@@ -83,4 +83,12 @@ public static class RateLimitPolicies
     /// the response ends, because a stream costs what it holds, not how often it is asked for.
     /// </summary>
     public const string PluginStream = "plugin-stream";
+
+    /// <summary>
+    /// The budget of the public callback door of the plugins (<c>/api/plugins/{id}/callback/...</c>), for gateways that
+    /// call the panel server to server without a session. Counted per caller address across every plugin and every path,
+    /// declared or not, so a refusal tells an installed plugin from an absent one no more than the 404 does. Applied by the
+    /// callback filter, like <see cref="PluginDefault"/>.
+    /// </summary>
+    public const string PluginCallback = "plugin-callback";
 }

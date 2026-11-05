@@ -7,17 +7,8 @@ namespace Innovayse.Hostpanel.Domain.Settings;
 /// </summary>
 public static class IntegrationSlugs
 {
-    /// <summary>The Stripe card gateway.</summary>
-    public const string Stripe = "stripe";
-
-    /// <summary>The PayPal gateway.</summary>
-    public const string PayPal = "paypal";
-
     /// <summary>The manual bank-transfer method.</summary>
     public const string BankTransfer = "bank-transfer";
-
-    /// <summary>The hosted card gateway provider.</summary>
-    public const string Inecobank = "inecobank";
 
     /// <summary>The Namecheap registrar.</summary>
     public const string Namecheap = "namecheap";

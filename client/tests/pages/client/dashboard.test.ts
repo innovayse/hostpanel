@@ -1,75 +1,103 @@
 /**
- * Tests for `pages/client/dashboard.vue` against the real client and content stores: the data
- * the page loads, what the cards render from it, the load-error and no-profile notices and the
- * manual refresh. Only the API composables are replaced.
+ * Tests for `pages/client/dashboard.vue` against the real client, content and plugin stores, the
+ * real API composables and the real transport, with a stub BFF answering on a real socket (nothing
+ * of ours is mocked): the data the page loads, what the cards render from it, the load-error and
+ * no-profile notices, the manual refresh, and the cards plugins add, which never change the page
+ * when there are none and never take it down when one breaks.
  *
  * @module tests/pages/client/dashboard.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { PLUGIN_COMPONENTS } from '~/tests/helpers/mountPlugin'
 import { Permission } from '~/composables/usePermissions'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { makeClientService } from '~/tests/helpers/clientServiceFixture'
+import { slotIndex, slotPath, slotWidgetPath, throwingView, workingView } from '~/tests/helpers/pluginSlotFixture'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import { DomainStatus } from '~/types/domainstatus'
-
-/** The mocked identity call, re-created for every test. */
-const fetchMe = vi.fn()
-
-/** The mocked services call, re-created for every test. */
-const fetchServices = vi.fn()
-
-/** The mocked invoices call, re-created for every test. */
-const fetchInvoices = vi.fn()
-
-/** The mocked domains call, re-created for every test. */
-const fetchDomains = vi.fn()
-
-/** The mocked tickets call, re-created for every test. */
-const fetchTickets = vi.fn()
-
-/** The mocked announcements call, re-created for every test. */
-const fetchRecentAnnouncements = vi.fn()
-
-vi.mock('~/composables/apis/useClientApi', () => ({
-  /**
-   * Stands in for the real API composable so the client store runs without transport.
-   *
-   * @returns The endpoints the dashboard loads.
-   */
-  useClientApi: () => ({ fetchMe, fetchServices, fetchInvoices, fetchDomains, fetchTickets })
-}))
-
-vi.mock('~/composables/apis/useContentApi', () => ({
-  /**
-   * Stands in for the real API composable so the content store runs without transport.
-   *
-   * @returns The endpoint the news card loads.
-   */
-  useContentApi: () => ({ fetchRecentAnnouncements })
-}))
+import { PluginSlotId } from '~/types/pluginslotid'
+import { settle } from '~/tests/helpers/settle'
 
 const { default: DashboardPage } = await import('~/pages/client/dashboard.vue')
+
+/**
+ * Mounts the dashboard with the plugin components its slot renders, and waits until its header is on screen: the
+ * page's reads go over a real socket, so its async setup ends after the mount's own promise flush.
+ *
+ * @returns The mounted page.
+ */
+const mountDashboard = async (): Promise<Awaited<ReturnType<typeof mountAuthPage>>> => {
+  const wrapper = await mountAuthPage(DashboardPage, PLUGIN_COMPONENTS)
+  await vi.waitFor(() => expect(wrapper.find('[data-testid="dashboard-title"]').exists()).toBe(true))
+  return wrapper
+}
 const { useDashboardSummary } = await import('~/composables/useDashboardSummary')
 
-beforeEach(() => {
+/** The BFF paths the dashboard reads. */
+const PATHS = {
+  me: '/api/portal/client/me',
+  services: '/api/portal/client/services',
+  invoices: '/api/portal/client/invoices',
+  domains: '/api/portal/client/domains',
+  tickets: '/api/portal/client/tickets',
+  news: '/api/portal/public/announcements',
+} as const
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
+
+/**
+ * How many times a path was read.
+ *
+ * @param path - The path.
+ * @returns The count.
+ */
+const reads = (path: string): number => requestsTo(stub.requests, path).length
+
+/**
+ * Answers every section with one refusal.
+ *
+ * @param status - The status.
+ * @param body - The refusal body.
+ * @param paths - The paths to refuse.
+ * @returns Nothing.
+ */
+const refuse = (status: number, body: unknown, paths: string[]): void => {
+  for (const path of paths) {
+    table[`GET ${path}`] = { status, body }
+  }
+}
+
+beforeEach(async () => {
   stubAuthRuntime()
   vi.stubGlobal('useDashboardSummary', useDashboardSummary)
-  for (const call of [fetchMe, fetchServices, fetchInvoices, fetchDomains, fetchTickets, fetchRecentAnnouncements]) {
-    call.mockReset()
+  table = {
+    [`GET ${PATHS.me}`]: { body: makeClientUser({ email: 'ada@example.com', permissions: Permission.All }) },
+    [`GET ${PATHS.services}`]: { body: [makeClientService({ id: 1, productName: 'Starter', domain: 'a.test', username: 'ada', server: null })] },
+    [`GET ${PATHS.invoices}`]: { body: [{ id: 7, status: 'Unpaid', dueDate: '2026-11-01', total: 25, currency: 'USD' }] },
+    [`GET ${PATHS.domains}`]: { body: [{ id: 3, name: 'a.test', status: DomainStatus.Active, expiresAt: '2030-01-01', nextDueDate: '', registeredAt: '' }] },
+    [`GET ${PATHS.tickets}`]: { body: [{ id: 9, subject: 'Help', departmentName: 'Support', status: 'Open' }] },
+    [`GET ${PATHS.news}`]: { body: { items: [{ id: 5, title: 'Maintenance', content: '', publishedAt: '2026-10-01T00:00:00Z' }], pageNumber: 1, pageSize: 20, totalCount: 1, totalPages: 1 } },
+    [`GET ${slotPath(PluginSlotId.DashboardCards)}`]: { body: slotIndex(PluginSlotId.DashboardCards, []) },
   }
-  fetchMe.mockResolvedValue(makeClientUser({ email: 'ada@example.com', permissions: Permission.All }))
-  fetchServices.mockResolvedValue([makeClientService({ id: 1, productName: 'Starter', domain: 'a.test', username: 'ada', server: null })])
-  fetchInvoices.mockResolvedValue([{ id: 7, status: 'Unpaid', dueDate: '2026-11-01', total: 25, currency: 'USD' }])
-  fetchDomains.mockResolvedValue([{ id: 3, name: 'a.test', status: DomainStatus.Active, expiresAt: '2030-01-01', nextDueDate: '', registeredAt: '' }])
-  fetchTickets.mockResolvedValue([{ id: 9, subject: 'Help', departmentName: 'Support', status: 'Open' }])
-  fetchRecentAnnouncements.mockResolvedValue({ items: [{ id: 5, title: 'Maintenance', content: '', publishedAt: '2026-10-01T00:00:00Z' }], pageNumber: 1, pageSize: 20, totalCount: 1, totalPages: 1 })
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  await stub.close()
 })
 
 describe('client dashboard page', () => {
   it('shows the title and subtitle in a header the e2e flow can wait for', async () => {
-    const wrapper = await mountAuthPage(DashboardPage)
+    const wrapper = await mountDashboard()
 
     const header = wrapper.find('[data-testid="dashboard-title"]')
     expect(header.text()).toContain('client.dashboard.title')
@@ -77,12 +105,13 @@ describe('client dashboard page', () => {
   })
 
   it('loads every section once and renders each card from it', async () => {
-    const wrapper = await mountAuthPage(DashboardPage)
+    const wrapper = await mountDashboard()
+    await settle()
 
-    expect(fetchServices).toHaveBeenCalledTimes(1)
-    expect(fetchInvoices).toHaveBeenCalledTimes(1)
-    expect(fetchDomains).toHaveBeenCalledTimes(1)
-    expect(fetchTickets).toHaveBeenCalledTimes(1)
+    expect(reads(PATHS.services)).toBe(1)
+    expect(reads(PATHS.invoices)).toBe(1)
+    expect(reads(PATHS.domains)).toBe(1)
+    expect(reads(PATHS.tickets)).toBe(1)
     expect(wrapper.find('[data-testid="dashboard-service-1"]').text()).toContain('Starter')
     expect(wrapper.find('[data-testid="dashboard-invoice-7"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="dashboard-domain-3"]').text()).toContain('a.test')
@@ -91,65 +120,59 @@ describe('client dashboard page', () => {
   })
 
   it('counts the sections in the stat tiles', async () => {
-    const wrapper = await mountAuthPage(DashboardPage)
+    const wrapper = await mountDashboard()
 
     expect(wrapper.find('[data-testid="dashboard-stat-services"] [data-testid="ui-stat-tile-value"]').text()).toBe('1')
     expect(wrapper.find('[data-testid="dashboard-stat-invoices"] [data-testid="ui-stat-tile-value"]').text()).toBe('1')
   })
 
   it('flags the unpaid invoice in the banners', async () => {
-    const wrapper = await mountAuthPage(DashboardPage)
+    const wrapper = await mountDashboard()
 
     expect(wrapper.find('[data-testid="dashboard-alert-unpaid"]').exists()).toBe(true)
   })
 
   it('shows each failed section once as a load error', async () => {
-    fetchServices.mockRejectedValue({ data: { detail: 'The billing system is down.' } })
-    fetchInvoices.mockRejectedValue({ data: { detail: 'The billing system is down.' } })
+    refuse(503, { detail: 'The billing system is down.' }, [PATHS.services, PATHS.invoices])
 
-    const wrapper = await mountAuthPage(DashboardPage)
+    const wrapper = await mountDashboard()
 
     const alert = wrapper.find('[data-testid="dashboard-load-errors"]')
     expect(alert.text().match(/The billing system is down\./g)).toHaveLength(1)
   })
 
   it('shows the no-profile notice instead of load errors for a staff account', async () => {
-    const refusal = { data: { type: 'CLIENT_PROFILE_NOT_FOUND', detail: 'No client record.' } }
-    fetchMe.mockRejectedValue(refusal)
-    fetchServices.mockRejectedValue(refusal)
-    fetchInvoices.mockRejectedValue(refusal)
-    fetchDomains.mockRejectedValue(refusal)
-    fetchTickets.mockRejectedValue(refusal)
+    refuse(404, { type: 'CLIENT_PROFILE_NOT_FOUND', detail: 'No client record.' }, [PATHS.me, PATHS.services, PATHS.invoices, PATHS.domains, PATHS.tickets])
 
-    const wrapper = await mountAuthPage(DashboardPage)
+    const wrapper = await mountDashboard()
 
     expect(wrapper.find('[data-testid="no-profile-notice"]').text()).toContain('No client record.')
     expect(wrapper.find('[data-testid="dashboard-load-errors"]').exists()).toBe(false)
   })
 
   it('reloads every section from the API when refresh is pressed', async () => {
-    const wrapper = await mountAuthPage(DashboardPage)
+    const wrapper = await mountDashboard()
 
     await wrapper.find('[data-testid="dashboard-refresh"]').trigger('click')
-    await flushPromises()
+    await vi.waitFor(() => expect(reads(PATHS.tickets)).toBe(2))
 
-    expect(fetchServices).toHaveBeenCalledTimes(2)
-    expect(fetchInvoices).toHaveBeenCalledTimes(2)
-    expect(fetchDomains).toHaveBeenCalledTimes(2)
-    expect(fetchTickets).toHaveBeenCalledTimes(2)
+    expect(reads(PATHS.services)).toBe(2)
+    expect(reads(PATHS.invoices)).toBe(2)
+    expect(reads(PATHS.domains)).toBe(2)
   })
 })
 
 describe('client dashboard page permissions', () => {
   it('neither asks for nor shows the sections the person has no permission for', async () => {
-    fetchMe.mockResolvedValue(makeClientUser({ email: 'ada@example.com', permissions: Permission.ViewDomains }))
+    table[`GET ${PATHS.me}`] = { body: makeClientUser({ email: 'ada@example.com', permissions: Permission.ViewDomains }) }
 
-    const wrapper = await mountAuthPage(DashboardPage)
+    const wrapper = await mountDashboard()
+    await settle()
 
-    expect(fetchDomains).toHaveBeenCalledTimes(1)
-    expect(fetchServices).not.toHaveBeenCalled()
-    expect(fetchInvoices).not.toHaveBeenCalled()
-    expect(fetchTickets).not.toHaveBeenCalled()
+    expect(reads(PATHS.domains)).toBe(1)
+    expect(reads(PATHS.services)).toBe(0)
+    expect(reads(PATHS.invoices)).toBe(0)
+    expect(reads(PATHS.tickets)).toBe(0)
     expect(wrapper.find('[data-testid="dashboard-domain-3"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="dashboard-service-1"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="dashboard-invoice-7"]').exists()).toBe(false)
@@ -159,10 +182,47 @@ describe('client dashboard page permissions', () => {
   })
 
   it('offers the domain search card to a person who may place orders', async () => {
-    fetchMe.mockResolvedValue(makeClientUser({ email: 'ada@example.com', permissions: Permission.PlaceNewOrders }))
+    table[`GET ${PATHS.me}`] = { body: makeClientUser({ email: 'ada@example.com', permissions: Permission.PlaceNewOrders }) }
 
-    const wrapper = await mountAuthPage(DashboardPage)
+    const wrapper = await mountDashboard()
 
     expect(wrapper.find('[data-testid="dashboard-register-domain"]').exists()).toBe(true)
+  })
+})
+
+describe('client dashboard plugin cards', () => {
+  it('reads the dashboard slot without context and adds nothing without plugins', async () => {
+    const wrapper = await mountDashboard()
+    await vi.waitFor(() => expect(reads(slotPath(PluginSlotId.DashboardCards))).toBe(1))
+
+    expect(stub.requests.find(request => request.url.startsWith(slotPath(PluginSlotId.DashboardCards)))?.url)
+      .toBe(slotPath(PluginSlotId.DashboardCards))
+    expect(wrapper.find('[data-testid="plugin-slot-client.dashboard.cards"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="dashboard-title"]').exists()).toBe(true)
+  })
+
+  it('shows the cards plugins add, a throwing one as a note, the rest of the page intact', async () => {
+    table[`GET ${slotPath(PluginSlotId.DashboardCards)}`] = { body: slotIndex(PluginSlotId.DashboardCards, ['broken', 'ok']) }
+    table[`GET ${slotWidgetPath(PluginSlotId.DashboardCards, 'broken')}`] = { body: throwingView() }
+    table[`GET ${slotWidgetPath(PluginSlotId.DashboardCards, 'ok')}`] = { body: workingView() }
+
+    const wrapper = await mountDashboard()
+
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="plugin-slot-unavailable-acme-sites-broken"]').exists()).toBe(true))
+    await vi.waitFor(() => expect(wrapper.get('[data-testid="plugin-slot-widget-acme-sites-ok"]').text()).toBe('Site is live'))
+    expect(wrapper.find('[data-testid="dashboard-service-1"]').text()).toContain('Starter')
+  })
+
+  it('keeps the page whole and silent when the slot cannot be read', async () => {
+    table[`GET ${slotPath(PluginSlotId.DashboardCards)}`] = { status: 503, body: { detail: 'Plugins are down.' } }
+
+    const wrapper = await mountDashboard()
+    // The transport retries a GET once on a 5xx, so a refused slot read is two requests.
+    await vi.waitFor(() => expect(reads(slotPath(PluginSlotId.DashboardCards))).toBe(2))
+    await settle()
+
+    expect(wrapper.find('[data-testid="plugin-slot-client.dashboard.cards"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="dashboard-load-errors"]').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('Plugins are down.')
   })
 })

@@ -28,7 +28,7 @@ export const makeClientService = (overrides: Partial<ClientService> = {}): Clien
   username: 'webmstr',
   price: 10,
   firstPaymentAmount: 12,
-  paymentMethod: 'stripe',
+  paymentMethod: 'card_gateway',
   server: { name: 'srv1', hostname: 'srv1.example.net', ipAddress: '10.0.0.1' },
   createdAt: '2026-01-01T00:00:00Z',
   suspensionSource: null,

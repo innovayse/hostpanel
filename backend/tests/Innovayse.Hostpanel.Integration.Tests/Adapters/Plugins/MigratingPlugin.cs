@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using Innovayse.SDK.Plugins.Lifecycle;
+using Hostpanel.Sdk.Plugins.Lifecycle;
 using Microsoft.Extensions.Configuration;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;

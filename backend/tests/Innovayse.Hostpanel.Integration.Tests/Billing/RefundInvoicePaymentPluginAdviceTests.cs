@@ -6,7 +6,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
-using Innovayse.SDK.Plugins.Fulfilment;
+using Hostpanel.Sdk.Plugins.Fulfilment;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;

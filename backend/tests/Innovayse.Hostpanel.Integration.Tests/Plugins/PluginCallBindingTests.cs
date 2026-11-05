@@ -1,11 +1,13 @@
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 
+using Hostpanel.Sdk.Plugins.Enums;
+
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 
 /// <summary>
 /// <see cref="PluginCallBinding"/>: only two shapes exist, a client with its reference and permissions, or no client,
-/// no reference and no permissions; a blank plugin id or client reference is refused.
+/// no reference and no permissions, each with the area it came through (client or admin); a blank plugin id or client reference is refused.
 /// </summary>
 public sealed class PluginCallBindingTests
 {
@@ -22,6 +24,7 @@ public sealed class PluginCallBindingTests
         binding.ClientId.Should().Be(42);
         binding.ClientRef.Should().Be("ref-42");
         binding.Permissions.Should().Be(ClientPermission.ViewDomains);
+        binding.Area.Should().Be(PluginArea.Client);
     }
 
     /// <summary>A binding without a client has no client id, no reference and no permissions.</summary>
@@ -34,6 +37,7 @@ public sealed class PluginCallBindingTests
         binding.ClientId.Should().BeNull();
         binding.ClientRef.Should().BeNull();
         binding.Permissions.Should().Be(ClientPermission.None);
+        binding.Area.Should().Be(PluginArea.Admin);
     }
 
     /// <summary>A client binding with an empty or white-space reference is refused, naming the reference.</summary>

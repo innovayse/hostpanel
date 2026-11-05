@@ -254,6 +254,10 @@
     "bulkActionDone": "Done for the selected invoices.",
     "invoiceDeleted": "Invoice deleted."
   },
+  "clientNav": {
+    "rail": "Client sections",
+    "strip": "Client section tabs"
+  },
   "clientLayout": {
     "loadingClient": "Loading client…",
     "exportData": "Export Data"
@@ -333,7 +337,6 @@
     "firstPaymentAmount": "First Payment Amount",
     "recurringAmount": "Recurring Amount",
     "terminationDate": "Termination Date",
-    "stripePaypal": "Stripe, PayPal...",
     "promotionCode": "Promotion Code",
     "subscriptionId": "Subscription ID",
     "autoManagement": "Auto-Management",

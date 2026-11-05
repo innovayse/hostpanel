@@ -114,6 +114,16 @@ public static class DependencyInjection
                     + "number, and an invoice payment term of 0 to 365 days.")
             .ValidateOnStart();
 
+        // How long the renewal run waits after a declined stored card charge and how many attempts an invoice gets.
+        services.AddOptions<StoredChargeOptions>()
+            .Bind(configuration.GetSection(StoredChargeOptions.SectionName))
+            .Validate(
+                o => o.IsValid,
+                $"{StoredChargeOptions.SectionName}:{nameof(StoredChargeOptions.RetryAfterDays)} must be from 1 to "
+                    + $"{StoredChargeOptions.MaxRetryAfterDaysLimit} days, and {StoredChargeOptions.SectionName}:"
+                    + $"{nameof(StoredChargeOptions.MaxAttemptsPerInvoice)} from 1 to {StoredChargeOptions.MaxAttemptsLimit}.")
+            .ValidateOnStart();
+
         // How large a request body the host passes on to a plugin route, how often a streamed reply sends a heartbeat,
         // and how much one plugin store scope holds.
         services.AddOptions<PluginApiOptions>()

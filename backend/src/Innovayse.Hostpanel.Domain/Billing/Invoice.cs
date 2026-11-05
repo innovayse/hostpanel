@@ -140,6 +140,17 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// </summary>
     public DateTimeOffset? RefundStartedAt { get; private set; }
 
+    /// <summary>
+    /// Gets the stable id of the gateway refund that was claimed and not yet recorded, or null when none is pending. It is
+    /// saved with the claim, before the gateway is called, and handed to the gateway as its idempotency key, so a retry of
+    /// the same refund after a timeout or a crash (see <see cref="BeginGatewayRefund"/>) sends the same id and the
+    /// gateway cannot refund twice. A recorded refund (<see cref="AddRefund"/>) ends the attempt and clears it.
+    /// </summary>
+    public Guid? PendingRefundId { get; private set; }
+
+    /// <summary>Gets the amount, in the invoice currency, of the refund <see cref="PendingRefundId"/> belongs to; null when none is pending.</summary>
+    public decimal? PendingRefundAmount { get; private set; }
+
     /// <summary>Gets optional notes for this invoice.</summary>
     public string? Notes { get; private set; }
 
@@ -1048,6 +1059,10 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         // Written on every refund, so the invoice row itself changes and a concurrent refund's save
         // fails the row's concurrency check instead of passing the same RefundableAmount twice.
         RefundStartedAt = date;
+
+        // A recorded refund ends the attempt whose id the gateway was given.
+        PendingRefundId = null;
+        PendingRefundAmount = null;
         var tx = InvoiceTransaction.Create(Id, date, gateway, transactionId, amount, InvoiceTransactionType.Refund, fees, notes);
         _transactions.Add(tx);
         if (RefundableAmount == 0)
@@ -1066,8 +1081,9 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// Claims the invoice for a refund that must ask a gateway before it can be recorded. The caller
     /// saves the claim before the gateway call, so of two refunds racing on the same invoice only one
     /// gets to move money; the other fails the save or finds the claim held. The parts the gateway
-    /// returns are then recorded with <see cref="AddRefund"/> under the same <paramref name="at"/>, or
-    /// the claim is given back with <see cref="ReleaseRefundClaim"/> when it returned nothing.
+    /// returns are then recorded with <see cref="AddRefund"/> under the same <paramref name="at"/>. A claim whose gateway call
+    /// returned nothing is never given back early: a plugin reports a refusal and a fault alike by throwing, so the outcome
+    /// is unknown and the claim, with its refund id, stays until <see cref="RefundClaimLease"/> runs out.
     /// </summary>
     /// <param name="at">When the refund begins (UTC); also the date its parts are recorded under.</param>
     /// <exception cref="DomainRuleException">The invoice is not Paid or PartiallyRefunded, or another refund is still in flight.</exception>
@@ -1085,17 +1101,28 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
-    /// Gives back a refund claim the gateway answered without returning any money, so the next
-    /// refund need not wait for the lease to run out. A claim that already recorded a part is no
-    /// longer in flight and is left as the latest refund's start.
+    /// Claims the invoice like <see cref="BeginRefund"/> and fixes the id the gateway is given for this refund. A claim whose
+    /// attempt left no recorded refund (the gateway call timed out, threw or the process stopped, so the outcome is unknown)
+    /// keeps its id: a retry of the same amount once the claim's lease has run out gets that id back, so the gateway answers
+    /// the first attempt again instead of refunding twice. A different amount is a different refund and gets a new id.
     /// </summary>
-    /// <param name="now">The current moment (UTC).</param>
-    public void ReleaseRefundClaim(DateTimeOffset now)
+    /// <param name="at">When the refund begins (UTC); also the date its parts are recorded under.</param>
+    /// <param name="amount">The amount to refund, in the invoice currency.</param>
+    /// <returns>The stable refund id to send the gateway.</returns>
+    /// <exception cref="DomainRuleException">The invoice is not Paid or PartiallyRefunded, or another refund is still in flight.</exception>
+    public Guid BeginGatewayRefund(DateTimeOffset at, decimal amount)
     {
-        if (IsRefundInFlight(now))
+        BeginRefund(at);
+
+        // A different amount is a different refund. A gateway treats a repeated idempotency key as the same request and
+        // either replays the first answer or refuses the changed amount, so the old id must not carry a new amount.
+        if (PendingRefundId is null || PendingRefundAmount != amount)
         {
-            RefundStartedAt = null;
+            PendingRefundId = Guid.NewGuid();
+            PendingRefundAmount = amount;
         }
+
+        return PendingRefundId.Value;
     }
 
     /// <summary>

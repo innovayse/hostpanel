@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Innovayse.Hostpanel.API.Plugins;

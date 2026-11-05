@@ -57,6 +57,13 @@ public sealed class SshKey : BaseEntity, IAggregateRoot
     /// <summary>Gets when the provider confirmed the revocation.</summary>
     public DateTimeOffset? RevokedAt { get; private set; }
 
+    /// <summary>
+    /// Gets the id of the plugin the host issued this key to, or <see langword="null"/> for a key the client added.
+    /// Set once, by <see cref="Create"/>: only that plugin may revoke the key through the plugin host API, while the client
+    /// may revoke any key of its service.
+    /// </summary>
+    public string? IssuedToPluginId { get; private set; }
+
     /// <summary>Gets whether this key is still live from the customer's point of view.</summary>
     public bool IsActive => SyncState is not SshKeySyncState.Revoked;
 
@@ -72,14 +79,28 @@ public sealed class SshKey : BaseEntity, IAggregateRoot
     /// <param name="label">Friendly label; trimmed.</param>
     /// <param name="publicKey">Canonical <c>ssh-ed25519 &lt;base64&gt;</c> line.</param>
     /// <param name="fingerprint">Its SHA256 fingerprint.</param>
+    /// <param name="issuedToPluginId">
+    /// The plugin the host issues the key to, or <see langword="null"/> for a key the client adds. Required rather than
+    /// defaulted, so no caller records a plugin's key as the client's by leaving it out.
+    /// </param>
     /// <returns>The new key.</returns>
+    /// <exception cref="ArgumentException">
+    /// A text is blank, or <paramref name="issuedToPluginId"/> is set and blank.
+    /// </exception>
     public static SshKey Create(
         int clientServiceId, int serverId, string accountUsername,
-        string label, string publicKey, string fingerprint)
+        string label, string publicKey, string fingerprint, string? issuedToPluginId)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(accountUsername);
-        ArgumentException.ThrowIfNullOrWhiteSpace(publicKey);
-        ArgumentException.ThrowIfNullOrWhiteSpace(fingerprint);
+        EnsureText(accountUsername, nameof(accountUsername));
+        EnsureText(label, nameof(label));
+        EnsureText(publicKey, nameof(publicKey));
+        EnsureText(fingerprint, nameof(fingerprint));
+        // Only blank is refused here: the plugin id rule (shape, length, reserved ids) belongs to the plugin packaging package,
+        // which the domain does not reference, and the id reaching this point is a loaded plugin's, already checked at load.
+        if (issuedToPluginId is not null)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(issuedToPluginId);
+        }
 
         return new SshKey
         {
@@ -90,6 +111,7 @@ public sealed class SshKey : BaseEntity, IAggregateRoot
             Label = label.Trim(),
             PublicKey = publicKey,
             Fingerprint = fingerprint,
+            IssuedToPluginId = issuedToPluginId,
             SyncState = SshKeySyncState.Pending,
         };
     }
@@ -103,6 +125,26 @@ public sealed class SshKey : BaseEntity, IAggregateRoot
     /// <returns><see langword="true"/> when both match the pinned values.</returns>
     public bool IsBoundTo(int? serverId, string? accountUsername) =>
         serverId == ServerId && string.Equals(accountUsername, AccountUsername, StringComparison.Ordinal);
+
+    /// <summary>Refuses a blank required text, the last line of defence behind the use cases' own checks.</summary>
+    /// <param name="value">The value.</param>
+    /// <param name="name">The parameter's name, for the exception.</param>
+    /// <exception cref="ArgumentException"><paramref name="value"/> is empty or white space.</exception>
+    private static void EnsureText(string value, string name)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("A value is required.", name);
+        }
+    }
+
+    /// <summary>Whether the host issued this key to <paramref name="pluginId"/>. A client's own key is issued to no plugin.</summary>
+    /// <param name="pluginId">The plugin asking.</param>
+    /// <returns><see langword="true"/> when the key was issued to exactly that plugin (ordinal comparison).</returns>
+    public bool IsIssuedTo(string pluginId)
+    {
+        return IssuedToPluginId is not null && string.Equals(IssuedToPluginId, pluginId, StringComparison.Ordinal);
+    }
 
     /// <summary>Records that the provider confirmed the install.</summary>
     public void MarkInstalled()

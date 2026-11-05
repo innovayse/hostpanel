@@ -16,7 +16,7 @@ public sealed class PluginNeutralSourceTests
     ];
 
     /// <summary>
-    /// The files that still name a built-in provider: the integrations slugs, the HTTP client profiles and the
+    /// The files that still name a built-in provider: the integrations slugs, the dependency registration and the
     /// provisioning factory that links the panel provider. This list only shrinks; a new entry needs a reason, and an
     /// entry whose file no longer names a plugin fails <see cref="LegacyBuiltIn_ListHasNoStaleEntry"/>.
     /// </summary>
@@ -25,7 +25,6 @@ public sealed class PluginNeutralSourceTests
         "Innovayse.Hostpanel.Domain/Settings/IntegrationSlugs.cs",
         "Innovayse.Hostpanel.Infrastructure/DependencyInjection.cs",
         "Innovayse.Hostpanel.Infrastructure/Provisioning/ProvisioningProviderFactory.cs",
-        "Innovayse.Hostpanel.Infrastructure/Resilience/Extensions/HttpClientResilienceExtensions.cs",
     ];
 
     /// <summary>The solution directory.</summary>

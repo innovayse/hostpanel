@@ -63,10 +63,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="SetAsDefaultMustBeTrue" xml:space="preserve">
-    <value>Card details cannot be changed. Remove and add a new card instead.</value>
-    <comment>SetDefaultPaymentMethodValidator. The only update this endpoint accepts is making a card the default.</comment>
-  </data>
   <data name="ContactEmailInvalid" xml:space="preserve">
     <value>Email must be a valid email address.</value>
     <comment>SendContactMessageHandler.</comment>
@@ -536,9 +532,6 @@
   <data name="PaymentMethodRequired" xml:space="preserve">
     <value>Select a payment method.</value>
   </data>
-  <data name="PaymentAttemptRequired" xml:space="preserve">
-    <value>Start the payment again.</value>
-  </data>
   <data name="PlaceOrderItemsRequired" xml:space="preserve">
     <value>Add at least one item to the order.</value>
   </data>
@@ -566,14 +559,14 @@
   <data name="GatewayModuleRequired" xml:space="preserve">
     <value>Select a payment gateway.</value>
   </data>
+  <data name="ConsentTextVersionInvalid" xml:space="preserve">
+    <value>The consent text version is required and at most {0} characters.</value>
+  </data>
   <data name="ReturnUrlRequired" xml:space="preserve">
     <value>A return URL is required.</value>
   </data>
   <data name="ReturnUrlInvalid" xml:space="preserve">
     <value>The return URL must be an absolute http or https address.</value>
-  </data>
-  <data name="PaymentIntentIdRequired" xml:space="preserve">
-    <value>The payment intent id is required.</value>
   </data>
   <data name="InvitationTokenRequired" xml:space="preserve">
     <value>An invitation token is required.</value>
@@ -1295,9 +1288,6 @@
   <data name="InvoiceStatusInvalid" xml:space="preserve">
     <value>Status must be a known invoice status.</value>
   </data>
-  <data name="PaymentMethodIdRequired" xml:space="preserve">
-    <value>Name the saved payment method.</value>
-  </data>
   <data name="ClientNewEmailInvalid" xml:space="preserve">
     <value>Enter a valid new email address.</value>
   </data>
@@ -1381,5 +1371,32 @@
   </data>
   <data name="IntegrationFieldExpectValue" xml:space="preserve">
     <value>a non-empty value</value>
+  </data>
+  <data name="CardConsentRequired" xml:space="preserve">
+    <value>Confirm that the saved payment method may be charged for your invoices.</value>
+  </data>
+  <data name="StoredChargeSessionIdRequired" xml:space="preserve">
+    <value>Name the save session.</value>
+  </data>
+  <data name="CardConsentIdInvalid" xml:space="preserve">
+    <value>Name the consent.</value>
+  </data>
+  <data name="StoredChargeInvalid" xml:space="preserve">
+    <value>Name the charge and how it ended.</value>
+  </data>
+  <data name="InvoicePaymentClaimStatusInvalid" xml:space="preserve">
+    <value>The status must be one of the known payment claim statuses.</value>
+  </data>
+  <data name="PluginVersionRequired" xml:space="preserve">
+    <value>The plugin version is required.</value>
+  </data>
+  <data name="PluginVersionInvalid" xml:space="preserve">
+    <value>The plugin version must be a semantic version such as 1.2.3.</value>
+  </data>
+  <data name="PluginRegistrySearchTooLong" xml:space="preserve">
+    <value>The search text may be at most 100 characters.</value>
+  </data>
+  <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
+    <value>Choose a valid category.</value>
   </data>
 </root>

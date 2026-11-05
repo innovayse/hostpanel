@@ -5,7 +5,7 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,7 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Integrations;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ListIntegrationsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The list carries every built-in integration, the card gateway among them.</summary>
+    /// <summary>The list carries every built-in integration, the mail server among them.</summary>
     [Fact]
     public async Task ShowsTheBuiltInIntegrationsAsync()
     {
@@ -28,30 +28,30 @@ public sealed class ListIntegrationsTests(IntegrationTestFactory factory) : ICla
 
         var list = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/integrations");
 
-        list!.Should().Contain(i => i.GetProperty("slug").GetString() == "stripe");
+        list!.Should().Contain(i => i.GetProperty("slug").GetString() == "smtp");
     }
 
     /// <summary>
-    /// Once the card gateway's required secret key is stored, its row reports it as configured;
+    /// Once an integration's required fields are stored, its row reports it as configured;
     /// the list carries no description and no last test moment, which nothing stores.
     /// </summary>
     [Fact]
     public async Task ReportsAnIntegrationWithItsRequiredFieldsAsConfiguredAsync()
     {
         var client = await IntegrationsTestSeeds.AdminClientAsync(factory);
-        var save = await client.PutAsJsonAsync("/api/admin/integrations/stripe", new
+        var save = await client.PutAsJsonAsync("/api/admin/integrations/smtp", new
         {
             isEnabled = false,
-            config = new Dictionary<string, string> { ["secret_key"] = "sk_test_configured" },
+            config = new Dictionary<string, string> { ["host"] = "mail.example.test", ["username"] = "mailer", ["password"] = "secret-configured", ["from_address"] = "billing@example.test" },
         });
         save.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var list = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/integrations");
 
-        var stripe = list!.Single(i => i.GetProperty("slug").GetString() == "stripe");
-        stripe.GetProperty("isConfigured").GetBoolean().Should().BeTrue();
-        stripe.TryGetProperty("description", out _).Should().BeFalse();
-        stripe.TryGetProperty("lastTestedAt", out _).Should().BeFalse();
+        var gateway = list!.Single(i => i.GetProperty("slug").GetString() == "smtp");
+        gateway.GetProperty("isConfigured").GetBoolean().Should().BeTrue();
+        gateway.TryGetProperty("description", out _).Should().BeFalse();
+        gateway.TryGetProperty("lastTestedAt", out _).Should().BeFalse();
     }
 
     /// <summary>
@@ -80,8 +80,31 @@ public sealed class ListIntegrationsTests(IntegrationTestFactory factory) : ICla
         var row = list!.Single(i => i.GetProperty("slug").GetString() == slug);
         row.GetProperty("isPlugin").GetBoolean().Should().BeTrue();
         row.GetProperty("pluginType").GetString().Should().Be(type.ToString());
-        var stripe = list!.Single(i => i.GetProperty("slug").GetString() == "stripe");
-        stripe.GetProperty("pluginType").ValueKind.Should().Be(JsonValueKind.Null);
+        var builtIn = list!.Single(i => i.GetProperty("slug").GetString() == "smtp");
+        builtIn.GetProperty("pluginType").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    /// <summary>A plugin entry carries its icon endpoint as <c>iconUrl</c>; a plugin without one and a built-in integration carry null.</summary>
+    [Fact]
+    public async Task NamesTheIconUrlOfAPluginRowAsync()
+    {
+        var withIcon = $"plugin-{Guid.NewGuid():N}";
+        var withoutIcon = $"plugin-{Guid.NewGuid():N}";
+        var plugins = new PluginIntegrationRegistry();
+        plugins.Register(new PluginIntegrationEntry(
+            withIcon, "Icon plugin", "Extensions", PluginType.Payment, "#123456", [], $"/api/admin/plugins/{withIcon}/icon"));
+        plugins.Register(new PluginIntegrationEntry(withoutIcon, "Plain plugin", "Extensions", PluginType.Payment, "#123456", []));
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<IPluginIntegrationRegistry>(plugins)));
+        var client = host.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await factory.GetAdminTokenAsync());
+
+        var list = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/integrations");
+
+        list!.Single(i => i.GetProperty("slug").GetString() == withIcon).GetProperty("iconUrl").GetString()
+            .Should().Be($"/api/admin/plugins/{withIcon}/icon");
+        list!.Single(i => i.GetProperty("slug").GetString() == withoutIcon).GetProperty("iconUrl").ValueKind.Should().Be(JsonValueKind.Null);
+        list!.Single(i => i.GetProperty("slug").GetString() == "smtp").GetProperty("iconUrl").ValueKind.Should().Be(JsonValueKind.Null);
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>

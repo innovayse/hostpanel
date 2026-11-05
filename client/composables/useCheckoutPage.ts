@@ -24,12 +24,6 @@ import { useCurrencyStore } from '~/stores/currency'
 import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
 import { redirectToExternal } from '~/utils/externalRedirect'
 
-/** The card form below the method list, as far as the page needs to drive it. */
-export interface CardFormHandle {
-  /** Confirms the card payment once the order exists. */
-  confirmPayment: (clientSecret: string) => Promise<{ id: string }>
-}
-
 /**
  * Wires a checkout page. Call it once at the top of the page's `<script setup>` and `await` it:
  * it waits for the payment methods so the server renders them.
@@ -129,9 +123,6 @@ export const useCheckoutPage = async () => {
     phonenumber: ''
   })
 
-  /** The card form below the method list; asked to confirm the payment once the order exists. */
-  const stripeCardFormRef = ref<CardFormHandle | null>(null)
-
   /**
    * Places the order through the checkout store and goes where it says.
    *
@@ -145,12 +136,6 @@ export const useCheckoutPage = async () => {
     }
     const destination = await checkout.placeOrder({
       guest: { ...form },
-      confirmCard: (clientSecret) => {
-        if (!stripeCardFormRef.value) {
-          return Promise.reject(new Error(t('checkout.errors.generic')))
-        }
-        return stripeCardFormRef.value.confirmPayment(clientSecret)
-      },
       confirmTotalChange: (shown, charged) => confirm(t('checkout.totalChangedConfirm', { shown, charged })),
       localizePath: localePath
     })
@@ -189,7 +174,6 @@ export const useCheckoutPage = async () => {
     userEmail,
     handleLogout,
     form,
-    stripeCardFormRef,
     submitOrder
   }
 }

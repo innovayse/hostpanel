@@ -1,8 +1,8 @@
 using System.Globalization;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Plugins.Common;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 
@@ -80,6 +80,59 @@ public sealed class PluginViewDocumentsTests
         InCulture("en", () => views.Localised("views/missing.json", PluginUiTexts.For(Manifest()))).Should().BeNull();
     }
 
+    /// <summary>
+    /// The labels nested inside a chat block (the assistant's <c>label</c>, the intro's <c>title</c> and <c>text</c>, and
+    /// each suggestion's <c>label</c> and <c>text</c>) are localised like a block's own, because a label member is resolved
+    /// at any depth; the routes beside them are left as written.
+    /// </summary>
+    [Fact]
+    public void NestedChatLabels_AreLocalised()
+    {
+        const string chatPath = "views/chat.json";
+        using var document = JsonDocument.Parse("""
+            {"schema":1,"blocks":[{"kind":"chat","placeholder":"chat.placeholder",
+              "send":{"method":"post","path":"/chat"},
+              "assistant":{"label":"chat.assistant"},
+              "intro":{"title":"chat.introTitle","text":"chat.introText"},
+              "suggestions":[{"label":"chat.suggest.color","text":"chat.suggest.colorText"}]}]}
+            """);
+        var views = new PluginViewDocuments(
+            new Dictionary<string, JsonElement>(StringComparer.Ordinal) { [chatPath] = document.RootElement.Clone() });
+        var manifest = Manifest(
+            new Dictionary<string, IReadOnlyDictionary<string, string>>
+            {
+                ["en"] = new Dictionary<string, string>
+                {
+                    ["chat.placeholder"] = "Ask",
+                    ["chat.assistant"] = "Assistant",
+                    ["chat.introTitle"] = "Hello",
+                    ["chat.introText"] = "Describe it",
+                    ["chat.suggest.color"] = "Colour",
+                    ["chat.suggest.colorText"] = "Make it green",
+                },
+                ["ru"] = new Dictionary<string, string>
+                {
+                    ["chat.placeholder"] = "Спросите",
+                    ["chat.assistant"] = "Помощник",
+                    ["chat.introTitle"] = "Привет",
+                    ["chat.introText"] = "Опишите",
+                    ["chat.suggest.color"] = "Цвет",
+                    ["chat.suggest.colorText"] = "Сделай зелёным",
+                },
+            });
+
+        var chat = InCulture("ru", () => views.Localised(chatPath, PluginUiTexts.For(manifest)))!.Value
+            .GetProperty("blocks")[0];
+
+        chat.GetProperty("placeholder").GetString().Should().Be("Спросите");
+        chat.GetProperty("assistant").GetProperty("label").GetString().Should().Be("Помощник");
+        chat.GetProperty("intro").GetProperty("title").GetString().Should().Be("Привет");
+        chat.GetProperty("intro").GetProperty("text").GetString().Should().Be("Опишите");
+        chat.GetProperty("suggestions")[0].GetProperty("label").GetString().Should().Be("Цвет");
+        chat.GetProperty("suggestions")[0].GetProperty("text").GetString().Should().Be("Сделай зелёным");
+        chat.GetProperty("send").GetProperty("path").GetString().Should().Be("/chat");
+    }
+
     /// <summary>Builds the documents of a plugin holding one view whose title is a locale key.</summary>
     /// <returns>The documents.</returns>
     private static PluginViewDocuments Views()
@@ -93,6 +146,18 @@ public sealed class PluginViewDocumentsTests
     /// <returns>The manifest.</returns>
     private static PluginManifest Manifest()
     {
+        return Manifest(new Dictionary<string, IReadOnlyDictionary<string, string>>
+        {
+            ["en"] = new Dictionary<string, string> { ["menu.reports"] = "Reports" },
+            ["ru"] = new Dictionary<string, string> { ["menu.reports"] = "Отчёты" },
+        });
+    }
+
+    /// <summary>Builds a manifest with the given locale texts.</summary>
+    /// <param name="locales">The texts by locale, then by key.</param>
+    /// <returns>The manifest.</returns>
+    private static PluginManifest Manifest(IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> locales)
+    {
         return new PluginManifest
         {
             Id = "views-plugin",
@@ -104,11 +169,7 @@ public sealed class PluginViewDocumentsTests
             Category = "tools",
             EntryPoint = "Views.Plugin",
             SdkVersion = "2.0.0",
-            Locales = new Dictionary<string, IReadOnlyDictionary<string, string>>
-            {
-                ["en"] = new Dictionary<string, string> { ["menu.reports"] = "Reports" },
-                ["ru"] = new Dictionary<string, string> { ["menu.reports"] = "Отчёты" },
-            },
+            Locales = locales,
         };
     }
 

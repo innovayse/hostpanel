@@ -26,7 +26,7 @@ describe('InvoiceTransactionsSection', () => {
             {
               id: 21,
               date: '2026-10-15T00:00:00Z',
-              gateway: 'Stripe',
+              gateway: 'Example Gateway',
               transactionId: 'ch_1',
               amount: 24000,
               fees: 500,

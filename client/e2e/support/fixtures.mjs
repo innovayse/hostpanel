@@ -208,7 +208,7 @@ export const CLIENT = {
   address: { street: null, address2: null, city: null, state: null, postCode: null, country: 'US' },
   language: null,
   currency: 'USD',
-  paymentMethod: 'stripe',
+  paymentMethod: 'bank_transfer',
   notifications: {
     general: true,
     invoice: true,
@@ -256,17 +256,6 @@ export const INVOICE = {
   paymentMethod: null,
   items: [{ id: 1, description: 'E2E Starter - monthly', unitPrice: 5, quantity: 1, amount: 5 }],
   transactions: [],
-}
-
-/** The saved card the pay page preselects, in the camelCase shape the backend sends. */
-export const SAVED_CARD = {
-  id: 'pm_e2e',
-  type: 'card',
-  brand: 'visa',
-  last4: '4242',
-  expiryMonth: 12,
-  expiryYear: 2030,
-  isDefault: false,
 }
 
 /** Operator settings the storefront reads; a light default and an uploaded light/dark logo pair. */
@@ -593,6 +582,33 @@ export const GATEWAY_METHODS = [
   { module: 'bank_transfer', displayName: 'Bank transfer' },
 ]
 
+/** The hosted card gateway the stub adds to the gateway list once a spec enables it (`POST /__e2e/gateways`). */
+export const HOSTED_GATEWAY = { module: 'e2e_card_gateway', displayName: 'E2E Card Gateway' }
+
+/** The address the stub sends the payer to for a hosted gateway page; the offline guard blocks the navigation itself, the request is observable. */
+export const GATEWAY_PAGE_URL = 'https://gateway.e2e.test/hosted/session'
+
+/** The card the stub holds as already saved, the default one. */
+export const STORED_CARD_DEFAULT = {
+  consentId: 11, gatewayModuleId: HOSTED_GATEWAY.module, detailsAvailable: true, brand: 'visa', last4: '4242',
+  expiryMonth: 9, expiryYear: 2031, isDefault: true,
+}
+
+/** A second saved card, not the default. */
+export const STORED_CARD_OTHER = {
+  consentId: 12, gatewayModuleId: HOSTED_GATEWAY.module, detailsAvailable: true, brand: 'mastercard', last4: '1111',
+  expiryMonth: 3, expiryYear: 2032, isDefault: false,
+}
+
+/** The session id the stub opens for a save, and the card it adds when that session is completed. */
+export const STORED_SESSION_ID = 'e2e-session-1'
+
+/** The card a completed save session adds. */
+export const STORED_CARD_NEW = {
+  consentId: 13, gatewayModuleId: HOSTED_GATEWAY.module, detailsAvailable: true, brand: 'amex', last4: '0005',
+  expiryMonth: 12, expiryYear: 2033, isDefault: false,
+}
+
 /** The enrolment the stub answers `POST /api/me/2fa/setup` with. */
 export const TWO_FACTOR = {
   secret: 'JBSWY3DPEHPK3PXP',
@@ -794,3 +810,117 @@ export const SLIDES = [
     pricing: { monthlyPrice: null, annualPrice: null },
   },
 ]
+
+/** The id of the fake app plugin the plugin page flow uses. */
+export const PLUGIN_ID = 'acme-sites'
+
+/** The fake plugin's one site; its name holds markup, which the page must show as characters. */
+export const PLUGIN_SITE = { id: 'blog', name: '<b>Blog</b>', status: 'live' }
+
+/** The one external origin the fake plugin declares; its link must render, any other must not. */
+export const PLUGIN_ORIGIN = 'https://sites.example.test'
+
+/** The streamed chat reply, as the fake plugin writes it: one `delta` per piece, with a pause between them. */
+export const PLUGIN_CHAT_REPLY = ['Your site ', 'is ', 'live.']
+
+/** How long the fake plugin waits between two chat events, in milliseconds, so a spec sees the reply grow. */
+export const PLUGIN_CHAT_PAUSE_MS = 150
+
+/**
+ * The fake plugin's texts per language: the API resolves every label before a view leaves it, so the stub answers
+ * already localised texts in the language of the request's `X-Language`.
+ */
+export const PLUGIN_TEXTS = {
+  en: { menu: 'My sites', sites: 'Sites', site: 'Site', status: 'Status', publish: 'Publish', preview: 'Open preview', elsewhere: 'Elsewhere', name: 'Name' },
+  ru: { menu: 'Мои сайты', sites: 'Сайты', site: 'Сайт', status: 'Статус', publish: 'Опубликовать', preview: 'Открыть превью', elsewhere: 'В другом месте', name: 'Название' },
+  hy: { menu: 'Իմ կայքերը', sites: 'Կայքեր', site: 'Կայք', status: 'Կարգավիճակ', publish: 'Հրապարակել', preview: 'Բացել նախադիտումը', elsewhere: 'Այլ տեղ', name: 'Անվանում' },
+}
+
+/**
+ * The plugin index in one language (`PluginUiDto`).
+ *
+ * @param {keyof typeof PLUGIN_TEXTS} language The request's language.
+ * @returns {{ menus: object[], pages: object[] }} The index.
+ */
+export const pluginUi = (language) => {
+  const text = PLUGIN_TEXTS[language] ?? PLUGIN_TEXTS.en
+  return {
+    menus: [{ pluginId: PLUGIN_ID, id: 'sites-menu', label: text.menu, page: 'sites', icon: 'globe', order: 0 }],
+    pages: [
+      { pluginId: PLUGIN_ID, id: 'sites', path: '/sites', title: text.sites },
+      { pluginId: PLUGIN_ID, id: 'site', path: '/sites/{siteId}', title: text.site },
+    ],
+  }
+}
+
+/**
+ * The page view an address names in one language (`PluginPageViewDto`), or null when no page matches.
+ *
+ * @param {string} address The page address below the plugin's prefix, e.g. `/sites/blog`.
+ * @param {keyof typeof PLUGIN_TEXTS} language The request's language.
+ * @returns {object | null} The page view.
+ */
+export const pluginPage = (address, language) => {
+  const text = PLUGIN_TEXTS[language] ?? PLUGIN_TEXTS.en
+  const segments = address.split('/').filter(Boolean)
+  const base = { pluginId: PLUGIN_ID, externalOrigins: [PLUGIN_ORIGIN] }
+  if (segments.length === 1 && segments[0] === 'sites') {
+    return {
+      ...base,
+      id: 'sites',
+      path: '/sites',
+      title: text.sites,
+      view: {
+        schema: 1,
+        blocks: [
+          { kind: 'header', title: text.sites },
+          {
+            kind: 'table',
+            source: { route: { method: 'get', path: '/sites' } },
+            columns: [{ field: 'name', label: text.name }, { field: 'status', label: text.status }],
+            rowLink: { page: 'site', params: { siteId: 'id' } },
+          },
+        ],
+      },
+    }
+  }
+  if (segments.length === 2 && segments[0] === 'sites') {
+    return {
+      ...base,
+      id: 'site',
+      path: '/sites/{siteId}',
+      title: text.site,
+      view: {
+        schema: 1,
+        blocks: [
+          { kind: 'header', title: text.site },
+          { id: 'status', kind: 'stat', label: text.status, source: { route: { method: 'get', path: '/sites/{siteId}' }, field: 'status' } },
+          { kind: 'action', label: text.publish, route: { method: 'post', path: '/sites/{siteId}/publish' }, refresh: ['status'] },
+          { kind: 'link', label: text.preview, href: `${PLUGIN_ORIGIN}/preview` },
+          { kind: 'link', label: text.elsewhere, href: 'https://evil.example.test/' },
+          { kind: 'chat', send: { method: 'post', path: '/sites/{siteId}/chat' } },
+        ],
+      },
+    }
+  }
+  return null
+}
+
+/** The fake plugin every slot spec uses. */
+export const SLOT_PLUGIN_ID = 'acme-sites'
+
+/**
+ * The fake widgets' view documents by widget id: `ok` renders text; `broken` is a tabs block with no
+ * tab list, which throws while it is set up, so the slot must isolate it; `slow` is answered only after
+ * {@link SLOT_SLOW_VIEW_DELAY_MS}, past the widget's 5 s limit, so the slot must give way to its note.
+ *
+ * @type {Record<string, { schema: number, blocks: Record<string, unknown>[] }>}
+ */
+export const SLOT_WIDGET_VIEWS = {
+  ok: { schema: 1, blocks: [{ kind: 'text', text: 'Site is live' }] },
+  broken: { schema: 1, blocks: [{ kind: 'tabs', tabs: null }] },
+  slow: { schema: 1, blocks: [{ kind: 'text', text: 'Slow' }] },
+}
+
+/** How long the stub holds the `slow` widget's view, in milliseconds: past the widget's 5000 ms limit. */
+export const SLOT_SLOW_VIEW_DELAY_MS = 8000

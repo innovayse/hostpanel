@@ -24,4 +24,10 @@ public enum PluginActivationOutcome
     /// settings are saved).
     /// </summary>
     MigrationPending = 4,
+
+    /// <summary>
+    /// The manifest declares a capability (such as <c>endpoints</c>) whose SDK interface the loaded implementation type
+    /// does not implement: the declaration is a claim too, so the plugin is refused for every contract (#818).
+    /// </summary>
+    CapabilityNotImplemented = 5,
 }

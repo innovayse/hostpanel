@@ -1,7 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
-using Innovayse.Hostpanel.Domain.Plugins;
+using Hostpanel.Sdk.Packaging.Naming;
 using Innovayse.Hostpanel.Shared.Models;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Queries.GetPluginPage;
@@ -9,7 +9,7 @@ namespace Innovayse.Hostpanel.Application.Plugins.Queries.GetPluginPage;
 /// <summary>
 /// Handles <see cref="GetPluginPageQuery"/>. A page id that is not <see cref="PluginPageIdentifier.IsValid"/> is refused
 /// first; then <see cref="PluginPageReader"/> does the rest, the steps the lookup by path shares: every refusal of a
-/// page answers the same <c>PLUGIN_PAGE_NOT_FOUND</c> (an unknown plugin, a disabled one, one that is not an app plugin,
+/// page answers the same <c>PLUGIN_PAGE_NOT_FOUND</c> (an unknown plugin, a disabled one, one that is not a serving plugin,
 /// a page it does not declare, a caller who acts for no account and a caller who lacks the page's permission are
 /// indistinguishable), so the endpoint is no oracle for which plugins and pages exist. The one other answer is the
 /// identity plugin's outage.

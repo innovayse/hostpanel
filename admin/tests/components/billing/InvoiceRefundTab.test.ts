@@ -114,7 +114,7 @@ describe('InvoiceRefundTab', () => {
             {
               id: 21,
               date: '2026-10-15T00:00:00Z',
-              gateway: 'Stripe',
+              gateway: 'Example Gateway',
               transactionId: 'ch_1',
               amount: 24000,
               fees: 500,
@@ -176,7 +176,7 @@ describe('InvoiceRefundTab', () => {
     expect(JSON.parse(String((post?.[1] as RequestInit | undefined)?.body))).toEqual({
       amount: 30,
       refundType: InvoiceRefundType.Manual,
-      gateway: 'Stripe',
+      gateway: 'Example Gateway',
       refundTransactionId: 'EXT-1',
     })
   })
@@ -187,14 +187,14 @@ describe('InvoiceRefundTab', () => {
         invoice: invoiceFixture({
           currency: 'AMD',
           transactions: [
-            { id: 21, date: '2026-10-15T00:00:00Z', gateway: 'Stripe', transactionId: 'ch_1', amount: 24000, fees: 500, type: 'Payment' },
+            { id: 21, date: '2026-10-15T00:00:00Z', gateway: 'Example Gateway', transactionId: 'ch_1', amount: 24000, fees: 500, type: 'Payment' },
           ],
         }),
       },
     })
 
     const options = (wrapper.getComponent(UiSelect).props() as { options: { label: string }[] }).options
-    expect(options.map((option) => option.label)).toContain('#21 — 24000.00 AMD (Stripe)')
+    expect(options.map((option) => option.label)).toContain('#21 — 24000.00 AMD (Example Gateway)')
     expect(options.map((option) => option.label).join(' ')).not.toContain('$')
   })
 })

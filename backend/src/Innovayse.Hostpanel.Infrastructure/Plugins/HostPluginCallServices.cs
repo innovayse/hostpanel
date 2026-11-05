@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
+using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.Extensions.Options;
 
@@ -37,19 +38,25 @@ public sealed class HostPluginCallServices : IPluginCallServices
     /// <summary>The plugin API limits; the store's quota per scope is read from it.</summary>
     private readonly IOptions<PluginApiOptions> _options;
 
+    /// <summary>Issues and revokes SSH identities for the host API's two SSH methods.</summary>
+    private readonly PluginSshAccessService _ssh;
+
     /// <summary>Initializes the factory.</summary>
     /// <param name="context">The request's data context, written by the store.</param>
     /// <param name="facts">Reads the client, service and invoice rows the host API shares.</param>
     /// <param name="identity">Reads the email address and language of the client's owner.</param>
     /// <param name="payerCurrency">Resolves the currency the client is billed in.</param>
     /// <param name="options">The plugin API limits; the store's quota per scope is read from it.</param>
+    /// <param name="ssh">Issues and revokes SSH identities for the host API's two SSH methods.</param>
     public HostPluginCallServices(
         AppDbContext context,
         IPluginHostFactsReader facts,
         IIdentityProvider identity,
         IPayerCurrencyResolver payerCurrency,
-        IOptions<PluginApiOptions> options)
+        IOptions<PluginApiOptions> options,
+        PluginSshAccessService ssh)
     {
+        _ssh = ssh;
         _context = context;
         _facts = facts;
         _identity = identity;
@@ -60,12 +67,10 @@ public sealed class HostPluginCallServices : IPluginCallServices
     /// <inheritdoc/>
     public PluginCallServices Create(PluginCallBinding binding)
     {
-        ArgumentNullException.ThrowIfNull(binding);
-
         // One signal per call: a refusal in one call never colours another call's answer.
         var quota = new PluginStoreQuotaSignal();
         return new PluginCallServices(
-            new PluginHostApi(binding, _facts, _identity, _payerCurrency),
+            new PluginHostApi(binding, _facts, _identity, _payerCurrency, _ssh),
             new PluginStore(binding.PluginId, binding.ClientRef, _context, _options.Value.StoreQuota, quota),
             quota);
     }

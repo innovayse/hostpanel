@@ -33,6 +33,8 @@ import { PRODUCT_PRICE_CYCLES } from '@/types/product'
 import type { CreateProductPayload, Product } from '@/types/product'
 import { ProductStatus, ProductType } from '@/types/productenums'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { useDocsGuide } from '@/composables/useDocsGuide'
+import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
@@ -89,6 +91,8 @@ onMounted(loadAll)
 
 /** The success line of the last save, shown above the table; a refusal shows inside the dialog. */
 const feedback = useResultBanner()
+/** Link to the docs guide for this screen, or null when docsUrl is not configured. */
+const { guideUrl } = useDocsGuide()
 
 /**
  * Lists the other currencies (besides the base) a product sells in, for the "+AMD, EUR" hint.
@@ -209,6 +213,7 @@ const productActions = (product: Product): UiRowAction[] => {
 
     <UiPageHeader :title="t('settings.products.products')" :subtitle="t('settings.products.manageHostingPlansAndServices')">
       <template #actions>
+        <PageHelpLink :url="guideUrl" />
         <UiButton type="button" variant="primary" data-testid="products-create" @click="openCreate">
           {{ t('settings.products.createProduct') }}
         </UiButton>

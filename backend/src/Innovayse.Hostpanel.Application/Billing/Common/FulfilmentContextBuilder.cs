@@ -1,9 +1,9 @@
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Fulfilment;
-using Innovayse.SDK.Plugins.Identity;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Fulfilment;
+using Hostpanel.Sdk.Plugins.Identity;
 
 namespace Innovayse.Hostpanel.Application.Billing.Common;
 

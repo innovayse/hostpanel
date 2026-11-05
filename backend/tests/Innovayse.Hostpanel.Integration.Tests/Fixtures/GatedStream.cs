@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using Innovayse.SDK.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Endpoints;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 

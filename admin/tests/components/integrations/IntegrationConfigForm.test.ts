@@ -22,8 +22,8 @@ describe('IntegrationConfigForm', () => {
   it('heads the form with the name from the API and the short description the admin keeps for the slug', () => {
     const wrapper = mountForm()
 
-    expect(wrapper.text()).toContain('Stripe')
-    expect(wrapper.text()).toContain('Accept credit card payments online')
+    expect(wrapper.text()).toContain('Bank Transfer')
+    expect(wrapper.text()).toContain('Allow clients to pay via direct bank transfer')
   })
 
   it('renders one control per field definition', () => {
@@ -204,5 +204,56 @@ describe('IntegrationConfigForm', () => {
     })
 
     expect((wrapper.get('[data-testid="integration-field-retries"] input').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('shows the plugin icon in the header of a plugin integration only', () => {
+    const plugin = mountForm({ integration: integrationDetail({ isPlugin: true, iconUrl: '/icon.png' }) })
+    const builtIn = mountForm()
+
+    expect(plugin.get('[data-testid="plugin-avatar-image"]').attributes('src')).toBe('/icon.png')
+    expect(builtIn.find('[data-testid="integration-plugin-avatar"]').exists()).toBe(false)
+  })
+
+  it('shows the label, help text, placeholder and option labels the API translated', () => {
+    const wrapper = mountForm({
+      integration: integrationDetail({
+        config: {
+          host: { value: '', isSecret: false, hasValue: false },
+          region: { value: 'eu', isSecret: false, hasValue: true },
+        },
+        fieldDefinitions: [
+          {
+            key: 'host',
+            label: 'Адрес сервиса',
+            type: IntegrationFieldType.Url,
+            required: true,
+            description: 'Базовый адрес API',
+            placeholder: 'https://api.example.org',
+          },
+          {
+            key: 'region',
+            label: 'Регион',
+            type: IntegrationFieldType.Select,
+            required: false,
+            options: ['eu', 'us'],
+            optionLabels: { eu: 'Европа', us: 'США' },
+          },
+        ],
+      }),
+    })
+
+    expect(wrapper.text()).toContain('Адрес сервиса')
+    expect(wrapper.text()).toContain('Базовый адрес API')
+    expect(wrapper.text()).not.toContain('settings.')
+    expect(wrapper.get('[data-testid="integration-field-host"]').attributes('placeholder')).toBe('https://api.example.org')
+    expect(wrapper.get('[data-testid="integration-field-region"]').text()).toContain('Европа')
+  })
+
+  it('hides Test Connection when the API says the integration cannot be tested', () => {
+    const testable = mountForm()
+    const untestable = mountForm({ integration: integrationDetail({ canTestConnection: false }) })
+
+    expect(testable.find('[data-testid="integration-test"]').exists()).toBe(true)
+    expect(untestable.find('[data-testid="integration-test"]').exists()).toBe(false)
   })
 })

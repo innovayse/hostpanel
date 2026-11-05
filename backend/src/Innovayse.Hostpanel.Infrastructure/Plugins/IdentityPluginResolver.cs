@@ -1,8 +1,8 @@
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Identity;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Identity;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
@@ -35,9 +35,12 @@ public sealed class IdentityPluginResolver : IIdentityPluginResolver
         {
             var activation = await _activator.ActivateAsync<IClientResolver>(plugin, ct);
 
-            // An enabled plugin that only lacks a setting still counts: the admin switched two on, and which
-            // one answers must not depend on which of them happens to be fully configured today.
-            if (activation.Outcome is PluginActivationOutcome.Activated or PluginActivationOutcome.RequiredSettingMissing)
+            // An enabled plugin that only lacks a setting, or declares a capability it does not implement, still counts:
+            // the admin switched two on, and which one answers must not depend on which of them happens to be fully
+            // configured or correctly built today. Such a plugin has no instance, so a single one still resolves to none.
+            if (activation.Outcome is PluginActivationOutcome.Activated
+                or PluginActivationOutcome.RequiredSettingMissing
+                or PluginActivationOutcome.CapabilityNotImplemented)
             {
                 enabled.Add(activation);
             }

@@ -22,4 +22,10 @@ public interface IForwardedReply
 
     /// <summary>The events of a streamed success, written as server-sent events; <see langword="null"/> for a reply with one body or a problem.</summary>
     public StreamedReply? Stream { get; }
+
+    /// <summary>The bytes of a raw reply, written as they are; <see langword="null"/> for every other reply.</summary>
+    public ReadOnlyMemory<byte>? RawBody { get; }
+
+    /// <summary>The media type of <see cref="RawBody"/>; <see langword="null"/> for every other reply.</summary>
+    public string? ContentType { get; }
 }

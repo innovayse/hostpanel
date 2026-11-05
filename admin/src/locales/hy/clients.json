@@ -254,6 +254,10 @@
     "bulkActionDone": "Կատարվեց ընտրված հաշիվների համար։",
     "invoiceDeleted": "Հաշիվը ջնջվեց։"
   },
+  "clientNav": {
+    "rail": "Հաճախորդի բաժիններ",
+    "strip": "Հաճախորդի բաժինների ներդիրներ"
+  },
   "clientLayout": {
     "loadingClient": "Հաճախորդը բեռնվում է…",
     "exportData": "Տվյալների արտահանում"
@@ -333,7 +337,6 @@
     "firstPaymentAmount": "Առաջին վճարման գումար",
     "recurringAmount": "Կրկնվող գումար",
     "terminationDate": "Դադարեցման ամսաթիվ",
-    "stripePaypal": "Stripe, PayPal...",
     "promotionCode": "Պրոմոկոդ",
     "subscriptionId": "Բաժանորդագրության ID",
     "autoManagement": "Ավտոմատ կառավարում",

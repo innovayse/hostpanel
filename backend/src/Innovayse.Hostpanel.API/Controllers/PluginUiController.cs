@@ -6,7 +6,7 @@ using Innovayse.Hostpanel.Application.Plugins.Queries.GetPluginUi;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;
@@ -21,7 +21,7 @@ namespace Innovayse.Hostpanel.API.Controllers;
 /// <remarks>
 /// The <c>ui</c> segment is reserved as a plugin id, so these routes never collide with the plugin doors
 /// (<c>/api/client/plugins/{id}/{path}</c>, <c>/api/admin/plugins/{id}</c>). A plugin that is unknown, switched off, not
-/// an app plugin or does not declare the page answers the same 404 <c>PLUGIN_PAGE_NOT_FOUND</c>, and so does a page the
+/// a serving plugin or does not declare the page answers the same 404 <c>PLUGIN_PAGE_NOT_FOUND</c>, and so does a page the
 /// client caller may not open, so a refusal never tells a page that exists from one that does not.
 /// A page is also found by its path (<c>pages/by-path?path=/sites/42</c>), the address a panel shows for it. The
 /// literal <c>by-path</c> wins over <c>{pageId}</c> in routing, and <c>by-path</c> is a reserved page id

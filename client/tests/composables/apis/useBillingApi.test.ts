@@ -13,7 +13,6 @@ import type { ExpectedRequest } from '../../helpers/stubTransport'
 import type { StubServer } from '../../helpers/stubServer'
 import { useBillingApi } from '~/composables/apis/useBillingApi'
 import { PaymentTarget } from '~/types/paymenttarget'
-import { PaymentMethodType } from '~/types/payment'
 import { HttpMethod } from '~/types/httpmethod'
 
 /** The stub started by the current test. */
@@ -32,18 +31,12 @@ const rows: ExpectedRequest[] = [
   { name: 'fetchInvoice reads one invoice', call: () => api.fetchInvoice('7'), method: HttpMethod.Get, url: '/api/portal/client/invoices/7' },
   { name: 'fetchInvoicePdf reads the invoice PDF', call: () => api.fetchInvoicePdf('7'), method: HttpMethod.Get, url: '/api/portal/client/invoices/7/pdf' },
   { name: 'fetchInvoicePdf encodes the id into one path segment', call: () => api.fetchInvoicePdf('7/../x'), method: HttpMethod.Get, url: '/api/portal/client/invoices/7%2F..%2Fx/pdf' },
-  { name: 'fetchPaymentMethods reads the saved methods', call: () => api.fetchPaymentMethods(), method: HttpMethod.Get, url: '/api/portal/client/payment-methods' },
   { name: 'fetchGatewayMethods reads the gateways under the order surface', call: () => api.fetchGatewayMethods(), method: HttpMethod.Get, url: '/api/portal/order/payment-methods' },
-  { name: 'payInvoice posts the saved method id and the attempt', call: () => api.payInvoice('7', 'pm_1', 'attempt-1'), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/pay', body: { paymentMethodId: 'pm_1', attemptId: 'attempt-1' } },
-  { name: 'setDefaultPaymentMethod puts the default flag', call: () => api.setDefaultPaymentMethod('pm_1'), method: HttpMethod.Put, url: '/api/portal/client/payment-methods/pm_1', body: { setAsDefault: true } },
-  { name: 'removePaymentMethod deletes by id', call: () => api.removePaymentMethod('pm_1'), method: HttpMethod.Delete, url: '/api/portal/client/payment-methods/pm_1' },
-  { name: 'createOrder posts the order', call: () => api.createOrder({ items: [], paymentmethod: 'stripe' }), method: HttpMethod.Post, url: '/api/portal/order/create', body: { items: [], paymentmethod: 'stripe' } },
-  { name: 'createOrderPaymentIntent posts the payment token', call: () => api.createOrderPaymentIntent(42, 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/create-payment-intent', body: { paymentToken: 'tok' } },
-  { name: 'startOrderGatewayPayment posts module, return address and token', call: () => api.startOrderGatewayPayment(42, 'inecobank', 'https://x/return', 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/gateway-payment/start', body: { module: 'inecobank', returnUrl: 'https://x/return', paymentToken: 'tok' } },
-  { name: 'startInvoiceGatewayPayment posts module and return address', call: () => api.startInvoiceGatewayPayment(7, 'inecobank', 'https://x/return'), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/gateway-payment/start', body: { module: 'inecobank', returnUrl: 'https://x/return' } },
+  { name: 'createOrder posts the order', call: () => api.createOrder({ items: [], paymentmethod: 'card_gateway' }), method: HttpMethod.Post, url: '/api/portal/order/create', body: { items: [], paymentmethod: 'card_gateway' } },
+  { name: 'startOrderGatewayPayment posts module, return address and token', call: () => api.startOrderGatewayPayment(42, 'hosted_gateway', 'https://x/return', 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/gateway-payment/start', body: { module: 'hosted_gateway', returnUrl: 'https://x/return', paymentToken: 'tok' } },
+  { name: 'startInvoiceGatewayPayment posts module and return address', call: () => api.startInvoiceGatewayPayment(7, 'hosted_gateway', 'https://x/return'), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/gateway-payment/start', body: { module: 'hosted_gateway', returnUrl: 'https://x/return' } },
   { name: 'completeGatewayPayment for an order sends the token', call: () => api.completeGatewayPayment(PaymentTarget.Order, 42, 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/gateway-payment/complete', body: { paymentToken: 'tok' } },
   { name: 'completeGatewayPayment for an invoice sends an empty body', call: () => api.completeGatewayPayment(PaymentTarget.Invoice, 7), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/gateway-payment/complete', body: {} },
-  { name: 'confirmOrderPayment merges the token into the body', call: () => api.confirmOrderPayment(42, { paymentIntentId: 'pi_1' }, 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/confirm-payment', body: { paymentIntentId: 'pi_1', paymentToken: 'tok' } },
 ]
 
 describe('useBillingApi', () => {
@@ -61,16 +54,6 @@ describe('useBillingApi', () => {
     const placed = await api.createOrder({})
 
     expect(placed).toEqual({ orderId: 42, invoiceId: 77, paymentToken: 'tok' })
-  })
-
-  it('maps the camelCase saved methods to the client shape', async () => {
-    stub = await startTransport(() => ({
-      body: [{ id: 'pm_1', type: PaymentMethodType.Card, brand: 'mastercard', last4: '4444', expiryMonth: 9, expiryYear: 2029, isDefault: true }]
-    }))
-
-    const [method] = await api.fetchPaymentMethods()
-
-    expect(method).toMatchObject({ id: 'pm_1', description: 'Mastercard •••• 4444', cardExpiry: '09/29', isDefault: true })
   })
 
   it('returns the PDF as a blob', async () => {

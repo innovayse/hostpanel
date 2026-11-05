@@ -3,7 +3,7 @@ using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
 using Innovayse.Providers.CWP7;
 using Innovayse.Providers.CWP7.Models;
-using Innovayse.SDK.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.Cwp7;
@@ -241,6 +241,7 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
         (await act.Should().ThrowAsync<InvalidOperationException>()).Which.Message.Should().NotContain("Unauthorized");
     }
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>
     /// A packages-list refusal ("Error" with a text <c>msj</c>) surfaces the panel's own reason
     /// instead of a JSON conversion error, so a wrong API key reads as one in the server log.
@@ -258,7 +259,9 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
 
         (await act.Should().ThrowAsync<InvalidOperationException>()).WithMessage("*key does not exist*");
     }
+#pragma warning restore CS0618
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>A packages list answers with its entry count.</summary>
     /// <returns>A task representing the asynchronous test.</returns>
     [Fact]
@@ -273,4 +276,5 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
 
         info.PackagesCount.Should().Be(2);
     }
+#pragma warning restore CS0618
 }

@@ -1,5 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.SDK.Plugins.Payment;
+using Hostpanel.Sdk.Plugins.Payment;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 

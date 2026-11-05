@@ -7,7 +7,8 @@ namespace Innovayse.Hostpanel.Shared.Infrastructure;
 /// <summary>
 /// The limiters behind the plugin routes: one sliding-window limiter per tier
 /// (<see cref="RateLimitPolicies.PluginDefault"/>, <see cref="RateLimitPolicies.PluginStrict"/>,
-/// <see cref="RateLimitPolicies.PluginHeavy"/>) and one concurrency limiter for streams
+/// <see cref="RateLimitPolicies.PluginHeavy"/>, and <see cref="RateLimitPolicies.PluginCallback"/> for the public callback
+/// door) and one concurrency limiter for streams
 /// (<see cref="RateLimitPolicies.PluginStream"/>), each partitioned by a key the caller builds from the plugin and the
 /// caller, so one plugin or one account cannot exhaust the API.
 /// </summary>
@@ -43,6 +44,10 @@ public sealed class PluginRateLimiter : IDisposable
             [RateLimitPolicies.PluginDefault] = SlidingWindow(limits.PluginDefault, disabled),
             [RateLimitPolicies.PluginStrict] = SlidingWindow(limits.PluginStrict, disabled),
             [RateLimitPolicies.PluginHeavy] = SlidingWindow(limits.PluginHeavy, disabled),
+            [RateLimitPolicies.PluginCallback] = SlidingWindow(limits.PluginCallback, disabled),
+
+            // The portal's SSH key budget, taken by the plugin SSH issue path per plugin and client (#758).
+            [RateLimitPolicies.SshKeys] = SlidingWindow(limits.SshKeys, disabled),
         };
 
         _streams = PartitionedRateLimiter.Create<string, string>(key => disabled
@@ -61,8 +66,8 @@ public sealed class PluginRateLimiter : IDisposable
     }
 
     /// <summary>Takes one request from a tier's budget.</summary>
-    /// <param name="policy">One of <see cref="RateLimitPolicies.PluginDefault"/>, <see cref="RateLimitPolicies.PluginStrict"/>
-    /// or <see cref="RateLimitPolicies.PluginHeavy"/>.</param>
+    /// <param name="policy">One of <see cref="RateLimitPolicies.PluginDefault"/>, <see cref="RateLimitPolicies.PluginStrict"/>,
+    /// <see cref="RateLimitPolicies.PluginHeavy"/> or <see cref="RateLimitPolicies.SshKeys"/>.</param>
     /// <param name="key">The partition, from <see cref="KeyFor"/>.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The lease; <see cref="RateLimitLease.IsAcquired"/> is false when the budget is spent.</returns>

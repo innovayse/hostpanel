@@ -2,8 +2,8 @@
  * Source-scan contract for the Nitro BFF (`server/`).
  *
  * The BFF is a pass-through: it forwards the reader's language, reaches the C# API only through
- * `internalApiCall` (or `internalApiBinaryCall` for a file, which shares its headers, token refresh
- * and error forwarding), and authors no sentence. These checks read the route sources, so a new
+ * `internalApiCall` (or `internalApiBinaryCall` for a file and `internalApiStream` for an event
+ * stream, which share its headers, token refresh and error forwarding), and authors no sentence. These checks read the route sources, so a new
  * route that breaks the contract fails here instead of surfacing as an English message in a
  * Russian customer's browser.
  *
@@ -57,10 +57,10 @@ describe('BFF contract', () => {
     expect(routes.length).toBeGreaterThan(60)
   })
 
-  it('reaches the C# API only through internalApiCall or internalApiBinaryCall', () => {
+  it('reaches the C# API only through internalApiCall, internalApiBinaryCall or internalApiStream', () => {
     const offenders = routes
       .filter((path) => !NOT_BACKEND_ROUTES.test(relative(PORTAL, path)))
-      .filter((path) => !/internalApi(Binary)?Call\s*[<(]/.test(code(path)))
+      .filter((path) => !/internalApi(BinaryCall|Call|Stream)\s*[<(]/.test(code(path)))
       .map((path) => relative(SERVER, path))
 
     expect(offenders).toEqual([])

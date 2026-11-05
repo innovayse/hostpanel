@@ -1,31 +1,14 @@
 {
-  "stripe": {
-    "shortDescription": "Accept credit card payments online with Stripe's payment processing platform.",
-    "fieldSecretKey": "Secret Key",
-    "fieldPublishableKey": "Publishable Key",
-    "fieldMode": "Mode"
-  },
-  "paypal": {
-    "shortDescription": "Enable PayPal checkout for clients who prefer PayPal payments.",
-    "fieldClientSecret": "Client Secret"
-  },
   "bankTransfer": {
     "shortDescription": "Allow clients to pay via direct bank transfer with your banking details.",
     "fieldAccountName": "Account Name",
     "fieldInstructions": "Payment Instructions"
   },
-  "inecobank": {
-    "shortDescription": "Accept Armenian bank cards through Inecobank's hosted payment page.",
-    "fieldGateway_url": "Gateway base URL (e.g. https://gateway.example.com)",
-    "fieldUsername": "API Username",
-    "fieldPassword": "API Password",
-    "fieldCurrency": "Currency (ISO 4217 numeric, default 051)",
-    "fieldLanguage": "Payment page language (default hy)"
-  },
   "namecheap": {
     "shortDescription": "Register and manage domains through Namecheap's reseller API.",
     "fieldApiKey": "API Key",
-    "fieldClientIp": "Whitelisted Client IP"
+    "fieldClientIp": "Whitelisted Client IP",
+    "fieldApiUsername": "API Username"
   },
   "nameam": {
     "shortDescription": "Register and manage .am domains through the Name.am registrar API.",

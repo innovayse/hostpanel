@@ -5,7 +5,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
-using Innovayse.SDK.Plugins.Slots;
+using Hostpanel.Sdk.Plugins.Slots;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

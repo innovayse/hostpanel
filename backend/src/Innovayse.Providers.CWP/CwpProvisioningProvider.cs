@@ -1,8 +1,8 @@
 using Innovayse.Providers.CWP.Models;
 using Innovayse.Providers.CWP.Models.Enums;
-using Innovayse.SDK.Base;
-using Innovayse.SDK.Plugins.HostingPanel;
-using Innovayse.SDK.Plugins.Provisioning;
+using Hostpanel.Sdk.Base;
+using Hostpanel.Sdk.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.Provisioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -49,7 +49,9 @@ public sealed class CwpProvisioningProvider : ProvisioningProviderBase
         var apiKey = GetConfig("api_key") ?? throw new InvalidOperationException("CWP: 'api_key' setting is required.");
 
         var resolvedPort = int.TryParse(port, out var p) ? p : CwpApiClient.DefaultPort;
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
         _connection = new CwpConnection(HostingPanelAddress.BaseUrl(host, resolvedPort), apiKey);
+#pragma warning restore CS0618
         _client = new CwpApiClient(
             httpClientFactory.CreateClient(CwpApiClient.HttpClientName),
             loggerFactory.CreateLogger<CwpApiClient>());

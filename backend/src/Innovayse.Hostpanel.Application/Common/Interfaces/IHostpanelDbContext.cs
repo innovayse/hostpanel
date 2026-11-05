@@ -102,6 +102,15 @@ public interface IHostpanelDbContext
     /// <summary>Gets the fulfilment records: one plugin told one thing about one invoice, and how far it got.</summary>
     public DbSet<FulfilmentRecord> FulfilmentRecords { get; }
 
+    /// <summary>Gets the customers payment gateway modules keep for clients: one per client and module.</summary>
+    public DbSet<GatewayCustomer> GatewayCustomers { get; }
+
+    /// <summary>Gets the clients' consents to have a stored payment method charged without them present.</summary>
+    public DbSet<CardChargeConsent> CardChargeConsents { get; }
+
+    /// <summary>Gets the claims on invoices while a stored payment method charge is in flight.</summary>
+    public DbSet<InvoicePaymentClaim> InvoicePaymentClaims { get; }
+
     /// <summary>Gets the transactions table.</summary>
     public DbSet<Transaction> Transactions { get; }
 
@@ -270,6 +279,13 @@ public interface IHostpanelDbContext
 
     /// <summary>Detaches every tracked entity, clearing pending or failed change state before a fresh save.</summary>
     public void DetachAll();
+
+    /// <summary>
+    /// Detaches one tracked entity, so a retry can read it fresh without dropping what else the request staged.
+    /// Nothing happens for an entity that is not tracked.
+    /// </summary>
+    /// <param name="entity">The entity to stop tracking.</param>
+    public void Detach(object entity);
 
     /// <summary>
     /// Throws away every change not yet saved: added entities are detached, modified and deleted

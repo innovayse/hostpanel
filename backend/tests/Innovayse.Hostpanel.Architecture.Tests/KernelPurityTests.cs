@@ -6,7 +6,9 @@ namespace Innovayse.Hostpanel.Architecture.Tests;
 
 /// <summary>
 /// The kernel and the domain reference nothing but the runtime. EF Core, logging or a localizer
-/// reaching the domain is how a business rule ends up depending on a framework.
+/// reaching the domain is how a business rule ends up depending on a framework. The plugin id rule is a plugin
+/// packaging concern and is checked by the use case validators in Application, so the domain does not reference
+/// <c>Hostpanel.Sdk</c> or <c>Hostpanel.Sdk.Packaging</c>.
 /// </summary>
 public sealed class KernelPurityTests
 {

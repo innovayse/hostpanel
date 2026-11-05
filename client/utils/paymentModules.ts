@@ -9,8 +9,7 @@ import { PaymentModule } from '~/types/paymentmodule'
 /**
  * Whether a payment module is a hosted gateway, which hands the browser off to the bank.
  *
- * Every plugin-backed module is one: anything that is neither the built-in card method nor the
- * built-in bank transfer. Branching on that rather than on a specific plugin id keeps a second
+ * Every plugin-backed module is one: anything that is not the built-in bank transfer. Branching on that rather than on a specific plugin id keeps a second
  * gateway plugin from being silently ignored.
  *
  * @param module - The module id as the API sent it; empty when nothing is chosen.
@@ -18,5 +17,4 @@ import { PaymentModule } from '~/types/paymentmodule'
  */
 export const isHostedGatewayModule = (module: string): boolean =>
   module !== ''
-    && module !== PaymentModule.Stripe
     && module !== PaymentModule.BankTransfer

@@ -3,7 +3,7 @@ using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Infrastructure;
-using Innovayse.SDK.Plugins.Store;
+using Hostpanel.Sdk.Plugins.Store;
 using Microsoft.EntityFrameworkCore;
 
 /*

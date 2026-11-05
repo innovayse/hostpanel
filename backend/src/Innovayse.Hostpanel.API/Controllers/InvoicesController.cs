@@ -308,6 +308,7 @@ public sealed class InvoicesController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 204 when cancelled; 404 when the id names no invoice; 400 when the invoice is already paid;
+    /// 409 with <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> while a stored card charge of the invoice has not finished;
     /// 401 without a session; 403 for a caller who is not an admin;
     /// 429 when the rate limit is hit.
     /// </returns>
@@ -315,6 +316,7 @@ public sealed class InvoicesController : BaseApiController
     [Authorize(Policy = Policies.Admin)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]

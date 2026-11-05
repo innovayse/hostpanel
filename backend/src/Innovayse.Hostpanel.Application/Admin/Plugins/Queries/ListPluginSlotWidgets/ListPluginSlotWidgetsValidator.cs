@@ -1,7 +1,7 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
-using Innovayse.Hostpanel.Domain.Plugins;
+using Hostpanel.Sdk.Packaging.Naming;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListPluginSlotWidgets;

@@ -6,7 +6,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Integrations.Telegram.Settings;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Telegram is optional in the same way Stripe and Name.am are: a deployment that runs no bot
+/// Telegram is optional in the same way Name.am is: a deployment that runs no bot
 /// configures none of this, and the contact form works exactly as it did before, delivering by
 /// mail alone. A partly filled section is a different thing, a misconfiguration, because a
 /// token with no chat id can post nowhere, and <see cref="IsUsable"/> is what the composition

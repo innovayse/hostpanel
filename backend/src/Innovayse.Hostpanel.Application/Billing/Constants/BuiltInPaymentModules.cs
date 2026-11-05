@@ -13,17 +13,8 @@ namespace Innovayse.Hostpanel.Application.Billing.Constants;
 /// </remarks>
 public static class BuiltInPaymentModules
 {
-    /// <summary>Module id for the built-in card payment method.</summary>
-    public const string Stripe = "stripe";
-
     /// <summary>Module id for the built-in manual bank transfer payment method.</summary>
     public const string BankTransfer = "bank_transfer";
-
-    /// <summary>
-    /// Integration slug the admin panel saves the card gateway on/off switch under: the literal
-    /// the admin integrations list keys its card by.
-    /// </summary>
-    public const string StripeIntegrationSlug = IntegrationSlugs.Stripe;
 
     /// <summary>
     /// Integration slug the admin panel saves the bank transfer switch under. It differs from

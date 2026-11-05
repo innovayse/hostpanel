@@ -53,4 +53,14 @@ describe('PluginSlotWidgetsCard', () => {
     expect(wrapper.get('[data-testid="plugin-widget-acme-usage"]').text()).toContain('Too many products.')
     expect(wrapper.get('[data-testid="plugin-widget-acme-logs"]').text()).not.toContain('Too many products.')
   })
+
+  it('shows the plugin icon in the heading, or the initial without one', async () => {
+    const withIcon = await mountScreen(PluginSlotWidgetsCard, {
+      pluginId: 'acme', pluginName: 'Acme', pluginIconUrl: '/icon.png', widgets, products, save: vi.fn(),
+    })
+    const without = await mountScreen(PluginSlotWidgetsCard, { pluginId: 'acme', pluginName: 'Acme', widgets, products, save: vi.fn() })
+
+    expect(withIcon.wrapper.get('[data-testid="plugin-avatar-image"]').attributes('src')).toBe('/icon.png')
+    expect(without.wrapper.get('[data-testid="plugin-avatar-fallback"] text').text()).toBe('A')
+  })
 })

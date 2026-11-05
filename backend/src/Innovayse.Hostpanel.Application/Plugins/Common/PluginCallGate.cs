@@ -2,8 +2,8 @@ using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Common;
 
@@ -62,7 +62,7 @@ public sealed class PluginCallGate
             return new PluginCallGateResult(PluginCallGateOutcome.NoAccount);
         }
 
-        return await EvaluateRouteAsync(pluginId, PluginArea.Client, input, access, clientId, ct);
+        return await EvaluateRouteAsync(pluginId, PluginArea.Client, manifest => manifest.Api.Client, input, access, clientId, ct);
     }
 
     /// <summary>Decides an admin area call.</summary>
@@ -74,28 +74,56 @@ public sealed class PluginCallGate
     {
         ArgumentNullException.ThrowIfNull(input);
 
-        return await EvaluateRouteAsync(pluginId, PluginArea.Admin, input, null, null, ct);
+        return await EvaluateRouteAsync(pluginId, PluginArea.Admin, manifest => manifest.Api.Admin, input, null, null, ct);
     }
 
-    /// <summary>The route steps both areas share: match, permission (client only), then the plugin's switch.</summary>
+    /// <summary>
+    /// Decides a public callback: a server to server call with no caller, such as a payment gateway's webhook. The same
+    /// steps as the other doors without the ones that need a caller: the manifest and the route match (memory only), then
+    /// the plugin's switch and settings. Only a route the manifest declares under <c>api.callbacks</c> is served; the
+    /// client and admin routes of the same plugin are never reachable through here.
+    /// </summary>
+    /// <param name="pluginId">The plugin id from the URL.</param>
+    /// <param name="input">The request, as the controller read it.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The decision; every refusal is "no such route" to the caller.</returns>
+    public async Task<PluginCallGateResult> EvaluateCallbackAsync(string pluginId, PluginHttpInput input, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+
+        return await EvaluateRouteAsync(
+            pluginId, PluginCallbackContract.Area, PluginCallbackContract.RoutesOf, input, null, null, ct);
+    }
+
+    /// <summary>The route steps every door shares: match, permission (client only), then the plugin's switch.</summary>
     /// <param name="pluginId">The plugin id from the URL.</param>
     /// <param name="area">The panel the request came through.</param>
+    /// <param name="routesOf">Picks, from the manifest, the routes the request is matched against.</param>
     /// <param name="input">The request.</param>
-    /// <param name="access">The client caller's access; <see langword="null"/> for an admin call.</param>
-    /// <param name="clientId">The account a client call acts for; <see langword="null"/> for an admin call.</param>
+    /// <param name="access">The client caller's access; <see langword="null"/> for an admin call or a callback.</param>
+    /// <param name="clientId">The account a client call acts for; <see langword="null"/> for an admin call or a callback.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The decision.</returns>
     private async Task<PluginCallGateResult> EvaluateRouteAsync(
-        string pluginId, PluginArea area, PluginHttpInput input, CallerClientAccess? access, int? clientId, CancellationToken ct)
+        string pluginId,
+        PluginArea area,
+        Func<PluginManifest, IReadOnlyList<PluginRoute>> routesOf,
+        PluginHttpInput input,
+        CallerClientAccess? access,
+        int? clientId,
+        CancellationToken ct)
     {
         var held = access?.Permissions ?? ClientPermission.None;
-        var manifest = _plugins.Find(pluginId);
+
+        // Only the callback door reaches a non-app plugin that declares the endpoints capability; the client and admin
+        // doors stay app only.
+        var manifest = area == PluginCallbackContract.Area ? _plugins.FindForCallback(pluginId) : _plugins.Find(pluginId);
         if (manifest is null)
         {
             return new PluginCallGateResult(PluginCallGateOutcome.UnknownPlugin, ClientId: clientId, Permissions: held);
         }
 
-        var routes = area == PluginArea.Admin ? manifest.Api.Admin : manifest.Api.Client;
+        var routes = routesOf(manifest);
         var match = PluginRouteMatcher.Match(routes, input.Method, input.Path);
         if (match is null)
         {

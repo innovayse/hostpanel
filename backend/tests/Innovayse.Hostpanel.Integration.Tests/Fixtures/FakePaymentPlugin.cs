@@ -1,5 +1,5 @@
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Payment;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Payment;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -36,16 +36,19 @@ public sealed class FakePaymentPlugin : IPaymentPlugin
     public Exception? StatusThrows { get; set; }
 
     /// <summary>
-    /// The refund id <see cref="RefundAsync"/> answers with when a test sets it; unset, it throws,
+    /// The refund id <see cref="RefundAsync(string, long, CancellationToken)"/> answers with when a test sets it; unset, it throws,
     /// for every test that never expects a refund call.
     /// </summary>
     public string? RefundResult { get; set; }
 
-    /// <summary>The gateway order id the last <see cref="RefundAsync"/> call carried.</summary>
+    /// <summary>The gateway order id the last <see cref="RefundAsync(string, long, CancellationToken)"/> call carried.</summary>
     public string? LastRefundGatewayOrderId { get; private set; }
 
-    /// <summary>The minor-unit amount the last <see cref="RefundAsync"/> call carried.</summary>
+    /// <summary>The minor-unit amount the last <see cref="RefundAsync(string, long, CancellationToken)"/> call carried.</summary>
     public long? LastRefundAmountMinor { get; private set; }
+
+    /// <summary>Every refund instruction the host sent, in order, including the stable refund id of each.</summary>
+    public List<RefundInstruction> RefundInstructions { get; } = [];
 
     /// <inheritdoc/>
     public Task<PaymentSession> CreatePaymentAsync(PaymentInstruction instruction, CancellationToken ct)
@@ -64,6 +67,13 @@ public sealed class FakePaymentPlugin : IPaymentPlugin
         return StatusThrows is not null
             ? Task.FromException<GatewayPaymentStatus>(StatusThrows)
             : Task.FromResult(StatusResult);
+    }
+
+    /// <inheritdoc/>
+    public Task<string> RefundAsync(RefundInstruction instruction, CancellationToken ct)
+    {
+        RefundInstructions.Add(instruction);
+        return RefundAsync(instruction.GatewayOrderId, instruction.AmountMinor, ct);
     }
 
     /// <inheritdoc/>

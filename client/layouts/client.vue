@@ -85,7 +85,9 @@ import {
 import { Permission } from '~/composables/usePermissions'
 import { useAuthStore } from '~/stores/auth'
 import { useClientStore } from '~/stores/client'
+import { usePluginsStore } from '~/stores/plugins'
 import type { ClientNavItem } from '~/types/clientnavitem'
+import { pluginIcon } from '~/utils/plugins'
 import { useHeaderWidget } from '~/composables/useHeaderWidget'
 
 /** How often the widget script is polled for, in milliseconds, until it has loaded. */
@@ -110,11 +112,13 @@ interface NavEntry extends ClientNavItem {
 }
 
 /** Translator for the strings this file builds itself. */
-const { t } = useI18n()
+const { t, locale } = useI18n()
 /** Auth store; owns the requests, in-flight flags and refusal sentences this file renders. */
 const authStore = useAuthStore()
 /** Client store: the signed-in person and their services, invoices, domains and tickets. */
 const store = useClientStore()
+/** Plugin store: the menu links plugins add, already filtered by the API to what the person may open. */
+const pluginsStore = usePluginsStore()
 /** Whether the platform widget is served here; without it nothing is polled for and the top bar draws its own account menu. */
 const { enabled: widgetEnabled } = useHeaderWidget()
 
@@ -154,7 +158,8 @@ onMounted(async () => {
   // No `userLoaded` check: the store is the one authority on whether this needs a request,
   // and the flag read here answered "not loaded yet" for a request that was already on the
   // wire, which is how the same page load asked for the identity more than once.
-  await store.fetchUser()
+  // Read together: the plugin index never waits for the identity, and a failed index only leaves its links out.
+  await Promise.all([store.fetchUser(), pluginsStore.loadUi()])
   // Reinit the widget after Vue renders the mount points. Poll until it is available: its
   // script may still be loading, because it is included with `async`.
   await nextTick()
@@ -205,10 +210,26 @@ const navItems = computed<NavEntry[]>(() => [
   { to: CLIENT_ACCOUNT_PATH, label: t('client.nav.account'), icon: UserCog, permission: Permission.None }
 ])
 
-/** Nav items filtered by what the signed-in person may do, by the same rule as the actions behind them. */
-const visibleNavItems = computed(() =>
-  navItems.value.filter((item) => store.mayDo(item.permission))
-)
+/**
+ * The links plugins add. The API already left out what the person may not open, so they carry no
+ * permission of their own here.
+ */
+const pluginNavItems = computed<ClientNavItem[]>(() => pluginsStore.menu.map(link => ({
+  to: link.url,
+  label: link.label,
+  icon: pluginIcon(link.icon)
+})))
+
+/**
+ * Nav items filtered by what the signed-in person may do, by the same rule as the actions behind
+ * them, with the plugins' links before the account link.
+ */
+const visibleNavItems = computed(() => {
+  const permitted = navItems.value.filter((item) => store.mayDo(item.permission))
+  const account = permitted.findIndex(item => item.to === CLIENT_ACCOUNT_PATH)
+  const at = account === -1 ? permitted.length : account
+  return [...permitted.slice(0, at), ...pluginNavItems.value, ...permitted.slice(at)]
+})
 
 /**
  * Signs the person out through the auth store, which ends the session here and, under SSO,
@@ -219,4 +240,8 @@ const visibleNavItems = computed(() =>
 const handleLogout = async (): Promise<void> => {
   await authStore.signOut()
 }
+
+// The API resolves plugin labels in the request's language, so the index is read again when the reader switches;
+// otherwise the plugin links would keep the language the layout was first opened in.
+watch(locale, () => pluginsStore.loadUi(true))
 </script>

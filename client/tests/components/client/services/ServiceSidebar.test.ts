@@ -35,6 +35,16 @@ describe('ServiceSidebar', () => {
     expect(wrapper.emitted('update:activeTab')).toEqual([[ServiceTab.Cancel]])
   })
 
+  it('lists the tabs plugins add after its own, labelled as text, and emits a plugin tab\'s key', async () => {
+    const wrapper = mountSidebar({ pluginTabs: [{ key: 'plugin.acme-sites.site', label: '<b>AI site</b>' }] })
+
+    const tab = wrapper.get('[data-testid="service-tab-plugin.acme-sites.site"]')
+    expect(tab.text()).toBe('<b>AI site</b>')
+    expect(tab.find('b').exists()).toBe(false)
+    await tab.trigger('click')
+    expect(wrapper.emitted('update:activeTab')?.at(-1)).toEqual(['plugin.acme-sites.site'])
+  })
+
   it('links to a new ticket and, while pending, to the setup', () => {
     const active = mountSidebar()
     const pending = mountSidebar({ service: service({ status: ServiceStatus.Pending }) })

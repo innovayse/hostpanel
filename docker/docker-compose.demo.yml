@@ -163,6 +163,7 @@ services:
       NUXT_SESSION_ENCRYPTION_KEY: ${DEMO_SESSION_ENCRYPTION_KEY:?DEMO_SESSION_ENCRYPTION_KEY must be set}
       # How many proxies sit in front of the client portal: the visitor address it forwards is the Nth entry from the right of X-Forwarded-For (.env.example, CLIENT_TRUSTED_PROXY_COUNT).
       NUXT_TRUSTED_PROXY_COUNT: ${CLIENT_TRUSTED_PROXY_COUNT:-1}
+      NUXT_PUBLIC_DOCS_URL: ${DOCS_URL:-}
     depends_on: !override
       hostpanel-demo-api:
         condition: service_healthy
@@ -174,6 +175,7 @@ services:
     container_name: hostpanel-demo-admin
     environment:
       CLIENT_BASE_URL: ${DEMO_CLIENT_BASE_URL:?DEMO_CLIENT_BASE_URL must be set}
+      DOCS_URL: ${DOCS_URL:-}
     networks: !override
       default: {}
       edge:

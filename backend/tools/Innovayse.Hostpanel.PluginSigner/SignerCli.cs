@@ -56,7 +56,7 @@ public static class SignerCli
     {
         RefuseInsideGitWorkTree(keyFile);
 
-        var (privateKey, publicKey) = Infrastructure.Plugins.PluginSigner.GenerateKeyPair();
+        var (privateKey, publicKey) = Signer.GenerateKeyPair();
         using (var stream = new FileStream(keyFile, FileMode.CreateNew, FileAccess.Write, FileShare.None))
         {
             // Owner-only where the platform has file modes; a private key file is not for anyone else to read.
@@ -79,7 +79,7 @@ public static class SignerCli
     /// <returns>The exit code.</returns>
     private static int PublicKey(string keyFile, TextWriter output)
     {
-        output.WriteLine(Convert.ToBase64String(Infrastructure.Plugins.PluginSigner.PublicKeyOf(ReadPrivateKey(keyFile))));
+        output.WriteLine(Convert.ToBase64String(Signer.PublicKeyOf(ReadPrivateKey(keyFile))));
         return Ok;
     }
 
@@ -97,7 +97,7 @@ public static class SignerCli
         }
 
         var privateKey = ReadPrivateKey(keyFile);
-        Infrastructure.Plugins.PluginSigner.Sign(packageDir, keyId, privateKey);
+        Signer.Sign(packageDir, keyId, privateKey);
         output.WriteLine($"Signed {packageDir} with key '{keyId}'. Zip the folder as it is now: changing any file invalidates {PluginSignatureFile.FileName}.");
         return Ok;
     }
@@ -123,7 +123,7 @@ public static class SignerCli
         RefuseInsideGitWorkTree(keyFile);
 
         var text = File.ReadAllText(keyFile).Trim();
-        var buffer = new byte[Infrastructure.Plugins.PluginSigner.PrivateKeyLength];
+        var buffer = new byte[Signer.PrivateKeyLength];
         if (!Convert.TryFromBase64String(text, buffer, out var written) || written != buffer.Length)
         {
             throw new InvalidDataException($"{keyFile} does not hold the base64 of a 32-byte private key.");

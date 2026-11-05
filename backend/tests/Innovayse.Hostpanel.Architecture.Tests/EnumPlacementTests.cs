@@ -10,7 +10,7 @@ public sealed class EnumPlacementTests
         var offenders = new[]
             {
                 Layers.SharedKernel, Layers.Domain, Layers.Application, Layers.Shared, Layers.Infrastructure, Layers.Api,
-                Layers.Sdk, Layers.ProviderCwp, Layers.ProviderCwp7, Layers.ProviderInecobank,
+                Layers.Sdk, Layers.ProviderCwp, Layers.ProviderCwp7,
             }
             .SelectMany(Layers.AuthoredTypesOf)
             .Where(type => type.IsEnum && !type.IsNested)

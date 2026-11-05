@@ -4,6 +4,8 @@ title: Email templates
 
 # Email templates <Label type="admin" />
 
+<DemoLink path="/settings/email-templates" />
+
 ## How templates work
 
 Each email template has a **slug** that identifies it in the code. One version is stored per language (English, Russian and Armenian). Some templates are created at start-up; others are created on first use. If a version does not exist for the client's language, the email is sent in English.
@@ -47,7 +49,7 @@ Click **Save**.
 
 ## Placeholders
 
-Placeholders use the Liquid template language. A variable is written as `{{ name }}` or `{{ object.field }}`, with names in lowercase and underscores. Every template has access to the brand and site variables:
+Placeholders use the Liquid template language. A variable is written as <code v-pre>{{ name }}</code> or <code v-pre>{{ object.field }}</code>, with names in lowercase and underscores. Every template has access to the brand and site variables:
 
 ```liquid
 {{ brand.primary }}       — primary brand colour

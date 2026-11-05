@@ -108,6 +108,9 @@ services:
       DefaultDepartments__BillingEmail: ${DEPARTMENT_BILLING_EMAIL:?DEPARTMENT_BILLING_EMAIL must be set}
       DefaultDepartments__SalesEmail: ${DEPARTMENT_SALES_EMAIL:?DEPARTMENT_SALES_EMAIL must be set}
       DefaultDepartments__GeneralEmail: ${DEPARTMENT_GENERAL_EMAIL:?DEPARTMENT_GENERAL_EMAIL must be set}
+      # The plugin registry the admin panel installs plugins from; off until PLUGIN_REGISTRY_BASE_URL (https) is set.
+      PluginRegistry__Enabled: ${PLUGIN_REGISTRY_ENABLED}
+      PluginRegistry__BaseUrl: ${PLUGIN_REGISTRY_BASE_URL}
       Telegram__BotToken: ${TELEGRAM_BOT_TOKEN}
       Telegram__ChatId: ${TELEGRAM_CHAT_ID}
 
@@ -232,6 +235,7 @@ services:
       NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU}
       NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY}
       BILLING_PORTAL_URL: ${BILLING_PORTAL_URL}
+      NUXT_PUBLIC_DOCS_URL: ${DOCS_URL:-}
       # Where the signed-in sessions are kept (the tokens never reach the browser): the API's Redis.
       NUXT_SESSION_REDIS: ${REDIS_CONNECTION}
       # Key the stored sessions are encrypted with; optional here because the dev server runs in development mode.
@@ -241,7 +245,6 @@ services:
       # Extra host names the dev server answers to besides localhost (comma separated); empty when the portal is reached on localhost only.
       NUXT_DEV_ALLOWED_HOSTS: ${CLIENT_DEV_ALLOWED_HOSTS:-}
 
-      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
       WATCHPACK_POLLING: ${DEV_FILE_POLLING:?DEV_FILE_POLLING must be set}
       CHOKIDAR_USEPOLLING: ${DEV_FILE_POLLING:?DEV_FILE_POLLING must be set}
     healthcheck:

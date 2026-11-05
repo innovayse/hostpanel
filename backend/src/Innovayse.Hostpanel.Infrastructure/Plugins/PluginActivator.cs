@@ -1,7 +1,11 @@
+using Hostpanel.Sdk.Plugins.Store;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +36,17 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// </remarks>
 public sealed class PluginActivator
 {
+    /// <summary>
+    /// The SDK interface each capability promises, keyed by its manifest name. A capability the validator let through
+    /// but this map does not name cannot be checked, so it fails closed as not implemented.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, Type> CapabilityContracts =
+        new Dictionary<string, Type>(StringComparer.Ordinal)
+        {
+            [PluginCapabilities.StoredCredentials] = typeof(IStoredCredentialPlugin),
+            [PluginCapabilities.Endpoints] = typeof(IPluginEndpoints),
+        };
+
     /// <summary>The data context, used to read the plugin's current settings rows.</summary>
     private readonly AppDbContext _db;
 
@@ -171,6 +186,19 @@ public sealed class PluginActivator
             return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.Disabled, null);
         }
 
+        // After the switch, so a plugin the admin left off is not logged as broken on every call. A declared capability
+        // is a claim like the type: a Fulfilment plugin that says "endpoints" but does not
+        // implement IPluginEndpoints is refused for every contract, so it neither sells nor serves half of itself (#818).
+        var unimplemented = UnimplementedCapability(plugin);
+        if (unimplemented is not null)
+        {
+            _logger.LogWarning(
+                "Plugin '{Module}' declares the capability '{Capability}' but its implementation type '{ImplementationType}' "
+                    + "does not implement it.",
+                id, unimplemented, plugin.ImplementationType);
+            return new PreparedPluginActivation<TContract>(id, PluginActivationOutcome.CapabilityNotImplemented, null);
+        }
+
         foreach (var field in plugin.Manifest.GetSettings())
         {
             if (!field.Required)
@@ -196,7 +224,61 @@ public sealed class PluginActivator
             id,
             PluginActivationOutcome.Activated,
             () => (TContract)ActivatorUtilities.CreateInstance(
-                _serviceProvider, plugin.ImplementationType, (IConfiguration)composed));
+                _serviceProvider, plugin.ImplementationType, ConstructorArguments(plugin.ImplementationType, composed, id)));
+    }
+
+    /// <summary>
+    /// Picks the arguments the plugin's constructor can take from the host: its own configuration and, for a plugin that asks
+    /// for it, its plugin-wide store. <see cref="ActivatorUtilities"/> refuses an argument no constructor parameter accepts,
+    /// so a plugin that takes only <see cref="IConfiguration"/> must not be handed a store it never asked for.
+    /// </summary>
+    /// <param name="implementation">The plugin's implementation type.</param>
+    /// <param name="composed">The configuration composed for this plugin alone.</param>
+    /// <param name="id">The id of the plugin being activated.</param>
+    /// <returns>The arguments to pass; the store is built only when a public constructor takes <see cref="IPluginStore"/>.</returns>
+    private object[] ConstructorArguments(Type implementation, IConfiguration composed, string id)
+    {
+        var arguments = new List<object> { composed };
+
+        if (AcceptsConstructorParameter(implementation, typeof(PluginWideStore)))
+        {
+            arguments.Add(PluginWideStoreOf(id));
+        }
+
+        return [.. arguments];
+    }
+
+    /// <summary>Whether a public constructor of a type has a parameter a given argument type can fill.</summary>
+    /// <param name="implementation">The type whose constructors are read.</param>
+    /// <param name="argument">The type of the argument on offer.</param>
+    /// <returns><see langword="true"/> when some public constructor parameter is assignable from <paramref name="argument"/>.</returns>
+    private static bool AcceptsConstructorParameter(Type implementation, Type argument)
+    {
+        return implementation.GetConstructors()
+            .Any(constructor => constructor.GetParameters().Any(parameter => parameter.ParameterType.IsAssignableFrom(argument)));
+    }
+
+    /// <summary>
+    /// Builds the plugin-wide store a plugin may take as <see cref="IPluginStore"/> in its constructor: bound to this plugin's
+    /// id and to no client, with a data context of its own for every operation, so it reads and writes the same rows as a call store without a client and never a client's rows
+    /// or another plugin's. Its limits are the call store's, and its rows are the ones the plugin purge removes.
+    /// </summary>
+    /// <param name="id">The id of the plugin being activated.</param>
+    /// <returns>The store; a plugin whose constructor does not ask for it simply never sees it.</returns>
+    private PluginWideStore PluginWideStoreOf(string id)
+    {
+        // Its own context per operation, never _db: a store write must not save what the caller has staged there.
+        return new PluginWideStore(id, _serviceProvider.GetRequiredService<IServiceScopeFactory>());
+    }
+
+    /// <summary>Finds the first capability the manifest declares that the implementation type does not implement.</summary>
+    /// <param name="plugin">The loaded plugin.</param>
+    /// <returns>The capability name, or <see langword="null"/> when every declared capability is implemented.</returns>
+    private static string? UnimplementedCapability(LoadedPlugin plugin)
+    {
+        return plugin.Manifest.Capabilities.FirstOrDefault(capability =>
+            !CapabilityContracts.TryGetValue(capability, out var contract)
+            || !contract.IsAssignableFrom(plugin.ImplementationType));
     }
 
     /// <summary>

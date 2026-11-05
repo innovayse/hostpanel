@@ -161,6 +161,27 @@ describe('ClientSummaryView', () => {
     expect(billing).toMatch(/Partially Refunded\s*1/)
   })
 
+  it('lists the plugin widgets of the client in its slot', async () => {
+    stubRoutes({
+      ...summaryRoutes(() => new Response(null, { status: 204 })),
+      'GET /api/admin/plugins/slots/admin.client.panels?clientId=7': () =>
+        json({ slotId: 'admin.client.panels', widgets: [{ pluginId: 'sites', id: 'usage', view: 'views/usage.json', title: 'Site usage', order: 1, contextKeys: ['clientId'] }] }),
+    })
+    const wrapper = await mountSummary()
+
+    expect(wrapper.get('[data-testid="plugin-slot-admin.client.panels"]').text()).toContain('Site usage')
+  })
+
+  it('shows no slot when no plugin offers a widget for the client', async () => {
+    stubRoutes({
+      ...summaryRoutes(() => new Response(null, { status: 204 })),
+      'GET /api/admin/plugins/slots/admin.client.panels?clientId=7': () => json({ slotId: 'admin.client.panels', widgets: [] }),
+    })
+    const wrapper = await mountSummary()
+
+    expect(wrapper.find('[data-testid^="plugin-slot-"]').exists()).toBe(false)
+  })
+
   it('reports saved notes under the Save button', async () => {
     stubRoutes(summaryRoutes(() => new Response(null, { status: 204 })))
     const wrapper = await mountSummary()

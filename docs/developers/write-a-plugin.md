@@ -8,7 +8,13 @@ A plugin is a .NET class library that references the Hostpanel SDK and adds a pa
 
 ## Before you start
 
-The SDK project lives at `backend/src/Innovayse.SDK` in the repository. Reference it from your class library, or reference the built `Innovayse.SDK.dll` directly. The bundled plugins in `backend/src/Innovayse.Providers.*` are the reference implementations; read their code before writing your own.
+The SDK project lives at `backend/src/Hostpanel.Sdk` in the repository. Reference it from your class library, or reference the built `Hostpanel.Sdk.dll` directly. This guide is written for Hostpanel.Sdk 3.1.0, so build against that version or a later 3.x one: a package built against an older SDK major is refused with `PLUGIN_SDK_ASSEMBLY_OUTDATED`. The SDK repository also publishes a second package, `Hostpanel.Sdk.Packaging`, versioned in step with the SDK (3.1.0). It holds the checks the host runs on a package, so you can run them on your own build before you upload it: the signature format and verification, the plugin id and version rules, reserved assembly names, the archive limits and path checks, the icon check and the structural manifest rules. Reference it from your build or release tooling only, never from the plugin assembly itself. The bundled plugins in `backend/src/Innovayse.Providers.*` are the reference implementations; read their code before writing your own.
+
+### Name the project
+
+Name a plugin project `<Company>.Hostpanel.Plugins.<Name>`, the .NET plugin convention `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`). The project, its folder, its assembly and its root namespace all carry that name, and its test project adds `.Tests`. Innovayse's own plugins are `Innovayse.Hostpanel.Plugins.<Name>`, with tests in `Innovayse.Hostpanel.Plugins.<Name>.Tests`, each in its own repository `innovayse/hostpanel-<name>`: Innovayse Sites, for example, is `Innovayse.Hostpanel.Plugins.Sites` in `innovayse/hostpanel-sites`. The bundled `Innovayse.Providers.*` projects predate the convention and are renamed as they move to their own repositories.
+
+The plugin `id` in `plugin.json` is not part of the name and never changes when a project is renamed: the host keys the plugin's stored settings and data by it.
 
 ## Plugin types
 
@@ -26,7 +32,7 @@ The `PluginType` enum defines what a plugin can be:
 
 ## A payment plugin
 
-Inherit `PaymentGatewayBase` and implement `IPaymentPlugin` from `Innovayse.SDK.Plugins.Payment`.
+Inherit `PaymentGatewayBase` and implement `IPaymentPlugin` from `Hostpanel.Sdk.Plugins.Payment`.
 
 ### Required members
 
@@ -57,16 +63,31 @@ Call `GetConfig(key)` (from `PaymentGatewayBase`) to read a setting. Settings ar
 public string? GetBaseUrl() => GetConfig("gateway_url");
 ```
 
+### Keeping data between calls
+
+`CreatePaymentAsync`, `GetStatusAsync` and `RefundAsync` are separate calls, and a gateway may need something from one in the next (an order id, a cursor). Take `IPluginStore` in the plugin's constructor, next to the `IConfiguration` the host passes:
+
+```csharp
+public MyGateway(IConfiguration configuration, IPluginStore store) : base(configuration)
+{
+    _store = store;
+}
+```
+
+The host provides it when it activates the plugin. It is plugin wide: scoped to your plugin id and to no client, with the same key rules and size limits as `call.Store`, and it is removed with the plugin's data when the plugin is removed and its data purged. It never reaches another plugin's values or any client's values; data about one client belongs in `call.Store`, which is bound to the call's client. The store is the same data as the call store of an admin call outside any client.
+
 ### Example
 
 ::: code-group
 
 ```csharp [MyGateway.cs]
-using Innovayse.SDK.Base;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Payment;
+using Hostpanel.Sdk.Base;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Payment;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+
+namespace MyCompany.Hostpanel.Plugins.MyGateway;
 
 public sealed class MyGateway : PaymentGatewayBase, IPaymentPlugin
 {
@@ -110,7 +131,7 @@ public sealed class MyGateway : PaymentGatewayBase, IPaymentPlugin
   "type": "Payment",
   "category": "Payment Gateways",
   "color": "#0369a1",
-  "entryPoint": "MyCompany.MyGateway.MyGateway",
+  "entryPoint": "MyCompany.Hostpanel.Plugins.MyGateway.MyGateway",
   "sdkVersion": "1.0",
   "showInIntegrations": true,
   "integrationsCategory": "Payment Gateways",
@@ -125,7 +146,7 @@ public sealed class MyGateway : PaymentGatewayBase, IPaymentPlugin
 ```csharp [MyGatewayTests.cs]
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging.Abstractions;
-using Innovayse.SDK.Plugins.Payment;
+using Hostpanel.Sdk.Plugins.Payment;
 using Xunit;
 
 public class MyGatewayTests
@@ -161,7 +182,7 @@ public class MyGatewayTests
 
 ## A provisioning plugin
 
-Inherit `ProvisioningProviderBase` and implement `IProvisioningPlugin` from `Innovayse.SDK.Plugins.Provisioning`. Read `backend/src/Innovayse.Providers.CWP7` as the reference implementation — it shows the full hosting panel client contract and how to handle each provisioning command (create, suspend, unsuspend, terminate, change package, change password, login).
+Inherit `ProvisioningProviderBase` and implement `IProvisioningPlugin` from `Hostpanel.Sdk.Plugins.Provisioning`. Read `backend/src/Innovayse.Providers.CWP7` as the reference implementation — it shows the full hosting panel client contract and how to handle each provisioning command (create, suspend, unsuspend, terminate, change package, change password, login).
 
 ## The manifest (`plugin.json`)
 
@@ -176,6 +197,7 @@ Every plugin ZIP must have `plugin.json` at the root.
   { name: 'type', type: 'string', default: '', description: 'Plugin type: Payment, Provisioning, Registrar, Identity, Fulfilment, Hosted or App.' },
   { name: 'category', type: 'string', default: '', description: 'Category used to group the plugin inside the Plugin Manager.' },
   { name: 'color', type: 'string', default: '', description: 'Hex colour for the plugin icon background, e.g. #0369a1.' },
+  { name: 'icon', type: 'string', default: '', description: 'Optional image of the plugin: a path inside the package to an SVG or PNG file, for example icon.svg or assets/icon.png. Lowercase letters, digits, dot, hyphen and underscore, forward slashes, no leading slash, no .. segment, extension .svg or .png, at most 256 KiB. Omit it to show the colour block with the plugin initial.' },
   { name: 'entryPoint', type: 'string', default: '', description: 'Fully qualified class name of the class that implements the plugin interface.' },
   { name: 'sdkVersion', type: 'string', default: '', description: 'Manifest SDK version. The accepted value is 1.0. The assembly SDK major is checked separately and older majors are refused.' },
   { name: 'showInIntegrations', type: 'boolean', default: 'false', description: 'When true, the plugin appears as a card on the Integrations screen.' },
@@ -183,7 +205,136 @@ Every plugin ZIP must have `plugin.json` at the root.
   { name: 'fields', type: 'array', default: '[]', description: 'Settings shown on the integration page, in order.' }
 ]" />
 
-The fields above cover manifest version 1. Manifest version 2 (`"manifestVersion": 2`) adds `settings`, `capabilities`, `locales`, `api`, `ui` and `externalOrigins`; documentation for those fields will be added in a follow-up page.
+The `icon` file is checked when the plugin is installed and again when it is loaded. A path that leaves the package, a file that is missing (`PLUGIN_ICON_MISSING`), a file over the size limit, a `.png` that is not a PNG, and an SVG that is not well-formed XML or that holds a script, a `foreignObject`, an event handler attribute (`onload`, `onclick`, ...), a DOCTYPE, or a reference that leaves the image (an `href` that is not a `#fragment`, a `url(...)` that is not a `#fragment`, `@import`) are refused with `PLUGIN_ICON_INVALID`. The admin panel shows the image where it shows the colour block; the host serves it from `GET /api/admin/plugins/{id}/icon` with `X-Content-Type-Options: nosniff` and a policy that blocks script and every fetch.
+
+The fields above cover manifest version 1. A manifest without `manifestVersion` is version 1; the host accepts `1` and `2` and refuses any other value (`PLUGIN_MANIFEST_VERSION_UNKNOWN`). `version` must be a strict `major.minor.patch` version. Manifest version 2 (`"manifestVersion": 2`) adds the members below.
+
+### Manifest v2 members
+
+<SettingTable :settings="[
+  { name: 'manifestVersion', type: 'number', default: '1', description: 'Set to 2 to use the members below.' },
+  { name: 'settings', type: 'array', default: '[]', description: 'Typed settings an administrator fills in. Supersedes fields; when settings is empty the host converts fields into settings.' },
+  { name: 'capabilities', type: 'string[]', default: '[]', description: 'What the plugin can do, shown without activating it. Known names: storedCredentials (a payment plugin that also implements IStoredCredentialPlugin) and endpoints (the plugin class implements IPluginEndpoints; for a plugin that is not an App plugin the host serves its public callbacks only, see Callbacks from outside; an App plugin is served without declaring it). It must agree with the interfaces the class really implements.' },
+  { name: 'hostAccess', type: 'string[]', default: '[]', description: 'Kinds of access to a client hosting the plugin asks the host for. The only kind today is ssh. The admin Plugins page shows each one a plugin declares.' },
+  { name: 'locales', type: 'object', default: '{}', description: 'Texts by language code, then by key, for example the language en with the key menu.chat and the text Chat. A text key has at least two dot-separated parts, such as menu.chat. The en texts must define every key the manifest uses.' },
+  { name: 'api', type: 'object', default: '{}', description: 'Routes the host forwards to the plugin: api.client and api.admin, each a list of routes.' },
+  { name: 'ui', type: 'object', default: '{}', description: 'What the plugin adds to the panels: ui.client and ui.admin (menus and pages) and ui.slots (widgets in host slots).' },
+  { name: 'externalOrigins', type: 'string[]', default: '[]', description: 'Web origins (scheme, host and port, such as https://example.com) that a link block of a plugin view may point at with an absolute https address.' }
+]" />
+
+Wherever a label, title or description may be a text, write either a key of `locales` or plain text. A value shaped like a key (letters, digits, dashes and underscores in two or more parts separated by dots) is looked up in the `en` texts and refused when it is not defined (`PLUGIN_LABEL_KEY_MISSING`).
+
+Each entry in `settings`:
+
+<SettingTable :settings="[
+  { name: 'key', type: 'string', default: '', description: 'Setting key read with GetConfig(key).' },
+  { name: 'label', type: 'string', default: '', description: 'Text shown for the setting.' },
+  { name: 'type', type: 'string', default: '', description: 'Input kind: Text, Url, Select, Secret, Number, Boolean or Textarea. A Secret is stored encrypted and never returned by a read.' },
+  { name: 'required', type: 'boolean', default: 'false', description: 'When true, the setting must be filled before the plugin can be enabled.' },
+  { name: 'description', type: 'string', default: '', description: 'Help text shown under the setting.' },
+  { name: 'default', type: 'string', default: '', description: 'Value used until the administrator sets one. Always written as text, for example 30 or true.' },
+  { name: 'placeholder', type: 'string', default: '', description: 'Hint shown in an empty input.' },
+  { name: 'min', type: 'number', default: '', description: 'Lowest value of a Number setting.' },
+  { name: 'max', type: 'number', default: '', description: 'Highest value of a Number setting.' },
+  { name: 'options', type: 'array', default: '[]', description: 'Choices of a Select setting, each an object with value (stored) and label (shown).' }
+]" />
+
+Each entry in `api.client` and `api.admin` is a route the host serves under `/api/client/plugins/{id}/...` and `/api/admin/plugins/{id}/ext/...`. The host checks sign-in, the caller's permission, CSRF and the rate limit before the plugin runs:
+
+<SettingTable :settings="[
+  { name: 'method', type: 'string', default: '', description: 'Get, Post, Put, Patch or Delete.' },
+  { name: 'path', type: 'string', default: '', description: 'Path below the plugin prefix: a leading slash, then lowercase letters, digits, dashes and underscores, or {parameter} segments, for example /invoices/{id}. No empty segment and no .. segment. The same method and path may be declared once per area.' },
+  { name: 'permission', type: 'string', default: '', description: 'Client routes only: a client permission name, or Any for every signed-in caller. An admin route declares none, because the admin area is guarded by the admin policy alone (PLUGIN_ADMIN_PERMISSION_DECLARED).' },
+  { name: 'rateLimit', type: 'string', default: 'Default', description: 'Rate limit policy: Default, Strict (costly or sensitive routes, such as sending messages) or Heavy (rare, heavy work, such as an export).' },
+  { name: 'streaming', type: 'boolean', default: 'false', description: 'When true, the route answers with a stream of server-sent events instead of one reply. A streaming route is also held to a concurrency cap.' }
+]" />
+
+`ui.client` and `ui.admin` each hold `menus` and `pages`. Each page:
+
+<SettingTable :settings="[
+  { name: 'id', type: 'string', default: '', description: 'Page id, unique per area: 1 to 64 lowercase letters, digits, dashes and underscores, starting with a letter or digit.' },
+  { name: 'path', type: 'string', default: '', description: 'Page path below the plugin prefix in the panel, with the same rules as an api path.' },
+  { name: 'title', type: 'string', default: '', description: 'Page title.' },
+  { name: 'view', type: 'string', default: '', description: 'Path inside the package of the view document that describes the page. The host renders it with its own components, so no plugin code runs in the browser.' },
+  { name: 'permission', type: 'string', default: '', description: 'Client pages only: a client permission name, or Any. Not allowed on an admin page.' }
+]" />
+
+Each menu entry:
+
+<SettingTable :settings="[
+  { name: 'id', type: 'string', default: '', description: 'Entry id, unique within the plugin.' },
+  { name: 'label', type: 'string', default: '', description: 'Text shown in the menu.' },
+  { name: 'page', type: 'string', default: '', description: 'Id of the page of the same area that the entry opens.' },
+  { name: 'icon', type: 'string', default: '', description: 'Icon name: 1 to 64 lowercase letters, digits and dashes. Omit it for the default icon of the panel.' },
+  { name: 'order', type: 'number', default: '0', description: 'Position in the menu, lowest first.' }
+]" />
+
+Each entry in `ui.slots` puts a widget into a slot the host offers. The slot list is versioned; the host offers `client.dashboard.cards` (no context), `client.service.tabs` (context key `serviceId`), `admin.client.panels` (`clientId`) and `admin.service.panels` (`serviceId` and `clientId`). A slot that is not listed, or a context key the slot does not offer, is refused.
+
+<SettingTable :settings="[
+  { name: 'id', type: 'string', default: '', description: 'Widget id, unique within the slot: lowercase letters, digits, dashes and underscores.' },
+  { name: 'slot', type: 'string', default: '', description: 'Slot id, one of the four above.' },
+  { name: 'view', type: 'string', default: '', description: 'Path inside the package of the view document that describes the widget.' },
+  { name: 'title', type: 'string', default: '', description: 'Title shown with the widget.' },
+  { name: 'order', type: 'number', default: '0', description: 'Position among the widgets of the slot, lowest first.' },
+  { name: 'permission', type: 'string', default: '', description: 'Client slots only: a client permission name, or Any.' },
+  { name: 'productIds', type: 'number[]', default: '[]', description: 'Products the widget is bound to; it shows only where the slot service belongs to one of them. Empty shows it for every product. An administrator can change the binding on the Plugins page.' },
+  { name: 'contextKeys', type: 'string[]', default: '[]', description: 'Context the widget needs from the slot. The host verifies the keys for the caller and passes only these to the plugin.' }
+]" />
+
+### Callbacks from outside
+
+A payment gateway calls the panel server to server, with no signed-in user: a card webhook, a pre check and confirmation, a bank result URL. A plugin that implements `IPluginEndpoints` can receive these through a public door, with no gateway code in the host. This is open to a plugin of any type: a payment plugin lists `"capabilities": ["endpoints"]` in its manifest and its class implements `IPluginEndpoints` beside `IPaymentPlugin`; an App plugin needs no capability. The capability opens this door only. The `api.client` and `api.admin` routes, pages, menus and slots of a plugin that is not an App plugin are not served, whatever it declares. A manifest that lists `endpoints` while its class does not implement `IPluginEndpoints` is refused at load with `PLUGIN_ENDPOINTS_NOT_IMPLEMENTED`, and a plugin that does not list it answers its callbacks with the same `404 PLUGIN_ROUTE_NOT_FOUND` as an unknown plugin.
+
+Declare each callback in `api.callbacks`, a list of routes with the same `method` and `path` rules as `api.client` (a `permission` is not allowed, and neither is `streaming`; `rateLimit` is ignored, because the door has its own limit):
+
+```json
+{
+  "api": {
+    "callbacks": [
+      { "method": "Post", "path": "/webhook" },
+      { "method": "Post", "path": "/confirm/{step}" }
+    ]
+  }
+}
+```
+
+The host serves them under `/api/plugins/{id}/callback/...`, so the second route above is `POST /api/plugins/{id}/callback/confirm/result`. Give that address to the gateway.
+
+What the host does:
+
+- It answers only a declared callback of an installed and enabled plugin. An unknown plugin, a switched-off or unconfigured one, an undeclared path and a wrong method all answer the same `404 PLUGIN_ROUTE_NOT_FOUND`, so the door never tells what is installed. The routes of `api.client` and `api.admin` are not reachable through it.
+- There is no sign-in and no CSRF header. The plugin gets `call.Area == PluginArea.Callback`, no client reference, no permissions, a fixed caller reference `callback` and the plugin-wide store.
+- The body is passed on byte for byte, never parsed or re-serialised, so a signature over it still verifies. `call.Headers` holds an allow-list of the request headers, exactly as received (see below), and `call.Query` the query string.
+- A callback may answer with `PluginReply.Raw(status, body, contentType)`, for gateways that expect a plain answer such as `OK` as `text/plain`: the bytes, status and media type are written as given, with `X-Content-Type-Options: nosniff`. A raw reply is accepted on a callback only (on a client or admin route it is a plugin fault, `PLUGIN_FAILED`), its media type must be `text/plain`, `application/json`, `application/xml` or `application/x-www-form-urlencoded` (anything else, markup and script included, is `PLUGIN_FAILED`), and its body is held to `PluginApi__MaxBodyBytes`. Every raw reply also carries `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`.
+- Only these request headers reach `call.Headers`: `Content-Type`, `Content-Length`, `User-Agent`, `Signature`, `Digest`, `Content-Digest`, `Date`, `Idempotency-Key`, `Webhook-Id`, `Webhook-Timestamp`, `Webhook-Signature`, and any `X-*` header except `X-Forwarded-*`, `X-Real-IP` and the host's own (`X-Language`, `X-Requested-With`, `X-Logout-Key`, `X-Service-Key`, `X-Renewed-Access-Token`). `Cookie`, `Authorization`, `Proxy-Authorization` and `Host` are never passed on. If your gateway signs a header that is not on this list, send it as an `X-*` header or put it in the body.
+- The body is capped by `PluginApi__MaxBodyBytes` (413 `PLUGIN_REQUEST_TOO_LARGE` above it) and every request to the door is counted per caller address against `RateLimit__PluginCallback` (429 above it).
+- A failure is logged with the plugin id only, never with a header, a query or a body.
+
+What the plugin must do: verify the call itself (the gateway's signature, checksum or shared secret) before it trusts anything in it, using a secret from its own settings. Answer `PluginReply.Problem(400, ...)` or `403` for a call that does not verify, and a success reply for one that does; keep the work idempotent, because gateways deliver the same event more than once. Nothing in the host says the call is authentic.
+
+A manifest that breaks one of these rules is refused at install and at startup with a `PLUGIN_*` manifest error code that names the offending member (`PLUGIN_CALLBACK_INVALID` for a callback that declares a permission or streams, `PLUGIN_ROUTE_PATH_INVALID` and `PLUGIN_ROUTE_DUPLICATE` for its path and repeats). Read `backend/src/Hostpanel.Sdk/Plugins/Manifest` for the exact types.
+
+### Capabilities
+
+A version 2 manifest may list `capabilities`, each a name from the SDK's `PluginCapabilities`:
+
+| Capability | Allowed on | The plugin class must also implement |
+|------------|------------|--------------------------------------|
+| `storedCredentials` | `Payment` only | `IStoredCredentialPlugin` |
+| `endpoints` | any type | `IPluginEndpoints` |
+
+An `App` plugin answers routes and shows pages, menus and slots without declaring anything. Any other type that declares
+`api` routes or `ui` menus, pages or slots must declare `endpoints`, or the package is refused at install and skipped at
+startup (`PLUGIN_ENDPOINTS_NOT_DECLARED`). This is how one plugin, for example a `Fulfilment` plugin that sells credits,
+also gives the client a screen. An unknown name, a name declared twice, or `storedCredentials` on a type other than
+`Payment` is refused the same way (`PLUGIN_CAPABILITY_NOT_ALLOWED`).
+
+A declared capability is checked against the class when the plugin is activated. If the class does not implement the
+interface a capability promises, the plugin is not activated for anything, its own type's calls included: a payment
+plugin that declares `storedCredentials` without implementing `IStoredCredentialPlugin` takes no payments, and a
+fulfilment plugin that declares `endpoints` without implementing `IPluginEndpoints` receives no fulfilment calls. The
+admin log names the plugin and the capability.
 
 Each entry in `fields`:
 
@@ -194,21 +345,110 @@ Each entry in `fields`:
   { name: 'required', type: 'boolean', default: 'false', description: 'When true, the integration page shows Not configured until this field is filled.' }
 ]" />
 
+## View state
+
+A page or slot view (`{ "schema": 1, "blocks": [...] }`) can react to its own data without a reload. Three optional
+members do it; all need SDK 2.2.0 or later, and the view schema stays 1.
+
+**A condition** is one shape, used by `visibleWhen` and by `followUp.until`, with exactly these three members:
+
+```json
+{ "route": { "method": "get", "path": "/services/{serviceId}/site" }, "field": "site.status", "equals": ["ready", "live"] }
+```
+
+- `route` is a `GET` route your manifest declares in the same area as the page or slot.
+- `field` is a dotted path into the JSON answer (letters, digits, `_` and `-` per segment, at most 200 characters).
+- `equals` is one JSON value (string, number, `true`, `false`, `null`) or a list of 1 to 20 of them. The condition holds
+  when the field strictly equals one of them: `"1"` does not match `1`.
+
+**`visibleWhen`** goes on any block, including header actions and blocks inside tabs. The block is shown only when the
+condition holds; while it is read, when the read fails, or when the field is missing, it stays hidden. It is read again
+when the block's own `id` is refreshed. Hide a create form once a site exists:
+
+```json
+{
+  "kind": "form",
+  "id": "create-site",
+  "visibleWhen": { "route": { "method": "get", "path": "/services/{serviceId}/site" }, "field": "exists", "equals": false },
+  "fields": [
+    { "key": "name", "label": "site.name", "type": "text", "required": true },
+    { "key": "description", "label": "site.description", "type": "textarea" }
+  ],
+  "submit": {
+    "route": { "method": "post", "path": "/services/{serviceId}/site" },
+    "label": "site.create",
+    "refresh": ["create-site", "site"],
+    "resetOnSuccess": true
+  }
+}
+```
+
+**`resetOnSuccess`** is `true` or `false`, only inside a form's `submit`. After a successful submit every field goes
+back to empty.
+
+**`followUp`** goes on an action block or inside a form's `submit`, with exactly `refresh` and `until`. After a
+successful call (and its normal `refresh`), the panel reads `until.route` again and again, refreshing the listed blocks
+each time, until the condition holds (then once more), it runs out of attempts, or the reader leaves the page. A failed
+read counts as an attempt. Show a publish result without a reload:
+
+```json
+{
+  "kind": "action",
+  "label": "site.publish",
+  "route": { "method": "post", "path": "/services/{serviceId}/site/publish" },
+  "followUp": {
+    "refresh": ["publish-result"],
+    "until": {
+      "route": { "method": "get", "path": "/services/{serviceId}/site" },
+      "field": "publish.state",
+      "equals": ["done", "failed"]
+    }
+  }
+}
+```
+
+Both examples assume the view also has blocks with the ids `site` and `publish-result`, and that the manifest declares
+the three routes in its `api` block and the label keys in `locales.en`:
+
+```json
+{
+  "locales": {
+    "en": {
+      "site.name": "Site name",
+      "site.description": "Description",
+      "site.create": "Create site",
+      "site.publish": "Publish"
+    }
+  }
+}
+```
+
+`refresh` lists 1 to 20 block `id`s, each present in the same view. How often and how long the panel polls is the
+host's choice, not yours: every 3 seconds, at most 20 times (about a minute). A long job should report its own state on
+the `until` route rather than expect more time.
+
+A view that breaks these rules is refused at install and skipped at startup: `PLUGIN_VIEW_CONDITION_INVALID` (a bad
+condition, a condition route that is not `GET`, `visibleWhen` outside a block), `PLUGIN_VIEW_FOLLOW_UP_INVALID` (a bad
+`followUp` or one in the wrong place, a `refresh` id no block carries, `resetOnSuccess` that is not a boolean or not in a
+`submit`), and `PLUGIN_VIEW_ROUTE_UNDECLARED` for a condition route the manifest does not declare.
+
 ## Package it
 
 Folder layout inside the ZIP:
 
 ```
-plugin.json              ← at the root
-MyCompany.MyGateway.dll  ← your assembly
-plugin.sig               ← signature file (required on production servers)
+plugin.json                                ← at the root
+MyCompany.Hostpanel.Plugins.MyGateway.dll  ← your assembly
+plugin.sig                                 ← signature file (required on production servers)
 ```
 
-Do **not** include the SDK assembly (`Innovayse.SDK.dll`) or any assembly the host already provides. The server refuses packages that contain a host assembly (`PLUGIN_HOST_ASSEMBLY_REFUSED`). A duplicate plugin `id` is skipped at startup without error — the first loaded version wins (built-in plugins load before uploaded ones).
+**Assembly naming.** The prefix `Innovayse.Hostpanel.` belongs to the host, so a package carrying a DLL under it is refused. The one exception is the plugin namespace `Innovayse.Hostpanel.Plugins.<Name>` (for example `Innovayse.Hostpanel.Plugins.Stripe.dll`), which is how official plugins are named and is always allowed in a package. The dot after `Plugins` is the boundary: `Innovayse.Hostpanel.PluginsX.dll` and `Innovayse.Hostpanel.Plugins.dll` are still host names and are refused. No host assembly is ever named under the plugin namespace (an architecture test guards it), so a plugin can never shadow one. Third-party plugins keep their own prefix, such as `MyCompany.MyGateway`.
+
+Do **not** include the SDK assembly (`Hostpanel.Sdk.dll`) or any assembly the host already provides. The server refuses packages that contain a host assembly (`PLUGIN_HOST_ASSEMBLY_REFUSED`). Give your assemblies names no other plugin uses: a package is also refused (`PLUGIN_ASSEMBLY_CONFLICT`) when one of its DLL or EXE file names, compared without regard to case, is already shipped by another installed or staged plugin, because the loader would bind both plugins to one copy. The rule covers every DLL in the package, shared third-party libraries included (a JSON or HTTP library two plugins both ship counts): if another installed plugin already ships a library of that name, pick a different assembly name or merge the library into your own assembly. Upgrading the same plugin `id` never conflicts with itself. A duplicate plugin `id` is skipped at startup without error — the first loaded version wins (built-in plugins load before uploaded ones).
 
 ### Sign the package
 
-Packages loaded from outside the Development and Testing environments must be signed. To skip signature checks, open **Plugins** in the admin panel and switch on **Allow unsigned plugins**. The `PluginSigner` tool is part of the Hostpanel repository (`backend/tools/Innovayse.Hostpanel.PluginSigner`), not the SDK. Run it on the **unpacked folder** before zipping.
+Packages loaded from outside the Development and Testing environments must be signed. To skip signature checks, open **Plugins** in the admin panel and switch on **Allow unsigned plugins**. The `PluginSigner` tool is part of the Hostpanel repository (`backend/tools/Innovayse.Hostpanel.PluginSigner`), not the SDK. Run it on the **unpacked folder** before zipping. The tool uses `Hostpanel.Sdk.Packaging` (3.1.0) for the signature format, so the signature it writes is checked by the same code the host installs with, and your pipeline can call `PluginSigner` and `PluginSignatureValidator` from that package to verify a signed folder before release.
 
 Generate a key pair. The key file is a base64-encoded private key; store it outside any git working tree (the tool refuses to sign if the key file is inside one):
 
@@ -219,7 +459,7 @@ dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- keygen my
 Sign the plugin folder:
 
 ```bash
-dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- sign ./MyCompany.MyGateway my-key.key my-key-id
+dotnet run --project backend/tools/Innovayse.Hostpanel.PluginSigner -- sign ./MyCompany.Hostpanel.Plugins.MyGateway my-key.key my-key-id
 ```
 
 This writes `plugin.sig` into the folder. Zip the folder after signing.
@@ -228,7 +468,7 @@ The operator must add the matching public key to `PluginSigning:OperatorKeys` in
 
 ## Test it
 
-Write unit tests for your gateway against a stubbed HTTP client — see `backend/tests/Innovayse.Inecobank.Tests` as the pattern.
+Write unit tests for your gateway against a stubbed HTTP client, so no test needs the real payment provider.
 
 For a manual end-to-end test:
 

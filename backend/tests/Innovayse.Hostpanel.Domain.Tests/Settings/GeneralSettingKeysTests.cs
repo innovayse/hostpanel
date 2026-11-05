@@ -32,8 +32,8 @@ public class GeneralSettingKeysTests
     /// <summary>Keys outside the catalogue are not members: integration rows, the setup token, deployment keys.</summary>
     /// <param name="key">The full setting key.</param>
     [Theory]
-    [InlineData("integration:stripe:secret_key")]
-    [InlineData("integration:stripe:is_enabled")]
+    [InlineData("integration:gateway:secret_key")]
+    [InlineData("integration:gateway:is_enabled")]
     [InlineData(SecretSettingKeys.SetupToken)]
     [InlineData("company.name")]
     [InlineData("PORTAL.TEMPLATE")]

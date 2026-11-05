@@ -8,7 +8,8 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Queries.ListIntegra
 /// <summary>
 /// Handles <see cref="ListIntegrationsQuery"/> by reading all integration-prefixed settings and
 /// computing the enabled/configured status for each known integration, then merging in any plugins
-/// registered via <see cref="IPluginIntegrationRegistry"/>.
+/// registered via <see cref="IPluginIntegrationRegistry"/>, each switched-on plugin that implements <c>IPluginStatus</c>
+/// with its cached connection state.
 /// </summary>
 public sealed class ListIntegrationsHandler
 {
@@ -18,13 +19,27 @@ public sealed class ListIntegrationsHandler
     /// <summary>Plugin integration registry for discovering plugin-provided integrations.</summary>
     private readonly IPluginIntegrationRegistry _pluginRegistry;
 
+    /// <summary>The loaded plugins' manifests, whose locales word a plugin's connection state.</summary>
+    private readonly IPluginRegistry _plugins;
+
+    /// <summary>The cached connection state of a plugin that implements <c>IPluginStatus</c>.</summary>
+    private readonly PluginConnectionReader _connections;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="pluginRegistry">Plugin integration registry for discovering plugin-provided integrations.</param>
-    public ListIntegrationsHandler(IHostpanelDbContext context, IPluginIntegrationRegistry pluginRegistry)
+    /// <param name="plugins">The loaded plugins' manifests, whose locales word a plugin's connection state.</param>
+    /// <param name="connections">The cached connection state of a plugin that implements <c>IPluginStatus</c>.</param>
+    public ListIntegrationsHandler(
+        IHostpanelDbContext context,
+        IPluginIntegrationRegistry pluginRegistry,
+        IPluginRegistry plugins,
+        PluginConnectionReader connections)
     {
         _context = context;
         _pluginRegistry = pluginRegistry;
+        _plugins = plugins;
+        _connections = connections;
     }
 
     /// <summary>
@@ -58,9 +73,12 @@ public sealed class ListIntegrationsHandler
 
             var isEnabled = settings.IsEnabled(plugin.Slug);
 
-            var isConfigured = plugin.FieldDefinitions
-                .Where(f => f.Required)
-                .All(f => settings.HasValue(plugin.Slug, f.Key));
+            var isConfigured = plugin.RequiredSettingKeys.All(key => settings.HasValue(plugin.Slug, key));
+
+            // Only a switched-on plugin is asked: a switched-off one would only answer "inactive", which its
+            // card already shows, and asking it would run plugin code on every list load for nothing.
+            var manifest = isEnabled ? _plugins.GetLoadedManifests().FirstOrDefault(m => m.Id == plugin.Slug) : null;
+            var connection = manifest is null ? null : await _connections.ReadAsync(manifest, ct);
 
             result.Add(new IntegrationListItemDto(
                 Slug: plugin.Slug,
@@ -69,7 +87,9 @@ public sealed class ListIntegrationsHandler
                 IsEnabled: isEnabled,
                 IsConfigured: isConfigured,
                 IsPlugin: true,
-                PluginType: plugin.Type));
+                PluginType: plugin.Type,
+                Connection: connection,
+                IconUrl: plugin.IconUrl));
         }
 
         return Result<IReadOnlyList<IntegrationListItemDto>>.Success(result);

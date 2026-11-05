@@ -2,8 +2,6 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Orders.Commands.AcceptOrder;
 using Innovayse.Hostpanel.Application.Orders.Commands.CancelOrder;
 using Innovayse.Hostpanel.Application.Orders.Commands.CompleteOrderGatewayPayment;
-using Innovayse.Hostpanel.Application.Orders.Commands.ConfirmOrderPayment;
-using Innovayse.Hostpanel.Application.Orders.Commands.CreateOrderPaymentIntent;
 using Innovayse.Hostpanel.Application.Orders.Commands.DeleteOrder;
 using Innovayse.Hostpanel.Application.Orders.Commands.PlaceOrder;
 using Innovayse.Hostpanel.Application.Orders.Commands.StartOrderGatewayPayment;
@@ -26,7 +24,7 @@ namespace Innovayse.Hostpanel.API.Controllers;
 /// Place is open to guests and authenticated users; all other endpoints require staff.
 /// </summary>
 /// <remarks>
-/// The four payment endpoints are the exception: they stay <c>[AllowAnonymous]</c> because a guest
+/// The two payment endpoints are the exception: they stay <c>[AllowAnonymous]</c> because a guest
 /// checkout has no credential to present, and they are authorised instead by the order's payment
 /// token, which the caller received when it placed the order. The route id alone never authorises
 /// anything here: ids are sequential, and before the token existed anyone could start a gateway
@@ -199,73 +197,6 @@ public sealed class OrdersController : BaseApiController
     }
 
     /// <summary>
-    /// Creates a card gateway payment intent for an order's linked invoice.
-    /// Returns the client secret needed by the frontend to confirm payment.
-    /// </summary>
-    /// <param name="id">Order primary key; wins over any order id in the body.</param>
-    /// <param name="command">The order's payment token.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>
-    /// 200 with the PaymentIntent client secret; 400 with <c>VALIDATION_ERROR</c>,
-    /// <c>ORDER_NOT_INVOICED</c> when the order was never billed, or <c>INVOICE_NOT_PAYABLE</c> when
-    /// its invoice is not open or owes nothing; 404 with <c>ORDER_NOT_FOUND</c> when the id and token
-    /// do not match an order, or with <c>INVOICE_NOT_FOUND</c>; 403 with <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or
-    /// <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the order's account may not pay by card; 409 with
-    /// <c>PAYMENT_METHOD_UNAVAILABLE</c> when the deployment has no card gateway; 429 when the rate limit is hit; 502
-    /// with <c>GATEWAY_CHARGE_UPSTREAM_FAILED</c> when the card gateway refuses to open the intent;
-    /// 503 with <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the card gateway cannot be reached.
-    /// </returns>
-    [HttpPost("{id:int}/create-payment-intent")]
-    [AllowAnonymous]
-    [EnableRateLimiting(RateLimitPolicies.Auth)]
-    [ProducesResponseType(typeof(PaymentIntentDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> CreatePaymentIntentAsync(
-        int id, [FromBody] CreateOrderPaymentIntentCommand command, CancellationToken ct)
-    {
-        var outcome = await _bus.InvokeAsync<Result<PaymentIntentDto>>(command with { OrderId = id }, ct);
-        return HandleResult(outcome);
-    }
-
-    /// <summary>
-    /// Confirms a card payment for an order, marks the invoice as paid,
-    /// accepts the order, and triggers service creation.
-    /// </summary>
-    /// <param name="id">Order primary key; wins over any order id in the body.</param>
-    /// <param name="command">The card gateway payment intent id and the order's payment token.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>
-    /// 200 with an empty body on success; 400 with <c>VALIDATION_ERROR</c> or
-    /// <c>ORDER_NOT_INVOICED</c>; 404 with <c>ORDER_NOT_FOUND</c> when the id and token do not match an
-    /// order, or with <c>INVOICE_NOT_FOUND</c>; 400 with <c>PAYMENT_INTENT_MISMATCH</c> when the intent
-    /// does not pay this order's invoice; 409 with <c>PAYMENT_INTENT_ALREADY_USED</c> when its payment is
-    /// already recorded, or with <c>PAYMENT_METHOD_UNAVAILABLE</c> when the deployment has no card gateway;
-    /// 502 with <c>GATEWAY_CHARGE_UPSTREAM_FAILED</c> or
-    /// <c>GATEWAY_TRANSACTION_MISSING_UPSTREAM_FAILED</c> when the gateway refuses; 503 with
-    /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the gateway cannot be reached; 429 when the rate limit is hit.
-    /// </returns>
-    [HttpPost("{id:int}/confirm-payment")]
-    [AllowAnonymous]
-    [EnableRateLimiting(RateLimitPolicies.Auth)]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
-    public async Task<IActionResult> ConfirmPaymentAsync(
-        int id, [FromBody] ConfirmOrderPaymentCommand command, CancellationToken ct)
-    {
-        var outcome = await _bus.InvokeAsync<Result>(command with { OrderId = id }, ct);
-        return HandleResultOk(outcome);
-    }
-
-    /// <summary>
     /// Starts a hosted-gateway payment (e.g. a hosted bank page) for an order's linked invoice.
     /// Returns the gateway URL to redirect the payer's browser to.
     /// </summary>
@@ -278,7 +209,7 @@ public sealed class OrdersController : BaseApiController
     /// 403 with <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the order's account may not pay;
     /// 404 with <c>ORDER_NOT_FOUND</c> when the id and token do not match an order,
     /// <c>INVOICE_NOT_FOUND</c> or <c>CURRENCY_NOT_FOUND</c>; 409 with
-    /// <c>GATEWAY_SESSION_ALREADY_STARTED</c>; 503 with <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the
+    /// <c>GATEWAY_SESSION_ALREADY_STARTED</c>, <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c>; 503 with <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the
     /// payment module is not set up;
     /// 429 when the rate limit is hit.
     /// </returns>

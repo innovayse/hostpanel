@@ -1,17 +1,20 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
+using PluginSignatureRule = Hostpanel.Sdk.Packaging.Enums.PluginSignatureRule;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures.Enums;
 using Innovayse.Hostpanel.Integration.Tests.Shared;
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Fulfilment;
-using Innovayse.SDK.Plugins.Hosting;
-using Innovayse.SDK.Plugins.Identity;
-using Innovayse.SDK.Plugins.Payment;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Fulfilment;
+using Hostpanel.Sdk.Plugins.Hosting;
+using Hostpanel.Sdk.Plugins.Identity;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Payment;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -42,12 +45,125 @@ public sealed class PluginLoaderTests
 
         PluginLoader.RegisterPluginType(services, plugin.Manifest, implementation, NullLogger.Instance);
 
-        var descriptor = services.Should().ContainSingle().Subject;
+        // The loader also registers the plugin's named HTTP client; only the keyed plugin registrations are under test.
+        var descriptor = services.Where(d => d.IsKeyedService && Equals(d.ServiceKey, plugin.Manifest.Id)).Should().ContainSingle().Subject;
         descriptor.IsKeyedService.Should().BeTrue();
         descriptor.ServiceKey.Should().Be(plugin.Manifest.Id);
         descriptor.ServiceType.Should().Be(contract);
         descriptor.KeyedImplementationType.Should().Be(implementation);
         descriptor.Lifetime.Should().Be(ServiceLifetime.Scoped);
+    }
+
+    /// <summary>
+    /// A plugin of a non-app type that lists the <c>endpoints</c> capability is registered under its own contract and also
+    /// under the endpoints contract; without the capability only under its own.
+    /// </summary>
+    /// <param name="declaresEndpoints">Whether the manifest lists the capability.</param>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void RegisterPluginType_RegistersEndpointsForANonAppPluginOnlyWhenItDeclaresTheCapability(bool declaresEndpoints)
+    {
+        var services = new ServiceCollection();
+        var id = PluginActivationTestSeeds.NewId("pay");
+        var manifest = new PluginManifest
+        {
+            Id = id,
+            Name = "Test plugin",
+            Version = "1.0.0",
+            Author = "Tests",
+            Description = "Plugin used by the plugin runtime tests.",
+            Type = PluginType.Payment,
+            Category = "Payment",
+            EntryPoint = typeof(ConfigurationCapturingPaymentPlugin).FullName!,
+            SdkVersion = "1.0.0",
+            Capabilities = declaresEndpoints ? [PluginCapabilities.Endpoints] : [],
+        };
+
+        PluginLoader.RegisterPluginType(services, manifest, typeof(ConfigurationCapturingPaymentPlugin), NullLogger.Instance);
+
+        var keyed = services.Where(d => d.IsKeyedService && Equals(d.ServiceKey, id)).Select(d => d.ServiceType).ToList();
+        keyed.Should().Contain(typeof(IPaymentPlugin));
+        if (declaresEndpoints)
+        {
+            keyed.Should().Contain(typeof(IPluginEndpoints));
+        }
+        else
+        {
+            keyed.Should().NotContain(typeof(IPluginEndpoints));
+        }
+    }
+
+    /// <summary>
+    /// A plugin that lists the <c>endpoints</c> capability but whose entry type does not implement the endpoints contract
+    /// is refused at load with the endpoints rule, kept in the registry as refused and never registered, while the plugin
+    /// beside it still loads.
+    /// </summary>
+    [Fact]
+    public void DiscoverAndRegister_EndpointsDeclaredButNotImplemented_IsRefusedAtLoad()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"loader-endpoints-{Guid.NewGuid():N}");
+        try
+        {
+            WriteAppPlugin(root, "good-plugin");
+            var folder = Directory.CreateDirectory(Path.Combine(root, "liar-plugin")).FullName;
+            File.WriteAllText(
+                Path.Combine(folder, "plugin.json"),
+                PluginsTestSeeds.ManifestJson("liar-plugin", ",\"capabilities\":[\"endpoints\"]")
+                    .Replace("\"Provisioning\"", "\"Payment\"", StringComparison.Ordinal)
+                    .Replace("Test.Plugin", "Fixture.PlainPlugin", StringComparison.Ordinal));
+            var assemblyName = "Fixture.Plain." + Guid.NewGuid().ToString("N");
+            File.WriteAllBytes(Path.Combine(folder, assemblyName + ".dll"), PluginAssemblyFixtures.PlainPlugin(assemblyName, "Fixture.PlainPlugin"));
+            var services = new ServiceCollection();
+
+            PluginLoader.DiscoverAndRegister(
+                services,
+                [new PluginRoot(root, PluginOrigin.Uploaded)],
+                PluginSigningTestSeeds.Verifier(enforced: false),
+                allowUnsigned: false,
+                PluginOptions.DefaultMaxViewBytes,
+                NullLoggerFactory.Instance);
+
+            var registry = services.BuildServiceProvider().GetRequiredService<PluginRegistry>();
+            registry.IsLoaded("good-plugin").Should().BeTrue();
+            registry.IsLoaded("liar-plugin").Should().BeFalse();
+            registry.GetRefusedPlugins().Should().ContainSingle(r =>
+                r.PluginId == "liar-plugin" && r.Rule == PluginManifestRule.EndpointsNotImplemented);
+            services.Should().NotContain(d => d.IsKeyedService && Equals(d.ServiceKey, "liar-plugin"));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    /// <summary>The endpoints rule maps to its own error code.</summary>
+    [Fact]
+    public void CodeFor_EndpointsNotImplemented_IsPluginEndpointsNotImplemented()
+    {
+        PluginPackageErrors.CodeFor(PluginManifestRule.EndpointsNotImplemented)
+            .Should().Be(HostpanelErrorCodes.PLUGIN_ENDPOINTS_NOT_IMPLEMENTED);
+    }
+
+    /// <summary>
+    /// A non-app plugin declaring the endpoints capability is registered under its type's contract and under
+    /// <see cref="IPluginEndpoints"/>, keyed by its id, so the route door and its fulfilment calls reach one class (#818).
+    /// </summary>
+    [Fact]
+    public void RegisterPluginType_FulfilmentWithEndpointsCapability_AlsoRegistersEndpoints()
+    {
+        var services = new ServiceCollection();
+        var plugin = PluginCapabilitySeeds.Plugin(
+            PluginActivationTestSeeds.NewId("sell"), PluginType.Fulfilment, typeof(FulfilmentEndpointsPlugin), PluginCapabilities.Endpoints);
+
+        PluginLoader.RegisterPluginType(services, plugin.Manifest, typeof(FulfilmentEndpointsPlugin), NullLogger.Instance);
+
+        // The plugin's named HTTP client adds keyed resilience pipelines; only the plugin id keys are under test.
+        var keyed = services.Where(d => d.IsKeyedService && Equals(d.ServiceKey, plugin.Manifest.Id)).ToList();
+        keyed.Select(d => d.ServiceType).Should().BeEquivalentTo([typeof(IFulfilmentPlugin), typeof(IPluginEndpoints)]);
+        keyed.Should().OnlyContain(d => Equals(d.ServiceKey, plugin.Manifest.Id)
+            && d.KeyedImplementationType == typeof(FulfilmentEndpointsPlugin)
+            && d.Lifetime == ServiceLifetime.Scoped);
     }
 
     /// <summary>
@@ -69,8 +185,7 @@ public sealed class PluginLoaderTests
                 var folder = Directory.CreateDirectory(Path.Combine(root, id)).FullName;
                 File.WriteAllText(
                     Path.Combine(folder, "plugin.json"),
-                    PluginsTestSeeds.ManifestJson(id, extra)
-                        .Replace("\"Provisioning\"", "\"App\"", StringComparison.Ordinal)
+                    PluginsTestSeeds.ManifestJson(id, extra, "App")
                         .Replace("Test.Plugin", "Fixture.AppPlugin", StringComparison.Ordinal));
 
                 // A fresh assembly per plugin: the loader loads into the default context, which holds one assembly per name.
@@ -283,8 +398,7 @@ public sealed class PluginLoaderTests
         var folder = Directory.CreateDirectory(Path.Combine(root, id)).FullName;
         File.WriteAllText(
             Path.Combine(folder, "plugin.json"),
-            PluginsTestSeeds.ManifestJson(id)
-                .Replace("\"Provisioning\"", "\"App\"", StringComparison.Ordinal)
+            PluginsTestSeeds.ManifestJson(id, type: "App")
                 .Replace("Test.Plugin", "Fixture.AppPlugin", StringComparison.Ordinal));
 
         // A fresh assembly name per plugin: the loader loads into the default context, which holds one assembly per name.

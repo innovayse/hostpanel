@@ -29,10 +29,10 @@
 
   <!-- ASP.NET Core & Identity -->
   <ItemGroup>
-    <PackageVersion Include="Innovayse.Auth" Version="5.1.0" />
+    <PackageVersion Include="Innovayse.Auth" Version="5.2.0" />
     <PackageVersion Include="DnsClient" Version="1.8.0" />
     <!--
-      9.0.21 rather than the 9.0.1 the other ASP.NET packages here carry: Innovayse.Auth 5.1.0
+      9.0.21 rather than the 9.0.1 the other ASP.NET packages here carry: Innovayse.Auth 5.2.0
       declares JwtBearer 9.0.21, and central package management turns the resulting
       downgrade into NU1605, which TreatWarningsAsErrors makes a restore failure.
     -->
@@ -41,7 +41,6 @@
     <PackageVersion Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="9.0.21" />
     <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="9.0.21" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.21" />
-    <PackageVersion Include="Stripe.net" Version="51.2.0" />
     <!--
       8.23.0 rather than 8.0.1: Innovayse.Hostpanel.Shared references
       Microsoft.AspNetCore.Authentication.JwtBearer 9.0.21, whose own dependency on
@@ -74,13 +73,6 @@
       resilience.
     -->
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.10.0" />
-    <!--
-      Polly.Core at the version Microsoft.Extensions.Http.Resilience 9.10.0 already resolves, named
-      here so the Inecobank plugin can catch the exceptions the resilience handler raises
-      (ExecutionRejectedException) and translate them. The plugin runs in the host process and
-      shares the host copy of this assembly.
-    -->
-    <PackageVersion Include="Polly.Core" Version="8.4.2" />
     <!--
       Localization for the error sentences the API sends (Innovayse.Hostpanel.Application/Resources/).
       The abstractions package only: the Application layer declares IStringLocalizer<T> as a

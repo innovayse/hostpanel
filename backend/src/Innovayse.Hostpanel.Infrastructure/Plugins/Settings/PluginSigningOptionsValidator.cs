@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Packaging.Signing;
 using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins.Settings;

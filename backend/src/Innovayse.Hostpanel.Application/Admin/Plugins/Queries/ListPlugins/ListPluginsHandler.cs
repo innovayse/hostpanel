@@ -68,10 +68,12 @@ public sealed class ListPluginsHandler
                 manifest.Color,
                 refusal is null && _registry.IsLoaded(manifest.Id),
                 package.IsBuiltIn,
+                refusal is null ? manifest.Capabilities : [],
                 refusal is null ? PluginListStatus.Loaded : PluginListStatus.Refused,
                 refusal?.Rule,
                 refusal?.Detail,
-                package.StagedVersion));
+                package.StagedVersion,
+                refusal is null && _registry.GetIcon(manifest.Id) is not null ? PluginIconPaths.For(manifest.Id) : null));
         }
 
         var scopeOwners = _context.PluginDataScopes.AsNoTracking().Select(s => s.PluginId);
@@ -94,6 +96,6 @@ public sealed class ListPluginsHandler
     {
         return new PluginListItemDto(
             pluginId, pluginId, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, string.Empty,
-            false, false, PluginListStatus.Removed);
+            false, false, [], PluginListStatus.Removed);
     }
 }

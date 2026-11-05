@@ -67,7 +67,7 @@ If you are signed in your name is shown as **Logged in as**. If you are a guest,
 </li>
 <li>
 
-Choose a **Payment Method**: **Pay by card** or **Pay by bank transfer**.
+Choose a **Payment Method**: one of the payment methods your provider offers, such as **Pay by bank transfer**.
 
 </li>
 <li>

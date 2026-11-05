@@ -2,7 +2,8 @@ using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
@@ -102,6 +103,30 @@ public sealed class IdentityPluginResolverTests(IntegrationTestFactory factory) 
             PluginActivationTestSeeds.Plugin(configured, PluginType.Identity, typeof(ConfigurationCapturingClientResolver)),
             PluginActivationTestSeeds.Plugin(unconfigured, PluginType.Identity, typeof(ConfigurationCapturingClientResolver), requiresApiKey: true));
         await PluginActivationTestSeeds.EnableAsync(db, configured, unconfigured);
+        var resolver = new IdentityPluginResolver(PluginActivationTestSeeds.Activator(factory, db), registry);
+
+        var resolve = () => resolver.ResolveAsync(CancellationToken.None);
+
+        await resolve.Should().ThrowAsync<IdentityPluginConflictException>();
+    }
+
+    /// <summary>
+    /// A second enabled identity plugin that declares a capability its class does not implement still conflicts: it is
+    /// switched on, and a build fault must not decide which of two plugins answers any more than a missing setting does.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ResolveAsync_SecondEnabledPluginWithAnUnimplementedCapability_StillThrows()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var working = PluginActivationTestSeeds.NewId("a-identity");
+        var broken = PluginActivationTestSeeds.NewId("b-identity");
+        var registry = PluginActivationTestSeeds.Registry(
+            PluginActivationTestSeeds.Plugin(working, PluginType.Identity, typeof(ConfigurationCapturingClientResolver)),
+            PluginCapabilitySeeds.Plugin(
+                broken, PluginType.Identity, typeof(ConfigurationCapturingClientResolver), PluginCapabilities.Endpoints));
+        await PluginActivationTestSeeds.EnableAsync(db, working, broken);
         var resolver = new IdentityPluginResolver(PluginActivationTestSeeds.Activator(factory, db), registry);
 
         var resolve = () => resolver.ResolveAsync(CancellationToken.None);

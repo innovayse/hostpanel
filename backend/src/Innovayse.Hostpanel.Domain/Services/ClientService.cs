@@ -15,6 +15,9 @@ namespace Innovayse.Hostpanel.Domain.Services;
 /// </summary>
 public sealed class ClientService : BaseEntity, IAggregateRoot
 {
+    /// <summary>The longest source service id the <see cref="ExternalId"/> column holds, in characters.</summary>
+    public const int MaxExternalIdLength = 100;
+
     /// <summary>Gets the FK to the owning client.</summary>
     public int ClientId { get; private set; }
 
@@ -78,6 +81,12 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// <summary>Gets the applied promotion code.</summary>
     public string? PromotionCode { get; private set; }
 
+    /// <summary>
+    /// Gets the service's own id in the system it was imported from, used to recognise it on a retried
+    /// import; <see langword="null"/> for a service created here or imported before the source sent ids.
+    /// </summary>
+    public string? ExternalId { get; private set; }
+
     /// <summary>Gets the external subscription reference.</summary>
     public string? SubscriptionId { get; private set; }
 
@@ -114,6 +123,13 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
 
     /// <summary>Gets why the service is suspended, or <see langword="null"/> when it is not (or the reason predates this column).</summary>
     public SuspensionSource? SuspensionSource { get; private set; }
+
+    /// <summary>
+    /// Gets how many SSH keys were ever added to the service. Not a count to read: it moves on every add so the add saves
+    /// over this row, whose xmin concurrency token then serialises two adds of one service, which keeps the per-service key limit
+    /// exact (the count and the insert are otherwise two statements another add could fall between).
+    /// </summary>
+    public long SshKeyRevision { get; private set; }
 
     /// <summary>Gets whether <see cref="Suspend"/> accepts the service: only an Active one can be suspended.</summary>
     public bool CanSuspend => Status is ServiceStatus.Active;
@@ -217,6 +233,7 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
             BillingCycle = import.BillingCycle,
             Status = import.Status,
             CreatedAt = import.RegisteredAt,
+            ExternalId = string.IsNullOrWhiteSpace(import.ExternalId) ? null : import.ExternalId,
         };
 
         // A pending service has not started a billing period yet, as with Activate.
@@ -531,6 +548,15 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// <summary>Replaces the internal notes staff keep on the service.</summary>
     /// <param name="notes">The notes, or <see langword="null"/> to clear them.</param>
     public void UpdateAdminNotes(string? notes) => AdminNotes = notes;
+
+    /// <summary>
+    /// Records that an SSH key is being added, in the same save as the key. Two adds of one service then both write this
+    /// row, and the second save fails with a concurrency conflict instead of passing the key limit unseen.
+    /// </summary>
+    public void RecordSshKeyAdded()
+    {
+        SshKeyRevision++;
+    }
 
     /// <summary>
     /// Corrects the recorded termination date of a terminated service, for a termination that really

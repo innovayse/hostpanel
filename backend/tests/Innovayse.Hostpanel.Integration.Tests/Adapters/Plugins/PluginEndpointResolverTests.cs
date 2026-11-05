@@ -1,7 +1,8 @@
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
@@ -30,6 +31,55 @@ public sealed class PluginEndpointResolverTests(IntegrationTestFactory factory) 
         resolver.Find(app)!.Id.Should().Be(app);
         resolver.Find(payment).Should().BeNull();
         resolver.Find("never-loaded").Should().BeNull();
+    }
+
+    /// <summary>
+    /// The callback door finds an app plugin and a plugin of any other type that declares the <c>endpoints</c> capability,
+    /// and nothing else; the client and admin doors (<see cref="PluginEndpointResolver.Find"/>) answer the same set.
+    /// </summary>
+    [Fact]
+    public void FindForCallback_FindsAnAppPluginAndAnyPluginDeclaringTheEndpointsCapability()
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var app = PluginActivationTestSeeds.NewId("app");
+        var declaring = PluginActivationTestSeeds.NewId("paydecl");
+        var plain = PluginActivationTestSeeds.NewId("payplain");
+        var registry = PluginActivationTestSeeds.Registry(
+            PluginActivationTestSeeds.Plugin(app, PluginType.App, typeof(EchoAppPlugin)),
+            WithCapabilities(PluginActivationTestSeeds.Plugin(declaring, PluginType.Payment, typeof(EchoAppPlugin)), [PluginCapabilities.Endpoints]),
+            PluginActivationTestSeeds.Plugin(plain, PluginType.Payment, typeof(EchoAppPlugin)));
+        var resolver = new PluginEndpointResolver(PluginActivationTestSeeds.Activator(factory, db), registry);
+
+        resolver.FindForCallback(app)!.Id.Should().Be(app);
+        resolver.FindForCallback(declaring)!.Id.Should().Be(declaring);
+        resolver.FindForCallback(plain).Should().BeNull();
+        resolver.FindForCallback("never-loaded").Should().BeNull();
+        resolver.Find(declaring)!.Id.Should().Be(declaring);
+        resolver.Find(plain).Should().BeNull();
+    }
+
+    /// <summary>Copies a loaded plugin with a capability list.</summary>
+    /// <param name="plugin">The plugin to copy.</param>
+    /// <param name="capabilities">The capabilities the copy's manifest lists.</param>
+    /// <returns>The loaded plugin with the new manifest.</returns>
+    private static LoadedPlugin WithCapabilities(LoadedPlugin plugin, IReadOnlyList<string> capabilities)
+    {
+        var manifest = new PluginManifest
+        {
+            Id = plugin.Manifest.Id,
+            Name = plugin.Manifest.Name,
+            Version = plugin.Manifest.Version,
+            Author = plugin.Manifest.Author,
+            Description = plugin.Manifest.Description,
+            Type = plugin.Manifest.Type,
+            Category = plugin.Manifest.Category,
+            EntryPoint = plugin.Manifest.EntryPoint,
+            SdkVersion = plugin.Manifest.SdkVersion,
+            Capabilities = capabilities,
+        };
+
+        return new LoadedPlugin(manifest, plugin.ImplementationType, plugin.Views);
     }
 
     /// <summary>A plugin that is off is not prepared, one that is on is, and preparing builds nothing: only calling the function does.</summary>

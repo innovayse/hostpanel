@@ -2,10 +2,11 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Plugins.Common;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Manifest;
-using Innovayse.SDK.Plugins.Slots;
-using Innovayse.SDK.Plugins.Ui;
+using Hostpanel.Sdk.Packaging.Signing;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Slots;
+using Hostpanel.Sdk.Plugins.Ui;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
@@ -54,6 +55,39 @@ internal static partial class PluginViewDocumentReader
 
     /// <summary>The member of a block (a header) that holds an array of action blocks.</summary>
     private const string ActionsMember = "actions";
+
+    /// <summary>The member of a block that holds its id, which a refresh names.</summary>
+    private const string IdMember = "id";
+
+    /// <summary>The member of a form block that holds what submitting does.</summary>
+    private const string SubmitMember = "submit";
+
+    /// <summary>The block kind that may carry a <c>followUp</c> of its own.</summary>
+    private const string ActionKind = "action";
+
+    /// <summary>The member of a condition naming the GET route read.</summary>
+    private const string ConditionRouteMember = "route";
+
+    /// <summary>The member of a condition holding the dotted path into the reply.</summary>
+    private const string ConditionFieldMember = "field";
+
+    /// <summary>The member of a condition holding the value, or the list of values, the field must equal.</summary>
+    private const string ConditionEqualsMember = "equals";
+
+    /// <summary>The number of members a condition holds: route, field and equals, nothing else.</summary>
+    private const int ConditionMemberCount = 3;
+
+    /// <summary>The longest dotted field a condition may name, in characters; far above any real reply path.</summary>
+    private const int MaxConditionFieldLength = 200;
+
+    /// <summary>The member of a follow-up listing the block ids read again.</summary>
+    private const string FollowUpRefreshMember = "refresh";
+
+    /// <summary>The member of a follow-up holding the condition that ends it.</summary>
+    private const string FollowUpUntilMember = "until";
+
+    /// <summary>The number of members a follow-up holds: refresh and until, nothing else.</summary>
+    private const int FollowUpMemberCount = 2;
 
     /// <summary>The member, at any depth, that names an icon; its value must be a plain icon name, never a URL.</summary>
     private const string IconMember = "icon";
@@ -110,6 +144,11 @@ internal static partial class PluginViewDocumentReader
     /// <returns>The compiled pattern.</returns>
     [GeneratedRegex(@"\A[a-z0-9-]{1,64}\z", RegexOptions.CultureInvariant)]
     private static partial Regex IconNamePattern();
+
+    /// <summary>Matches a dotted reply field of a condition: segments of letters, digits, underscore and hyphen joined by single dots; nothing after it.</summary>
+    /// <returns>The compiled pattern.</returns>
+    [GeneratedRegex(@"\A[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*\z", RegexOptions.CultureInvariant)]
+    private static partial Regex ConditionFieldPattern();
 
     /// <summary>Reads and checks every view document the manifest names, under the plugin folder.</summary>
     /// <param name="pluginDirectory">The plugin folder: the folder holding <c>plugin.json</c>.</param>
@@ -269,6 +308,12 @@ internal static partial class PluginViewDocumentReader
             if (kind is not null)
             {
                 return new PluginManifestViolation(PluginManifestRule.ViewBlockKindUnknown, $"{where} has a block of kind '{kind}'");
+            }
+
+            var state = CheckState(scan);
+            if (state is not null)
+            {
+                return new PluginManifestViolation(state.Rule, $"{where} {state.Detail}");
             }
 
             foreach (var label in scan.Labels.Where(PluginManifestValidator.IsTextKey))
@@ -545,24 +590,37 @@ internal static partial class PluginViewDocumentReader
     }
 
     /// <summary>
-    /// Walks a document at any depth, collecting block kinds, labels and routes, and noting the first malformed member.
-    /// A member name used twice in one object is malformed: the parser keeps both, but the node model the page is
-    /// served from throws on a duplicate, which would turn a served page into a server error.
+    /// Walks a document at any depth, collecting block kinds, ids, labels and routes, checking the view state members,
+    /// and noting the first malformed member. A member name used twice in one object is malformed: the parser keeps
+    /// both, but the node model the page is served from throws on a duplicate, which would turn a served page into a
+    /// server error.
     /// </summary>
     /// <param name="element">The element to walk.</param>
     /// <param name="scan">Receives what is found.</param>
-    private static void Walk(JsonElement element, DocumentScan scan)
+    /// <param name="via">The name of the member holding <paramref name="element"/> (through any arrays), or <see langword="null"/> at the root.</param>
+    private static void Walk(JsonElement element, DocumentScan scan, string? via = null)
     {
         switch (element.ValueKind)
         {
             case JsonValueKind.Array:
                 foreach (var item in element.EnumerateArray())
                 {
-                    Walk(item, scan);
+                    Walk(item, scan, via);
                 }
 
                 break;
             case JsonValueKind.Object:
+                var kind = element.TryGetProperty(KindMember, out var kindValue) && kindValue.ValueKind == JsonValueKind.String
+                    ? kindValue.GetString()
+                    : null;
+                if (kind is not null
+                    && element.TryGetProperty(IdMember, out var id)
+                    && id.ValueKind == JsonValueKind.String
+                    && id.GetString() is { } blockId)
+                {
+                    scan.BlockIds.Add(blockId);
+                }
+
                 var names = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var member in element.EnumerateObject())
                 {
@@ -571,11 +629,172 @@ internal static partial class PluginViewDocumentReader
                         scan.Malformed ??= $"the member '{member.Name}' appears twice in one object";
                     }
 
-                    WalkMember(member, scan);
+                    if (!WalkStateMember(member, kind, string.Equals(via, SubmitMember, StringComparison.Ordinal), scan))
+                    {
+                        WalkMember(member, scan);
+                    }
                 }
 
                 break;
         }
+    }
+
+    /// <summary>
+    /// Handles a view state member (<see cref="PluginViews.VisibleWhenProperty"/>, <see cref="PluginViews.ResetOnSuccessProperty"/>,
+    /// <see cref="PluginViews.FollowUpProperty"/>) where it is allowed, and records a broken rule where it is not. A
+    /// state member is never walked as ordinary content, so a value in a condition's <c>equals</c> is never read as a label.
+    /// </summary>
+    /// <param name="member">The member.</param>
+    /// <param name="kind">The block kind of the object holding it, or <see langword="null"/> when that object is no block.</param>
+    /// <param name="inSubmit">Whether the object holding it is a form's <c>submit</c>.</param>
+    /// <param name="scan">Receives what is found.</param>
+    /// <returns><see langword="true"/> when the member is a state member and was handled here.</returns>
+    private static bool WalkStateMember(JsonProperty member, string? kind, bool inSubmit, DocumentScan scan)
+    {
+        if (member.NameEquals(PluginViews.VisibleWhenProperty))
+        {
+            if (kind is null)
+            {
+                scan.StateViolation ??= new PluginManifestViolation(
+                    PluginManifestRule.ViewConditionInvalid, $"has a '{PluginViews.VisibleWhenProperty}' on something that is not a block");
+            }
+            else
+            {
+                CheckCondition(member.Value, PluginViews.VisibleWhenProperty, scan);
+            }
+
+            return true;
+        }
+
+        if (member.NameEquals(PluginViews.ResetOnSuccessProperty))
+        {
+            if (!inSubmit || (member.Value.ValueKind != JsonValueKind.True && member.Value.ValueKind != JsonValueKind.False))
+            {
+                scan.StateViolation ??= new PluginManifestViolation(
+                    PluginManifestRule.ViewFollowUpInvalid, $"has a '{PluginViews.ResetOnSuccessProperty}' that is not a boolean in a form's '{SubmitMember}'");
+            }
+
+            return true;
+        }
+
+        if (member.NameEquals(PluginViews.FollowUpProperty))
+        {
+            if (!inSubmit && !string.Equals(kind, ActionKind, StringComparison.Ordinal))
+            {
+                scan.StateViolation ??= new PluginManifestViolation(
+                    PluginManifestRule.ViewFollowUpInvalid, $"has a '{PluginViews.FollowUpProperty}' outside an action block and a form's '{SubmitMember}'");
+            }
+            else
+            {
+                CheckFollowUp(member.Value, scan);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Checks a follow-up: an object holding exactly <c>refresh</c>, a list of 1 to
+    /// <see cref="PluginViews.MaxFollowUpRefresh"/> non-empty block ids, and <c>until</c>, a condition. Whether each id
+    /// names a block of the document is checked once the whole document is walked (<see cref="CheckState"/>).
+    /// </summary>
+    /// <param name="value">The follow-up value.</param>
+    /// <param name="scan">Receives the ids and the first broken rule.</param>
+    private static void CheckFollowUp(JsonElement value, DocumentScan scan)
+    {
+        if (value.ValueKind != JsonValueKind.Object
+            || value.EnumerateObject().Count() != FollowUpMemberCount
+            || !value.TryGetProperty(FollowUpRefreshMember, out var refresh)
+            || !value.TryGetProperty(FollowUpUntilMember, out var until)
+            || refresh.ValueKind != JsonValueKind.Array
+            || refresh.GetArrayLength() is < 1 or > PluginViews.MaxFollowUpRefresh
+            || refresh.EnumerateArray().Any(id => id.ValueKind != JsonValueKind.String || string.IsNullOrEmpty(id.GetString())))
+        {
+            scan.StateViolation ??= new PluginManifestViolation(
+                PluginManifestRule.ViewFollowUpInvalid,
+                $"has a '{PluginViews.FollowUpProperty}' that is not {{ {FollowUpRefreshMember}: 1 to {PluginViews.MaxFollowUpRefresh} block ids, {FollowUpUntilMember}: a condition }}");
+            return;
+        }
+
+        scan.FollowUpRefresh.AddRange(refresh.EnumerateArray().Select(id => id.GetString() ?? string.Empty));
+        CheckCondition(until, $"{PluginViews.FollowUpProperty}.{FollowUpUntilMember}", scan);
+    }
+
+    /// <summary>
+    /// Checks a condition: an object holding exactly a GET <c>route</c>, a dotted <c>field</c> and an <c>equals</c> that is
+    /// one JSON scalar or a list of 1 to <see cref="PluginViews.MaxConditionValues"/> scalars. The route joins the
+    /// document's routes, so it must also be declared in the area that shows the view.
+    /// </summary>
+    /// <param name="value">The condition value.</param>
+    /// <param name="member">The member holding it, for the detail.</param>
+    /// <param name="scan">Receives the route and the first broken rule.</param>
+    private static void CheckCondition(JsonElement value, string member, DocumentScan scan)
+    {
+        var route = value.ValueKind == JsonValueKind.Object && value.TryGetProperty(ConditionRouteMember, out var routeValue)
+            ? ReadRoute(routeValue)
+            : null;
+        var valid = route is not null
+            && route.Method == PluginRouteMethod.Get
+            && value.EnumerateObject().Count() == ConditionMemberCount
+            && value.TryGetProperty(ConditionFieldMember, out var field)
+            && field.ValueKind == JsonValueKind.String
+            && field.GetString() is { Length: <= MaxConditionFieldLength } path
+            && ConditionFieldPattern().IsMatch(path)
+            && value.TryGetProperty(ConditionEqualsMember, out var equals)
+            && IsConditionValue(equals);
+        if (route is null || !valid)
+        {
+            scan.StateViolation ??= new PluginManifestViolation(
+                PluginManifestRule.ViewConditionInvalid,
+                $"has a '{member}' that is not {{ {ConditionRouteMember}: a GET route, {ConditionFieldMember}: a dotted path, {ConditionEqualsMember}: a value or 1 to {PluginViews.MaxConditionValues} values }}");
+            return;
+        }
+
+        scan.Routes.Add(route);
+    }
+
+    /// <summary>Tells whether a condition's <c>equals</c> is one JSON scalar or a list of 1 to <see cref="PluginViews.MaxConditionValues"/> of them.</summary>
+    /// <param name="equals">The value.</param>
+    /// <returns><see langword="true"/> when it is.</returns>
+    private static bool IsConditionValue(JsonElement equals)
+    {
+        if (equals.ValueKind != JsonValueKind.Array)
+        {
+            return IsScalar(equals);
+        }
+
+        return equals.GetArrayLength() is >= 1 and <= PluginViews.MaxConditionValues && equals.EnumerateArray().All(IsScalar);
+    }
+
+    /// <summary>Tells whether a JSON value is a scalar a reply field can be compared with: a string, a number, a boolean or null.</summary>
+    /// <param name="value">The value.</param>
+    /// <returns><see langword="true"/> when it is a scalar.</returns>
+    private static bool IsScalar(JsonElement value)
+    {
+        return value.ValueKind is JsonValueKind.String or JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False or JsonValueKind.Null;
+    }
+
+    /// <summary>
+    /// Applies the view state rules once the whole document is walked: the first state member broken during the walk,
+    /// then a follow-up refresh naming a block id the document does not hold (a refresh of nothing would leave the
+    /// reader waiting on a block that never changes).
+    /// </summary>
+    /// <param name="scan">What the walk found.</param>
+    /// <returns>The violation, its detail without the document's place, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckState(DocumentScan scan)
+    {
+        if (scan.StateViolation is not null)
+        {
+            return scan.StateViolation;
+        }
+
+        var unknown = scan.FollowUpRefresh.FirstOrDefault(id => !scan.BlockIds.Contains(id));
+        return unknown is null
+            ? null
+            : new PluginManifestViolation(
+                PluginManifestRule.ViewFollowUpInvalid, $"has a '{PluginViews.FollowUpProperty}' refreshing the block '{unknown}', which the document does not hold");
     }
 
     /// <summary>
@@ -654,7 +873,7 @@ internal static partial class PluginViewDocumentReader
             return;
         }
 
-        Walk(member.Value, scan);
+        Walk(member.Value, scan, member.Name);
     }
 
     /// <summary>Reads the value of a route member.</summary>

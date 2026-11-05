@@ -5,10 +5,10 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Identity;
-using Innovayse.SDK.Plugins.Manifest;
-using Innovayse.SDK.Plugins.Slots;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Identity;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Slots;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -362,15 +362,12 @@ public sealed class GetClientPluginSlotTests : IClassFixture<AppPluginFixture>
     [Fact]
     public async Task ACallerWithNoAccount_Answers404ClientProfileNotFound()
     {
-        var (derived, http) = await NoAccountCallerAsync("slot-no-account");
-        using (derived)
-        using (http)
-        {
-            var response = await http.GetAsync(Url(PluginSlots.ClientDashboardCards));
+        using var caller = await PluginSlotSeeds.NoAccountCallerAsync(_fixture, "slot-no-account");
 
-            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-            await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.CLIENT_PROFILE_NOT_FOUND);
-        }
+        var response = await caller.Http.GetAsync(Url(PluginSlots.ClientDashboardCards));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.CLIENT_PROFILE_NOT_FOUND);
     }
 
     /// <summary>The slot is checked before the account: an unknown slot answers <c>PLUGIN_SLOT_NOT_FOUND</c> even for a caller with no account.</summary>
@@ -378,29 +375,11 @@ public sealed class GetClientPluginSlotTests : IClassFixture<AppPluginFixture>
     [Fact]
     public async Task TheSlotIsCheckedBeforeTheAccount()
     {
-        var (derived, http) = await NoAccountCallerAsync("slot-before-account");
-        using (derived)
-        using (http)
-        {
-            var response = await http.GetAsync(Url("client.nothing.here"));
+        using var caller = await PluginSlotSeeds.NoAccountCallerAsync(_fixture, "slot-before-account");
 
-            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-            await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_SLOT_NOT_FOUND);
-        }
-    }
+        var response = await caller.Http.GetAsync(Url("client.nothing.here"));
 
-    /// <summary>Makes a caller the identity plugin vouches for whose external account has no client row.</summary>
-    /// <param name="label">A label for the seeded user.</param>
-    /// <returns>The derived host and the client that talks to it, both to dispose when the test ends.</returns>
-    private async Task<(Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<Program> Host, HttpClient Http)> NoAccountCallerAsync(string label)
-    {
-        var user = await ClientsTestSeeds.CreateUnlinkedUserAsync(_fixture.Factory, label);
-        var plugin = new StubClientResolver();
-        plugin.Grant(
-            user.UserId,
-            new ClientAccess(new ExternalAccount(PluginMemberSeeds.Provider, $"acct-{Guid.NewGuid():N}", null, null), true, CanManagePaymentMethods: false));
-        var derived = _fixture.Derive(services => services.AddSingleton<IIdentityPluginResolver>(new FakeIdentityPluginResolver(plugin)));
-
-        return (derived, AppPluginFixture.WithBearerOf(derived, user.Client));
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_SLOT_NOT_FOUND);
     }
 }

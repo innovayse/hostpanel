@@ -4,7 +4,8 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Innovayse.Hostpanel.Domain\Innovayse.Hostpanel.Domain.csproj" />
-    <ProjectReference Include="..\Innovayse.SDK\Innovayse.SDK.csproj" />
+    <ProjectReference Include="..\Hostpanel.Sdk\Hostpanel.Sdk.csproj" />
+    <ProjectReference Include="..\Hostpanel.Sdk\Hostpanel.Sdk.Packaging\Hostpanel.Sdk.Packaging.csproj" />
     <!-- Not consumed yet — this reference proves the graph compiles for phase 4, which wires
          Result<T> and BaseApiController's helpers into the Application layer's handlers. -->
     <ProjectReference Include="..\Shared\Innovayse.Hostpanel.Shared.csproj" />

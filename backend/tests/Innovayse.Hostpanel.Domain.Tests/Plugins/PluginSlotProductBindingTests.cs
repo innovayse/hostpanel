@@ -17,13 +17,13 @@ public sealed class PluginSlotProductBindingTests
         binding.ProductId.Should().Be(7);
     }
 
-    /// <summary>A plugin id that breaks the plugin id rule, an empty or oversized id and a non-positive product are refused.</summary>
+    /// <summary>An empty plugin id, slot id or widget id and a non-positive product are refused.</summary>
     /// <param name="pluginId">The plugin id.</param>
     /// <param name="slotId">The slot id.</param>
     /// <param name="widgetId">The widget id.</param>
     /// <param name="productId">The product id.</param>
     [Theory]
-    [InlineData("Bad Plugin", "slot", "widget", 1)]
+    [InlineData(" ", "slot", "widget", 1)]
     [InlineData("acme", "", "widget", 1)]
     [InlineData("acme", "slot", " ", 1)]
     [InlineData("acme", "slot", "widget", 0)]

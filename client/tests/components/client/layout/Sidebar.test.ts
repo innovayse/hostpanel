@@ -80,4 +80,23 @@ describe('ClientLayoutSidebar', () => {
 
     expect(wrapper.emitted('signOut')).toHaveLength(1)
   })
+
+  it('hides the documentation link when docsUrl is empty', () => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { docsUrl: '' } }))
+    routeAt('/')
+    const wrapper = mountClient(Sidebar, { props: { items: ITEMS, open: false } })
+
+    expect(wrapper.find('[data-testid="client-nav-documentation"]').exists()).toBe(false)
+  })
+
+  it('shows the documentation link with the correct href when docsUrl is set', () => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { docsUrl: 'https://docs.example.com' } }))
+    routeAt('/')
+    const wrapper = mountClient(Sidebar, { props: { items: ITEMS, open: false } })
+
+    const link = wrapper.find('[data-testid="client-nav-documentation"]')
+    expect(link.exists()).toBe(true)
+    expect(link.attributes('href')).toBe('https://docs.example.com')
+    expect(link.attributes('rel')).toContain('noopener')
+  })
 })

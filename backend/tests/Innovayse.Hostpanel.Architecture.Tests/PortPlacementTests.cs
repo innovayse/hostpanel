@@ -55,7 +55,7 @@ public sealed class PortPlacementTests
         var offenders = new[]
             {
                 Layers.Application, Layers.Shared, Layers.Api,
-                Layers.Sdk, Layers.ProviderCwp, Layers.ProviderInecobank,
+                Layers.Sdk, Layers.ProviderCwp,
             }
             .SelectMany(Layers.AuthoredTypesOf)
             .Where(type => type.IsClass && !type.IsAbstract && !RequestScopedAdapters.ContainsKey(type))

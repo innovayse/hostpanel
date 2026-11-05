@@ -4,8 +4,8 @@ using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 
@@ -128,6 +128,6 @@ public sealed class SettingSecrecyTests
             }
         }
 
-        secrecy.IsSecret(IntegrationSettingKeys.FieldKey(IntegrationSlugs.Stripe, "mode")).Should().BeFalse();
+        secrecy.IsSecret(IntegrationSettingKeys.FieldKey(IntegrationSlugs.Smtp, "encryption")).Should().BeFalse();
     }
 }

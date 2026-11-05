@@ -3,10 +3,10 @@ using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
-using Innovayse.SDK.Plugins.Identity;
+using Hostpanel.Sdk.Plugins.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using PluginGrant = Innovayse.SDK.Plugins.Identity.ClientAccess;
+using PluginGrant = Hostpanel.Sdk.Plugins.Identity.ClientAccess;
 
 namespace Innovayse.Hostpanel.Infrastructure.Authorization;
 

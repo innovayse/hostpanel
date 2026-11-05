@@ -135,7 +135,7 @@ describe('billingStore mutations', () => {
     expect(await store.updateItems(5, [])).toBe(true)
     expect(await store.updateOptions(5, { invoiceDate: 'a', dueDate: 'b', paymentMethod: 'Manual', taxRate: 0 })).toBe(true)
     expect(await store.updateNotes(5, 'n')).toBe(true)
-    expect(await store.addPayment(5, { date: 'a', gateway: PaymentGateway.Stripe, transactionId: 't', amount: 1 })).toBe(true)
+    expect(await store.addPayment(5, { date: 'a', gateway: PaymentGateway.BankTransfer, transactionId: 't', amount: 1 })).toBe(true)
     expect(await store.applyCredit(5, 1)).toBe(true)
     expect(await store.removeCredit(5, 1)).toBe(true)
     expect(await store.refundPayment(5, { amount: 1, refundType: InvoiceRefundType.Gateway })).toBe(true)
@@ -145,7 +145,7 @@ describe('billingStore mutations', () => {
 
 describe('billingStore recordPayment', () => {
   /** A payment as the Offline CC screen builds it. */
-  const PAYMENT = { date: '2026-10-20T00:00:00.000Z', gateway: PaymentGateway.Stripe, transactionId: 'ref-1', amount: 25, fees: 0 }
+  const PAYMENT = { date: '2026-10-20T00:00:00.000Z', gateway: PaymentGateway.BankTransfer, transactionId: 'ref-1', amount: 25, fees: 0 }
 
   it('posts the payment to the invoice and does not reload it', async () => {
     const mock = stubFetch(new Response(null, { status: 204 }))

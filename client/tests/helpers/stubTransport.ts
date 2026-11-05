@@ -11,7 +11,7 @@
 import { ofetch } from 'ofetch'
 import { expect, vi } from 'vitest'
 import { startStubServer } from './stubServer'
-import type { StubReply, StubRequest, StubServer } from './stubServer'
+import type { StubHandler, StubServer } from './stubServer'
 import type { HttpMethod } from '~/types/httpmethod'
 
 /**
@@ -20,7 +20,7 @@ import type { HttpMethod } from '~/types/httpmethod'
  * @param reply Initial reply function; defaults to `200 {}`.
  * @returns The running stub; the caller closes it after the test.
  */
-export const startTransport = async (reply?: (request: StubRequest) => StubReply): Promise<StubServer> => {
+export const startTransport = async (reply?: StubHandler): Promise<StubServer> => {
   const stub = await startStubServer(reply)
   vi.stubGlobal('$fetch', ofetch.create({ baseURL: stub.baseUrl }))
   vi.stubGlobal('useNuxtApp', () => ({

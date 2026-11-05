@@ -13,13 +13,13 @@ import { createTestI18n } from '../../helpers/i18n'
  * @returns The wrapper.
  */
 const mountList = (overrides: Record<string, unknown> = {}) =>
-  mount(PluginKeptData, { props: { ids: ['ineco', 'acme'], purgingId: null, ...overrides }, global: { plugins: [createTestI18n()] } })
+  mount(PluginKeptData, { props: { ids: ['example-pay', 'acme'], purgingId: null, ...overrides }, global: { plugins: [createTestI18n()] } })
 
 describe('PluginKeptData', () => {
   it('lists every removed plugin with a purge button', () => {
     const wrapper = mountList()
 
-    expect(wrapper.get('[data-testid="plugin-kept-ineco"]').text()).toContain('ineco')
+    expect(wrapper.get('[data-testid="plugin-kept-example-pay"]').text()).toContain('example-pay')
     expect(wrapper.get('[data-testid="plugin-purge-acme"]').text()).toBe('Purge data')
   })
 
@@ -32,9 +32,9 @@ describe('PluginKeptData', () => {
   })
 
   it('disables the buttons and says purging while one purge runs', () => {
-    const wrapper = mountList({ purgingId: 'ineco' })
+    const wrapper = mountList({ purgingId: 'example-pay' })
 
-    expect(wrapper.get('[data-testid="plugin-purge-ineco"]').text()).toContain('Purging')
+    expect(wrapper.get('[data-testid="plugin-purge-example-pay"]').text()).toContain('Purging')
     expect(wrapper.get('[data-testid="plugin-purge-acme"]').attributes('disabled')).toBeDefined()
   })
 })

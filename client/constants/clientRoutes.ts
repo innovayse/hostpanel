@@ -104,6 +104,23 @@ export const CLIENT_PUBLIC_ROUTES: readonly string[] = [
  */
 export const clientServicePath = (id: number | string): string => `${CLIENT_SERVICES_PATH}/${id}`
 
+/** The root of the pages plugins add to the client area. */
+export const CLIENT_APPS_PATH = '/client/apps'
+
+/**
+ * Path of one plugin page.
+ *
+ * @param pluginId - The plugin id.
+ * @param pagePath - The page's path below the plugin's prefix with its parameters already filled and encoded,
+ *   e.g. `sites/7`; a leading `/` is ignored.
+ * @returns `/client/apps/<plugin>[/<path>]`, the plugin id percent-encoded.
+ */
+export const clientPluginPagePath = (pluginId: string, pagePath: string): string => {
+  const rest = pagePath.replace(/^\/+/, '')
+  const root = `${CLIENT_APPS_PATH}/${encodeURIComponent(pluginId)}`
+  return rest ? `${root}/${rest}` : root
+}
+
 /**
  * Path of one service's first-time setup wizard.
  *

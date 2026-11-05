@@ -41,6 +41,7 @@ export const migrationSkipReasonLabelKey: Record<MigrationSkipReason, string> = 
   [MigrationSkipReason.BillingCycleUnsupported]: 'migration.skipReason.billingCycleUnsupported',
   [MigrationSkipReason.NoProductLines]: 'migration.skipReason.noProductLines',
   [MigrationSkipReason.CurrencyInvalid]: 'migration.skipReason.currencyInvalid',
+  [MigrationSkipReason.ExternalIdInvalid]: 'migration.skipReason.externalIdInvalid',
 }
 
 /** Locale key of the caption per reason a job failed. */

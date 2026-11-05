@@ -1,6 +1,5 @@
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Products;
-using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Infrastructure.Persistence.Converters;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +23,12 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         // counts the dashboard and reports run.
         builder.HasIndex(x => x.ClientId);
         builder.HasIndex(x => new { x.Status, x.NextRenewalAt });
+
+        // The source system's service id, kept for migration de-duplication. A source id is unique
+        // only within one source, so it is unique per client, and only where one is set.
+        builder.HasIndex(x => new { x.ClientId, x.ExternalId })
+            .IsUnique()
+            .HasFilter("\"ExternalId\" IS NOT NULL");
 
         builder.Property(x => x.ClientId).IsRequired();
         builder.Property(x => x.ProductId).IsRequired();
@@ -49,8 +54,14 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         builder.Property(x => x.PaymentMethod).HasMaxLength(50);
         builder.Property(x => x.PromotionCode).HasMaxLength(50);
         builder.Property(x => x.SubscriptionId).HasMaxLength(256);
+        builder.Property(x => x.ExternalId).HasMaxLength(ClientService.MaxExternalIdLength);
         builder.Property(x => x.AutoTerminateReason).HasMaxLength(2000);
         builder.Property(x => x.AdminNotes).HasMaxLength(2000);
+
+        // Every SSH key add moves SshKeyRevision in the same save as the key, so the add updates this row and the row's
+        // xmin token (above) makes two adds of one service conflict; the loser recounts, so the per-service key limit
+        // holds. An unrelated save of the same service in that window conflicts too, which the installer retries.
+        builder.Property(x => x.SshKeyRevision).IsRequired().HasDefaultValue(0L);
         builder.Ignore(x => x.DomainEvents);
 
         // A client who still has this record cannot be deleted: billing, service and support history

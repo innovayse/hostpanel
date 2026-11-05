@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins.Fulfilment;
+using Hostpanel.Sdk.Plugins.Fulfilment;
 
 namespace Innovayse.Hostpanel.Application.Billing.Common;
 

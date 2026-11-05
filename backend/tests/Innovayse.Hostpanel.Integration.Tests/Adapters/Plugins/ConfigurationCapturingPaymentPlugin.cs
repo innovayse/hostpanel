@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins.Payment;
+using Hostpanel.Sdk.Plugins.Payment;
 using Microsoft.Extensions.Configuration;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;

@@ -148,6 +148,15 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the fulfilment records: one plugin told one thing about one invoice, and how far it got.</summary>
     public DbSet<FulfilmentRecord> FulfilmentRecords => Set<FulfilmentRecord>();
 
+    /// <summary>Gets the customers payment gateway modules keep for clients: one per client and module.</summary>
+    public DbSet<GatewayCustomer> GatewayCustomers => Set<GatewayCustomer>();
+
+    /// <summary>Gets the clients' consents to have a stored payment method charged without them present.</summary>
+    public DbSet<CardChargeConsent> CardChargeConsents => Set<CardChargeConsent>();
+
+    /// <summary>Gets the claims on invoices while a stored payment method charge is in flight.</summary>
+    public DbSet<InvoicePaymentClaim> InvoicePaymentClaims => Set<InvoicePaymentClaim>();
+
     /// <summary>Gets the transactions table.</summary>
     public DbSet<Transaction> Transactions => Set<Transaction>();
 
@@ -394,6 +403,39 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             throw new ConcurrencyConflictException(
                 "Another save bound the same plugin widget to the same product concurrently.", ex);
         }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: GatewayCustomerConfiguration.ClientModuleIndex,
+        })
+        {
+            // Two first requests for one client's customer at a gateway module ran at once: the same lost race as
+            // a concurrent save, so it takes the same path. The caller re-reads the customer the winner recorded.
+            throw new ConcurrencyConflictException(
+                "Another call recorded the same gateway customer concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: InvoicePaymentClaimConfiguration.UnresolvedInvoiceIndex,
+        })
+        {
+            // Two stored charges were started for one invoice at once: the loser writes no charge and answers that
+            // one is already in progress, so the invoice is never charged twice.
+            throw new ConcurrencyConflictException(
+                "Another call claimed the same invoice for a stored charge concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: SshKeyConfiguration.ServiceFingerprintIndex,
+        })
+        {
+            // Two adds recorded the same key on one service at once: the same lost race as a concurrent save. The SSH
+            // key installer counts again from a fresh read and then finds the key already there.
+            throw new ConcurrencyConflictException(
+                "Another add recorded the same SSH key on the service concurrently.", ex);
+        }
     }
 
     /// <inheritdoc/>
@@ -413,6 +455,12 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
         {
             entry.State = EntityState.Detached;
         }
+    }
+
+    /// <inheritdoc/>
+    public void Detach(object entity)
+    {
+        Entry(entity).State = EntityState.Detached;
     }
 
     /// <inheritdoc/>

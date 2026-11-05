@@ -1,5 +1,5 @@
-using Innovayse.SDK.Plugins.Payment;
-using Innovayse.SDK.Plugins.StoredCredentials;
+using Hostpanel.Sdk.Plugins.Payment;
+using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Microsoft.Extensions.Configuration;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;

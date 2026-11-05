@@ -49,7 +49,7 @@ describe('InvoiceOptionsTab', () => {
     expect(JSON.parse(String((put?.[1] as RequestInit | undefined)?.body))).toEqual({
       invoiceDate: '2026-10-14',
       dueDate: '2026-12-31',
-      paymentMethod: 'Stripe',
+      paymentMethod: 'Example Gateway',
       taxRate: 15,
     })
     expect(wrapper.get('[data-testid="billing-invoice-options-feedback"]').text()).toBe('Changes saved successfully.')

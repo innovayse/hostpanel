@@ -1,9 +1,9 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Manifest;
-using Innovayse.SDK.Plugins.Slots;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Slots;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Common;
 
@@ -13,7 +13,8 @@ namespace Innovayse.Hostpanel.Application.Plugins.Common;
 /// area's own handler before this runs, and nothing it returns depends on what a plugin would answer.
 /// </summary>
 /// <remarks>
-/// A widget is listed when its plugin is an app plugin that is loaded, switched on and configured (the same gates a
+/// A widget is listed when its plugin is a serving plugin (an app plugin, or any type declaring the <c>endpoints</c>
+/// capability, #818) that is loaded, switched on and configured (the same gates a
 /// plugin route passes, <see cref="IPluginEndpointResolver"/>), the operator has not hidden it
 /// (<see cref="PluginSettingKeys.HiddenSlotWidgets"/>), the viewer holds its permission (client slots) and the slot's
 /// service is one of the products it is bound to (the operator's binding when the widget was ever bound, even if
@@ -25,7 +26,7 @@ public sealed class PluginSlotIndexBuilder
     /// <summary>The plugins loaded at startup and their manifests.</summary>
     private readonly IPluginRegistry _registry;
 
-    /// <summary>Finds an app plugin and checks that it is switched on, without building it.</summary>
+    /// <summary>Finds a serving plugin and checks that it is switched on, without building it.</summary>
     private readonly IPluginEndpointResolver _plugins;
 
     /// <summary>Reads the operator's hidden widgets setting.</summary>
@@ -33,7 +34,7 @@ public sealed class PluginSlotIndexBuilder
 
     /// <summary>Initializes a new instance of the <see cref="PluginSlotIndexBuilder"/> class.</summary>
     /// <param name="registry">The plugins loaded at startup and their manifests.</param>
-    /// <param name="plugins">Finds an app plugin and checks that it is switched on, without building it.</param>
+    /// <param name="plugins">Finds a serving plugin and checks that it is switched on, without building it.</param>
     /// <param name="context">Reads the operator's hidden widgets setting.</param>
     public PluginSlotIndexBuilder(IPluginRegistry registry, IPluginEndpointResolver plugins, IPluginSlotContextReader context)
     {

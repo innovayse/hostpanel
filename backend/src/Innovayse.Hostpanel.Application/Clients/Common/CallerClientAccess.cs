@@ -1,5 +1,5 @@
 using Innovayse.Hostpanel.Domain.Clients.Enums;
-using Innovayse.SDK.Plugins.Identity;
+using Hostpanel.Sdk.Plugins.Identity;
 
 namespace Innovayse.Hostpanel.Application.Clients.Common;
 

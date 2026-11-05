@@ -11,7 +11,7 @@
  * Playwright starts it as the first `webServer` entry (see `playwright.config.ts`); the Nuxt
  * server is started with `API_URL` pointing here.
  *
- * Besides the backend routes it exposes six test-only endpoints:
+ * Besides the backend routes it exposes seven test-only endpoints:
  * - `GET  /__e2e/requests`: every request received so far (method, path, body and the
  *   `X-Language` it carried), so a spec can assert that a form submission really reached the
  *   backend with the right body and in the right language;
@@ -23,13 +23,17 @@
  *   the demo banner and the sign-in hint turns it on, until the next reset;
  * - `POST /__e2e/slides`: switches the home-page slides on; the feed is empty by default (the home shows the
  *   text hero), so only the spec that covers the slider turns them on, until the next reset;
+ * - `POST /__e2e/plugin-slots`: lists fake plugin widgets per slot (`{ "client.dashboard.cards": ["ok"] }`) until
+ *   the next reset; every slot is empty by default;
  * - `POST /__e2e/email-verified`: sets whether the signed-in address reads as confirmed (it does by default),
  *   so only the spec for the verification banner turns it off, until the next reset;
  * - `POST /__e2e/account`: overrides fields of the signed-in person's account (`GET /api/auth/me`), such as
  *   `clientPermissions` or `clientId`, so a spec can sign in a member without a permission or a first-time buyer, until the next reset;
+ * - `POST /__e2e/gateways`: adds the hosted card gateway to the gateway list (`GET /api/payment-methods`); only bank
+ *   transfer is offered by default, so only the specs for the saved methods and the invoice payment turn it on, until the next reset;
  * - `POST /__e2e/reset`: clears the log, the scripted answers, the settings overrides, demo mode and
  *   everything a spec changed: tickets, profile, services, the domain, payment methods, contacts,
- *   the team and the two-factor flag.
+ *   the team, the saved payment methods, the hosted gateway and the two-factor flag.
  *
  * Anything it does not know answers 404 with a problem+json body, exactly as the real API
  * does for an unknown route, so a missing fixture shows up as a visible failure and not as a
@@ -66,7 +70,13 @@ import {
   GATEWAY_DECLINED_INVOICE,
   GATEWAY_METHODS,
   GATEWAY_PAID_INVOICE,
+  GATEWAY_PAGE_URL,
   GATEWAY_PENDING_INVOICE,
+  HOSTED_GATEWAY,
+  STORED_CARD_DEFAULT,
+  STORED_CARD_NEW,
+  STORED_CARD_OTHER,
+  STORED_SESSION_ID,
   INVOICE,
   KB_ARTICLES,
   ORDER,
@@ -74,7 +84,6 @@ import {
   HOSTING_SPECIFICATIONS,
   productsIn,
   PUBLIC_SETTINGS,
-  SAVED_CARD,
   SEEDED_CONTACT,
   SEEDED_TICKET,
   SEEDED_TICKET_THREAD,
@@ -96,6 +105,15 @@ import {
   WHOIS_RECORD,
   TWO_FACTOR,
   TWO_FACTOR_REFUSED,
+  PLUGIN_CHAT_PAUSE_MS,
+  PLUGIN_CHAT_REPLY,
+  PLUGIN_ID,
+  PLUGIN_SITE,
+  pluginPage,
+  pluginUi,
+  SLOT_PLUGIN_ID,
+  SLOT_SLOW_VIEW_DELAY_MS,
+  SLOT_WIDGET_VIEWS,
 } from './fixtures.mjs'
 
 /**
@@ -160,8 +178,24 @@ let account = { ...ACCOUNT }
 /** Whether the stub reports a demo; off by default, a spec turns it on, a reset turns it off. */
 let demoEnabled = false
 
+/** Whether the gateway list also offers the hosted card gateway; off by default, a spec turns it on, a reset turns it off. */
+let hostedGatewayEnabled = false
+
+/**
+ * Builds the saved payment methods the stub starts with, so a reset can restore them.
+ *
+ * @returns {Record<string, unknown>[]} A fresh list: a default card and a second card.
+ */
+const seedStoredMethods = () => [{ ...STORED_CARD_DEFAULT }, { ...STORED_CARD_OTHER }]
+
+/** @type {Record<string, unknown>[]} The client's saved payment methods; a save, a revoke or a default change edits it, a reset restores it. */
+let storedMethods = seedStoredMethods()
+
 /** Whether the stub serves home-page slides; off by default, a spec turns it on, a reset turns it off. */
 let slidesEnabled = false
+
+/** @type {Record<string, string[]>} Widget ids each slot lists, by slot id; empty, so no slot output, until a spec scripts it. */
+let pluginSlots = {}
 
 /** Whether the stub reports the signed-in address as confirmed; on by default, a spec turns it off, a reset turns it on. */
 let emailVerified = true
@@ -199,9 +233,6 @@ let nameservers = seedNameservers()
  * @returns {Record<string, unknown>} The domain.
  */
 const domainView = () => ({ ...domainState, management: { ...DOMAIN.management, nameservers } })
-
-/** @type {Record<string, unknown>[]} The saved payment methods; a removal changes them, a reset restores them. */
-let savedCards = [{ ...SAVED_CARD }]
 
 /** @type {Record<string, unknown>[]} The account's contacts; an add, an edit and a removal change them. */
 let contacts = [{ ...SEEDED_CONTACT }]
@@ -297,6 +328,107 @@ const sendProblem = (res, status, code, detail, errors) => {
   send(res, status, { type: code, title: detail, status, detail, ...(errors ? { errors } : {}) }, 'application/problem+json')
 }
 
+/** @type {string} The fake plugin site's status; publishing sets it, a reset restores it. */
+let pluginSiteStatus = PLUGIN_SITE.status
+
+/**
+ * Streams the fake plugin's chat reply: one `delta` per piece with a pause between them, then `done`, keeping the
+ * response open until the last event, so a spec sees the reply grow while the stream runs (only an unbuffered path
+ * end to end allows that) and a stop ends it early.
+ *
+ * @param {import('node:http').ServerResponse} res The response.
+ * @returns {Promise<void>} Resolves when the stream ended or the browser left.
+ */
+const streamPluginChat = async (res) => {
+  res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no' })
+  for (const text of PLUGIN_CHAT_REPLY) {
+    if (res.destroyed) {
+      return
+    }
+    res.write(`event: delta\ndata: ${JSON.stringify({ text })}\n\n`)
+    await new Promise(resolve => setTimeout(resolve, PLUGIN_CHAT_PAUSE_MS))
+  }
+  res.end('event: done\ndata: {}\n\n')
+}
+
+/**
+ * Answers the fake app plugin `acme-sites`: the plugin index, the page lookup by address, and the plugin's own
+ * routes, including a streamed chat reply. Labels arrive already localised, as the real API sends them.
+ *
+ * @param {string} method HTTP method.
+ * @param {string} path Request path without the query string.
+ * @param {import('node:http').ServerResponse} res The response to write.
+ * @param {URLSearchParams} query The request's query string; the page lookup reads `path`.
+ * @param {string} language The request's `X-Language`.
+ * @returns {boolean} True when the route was handled.
+ */
+const routePlugin = (method, path, res, query, language) => {
+  const own = `/api/client/plugins/${PLUGIN_ID}`
+  if (method === 'GET' && path === '/api/client/plugins/ui') {
+    send(res, 200, pluginUi(language))
+    return true
+  }
+  // Plugin slots: the index lists the scripted widgets; a widget view answers its fixture, or the API's one 404.
+  const slotIndex = method === 'GET' ? /^\/api\/client\/plugins\/slots\/([a-z.]+)$/.exec(path) : null
+  if (slotIndex) {
+    const slotId = slotIndex[1]
+    const widgets = (pluginSlots[slotId] ?? []).map((id, order) => ({
+      pluginId: SLOT_PLUGIN_ID, id, view: `views/${id}.json`, title: `Widget ${id}`, order,
+      contextKeys: slotId === 'client.service.tabs' ? ['serviceId'] : [],
+    }))
+    send(res, 200, { slotId, widgets })
+    return true
+  }
+  const slotWidget = method === 'GET'
+    ? /^\/api\/client\/plugins\/slots\/([a-z.]+)\/widgets\/([a-z0-9-]+)\/([a-z0-9_-]+)$/.exec(path)
+    : null
+  if (slotWidget) {
+    const [, slotId, pluginId, widgetId] = slotWidget
+    const view = SLOT_WIDGET_VIEWS[widgetId]
+    if (pluginId !== SLOT_PLUGIN_ID || !view || !(pluginSlots[slotId] ?? []).includes(widgetId)) {
+      sendProblem(res, 404, 'PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND', 'This widget is not available.')
+      return true
+    }
+    const answer = { pluginId, id: widgetId, title: `Widget ${widgetId}`, externalOrigins: [], view }
+    if (widgetId === 'slow') {
+      // Answered late on purpose: the client must show its neutral note at 5 s, not wait for this.
+      setTimeout(() => send(res, 200, answer), SLOT_SLOW_VIEW_DELAY_MS)
+      return true
+    }
+    send(res, 200, answer)
+    return true
+  }
+  // The page lookup by address (#643). Every refusal is the same 404, whatever the cause, as the API answers it.
+  const lookup = /^\/api\/client\/plugins\/ui\/([^/]+)\/pages\/by-path$/.exec(path)
+  if (method === 'GET' && lookup) {
+    const view = lookup[1] === PLUGIN_ID ? pluginPage(query.get('path') ?? '', language) : null
+    if (view) {
+      send(res, 200, view)
+    } else {
+      sendProblem(res, 404, 'PLUGIN_PAGE_NOT_FOUND', 'This plugin page does not exist.')
+    }
+    return true
+  }
+  if (method === 'GET' && path === `${own}/sites`) {
+    send(res, 200, [{ id: PLUGIN_SITE.id, name: PLUGIN_SITE.name, status: pluginSiteStatus }])
+    return true
+  }
+  if (method === 'GET' && path === `${own}/sites/${PLUGIN_SITE.id}`) {
+    send(res, 200, { status: pluginSiteStatus })
+    return true
+  }
+  if (method === 'POST' && path === `${own}/sites/${PLUGIN_SITE.id}/publish`) {
+    pluginSiteStatus = 'published'
+    send(res, 204)
+    return true
+  }
+  if (method === 'POST' && path === `${own}/sites/${PLUGIN_SITE.id}/chat`) {
+    void streamPluginChat(res)
+    return true
+  }
+  return false
+}
+
 /**
  * Answers one backend route, or `false` when the stub has no fixture for it.
  *
@@ -305,10 +437,15 @@ const sendProblem = (res, status, code, detail, errors) => {
  * @param {unknown} body Parsed JSON body, or `null`.
  * @param {import('node:http').ServerResponse} res The response to write.
  * @param {URLSearchParams} [query] The request's query string, read by the routes that filter, page or price by `currency`.
+ * @param {string} [language] The request's `X-Language`, read by the routes that answer localised texts.
  * @returns {boolean} True when the route was handled.
  */
-const route = (method, path, body, res, query = new URLSearchParams()) => {
+const route = (method, path, body, res, query = new URLSearchParams(), language = 'en') => {
   const isGet = method === 'GET'
+
+  if (path.startsWith('/api/client/plugins/') && routePlugin(method, path, res, query, language)) {
+    return true
+  }
 
   // Public storefront data: read by the Nuxt server while rendering.
   if (isGet && path === '/api/settings/public') {
@@ -399,7 +536,7 @@ const route = (method, path, body, res, query = new URLSearchParams()) => {
     return true
   }
   if (isGet && path === '/api/payment-methods') {
-    send(res, 200, GATEWAY_METHODS)
+    send(res, 200, hostedGatewayEnabled ? [...GATEWAY_METHODS, HOSTED_GATEWAY] : GATEWAY_METHODS)
     return true
   }
 
@@ -592,10 +729,6 @@ const route = (method, path, body, res, query = new URLSearchParams()) => {
     send(res, 200, INVOICE)
     return true
   }
-  if (isGet && path === '/api/me/payment-methods') {
-    send(res, 200, savedCards)
-    return true
-  }
   // Hosted-gateway return: the invoice id picks the outcome (an unknown id is a 404, so the page cannot tell); the state is spelled as the API sends its enum.
   const gatewayMatch = path.match(/^\/api\/me\/invoices\/(\d+)\/gateway-payment\/complete$/)
   if (method === 'POST' && gatewayMatch) {
@@ -607,15 +740,20 @@ const route = (method, path, body, res, query = new URLSearchParams()) => {
     }
     return true
   }
+  // Hosted-gateway start: the stub answers the address of the bank's page; the id of an unknown invoice is a 404.
+  const gatewayStartMatch = path.match(/^\/api\/me\/invoices\/(\d+)\/gateway-payment\/start$/)
+  if (method === 'POST' && gatewayStartMatch) {
+    if (gatewayStartMatch[1] === String(INVOICE.id)) {
+      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL })
+    } else {
+      sendProblem(res, 404, 'NOT_FOUND', 'Invoice not found.')
+    }
+    return true
+  }
   if (method === 'POST' && path === '/api/auth/accept-invite') {
     send(res, 200, { success: true })
     return true
   }
-  if (method === 'POST' && path === `/api/me/invoices/${INVOICE.id}/pay`) {
-    send(res, 200, { success: true })
-    return true
-  }
-
   // Order placement: the order, its invoice and the token that proves the order is the caller's.
   if (method === 'POST' && path === '/api/orders') {
     send(res, 200, ORDER)
@@ -627,7 +765,7 @@ const route = (method, path, body, res, query = new URLSearchParams()) => {
 
 /**
  * Answers the routes of the client area's management screens: one service, one domain, the
- * account's payment methods, contacts, team and two-factor.
+ * account's contacts, team and two-factor.
  *
  * @param {string} method HTTP method.
  * @param {string} path Request path without the query string.
@@ -774,20 +912,6 @@ const routeManagement = (method, path, body, res) => {
     }
   }
 
-  // Saved payment methods: set the default, remove.
-  const cardMatch = path.match(/^\/api\/me\/payment-methods\/([^/]+)$/)
-  if (cardMatch && (method === 'PUT' || method === 'DELETE')) {
-    if (!savedCards.some((card) => card.id === cardMatch[1])) {
-      sendProblem(res, 404, 'NOT_FOUND', 'Payment method not found.')
-      return true
-    }
-    if (method === 'DELETE') {
-      savedCards = savedCards.filter((card) => card.id !== cardMatch[1])
-    }
-    send(res, 204)
-    return true
-  }
-
   // Contacts of the account, kept in memory so an add, an edit and a removal show on the next read.
   if (isGet && path === '/api/clients/me/contacts') {
     send(res, 200, contacts)
@@ -837,6 +961,41 @@ const routeManagement = (method, path, body, res) => {
     return true
   }
 
+  // Saved payment methods: list, open a save session (a redirect to the gateway), complete it on return,
+  // make one the default and withdraw the consent.
+  if (isGet && path === '/api/me/stored-payment-methods') {
+    send(res, 200, storedMethods)
+    return true
+  }
+  if (method === 'POST' && path === '/api/me/stored-payment-methods/sessions') {
+    send(res, 200, { sessionId: STORED_SESSION_ID, mode: 'Redirect', clientToken: null, redirectUrl: GATEWAY_PAGE_URL })
+    return true
+  }
+  const completeMatch = path.match(/^\/api\/me\/stored-payment-methods\/sessions\/([^/]+)\/complete$/)
+  if (method === 'POST' && completeMatch) {
+    if (completeMatch[1] !== STORED_SESSION_ID) {
+      sendProblem(res, 404, 'NOT_FOUND', 'No such save session.')
+      return true
+    }
+    if (!storedMethods.some((m) => m.consentId === STORED_CARD_NEW.consentId)) {
+      storedMethods = [...storedMethods, { ...STORED_CARD_NEW }]
+    }
+    send(res, 200, STORED_CARD_NEW)
+    return true
+  }
+  const defaultMatch = path.match(/^\/api\/me\/stored-payment-methods\/consents\/(\d+)\/default$/)
+  if (method === 'POST' && defaultMatch) {
+    storedMethods = storedMethods.map((m) => ({ ...m, isDefault: String(m.consentId) === defaultMatch[1] }))
+    send(res, 204)
+    return true
+  }
+  const consentMatch = path.match(/^\/api\/me\/stored-payment-methods\/consents\/(\d+)$/)
+  if (method === 'DELETE' && consentMatch) {
+    storedMethods = storedMethods.filter((m) => String(m.consentId) !== consentMatch[1])
+    send(res, 204)
+    return true
+  }
+
   // Two-factor: enrolment, then the flag on the profile follows the accepted code.
   if (method === 'POST' && path === '/api/me/2fa/setup') {
     send(res, 200, { secret: TWO_FACTOR.secret, qrCodeUri: TWO_FACTOR.qrCodeUri })
@@ -883,7 +1042,10 @@ const server = createServer(async (req, res) => {
     scripted.clear()
     settingOverrides.clear()
     demoEnabled = false
+    hostedGatewayEnabled = false
+    storedMethods = seedStoredMethods()
     slidesEnabled = false
+    pluginSlots = {}
     account = { ...ACCOUNT }
     emailVerified = true
     tickets = seedTickets()
@@ -891,10 +1053,10 @@ const server = createServer(async (req, res) => {
     services = seedServices()
     domainState = { ...DOMAIN }
     nameservers = seedNameservers()
-    savedCards = [{ ...SAVED_CARD }]
     contacts = [{ ...SEEDED_CONTACT }]
     team = [{ ...TEAM_OWNER }, { ...TEAM_MEMBER }]
     sshKeys = []
+    pluginSiteStatus = PLUGIN_SITE.status
     lastSshKey = 0
     lastContactId = Number(SEEDED_CONTACT.id)
     send(res, 204)
@@ -923,6 +1085,17 @@ const server = createServer(async (req, res) => {
     send(res, 204)
     return
   }
+  if (path === '/__e2e/gateways') {
+    const gateways = await readJson(req)
+    hostedGatewayEnabled = gateways.hosted === true
+    send(res, 204)
+    return
+  }
+  if (path === '/__e2e/plugin-slots') {
+    pluginSlots = await readJson(req)
+    send(res, 204)
+    return
+  }
   if (path === '/__e2e/slides') {
     const slides = await readJson(req)
     slidesEnabled = slides.enabled === true
@@ -942,7 +1115,7 @@ const server = createServer(async (req, res) => {
   if (answerScripted(method, path, res)) {
     return
   }
-  if (!route(method, path, body, res, url.searchParams)) {
+  if (!route(method, path, body, res, url.searchParams, String(req.headers['x-language'] ?? 'en'))) {
     sendProblem(res, 404, 'NOT_FOUND', `No e2e fixture for ${method} ${path}.`)
   }
 })

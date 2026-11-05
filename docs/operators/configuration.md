@@ -127,8 +127,8 @@ Updating to a release that moves the sign-on client package to 5.1 resets the ad
   { name: 'ADMIN_BASE_URL_PATH', type: 'string', default: '/', description: 'Base path the admin SPA is served under (/ or /admin). Read by the admin container at start, not at build. Tiers: hub, prod.' },
   { name: 'ALLOWED_HOSTS', type: 'string', default: 'panel.example.test;hostpanel-api;localhost', description: 'Host names the API answers to, semicolon-separated. Include the public host, hostpanel-api and localhost. Required. Tiers: all.' },
   { name: 'PANEL_DEV_ORIGIN', type: 'string', default: 'http://panel.example.test', description: 'Dev-proxy origin the API allows alongside localhost (CORS). Tiers: dev.' },
-  { name: 'SSH_AGENT_SOURCE_ADDRESSES', type: 'string', default: '', description: 'Public address(es) this installation connects to SSH key agents from, comma-separated. New in next release. Tiers: prod, hub.' },
-  { name: 'PANEL_HOST_ADDRESSES', type: 'string', default: '', description: 'Control panels reachable only over a VPN, as hostname=address pairs, comma-separated. New in next release. Tiers: prod, hub.' },
+  { name: 'SSH_AGENT_SOURCE_ADDRESSES', type: 'string', default: '', description: 'Public address(es) this installation connects to SSH key agents from, comma-separated. New in 0.4.0. Tiers: prod, hub.' },
+  { name: 'PANEL_HOST_ADDRESSES', type: 'string', default: '', description: 'Control panels reachable only over a VPN, as hostname=address pairs, comma-separated. New in 0.4.0. Tiers: prod, hub.' },
 ]" />
 
 Servers → SSH shows the exact firewall rules once SSH_AGENT_SOURCE_ADDRESSES is set. See [SSH key agent](/servers/ssh-key-agent).
@@ -233,6 +233,8 @@ The following settings are set directly on the API service in a compose override
 | `RateLimit__PluginStrict__WindowSeconds` | `60` | Plugin strict window length in seconds |
 | `RateLimit__PluginHeavy__PermitLimit` | `6` | Limit per window for a plugin route that asks for the heavy tier (reports, exports) |
 | `RateLimit__PluginHeavy__WindowSeconds` | `60` | Plugin heavy window length in seconds |
+| `RateLimit__PluginCallback__PermitLimit` | `120` | Limit per window for the public plugin callback door (`/api/plugins/{id}/callback/...`). Counted per caller address over every plugin and path, declared or not |
+| `RateLimit__PluginCallback__WindowSeconds` | `60` | Plugin callback window length in seconds |
 | `RateLimit__PluginStreamPermitLimit` | `3` | Streaming plugin routes one caller may hold open at once, per plugin |
 | `SignInLockout__MaxFailedAttempts` | `5` | Wrong passwords before lockout |
 | `SignInLockout__LockoutMinutes` | `15` | Minutes an account stays locked (locked sign-in → 423) |
@@ -240,6 +242,8 @@ The following settings are set directly on the API service in a compose override
 MaxFailedAttempts accepts 1–100, LockoutMinutes accepts 1–1440. Values outside these ranges refuse startup.
 
 Plugin routes are limited per plugin and per caller, so one plugin or one account cannot use up the API. A plugin route declares its tier in the plugin manifest (`rateLimit`: `default`, `strict` or `heavy`); a route that declares none uses the default tier. A refused request answers 429 with `Retry-After` and `X-RateLimit-Remaining`. Every plugin tier must be positive and no larger than `RateLimit__Global__PermitLimit`, the tiers must be ordered heavy <= strict <= default, and `RateLimit__PluginStreamPermitLimit` must be positive, or startup is refused.
+
+The public plugin callback door (`/api/plugins/{id}/callback/...`) is rate limited per caller address, and that address is the one the forwarded headers resolve to. It only works as intended when the forwarded headers are configured: set `RateLimit__TrustedProxyCount` to the number of proxies in front of the API and list them in `RateLimit__KnownProxies` or `RateLimit__KnownNetworks` (the bundled stacks do this through `STACK_NETWORK_SUBNET`). Behind an unconfigured proxy every gateway call shares the proxy's address and one burst refuses all callbacks; with too many trusted hops a sender can write its own `X-Forwarded-For` and pick its own bucket. The API ignores `X-Forwarded-For` from any peer that is not a configured proxy.
 
 ## Edge proxy
 
@@ -252,7 +256,7 @@ The edge layer (Caddy on hub, nginx on prod) terminates TLS and routes to the AP
   { name: 'ACME_EMAIL', type: 'string', default: 'admin@yourdomain.com', description: 'Contact address for Let\'s Encrypt certificates. Set by installer. Required for hub. Tiers: hub.' },
   { name: 'EDGE_MAX_BODY_SIZE', type: 'string', default: '50M', description: 'Largest request body on the client portal host. Use the M suffix (e.g., 50M). Tiers: hub, prod.' },
   { name: 'EDGE_ADMIN_MAX_BODY_SIZE', type: 'string', default: '1M', description: 'Largest request body on the admin host. Tiers: hub, prod.' },
-  { name: 'EDGE_CLIENT_CSP_SOURCES', type: 'string', default: '', description: 'Extra origins the client portal\'s CSP allows (space-separated). Tiers: hub, prod.' },
+  { name: 'EDGE_CLIENT_CSP_SOURCES', type: 'string', default: '', description: 'Extra origins the client portal\'s CSP allows (space-separated). Add the script and API origins a payment plugin\'s checkout needs; the default policy names no gateway. Tiers: hub, prod.' },
   { name: 'NGINX_HTTP_PORT', type: 'string', default: '80', description: 'Host HTTP port for the bundled nginx (prod stack, no platform overlay). Tiers: prod.' },
   { name: 'NGINX_HTTPS_PORT', type: 'string', default: '443', description: 'Host HTTPS port for the bundled nginx. Tiers: prod.' },
 ]" />
@@ -260,7 +264,7 @@ The edge layer (Caddy on hub, nginx on prod) terminates TLS and routes to the AP
 ## Images and versions
 
 <SettingTable :settings="[
-  { name: 'IMAGE_TAG', type: 'string', default: 'local', description: 'Release to run, e.g., 1.4.0 or latest. No leading v. Required for hub and prod. Tiers: hub, prod.' },
+  { name: 'IMAGE_TAG', type: 'string', default: 'local', description: 'Release to run, e.g., 0.4.0 or latest. No leading v. Required for hub and prod. Tiers: hub, prod.' },
   { name: 'DOCKERHUB_NAMESPACE', type: 'string', default: 'innovayse', description: 'Docker Hub user/organisation for hub stack images. Tiers: hub.' },
   { name: 'IMAGE_REGISTRY', type: 'string', default: 'registry.example.com/hostpanel', description: 'Registry path for prod stack images (e.g., registry.example.com/hostpanel). Required for prod. Tiers: prod.' },
   { name: 'POSTGRES_IMAGE', type: 'string', default: 'see .env.example', description: 'Full postgres image reference, pinned to a digest. Tiers: all.' },
@@ -337,7 +341,6 @@ All these settings control the public-facing storefront and have NUXT_PUBLIC_POR
 
 <SettingTable :settings="[
   { name: 'BILLING_PORTAL_URL', type: 'string', default: '', description: 'Billing portal address (no trailing slash). Left empty, handoff links are hidden. Tiers: all.' },
-  { name: 'STRIPE_PUBLISHABLE_KEY', type: 'string', default: '', description: 'Stripe publishable key for the browser card form. Empty disables the card form. Tiers: all.' },
 ]" />
 
 

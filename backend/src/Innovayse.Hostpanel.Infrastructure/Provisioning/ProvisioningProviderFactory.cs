@@ -8,7 +8,7 @@ using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
 using Innovayse.Hostpanel.Infrastructure.Resilience;
 using Innovayse.Providers.CWP7;
 using Innovayse.Providers.CWP7.Models;
-using Innovayse.SDK.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -96,7 +96,9 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
             throw new InvalidOperationException($"Server '{server.Name}' (id={server.Id}) has no access hash configured.");
         }
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
         var connection = new PleskConnection(HostingPanelAddress.BaseUrl(server.Hostname, _options.Value.PleskPort), apiKey);
+#pragma warning restore CS0618
         var client = new PleskApiClient(
             _httpClientFactory.CreateClient(HttpClientNames.Plesk),
             _loggerFactory.CreateLogger<PleskApiClient>());
@@ -126,10 +128,12 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
         }
 
         var options = _options.Value;
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
         var connection = new Cwp7Connection(
             HostingPanelAddress.BaseUrl(server.Hostname, options.Cwp7ApiPort),
             apiKey,
             HostingPanelAddress.BaseUrl(server.Hostname, options.Cwp7UserPanelPort));
+#pragma warning restore CS0618
         var serverIp = server.IpAddress ?? server.Hostname;
 
         var httpClient = _httpClientFactory.CreateClient(HttpClientNames.Cwp7);

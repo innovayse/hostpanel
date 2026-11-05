@@ -58,7 +58,6 @@ public sealed class DemoServiceRegistrationTests
     {
         var (services, _) = Build(ValidSettings());
 
-        ImplementationOf<ICardPaymentGateway>(services).Should().Be<DemoCardPaymentGateway>();
         ImplementationOf<IPaymentPluginResolver>(services).Should().Be<DemoPaymentPluginResolver>();
         ImplementationOf<IRegistrarProvider>(services).Should().Be<DemoRegistrarProvider>();
         ImplementationOf<IRegistrarProviderFactory>(services).Should().Be<DemoRegistrarProviderFactory>();
@@ -105,7 +104,6 @@ public sealed class DemoServiceRegistrationTests
     {
         var (services, provider) = Build(new Dictionary<string, string?>());
 
-        services.Should().NotContain(d => d.ServiceType == typeof(ICardPaymentGateway));
         services.Should().NotContain(d => d.ServiceType == typeof(IRegistrarProvider));
         ImplementationOf<IDemoDataManager>(services).Should().Be<DisabledDemoDataManager>();
         provider.GetRequiredService<IOptions<DemoOptions>>().Value.Enabled.Should().BeFalse();

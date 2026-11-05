@@ -44,19 +44,15 @@ public sealed class PluginSlotProductBinding : BaseEntity, IAggregateRoot
     }
 
     /// <summary>Binds a widget to one product. The only way a row comes into existence.</summary>
-    /// <param name="pluginId">The plugin that declares the widget; meets the plugin id rule.</param>
+    /// <param name="pluginId">The plugin that declares the widget; not empty. The plugin id rule is checked by the use case's validator.</param>
     /// <param name="slotId">The slot the widget is placed in.</param>
     /// <param name="widgetId">The widget id within the plugin.</param>
     /// <param name="productId">The product, positive.</param>
     /// <returns>The new, unsaved binding.</returns>
-    /// <exception cref="ArgumentException">An id is empty or too long, the plugin id breaks its rule, or the product id is not positive.</exception>
+    /// <exception cref="ArgumentException">An id is empty or too long, or the product id is not positive.</exception>
     public static PluginSlotProductBinding Create(string pluginId, string slotId, string widgetId, int productId)
     {
-        if (!PluginIdentifier.IsValid(pluginId))
-        {
-            throw new ArgumentException("The plugin id breaks the plugin id rule.", nameof(pluginId));
-        }
-
+        ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
         EnsureId(slotId, nameof(slotId));
         EnsureId(widgetId, nameof(widgetId));
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(productId);

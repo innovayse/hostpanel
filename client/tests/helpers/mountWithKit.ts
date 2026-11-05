@@ -90,6 +90,8 @@ export interface MountWithKitOptions {
   stubs?: Record<string, Component | boolean>
   /** Extra components registered globally for this mount, by the name Nuxt would auto-import them under. */
   components?: Record<string, Component>
+  /** Template globals replacing the defaults, such as a `$t` that also echoes its parameters. */
+  mocks?: Record<string, unknown>
   /** Mount into the document so focus and `document` listeners work. */
   attachToBody?: boolean
   /** A Pinia the test filled before mounting; a fresh one is created when omitted. */
@@ -116,7 +118,7 @@ export const mountWithKit = (component: Component, options: MountWithKitOptions 
     global: {
       plugins: [pinia],
       components: { LayoutDemoBanner, ...config.global.components, ...KIT, ...options.components, NuxtLink: NuxtLinkStub, NuxtImg: NuxtImgStub, Icon: IconStub, ClientOnly: ClientOnlyStub },
-      mocks: { $t: (key: string) => key },
+      mocks: { $t: (key: string) => key, ...options.mocks },
       stubs: { teleport: true, ...options.stubs },
       config: options.errorHandler ? { errorHandler: options.errorHandler } : {},
     },

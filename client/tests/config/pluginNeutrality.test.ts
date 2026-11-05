@@ -34,10 +34,10 @@ const SCANNED = [
 ] as const
 
 /**
- * Files that still name a built-in provider: the payment module type. This list only shrinks; an entry
- * whose file no longer names a plugin fails the stale-entry check below.
+ * Files that still name a built-in provider. Empty: the portal names no plugin. An entry whose file no
+ * longer names a plugin fails the stale-entry check below, so the list can only shrink.
  */
-const LEGACY_BUILT_IN: readonly string[] = ['types/paymentmodule.ts']
+const LEGACY_BUILT_IN: readonly string[] = []
 
 /** Every authored source of the client portal. */
 const sources = readSources(CLIENT_ROOT, SCANNED)

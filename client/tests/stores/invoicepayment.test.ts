@@ -1,7 +1,7 @@
 /**
  * Tests for `stores/invoicepayment.ts`.
  *
- * The store, not the payment page, owns the in-flight flag, the success flag and the refusal
+ * The store, not the payment page, owns the in-flight flag and the refusal
  * sentence, so these assertions pin the contract the page renders from.
  *
  * @module tests/stores/invoicepayment.test
@@ -13,17 +13,11 @@ import { ref } from 'vue'
 import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
 import { PaymentTarget } from '~/types/paymenttarget'
 
-/** The mocked saved-method payment call, re-created for every test. */
-const payInvoiceMock = vi.fn()
-
 /** The mocked hosted-gateway start call, re-created for every test. */
 const startGatewayMock = vi.fn()
 
 /** The mocked invoice read. */
 const fetchInvoiceMock = vi.fn()
-
-/** The mocked saved-methods read. */
-const fetchPaymentMethodsMock = vi.fn()
 
 /** The mocked gateway-list read. */
 const fetchGatewayMethodsMock = vi.fn()
@@ -46,10 +40,8 @@ vi.mock('~/composables/apis/useBillingApi', () => ({
    * @returns Only the endpoints the tests reach for.
    */
   useBillingApi: () => ({
-    payInvoice: payInvoiceMock,
     startInvoiceGatewayPayment: startGatewayMock,
     fetchInvoice: fetchInvoiceMock,
-    fetchPaymentMethods: fetchPaymentMethodsMock,
     fetchGatewayMethods: fetchGatewayMethodsMock,
     completeGatewayPayment: completeGatewayMock,
     fetchInvoicePdf: fetchInvoicePdfMock
@@ -59,39 +51,6 @@ vi.mock('~/composables/apis/useBillingApi', () => ({
 vi.mock('~/utils/saveBlob', () => ({ saveBlob: saveBlobMock }))
 
 const { useInvoicePaymentStore } = await import('~/stores/invoicepayment')
-const { ActionOutcome } = await import('~/types/actionoutcome')
-
-describe('useInvoicePaymentStore.payWithSavedMethod', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    payInvoiceMock.mockReset()
-  })
-
-  it('reports Succeeded, sets paySuccess and releases the in-flight flag', async () => {
-    payInvoiceMock.mockResolvedValue({})
-    const store = useInvoicePaymentStore()
-
-    const outcome = await store.payWithSavedMethod('7', 'pm_1', 'attempt-1')
-
-    expect(outcome).toBe(ActionOutcome.Succeeded)
-    expect(payInvoiceMock).toHaveBeenCalledWith('7', 'pm_1', 'attempt-1')
-    expect(store.paySuccess).toBe(true)
-    expect(store.submitting).toBe(false)
-    expect(store.error).toBe('')
-  })
-
-  it('reports Failed and keeps the refusal sentence as state', async () => {
-    payInvoiceMock.mockRejectedValue({ data: { detail: 'Card declined.' } })
-    const store = useInvoicePaymentStore()
-
-    const outcome = await store.payWithSavedMethod('7', 'pm_1', 'attempt-1')
-
-    expect(outcome).toBe(ActionOutcome.Failed)
-    expect(store.paySuccess).toBe(false)
-    expect(store.submitting).toBe(false)
-    expect(store.error).not.toBe('')
-  })
-})
 
 describe('useInvoicePaymentStore.startGatewayPayment', () => {
   beforeEach(() => {
@@ -132,7 +91,7 @@ describe('useInvoicePaymentStore.startGatewayPayment', () => {
     expect(store.error).not.toBe('')
   })
 
-  it('reset clears every flag and the sentence', async () => {
+  it('reset clears the flag and the sentence', async () => {
     startGatewayMock.mockRejectedValue(new Error('down'))
     const store = useInvoicePaymentStore()
     await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
@@ -140,7 +99,6 @@ describe('useInvoicePaymentStore.startGatewayPayment', () => {
     store.reset()
 
     expect(store.error).toBe('')
-    expect(store.paySuccess).toBe(false)
     expect(store.submitting).toBe(false)
   })
 })
@@ -149,7 +107,6 @@ describe('useInvoicePaymentStore reads', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     fetchInvoiceMock.mockReset()
-    fetchPaymentMethodsMock.mockReset()
     fetchGatewayMethodsMock.mockReset()
     completeGatewayMock.mockReset()
   })
@@ -167,24 +124,22 @@ describe('useInvoicePaymentStore reads', () => {
     expect(store.invoiceLoading).toBe(false)
   })
 
-  it('reads the saved and hosted methods, and picks the first plugin-backed gateway', async () => {
-    fetchPaymentMethodsMock.mockResolvedValue([{ id: 'pm_1' }])
+  it('reads the gateways and picks the first plugin-backed gateway', async () => {
     fetchGatewayMethodsMock.mockResolvedValue([
-      { module: 'stripe', displayName: 'Card' },
       { module: 'bank_transfer', displayName: 'Bank' },
-      { module: 'inecobank', displayName: 'Inecobank' }
+      { module: 'hosted_gateway', displayName: 'Hosted gateway' },
+      { module: 'card_gateway', displayName: 'Card' }
     ])
     const store = useInvoicePaymentStore()
 
     await store.loadPaymentOptions()
 
-    expect(store.savedMethods).toHaveLength(1)
-    expect(store.hostedGatewayModule).toBe('inecobank')
+    expect(store.gatewayMethods).toHaveLength(3)
+    expect(store.hostedGatewayModule).toBe('hosted_gateway')
   })
 
-  it('has no hosted gateway when only the built-ins are offered', async () => {
-    fetchPaymentMethodsMock.mockResolvedValue([])
-    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'stripe', displayName: 'Card' }])
+  it('has no hosted gateway when only the bank transfer is offered', async () => {
+    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'bank_transfer', displayName: 'Bank' }])
     const store = useInvoicePaymentStore()
 
     await store.loadPaymentOptions()
@@ -192,15 +147,20 @@ describe('useInvoicePaymentStore reads', () => {
     expect(store.hostedGatewayModule).toBeNull()
   })
 
-  it('leaves a list empty when its read fails and keeps the other', async () => {
-    fetchPaymentMethodsMock.mockRejectedValue(new Error('down'))
-    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'inecobank', displayName: 'I' }])
+  it('leaves the gateway list empty and keeps a sentence when its read fails, then clears it on a good read', async () => {
+    fetchGatewayMethodsMock.mockRejectedValueOnce({ data: { detail: 'down' } })
     const store = useInvoicePaymentStore()
 
     await store.loadPaymentOptions()
 
-    expect(store.savedMethods).toEqual([])
-    expect(store.hostedGatewayModule).toBe('inecobank')
+    expect(store.gatewayMethods).toEqual([])
+    expect(store.hostedGatewayModule).toBeNull()
+    expect(store.optionsError).toBe('down')
+
+    fetchGatewayMethodsMock.mockResolvedValue([])
+    await store.loadPaymentOptions()
+
+    expect(store.optionsError).toBe('')
   })
 })
 

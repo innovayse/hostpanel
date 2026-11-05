@@ -268,6 +268,6 @@ pipeline's commit) when missing.
 
 Every deploy job (staging, demo, production and the production rollback) runs `git submodule sync --recursive`
 and `git submodule update --init --recursive` after it checks out its `DEPLOY_DIR`: the plugin SDK
-(`backend/src/Innovayse.SDK`) is a submodule from its own public repository, so the host must be able to fetch it.
+(`backend/src/Hostpanel.Sdk`) is a submodule from its own public repository, so the host must be able to fetch it.
 
 The demo's GitLab scope is `demo/hostpanel`.

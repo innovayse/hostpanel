@@ -1,38 +1,41 @@
 /**
- * Flow: client dashboard -> invoice -> pay page.
+ * Flow: paying an invoice through a hosted gateway.
  *
- * A signed-in customer opens an unpaid invoice from the dashboard, goes to its pay page and pays
- * with the saved card. Checks the payment really went to the backend for that invoice.
+ * With a gateway enabled the pay page offers one button that starts the payment and hands the
+ * browser to the gateway's page; with none it says online payment is unavailable and shows no
+ * button and no security notice.
  */
 import { expect, test } from './support/test'
-import { INVOICE } from './support/fixtures.mjs'
-import { resetStub, signIn, stubRequests, waitForHydration } from './support/helpers'
+import { GATEWAY_PAGE_URL, HOSTED_GATEWAY, INVOICE } from './support/fixtures.mjs'
+import { enableHostedGateway, resetStub, signIn, stubRequests, waitForHydration } from './support/helpers'
 
-test('a customer pays an unpaid invoice with a saved card', async ({ page, context, request, baseURL }) => {
+test.beforeEach(async ({ context, request, baseURL }) => {
   await resetStub(request)
   await signIn(context, baseURL ?? 'http://127.0.0.1:3100')
+})
 
-  await page.goto('/client/dashboard')
+test('the gateway button starts the payment and leaves for the gateway page', async ({ page, request }) => {
+  await enableHostedGateway(request)
+  await page.goto(`/client/invoices/${INVOICE.id}/pay`)
   await waitForHydration(page)
-  await expect(page.getByTestId('dashboard-title')).toBeVisible()
 
-  // Dashboard -> the invoice.
-  await page.getByTestId(`dashboard-invoice-${INVOICE.id}`).click()
-  await expect(page).toHaveURL(new RegExp(`/client/invoices/${INVOICE.id}$`))
-  await expect(page.getByTestId('invoice-heading')).toBeVisible()
+  await expect(page.getByTestId('invoice-pay-security')).toBeVisible()
+  await expect(page.getByTestId('invoice-pay-unavailable')).toHaveCount(0)
 
-  // Invoice -> its pay page.
-  await page.getByTestId('invoice-pay-now').click()
-  await expect(page).toHaveURL(new RegExp(`/client/invoices/${INVOICE.id}/pay$`))
+  const leaving = page.waitForRequest(r => r.url().startsWith(GATEWAY_PAGE_URL))
+  await page.getByTestId('invoice-pay-hosted').click()
+  await leaving
 
-  // Pay with the preselected saved card.
-  await page.getByTestId('invoice-pay-submit').click()
-  await expect(page.getByTestId('invoice-pay-success')).toBeVisible()
-  await expect(page.getByTestId('invoice-pay-error')).toHaveCount(0)
+  const sent = (await stubRequests(request)).find(r => r.method === 'POST' && r.path === `/api/me/invoices/${INVOICE.id}/gateway-payment/start`)
+  expect(sent?.body).toMatchObject({ module: HOSTED_GATEWAY.module })
+})
 
-  const requests = await stubRequests(request)
-  const pay = requests.find(r => r.method === 'POST' && r.path === `/api/me/invoices/${INVOICE.id}/pay`)
-  expect(pay).toBeDefined()
-  // Each pay action carries its own attempt id, the key the backend deduplicates the charge by.
-  expect(pay?.body).toEqual({ paymentMethodId: expect.any(String), attemptId: expect.stringMatching(/^[0-9a-f-]{36}$/) })
+test('without a gateway the page says online payment is unavailable and offers no button or notice', async ({ page }) => {
+  await page.goto(`/client/invoices/${INVOICE.id}/pay`)
+  await waitForHydration(page)
+
+  await expect(page.getByTestId('invoice-pay-unavailable')).toBeVisible()
+  await expect(page.getByTestId('invoice-pay-hosted')).toHaveCount(0)
+  await expect(page.getByTestId('invoice-pay-security')).toHaveCount(0)
+  await expect(page.getByTestId('invoice-pay-options-error')).toHaveCount(0)
 })

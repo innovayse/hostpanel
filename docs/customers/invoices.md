@@ -6,7 +6,7 @@ title: Invoices and paying
 
 ## Your invoices
 
-<!-- See it in the demo: link goes here (#615) -->
+<DemoLink clientPath="/client/invoices" />
 
 Go to **Invoices**. The page has three tabs: **All**, **Unpaid** and **Paid**. Click an invoice to open it.
 
@@ -29,7 +29,7 @@ Draft invoices are not shown to customers.
 
 ## Pay an invoice
 
-<!-- See it in the demo: link goes here (#615) -->
+<DemoLink clientPath="/client/invoices" />
 
 <Steps>
 <li>

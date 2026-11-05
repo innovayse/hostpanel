@@ -37,27 +37,27 @@ describe('IntegrationDetailView', () => {
   })
 
   it('shows the breadcrumb, the form and the status sidebar', async () => {
-    stubRoutes({ 'GET /api/admin/integrations/stripe': () => json(integrationDetail()) })
-    const wrapper = await mountDetail('stripe')
+    stubRoutes({ 'GET /api/admin/integrations/bank-transfer': () => json(integrationDetail()) })
+    const wrapper = await mountDetail('bank-transfer')
 
-    expect(wrapper.get('[data-testid="integration-breadcrumb"]').text()).toContain('Stripe')
+    expect(wrapper.get('[data-testid="integration-breadcrumb"]').text()).toContain('Bank Transfer')
     expect(wrapper.find('[data-testid="integration-config-form"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="integration-status"]').exists()).toBe(true)
   })
 
   it('shows the API sentence when the integration cannot be loaded', async () => {
-    stubRoutes({ 'GET /api/admin/integrations/stripe': () => problem('Not available.', 503) })
-    const wrapper = await mountDetail('stripe')
+    stubRoutes({ 'GET /api/admin/integrations/bank-transfer': () => problem('Not available.', 503) })
+    const wrapper = await mountDetail('bank-transfer')
 
     expect(wrapper.get('[data-testid="integration-error"]').text()).toContain('Not available.')
   })
 
   it('saves the edited config and reloads the detail', async () => {
     const mock = stubRoutes({
-      'GET /api/admin/integrations/stripe': () => json(integrationDetail()),
-      'PUT /api/admin/integrations/stripe': () => new Response(null, { status: 204 }),
+      'GET /api/admin/integrations/bank-transfer': () => json(integrationDetail()),
+      'PUT /api/admin/integrations/bank-transfer': () => new Response(null, { status: 204 }),
     })
-    const wrapper = await mountDetail('stripe')
+    const wrapper = await mountDetail('bank-transfer')
 
     await wrapper.get('[data-testid="integration-field-secretKey-replace"]').trigger('click')
     await wrapper.get('[data-testid="integration-field-secretKey-input"]').setValue('sk_new')
@@ -71,10 +71,10 @@ describe('IntegrationDetailView', () => {
 
   it('shows the API sentence above the form when the save is refused and keeps the form', async () => {
     stubRoutes({
-      'GET /api/admin/integrations/stripe': () => json(integrationDetail()),
-      'PUT /api/admin/integrations/stripe': () => problem('Required field missing.', 422),
+      'GET /api/admin/integrations/bank-transfer': () => json(integrationDetail()),
+      'PUT /api/admin/integrations/bank-transfer': () => problem('Required field missing.', 422),
     })
-    const wrapper = await mountDetail('stripe')
+    const wrapper = await mountDetail('bank-transfer')
 
     await wrapper.get('[data-testid="integration-save"]').trigger('click')
     await flushPromises()
@@ -86,8 +86,8 @@ describe('IntegrationDetailView', () => {
 
   it('reloads the integration from the Retry of a refused load', async () => {
     let refused = true
-    stubRoutes({ 'GET /api/admin/integrations/stripe': () => (refused ? problem('Not available.', 503) : json(integrationDetail())) })
-    const wrapper = await mountDetail('stripe')
+    stubRoutes({ 'GET /api/admin/integrations/bank-transfer': () => (refused ? problem('Not available.', 503) : json(integrationDetail())) })
+    const wrapper = await mountDetail('bank-transfer')
 
     refused = false
     await wrapper.get('[data-testid="integration-error-retry"]').trigger('click')
@@ -99,10 +99,10 @@ describe('IntegrationDetailView', () => {
 
   it('shows the verdict after a connection test', async () => {
     stubRoutes({
-      'GET /api/admin/integrations/stripe': () => json(integrationDetail()),
-      'POST /api/admin/integrations/stripe/test': () => json({ success: true, message: 'All good.' }),
+      'GET /api/admin/integrations/bank-transfer': () => json(integrationDetail()),
+      'POST /api/admin/integrations/bank-transfer/test': () => json({ success: true, message: 'All good.' }),
     })
-    const wrapper = await mountDetail('stripe')
+    const wrapper = await mountDetail('bank-transfer')
 
     await wrapper.get('[data-testid="integration-test"]').trigger('click')
     await flushPromises()

@@ -10,7 +10,7 @@ public sealed partial class NoVendorNamesTests
 {
     /// <summary>Matches a vendor or external product name anywhere in a type name, case-insensitively.</summary>
     /// <returns>The compiled expression.</returns>
-    [GeneratedRegex("Stripe|Cwp|CPanel|Inecobank|Whmcs|Plesk|Namecheap|DirectAdmin|Hestia|PayPal|Cloudflare", RegexOptions.IgnoreCase)]
+    [GeneratedRegex("Stripe|Cwp|CPanel|Inecobank|Idram|Ameriabank|Whmcs|Plesk|Namecheap|DirectAdmin|Hestia|PayPal|Cloudflare", RegexOptions.IgnoreCase)]
     private static partial Regex VendorName();
 
     /// <summary>No type in the kernel, domain, application, shared, API or SDK assemblies carries a vendor name.</summary>
@@ -74,7 +74,7 @@ public sealed partial class NoVendorNamesTests
     public void SdkSources_CarryNoVendorOrHostInternalName()
     {
         var backendRoot = UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory);
-        var sdkRoot = Path.Combine(backendRoot, "src", "Innovayse.SDK");
+        var sdkRoot = Path.Combine(backendRoot, "src", "Hostpanel.Sdk");
         var separators = new[] { Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar };
 
         var sources = Directory

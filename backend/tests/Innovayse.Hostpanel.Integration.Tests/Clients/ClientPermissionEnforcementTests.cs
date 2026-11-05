@@ -35,9 +35,8 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     public static TheoryData<string, string, ClientPermission> Requests() => new()
     {
         { "GET", "/api/me/invoices", ClientPermission.ViewPayInvoices },
-        { "POST", "/api/me/invoices/1/pay", ClientPermission.ViewPayInvoices },
         { "GET", "/api/me/invoices/1/pdf", ClientPermission.ViewPayInvoices },
-        { "GET", "/api/me/payment-methods", ClientPermission.ViewPayInvoices },
+        { "GET", "/api/me/stored-payment-methods", ClientPermission.ViewPayInvoices },
         { "GET", "/api/me/tickets", ClientPermission.ViewOpenSupportTickets },
         { "POST", "/api/me/tickets", ClientPermission.ViewOpenSupportTickets },
         { "GET", "/api/me/emails", ClientPermission.ViewEmails },

@@ -40,20 +40,6 @@ public static class IntegrationCatalogue
     /// </summary>
     private static readonly Dictionary<string, IntegrationCatalogueEntry> BuiltIn = new()
     {
-        [IntegrationSlugs.Stripe] = new("Stripe", PaymentGateways,
-            [
-                new("secret_key", "Secret Key", Password, Required: true),
-                new("publishable_key", "Publishable Key", Text, Required: true),
-                new("mode", "Mode", Select, Required: false, Options: ["Live", "Test"]),
-            ],
-            ["secret_key"]),
-        [IntegrationSlugs.PayPal] = new("PayPal", PaymentGateways,
-            [
-                new("client_id", "Client ID", Text, Required: true),
-                new("client_secret", "Client Secret", Password, Required: true),
-                new("mode", "Mode", Select, Required: false, Options: ["Live", "Sandbox"]),
-            ],
-            ["client_id", "client_secret"]),
         [IntegrationSlugs.BankTransfer] = new("Bank Transfer", PaymentGateways,
             [
                 new("account_name", "Account Name", Text, Required: false),
@@ -131,17 +117,6 @@ public static class IntegrationCatalogue
             ["account_id", "license_key"]),
     };
 
-    /// <summary>
-    /// The hosted payment gateway. It can be connection-tested like a built-in integration but is
-    /// listed and edited through the plugin registry, so it lives outside <see cref="BuiltIn"/> and
-    /// carries no form fields here.
-    /// </summary>
-    private static readonly IntegrationCatalogueEntry HostedGateway = new(
-        "Inecobank",
-        PaymentGateways,
-        [],
-        ["gateway_url", "username", "password"]);
-
     /// <summary>Gets every built-in integration with its slug, in display order.</summary>
     public static IReadOnlyDictionary<string, IntegrationCatalogueEntry> All => BuiltIn;
 
@@ -154,25 +129,15 @@ public static class IntegrationCatalogue
         return BuiltIn.TryGetValue(slug, out entry!);
     }
 
-    /// <summary>Looks up an integration that the connection test knows how to check.</summary>
+    /// <summary>Looks up an integration that the connection test checks by its stored fields.</summary>
     /// <param name="slug">The integration slug.</param>
     /// <param name="entry">The catalogue entry when found.</param>
     /// <returns>
-    /// <c>true</c> when the slug names a built-in integration or the hosted payment gateway.
+    /// <c>true</c> when the slug names a built-in integration; a payment plugin is not in the
+    /// catalogue and is probed through its plugin instead.
     /// </returns>
     public static bool TryGetTestable(string slug, out IntegrationCatalogueEntry entry)
     {
-        if (BuiltIn.TryGetValue(slug, out entry!))
-        {
-            return true;
-        }
-
-        if (slug == IntegrationSlugs.Inecobank)
-        {
-            entry = HostedGateway;
-            return true;
-        }
-
-        return false;
+        return BuiltIn.TryGetValue(slug, out entry!);
     }
 }

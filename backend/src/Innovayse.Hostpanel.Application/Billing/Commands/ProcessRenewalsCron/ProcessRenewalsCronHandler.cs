@@ -1,5 +1,6 @@
 using System.Globalization;
 using Innovayse.Hostpanel.Application.Billing.Commands.ApplyPaidRenewals;
+using Innovayse.Hostpanel.Application.Billing.Commands.ChargeClientRenewalInvoices;
 using Innovayse.Hostpanel.Application.Billing.Commands.RaiseClientRenewalInvoices;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
@@ -144,6 +145,13 @@ public sealed class ProcessRenewalsCronHandler
             await DispatchAsync(
                 $"RaiseClientRenewalInvoices(client {clientId})",
                 () => _bus.InvokeAsync<Result<int>>(new RaiseClientRenewalInvoicesCommand(clientId), ct),
+                ct);
+
+            // A client who consented to charges on a stored method is charged for what was just raised; with no
+            // consent, capability or stored method this changes nothing and the invoice goes out unpaid as before.
+            await DispatchAsync(
+                $"ChargeClientRenewalInvoices(client {clientId})",
+                () => _bus.InvokeAsync<Result<int>>(new ChargeClientRenewalInvoicesCommand(clientId), ct),
                 ct);
         }
 

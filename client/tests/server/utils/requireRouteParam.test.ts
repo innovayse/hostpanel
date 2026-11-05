@@ -2,7 +2,9 @@
  * Tests for the route-parameter guard in `server/utils/requireRouteParam.ts`.
  *
  * A missing or malformed parameter answers a coded 400 and carries no sentence: the BFF authors
- * none. A well-formed one is returned encoded.
+ * none. A well-formed one is returned encoded. The plugin slot kinds (`DottedName`, `PluginId`,
+ * `PluginWidgetId`) are as narrow as the backend's own rules, and `isPositiveIntKey` is the integer rule
+ * the slot query shares.
  *
  * @module tests/server/utils/requireRouteParam.test
  */
@@ -17,7 +19,7 @@ let params: Record<string, string | undefined> = {}
 vi.stubGlobal('getRouterParam', (_event: H3Event, name: string) => params[name])
 vi.stubGlobal('createError', (options: Record<string, unknown>) => Object.assign(new Error('h3'), options))
 
-const { BAD_ROUTE_PARAM, requireRouteParam } = await import('~/server/utils/requireRouteParam')
+const { BAD_ROUTE_PARAM, isPositiveIntKey, requireRouteParam } = await import('~/server/utils/requireRouteParam')
 
 /** An opaque event; the stubbed helper reads {@link params}. */
 const event = {} as H3Event
@@ -88,6 +90,46 @@ describe('requireRouteParam', () => {
   it.each(['a/b', '../y', 'a b', 'a?b', 'a#b', 'a\\b', 'a%2Fb', 'x'.repeat(129)])('refuses %j as an identifier', (value) => {
     expect(refusalOf(value, RouteParamKind.Identifier)).toMatchObject({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
   })
+
+  it.each(['client.service.tabs', 'client.dashboard.cards', 'admin.client.tabs'])('returns %j as a dotted name', (value) => {
+    params = { id: value }
+
+    expect(requireRouteParam(event, 'id', RouteParamKind.DottedName)).toBe(value)
+  })
+
+  it.each(['client', 'Client.x', 'a..b', 'a.b/c', '.a.b', 'a.b.', 'a.b1', '../admin', `${'a'.repeat(33)}.b`])(
+    'refuses %j as a dotted name',
+    (value) => {
+      expect(refusalOf(value, RouteParamKind.DottedName)).toMatchObject({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
+    }
+  )
+
+  it.each(['acme', 'acme-sites', 'a1', 'x'.repeat(64)])('returns %j as a plugin id', (value) => {
+    params = { id: value }
+
+    expect(requireRouteParam(event, 'id', RouteParamKind.PluginId)).toBe(value)
+  })
+
+  it.each(['Acme', 'acme_sites', '-acme', 'acme--sites', 'acme-', 'x'.repeat(65), '..', 'acme/sites', 'ui', 'slots'])('refuses %j as a plugin id', (value) => {
+    expect(refusalOf(value, RouteParamKind.PluginId)).toMatchObject({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
+  })
+
+  it.each(['tab', 'site_status', '1-card', 'x'.repeat(64)])('returns %j as a plugin widget id', (value) => {
+    params = { id: value }
+
+    expect(requireRouteParam(event, 'id', RouteParamKind.PluginWidgetId)).toBe(value)
+  })
+
+  it.each(['_tab', 'Tab', 'a.b', '-tab', 'x'.repeat(65), 'a/b'])('refuses %j as a plugin widget id', (value) => {
+    expect(refusalOf(value, RouteParamKind.PluginWidgetId)).toMatchObject({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
+  })
+
+  it.each([['1', true], ['2147483647', true], ['0', false], ['04', false], ['2147483648', false], ['-1', false], ['', false], ['1.0', false]])(
+    'isPositiveIntKey(%j) is %s',
+    (value, expected) => {
+      expect(isPositiveIntKey(value)).toBe(expected)
+    }
+  )
 
   it('names the code the way the contract does', () => {
     expect(BAD_ROUTE_PARAM).toBe('BAD_ROUTE_PARAM')

@@ -11,13 +11,15 @@ import { IntegrationFieldType } from '@/types/integration'
  * @returns The summary.
  */
 export const integrationDto = (overrides: Partial<IntegrationDto> = {}): IntegrationDto => ({
-  slug: 'stripe',
-  name: 'Stripe',
+  slug: 'bank-transfer',
+  name: 'Bank Transfer',
   category: 'payments',
   isEnabled: true,
   isConfigured: true,
   isPlugin: false,
   pluginType: null,
+  iconUrl: null,
+  connection: null,
   ...overrides,
 })
 
@@ -29,8 +31,8 @@ export const integrationDto = (overrides: Partial<IntegrationDto> = {}): Integra
  * @returns The detail.
  */
 export const integrationDetail = (overrides: Partial<IntegrationDetailDto> = {}): IntegrationDetailDto => ({
-  slug: 'stripe',
-  name: 'Stripe',
+  slug: 'bank-transfer',
+  name: 'Bank Transfer',
   isEnabled: true,
   config: {
     secretKey: { value: null, isSecret: true, hasValue: true },
@@ -44,5 +46,7 @@ export const integrationDetail = (overrides: Partial<IntegrationDetailDto> = {})
     { key: 'note', label: 'Note', type: IntegrationFieldType.Textarea, required: false },
     { key: 'live', label: 'Live payments', type: IntegrationFieldType.Toggle, required: false },
   ],
+  canTestConnection: true,
+  connection: null,
   ...overrides,
 })

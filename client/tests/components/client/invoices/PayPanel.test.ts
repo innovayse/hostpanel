@@ -1,27 +1,22 @@
 /**
- * Unit tests for PayPanel: which ways to pay are offered, the saved-card payment through the
- * store and the success and refusal states.
+ * Unit tests for PayPanel: the gateway button the panel offers, the unavailable state and the
+ * refusal sentence.
  */
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountClient, stubClientRuntime } from '~/tests/helpers/mountClient'
 import PayPanel from '~/components/client/invoices/PayPanel.vue'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
-import { PaymentMethodType } from '~/types/payment'
-import type { PaymentMethod } from '~/types/payment'
 
 /** The mocked billing endpoints the store reaches. */
-const billingApi = vi.hoisted(() => ({ payInvoice: vi.fn(), startInvoiceGatewayPayment: vi.fn() }))
+const billingApi = vi.hoisted(() => ({ startInvoiceGatewayPayment: vi.fn() }))
 
 vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => billingApi }))
-
-/** A saved card. */
-const card = { id: 'pm_1', type: PaymentMethodType.Card, description: 'Visa', gatewayName: 'stripe', cardType: 'visa', cardLastFour: '4242' } as PaymentMethod
 
 /**
  * Mounts the panel after filling the store the page would have filled.
  *
- * @param state - Store fields to set (saved methods, gateways).
+ * @param state - Store fields to set (gateways, flags).
  * @returns The wrapper.
  */
 const mountPanel = (state: Record<string, unknown> = {}) => {
@@ -33,82 +28,50 @@ const mountPanel = (state: Record<string, unknown> = {}) => {
 
 describe('PayPanel', () => {
   beforeEach(() => {
-    billingApi.payInvoice.mockReset()
     billingApi.startInvoiceGatewayPayment.mockReset()
     stubClientRuntime()
   })
 
-  it('preselects the first saved card and offers to submit', () => {
-    const wrapper = mountPanel({ savedMethods: [card] })
-
-    expect(wrapper.find('[data-testid="pay-method-pm_1"]').attributes('data-state')).toBe('checked')
-    expect(wrapper.find('[data-testid="invoice-pay-submit"]').exists()).toBe(true)
-  })
-
-  it('pays with the saved card and shows the success state', async () => {
-    billingApi.payInvoice.mockResolvedValue({})
-    const wrapper = mountPanel({ savedMethods: [card] })
-
-    await wrapper.find('[data-testid="invoice-pay-submit"]').trigger('click')
-
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-success"]').exists()).toBe(true))
-    expect(billingApi.payInvoice).toHaveBeenCalledWith('9', 'pm_1', expect.any(String))
-    expect(wrapper.find('[data-testid="invoice-pay-submit"]').exists()).toBe(false)
-  })
-
-  it('shows the refusal and keeps the button when the payment fails', async () => {
-    billingApi.payInvoice.mockRejectedValue({ data: { detail: 'Card declined.' } })
-    const wrapper = mountPanel({ savedMethods: [card] })
-
-    await wrapper.find('[data-testid="invoice-pay-submit"]').trigger('click')
-
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-error"]').text()).toBe('Card declined.'))
-    expect(wrapper.find('[data-testid="invoice-pay-submit"]').exists()).toBe(true)
-  })
-
-  it('pays again after a decline as a new attempt, so the gateway does not replay the decline', async () => {
-    billingApi.payInvoice.mockRejectedValueOnce({ data: { detail: 'Card declined.' } }).mockResolvedValueOnce({})
-    const wrapper = mountPanel({ savedMethods: [card] })
-
-    await wrapper.find('[data-testid="invoice-pay-submit"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-error"]').exists()).toBe(true))
-    await wrapper.find('[data-testid="invoice-pay-submit"]').trigger('click')
-
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-success"]').exists()).toBe(true))
-    const [first, second] = billingApi.payInvoice.mock.calls.map(call => call[2] as string)
-    expect(first).toBeTruthy()
-    expect(second).toBeTruthy()
-    expect(second).not.toBe(first)
-  })
-
-  it('says online payment is unavailable when there is neither a saved card nor a gateway', () => {
+  it('says online payment is unavailable when there is no gateway', () => {
     const wrapper = mountPanel()
 
-    expect(wrapper.find('[data-testid="pay-method-selector"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="invoice-pay-submit"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-pay-unavailable"]').text()).toContain('invoicePay.noPaymentOption')
   })
 
-  it('tells a customer without a saved card to use the hosted gateway button', () => {
-    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', name: 'Bank' }] })
+  it('offers the gateway button with its hint when a gateway is enabled', () => {
+    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }] })
 
     expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="invoice-pay-no-cards"]').text()).toContain('invoicePay.noSavedCardsHosted')
+    expect(wrapper.find('[data-testid="invoice-pay-hosted-hint"]').text()).toContain('invoicePay.hostedHint')
     expect(wrapper.find('[data-testid="invoice-pay-unavailable"]').exists()).toBe(false)
   })
 
-  it('disables both pay buttons while a payment is being submitted', () => {
-    const wrapper = mountPanel({ savedMethods: [card], gatewayMethods: [{ module: 'hostedbank', name: 'Bank' }], submitting: true })
+  it('offers no card form or saved-method choice', () => {
+    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }] })
+
+    expect(wrapper.find('[data-testid="pay-method-selector"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="invoice-pay-submit"]').exists()).toBe(false)
+  })
+
+  it('starts the gateway payment for the invoice through the store', async () => {
+    billingApi.startInvoiceGatewayPayment.mockResolvedValue({ redirectUrl: 'javascript:alert(1)' })
+    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }] })
+
+    await wrapper.find('[data-testid="invoice-pay-hosted"]').trigger('click')
+
+    await vi.waitFor(() => expect(billingApi.startInvoiceGatewayPayment).toHaveBeenCalledWith('9', 'hostedbank', expect.stringContaining('/payment/result?invoice=9')))
+  })
+
+  it('disables the gateway button while a payment is being started', () => {
+    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }], submitting: true })
 
     expect(wrapper.find('[data-testid="invoice-pay-hosted"]').attributes('disabled')).toBeDefined()
-    expect(wrapper.find('[data-testid="invoice-pay-submit"]').attributes('disabled')).toBeDefined()
   })
 
-  it('shows no empty-state hint when a saved card exists', () => {
-    const wrapper = mountPanel({ savedMethods: [card], gatewayMethods: [{ module: 'hostedbank', name: 'Bank' }] })
+  it('shows the refusal sentence the store holds', () => {
+    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }], error: 'Gateway is down.' })
 
-    expect(wrapper.find('[data-testid="invoice-pay-no-cards"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="invoice-pay-unavailable"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="invoice-pay-error"]').text()).toBe('Gateway is down.')
   })
 })

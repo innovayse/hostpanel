@@ -137,7 +137,11 @@ onMounted(() => {
   <Cwp7IntegrationView v-else-if="isCwp7" />
 
   <UiStack v-else gap="md" class="w-full">
-    <IntegrationBreadcrumb :name="store.current?.name ?? slug" />
+    <IntegrationBreadcrumb
+      :name="store.current?.name ?? slug"
+      :is-plugin="store.current?.isPlugin ?? false"
+      :icon-url="store.current?.iconUrl ?? null"
+    />
 
     <!-- Loading -->
     <UiSkeleton v-if="store.loading && !store.current" :lines="4" data-testid="integration-loading" />
@@ -166,6 +170,7 @@ onMounted(() => {
       <IntegrationStatusSidebar
         :test-result="store.testResult"
         :testing="store.testing"
+        :connection="store.current.connection"
         :endpoint-host="endpointHost"
         :hint="hint"
       />

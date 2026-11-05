@@ -126,32 +126,17 @@
 <data name="GATEWAY_SESSION_NOT_FOUND" xml:space="preserve">
     <value>Այս հաշիվ-ապրանքագիրը ստուգման ենթակա վճարային սեսիա չունի։</value>
   </data>
-<data name="PAYMENT_METHOD_NOT_OWNED" xml:space="preserve">
-    <value>Այդ վճարման եղանակը այս հաշվինը չէ։</value>
-  </data>
-<data name="PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
-    <value>Քարտային վճարումները հասանելի չեն, քանի որ քարտային վճարային դարպասը կարգավորված չէ։</value>
-  </data>
 <data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
     <value>Այս հաշիվը պահպանված վճարման եղանակներ չունի։</value>
   </data>
 <data name="RETURN_URL_NOT_ALLOWED" xml:space="preserve">
     <value>Այդ վերադարձի հասցեն թույլատրված չէ այս համակարգի համար։</value>
   </data>
-<data name="GATEWAY_CHARGE_UPSTREAM_FAILED" xml:space="preserve">
-    <value>Վճարային համակարգը մերժեց գումարի գանձումը։</value>
-  </data>
   <data name="PAYMENT_GATEWAY_SERVICE_UNAVAILABLE" xml:space="preserve">
     <value>Վճարային համակարգը ժամանակավորապես անհասանելի է։ Խնդրում ենք փորձել մի փոքր ուշ։</value>
   </data>
   <data name="IDENTITY_PLUGIN_UNAVAILABLE" xml:space="preserve">
     <value>Ձեր հաշիվը հաճախորդի պրոֆիլին կապող ծառայությունը ժամանակավորապես անհասանելի է։ Խնդրում ենք փորձել մի փոքր ուշ։</value>
-  </data>
-  <data name="PAYMENT_METHOD_UPSTREAM_FAILED" xml:space="preserve">
-    <value>Վճարային համակարգը չկարողացավ մշակել ձեր պահպանված վճարման եղանակների հարցումը։ Խնդրում ենք փորձել ավելի ուշ կամ դիմել աջակցությանը։</value>
-  </data>
-<data name="GATEWAY_TRANSACTION_MISSING_UPSTREAM_FAILED" xml:space="preserve">
-    <value>Վճարային համակարգը հայտնել է հաջողության մասին, բայց չի վերադարձրել գործարքի հղումը։</value>
   </data>
 <data name="CLIENT_PROFILE_NOT_FOUND" xml:space="preserve">
     <value>Այս հաշիվը հաճախորդի պրոֆիլ չունի, ուստի հաճախորդի բաժնում ցուցադրելու բան չկա։</value>
@@ -570,14 +555,38 @@
   <data name="PLUGIN_MENU_ICON_INVALID" xml:space="preserve">
     <value>Այս հավելագրիչը ընտրացանկի կետին տալիս է պատկերակ, որը պատկերակի պարզ անուն չէ։ Օգտագործեք 1-ից 64 լատինական փոքրատառ, թվանշան և գծիկ։</value>
   </data>
+  <data name="PLUGIN_ICON_MISSING" xml:space="preserve">
+    <value>Այս հավելագրիչը նշում է պատկերակի ֆայլ, որը փաթեթում չկա։ Ստուգեք պատկերակի ուղին մանիֆեստում։</value>
+  </data>
+  <data name="PLUGIN_ICON_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչը պարունակում է անթույլատրելի պատկերակ։ Օգտագործեք փաթեթի ներսի SVG կամ PNG ֆայլ՝ մինչև 128 ԿԲ. SVG-ն չպետք է պարունակի սկրիպտներ, իրադարձությունների մշակիչներ և հղումներ այլ ֆայլերի։</value>
+  </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_IMPLEMENTED" xml:space="preserve">
+    <value>Այս հավելագրիչը հայտարարում է endpoints հնարավորությունը, բայց այն չի իրականացնում։ Հեռացրեք հնարավորությունը մանիֆեստից կամ իրականացրեք endpoints պայմանագիրը։</value>
+  </data>
+  <data name="PLUGIN_ICON_NOT_FOUND" xml:space="preserve">
+    <value>Այս հավելագրիչը պատկերակ չունի։</value>
+  </data>
+  <data name="PLUGIN_CALLBACK_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչը հայտարարում է հետկանչի երթուղի, որը թույլտվություն է նշում կամ պատասխանում է հոսքով։ Հետկանչը մուտք գործած օգտատեր չունի և պատասխանում է մեկ պատասխանով։</value>
+  </data>
   <data name="PLUGIN_PAGE_ID_INVALID" xml:space="preserve">
     <value>Այս հավելագրիչը հայտարարում է էջ, որի նույնացուցիչը վավեր չէ կամ կրկնվում է նույն վահանակում։ Օգտագործեք 1-ից 64 լատինական փոքրատառ, թվանշան, գծիկ և ընդգծիկ՝ սկսելով տառով կամ թվանշանով։</value>
   </data>
 <data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve">
     <value>Հավելագրիչի այդպիսի էջ չկա։</value>
   </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_DECLARED" xml:space="preserve">
+    <value>Այս հավելագրիչը հայտարարում է երթուղիներ, էջեր կամ սլոտներ, սակայն այն հավելվածի տեսակի հավելագրիչ չէ և չի հայտարարում «endpoints» հնարավորությունը։</value>
+  </data>
+  <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
+    <value>Այս հավելագրիչը հայտարարում է հնարավորություն, որը սերվերը չի ճանաչում կամ որը նրա տեսակի հավելագրիչը չի կարող ունենալ։</value>
+  </data>
 <data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
     <value>Այդ արխիվը պարունակում է գրառում, որը կգրեր հավելագրիչի սեփական թղթապանակից դուրս, և մերժվեց։</value>
+  </data>
+<data name="PLUGIN_ARCHIVE_UNWRITABLE" xml:space="preserve">
+    <value>Այդ արխիվը պարունակում է գրառումներ, որոնք հնարավոր չէ միասին բացել, օրինակ՝ նույն անունով ֆայլ և թղթապանակ, և մերժվեց։</value>
   </data>
 <data name="PLUGIN_ID_INVALID" xml:space="preserve">
     <value>Հավելագրիչի այդ նույնացուցիչը վավեր չէ։</value>
@@ -590,6 +599,9 @@
   </data>
 <data name="PLUGIN_HOST_ASSEMBLY_REFUSED" xml:space="preserve">
     <value>Այդ արխիվը պարունակում է գրադարան, որի անունը համընկնում է սերվերում արդեն առկայի հետ, և մերժվեց։ Հեռացրեք այն փաթեթից և կրկին վերբեռնեք։</value>
+  </data>
+<data name="PLUGIN_ASSEMBLY_CONFLICT" xml:space="preserve">
+    <value>Մեկ այլ տեղադրված պլագին արդեն պարունակում է այս փաթեթի գրադարանի հետ նույն ֆայլի անունով գրադարան, ուստի փաթեթը մերժվեց։ Հակասող պլագինի նույնացուցիչը գրանցված է սերվերի մատյանում։ Վերանվանեք կամ հեռացրեք գրադարանը, կամ հեռացրեք մյուս պլագինը և կրկին վերբեռնեք։</value>
   </data>
 <data name="PLUGIN_NOT_TRUSTED" xml:space="preserve">
     <value>Այդ արխիվը սերվերի վստահելի հավելագրիչների փաթեթների ցանկում չէ։</value>
@@ -621,11 +633,14 @@
 <data name="PLUGIN_SLOT_NOT_FOUND" xml:space="preserve">
     <value>Էջի այդ հատվածը հասանելի չէ։</value>
   </data>
-<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
-    <value>Էջի այս հատվածի համար անհրաժեշտ է համատեքստ։</value>
-  </data>
   <data name="PLUGIN_SLOT_WIDGET_NOT_FOUND" xml:space="preserve">
     <value>Հավելագրիչը այդպիսի վիջեթ չի հայտարարել։</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND" xml:space="preserve">
+    <value>Էջի այդ մասը հասանելի չէ։</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
+    <value>Էջի այս հատվածի համար անհրաժեշտ է համատեքստ։</value>
   </data>
   <data name="PLUGIN_SLOT_PRODUCTS_UNKNOWN" xml:space="preserve">
     <value>Ապրանքներից և ոչ մեկը գոյություն չունի, վիջեթը չի կապվել։ Կապը հանելու համար ուղարկեք դատարկ ցուցակ։</value>
@@ -659,6 +674,27 @@
   </data>
 <data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
     <value>Ինտեգրման այս դաշտի համար այդ արժեքը չի ընդունվում։</value>
+  </data>
+<data name="INTEGRATION_NOT_TESTABLE" xml:space="preserve">
+    <value>Այս ինտեգրումը կապի ստուգում չունի։</value>
+  </data>
+<data name="PLUGIN_STATUS_HEALTHY" xml:space="preserve">
+    <value>Պլագինը հայտնում է, որ աշխատում է։</value>
+  </data>
+<data name="PLUGIN_STATUS_DEGRADED" xml:space="preserve">
+    <value>Պլագինն աշխատում է սահմանափակ։</value>
+  </data>
+<data name="PLUGIN_STATUS_REPORTED_DOWN" xml:space="preserve">
+    <value>Պլագինը հայտնում է, որ այս պահին չի կարող աշխատել։</value>
+  </data>
+<data name="PLUGIN_STATUS_INACTIVE" xml:space="preserve">
+    <value>Պլագինն անջատված է, կամ պարտադիր կարգավորումը լրացված չէ։</value>
+  </data>
+<data name="PLUGIN_STATUS_TIMED_OUT" xml:space="preserve">
+    <value>Պլագինը ժամանակին չպատասխանեց վիճակի ստուգմանը։</value>
+  </data>
+<data name="PLUGIN_STATUS_FAILED" xml:space="preserve">
+    <value>Պլագինի վիճակի ստուգումը ձախողվեց։ Մանրամասները սերվերի մատյանում են։</value>
   </data>
 <data name="SETTING_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի կարգավորում չի գտնվել։</value>
@@ -910,12 +946,6 @@
   <data name="SSH_AGENT_ENDPOINT_IN_USE" xml:space="preserve">
     <value>Այս agent-ի հոսթն ու պորտն արդեն օգտագործում է մեկ այլ սերվեր։</value>
   </data>
-  <data name="PAYMENT_INTENT_MISMATCH" xml:space="preserve">
-    <value>Այս քարտային վճարումը չի համապատասխանում այս պատվերի հաշիվ-ապրանքագրին։</value>
-  </data>
-  <data name="PAYMENT_INTENT_ALREADY_USED" xml:space="preserve">
-    <value>Այս քարտային վճարումն արդեն գրանցված է։</value>
-  </data>
   <data name="REGISTRAR_NOT_CONFIGURED" xml:space="preserve">
     <value>Այս դոմենի ռեգիստրատորը կարգավորված չէ։</value>
   </data>
@@ -954,9 +984,6 @@
   </data>
   <data name="INVOICE_NOT_GATEWAY_PAID" xml:space="preserve">
     <value>Այս հաշիվ-ապրանքագրի համար գումար չի ընդունել որևէ վճարային շլյուզ, ուստի այն հնարավոր չէ վերադարձնել շլյուզով։</value>
-  </data>
-  <data name="CARD_REFUND_REFUSED" xml:space="preserve">
-    <value>Քարտային վճարային շլյուզը մերժել է վերադարձը։ Այն մասը, որն արդեն վերադարձվել է, գրանցված է հաշիվ-ապրանքագրում։</value>
   </data>
   <data name="INVOICE_REFUND_CONFLICT" xml:space="preserve">
     <value>Այս հաշիվ-ապրանքագրի մեկ այլ վերադարձ դեռ սպասում է վճարային շլյուզի պատասխանին։ Կրկին փորձեք, երբ այն ավարտվի։</value>
@@ -1059,5 +1086,65 @@
   </data>
   <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
     <value>Վերադարձը հիմա հնարավոր չեղավ ստուգել, ուստի գումար չի վերադարձվել։ Փորձեք ավելի ուշ։</value>
+  </data>
+<data name="STORED_CREDENTIALS_NOT_SUPPORTED" xml:space="preserve">
+    <value>Այս վճարային համակարգը չի կարող պահպանել վճարման եղանակներ հետագա գանձումների համար։</value>
+  </data>
+<data name="CARD_CONSENT_REQUIRED" xml:space="preserve">
+    <value>Պահպանված վճարման եղանակից գանձելու համաձայնություն չկա։</value>
+  </data>
+<data name="CARD_CONSENT_NOT_FOUND" xml:space="preserve">
+    <value>Այդ համաձայնությունը չի գտնվել։</value>
+  </data>
+<data name="STORED_METHOD_NOT_SAVED" xml:space="preserve">
+    <value>Վճարման եղանակը չի պահպանվել։ Սկսեք նորից։</value>
+  </data>
+<data name="STORED_CHARGE_ALREADY_IN_PROGRESS" xml:space="preserve">
+    <value>Այս հաշիվ-ապրանքագրի գանձումն արդեն ընթացքի մեջ է։</value>
+  </data>
+<data name="INVOICE_PAYMENT_CLAIM_NOT_FOUND" xml:space="preserve">
+    <value>Այդ գանձումը չի գտնվել։</value>
+  </data>
+<data name="INVOICE_STORED_CHARGE_UNRESOLVED" xml:space="preserve">
+    <value>Հաշիվ-ապրանքագրի քարտով գանձումը դեռ ավարտված չէ, ուստի այն դեռ հնարավոր չէ չեղարկել կամ վճարել ձեռքով։</value>
+  </data>
+<data name="INVOICE_STORED_CHARGE_HELD" xml:space="preserve">
+    <value>Հաշիվ-ապրանքագրի քարտով գանձումը պահվում է օպերատորի համար, ուստի այն հնարավոր չէ վճարել առցանց, քանի դեռ այդ գումարը չի կարգավորվել։</value>
+  </data>
+<data name="CARD_CONSENT_ALREADY_ATTACHED" xml:space="preserve">
+    <value>Համաձայնությունն արդեն վերաբերում է վճարման այլ եղանակի։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DISABLED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրն այս սերվերում միացված չէ։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_UNAVAILABLE" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրին միանալ չհաջողվեց։ Փորձեք ավելի ուշ։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_TIMED_OUT" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը ժամանակին չպատասխանեց։ Փորձեք ավելի ուշ։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_RESPONSE_INVALID" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը ուղարկեց պատասխան, որը սերվերը չի կարող օգտագործել։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_PLUGIN_NOT_FOUND" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրում այդպիսի հավելագրիչ կամ տարբերակ չկա։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_PACKAGE_REFUSED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրի առաջարկած փաթեթը մերժվեց։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_CHECKSUM_MISMATCH" xml:space="preserve">
+    <value>Ներբեռնված փաթեթը չի համապատասխանում ռեեստրի հրապարակած ստուգիչ գումարին, ուստի այն չի տեղադրվել։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_NOT_TRUSTED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրի վստահության կարգավորումը չի թույլատրում տեղադրել այս հավելագրիչը։</value>
+  </data>
+  <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
+    <value>Հավելագրիչը պահանջում է հաճախորդի հոսթինգի մուտքի տեսակ, որը այս սերվերը չգիտի, նշում է այն երկու անգամ կամ հայտարարում է 1-ին տարբերակի մանիֆեստում։</value>
+  </data>
+  <data name="PLUGIN_VIEW_CONDITION_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը բլոկը ցույց է տալիս պայմանով, որը GET երթուղի, դաշտ և մեկ արժեք կամ արժեքների կարճ ցուցակ չէ։</value>
+  </data>
+  <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
+    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը գործողությունից հետո թարմացնում է բլոկ, որը չունի, կամ կրկնակի ընթերցումը կամ ձևի մաքրումը նկարագրում է այնպես, ինչպես այս սերվերը չի ընդունում։</value>
   </data>
 </root>

@@ -5,7 +5,9 @@
  *
  * A refused plugin (one that broke a manifest rule) shows a Refused badge instead of a loaded
  * status, with its id, the broken rule and the localised reason; it is never shown as enabled and
- * can only be removed. A newer upload waiting for the restart shows its staged version.
+ * can only be removed. A newer upload waiting for the restart shows its staged version, a newer version in the
+ * registry shows an update badge, and each capability the manifest declares (such as serving pages from a
+ * fulfilment plugin) is shown as a badge.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -14,6 +16,7 @@ import type { PluginListItemDto } from '@/types/plugin'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { UiTone } from '@/utils/ui/tone'
@@ -27,6 +30,8 @@ const props = defineProps<{
   plugin: PluginListItemDto
   /** True while this plugin's removal is in flight. */
   removing: boolean
+  /** The newer version the registry offers for this plugin; null or omitted when it is up to date. */
+  updateVersion?: string | null
 }>()
 
 /** True when the host skipped this plugin because it broke a manifest rule. */
@@ -47,6 +52,7 @@ const emit = defineEmits<{
 <template>
   <UiCard padding="sm" :data-testid="`plugin-card-${plugin.id}`">
     <UiStack direction="row" align="center" gap="md">
+      <UiPluginAvatar :name="plugin.name" :icon-url="plugin.iconUrl" :color="plugin.color" />
       <UiStack gap="xs" class="min-w-0 flex-1">
         <UiStack direction="row" align="center" gap="sm" wrap>
           <UiText tone="primary" size="lg" class="font-semibold">{{ plugin.name }}</UiText>
@@ -65,8 +71,25 @@ const emit = defineEmits<{
           >
             {{ t('plugins.pluginCard.staged', { version: plugin.stagedVersion }) }}
           </UiBadge>
+          <UiBadge
+            v-if="updateVersion"
+            :tone="UiTone.Warning"
+            small
+            :data-testid="`plugin-update-${plugin.id}`"
+          >
+            {{ t('plugins.pluginCard.updateAvailable', { version: updateVersion }) }}
+          </UiBadge>
           <UiBadge v-if="plugin.isBuiltIn" :tone="UiTone.Info" small :data-testid="`plugin-builtin-${plugin.id}`">
             {{ t('plugins.pluginCard.builtIn') }}
+          </UiBadge>
+          <UiBadge
+            v-for="capability in plugin.capabilities"
+            :key="capability"
+            :tone="UiTone.Neutral"
+            small
+            :data-testid="`plugin-capability-${plugin.id}-${capability}`"
+          >
+            {{ t(`plugins.pluginCard.capabilities.${capability}`) }}
           </UiBadge>
         </UiStack>
         <UiText tone="muted" size="sm" class="truncate">{{ plugin.description }}</UiText>

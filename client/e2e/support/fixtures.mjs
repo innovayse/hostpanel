@@ -571,6 +571,9 @@ export const ORDER = {
   currency: 'USD',
 }
 
+/** Id of an order whose hosted-gateway payment the stub reports as declined (the placed order, {@link ORDER}, is the paid one). */
+export const ORDER_DECLINED_ID = 302
+
 /** Order raised by a domain renewal or transfer; the invoice is the unpaid one. */
 export const DOMAIN_ORDER = {
   orderId: 701,

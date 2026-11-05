@@ -9,9 +9,12 @@ import { createPinia, setActivePinia } from 'pinia'
 import type { Pinia } from 'pinia'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import ResultPage from '~/pages/payment/result.vue'
+import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
+import { ConsentTextVersion } from '~/types/consenttextversion'
 import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
 import { PricingCycle } from '~/types/pricingcycle'
+import { consumeCheckoutSave, rememberCheckoutSave } from '~/utils/pendingCheckoutSave'
 import { ProductType } from '~/types/producttype'
 
 /** The mocked billing endpoints, re-created for every test. */
@@ -24,6 +27,18 @@ vi.mock('~/composables/apis/useBillingApi', () => ({
    * @returns The mocked endpoints.
    */
   useBillingApi: () => billing,
+}))
+
+/** The shared stored-method session starter; a test makes it answer. */
+const storedStart = vi.hoisted(() => vi.fn())
+
+vi.mock('~/composables/useStoredMethodStart', () => ({
+  /**
+   * Stands in for the shared session starter so no stored-method call is made.
+   *
+   * @returns The shared stand-in.
+   */
+  useStoredMethodStart: () => ({ start: storedStart }),
 }))
 
 /** The order payment token helpers of the current test. */
@@ -43,6 +58,22 @@ const mountResult = async (query: Record<string, string | string[]> = {}, pinia?
   return wrapper
 }
 
+/** The account that made the checkout choice. */
+const ADA = 'ada@example.com'
+
+/**
+ * Builds a Pinia in which the given account is already loaded as the signed-in one.
+ *
+ * @param email The signed-in account's email.
+ * @returns The Pinia to mount the page with.
+ */
+const signedInAs = (email: string): Pinia => {
+  const pinia = createPinia()
+  setActivePinia(pinia)
+  useAuthStore().user = { email } as never
+  return pinia
+}
+
 describe('payment result page', () => {
   beforeEach(() => {
     billing.completeGatewayPayment.mockReset()
@@ -51,6 +82,8 @@ describe('payment result page', () => {
     tokens.recallInvoiceId.mockReset()
     tokens.recallInvoiceId.mockReturnValue(77)
     tokens.forget.mockReset()
+    storedStart.mockReset()
+    window.sessionStorage.clear()
     vi.stubGlobal('useOrderPaymentToken', () => tokens)
   })
 
@@ -164,12 +197,112 @@ describe('payment result page', () => {
   })
 
   it('does not assert an outcome when the backend cannot be reached, and keeps the token', async () => {
+    rememberCheckoutSave('5', 'card_gateway', ADA)
     billing.completeGatewayPayment.mockRejectedValue(new Error('offline'))
 
-    const wrapper = await mountResult({ order: '5' })
+    const wrapper = await mountResult({ order: '5' }, signedInAs(ADA))
 
     expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.unknownTitle')
     expect(wrapper.find('[data-testid="payment-status"]').exists()).toBe(true)
     expect(tokens.forget).not.toHaveBeenCalled()
+    // Nothing was confirmed or declined, so the renewal-save choice is neither acted on nor dropped.
+    expect(storedStart).not.toHaveBeenCalled()
+    expect(consumeCheckoutSave('5', ADA)).toBe('card_gateway')
+  })
+
+  describe('save for automatic renewals', () => {
+    it('starts the stored-method session once the payment is confirmed and the payer asked for it', async () => {
+      rememberCheckoutSave('5', 'card_gateway', ADA)
+      storedStart.mockResolvedValue(true)
+      billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' })
+
+      const wrapper = await mountResult({ order: '5' }, signedInAs(ADA))
+
+      expect(storedStart).toHaveBeenCalledWith('card_gateway', true, ConsentTextVersion.CheckoutAgreement)
+      expect(wrapper.find('[data-testid="payment-save-starting"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="payment-save-failed"]').exists()).toBe(false)
+    })
+
+    it('starts nothing, and drops the choice, when another account opens the page on the same browser', async () => {
+      rememberCheckoutSave('5', 'card_gateway', ADA)
+      billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' })
+
+      const wrapper = await mountResult({ order: '5' }, signedInAs('bob@example.com'))
+
+      expect(storedStart).not.toHaveBeenCalled()
+      expect(wrapper.find('[data-testid="payment-save-starting"]').exists()).toBe(false)
+      expect(consumeCheckoutSave('5', ADA)).toBeNull()
+    })
+
+    it('starts nothing when the payer did not ask for it', async () => {
+      billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' })
+
+      await mountResult({ order: '5' }, signedInAs(ADA))
+
+      expect(storedStart).not.toHaveBeenCalled()
+    })
+
+    it('starts one session only, even when the paid page is opened again', async () => {
+      rememberCheckoutSave('5', 'card_gateway', ADA)
+      storedStart.mockResolvedValue(true)
+      billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' })
+
+      await mountResult({ order: '5' }, signedInAs(ADA))
+      await mountResult({ order: '5' }, signedInAs(ADA))
+
+      expect(storedStart).toHaveBeenCalledTimes(1)
+    })
+
+    it('does not start on a declined payment, and drops the choice', async () => {
+      rememberCheckoutSave('5', 'card_gateway', ADA)
+      billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Declined })
+
+      await mountResult({ order: '5' }, signedInAs(ADA))
+
+      expect(storedStart).not.toHaveBeenCalled()
+      expect(consumeCheckoutSave('5', ADA)).toBeNull()
+    })
+
+    it('does not start on a pending payment, and keeps the choice for the next check', async () => {
+      rememberCheckoutSave('5', 'card_gateway', ADA)
+      billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Pending })
+
+      await mountResult({ order: '5' }, signedInAs(ADA))
+
+      expect(storedStart).not.toHaveBeenCalled()
+      expect(consumeCheckoutSave('5', ADA)).toBe('card_gateway')
+    })
+
+    it('does not start when the outcome could not be confirmed', async () => {
+      rememberCheckoutSave('5', 'card_gateway', ADA)
+      billing.completeGatewayPayment.mockRejectedValue(new Error('offline'))
+
+      await mountResult({ order: '5' }, signedInAs(ADA))
+
+      expect(storedStart).not.toHaveBeenCalled()
+    })
+
+    it('starts nothing for an invoice payment', async () => {
+      rememberCheckoutSave('9', 'card_gateway', ADA)
+      billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Paid })
+
+      await mountResult({ invoice: '9' }, signedInAs(ADA))
+
+      expect(storedStart).not.toHaveBeenCalled()
+    })
+
+    it('keeps the paid result and shows a notice with a link to the saved methods when the session cannot be started', async () => {
+      rememberCheckoutSave('5', 'card_gateway', ADA)
+      storedStart.mockResolvedValue(false)
+      billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' })
+
+      const wrapper = await mountResult({ order: '5' }, signedInAs(ADA))
+
+      expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.successTitle')
+      expect(wrapper.find('[data-testid="payment-continue"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="payment-save-failed"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="payment-save-failed-link"]').attributes('href')).toBe('/en/client/account?tab=payment')
+      expect(wrapper.find('[data-testid="payment-save-starting"]').exists()).toBe(false)
+    })
   })
 })

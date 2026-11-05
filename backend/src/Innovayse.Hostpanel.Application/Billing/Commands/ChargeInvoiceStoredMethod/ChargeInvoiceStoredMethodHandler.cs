@@ -31,8 +31,17 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.ChargeInvoiceStoredMe
 /// held invoice is never charged again.
 /// </para>
 /// <para>
-/// The consent is read again after the claim is saved and right before the plugin is called. A client who revoked it
-/// in between is not charged: the claim is abandoned, because nothing was sent to the gateway.
+/// The consent is read again after the claim is saved, before the plugin is called. A client who revoked it
+/// in between is not charged: the claim is abandoned, because nothing was sent to the gateway. The invoice is read
+/// again at the same point for the same reason: one paid by a run that finished meanwhile, or one whose due amount no
+/// longer equals the claimed amount (a part payment landed), is not charged, and its claim is abandoned.
+/// </para>
+/// <para>
+/// These rechecks narrow the window but do not close it. The consent and the invoice are read in separate statements
+/// and neither is locked, so a revocation or a payment that commits after the recheck and before the plugin answers is
+/// still charged; the claim gate only stops a second charge of the same invoice. A claim abandoned here never reached
+/// the gateway and is not counted as a failed attempt by the renewal run
+/// (<see cref="InvoicePaymentClaim.FailedAttemptFilter"/>).
 /// </para>
 /// <para>
 /// A plugin that throws leaves the claim open: nothing is known about the money, so the claim is not released and the
@@ -198,6 +207,25 @@ public sealed class ChargeInvoiceStoredMethodHandler
             claim.MarkAbandoned(_clock.UtcNow);
             await _context.SaveChangesAsync(ct);
             return Result<InvoiceChargeDto>.FailureCode(HostpanelErrorCodes.CARD_CONSENT_REQUIRED);
+        }
+
+        // The invoice was read before the claim was taken. A run that finished in between (it held no claim yet when this
+        // one looked) may have paid it, so it is read again now that the claim holds the invoice: nothing is sent to the
+        // gateway for an invoice that owes nothing, and the claim is ended as never charged. A part payment that landed
+        // meanwhile changes what is due, and the claim and the plugin call carry the amount of the earlier read, so a
+        // due amount that no longer equals the claimed one ends the claim the same way rather than overcharge the client.
+        var current = await _context.Invoices
+            .AsNoTracking()
+            .Include(i => i.Transactions)
+            .FirstOrDefaultAsync(i => i.Id == invoice.Id, ct);
+        if (current is null
+            || !current.IsPayable
+            || current.AmountDue <= 0m
+            || CurrencyCode.ToMinorUnits(current.AmountDue, current.Currency) != claim.AmountMinor)
+        {
+            claim.MarkAbandoned(_clock.UtcNow);
+            await _context.SaveChangesAsync(ct);
+            return Result<InvoiceChargeDto>.FailureCode(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
         }
 
         StoredChargeResult charged;

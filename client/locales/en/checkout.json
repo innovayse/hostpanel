@@ -56,6 +56,8 @@
       "email": "you{'@'}example.com",
       "password": "••••••••"
     },
-    "totalChangedConfirm": "The total changed from {shown} to {charged}. Pay the new total?"
+    "totalChangedConfirm": "The total changed from {shown} to {charged}. Pay the new total?",
+    "saveForRenewals": "Save this payment method for automatic renewals",
+    "saveForRenewalsAgreement": "I agree that, after this payment, the payment method I confirm on the payment provider's page may be saved and charged automatically for my renewal invoices until I withdraw this permission. I can withdraw it at any time under Saved payment methods."
   }
 }

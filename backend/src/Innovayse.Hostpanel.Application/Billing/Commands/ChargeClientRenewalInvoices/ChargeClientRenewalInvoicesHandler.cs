@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Domain.Billing;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -140,7 +139,8 @@ public sealed class ChargeClientRenewalInvoicesHandler
     /// <summary>
     /// Finds the client's invoices the run must not charge now: those whose last declined or abandoned attempt ended less
     /// than <see cref="StoredChargeOptions.RetryAfterDays"/> days ago, and those that already had
-    /// <see cref="StoredChargeOptions.MaxAttemptsPerInvoice"/> failed attempts.
+    /// <see cref="StoredChargeOptions.MaxAttemptsPerInvoice"/> failed attempts. A claim abandoned before the plugin was
+    /// called is not an attempt (<see cref="InvoicePaymentClaim.FailedAttemptFilter"/>).
     /// </summary>
     /// <param name="clientId">The client.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -153,7 +153,7 @@ public sealed class ChargeClientRenewalInvoicesHandler
         var failed = await _context.InvoicePaymentClaims
             .AsNoTracking()
             .Where(c => c.ClientId == clientId)
-            .Where(c => c.Status == InvoicePaymentClaimStatus.Declined || c.Status == InvoicePaymentClaimStatus.Abandoned)
+            .Where(InvoicePaymentClaim.FailedAttemptFilter)
             .GroupBy(c => c.InvoiceId)
             .Select(g => new { InvoiceId = g.Key, Attempts = g.Count(), LastEnded = g.Max(c => c.ResolvedAt ?? c.CreatedAt) })
             .ToListAsync(ct);

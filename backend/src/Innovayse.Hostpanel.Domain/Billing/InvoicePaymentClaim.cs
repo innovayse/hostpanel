@@ -115,6 +115,21 @@ public sealed class InvoicePaymentClaim : BaseEntity, IAggregateRoot
             || c.Status == InvoicePaymentClaimStatus.Pending
             || c.Status == InvoicePaymentClaimStatus.Held;
 
+    /// <summary>
+    /// Gets the filter for the claims that count as a failed charge attempt of their invoice: a declined claim, and an
+    /// abandoned claim the reconciliation pass confirmed with the gateway. An abandoned claim the charge itself ended
+    /// before it called the plugin (the consent was revoked, or the invoice no longer owed the claimed amount) never
+    /// reached the gateway and does not count.
+    /// </summary>
+    /// <remarks>
+    /// The two kinds of abandoned claim are told apart without a column: the outcome path
+    /// (<c>ApplyStoredChargeOutcomeHandler</c>) stamps <see cref="CheckedAt"/> through <see cref="RecordCheck"/> before it
+    /// ends any claim, while the charge handler abandons a claim it has not sent anywhere without that stamp.
+    /// </remarks>
+    public static Expression<Func<InvoicePaymentClaim, bool>> FailedAttemptFilter =>
+        c => c.Status == InvoicePaymentClaimStatus.Declined
+            || (c.Status == InvoicePaymentClaimStatus.Abandoned && c.CheckedAt != null);
+
     /// <summary>EF Core parameterless constructor: do not call directly.</summary>
     private InvoicePaymentClaim() { }
 

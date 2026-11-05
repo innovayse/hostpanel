@@ -13,6 +13,7 @@ import { useStoredMethodsApi } from '~/composables/apis/useStoredMethodsApi'
 import { apiErrorMessage } from '~/lib/errorHandler'
 import { ActionOutcome } from '~/types/actionoutcome'
 import { SaveMethodMode } from '~/types/savemethodmode'
+import type { ConsentTextVersion } from '~/types/consenttextversion'
 import type { StoredMethod } from '~/types/storedmethod'
 import { isSafeRedirectUrl } from '~/utils/externalRedirect'
 import {
@@ -66,15 +67,16 @@ export const useStoredMethodsStore = defineStore('storedMethods', () => {
    *
    * @param gatewayModuleId - Gateway module to store the method at.
    * @param consentAccepted - Whether the consent box was ticked.
+   * @param consentTextVersion - Which wording the payer ticked.
    * @param returnUrl - Absolute URL the gateway returns the payer to.
    * @returns The gateway address to navigate to, or null when the attempt failed
    * ({@link error} holds the sentence).
    */
-  const beginSave = async (gatewayModuleId: string, consentAccepted: boolean, returnUrl: string): Promise<string | null> => {
+  const beginSave = async (gatewayModuleId: string, consentAccepted: boolean, consentTextVersion: ConsentTextVersion, returnUrl: string): Promise<string | null> => {
     error.value = ''
     starting.value = true
     try {
-      const session = await api.beginSave(gatewayModuleId, consentAccepted, returnUrl)
+      const session = await api.beginSave(gatewayModuleId, consentAccepted, consentTextVersion, returnUrl)
       if (session.mode !== SaveMethodMode.Redirect || !session.redirectUrl || !isSafeRedirectUrl(session.redirectUrl)) {
         // The portal hosts no in-page card form, and an unsafe address must not be followed.
         error.value = translate('client.storedMethods.unsupportedMode')

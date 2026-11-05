@@ -123,21 +123,17 @@
 
 import { Plus, Star, Trash2 } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
-import { CLIENT_ACCOUNT_PATH } from '~/constants/clientRoutes'
 import { STORED_METHOD_RETURN_QUERY } from '~/constants/storedMethodReturn'
+import { useStoredMethodStart } from '~/composables/useStoredMethodStart'
+import { ConsentTextVersion } from '~/types/consenttextversion'
 import { useAccountStore } from '~/stores/account'
 import { useStoredMethodsStore } from '~/stores/storedmethods'
 import { ActionOutcome } from '~/types/actionoutcome'
-import { AccountTab } from '~/types/accounttab'
 import { PaymentModule } from '~/types/paymentmodule'
 import type { StoredMethod } from '~/types/storedmethod'
-import { redirectToExternal } from '~/utils/externalRedirect'
 
 /** Translator for the success sentence. */
 const { t } = useI18n()
-
-/** Prefixes a path with the active locale. */
-const localePath = useLocalePath()
 
 /** The current route; the return from the gateway is marked in its query. */
 const route = useRoute()
@@ -197,21 +193,18 @@ const methodName = (method: StoredMethod): string => {
   return [method.brand || t('client.storedMethods.card'), method.last4].filter(Boolean).join(' ')
 }
 
+/** Starts a save session and follows its redirect; shared with the post-checkout save. */
+const { start } = useStoredMethodStart()
+
 /** Opens a save session and hands the browser to the gateway's page. */
 const onStart = async (): Promise<void> => {
   success.value = ''
   if (typeof selectedModule.value !== 'string') {
     return
   }
-  const returnUrl = new URL(
-    localePath(`${CLIENT_ACCOUNT_PATH}?tab=${AccountTab.Payment}&${STORED_METHOD_RETURN_QUERY}=1`),
-    window.location.origin
-  ).toString()
-  const redirectUrl = await storedStore.beginSave(selectedModule.value, consent.value, returnUrl)
-  if (redirectUrl) {
+  if (await start(selectedModule.value, consent.value, ConsentTextVersion.AccountCard)) {
     // The consent covered this one session; a later visit asks again.
     consent.value = false
-    redirectToExternal(redirectUrl)
   }
 }
 

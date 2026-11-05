@@ -4,7 +4,8 @@
  * click or Enter/Space. The overlay is Teleported to `<body>` after mount to
  * avoid a hydration mismatch during SSR.
  */
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { withBase } from 'vitepress'
 
 /** Props accepted by the Screenshot component. */
 const props = withDefaults(
@@ -16,6 +17,9 @@ const props = withDefaults(
   }>(),
   { alt: '' },
 )
+
+/** Address of the image under the base path the site is served from (`DOCS_BASE`). */
+const url = computed<string>(() => withBase(props.src))
 
 /** Whether the full-size lightbox overlay is currently open. */
 const open = ref(false)
@@ -58,7 +62,7 @@ onBeforeUnmount(() => {
 <template>
   <span class="screenshot-wrapper">
     <img
-      :src="props.src"
+      :src="url"
       :alt="props.alt"
       class="screenshot-thumb"
       role="button"
@@ -86,7 +90,7 @@ onBeforeUnmount(() => {
           &#x2715;
         </button>
         <img
-          :src="props.src"
+          :src="url"
           :alt="props.alt"
           class="screenshot-full"
           @click.stop

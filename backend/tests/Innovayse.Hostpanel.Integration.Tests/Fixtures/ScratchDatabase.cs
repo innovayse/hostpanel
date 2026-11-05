@@ -11,6 +11,9 @@ public sealed class ScratchDatabase : IAsyncDisposable
     /// <summary>The unique database name.</summary>
     private readonly string _name;
 
+    /// <summary>The connection string of the database.</summary>
+    public string ConnectionString { get; }
+
     /// <summary>Creates the handle for a database that already exists.</summary>
     /// <param name="name">The database name.</param>
     /// <param name="connectionString">The connection string that reaches it.</param>
@@ -19,9 +22,6 @@ public sealed class ScratchDatabase : IAsyncDisposable
         _name = name;
         ConnectionString = connectionString;
     }
-
-    /// <summary>The connection string of the database.</summary>
-    public string ConnectionString { get; }
 
     /// <summary>Creates an empty database on the shared server.</summary>
     /// <returns>The handle; dispose it to drop the database.</returns>

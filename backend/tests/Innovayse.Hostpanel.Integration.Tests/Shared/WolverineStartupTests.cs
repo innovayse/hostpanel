@@ -37,6 +37,8 @@ public sealed class WolverineStartupTests
     [InlineData("Testing", false)]
     public void PreGeneratedTypeAssertion_IsOnWhereHandlerCodeIsLoaded(string environment, bool expected)
     {
+        // The Development row only covers the AssertsPreGeneratedTypes branch: a Development host may
+        // compile on demand, so it is never given the profile that asserts the generated types.
         using var app = BuildHost(environment, "Host=unused;Database=unused");
 
         var options = app.Services.GetRequiredService<JasperFxOptions>();
@@ -67,11 +69,13 @@ public sealed class WolverineStartupTests
     /// <summary>
     /// The current Wolverine starts on a message store schema created by 5.41, the version production ran
     /// before: the additive upgrade at startup drops no table and no column, keeps the rows already stored,
-    /// and leaves a scheduled message that was waiting exactly as it was.
+    /// and leaves a scheduled message that was waiting exactly as it was. The upgrade did run: the dead
+    /// letter history table and the replay count column of the dead letters, which 5.41 does not have, exist
+    /// afterwards.
     /// </summary>
     /// <returns>A task that completes when the upgraded schema was compared with the original.</returns>
     [Fact]
-    public async Task Host_StartedOnAFiveFortyOneSchema_KeepsItsTablesColumnsAndRows()
+    public async Task Host_StartedOnAFiveFortyOneSchema_UpgradesItAdditivelyAndKeepsItsRows()
     {
         await using var database = await ScratchDatabase.CreateAsync();
         await database.ExecuteAsync(await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Fixtures", FiveFortyOneSchemaFile)));
@@ -94,6 +98,12 @@ public sealed class WolverineStartupTests
 
         var after = await database.ColumnsOfWolverineSchemaAsync();
         after.Should().Contain(before, "the upgrade is additive: no table and no column of the old schema is dropped");
+        after.Should().Contain(
+            ["wolverine_dead_letter_history.id", "wolverine_dead_letters.replay_count"],
+            "the upgrade really ran and added what the current Wolverine keeps for dead letters");
+        before.Should().NotContain(
+            ["wolverine_dead_letter_history.id", "wolverine_dead_letters.replay_count"],
+            "5.41 had neither, so their presence afterwards is the upgrade's doing");
         (await database.ScalarAsync($"SELECT status FROM wolverine.wolverine_incoming_envelopes WHERE id = '{envelopeId}'"))
             .Should().Be("Scheduled");
     }

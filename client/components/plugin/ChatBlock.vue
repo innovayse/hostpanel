@@ -105,7 +105,7 @@
  * plugin's `text`, or the host's localised `message` when the plugin failed mid-stream), `link` (`{ text, url }`)
  * adds a link to the reply when the link-block rule admits the address, `done` ends the reply.
  * `step` (`{ id?, label, state }`) keeps a compact list inside the reply, a repeated key updating its row; `result`
- * adds a card with a tone stripe and actions under the same link and route rules as other blocks; `issue` shows the
+ * adds a card with a tone edge and actions under the same link and route rules as other blocks; `issue` shows the
  * plugin's own failure in the danger tone while the stream goes on, `error` and `done` staying the host's. A malformed
  * event of these three is ignored whole. Everything is shown as text, never HTML.
  *

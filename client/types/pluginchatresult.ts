@@ -24,7 +24,7 @@ export interface PluginChatResultAction {
 export interface PluginChatResult {
   /** A key unique within the chat. */
   key: number
-  /** The tone of the card's stripe. */
+  /** The tone of the card's edge. */
   tone: PluginBlockTone
   /** The title; empty for none. */
   title: string

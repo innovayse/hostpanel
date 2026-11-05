@@ -23,7 +23,7 @@
     <UiStack align="center" class="min-h-[420px] flex-1" data-testid="plugin-preview-canvas">
       <div
         v-if="showFrame && address"
-        :class="['h-full min-h-[420px] w-full', size === PluginPreviewSize.Phone ? 'max-w-[375px]' : '']"
+        :class="['h-full min-h-[420px] max-w-full', size === PluginPreviewSize.Phone ? 'w-[375px]' : 'w-full']"
         data-testid="plugin-preview-viewport"
       >
         <UiPreviewFrame :key="address" :src="address" :title="source?.label ?? ''" testid="plugin-preview-frame" />

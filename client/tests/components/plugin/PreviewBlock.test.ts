@@ -126,7 +126,7 @@ describe('PluginPreviewBlock', () => {
     expect(wrapper.get('iframe').attributes('title')).toBe('Live')
 
     await wrapper.get('[data-testid="plugin-preview-size-phone"]').trigger('click')
-    expect(wrapper.get('[data-testid="plugin-preview-viewport"]').classes()).toContain('max-w-[375px]')
+    expect(wrapper.get('[data-testid="plugin-preview-viewport"]').classes()).toContain('w-[375px]')
   })
 
   it('starts at the size the view names and hides the source switch for one source', async () => {
@@ -135,7 +135,7 @@ describe('PluginPreviewBlock', () => {
     await settle()
 
     expect(wrapper.find('[data-testid="plugin-preview-source"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="plugin-preview-viewport"]').classes()).toContain('max-w-[375px]')
+    expect(wrapper.get('[data-testid="plugin-preview-viewport"]').classes()).toContain('w-[375px]')
   })
 
   it('loads the page in full, once, when the document was served for another page of the same plugin', async () => {

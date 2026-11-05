@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Client portal: choosing another account in the header account menu, or "Add another account", started the sign-in with the wrong application and callback, so the person landed on a page that does not exist and kept the old account. The header widget is now served from the portal itself, so both go through the portal's own sign-in and end back in the portal as the chosen account.
 - Admin panel: the theme script in `index.html` was blocked by the Content-Security-Policy on every load. It is now a file served from the panel's own origin, and the policy stays free of `unsafe-inline` for scripts.
 - Admin panel: when the identity provider signs a person out everywhere, the API must be registered with it as the receiver (`/api/auth/backchannel-logout`) for this client, otherwise the admin session outlives the sign-out (see the Docker README).
+- Admin panel: the container refused to start with "DOCS_URL must be empty or an http(s) address" when `DOCS_URL` (or `CLIENT_BASE_URL`) was left empty, the value the settings document as allowed. An empty value is accepted again and a malformed one is still refused.
+- Plugins: a plugin was skipped at start with "Entry point type not found" because the published image stamped the plugin SDK assembly with the image version (0.0.0.0 in a default build) instead of its own, so no plugin built against the SDK could load. The image version no longer reaches the SDK, and the log now says why an entry point type could not be loaded.
 
 ## [0.4.0] - 2026-11-05
 

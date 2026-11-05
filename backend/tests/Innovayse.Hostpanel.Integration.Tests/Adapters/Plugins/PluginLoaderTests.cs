@@ -372,6 +372,39 @@ public sealed class PluginLoaderTests
         }
     }
 
+    /// <summary>
+    /// A plugin whose entry point type derives from an assembly the host cannot find (the case of a plugin built against an
+    /// SDK version the host does not carry) is skipped, and the log says why: the assembly it needs could not be loaded.
+    /// The load used to fail as a bare "entry point type not found", which hid the cause.
+    /// </summary>
+    [Fact]
+    public void DiscoverAndRegister_EntryPointDependencyCannotBeLoaded_LogsTheLoadFailure()
+    {
+        var root = PluginSigningTestSeeds.NewFolder("loader-missing-dependency");
+        try
+        {
+            var folder = Directory.CreateDirectory(Path.Combine(root, "missing-dependency")).FullName;
+            File.WriteAllText(
+                Path.Combine(folder, "plugin.json"),
+                PluginsTestSeeds.ManifestJson("missing-dependency").Replace("\"entryPoint\": \"Test.Plugin\"", "\"entryPoint\": \"Fixture.PluginType\"", StringComparison.Ordinal));
+            File.WriteAllBytes(
+                Path.Combine(folder, "Fixture.Loaded.dll"),
+                PluginAssemblyFixtures.BuiltAgainstAssembly("Fixture.MissingDependency", new Version(3, 1, 0, 0), "Fixture.Loaded"));
+
+            var (registry, logs) = Discover(
+                [new PluginRoot(root, PluginOrigin.BuiltIn)], PluginSigningTestSeeds.Verifier(enforced: false), allowUnsigned: false);
+
+            registry.IsLoaded("missing-dependency").Should().BeFalse();
+            logs.Entries.Should().Contain(e => e.Level == LogLevel.Error
+                && e.Exception != null && e.Exception.Message.Contains("Fixture.MissingDependency"));
+            logs.Entries.Should().Contain(e => e.Level == LogLevel.Error && e.Message.Contains("not found for plugin missing-dependency"));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     /// <summary>Runs the loader over the given roots on a bare service collection.</summary>
     /// <param name="roots">The plugin roots, with their origin.</param>
     /// <param name="verifier">The signature policy.</param>

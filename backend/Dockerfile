@@ -118,12 +118,15 @@ RUN --mount=type=secret,id=nuget_credentials,required=false \
     if [ -s /run/secrets/nuget_credentials ]; then export NuGetPackageSourceCredentials_innovayse="$(cat /run/secrets/nuget_credentials)"; fi; \
     dotnet restore src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj -p:OmitRuntimeCompilation=true $SSO
 
+# The image version goes in as HostVersion, never as Version: a global Version reaches every referenced project and
+# would overwrite the version the plugin SDK sets for itself (backend/src/Directory.Build.props maps HostVersion onto
+# the host's own projects only). A plugin is built against the SDK's own number and refuses to load against another,
+# so an SDK stamped 0.0.0.0 made every plugin's entry point type unloadable.
 RUN SSO=$([ "$AUTH_MODE" = "sso" ] && echo "-p:InnovayseSso=true"); \
     dotnet publish src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj -c Release -o /out --no-restore \
         /p:OmitRuntimeCompilation=true \
         /p:ErrorOnDuplicatePublishOutputFiles=false \
-        /p:Version=$VERSION \
-        /p:InformationalVersion=$VERSION \
+        /p:HostVersion=$VERSION \
         $SSO
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0.22-alpine3.24@sha256:c8e9a3262af499a08fd3911542af57a35c7a11819ba5db2a0a1658e47417d11b AS prod

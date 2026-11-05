@@ -193,7 +193,7 @@ A key added to `.env.example` needs its GitLab variable before the next deploy, 
   generates every secret.
 - **Private package feed.** Builds of `AUTH_MODE=sso` read the feed credentials from the BuildKit secret
   `nuget_credentials`, never from a build argument: `docker build --secret id=nuget_credentials,env=NAME ...`
-  (compose reads `NUGET_INNOVAYSE_CREDENTIALS` for it). An empty or absent secret builds without the feed.
+  (compose reads `NUGET_INNOVAYSE_CREDENTIALS` for it). An empty or absent secret builds without the feed. In `.gitlab-ci.yml` the credential is composed once, in `.nuget-credentials`, from the masked CI/CD variable `PRIVATE_FEED_TOKEN` (the deploy token password) and `PRIVATE_FEED_USER`; an unprotected ref falls back to the job token.
 - **Admin session reset on update.** The sign-on client package (5.1) keeps its session cache keys per product, so the first update to a release that carries it signs every admin panel user out once; the old entries expire on their own. The package maps the back-channel logout receiver (`/api/auth/backchannel-logout`) itself (the identity provider must be told that address for this client, on a host that routes `/api/` to the API; without it the admin session is not ended when the person signs out everywhere), and a sign-in callback with no matching attempt redirects to the sign-in page instead of answering an error body.
 - **Plugin streaming.** `/api/client/plugins/` and `/api/admin/plugins/` can carry server-sent events from plugins, so
   the nginx template gives them `proxy_buffering off`, `proxy_cache off`, HTTP/1.1, an empty `Connection` header and

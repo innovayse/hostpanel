@@ -67,6 +67,7 @@ public static class SwaggerRegistration
 
             options.EnableAnnotations();
             options.TagActionsBy(description => [TagFor(description)]);
+            options.OperationFilter<SameStatusResponsesOperationFilter>();
 
             // Two operations may share a CLR type name in different modules; the full name keeps
             // their schemas apart instead of failing the whole document on the first collision.

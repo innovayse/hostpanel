@@ -41,7 +41,7 @@ if (!existsSync(openapiPath)) {
 }
 
 const spec = JSON.parse(readFileSync(openapiPath, 'utf8'))
-const { resolve: resolveSchema, typeLabel, fieldRows, example, describe, enumNote } = createSchemaTools(spec)
+const { resolve: resolveSchema, typeLabel, variants, fieldRows, example, describe, enumNote } = createSchemaTools(spec)
 const access = scanControllers(controllersDir)
 const errors = loadErrorCatalog()
 
@@ -273,7 +273,15 @@ const responseExamples = (op) => {
     const code = Number(status)
     if (code >= 200 && code < 300) {
       const schema = response.content?.['application/json']?.schema
-      out.push({ status, body: schema ? JSON.stringify(example(schema), null, 2) : null })
+      const alternatives = variants(schema)
+      if (alternatives.length > 0) {
+        // One status with several bodies: one example for each, named after its type.
+        for (const alternative of alternatives) {
+          out.push({ status: `${status} ${typeLabel(alternative)}`, body: JSON.stringify(example(alternative), null, 2) })
+        }
+      } else {
+        out.push({ status, body: schema ? JSON.stringify(example(schema), null, 2) : null })
+      }
     } else {
       const sample = errorExample(code)
       out.push({ status, body: sample ? JSON.stringify(sample, null, 2) : null })

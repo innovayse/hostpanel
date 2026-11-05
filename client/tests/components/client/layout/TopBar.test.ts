@@ -11,7 +11,7 @@ import { mountClient } from '~/tests/helpers/mountClient'
 import TopBar from '~/components/client/layout/TopBar.vue'
 
 /** The theme and language controls need runtime services this test does not provide. */
-const STUBS = { UiThemeToggle: true, UiLanguageSwitcher: true }
+const STUBS = { UiThemeToggle: true, UiLanguageSwitcher: true, LogoLockup: true }
 
 /**
  * Stands in for the runtime configuration.
@@ -71,10 +71,23 @@ describe('ClientLayoutTopBar', () => {
     expect(wrapper.emitted('toggleSidebar')).toHaveLength(1)
   })
 
-  it('links the mobile brand to the home page', () => {
+  it('links the brand lockup to the home page', () => {
     const wrapper = mountClient(TopBar, { props: { fullName: 'Ada', sidebarOpen: false }, stubs: STUBS })
+    const brand = wrapper.find('[data-testid="client-topbar-brand"]')
 
-    expect(wrapper.find('[data-testid="client-topbar-brand"]').attributes('href')).toBe('/')
+    expect(brand.attributes('href')).toBe('/')
+    expect(brand.classes()).not.toContain('lg:hidden')
+  })
+
+  it('puts the welcome line on the right, after the brand and before the controls', () => {
+    const wrapper = mountClient(TopBar, { props: { fullName: 'Ada Lovelace', sidebarOpen: false }, stubs: STUBS })
+    const header = wrapper.get('[data-testid="client-topbar"]')
+    const left = header.element.children[0] as HTMLElement
+    const right = header.element.children[1] as HTMLElement
+
+    expect(left.contains(wrapper.get('[data-testid="client-topbar-brand"]').element)).toBe(true)
+    expect(left.querySelector('[data-testid="client-topbar-name"]')).toBeNull()
+    expect(right.querySelector('[data-testid="client-topbar-name"]')?.textContent).toBe('Ada Lovelace')
   })
 })
 

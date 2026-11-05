@@ -1055,10 +1055,27 @@ docker/                              compose set (shared·dev·prod·platform), 
 
 ## CQRS — Wolverine, conforming
 
-Wolverine 5.41.0. `Extensions/MessagingRegistration.cs` registers discovery over the API and
+Wolverine 6.61.0. `Extensions/MessagingRegistration.cs` registers discovery over the API and
 Application assemblies; handlers are never registered by hand and never called directly. One
 folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
 
+- **Handler code is generated at image build time and loaded, never compiled, in production.**
+  `MessagingRegistration.TypeLoadModeFor` picks `Static` everywhere except Development (`Auto`) and the
+  Testing environment of the integration suite (`Dynamic`). The API Dockerfile runs `codegen write`, which
+  compiles with Roslyn and so needs the `WolverineFx.RuntimeCompilation` package (Wolverine 6 moved the
+  compiler out of core), then restores and publishes the API with `OmitRuntimeCompilation=true`, which the
+  API csproj honours by leaving that one reference out: the published image carries neither the package
+  nor the scripting and Visual Basic Roslyn assemblies it adds (about 9 MB). The core Roslyn assemblies
+  (`Microsoft.CodeAnalysis*`, `BuildHost-*`) stay in the image regardless, because
+  `WolverineFx.EntityFrameworkCore` depends on `Microsoft.CodeAnalysis.CSharp.Workspaces`,
+  `Microsoft.CodeAnalysis.Workspaces.MSBuild` and `Microsoft.EntityFrameworkCore.Design` itself; dropping them
+  would mean hand-listing a transitive closure of a package that may load it. A plain restore or build leaves
+  the property unset, so Development, the tests and `dotnet watch` keep the package.
+  Since Wolverine 6.30 a `Static` host refuses to start (`MissingPreBuiltTypesException`, naming the chains)
+  when a handler chain's generated type is missing, where earlier versions started healthy and lost the
+  messages of that type; `Production.AssertAllPreGeneratedTypesExist` is set in `Static` mode as well, for the
+  environment check over every code collection. `WolverineStartupTests` pins both, and starts the current
+  Wolverine on a message store schema created by 5.41 (`Fixtures/wolverine-5.41-schema.sql`).
 - **Handlers return `Result` / `Result<T>`** (`Shared/Models`); controllers derive from
   `BaseApiController` and return through `HandleResult`, which maps the failure code to a status
   with `StatusMapping`. Every controller derives from it (`ControllerBaseTests`); handlers and
@@ -1394,7 +1411,7 @@ feature does not exist is not kept. The decisions:
 
 ## Stack
 
-.NET 9 · Wolverine 5.41.0 (WolverineFx.Postgresql, WolverineFx.EntityFrameworkCore) · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
+.NET 9 · Wolverine 6.61.0 (WolverineFx.Postgresql, WolverineFx.EntityFrameworkCore) · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
 mode) + JWT bearer · `Innovayse.Auth` (cookie session for the admin SPA, sso builds only) · SkiaSharp (branding images) ·
 Serilog · Scalar + Swashbuckle · Mapster · MailKit · Otp.NET · Fluid.Core ·
 DnsClient · Redis (sessions + data-protection key ring) · RabbitMQ · xUnit + FluentAssertions +
@@ -1597,14 +1614,24 @@ default, so `docker/docker-compose.prod.yml` spells every one of them that way. 
 in `docker/docker-compose.dev.yml` are silently ignored on a deployed host**, so the value stays
 at its build-time default and no `.env` edit can change it.
 
-**The client image has no build args.** The app-launcher `<script src="…/widget/header.js">` tag is
-added by `plugins/header-widget.ts` from `runtimeConfig.public.mainUrl`, so `NUXT_PUBLIC_MAIN_URL`
+**The client image has no build args.** The app-launcher `<script src="/widget/header.js">` tag is
+added by `plugins/header-widget.ts` when `runtimeConfig.public.mainUrl` is set, so `NUXT_PUBLIC_MAIN_URL`
 is plain runtime env. `site.url` is read at runtime by nuxt-site-config from `NUXT_PUBLIC_SITE_URL`
 (set in `docker-compose.prod.yml`); the esbuild `drop` depends only on `NODE_ENV`, not on a
 deployment. Do not add a `process.env` read outside `runtimeConfig` that differs per deployment.
 
-That widget is a host-provided header widget, not served by this product. It must be HTTPS on an HTTPS
-deployment or the browser blocks it as mixed content and the client dashboard's hydration
+That widget is a host-provided header widget, written elsewhere, but it is **served from this portal's own origin**:
+`server/routes/widget/[file].get.ts` relays `header.js` and `header.v2.js` from `MAIN_APP_URL` (five minutes' cache, the last copy kept when the host is unreachable, only those two names). The script builds every
+address for switching account, adding an account, its configuration and its launcher from the origin it was
+served from; loaded from the host's origin it sent the switch through the host's sign-in client and callback, so
+the visitor landed on a page that does not exist here and kept the old account. Served from here, those
+addresses are this portal's own: `GET /api/portal/auth/sso/switch` and `GET /api/portal/auth/sso/authorize`
+(which reads the page to return to as `returnTo` or, as the widget spells it, `redirect`). The three other
+addresses the widget asks of its origin are answered by `server/routes/api/portal/public/config.get.ts` (the
+sign-on address), `.../apps.get.ts` (the launcher list, read from the host, empty when it is unreachable) and
+`server/routes/account.get.ts` (a redirect to the host's account centre). All of them answer 404 unless the
+widget is enabled (`isHeaderWidgetEnabled`). The host's address must be HTTPS on an HTTPS
+deployment or the browser blocks the script as mixed content and the client dashboard's hydration
 hangs.
 
 **The `dark` / `light` class on `<html>` has exactly one writer: `client/plugins/color-mode.ts`.**

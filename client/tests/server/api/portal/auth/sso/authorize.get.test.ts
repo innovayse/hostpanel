@@ -127,6 +127,40 @@ describe('GET /api/portal/auth/sso/authorize', () => {
     expect(returnToOf(event)).toBe('/client/invoices')
   })
 
+  it('reads the page to return to from redirect, the name the header widget uses for add account', async () => {
+    const event = makeEvent({ query: { redirect: '/client/services', prompt: 'select_account' } })
+
+    await route.default(event)
+
+    expect(returnToOf(event)).toBe('/client/services')
+    expect(new URL(event.redirectedTo ?? '').searchParams.get('prompt')).toBe('select_account')
+  })
+
+  it('prefers returnTo over redirect when both are given', async () => {
+    const event = makeEvent({ query: { returnTo: '/client/invoices', redirect: '/client/services' } })
+
+    await route.default(event)
+
+    expect(returnToOf(event)).toBe('/client/invoices')
+  })
+
+  it('reads the page to return to from redirect, the name the header widget uses for add account', async () => {
+    const event = makeEvent({ query: { redirect: '/client/services', prompt: 'select_account' } })
+
+    await route.default(event)
+
+    expect(returnToOf(event)).toBe('/client/services')
+    expect(new URL(event.redirectedTo ?? '').searchParams.get('prompt')).toBe('select_account')
+  })
+
+  it('prefers returnTo over redirect when both are given', async () => {
+    const event = makeEvent({ query: { returnTo: '/client/invoices', redirect: '/client/services' } })
+
+    await route.default(event)
+
+    expect(returnToOf(event)).toBe('/client/invoices')
+  })
+
   it('falls back to the referer path when no returnTo is given', async () => {
     const event = makeEvent({ headers: { referer: 'https://portal.test/client/tickets?x=1' } })
 

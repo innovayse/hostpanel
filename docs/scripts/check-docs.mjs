@@ -58,6 +58,13 @@ for (const htmlFile of collectHtml(distDir)) {
     const src = m[1]
     // Skip external URLs and data URIs.
     if (src.startsWith('http') || src.startsWith('data:')) { continue }
+    // A root-relative address must sit under the base: anything else works in a dev server but is a 404 once
+    // the site is served from its base path.
+    if (src.startsWith('/') && !src.startsWith('//') && !src.startsWith(base)) {
+      console.error(`Image outside the base ${base}: ${src}  (referenced in ${relative(distDir, htmlFile)})`)
+      failures++
+      continue
+    }
     // Strip query/hash, strip leading slash.
     const clean = src.split('?')[0].split('#')[0].replace(base.length > 1 ? new RegExp(`^${base}`) : /^\//, '')
     const abs = join(distDir, clean)

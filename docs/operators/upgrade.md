@@ -69,11 +69,16 @@ In Production the API refuses to start while a secret still holds a placeholder 
 
 ### Saved cards and the payment plugin
 
-Release 0.4.0 moves the saved card customer references to the payment plugin with
-the id `stripe`, because the only gateway that ever stored them was that one. If your
-clients paid with a saved card, install your card plugin with the id `stripe` before
-upgrading. If your plugin uses another id, rewrite `GatewayModuleId` in
-`GatewayCustomers` to that id. Otherwise those clients are asked for their card again.
+Release 0.4.0 removes the built in card gateways. Their plugins are not publicly
+available yet, so if you take card payments, stay on 0.3.1 until a card plugin is
+available. Without a card plugin no card payment method is offered at checkout. Bank
+transfer keeps working.
+
+The upgrade keeps the saved card customer references. It moves them to the payment
+plugin with the id `stripe`, because the only gateway that ever stored them was that
+one, and they are used once a plugin with that id is installed. If your plugin uses
+another id, rewrite `GatewayModuleId` in `GatewayCustomers` to that id. Until a
+matching plugin is installed, those clients are asked for their card again.
 
 ### Uploaded plugins and signed packages
 

@@ -366,8 +366,8 @@ Plugin settings are not in .env. Set them on the API service in a compose overri
 | `PluginApi__StreamHeartbeatSeconds` | `15` | Seconds a streamed plugin reply may stay silent before the host writes a comment line to keep the connection alive (1 to 300). |
 | `PluginApi__StreamEventMaxBytes` | `65536` | Largest data of one event of a streamed plugin reply, in bytes (1 to 1048576). A plugin that sends a larger event ends the stream with an `error` event. |
 | `PluginSigning__MaintainerKeys__0__KeyId`, `__PublicKey`, ... | *(shipped in the image)* | Ed25519 signing key entries for the official plugin maintainers. Shipped in the image; operators do not set these. |
-| `PluginSigning__OperatorKeys__0__KeyId` | n/a | Key ID of an operator-trusted plugin signer. Each entry is a pair of `__KeyId` and `__PublicKey` under the same index. |
-| `PluginSigning__OperatorKeys__0__PublicKey` | n/a | Ed25519 public key of the operator-trusted signer at index 0. Add more signers as `__1__KeyId` / `__1__PublicKey`, and so on. |
+| `PluginSigning__OperatorKeys__0__KeyId` | n/a | Key ID of an operator-trusted plugin signer. Each entry is a pair of `__KeyId` and `__PublicKey` under the same index. With the compose files, set `PLUGIN_OPERATOR_KEY_ID`. Leave it and the public key empty to add none; setting only one of the two stops the API at start. |
+| `PluginSigning__OperatorKeys__0__PublicKey` | n/a | Ed25519 public key of the operator-trusted signer at index 0. Add more signers as `__1__KeyId` / `__1__PublicKey`, and so on. With the compose files, set `PLUGIN_OPERATOR_PUBLIC_KEY`. |
 
 ## Development-only settings
 

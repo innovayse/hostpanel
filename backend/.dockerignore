@@ -8,3 +8,6 @@
 **/.gitnexus
 **/.claude
 **/wg0.conf
+# Handler code that dotnet watch (Development, TypeLoadMode.Auto) wrote beside the sources: gitignored, and stale
+# for the image, whose build generates its own with `codegen write` (a leftover file breaks that step).
+**/Internal/Generated

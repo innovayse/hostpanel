@@ -4,15 +4,14 @@
  * .github/workflows/docs.yml); nothing it produces is committed.
  *
  * It writes, under docs/api-reference/:
- *   - auth/, public/, client/, admin/   one page per operation (the audience groups)
+ *   - auth/, public/, client/, member/, admin/   one page per operation (the audience groups)
  *   - generated-sidebar.json            the sidebar groups the VitePress config merges in
  *   - _partials/rate-limit-endpoints.md the list of endpoints per rate limit policy, which the
  *                                       Rate limits page includes
  *
- * The audience of an operation is the tag of the document (Public, Auth, Client, Admin). The
- * document tags every action that is not anonymous, not under api/auth and not a client action as
- * Admin, including the few that any signed-in user may call, so the access of each action is
- * also read from the controllers' attributes (see lib/controllers.mjs) and stated on its page.
+ * The audience of an operation is the tag of the document (Auth, Public, Client, Member, Admin).
+ * The access of each action is also read from the controllers' attributes (see
+ * lib/controllers.mjs) and stated on its page, because the document does not carry it.
  *
  * Usage (from the repository root):
  *   node docs/scripts/generate-api-reference.mjs [path/to/openapi.json]
@@ -42,7 +41,7 @@ if (!existsSync(openapiPath)) {
 }
 
 const spec = JSON.parse(readFileSync(openapiPath, 'utf8'))
-const { resolve: resolveSchema, typeLabel, fieldRows, example, describe, enumNote } = createSchemaTools(spec)
+const { resolve: resolveSchema, typeLabel, variants, fieldRows, example, describe, enumNote } = createSchemaTools(spec)
 const access = scanControllers(controllersDir)
 const errors = loadErrorCatalog()
 
@@ -51,6 +50,7 @@ const AUDIENCES = [
   { key: 'Auth', dir: 'auth', title: 'Auth endpoints' },
   { key: 'Public', dir: 'public', title: 'Public endpoints' },
   { key: 'Client', dir: 'client', title: 'Client endpoints' },
+  { key: 'Member', dir: 'member', title: 'Any signed-in user' },
   { key: 'Admin', dir: 'admin', title: 'Admin endpoints' },
 ]
 
@@ -105,13 +105,7 @@ for (const [path, item] of Object.entries(spec.paths ?? {})) {
       process.exit(1)
     }
 
-    // A tag of Admin on an action any signed-in user may call is the document's fallback, not a
-    // fact. Follow the audience the routes belong to: api/me/* is for clients, the rest is
-    // shared reference data.
-    let audience = tag
-    if (tag === 'Admin' && facts?.policy === 'member') {
-      audience = path.startsWith('/api/me/') ? 'Client' : 'Public'
-    }
+    const audience = tag
 
     operations.push({ path, method: method.toUpperCase(), op, facts, tag, audience })
   }
@@ -279,7 +273,15 @@ const responseExamples = (op) => {
     const code = Number(status)
     if (code >= 200 && code < 300) {
       const schema = response.content?.['application/json']?.schema
-      out.push({ status, body: schema ? JSON.stringify(example(schema), null, 2) : null })
+      const alternatives = variants(schema)
+      if (alternatives.length > 0) {
+        // One status with several bodies: one example for each, named after its type.
+        for (const alternative of alternatives) {
+          out.push({ status: `${status} ${typeLabel(alternative)}`, body: JSON.stringify(example(alternative), null, 2) })
+        }
+      } else {
+        out.push({ status, body: schema ? JSON.stringify(example(schema), null, 2) : null })
+      }
     } else {
       const sample = errorExample(code)
       out.push({ status, body: sample ? JSON.stringify(sample, null, 2) : null })

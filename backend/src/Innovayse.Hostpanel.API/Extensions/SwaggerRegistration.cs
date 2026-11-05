@@ -35,6 +35,9 @@ public static class SwaggerRegistration
     /// <summary>The tag on operations a signed-in client user calls.</summary>
     public const string ClientTag = "Client";
 
+    /// <summary>The tag on operations any signed-in user may call, whatever their role.</summary>
+    public const string MemberTag = "Member";
+
     /// <summary>The tag on staff operations.</summary>
     public const string AdminTag = "Admin";
 
@@ -64,6 +67,7 @@ public static class SwaggerRegistration
 
             options.EnableAnnotations();
             options.TagActionsBy(description => [TagFor(description)]);
+            options.OperationFilter<SameStatusResponsesOperationFilter>();
 
             // Two operations may share a CLR type name in different modules; the full name keeps
             // their schemas apart instead of failing the whole document on the first collision.
@@ -138,6 +142,11 @@ public static class SwaggerRegistration
         if (policies.Contains(Policies.Client))
         {
             return ClientTag;
+        }
+
+        if (policies.Contains(Policies.Member))
+        {
+            return MemberTag;
         }
 
         return AdminTag;

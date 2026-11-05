@@ -100,7 +100,8 @@ describe('BFF contract', () => {
   })
 
   it('reaches the sign-on service only through signOnFetch, bar the code exchange of the callback', () => {
-    const allowed = new Set(['utils/signon-http.ts', 'api/portal/auth/sso/callback.get.ts'])
+    // config.get.ts only names `ssoUrl` as the key of the JSON the header widget reads; it never calls the service.
+    const allowed = new Set(['utils/signon-http.ts', 'api/portal/auth/sso/callback.get.ts', 'routes/api/portal/public/config.get.ts'])
     const offenders = walk(SERVER)
       .filter((path) => /\bssoUrl\b/.test(code(path)))
       .map((path) => relative(SERVER, path).replace(/\\/g, '/'))

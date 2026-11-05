@@ -298,6 +298,33 @@ Start with [docs/developers/write-a-plugin.md](docs/developers/write-a-plugin.md
   **Allow unsigned plugins** (off by default, audited) or pin archive digests with `Plugins:TrustedPackageSha256`. With no
   plugin installed the panels look exactly as the core ships them.
 
+## Contributing in 5 minutes
+
+1. **Fork and clone** with the submodule, then start your change from `develop` (not `main`):
+
+   ```bash
+   git clone --recurse-submodules https://github.com/<your-user>/hostpanel.git
+   cd hostpanel
+   git switch -c my-change --no-track origin/develop
+   ```
+
+2. **Start the development stack.** The first start takes a few minutes while the images build:
+
+   ```bash
+   cd docker
+   cp .env.example .env
+   docker compose -f docker-compose.shared.yml -f docker-compose.dev.yml up -d
+   ```
+
+3. **Open the admin panel** at http://localhost:5174 and sign in with `admin@example.test` / `Admin123!`.
+   The client portal is at http://localhost:3001. Both come with sample data.
+4. **Pick an issue** labelled [`good first issue`](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+   and leave a comment saying you are taking it.
+5. **Make the change, run the tests** (see [Run from source](#run-from-source)) and open a pull request **against
+   `develop`**. A first review comes within 3 working days.
+
+More detail, including the rules for pull requests, is in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Contributing, security, license
 
 - **Contributing:** start with [good first issues](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22),

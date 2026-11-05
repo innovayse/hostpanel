@@ -72,6 +72,15 @@ public static class MessagingRegistration
         return environment.IsDevelopment() ? TypeLoadMode.Auto : TypeLoadMode.Static;
     }
 
+    /// <summary>
+    /// Whether the host asserts, at startup, that every pre-generated type it will load exists. Only a mode
+    /// that loads generated code has anything to assert: a mode that compiles on demand writes what is
+    /// missing, and asserting there would fail a development or test host that has no generated code yet.
+    /// </summary>
+    /// <param name="typeLoadMode">The mode <see cref="TypeLoadModeFor"/> chose.</param>
+    /// <returns><see langword="true"/> for <see cref="TypeLoadMode.Static"/>.</returns>
+    public static bool AssertsPreGeneratedTypes(TypeLoadMode typeLoadMode) => typeLoadMode == TypeLoadMode.Static;
+
     /// <summary>Adds Wolverine to the host.</summary>
     /// <param name="builder">The host builder, needed for both its container and <c>UseWolverine</c>.</param>
     /// <returns><paramref name="builder"/>, for chaining.</returns>
@@ -104,6 +113,19 @@ public static class MessagingRegistration
         builder.Host.UseWolverine(opts =>
         {
             opts.CodeGeneration.TypeLoadMode = typeLoadMode;
+
+            // Static mode has no fallback, and before Wolverine 6.30 a handler whose generated type was
+            // missing (a stale or skipped `codegen write`) booted a healthy host that lost every message of
+            // that type. From 6.30 the host itself refuses to start in Static mode when a handler chain's
+            // generated type is not in the assembly (MissingPreBuiltTypesException, naming the chains).
+            // This flag adds JasperFx's environment check for the same thing over every code collection,
+            // handlers or not (`check-env`, and anything added later), and is on exactly where handler code
+            // is loaded rather than compiled. Production here means every environment but Development, the
+            // same split TypeLoadModeFor makes.
+            opts.Services.CritterStackDefaults(defaults =>
+            {
+                defaults.Production.AssertAllPreGeneratedTypesExist = AssertsPreGeneratedTypes(typeLoadMode);
+            });
 
             // Wolverine builds a handler's dependencies as plain constructor calls in its generated
             // code. Falling back on the container instead is refused, in every environment: a lambda

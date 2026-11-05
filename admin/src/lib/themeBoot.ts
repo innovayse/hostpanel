@@ -1,8 +1,9 @@
 /**
  * Applies the operator's theme to the document: before first paint and on every later change.
  *
- * {@link bootTheme} is the one implementation: `vite.config.ts` serialises it into an inline
- * `<script>` at the end of `<head>` (so the page never flashes dark before switching to light),
+ * {@link bootTheme} is the one implementation: `themeBootPlugin` serialises it into `theme-boot.js`, a
+ * same-origin script at the end of `<head>` (the Content-Security-Policy refuses an inline one; the page
+ * still never flashes dark before switching to light),
  * and the theme store calls the same function after a choice or a system-scheme change. Because
  * it is turned into source text with `toString()`, it must stay self-contained: no imports, no
  * closure over module values: everything it needs arrives in its {@link ThemeBootConfig}.
@@ -13,7 +14,7 @@
 // and knows neither the alias nor an extensionless relative import.
 import { AdminTheme } from '../types/admintheme.ts'
 
-/** Everything {@link bootTheme} needs, passed in so the function can run as an inline script. */
+/** Everything {@link bootTheme} needs, passed in so the function can run as a standalone script. */
 export interface ThemeBootConfig {
   /** localStorage key holding the operator's {@link AdminTheme} choice. */
   storageKey: string
@@ -37,7 +38,7 @@ export interface ThemeBootConfig {
 /** localStorage key holding the operator's theme choice. */
 export const THEME_STORAGE_KEY = 'admin.theme'
 
-/** The panel's theme configuration, shared by the inline script and the store. */
+/** The panel's theme configuration, shared by the pre-paint script and the store. */
 export const THEME_BOOT_CONFIG: ThemeBootConfig = {
   storageKey: THEME_STORAGE_KEY,
   light: AdminTheme.Light,
@@ -79,7 +80,7 @@ export const bootTheme = (config: ThemeBootConfig): boolean => {
 }
 
 /**
- * Source text of the inline pre-paint script: {@link bootTheme} called with the panel's config.
+ * Source text of the pre-paint script: {@link bootTheme} called with the panel's config.
  *
  * @param config - Configuration to embed; the panel's own by default.
  * @returns A self-invoking script body for a `<script>` tag.

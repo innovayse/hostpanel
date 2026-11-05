@@ -113,6 +113,8 @@ describe('ClientInnerSidebar', () => {
     const callbacks: ResizeObserverCallback[] = []
     /** How many observers were disconnected. */
     let disconnected = 0
+    /** Every element an observer was asked to watch. */
+    const observed: Element[] = []
     vi.stubGlobal('ResizeObserver', class {
       /**
        * Keeps the callback to play later.
@@ -123,8 +125,14 @@ describe('ClientInnerSidebar', () => {
         callbacks.push(callback)
       }
 
-      /** Accepts the observed element. */
-      observe = (): void => {}
+      /**
+       * Records the observed element.
+       *
+       * @param target - The element the component watches.
+       */
+      observe = (target: Element): void => {
+        observed.push(target)
+      }
 
       /** Not used by the component. */
       unobserve = (): void => {}
@@ -144,6 +152,11 @@ describe('ClientInnerSidebar', () => {
       await flushPromises()
       scrolled.length = 0
       expect(callbacks).toHaveLength(1)
+      // The list keeps its box when a tab changes width (it scrolls), so every tab is watched as well.
+      expect(observed).toContain(wrapper.get('[role="tablist"]').element)
+      for (const tab of wrapper.findAll('[role="tab"]')) {
+        expect(observed).toContain(tab.element)
+      }
 
       callbacks[0]?.([], {} as ResizeObserver)
       await flushPromises()

@@ -2,21 +2,9 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
-import type { Plugin } from 'vite'
 // The extension is spelled out because Vite's native config loader runs this file under Node,
 // which resolves a relative import only by its full file name.
-import { themeBootScript } from './src/lib/themeBoot.ts'
-
-/**
- * Inlines the theme pre-paint script at the end of `<head>`, after the `theme-color` metas it
- * rewrites, so the stored light/dark choice is on `<html>` before the first paint.
- *
- * @returns The Vite plugin.
- */
-const themeBoot = (): Plugin => ({
-  name: 'admin-theme-boot',
-  transformIndexHtml: () => [{ tag: 'script', children: themeBootScript(), injectTo: 'head' }],
-})
+import { themeBootPlugin } from './src/lib/themeBootPlugin.ts'
 
 export default defineConfig({
   // Relative: the deployed base path is set at container start (<base href> + config.js).
@@ -24,7 +12,7 @@ export default defineConfig({
   plugins: [
     vue(),
     tailwindcss(),
-    themeBoot(),
+    themeBootPlugin(),
   ],
   resolve: {
     alias: {

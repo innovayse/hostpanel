@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useStoredMethodsStore } from '~/stores/storedmethods'
 import { ActionOutcome } from '~/types/actionoutcome'
+import { ConsentTextVersion } from '~/types/consenttextversion'
 import { SaveMethodMode } from '~/types/savemethodmode'
 import type { StoredMethod } from '~/types/storedmethod'
 import { readPendingStoredSession, writePendingStoredSession } from '~/utils/pendingStoredSession'
@@ -69,10 +70,10 @@ describe('stored methods store', () => {
     api.beginSave.mockResolvedValue({ sessionId: 's1', mode: SaveMethodMode.Redirect, clientToken: null, redirectUrl: 'https://pay.example/s1' })
     const store = useStoredMethodsStore()
 
-    const url = await store.beginSave('card_gateway', true, 'https://x/return')
+    const url = await store.beginSave('card_gateway', true, ConsentTextVersion.AccountCard, 'https://x/return')
 
     expect(url).toBe('https://pay.example/s1')
-    expect(api.beginSave).toHaveBeenCalledWith('card_gateway', true, 'https://x/return')
+    expect(api.beginSave).toHaveBeenCalledWith('card_gateway', true, ConsentTextVersion.AccountCard, 'https://x/return')
     expect(readPendingStoredSession()).toEqual({ gatewayModuleId: 'card_gateway', sessionId: 's1' })
     expect(store.starting).toBe(false)
   })
@@ -81,7 +82,7 @@ describe('stored methods store', () => {
     api.beginSave.mockResolvedValue({ sessionId: 's1', mode: SaveMethodMode.EmbeddedToken, clientToken: 'tok', redirectUrl: null })
     const store = useStoredMethodsStore()
 
-    expect(await store.beginSave('card_gateway', true, 'https://x/return')).toBeNull()
+    expect(await store.beginSave('card_gateway', true, ConsentTextVersion.AccountCard, 'https://x/return')).toBeNull()
     expect(store.error).not.toBe('')
     expect(readPendingStoredSession()).toBeNull()
   })
@@ -90,7 +91,7 @@ describe('stored methods store', () => {
     api.beginSave.mockRejectedValue(refusal)
     const store = useStoredMethodsStore()
 
-    expect(await store.beginSave('card_gateway', false, 'https://x/return')).toBeNull()
+    expect(await store.beginSave('card_gateway', false, ConsentTextVersion.AccountCard, 'https://x/return')).toBeNull()
     expect(store.error).toBe('Refused.')
     expect(store.starting).toBe(false)
   })

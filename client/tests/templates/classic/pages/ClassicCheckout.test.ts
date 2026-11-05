@@ -249,6 +249,7 @@ describe('ClassicCheckout', () => {
     it('is hidden for bank transfer', async () => {
       const wrapper = await mountCheckout()
       useAuthStore().user = client
+      useCheckoutStore().selectedMethod = PaymentModule.BankTransfer
       await flushPromises()
 
       expect(wrapper.find('[data-testid="checkout-save-for-renewals"]').exists()).toBe(false)

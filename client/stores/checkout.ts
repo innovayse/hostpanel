@@ -394,9 +394,15 @@ export const useCheckoutStore = defineStore('checkout', () => {
         // The renewal-save choice rides the same trip as the payment token. Nothing is started here:
         // the return page starts the stored-method session only once the payment is confirmed.
         if (saveForRenewals.value && mayOfferSave()) {
-          // Bound to the signed-in account: another account on this browser must not act on it.
-          await authStore.fetchUser()
-          rememberCheckoutSave(result.orderId, method, authStore.user?.email)
+          // Best effort: the gateway session is already registered, so a failure here must not turn a set
+          // up payment into an error. The payer still goes to the bank; the choice is just not kept.
+          try {
+            // Bound to the signed-in account: another account on this browser must not act on it.
+            await authStore.fetchUser()
+            rememberCheckoutSave(result.orderId, method, authStore.user?.email)
+          } catch {
+            // Nothing is saved after this payment; the payment itself is unaffected.
+          }
         }
         // The cart is kept: the result page empties it once the bank confirms the payment, so a
         // declined or abandoned payment leaves the payer's choices where they were.

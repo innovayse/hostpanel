@@ -29,13 +29,13 @@ describe('POST /api/portal/client/stored-payment-methods/sessions', () => {
   it('calls the backend endpoint with the body and returns its answer', async () => {
     backend.respondWith(() => ({ body: { sessionId: 's1' } }))
 
-    const result = await route.default(makeEvent({ body: { gatewayModuleId: 'card_gateway', consentAccepted: true, returnUrl: 'https://x/r' }, cookies: await signedIn('jwt') }))
+    const result = await route.default(makeEvent({ body: { gatewayModuleId: 'card_gateway', consentAccepted: true, consentTextVersion: 'account-card-2026-11', returnUrl: 'https://x/r' }, cookies: await signedIn('jwt') }))
 
     expect(result).toEqual({ sessionId: 's1' })
     expect(backend.requests[0]?.method).toBe('POST')
     expect(backend.requests[0]?.url).toBe('/api/me/stored-payment-methods/sessions')
     expect(backend.requests[0]?.headers['authorization']).toBe('Bearer jwt')
-    expect(JSON.parse(backend.requests[0]?.body ?? '{}')).toEqual({ gatewayModuleId: 'card_gateway', consentAccepted: true, returnUrl: 'https://x/r' })
+    expect(JSON.parse(backend.requests[0]?.body ?? '{}')).toEqual({ gatewayModuleId: 'card_gateway', consentAccepted: true, consentTextVersion: 'account-card-2026-11', returnUrl: 'https://x/r' })
   })
 
   it('passes the backend refusal through with its code and sentence', async () => {

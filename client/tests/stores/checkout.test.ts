@@ -408,11 +408,24 @@ describe('useCheckoutStore save for renewals', () => {
     auth.isLoggedIn = true
     auth.user = { email: 'ada@example.com' }
     auth.login = vi.fn().mockResolvedValue({})
+    auth.fetchUser.mockReset().mockResolvedValue(undefined)
     rememberToken.mockReset()
     window.sessionStorage.clear()
     payer.code = 'USD'
     billing.createOrder.mockResolvedValue(placed)
     billing.startOrderGatewayPayment.mockResolvedValue({ redirectUrl: 'https://bank.example/pay' })
+  })
+
+  it('still sends the payer to the bank, saving nothing, when the account cannot be read', async () => {
+    auth.fetchUser.mockRejectedValue(new Error('offline'))
+    const store = arrange('hosted_gateway')
+    store.saveForRenewals = true
+
+    const destination = await store.placeOrder(input())
+
+    expect(destination).toEqual({ kind: CheckoutDestinationKind.External, target: 'https://bank.example/pay' })
+    expect(store.error).toBe('')
+    expect(consumeCheckoutSave(42, 'ada@example.com')).toBeNull()
   })
 
   it('is off by default', () => {

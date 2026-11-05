@@ -9,6 +9,7 @@
 
 import { apiFetch } from '~/composables/useApi'
 import { HttpMethod } from '~/types/httpmethod'
+import type { ConsentTextVersion } from '~/types/consenttextversion'
 import type { SaveMethodSession } from '~/types/savemethodsession'
 import type { StoredMethod } from '~/types/storedmethod'
 
@@ -37,14 +38,16 @@ export const useStoredMethodsApi = () => {
    *
    * @param gatewayModuleId - Gateway module to store the method at.
    * @param consentAccepted - Whether the consent box was ticked; the API refuses a session without it.
+   * @param consentTextVersion - Which wording the payer ticked; the API binds it as `consentTextVersion`, keeps it as
+   * evidence and refuses a session without it.
    * @param returnUrl - Absolute URL the gateway returns the payer to.
    * @returns The session.
    * @throws Whatever `apiFetch` throws.
    */
-  const beginSave = (gatewayModuleId: string, consentAccepted: boolean, returnUrl: string): Promise<SaveMethodSession> =>
+  const beginSave = (gatewayModuleId: string, consentAccepted: boolean, consentTextVersion: ConsentTextVersion, returnUrl: string): Promise<SaveMethodSession> =>
     apiFetch<SaveMethodSession>(`${BASE}/sessions`, {
       method: HttpMethod.Post,
-      body: { gatewayModuleId, consentAccepted, returnUrl }
+      body: { gatewayModuleId, consentAccepted, consentTextVersion, returnUrl }
     })
 
   /**

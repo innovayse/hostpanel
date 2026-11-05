@@ -7,6 +7,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ConsentTextVersion } from '~/types/consenttextversion'
 import { rememberCheckoutSave } from '~/utils/pendingCheckoutSave'
 
 /** The shared session starter a test makes answer. */
@@ -63,7 +64,7 @@ describe('useCheckoutRenewalSave', () => {
 
     await save.startIfChosen(42)
 
-    expect(start).toHaveBeenCalledWith('card_gateway', true)
+    expect(start).toHaveBeenCalledWith('card_gateway', true, ConsentTextVersion.CheckoutAgreement)
     // The browser is on its way to the gateway page: the page keeps showing progress, never a failure.
     expect(save.saving.value).toBe(true)
     expect(save.failed.value).toBe(false)
@@ -132,6 +133,31 @@ describe('useCheckoutRenewalSave', () => {
     await save.startIfChosen(42)
 
     expect(start).not.toHaveBeenCalled()
+    expect(window.sessionStorage.length).toBe(0)
+  })
+
+  it('still starts the session when the account read fails but the account is already known', async () => {
+    rememberCheckoutSave(42, 'card_gateway', ADA)
+    auth.fetchUser.mockRejectedValue(new Error('offline'))
+    start.mockResolvedValue(true)
+    const save = useCheckoutRenewalSave()
+
+    await expect(save.startIfChosen(42)).resolves.toBeUndefined()
+
+    expect(start).toHaveBeenCalledWith('card_gateway', true, ConsentTextVersion.CheckoutAgreement)
+    expect(save.failed.value).toBe(false)
+  })
+
+  it('starts nothing, and does not throw, when the account read fails and nobody is known', async () => {
+    rememberCheckoutSave(42, 'card_gateway', ADA)
+    auth.user = null
+    auth.fetchUser.mockRejectedValue(new Error('offline'))
+    const save = useCheckoutRenewalSave()
+
+    await expect(save.startIfChosen(42)).resolves.toBeUndefined()
+
+    expect(start).not.toHaveBeenCalled()
+    expect(save.failed.value).toBe(false)
     expect(window.sessionStorage.length).toBe(0)
   })
 

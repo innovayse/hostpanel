@@ -12,6 +12,7 @@ import type { Page } from '@playwright/test'
 import { expect, test } from './support/test'
 import { CLIENT, GATEWAY_PAGE_URL, HOSTED_GATEWAY, ORDER, ORDER_DECLINED_ID, PLAN } from './support/fixtures.mjs'
 import { enableHostedGateway, resetStub, scriptStub, signIn, stubRequests, waitForHydration } from './support/helpers'
+import { ConsentTextVersion } from '../types/consenttextversion'
 import { HttpMethod } from '../types/httpmethod'
 
 /** localStorage key the cart is persisted under (`stores/cart.ts`). */
@@ -125,7 +126,9 @@ test('a confirmed payment starts one save session, even when the page is reloade
   // not asserted here: the request is the proof.
   await expect.poll(() => sessionRequests(request)).toBe(1)
   const session = (await stubRequests(request)).find(r => r.method === HttpMethod.Post && r.path === SESSIONS_PATH)
-  expect(session?.body).toMatchObject({ gatewayModuleId: HOSTED_GATEWAY.module, consentAccepted: true })
+  expect(session?.body).toMatchObject({ gatewayModuleId: HOSTED_GATEWAY.module, consentAccepted: true,
+    consentTextVersion: ConsentTextVersion.CheckoutAgreement
+  })
 
   // The payer comes back to the same address again (a reload of it): the choice was spent, so nothing starts.
   await page.goto(`/payment/result?order=${ORDER.orderId}`)

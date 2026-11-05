@@ -984,6 +984,12 @@ const routeManagement = (method, path, body, res) => {
     return true
   }
   if (method === 'POST' && path === '/api/me/stored-payment-methods/sessions') {
+    // As the real validator: the wording version is required and at most 50 characters (CardChargeConsent.MaxTextVersionLength).
+    const version = body?.consentTextVersion
+    if (typeof version !== 'string' || version.trim() === '' || version.length > 50) {
+      sendProblem(res, 400, 'VALIDATION_ERROR', 'Validation failed.', { consentTextVersion: ['The consent text version is required.'] })
+      return true
+    }
     send(res, 200, { sessionId: STORED_SESSION_ID, mode: 'Redirect', clientToken: null, redirectUrl: GATEWAY_PAGE_URL })
     return true
   }

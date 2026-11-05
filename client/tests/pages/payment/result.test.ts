@@ -11,6 +11,7 @@ import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import ResultPage from '~/pages/payment/result.vue'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
+import { ConsentTextVersion } from '~/types/consenttextversion'
 import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
 import { PricingCycle } from '~/types/pricingcycle'
 import { consumeCheckoutSave, rememberCheckoutSave } from '~/utils/pendingCheckoutSave'
@@ -196,13 +197,17 @@ describe('payment result page', () => {
   })
 
   it('does not assert an outcome when the backend cannot be reached, and keeps the token', async () => {
+    rememberCheckoutSave('5', 'card_gateway', ADA)
     billing.completeGatewayPayment.mockRejectedValue(new Error('offline'))
 
-    const wrapper = await mountResult({ order: '5' })
+    const wrapper = await mountResult({ order: '5' }, signedInAs(ADA))
 
     expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.unknownTitle')
     expect(wrapper.find('[data-testid="payment-status"]').exists()).toBe(true)
     expect(tokens.forget).not.toHaveBeenCalled()
+    // Nothing was confirmed or declined, so the renewal-save choice is neither acted on nor dropped.
+    expect(storedStart).not.toHaveBeenCalled()
+    expect(consumeCheckoutSave('5', ADA)).toBe('card_gateway')
   })
 
   describe('save for automatic renewals', () => {
@@ -213,7 +218,7 @@ describe('payment result page', () => {
 
       const wrapper = await mountResult({ order: '5' }, signedInAs(ADA))
 
-      expect(storedStart).toHaveBeenCalledWith('card_gateway', true)
+      expect(storedStart).toHaveBeenCalledWith('card_gateway', true, ConsentTextVersion.CheckoutAgreement)
       expect(wrapper.find('[data-testid="payment-save-starting"]').exists()).toBe(true)
       expect(wrapper.find('[data-testid="payment-save-failed"]').exists()).toBe(false)
     })

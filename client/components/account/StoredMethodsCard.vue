@@ -125,6 +125,7 @@ import { Plus, Star, Trash2 } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { STORED_METHOD_RETURN_QUERY } from '~/constants/storedMethodReturn'
 import { useStoredMethodStart } from '~/composables/useStoredMethodStart'
+import { ConsentTextVersion } from '~/types/consenttextversion'
 import { useAccountStore } from '~/stores/account'
 import { useStoredMethodsStore } from '~/stores/storedmethods'
 import { ActionOutcome } from '~/types/actionoutcome'
@@ -201,7 +202,7 @@ const onStart = async (): Promise<void> => {
   if (typeof selectedModule.value !== 'string') {
     return
   }
-  if (await start(selectedModule.value, consent.value)) {
+  if (await start(selectedModule.value, consent.value, ConsentTextVersion.AccountCard)) {
     // The consent covered this one session; a later visit asks again.
     consent.value = false
   }

@@ -14,6 +14,7 @@
 
 import { useStoredMethodStart } from '~/composables/useStoredMethodStart'
 import { useAuthStore } from '~/stores/auth'
+import { ConsentTextVersion } from '~/types/consenttextversion'
 import { consumeCheckoutSave, forgetCheckoutSave, hasCheckoutSave } from '~/utils/pendingCheckoutSave'
 
 /**
@@ -58,8 +59,8 @@ export const useCheckoutRenewalSave = () => {
     saving.value = true
     failed.value = false
     try {
-      // Ticking the box beside the agreement wording is the consent; the server records it.
-      if (!(await start(gatewayModuleId, true))) {
+      // Ticking the box beside the agreement wording is the consent to the checkout agreement wording; the server records it.
+      if (!(await start(gatewayModuleId, true, ConsentTextVersion.CheckoutAgreement))) {
         failed.value = true
         saving.value = false
       }

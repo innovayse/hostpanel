@@ -80,6 +80,7 @@ import {
   INVOICE,
   KB_ARTICLES,
   ORDER,
+  ORDER_DECLINED_ID,
   PRODUCT_GROUPS,
   HOSTING_SPECIFICATIONS,
   productsIn,
@@ -757,6 +758,21 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
   // Order placement: the order, its invoice and the token that proves the order is the caller's.
   if (method === 'POST' && path === '/api/orders') {
     send(res, 200, ORDER)
+    return true
+  }
+  // Hosted-gateway payment of a placed order: start answers the address of the bank's page; the return check
+  // reports the placed order as paid and the declined fixture order as declined (the order id picks the outcome).
+  const orderGatewayMatch = path.match(/^\/api\/orders\/(\d+)\/gateway-payment\/(start|complete)$/)
+  if (method === 'POST' && orderGatewayMatch) {
+    if (orderGatewayMatch[2] === 'start') {
+      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL })
+    } else if (orderGatewayMatch[1] === String(ORDER.orderId)) {
+      send(res, 200, { state: 'Paid', orderNumber: `ORD-${ORDER.orderId}` })
+    } else if (orderGatewayMatch[1] === String(ORDER_DECLINED_ID)) {
+      send(res, 200, { state: 'Declined' })
+    } else {
+      sendProblem(res, 404, 'NOT_FOUND', 'Order not found.')
+    }
     return true
   }
 

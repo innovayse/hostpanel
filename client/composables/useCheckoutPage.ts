@@ -87,6 +87,8 @@ export const useCheckoutPage = async () => {
     submittingHint,
     paymentMethods,
     selectedMethod,
+    saveForRenewals,
+    canSaveForRenewals,
     submitting,
     error: orderError
   } = storeToRefs(checkout)
@@ -165,6 +167,8 @@ export const useCheckoutPage = async () => {
     submittingHint,
     paymentMethods,
     selectedMethod,
+    saveForRenewals,
+    canSaveForRenewals,
     submitting,
     orderError,
     itemPrice,

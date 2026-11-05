@@ -10,6 +10,7 @@ import { flushPromises } from '@vue/test-utils'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AuroraCheckout from '~/templates/aurora/pages/AuroraCheckout.vue'
 import GatewayOption from '~/components/checkout/GatewayOption.vue'
+import SaveOption from '~/components/checkout/SaveOption.vue'
 import SubmitHint from '~/components/checkout/SubmitHint.vue'
 import { Permission } from '~/composables/usePermissions'
 import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
@@ -62,7 +63,7 @@ interface FakeCheckout {
  * @param options Whether the cart is empty and which payment methods the gateway offers.
  * @returns The settable parts of the fake checkout store.
  */
-const buildStores = (options: { empty?: boolean, methods?: { module: string, displayName: string }[] } = {}): FakeCheckout => {
+const buildStores = (options: { empty?: boolean, canSave?: boolean, methods?: { module: string, displayName: string }[] } = {}): FakeCheckout => {
   const placeOrder = vi.fn(async () => ({ kind: CheckoutDestinationKind.Route, target: '/client/order-success' }))
   fakes.cart = reactive({
     isEmpty: options.empty ?? false,
@@ -79,6 +80,8 @@ const buildStores = (options: { empty?: boolean, methods?: { module: string, dis
   const error = ref('')
   /** The payment method the fake store has selected. */
   const selectedMethod = ref('example_gateway')
+  /** Whether the fake store offers the renewal-save box. */
+  const canSaveForRenewals = ref(options.canSave ?? false)
   /** Whether the fake store is placing an order. */
   const submitting = ref(false)
   /** The button label the fake store shows while placing an order. */
@@ -92,6 +95,8 @@ const buildStores = (options: { empty?: boolean, methods?: { module: string, dis
     submittingHint,
     paymentMethods: ref(options.methods ?? [{ module: 'card_gateway', displayName: 'Card' }, { module: 'example_gateway', displayName: 'Example Gateway' }]),
     selectedMethod,
+    saveForRenewals: ref(false),
+    canSaveForRenewals,
     submitting,
     error,
     itemPrice: () => '$9.99',
@@ -111,7 +116,7 @@ const buildStores = (options: { empty?: boolean, methods?: { module: string, dis
  */
 const mountPage = async () => {
   const Host = defineComponent({ render: () => h(Suspense, null, { default: () => h(AuroraCheckout) }) })
-  const wrapper = mountWithKit(Host, { components: { CheckoutGatewayOption: GatewayOption, CheckoutSubmitHint: SubmitHint } })
+  const wrapper = mountWithKit(Host, { components: { CheckoutGatewayOption: GatewayOption, CheckoutSaveOption: SaveOption, CheckoutSubmitHint: SubmitHint } })
   await flushPromises()
   return wrapper
 }
@@ -130,6 +135,20 @@ describe('AuroraCheckout', () => {
     expect(wrapper.find('[data-testid="checkout-empty"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="checkout-browse-hosting"]').attributes('href')).toBe('/hosting')
     expect(wrapper.find('[data-testid="checkout-account"]').exists()).toBe(false)
+  })
+
+  it('offers the renewal-save box, unticked, only when the store says so', async () => {
+    stubAuroraGlobals()
+    buildStores({ canSave: true })
+    const offered = await mountPage()
+
+    expect(offered.find('[data-testid="checkout-save-for-renewals"]').attributes('aria-checked')).toBe('false')
+    expect(offered.text()).toContain('checkout.saveForRenewalsAgreement')
+
+    buildStores({ canSave: false })
+    const hidden = await mountPage()
+
+    expect(hidden.find('[data-testid="checkout-save-for-renewals"]').exists()).toBe(false)
   })
 
   it('gives every guest field a translated placeholder', async () => {

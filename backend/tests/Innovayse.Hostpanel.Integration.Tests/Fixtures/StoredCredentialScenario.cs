@@ -9,6 +9,7 @@ using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
@@ -37,7 +38,12 @@ public sealed class StoredCredentialScenario : IDisposable
     /// A fake mail relay to host in place of the real one, so a test can read the mail the charge outcome sends;
     /// <see langword="null"/> leaves the host's relay as it is.
     /// </param>
-    public StoredCredentialScenario(IntegrationTestFactory factory, FakeEmailSender? emailSender = null)
+    /// <param name="saveInterceptor">
+    /// An interceptor every data context of the host is built with, so a test can run a competing write at a chosen
+    /// save; <see langword="null"/> adds none.
+    /// </param>
+    public StoredCredentialScenario(
+        IntegrationTestFactory factory, FakeEmailSender? emailSender = null, IInterceptor? saveInterceptor = null)
     {
         _factory = factory;
         State = new DemoStoredCredentialState(new SystemClock(TimeProvider.System));
@@ -48,6 +54,11 @@ public sealed class StoredCredentialScenario : IDisposable
             builder.ConfigureTestServices(services =>
             {
                 services.AddSingleton<IStoredCredentialPluginResolver>(Resolver);
+                if (saveInterceptor is not null)
+                {
+                    services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(saveInterceptor));
+                }
+
                 if (emailSender is not null)
                 {
                     services.RemoveAll<IEmailSender>();

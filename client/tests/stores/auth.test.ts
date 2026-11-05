@@ -76,6 +76,7 @@ vi.mock('~/stores/client', () => ({
 
 const { useAuthStore } = await import('~/stores/auth')
 const { useCartStore } = await import('~/stores/cart')
+const { hasCheckoutSave, rememberCheckoutSave } = await import('~/utils/pendingCheckoutSave')
 const { PricingCycle } = await import('~/types/pricingcycle')
 const { SignInOutcome } = await import('~/types/signinoutcome')
 const { ActionOutcome } = await import('~/types/actionoutcome')
@@ -532,5 +533,38 @@ describe('useAuthStore.endLocalSession', () => {
     await store.endLocalSession()
 
     expect(store.user).toBeNull()
+  })
+})
+
+describe('useAuthStore remembered checkout choices', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    logoutMock.mockReset().mockResolvedValue(undefined)
+    window.sessionStorage.clear()
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { authMode: 'local' } }))
+  })
+
+  it('removes them when the client logs out', async () => {
+    rememberCheckoutSave(42, 'card_gateway', 'ada@example.com')
+
+    await useAuthStore().logout()
+
+    expect(hasCheckoutSave(42)).toBe(false)
+  })
+
+  it('removes them when the local session ends', async () => {
+    rememberCheckoutSave(42, 'card_gateway', 'ada@example.com')
+
+    await useAuthStore().endLocalSession()
+
+    expect(hasCheckoutSave(42)).toBe(false)
+  })
+
+  it('removes them when the identity is reset after a 401', () => {
+    rememberCheckoutSave(42, 'card_gateway', 'ada@example.com')
+
+    useAuthStore().reset()
+
+    expect(hasCheckoutSave(42)).toBe(false)
   })
 })

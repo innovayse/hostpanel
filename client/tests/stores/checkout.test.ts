@@ -23,8 +23,8 @@ const billing = {
   startOrderGatewayPayment: vi.fn()
 }
 
-/** The auth store stand-in: who is signed in and the sign-in call a guest order makes. */
-const auth = { isLoggedIn: false, login: vi.fn() }
+/** The auth store stand-in: who is signed in, the account and the sign-in call a guest order makes. */
+const auth = { isLoggedIn: false, login: vi.fn(), fetchUser: vi.fn().mockResolvedValue(undefined), user: { email: 'ada@example.com' } as { email: string } | null }
 
 /** The payer the currency store stand-in reports. */
 const payer = { code: 'USD' as string | null }
@@ -91,6 +91,7 @@ vi.mock('~/stores/currency', () => ({
 
 const { useCheckoutStore } = await import('~/stores/checkout')
 const { useCartStore } = await import('~/stores/cart')
+const { consumeCheckoutSave } = await import('~/utils/pendingCheckoutSave')
 const { CheckoutDestinationKind } = await import('~/types/checkoutdestinationkind')
 
 /** A hosting item priced in dollars. */
@@ -397,6 +398,121 @@ describe('useCheckoutStore.placeOrder', () => {
       target: '/en/client/order-success?order=A+42&invoice=77'
     })
     expect(useCartStore().items).toEqual([])
+  })
+})
+
+describe('useCheckoutStore save for renewals', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    Object.values(billing).forEach(fn => fn.mockReset())
+    auth.isLoggedIn = true
+    auth.user = { email: 'ada@example.com' }
+    auth.login = vi.fn().mockResolvedValue({})
+    rememberToken.mockReset()
+    window.sessionStorage.clear()
+    payer.code = 'USD'
+    billing.createOrder.mockResolvedValue(placed)
+    billing.startOrderGatewayPayment.mockResolvedValue({ redirectUrl: 'https://bank.example/pay' })
+  })
+
+  it('is off by default', () => {
+    const store = arrange('hosted_gateway')
+
+    expect(store.saveForRenewals).toBe(false)
+  })
+
+  it('is offered to a signed-in client paying through a hosted gateway only', () => {
+    const store = arrange('hosted_gateway')
+    expect(store.canSaveForRenewals).toBe(true)
+
+    store.selectedMethod = 'bank_transfer'
+    expect(store.canSaveForRenewals).toBe(false)
+  })
+
+  it('is not offered to a guest', () => {
+    auth.isLoggedIn = false
+    const store = arrange('hosted_gateway')
+
+    expect(store.canSaveForRenewals).toBe(false)
+  })
+
+  it('keeps the choice and the module for the return page when the box was ticked, and still pays as before', async () => {
+    const store = arrange('hosted_gateway')
+    store.saveForRenewals = true
+
+    const destination = await store.placeOrder(input())
+
+    expect(destination).toEqual({ kind: CheckoutDestinationKind.External, target: 'https://bank.example/pay' })
+    expect(billing.startOrderGatewayPayment).toHaveBeenCalledTimes(1)
+    expect(consumeCheckoutSave(42, 'ada@example.com')).toBe('hosted_gateway')
+  })
+
+  it('keeps the choice for the signed-in account only', async () => {
+    const store = arrange('hosted_gateway')
+    store.saveForRenewals = true
+
+    await store.placeOrder(input())
+
+    expect(consumeCheckoutSave(42, 'bob@example.com')).toBeNull()
+  })
+
+  it('keeps nothing when the account cannot be identified', async () => {
+    auth.user = null
+    const store = arrange('hosted_gateway')
+    store.saveForRenewals = true
+
+    await store.placeOrder(input())
+
+    expect(consumeCheckoutSave(42, 'ada@example.com')).toBeNull()
+  })
+
+  it('keeps nothing when the box was left off', async () => {
+    const store = arrange('hosted_gateway')
+
+    await store.placeOrder(input())
+
+    expect(consumeCheckoutSave(42, 'ada@example.com')).toBeNull()
+  })
+
+  it('keeps nothing for a bank transfer, whatever the box says', async () => {
+    const store = arrange('bank_transfer')
+    store.saveForRenewals = true
+
+    await store.placeOrder(input())
+
+    expect(consumeCheckoutSave(42, 'ada@example.com')).toBeNull()
+  })
+
+  it('keeps nothing for a guest, whatever the box says', async () => {
+    auth.isLoggedIn = false
+    const store = arrange('hosted_gateway')
+    store.saveForRenewals = true
+
+    await store.placeOrder(input())
+
+    expect(consumeCheckoutSave(42, 'ada@example.com')).toBeNull()
+  })
+
+  it('keeps nothing when the gateway payment could not be started', async () => {
+    billing.startOrderGatewayPayment.mockRejectedValue({ data: { detail: 'Gateway unavailable.' } })
+    const store = arrange('hosted_gateway')
+    store.saveForRenewals = true
+
+    expect(await store.placeOrder(input())).toBeNull()
+
+    expect(consumeCheckoutSave(42, 'ada@example.com')).toBeNull()
+  })
+
+  it('drops the choice of an earlier attempt when the same order is retried with the box off', async () => {
+    const store = arrange('hosted_gateway')
+    store.saveForRenewals = true
+    await store.placeOrder(input())
+    store.resetFlow()
+    store.saveForRenewals = false
+
+    await store.placeOrder(input())
+
+    expect(consumeCheckoutSave(42, 'ada@example.com')).toBeNull()
   })
 })
 

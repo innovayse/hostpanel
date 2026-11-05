@@ -32,6 +32,7 @@ import type { PlaceOrderInput } from '~/types/placeorderinput'
 import type { PlaceOrderResult } from '~/types/placeorderresult'
 import { isSafeRedirectUrl } from '~/utils/externalRedirect'
 import { formatMoney } from '~/utils/formatMoney'
+import { forgetCheckoutSave, rememberCheckoutSave } from '~/utils/pendingCheckoutSave'
 import { isHostedGatewayModule } from '~/utils/paymentModules'
 import { translate } from '~/utils/translate'
 import { CartItemType } from '~/types/cartitemtype'
@@ -84,6 +85,13 @@ export const useCheckoutStore = defineStore('checkout', () => {
   /** The order whose changed total the payer has agreed to pay; a retry of it is not asked again. */
   const acceptedTotalOrderId = ref<number | null>(null)
 
+  /**
+   * Whether the payer ticked "save this payment method for automatic renewals". Off by default; it
+   * only counts while {@link canSaveForRenewals} holds, and it is acted on after the payment is
+   * confirmed, never at checkout.
+   */
+  const saveForRenewals = ref(false)
+
   watch(() => cart.items, () => {
     pendingOrder.value = null
   }, { deep: true })
@@ -99,6 +107,17 @@ export const useCheckoutStore = defineStore('checkout', () => {
 
   /** Whether the chosen method is a hosted gateway, which hands the browser off to the bank. */
   const isHostedGateway = computed(() => isHostedGatewayModule(selectedMethod.value))
+
+  /**
+   * Whether the renewal-save choice may be offered and honoured: a signed-in client (the stored
+   * methods belong to an account) paying through a hosted gateway, never by bank transfer.
+   *
+   * @returns True when the box is offered.
+   */
+  const mayOfferSave = (): boolean => authStore.isLoggedIn && isHostedGatewayModule(selectedMethod.value)
+
+  /** Whether the "save for automatic renewals" box is shown at checkout. */
+  const canSaveForRenewals = computed(mayOfferSave)
 
   /** Short submit-button label while the order is being placed; the sentence lives in {@link submittingHint}. */
   const submittingLabel = computed(() =>
@@ -361,6 +380,8 @@ export const useCheckoutStore = defineStore('checkout', () => {
         // navigation that knows only the order id, and that page has to prove the order is
         // theirs before the backend will say whether the payment went through.
         rememberPaymentToken(result.orderId, result.paymentToken, result.invoiceId)
+        // A retry of the same order must not inherit a choice made on an earlier attempt.
+        forgetCheckoutSave(result.orderId)
         const { redirectUrl } = await billing.startOrderGatewayPayment(
           result.orderId,
           method,
@@ -369,6 +390,13 @@ export const useCheckoutStore = defineStore('checkout', () => {
         )
         if (!isSafeRedirectUrl(redirectUrl)) {
           throw new Error(translate('checkout.errors.generic'))
+        }
+        // The renewal-save choice rides the same trip as the payment token. Nothing is started here:
+        // the return page starts the stored-method session only once the payment is confirmed.
+        if (saveForRenewals.value && mayOfferSave()) {
+          // Bound to the signed-in account: another account on this browser must not act on it.
+          await authStore.fetchUser()
+          rememberCheckoutSave(result.orderId, method, authStore.user?.email)
         }
         // The cart is kept: the result page empties it once the bank confirms the payment, so a
         // declined or abandoned payment leaves the payer's choices where they were.
@@ -395,6 +423,8 @@ export const useCheckoutStore = defineStore('checkout', () => {
     paymentMethods,
     methodsLoading,
     selectedMethod,
+    saveForRenewals,
+    canSaveForRenewals,
     submitting,
     error,
     fieldErrors,

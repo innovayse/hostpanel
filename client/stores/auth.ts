@@ -35,6 +35,7 @@ import { translate } from '~/utils/translate'
 import { asClientUser } from '~/utils/asClientUser'
 import { AuthMode } from '~/types/authmode'
 import { SessionCookie } from '~/constants/sessionCookie'
+import { clearCheckoutSaves } from '~/utils/pendingCheckoutSave'
 
 /**
  * Central store for the signed-in identity.
@@ -398,6 +399,8 @@ export const useAuthStore = defineStore('auth', () => {
     useClientStore().reset()
     usePluginsStore().reset()
     useCartStore().clear()
+    // A remembered "save for renewals" choice belongs to the account that made it.
+    clearCheckoutSaves()
   }
 
   /**
@@ -419,6 +422,7 @@ export const useAuthStore = defineStore('auth', () => {
     useClientStore().reset()
     usePluginsStore().reset()
     useCartStore().clear()
+    clearCheckoutSaves()
   }
 
   /**
@@ -528,6 +532,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
     useClientStore().reset()
     usePluginsStore().reset()
+    clearCheckoutSaves()
   }
 
   return {

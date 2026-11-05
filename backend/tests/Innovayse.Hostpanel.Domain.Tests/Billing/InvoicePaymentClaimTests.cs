@@ -227,6 +227,31 @@ public sealed class InvoicePaymentClaimTests
         settled.IsBlocking.Should().BeFalse();
     }
 
+    /// <summary>
+    /// A declined claim and an abandoned claim the reconciliation pass checked count as failed attempts; an abandoned
+    /// claim that was never checked (ended before the plugin was called) and every other status do not.
+    /// </summary>
+    [Fact]
+    public void FailedAttemptFilter_CountsDeclinedAndCheckedAbandonedOnly()
+    {
+        var filter = InvoicePaymentClaim.FailedAttemptFilter.Compile();
+        var declined = NewClaim();
+        declined.MarkDeclined(Now);
+        var checkedAbandoned = NewClaim();
+        checkedAbandoned.RecordCheck(Now);
+        checkedAbandoned.MarkAbandoned(Now);
+        var neverSent = NewClaim();
+        neverSent.MarkAbandoned(Now);
+        var held = NewClaim();
+        held.MarkHeld(null, Now);
+
+        filter(declined).Should().BeTrue();
+        filter(checkedAbandoned).Should().BeTrue();
+        filter(neverSent).Should().BeFalse();
+        filter(held).Should().BeFalse();
+        filter(NewClaim()).Should().BeFalse();
+    }
+
     /// <summary>The query filter agrees with the predicate for every status.</summary>
     [Fact]
     public void BlockingFilter_AgreesWithIsBlocking()

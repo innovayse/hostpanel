@@ -8,9 +8,11 @@ import { flushPromises } from '@vue/test-utils'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import ClassicCheckout from '~/templates/classic/pages/ClassicCheckout.vue'
 import GatewayOption from '~/components/checkout/GatewayOption.vue'
+import SaveOption from '~/components/checkout/SaveOption.vue'
 import SubmitHint from '~/components/checkout/SubmitHint.vue'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
+import { useCheckoutStore } from '~/stores/checkout'
 import { useClientStore } from '~/stores/client'
 import type { BillingCurrency } from '~/types/currency'
 import type { CartItem } from '~/types/cartitem'
@@ -113,7 +115,7 @@ const line = (pid: number, amount: number, currency = 'USD'): CartItem => ({
  */
 const mountCheckout = async (items: CartItem[] = [line(1, 5), line(2, 7)]) => {
   const wrapper = await mountPage(ClassicCheckout, {
-    components: { CheckoutGatewayOption: GatewayOption, CheckoutSubmitHint: SubmitHint, UiPhoneInput: PhoneInputStub },
+    components: { CheckoutGatewayOption: GatewayOption, CheckoutSaveOption: SaveOption, CheckoutSubmitHint: SubmitHint, UiPhoneInput: PhoneInputStub },
   })
   useCartStore().items = items
   await flushPromises()
@@ -223,6 +225,34 @@ describe('ClassicCheckout', () => {
 
     expect(wrapper.find('[data-testid="checkout-no-methods"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="checkout-submit"]').attributes('disabled')).toBeDefined()
+  })
+
+  describe('save for automatic renewals', () => {
+    it('is not offered to a guest', async () => {
+      const wrapper = await mountCheckout()
+
+      expect(wrapper.find('[data-testid="checkout-save-for-renewals"]').exists()).toBe(false)
+    })
+
+    it('is offered, unticked, to a signed-in client paying through a hosted gateway', async () => {
+      const wrapper = await mountCheckout()
+      useAuthStore().user = client
+      useCheckoutStore().selectedMethod = 'card_gateway'
+      await flushPromises()
+
+      const box = wrapper.find('[data-testid="checkout-save-for-renewals"]')
+      expect(box.exists()).toBe(true)
+      expect(box.attributes('aria-checked')).toBe('false')
+      expect(wrapper.text()).toContain('checkout.saveForRenewalsAgreement')
+    })
+
+    it('is hidden for bank transfer', async () => {
+      const wrapper = await mountCheckout()
+      useAuthStore().user = client
+      await flushPromises()
+
+      expect(wrapper.find('[data-testid="checkout-save-for-renewals"]').exists()).toBe(false)
+    })
   })
 
   describe('purchase permission', () => {

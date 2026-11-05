@@ -180,6 +180,14 @@
                   muted-class="text-classic-muted"
                 />
               </UiGrid>
+
+              <CheckoutSaveOption
+                v-if="canSaveForRenewals"
+                v-model="saveForRenewals"
+                :disabled="!mayPlaceOrders || submitting"
+                class="mt-4"
+                testid="checkout-save-for-renewals"
+              />
             </UiCard>
           </UiStack>
 
@@ -316,6 +324,8 @@ const {
   submittingHint,
   paymentMethods,
   selectedMethod,
+  saveForRenewals,
+  canSaveForRenewals,
   submitting,
   orderError,
   itemPrice,

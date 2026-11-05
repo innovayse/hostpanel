@@ -52,6 +52,8 @@ const buildStores = (destination: { kind: CheckoutDestinationKind, target: strin
     submittingHint: ref(''),
     paymentMethods: ref([]),
     selectedMethod: ref(''),
+    saveForRenewals: ref(false),
+    canSaveForRenewals: ref(true),
     submitting: ref(false),
     error: ref(''),
     itemPrice: () => '',
@@ -111,6 +113,14 @@ describe('useCheckoutPage', () => {
 
     expect(resetFlow).toHaveBeenCalled()
     expect(refreshCartPrices).toHaveBeenCalled()
+  })
+
+  it('hands the templates the renewal-save choice, off by default, and whether to offer it', async () => {
+    buildStores(null)
+    const page = await runInPage()
+
+    expect(page.saveForRenewals.value).toBe(false)
+    expect(page.canSaveForRenewals.value).toBe(true)
   })
 
   it('asks the visitor before the store changes the currency', async () => {

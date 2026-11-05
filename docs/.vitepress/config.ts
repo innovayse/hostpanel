@@ -12,6 +12,10 @@ import { defineConfig } from 'vitepress'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createSeo } from './seo'
+import { hasSitemap, readLatestPages, resolveVersion } from './versions'
+import { sidebarSectionText } from './sidebarIcon'
+import type { SidebarIcon } from './sidebarIcon'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 /** A group or a page of the generated endpoint sidebar; groups nest (audience, then area). */
@@ -26,10 +30,22 @@ const generatedApiSidebarItems: GeneratedSidebarItem[] = existsSync(generatedSid
   ? JSON.parse(readFileSync(generatedSidebarPath, 'utf8'))
   : []
 
+/**
+ * Icon of each endpoint group, by the group title `scripts/generate-api-reference.mjs` writes, so the
+ * API reference sidebar looks like the main one. A group with a new title falls back to the book icon.
+ */
+const API_GROUP_ICONS: Record<string, SidebarIcon> = {
+  'Auth endpoints': 'key-round',
+  'Public endpoints': 'globe',
+  'Client endpoints': 'user',
+  'Any signed-in user': 'user-check',
+  'Admin endpoints': 'shield-check',
+}
+
 /** The sidebar of the API reference: the pages every endpoint shares, then the generated endpoint groups. */
 const apiReferenceSidebar: GeneratedSidebarItem[] = [
   {
-    text: 'API reference',
+    text: sidebarSectionText('book-open', 'API reference'),
     items: [
       { text: 'Overview', link: '/api-reference/' },
       { text: 'Authentication', link: '/api-reference/authentication' },
@@ -39,7 +55,10 @@ const apiReferenceSidebar: GeneratedSidebarItem[] = [
       { text: 'Pagination', link: '/api-reference/pagination' },
     ],
   },
-  ...generatedApiSidebarItems,
+  ...generatedApiSidebarItems.map((group) => ({
+    ...group,
+    text: sidebarSectionText(API_GROUP_ICONS[group.text] ?? 'book-open', group.text),
+  })),
 ]
 
 /**
@@ -66,6 +85,25 @@ const base: string = `/${(process.env.DOCS_BASE?.trim() || '/hostpanel/').replac
  */
 const siteUrl: string = (process.env.DOCS_SITE_URL?.trim() || 'https://innovayse.github.io/hostpanel').replace(/\/+$/, '')
 
+/**
+ * Which version of the documentation this build is: `DOCS_VERSION` is empty (unversioned, or the latest
+ * release), `next`, or `vMAJOR.MINOR` for an older release. `DOCS_LATEST_VERSION`, `DOCS_LATEST_URL`,
+ * `DOCS_VERSIONS_URL` and `DOCS_LATEST_PAGES` describe the latest release, which an older build points
+ * its canonical links and its banner at; see `versions.ts`. All are unset for a plain build.
+ */
+const version = resolveVersion(
+  {
+    version: process.env.DOCS_VERSION,
+    latestVersion: process.env.DOCS_LATEST_VERSION,
+    latestUrl: process.env.DOCS_LATEST_URL,
+    versionsUrl: process.env.DOCS_VERSIONS_URL,
+  },
+  readLatestPages(process.env.DOCS_LATEST_PAGES ?? ''),
+)
+
+/** Per page description, canonical, social tags, JSON-LD and the sitemap filter, all built from `siteUrl`. */
+const seo = createSeo(siteUrl, version)
+
 export default defineConfig({
   title: 'Hostpanel',
   description: 'Open source web hosting control panel',
@@ -74,6 +112,23 @@ export default defineConfig({
 
   /** Generated fragments that pages include; they are not pages of their own. */
   srcExclude: ['api-reference/_partials/**'],
+
+  /**
+   * Replaces the default theme's search box with `theme/components/LocalSearchBox.vue`, a copy of
+   * VitePress 1.6.4's `VPLocalSearchBox.vue` with a start view. This is the documented way to
+   * override an internal theme component (a `resolve.alias` entry matching the component's file
+   * name). The copy follows the pinned version, see the header of that file.
+   */
+  vite: {
+    resolve: {
+      alias: [
+        {
+          find: /^.*\/VPLocalSearchBox\.vue$/,
+          replacement: fileURLToPath(new URL('./theme/components/LocalSearchBox.vue', import.meta.url)),
+        },
+      ],
+    },
+  },
 
   /**
    * The site data, which holds the sidebar of every endpoint of the API reference, is large. One
@@ -90,15 +145,29 @@ export default defineConfig({
 
   head: [
     ['link', { rel: 'icon', href: `${base}mark.svg`, type: 'image/svg+xml' }],
-    ['meta', { property: 'og:type', content: 'website' }],
-    ['meta', { property: 'og:title', content: 'Hostpanel' }],
-    ['meta', { property: 'og:description', content: 'Open source web hosting control panel' }],
-    ['meta', { property: 'og:image', content: `${siteUrl}/social-preview.png` }],
+    ['link', { rel: 'icon', href: `${base}favicon-32x32.png`, type: 'image/png', sizes: '32x32' }],
+    ['link', { rel: 'apple-touch-icon', href: `${base}apple-touch-icon.png`, sizes: '180x180' }],
+    ['meta', { name: 'theme-color', content: '#323DF3' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
-    ['meta', { name: 'twitter:title', content: 'Hostpanel' }],
-    ['meta', { name: 'twitter:description', content: 'Open source web hosting control panel' }],
-    ['meta', { name: 'twitter:image', content: `${siteUrl}/social-preview.png` }],
   ],
+
+  /**
+   * The sitemap is written to the output root, so it is served at `<base>sitemap.xml`. The hostname
+   * ends in a slash because it carries the base path and the page addresses are relative to it.
+   * Pages marked Work in progress are left out.
+   */
+  sitemap: hasSitemap(version)
+    ? {
+        hostname: `${siteUrl}/`,
+        transformItems: seo.sitemapItems,
+      }
+    : undefined,
+
+  /** Gives every page its own description and records the stubs that must not be indexed. */
+  transformPageData: seo.transformPageData,
+
+  /** Adds the per page canonical, Open Graph, Twitter, robots and JSON-LD tags. */
+  transformHead: seo.transformHead,
 
   themeConfig: {
     /** Separate light and dark logos; VitePress prepends `base` automatically. */
@@ -124,7 +193,7 @@ export default defineConfig({
       '/api-reference/': apiReferenceSidebar,
       '/': [
         {
-          text: 'Get started',
+          text: sidebarSectionText('rocket', 'Get started'),
           collapsed: true,
           items: [
             { text: 'Introduction', link: '/get-started/' },
@@ -133,7 +202,7 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Operators',
+          text: sidebarSectionText('wrench', 'Operators'),
           collapsed: true,
           items: [
             { text: 'Overview', link: '/operators/' },
@@ -146,7 +215,7 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Staff',
+          text: sidebarSectionText('briefcase', 'Staff'),
           collapsed: true,
           items: [
             { text: 'Overview', link: '/staff/' },
@@ -165,7 +234,7 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Customers',
+          text: sidebarSectionText('users', 'Customers'),
           collapsed: true,
           items: [
             { text: 'Overview', link: '/customers/' },
@@ -180,7 +249,7 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Payments',
+          text: sidebarSectionText('credit-card', 'Payments'),
           collapsed: true,
           items: [
             { text: 'Overview', link: '/payments/' },
@@ -190,7 +259,7 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Servers & SSH',
+          text: sidebarSectionText('server', 'Servers & SSH'),
           collapsed: true,
           items: [
             { text: 'Overview', link: '/servers/' },
@@ -200,7 +269,7 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Migration',
+          text: sidebarSectionText('arrow-left-right', 'Migration'),
           collapsed: true,
           items: [
             { text: 'Overview', link: '/migration/' },
@@ -209,7 +278,7 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Developers',
+          text: sidebarSectionText('code', 'Developers'),
           collapsed: true,
           items: [
             { text: 'Overview', link: '/developers/' },
@@ -221,6 +290,7 @@ export default defineConfig({
             { text: 'Where a new feature goes', link: '/developers/new-feature' },
             { text: 'Contributing', link: '/developers/contributing' },
             { text: 'Translating Hostpanel', link: '/developers/translating' },
+            { text: 'Documentation versions', link: '/developers/documentation-versions' },
             { text: 'Add a new language', link: '/developers/add-language' },
             { text: 'Integrations', link: '/developers/integrations' },
             { text: 'Write a plugin', link: '/developers/write-a-plugin' },
@@ -228,7 +298,7 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Contributing',
+          text: sidebarSectionText('git-pull-request', 'Contributing'),
           collapsed: true,
           items: [
             { text: 'Components', link: '/components' },
@@ -249,12 +319,21 @@ export default defineConfig({
     },
 
     socialLinks: [
+      { icon: 'discord', link: 'https://discord.gg/NfqTkyTgD' },
       { icon: 'github', link: 'https://github.com/innovayse/hostpanel' },
     ],
 
     footer: {
       message: 'Released under the AGPL-3.0 License.',
       copyright: 'Copyright © 2024-present Innovayse Digital Agency',
+    },
+
+    /** Read by the version switcher and the notice banner of the theme. */
+    docsVersion: {
+      kind: version.kind,
+      label: version.label,
+      latestUrl: version.latestUrl,
+      versionsUrl: version.versionsUrl,
     },
 
     demoAdminUrl: DEMO_ADMIN_URL,

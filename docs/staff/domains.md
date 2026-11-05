@@ -1,5 +1,7 @@
 ---
 title: Domains
+description: "Run domains in Hostpanel: statuses, registration, transfer in, renewal, expiry warnings and what happens when the registrar refuses."
+keywords: "domains, domain registration, domain transfer, domain renewal, registrar"
 ---
 
 # Domains <Label type="admin" />

@@ -1,5 +1,7 @@
 ---
 title: Announcements, knowledge base and downloads
+description: "Publish announcements, knowledge base articles and download files for clients from the Hostpanel admin panel."
+keywords: "announcements, knowledge base, downloads, support content"
 ---
 
 # Announcements, knowledge base and downloads <Label type="admin" />

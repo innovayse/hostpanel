@@ -1,5 +1,7 @@
 ---
 title: Write a plugin
+description: "Write a Hostpanel plugin as a .NET class library on the SDK: payment and provisioning plugins, the plugin.json manifest, packaging and tests."
+keywords: "write plugin, hostpanel sdk, payment plugin, provisioning plugin, plugin manifest"
 ---
 
 # Write a plugin

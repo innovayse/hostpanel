@@ -1,5 +1,7 @@
 ---
 title: Ordering
+description: "Order hosting in the Hostpanel client portal: choose a plan and billing cycle, search for a domain, review the cart and check out."
+keywords: "order hosting, hosting plans, billing cycle, domain search, checkout"
 ---
 
 # Ordering

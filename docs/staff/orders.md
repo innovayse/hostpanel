@@ -1,5 +1,7 @@
 ---
 title: Orders
+description: "View and process orders in Hostpanel: the order list, what happens when an order is paid, manual acceptance, details, cancelling and order numbers."
+keywords: "orders, order list, accept order, order numbers"
 ---
 
 # Orders <Label type="admin" />

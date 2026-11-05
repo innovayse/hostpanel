@@ -1,5 +1,7 @@
 ---
 title: Payments
+description: "Accept money in Hostpanel: set up bank transfer and installed payment gateways, see how online payments are confirmed and add payment plugins."
+keywords: "payments, payment gateways, online payments, plugins, bank transfer"
 ---
 
 # Payments

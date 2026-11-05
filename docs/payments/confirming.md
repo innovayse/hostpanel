@@ -1,5 +1,7 @@
 ---
 title: How online payments are confirmed
+description: "How Hostpanel confirms online payments by polling the gateway, with no webhooks: reconciliation, amount checks, refunds and troubleshooting."
+keywords: "payment confirmation, reconciliation, gateway transaction log, gateway refunds, no webhooks"
 ---
 
 # How online payments are confirmed <Label type="admin" />

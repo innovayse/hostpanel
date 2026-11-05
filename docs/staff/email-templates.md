@@ -1,5 +1,7 @@
 ---
 title: Email templates
+description: "Edit Hostpanel transactional email templates per language (English, Russian, Armenian), use placeholders and check mail delivery."
+keywords: "email templates, placeholders, transactional email, mail delivery"
 ---
 
 # Email templates <Label type="admin" />

@@ -9,14 +9,13 @@
 import { provide } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
-import { UI_TABLE_CONTEXT } from '@/utils/ui/injection'
-import type { UiTableDensity } from '@/utils/ui/injection'
+import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
 /** Props for UiTable. */
 const props = withDefaults(defineProps<{
-  /** Padding of the cells; `plain` leaves it to the screen's classes. */
+  /** Padding of the cells (comfortable by default so header and cells always share one padding); `plain` leaves it to the screen's classes. */
   density?: UiTableDensity
   /** Shows skeleton lines under the rows while data loads. */
   loading?: boolean
@@ -25,7 +24,7 @@ const props = withDefaults(defineProps<{
   /** Number of columns, for the width of the status row. */
   colspan?: number
 }>(), {
-  density: 'plain',
+  density: UiTableDensity.Comfortable,
   loading: false,
   empty: false,
   colspan: 100,

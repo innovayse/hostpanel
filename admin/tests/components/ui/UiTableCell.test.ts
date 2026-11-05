@@ -26,7 +26,7 @@ describe('UiTableCell', () => {
     expect(wrapper.classes()).toEqual(expect.arrayContaining(['text-end', 'text-text-muted']))
   })
 
-  it('adds no padding outside a table', () => {
-    expect(mount(UiTableCell).classes()).toEqual([])
+  it('adds no padding outside a table and aligns left like the header', () => {
+    expect(mount(UiTableCell).classes()).toEqual(['text-start'])
   })
 })

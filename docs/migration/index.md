@@ -1,5 +1,7 @@
 ---
 title: Migration
+description: "Move clients, invoices, services and other data from WHMCS into Hostpanel, and read what the import report tells you."
+keywords: "migration, import clients, import invoices, import report"
 ---
 
 # Migration

@@ -1,5 +1,7 @@
 ---
 title: Domain extensions and registrars
+description: "Manage domain extensions in Hostpanel: configure registrars, add or import TLDs, keep cost prices current and choose a registrar per domain."
+keywords: "tld pricing, domain extensions, registrars, tld import, domain pricing"
 ---
 
 # Domain extensions and registrars <Label type="admin" />

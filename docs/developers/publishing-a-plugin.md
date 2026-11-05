@@ -1,5 +1,7 @@
 ---
 title: Publishing a plugin
+description: "Take a finished Hostpanel plugin to a signed, versioned package: signing key, package layout, zip rules, registry upload and release workflow."
+keywords: "publish plugin, plugin signing, plugin registry, release workflow, plugin package"
 ---
 
 # Publishing a plugin

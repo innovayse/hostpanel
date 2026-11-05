@@ -58,6 +58,22 @@ describe('UiTable', () => {
     expect(mount(UiTable, { global: global() }).find('tbody').exists()).toBe(false)
   })
 
+  it('gives header and data cells the same padding and alignment by default', () => {
+    const Harness = defineComponent({
+      render: () => h(UiTable, null, {
+        default: () => [
+          h(UiTableHead, null, { default: () => h(UiTableRow, null, { default: () => h(UiTableHeader, null, { default: () => 'A' }) }) }),
+          h(UiTableBody, null, { default: () => h(UiTableRow, null, { default: () => h(UiTableCell, null, { default: () => '1' }) }) }),
+        ],
+      }),
+    })
+
+    const wrapper = mount(Harness, { global: global() })
+
+    expect(wrapper.get('th').classes()).toEqual(expect.arrayContaining(['px-4', 'py-3', 'text-start']))
+    expect(wrapper.get('td').classes()).toEqual(expect.arrayContaining(['px-4', 'py-3', 'text-start']))
+  })
+
   it('hands its density to the header and data cells', () => {
     const Harness = defineComponent({
       render: () => h(UiTable, { density: 'compact' }, {

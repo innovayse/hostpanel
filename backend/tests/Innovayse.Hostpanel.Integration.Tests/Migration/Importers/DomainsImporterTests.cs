@@ -142,9 +142,6 @@ public sealed class DomainsImporterTests(IntegrationTestFactory factory) : IClas
         Assert.Equal(DomainStatus.Expired, domain.Status);
         Assert.Null(domain.RegistrarRef);
         Assert.Equal((await payerCurrency.ForClientAsync(domain.ClientId, CancellationToken.None)).Code, domain.PriceCurrency);
-
-        // Only the import's own mail counts: seeding the client queues its welcome mail, which a durable queue may deliver
-        // to this sender before or after this line, so an empty outbox would depend on that timing.
-        Assert.DoesNotContain(emailSender.Sent, m => m.Subject is "Domain registered" or "Domain expired");
+        Assert.Empty(emailSender.Sent);
     }
 }

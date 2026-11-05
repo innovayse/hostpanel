@@ -4,6 +4,14 @@
     "chatMessage": "Ձեր հաղորդագրությունը",
     "chatSend": "Ուղարկել",
     "chatStop": "Կանգնեցնել",
-    "unavailable": "Այս բաժինը հիմա հասանելի չէ։"
+    "unavailable": "Այս բաժինը հիմա հասանելի չէ։",
+    "workspaceBack": "Հետ",
+    "previewSize": "Էկրանի չափը",
+    "previewSource": "Որ կայքը",
+    "previewDesktop": "Համակարգիչ",
+    "previewPhone": "Հեռախոս",
+    "previewOpen": "Բացել նոր ներդիրում",
+    "previewEmpty": "Ցուցադրելու բան դեռ չկա։",
+    "chatStepStopped": "Կանգնեցված է"
   }
 }

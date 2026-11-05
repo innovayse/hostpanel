@@ -82,6 +82,8 @@ services:
       MigrationSource__AllowPrivateNetworks: "true"
 
       # Sign-in passwords of the accounts DevDataSeeder creates. Published development fixtures, required by the seeder.
+      # An http origin a plugin preview may frame on this machine, such as a local site host; empty means none.
+      PluginPreview__DevelopmentHttpOrigins__0: ${PLUGIN_PREVIEW_DEV_HTTP_ORIGIN:-}
       DevDataSeed__AdminPassword: ${DEV_SEED_ADMIN_PASSWORD:-Admin123!}
       DevDataSeed__ClientPassword: ${DEV_SEED_CLIENT_PASSWORD:-Test@12345}
 

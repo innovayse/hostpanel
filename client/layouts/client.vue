@@ -22,6 +22,7 @@
       <ClientLayoutSidebar
         :items="visibleNavItems"
         :open="sidebarOpen"
+        :class="workspace ? 'lg:hidden' : ''"
         @close="sidebarOpen = false"
         @sign-out="handleLogout"
       />
@@ -43,7 +44,8 @@
 
       <!-- Main: only this scrolls -->
       <main class="flex min-w-0 flex-1 flex-col overflow-y-auto">
-        <div class="p-6 lg:p-8">
+        <!-- A workspace page fills the row itself, without the gutter. -->
+        <div :class="workspace ? 'flex flex-1 flex-col md:min-h-0' : 'p-6 lg:p-8'">
           <ClientVerifyEmailBanner class="mb-6" />
           <Suspense>
             <template #default>
@@ -71,7 +73,7 @@
  * links the visitor may see, whether the mobile drawer is open, how the platform widget is told
  * who is signed in, and signing out.
  */
-import { CLIENT_ACCOUNT_PATH, CLIENT_DASHBOARD_PATH, CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH, CLIENT_TICKETS_PATH } from '~/constants/clientRoutes'
+import { clientPluginPagePath, CLIENT_ACCOUNT_PATH, CLIENT_DASHBOARD_PATH, CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH, CLIENT_TICKETS_PATH } from '~/constants/clientRoutes'
 import {
   LayoutDashboard,
   Server,
@@ -87,6 +89,7 @@ import { useAuthStore } from '~/stores/auth'
 import { useClientStore } from '~/stores/client'
 import { usePluginsStore } from '~/stores/plugins'
 import type { ClientNavItem } from '~/types/clientnavitem'
+import { PluginPageLayout } from '~/types/pluginpagelayout'
 import { pluginIcon } from '~/utils/plugins'
 import { useHeaderWidget } from '~/composables/useHeaderWidget'
 
@@ -121,6 +124,19 @@ const store = useClientStore()
 const pluginsStore = usePluginsStore()
 /** Whether the platform widget is served here; without it nothing is polled for and the top bar draws its own account menu. */
 const { enabled: widgetEnabled } = useHeaderWidget()
+
+/** The address, which tells whether the plugin page the store still holds is the one on screen. */
+const route = useRoute()
+
+/** Whether the page on screen is a plugin page declaring the workspace layout: full width, no side menu on a wide screen. */
+const workspace = computed(() => {
+  const page = pluginsStore.page
+  if (page?.layout !== PluginPageLayout.Workspace) {
+    return false
+  }
+  const root = clientPluginPagePath(page.pluginId, '')
+  return route.path === root || route.path.startsWith(`${root}/`)
+})
 
 /** Whether the mobile sidebar drawer is open. */
 const sidebarOpen = ref(false)

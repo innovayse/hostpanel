@@ -84,7 +84,17 @@ const MAX_PAGE_PATH_LENGTH = 1024
  * @throws H3Error 400 carrying `data.code = BAD_ROUTE_PARAM` for a missing, repeated, overlong or malformed value.
  */
 export const requirePluginPagePath = (event: H3Event): string => {
-  const raw = getQuery(event).path
+  return checkedPluginPagePath(getQuery(event).path)
+}
+
+/**
+ * Checks a page address that is already decoded once, wherever it was read from.
+ *
+ * @param raw - The address below `/client/apps/<plugin>`.
+ * @returns The address with a leading `/` (`/` alone for the root page), each segment checked like a route segment.
+ * @throws H3Error 400 carrying `data.code = BAD_ROUTE_PARAM` for a missing, repeated, overlong or malformed value.
+ */
+export const checkedPluginPagePath = (raw: unknown): string => {
   // A repeated key arrives as an array; which one would win is not the visitor's to choose, so it is refused.
   if (typeof raw !== 'string' || !raw.startsWith('/') || raw.length > MAX_PAGE_PATH_LENGTH) {
     throw badPath()

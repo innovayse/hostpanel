@@ -1,6 +1,6 @@
 <template>
-  <UiCard data-testid="plugin-chat">
-    <UiStack gap="md">
+  <UiCard class="flex flex-1 flex-col md:min-h-0" data-testid="plugin-chat">
+    <UiStack gap="md" class="flex-1 md:min-h-0">
       <!-- An empty chat shows the plugin's introduction and its ready-made messages, which only fill the field. -->
       <UiStack v-if="messages.length === 0 && (block.intro || block.suggestions?.length)" gap="sm" data-testid="plugin-chat-intro">
         <UiText v-if="block.intro?.title" as="p" weight="semibold" data-testid="plugin-chat-intro-title">{{ block.intro.title }}</UiText>
@@ -18,28 +18,67 @@
           </UiButton>
         </UiStack>
       </UiStack>
-      <UiStack gap="sm" data-testid="plugin-chat-messages">
-        <UiChatBubble
-          v-for="message in messages"
-          :key="message.key"
-          :side="message.role === PluginChatRole.User ? UiChatBubbleSide.Own : UiChatBubbleSide.Other"
-          :data-testid="`plugin-chat-${message.role}`"
-        >
-          <UiText
-            v-if="message.role === PluginChatRole.Assistant && block.assistant?.label"
-            as="span"
-            size="xs"
-            tone="muted"
-            class="block"
-            data-testid="plugin-chat-assistant-label"
-          >{{ block.assistant.label }}</UiText>
-          {{ message.text }}
-          <template v-for="link in message.links" :key="link.key">
-            <UiLink v-if="link.external" :href="link.href" external class="block" testid="plugin-chat-link">{{ link.text }}</UiLink>
-            <UiLink v-else :to="link.href" class="block" testid="plugin-chat-link">{{ link.text }}</UiLink>
+      <!-- The log scrolls by itself, so the composer below it stays at the bottom of the pane. -->
+      <div
+        ref="log"
+        :class="['min-h-64 flex-1 overflow-y-auto', inPane ? 'max-h-[50dvh] md:max-h-none' : 'max-h-[60dvh]']"
+        data-testid="plugin-chat-log"
+        @scroll="onLogScroll"
+      >
+        <UiStack gap="sm" data-testid="plugin-chat-messages">
+          <template v-for="message in messages" :key="message.key">
+            <UiChatBubble
+              v-if="hasBubble(message)"
+              :side="message.role === PluginChatRole.User ? UiChatBubbleSide.Own : UiChatBubbleSide.Other"
+              :data-testid="`plugin-chat-${message.role}`"
+            >
+              <UiText
+                v-if="message.role === PluginChatRole.Assistant && block.assistant?.label"
+                as="span"
+                size="xs"
+                tone="muted"
+                class="block"
+                data-testid="plugin-chat-assistant-label"
+              >{{ block.assistant.label }}</UiText>
+              {{ message.text }}
+              <template v-for="link in message.links" :key="link.key">
+                <UiLink v-if="link.external" :href="link.href" external class="block" testid="plugin-chat-link">{{ link.text }}</UiLink>
+                <UiLink v-else :to="link.href" class="block" testid="plugin-chat-link">{{ link.text }}</UiLink>
+              </template>
+            </UiChatBubble>
+            <UiStack v-if="message.steps.length" as="ul" gap="xs" data-testid="plugin-chat-steps">
+              <UiStack
+                v-for="step in message.steps"
+                :key="step.key"
+                as="li"
+                direction="row"
+                gap="xs"
+                align="center"
+                :data-state="step.state"
+                data-testid="plugin-chat-step"
+              >
+                <component :is="STEP_ICONS[step.state]" :size="14" :class="STEP_ICON_CLASSES[step.state]" aria-hidden="true" />
+                <UiText as="span" size="xs" tone="muted">{{ step.label }}</UiText>
+                <UiText v-if="step.state === PluginChatStepState.Stopped" as="span" size="xs" tone="muted" data-testid="plugin-chat-step-stopped">{{ $t('plugins.chatStepStopped') }}</UiText>
+              </UiStack>
+            </UiStack>
+            <UiAlert v-for="issue in message.issues" :key="issue.key" variant="error" data-testid="plugin-chat-issue">{{ issue.text }}</UiAlert>
+            <UiToneCard v-for="result in message.results" :key="result.key" :tone="pluginUiTone(result.tone)" data-testid="plugin-chat-result">
+              <UiStack gap="xs">
+                <UiText v-if="result.title" as="p" weight="semibold" data-testid="plugin-chat-result-title">{{ result.title }}</UiText>
+                <UiText v-if="result.text" as="p" size="sm" tone="muted" data-testid="plugin-chat-result-text">{{ result.text }}</UiText>
+                <UiStack v-if="result.actions.length" direction="row" gap="sm" align="center" wrap>
+                  <template v-for="action in result.actions" :key="action.key">
+                    <PluginActionBlock v-if="action.block" :block="action.block" />
+                    <UiLink v-else-if="action.link?.external" :href="action.link.href" external testid="plugin-chat-result-link">{{ action.label }}</UiLink>
+                    <UiLink v-else-if="action.link" :to="action.link.href" testid="plugin-chat-result-link">{{ action.label }}</UiLink>
+                  </template>
+                </UiStack>
+              </UiStack>
+            </UiToneCard>
           </template>
-        </UiChatBubble>
-      </UiStack>
+        </UiStack>
+      </div>
       <UiText v-if="status" size="xs" tone="muted" data-testid="plugin-chat-status">{{ status }}</UiText>
       <UiText v-if="error" size="sm" tone="danger" data-testid="plugin-chat-error">{{ error }}</UiText>
       <UiTextarea
@@ -52,7 +91,7 @@
       />
       <UiStack direction="row" gap="sm" justify="end">
         <UiButton v-if="streaming" variant="outline" size="sm" data-testid="plugin-chat-stop" @click="stop">{{ $t('plugins.chatStop') }}</UiButton>
-        <UiButton size="sm" :disabled="!canSend" :loading="streaming" data-testid="plugin-chat-send" @click="send">{{ $t('plugins.chatSend') }}</UiButton>
+        <UiButton v-else size="sm" :disabled="!canSend" data-testid="plugin-chat-send" @click="send">{{ $t('plugins.chatSend') }}</UiButton>
       </UiStack>
     </UiStack>
   </UiCard>
@@ -65,26 +104,34 @@
  * text to the reply, `message` replaces it, `status` says what the plugin is doing, `error` shows the sentence (the
  * plugin's `text`, or the host's localised `message` when the plugin failed mid-stream), `link` (`{ text, url }`)
  * adds a link to the reply when the link-block rule admits the address, `done` ends the reply.
- * Everything is shown as text, never HTML.
+ * `step` (`{ id?, label, state }`) keeps a compact list inside the reply, a repeated key updating its row; `result`
+ * adds a card with a tone stripe and actions under the same link and route rules as other blocks; `issue` shows the
+ * plugin's own failure in the danger tone while the stream goes on, `error` and `done` staying the host's. A malformed
+ * event of these three is ignored whole. Everything is shown as text, never HTML.
  *
  * The stream is read through the store, which opens it with `apiStream` (fetch through the panel's own server,
  * with the CSRF and language headers), never with `EventSource`. Stop, leaving the page and a lost connection end
- * it, and the plugin's call ends with it.
+ * it, and the plugin's call ends with it. After a Stop a step still running shows as stopped and no failure is shown.
+ *
+ * The log scrolls on its own and follows the reply, unless the reader scrolled up.
  *
  * An empty chat shows the block's `intro` and its `suggestions`, which only fill the message field; `assistant.label`
  * signs each reply, `maxLength` caps the field, and once a reply has ended the blocks named in `refresh` read again,
  * since a turn may have changed what they show. When another block refreshes this one by its `id` (a "new
  * conversation" action), the reply in flight is stopped, the messages are cleared and the history is read again.
  */
+import type { Component } from 'vue'
+import { Check, CircleSlash, LoaderCircle, X } from 'lucide-vue-next'
 import { UiChatBubbleSide } from '~/utils/ui/enums'
-import { usePluginView } from '~/composables/usePluginView'
+import { usePluginPane, usePluginView } from '~/composables/usePluginView'
 import { usePluginsStore } from '~/stores/plugins'
 import type { PluginChatBlock } from '~/types/pluginblock'
 import { PluginChatEventType } from '~/types/pluginchateventtype'
 import type { PluginChatMessage } from '~/types/pluginchatmessage'
 import { PluginChatRole } from '~/types/pluginchatrole'
 import type { PluginStreamEvent } from '~/types/pluginstreamevent'
-import { pluginLinkTarget, readPluginField } from '~/utils/plugins'
+import { PluginChatStepState } from '~/types/pluginchatstepstate'
+import { parsePluginChatResult, parsePluginChatStep, pluginLinkTarget, pluginUiTone, readPluginField } from '~/utils/plugins'
 
 /** Props of PluginChatBlock. */
 interface Props {
@@ -99,6 +146,36 @@ const props = defineProps<Props>()
 const context = usePluginView()
 /** The plugin store, which reads the history and the stream. */
 const store = usePluginsStore()
+
+/** Whether the chat sits in a split pane, which gives it its height on a wide screen. */
+const inPane = usePluginPane()
+
+/** The icon of each step state. */
+const STEP_ICONS: Readonly<Record<PluginChatStepState, Component>> = {
+  [PluginChatStepState.Running]: LoaderCircle,
+  [PluginChatStepState.Done]: Check,
+  [PluginChatStepState.Failed]: X,
+  [PluginChatStepState.Stopped]: CircleSlash,
+}
+
+/** The icon colour of each step state, light and dark. */
+const STEP_ICON_CLASSES: Readonly<Record<PluginChatStepState, string>> = {
+  [PluginChatStepState.Running]: 'shrink-0 animate-spin text-primary-500 motion-reduce:animate-none',
+  [PluginChatStepState.Done]: 'shrink-0 text-green-600 dark:text-green-400',
+  [PluginChatStepState.Failed]: 'shrink-0 text-red-600 dark:text-red-400',
+  [PluginChatStepState.Stopped]: 'shrink-0 text-gray-400',
+}
+
+/** How close to the end, in pixels, still counts as reading the end of the log. */
+const FOLLOW_THRESHOLD_PX = 40
+
+/** The most steps, cards or issues one reply keeps, so a stream cannot grow the page without end. */
+const MAX_REPLY_PARTS = 100
+
+/** The scrolling log. */
+const log = ref<HTMLElement | null>(null)
+/** Whether the log follows the reply; false once the reader scrolled up. */
+let following = true
 
 /** The messages shown, oldest first. */
 const messages = ref<PluginChatMessage[]>([])
@@ -162,7 +239,7 @@ const addLink = (message: PluginChatMessage, text: unknown, url: unknown): void 
  * @returns The message as the reactive list holds it, so later events extend it in place.
  */
 const add = (role: PluginChatRole, text: string): PluginChatMessage => {
-  messages.value.push({ key: nextKey.value++, role, text, links: [] })
+  messages.value.push({ key: nextKey.value++, role, text, links: [], steps: [], results: [], issues: [] })
   if (messages.value.length > MAX_MESSAGES) {
     messages.value.splice(0, messages.value.length - MAX_MESSAGES)
   }
@@ -202,6 +279,65 @@ const loadHistory = async (): Promise<void> => {
 }
 
 /**
+ * Whether a message draws its bubble: a reply made only of steps or cards draws none.
+ *
+ * @param message - The message.
+ * @returns False for a reply with parts and no text or link.
+ */
+const hasBubble = (message: PluginChatMessage): boolean =>
+  message.text !== '' || message.links.length > 0
+  || (message.steps.length === 0 && message.results.length === 0 && message.issues.length === 0)
+
+/**
+ * Adds a step or updates the row its key names.
+ *
+ * @param target - The reply being written.
+ * @param data - The event's data.
+ * @returns Nothing.
+ */
+const applyStep = (target: PluginChatMessage, data: unknown): void => {
+  const step = parsePluginChatStep(data)
+  if (!step) {
+    return
+  }
+  const row = target.steps.find(candidate => candidate.key === step.key)
+  if (row) {
+    row.label = step.label
+    row.state = step.state
+  } else if (target.steps.length < MAX_REPLY_PARTS) {
+    target.steps.push(step)
+  }
+}
+
+/**
+ * Adds a result card.
+ *
+ * @param target - The reply being written.
+ * @param data - The event's data.
+ * @returns Nothing.
+ */
+const applyResult = (target: PluginChatMessage, data: unknown): void => {
+  const result = parsePluginChatResult(data, context.values, context.externalOrigins)
+  if (result && target.results.length < MAX_REPLY_PARTS) {
+    target.results.push({ ...result, key: nextKey.value++ })
+  }
+}
+
+/**
+ * Adds the plugin's own failure.
+ *
+ * @param target - The reply being written.
+ * @param data - The event's data.
+ * @returns Nothing.
+ */
+const applyIssue = (target: PluginChatMessage, data: unknown): void => {
+  const text = readPluginField(data, 'text')
+  if (typeof text === 'string' && text !== '' && target.issues.length < MAX_REPLY_PARTS) {
+    target.issues.push({ key: nextKey.value++, text })
+  }
+}
+
+/**
  * Applies one event of the reply.
  *
  * @param target - The reply being written.
@@ -228,6 +364,15 @@ const apply = (target: PluginChatMessage, event: PluginStreamEvent): void => {
     case PluginChatEventType.Done:
       status.value = ''
       break
+    case PluginChatEventType.Step:
+      applyStep(target, event.data)
+      break
+    case PluginChatEventType.Result:
+      applyResult(target, event.data)
+      break
+    case PluginChatEventType.Issue:
+      applyIssue(target, event.data)
+      break
     default:
       // An event this host does not know is ignored, so a plugin written for a newer host still chats here.
       break
@@ -248,13 +393,15 @@ const send = async (): Promise<void> => {
   draft.value = ''
   const target = add(PluginChatRole.Assistant, '')
   const asked = generation
-  controller = new AbortController()
+  const running = new AbortController()
+  controller = running
+  following = true
   streaming.value = true
   status.value = ''
   error.value = ''
 
   const result = await store.streamRoute(
-    context.pluginId, props.block.send, context.values, { message: text }, event => apply(target, event), controller.signal)
+    context.pluginId, props.block.send, context.values, { message: text }, event => apply(target, event), running.signal)
 
   // The conversation was reset while the reply streamed: the reset already stopped it and cleared the screen.
   if (asked !== generation) {
@@ -263,6 +410,14 @@ const send = async (): Promise<void> => {
   streaming.value = false
   status.value = ''
   controller = null
+  // The reader stopped watching: what is still running is not known to have finished, and is not called a failure.
+  if (running.signal.aborted) {
+    for (const step of target.steps) {
+      if (step.state === PluginChatStepState.Running) {
+        step.state = PluginChatStepState.Stopped
+      }
+    }
+  }
   // A refusal or a broken connection shows the store's sentence; an unusable route reference (`unavailable`) has
   // no sentence of its own to show, and a stop or a finished stream is `ok`.
   if (!result.ok && !result.unavailable) {
@@ -273,7 +428,7 @@ const send = async (): Promise<void> => {
     context.refresh(props.block.refresh)
   }
   // A reply that never wrote a word (a refusal before the first event) leaves no empty bubble behind.
-  if (target.text === '' && target.links.length === 0) {
+  if (target.text === '' && target.links.length === 0 && target.steps.length === 0 && target.results.length === 0 && target.issues.length === 0) {
     messages.value = messages.value.filter(message => message.key !== target.key)
   }
 }
@@ -304,7 +459,26 @@ const restart = async (): Promise<void> => {
   await loadHistory()
 }
 
+/**
+ * Notes whether the reader is at the end of the log.
+ *
+ * @returns Nothing.
+ */
+const onLogScroll = (): void => {
+  const element = log.value
+  if (element) {
+    following = element.scrollHeight - element.scrollTop - element.clientHeight <= FOLLOW_THRESHOLD_PX
+  }
+}
+
 onMounted(loadHistory)
+
+// After the render, when the new height is known; a reader who scrolled up keeps their place.
+watch(messages, () => {
+  if (following && log.value) {
+    log.value.scrollTop = log.value.scrollHeight
+  }
+}, { deep: true, flush: 'post' })
 
 // Another block (a reset action) names this block in its `refresh`: the conversation it showed is gone.
 watch(() => (props.block.id ? context.refreshes.value[props.block.id] ?? 0 : 0), restart)

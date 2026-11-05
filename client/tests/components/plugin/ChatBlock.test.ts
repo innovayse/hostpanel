@@ -342,4 +342,131 @@ describe('PluginChatBlock', () => {
     expect(shown).toHaveLength(200)
     expect(shown[0]!.text()).toBe('m50')
   })
+
+  it('keeps one compact list of steps in the reply, a repeated id updating its row, and ignores a malformed step', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, 'Build')
+
+    reply.send('step', { id: 'build', label: 'Building', state: 'running' })
+    reply.send('step', { label: 'Checks', state: 'failed' })
+    reply.send('step', { id: 'build', label: 'Built', state: 'done' })
+    reply.send('step', { label: 'Bad state', state: 'stopped' })
+    reply.send('step', { state: 'done' })
+    await settle()
+
+    const rows = wrapper.findAll('[data-testid="plugin-chat-step"]')
+    expect(rows.map(row => [row.text(), row.attributes('data-state')])).toEqual([['Built', 'done'], ['Checks', 'failed']])
+  })
+
+  it('draws a result card with its tone and checked actions, as text', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, 'Publish')
+
+    reply.send('result', {
+      tone: 'success',
+      title: '<b>Published</b>',
+      text: 'Live.',
+      actions: [
+        { label: 'Open', href: 'https://x.sites.example.test/' },
+        { label: 'Foreign', href: 'https://evil.test/' },
+        { label: 'Roll back', route: TEST_ROUTES.publish },
+        { label: 'Read', route: TEST_ROUTES.site },
+        { label: 'Unfilled', route: { method: 'post', path: '/other/{missing}' } },
+        { label: 'Sixth', href: 'https://y.sites.example.test/' },
+      ],
+    })
+    reply.send('result', { tone: 'nonsense', text: 'Plain' })
+    reply.send('result', { tone: 'danger' })
+    reply.send('result', { title: 5, text: 'Wrong type' })
+    await settle()
+
+    const cards = wrapper.findAll('[data-testid="plugin-chat-result"]')
+    expect(cards).toHaveLength(2)
+    expect(cards[0]!.attributes('data-tone')).toBe('success')
+    expect(cards[1]!.attributes('data-tone')).toBe('info')
+    expect(cards[0]!.get('[data-testid="plugin-chat-result-title"]').text()).toBe('<b>Published</b>')
+    expect(cards[0]!.find('b').exists()).toBe(false)
+    expect(cards[0]!.findAll('[data-testid="plugin-chat-result-link"]').map(link => link.text())).toEqual(['Open'])
+    expect(cards[0]!.findAll('[data-testid="plugin-action-button"]').map(button => button.text())).toEqual(['Roll back'])
+  })
+
+  it('calls a card\'s route through the plugin door', async () => {
+    const reply = stubStream()
+    let calls = 0
+    api = await startPluginApi({
+      [`GET ${ROUTES_URL}/sites/7/history`]: { body: [] },
+      [`POST ${ROUTES_URL}/sites/7/publish`]: () => {
+        calls += 1
+        return { status: 204 }
+      },
+    })
+    const wrapper = mountBlocks([chat])
+    await settle()
+    await sendMessage(wrapper, 'Publish')
+    reply.send('result', { title: 'Ready', actions: [{ label: 'Publish', route: TEST_ROUTES.publish }] })
+    await settle()
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    expect(calls).toBe(1)
+  })
+
+  it('shows the plugin\'s own failure as an issue while the stream goes on, apart from the host\'s error', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, 'Build')
+
+    reply.send('issue', { text: 'The theme is missing.' })
+    reply.send('issue', { text: 7 })
+    reply.send('delta', { text: 'Still here' })
+    await settle()
+
+    expect(wrapper.findAll('[data-testid="plugin-chat-issue"]').map(issue => issue.text())).toEqual(['The theme is missing.'])
+    expect(wrapper.find('[data-testid="plugin-chat-error"]').exists()).toBe(false)
+    expect(lastReply(wrapper)).toBe('Still here')
+    expect(wrapper.find('[data-testid="plugin-chat-stop"]').exists()).toBe(true)
+  })
+
+  it('replaces Send with Stop while a reply runs, and on Stop marks a running step stopped with no failure', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, 'Build')
+    reply.send('step', { id: 'a', label: 'Done one', state: 'done' })
+    reply.send('step', { id: 'b', label: 'Running one', state: 'running' })
+    await settle()
+    expect(wrapper.find('[data-testid="plugin-chat-send"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="plugin-chat-stop"]').trigger('click')
+    await settle()
+
+    expect((reply.calls[0]!.init.signal as AbortSignal).aborted).toBe(true)
+    const rows = wrapper.findAll('[data-testid="plugin-chat-step"]')
+    expect(rows.map(row => row.attributes('data-state'))).toEqual(['done', 'stopped'])
+    expect(wrapper.find('[data-testid="plugin-chat-step-stopped"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="plugin-chat-error"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-chat-send"]').exists()).toBe(true)
+  })
+
+  it('follows the reply in its own scrolling log, unless the reader scrolled up', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, 'Build')
+    const log = wrapper.get('[data-testid="plugin-chat-log"]')
+    const element = log.element as HTMLElement
+    Object.defineProperty(element, 'scrollHeight', { configurable: true, value: 1000 })
+    Object.defineProperty(element, 'clientHeight', { configurable: true, value: 200 })
+
+    reply.send('delta', { text: 'One' })
+    await settle()
+    expect(element.scrollTop).toBe(1000)
+
+    element.scrollTop = 100
+    await log.trigger('scroll')
+    reply.send('delta', { text: 'Two' })
+    await settle()
+    expect(element.scrollTop).toBe(100)
+  })
 })

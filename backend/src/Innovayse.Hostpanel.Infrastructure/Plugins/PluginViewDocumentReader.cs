@@ -89,6 +89,18 @@ internal static partial class PluginViewDocumentReader
     /// <summary>The number of members a follow-up holds: refresh and until, nothing else.</summary>
     private const int FollowUpMemberCount = 2;
 
+    /// <summary>The number of members a pane holds: blocks, nothing else.</summary>
+    private const int PaneMemberCount = 1;
+
+    /// <summary>The number of members a preview source holds: id, label, route and field, nothing else.</summary>
+    private const int PreviewSourceMemberCount = 4;
+
+    /// <summary>The member of a preview source naming it within its block.</summary>
+    private const string PreviewSourceIdMember = "id";
+
+    /// <summary>The member of a preview source holding its label.</summary>
+    private const string PreviewSourceLabelMember = "label";
+
     /// <summary>The member, at any depth, that names an icon; its value must be a plain icon name, never a URL.</summary>
     private const string IconMember = "icon";
 
@@ -150,6 +162,11 @@ internal static partial class PluginViewDocumentReader
     [GeneratedRegex(@"\A[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*\z", RegexOptions.CultureInvariant)]
     private static partial Regex ConditionFieldPattern();
 
+    /// <summary>Matches the id of a preview source; nothing after it, not even a newline.</summary>
+    /// <returns>The compiled pattern.</returns>
+    [GeneratedRegex(@"\A[a-z0-9][a-z0-9_-]*\z", RegexOptions.CultureInvariant)]
+    private static partial Regex PreviewSourceIdPattern();
+
     /// <summary>Reads and checks every view document the manifest names, under the plugin folder.</summary>
     /// <param name="pluginDirectory">The plugin folder: the folder holding <c>plugin.json</c>.</param>
     /// <param name="manifest">The manifest, already accepted by <see cref="PluginManifestValidator.Validate"/>.</param>
@@ -178,7 +195,7 @@ internal static partial class PluginViewDocumentReader
 
             foreach (var use in group)
             {
-                violation = CheckRoutes(manifest, use, scan);
+                violation = CheckPreviewPlace(use, scan) ?? CheckRoutes(manifest, use, scan);
                 if (violation is not null)
                 {
                     return new PluginViewRead(PluginViewDocuments.None, violation);
@@ -206,7 +223,7 @@ internal static partial class PluginViewDocumentReader
         {
             foreach (var page in area.Ui.Pages)
             {
-                uses.Add(new ViewUse(page.View, area.Area, $"ui.{area.Member}.pages '{page.Id}' view '{page.View}'"));
+                uses.Add(new ViewUse(page.View, area.Area, $"ui.{area.Member}.pages '{page.Id}' view '{page.View}'", IsPage: true));
             }
         }
 
@@ -215,7 +232,7 @@ internal static partial class PluginViewDocumentReader
             var known = PluginSlots.Find(slot.Slot);
             if (known is not null)
             {
-                uses.Add(new ViewUse(slot.View, known.Area, $"ui.slots '{slot.Id}' view '{slot.View}'"));
+                uses.Add(new ViewUse(slot.View, known.Area, $"ui.slots '{slot.Id}' view '{slot.View}'", IsPage: false));
             }
         }
 
@@ -621,6 +638,13 @@ internal static partial class PluginViewDocumentReader
                     scan.BlockIds.Add(blockId);
                 }
 
+                CheckArrangement(element, kind, scan);
+
+                // A split counts itself while its own members are walked, so a split in one of its panes, however deep,
+                // is seen by the check above.
+                var isSplit = string.Equals(kind, PluginViews.SplitKind, StringComparison.Ordinal);
+                scan.SplitDepth += isSplit ? 1 : 0;
+
                 var names = new HashSet<string>(StringComparer.Ordinal);
                 foreach (var member in element.EnumerateObject())
                 {
@@ -635,8 +659,125 @@ internal static partial class PluginViewDocumentReader
                     }
                 }
 
+                scan.SplitDepth -= isSplit ? 1 : 0;
                 break;
         }
+    }
+
+    /// <summary>Checks a block's shape when it is a <c>split</c> or a <c>preview</c>.</summary>
+    /// <param name="block">The object being walked.</param>
+    /// <param name="kind">Its block kind, or <see langword="null"/> when it is no block.</param>
+    /// <param name="scan">Receives the first broken rule.</param>
+    private static void CheckArrangement(JsonElement block, string? kind, DocumentScan scan)
+    {
+        if (string.Equals(kind, PluginViews.SplitKind, StringComparison.Ordinal))
+        {
+            CheckSplit(block, scan);
+        }
+        else if (string.Equals(kind, PluginViews.PreviewKind, StringComparison.Ordinal))
+        {
+            scan.HasPreview = true;
+            CheckPreview(block, scan);
+        }
+    }
+
+    /// <summary>
+    /// Checks a split: not inside another split, with exactly <see cref="PluginViews.SplitPaneCount"/> panes, each an object
+    /// holding only a valid <c>blocks</c> array. A pane the panel could not render would leave half a screen blank, so it
+    /// is refused at install; what the panes hold is walked like any other content.
+    /// </summary>
+    /// <param name="split">The split block.</param>
+    /// <param name="scan">Receives the first broken rule.</param>
+    private static void CheckSplit(JsonElement split, DocumentScan scan)
+    {
+        var valid = scan.SplitDepth == 0
+            && split.TryGetProperty(PluginViews.PanesProperty, out var panes)
+            && panes.ValueKind == JsonValueKind.Array
+            && panes.GetArrayLength() == PluginViews.SplitPaneCount
+            && panes.EnumerateArray().All(IsPane);
+        if (!valid)
+        {
+            scan.StateViolation ??= new PluginManifestViolation(
+                PluginManifestRule.ViewSplitInvalid,
+                $"has a '{PluginViews.SplitKind}' that is nested or does not have {PluginViews.SplitPaneCount} panes, each holding only '{BlocksMember}'");
+        }
+    }
+
+    /// <summary>Tells whether a pane is an object holding only a valid <c>blocks</c> array.</summary>
+    /// <param name="pane">The pane.</param>
+    /// <returns><see langword="true"/> when it is.</returns>
+    private static bool IsPane(JsonElement pane)
+    {
+        return pane.ValueKind == JsonValueKind.Object
+            && pane.EnumerateObject().Count() == PaneMemberCount
+            && pane.TryGetProperty(BlocksMember, out var blocks)
+            && CheckBlocks(blocks) is null;
+    }
+
+    /// <summary>
+    /// Checks a preview's <c>sources</c> and <c>size</c>. The routes and labels of the sources are collected by the ordinary
+    /// walk, so a route must also be declared in the area and a label key must exist. The address itself is only known
+    /// when the panel reads it, so its origin is checked there, against what the host allows for that reader.
+    /// </summary>
+    /// <param name="preview">The preview block.</param>
+    /// <param name="scan">Receives the first broken rule.</param>
+    private static void CheckPreview(JsonElement preview, DocumentScan scan)
+    {
+        var sizeValid = !preview.TryGetProperty(PluginViews.PreviewSizeProperty, out var size)
+            || (size.ValueKind == JsonValueKind.String
+                && PluginViews.PreviewSizes.Contains(size.GetString() ?? string.Empty, StringComparer.Ordinal));
+        var sourcesValid = preview.TryGetProperty(PluginViews.PreviewSourcesProperty, out var sources)
+            && sources.ValueKind == JsonValueKind.Array
+            && sources.GetArrayLength() is >= 1 and <= PluginViews.MaxPreviewSources
+            && sources.EnumerateArray().All(IsPreviewSource)
+            && sources.EnumerateArray()
+                .Select(source => source.GetProperty(PreviewSourceIdMember).GetString())
+                .Distinct(StringComparer.Ordinal)
+                .Count() == sources.GetArrayLength();
+        if (!sizeValid || !sourcesValid)
+        {
+            scan.StateViolation ??= new PluginManifestViolation(
+                PluginManifestRule.ViewPreviewInvalid,
+                $"has a '{PluginViews.PreviewKind}' whose '{PluginViews.PreviewSourcesProperty}' or '{PluginViews.PreviewSizeProperty}' is not valid");
+        }
+    }
+
+    /// <summary>Tells whether a preview source holds exactly an id, a label, a GET route and a dotted field.</summary>
+    /// <param name="source">The source.</param>
+    /// <returns><see langword="true"/> when it does.</returns>
+    private static bool IsPreviewSource(JsonElement source)
+    {
+        return source.ValueKind == JsonValueKind.Object
+            && source.EnumerateObject().Count() == PreviewSourceMemberCount
+            && source.TryGetProperty(PreviewSourceIdMember, out var id)
+            && id.ValueKind == JsonValueKind.String
+            && id.GetString() is { Length: <= PluginViews.MaxPreviewSourceIdLength } name
+            && PreviewSourceIdPattern().IsMatch(name)
+            && source.TryGetProperty(PreviewSourceLabelMember, out var label)
+            && label.ValueKind == JsonValueKind.String
+            && !string.IsNullOrEmpty(label.GetString())
+            && source.TryGetProperty(ConditionRouteMember, out var route)
+            && ReadRoute(route) is { Method: PluginRouteMethod.Get }
+            && source.TryGetProperty(ConditionFieldMember, out var field)
+            && field.ValueKind == JsonValueKind.String
+            && field.GetString() is { Length: <= MaxConditionFieldLength } path
+            && ConditionFieldPattern().IsMatch(path);
+    }
+
+    /// <summary>
+    /// Refuses a preview anywhere but on a client page. Only the document of a client plugin page gets the host's narrowed
+    /// <c>frame-src</c>, and only there is the reader's own account known to the origins; elsewhere the block could not be
+    /// held to them by the browser.
+    /// </summary>
+    /// <param name="use">The page or slot showing the document.</param>
+    /// <param name="scan">What the walk found.</param>
+    /// <returns>The violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckPreviewPlace(ViewUse use, DocumentScan scan)
+    {
+        return scan.HasPreview && (!use.IsPage || use.Area != PluginArea.Client)
+            ? new PluginManifestViolation(
+                PluginManifestRule.ViewPreviewInvalid, $"{use.Where} shows a '{PluginViews.PreviewKind}', which only a client page may")
+            : null;
     }
 
     /// <summary>

@@ -52,6 +52,7 @@ const Host = defineComponent({
       pluginId: 'acme-sites',
       values: { siteId: '7' },
       externalOrigins: [],
+      frameOrigins: [],
       refreshes,
       refresh: () => undefined,
       open: () => undefined,
@@ -204,6 +205,7 @@ const WatchHost = defineComponent({
       pluginId: 'acme-sites',
       values: { siteId: '7' },
       externalOrigins: [],
+      frameOrigins: [],
       refreshes,
       refresh: (ids: string[]) => {
         refreshed.push(ids)

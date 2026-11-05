@@ -120,6 +120,30 @@ describe('plugin page', () => {
     expect(wrapper.text()).toContain('<img src=x onerror="alert(1)">')
   })
 
+  it('draws a slim link back to the service on a workspace page, and passes the frame origins on', async () => {
+    stub.respondWith(answering(() => ({ body: { ...SITE_PAGE, path: '/services/{serviceId}', layout: 'workspace', frameOrigins: ['https://a.example'] } })))
+
+    const wrapper = await mountPluginPage()
+
+    expect(wrapper.get('[data-testid="plugin-page-back"]').attributes('href')).toBe('/client/services/blog')
+  })
+
+  it('goes back to the dashboard from a workspace page with no service', async () => {
+    stub.respondWith(answering(() => ({ body: { ...SITE_PAGE, layout: 'workspace', frameOrigins: [] } })))
+
+    const wrapper = await mountPluginPage()
+
+    expect(wrapper.get('[data-testid="plugin-page-back"]').attributes('href')).toBe('/client/dashboard')
+  })
+
+  it.each(['standard', 'unknown-layout'])('draws no back link on a page whose layout is %s', async (layout) => {
+    stub.respondWith(answering(() => ({ body: { ...SITE_PAGE, layout, frameOrigins: [] } })))
+
+    const wrapper = await mountPluginPage()
+
+    expect(wrapper.find('[data-testid="plugin-page-back"]').exists()).toBe(false)
+  })
+
   it('shows the API\'s sentence for a page that is not there, and no view', async () => {
     stub.respondWith(answering(() => ({ status: 404, body: { statusMessage: 'This page does not exist.', data: { code: 'PLUGIN_PAGE_NOT_FOUND' } } })))
 

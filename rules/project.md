@@ -234,7 +234,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
-- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.1.0, which keeps what 2.1.0 added, the `Ui`
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.2.0, which keeps what 2.1.0 added, the `Ui`
   view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, and adds the plugin
   packaging package, `Hostpanel.Sdk.Packaging`).** Every SDK type lives in
   `Plugins/<Area>/` and its namespace equals the folder: `Payment`, `Provisioning`, `Registrar`, `HostingPanel`, `Hosting`,
@@ -336,7 +336,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     are in "Manifest v2" and "One manifest validator" in this section and in "Menu icons and page ids".
   - **View schema** (`PluginViews` in the SDK, version 1): a JSON document `{ "schema": 1, "blocks": [...] }` named by the
     `view` member of a page or slot entry. Block kinds: `header`, `text`, `stat`, `table`, `form`, `action`, `link`, `badge`,
-    `empty`, `alert`, `tabs`, `chat`, `progress`. Label members (`title`, `label`, `confirm`, `placeholder`, `text`) are
+    `empty`, `alert`, `tabs`, `chat`, `progress`, `split`, `preview`. Label members (`title`, `label`, `confirm`, `placeholder`, `text`) are
     localised by the host; route members (`route`, `send`, `history`) name a declared `api` route by method and path. Checked
     at load and install (`PluginViewDocumentReader`, the `PLUGIN_VIEW_*` rules); rendered as text only, never `v-html`.
     View state (#852, SDK 2.2.0, schema stays 1): `visibleWhen` on a block, `resetOnSuccess` in a form's `submit`,
@@ -468,6 +468,39 @@ docker/                              compose set (shared·dev·prod·platform), 
       condition route, `visibleWhen` outside a block) and `ViewFollowUpInvalid` (`PLUGIN_VIEW_FOLLOW_UP_INVALID`: a bad
       `followUp` shape or place, a `refresh` id no block carries, `resetOnSuccess` not a boolean or outside a `submit`),
       each with its en/ru/hy sentence, 400.
+  - **Layout, split and preview (#910, SDK 3.2.0, schema stays 1).** A client page's `layout` is a `PluginPageLayouts`
+    value and the page answers it (`PluginPageViewDto.Layout`, `standard` when absent); another value or any layout on an
+    admin page is `PLUGIN_PAGE_LAYOUT_UNKNOWN` (`CheckPageLayouts` in the manifest validator). `split` holds exactly two
+    panes of `{ blocks }` and never nests in a split (`PLUGIN_VIEW_SPLIT_INVALID`). `preview` holds 1 to 5 `sources`
+    (exactly `id`, `label`, a GET `route`, a dotted `field`) and an optional `size`, and is allowed **only on a client
+    page** (`PLUGIN_VIEW_PREVIEW_INVALID`), because no other document gets the narrowed frame policy.
+    - **Origins.** `PluginPageViewDto.FrameOrigins`, computed per request by `PluginFrameOriginResolver` from the one
+      page reader, empty in the admin panel: the manifest's `externalOrigins` that are pure https origins, the domains of
+      the caller's account's `Active` services on products the operator bound to this plugin (#823 rows through
+      `IPluginSlotContextReader`, the rule SSH access follows: no manifest fallback, nothing bound means none;
+      `IPluginHostFactsReader.ListActiveServiceDomainsAsync`; the account comes from `ICallerClientResolver`, and only with
+      `ViewProductsServices`, as in the host API) as `https://d` and
+      `https://www.d`, then `PluginPreview:DevelopmentHttpOrigins`. `PluginFrameOrigin` is the one parser, and everything
+      that is not a plain DNS name is dropped, because a domain is what a client typed and the text reaches a response
+      header. The list is cut at 2048 characters for the proxies' header limits; what falls off shows nothing.
+    - **Browser enforcement.** The panel frames an address only when its origin is exactly on that list and is not the
+      panel's own. The edge CSP keeps `frame-src 'self' https:` (operator content on public pages, and domains cannot be
+      listed statically), and `client/server/middleware/plugin-frame-csp.ts` adds a second header to the document of
+      `/client/apps/<plugin>/**`, `Content-Security-Policy: frame-src <origins>` or `'none'` on any failure. Policies
+      intersect. A CSP belongs to the document, so the renderer loads the page once in full when it arrived by a router
+      move from another document.
+    - **Sandbox decision.** `allow-scripts allow-forms`, **never `allow-same-origin`**: a client chooses a service's
+      domain, so it could name the panel's own host, and that pair is an escape from the sandbox on a shared origin. The
+      opaque origin also means a framed site's session can never be driven from the panel. Accepted cost: a page that
+      needs its own cookies or storage degrades in the preview.
+    - **http only in Development.** `PluginPreviewOptionsValidator` refuses to start with `DevelopmentHttpOrigins` set
+      outside Development (a blank entry counts as unset, which is what `PLUGIN_PREVIEW_DEV_HTTP_ORIGIN`, a dev compose key only,
+      passes when empty), and with anything but an http origin on a loopback host (a browser blocks other http frames in
+      an https panel as mixed content). This is a refusal on purpose, not a branch in the flow.
+  - **Chat events (#911, SDK 3.2.0).** `PluginChatEvents`: `step`, `result`, `issue`, sent as ordinary plugin events and
+    rendered by the client's chat block; `error` and `done` stay reserved (`PluginEventStream`). The host forwards their data
+    unread: the client renders text only and takes a result's actions through the same link rule and route door as
+    other blocks. Stop aborts the fetch, which cancels the plugin through `RequestAborted`; no event and no route of its own.
   - **Structure.** The root is an object with an integer `schema` and a `blocks` array. Every entry of a `blocks`
     array (the root's or a tab's) and of a block's `actions` array is an object with a string `kind`; a block's `tabs`
     is an array of objects whose `blocks`, when present, follow the same rule. A block the panel would skip or crash on
@@ -1838,6 +1871,14 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
     as text, never `v-html`. A link renders only through `pluginLinkTarget`: a host-relative path (one leading `/`,
     never `//`, and never `/api` or below once resolved and decoded once, in any case), or an `https` URL without user
     info on one of the plugin's `externalOrigins`, opened with `noopener noreferrer`; anything else is not rendered.
+  - **Workspace, split, preview, chat events (#910, #911).** `layouts/client.vue` drops the gutter and hides the side menu
+    on a wide screen while the page on screen declares `workspace`. `SplitBlock` stacks on a phone. `PreviewBlock` frames
+    through `UiPreviewFrame`, the one `<iframe>` (see "Layout, split and preview"), and `pluginFrameAddress` admits an
+    address. `server/middleware/plugin-frame-csp.ts` writes the document's `frame-src`, read from the page of that address,
+    so the document's scope is the exact page: `pluginDocumentLoaded` compares the navigation entry's path with the page on
+    screen, and any router move onto a preview, inside one plugin too, loads it once in full (one session flag per page
+    keeps it from looping). `ChatBlock` renders `step`, `result` (`UiToneCard`) and `issue` inside the reply, and Stop
+    aborts the fetch.
 - **The kit is `components/ui/` (`Ui*`), and screens are composed from it.** `pages/**`, `layouts/**`
   and `templates/*/{pages,sections,layout}/**` carry no raw tag at all; an area's own components
   (`components/<area>/`) compose the kit and may not hold a card-styled `div` or an interactive

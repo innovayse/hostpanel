@@ -219,7 +219,7 @@ The fields above cover manifest version 1. A manifest without `manifestVersion` 
   { name: 'locales', type: 'object', default: '{}', description: 'Texts by language code, then by key, for example the language en with the key menu.chat and the text Chat. A text key has at least two dot-separated parts, such as menu.chat. The en texts must define every key the manifest uses.' },
   { name: 'api', type: 'object', default: '{}', description: 'Routes the host forwards to the plugin: api.client and api.admin, each a list of routes.' },
   { name: 'ui', type: 'object', default: '{}', description: 'What the plugin adds to the panels: ui.client and ui.admin (menus and pages) and ui.slots (widgets in host slots).' },
-  { name: 'externalOrigins', type: 'string[]', default: '[]', description: 'Web origins (scheme, host and port, such as https://example.com) that a link block of a plugin view may point at with an absolute https address.' }
+  { name: 'externalOrigins', type: 'string[]', default: '[]', description: 'Web origins (scheme, host and port, such as https://example.com) that a link block of a plugin view may point at with an absolute https address, and that a preview block may frame (a pure https origin only).' }
 ]" />
 
 Wherever a label, title or description may be a text, write either a key of `locales` or plain text. A value shaped like a key (letters, digits, dashes and underscores in two or more parts separated by dots) is looked up in the `en` texts and refused when it is not defined (`PLUGIN_LABEL_KEY_MISSING`).
@@ -431,6 +431,79 @@ A view that breaks these rules is refused at install and skipped at startup: `PL
 condition, a condition route that is not `GET`, `visibleWhen` outside a block), `PLUGIN_VIEW_FOLLOW_UP_INVALID` (a bad
 `followUp` or one in the wrong place, a `refresh` id no block carries, `resetOnSuccess` that is not a boolean or not in a
 `submit`), and `PLUGIN_VIEW_ROUTE_UNDECLARED` for a condition route the manifest does not declare.
+
+## Working screens: layout, split and preview
+
+Needs SDK 3.2.0 or later; the view schema stays 1.
+
+A client page may set `"layout": "workspace"` (`PluginPageLayouts`) in `plugin.json`: full width, no service side menu,
+a slim link back to the service (its `{serviceId}` path parameter names which). Absent means `standard`. An admin page
+takes no layout. A bad value is `PLUGIN_PAGE_LAYOUT_UNKNOWN`.
+
+`split` puts two panes side by side, stacked on a phone, and never nests inside a split (`PLUGIN_VIEW_SPLIT_INVALID`):
+
+```json
+{ "kind": "split", "panes": [ { "blocks": [ { "kind": "chat", "send": { "method": "post", "path": "/chat" } } ] },
+                              { "blocks": [ { "kind": "preview", "sources": [ ] } ] } ] }
+```
+
+`preview` shows one address in a sandboxed frame, on a client page only:
+
+```json
+{
+  "kind": "preview",
+  "id": "site-preview",
+  "size": "desktop",
+  "sources": [
+    { "id": "preview", "label": "site.preview", "route": { "method": "get", "path": "/services/{serviceId}/site" }, "field": "previewUrl" },
+    { "id": "live", "label": "site.live", "route": { "method": "get", "path": "/services/{serviceId}/site" }, "field": "liveUrl" }
+  ]
+}
+```
+
+Up to 5 `sources`, each exactly `id`, `label`, a `GET` `route` and a dotted `field`; `size` is `desktop` or `phone`, and
+the reader can switch both. A bad shape, or a preview in a slot or on an admin page, is `PLUGIN_VIEW_PREVIEW_INVALID`.
+
+**What may be framed.** The address the route returns is shown only when its origin is one of your manifest's
+`externalOrigins` (a pure `https` origin) or a domain of the reader's own active hosting services on a product the
+operator bound to your plugin's slot widgets (with its `www` name, and only for a reader who may see services; your
+manifest's `productIds` do not count, and nothing bound means no domains). Anything else shows nothing, with no message, and your plugin cannot
+change that: the host writes the list per reader, and the same list narrows the page's `frame-src`, so a browser refuses
+any other frame too.
+
+**The frame is `sandbox="allow-scripts allow-forms"`.** Scripts run, but the frame has an opaque origin: no cookies or
+storage of the site's own, no pop-ups, no top navigation, no access to the panel. A site that needs its own session
+will look signed out there, and a site that refuses framing (`X-Frame-Options`, `frame-ancestors`) stays blank, so send
+your preview without those headers.
+
+On a developer machine, `PLUGIN_PREVIEW_DEV_HTTP_ORIGIN=http://localhost:8088` in `docker/.env` (the dev compose file maps
+it to `PluginPreview__DevelopmentHttpOrigins__0`; empty means none) allows an exact `http` origin on
+a loopback host. Outside the Development environment the host refuses to start with it set.
+
+## Chat events
+
+Needs SDK 3.2.0 or later. A `chat` block's streaming route may send these events (`PluginChatEvents`) beside its reply
+text, so a reader can see what happened without reading it out of a paragraph. Text is plain and already in the reader's
+language. `error` and `done` stay the host's.
+
+```json
+{ "event": "step", "data": { "id": "build", "label": "Building the site", "state": "running" } }
+{ "event": "step", "data": { "id": "build", "label": "Building the site", "state": "done" } }
+{ "event": "result", "data": { "tone": "success", "title": "Published", "text": "Your site is live.", "actions": [
+  { "label": "Open site", "href": "https://example.com/" },
+  { "label": "Roll back", "route": { "method": "post", "path": "/services/{serviceId}/site/rollback" }, "confirm": "Roll back?" } ] } }
+{ "event": "issue", "data": { "text": "The build failed: the theme is missing." } }
+```
+
+- `step` is one row of a list in the reply; sending its `id` again (or its `label`, without an `id`) updates the row.
+  `state` is `running`, `done` or `failed`.
+- `result` is a card. `tone` is `info` (default), `success`, `warning` or `danger`; at least one of `title` and `text`.
+  At most 5 `actions`, each with a `label` and exactly one of `route` (one of your own, called through the host, so an
+  undeclared route or a missing permission is refused as usual) or `href` (under the rule of a link block).
+- `issue` is your own failure, in the danger tone. The stream goes on; end it when you are done.
+
+A panel ignores an event it cannot read. **Stop** cancels the stream: your enumerator's token fires (`EnumeratorCancellation`)
+and nothing more is sent. Stop does not undo anything, so observe the token and leave your own work consistent.
 
 ## Package it
 

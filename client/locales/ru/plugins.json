@@ -4,6 +4,14 @@
     "chatMessage": "Ваше сообщение",
     "chatSend": "Отправить",
     "chatStop": "Остановить",
-    "unavailable": "Этот раздел сейчас недоступен."
+    "unavailable": "Этот раздел сейчас недоступен.",
+    "workspaceBack": "Назад",
+    "previewSize": "Размер экрана",
+    "previewSource": "Какой сайт",
+    "previewDesktop": "Компьютер",
+    "previewPhone": "Телефон",
+    "previewOpen": "Открыть в новой вкладке",
+    "previewEmpty": "Пока нечего показать.",
+    "chatStepStopped": "Остановлено"
   }
 }

@@ -28,6 +28,10 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
     /// <summary>The longest plain icon name accepted, in characters.</summary>
     private const int MaxIconNameLength = 64;
 
+    /// <summary>A view holding one valid preview, reading GET /site.</summary>
+    private const string ValidPreviewDocument =
+        """{"schema":1,"blocks":[{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]}]}""";
+
     /// <summary>A scratch plugin folder per test instance, removed on disposal.</summary>
     private readonly string _folder = Path.Combine(Path.GetTempPath(), $"view-rules-{Guid.NewGuid():N}");
 
@@ -633,6 +637,110 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
         var open = string.Concat(Enumerable.Repeat("[", padding));
         var close = string.Concat(Enumerable.Repeat("]", padding));
         return $$"""{"schema":1,"blocks":[{"kind":"text","text":"x","data":{{open}}{{close}}}]}""";
+    }
+
+    /// <summary>A manifest whose client page shows <c>views/a.json</c> and whose client api declares GET /site and POST /publish.</summary>
+    /// <returns>The manifest.</returns>
+    private static PluginManifest ClientPageManifest()
+    {
+        return Manifest(""","api":{"client":[{"method":"get","path":"/site","permission":"Any"},{"method":"post","path":"/publish","permission":"Any"}]},"ui":{"client":{"pages":[{"id":"overview","path":"/o","title":"O","view":"views/a.json","permission":"Any"}]}}""");
+    }
+
+    /// <summary>A split holding a chat beside a preview with two sources, on a client page, is accepted.</summary>
+    [Fact]
+    public void Read_SplitWithPreviewOnClientPage_IsAccepted()
+    {
+        Write("views/a.json", """
+            {"schema":1,"blocks":[{"kind":"split","panes":[
+              {"blocks":[{"kind":"chat","send":{"method":"post","path":"/publish"}}]},
+              {"blocks":[{"kind":"preview","size":"phone","sources":[
+                {"id":"preview","label":"Preview","route":{"method":"get","path":"/site"},"field":"urls.preview"},
+                {"id":"live","label":"Live","route":{"method":"get","path":"/site"},"field":"urls.live"}]}]}
+            ]}]}
+            """);
+
+        PluginViewDocumentReader.Read(_folder, ClientPageManifest(), MaxViewBytes).Violation.Should().BeNull();
+    }
+
+    /// <summary>A split without exactly two panes of blocks, or inside another split at any depth, breaks ViewSplitInvalid.</summary>
+    /// <param name="block">The block under test.</param>
+    [Theory]
+    [InlineData("""{"kind":"split"}""")]
+    [InlineData("""{"kind":"split","panes":{}}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]}]}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]},{"blocks":[]},{"blocks":[]}]}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]},{}]}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]},{"blocks":[],"extra":1}]}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]},{"blocks":[{"nokind":1}]}]}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]},{"blocks":[{"kind":"split","panes":[{"blocks":[]},{"blocks":[]}]}]}]}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]},{"blocks":[{"kind":"tabs","tabs":[{"blocks":[{"kind":"split","panes":[{"blocks":[]},{"blocks":[]}]}]}]}]}]}""")]
+    public void Read_SplitMalformed_BreaksViewSplitInvalid(string block)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{block}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewSplitInvalid);
+    }
+
+    /// <summary>A preview with bad sources or size breaks ViewPreviewInvalid: the frame must never be guessed at.</summary>
+    /// <param name="block">The block under test.</param>
+    [Theory]
+    [InlineData("""{"kind":"preview"}""")]
+    [InlineData("""{"kind":"preview","sources":[]}""")]
+    [InlineData("""{"kind":"preview","sources":{}}""")]
+    [InlineData("""{"kind":"preview","size":"tablet","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]}""")]
+    [InlineData("""{"kind":"preview","size":1,"sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"id":"A b","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"label":"A","route":{"method":"get","path":"/site"},"field":"url"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"id":"a","label":"","route":{"method":"get","path":"/site"},"field":"url"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"post","path":"/publish"},"field":"url"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"a..b"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url","address":"https://evil.example"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"u"},{"id":"a","label":"B","route":{"method":"get","path":"/site"},"field":"v"}]}""")]
+    public void Read_PreviewMalformed_BreaksViewPreviewInvalid(string block)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{block}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewPreviewInvalid);
+    }
+
+    /// <summary>More sources than the SDK bound break ViewPreviewInvalid.</summary>
+    [Fact]
+    public void Read_PreviewOverSourceBound_BreaksViewPreviewInvalid()
+    {
+        var sources = string.Join(',', Enumerable.Range(0, PluginViews.MaxPreviewSources + 1).Select(i =>
+            $$"""{"id":"s{{i}}","label":"S","route":{"method":"get","path":"/site"},"field":"url"}"""));
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{"kind":"preview","sources":[{{sources}}]}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewPreviewInvalid);
+    }
+
+    /// <summary>A preview on an admin page breaks ViewPreviewInvalid: no document there gets the narrowed frame policy.</summary>
+    [Fact]
+    public void Read_PreviewOnAdminPage_BreaksViewPreviewInvalid()
+    {
+        Write("views/a.json", ValidPreviewDocument);
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewPreviewInvalid);
+    }
+
+    /// <summary>A preview in a client slot breaks ViewPreviewInvalid: a slot lives in a document with the wide frame policy.</summary>
+    [Fact]
+    public void Read_PreviewInSlot_BreaksViewPreviewInvalid()
+    {
+        Write("views/a.json", ValidPreviewDocument);
+
+        AssertBreaks(
+            Manifest(""","api":{"client":[{"method":"get","path":"/site","permission":"Any"}]},"ui":{"slots":[{"id":"w","slot":"client.dashboard.cards","title":"T","view":"views/a.json","permission":"Any"}]}"""),
+            PluginManifestRule.ViewPreviewInvalid);
+    }
+
+    /// <summary>A preview source naming a route the area does not declare breaks ViewRouteUndeclared.</summary>
+    [Fact]
+    public void Read_PreviewRouteUndeclared_BreaksViewRouteUndeclared()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/other"},"field":"url"}]}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewRouteUndeclared);
     }
 
     /// <summary>Asserts the violation of reading the admin page manifest names neither the scratch folder nor another host folder.</summary>

@@ -13,8 +13,12 @@ import { formatDateTime } from '~/utils/formatDate'
 import { clientPluginPagePath } from '~/constants/clientRoutes'
 import type { PluginMenuItem } from '~/types/pluginmenuitem'
 import type { PluginMenuLink } from '~/types/pluginmenulink'
-import type { PluginPageLink } from '~/types/pluginblock'
+import type { PluginActionBlock, PluginPageLink } from '~/types/pluginblock'
+import { PluginBlockKind } from '~/types/pluginblockkind'
 import { PluginBlockTone } from '~/types/pluginblocktone'
+import type { PluginChatResult, PluginChatResultAction } from '~/types/pluginchatresult'
+import type { PluginChatStep } from '~/types/pluginchatstep'
+import { PluginChatStepState } from '~/types/pluginchatstepstate'
 import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import { PluginValueFormat } from '~/types/pluginvalueformat'
 import type { PluginUiPage } from '~/types/pluginuipage'
@@ -22,6 +26,9 @@ import type { PluginConditionValue, PluginViewCondition } from '~/types/pluginvi
 import type { PluginViewRoute } from '~/types/pluginviewroute'
 import { HttpMethod } from '~/types/httpmethod'
 import { UiAlertVariant, UiButtonVariant, UiTone } from '~/utils/ui/enums'
+
+/** The most actions a result card shows. */
+const MAX_RESULT_ACTIONS = 5
 
 /** The event name of a server-sent event that names none. */
 const DEFAULT_EVENT = 'message'
@@ -340,6 +347,149 @@ export const pluginLinkTarget = (href: unknown, origins: readonly string[]): Plu
     return null
   }
   return origins.some(pattern => originMatches(pattern, url)) ? { href, external: true } : null
+}
+
+/**
+ * The address a preview block may frame, failing closed. The origin must be an exact member of the page's
+ * `frameOrigins`, with no suffix or wildcard match, and never the panel's own: a framed page on the panel's origin
+ * could reach the panel. `javascript:` and `data:` have the origin `null`, which no list holds; http passes only when
+ * the host listed that origin, which it does in development alone.
+ *
+ * @param value - The value read from the route.
+ * @param frameOrigins - The page's allowed frame origins.
+ * @param ownOrigin - The panel's own origin.
+ * @returns The normalised address, or null when nothing may be shown.
+ */
+export const pluginFrameAddress = (value: unknown, frameOrigins: readonly string[], ownOrigin: string): string | null => {
+  if (typeof value !== 'string') {
+    return null
+  }
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    return null
+  }
+  if (url.username !== '' || url.password !== '' || url.origin === ownOrigin || !frameOrigins.includes(url.origin)) {
+    return null
+  }
+  return url.href
+}
+
+/**
+ * Whether the document in the browser was served for this very page, and so carries the `frame-src` the panel's server
+ * wrote for it. A CSP belongs to the document, so a router move keeps the policy of the address it was first loaded at:
+ * another document's wide one, or a closed one when that address named no page the caller may open (that read answers
+ * `'none'`), and that holds inside one plugin too, which would leave the frame blank. So the scope is the exact page.
+ *
+ * @param documentAddress - The address of the document's navigation entry.
+ * @param pagePath - The path of the page on screen.
+ * @returns True when both name one path, a trailing slash aside.
+ */
+export const pluginDocumentLoaded = (documentAddress: string | undefined, pagePath: string): boolean => {
+  if (!documentAddress) {
+    return false
+  }
+  try {
+    return new URL(documentAddress).pathname.replace(/\/+$/, '') === pagePath.replace(/\/+$/, '')
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Reads a step event: `{ id?, label, state }`.
+ *
+ * @param data - The event's data.
+ * @returns The step, its key the `id` or else the label; null for a malformed event or an unknown state.
+ */
+export const parsePluginChatStep = (data: unknown): PluginChatStep | null => {
+  const label = readPluginField(data, 'label')
+  const id = readPluginField(data, 'id')
+  const state = readPluginField(data, 'state')
+  if (typeof label !== 'string' || label === '' || (id !== undefined && (typeof id !== 'string' || id === ''))) {
+    return null
+  }
+  if (!(Object.values(PluginChatStepState) as unknown[]).includes(state) || state === PluginChatStepState.Stopped) {
+    return null
+  }
+  return { key: id ?? label, label, state: state as PluginChatStepState }
+}
+
+/**
+ * Reads one action of a result event. A link passes {@link pluginLinkTarget}; a route is shown only when it is a call
+ * the page can make: an action is never a GET, and an unfilled parameter has nothing to send.
+ *
+ * @param data - The action.
+ * @param key - Its place in the card.
+ * @param values - The page's parameter values.
+ * @param origins - The plugin's allowed link origins.
+ * @returns The action, or null when it is not to be rendered.
+ */
+const parseResultAction = (
+  data: unknown,
+  key: number,
+  values: Readonly<Record<string, string>>,
+  origins: readonly string[],
+): PluginChatResultAction | null => {
+  const label = readPluginField(data, 'label')
+  const href = readPluginField(data, 'href')
+  const route = readPluginField(data, 'route') as PluginViewRoute | undefined
+  // Exactly one of the two: a view cannot leave it to the host which one wins.
+  if (typeof label !== 'string' || label === '' || (href === undefined) === (route === undefined)) {
+    return null
+  }
+  if (href !== undefined) {
+    const link = pluginLinkTarget(href, origins)
+    return link ? { key, label, link, block: null } : null
+  }
+  const method = pluginRouteMethod(route)
+  if (!route || typeof route.path !== 'string' || method === undefined || method === HttpMethod.Get || fillPluginPath(route.path, values) === null) {
+    return null
+  }
+  const confirm = readPluginField(data, 'confirm')
+  const block: PluginActionBlock = {
+    kind: PluginBlockKind.Action,
+    label,
+    route: { method: route.method, path: route.path },
+    ...(typeof confirm === 'string' && confirm !== '' ? { confirm } : {}),
+  }
+  return { key, label, link: null, block }
+}
+
+/** The tones a result card may carry; any other reads as information. */
+const RESULT_TONES: readonly unknown[] = [PluginBlockTone.Info, PluginBlockTone.Success, PluginBlockTone.Warning, PluginBlockTone.Danger]
+
+/**
+ * Reads a result event: `{ tone?, title?, text?, actions? }`.
+ *
+ * @param data - The event's data.
+ * @param values - The page's parameter values, which route actions are filled from.
+ * @param origins - The plugin's allowed link origins.
+ * @returns The card without its key; null for a malformed event (no title or text, or a member of the wrong type).
+ */
+export const parsePluginChatResult = (
+  data: unknown,
+  values: Readonly<Record<string, string>>,
+  origins: readonly string[],
+): Omit<PluginChatResult, 'key'> | null => {
+  const title = readPluginField(data, 'title') ?? ''
+  const text = readPluginField(data, 'text') ?? ''
+  const actions = readPluginField(data, 'actions') ?? []
+  if (typeof title !== 'string' || typeof text !== 'string' || (title === '' && text === '') || !Array.isArray(actions)) {
+    return null
+  }
+  const tone = readPluginField(data, 'tone')
+  return {
+    tone: RESULT_TONES.includes(tone) ? tone as PluginBlockTone : PluginBlockTone.Info,
+    title,
+    text,
+    // Cut before filtering: the sixth action is dropped even when an earlier one is refused.
+    actions: actions.slice(0, MAX_RESULT_ACTIONS).flatMap((action: unknown, position: number) => {
+      const parsed = parseResultAction(action, position, values, origins)
+      return parsed ? [parsed] : []
+    }),
+  }
 }
 
 /** A money value as a plugin sends it. */

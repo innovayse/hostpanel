@@ -534,4 +534,39 @@ public sealed class PluginManifestValidatorTests : IDisposable
 
         throw new FileNotFoundException($"The manifest of {project} was not found above {AppContext.BaseDirectory}.");
     }
+
+    /// <summary>A client page may ask for the workspace layout or the standard one, or for none.</summary>
+    /// <param name="layout">The layout member, or empty for none.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData(""","layout":"standard" """)]
+    [InlineData(""","layout":"workspace" """)]
+    public void Validate_ClientPageLayoutKnown_Passes(string layout)
+    {
+        var manifest = Manifest($$$""","ui":{"client":{"pages":[{"id":"p","path":"/p","title":"P","view":"views/p.json","permission":"Any"{{{layout}}}}]}}""");
+
+        PluginManifestValidator.Validate(manifest).Should().BeNull();
+    }
+
+    /// <summary>A layout outside the SDK's list, in any other case too, breaks PageLayoutUnknown.</summary>
+    /// <param name="layout">The layout value.</param>
+    [Theory]
+    [InlineData("full")]
+    [InlineData("Workspace")]
+    [InlineData("")]
+    public void Validate_ClientPageLayoutUnknown_BreaksPageLayoutUnknown(string layout)
+    {
+        AssertBreaks(
+            Manifest($$$""","ui":{"client":{"pages":[{"id":"p","path":"/p","title":"P","view":"views/p.json","permission":"Any","layout":"{{{layout}}}"}]}}"""),
+            PluginManifestRule.PageLayoutUnknown);
+    }
+
+    /// <summary>Any layout on an admin page breaks PageLayoutUnknown: the admin panel has none to honour.</summary>
+    [Fact]
+    public void Validate_AdminPageLayout_BreaksPageLayoutUnknown()
+    {
+        AssertBreaks(
+            Manifest(""","ui":{"admin":{"pages":[{"id":"p","path":"/p","title":"P","view":"views/p.json","layout":"workspace"}]}}"""),
+            PluginManifestRule.PageLayoutUnknown);
+    }
 }

@@ -14,6 +14,10 @@ import { PluginBlockTone } from '~/types/pluginblocktone'
 import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import { PluginValueFormat } from '~/types/pluginvalueformat'
 import {
+  parsePluginChatResult,
+  parsePluginChatStep,
+  pluginDocumentLoaded,
+  pluginFrameAddress,
   fillPluginPath,
   pluginMenuLinks,
   formatPluginValue,
@@ -411,5 +415,75 @@ describe('pluginMenuLinks', () => {
     const menus = [{ pluginId: 'acme', id: 'p', label: 'P', page: 'p', icon: null, order: 0 }]
 
     expect(pluginMenuLinks(menus, pages)).toEqual([])
+  })
+})
+
+describe('pluginFrameAddress', () => {
+  /** The allowed origin. */
+  const origins = ['https://a.example']
+
+  it('answers the normalised address on an exact origin', () => {
+    expect(pluginFrameAddress('https://A.example/p', origins, 'https://panel.test')).toBe('https://a.example/p')
+  })
+
+  it.each([
+    'https://evil.test/',
+    'https://b.a.example/',
+    'http://a.example/',
+    'javascript:alert(1)',
+    'data:text/html,x',
+    'https://u:p@a.example/',
+    'not a url',
+    5,
+    null,
+  ])('refuses %s', (value) => {
+    expect(pluginFrameAddress(value, origins, 'https://panel.test')).toBeNull()
+  })
+
+  it('refuses the panel\'s own origin even when listed', () => {
+    expect(pluginFrameAddress('https://a.example/', origins, 'https://a.example')).toBeNull()
+  })
+})
+
+describe('pluginDocumentLoaded', () => {
+  it.each([
+    ['https://p.test/client/apps/acme/sites/7', true],
+    ['https://p.test/client/apps/acme/sites/7/', true],
+    ['https://p.test/client/apps/acme/sites/7?a=1', true],
+    ['https://p.test/client/apps/acme/overview', false],
+    ['https://p.test/client/apps/acme', false],
+    ['https://p.test/client/apps/acme-two/sites/7', false],
+    ['https://p.test/client/dashboard', false],
+    ['nonsense', false],
+    [undefined, false],
+  ])('for %s answers %s', (address, expected) => {
+    expect(pluginDocumentLoaded(address, '/client/apps/acme/sites/7')).toBe(expected)
+  })
+})
+
+describe('parsePluginChatStep', () => {
+  it('keys a step by its id, else its label', () => {
+    expect(parsePluginChatStep({ id: 'a', label: 'L', state: 'running' })?.key).toBe('a')
+    expect(parsePluginChatStep({ label: 'L', state: 'done' })?.key).toBe('L')
+  })
+
+  it.each([[{ label: 'L', state: 'stopped' }], [{ label: 'L', state: 'odd' }], [{ state: 'done' }], [{ id: 1, label: 'L', state: 'done' }], ['text']])('ignores %j', (data) => {
+    expect(parsePluginChatStep(data)).toBeNull()
+  })
+})
+
+describe('parsePluginChatResult', () => {
+  it('drops actions past the fifth and any action with both or neither of route and href', () => {
+    const link = { label: 'L', href: '/client/x' }
+    const result = parsePluginChatResult({
+      text: 'T',
+      actions: [link, { label: 'Both', href: '/client/x', route: { method: 'post', path: '/x' } }, { label: 'Neither' }, link, link, link],
+    }, {}, [])
+
+    expect(result?.actions.map(action => action.key)).toEqual([0, 3, 4])
+  })
+
+  it('refuses actions that are not a list', () => {
+    expect(parsePluginChatResult({ text: 'T', actions: 'x' }, {}, [])).toBeNull()
   })
 })

@@ -4,6 +4,11 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Domain.Plugins;
+using Innovayse.Hostpanel.Domain.Products;
+using Innovayse.Hostpanel.Domain.Products.Enums;
+using Innovayse.Hostpanel.Domain.Services;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Hostpanel.Sdk.Packaging.Naming;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -497,5 +502,104 @@ public sealed class GetPluginPageTests : IClassFixture<PluginUiFixture>
         var response = await http.GetAsync(AdminUrl(_fixture.PluginId, PluginUiFixture.AdminPage));
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    /// <summary>
+    /// A page answers its layout (standard when none is declared) and the frame origins for the caller: the manifest's plus
+    /// the caller's own active domains on products the operator bound to this plugin, never another client's; a sub-user who
+    /// may not see services gets none of them.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Client_Page_AnswersLayoutAndOnlyTheCallersOwnBoundFrameOrigins()
+    {
+        var (owner, http) = await _fixture.OwnerAsync("frame-owner");
+        var (stranger, _) = await _fixture.OwnerAsync("frame-stranger");
+        var domain = $"site-{Guid.NewGuid():N}.example";
+        var foreign = $"foreign-{Guid.NewGuid():N}.example";
+        var productId = await SeedActiveServiceAsync(owner.ClientId, domain);
+        var strangerProductId = await SeedActiveServiceAsync(stranger.ClientId, foreign);
+        await BindAsync(_fixture.PluginId, productId);
+        await BindAsync(_fixture.PluginId, strangerProductId);
+        using var withoutServices = await _fixture.SubUserAsync("frame-sub", owner.ClientId, ClientPermission.ViewPayInvoices);
+
+        var page = await JsonOfAsync(await http.GetAsync(ClientUrl(_fixture.PluginId, PluginUiFixture.HomePage)));
+        var limited = await JsonOfAsync(await withoutServices.GetAsync(ClientUrl(_fixture.PluginId, PluginUiFixture.HomePage)));
+
+        page.GetProperty("layout").GetString().Should().Be("standard");
+        OriginsOf(page).Should().Equal(PluginUiFixture.ExternalOrigin, $"https://{domain}", $"https://www.{domain}");
+        OriginsOf(limited).Should().Equal(PluginUiFixture.ExternalOrigin);
+    }
+
+    /// <summary>
+    /// The caller's own active domain is not framed when its product is not bound, or is bound only to another plugin:
+    /// the operator's binding is the one thing that lets a plugin reach a client's site.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Client_Page_OwnDomainOnAProductNotBoundToThePlugin_IsNotAFrameOrigin()
+    {
+        var (owner, http) = await _fixture.OwnerAsync("frame-unbound");
+        await SeedActiveServiceAsync(owner.ClientId, $"unbound-{Guid.NewGuid():N}.example");
+        var otherProductId = await SeedActiveServiceAsync(owner.ClientId, $"other-{Guid.NewGuid():N}.example");
+        await BindAsync(_fixture.SecondPluginId, otherProductId);
+
+        var page = await JsonOfAsync(await http.GetAsync(ClientUrl(_fixture.PluginId, PluginUiFixture.HomePage)));
+
+        OriginsOf(page).Should().Equal(PluginUiFixture.ExternalOrigin);
+    }
+
+    /// <summary>An admin page carries no frame origins: that panel renders no preview and acts for no client.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Admin_Page_HasNoFrameOrigins()
+    {
+        using var admin = await _fixture.AdminClientAsync();
+
+        var page = await JsonOfAsync(await admin.GetAsync($"/api/admin/plugins/ui/{_fixture.PluginId}/pages/{PluginUiFixture.AdminPage}"));
+
+        OriginsOf(page).Should().BeEmpty();
+    }
+
+    /// <summary>Reads the frame origins of a page body.</summary>
+    /// <param name="page">The page body.</param>
+    /// <returns>The origins.</returns>
+    private static List<string?> OriginsOf(JsonElement page)
+    {
+        return page.GetProperty("frameOrigins").EnumerateArray().Select(origin => origin.GetString()).ToList();
+    }
+
+    /// <summary>Seeds an active service on a domain, under a product of its own.</summary>
+    /// <param name="clientId">The owner.</param>
+    /// <param name="domain">The domain.</param>
+    /// <returns>The product's id.</returns>
+    private async Task<int> SeedActiveServiceAsync(int clientId, string domain)
+    {
+        var now = new DateTimeOffset(2032, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        using var scope = _fixture.Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var group = ProductGroup.Create($"frame-{Guid.NewGuid():N}", null);
+        context.ProductGroups.Add(group);
+        await context.SaveChangesAsync(CancellationToken.None);
+        var product = Product.Create(group.Id, $"Plan {Guid.NewGuid():N}", null, null, null, "plan", ProductType.SharedHosting, 0m, 0m, now);
+        context.Products.Add(product);
+        await context.SaveChangesAsync(CancellationToken.None);
+        var service = ClientService.CreateOrdered(clientId, product.Id, BillingCycle.Monthly, domain, 0m, 0m, null, null, now);
+        service.Activate("ref", now, now);
+        context.ClientServices.Add(service);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return product.Id;
+    }
+
+    /// <summary>Stores an operator binding of a plugin's widget to a product.</summary>
+    /// <param name="pluginId">The plugin.</param>
+    /// <param name="productId">The product.</param>
+    /// <returns>A task that completes when it is saved.</returns>
+    private async Task BindAsync(string pluginId, int productId)
+    {
+        using var scope = _fixture.Factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        context.PluginSlotProductBindings.Add(PluginSlotProductBinding.Create(pluginId, "client.dashboard.cards", "widget", productId));
+        await context.SaveChangesAsync(CancellationToken.None);
     }
 }

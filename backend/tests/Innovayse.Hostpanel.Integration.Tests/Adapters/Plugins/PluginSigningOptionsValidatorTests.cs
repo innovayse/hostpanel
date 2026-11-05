@@ -32,6 +32,36 @@ public sealed class PluginSigningOptionsValidatorTests
         _validator.Validate(null, options).Succeeded.Should().BeTrue();
     }
 
+    /// <summary>
+    /// An operator entry with a blank key id and a blank public key, which an unset compose variable pair produces, is
+    /// valid and is not part of the trusted set.
+    /// </summary>
+    [Fact]
+    public void ABlankOperatorEntry_IsValidAndIgnored()
+    {
+        var options = new PluginSigningOptions
+        {
+            MaintainerKeys = [PluginSigningTestSeeds.TrustedEntry],
+            OperatorKeys = [new TrustedPluginKey { KeyId = string.Empty, PublicKey = " " }],
+        };
+
+        _validator.Validate(null, options).Succeeded.Should().BeTrue();
+        options.TrustedKeys.Should().ContainSingle().Which.KeyId.Should().Be(PluginSigningTestSeeds.TrustedKeyId);
+    }
+
+    /// <summary>An entry with only the key id set, or only the public key set, still fails: half a key is a mistake.</summary>
+    /// <param name="keyId">The key id, blank or set.</param>
+    /// <param name="publicKey">The public key, blank or set.</param>
+    [Theory]
+    [InlineData("operator-one", "")]
+    [InlineData("", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=")]
+    public void AHalfSetOperatorEntry_Fails(string keyId, string publicKey)
+    {
+        var options = new PluginSigningOptions { OperatorKeys = [new TrustedPluginKey { KeyId = keyId, PublicKey = publicKey }] };
+
+        _validator.Validate(null, options).Failed.Should().BeTrue();
+    }
+
     /// <summary>A key id outside the allowed shape fails, naming the variable to fix.</summary>
     /// <param name="keyId">The bad key id.</param>
     [Theory]

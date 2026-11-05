@@ -146,6 +146,9 @@ services:
       # The plugin registry the admin panel installs plugins from; off until PLUGIN_REGISTRY_BASE_URL (https) is set.
       PluginRegistry__Enabled: ${PLUGIN_REGISTRY_ENABLED:-false}
       PluginRegistry__BaseUrl: ${PLUGIN_REGISTRY_BASE_URL:-}
+      # An extra plugin signing key the operator trusts (see PLUGIN_OPERATOR_KEY_ID in .env.example). Both empty: no key is added.
+      PluginSigning__OperatorKeys__0__KeyId: ${PLUGIN_OPERATOR_KEY_ID:-}
+      PluginSigning__OperatorKeys__0__PublicKey: ${PLUGIN_OPERATOR_PUBLIC_KEY:-}
     volumes:
       # Operator-uploaded branding lives in the web root; without a volume every deploy erases it.
       - hostpanel_branding:/app/wwwroot/uploads/branding

@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 namespace Innovayse.Hostpanel.Architecture.Tests;
@@ -88,6 +89,51 @@ public sealed class SdkPackageTests
         Layers.Sdk.GetReferencedAssemblies()
             .Select(assembly => assembly.Name ?? string.Empty)
             .Should().NotContain(name => name.StartsWith("Microsoft.AspNetCore", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// The SDK assembly carries the version its own props file sets. A plugin is built against that number and the
+    /// loader refuses it against any other, so an image whose SDK was stamped with the host's version (0.0.0.0 from the
+    /// image's default version) left every plugin unloadable.
+    /// </summary>
+    [Fact]
+    public void Assembly_CarriesTheVersionTheSdkSetsForItself()
+    {
+        var declared = Version.Parse(Property(LoadSharedProps(), "Version")!);
+
+        Layers.Sdk.GetName().Version.Should().Be(new Version(declared.Major, declared.Minor, declared.Build, 0));
+    }
+
+    /// <summary>
+    /// The image build hands the host its version as <c>HostVersion</c>, never as the global property <c>Version</c>:
+    /// a global property reaches every referenced project, the SDK included, and overrides the version the SDK sets for
+    /// itself. Passing it that way is what stamped the SDK in the production image with 0.0.0.0.
+    /// </summary>
+    [Fact]
+    public void Dockerfile_PassesTheImageVersionWithoutOverridingTheSdkVersion()
+    {
+        var dockerfile = File.ReadAllLines(Path.Combine(UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory), "Dockerfile"))
+            .Where(line => !line.TrimStart().StartsWith('#'))
+            .ToList();
+
+        dockerfile.Should().NotContain(line => Regex.IsMatch(line, @"[/-]p:(Version|InformationalVersion|AssemblyVersion|FileVersion|PackageVersion)=", RegexOptions.IgnoreCase));
+        dockerfile.Should().Contain(line => line.Contains("/p:HostVersion=$VERSION", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A build with <c>HostVersion</c> set gives the host's projects that version and leaves the SDK on its own, which is
+    /// how the image is built. The props are read, not evaluated: the host's maps <c>HostVersion</c> onto <c>Version</c>
+    /// and the SDK's own props set <c>Version</c> after importing it.
+    /// </summary>
+    [Fact]
+    public void HostProps_MapHostVersionOntoVersion_AndTheSdkSetsItsOwnAfterImportingThem()
+    {
+        var hostProps = File.ReadAllText(Path.Combine(SdkRoot, "..", "Directory.Build.props"));
+        var sdkProps = File.ReadAllText(Path.Combine(SdkRoot, "Directory.Build.props"));
+
+        hostProps.Should().Contain("<Version>$(HostVersion)</Version>");
+        sdkProps.IndexOf("<Import Project=\"$(HostBackendProps)\"", StringComparison.Ordinal)
+            .Should().BeGreaterThan(-1).And.BeLessThan(sdkProps.IndexOf("<Version>", StringComparison.Ordinal));
     }
 
     /// <summary>Reads the SDK project file.</summary>

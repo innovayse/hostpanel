@@ -1,5 +1,15 @@
 <Project>
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+  <!--
+    The image version (Dockerfile build argument VERSION) arrives as HostVersion. It must not arrive as the
+    global property Version: that flows into every referenced project and would stamp the plugin SDK, a
+    submodule with a version of its own that plugins are built against, with the host's number. The SDK
+    imports this file and then sets its own Version after it, so the SDK keeps its number while the
+    host's projects take the image version (InformationalVersion follows Version).
+  -->
+  <PropertyGroup Condition="'$(HostVersion)' != ''">
+    <Version>$(HostVersion)</Version>
+  </PropertyGroup>
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>

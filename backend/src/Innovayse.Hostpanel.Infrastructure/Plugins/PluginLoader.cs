@@ -180,16 +180,24 @@ public static class PluginLoader
             }
 
             Type? pluginType = null;
+            TypeLoadException? notDefined = null;
             foreach (var dll in dllFiles)
             {
                 try
                 {
                     var assembly = Assembly.LoadFrom(dll);
-                    pluginType = assembly.GetType(manifest.EntryPoint);
-                    if (pluginType is not null)
-                    {
-                        break;
-                    }
+
+                    // throwOnError is on so a load that fails says why. With it off, GetType answers null for a type whose
+                    // dependency cannot be loaded (the plugin was built against an SDK version this host does not have)
+                    // exactly as for a type that is not there, and the log could only say "not found".
+                    pluginType = assembly.GetType(manifest.EntryPoint, throwOnError: true);
+                    break;
+                }
+                catch (TypeLoadException ex)
+                {
+                    // The usual case in a folder with helper assemblies: this one does not define the entry point. It is
+                    // logged below, with the skip, only when no assembly of the plugin defines it.
+                    notDefined = ex;
                 }
                 catch (Exception ex)
                 {
@@ -200,6 +208,7 @@ public static class PluginLoader
             if (pluginType is null)
             {
                 logger.LogError(
+                    notDefined,
                     "Entry point type '{EntryPoint}' not found for plugin {Id} — skipping",
                     manifest.EntryPoint, manifest.Id);
                 continue;

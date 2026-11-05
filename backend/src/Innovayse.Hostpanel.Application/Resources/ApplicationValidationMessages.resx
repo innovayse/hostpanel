@@ -1399,4 +1399,10 @@
   <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
     <value>Choose a valid category.</value>
   </data>
+  <data name="InvoiceItemIdInvalid" xml:space="preserve">
+    <value>Name a valid invoice line.</value>
+  </data>
+  <data name="RenewalWindowInvalid" xml:space="preserve">
+    <value>Choose a renewal window of 30, 60 or 90 days.</value>
+  </data>
 </root>

@@ -143,6 +143,9 @@ public static class StatusMapping
             // in the way (a conflict); a fulfilment plugin that cannot advise on a refund is a
             // dependency that did not answer (503 with Retry-After). Neither name carries a token.
             "FULFILMENT_RECORD_NOT_RETRYABLE" => new(409, "Conflict"),
+            // Exact row: the line has no claim to release (not a domain renewal, already applied, or not
+            // claimed), a state conflict whose name carries no token for the generic arms.
+            "RENEWAL_CLAIM_NOT_HELD" => new(409, "Conflict"),
             "FULFILMENT_ADVICE_UNAVAILABLE" => new(503, "Service Unavailable"),
             // Exact row: no invoice PDF render slot came free for the request within the configured
             // wait, the server's capacity rather than the request (503 with Retry-After), and the name

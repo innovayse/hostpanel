@@ -523,6 +523,31 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
+    /// Lets a domain renewal line left claimed after an unknown registrar outcome be tried again, on a staff
+    /// decision made after checking the registrar. Only the claim is cleared: the line stays unapplied and
+    /// unpaid status is untouched, so the next renewal sweep renews the domain.
+    /// </summary>
+    /// <param name="itemId">Id of the renewal line whose claim is released.</param>
+    /// <exception cref="DomainRuleException">
+    /// <see cref="BillingErrors.InvoiceItemNotFound"/> when the invoice has no such line, or
+    /// <see cref="BillingErrors.RenewalClaimNotHeld"/> when the line is not a domain renewal, is already applied, or is not claimed.
+    /// </exception>
+    public void ReleaseRenewalClaim(int itemId)
+    {
+        var item = _items.FirstOrDefault(i => i.Id == itemId)
+            ?? throw new DomainRuleException(BillingErrors.InvoiceItemNotFound, $"Invoice item {itemId} not found.");
+
+        if (item.RegisteredDomainId is null || !item.IsRenewal || item.RenewalAppliedAt is not null || item.RenewalAttemptAt is null)
+        {
+            throw new DomainRuleException(
+                BillingErrors.RenewalClaimNotHeld,
+                $"Invoice item {itemId} is not a domain renewal line left claimed.");
+        }
+
+        item.ReleaseRenewalClaim();
+    }
+
+    /// <summary>
     /// Updates an existing line item and recalculates totals. A lower price may leave the applied
     /// credit above what is left to pay; the caller returns <see cref="ExcessCredit"/> to the
     /// client's balance in the same save.

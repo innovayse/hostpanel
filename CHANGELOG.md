@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Admin panel: an Upcoming Renewals page under Billing lists the services and domains renewing in the next 30, 60 or 90 days. A row switches automatic renewal on or off and raises that client's renewal invoice by hand. A third list shows paid domain renewal lines left claimed after the registrar gave no clear answer; staff release one after checking the registrar, and the release is written to the client's activity log.
+
 ### Fixed
+
+- Billing: raising renewal invoices for one client now runs under a per-client database lock, so the daily run and a staff click (or two instances) can no longer both pass the duplicate check and bill the same renewal twice.
 
 - Client portal: choosing another account in the header account menu, or "Add another account", started the sign-in with the wrong application and callback, so the person landed on a page that does not exist and kept the old account. The header widget is now served from the portal itself, so both go through the portal's own sign-in and end back in the portal as the chosen account.
 - Admin panel: the theme script in `index.html` was blocked by the Content-Security-Policy on every load. It is now a file served from the panel's own origin, and the policy stays free of `unsafe-inline` for scripts.

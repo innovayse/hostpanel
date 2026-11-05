@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Services.Commands.AddExistingService;
 using Innovayse.Hostpanel.Application.Services.Commands.ChangeServiceStatus;
 using Innovayse.Hostpanel.Application.Services.Commands.CorrectServiceTerminationDate;
+using Innovayse.Hostpanel.Application.Services.Commands.SetServiceAutoRenew;
 using Innovayse.Hostpanel.Application.Services.Commands.SuspendService;
 using Innovayse.Hostpanel.Application.Services.Commands.TerminateService;
 using Innovayse.Hostpanel.Application.Services.Commands.UnsuspendService;
@@ -11,6 +12,7 @@ using Innovayse.Hostpanel.Application.Services.Commands.UpdateServiceNotes;
 using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Application.Services.Queries.GetService;
 using Innovayse.Hostpanel.Application.Services.Queries.GetServices;
+using Innovayse.Hostpanel.Application.Services.Queries.ListUpcomingServiceRenewals;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
@@ -304,6 +306,46 @@ public sealed class ServicesController : BaseApiController
     public async Task<IActionResult> UnsuspendAsync(int id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(new UnsuspendServiceCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Lists the active services renewing inside a window, soonest first, with their auto-renew switch.</summary>
+    /// <param name="query">The window (30, 60 or 90 days) and the page.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the page; 400 when the window or the page is refused; 401 when the caller is not signed in;
+    /// 403 when the caller role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("renewals/upcoming")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(typeof(PaginatedList<UpcomingServiceRenewalDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ListUpcomingRenewalsAsync([FromQuery] ListUpcomingServiceRenewalsQuery query, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<PaginatedList<UpcomingServiceRenewalDto>>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Switches the automatic billing of a service on or off.</summary>
+    /// <param name="id">Service primary key; wins over any id in the body.</param>
+    /// <param name="command">The value.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when written; 400 when the id is refused; 404 when the id names no service; 401 when the caller is not
+    /// signed in; 403 when the caller role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPut("{id:int}/auto-renew")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetAutoRenewAsync(int id, [FromBody] SetServiceAutoRenewCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command with { ServiceId = id }, ct);
         return HandleResult(outcome);
     }
 }

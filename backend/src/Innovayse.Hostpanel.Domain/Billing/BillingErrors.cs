@@ -58,6 +58,12 @@ public static class BillingErrors
     public const string FulfilmentRecordNotRetryable = "FULFILMENT_RECORD_NOT_RETRYABLE";
 
     /// <summary>
+    /// The line is not a domain renewal left claimed, so there is no claim to release (409):
+    /// <see cref="Invoice.ReleaseRenewalClaim"/>.
+    /// </summary>
+    public const string RenewalClaimNotHeld = "RENEWAL_CLAIM_NOT_HELD";
+
+    /// <summary>
     /// The invoice is past the point where it can be cancelled (400): it is paid, refunded or
     /// already cancelled; <see cref="Invoice.Cancel"/>.
     /// </summary>

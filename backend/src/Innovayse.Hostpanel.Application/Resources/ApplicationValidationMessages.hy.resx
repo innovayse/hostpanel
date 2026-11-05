@@ -1399,4 +1399,10 @@
   <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
     <value>Ընտրեք թույլատրելի կատեգորիա։</value>
   </data>
+  <data name="InvoiceItemIdInvalid" xml:space="preserve">
+    <value>Նշեք վավեր հաշիվ-ապրանքագրի տող։</value>
+  </data>
+  <data name="RenewalWindowInvalid" xml:space="preserve">
+    <value>Ընտրեք երկարացման ժամանակահատվածը՝ 30, 60 կամ 90 օր։</value>
+  </data>
 </root>

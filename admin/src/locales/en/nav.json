@@ -19,7 +19,8 @@
     "offlineCc": "Offline CC Processing",
     "disputes": "Disputes",
     "gatewayLog": "Gateway Log",
-    "paymentClaims": "Payment Claims"
+    "paymentClaims": "Payment Claims",
+    "renewals": "Upcoming Renewals"
   },
   "reports": "Reports",
   "orders": "Orders",

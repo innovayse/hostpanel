@@ -11,6 +11,7 @@ using Innovayse.Hostpanel.Application.Domains.Queries.CheckDomainAvailability;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetDomain;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetWhois;
 using Innovayse.Hostpanel.Application.Domains.Queries.ListDomains;
+using Innovayse.Hostpanel.Application.Domains.Queries.ListUpcomingDomainRenewals;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
@@ -297,6 +298,25 @@ public sealed class DomainsController : BaseApiController
         [FromBody] CheckDomainAvailabilityQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<DomainCheckResultDto>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Lists the active domains expiring inside a window, soonest first, with their auto-renew switch.</summary>
+    /// <param name="query">The window (30, 60 or 90 days) and the page.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the page; 400 when the window or the page is refused; 401 when the caller is not signed in;
+    /// 403 when the caller role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("renewals/upcoming")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(typeof(PaginatedList<DomainRegistrationDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ListUpcomingRenewalsAsync([FromQuery] ListUpcomingDomainRenewalsQuery query, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<PaginatedList<DomainRegistrationDto>>>(query, ct);
         return HandleResult(outcome);
     }
 }

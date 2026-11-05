@@ -1399,4 +1399,10 @@
   <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
     <value>Выберите допустимую категорию.</value>
   </data>
+  <data name="InvoiceItemIdInvalid" xml:space="preserve">
+    <value>Укажите корректную позицию счёта.</value>
+  </data>
+  <data name="RenewalWindowInvalid" xml:space="preserve">
+    <value>Выберите период продления: 30, 60 или 90 дней.</value>
+  </data>
 </root>

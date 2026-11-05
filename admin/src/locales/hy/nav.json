@@ -19,7 +19,8 @@
     "offlineCc": "Offline քարտային վճարումներ",
     "disputes": "Վեճեր",
     "gatewayLog": "Վճարային համակարգի լոգ",
-    "paymentClaims": "Վճարման հայտեր"
+    "paymentClaims": "Վճարման հայտեր",
+    "renewals": "Առաջիկա երկարացումներ"
   },
   "reports": "Հաշվետվություններ",
   "orders": "Պատվերներ",

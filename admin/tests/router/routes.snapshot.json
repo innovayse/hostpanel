@@ -165,6 +165,10 @@
             "component": "InvoiceDetailView.vue"
           },
           {
+            "path": "renewals",
+            "component": "UpcomingRenewalsView.vue"
+          },
+          {
             "path": ":id",
             "component": "InvoiceDetailView.vue"
           },

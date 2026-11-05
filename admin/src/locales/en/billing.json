@@ -137,6 +137,36 @@
     "credit": "Credit",
     "pending": "Pending"
   },
+  "renewals": {
+    "heading": "Upcoming Renewals",
+    "subtitle": "Services and domains renewing soon. Raise a renewal invoice by hand, switch automatic renewal on or off, and release renewal lines left waiting after an unclear registrar answer.",
+    "windowLabel": "Look ahead",
+    "window": {
+      "Next30Days": "Next 30 days",
+      "Next60Days": "Next 60 days",
+      "Next90Days": "Next 90 days"
+    },
+    "servicesHeading": "Services",
+    "domainsHeading": "Domains",
+    "claimsHeading": "Domain renewals waiting for staff",
+    "claimsNote": "A line is listed here when a paid domain renewal was sent and the registrar gave no clear answer. Check the domain at the registrar first. Release the line only if the domain was not renewed, and the next renewal run sends it again. If it was renewed, do not release it.",
+    "product": "Product",
+    "renewsOn": "Renews on",
+    "expires": "Expires",
+    "line": "Invoice line",
+    "claimedAt": "Claimed at",
+    "generateInvoice": "Generate renewal invoice",
+    "invoicesRaised": "Renewal invoices raised: {count}.",
+    "nothingDue": "Nothing to invoice yet. Renewal invoices are raised once a renewal is inside the invoicing lead time, or they already exist.",
+    "releaseClaim": "Release claim",
+    "releasing": "Releasing...",
+    "releaseTitle": "Release renewal claim",
+    "releaseMessage": "Confirm at the registrar that this domain was not renewed: {line}. The next renewal run will send the renewal again.",
+    "claimReleased": "The claim was released. The next renewal run will try it again.",
+    "emptyServices": "No services renew in this window.",
+    "emptyDomains": "No domains expire in this window.",
+    "emptyClaims": "No domain renewals are waiting for staff."
+  },
   "paymentClaims": {
     "heading": "Held Payment Claims",
     "subtitle": "Charges where the gateway took money the invoice could not record. Settle them by hand.",

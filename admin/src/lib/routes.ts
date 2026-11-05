@@ -27,6 +27,8 @@ export enum AppRoute {
   BillingQuotes = '/billing/quotes',
   /** The `/billing/quotes/add` screen. */
   BillingQuotesAdd = '/billing/quotes/add',
+  /** The `/billing/renewals` screen. */
+  BillingRenewals = '/billing/renewals',
   /** The `/billing/transactions` screen. */
   BillingTransactions = '/billing/transactions',
   /** The `/clients` screen. */

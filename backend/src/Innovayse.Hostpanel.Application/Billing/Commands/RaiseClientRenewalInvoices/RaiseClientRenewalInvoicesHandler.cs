@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
@@ -72,6 +73,9 @@ public sealed class RaiseClientRenewalInvoicesHandler
     /// <summary>The clock every moment in this handler is read from.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Records the activity log line of a staff-requested run, saved with the invoices it raised.</summary>
+    private readonly IActivityLogger _activity;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">Invoices and currencies.</param>
     /// <param name="clientCredit">Takes applied credit off the client's balance in the same save as the invoice.</param>
@@ -80,10 +84,11 @@ public sealed class RaiseClientRenewalInvoicesHandler
     /// <param name="bus">Reads the client's brief, the due services, domains, products, renew orders and TLD prices from their modules, and alerts staff about unpriceable domains.</param>
     /// <param name="logger">Structured logger.</param>
     /// <param name="clock">The clock the current moment is read from.</param>
+    /// <param name="activity">Records the activity log line of a staff-requested run, saved with the invoices it raised.</param>
     public RaiseClientRenewalInvoicesHandler(
         IHostpanelDbContext context, IClientCredit clientCredit, IPayerCurrencyResolver payerCurrency, RenewalSettingsReader settings,
         IMessageBus bus, ILogger<RaiseClientRenewalInvoicesHandler> logger,
-        IClock clock)
+        IClock clock, IActivityLogger activity)
     {
         _context = context;
         _clientCredit = clientCredit;
@@ -92,6 +97,7 @@ public sealed class RaiseClientRenewalInvoicesHandler
         _bus = bus;
         _logger = logger;
         _clock = clock;
+        _activity = activity;
     }
 
     /// <summary>Raises the client's due renewal invoices.</summary>
@@ -115,6 +121,13 @@ public sealed class RaiseClientRenewalInvoicesHandler
         {
             return Result<int>.FailureCode(mayBill.ErrorCode!);
         }
+
+        // One run per client at a time. The duplicate guard below reads the client's open renewal lines and
+        // then inserts, which two callers (the daily sweep and a staff click, or two instances) could
+        // interleave and both pass. The transaction-scoped advisory lock makes the second caller wait until
+        // the first has committed; Postgres then reads the first caller's invoice, so its guard refuses.
+        await using var transaction = await _context.BeginTransactionAsync(ct);
+        await _context.LockForTransactionAsync(LockKeyOf(client.Id), ct);
 
         var settings = await _settings.ReadAsync(ct);
         var now = _clock.UtcNow;
@@ -175,8 +188,21 @@ public sealed class RaiseClientRenewalInvoicesHandler
                 "Raised renewal invoice {InvoiceId} for client {ClientId} with {Count} lines.", invoice.Id, client.Id, group.Length);
         }
 
+        if (cmd.Manual)
+        {
+            await _activity.RecordAsync(
+                new ActivityLogEntry(client.Id, $"Generated Renewal Invoices - Client ID: {client.Id}, Invoices: {raised}"), ct);
+            await _context.SaveChangesAsync(ct);
+        }
+
+        await transaction.CommitAsync(ct);
         return Result.Success(raised);
     }
+
+    /// <summary>The advisory lock key that serialises renewal invoicing for one client.</summary>
+    /// <param name="clientId">The client.</param>
+    /// <returns>The key; the same client always maps to the same text.</returns>
+    public static string LockKeyOf(int clientId) => $"renewal-invoices:client:{clientId}";
 
     /// <summary>
     /// The due date of an invoice carrying <paramref name="group"/>: the earliest period start when it

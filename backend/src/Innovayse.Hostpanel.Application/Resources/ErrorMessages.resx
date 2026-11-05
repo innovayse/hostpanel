@@ -1156,4 +1156,7 @@
   <data name="PLUGIN_VIEW_PREVIEW_INVALID" xml:space="preserve">
     <value>One of this plugin's view documents holds a preview with invalid sources or size, or shows a preview anywhere but on a client page.</value>
   </data>
+  <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
+    <value>This line has no renewal claim to release.</value>
+  </data>
 </root>

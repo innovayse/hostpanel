@@ -158,6 +158,12 @@ public static class HostpanelErrorCodes
     public const string FULFILMENT_RECORD_NOT_RETRYABLE = Domain.Billing.BillingErrors.FulfilmentRecordNotRetryable;
 
     /// <summary>
+    /// The line is not a domain renewal left claimed, so there is no claim to release (409, an exact
+    /// <c>StatusMapping</c> row): <see cref="Domain.Billing.Invoice.ReleaseRenewalClaim"/>.
+    /// </summary>
+    public const string RENEWAL_CLAIM_NOT_HELD = Domain.Billing.BillingErrors.RenewalClaimNotHeld;
+
+    /// <summary>
     /// A fulfilment plugin could not be asked how much of the payment may be refunded, so the refund
     /// is refused and no money moved (503, an exact <c>StatusMapping</c> row).
     /// </summary>

@@ -1289,6 +1289,19 @@ renewal invoices per client), `SendRenewalRemindersCron` 06:00, `CheckOverdueInv
 (`Manual`, `Overdue`, `DomainExpired`, `Other`): payment lifts only `Overdue`, and `DomainRenewedHandler` lifts only
 `DomainExpired`. Renewal alerts go to `Notifications:AdminEmail`, falling back to `Notifications:ContactEmail`.
 
+**Renewal invoicing is serialised per client.** `RaiseClientRenewalInvoicesHandler` opens a transaction and takes
+a transaction-scoped advisory lock (`IHostpanelDbContext.LockForTransactionAsync`, key
+`RaiseClientRenewalInvoicesHandler.LockKeyOf(clientId)`) before it reads the duplicate guard, and commits after the
+last invoice and credit change. Two callers for one client (the daily sweep, a staff "Generate renewal invoice" click,
+another instance) therefore run one after the other, and the second one finds the first one's invoice. Staff reach the
+same use case through `POST /api/billing/client/{clientId}/renewal-invoices` (`Manual` on the command only adds an
+activity log line). The admin Upcoming Renewals page (`/billing/renewals`) lists services and domains inside a 30, 60 or
+90 day window (`RenewalWindow`), whether or not they renew automatically, switches `AutoRenew` through
+`SetServiceAutoRenew` (domains use the existing `SetAutoRenew`), and lists domain renewal lines left claimed
+(`ListClaimedDomainRenewals`). `ReleaseDomainRenewalClaim` clears `RenewalAttemptAt` through `Invoice.ReleaseRenewalClaim`
+after staff checked the registrar, with an activity log line; the line stays unapplied, so the next sweep renews the
+domain again, which is why the page asks for confirmation.
+
 **Renewal invoice lines are not unique per period, on purpose.** The indexes on `InvoiceItems`
 `(ClientServiceId, RenewalPeriodStart)` and `(RegisteredDomainId, RenewalPeriodStart)` stay non-unique: a
 cancelled invoice's renewal line must not block raising that period again. Double raising is prevented

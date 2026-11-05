@@ -14,12 +14,13 @@ The examples use <code>https://panel.example.com</code> for the client portal ho
 
 ## Audiences
 
-Each endpoint belongs to one of four audiences. The audience is the tag the API puts on the operation, and each endpoint page states what a call needs under **Access**.
+Each endpoint belongs to one of five audiences. The audience is the tag the API puts on the operation, and each endpoint page states what a call needs under **Access**.
 
 <SettingTable :settings="[
   { name: 'Auth', type: '', default: 'None', description: 'Sign-in, session and account routes under api/auth. Most take no credential. The routes that let people sign in or register with a password exist only when the install authenticates its own users.' },
-  { name: 'Public', type: '', default: 'None', description: 'The storefront and probe routes that need no sign-in: the product catalog, domain search, the contact form, published content and the health probe. It also lists the few reference-data routes that any signed-in user may call.' },
+  { name: 'Public', type: '', default: 'None', description: 'The storefront and probe routes that need no sign-in: the product catalog, domain search, the contact form, published content and the health probe.' },
   { name: 'Client', type: '', default: 'None', description: 'Routes a signed-in client user calls on their own account: api/me/*, api/clients/me and the client plugin routes. Some also need a client permission.' },
+  { name: 'Member', type: '', default: 'None', description: 'The few routes any signed-in user may call, whatever their role: the two-factor setup of the own account, the country list and the published announcements. It is listed in the sidebar as Any signed-in user.' },
   { name: 'Admin', type: '', default: 'None', description: 'Staff routes: api/admin/* and the shared routes whose actions are admin only, such as api/clients, api/billing, api/orders, api/services, api/domains and api/tickets.' },
 ]" />
 
@@ -58,6 +59,6 @@ Each endpoint page has the description, parameters and responses on the left, an
 
 <Screenshot src="/screenshots/api-endpoint-dark.png" alt="An endpoint page with the examples column, in the dark theme" />
 
-The sidebar lists the endpoints in four audience groups, and each group is split by area.
+The sidebar lists the endpoints in five audience groups, and each group is split by area.
 
-<Screenshot src="/screenshots/api-sidebar.png" alt="The sidebar of the API reference with the four audience groups" />
+<Screenshot src="/screenshots/api-sidebar.png" alt="The sidebar of the API reference with the five audience groups" />

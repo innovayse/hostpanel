@@ -46,7 +46,7 @@ public sealed class PluginLoaderTests
         PluginLoader.RegisterPluginType(services, plugin.Manifest, implementation, NullLogger.Instance);
 
         // The loader also registers the plugin's named HTTP client; only the keyed plugin registrations are under test.
-        var descriptor = services.Where(d => d.IsKeyedService).Should().ContainSingle().Subject;
+        var descriptor = services.Where(d => d.IsKeyedService && Equals(d.ServiceKey, plugin.Manifest.Id)).Should().ContainSingle().Subject;
         descriptor.IsKeyedService.Should().BeTrue();
         descriptor.ServiceKey.Should().Be(plugin.Manifest.Id);
         descriptor.ServiceType.Should().Be(contract);
@@ -158,7 +158,8 @@ public sealed class PluginLoaderTests
 
         PluginLoader.RegisterPluginType(services, plugin.Manifest, typeof(FulfilmentEndpointsPlugin), NullLogger.Instance);
 
-        var keyed = services.Where(d => d.IsKeyedService).ToList();
+        // The plugin's named HTTP client adds keyed resilience pipelines; only the plugin id keys are under test.
+        var keyed = services.Where(d => d.IsKeyedService && Equals(d.ServiceKey, plugin.Manifest.Id)).ToList();
         keyed.Select(d => d.ServiceType).Should().BeEquivalentTo([typeof(IFulfilmentPlugin), typeof(IPluginEndpoints)]);
         keyed.Should().OnlyContain(d => Equals(d.ServiceKey, plugin.Manifest.Id)
             && d.KeyedImplementationType == typeof(FulfilmentEndpointsPlugin)

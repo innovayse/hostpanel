@@ -489,7 +489,7 @@ public sealed class SdkContractTests
         typeof(PluginUiArea).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Menus", "Pages");
         typeof(PluginMenuItem).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Id", "Label", "Page", "Icon", "Order");
         typeof(PluginPage).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
-            "Id", "Path", "Title", "View", "Permission");
+            "Id", "Path", "Title", "View", "Permission", "Layout");
         typeof(PluginSlotEntry).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
             "Id", "Slot", "View", "Title", "Order", "Permission", "ProductIds", "ContextKeys");
     }

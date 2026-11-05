@@ -4,6 +4,8 @@ using Hostpanel.Sdk.Packaging.Naming;
 using Innovayse.Hostpanel.Shared.Models;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Manifest;
+using Innovayse.Hostpanel.Application.Common.Settings;
+using Microsoft.Extensions.Options;
 
 /*
  * The one body behind every way a panel opens a plugin page (by id, by path). Both lookups must refuse in the same
@@ -28,13 +30,25 @@ public sealed class PluginPageReader
     /// <summary>Resolves the account the caller acts for and the permissions held there.</summary>
     private readonly ICallerClientResolver _callerClient;
 
+    /// <summary>Works out which origins a preview may frame for the caller.</summary>
+    private readonly PluginFrameOriginResolver _frameOrigins;
+
     /// <summary>Initializes the reader.</summary>
     /// <param name="source">The plugins whose pages the panels may show.</param>
     /// <param name="callerClient">Resolves the account the caller acts for and the permissions held there.</param>
-    public PluginPageReader(IPluginUiSource source, ICallerClientResolver callerClient)
+    /// <param name="facts">Reads the domains of the caller's own hosting services.</param>
+    /// <param name="slots">Reads the products the operator bound a plugin's slot widgets to.</param>
+    /// <param name="preview">The origins allowed over plain http on a developer machine.</param>
+    public PluginPageReader(
+        IPluginUiSource source,
+        ICallerClientResolver callerClient,
+        IPluginHostFactsReader facts,
+        IPluginSlotContextReader slots,
+        IOptions<PluginPreviewOptions> preview)
     {
         _source = source;
         _callerClient = callerClient;
+        _frameOrigins = new PluginFrameOriginResolver(callerClient, facts, slots, preview);
     }
 
     /// <summary>Reads and localises the page <paramref name="select"/> picks from the plugin's pages of the area.</summary>
@@ -96,7 +110,19 @@ public sealed class PluginPageReader
             return Result<PluginPageViewDto>.FailureCode(HostpanelErrorCodes.PLUGIN_PAGE_NOT_FOUND);
         }
 
+        // The admin panel renders no preview and acts for no client, so nothing is read for it.
+        IReadOnlyList<string> frameOrigins = area == PluginArea.Client
+            ? await _frameOrigins.ResolveAsync(manifest, held.Value, ct)
+            : [];
+
         return Result<PluginPageViewDto>.Success(new PluginPageViewDto(
-            manifest.Id, page.Id, page.Path, texts.Resolve(page.Title), view, manifest.ExternalOrigins));
+            manifest.Id,
+            page.Id,
+            page.Path,
+            texts.Resolve(page.Title),
+            view,
+            manifest.ExternalOrigins,
+            page.Layout ?? PluginPageLayouts.Standard,
+            frameOrigins));
     }
 }

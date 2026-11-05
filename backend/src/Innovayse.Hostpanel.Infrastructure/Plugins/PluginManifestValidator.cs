@@ -68,7 +68,31 @@ internal static class PluginManifestValidator
         // the plugin's endpoints. The package knows none of these.
         return CheckHostAccess(manifest)
             ?? CheckCapabilities(manifest)
-            ?? CheckEndpointsDeclared(manifest);
+            ?? CheckEndpointsDeclared(manifest)
+            ?? CheckPageLayouts(manifest);
+    }
+
+    /// <summary>
+    /// Checks that a client page's layout is one the SDK names, and that no admin page declares one: the admin panel has
+    /// no second layout to honour, and a value it would silently ignore must not be accepted.
+    /// </summary>
+    /// <param name="manifest">The manifest.</param>
+    /// <returns>The <see cref="PluginManifestRule.PageLayoutUnknown"/> violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckPageLayouts(PluginManifest manifest)
+    {
+        var unknown = manifest.Ui.Client.Pages.FirstOrDefault(
+            page => page.Layout is not null && !PluginPageLayouts.All.Contains(page.Layout, StringComparer.Ordinal));
+        if (unknown is not null)
+        {
+            return new PluginManifestViolation(
+                PluginManifestRule.PageLayoutUnknown, $"ui.client.pages '{unknown.Id}' has an unknown layout");
+        }
+
+        var admin = manifest.Ui.Admin.Pages.FirstOrDefault(page => page.Layout is not null);
+        return admin is null
+            ? null
+            : new PluginManifestViolation(
+                PluginManifestRule.PageLayoutUnknown, $"ui.admin.pages '{admin.Id}' declares a layout, which only a client page may");
     }
 
     /// <summary>

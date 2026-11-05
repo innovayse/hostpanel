@@ -80,6 +80,7 @@ import {
   INVOICE,
   KB_ARTICLES,
   ORDER,
+  ORDER_DECLINED_ID,
   PRODUCT_GROUPS,
   HOSTING_SPECIFICATIONS,
   productsIn,
@@ -759,6 +760,21 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
     send(res, 200, ORDER)
     return true
   }
+  // Hosted-gateway payment of a placed order: start answers the address of the bank's page; the return check
+  // reports the placed order as paid and the declined fixture order as declined (the order id picks the outcome).
+  const orderGatewayMatch = path.match(/^\/api\/orders\/(\d+)\/gateway-payment\/(start|complete)$/)
+  if (method === 'POST' && orderGatewayMatch) {
+    if (orderGatewayMatch[2] === 'start') {
+      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL })
+    } else if (orderGatewayMatch[1] === String(ORDER.orderId)) {
+      send(res, 200, { state: 'Paid', orderNumber: `ORD-${ORDER.orderId}` })
+    } else if (orderGatewayMatch[1] === String(ORDER_DECLINED_ID)) {
+      send(res, 200, { state: 'Declined' })
+    } else {
+      sendProblem(res, 404, 'NOT_FOUND', 'Order not found.')
+    }
+    return true
+  }
 
   return routeManagement(method, path, body, res)
 }
@@ -968,6 +984,12 @@ const routeManagement = (method, path, body, res) => {
     return true
   }
   if (method === 'POST' && path === '/api/me/stored-payment-methods/sessions') {
+    // As the real validator: the wording version is required and at most 50 characters (CardChargeConsent.MaxTextVersionLength).
+    const version = body?.consentTextVersion
+    if (typeof version !== 'string' || version.trim() === '' || version.length > 50) {
+      sendProblem(res, 400, 'VALIDATION_ERROR', 'Validation failed.', { consentTextVersion: ['The consent text version is required.'] })
+      return true
+    }
     send(res, 200, { sessionId: STORED_SESSION_ID, mode: 'Redirect', clientToken: null, redirectUrl: GATEWAY_PAGE_URL })
     return true
   }

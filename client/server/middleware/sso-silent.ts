@@ -26,7 +26,6 @@
  * @module server/middleware/sso-silent
  */
 
-import type { H3Event } from 'h3'
 import {
   LOGIN_HINT_QUERY,
   SIGN_IN_PROMPT_QUERY,
@@ -34,38 +33,13 @@ import {
   SSO_AUTHORIZE_PATH
 } from '~/constants/clientRoutes'
 import { AuthMode } from '~/types/authmode'
-import { HttpMethod } from '~/types/httpmethod'
 import { SessionCookie } from '~/constants/sessionCookie'
 import { SSO_SILENT_COOKIE_MAX_AGE, cookieOptions } from '~/server/utils/auth-cookie'
-import { isBotUserAgent } from '~/server/utils/bot-agent'
+import { isDocumentNavigation } from '~/server/utils/documentNavigation'
 import { hasPendingInteractiveTransaction } from '~/server/utils/signon-transaction'
 
 /** The query key that carries the page to return to once the probe finishes. */
 const RETURN_TO_QUERY = 'returnTo'
-
-/** The value of `Sec-Fetch-Dest` for a navigation to a page. */
-const FETCH_DEST_DOCUMENT = 'document'
-
-/** The media type a page navigation asks for. */
-const HTML_MEDIA_TYPE = 'text/html'
-
-/**
- * Whether the request is a browser opening a page: a GET, from a user agent that is a browser,
- * that the browser marks as a document or that accepts HTML.
- *
- * @param event - The incoming request.
- * @returns True for a document navigation.
- */
-const isDocumentNavigation = (event: H3Event): boolean => {
-  if (event.method !== HttpMethod.Get || isBotUserAgent(getHeader(event, 'user-agent'))) {
-    return false
-  }
-  const fetchDest = getHeader(event, 'sec-fetch-dest')
-  if (fetchDest) {
-    return fetchDest === FETCH_DEST_DOCUMENT
-  }
-  return (getHeader(event, 'accept') ?? '').includes(HTML_MEDIA_TYPE)
-}
 
 /** Sends a signed-out page navigation through one silent SSO probe. */
 export default defineEventHandler((event) => {

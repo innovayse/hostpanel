@@ -1,5 +1,7 @@
 ---
 title: Two-factor authentication
+description: "Turn two-factor authentication on or off for a local Hostpanel account, sign in with a 6-digit code and recover access when you lose your phone."
+keywords: "two-factor authentication, 2fa, authenticator app, lost phone"
 ---
 
 # Two-factor authentication

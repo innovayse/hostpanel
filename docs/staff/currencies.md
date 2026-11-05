@@ -1,5 +1,7 @@
 ---
 title: Currencies, renewals and jobs
+description: "Set up currencies in Hostpanel and understand renewals, overdue handling, renewal settings, daily billing jobs and automated staff emails."
+keywords: "currencies, renewals, overdue invoices, billing jobs, renewal settings"
 ---
 
 # Currencies, renewals and jobs <Label type="admin" />

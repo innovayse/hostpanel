@@ -334,7 +334,7 @@ onMounted(() => load(1))
             <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.invoiceDate') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.dueDate') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.total') }}</UiTableHeader>
+            <UiTableHeader align="right">{{ t('shared.total') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
@@ -354,7 +354,7 @@ onMounted(() => load(1))
             <UiTableCell>{{ invoice.clientName }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(invoice.createdAt) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(invoice.dueDate) }}</UiTableCell>
-            <UiTableCell>{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
+            <UiTableCell align="right">{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
             <UiTableCell muted>{{ invoice.paymentMethod || '—' }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="invoiceStatusTone(invoice.status)">{{ invoice.status }}</UiBadge>

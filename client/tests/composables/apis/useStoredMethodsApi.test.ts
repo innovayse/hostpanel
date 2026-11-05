@@ -12,6 +12,7 @@ import { expectLastRequest, startTransport } from '../../helpers/stubTransport'
 import type { ExpectedRequest } from '../../helpers/stubTransport'
 import type { StubServer } from '../../helpers/stubServer'
 import { useStoredMethodsApi } from '~/composables/apis/useStoredMethodsApi'
+import { ConsentTextVersion } from '~/types/consenttextversion'
 import { HttpMethod } from '~/types/httpmethod'
 
 /** The stub started by the current test. */
@@ -40,11 +41,11 @@ const rows: ExpectedRequest[] = [
     url: '/api/portal/client/stored-payment-methods/consents/5/default'
   },
   {
-    name: 'beginSave posts module, consent and return address',
-    call: () => api.beginSave('card_gateway', true, 'https://x/return'),
+    name: 'beginSave posts module, consent, wording version and return address',
+    call: () => api.beginSave('card_gateway', true, ConsentTextVersion.AccountCard, 'https://x/return'),
     method: HttpMethod.Post,
     url: '/api/portal/client/stored-payment-methods/sessions',
-    body: { gatewayModuleId: 'card_gateway', consentAccepted: true, returnUrl: 'https://x/return' }
+    body: { gatewayModuleId: 'card_gateway', consentAccepted: true, consentTextVersion: ConsentTextVersion.AccountCard, returnUrl: 'https://x/return' }
   },
   {
     name: 'completeSave posts the module to the session',
@@ -90,7 +91,7 @@ describe('useStoredMethodsApi', () => {
   it('returns the session the endpoint answers with', async () => {
     stub = await startTransport(() => ({ body: { sessionId: 's1', mode: 'Redirect', clientToken: null, redirectUrl: 'https://pay.example/s1' } }))
 
-    const session = await api.beginSave('card_gateway', true, 'https://x/return')
+    const session = await api.beginSave('card_gateway', true, ConsentTextVersion.CheckoutAgreement, 'https://x/return')
 
     expect(session).toEqual({ sessionId: 's1', mode: 'Redirect', clientToken: null, redirectUrl: 'https://pay.example/s1' })
   })

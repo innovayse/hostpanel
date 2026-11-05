@@ -1,5 +1,7 @@
 ---
 title: Network issues
+description: "Tell clients about outages and planned maintenance in Hostpanel: report an issue, update it and see what customers see."
+keywords: "network issues, outages, planned maintenance, incident reports"
 ---
 
 # Network issues <Label type="admin" />

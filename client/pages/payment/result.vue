@@ -13,6 +13,17 @@
         <CheckCircle2 :size="48" class="mx-auto text-green-600 dark:text-green-400 mb-4" />
         <UiHeading :level="1" size="subsection" class="text-xl mb-2" data-testid="payment-title">{{ $t('paymentResult.successTitle') }}</UiHeading>
         <UiText tone="muted" class="mb-8">{{ $t('paymentResult.successBody') }}</UiText>
+        <!-- The payer asked at checkout to save the method for renewals: the session is opening, or it could not be
+             opened. The payment is paid either way, so this never blocks the way on. -->
+        <UiText v-if="renewalSaving" tone="muted" size="sm" class="mb-6" data-testid="payment-save-starting">
+          {{ $t('paymentResult.saveStarting') }}
+        </UiText>
+        <UiAlert v-if="renewalSaveFailed" variant="warning" class="mb-6 text-left" data-testid="payment-save-failed">
+          {{ $t('paymentResult.saveFailed') }}
+          <UiLink :to="savedMethodsTarget" class="font-medium underline" testid="payment-save-failed-link">
+            {{ $t('paymentResult.saveFailedLink') }}
+          </UiLink>
+        </UiAlert>
         <UiButton :to="continueTarget" size="lg" class="font-bold" data-testid="payment-continue">
           {{ orderId ? $t('paymentResult.goToOrder') : $t('paymentResult.goToInvoice') }}
         </UiButton>
@@ -72,11 +83,13 @@
  * authenticated) and verifies the payment against the backend, which pulls the
  * authoritative status from the bank.
  */
-import { CLIENT_INVOICES_PATH, clientInvoicePayPath, clientOrderSuccessPath } from '~/constants/clientRoutes'
+import { CLIENT_INVOICES_PATH, clientAccountTabPath, clientInvoicePayPath, clientOrderSuccessPath } from '~/constants/clientRoutes'
 import { AlertTriangle, CheckCircle2, Clock, Loader2, XCircle } from 'lucide-vue-next'
+import { useCheckoutRenewalSave } from '~/composables/useCheckoutRenewalSave'
 import { useCartStore } from '~/stores/cart'
 import { useCurrencyStore } from '~/stores/currency'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
+import { AccountTab } from '~/types/accounttab'
 import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
 import { PaymentTarget } from '~/types/paymenttarget'
 import { queryId } from '~/utils/queryId'
@@ -95,6 +108,12 @@ const currencyStore = useCurrencyStore()
 const cart = useCartStore()
 /** Reads and forgets the token an order was placed with, and the invoice it was billed on. */
 const { recall: recallPaymentToken, recallInvoiceId, forget: forgetPaymentToken } = useOrderPaymentToken()
+
+/**
+ * The "save this payment method for automatic renewals" follow-up: whether a session is opening, whether it
+ * could not be opened, and the two actions. It acts only on a confirmed payment and spends the choice once.
+ */
+const { saving: renewalSaving, failed: renewalSaveFailed, startIfChosen: startRenewalSave, discard: discardRenewalSave } = useCheckoutRenewalSave()
 
 /** The order id from `?order=`, when the payer came from checkout and the value is one whole number. */
 const orderId = computed(() => queryId(route.query.order))
@@ -143,6 +162,9 @@ const continueTarget = computed(() =>
   orderId.value
     ? localePath(clientOrderSuccessPath({ order: paymentStore.verifiedOrderNumber, digital: orderWasDigital.value }))
     : localePath(`${CLIENT_INVOICES_PATH}/${invoiceId.value}`))
+
+/** Where the notice for a save that could not be started leads: the saved payment methods. */
+const savedMethodsTarget = computed(() => localePath(clientAccountTabPath(AccountTab.Payment)))
 
 /**
  * Where to send the payer to retry after a declined payment: paying the same invoice again, never
@@ -203,6 +225,15 @@ const check = async (): Promise<void> => {
     forgetPaymentToken(id)
   }
   checking.value = false
+  if (target === PaymentTarget.Order) {
+    if (result === GatewayPaymentState.Paid) {
+      // Only a payment the bank confirmed may start the session; a pending or unknown one keeps the
+      // choice for the next check, a declined one drops it.
+      await startRenewalSave(id)
+    } else if (result === GatewayPaymentState.Declined) {
+      discardRenewalSave(id)
+    }
+  }
 }
 
 onMounted(() => {

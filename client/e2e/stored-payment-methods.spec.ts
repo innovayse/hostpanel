@@ -15,6 +15,7 @@ import {
   STORED_CARD_OTHER,
   STORED_SESSION_ID,
 } from './support/fixtures.mjs'
+import { ConsentTextVersion } from '../types/consenttextversion'
 import { enableHostedGateway, resetStub, signIn, stubRequests, waitForHydration } from './support/helpers'
 
 test.beforeEach(async ({ context, request, baseURL }) => {
@@ -60,7 +61,9 @@ test('a save cannot start without the consent, and with it the browser is sent t
   await leaving
 
   const sent = (await stubRequests(request)).find(r => r.method === 'POST' && r.path === '/api/me/stored-payment-methods/sessions')
-  expect(sent?.body).toMatchObject({ gatewayModuleId: HOSTED_GATEWAY.module, consentAccepted: true })
+  expect(sent?.body).toMatchObject({ gatewayModuleId: HOSTED_GATEWAY.module, consentAccepted: true,
+    consentTextVersion: ConsentTextVersion.AccountCard
+  })
 })
 
 test('on return the pending session is completed, the new method is listed and the marker is dropped', async ({ page, request }) => {

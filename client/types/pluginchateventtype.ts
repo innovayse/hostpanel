@@ -18,5 +18,11 @@ export enum PluginChatEventType {
   /** A link offered with the reply: `{ text, url }`, shown only when the link rule admits `url`. */
   Link = 'link',
   /** The reply is complete. */
-  Done = 'done'
+  Done = 'done',
+  /** One row of the reply's step list: `{ id?, label, state }`; a repeated key updates the row in place. */
+  Step = 'step',
+  /** A card in the reply: `{ tone?, title?, text?, actions? }`. */
+  Result = 'result',
+  /** The plugin's own failure, the stream going on: `{ text }`. */
+  Issue = 'issue'
 }

@@ -54,12 +54,24 @@ variables:
 # ── Reusable templates (inlined — this project runs on a GitLab pull-mirror
 #    of the GitHub repo, so the shared job definitions are copied here) ───────────
 
-# The job's own token as the private package feed credential (see the note on .test-dotnet). Defined here
-# once and extended only by the jobs that restore NuGet (.test-dotnet, .build-image, .deploy-staging and
+# The private package feed credential (see the note on .test-dotnet), composed here and nowhere else.
+# Extended only by the jobs that restore NuGet (.test-dotnet, .build-image, .deploy-staging and
 # deploy:prod), so no other job sees the token as a variable.
+#
+# One secret under one name: the CI/CD variable PRIVATE_FEED_TOKEN (masked, protected) holds only the
+# password of the feed's deploy token, and PRIVATE_FEED_USER (protected) its user name. A pipeline on a
+# protected ref gets both from the project. Any other ref (a merge request, a feature branch) is not given
+# protected variables, so the defaults below apply: the job's own token, valid only while the job runs.
+# That is why the two defaults are defined here under the same names; a project variable wins over them.
+#
+# The result is the exact spelling NuGet reads (the source name is part of the variable name). The jobs
+# that build the API image hand it to docker as the BuildKit secret "nuget_credentials", and the deploy
+# jobs pass it on to docker compose as NUGET_INNOVAYSE_CREDENTIALS.
 .nuget-credentials:
   variables:
-    PRIVATE_FEED_CREDENTIALS: "Username=gitlab-ci-token;Password=${CI_JOB_TOKEN}"
+    PRIVATE_FEED_USER: "gitlab-ci-token"
+    PRIVATE_FEED_TOKEN: $CI_JOB_TOKEN
+    NuGetPackageSourceCredentials_innovayse: "Username=${PRIVATE_FEED_USER};Password=${PRIVATE_FEED_TOKEN}"
 
 # Every test job a deploy waits for. A job's rules may leave a test out of a
 # pipeline (the `changes:` filters), so each is optional: a test that did not run does not block, a test
@@ -87,16 +99,14 @@ variables:
   variables:
     DOTNET_CLI_TELEMETRY_OPTOUT: "1"
     # The credential for the private authentication package, which lives in a private package
-    # registry. backend/nuget.config deliberately carries no credentials and expects them from
-    # the environment.
+    # registry, comes from .nuget-credentials (NuGetPackageSourceCredentials_innovayse).
+    # backend/nuget.config deliberately carries no credentials and expects them from the environment.
     #
-    # This exact spelling is the one NuGet reads (the source name is part of the variable name).
     # The NUGET_PACKAGE_SOURCE_CREDENTIALS_ form is read by nothing.
     #
-    # It is the job's own token, valid only while the job runs. For it to be accepted the
-    # registry's project must list this project in its CI_JOB_TOKEN allowlist, since a job
-    # token is scoped to its own project by default.
-    NuGetPackageSourceCredentials_innovayse: $PRIVATE_FEED_CREDENTIALS
+    # On an unprotected ref it is the job's own token, valid only while the job runs. For it to be
+    # accepted the registry's project must list this project in its CI_JOB_TOKEN allowlist, since a
+    # job token is scoped to its own project by default.
     # Testcontainers starts Ryuk, its reaper container, before the first real container and
     # then dials it on a mapped port. On the builder runner that connection is never made:
     # it waits its full minute, throws "ResourceReaperException: Initialization has been
@@ -184,7 +194,7 @@ variables:
     # build arg), so it is not stored in the image layers or its history. The client and admin
     # Dockerfiles never mount the secret. NUXT_PUBLIC_PORTAL_CHAT_BASE_URL is the client's build-time
     # proxy target; an unset CI/CD variable expands to empty (no proxy).
-    - docker build --secret id=nuget_credentials,env=PRIVATE_FEED_CREDENTIALS --build-arg AUTH_MODE=sso --build-arg "NUXT_PUBLIC_PORTAL_CHAT_BASE_URL=$NUXT_PUBLIC_PORTAL_CHAT_BASE_URL" --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
+    - docker build --secret id=nuget_credentials,env=NuGetPackageSourceCredentials_innovayse --build-arg AUTH_MODE=sso --build-arg "NUXT_PUBLIC_PORTAL_CHAT_BASE_URL=$NUXT_PUBLIC_PORTAL_CHAT_BASE_URL" --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
     - docker push "$IMAGE:$TAG"
     - docker push "$IMAGE:$CI_COMMIT_SHORT_SHA"
   rules:
@@ -199,7 +209,7 @@ variables:
     GIT_STRATEGY: none
     # The build below restores the private authentication package from the package registry, so the
     # credential has to reach it here the same way it does on production.
-    NUGET_INNOVAYSE_CREDENTIALS: $PRIVATE_FEED_CREDENTIALS
+    NUGET_INNOVAYSE_CREDENTIALS: $NuGetPackageSourceCredentials_innovayse
     COMPOSE_FILE: $COMPOSE_FILES_DEPLOYED
     # The local image names docker/docker-compose.prod.yml builds and runs: the project's own registry path.
     IMAGE_REGISTRY: $CI_REGISTRY_IMAGE
@@ -652,7 +662,7 @@ deploy:prod:
     # credential has to reach the restore here too — docker-compose.prod.yml passes it
     # through as a BuildKit secret (id nuget_credentials) read from this variable. The host's .env does
     # not carry it, and without it the restore goes to the feed anonymously and the build fails 401.
-    NUGET_INNOVAYSE_CREDENTIALS: $PRIVATE_FEED_CREDENTIALS
+    NUGET_INNOVAYSE_CREDENTIALS: $NuGetPackageSourceCredentials_innovayse
     # The public health endpoint, waited for after the deploy.
     HEALTH_URL: $PROD_PUBLIC_URL/health
   script:

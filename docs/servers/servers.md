@@ -1,5 +1,7 @@
 ---
 title: Servers and server groups
+description: "Add and test provisioning servers in Hostpanel, edit or delete them, group them for load balancing and set private network routes."
+keywords: "servers, server groups, load balancing, connection test, private network routes"
 ---
 
 # Servers and server groups <Label type="admin" />

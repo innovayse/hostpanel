@@ -4,6 +4,14 @@
     "chatMessage": "Your message",
     "chatSend": "Send",
     "chatStop": "Stop",
-    "unavailable": "This part is not available right now."
+    "unavailable": "This part is not available right now.",
+    "workspaceBack": "Back",
+    "previewSize": "Screen size",
+    "previewSource": "Which site",
+    "previewDesktop": "Desktop",
+    "previewPhone": "Phone",
+    "previewOpen": "Open in a new tab",
+    "previewEmpty": "Nothing to preview yet.",
+    "chatStepStopped": "Stopped"
   }
 }

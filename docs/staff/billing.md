@@ -1,5 +1,7 @@
 ---
 title: Invoices and payments
+description: "Create and edit Hostpanel invoices, record payments, mark paid or unpaid, apply credit, refund, cancel and download PDFs."
+keywords: "invoices, record payment, credit, refund, invoice pdf, invoice statuses"
 ---
 
 # Invoices and payments <Label type="admin" />

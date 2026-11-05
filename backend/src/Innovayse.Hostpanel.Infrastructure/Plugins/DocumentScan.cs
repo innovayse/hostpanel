@@ -26,6 +26,12 @@ internal sealed class DocumentScan
     /// </summary>
     public PluginManifestViolation? StateViolation { get; set; }
 
+    /// <summary>Gets or sets whether the document holds a <c>preview</c> block, which only a client page may show.</summary>
+    public bool HasPreview { get; set; }
+
+    /// <summary>Gets or sets how many <c>split</c> blocks enclose the element being walked; above zero, a split would nest.</summary>
+    public int SplitDepth { get; set; }
+
     /// <summary>Gets or sets what is malformed, or <see langword="null"/> while nothing is.</summary>
     public string? Malformed { get; set; }
 }

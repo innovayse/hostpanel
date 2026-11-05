@@ -1,5 +1,7 @@
 ---
 title: Authentication
+description: "Sign in to the Hostpanel REST API and send the access token or session cookie. Covers two-factor sign-in, token lifetime and sign-on mode."
+keywords: "hostpanel api authentication, bearer token, session cookie, two-factor sign-in, rest api"
 ---
 
 # Authentication

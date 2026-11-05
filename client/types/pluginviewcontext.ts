@@ -16,6 +16,8 @@ export interface PluginViewContext {
   values: Record<string, string>
   /** The plugin's allowed link origins. */
   externalOrigins: string[]
+  /** The exact origins a preview block may frame; empty outside a plugin page. */
+  frameOrigins: string[]
   /** A counter per block id, bumped to make that block read its source again. */
   refreshes: Ref<Record<string, number>>
   /** Bumps the counters of the named blocks. */

@@ -64,6 +64,22 @@ describe('UiCheckbox', () => {
     expect(wrapper.find('[role="checkbox"]').attributes('data-testid')).toBe('terms-box')
   })
 
+  it('names the box by its label and describes the box and the native input by the description', () => {
+    const wrapper = mountWithKit(UiCheckbox, { props: { id: 'agree', label: 'Terms', description: 'Read them first' } })
+
+    const box = wrapper.find('[role="checkbox"]')
+    expect(box.attributes('aria-labelledby')).toBe(wrapper.find('label').attributes('id'))
+    expect(box.attributes('aria-describedby')).toBe(wrapper.find('p').attributes('id'))
+    expect(wrapper.find('input').attributes('aria-describedby')).toBe(wrapper.find('p').attributes('id'))
+  })
+
+  it('adds no label or description references when there are none', () => {
+    const wrapper = mountWithKit(UiCheckbox)
+
+    expect(wrapper.find('[role="checkbox"]').attributes('aria-labelledby')).toBeUndefined()
+    expect(wrapper.find('[role="checkbox"]').attributes('aria-describedby')).toBeUndefined()
+  })
+
   it('tags the native input derived from the testid, and leaves it untagged without one', () => {
     const tagged = mountWithKit(UiCheckbox, { props: { testid: 'terms-box' } })
     const plain = mountWithKit(UiCheckbox)

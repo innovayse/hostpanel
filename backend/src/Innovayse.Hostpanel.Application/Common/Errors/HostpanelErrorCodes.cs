@@ -834,6 +834,24 @@ public static class HostpanelErrorCodes
     public const string PLUGIN_VIEW_FOLLOW_UP_INVALID = "PLUGIN_VIEW_FOLLOW_UP_INVALID";
 
     /// <summary>
+    /// A page declares a layout the host does not define, or a layout on an admin page (400, the default arm: it is
+    /// answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_PAGE_LAYOUT_UNKNOWN = "PLUGIN_PAGE_LAYOUT_UNKNOWN";
+
+    /// <summary>
+    /// A view document holds a split that is not exactly two panes of blocks, or one inside another (400, the default
+    /// arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_SPLIT_INVALID = "PLUGIN_VIEW_SPLIT_INVALID";
+
+    /// <summary>
+    /// A view document holds a preview with bad sources or size, or outside a client page (400, the default arm: it is
+    /// answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_PREVIEW_INVALID = "PLUGIN_VIEW_PREVIEW_INVALID";
+
+    /// <summary>
     /// One of the archive's entries would write outside the plugin's own directory (400). The
     /// zip-slip guard's refusal, named for what a caller can act on rather than the attack it
     /// blocks.

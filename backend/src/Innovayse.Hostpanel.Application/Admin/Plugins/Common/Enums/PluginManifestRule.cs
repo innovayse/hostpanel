@@ -118,4 +118,16 @@ public enum PluginManifestRule
 
     /// <summary>The manifest declares the <c>endpoints</c> capability, but the entry type does not implement <c>IPluginEndpoints</c>.</summary>
     EndpointsNotImplemented = 30,
+
+    /// <summary>A page declares a <c>layout</c> that is not one of <c>PluginPageLayouts.All</c>, or any <c>layout</c> on an admin page.</summary>
+    PageLayoutUnknown = 31,
+
+    /// <summary>A view document holds a <c>split</c> that does not have exactly two panes of blocks, or that nests inside a split.</summary>
+    ViewSplitInvalid = 32,
+
+    /// <summary>
+    /// A view document holds a <c>preview</c> whose <c>sources</c> or <c>size</c> break the shape, or that is shown anywhere
+    /// but on a client page, the one place the host narrows the frames a document may load.
+    /// </summary>
+    ViewPreviewInvalid = 33,
 }

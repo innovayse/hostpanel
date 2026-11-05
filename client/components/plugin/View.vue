@@ -32,6 +32,8 @@ interface Props {
   values: Record<string, string>
   /** The only origins an absolute link may open; an empty list allows host-relative links only. */
   externalOrigins?: string[]
+  /** The exact origins a preview block may frame, from the page's answer; a slot has none. */
+  frameOrigins?: string[]
   /** Told of each block's first read as it starts, so a slot widget can tell a slow widget from a ready one. */
   track?: (read: Promise<void>) => void
 }
@@ -39,6 +41,7 @@ interface Props {
 /** The props. */
 const props = withDefaults(defineProps<Props>(), {
   externalOrigins: () => [],
+  frameOrigins: () => [],
   track: undefined,
 })
 
@@ -88,6 +91,7 @@ providePluginView({
   pluginId: props.pluginId,
   values: props.values,
   externalOrigins: props.externalOrigins,
+  frameOrigins: props.frameOrigins,
   refreshes,
   refresh,
   open,

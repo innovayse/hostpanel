@@ -54,7 +54,7 @@ const RESERVED_PLUGIN_IDS: ReadonlySet<string> = new Set(['ui', 'slots'])
  * @param kind - The shape the route accepts.
  * @returns True when the value is well formed for the kind.
  */
-const hasShape = (value: string, kind: RouteParamKind): boolean => {
+export const hasShape = (value: string, kind: RouteParamKind): boolean => {
   if (kind === RouteParamKind.Int) {
     return isPositiveIntKey(value)
   }

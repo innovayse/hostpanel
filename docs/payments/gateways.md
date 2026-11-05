@@ -1,5 +1,7 @@
 ---
 title: Payment gateways
+description: "Configure payment methods in Hostpanel: bank transfer, payment gateway plugins, gateway settings, currencies and what customers see at checkout."
+keywords: "payment gateways, bank transfer, gateway settings, currencies, checkout"
 ---
 
 # Payment gateways <Label type="admin" />

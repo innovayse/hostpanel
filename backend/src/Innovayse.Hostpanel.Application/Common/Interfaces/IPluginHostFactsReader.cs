@@ -32,4 +32,16 @@ public interface IPluginHostFactsReader
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The invoices; empty when the client has none or does not exist.</returns>
     Task<IReadOnlyList<PluginHostInvoiceDto>> ListNewestInvoicesAsync(int clientId, CancellationToken ct);
+
+    /// <summary>
+    /// Lists the domains of a client's active services on the given products: at most
+    /// <see cref="PluginHostLimits.MaxListed"/>, newest first. A service with no domain is left out. The value is what was
+    /// typed at the order, not a checked host name.
+    /// </summary>
+    /// <param name="clientId">Client primary key.</param>
+    /// <param name="productIds">The products whose services count; none lists nothing.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The domains as stored; empty when the client has none or does not exist.</returns>
+    Task<IReadOnlyList<string>> ListActiveServiceDomainsAsync(
+        int clientId, IReadOnlyCollection<int> productIds, CancellationToken ct);
 }

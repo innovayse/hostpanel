@@ -841,6 +841,12 @@ public static class DependencyInjection
             .ValidateOnStart();
         var signingOptions = configuration.GetSection(PluginSigningOptions.SectionName).Get<PluginSigningOptions>() ?? new PluginSigningOptions();
 
+        // The http origins a preview may frame exist only on a developer machine; the validator refuses them anywhere else.
+        services.AddSingleton<IValidateOptions<PluginPreviewOptions>, PluginPreviewOptionsValidator>();
+        services.AddOptions<PluginPreviewOptions>()
+            .Bind(configuration.GetSection(PluginPreviewOptions.SectionName))
+            .ValidateOnStart();
+
         // The plugin registry: off until an operator sets an https address. Its client follows redirects itself, only inside
         // the registry's origin, so the handler's own redirect handling is switched off; the time limit is the client's own
         // (a download included), so the HttpClient default of 100 seconds must not cut it short. The connect callback

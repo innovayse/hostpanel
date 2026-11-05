@@ -1,5 +1,7 @@
 ---
 title: Languages
+description: "Send the X-Language header to get Hostpanel API messages in English, Russian or Armenian, with an example request."
+keywords: "x-language header, api languages, english, russian, armenian"
 ---
 
 # Languages

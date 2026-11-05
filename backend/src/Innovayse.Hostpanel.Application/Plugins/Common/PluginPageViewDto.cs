@@ -13,10 +13,17 @@ namespace Innovayse.Hostpanel.Application.Plugins.Common;
 /// <c>externalOrigins</c>, as written there; empty when it declares none. The panels need them to render the view's
 /// link blocks, which may point at an absolute <c>https</c> address only on one of these origins.
 /// </param>
+/// <param name="Layout">The layout the panel renders the page in, a <c>PluginPageLayouts</c> value, never absent.</param>
+/// <param name="FrameOrigins">
+/// The origins a <c>preview</c> block may frame for this caller (<see cref="PluginFrameOriginResolver"/>), also what the
+/// client's document policy narrows <c>frame-src</c> to; empty in the admin panel.
+/// </param>
 public sealed record PluginPageViewDto(
     string PluginId,
     string Id,
     string Path,
     string Title,
     JsonElement View,
-    IReadOnlyList<string> ExternalOrigins);
+    IReadOnlyList<string> ExternalOrigins,
+    string Layout,
+    IReadOnlyList<string> FrameOrigins);

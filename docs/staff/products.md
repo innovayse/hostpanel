@@ -1,5 +1,7 @@
 ---
 title: Products and pricing
+description: "Create and price hosting products in Hostpanel: groups, types, billing cycles and prices per currency, plan specification and hidden products."
+keywords: "products, product pricing, billing cycles, plan specification, product groups"
 ---
 
 # Products and pricing <Label type="admin" />

@@ -1,5 +1,7 @@
 ---
 title: Errors
+description: "Every Hostpanel API failure answers with one application/problem+json body. Read the error body, the error codes and the Retry-After header on 503."
+keywords: "hostpanel api errors, problem+json, error codes, retry-after, 503"
 ---
 
 # Errors

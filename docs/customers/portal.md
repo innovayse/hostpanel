@@ -1,5 +1,7 @@
 ---
 title: Client portal
+description: "Guide to the Hostpanel client portal: account and sign in, two-factor authentication, ordering, invoices, services, domains and tickets."
+keywords: "client portal, customer guide, hosting account, invoices, tickets"
 ---
 
 # Client portal

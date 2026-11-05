@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Client portal: choosing another account in the header account menu, or "Add another account", started the sign-in with the wrong application and callback, so the person landed on a page that does not exist and kept the old account. The header widget is now served from the portal itself, so both go through the portal's own sign-in and end back in the portal as the chosen account.
+- Admin panel: the theme script in `index.html` was blocked by the Content-Security-Policy on every load. It is now a file served from the panel's own origin, and the policy stays free of `unsafe-inline` for scripts.
+- Admin panel: when the identity provider signs a person out everywhere, the API must be registered with it as the receiver (`/api/auth/backchannel-logout`) for this client, otherwise the admin session outlives the sign-out (see the Docker README).
+
 ## [0.4.0] - 2026-11-05
 
 Highlights since 0.3.1:

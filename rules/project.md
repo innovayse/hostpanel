@@ -1055,7 +1055,7 @@ docker/                              compose set (shared·dev·prod·platform), 
 
 ## CQRS — Wolverine, conforming
 
-Wolverine 5.41.0. `Extensions/MessagingRegistration.cs` registers discovery over the API and
+Wolverine 6.8.0. `Extensions/MessagingRegistration.cs` registers discovery over the API and
 Application assemblies; handlers are never registered by hand and never called directly. One
 folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
 
@@ -1394,7 +1394,7 @@ feature does not exist is not kept. The decisions:
 
 ## Stack
 
-.NET 9 · Wolverine 5.41.0 (WolverineFx.Postgresql, WolverineFx.EntityFrameworkCore) · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
+.NET 9 · Wolverine 6.8.0 (WolverineFx.Postgresql, WolverineFx.EntityFrameworkCore) · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
 mode) + JWT bearer · `Innovayse.Auth` (cookie session for the admin SPA, sso builds only) · SkiaSharp (branding images) ·
 Serilog · Scalar + Swashbuckle · Mapster · MailKit · Otp.NET · Fluid.Core ·
 DnsClient · Redis (sessions + data-protection key ring) · RabbitMQ · xUnit + FluentAssertions +

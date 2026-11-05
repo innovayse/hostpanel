@@ -100,14 +100,20 @@
   </ItemGroup>
   <!-- Wolverine -->
   <ItemGroup>
-    <PackageVersion Include="WolverineFx" Version="5.41.0" />
-    <PackageVersion Include="WolverineFx.Postgresql" Version="5.41.0" />
+    <PackageVersion Include="WolverineFx" Version="6.8.0" />
+    <PackageVersion Include="WolverineFx.Postgresql" Version="6.8.0" />
+    <!--
+      The Roslyn compiler Wolverine 6 split out of core. TypeLoadMode.Auto (Development) and Dynamic (the
+      Testing environment of the integration suite) compile handler chains at runtime and refuse to start
+      without it; Production runs the pre-generated Static code and never calls it.
+    -->
+    <PackageVersion Include="WolverineFx.RuntimeCompilation" Version="6.8.0" />
     <!--
       The EF Core outbox (IDbContextOutbox): DomainEventDispatchInterceptor writes a save's domain
       events into Wolverine's PostgreSQL tables in the same transaction as the save. Same version as
       WolverineFx; its EF Core floor (9.0.5) is in the band this repository already runs.
     -->
-    <PackageVersion Include="WolverineFx.EntityFrameworkCore" Version="5.41.0" />
+    <PackageVersion Include="WolverineFx.EntityFrameworkCore" Version="6.8.0" />
   </ItemGroup>
   <!-- Application Libraries -->
   <ItemGroup>
@@ -157,7 +163,7 @@
       through MimeKit; System.Security.Cryptography.Xml arrives at 9.0.0 through
       Build.Tasks.Core (GHSA-37gx-xxp4-5rgx, design-time only) (GHSA-846f-f764-76mx, GHSA-2fmv-rv2c-59x7; fixed from 10.0.13). Both are
       raised by a direct reference in the project that owns the parent package.
-      WolverineFx.EntityFrameworkCore 5.41.0 requires Microsoft.Build.Tasks.Core 18.4.0 or later, so the
+      WolverineFx.EntityFrameworkCore 6.8.0 requires Microsoft.Build.Tasks.Core 18.4.0 or later, so the
       pin sits at that floor; a lower pin is an NU1605 downgrade and fails the restore.
     -->
     <PackageVersion Include="Microsoft.Build.Tasks.Core" Version="18.4.0" />

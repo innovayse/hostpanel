@@ -13,7 +13,7 @@
 #
 # Options (flag, or the environment variable in brackets):
 #   --dir <path>       install directory                  [HOSTPANEL_DIR, default /opt/hostpanel]
-#   --version <x.y.z>  release to install, e.g. 1.4.0     [HOSTPANEL_VERSION, default: main / latest]
+#   --version <x.y.z>  release to install, e.g. 0.4.0     [HOSTPANEL_VERSION, default: main / latest]
 #   --no-tls           serve plain HTTP on 8080 behind your own TLS proxy [HOSTPANEL_TLS=off]
 #   --help             print this text
 #

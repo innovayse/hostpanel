@@ -15,31 +15,28 @@ Take a database dump before every upgrade. Database migrations run forward autom
 </Callout>
 
 Read the changelog entry for the new release before upgrading. Take a database
-dump and note the current `IMAGE_TAG` in `/opt/hostpanel/.env` — you will need it
+dump and note the current `IMAGE_TAG` in `/opt/hostpanel/.env`. You will need it
 if you roll back.
 
 ### Check for duplicate gateway payments
 
-The next release adds a unique index on gateway payment references. If any two
-ledger rows share the same payment method and reference the migration stops and
-the upgrade fails. Run the check script before upgrading — an empty result means
+Release 0.4.0 adds a unique index on gateway payment references. If any two
+gateway payment rows share the same payment method and reference, the migration stops
+and the upgrade fails. Run the check script before upgrading. An empty result means
 the migration will run cleanly.
 
-The script is included starting from the release that adds the unique index
-(the first release after v0.3.1). Fetch it from the release tag you are
-upgrading to (replace `v1.0.0` with the real tag — a 404 means the release
-does not contain the script yet and you can skip this step):
+The script is part of release 0.4.0. It works on a 0.3.x database and on a 0.4.0 database,
+so run it before the upgrade. Fetch it from the release tag:
 
 ```bash
 curl -fsSL -o /tmp/check-dup-payments.sh \
-  https://raw.githubusercontent.com/innovayse/hostpanel/v1.0.0/scripts/check-duplicate-gateway-payments.sh \
+  https://raw.githubusercontent.com/innovayse/hostpanel/v0.4.0/scripts/check-duplicate-gateway-payments.sh \
   && sh /tmp/check-dup-payments.sh hostpanel-db
 ```
 
-Downloading the script first means a 404 (script not in this release yet) fails the
-`curl` step and does not pipe an empty response into `sh`. The first argument is the
-database container name (default: `hostpanel-db`) — pass a different name if your
-container is named otherwise.
+Downloading the script first means a failed download does not pipe an empty response
+into `sh`. The first argument is the database container name (default: `hostpanel-db`).
+Pass a different name if your container is named otherwise.
 
 If the server has no outbound internet access, copy the script from the repository
 and run it over SSH:
@@ -51,9 +48,36 @@ ssh user@your-server 'sh -s -- hostpanel-db' < scripts/check-duplicate-gateway-p
 If the script lists any rows, give each a distinct reference (or delete the
 duplicate), then run it again before upgrading.
 
+### The database is renamed
+
+Release 0.4.0 renames every table, key, index and constraint to PascalCase (columns
+already were). The migration renames them in place and keeps all data. Update your own
+SQL, reports and scripts to the new names. A dump taken before the upgrade restores only
+onto the previous version, so keep it for a rollback and do not restore it onto 0.4.0.
+
+### Configuration that must be set
+
+Release 0.4.0 requires these settings. Set them in `.env` before the first start:
+
+- `ENCRYPTION_KEY` in every environment.
+- `SESSION_ENCRYPTION_KEY` for the client app sessions. The installer generates it for you.
+- `EDGE_SCHEME`, the scheme the public hosts are reached with (`https://` or `http://`).
+- The trusted proxy counts under `RateLimit` (`KnownProxies`, `KnownNetworks`, `TrustedProxyCount`).
+- Absolute `Cors:AllowedOrigins` entries such as `https://host.example.com`.
+
+In Production the API refuses to start while a secret still holds a placeholder value.
+
+### Saved cards and the payment plugin
+
+Release 0.4.0 moves the saved card customer references to the payment plugin with
+the id `stripe`, because the only gateway that ever stored them was that one. If your
+clients paid with a saved card, install your card plugin with the id `stripe` before
+upgrading. If your plugin uses another id, rewrite `GatewayModuleId` in
+`GatewayCustomers` to that id. Otherwise those clients are asked for their card again.
+
 ### Uploaded plugins and signed packages
 
-The next release verifies the signature of every plugin on startup. Plugins
+Release 0.4.0 verifies the signature of every plugin on startup. Plugins
 uploaded before this release carry no signature file (`plugin.sig`) and are
 **skipped with a warning in the API log** on a production server after the upgrade. To restore them:
 
@@ -76,7 +100,7 @@ docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
 cp .env .env.bak
 ```
 
-Note the `IMAGE_TAG` value from `.env` — you will need it if you roll back.
+Note the `IMAGE_TAG` value from `.env`. You will need it if you roll back.
 If `IMAGE_TAG` is `latest`, find the exact version the running containers use before pulling new images:
 
 ```bash
@@ -88,7 +112,7 @@ docker image ls --format '{{.Repository}}:{{.Tag}}' | grep hostpanel
 ```bash
 curl -fsSL \
   https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh \
-  | bash -s -- --version 1.4.0
+  | bash -s -- --version 0.4.0
 ```
 
 Always pass `--version`. The installer only updates `IMAGE_TAG` when `--version`
@@ -98,24 +122,24 @@ run with the new stack files.
 
 **3. Check the output** for any warnings about new settings added to `.env` and review them.
 
-**4. Verify the upgrade** — see [What to check after an upgrade](#what-to-check-after-an-upgrade).
+**4. Verify the upgrade.** See [What to check after an upgrade](#what-to-check-after-an-upgrade).
 
 When `.env` already exists the installer:
 
-- Keeps all your existing settings — it does **not** overwrite `.env` or ask the
+- Keeps all your existing settings. It does **not** overwrite `.env` or ask the
   domain and email questions again.
 - Updates `IMAGE_TAG` to the version given with `--version` or `HOSTPANEL_VERSION`.
 - Adds any new keys introduced in `.env.example` since your install. New secrets
   (e.g. `SESSION_ENCRYPTION_KEY`) are generated automatically; other new keys get
-  the example value and a warning is printed — review them.
+  the example value and a warning is printed. Review them.
 - Re-applies the TLS mode only when `--no-tls` or `HOSTPANEL_TLS` is passed.
 
 ## Upgrade by hand
 
-**1. Set `IMAGE_TAG` in `/opt/hostpanel/.env`** to the target version. No leading `v` — use `1.4.0`, not `v1.4.0`:
+**1. Set `IMAGE_TAG` in `/opt/hostpanel/.env`** to the target version. No leading `v`, use `0.4.0`, not `v0.4.0`:
 
 ```bash
-# e.g. IMAGE_TAG=1.4.0
+# e.g. IMAGE_TAG=0.4.0
 ```
 
 **2. Pull the new images and restart the stack:**
@@ -127,7 +151,7 @@ docker compose -f docker-compose.hub.yml up -d
 ```
 
 Image tags on Docker Hub follow the pattern `<namespace>/hostpanel:<component>-<version>`,
-for example `innovayse/hostpanel:api-1.4.0`. The moving `latest` tags
+for example `innovayse/hostpanel:api-0.4.0`. The moving `latest` tags
 (`api-latest`, `client-latest`, `admin-latest`) always point at the current release.
 
 ## What to check after an upgrade
@@ -141,8 +165,12 @@ for example `innovayse/hostpanel:api-1.4.0`. The moving `latest` tags
 - `GET /health` returns `200`.
 - You can sign in to the admin panel.
 - A test invoice PDF downloads correctly.
-- The recurring billing jobs ran as expected — see the [billing guide](/staff/billing).
+- The recurring billing jobs ran as expected, see the [billing guide](/staff/billing).
 
 ## Go back to a previous version
 
 See [Rollback](/operators/rollback).
+
+A dump taken before the upgrade to 0.4.0 restores only onto the previous version. The
+upgrade renames the database tables, keys and indexes to PascalCase, so restore that
+dump together with the previous images and never onto 0.4.0.

@@ -19,14 +19,30 @@ internal static class PluginAssemblyFixtures
     /// <returns>The raw bytes of the assembly file.</returns>
     public static byte[] BuiltAgainstSdk(Version sdkVersion)
     {
-        var sdkName = typeof(PluginManifest).Assembly.GetName().Name!;
-        var sdk = new PersistedAssemblyBuilder(new AssemblyName(sdkName) { Version = sdkVersion }, typeof(object).Assembly);
-        var sdkType = sdk.DefineDynamicModule(sdkName).DefineType("Fixture.SdkType", TypeAttributes.Public | TypeAttributes.Class);
-        sdkType.CreateType();
+        return BuiltAgainstAssembly(typeof(PluginManifest).Assembly.GetName().Name!, sdkVersion);
+    }
 
-        var plugin = new PersistedAssemblyBuilder(new AssemblyName("Fixture.Plugin"), typeof(object).Assembly);
-        var pluginType = plugin.DefineDynamicModule("Fixture.Plugin")
-            .DefineType("Fixture.PluginType", TypeAttributes.Public | TypeAttributes.Class, sdkType);
+    /// <summary>
+    /// Builds an assembly with one type (<c>Fixture.PluginType</c>) that derives from a type of an assembly named
+    /// <paramref name="dependencyName"/> at <paramref name="dependencyVersion"/>. When no such assembly can be found
+    /// the type cannot be loaded, which is how a plugin built against an SDK the host does not carry fails.
+    /// </summary>
+    /// <param name="dependencyName">The simple name of the assembly the plugin type derives from.</param>
+    /// <param name="dependencyVersion">The version of that assembly the plugin is "built against".</param>
+    /// <param name="pluginAssemblyName">
+    /// The name of the plugin assembly. A test that loads it passes a name of its own: the default context keeps one
+    /// assembly per name for the life of the process, and another test asserts the default name was never loaded.
+    /// </param>
+    /// <returns>The raw bytes of the assembly file.</returns>
+    public static byte[] BuiltAgainstAssembly(string dependencyName, Version dependencyVersion, string pluginAssemblyName = "Fixture.Plugin")
+    {
+        var dependency = new PersistedAssemblyBuilder(new AssemblyName(dependencyName) { Version = dependencyVersion }, typeof(object).Assembly);
+        var dependencyType = dependency.DefineDynamicModule(dependencyName).DefineType("Fixture.SdkType", TypeAttributes.Public | TypeAttributes.Class);
+        dependencyType.CreateType();
+
+        var plugin = new PersistedAssemblyBuilder(new AssemblyName(pluginAssemblyName), typeof(object).Assembly);
+        var pluginType = plugin.DefineDynamicModule(pluginAssemblyName)
+            .DefineType("Fixture.PluginType", TypeAttributes.Public | TypeAttributes.Class, dependencyType);
         pluginType.CreateType();
 
         return Save(plugin);

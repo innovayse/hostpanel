@@ -15,14 +15,14 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 public sealed class SecretSettingsLeakTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The setting key the gateway secret is planted under.</summary>
-    private const string StripeSecretKey = "integration:stripe:secret_key";
+    private const string GatewaySecretKey = "integration:smtp:password";
 
     /// <summary>The admin list omits every row outside the catalogue, so a secret is not listed at all.</summary>
     [Fact]
     public async Task AdminList_OmitsSecretRowsAsync()
     {
         var sentinel = SecretSettingTestSeeds.Sentinel("list");
-        await SecretSettingTestSeeds.StoreAsync(factory, StripeSecretKey, sentinel);
+        await SecretSettingTestSeeds.StoreAsync(factory, GatewaySecretKey, sentinel);
         await SecretSettingTestSeeds.StoreAsync(factory, SecretSettingKeys.SetupToken, sentinel);
         var client = await AdminTestSeeds.AdminClientAsync(factory);
 
@@ -32,7 +32,7 @@ public sealed class SecretSettingsLeakTests(IntegrationTestFactory factory) : IC
         var body = await response.Content.ReadAsStringAsync();
         body.Should().NotContain(sentinel);
         var rows = JsonSerializer.Deserialize<List<JsonElement>>(body)!;
-        rows.Should().NotContain(r => r.GetProperty("key").GetString() == StripeSecretKey);
+        rows.Should().NotContain(r => r.GetProperty("key").GetString() == GatewaySecretKey);
         rows.Should().NotContain(r => r.GetProperty("key").GetString() == SecretSettingKeys.SetupToken);
         rows.Should().OnlyContain(r => GeneralSettingKeys.Contains(r.GetProperty("key").GetString()!));
         rows.Single(r => r.GetProperty("key").GetString() == PortalSettingKeys.Template)
@@ -59,22 +59,22 @@ public sealed class SecretSettingsLeakTests(IntegrationTestFactory factory) : IC
     public async Task IntegrationDetail_NeverReturnsASecretValueAsync()
     {
         var sentinel = SecretSettingTestSeeds.Sentinel("detail");
-        await SecretSettingTestSeeds.StoreAsync(factory, StripeSecretKey, sentinel);
+        await SecretSettingTestSeeds.StoreAsync(factory, GatewaySecretKey, sentinel);
         var client = await AdminTestSeeds.AdminClientAsync(factory);
 
-        var response = await client.GetAsync("/api/admin/integrations/stripe");
+        var response = await client.GetAsync("/api/admin/integrations/smtp");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadAsStringAsync();
         body.Should().NotContain(sentinel);
         using var document = JsonDocument.Parse(body);
         var config = document.RootElement.GetProperty("config");
-        var secret = config.GetProperty("secret_key");
+        var secret = config.GetProperty("password");
         secret.GetProperty("isSecret").GetBoolean().Should().BeTrue();
         secret.GetProperty("hasValue").GetBoolean().Should().BeTrue();
         secret.GetProperty("value").ValueKind.Should().Be(JsonValueKind.Null);
         config.TryGetProperty("webhook_secret", out _).Should().BeFalse();
-        config.GetProperty("publishable_key").GetProperty("isSecret").GetBoolean().Should().BeFalse();
+        config.GetProperty("host").GetProperty("isSecret").GetBoolean().Should().BeFalse();
     }
 
     /// <summary>The anonymous public settings carry no secret and no integration row at all.</summary>
@@ -82,7 +82,7 @@ public sealed class SecretSettingsLeakTests(IntegrationTestFactory factory) : IC
     public async Task PublicSettings_NeverIncludeASecretAsync()
     {
         var sentinel = SecretSettingTestSeeds.Sentinel("public");
-        await SecretSettingTestSeeds.StoreAsync(factory, StripeSecretKey, sentinel);
+        await SecretSettingTestSeeds.StoreAsync(factory, GatewaySecretKey, sentinel);
         await SecretSettingTestSeeds.StoreAsync(factory, SecretSettingKeys.SetupToken, sentinel);
 
         var response = await factory.CreateClient().GetAsync("/api/settings/public");

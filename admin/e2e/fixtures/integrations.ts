@@ -8,31 +8,32 @@ import type { PluginListItemDto } from '../../src/types/plugin'
 import { PluginStatus } from '../../src/types/plugin'
 
 /** A disabled payment integration as the list endpoint returns it. */
-export const stripe: IntegrationDto = {
-  slug: 'stripe',
-  name: 'Stripe',
+export const bankTransfer: IntegrationDto = {
+  slug: 'bank-transfer',
+  name: 'Bank Transfer',
   category: 'payments',
   isEnabled: false,
   isConfigured: false,
   isPlugin: false,
   pluginType: null,
+  iconUrl: null,
   connection: null,
 }
 
 /** The same integration with the fields its configuration form renders. */
-export const stripeDetail: IntegrationDetailDto = {
-  slug: stripe.slug,
-  name: stripe.name,
-  isEnabled: stripe.isEnabled,
+export const bankTransferDetail: IntegrationDetailDto = {
+  slug: bankTransfer.slug,
+  name: bankTransfer.name,
+  isEnabled: bankTransfer.isEnabled,
   config: {
-    secretKey: { value: null, isSecret: true, hasValue: false },
-    publishableKey: { value: '', isSecret: false, hasValue: false },
+    accountHolder: { value: '', isSecret: false, hasValue: false },
+    iban: { value: '', isSecret: false, hasValue: false },
     webhookUrl: { value: '', isSecret: false, hasValue: false },
     timeoutSeconds: { value: '30', isSecret: false, hasValue: true },
   },
   fieldDefinitions: [
-    { key: 'secretKey', label: 'Secret key', type: IntegrationFieldType.Password, required: true },
-    { key: 'publishableKey', label: 'Publishable key', type: IntegrationFieldType.Text, required: false },
+    { key: 'accountHolder', label: 'Account holder', type: IntegrationFieldType.Text, required: true },
+    { key: 'iban', label: 'IBAN', type: IntegrationFieldType.Text, required: false },
     { key: 'webhookUrl', label: 'Webhook URL', type: IntegrationFieldType.Url, required: false },
     { key: 'timeoutSeconds', label: 'Timeout (seconds)', type: IntegrationFieldType.Number, required: false, min: 1, max: 60 },
   ],
@@ -51,6 +52,7 @@ export const cwpPlugin: PluginListItemDto = {
   category: 'Hosting / Provisioning',
   color: '#1a73e8',
   isLoaded: true,
+  iconUrl: null,
   isBuiltIn: false,
   status: PluginStatus.Loaded,
   refusedRule: null,

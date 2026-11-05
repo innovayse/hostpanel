@@ -1,31 +1,14 @@
 {
-  "stripe": {
-    "shortDescription": "Принимайте онлайн-платежи картами через платёжную платформу Stripe.",
-    "fieldSecretKey": "Секретный ключ",
-    "fieldPublishableKey": "Публичный ключ",
-    "fieldMode": "Режим"
-  },
-  "paypal": {
-    "shortDescription": "Включите оплату через PayPal для клиентов, которые предпочитают этот способ.",
-    "fieldClientSecret": "Секрет клиента"
-  },
   "bankTransfer": {
     "shortDescription": "Позвольте клиентам платить прямым банковским переводом по вашим реквизитам.",
     "fieldAccountName": "Имя владельца счёта",
     "fieldInstructions": "Инструкции по оплате"
   },
-  "inecobank": {
-    "shortDescription": "Принимайте армянские банковские карты через размещённую страницу оплаты Inecobank.",
-    "fieldGateway_url": "Базовый URL шлюза (например, https://gateway.example.com)",
-    "fieldUsername": "Имя пользователя API",
-    "fieldPassword": "Пароль API",
-    "fieldCurrency": "Валюта (числовой код ISO 4217, по умолчанию 051)",
-    "fieldLanguage": "Язык страницы оплаты (по умолчанию hy)"
-  },
   "namecheap": {
     "shortDescription": "Регистрируйте и управляйте доменами через реселлерский API Namecheap.",
     "fieldApiKey": "Ключ API",
-    "fieldClientIp": "IP клиента из белого списка"
+    "fieldClientIp": "IP клиента из белого списка",
+    "fieldApiUsername": "Имя пользователя API"
   },
   "nameam": {
     "shortDescription": "Регистрируйте и управляйте доменами .am через API регистратора Name.am.",

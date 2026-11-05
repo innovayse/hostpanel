@@ -20,6 +20,12 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const docsRoot = join(__dirname, '..')
 const distDir = join(docsRoot, '.vitepress', 'dist')
 
+/**
+ * URL base the site was built with, same rule as config.ts: leading and trailing slash,
+ * default /hostpanel/. Image paths in the built HTML start with it.
+ */
+const base = `/${(process.env.DOCS_BASE?.trim() || '/hostpanel/').replace(/^\/+|\/+$/g, '')}/`.replace(/^\/\/$/, '/')
+
 let failures = 0
 
 // ---------------------------------------------------------------------------
@@ -53,7 +59,7 @@ for (const htmlFile of collectHtml(distDir)) {
     // Skip external URLs and data URIs.
     if (src.startsWith('http') || src.startsWith('data:')) { continue }
     // Strip query/hash, strip leading slash.
-    const clean = src.split('?')[0].split('#')[0].replace(/^\/hostpanel\//, '')
+    const clean = src.split('?')[0].split('#')[0].replace(base.length > 1 ? new RegExp(`^${base}`) : /^\//, '')
     const abs = join(distDir, clean)
     try {
       statSync(abs)

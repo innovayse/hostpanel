@@ -71,6 +71,8 @@ export type PluginManifestRule = (typeof PluginManifestRule)[keyof typeof Plugin
 export const PluginErrorCode = {
   /** An upload is older than the installed version and was not forced. */
   DowngradeRefused: 'PLUGIN_DOWNGRADE_REFUSED',
+  /** The plugin registry is switched off on this server; the Browse tab is hidden. */
+  RegistryDisabled: 'PLUGIN_REGISTRY_DISABLED',
 } as const
 
 /** One of the {@link PluginErrorCode} values. */
@@ -105,6 +107,8 @@ export interface PluginListItemDto {
   category: string
   /** Hex colour for the plugin logo block (e.g. "#1a73e8"). */
   color: string
+  /** Address of the plugin's icon (GET /api/admin/plugins/{id}/icon), null when the plugin ships none. */
+  iconUrl: string | null
   /** Whether the DLL was successfully loaded at the last startup. */
   isLoaded: boolean
   /** Whether the plugin ships with the server build; a built-in plugin cannot be removed. */
@@ -149,4 +153,109 @@ export interface PluginSlotWidgetBindingDto {
 export interface SavePluginSlotWidgetProductsBody {
   /** Product ids to bind the widget to; empty clears the operator binding. */
   productIds: number[]
+}
+
+/** Closed set of registry categories; the strings are the API's enum names. */
+export const PluginCategory = {
+  /** Payment gateway. */
+  Payment: 'Payment',
+  /** Hosting and server provisioning through a hosting panel. */
+  Provisioning: 'Provisioning',
+  /** Domain registrar. */
+  Registrar: 'Registrar',
+  /** An app plugin that adds its own pages and routes. */
+  App: 'App',
+  /** Anything that fits no other category. */
+  Other: 'Other',
+} as const
+
+/** One of the {@link PluginCategory} values. */
+export type PluginCategory = (typeof PluginCategory)[keyof typeof PluginCategory]
+
+/** The registry filter's "every category" choice: the empty string, which the query leaves out. */
+export const PluginCategoryAll = '' as const
+
+/** What the category filter holds: one category, or {@link PluginCategoryAll}. */
+export type PluginCategoryFilter = PluginCategory | typeof PluginCategoryAll
+
+/** Closed set of prices a registry listing declares; the strings are the API's enum names. */
+export const PluginPricing = {
+  /** Free to install and use. */
+  Free: 'Free',
+  /** The publisher charges for it. */
+  Paid: 'Paid',
+  /** Offered by the publisher to chosen customers only. */
+  Private: 'Private',
+} as const
+
+/** One of the {@link PluginPricing} values. */
+export type PluginPricing = (typeof PluginPricing)[keyof typeof PluginPricing]
+
+/** Closed set of values of the `plugins.registry_trust` setting; the strings are the stored values. */
+export const PluginRegistryTrust = {
+  /** Only publishers the registry has verified may be installed. */
+  VerifiedOnly: 'VerifiedOnly',
+  /** Any publisher the registry lists may be installed. */
+  AnyRegistryPublisher: 'AnyRegistryPublisher',
+  /** Only packages signed with a key the operator trusts may be installed. */
+  OwnKeysOnly: 'OwnKeysOnly',
+} as const
+
+/** One of the {@link PluginRegistryTrust} values. */
+export type PluginRegistryTrust = (typeof PluginRegistryTrust)[keyof typeof PluginRegistryTrust]
+
+/** One plugin listed by the registry (GET /api/admin/plugins/registry). */
+export interface PluginRegistryItemDto {
+  /** Unique plugin identifier, the `id` field of plugin.json. */
+  id: string
+  /** Human-readable display name. */
+  name: string
+  /** Publisher name. */
+  author: string
+  /** Short description. */
+  description: string
+  /** Address of the plugin's icon, null when it has none. */
+  iconUrl: string | null
+  /** Registry category. */
+  category: PluginCategory
+  /** Newest version the registry offers. */
+  latestVersion: string
+  /** SDK version the newest version was built against. */
+  sdkVersion: string
+  /** Whether the registry has verified the publisher. */
+  verified: boolean
+  /** Whether the plugin is free or paid. */
+  pricing: PluginPricing
+  /** Whether this server has the plugin installed. */
+  installed: boolean
+  /** Installed version, null when the plugin is not installed. */
+  installedVersion: string | null
+  /** Whether the registry offers a newer version than the installed one. */
+  updateAvailable: boolean
+}
+
+/** One page of registry listings. */
+export interface PluginRegistryPageDto {
+  /** Listings on this page. */
+  items: PluginRegistryItemDto[]
+  /** Listings matching the filter across all pages. */
+  total: number
+  /** Listings per page, as the server pages them. */
+  pageSize: number
+}
+
+/** Filter of the registry browser: the query string parameters of GET /api/admin/plugins/registry. */
+export interface PluginRegistryQuery {
+  /** Search text; empty for no text filter. */
+  q: string
+  /** Category filter; empty for every category. */
+  category: PluginCategoryFilter
+  /** Page, starting at 1. */
+  page: number
+}
+
+/** Body of POST /api/admin/plugins/registry/{id}/install. */
+export interface InstallRegistryPluginBody {
+  /** Version to install. */
+  version: string
 }

@@ -1,7 +1,7 @@
 using System.Reflection;
 using System.Reflection.Emit;
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -55,6 +55,24 @@ internal static class PluginAssemblyFixtures
         il.Emit(OpCodes.Ldnull);
         il.Emit(OpCodes.Ret);
         type.DefineMethodOverride(handle, typeof(IPluginEndpoints).GetMethod(nameof(IPluginEndpoints.HandleAsync))!);
+        type.CreateType();
+
+        return Save(plugin);
+    }
+
+    /// <summary>
+    /// Builds an assembly with one public type that implements no SDK contract at all, so a manifest that names it as the
+    /// entry point of a plugin that declares a capability is declaring something the class does not do.
+    /// </summary>
+    /// <param name="assemblyName">The unique assembly name.</param>
+    /// <param name="typeName">The full name of the plugin type, as a manifest's <c>entryPoint</c> spells it.</param>
+    /// <returns>The raw bytes of the assembly file.</returns>
+    public static byte[] PlainPlugin(string assemblyName, string typeName)
+    {
+        var plugin = new PersistedAssemblyBuilder(new AssemblyName(assemblyName), typeof(object).Assembly);
+        var type = plugin.DefineDynamicModule(assemblyName).DefineType(
+            typeName, TypeAttributes.Public | TypeAttributes.Class | TypeAttributes.Sealed);
+        type.DefineDefaultConstructor(MethodAttributes.Public);
         type.CreateType();
 
         return Save(plugin);

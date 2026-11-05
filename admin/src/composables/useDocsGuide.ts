@@ -13,6 +13,7 @@ export const useDocsGuide = (): { guideUrl: ComputedRef<string | null> } => {
   const route = useRoute()
   const { docsUrl } = getRuntimeConfig()
 
+  /** The full guide address for the current route, or null when none applies. */
   const guideUrl = computed<string | null>(() => {
     if (!docsUrl) { return null }
     const path = DOCS_GUIDES[route.path]

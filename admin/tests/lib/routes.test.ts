@@ -73,7 +73,7 @@ describe('route builders', () => {
 
   it('builds the integration and report paths', () => {
     expect(integrationCategoryPath('payments')).toBe('/integrations/payments')
-    expect(integrationConfigurePath('stripe')).toBe('/integrations/stripe/configure')
+    expect(integrationConfigurePath('bank-transfer')).toBe('/integrations/bank-transfer/configure')
     expect(reportPagePath('tax')).toBe('/reports/tax')
   })
 })

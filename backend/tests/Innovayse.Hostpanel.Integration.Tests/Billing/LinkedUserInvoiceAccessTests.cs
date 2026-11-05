@@ -5,7 +5,7 @@ using Innovayse.Hostpanel.Domain.Clients.Enums;
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
 /// <summary>
-/// <c>GET /api/me/invoices</c>, <c>GET /api/me/invoices/{id}</c> and <c>GET /api/me/payment-methods</c> for
+/// <c>GET /api/me/invoices</c>, <c>GET /api/me/invoices/{id}</c> and <c>GET /api/me/stored-payment-methods</c> for
 /// the users of an account: the owner and a user linked with the invoices permission see the
 /// account's invoices; a user without the permission is refused; a user of another account gets an
 /// empty list and 404 for an id that is not theirs.
@@ -36,7 +36,7 @@ public sealed class LinkedUserInvoiceAccessTests(IntegrationTestFactory factory)
 
         var list = await user.GetAsync("/api/me/invoices");
         var read = await user.GetAsync($"/api/me/invoices/{invoiceId}");
-        var methods = await user.GetAsync("/api/me/payment-methods");
+        var methods = await user.GetAsync("/api/me/stored-payment-methods");
 
         list.StatusCode.Should().Be(HttpStatusCode.OK);
         (await ClientsTestSeeds.IdsOfAsync(list)).Should().Contain(invoiceId);
@@ -53,7 +53,7 @@ public sealed class LinkedUserInvoiceAccessTests(IntegrationTestFactory factory)
 
         var list = await user.GetAsync("/api/me/invoices");
         var read = await user.GetAsync($"/api/me/invoices/{invoiceId}");
-        var methods = await user.GetAsync("/api/me/payment-methods");
+        var methods = await user.GetAsync("/api/me/stored-payment-methods");
 
         foreach (var response in new[] { list, read, methods })
         {

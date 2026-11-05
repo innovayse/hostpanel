@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Manifest;
 
 /*
  * A page path arrives from a panel's address bar, so it is untrusted text. The manifest validator holds a page path to

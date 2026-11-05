@@ -35,7 +35,7 @@ const domainsApi = {
 const catalogApi = { checkDomain: vi.fn(), fetchProducts: vi.fn() }
 
 /** The mocked billing endpoints. */
-const billingApi = { fetchPaymentMethods: vi.fn(), fetchGatewayMethods: vi.fn() }
+const billingApi = { fetchGatewayMethods: vi.fn() }
 
 /** The mocked client endpoints. */
 const clientApi = { fetchContacts: vi.fn(), fetchMeOnce: vi.fn() }
@@ -156,11 +156,6 @@ describe('useDomainsStore', () => {
     expect(await store.placeRenewal('9', 1, 'gw')).toBe(DomainActionOutcome.Failed)
     expect(store.renewError).toBe('Refused by the registrar.')
     expect(store.renewSaving).toBe(false)
-  })
-
-  it('returns no payment methods when they cannot be read', async () => {
-    billingApi.fetchPaymentMethods.mockRejectedValue(refusal)
-    expect(await useDomainsStore().fetchPaymentMethods()).toEqual([])
   })
 
   it('reports a toggle outcome and clears its flag either way', async () => {
@@ -398,7 +393,7 @@ describe('useDomainsStore detail reads', () => {
   })
 
   it('keeps the gateways, and an empty list when they cannot be read', async () => {
-    billingApi.fetchGatewayMethods.mockResolvedValueOnce([{ module: 'stripe', displayName: 'Stripe' }]).mockRejectedValueOnce(refusal)
+    billingApi.fetchGatewayMethods.mockResolvedValueOnce([{ module: 'card_gateway', displayName: 'Card gateway' }]).mockRejectedValueOnce(refusal)
     const store = useDomainsStore()
 
     await store.loadPaymentMethods()

@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins.Identity;
+using Hostpanel.Sdk.Plugins.Identity;
 
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 

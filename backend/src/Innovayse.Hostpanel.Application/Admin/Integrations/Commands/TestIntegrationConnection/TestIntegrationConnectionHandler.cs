@@ -4,6 +4,8 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Payment;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
@@ -16,13 +18,6 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Commands.TestIntegr
 /// </summary>
 public sealed class TestIntegrationConnectionHandler
 {
-    /// <summary>
-    /// Plugin id / slug of the hosted payment gateway. The provider assembly already exposes this as
-    /// the provider's plugin id constant, but Application cannot reference a provider
-    /// assembly, so it is repeated here as a single source shared by both usages below.
-    /// </summary>
-    private const string HostedGatewaySlug = IntegrationSlugs.Inecobank;
-
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
@@ -86,19 +81,43 @@ public sealed class TestIntegrationConnectionHandler
     /// An <see cref="IntegrationTestResultDto"/> with <c>Success = true</c> when fully configured
     /// (or successfully probed), or <c>Success = false</c> listing what is missing or reporting the
     /// probe's outcome, or <c>INTEGRATION_NOT_FOUND</c> when the slug names neither a built-in
-    /// integration nor a loaded plugin, or <c>INTEGRATION_NOT_TESTABLE</c> for a plugin without <c>IPluginStatus</c>.
+    /// integration nor a loaded plugin, or <c>INTEGRATION_NOT_TESTABLE</c> for a loaded plugin that implements neither
+    /// <c>IPluginStatus</c> nor the payment contract (or is a payment plugin that is not enabled).
     /// </returns>
     public async Task<Result<IntegrationTestResultDto>> HandleAsync(
         TestIntegrationConnectionCommand command, CancellationToken ct)
     {
         var testedAt = _clock.UtcNow;
 
-        if (!IntegrationCatalogue.TryGetTestable(command.Slug, out var meta))
+        IntegrationTestResultDto result;
+        if (IntegrationCatalogue.TryGetTestable(command.Slug, out var meta))
         {
-            return await TestPluginAsync(command.Slug, ct);
+            result = await RunTestAsync(command.Slug, meta.RequiredFields, testedAt, ct);
         }
+        else
+        {
+            // Not a built-in: a plugin that implements IPluginStatus is asked through it first (#855). A payment
+            // plugin without it is probed through the gateway status call, whatever vendor it talks to.
+            var manifest = _plugins.GetLoadedManifests().FirstOrDefault(m => m.Id == command.Slug);
+            var status = manifest is null ? null : await TestPluginStatusAsync(manifest, ct);
+            if (status is not null)
+            {
+                result = status;
+            }
+            else
+            {
+                // No enabled payment plugin under this id: unknown to the host when no plugin is loaded at all,
+                // otherwise a loaded plugin that offers no way to test it.
+                var plugin = await _pluginResolver.ResolveAsync(command.Slug, ct);
+                if (plugin is null)
+                {
+                    return Result<IntegrationTestResultDto>.FailureCode(
+                        manifest is null ? HostpanelErrorCodes.INTEGRATION_NOT_FOUND : HostpanelErrorCodes.INTEGRATION_NOT_TESTABLE);
+                }
 
-        var result = await RunTestAsync(command.Slug, meta.RequiredFields, testedAt, ct);
+                result = await ProbePaymentPluginAsync(plugin, testedAt, ct);
+            }
+        }
 
         // A tested hosting-panel credential invalidates the cached live server-info result
         // the read side serves for 5 minutes, whatever the probe's own outcome.
@@ -114,30 +133,23 @@ public sealed class TestIntegrationConnectionHandler
     /// Tests a plugin integration by asking its <c>IPluginStatus</c> now (#855). The answer also replaces the cached
     /// state its card shows, so the page and the test never disagree.
     /// </summary>
-    /// <param name="slug">The plugin id.</param>
+    /// <param name="manifest">The loaded plugin's manifest.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The outcome in the request's language; <c>INTEGRATION_NOT_FOUND</c> when no plugin with that id is loaded,
-    /// <c>INTEGRATION_NOT_TESTABLE</c> when it does not implement <c>IPluginStatus</c>.
+    /// The outcome in the request's language, or <see langword="null"/> when the plugin does not implement
+    /// <c>IPluginStatus</c> and so has to be tested some other way.
     /// </returns>
-    private async Task<Result<IntegrationTestResultDto>> TestPluginAsync(string slug, CancellationToken ct)
+    private async Task<IntegrationTestResultDto?> TestPluginStatusAsync(PluginManifest manifest, CancellationToken ct)
     {
-        var manifest = _plugins.GetLoadedManifests().FirstOrDefault(m => m.Id == slug);
-        if (manifest is null)
-        {
-            return Result<IntegrationTestResultDto>.FailureCode(HostpanelErrorCodes.INTEGRATION_NOT_FOUND);
-        }
-
         var connection = await _connections.RefreshAsync(manifest, ct);
         if (connection is null)
         {
-            return Result<IntegrationTestResultDto>.FailureCode(HostpanelErrorCodes.INTEGRATION_NOT_TESTABLE);
+            return null;
         }
 
         // Degraded still works, with reduced function, so it passes; the message says which.
         var works = connection.State is IntegrationConnectionState.Connected or IntegrationConnectionState.Degraded;
-        return Result<IntegrationTestResultDto>.Success(
-            new IntegrationTestResultDto(works, connection.Message, connection.CheckedAt));
+        return new IntegrationTestResultDto(works, connection.Message, connection.CheckedAt);
     }
 
     /// <summary>Runs the field-completeness check and, where supported, the live probe.</summary>
@@ -171,14 +183,6 @@ public sealed class TestIntegrationConnectionHandler
                 Success: false,
                 Message: $"Missing required fields: {missingList}.",
                 TestedAt: testedAt);
-        }
-
-        // Live probe for hosted-gateway plugins: a status query with a bogus order id
-        // distinguishes valid credentials ("unregistered orderId" -> Declined result)
-        // from rejected ones (access-denied error -> exception).
-        if (slug == HostedGatewaySlug)
-        {
-            return await ProbeHostedGatewayAsync(testedAt, ct);
         }
 
         // Built-in integrations with a live probe: without it a "Connection OK" only meant
@@ -229,21 +233,17 @@ public sealed class TestIntegrationConnectionHandler
         }
     }
 
-    /// <summary>Runs the hosted payment gateway's live probe.</summary>
+    /// <summary>
+    /// Runs a payment plugin's live probe: a status query with a bogus order id tells valid
+    /// credentials (an unknown order comes back as a result) from rejected ones (an exception).
+    /// </summary>
+    /// <param name="plugin">The enabled payment plugin under test.</param>
     /// <param name="testedAt">The moment the test was run.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The probe's outcome, with no gateway detail on the wire.</returns>
-    private async Task<IntegrationTestResultDto> ProbeHostedGatewayAsync(DateTimeOffset testedAt, CancellationToken ct)
+    private async Task<IntegrationTestResultDto> ProbePaymentPluginAsync(
+        IPaymentPlugin plugin, DateTimeOffset testedAt, CancellationToken ct)
     {
-        var plugin = await _pluginResolver.ResolveAsync(HostedGatewaySlug, ct);
-        if (plugin is null)
-        {
-            return new IntegrationTestResultDto(
-                Success: false,
-                Message: "Integration is disabled or the plugin is not loaded.",
-                TestedAt: testedAt);
-        }
-
         try
         {
             await plugin.GetStatusAsync("connection-test-probe", ct);
@@ -262,7 +262,7 @@ public sealed class TestIntegrationConnectionHandler
         {
             // The gateway's own message never reaches the caller (rules on upstream detail); it is
             // logged here for whoever has to chase the failure up.
-            _logger.LogWarning(ex, "Hosted gateway connection test probe failed.");
+            _logger.LogWarning(ex, "Payment plugin connection test probe failed.");
             return new IntegrationTestResultDto(
                 Success: false,
                 Message: "Gateway test failed. See the server log for detail.",

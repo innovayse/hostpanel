@@ -115,10 +115,6 @@ export interface TransactionFormValues {
 
 /** Closed set of payment methods a ledger transaction or domain can name, as the API stores them. */
 export const PaymentMethod = {
-  /** Paid through Stripe. */
-  Stripe: 'Stripe',
-  /** Paid through PayPal. */
-  PayPal: 'PayPal',
   /** Paid by credit or debit card. */
   Card: 'Credit/Debit Card',
   /** Paid by bank transfer. */

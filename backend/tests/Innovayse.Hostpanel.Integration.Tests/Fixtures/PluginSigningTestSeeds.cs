@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using Hostpanel.Sdk.Packaging.Signing;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 

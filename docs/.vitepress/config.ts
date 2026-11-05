@@ -1,10 +1,12 @@
 /**
  * VitePress site configuration for the Hostpanel documentation website.
- * Served by GitHub Pages under /hostpanel/; the `base` option must match
- * the repository name so that all asset and page links resolve correctly.
+ * The site is served under a configurable URL path. The GitHub Pages project
+ * path /hostpanel/ is only the default; set `DOCS_BASE` and `DOCS_SITE_URL`
+ * (see below) to publish it anywhere else, for example at the root of a
+ * custom domain.
  *
- * Before the first deploy, switch the GitHub Pages source to "GitHub Actions"
- * in Settings → Pages → Build and deployment.
+ * For the default GitHub Pages deploy, switch the Pages source to "GitHub
+ * Actions" in Settings → Pages → Build and deployment before the first deploy.
  */
 import { defineConfig } from 'vitepress'
 import { existsSync, readFileSync } from 'node:fs'
@@ -48,6 +50,22 @@ const apiReferenceSidebar: GeneratedSidebarItem[] = [
 const DEMO_ADMIN_URL = process.env.DEMO_ADMIN_URL ?? ''
 const DEMO_CLIENT_URL = process.env.DEMO_CLIENT_URL ?? ''
 
+/**
+ * URL path the site is served under, always with a leading and a trailing slash.
+ * Set `DOCS_BASE` when the site is published somewhere other than the default
+ * GitHub Pages project path (for example `/` on a custom domain). The value is
+ * trimmed and normalized, so `docs`, ` /docs ` and `/docs/` all give `/docs/`;
+ * an empty or blank value falls back to the default.
+ */
+const base: string = `/${(process.env.DOCS_BASE?.trim() || '/hostpanel/').replace(/^\/+|\/+$/g, '')}/`.replace(/^\/\/$/, '/')
+
+/**
+ * Public origin plus base path of the published site, without a trailing slash.
+ * Used for absolute URLs such as the social preview image. Set `DOCS_SITE_URL`
+ * to match `DOCS_BASE` when publishing elsewhere.
+ */
+const siteUrl: string = (process.env.DOCS_SITE_URL?.trim() || 'https://innovayse.github.io/hostpanel').replace(/\/+$/, '')
+
 export default defineConfig({
   title: 'Hostpanel',
   description: 'Open source web hosting control panel',
@@ -64,21 +82,22 @@ export default defineConfig({
   metaChunk: true,
 
   /**
-   * Must match the GitHub repository name so that GitHub Pages serves the site
-   * at https://<org>.github.io/hostpanel/ with all assets resolving correctly.
+   * Defaults to the GitHub Pages project path (/hostpanel/), where the site is
+   * served at https://<org>.github.io/hostpanel/. Override with the `DOCS_BASE`
+   * environment variable to publish under another path.
    */
-  base: '/hostpanel/',
+  base,
 
   head: [
-    ['link', { rel: 'icon', href: '/hostpanel/mark.svg', type: 'image/svg+xml' }],
+    ['link', { rel: 'icon', href: `${base}mark.svg`, type: 'image/svg+xml' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { property: 'og:title', content: 'Hostpanel' }],
     ['meta', { property: 'og:description', content: 'Open source web hosting control panel' }],
-    ['meta', { property: 'og:image', content: 'https://innovayse.github.io/hostpanel/social-preview.png' }],
+    ['meta', { property: 'og:image', content: `${siteUrl}/social-preview.png` }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
     ['meta', { name: 'twitter:title', content: 'Hostpanel' }],
     ['meta', { name: 'twitter:description', content: 'Open source web hosting control panel' }],
-    ['meta', { name: 'twitter:image', content: 'https://innovayse.github.io/hostpanel/social-preview.png' }],
+    ['meta', { name: 'twitter:image', content: `${siteUrl}/social-preview.png` }],
   ],
 
   themeConfig: {
@@ -205,6 +224,7 @@ export default defineConfig({
             { text: 'Add a new language', link: '/developers/add-language' },
             { text: 'Integrations', link: '/developers/integrations' },
             { text: 'Write a plugin', link: '/developers/write-a-plugin' },
+            { text: 'Publishing a plugin', link: '/developers/publishing-a-plugin' },
           ],
         },
         {

@@ -337,7 +337,6 @@
     "firstPaymentAmount": "Сумма первого платежа",
     "recurringAmount": "Регулярная сумма",
     "terminationDate": "Дата завершения",
-    "stripePaypal": "Stripe, PayPal...",
     "promotionCode": "Промокод",
     "subscriptionId": "ID подписки",
     "autoManagement": "Автоматическое управление",

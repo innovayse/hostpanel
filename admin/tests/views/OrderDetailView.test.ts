@@ -18,7 +18,7 @@ const pendingOrder = {
   clientId: 5,
   clientName: 'Ada Lovelace',
   status: 'Pending',
-  paymentMethod: 'PayPal',
+  paymentMethod: 'Example Gateway',
   total: 30,
   currency: 'EUR',
   invoiceId: 41,

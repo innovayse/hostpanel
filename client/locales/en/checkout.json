@@ -5,7 +5,6 @@
     "yourOrder": "Your Order",
     "account": "Account",
     "paymentMethod": "Payment Method",
-    "cardDetails": "Card details",
     "loggedInAs": "Logged in as",
     "notYou": "Not you? Switch account",
     "guestNotice": "You are checking out as a guest",
@@ -46,7 +45,6 @@
     "identifyPrompt": "How should we identify you?",
     "choosePayment": "Select your preferred payment way",
     "gatewayKinds": {
-      "card": "Pay by card",
       "bankTransfer": "Pay by bank transfer"
     },
     "needHelp": "Need Help?",
@@ -58,11 +56,6 @@
       "email": "you{'@'}example.com",
       "password": "••••••••"
     },
-    "totalChangedConfirm": "The total changed from {shown} to {charged}. Pay the new total?",
-    "card": {
-      "notInitialized": "The card form is not ready yet. Please wait a moment and try again.",
-      "failed": "The card payment could not be completed.",
-      "noIntent": "The payment could not be confirmed."
-    }
+    "totalChangedConfirm": "The total changed from {shown} to {charged}. Pay the new total?"
   }
 }

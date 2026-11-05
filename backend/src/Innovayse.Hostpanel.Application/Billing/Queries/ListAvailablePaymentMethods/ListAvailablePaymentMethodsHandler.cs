@@ -6,14 +6,14 @@ using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Models;
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Enums;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Queries.ListAvailablePaymentMethods;
 
 /// <summary>
-/// Lists the payment gateways a payer can actually use: the built-in methods that are both
-/// configured and switched on by the admin, plus every loaded payment plugin whose integration
+/// Lists the payment gateways a payer can actually use: the built-in methods that are
+/// switched on by the admin, plus every loaded payment plugin whose integration
 /// is enabled and fully configured, and whose currency is the one this payer is billed in.
 /// Nothing is listed that would fail when the payer picks it, and <c>PlaceOrderHandler</c>
 /// refuses any module this list does not contain, so listing and ordering can never disagree.
@@ -37,9 +37,6 @@ public sealed class ListAvailablePaymentMethodsHandler
     /// <summary>The module's data context, for the configured currencies.</summary>
     private readonly IHostpanelDbContext _context;
 
-    /// <summary>Card payment gateway, asked whether the deployment carries a key at all.</summary>
-    private readonly ICardPaymentGateway _cardGateway;
-
     /// <summary>
     /// The one rule for which currency the caller is billed in: their client's, else the base.
     /// </summary>
@@ -52,21 +49,18 @@ public sealed class ListAvailablePaymentMethodsHandler
     /// <param name="plugins">Plugin registry for loaded plugin manifests.</param>
     /// <param name="pluginResolver">Payment plugin resolver.</param>
     /// <param name="context">The module's data context, for the configured currencies.</param>
-    /// <param name="cardGateway">Card payment gateway.</param>
     /// <param name="payerCurrency">Resolves the currency the caller is billed in.</param>
     /// <param name="bus">The message bus, for the admin's on/off switch on each built-in method.</param>
     public ListAvailablePaymentMethodsHandler(
         IPluginRegistry plugins,
         IPaymentPluginResolver pluginResolver,
         IHostpanelDbContext context,
-        ICardPaymentGateway cardGateway,
         IPayerCurrencyResolver payerCurrency,
         IMessageBus bus)
     {
         _plugins = plugins;
         _pluginResolver = pluginResolver;
         _context = context;
-        _cardGateway = cardGateway;
         _payerCurrency = payerCurrency;
         _bus = bus;
     }
@@ -91,15 +85,6 @@ public sealed class ListAvailablePaymentMethodsHandler
         if (payerCurrencyNumeric is null)
         {
             return Result.Success<IReadOnlyList<AvailablePaymentMethodDto>>(methods);
-        }
-
-        // Configured is not enough on its own: an operator who switched the card gateway off on the admin
-        // integrations page still had it offered at checkout as long as the deployment carried
-        // a secret key. Both gates apply, the way the plugin resolver applies them.
-        if (_cardGateway.IsConfigured
-            && await IsIntegrationEnabledAsync(BuiltInPaymentModules.StripeIntegrationSlug, ct))
-        {
-            methods.Add(new(BuiltInPaymentModules.Stripe, "Credit/Debit Card"));
         }
 
         // Bank transfer has no credentials to be "configured" with, so the admin integrations

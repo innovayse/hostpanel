@@ -48,6 +48,10 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(x => x.GatewayConcludedAt);
         builder.Property(x => x.GatewayStalledNotifiedAt);
         builder.Property(x => x.GatewayUnreferencedNotifiedAt);
+
+        // The idempotency key of a gateway refund that was claimed and not yet recorded, and the amount it was for.
+        builder.Property(x => x.PendingRefundId);
+        builder.Property(x => x.PendingRefundAmount).HasColumnType("numeric(18,4)");
         builder.Property(x => x.TaxRate).HasColumnType("numeric(5,2)").IsRequired();
         builder.Property(x => x.Tax).HasColumnType("numeric(18,4)").IsRequired();
         builder.Property(x => x.SubTotal).HasColumnType("numeric(18,4)").IsRequired();

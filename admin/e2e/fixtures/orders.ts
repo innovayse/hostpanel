@@ -15,7 +15,7 @@ export const pendingOrder: OrderListItem = {
   clientId: 7,
   clientName: 'Ada Lovelace',
   status: OrderStatus.Pending,
-  paymentMethod: 'PayPal',
+  paymentMethod: 'Example Gateway',
   total: 12.5,
   currency: 'USD',
   invoiceId: null,

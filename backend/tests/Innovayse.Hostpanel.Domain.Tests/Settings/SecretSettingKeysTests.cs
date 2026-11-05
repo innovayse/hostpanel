@@ -13,17 +13,17 @@ public class SecretSettingKeysTests
     /// <summary>Every credential field of the payment gateways, registrars, panels, SMTP and plugins is secret.</summary>
     /// <param name="key">The full setting key.</param>
     [Theory]
-    [InlineData("integration:stripe:secret_key")]
-    [InlineData("integration:stripe:webhook_secret")]
-    [InlineData("integration:paypal:client_secret")]
+    [InlineData("integration:gateway:secret_key")]
+    [InlineData("integration:gateway:webhook_secret")]
+    [InlineData("integration:example-gateway:client_secret")]
     [InlineData("integration:namecheap:api_key")]
     [InlineData("integration:nameam:password")]
     [InlineData("integration:cpanel:api_token")]
     [InlineData("integration:smtp:password")]
     [InlineData("integration:maxmind:license_key")]
     [InlineData("integration:cwp7:access_hash")]
-    [InlineData("integration:inecobank:password")]
-    [InlineData("INTEGRATION:Stripe:SECRET_KEY")]
+    [InlineData("integration:example-gateway:password")]
+    [InlineData("INTEGRATION:Gateway:SECRET_KEY")]
     [InlineData(SecretSettingKeys.SetupToken)]
     public void IsSecret_CredentialKeys_AreSecret(string key)
     {
@@ -33,9 +33,9 @@ public class SecretSettingKeysTests
     /// <summary>Identifiers, hosts, flags and public widget tokens stay readable.</summary>
     /// <param name="key">The full setting key.</param>
     [Theory]
-    [InlineData("integration:stripe:publishable_key")]
-    [InlineData("integration:stripe:is_enabled")]
-    [InlineData("integration:paypal:client_id")]
+    [InlineData("integration:gateway:publishable_key")]
+    [InlineData("integration:gateway:is_enabled")]
+    [InlineData("integration:example-gateway:client_id")]
     [InlineData("integration:nameam:email")]
     [InlineData("integration:cpanel:host")]
     [InlineData("integration:cwp7:hostname")]

@@ -1,6 +1,7 @@
 namespace Innovayse.Hostpanel.Application.Migration.Importers.Records;
 
 /// <summary>One client service as the source plugin describes it.</summary>
+/// <param name="ExternalId">The service's own id in the source; together with the client it is the duplicate check. Null from a source that sends none, and the importer then matches by domain or username.</param>
 /// <param name="ClientEmail">Email of the owning client in the source; the importer finds the local client by it and skips the record when none matches.</param>
 /// <param name="ProductName">The product's name in the source; the importer matches the local product by it.</param>
 /// <param name="BillingCycle">The source's billing cycle word (monthly, annually and so on), mapped to a local cycle.</param>
@@ -20,4 +21,5 @@ internal sealed record ServiceRecord(
     string? Domain, string? Username, DateTimeOffset? NextDueDate,
     DateTimeOffset? TerminatedAt, string? SubscriptionId, string? AdminNotes,
     decimal RecurringAmount, decimal FirstPaymentAmount, string? PaymentMethod,
-    DateTimeOffset? RegisteredAt);
+    DateTimeOffset? RegisteredAt,
+    string? ExternalId = null);

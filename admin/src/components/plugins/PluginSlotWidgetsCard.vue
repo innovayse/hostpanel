@@ -12,8 +12,10 @@ import { useI18n } from 'vue-i18n'
 import PluginSlotWidgetRow from '@/components/plugins/PluginSlotWidgetRow.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
+import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import type { PluginSlotWidgetBindingDto } from '@/types/plugin'
 import type { Product } from '@/types/product'
@@ -26,6 +28,10 @@ const props = defineProps<{
   pluginId: string
   /** Display name of the plugin, shown in the heading. */
   pluginName: string
+  /** Address of the plugin's icon; null when it has none. */
+  pluginIconUrl?: string | null
+  /** Hex colour of the plugin's fallback block. */
+  pluginColor?: string
   /** The slot widgets with their current binding. */
   widgets: PluginSlotWidgetBindingDto[]
   /** Every product the operator can choose from. */
@@ -69,7 +75,10 @@ const saveWidget = async (widget: PluginSlotWidgetBindingDto, productIds: number
   <UiCard padding="md" :data-testid="`plugin-slot-widgets-${pluginId}`">
     <UiStack gap="md">
       <UiStack gap="sm">
-        <UiHeading :level="2" variant="section">{{ t('plugins.pluginSlotWidgets.title', { plugin: pluginName }) }}</UiHeading>
+        <UiStack direction="row" align="center" gap="sm">
+          <UiPluginAvatar :name="pluginName" :icon-url="pluginIconUrl" :color="pluginColor" :size="UiSize.Sm" />
+          <UiHeading :level="2" variant="section">{{ t('plugins.pluginSlotWidgets.title', { plugin: pluginName }) }}</UiHeading>
+        </UiStack>
         <UiText :tone="UiTextTone.Secondary" :size="UiTextSize.Md">{{ t('plugins.pluginSlotWidgets.description') }}</UiText>
       </UiStack>
       <PluginSlotWidgetRow

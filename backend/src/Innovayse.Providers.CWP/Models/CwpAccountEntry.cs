@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Innovayse.SDK.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 
 namespace Innovayse.Providers.CWP.Models;
 
@@ -19,7 +19,9 @@ internal sealed class CwpAccountEntry
     [JsonPropertyName("suspended")]
     public JsonElement Suspended { get; init; }
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>Gets a value indicating whether the account is currently suspended; an absent flag reads as active.</summary>
     [JsonIgnore]
     public bool IsSuspended => HostingPanelApiReader.IsFlagSet(Suspended);
+#pragma warning restore CS0618
 }

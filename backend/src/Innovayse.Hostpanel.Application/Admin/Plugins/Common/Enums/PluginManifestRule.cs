@@ -104,4 +104,18 @@ public enum PluginManifestRule
     /// not a boolean in a form's <c>submit</c>.
     /// </summary>
     ViewFollowUpInvalid = 26,
+    /// <summary>A callback route in <c>api.callbacks</c> declares a permission or streams; a callback has no signed-in caller and one reply.</summary>
+    CallbackInvalid = 27,
+
+    /// <summary>The manifest names an <c>icon</c> file the package does not hold.</summary>
+    IconMissing = 28,
+
+    /// <summary>
+    /// The manifest <c>icon</c> is not a package-relative <c>.svg</c> or <c>.png</c> path, is over the size limit, is not a
+    /// real PNG, or is an SVG that is not well-formed or carries script, event handlers or external references.
+    /// </summary>
+    IconInvalid = 29,
+
+    /// <summary>The manifest declares the <c>endpoints</c> capability, but the entry type does not implement <c>IPluginEndpoints</c>.</summary>
+    EndpointsNotImplemented = 30,
 }

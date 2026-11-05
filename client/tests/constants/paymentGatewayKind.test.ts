@@ -12,11 +12,6 @@ import { PaymentGatewayKind } from '~/types/paymentgatewaykind'
 import { PaymentModule } from '~/types/paymentmodule'
 
 describe('paymentGatewayKind', () => {
-  it('maps the card gateways to the card kind', () => {
-    expect(paymentGatewayKind(PaymentModule.Stripe)).toBe(PaymentGatewayKind.Card)
-    expect(paymentGatewayKind(PaymentModule.Inecobank)).toBe(PaymentGatewayKind.Card)
-  })
-
   it('maps the manual transfer to the bank transfer kind', () => {
     expect(paymentGatewayKind(PaymentModule.BankTransfer)).toBe(PaymentGatewayKind.BankTransfer)
   })
@@ -30,6 +25,6 @@ describe('paymentGatewayKind', () => {
       expect(PAYMENT_GATEWAY_KIND_ICON[kind]).toBeTruthy()
     }
     expect(PAYMENT_GATEWAY_KIND_DESCRIPTION_KEY[PaymentGatewayKind.Other]).toBeNull()
-    expect(PAYMENT_GATEWAY_KIND_DESCRIPTION_KEY[PaymentGatewayKind.Card]).toBe('checkout.gatewayKinds.card')
+    expect(PAYMENT_GATEWAY_KIND_DESCRIPTION_KEY[PaymentGatewayKind.BankTransfer]).toBe('checkout.gatewayKinds.bankTransfer')
   })
 })

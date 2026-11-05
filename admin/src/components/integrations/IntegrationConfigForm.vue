@@ -27,6 +27,7 @@ import UiImage from '@/components/ui/UiImage.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
+import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -226,7 +227,13 @@ const handleSave = (): void => {
     <UiStack gap="lg">
       <!-- Card header: logo + name + enabled switch -->
       <UiStack direction="row" align="center" gap="md">
-        <UiStack align="center" justify="center" class="h-10 w-10 shrink-0 rounded-xl p-2" :class="meta?.color ?? 'bg-text-muted'">
+        <UiPluginAvatar
+          v-if="integration.isPlugin"
+          :name="integration.name"
+          :icon-url="integration.iconUrl"
+          data-testid="integration-plugin-avatar"
+        />
+        <UiStack v-else align="center" justify="center" class="h-10 w-10 shrink-0 rounded-xl p-2" :class="meta?.color ?? 'bg-text-muted'">
           <UiImage
             v-if="meta?.logo"
             :src="meta.logo"

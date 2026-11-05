@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 
@@ -20,6 +20,10 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// The last known connection state of a plugin that implements <c>IPluginStatus</c> and is switched on, cached for
 /// <c>PluginApi:StatusCacheSeconds</c>; <see langword="null"/> for a built-in integration and for any other plugin.
 /// </param>
+/// <param name="IconUrl">
+/// Path of the admin icon endpoint (<c>/api/admin/plugins/{id}/icon</c>) for a plugin entry that ships an icon;
+/// <see langword="null"/> for a built-in integration and for a plugin without an icon.
+/// </param>
 public sealed record IntegrationListItemDto(
     string Slug,
     string Name,
@@ -28,4 +32,5 @@ public sealed record IntegrationListItemDto(
     bool IsConfigured,
     bool IsPlugin = false,
     PluginType? PluginType = null,
-    IntegrationConnectionDto? Connection = null);
+    IntegrationConnectionDto? Connection = null,
+    string? IconUrl = null);

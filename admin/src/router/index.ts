@@ -130,6 +130,7 @@ const router = createRouter({
             { path: 'offline-cc', component: lazy('views/OfflineCCView.vue') },
             { path: 'disputes', component: lazy('views/DisputesView.vue') },
             { path: 'gateway-log', component: lazy('views/GatewayLogView.vue') },
+            { path: 'payment-claims', component: lazy('views/PaymentClaimsView.vue') },
             { path: 'transactions', component: lazy('views/TransactionsListView.vue') },
             { path: 'add-transaction', component: lazy('views/AddTransactionView.vue') },
             { path: 'transactions/:id/edit', component: lazy('views/EditTransactionView.vue') },

@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Common;
 
@@ -12,10 +12,15 @@ namespace Innovayse.Hostpanel.Application.Plugins.Common;
 /// <param name="Body">The request body stream, read by the use case only after the caller is authorised and never past the configured cap.</param>
 /// <param name="ContentType">The <c>Content-Type</c> header, or <see langword="null"/> when there is none.</param>
 /// <param name="ContentLength">The declared <c>Content-Length</c>, or <see langword="null"/> when the body is chunked or absent.</param>
+/// <param name="Headers">
+/// The request headers by name, exactly as received, and only on a public callback, where a gateway signs them along with the
+/// body; <see langword="null"/> on every other door, whose headers carry the caller's own credentials and are never passed on.
+/// </param>
 public sealed record PluginHttpInput(
     PluginRouteMethod Method,
     string Path,
     IReadOnlyDictionary<string, IReadOnlyList<string>> Query,
     Stream Body,
     string? ContentType,
-    long? ContentLength);
+    long? ContentLength,
+    IReadOnlyDictionary<string, IReadOnlyList<string>>? Headers = null);

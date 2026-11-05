@@ -1,6 +1,6 @@
 using Innovayse.Hostpanel.Application.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Common;
 

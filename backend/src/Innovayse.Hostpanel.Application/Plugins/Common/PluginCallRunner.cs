@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
 using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
@@ -8,9 +9,9 @@ using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -148,6 +149,10 @@ public sealed class PluginCallRunner
     /// <param name="userRef">The plugin's opaque reference of the signed-in user.</param>
     /// <param name="input">The request, as the controller read it.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="recordActivity">
+    /// Whether an unsafe call writes the audit line. <see langword="false"/> for a public callback: it has no signed-in caller to
+    /// stamp, and a line per unauthenticated request would let anyone grow the log; the plugin records what it verified.
+    /// </param>
     /// <returns>
     /// The plugin's reply, which on a streaming route may be a stream (not enumerated here: the response enumerates it
     /// with the caller's abort token, see <see cref="PluginEventStream"/>); <c>PLUGIN_REQUEST_TOO_LARGE</c> when the body is over the cap; <c>PLUGIN_FAILED</c> when the plugin threw or broke
@@ -157,7 +162,12 @@ public sealed class PluginCallRunner
     /// </returns>
     /// <exception cref="ArgumentException"><paramref name="binding"/> names another plugin than <paramref name="target"/>.</exception>
     public async Task<Result<PluginReplyDto>> RunAsync(
-        PluginTarget target, PluginCallBinding binding, string userRef, PluginHttpInput input, CancellationToken ct)
+        PluginTarget target,
+        PluginCallBinding binding,
+        string userRef,
+        PluginHttpInput input,
+        CancellationToken ct,
+        bool recordActivity = true)
     {
         ArgumentNullException.ThrowIfNull(target);
         ArgumentNullException.ThrowIfNull(binding);
@@ -180,7 +190,7 @@ public sealed class PluginCallRunner
 
         // Recorded before the plugin runs: the line says the call was made, so it exists even if the plugin then
         // fails or the process stops. The caller (id, name, address) is stamped by the logger; the body is never logged.
-        if (route.Method != PluginRouteMethod.Get)
+        if (recordActivity && route.Method != PluginRouteMethod.Get)
         {
             await _activityLogger.RecordAsync(new ActivityLogEntry(binding.ClientId, Describe(target)), ct);
             await _context.SaveChangesAsync(ct);
@@ -272,6 +282,7 @@ public sealed class PluginCallRunner
                 Query = input.Query,
                 Body = body,
                 ContentType = body.Length == 0 ? null : input.ContentType,
+                Headers = input.Headers ?? new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase),
             };
 
             var limit = _options.Value.CallTimeoutFor(null);
@@ -284,7 +295,7 @@ public sealed class PluginCallRunner
                 return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_TIMEOUT);
             }
 
-            return Map(pluginId, route, reply, limit, owned);
+            return Map(pluginId, target.Area, route, reply, limit, owned);
         }
         catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
         {
@@ -376,12 +387,13 @@ public sealed class PluginCallRunner
 
     /// <summary>Turns what the plugin answered into the host's reply.</summary>
     /// <param name="pluginId">The plugin that answered.</param>
+    /// <param name="area">The area the call came through; only a callback may answer with a raw body.</param>
     /// <param name="route">The route that was called; only a route that declares <c>streaming</c> may answer with a stream.</param>
     /// <param name="reply">The plugin's reply; a plugin that returns none broke its contract.</param>
     /// <param name="limit">The call's time limit; on a stream it is the longest silence between events.</param>
     /// <param name="owner">The scope a streaming route's call owns, handed to an accepted stream; otherwise <see langword="null"/>.</param>
     /// <returns>The reply, or the failure for a reply the host cannot forward.</returns>
-    private Result<PluginReplyDto> Map(string pluginId, PluginRoute route, PluginReply? reply, TimeSpan limit, IPluginCallScope? owner)
+    private Result<PluginReplyDto> Map(string pluginId, PluginArea area, PluginRoute route, PluginReply? reply, TimeSpan limit, IPluginCallScope? owner)
     {
         // The SDK factories refuse a status outside the contract, but the host does not rely on that: a reply built another
         // way (a reflected or subclassed type, a plugin compiled against a different SDK) is checked again here, because
@@ -402,10 +414,47 @@ public sealed class PluginCallRunner
                 return MapProblem(pluginId, reply);
             case PluginReplyKind.Stream:
                 return MapStream(pluginId, route, reply, limit, owner);
+            case PluginReplyKind.Raw:
+                return MapRaw(pluginId, area, reply);
             default:
                 _logger.LogError("Plugin {PluginId} returned {Reply}, which is not a reply.", pluginId, reply?.Kind.ToString() ?? "no reply");
                 return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_FAILED);
         }
+    }
+
+    /// <summary>The media types a raw callback reply may carry; anything else, markup and script included, is refused.</summary>
+    private static readonly HashSet<string> AllowedRawMediaTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "text/plain",
+        "application/json",
+        "application/xml",
+        "application/x-www-form-urlencoded",
+    };
+
+    /// <summary>
+    /// Turns a plugin's raw reply into the host's. A raw body carries a media type the plugin chose, so it is accepted only
+    /// on a callback, whose answer goes to an outside system; on a panel route it could serve markup from the API's own origin
+    /// to a signed-in browser. The media type is parsed again here and must be one of <see cref="AllowedRawMediaTypes"/>
+    /// (a gateway acknowledgement is plain text, JSON, XML or a form, never markup or script), and the body is held to the request body cap.
+    /// </summary>
+    /// <param name="pluginId">The plugin that answered.</param>
+    /// <param name="area">The area the call came through.</param>
+    /// <param name="reply">The plugin's raw reply.</param>
+    /// <returns>The reply carrying the bytes and the media type, or <c>PLUGIN_FAILED</c> when the area, the media type or the size is not allowed.</returns>
+    private Result<PluginReplyDto> MapRaw(string pluginId, PluginArea area, PluginReply reply)
+    {
+        if (area != PluginArea.Callback
+            || string.IsNullOrWhiteSpace(reply.ContentType)
+            || !MediaTypeHeaderValue.TryParse(reply.ContentType, out var mediaType)
+            || mediaType.MediaType is null
+            || !AllowedRawMediaTypes.Contains(mediaType.MediaType)
+            || reply.RawBody.Length > _options.Value.MaxBodyBytes)
+        {
+            _logger.LogError("Plugin {PluginId} returned a raw reply that is not allowed here: not a callback, a media type outside the allowed list or a body over the cap.", pluginId);
+            return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_FAILED);
+        }
+
+        return Result<PluginReplyDto>.Success(new PluginReplyDto(reply.Status, null, null, null, null, reply.RawBody, reply.ContentType));
     }
 
     /// <summary>Turns a plugin's stream into the host's, when the route declared one.</summary>
@@ -440,7 +489,7 @@ public sealed class PluginCallRunner
         return Result<PluginReplyDto>.Success(new PluginReplyDto(reply.Status, null, null, null, stream));
     }
 
-    /// <summary>Whether a reply carries a status its kind may have: 200 to 203 with a body, 204 with none, 400 to 599 except 401 and 407 for a problem.</summary>
+    /// <summary>Whether a reply carries a status its kind may have: 200 to 203 with a body, 204 with none, 400 to 599 except 401 and 407 for a problem, 200 to 599 except 401 and 407 for a raw body.</summary>
     /// <param name="reply">The plugin's reply.</param>
     /// <returns><see langword="true"/> when the status is one the contract allows for the reply's kind; a stream carries no status of its own.</returns>
     private static bool HasContractStatus(PluginReply reply)
@@ -450,6 +499,7 @@ public sealed class PluginCallRunner
             PluginReplyKind.Json => reply.Status is >= 200 and <= 203 && reply.Body is not null,
             PluginReplyKind.NoContent => reply.Status == 204,
             PluginReplyKind.Problem => reply.Status is >= 400 and <= 599 and not (401 or 407),
+            PluginReplyKind.Raw => reply.Status is >= 200 and <= 599 and not (401 or 407),
 
             // A stream (checked against its route by MapStream) and a kind this host does not know carry no status rule here. An unknown
             // kind must not pass as valid: Map's default arm answers it PLUGIN_FAILED, so this method does not decide it.

@@ -20,6 +20,7 @@ import {
   networkIssuePriorityTone,
   networkIssueStatusTone,
   orderItemStatusTone,
+  paymentClaimStatusTone,
   orderStatusTone,
   quoteStageTone,
   reportStatusTone,
@@ -32,6 +33,7 @@ import {
 import { ClientStatus } from '@/types/client'
 import { ContactType } from '@/types/contact'
 import { DomainStatus } from '@/types/domain'
+import { InvoicePaymentClaimStatus } from '@/types/invoicepaymentclaim'
 import { GatewayLogResult } from '@/types/gatewaylog'
 import { FulfilmentStatus, InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
 import { MigrationLogAction, MigrationStatus } from '@/types/migration'
@@ -131,6 +133,13 @@ describe('billing tones', () => {
     expect(fulfilmentStatusTone(FulfilmentStatus.Done)).toBe(UiTone.Success)
     expect(fulfilmentStatusTone(FulfilmentStatus.Failed)).toBe(UiTone.Danger)
     expect(fulfilmentStatusTone('Mystery')).toBe(UiTone.Neutral)
+  })
+
+  it('maps every payment claim status to a tone', () => {
+    expect(paymentClaimStatusTone(InvoicePaymentClaimStatus.Held)).toBe(UiTone.Warning)
+    expect(paymentClaimStatusTone(InvoicePaymentClaimStatus.Settled)).toBe(UiTone.Success)
+    expect(paymentClaimStatusTone(InvoicePaymentClaimStatus.Declined)).toBe(UiTone.Danger)
+    expect(paymentClaimStatusTone('Mystery')).toBe(UiTone.Neutral)
   })
 
   it('maps gateway log outcomes to tones', () => {

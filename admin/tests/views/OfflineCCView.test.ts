@@ -85,7 +85,7 @@ describe('OfflineCCView', () => {
     expect(posts).toHaveLength(1)
     expect(JSON.parse(String((posts[0]?.[1] as RequestInit | undefined)?.body))).toEqual({
       date: new Date('2026-10-20').toISOString(),
-      gateway: PaymentGateway.Stripe,
+      gateway: PaymentGateway.BankTransfer,
       transactionId: 'ref-1',
       amount: 25,
       fees: 0,

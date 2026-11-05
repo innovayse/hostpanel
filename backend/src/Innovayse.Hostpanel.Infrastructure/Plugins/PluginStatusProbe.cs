@@ -3,7 +3,7 @@ using Innovayse.Hostpanel.Application.Admin.Integrations.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
-using Innovayse.SDK.Plugins.Lifecycle;
+using Hostpanel.Sdk.Plugins.Lifecycle;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

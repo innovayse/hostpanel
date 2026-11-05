@@ -10,12 +10,11 @@ import { isHostedGatewayModule } from '~/utils/paymentModules'
 
 describe('isHostedGatewayModule', () => {
   it('reads a plugin-backed module as a hosted gateway', () => {
-    expect(isHostedGatewayModule(PaymentModule.Inecobank)).toBe(true)
+    expect(isHostedGatewayModule('hosted_gateway')).toBe(true)
     expect(isHostedGatewayModule('otherbank')).toBe(true)
   })
 
-  it('does not read the built-in methods as hosted gateways', () => {
-    expect(isHostedGatewayModule(PaymentModule.Stripe)).toBe(false)
+  it('does not read the built-in bank transfer as a hosted gateway', () => {
     expect(isHostedGatewayModule(PaymentModule.BankTransfer)).toBe(false)
   })
 

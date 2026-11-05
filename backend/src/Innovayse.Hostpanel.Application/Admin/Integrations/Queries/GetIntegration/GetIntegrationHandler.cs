@@ -1,9 +1,11 @@
 using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
+using Hostpanel.Sdk.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Application.Admin.Integrations.Queries.GetIntegration;
 
@@ -71,13 +73,19 @@ public sealed class GetIntegrationHandler
                 : new IntegrationFieldValueDto(value ?? string.Empty, IsSecret: false, hasValue);
         }
 
-        // A built-in slug the test knows keeps its own test; a plugin can be tested only through IPluginStatus.
+        // A built-in integration wins over a plugin of the same slug, as it does in the list.
+        var isPlugin = !IntegrationCatalogue.All.ContainsKey(query.Slug) && _plugins.IsLoaded(query.Slug);
+        var iconUrl = isPlugin && _plugins.GetIcon(query.Slug) is not null ? PluginIconPaths.For(query.Slug) : null;
+
+        // A built-in slug the test knows keeps its own test. A plugin can be tested through IPluginStatus, or, for a
+        // payment plugin, through the gateway status probe that Test Connection falls back to.
         var isBuiltIn = IntegrationCatalogue.TryGetTestable(query.Slug, out _);
         var manifest = isBuiltIn ? null : _plugins.GetLoadedManifests().FirstOrDefault(m => m.Id == query.Slug);
-        var canTest = isBuiltIn || (manifest is not null && _connections.Supports(manifest.Id));
+        var canTest = isBuiltIn
+            || (manifest is not null && (_connections.Supports(manifest.Id) || manifest.Type == PluginType.Payment));
         var connection = manifest is not null && isEnabled ? await _connections.ReadAsync(manifest, ct) : null;
 
         return Result<IntegrationDetailDto>.Success(new IntegrationDetailDto(
-            query.Slug, definition.Name, isEnabled, config, definition.Fields, canTest, connection));
+            query.Slug, definition.Name, isEnabled, config, definition.Fields, canTest, connection, isPlugin, iconUrl));
     }
 }

@@ -53,4 +53,7 @@ public enum MigrationSkipReason
 
     /// <summary>The record carries a currency that is not a three-letter ISO 4217 code, so its amounts cannot be placed in any currency.</summary>
     CurrencyInvalid = 16,
+
+    /// <summary>The record carries a source id longer than the column that keeps it, so it cannot be kept or matched on a retry.</summary>
+    ExternalIdInvalid = 17,
 }

@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Domain.Ssh.Enums;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
@@ -86,7 +85,7 @@ public sealed class SshKey : BaseEntity, IAggregateRoot
     /// </param>
     /// <returns>The new key.</returns>
     /// <exception cref="ArgumentException">
-    /// A text is blank, or <paramref name="issuedToPluginId"/> is set and breaks the plugin id rule.
+    /// A text is blank, or <paramref name="issuedToPluginId"/> is set and blank.
     /// </exception>
     public static SshKey Create(
         int clientServiceId, int serverId, string accountUsername,
@@ -96,9 +95,11 @@ public sealed class SshKey : BaseEntity, IAggregateRoot
         EnsureText(label, nameof(label));
         EnsureText(publicKey, nameof(publicKey));
         EnsureText(fingerprint, nameof(fingerprint));
-        if (issuedToPluginId is not null && !PluginIdentifier.IsValid(issuedToPluginId))
+        // Only blank is refused here: the plugin id rule (shape, length, reserved ids) belongs to the plugin packaging package,
+        // which the domain does not reference, and the id reaching this point is a loaded plugin's, already checked at load.
+        if (issuedToPluginId is not null)
         {
-            throw new ArgumentException("The plugin id breaks the plugin id rule.", nameof(issuedToPluginId));
+            ArgumentException.ThrowIfNullOrWhiteSpace(issuedToPluginId);
         }
 
         return new SshKey

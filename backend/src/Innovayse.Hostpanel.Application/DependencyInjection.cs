@@ -43,6 +43,7 @@ public static class DependencyInjection
 
         // Asks the enabled fulfilment plugins to cap a refund before any money moves.
         services.AddScoped<RefundAdviser>();
+        services.AddScoped<GatewayPaymentCanceller>();
 
         // The connection state of plugin integrations (IPluginStatus), cached and worded for the Integrations page.
         services.AddScoped<PluginConnectionReader>();

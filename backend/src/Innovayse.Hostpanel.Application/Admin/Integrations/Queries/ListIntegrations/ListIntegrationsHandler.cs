@@ -88,7 +88,8 @@ public sealed class ListIntegrationsHandler
                 IsConfigured: isConfigured,
                 IsPlugin: true,
                 PluginType: plugin.Type,
-                Connection: connection));
+                Connection: connection,
+                IconUrl: plugin.IconUrl));
         }
 
         return Result<IReadOnlyList<IntegrationListItemDto>>.Success(result);

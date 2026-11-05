@@ -12,7 +12,6 @@ calls Nitro makes while rendering are invisible to `page.route`.
 | `domain-search.spec.ts` | search a name; available can be added, taken cannot |
 | `contact-form.spec.ts` | fill and submit; success shown and the backend received the enquiry |
 | `sign-in.spec.ts` | valid credentials open the dashboard; a wrong password is refused |
-| `invoice-pay.spec.ts` | dashboard -> invoice -> pay page -> pay with the saved card |
 | `theme-toggle.spec.ts` | light/dark toggle swaps palette and logo and persists across reload |
 | `language-switch.spec.ts` | en/ru/hy contact form: `html lang` and the `X-Language` the backend received |
 | `contact-field-errors.spec.ts` | a refused contact email is marked invalid with the backend sentence |
@@ -33,10 +32,11 @@ calls Nitro makes while rendering are invisible to `page.route`.
 | `order-placement.spec.ts` | checkout by bank transfer: order body, invoice, refused order |
 | `session-expiry.spec.ts` | 401 on a client-side step -> sign-in form -> signing in again |
 | `account.spec.ts` | edit and save the profile; unreadable-profile state |
-| `account-payment-methods.spec.ts` | saved card: list, set default, confirmed removal |
 | `account-two-factor.spec.ts` | enrol (secret, QR, code), refused code, disable |
 | `account-team.spec.ts` | owner vs member, confirmed removal, invitation, refusal |
 | `account-contacts.spec.ts` | contact add, nameless refusal, edit, confirmed removal |
+| `stored-payment-methods.spec.ts` | saved methods: list and default badge, consent gate, redirect start, completion on return, make default, confirmed withdrawal |
+| `invoice-pay.spec.ts` | pay page: the gateway button starts the payment and leaves; no gateway shows the unavailable state, no button and no notice |
 | `storefront-templates.spec.ts` | home in aurora/nova/classic; seeded cart -> checkout summary in each |
 
 Not covered: a card order (needs the payment provider's element), the domain WHOIS-contact panel,
@@ -63,9 +63,9 @@ Browsers are installed once with `npx playwright install chromium`.
 `GET /__e2e/requests` on the stub lists the requests it received (method, path, body and the
 `X-Language` it carried), so a spec can prove a submission reached the backend in the right
 language. The other control endpoints are scriptable per test and cleared by `POST /__e2e/reset`
-(also the log and everything a spec changed: tickets, profile, services, the domain, payment methods, contacts, the team, the two-factor flag): `POST /__e2e/script` makes one route answer a
+(also the log and everything a spec changed: tickets, profile, services, the domain, saved payment methods, the hosted gateway, contacts, the team, the two-factor flag): `POST /__e2e/script` makes one route answer a
 refusal (`scriptStub` in `support/helpers.ts`), `POST /__e2e/settings` overrides a public portal
-setting such as `portal.template` (`setPortalSetting`), `POST /__e2e/demo` turns demo mode on
+setting such as `portal.template` (`setPortalSetting`), `POST /__e2e/gateways` adds the hosted card gateway to the gateway list (`enableHostedGateway`; only bank transfer is offered by default), `POST /__e2e/demo` turns demo mode on
 (`enableDemoMode`; it is off by default), `POST /__e2e/plugin-slots` lists fake plugin widgets per
 slot (`setPluginSlots`; every slot is empty by default).
 

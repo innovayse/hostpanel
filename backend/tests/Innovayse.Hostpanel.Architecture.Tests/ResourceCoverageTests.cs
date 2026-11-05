@@ -34,6 +34,10 @@ public sealed partial class ResourceCoverageTests
         // A plugin did not answer within the call time limit: the host is a gateway to code it does not own (#792), so the
         // answer is 504, the status for an upstream that timed out, which 502 (it failed) does not say.
         [HostpanelErrorCodes.PLUGIN_TIMEOUT] = 504,
+
+        // The plugin registry did not answer in time: the host is a gateway to a service it does not own, so the answer is
+        // 504, the status for an upstream that timed out, which 502 (it failed) does not say.
+        [HostpanelErrorCodes.PLUGIN_REGISTRY_TIMED_OUT] = 504,
     };
 
     /// <summary>The codes the registry declares.</summary>

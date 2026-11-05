@@ -337,7 +337,6 @@
     "firstPaymentAmount": "Առաջին վճարման գումար",
     "recurringAmount": "Կրկնվող գումար",
     "terminationDate": "Դադարեցման ամսաթիվ",
-    "stripePaypal": "Stripe, PayPal...",
     "promotionCode": "Պրոմոկոդ",
     "subscriptionId": "Բաժանորդագրության ID",
     "autoManagement": "Ավտոմատ կառավարում",

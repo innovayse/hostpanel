@@ -212,7 +212,6 @@ internal sealed class DemoPeopleSeeder
             PaymentMethodNames.Card, "Demo Client", "Long-standing customer; prefers invoices by email and pays by card.");
         client.UpdateNotifications(true, true, true, true, true, false);
         client.UpdateSettings(true, false, false, false, true, true, true);
-        client.SetCardGatewayCustomerId($"demo-customer-{client.Id}");
 
         client.AddContact(new ContactDetails(
             "Nina", "Avery", "Brightleaf Studio LLC", $"nina.avery@{FillerMailDomain}", "+1 555 0111", ContactType.Technical,

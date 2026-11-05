@@ -28,7 +28,7 @@ Browser
 | **Message queue** | Carries commands and queries between the API process and its background workers. |
 | **Cache** | Shared cache used for rate limiting, session state and short-lived data. |
 
-The plugin SDK (`Innovayse.SDK`) is MIT-licensed and lives as a git submodule at `backend/src/Innovayse.SDK`. It is the only part of the codebase that third-party plugin authors consume.
+The plugin SDK (`Hostpanel.Sdk`) is MIT-licensed and lives as a git submodule at `backend/src/Hostpanel.Sdk`. It is the only part of the codebase that third-party plugin authors consume.
 
 ## The layers
 
@@ -45,7 +45,7 @@ Dependencies point inward. Outer layers may reference inner ones; inner layers n
 
 ## The plugin SDK and bundled plugins
 
-The SDK lives at `backend/src/Innovayse.SDK` as a git submodule (hosted separately at `github.com/innovayse/hostpanel-sdk`). Clone the repository with `--recurse-submodules`, or run `git submodule update --init` after a plain clone.
+The SDK lives at `backend/src/Hostpanel.Sdk` as a git submodule (hosted separately at `github.com/innovayse/hostpanel-sdk`). Clone the repository with `--recurse-submodules`, or run `git submodule update --init` after a plain clone.
 
 Bundled plugins ship with the server image and live under `backend/src/Innovayse.Providers.*`. They are the reference implementations for plugin authors.
 

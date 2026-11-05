@@ -1,7 +1,7 @@
 using System.Globalization;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Payment;
-using Innovayse.SDK.Plugins.StoredCredentials;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Payment;
+using Hostpanel.Sdk.Plugins.StoredCredentials;
 
 namespace Innovayse.Hostpanel.Infrastructure.Demo;
 

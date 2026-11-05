@@ -19,15 +19,15 @@ describe('IntegrationsView', () => {
   it('shows only the integrations of the route category, with the active count', async () => {
     stubRoutes({
       'GET /api/admin/integrations': () => json([
-        integrationDto({ slug: 'stripe', name: 'Stripe', isEnabled: true }),
-        integrationDto({ slug: 'paypal', name: 'PayPal', isEnabled: false }),
+        integrationDto({ slug: 'bank-transfer', name: 'Bank Transfer', isEnabled: true }),
+        integrationDto({ slug: 'bank-transfer', name: 'Bank Transfer', isEnabled: false }),
         integrationDto({ slug: 'smtp', name: 'SMTP', category: 'email' }),
       ]),
     })
     const wrapper = await mountView(IntegrationsView, { path: '/integrations/payments', pattern: '/integrations/:category?' })
 
-    expect(wrapper.find('[data-testid="integration-card-stripe"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="integration-card-paypal"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="integration-card-bank-transfer"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="integration-card-bank-transfer"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="integration-card-smtp"]').exists()).toBe(false)
     expect(wrapper.text()).toContain('Integrations: 2')
     expect(wrapper.text()).toContain('1 active')
@@ -43,7 +43,7 @@ describe('IntegrationsView', () => {
     const wrapper = await mountView(IntegrationsView, { path: '/integrations/fulfilment', pattern: '/integrations/:category?' })
 
     expect(wrapper.find('[data-testid="integration-card-deliver"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="integration-card-stripe"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="integration-card-bank-transfer"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="integration-type-deliver"]').text()).toBe('Fulfilment')
     expect(wrapper.text()).toContain('Integrations: 1')
   })
@@ -52,7 +52,7 @@ describe('IntegrationsView', () => {
     stubRoutes({ 'GET /api/admin/integrations': () => json([integrationDto()]) })
     const wrapper = await mountView(IntegrationsView, { path: '/integrations', pattern: '/integrations/:category?' })
 
-    expect(wrapper.find('[data-testid="integration-card-stripe"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="integration-card-bank-transfer"]').exists()).toBe(true)
   })
 
   it('shows the empty state for a category with nothing in it', async () => {

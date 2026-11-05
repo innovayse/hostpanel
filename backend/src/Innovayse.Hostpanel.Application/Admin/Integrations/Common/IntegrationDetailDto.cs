@@ -14,12 +14,17 @@ namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 /// Ordered list of field metadata used by the admin panel to render the config form.
 /// </param>
 /// <param name="CanTestConnection">
-/// Whether Test Connection can check this integration: a built-in one the test knows, or a plugin that implements
-/// <c>IPluginStatus</c>. The panel hides the button otherwise.
+/// Whether Test Connection can check this integration: a built-in one the test knows, a payment plugin (probed through
+/// its gateway status call) or a plugin that implements <c>IPluginStatus</c>. The panel hides the button otherwise.
 /// </param>
 /// <param name="Connection">
 /// The last known connection state of a plugin that implements <c>IPluginStatus</c>; <see langword="null"/> for a
 /// built-in integration and any other plugin.
+/// </param>
+/// <param name="IsPlugin">True when the integration comes from an installed plugin (not built-in).</param>
+/// <param name="IconUrl">
+/// Path of the admin icon endpoint for a plugin integration that ships an icon; <see langword="null"/> for a built-in
+/// integration and for a plugin without an icon.
 /// </param>
 public sealed record IntegrationDetailDto(
     string Slug,
@@ -28,4 +33,6 @@ public sealed record IntegrationDetailDto(
     IReadOnlyDictionary<string, IntegrationFieldValueDto> Config,
     IReadOnlyList<FieldDefinitionDto> FieldDefinitions,
     bool CanTestConnection,
-    IntegrationConnectionDto? Connection);
+    IntegrationConnectionDto? Connection,
+    bool IsPlugin = false,
+    string? IconUrl = null);

@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
+using PluginSignatureRule = Hostpanel.Sdk.Packaging.Enums.PluginSignatureRule;
 
 namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 

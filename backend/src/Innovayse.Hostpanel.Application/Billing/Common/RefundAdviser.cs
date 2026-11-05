@@ -4,7 +4,7 @@ using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.Settings;
-using Innovayse.SDK.Plugins.Fulfilment;
+using Hostpanel.Sdk.Plugins.Fulfilment;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

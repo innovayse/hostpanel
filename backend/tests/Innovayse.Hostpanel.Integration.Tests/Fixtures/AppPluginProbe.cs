@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
-using Innovayse.SDK.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Endpoints;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 

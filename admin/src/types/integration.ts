@@ -37,10 +37,7 @@ export type IntegrationCategoryName = (typeof IntegrationCategoryName)[keyof typ
 
 /** Closed set of integration slugs. */
 export const IntegrationSlug = {
-  Stripe: 'stripe',
-  Paypal: 'paypal',
   BankTransfer: 'bank-transfer',
-  Inecobank: 'inecobank',
   Namecheap: 'namecheap',
   Nameam: 'nameam',
   Resellerclub: 'resellerclub',
@@ -72,6 +69,8 @@ export interface IntegrationDto {
   isPlugin: boolean
   /** The type a plugin's manifest declares; null for a built-in integration. */
   pluginType: PluginType | null
+  /** Address of the plugin's icon; null for a built-in integration or a plugin without one. */
+  iconUrl: string | null
   /**
    * Last known connection state of a switched-on plugin that implements the status capability; null for a built-in
    * integration and every other plugin.
@@ -146,6 +145,10 @@ export interface IntegrationDetailDto {
   name: string
   /** Whether this integration is currently enabled. */
   isEnabled: boolean
+  /** True if this integration comes from an installed plugin (not built-in). */
+  isPlugin?: boolean
+  /** Address of the plugin's icon; null or absent for a built-in integration or a plugin without one. */
+  iconUrl?: string | null
   /** Field key to its stored state; a secret field answers only whether it is set. */
   config: Record<string, IntegrationFieldValue>
   /**

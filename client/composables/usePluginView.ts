@@ -290,6 +290,7 @@ const PLUGIN_ACTION_MESSAGE_KEY: InjectionKey<PluginActionMessageOutlet> = Symbo
  * @returns The last sentence an action below reported; null until one has.
  */
 export const providePluginActionMessages = (): Ref<PluginActionMessage | null> => {
+  /** The last sentence an action below reported; null until one has. */
   const message = ref<PluginActionMessage | null>(null)
   provide(PLUGIN_ACTION_MESSAGE_KEY, (next: PluginActionMessage) => {
     message.value = next

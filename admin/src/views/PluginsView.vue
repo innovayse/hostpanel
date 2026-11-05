@@ -11,12 +11,17 @@
  * second danger prompt. The "Allow unsigned plugins" switch with its warning sits
  * under the uploader and saves through the settings store, like every other settings row. The slot widgets section
  * lists the widgets plugins add to pages, each with a product multi select the operator saves after install.
+ * A second tab, Browse, lists the plugin registry (search, category, pages) with the registry trust card
+ * and installs or updates from it; the tab is not offered when the server answers that the registry is
+ * switched off. A plugin with a newer registry version shows an update badge in the installed list.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePluginsStore } from '@/stores/plugins'
 import { useSettingsStore } from '@/stores/settings'
 import PluginCard from '@/components/plugins/PluginCard.vue'
+import PluginRegistryBrowser from '@/components/plugins/PluginRegistryBrowser.vue'
+import PluginRegistryTrustCard from '@/components/plugins/PluginRegistryTrustCard.vue'
 import PluginKeptData from '@/components/plugins/PluginKeptData.vue'
 import PluginSigningCard from '@/components/plugins/PluginSigningCard.vue'
 import PluginSlotWidgetsCard from '@/components/plugins/PluginSlotWidgetsCard.vue'
@@ -30,10 +35,13 @@ import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
+import UiTabs from '@/components/ui/UiTabs.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import type { SettingSaveResult } from '@/types/setting'
+import type { PluginCategoryFilter } from '@/types/plugin'
+import type { UiTabItem } from '@/utils/ui/tabs'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -180,11 +188,95 @@ const saveSetting = async (id: number, value: string): Promise<SettingSaveResult
   return { saved, error: saved ? null : settingsStore.actionError }
 }
 
+/** Closed set of the page's tabs; the strings are the tab values. */
+const PluginsTab = {
+  /** The installed plugins, the uploader and the settings. */
+  Installed: 'installed',
+  /** The registry browser. */
+  Browse: 'browse',
+} as const
+
+/** One of the {@link PluginsTab} values. */
+type PluginsTab = (typeof PluginsTab)[keyof typeof PluginsTab]
+
+/** The tab on show. */
+const tab = ref<PluginsTab>(PluginsTab.Installed)
+
+/**
+ * Switches tab from the strip's event; a value that is no tab is ignored.
+ *
+ * @param value - The value the strip reported.
+ */
+const selectTab = (value: string): void => {
+  const next = Object.values(PluginsTab).find(known => known === value)
+  if (next !== undefined) {
+    tab.value = next
+  }
+}
+
+/** The tab strip: Browse is offered only while the registry is switched on. */
+const tabs = computed<UiTabItem[]>(() => [
+  { value: PluginsTab.Installed, label: t('plugins.plugins.tabInstalled'), testid: 'plugins-tab-installed' },
+  ...(store.registryDisabled
+    ? []
+    : [{ value: PluginsTab.Browse, label: t('plugins.plugins.tabBrowse'), testid: 'plugins-tab-browse' }]),
+])
+
+/**
+ * Installs or updates a plugin from the registry and shows the outcome.
+ *
+ * @param id - Plugin id as listed by the registry.
+ * @param version - Version to install.
+ */
+const handleRegistryInstall = async (id: string, version: string): Promise<void> => {
+  feedback.clear()
+  const ok = await store.installFromRegistry(id, version)
+  if (!ok) {
+    feedback.show(store.registryInstallError ?? t('errors.noAnswer'), true)
+  } else if (store.stagedVersion !== null) {
+    feedback.show(t('plugins.plugins.pluginStaged', { version: store.stagedVersion }), false)
+  } else {
+    feedback.show(t('plugins.plugins.registryInstalled'), false)
+  }
+}
+
+/**
+ * Applies a new search text to the registry list.
+ *
+ * @param q - The search text.
+ */
+const handleRegistryQuery = (q: string): void => {
+  void store.setRegistryFilter({ q })
+}
+
+/**
+ * Applies a new category to the registry list.
+ *
+ * @param category - The category, empty for every category.
+ */
+const handleRegistryCategory = (category: PluginCategoryFilter): void => {
+  void store.setRegistryFilter({ category })
+}
+
+/**
+ * Moves the registry list to a page.
+ *
+ * @param page - The page, starting at 1.
+ */
+const handleRegistryPage = (page: number): void => {
+  void store.setRegistryFilter({ page })
+}
+
 /** Plugins that declare at least one slot widget; the others have nothing to bind. */
 const pluginsWithWidgets = computed(() => store.plugins.filter(plugin => (store.slotWidgets[plugin.id]?.length ?? 0) > 0))
 
-/** Loads the installed plugins, the settings the signing switch reads, and the widgets with the products to bind. */
+/**
+ * Loads the installed plugins, the settings the signing switch reads, the widgets with the products to bind,
+ * and the registry (its first page decides whether the Browse tab exists; its updates feed the badges).
+ */
 onMounted(() => Promise.all([
+  store.fetchRegistry(),
+  store.fetchRegistryUpdates(),
   // The widgets are listed per installed plugin, so they wait for the plugin list.
   store.fetchAll().then(() => store.fetchSlotWidgets()),
   settingsStore.fetchSettings(),
@@ -203,80 +295,115 @@ onMounted(() => Promise.all([
     <!-- Restart banner -->
     <RestartBanner v-if="store.requiresRestart" :restarting="restarting" @restart="handleRestart" />
 
-    <!-- Upload -->
-    <PluginUploader @upload="handleUpload" />
-
-    <!-- Signature policy -->
-    <UiErrorState
-      v-if="settingsStore.error"
-      :message="settingsStore.error"
-      :loading="settingsStore.loading"
-      testid="plugin-signing-error"
-      @retry="settingsStore.fetchSettings()"
+    <UiTabs
+      v-if="!store.registryDisabled"
+      :model-value="tab"
+      :items="tabs"
+      data-testid="plugins-tabs"
+      @update:model-value="selectTab"
     />
-    <PluginSigningCard v-else :settings="settingsStore.settings" :save="saveSetting" />
-
-    <!-- Slot widgets and the products they are bound to -->
-    <UiErrorState
-      v-if="store.slotWidgetsError"
-      :message="store.slotWidgetsError"
-      testid="plugin-slot-widgets-error"
-      @retry="store.fetchSlotWidgets()"
-    />
-    <template v-else>
-      <PluginSlotWidgetsCard
-        v-for="plugin in pluginsWithWidgets"
-        :key="plugin.id"
-        :plugin-id="plugin.id"
-        :plugin-name="plugin.name"
-        :widgets="store.slotWidgets[plugin.id] ?? []"
-        :products="store.productOptions"
-        :save="(widget, productIds) => store.saveSlotWidgetProducts(plugin.id, widget, productIds)"
-        :error="store.bindingError"
-      />
-    </template>
 
     <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="plugins-feedback" />
 
-    <!-- Removed plugins whose data is kept -->
-    <PluginKeptData
-      v-if="store.keptDataIds.length > 0"
-      :ids="store.keptDataIds"
-      :purging-id="purgingId"
-      @purge="askPurge"
-    />
-
-    <!-- Error -->
-    <UiErrorState
-      v-if="store.error"
-      :message="store.error"
-      :loading="store.loading"
-      testid="plugins-error"
-      @retry="store.fetchAll()"
-    />
-
-    <!-- Loading -->
-    <UiSkeleton v-else-if="store.loading && store.installed.length === 0" :lines="3" data-testid="plugins-loading" />
-
-    <!-- Empty state -->
-    <UiEmptyState
-      v-else-if="!store.loading && store.installed.length === 0"
-      :title="t('plugins.plugins.noPluginsInstalledYet')"
-      :description="`${t('plugins.plugins.uploadA')} ${t('plugins.plugins.zip')} ${t('plugins.plugins.fileAboveToGetStarted')}`"
-      data-testid="plugins-empty"
-    />
-
-    <!-- Plugin list -->
-    <UiStack v-else gap="sm" data-testid="plugins-list">
-      <UiHeading :level="2" variant="section">{{ t('plugins.plugins.installedPlugins') }}</UiHeading>
-      <PluginCard
-        v-for="plugin in store.installed"
-        :key="plugin.id"
-        :plugin="plugin"
-        :removing="removingId === plugin.id"
-        @remove="askRemove"
+    <!-- Browse -->
+    <template v-if="tab === PluginsTab.Browse && !store.registryDisabled">
+      <PluginRegistryTrustCard :settings="settingsStore.settings" :save="saveSetting" />
+      <PluginRegistryBrowser
+        :items="store.registryItems"
+        :total="store.registryTotal"
+        :page-size="store.registryPageSize"
+        :page="store.registryQuery.page"
+        :query="store.registryQuery.q"
+        :category="store.registryQuery.category"
+        :loading="store.registryLoading"
+        :error="store.registryError"
+        :installing-id="store.registryInstallingId"
+        @update:query="handleRegistryQuery"
+        @update:category="handleRegistryCategory"
+        @update:page="handleRegistryPage"
+        @install="handleRegistryInstall"
+        @retry="store.fetchRegistry()"
       />
-    </UiStack>
+    </template>
+
+    <!-- Installed -->
+    <template v-else>
+      <!-- Upload -->
+      <PluginUploader @upload="handleUpload" />
+
+      <!-- Signature policy -->
+      <UiErrorState
+        v-if="settingsStore.error"
+        :message="settingsStore.error"
+        :loading="settingsStore.loading"
+        testid="plugin-signing-error"
+        @retry="settingsStore.fetchSettings()"
+      />
+      <PluginSigningCard v-else :settings="settingsStore.settings" :save="saveSetting" />
+
+      <!-- Slot widgets and the products they are bound to -->
+      <UiErrorState
+        v-if="store.slotWidgetsError"
+        :message="store.slotWidgetsError"
+        testid="plugin-slot-widgets-error"
+        @retry="store.fetchSlotWidgets()"
+      />
+      <template v-else>
+        <PluginSlotWidgetsCard
+          v-for="plugin in pluginsWithWidgets"
+          :key="plugin.id"
+          :plugin-id="plugin.id"
+          :plugin-name="plugin.name"
+          :plugin-icon-url="plugin.iconUrl"
+          :plugin-color="plugin.color"
+          :widgets="store.slotWidgets[plugin.id] ?? []"
+          :products="store.productOptions"
+          :save="(widget, productIds) => store.saveSlotWidgetProducts(plugin.id, widget, productIds)"
+          :error="store.bindingError"
+        />
+      </template>
+
+      <!-- Removed plugins whose data is kept -->
+      <PluginKeptData
+        v-if="store.keptDataIds.length > 0"
+        :ids="store.keptDataIds"
+        :purging-id="purgingId"
+        @purge="askPurge"
+      />
+
+      <!-- Error -->
+      <UiErrorState
+        v-if="store.error"
+        :message="store.error"
+        :loading="store.loading"
+        testid="plugins-error"
+        @retry="store.fetchAll()"
+      />
+
+      <!-- Loading -->
+      <UiSkeleton v-else-if="store.loading && store.installed.length === 0" :lines="3" data-testid="plugins-loading" />
+
+      <!-- Empty state -->
+      <UiEmptyState
+        v-else-if="!store.loading && store.installed.length === 0"
+        :title="t('plugins.plugins.noPluginsInstalledYet')"
+        :description="`${t('plugins.plugins.uploadA')} ${t('plugins.plugins.zip')} ${t('plugins.plugins.fileAboveToGetStarted')}`"
+        data-testid="plugins-empty"
+      />
+
+      <!-- Plugin list -->
+      <UiStack v-else gap="sm" data-testid="plugins-list">
+        <UiHeading :level="2" variant="section">{{ t('plugins.plugins.installedPlugins') }}</UiHeading>
+        <PluginCard
+          v-for="plugin in store.installed"
+          :key="plugin.id"
+          :plugin="plugin"
+          :removing="removingId === plugin.id"
+          :update-version="store.updateVersions[plugin.id] ?? null"
+          @remove="askRemove"
+        />
+      </UiStack>
+    </template>
 
     <UiDialog
       :open="confirmingId !== null"

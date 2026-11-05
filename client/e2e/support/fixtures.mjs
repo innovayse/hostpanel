@@ -208,7 +208,7 @@ export const CLIENT = {
   address: { street: null, address2: null, city: null, state: null, postCode: null, country: 'US' },
   language: null,
   currency: 'USD',
-  paymentMethod: 'stripe',
+  paymentMethod: 'bank_transfer',
   notifications: {
     general: true,
     invoice: true,
@@ -256,17 +256,6 @@ export const INVOICE = {
   paymentMethod: null,
   items: [{ id: 1, description: 'E2E Starter - monthly', unitPrice: 5, quantity: 1, amount: 5 }],
   transactions: [],
-}
-
-/** The saved card the pay page preselects, in the camelCase shape the backend sends. */
-export const SAVED_CARD = {
-  id: 'pm_e2e',
-  type: 'card',
-  brand: 'visa',
-  last4: '4242',
-  expiryMonth: 12,
-  expiryYear: 2030,
-  isDefault: false,
 }
 
 /** Operator settings the storefront reads; a light default and an uploaded light/dark logo pair. */
@@ -592,6 +581,33 @@ export const DOMAIN_ORDER = {
 export const GATEWAY_METHODS = [
   { module: 'bank_transfer', displayName: 'Bank transfer' },
 ]
+
+/** The hosted card gateway the stub adds to the gateway list once a spec enables it (`POST /__e2e/gateways`). */
+export const HOSTED_GATEWAY = { module: 'e2e_card_gateway', displayName: 'E2E Card Gateway' }
+
+/** The address the stub sends the payer to for a hosted gateway page; the offline guard blocks the navigation itself, the request is observable. */
+export const GATEWAY_PAGE_URL = 'https://gateway.e2e.test/hosted/session'
+
+/** The card the stub holds as already saved, the default one. */
+export const STORED_CARD_DEFAULT = {
+  consentId: 11, gatewayModuleId: HOSTED_GATEWAY.module, detailsAvailable: true, brand: 'visa', last4: '4242',
+  expiryMonth: 9, expiryYear: 2031, isDefault: true,
+}
+
+/** A second saved card, not the default. */
+export const STORED_CARD_OTHER = {
+  consentId: 12, gatewayModuleId: HOSTED_GATEWAY.module, detailsAvailable: true, brand: 'mastercard', last4: '1111',
+  expiryMonth: 3, expiryYear: 2032, isDefault: false,
+}
+
+/** The session id the stub opens for a save, and the card it adds when that session is completed. */
+export const STORED_SESSION_ID = 'e2e-session-1'
+
+/** The card a completed save session adds. */
+export const STORED_CARD_NEW = {
+  consentId: 13, gatewayModuleId: HOSTED_GATEWAY.module, detailsAvailable: true, brand: 'amex', last4: '0005',
+  expiryMonth: 12, expiryYear: 2033, isDefault: false,
+}
 
 /** The enrolment the stub answers `POST /api/me/2fa/setup` with. */
 export const TWO_FACTOR = {

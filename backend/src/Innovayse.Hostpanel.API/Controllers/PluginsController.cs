@@ -1,8 +1,12 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallPlugin;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallRegistryPlugin;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.PurgePluginData;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.RemovePlugin;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.CheckPluginUpdates;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.GetPluginIcon;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListPlugins;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListRegistryPlugins;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
@@ -59,6 +63,31 @@ public sealed class PluginsController : BaseApiController
     }
 
     /// <summary>
+    /// The icon a loaded plugin ships (<c>iconUrl</c> on the plugin row points here), served from memory with
+    /// <c>X-Content-Type-Options: nosniff</c>, a restrictive Content-Security-Policy and an entity tag.
+    /// </summary>
+    /// <param name="id">Plugin identifier as declared in <c>plugin.json</c>.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the image (<c>image/svg+xml</c> or <c>image/png</c>); 304 when the caller's <c>If-None-Match</c> holds
+    /// the current tag; 400 with <c>VALIDATION_ERROR</c> for an id that is not a plugin id; 401 without a session; 403
+    /// for a caller who is not an administrator; 404 with <c>PLUGIN_ICON_NOT_FOUND</c> alike for an unknown plugin and
+    /// for a plugin without an icon; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("{id}/icon")]
+    [ProducesResponseType(typeof(byte[]), StatusCodes.Status200OK, "image/svg+xml", "image/png")]
+    [ProducesResponseType(StatusCodes.Status304NotModified)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetIconAsync(string id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<PluginIconDto>>(new GetPluginIconQuery(id), ct);
+        return HandleResult(outcome, icon => InlineImage(icon.Content, icon.ContentType, icon.ETag));
+    }
+
+    /// <summary>
     /// Installs a plugin from an uploaded ZIP archive. When a plugin of the same id is installed and the uploaded
     /// version differs, the upload is an upgrade: it passes the same checks, is staged, and replaces the installed
     /// plugin at the next restart, which then runs the plugin's migration hook once. An older version is refused unless
@@ -78,7 +107,7 @@ public sealed class PluginsController : BaseApiController
     /// 200 with <c>requiresRestart: true</c> on success (and <c>stagedVersion</c> when the upload is an upgrade or a forced
     /// downgrade waiting for the restart); 400 with <c>VALIDATION_ERROR</c> (no file),
     /// <c>PLUGIN_MANIFEST_INVALID</c>, <c>PLUGIN_SDK_VERSION_UNSUPPORTED</c>,
-    /// <c>PLUGIN_ID_INVALID</c>, <c>PLUGIN_ARCHIVE_UNSAFE</c>, <c>PLUGIN_HOST_ASSEMBLY_REFUSED</c> or
+    /// <c>PLUGIN_ID_INVALID</c>, <c>PLUGIN_ARCHIVE_UNSAFE</c>, <c>PLUGIN_ARCHIVE_UNWRITABLE</c>, <c>PLUGIN_HOST_ASSEMBLY_REFUSED</c> or
     /// <c>PLUGIN_NOT_TRUSTED</c>, or one of <c>PLUGIN_UNSIGNED</c>, <c>PLUGIN_SIGNATURE_MALFORMED</c>,
     /// <c>PLUGIN_SIGNATURE_KEY_UNKNOWN</c> and <c>PLUGIN_SIGNATURE_INVALID</c> when the host enforces signatures and the
     /// package fails that check while "allow unsigned plugins" is off; 401 without a session; 403 for a caller who is not an
@@ -100,6 +129,95 @@ public sealed class PluginsController : BaseApiController
     {
         await using var content = file?.OpenReadStream();
         var outcome = await _bus.InvokeAsync<Result<PluginActionResultDto>>(new InstallPluginCommand(content, force), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// One page of the plugin registry, each plugin marked with whether it is installed here, at which version and whether
+    /// a newer one is published. The registry is a remote catalogue the operator configures; it is off until then.
+    /// </summary>
+    /// <param name="query">
+    /// The filters bound from the query string: <c>q</c> (free text), <c>category</c> (<c>Payment</c>, <c>Provisioning</c>,
+    /// <c>Registrar</c>, <c>App</c> or <c>Other</c>), <c>page</c> and <c>pageSize</c>.
+    /// </param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with <c>items</c>, <c>total</c>, <c>page</c> and <c>pageSize</c>; 400 with <c>VALIDATION_ERROR</c> for a search
+    /// over 100 characters or an undefined category; 401 without a session; 403 for a caller who is not an administrator;
+    /// 409 with <c>PLUGIN_REGISTRY_DISABLED</c> while the registry is off; 429 when the rate limit is hit; 502 with
+    /// <c>PLUGIN_REGISTRY_UNAVAILABLE</c> or <c>PLUGIN_REGISTRY_RESPONSE_INVALID</c> when the registry cannot be used; 504
+    /// with <c>PLUGIN_REGISTRY_TIMED_OUT</c> when it does not answer in time.
+    /// </returns>
+    [HttpGet("registry")]
+    [ProducesResponseType(typeof(RegistryPluginPageDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status504GatewayTimeout)]
+    public async Task<IActionResult> ListRegistryAsync([FromQuery] ListRegistryPluginsQuery query, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<RegistryPluginPageDto>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// The installed, uploaded plugins for which the registry publishes a newer version, in the same shape as the
+    /// registry browser rows (<c>installed</c> and <c>updateAvailable</c> are true).
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the plugins (an empty array when nothing is outdated); 401 without a session; 403 for a caller who is not
+    /// an administrator; 409 with <c>PLUGIN_REGISTRY_DISABLED</c> while the registry is off; 429 when the rate limit is
+    /// hit; 502 with <c>PLUGIN_REGISTRY_UNAVAILABLE</c> or <c>PLUGIN_REGISTRY_RESPONSE_INVALID</c>; 504 with
+    /// <c>PLUGIN_REGISTRY_TIMED_OUT</c>.
+    /// </returns>
+    [HttpGet("registry/updates")]
+    [ProducesResponseType(typeof(IReadOnlyList<RegistryPluginDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status504GatewayTimeout)]
+    public async Task<IActionResult> CheckRegistryUpdatesAsync(CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<RegistryPluginDto>>>(new CheckPluginUpdatesQuery(), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Installs one version of a plugin from the registry, or stages it as an upgrade when the plugin is installed. The
+    /// package is downloaded from the registry's own host, checked against the checksum the registry published, held to
+    /// the <c>plugins.registry_trust</c> setting and installed like an upload with its signature always enforced.
+    /// </summary>
+    /// <param name="id">Plugin identifier.</param>
+    /// <param name="command">The body: the <c>version</c> to install.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with <c>requiresRestart: true</c> (and <c>stagedVersion</c> for an upgrade); 400 with <c>VALIDATION_ERROR</c> for
+    /// an id or version of the wrong shape, or with a package rule (<c>PLUGIN_MANIFEST_INVALID</c>,
+    /// <c>PLUGIN_UNSIGNED</c>, <c>PLUGIN_SIGNATURE_INVALID</c> and the other install refusals); 401 without a session; 403
+    /// for a caller who is not an administrator or with <c>PLUGIN_REGISTRY_NOT_TRUSTED</c> when the trust setting declines
+    /// the plugin; 404 with <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c>; 409 with <c>PLUGIN_REGISTRY_DISABLED</c>,
+    /// <c>PLUGIN_BUILT_IN</c> or <c>PLUGIN_DOWNGRADE_REFUSED</c>; 413 with <c>PLUGIN_ARCHIVE_TOO_LARGE</c>; 429 when the
+    /// rate limit is hit; 502 with <c>PLUGIN_REGISTRY_UNAVAILABLE</c>, <c>PLUGIN_REGISTRY_RESPONSE_INVALID</c>,
+    /// <c>PLUGIN_REGISTRY_PACKAGE_REFUSED</c> or <c>PLUGIN_REGISTRY_CHECKSUM_MISMATCH</c>; 504 with
+    /// <c>PLUGIN_REGISTRY_TIMED_OUT</c>.
+    /// </returns>
+    [HttpPost("registry/{id}/install")]
+    [ProducesResponseType(typeof(PluginActionResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status413PayloadTooLarge)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status504GatewayTimeout)]
+    public async Task<IActionResult> InstallRegistryAsync(string id, [FromBody] InstallRegistryPluginCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<PluginActionResultDto>>(command with { PluginId = id }, ct);
         return HandleResult(outcome);
     }
 

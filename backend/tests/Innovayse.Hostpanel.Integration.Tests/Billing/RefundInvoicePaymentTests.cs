@@ -1,21 +1,17 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Innovayse.Hostpanel.Application.Billing.Commands.RefundInvoicePayment;
-using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
-using Innovayse.Hostpanel.Infrastructure.Time;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Infrastructure;
-using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -209,72 +205,18 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>
-    /// A Gateway refund of an invoice paid by saved card goes to the card gateway against the
-    /// original charge's reference for the amount asked, writes the refund ledger row, and a
-    /// partial amount leaves the invoice Paid.
+    /// A gateway refund of a payment recorded as a card payment, with no hosted session that took it,
+    /// answers 400 <c>INVOICE_NOT_GATEWAY_PAID</c>: no on-site card gateway exists any more, so such
+    /// a payment is refunded by recording a manual refund.
     /// </summary>
     [Fact]
-    public async Task GatewayRefundOfACardPaymentGoesToTheCardGateway()
+    public async Task GatewayRefundOfALegacyCardPaymentIsRefused()
     {
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_card_1" };
-        var host = factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
-        var clientId = await BillingTestSeeds.SeedClientAsync(host);
-        var chargeId = $"ch_{Guid.NewGuid():N}";
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
 
         int invoiceId;
-        using (var scope = host.Services.CreateScope())
-        {
-            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
-            invoice.AddItem("Hosting", 10m, 1);
-            context.Invoices.Add(invoice);
-            await context.SaveChangesAsync(CancellationToken.None);
-            var ledgerRow = invoice.Settle(PaymentMethodNames.Card, chargeId, DateTimeOffset.UtcNow, TransactionSource.Manual);
-            context.Transactions.Add(ledgerRow!);
-            await context.SaveChangesAsync(CancellationToken.None);
-            invoiceId = invoice.Id;
-        }
-
-        var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
-        {
-            amount = 4m,
-            refundType = nameof(RefundType.Gateway),
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        var instruction = cardGateway.RefundInstructions.Should().ContainSingle().Subject;
-        instruction.TransactionId.Should().Be(chargeId);
-        instruction.Amount.Should().Be(4m);
-        instruction.Currency.Should().Be("USD");
-        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.PartiallyRefunded));
-
-        using var readScope = host.Services.CreateScope();
-        var readContext = readScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var refundRow = await readContext.Transactions.AsNoTracking()
-            .SingleAsync(t => t.InvoiceId == invoiceId && t.AmountOut > 0);
-        refundRow.TransactionId.Should().Be("re_card_1");
-        refundRow.PaymentMethod.Should().Be(PaymentMethodNames.Card);
-        refundRow.AmountOut.Should().Be(4m);
-        refundRow.Source.Should().Be(TransactionSource.GatewayRefund);
-    }
-
-    /// <summary>
-    /// A gateway refund of a card payment on a deployment with no card gateway key answers 409
-    /// <c>PAYMENT_METHOD_UNAVAILABLE</c>, never a 500, and the card gateway is never called.
-    /// </summary>
-    [Fact]
-    public async Task GatewayRefundOfACardPaymentWithoutCardGatewayKeyAnswersConflict()
-    {
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = false };
-        var host = factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
-        var clientId = await BillingTestSeeds.SeedClientAsync(host);
-
-        int invoiceId;
-        using (var scope = host.Services.CreateScope())
+        using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
@@ -292,56 +234,8 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
             refundType = nameof(RefundType.Gateway),
         });
 
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PAYMENT_METHOD_UNAVAILABLE);
-        cardGateway.RefundInstructions.Should().BeEmpty();
-    }
-
-    /// <summary>
-    /// A card payment that settled an invoice whose hosted session was still open is refunded to the
-    /// card: the kept session took none of the money, so the hosted gateway is never asked.
-    /// </summary>
-    [Fact]
-    public async Task GatewayRefundWithAnOpenSessionThatTookNothingGoesToTheCardGateway()
-    {
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_card_session" };
-        var plugin = new FakePaymentPlugin { RefundResult = "gw-refund-wrong" };
-        var resolver = new FakePaymentPluginResolver();
-        resolver.Register(HostedGateway, plugin);
-        var host = factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services =>
-            {
-                services.AddSingleton<ICardPaymentGateway>(cardGateway);
-                services.AddSingleton<IPaymentPluginResolver>(resolver);
-            }));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
-        var clientId = await BillingTestSeeds.SeedClientAsync(host);
-        var chargeId = $"ch_{Guid.NewGuid():N}";
-
-        int invoiceId;
-        using (var scope = host.Services.CreateScope())
-        {
-            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
-            invoice.AddItem("Hosting", 10m, 1);
-            invoice.SetGatewaySession(HostedGateway, $"gw-order-{Guid.NewGuid():N}", DateTimeOffset.UtcNow);
-            context.Invoices.Add(invoice);
-            await context.SaveChangesAsync(CancellationToken.None);
-            context.Transactions.Add(invoice.Settle(PaymentMethodNames.Card, chargeId, DateTimeOffset.UtcNow, TransactionSource.Manual)!);
-            await context.SaveChangesAsync(CancellationToken.None);
-            invoiceId = invoice.Id;
-        }
-
-        var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
-        {
-            amount = 10m,
-            refundType = nameof(RefundType.Gateway),
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        cardGateway.RefundInstructions.Should().ContainSingle().Which.TransactionId.Should().Be(chargeId);
-        plugin.LastRefundGatewayOrderId.Should().BeNull();
-        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Refunded));
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_NOT_GATEWAY_PAID);
     }
 
     /// <summary>
@@ -390,77 +284,6 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>
-    /// A card refund larger than the newest charge is spread over the invoice's card charges, newest
-    /// first, each asked for no more than it took, and every part is on the ledger.
-    /// </summary>
-    [Fact]
-    public async Task GatewayRefundSpreadsOverTheCardChargesNewestFirst()
-    {
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_spread" };
-        var host = factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
-        var (invoiceId, olderCharge, newerCharge) = await TwoCardChargesAsync(host);
-
-        var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
-        {
-            amount = 90m,
-            refundType = nameof(RefundType.Gateway),
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        cardGateway.RefundInstructions.Should().Equal(
-            new CardRefundInstruction(newerCharge, 60m, "USD", $"refund-{invoiceId}-{newerCharge}-0"),
-            new CardRefundInstruction(olderCharge, 30m, "USD", $"refund-{invoiceId}-{olderCharge}-0"));
-        using var readScope = host.Services.CreateScope();
-        var readContext = readScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var refunds = await readContext.Transactions.AsNoTracking()
-            .Where(t => t.InvoiceId == invoiceId && t.AmountOut > 0)
-            .Select(t => t.AmountOut)
-            .ToListAsync();
-        refunds.Should().BeEquivalentTo(new[] { 60m, 30m });
-        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.PartiallyRefunded));
-
-        var restResponse = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
-        {
-            amount = 10m,
-            refundType = nameof(RefundType.Gateway),
-        });
-
-        restResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
-        cardGateway.RefundInstructions[^1].Should().Be(new CardRefundInstruction(olderCharge, 10m, "USD", $"refund-{invoiceId}-{olderCharge}-3000"));
-        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Refunded));
-    }
-
-    /// <summary>
-    /// A card gateway that refuses the refund answers 502 with <c>CARD_REFUND_REFUSED</c> and nothing
-    /// is recorded.
-    /// </summary>
-    [Fact]
-    public async Task RefusedCardRefundIsAFailureNotAnException()
-    {
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefusesRefunds = true };
-        var host = factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
-        var (invoiceId, _, _) = await TwoCardChargesAsync(host);
-
-        var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
-        {
-            amount = 50m,
-            refundType = nameof(RefundType.Gateway),
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
-        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.CARD_REFUND_REFUSED);
-        using var readScope = host.Services.CreateScope();
-        var readContext = readScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        (await readContext.Transactions.AsNoTracking().AnyAsync(t => t.InvoiceId == invoiceId && t.AmountOut > 0))
-            .Should().BeFalse();
-        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.Paid));
-    }
-
-    /// <summary>
     /// Two partial refunds of 60 read the same 100 invoice at once: both pass RefundableAmount, but
     /// each changes the invoice row, so the second save fails the row's concurrency check and only
     /// one refund is recorded.
@@ -489,69 +312,6 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         var saved = await readContext.Invoices.AsNoTracking().Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
         saved.AmountRefunded.Should().Be(60m);
         saved.RefundableAmount.Should().Be(40m);
-    }
-
-    /// <summary>
-    /// A Gateway refund of an invoice another refund has claimed answers 409 with
-    /// <c>INVOICE_REFUND_CONFLICT</c> before the card gateway is ever called.
-    /// </summary>
-    [Fact]
-    public async Task GatewayRefundWhileAnotherIsInFlightIsAConflict()
-    {
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_never" };
-        var host = factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
-        var (invoiceId, _, _) = await TwoCardChargesAsync(host);
-        using (var scope = host.Services.CreateScope())
-        {
-            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
-            invoice.BeginRefund(DateTimeOffset.UtcNow);
-            await context.SaveChangesAsync(CancellationToken.None);
-        }
-
-        var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
-        {
-            amount = 10m,
-            refundType = nameof(RefundType.Gateway),
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_REFUND_CONFLICT);
-        cardGateway.RefundInstructions.Should().BeEmpty();
-    }
-
-    /// <summary>
-    /// A card gateway that throws on the second charge of a multi-charge refund answers 502 with
-    /// <c>CARD_REFUND_REFUSED</c>, and the part the first charge returned is still recorded.
-    /// </summary>
-    [Fact]
-    public async Task CardGatewayThatThrowsMidwayKeepsWhatItReturned()
-    {
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_midway", ThrowsOnRefundCall = 2 };
-        var host = factory.WithWebHostBuilder(builder =>
-            builder.ConfigureTestServices(services => services.AddSingleton<ICardPaymentGateway>(cardGateway)));
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
-        var (invoiceId, _, newerCharge) = await TwoCardChargesAsync(host);
-
-        var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
-        {
-            amount = 90m,
-            refundType = nameof(RefundType.Gateway),
-        });
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
-        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.CARD_REFUND_REFUSED);
-        cardGateway.RefundInstructions.Should().HaveCount(2);
-        cardGateway.RefundInstructions[0].Should().Be(new CardRefundInstruction(newerCharge, 60m, "USD", $"refund-{invoiceId}-{newerCharge}-0"));
-        using var readScope = host.Services.CreateScope();
-        var readContext = readScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var refunds = await readContext.Transactions.AsNoTracking()
-            .Where(t => t.InvoiceId == invoiceId && t.AmountOut > 0)
-            .ToListAsync();
-        refunds.Should().ContainSingle(t => t.AmountOut == 60m && t.TransactionId == "re_midway");
-        (await StatusOfAsync(admin, invoiceId)).Should().Be(nameof(InvoiceStatus.PartiallyRefunded));
     }
 
     /// <summary>
@@ -633,6 +393,163 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>
+    /// The host sends the plugin a refund id with the claim, and a retry of the same refund after the claim's lease has run
+    /// out (the first call threw, so its outcome was unknown) sends the same id, so a gateway that keys on it refunds once.
+    /// </summary>
+    [Fact]
+    public async Task RetryOfTheSameGatewayRefund_ReusesTheRefundId()
+    {
+        var plugin = new FakePaymentPlugin();
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register(HostedGateway, plugin);
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 0m);
+
+        var first = await GatewayRefundAsync(admin, invoiceId, 10m);
+        first.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        await ExpireRefundClaimAsync(host, invoiceId);
+        plugin.RefundResult = "gw-refund-retry";
+        var retry = await GatewayRefundAsync(admin, invoiceId, 10m);
+
+        retry.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        plugin.RefundInstructions.Should().HaveCount(2);
+        plugin.RefundInstructions[0].RefundId.Should().NotBeNullOrWhiteSpace();
+        plugin.RefundInstructions[1].RefundId.Should().Be(plugin.RefundInstructions[0].RefundId);
+        plugin.RefundInstructions[1].AmountMinor.Should().Be(plugin.RefundInstructions[0].AmountMinor);
+    }
+
+    /// <summary>A retry for another amount is another refund and gets its own id.</summary>
+    [Fact]
+    public async Task RetryWithAnotherAmount_GetsANewRefundId()
+    {
+        var plugin = new FakePaymentPlugin();
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register(HostedGateway, plugin);
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 0m);
+
+        (await GatewayRefundAsync(admin, invoiceId, 10m)).StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        await ExpireRefundClaimAsync(host, invoiceId);
+        plugin.RefundResult = "gw-refund-other";
+        (await GatewayRefundAsync(admin, invoiceId, 12m)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        plugin.RefundInstructions.Should().HaveCount(2);
+        plugin.RefundInstructions[1].RefundId.Should().NotBe(plugin.RefundInstructions[0].RefundId);
+    }
+
+    /// <summary>Once a refund is recorded its id is spent: the next refund, even of the same amount, gets a new one.</summary>
+    [Fact]
+    public async Task ARecordedRefund_EndsItsId_SoTheNextRefundGetsAnother()
+    {
+        var plugin = new FakePaymentPlugin { RefundResult = "gw-refund-ok" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register(HostedGateway, plugin);
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 0m);
+
+        (await GatewayRefundAsync(admin, invoiceId, 10m)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        plugin.RefundResult = "gw-refund-ok-2";
+        (await GatewayRefundAsync(admin, invoiceId, 10m)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        plugin.RefundInstructions.Should().HaveCount(2);
+        plugin.RefundInstructions[1].RefundId.Should().NotBe(plugin.RefundInstructions[0].RefundId);
+    }
+
+    /// <summary>The first partial refund of a gateway order tells the plugin nothing was refunded before it.</summary>
+    [Fact]
+    public async Task FirstPartialGatewayRefund_SendsZeroAlreadyRefunded()
+    {
+        var plugin = new FakePaymentPlugin { RefundResult = "gw-refund-1" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register(HostedGateway, plugin);
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 0m);
+
+        (await GatewayRefundAsync(admin, invoiceId, 10m)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        plugin.RefundInstructions.Should().ContainSingle().Which.AlreadyRefundedMinor.Should().Be(0);
+    }
+
+    /// <summary>A second, smaller partial refund carries the sum the ledger recorded for the first one.</summary>
+    [Fact]
+    public async Task SecondSmallerPartialGatewayRefund_SendsTheRecordedSum()
+    {
+        var plugin = new FakePaymentPlugin { RefundResult = "gw-refund-1" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register(HostedGateway, plugin);
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 0m);
+
+        (await GatewayRefundAsync(admin, invoiceId, 10m)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        plugin.RefundResult = "gw-refund-2";
+        (await GatewayRefundAsync(admin, invoiceId, 4m)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        plugin.RefundInstructions.Should().HaveCount(2);
+        plugin.RefundInstructions[1].AmountMinor.Should().Be(400);
+        plugin.RefundInstructions[1].AlreadyRefundedMinor.Should().Be(1000);
+    }
+
+    /// <summary>A retry of the pending refund sends the same id and the same sum, not counting the pending refund itself.</summary>
+    [Fact]
+    public async Task RetryOfThePendingGatewayRefund_SendsTheSameAlreadyRefunded()
+    {
+        var plugin = new FakePaymentPlugin { RefundResult = "gw-refund-1" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register(HostedGateway, plugin);
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var invoiceId = await HostedGatewayPaidInvoiceAsync(host, manualPart: 0m);
+
+        (await GatewayRefundAsync(admin, invoiceId, 10m)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        plugin.RefundResult = null;
+        (await GatewayRefundAsync(admin, invoiceId, 4m)).StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        await ExpireRefundClaimAsync(host, invoiceId);
+        plugin.RefundResult = "gw-refund-2";
+        (await GatewayRefundAsync(admin, invoiceId, 4m)).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        plugin.RefundInstructions.Should().HaveCount(3);
+        plugin.RefundInstructions[2].RefundId.Should().Be(plugin.RefundInstructions[1].RefundId);
+        plugin.RefundInstructions[1].AlreadyRefundedMinor.Should().Be(1000);
+        plugin.RefundInstructions[2].AlreadyRefundedMinor.Should().Be(1000);
+    }
+
+    /// <summary>Asks for a gateway refund of <paramref name="amount"/>.</summary>
+    /// <param name="admin">An admin HTTP client.</param>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <param name="amount">The amount asked for.</param>
+    /// <returns>The response.</returns>
+    private static Task<HttpResponseMessage> GatewayRefundAsync(HttpClient admin, int invoiceId, decimal amount) =>
+        admin.PostAsJsonAsync($"/api/billing/{invoiceId}/refund", new
+        {
+            amount,
+            refundType = nameof(RefundType.Gateway),
+        });
+
+    /// <summary>Moves the start of an invoice's refund claim back past its lease, as if the lease had run out.</summary>
+    /// <param name="host">The host whose database holds the invoice.</param>
+    /// <param name="invoiceId">The invoice.</param>
+    /// <returns>A task that completes when the claim is aged.</returns>
+    private static async Task ExpireRefundClaimAsync(WebApplicationFactory<Program> host, int invoiceId)
+    {
+        using var scope = host.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var past = DateTimeOffset.UtcNow.AddHours(-1);
+        await db.Database.ExecuteSqlInterpolatedAsync(
+            $"""UPDATE "Invoices" SET "RefundStartedAt" = {past} WHERE "Id" = {invoiceId}""");
+    }
+
+    /// <summary>
     /// Seeds a 100 USD invoice paid <paramref name="manualPart"/> by a manual payment and the rest
     /// through the hosted gateway, whose session the settlement keeps.
     /// </summary>
@@ -659,146 +576,6 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         context.Transactions.Add(invoice.Settle(HostedGateway, $"gw-pay-{Guid.NewGuid():N}", now, TransactionSource.Manual)!);
         await context.SaveChangesAsync(CancellationToken.None);
         return invoice.Id;
-    }
-
-    /// <summary>
-    /// Seeds a 100 USD invoice paid by two card charges: 40 by an earlier recorded card payment and
-    /// the remaining 60 by a later card settlement, each with its ledger row.
-    /// </summary>
-    /// <param name="host">The host whose database is seeded.</param>
-    /// <returns>The invoice id, the older charge id and the newer charge id.</returns>
-    private static async Task<(int InvoiceId, string OlderCharge, string NewerCharge)> TwoCardChargesAsync(
-        WebApplicationFactory<Program> host)
-    {
-        var clientId = await BillingTestSeeds.SeedClientAsync(host);
-        var olderCharge = $"ch_{Guid.NewGuid():N}";
-        var newerCharge = $"ch_{Guid.NewGuid():N}";
-        var now = DateTimeOffset.UtcNow;
-
-        using var scope = host.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var invoice = Invoice.Create(clientId, now.AddDays(7), "USD", now);
-        invoice.AddItem("Hosting", 100m, 1);
-        context.Invoices.Add(invoice);
-        await context.SaveChangesAsync(CancellationToken.None);
-        context.Transactions.Add(invoice.AddPayment(now.AddMinutes(-5), PaymentMethodNames.Card, olderCharge, 40m, 0m, null, TransactionSource.Manual));
-        context.Transactions.Add(invoice.Settle(PaymentMethodNames.Card, newerCharge, now, TransactionSource.Manual)!);
-        await context.SaveChangesAsync(CancellationToken.None);
-        return (invoice.Id, olderCharge, newerCharge);
-    }
-
-    /// <summary>
-    /// A card refund whose answer is lost after the gateway issued it records nothing and keeps the
-    /// claim; a retry inside the lease is a conflict, and the retry after the lease plans the same
-    /// part under the same idempotency key, so the gateway replays the first refund instead of
-    /// returning the money twice, and the ledger records it once.
-    /// </summary>
-    [Fact]
-    public async Task RefundWhoseAnswerWasLostIsReplayedByItsKeyOnceTheLeaseRunsOut()
-    {
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
-        var answerLost = false;
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_lost" };
-        cardGateway.AfterRefundIssued = _ =>
-        {
-            // Only the first answer is lost: the refund happened, the caller never hears of it.
-            if (!answerLost)
-            {
-                answerLost = true;
-                throw new HttpRequestException("The card gateway answer was lost.");
-            }
-
-            return Task.CompletedTask;
-        };
-        var (invoiceId, _, newerCharge) = await TwoCardChargesAsync(factory);
-        var command = new RefundInvoicePaymentCommand(invoiceId, 50m, RefundType.Gateway);
-
-        var lost = await RefundDirectlyAsync(command, cardGateway, clock);
-        var inLease = await RefundDirectlyAsync(command, cardGateway, clock);
-        clock.Advance(Invoice.RefundClaimLease + TimeSpan.FromMinutes(1));
-        var afterLease = await RefundDirectlyAsync(command, cardGateway, clock);
-
-        lost.ErrorCode.Should().Be(HostpanelErrorCodes.CARD_REFUND_REFUSED);
-        inLease.ErrorCode.Should().Be(HostpanelErrorCodes.INVOICE_REFUND_CONFLICT);
-        afterLease.IsSuccess.Should().BeTrue();
-        var key = $"refund-{invoiceId}-{newerCharge}-0";
-        cardGateway.RefundInstructions.Should().Equal(
-            new CardRefundInstruction(newerCharge, 50m, "USD", key),
-            new CardRefundInstruction(newerCharge, 50m, "USD", key));
-        cardGateway.RefundsByKey.Should().ContainSingle();
-        using var readScope = factory.Services.CreateScope();
-        var readContext = readScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var refunds = await readContext.Transactions.AsNoTracking()
-            .Where(t => t.InvoiceId == invoiceId && t.AmountOut > 0)
-            .ToListAsync();
-        refunds.Should().ContainSingle(t => t.AmountOut == 50m && t.TransactionId == "re_lost");
-    }
-
-    /// <summary>
-    /// When another writer changes the invoice while the card gateway refunds it, the save that
-    /// records the refunds loses the row's concurrency check; it is retried on a fresh read, so every
-    /// part the gateway issued is recorded and the other writer's change is kept.
-    /// </summary>
-    [Fact]
-    public async Task RecordingThatLosesToAnotherWriterIsRetried()
-    {
-        var touched = false;
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_retry" };
-        var (invoiceId, _, _) = await TwoCardChargesAsync(factory);
-        cardGateway.AfterRefundIssued = async _ =>
-        {
-            // Once, between the claim save and the recording save, an unrelated edit of the invoice.
-            if (touched)
-            {
-                return;
-            }
-
-            touched = true;
-            using var writerScope = factory.Services.CreateScope();
-            var writerContext = writerScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var invoice = await writerContext.Invoices.SingleAsync(i => i.Id == invoiceId);
-            invoice.UpdateNotes("edited meanwhile");
-            await writerContext.SaveChangesAsync(CancellationToken.None);
-        };
-
-        var result = await RefundDirectlyAsync(
-            new RefundInvoicePaymentCommand(invoiceId, 90m, RefundType.Gateway), cardGateway, TimeProvider.System);
-
-        result.IsSuccess.Should().BeTrue();
-        cardGateway.RefundsByKey.Should().HaveCount(2);
-        using var readScope = factory.Services.CreateScope();
-        var readContext = readScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var saved = await readContext.Invoices.AsNoTracking().Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
-        saved.AmountRefunded.Should().Be(90m);
-        saved.Notes.Should().Be("edited meanwhile");
-        var ledger = await readContext.Transactions.AsNoTracking()
-            .Where(t => t.InvoiceId == invoiceId && t.AmountOut > 0)
-            .Select(t => t.AmountOut)
-            .ToListAsync();
-        ledger.Should().BeEquivalentTo(new[] { 60m, 30m });
-    }
-
-    /// <summary>
-    /// Runs one refund through the handler in its own scope, against the given card gateway and clock,
-    /// as one request would.
-    /// </summary>
-    /// <param name="command">The refund to run.</param>
-    /// <param name="cardGateway">The fake card gateway the refund goes to.</param>
-    /// <param name="time">The clock the handler reads.</param>
-    /// <returns>The handler's result.</returns>
-    private async Task<Result> RefundDirectlyAsync(
-        RefundInvoicePaymentCommand command, FakeCardPaymentGateway cardGateway, TimeProvider time)
-    {
-        using var scope = factory.Services.CreateScope();
-        var handler = new RefundInvoicePaymentHandler(
-            scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>(),
-            scope.ServiceProvider.GetRequiredService<IPaymentPluginResolver>(),
-            cardGateway,
-            scope.ServiceProvider.GetRequiredService<IClientCredit>(),
-            scope.ServiceProvider.GetRequiredService<RefundAdviser>(),
-            new SystemClock(time),
-            NullLogger<RefundInvoicePaymentHandler>.Instance);
-        return await handler.HandleAsync(command, CancellationToken.None);
     }
 
     /// <summary>Refunding an id that names no invoice answers 404 with <c>INVOICE_NOT_FOUND</c>.</summary>

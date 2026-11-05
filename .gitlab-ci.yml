@@ -46,7 +46,7 @@ variables:
   COMPOSE_FILES_DEPLOYED: docker/docker-compose.shared.yml:docker/docker-compose.prod.yml:docker/docker-compose.platform.yml
   # How long a deploy waits for the health endpoint to answer before the job fails.
   HEALTH_TIMEOUT_SECONDS: "180"
-  # The plugin SDK (backend/src/Innovayse.SDK) is a git submodule from its own public repository,
+  # The plugin SDK (backend/src/Hostpanel.Sdk) is a git submodule from its own public repository,
   # so every job the runner checks out fetches it too. The deploy jobs run with GIT_STRATEGY: none
   # and sync their own checkout, so they run `git submodule update` themselves after each checkout.
   GIT_SUBMODULE_STRATEGY: recursive
@@ -269,7 +269,6 @@ backend:test:
       Innovayse.Hostpanel.Domain.Tests
       Innovayse.Hostpanel.Architecture.Tests
       Innovayse.CWP.Tests
-      Innovayse.Inecobank.Tests
   rules:
     # main is reached only through a GitHub PR whose CI ran these same suites before the
     # merge; running them again here only delayed the deploy by ~20 minutes. Set

@@ -5,8 +5,8 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
-using Innovayse.SDK.Plugins.Manifest;
-using Innovayse.SDK.Plugins.Slots;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Slots;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -61,7 +61,7 @@ public sealed class GetClientPluginSlotWidgetTests : IClassFixture<AppPluginFixt
     /// <returns>The loaded plugin.</returns>
     private static Infrastructure.Plugins.LoadedPlugin WithViews(string pluginId, params PluginSlotEntry[] widgets)
     {
-        var plugin = PluginSlotSeeds.Plugin(pluginId, Innovayse.SDK.Plugins.Enums.PluginType.App, Locales, widgets);
+        var plugin = PluginSlotSeeds.Plugin(pluginId, global::Hostpanel.Sdk.Plugins.Enums.PluginType.App, Locales, widgets);
         foreach (var widget in widgets)
         {
             plugin = PluginSlotSeeds.WithView(plugin, widget.View, ViewJson);

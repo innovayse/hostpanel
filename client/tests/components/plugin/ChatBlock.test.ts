@@ -266,6 +266,7 @@ describe('PluginChatBlock', () => {
       { kind: PluginBlockKind.Chat, send: TEST_ROUTES.chat, refresh: ['status'] },
     ])
     await settle()
+    /** How many times the site route has been read so far. */
     const reads = (): number => api!.requests.filter(request => request.url === `${ROUTES_URL}/sites/7`).length
     expect(reads()).toBe(1)
 

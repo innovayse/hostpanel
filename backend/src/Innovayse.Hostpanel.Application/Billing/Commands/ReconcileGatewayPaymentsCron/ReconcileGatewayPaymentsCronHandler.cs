@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Billing.Commands.CompleteGatewayPayment;
+using Innovayse.Hostpanel.Application.Billing.Commands.ReconcileInvoicePaymentClaims;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common;
@@ -131,6 +132,28 @@ public sealed class ReconcileGatewayPaymentsCronHandler
         {
             var concluded = await CompleteAsync(session, ct);
             await RecordCheckAsync(session, concluded, now, ct);
+        }
+
+        await ReconcileStoredChargesAsync(ct);
+    }
+
+    /// <summary>
+    /// Resolves the stored method charges that stayed unresolved, in the same pass and under the same lease as the
+    /// hosted sessions: a charge whose answer was lost is found by its idempotency key. A failure is logged and never
+    /// stops the job or its schedule.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task.</returns>
+    private async Task ReconcileStoredChargesAsync(CancellationToken ct)
+    {
+        try
+        {
+            var looked = await _bus.InvokeAsync<Result<int>>(new ReconcileInvoicePaymentClaimsCommand(), ct);
+            _logger.LogInformation("Stored charge reconciliation looked at {Count} claim(s).", looked.Value);
+        }
+        catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
+        {
+            _logger.LogError(ex, "Stored charge reconciliation failed; the next pass retries it.");
         }
     }
 

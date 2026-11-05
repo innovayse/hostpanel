@@ -51,11 +51,9 @@ internal static class DemoServiceRegistration
                 + "the published demo accounts are created in this product's own account store.");
         }
 
-        services.AddSingleton<DemoCardState>();
         services.AddSingleton<DemoStoredCredentialState>();
         services.AddScoped<IDemoDataManager, DemoDataManager>();
 
-        services.Replace(ServiceDescriptor.Scoped<ICardPaymentGateway, DemoCardPaymentGateway>());
         services.Replace(ServiceDescriptor.Scoped<IPaymentPluginResolver, DemoPaymentPluginResolver>());
         services.Replace(ServiceDescriptor.Scoped<IRegistrarProvider, DemoRegistrarProvider>());
         services.Replace(ServiceDescriptor.Scoped<IRegistrarProviderFactory, DemoRegistrarProviderFactory>());

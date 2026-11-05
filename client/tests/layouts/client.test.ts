@@ -178,6 +178,7 @@ describe('client layout', () => {
   })
 
   it('reads the plugin index again when the reader switches language, so the plugin labels follow', async () => {
+    /** The reader language; switched to prove the plugin index is read again. */
     const locale = ref('en')
     vi.stubGlobal('useI18n', () => ({ t: (key: string) => key, locale }))
     await mountLayout()

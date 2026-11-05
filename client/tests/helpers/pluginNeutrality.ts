@@ -11,7 +11,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative, sep } from 'node:path'
 
-/** The plugin ids and entry point type names of the in-tree plugin manifests. */
+/** The plugin ids and entry point type names of the in-tree plugin manifests, plus the former built-in provider names (a deny list). */
 export const PLUGIN_NAMES: readonly string[] = [
   'innovayse-cwp',
   'innovayse-cwp7',
@@ -19,6 +19,16 @@ export const PLUGIN_NAMES: readonly string[] = [
   'CwpProvisioningProvider',
   'Cwp7ProvisioningProvider',
   'InecobankPaymentGateway',
+  // Former built-in providers: no source may name them, the gateways come only from installed plugins.
+  'stripe',
+  'Stripe',
+  'Inecobank',
+  'paypal',
+  'PayPal',
+  'idram',
+  'Idram',
+  'ameriabank',
+  'Ameriabank',
 ]
 
 /** A source file as the scanner reads it. */

@@ -166,9 +166,10 @@ public sealed class InvoicesController : BaseApiController
 
 ## Pluggable Interface Rules
 
-- Card payments go through `ICardPaymentGateway`; hosted bank pages go through the plugin SDK
-  contract `IPaymentPlugin` (`Innovayse.SDK.Plugins`), which Application reaches through
-  `IPaymentPluginResolver`; there is no third, direct-charge gateway
+- Card and bank payments go through the plugin SDK contract `IPaymentPlugin` (`Hostpanel.Sdk.Plugins`), which
+  Application reaches through `IPaymentPluginResolver` (hosted pages, redirect flow); a plugin that also stores
+  methods for later charges implements `IStoredCredentialPlugin`, reached through `IStoredCredentialPluginResolver`;
+  there is no on-site card gateway port and no third, direct-charge gateway
 - Registrar providers implement `IRegistrarProvider`
 - Provisioning providers implement `IProvisioningProvider`
 - Ports live in **Application/Common/Interfaces**, implementations in **Infrastructure**
@@ -250,8 +251,8 @@ public static class MigrationJobDtoExtensions
 | Handler | `VerbNounHandler` | `CreateInvoiceHandler` |
 | Event | `NounVerbedEvent` | `InvoiceCreatedEvent` |
 | DTO | `NounDto` in `<Module>/Common/` | `InvoiceDto` |
-| Port | `INoun` in `Application/Common/Interfaces/` | `ICardPaymentGateway` |
-| Adapter | implementation under a capability folder in Infrastructure | `Integrations/Stripe/StripeService` |
+| Port | `INoun` in `Application/Common/Interfaces/` | `IPaymentPluginResolver` |
+| Adapter | implementation under a capability folder in Infrastructure | `Integrations/Plesk/PleskApiClient` |
 | Extension class | `NounExtensions` | `MigrationJobDtoExtensions` |
 
 - Every database identifier we own is PascalCase: tables (plural), columns, primary/foreign keys, indexes (`IX_<Table>_<Cols>`), unique/check constraints (`CK_<Table>_<Rule>`), schemas we create. No snake_case or lower case; see "Database identifiers" in `project.md`.

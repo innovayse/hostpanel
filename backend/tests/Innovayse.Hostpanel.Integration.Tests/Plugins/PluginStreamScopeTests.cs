@@ -1,8 +1,8 @@
 using System.Net;
 using System.Runtime.CompilerServices;
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Host;
-using Innovayse.SDK.Plugins.Store;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Host;
+using Hostpanel.Sdk.Plugins.Store;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 

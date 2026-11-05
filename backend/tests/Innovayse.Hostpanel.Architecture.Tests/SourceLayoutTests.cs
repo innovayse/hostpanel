@@ -16,10 +16,11 @@ public sealed partial class SourceLayoutTests
     private const string GenericTwinSuffix = "OfT";
 
     /// <summary>
-    /// Folders that are never scanned: build output, and the migrations <c>dotnet ef</c> generates,
-    /// whose file names carry a timestamp the class name does not.
+    /// Folders that are never scanned: build output, the migrations <c>dotnet ef</c> generates,
+    /// whose file names carry a timestamp the class name does not, and <c>tests</c>, the SDK's own test
+    /// project inside its submodule, which keeps the layout of its own repository.
     /// </summary>
-    private static readonly string[] SkippedFolders = ["bin", "obj", "Migrations"];
+    private static readonly string[] SkippedFolders = ["bin", "obj", "Migrations", "tests"];
 
     /// <summary>A file-scoped namespace declaration.</summary>
     /// <returns>The regex; group <c>name</c> is the namespace.</returns>
@@ -99,15 +100,19 @@ public sealed partial class SourceLayoutTests
     {
         var sourceRoot = Path.Combine(UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory), "src");
 
-        return Directory.EnumerateFiles(sourceRoot, "*.csproj", SearchOption.AllDirectories)
+        var projects = Directory.EnumerateFiles(sourceRoot, "*.csproj", SearchOption.AllDirectories)
             .Where(project => !IsSkipped(sourceRoot, project))
+            .ToList();
+        var projectRoots = projects.Select(project => Path.GetDirectoryName(project)!).ToList();
+
+        return projects
             .SelectMany(project =>
             {
                 var projectRoot = Path.GetDirectoryName(project)!;
                 var rootNamespace = Path.GetFileNameWithoutExtension(project);
 
                 return Directory.EnumerateFiles(projectRoot, "*.cs", SearchOption.AllDirectories)
-                    .Where(path => !IsSkipped(projectRoot, path))
+                    .Where(path => !IsSkipped(projectRoot, path) && !IsInNestedProject(projectRoots, projectRoot, path))
                     .Select(path => new SourceFile(
                         path,
                         Path.GetRelativePath(sourceRoot, path).Replace('\\', '/'),
@@ -126,6 +131,21 @@ public sealed partial class SourceLayoutTests
         var folders = Path.GetRelativePath(root, Path.GetDirectoryName(path)!).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
         return folders.Any(folder => SkippedFolders.Contains(folder, StringComparer.Ordinal));
+    }
+
+    /// <summary>
+    /// Whether a file belongs to a project that sits inside another project's folder (the SDK's packaging project below the SDK),
+    /// so the file is read once, under the project that compiles it, and not again under the outer one.
+    /// </summary>
+    /// <param name="projectRoots">The folder of every scanned project.</param>
+    /// <param name="projectRoot">The folder of the project being read.</param>
+    /// <param name="path">The file.</param>
+    /// <returns><c>true</c> when a deeper project folder than <paramref name="projectRoot"/> contains the file.</returns>
+    private static bool IsInNestedProject(IReadOnlyList<string> projectRoots, string projectRoot, string path)
+    {
+        return projectRoots.Any(other => other.Length > projectRoot.Length
+            && other.StartsWith(projectRoot, StringComparison.Ordinal)
+            && path.StartsWith(other + Path.DirectorySeparatorChar, StringComparison.Ordinal));
     }
 
     /// <summary>The namespace a file's folder implies: the project name, then each folder below the project.</summary>

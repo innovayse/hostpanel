@@ -5,5 +5,5 @@ namespace Innovayse.Hostpanel.Application.Clients.Common;
 /// lists it. Card details themselves are kept by the card gateway, not here.
 /// </summary>
 /// <param name="PaymentMethod">The payment method the account prefers, when one is set.</param>
-/// <param name="HasSavedCard">Whether a customer record exists at the card gateway, so cards may be saved there.</param>
+/// <param name="HasSavedCard">Whether a payment module keeps a customer for the client, so cards may be saved there.</param>
 public sealed record ClientExportPayMethodDto(string? PaymentMethod, bool HasSavedCard);

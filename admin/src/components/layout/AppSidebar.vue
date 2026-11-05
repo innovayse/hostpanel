@@ -134,6 +134,7 @@ const navItems: NavItem[] = [
       { to: AppRoute.BillingOfflineCc, labelKey: 'nav.billingChildren.offlineCc' },
       { to: AppRoute.BillingDisputes, labelKey: 'nav.billingChildren.disputes' },
       { to: AppRoute.BillingGatewayLog, labelKey: 'nav.billingChildren.gatewayLog' },
+      { to: AppRoute.BillingPaymentClaims, labelKey: 'nav.billingChildren.paymentClaims' },
     ],
   },
   {

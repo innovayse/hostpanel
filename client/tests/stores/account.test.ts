@@ -11,7 +11,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { ref } from 'vue'
 import { makeContactInput } from '~/tests/helpers/accountContact'
-import { Permission } from '~/composables/usePermissions'
 import { InvitePermissionMode } from '~/types/invitepermissionmode'
 import type { InviteUserPayload } from '~/types/inviteuserpayload'
 
@@ -32,9 +31,6 @@ const clientApi = {
 
 /** Mocked billing endpoints. */
 const billingApi = {
-  setDefaultPaymentMethod: vi.fn(),
-  removePaymentMethod: vi.fn(),
-  fetchPaymentMethods: vi.fn(),
   fetchGatewayMethods: vi.fn()
 }
 
@@ -375,35 +371,6 @@ describe('useAccountStore sign-in address', () => {
   })
 })
 
-describe('useAccountStore payment methods', () => {
-  it('reports Succeeded for set-default and clears the in-flight id', async () => {
-    billingApi.setDefaultPaymentMethod.mockResolvedValue({})
-    const store = useAccountStore()
-
-    expect(await store.setDefaultPaymentMethod('1')).toBe(ActionOutcome.Succeeded)
-    expect(store.settingDefaultId).toBeNull()
-  })
-
-  it('keeps the sentence when a removal is refused', async () => {
-    billingApi.removePaymentMethod.mockRejectedValue(refused)
-    const store = useAccountStore()
-
-    expect(await store.removePaymentMethod('1')).toBe(ActionOutcome.Failed)
-    expect(store.paymentActionError).toBe('Refused.')
-    expect(store.removingId).toBeNull()
-  })
-
-  it('clears every modal error on request', async () => {
-    clientApi.updateMe.mockRejectedValue(refused)
-    const store = useAccountStore()
-    await store.saveProfile({})
-
-    store.clearModalErrors()
-
-    expect(store.saveError).toBe('')
-  })
-})
-
 describe('useAccountStore reads', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -443,29 +410,8 @@ describe('useAccountStore reads', () => {
     expect(store.emailsLoading).toBe(false)
   })
 
-  it('keeps the saved payment methods', async () => {
-    billingApi.fetchPaymentMethods.mockResolvedValue([{ id: 'pm_1' }])
-    const store = useAccountStore()
-
-    await store.loadPaymentMethods()
-
-    expect(store.paymentMethods).toEqual([{ id: 'pm_1' }])
-    expect(store.paymentLoadError).toBeNull()
-  })
-
-  it('says it could not read the payment methods instead of showing an empty account', async () => {
-    billingApi.fetchPaymentMethods.mockRejectedValue({ data: { detail: 'Cannot reach the gateway.' } })
-    const store = useAccountStore()
-
-    await store.loadPaymentMethods()
-
-    expect(store.paymentMethods).toEqual([])
-    expect(store.paymentLoadError).toBe('Cannot reach the gateway.')
-    expect(store.paymentLoading).toBe(false)
-  })
-
   it('keeps the gateways the profile can default to, and none when the read fails', async () => {
-    billingApi.fetchGatewayMethods.mockResolvedValueOnce([{ module: 'stripe', displayName: 'Card' }]).mockRejectedValueOnce(new Error('down'))
+    billingApi.fetchGatewayMethods.mockResolvedValueOnce([{ module: 'card_gateway', displayName: 'Card' }]).mockRejectedValueOnce(new Error('down'))
     const store = useAccountStore()
 
     await store.loadGatewayMethods()
@@ -473,6 +419,18 @@ describe('useAccountStore reads', () => {
 
     await store.loadGatewayMethods()
     expect(store.gatewayMethods).toEqual([])
+  })
+})
+
+describe('useAccountStore modal errors', () => {
+  it('clears every modal error on request', async () => {
+    clientApi.updateMe.mockRejectedValue(refused)
+    const store = useAccountStore()
+    await store.saveProfile({})
+
+    store.clearModalErrors()
+
+    expect(store.saveError).toBe('')
   })
 })
 
@@ -489,17 +447,5 @@ describe('useAccountStore reads without the permission', () => {
 
     expect(clientApi[endpoint]).not.toHaveBeenCalled()
     expect(store[list]).toEqual([])
-  })
-
-  it('loadPaymentMethods sends no request and reports no failure', async () => {
-    mayDo.mockReturnValue(false)
-    const store = useAccountStore()
-
-    await store.loadPaymentMethods()
-
-    expect(mayDo).toHaveBeenCalledWith(Permission.ViewPayInvoices)
-    expect(billingApi.fetchPaymentMethods).not.toHaveBeenCalled()
-    expect(store.paymentMethods).toEqual([])
-    expect(store.paymentLoadError).toBeNull()
   })
 })

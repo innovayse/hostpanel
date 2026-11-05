@@ -1,5 +1,5 @@
 using Innovayse.Hostpanel.Application.Plugins.Common;
-using Innovayse.SDK.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Endpoints;
 
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 

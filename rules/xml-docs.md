@@ -68,14 +68,14 @@ private void RecalculateTotal()
 
 ### Interface
 ```csharp
-/// <summary>Abstraction over the card gateway.</summary>
-public interface ICardPaymentGateway
+/// <summary>Abstraction over the registrar.</summary>
+public interface IRegistrarProvider
 {
-    /// <summary>Refunds a completed card payment in full.</summary>
-    /// <param name="instruction">The charge or payment intent to refund.</param>
+    /// <summary>Renews a registered domain.</summary>
+    /// <param name="order">The domain and the number of years to renew it for.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The refund the gateway issued.</returns>
-    Task<CardRefundResult> RefundAsync(CardRefundInstruction instruction, CancellationToken ct);
+    /// <returns>The registrar's answer.</returns>
+    Task<DomainOperationResult> RenewAsync(DomainRenewalOrder order, CancellationToken ct);
 }
 ```
 

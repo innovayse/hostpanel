@@ -1,8 +1,9 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
@@ -37,6 +38,22 @@ public sealed class PluginEndpointResolver : IPluginEndpointResolver
         // An app plugin, or a plugin of another type that declares the endpoints capability; anything else answers
         // null, so the door's 404 is the same for it as for an unknown id.
         return plugin is not null && plugin.Manifest.ServesEndpoints() ? plugin.Manifest : null;
+    }
+
+    /// <inheritdoc/>
+    public PluginManifest? FindForCallback(string pluginId)
+    {
+        var plugin = _registry.Find(pluginId);
+        if (plugin is null)
+        {
+            return null;
+        }
+
+        // The loader registers IPluginEndpoints for an app plugin and for any plugin that declares the capability (and
+        // refuses one that declares it without implementing it), so the manifest decides here as it did there.
+        var served = plugin.Manifest.Type == PluginType.App
+            || plugin.Manifest.Capabilities.Contains(PluginCapabilities.Endpoints, StringComparer.Ordinal);
+        return served ? plugin.Manifest : null;
     }
 
     /// <inheritdoc/>

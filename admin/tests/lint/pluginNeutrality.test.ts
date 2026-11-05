@@ -12,16 +12,10 @@ import { namesIn, offenders, PLUGIN_NAMES, readSources } from '../helpers/plugin
 const ROOT = join(__dirname, '..', '..')
 
 /**
- * Files that still name a built-in provider: the integrations catalogue metadata and its types. This list
- * only shrinks; an entry whose file no longer names a plugin fails the stale-entry check below.
+ * Files that still name a built-in provider. Empty: the panel names no plugin. An entry whose file no
+ * longer names a plugin fails the stale-entry check below, so the list can only shrink.
  */
-const LEGACY_BUILT_IN: readonly string[] = [
-  'src/locales/en/integrationMeta.json',
-  'src/locales/hy/integrationMeta.json',
-  'src/locales/ru/integrationMeta.json',
-  'src/types/integration.ts',
-  'src/types/integrationmeta.ts',
-]
+const LEGACY_BUILT_IN: readonly string[] = []
 
 /** Every authored source of the admin interface. */
 const sources = readSources(ROOT, ['src'])

@@ -21,9 +21,6 @@ public static class PaymentMethodNames
     /// <summary>The reference an invoice that owed nothing is marked paid with; no money moved.</summary>
     public const string NoCharge = "No Charge";
 
-    /// <summary>A payment taken through PayPal.</summary>
-    public const string PayPal = "PayPal";
-
     /// <summary>The fragment that marks a payment method as a direct debit, matched case-insensitively.</summary>
     public const string DirectDebitMarker = "direct";
 }

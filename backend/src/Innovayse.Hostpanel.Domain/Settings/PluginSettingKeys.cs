@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Innovayse.Hostpanel.Domain.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Domain.Settings;
 
@@ -22,6 +23,12 @@ public static class PluginSettingKeys
     /// slot index; the plugin stays enabled and its other widgets are unaffected.
     /// </summary>
     public const string HiddenSlotWidgets = "plugins.hidden_slot_widgets";
+
+    /// <summary>
+    /// Whose plugins the plugin registry may install: the name of a <see cref="PluginRegistryTrust"/>. Seeded
+    /// <see cref="PluginRegistryTrust.VerifiedOnly"/> by the server. Read on every registry install.
+    /// </summary>
+    public const string RegistryTrust = "plugins.registry_trust";
 
     /// <summary>The stored value of a switch that is on.</summary>
     public const string On = "true";
@@ -50,6 +57,12 @@ public static class PluginSettingKeys
                 new Regex("^(true|false)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
                 "true or false",
                 v => v.ToLowerInvariant()),
+            [RegistryTrust] = new(
+                new Regex(
+                    "^(" + string.Join("|", Enum.GetNames<PluginRegistryTrust>()) + ")$",
+                    RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
+                string.Join(", ", Enum.GetNames<PluginRegistryTrust>()),
+                v => Enum.GetNames<PluginRegistryTrust>().First(n => string.Equals(n, v, StringComparison.OrdinalIgnoreCase))),
             [HiddenSlotWidgets] = new(
                 new Regex(HiddenListPattern, RegexOptions.CultureInvariant),
                 "slot:plugin:widget entries separated by commas, such as client.dashboard.cards:acme:usage",
@@ -60,11 +73,12 @@ public static class PluginSettingKeys
     public static readonly IReadOnlyList<SettingDefault> Defaults =
     [
         new(AllowUnsigned, Off, "Install and load uploaded plugins whose signature is missing or invalid, in a production host (true/false). Off by default."),
+        new(RegistryTrust, nameof(PluginRegistryTrust.VerifiedOnly), "Whose plugins the plugin registry may install: VerifiedOnly, AnyRegistryPublisher or OwnKeysOnly. VerifiedOnly by default."),
         new(HiddenSlotWidgets, string.Empty, "Plugin widgets hidden from a page slot, as slot:plugin:widget entries separated by commas. Empty hides nothing."),
     ];
 
     /// <summary>Keys whose every change is written to the activity log: they weaken a security control.</summary>
-    private static readonly IReadOnlySet<string> Audited = new HashSet<string>(StringComparer.Ordinal) { AllowUnsigned };
+    private static readonly IReadOnlySet<string> Audited = new HashSet<string>(StringComparer.Ordinal) { AllowUnsigned, RegistryTrust };
 
     /// <summary>Whether a change of <paramref name="key"/> is written to the activity log.</summary>
     /// <param name="key">The setting key.</param>
@@ -99,6 +113,20 @@ public static class PluginSettingKeys
         return (value ?? string.Empty)
             .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
             .Where(entry => HiddenEntry.IsMatch(entry));
+    }
+
+    /// <summary>Reads the stored value of <see cref="RegistryTrust"/>.</summary>
+    /// <param name="value">The stored value, or <see langword="null"/> when the row does not exist.</param>
+    /// <returns>
+    /// The policy the name stands for (any case); a missing, empty or unknown value reads as
+    /// <see cref="PluginRegistryTrust.VerifiedOnly"/>, the strictest choice that still installs from the registry, so a damaged
+    /// row never widens trust.
+    /// </returns>
+    public static PluginRegistryTrust ParseRegistryTrust(string? value)
+    {
+        return Enum.TryParse<PluginRegistryTrust>(value, ignoreCase: true, out var trust) && Enum.IsDefined(trust)
+            ? trust
+            : PluginRegistryTrust.VerifiedOnly;
     }
 
     /// <summary>Whether a stored value reads as an enabled switch.</summary>

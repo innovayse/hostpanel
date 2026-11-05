@@ -157,7 +157,7 @@ const widget = {
 
 /** An installed plugin that is loaded, so its widgets are listed. */
 const loadedPlugin = {
-  id: 'acme', name: 'Acme', version: '1.0.0', author: 'A', description: '', type: 'hosted', category: '', color: '#000000',
+  id: 'acme', name: 'Acme', version: '1.0.0', author: 'A', description: '', type: 'hosted', category: '', color: '#000000', iconUrl: null,
   isLoaded: true, isBuiltIn: false,
 } as PluginListItemDto
 

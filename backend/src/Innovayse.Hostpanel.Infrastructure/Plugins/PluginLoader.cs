@@ -1,19 +1,22 @@
 using System.Reflection;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Plugins;
+using Hostpanel.Sdk.Packaging.Naming;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+using Innovayse.Hostpanel.Infrastructure.Resilience;
+using Innovayse.Hostpanel.Infrastructure.Resilience.Extensions;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Fulfilment;
+using Hostpanel.Sdk.Plugins.Hosting;
+using Hostpanel.Sdk.Plugins.Identity;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Payment;
+using Hostpanel.Sdk.Plugins.Provisioning;
+using Hostpanel.Sdk.Plugins.Registrar;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Fulfilment;
-using Innovayse.SDK.Plugins.Hosting;
-using Innovayse.SDK.Plugins.Identity;
-using Innovayse.SDK.Plugins.Manifest;
-using Innovayse.SDK.Plugins.Payment;
-using Innovayse.SDK.Plugins.Provisioning;
-using Innovayse.SDK.Plugins.Registrar;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -160,6 +163,15 @@ public static class PluginLoader
                 continue;
             }
 
+            var icon = PluginIconReader.Read(pluginDir, manifest);
+            if (icon.Violation is not null)
+            {
+                logger.LogWarning(
+                    "Plugin {Id} refused by manifest rule {Rule}: {Detail}. Skipping it; the other plugins still load.",
+                    manifest.Id, icon.Violation.Rule, icon.Violation.Detail);
+                continue;
+            }
+
             var dllFiles = Directory.GetFiles(pluginDir, "*.dll");
             if (dllFiles.Length == 0)
             {
@@ -193,8 +205,22 @@ public static class PluginLoader
                 continue;
             }
 
+            // A plugin that declares the endpoints capability promises the host it can answer routes. Declaring it without
+            // implementing the contract is a broken manifest, refused here like any other, and kept in the registry so the
+            // admin list shows why. The id is already claimed above, so an upload cannot stand in for it.
+            if (manifest.Declares(PluginCapabilities.Endpoints) && !typeof(IPluginEndpoints).IsAssignableFrom(pluginType))
+            {
+                var detail = $"capabilities declares '{PluginCapabilities.Endpoints}' but '{manifest.EntryPoint}' does not implement IPluginEndpoints";
+                logger.LogWarning(
+                    "Plugin {Id} refused by manifest rule {Rule}: {Detail}. Skipping it; the other plugins still load.",
+                    manifest.Id, PluginManifestRule.EndpointsNotImplemented, detail);
+                registry.RegisterRefused(new RefusedPlugin(
+                    manifest.Id, PluginManifestRule.EndpointsNotImplemented, detail, origin == PluginOrigin.BuiltIn));
+                continue;
+            }
+
             RegisterPluginType(services, manifest, pluginType, logger);
-            registry.Register(new LoadedPlugin(manifest, pluginType, views.Views));
+            registry.Register(new LoadedPlugin(manifest, pluginType, views.Views, icon.Icon));
 
             if (manifest.ShowInIntegrations)
             {
@@ -207,7 +233,8 @@ public static class PluginLoader
                     RequiredSettingKeys: manifest.GetSettings()
                         .Where(s => s.Required)
                         .Select(s => s.Key)
-                        .ToList()));
+                        .ToList(),
+                    IconUrl: icon.Icon is null ? null : PluginIconPaths.For(manifest.Id)));
 
                 logger.LogInformation(
                     "Plugin {Id} registered as integration entry in category '{Category}'",
@@ -238,6 +265,13 @@ public static class PluginLoader
         Type pluginType,
         ILogger logger)
     {
+        // Every plugin that reaches the network asks IHttpClientFactory for a client named after its
+        // own id. An unregistered name would silently get the factory's 100-second client with no
+        // handler, so each loaded plugin gets the generic plugin profile under its id: the host
+        // names no vendor, and the contract with the plugin is only "your id is your client name".
+        services.AddHttpClient(manifest.Id, client => client.Timeout = HttpBackstopTimeouts.Plugin)
+            .AddPluginResilience();
+
         switch (manifest.Type)
         {
             case PluginType.Provisioning:
@@ -259,7 +293,7 @@ public static class PluginLoader
                 services.AddKeyedScoped(typeof(IHostedPlugin), manifest.Id, pluginType);
                 break;
             case PluginType.App:
-                services.AddKeyedScoped(typeof(IPluginEndpoints), manifest.Id, pluginType);
+                // An app plugin is registered as its endpoints below, like any plugin that declares the capability.
                 break;
             default:
                 logger.LogWarning("Unknown plugin type {Type} for plugin {Id} — skipping DI registration",
@@ -267,8 +301,8 @@ public static class PluginLoader
                 break;
         }
 
-        // The same class answers routes too; an app plugin is already registered under this contract above.
-        if (manifest.Type != PluginType.App && manifest.ServesEndpoints())
+        // The same class answers routes too; an app plugin always serves them, any other type only with the capability.
+        if (manifest.ServesEndpoints())
         {
             services.AddKeyedScoped(typeof(IPluginEndpoints), manifest.Id, pluginType);
         }

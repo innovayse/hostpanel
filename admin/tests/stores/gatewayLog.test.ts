@@ -21,7 +21,7 @@ const noFilters: GatewayLogFilters = { from: '', to: '', gateway: '', debugData:
 const entry = {
   id: 'tx-12',
   dateTime: '2027-01-01T10:00:00Z',
-  gateway: 'Stripe',
+  gateway: 'Example Gateway',
   debugData: 'Invoice 5',
   result: GatewayLogResult.Payment,
   invoiceId: 5,
@@ -54,7 +54,7 @@ describe('gatewayLogStore', () => {
     const store = useGatewayLogStore()
 
     await store.fetchPage(
-      { from: '2027-01-01', to: '2027-01-31', gateway: 'Stripe', debugData: '', result: GatewayLogResult.Refund },
+      { from: '2027-01-01', to: '2027-01-31', gateway: 'Example Gateway', debugData: '', result: GatewayLogResult.Refund },
       3,
       10,
     )
@@ -64,7 +64,7 @@ describe('gatewayLogStore', () => {
     expect(query.get('pageSize')).toBe('10')
     expect(query.get('from')).toBe('2027-01-01T00:00:00Z')
     expect(query.get('to')).toBe('2027-01-31T23:59:59.999Z')
-    expect(query.get('gateway')).toBe('Stripe')
+    expect(query.get('gateway')).toBe('Example Gateway')
     expect(query.get('result')).toBe('Refund')
     expect(query.has('debugData')).toBe(false)
   })

@@ -583,25 +583,31 @@
       }
     },
     "payment": {
-      "title": "Payment Methods",
       "permissionDenied": "Your account is not allowed to view or manage payment methods. Ask the account owner to grant you the permission to view and pay invoices.",
-      "empty": "No payment methods saved",
-      "emptyDesc": "You have no saved cards. To pay, open an unpaid invoice and choose Pay by card: you finish the payment on the payment provider's secure page.",
-      "viewInvoices": "View invoices",
-      "remove": "Remove",
-      "removeConfirm": "Remove payment method?",
-      "removeConfirmDesc": "This action cannot be undone.",
-      "expires": "Expires",
-      "statusActive": "Active",
+      "expires": "Expires"
+    },
+    "storedMethods": {
+      "title": "Saved payment methods",
+      "subtitle": "Save a card with a payment provider so invoices can be charged to it later. You can withdraw the permission at any time.",
+      "card": "Card",
+      "gateway": "Payment provider",
+      "gatewayPlaceholder": "Choose a payment provider",
+      "consent": "I agree that this payment method may be charged for my invoices and renewals until I withdraw this permission.",
+      "start": "Save a payment method",
+      "empty": "No saved payment methods.",
+      "detailsUnavailable": "Details unavailable",
       "defaultBadge": "Default",
-      "type": {
-        "card": "Card",
-        "bankAccount": "Bank account",
-        "other": "Payment method"
-      },
-      "removeSuccess": "Payment method removed",
-      "setDefault": "Set as Default",
-      "defaultSet": "Default payment method updated"
+      "makeDefault": "Make default",
+      "makeDefaultLabel": "Make {method} the default payment method",
+      "revokeLabel": "Withdraw permission to charge {method}",
+      "noGateways": "No payment provider is available for saving a method right now.",
+      "defaultSet": "Default payment method updated",
+      "revoke": "Withdraw permission",
+      "revokeConfirm": "Withdraw permission to charge this method?",
+      "revokeConfirmDesc": "This payment method will not be charged again.",
+      "revokeSuccess": "Permission withdrawn",
+      "saved": "Payment method saved",
+      "unsupportedMode": "This payment provider cannot be used to save a method here."
     },
     "users": {
       "currentUsers": "Account Users",

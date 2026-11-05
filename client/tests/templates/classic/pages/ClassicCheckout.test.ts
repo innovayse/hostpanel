@@ -73,15 +73,6 @@ vi.mock('~/composables/useOrderPaymentToken', () => ({
   useOrderPaymentToken: () => ({ remember: vi.fn(), recall: vi.fn(), forget: vi.fn() })
 }))
 
-/** Stand-in for the card form, which mounts the payment provider's element. */
-const StripeCardFormStub = defineComponent({
-  name: 'CheckoutStripeCardForm',
-  setup: (_props, { expose }) => {
-    expose({ confirmPayment: () => Promise.resolve({ id: 'pi_1' }) })
-    return () => h('div', { 'data-testid': 'card-form-stub' })
-  },
-})
-
 /** Stand-in for the phone field, which keeps its country picker out of this test. */
 const PhoneInputStub = defineComponent({
   name: 'UiPhoneInput',
@@ -122,7 +113,7 @@ const line = (pid: number, amount: number, currency = 'USD'): CartItem => ({
  */
 const mountCheckout = async (items: CartItem[] = [line(1, 5), line(2, 7)]) => {
   const wrapper = await mountPage(ClassicCheckout, {
-    components: { CheckoutStripeCardForm: StripeCardFormStub, CheckoutGatewayOption: GatewayOption, CheckoutSubmitHint: SubmitHint, UiPhoneInput: PhoneInputStub },
+    components: { CheckoutGatewayOption: GatewayOption, CheckoutSubmitHint: SubmitHint, UiPhoneInput: PhoneInputStub },
   })
   useCartStore().items = items
   await flushPromises()
@@ -148,7 +139,7 @@ describe('ClassicCheckout', () => {
     billing.fetchGatewayMethods.mockReset()
     billing.fetchGatewayMethods.mockResolvedValue([
       { module: PaymentModule.BankTransfer, displayName: 'Bank transfer' },
-      { module: PaymentModule.Stripe, displayName: 'Card' },
+      { module: 'card_gateway', displayName: 'Card' },
     ])
     billing.createOrder.mockReset()
     billing.createOrder.mockResolvedValue({ orderId: 7, invoiceId: 12, paymentToken: 'token', total: 12, currency: 'USD' })
@@ -207,11 +198,11 @@ describe('ClassicCheckout', () => {
     const wrapper = await mountCheckout()
 
     const bank = wrapper.find(`[data-testid="checkout-method-${PaymentModule.BankTransfer}"]`)
-    const card = wrapper.find(`[data-testid="checkout-method-${PaymentModule.Stripe}"]`)
+    const card = wrapper.find(`[data-testid="checkout-method-card_gateway"]`)
     expect(bank.text()).toContain('Bank transfer')
     expect(bank.text()).toContain('checkout.gatewayKinds.bankTransfer')
     expect(card.text()).toContain('Card')
-    expect(card.text()).toContain('checkout.gatewayKinds.card')
+    expect(card.text()).not.toContain('checkout.gatewayKinds')
     expect(bank.classes()).toContain('bg-classic-brand-soft')
     expect(card.classes()).not.toContain('bg-classic-brand-soft')
   })
@@ -242,7 +233,7 @@ describe('ClassicCheckout', () => {
       await flushPromises()
 
       expect(wrapper.find('[data-testid="checkout-permission-denied"]').exists()).toBe(false)
-      expect(wrapper.find(`[data-testid="checkout-method-${PaymentModule.Stripe}-input"]`).attributes('disabled')).toBeUndefined()
+      expect(wrapper.find(`[data-testid="checkout-method-card_gateway-input"]`).attributes('disabled')).toBeUndefined()
       expect(wrapper.find('[data-testid="checkout-submit"]').attributes('disabled')).toBeUndefined()
     })
 
@@ -253,19 +244,8 @@ describe('ClassicCheckout', () => {
       await flushPromises()
 
       expect(wrapper.find('[data-testid="checkout-permission-denied"]').text()).toContain('checkout.permissionDenied')
-      expect(wrapper.find(`[data-testid="checkout-method-${PaymentModule.Stripe}-input"]`).attributes('disabled')).toBeDefined()
+      expect(wrapper.find(`[data-testid="checkout-method-card_gateway-input"]`).attributes('disabled')).toBeDefined()
       expect(wrapper.find('[data-testid="checkout-submit"]').attributes('disabled')).toBeDefined()
-    })
-
-    it('does not open the card form for a member who may not place orders', async () => {
-      const wrapper = await mountCheckout()
-      await wrapper.find(`[data-testid="checkout-method-${PaymentModule.Stripe}-input"]`).setValue(true)
-      expect(wrapper.find('[data-testid="checkout-card-form"]').exists()).toBe(true)
-
-      useClientStore().user = makeClientUser({ permissions: Permission.None })
-      await flushPromises()
-
-      expect(wrapper.find('[data-testid="checkout-card-form"]').exists()).toBe(false)
     })
 
     it('keeps the checkout open for a signed-in first-time buyer who acts for no account and holds no flag', async () => {
@@ -277,15 +257,6 @@ describe('ClassicCheckout', () => {
       expect(wrapper.find('[data-testid="checkout-permission-denied"]').exists()).toBe(false)
       expect(wrapper.find('[data-testid="checkout-submit"]').attributes('disabled')).toBeUndefined()
     })
-  })
-
-  it('opens the card form only for the card gateway', async () => {
-    const wrapper = await mountCheckout()
-    expect(wrapper.find('[data-testid="checkout-card-form"]').exists()).toBe(false)
-
-    await wrapper.find(`[data-testid="checkout-method-${PaymentModule.Stripe}-input"]`).setValue(true)
-
-    expect(wrapper.find('[data-testid="checkout-card-form"]').exists()).toBe(true)
   })
 
   it('places a bank-transfer order with the guest details and goes to the invoice', async () => {
@@ -313,7 +284,7 @@ describe('ClassicCheckout', () => {
   })
 
   it('keeps the busy label short and explains the bank hand-off in a polite line under the button', async () => {
-    billing.fetchGatewayMethods.mockResolvedValue([{ module: PaymentModule.Inecobank, displayName: 'Bank card' }])
+    billing.fetchGatewayMethods.mockResolvedValue([{ module: 'hosted_gateway', displayName: 'Bank card' }])
     // An order that never settles keeps the page in its busy state.
     billing.createOrder.mockReturnValue(new Promise(() => undefined))
     const wrapper = await mountCheckout()

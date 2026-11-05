@@ -1,8 +1,8 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Slots;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Slots;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Common;
 

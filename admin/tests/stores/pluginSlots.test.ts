@@ -72,6 +72,7 @@ describe('pluginSlotsStore.load', () => {
     const resolvers: Array<(value: Response) => void> = []
     const waiting = new Promise<Response>((resolve) => resolvers.push(resolve))
     let call = 0
+    /** Answers the first request late and every later one at once. */
     const fetchMock = (): Promise<Response> => {
       call += 1
       return call === 1 ? waiting : Promise.resolve(json(clientPanels(widget('fresh'))))

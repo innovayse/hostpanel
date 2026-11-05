@@ -1,8 +1,8 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Time;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.StoredCredentials;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Demo;
@@ -394,19 +394,23 @@ public sealed class DemoStoredCredentialPluginTests(IntegrationTestFactory facto
             .Should().ContainSingle().Which.Should().Match<SavedMethod>(m => m.MethodRef == saved.Method.MethodRef && m.IsDefault);
     }
 
-    /// <summary>A session that is unknown, or already completed, saves nothing.</summary>
+    /// <summary>
+    /// A session that is unknown saves nothing; a session completed before answers the same method and stores it once,
+    /// because completing a session is idempotent.
+    /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task CompleteSaveMethod_UnknownOrRepeatedSession_SavesNothing()
+    public async Task CompleteSaveMethod_UnknownSession_SavesNothing_AndARepeatedOneAnswersTheSameMethod()
     {
         var plugin = NewPlugin();
         var session = await plugin.BeginSaveMethodAsync(new SaveMethodContext("demo-cus-9", "https://shop.test/return"), CancellationToken.None);
-        await plugin.CompleteSaveMethodAsync(session.SessionId, CancellationToken.None);
+        var first = await plugin.CompleteSaveMethodAsync(session.SessionId, CancellationToken.None);
 
         var repeated = await plugin.CompleteSaveMethodAsync(session.SessionId, CancellationToken.None);
         var unknown = await plugin.CompleteSaveMethodAsync("no-such-session", CancellationToken.None);
 
-        repeated.Should().Be(new SavedMethodResult(false, null));
+        repeated.Should().Be(first);
+        repeated.Saved.Should().BeTrue();
         unknown.Should().Be(new SavedMethodResult(false, null));
         (await plugin.ListMethodsAsync("demo-cus-9", CancellationToken.None)).Should().ContainSingle();
     }

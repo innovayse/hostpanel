@@ -22,8 +22,8 @@ describe('IntegrationConfigForm', () => {
   it('heads the form with the name from the API and the short description the admin keeps for the slug', () => {
     const wrapper = mountForm()
 
-    expect(wrapper.text()).toContain('Stripe')
-    expect(wrapper.text()).toContain('Accept credit card payments online')
+    expect(wrapper.text()).toContain('Bank Transfer')
+    expect(wrapper.text()).toContain('Allow clients to pay via direct bank transfer')
   })
 
   it('renders one control per field definition', () => {
@@ -204,6 +204,14 @@ describe('IntegrationConfigForm', () => {
     })
 
     expect((wrapper.get('[data-testid="integration-field-retries"] input').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('shows the plugin icon in the header of a plugin integration only', () => {
+    const plugin = mountForm({ integration: integrationDetail({ isPlugin: true, iconUrl: '/icon.png' }) })
+    const builtIn = mountForm()
+
+    expect(plugin.get('[data-testid="plugin-avatar-image"]').attributes('src')).toBe('/icon.png')
+    expect(builtIn.find('[data-testid="integration-plugin-avatar"]').exists()).toBe(false)
   })
 
   it('shows the label, help text, placeholder and option labels the API translated', () => {

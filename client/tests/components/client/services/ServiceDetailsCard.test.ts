@@ -32,7 +32,7 @@ describe('ServiceDetailsCard', () => {
   it('shows the payment method the backend sent', () => {
     const wrapper = mountClient(ServiceDetailsCard, { props: { service: service(), currency: {} } })
 
-    expect(wrapper.text()).toContain('stripe')
+    expect(wrapper.text()).toContain('card_gateway')
   })
 
   it('shows a dash for a missing domain', () => {

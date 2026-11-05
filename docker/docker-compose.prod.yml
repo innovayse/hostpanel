@@ -111,6 +111,9 @@ services:
       SshAgent__SourceAddresses: ${SSH_AGENT_SOURCE_ADDRESSES:-}
       PanelNetwork__HostAddresses: ${PANEL_HOST_ADDRESSES:-}
       ScheduledJobs__DisableReleaseUpdateChecks: ${DISABLE_RELEASE_UPDATE_CHECKS:-false}
+      # The plugin registry the admin panel installs plugins from; off until PLUGIN_REGISTRY_BASE_URL (https) is set.
+      PluginRegistry__Enabled: ${PLUGIN_REGISTRY_ENABLED:-false}
+      PluginRegistry__BaseUrl: ${PLUGIN_REGISTRY_BASE_URL:-}
     volumes:
       # Operator-uploaded branding lives in the web root; without a volume every deploy erases it.
       - hostpanel_branding:/app/wwwroot/uploads/branding
@@ -216,7 +219,6 @@ services:
       NUXT_PUBLIC_EMAIL_URL: ${NUXT_PUBLIC_EMAIL_URL:-}
       NUXT_PUBLIC_DRIVE_URL: ${NUXT_PUBLIC_DRIVE_URL:-}
       NUXT_PUBLIC_BILLING_PORTAL_URL: ${BILLING_PORTAL_URL:-}
-      NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
 
       NUXT_SSO_CLIENT_ID: ${SSO_CLIENT_ID:-}
       NUXT_SSO_CLIENT_SECRET: ${CLIENT_HOSTPANEL_SECRET:-}

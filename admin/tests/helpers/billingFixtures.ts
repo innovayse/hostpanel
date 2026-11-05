@@ -27,12 +27,12 @@ export const invoiceFixture = (overrides: Partial<InvoiceDetail> = {}): InvoiceD
   },
   amounts: { subTotal: 100, credit: 5, tax: 0, taxRate: 0, total: 100 },
   amountDue: 60,
-  payment: { method: 'Stripe', gatewayTransactionId: null },
+  payment: { method: 'Example Gateway', gatewayTransactionId: null },
   notes: null,
   items: [{ id: 11, description: 'Managed hosting', unitPrice: 100, quantity: 1, amount: 100, sku: null }],
   transactions: [
-    { id: 21, date: '2026-10-15T00:00:00Z', gateway: 'Stripe', transactionId: 'ch_1', amount: 40, fees: 1.5, type: 'Payment' },
-    { id: 22, date: '2026-10-16T00:00:00Z', gateway: 'Stripe', transactionId: 'rf_1', amount: 10, fees: 0, type: 'Refund', notes: 'Goodwill' },
+    { id: 21, date: '2026-10-15T00:00:00Z', gateway: 'Example Gateway', transactionId: 'ch_1', amount: 40, fees: 1.5, type: 'Payment' },
+    { id: 22, date: '2026-10-16T00:00:00Z', gateway: 'Example Gateway', transactionId: 'rf_1', amount: 10, fees: 0, type: 'Refund', notes: 'Goodwill' },
   ],
   ...overrides,
 })
@@ -54,7 +54,7 @@ export const invoiceRowFixture = (overrides: Partial<Invoice> = {}): Invoice => 
   total: 100,
   subTotal: 100,
   tax: 0,
-  paymentMethod: 'Stripe',
+  paymentMethod: 'Example Gateway',
   ...overrides,
 })
 
@@ -91,7 +91,7 @@ export const transactionFixture = (overrides: Partial<Transaction> = {}): Transa
   description: 'Hosting payment',
   transactionId: 'ch_9',
   invoiceId: 1,
-  paymentMethod: 'Stripe',
+  paymentMethod: 'Example Gateway',
   amountIn: 120,
   amountOut: 0,
   fees: 3.5,

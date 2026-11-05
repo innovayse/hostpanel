@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins.Ui;
+using Hostpanel.Sdk.Plugins.Ui;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 

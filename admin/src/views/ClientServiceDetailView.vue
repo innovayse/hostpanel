@@ -1107,7 +1107,7 @@ onMounted(() => {
                         :id="id"
                         v-model="paymentMethod"
                         type="text"
-                        :placeholder="t('clients.clientServiceDetail.stripePaypal')"
+                        :placeholder="t('shared.paymentMethod')"
                         data-testid="client-service-payment-method"
                       />
                     </template>

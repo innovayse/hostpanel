@@ -62,9 +62,13 @@ export const createSchemaTools = (spec) => {
     return { schema: schema ?? {}, name, nullable }
   }
 
+  /** The alternatives of a `oneOf` schema, or an empty list when the schema is not one. */
+  const variants = (input) => (Array.isArray(input?.oneOf) ? input.oneOf : [])
+
   /** A short, readable type for a table cell. */
   const typeLabel = (input) => {
     if (!input) { return 'object' }
+    if (variants(input).length > 0) { return variants(input).map(typeLabel).join(' or ') }
     const { schema, name, nullable } = resolve(input)
     let base
     if (name && schema.enum) {
@@ -170,5 +174,5 @@ export const createSchemaTools = (spec) => {
     }
   }
 
-  return { resolve, typeLabel, fieldRows, example, describe, enumNote }
+  return { resolve, typeLabel, variants, fieldRows, example, describe, enumNote }
 }

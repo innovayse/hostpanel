@@ -37,6 +37,35 @@ public sealed class SwaggerDocumentTests(IntegrationTestFactory factory) : IClas
         tags.Should().Contain([SwaggerRegistration.AdminTag, SwaggerRegistration.PublicTag, SwaggerRegistration.AuthTag]);
     }
 
+    /// <summary>The operations any signed-in user may call carry the Member tag, not the Admin one.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Document_TagsOperationsOpenToAnySignedInUserAsMemberAsync()
+    {
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync(SwaggerRegistration.DocumentPath);
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var paths = document.RootElement.GetProperty("paths");
+        (string Path, string Method)[] memberOperations =
+        [
+            ("/api/me/2fa/setup", "post"),
+            ("/api/me/2fa/enable", "post"),
+            ("/api/me/2fa/disable", "post"),
+            ("/api/reference/countries", "get"),
+            ("/api/announcements/published", "get"),
+        ];
+
+        foreach (var (path, method) in memberOperations)
+        {
+            var tags = paths.GetProperty(path).GetProperty(method).GetProperty("tags").EnumerateArray()
+                .Select(tag => tag.GetString())
+                .ToList();
+            tags.Should().Equal([SwaggerRegistration.MemberTag], because: $"{method.ToUpperInvariant()} {path} is open to any signed-in user");
+        }
+    }
+
     /// <summary>The sign-in answers 200 with a token or with a second factor challenge, and the document shows both bodies.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]

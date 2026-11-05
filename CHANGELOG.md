@@ -17,7 +17,7 @@ Highlights since 0.3.1:
 - Billing gained quarterly, semi-annual and biennial cycles and a recurring billing engine with overdue suspension. Invoices download as PDF.
 - Single sign-on builds use the sign-on package `Innovayse.Auth` 5.2.0 (#822, #796).
 - Documentation: an API reference, translated docs and working links between the pages.
-- Plus 42 internal changes (continuous integration, tests, deploy tooling and branch syncs) that are not listed below.
+- Plus 39 internal changes (continuous integration, tests, deploy tooling and branch syncs) that are not listed below.
 
 Upgrade notes, read before upgrading:
 
@@ -174,6 +174,9 @@ Upgrade notes, read before upgrading:
 - Focus styling follows `:focus-visible` (#327).
 - The billing toggle is fixed (#332).
 - Order numbers are issued from a database sequence (#307).
+- The client UiButton no longer animates its outline (#341).
+- The entrance reveal on the storefront is staggered with Tailwind classes (#376).
+- The admin checks the redirect target after sign in without a control character pattern (#361).
 - Admin lists and forms: tickets reload on every visit, ticked invoices and billable items clear when the list reloads or a filter changes, the Renew Domain action is locked while a domain is pending, the income forecast is right for the first months of the year, line up of invoice summary values, invoice detail currency formatting and profile form field errors (#737, #687, #740, #689, #686, #672, #670, #677).
 - Invoice edits save, and two factor sign-in is hardened (#473). Quotes keep line discounts when they become an invoice (#738).
 - A replayed card payment is never refunded, staff hear about credited gateway payments, and staff are alerted once when a gateway reports a payment paid without a reference (#730, #736).

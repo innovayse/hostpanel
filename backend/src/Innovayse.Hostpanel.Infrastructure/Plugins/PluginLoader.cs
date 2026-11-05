@@ -301,8 +301,8 @@ public static class PluginLoader
                 break;
         }
 
-        // The same class answers routes too; an app plugin is already registered under this contract above.
-        if (manifest.Type != PluginType.App && manifest.ServesEndpoints())
+        // The same class answers routes too; an app plugin always serves them, any other type only with the capability.
+        if (manifest.ServesEndpoints())
         {
             services.AddKeyedScoped(typeof(IPluginEndpoints), manifest.Id, pluginType);
         }

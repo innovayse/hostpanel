@@ -127,8 +127,8 @@ Updating to a release that moves the sign-on client package to 5.1 resets the ad
   { name: 'ADMIN_BASE_URL_PATH', type: 'string', default: '/', description: 'Base path the admin SPA is served under (/ or /admin). Read by the admin container at start, not at build. Tiers: hub, prod.' },
   { name: 'ALLOWED_HOSTS', type: 'string', default: 'panel.example.test;hostpanel-api;localhost', description: 'Host names the API answers to, semicolon-separated. Include the public host, hostpanel-api and localhost. Required. Tiers: all.' },
   { name: 'PANEL_DEV_ORIGIN', type: 'string', default: 'http://panel.example.test', description: 'Dev-proxy origin the API allows alongside localhost (CORS). Tiers: dev.' },
-  { name: 'SSH_AGENT_SOURCE_ADDRESSES', type: 'string', default: '', description: 'Public address(es) this installation connects to SSH key agents from, comma-separated. New in next release. Tiers: prod, hub.' },
-  { name: 'PANEL_HOST_ADDRESSES', type: 'string', default: '', description: 'Control panels reachable only over a VPN, as hostname=address pairs, comma-separated. New in next release. Tiers: prod, hub.' },
+  { name: 'SSH_AGENT_SOURCE_ADDRESSES', type: 'string', default: '', description: 'Public address(es) this installation connects to SSH key agents from, comma-separated. New in 0.4.0. Tiers: prod, hub.' },
+  { name: 'PANEL_HOST_ADDRESSES', type: 'string', default: '', description: 'Control panels reachable only over a VPN, as hostname=address pairs, comma-separated. New in 0.4.0. Tiers: prod, hub.' },
 ]" />
 
 Servers → SSH shows the exact firewall rules once SSH_AGENT_SOURCE_ADDRESSES is set. See [SSH key agent](/servers/ssh-key-agent).
@@ -264,7 +264,7 @@ The edge layer (Caddy on hub, nginx on prod) terminates TLS and routes to the AP
 ## Images and versions
 
 <SettingTable :settings="[
-  { name: 'IMAGE_TAG', type: 'string', default: 'local', description: 'Release to run, e.g., 1.4.0 or latest. No leading v. Required for hub and prod. Tiers: hub, prod.' },
+  { name: 'IMAGE_TAG', type: 'string', default: 'local', description: 'Release to run, e.g., 0.4.0 or latest. No leading v. Required for hub and prod. Tiers: hub, prod.' },
   { name: 'DOCKERHUB_NAMESPACE', type: 'string', default: 'innovayse', description: 'Docker Hub user/organisation for hub stack images. Tiers: hub.' },
   { name: 'IMAGE_REGISTRY', type: 'string', default: 'registry.example.com/hostpanel', description: 'Registry path for prod stack images (e.g., registry.example.com/hostpanel). Required for prod. Tiers: prod.' },
   { name: 'POSTGRES_IMAGE', type: 'string', default: 'see .env.example', description: 'Full postgres image reference, pinned to a digest. Tiers: all.' },

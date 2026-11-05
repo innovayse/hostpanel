@@ -21,8 +21,8 @@ if you roll back.
 ### Check for duplicate gateway payments
 
 Release 0.4.0 adds a unique index on gateway payment references. If any two
-ledger rows share the same payment method and reference the migration stops and
-the upgrade fails. Run the check script before upgrading. An empty result means
+gateway payment rows share the same payment method and reference, the migration stops
+and the upgrade fails. Run the check script before upgrading. An empty result means
 the migration will run cleanly.
 
 The script is part of release 0.4.0. It works on a 0.3.x database and on a 0.4.0 database,

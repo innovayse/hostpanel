@@ -133,7 +133,7 @@ Pass flags on the command line or set the matching environment variable in front
 
 <SettingTable :settings="[
   { name: '--dir &lt;path&gt; / HOSTPANEL_DIR', type: 'string', default: '/opt/hostpanel', description: 'Directory the installer downloads files into and starts the stack from.' },
-  { name: '--version &lt;x.y.z&gt; / HOSTPANEL_VERSION', type: 'string', default: 'latest', description: 'Release to install, e.g. 1.4.0. A leading v is accepted. Omit for the latest release.' },
+  { name: '--version &lt;x.y.z&gt; / HOSTPANEL_VERSION', type: 'string', default: 'latest', description: 'Release to install, e.g. 0.4.0. A leading v is accepted. Omit for the latest release.' },
   { name: '--no-tls / HOSTPANEL_TLS=off', type: 'flag', default: 'on', description: 'Serve plain HTTP on port 8080 behind your own TLS proxy instead of getting automatic certificates. See Without TLS.' },
   { name: '--help / -h', type: 'flag', default: '—', description: 'Print usage and exit.' },
   { name: 'HOSTPANEL_NONINTERACTIVE=1', type: 'env', default: '—', description: 'Skip the interactive prompts. Requires HOSTPANEL_DOMAIN and HOSTPANEL_ADMIN_EMAIL to be set.' },

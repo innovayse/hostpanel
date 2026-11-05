@@ -12,7 +12,7 @@
 # A row is a gateway payment when it is not linked to an imported invoice, it took money in, its
 # reference is not empty, its method is not one staff record by hand (Manual, Bank Transfer, Credit
 # Balance, No Charge) and its description is one of the three the gateway paths write
-# ("Invoice #N Payment", "Gateway payment for Invoice #N ...", "Card payment for Invoice #N ...").
+# ("Invoice #N Payment", "Gateway payment for Invoice #N" and "Card payment for Invoice #N", each followed by more text).
 # It cannot tell a payment staff recorded by hand under a gateway's name from the gateway's own, so a
 # row listed here may be a manual entry: if it is, give its reference a distinct value or delete the
 # duplicate, then run this again. An empty result means the migration will run.
@@ -23,6 +23,9 @@
 # one, so run it before the upgrade (0.3.x names) or after it (0.4.0 names), with the same result.
 #
 # Read-only. Safe to run against production at any time.
+#
+# Exit status: 0 when the query ran, whether or not it found duplicates (read the output for that), and
+# non zero when the SQL failed, because psql stops at the first error (ON_ERROR_STOP).
 #
 # Usage:
 #   scripts/check-duplicate-gateway-payments.sh [container]
@@ -38,7 +41,7 @@ set -eu
 CONTAINER="${1:-hostpanel-db}"
 
 docker exec -i "$CONTAINER" sh -lc \
-  'psql -U "$POSTGRES_USER" -d "${POSTGRES_DB}" -X -q -f -' <<'SQL'
+  'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "${POSTGRES_DB}" -X -q -f -' <<'SQL'
 -- Pick the table names the database has: PascalCase from 0.4.0, snake_case before it. \gset stores
 -- the answers as psql variables, and :tx and :inv paste them in as identifiers.
 SELECT

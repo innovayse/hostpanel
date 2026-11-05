@@ -45,7 +45,8 @@ public sealed class PluginLoaderTests
 
         PluginLoader.RegisterPluginType(services, plugin.Manifest, implementation, NullLogger.Instance);
 
-        var descriptor = services.Should().ContainSingle().Subject;
+        // The loader also registers the plugin's named HTTP client; only the keyed plugin registrations are under test.
+        var descriptor = services.Where(d => d.IsKeyedService).Should().ContainSingle().Subject;
         descriptor.IsKeyedService.Should().BeTrue();
         descriptor.ServiceKey.Should().Be(plugin.Manifest.Id);
         descriptor.ServiceType.Should().Be(contract);
@@ -157,9 +158,9 @@ public sealed class PluginLoaderTests
 
         PluginLoader.RegisterPluginType(services, plugin.Manifest, typeof(FulfilmentEndpointsPlugin), NullLogger.Instance);
 
-        services.Select(d => d.ServiceType).Should().BeEquivalentTo([typeof(IFulfilmentPlugin), typeof(IPluginEndpoints)]);
-        services.Should().OnlyContain(d => d.IsKeyedService
-            && Equals(d.ServiceKey, plugin.Manifest.Id)
+        var keyed = services.Where(d => d.IsKeyedService).ToList();
+        keyed.Select(d => d.ServiceType).Should().BeEquivalentTo([typeof(IFulfilmentPlugin), typeof(IPluginEndpoints)]);
+        keyed.Should().OnlyContain(d => Equals(d.ServiceKey, plugin.Manifest.Id)
             && d.KeyedImplementationType == typeof(FulfilmentEndpointsPlugin)
             && d.Lifetime == ServiceLifetime.Scoped);
     }

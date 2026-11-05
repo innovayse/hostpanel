@@ -35,7 +35,7 @@ public sealed class PluginEndpointResolverTests(IntegrationTestFactory factory) 
 
     /// <summary>
     /// The callback door finds an app plugin and a plugin of any other type that declares the <c>endpoints</c> capability,
-    /// and nothing else; the client and admin doors (<see cref="PluginEndpointResolver.Find"/>) still find the app plugin only.
+    /// and nothing else; the client and admin doors (<see cref="PluginEndpointResolver.Find"/>) answer the same set.
     /// </summary>
     [Fact]
     public void FindForCallback_FindsAnAppPluginAndAnyPluginDeclaringTheEndpointsCapability()
@@ -55,7 +55,8 @@ public sealed class PluginEndpointResolverTests(IntegrationTestFactory factory) 
         resolver.FindForCallback(declaring)!.Id.Should().Be(declaring);
         resolver.FindForCallback(plain).Should().BeNull();
         resolver.FindForCallback("never-loaded").Should().BeNull();
-        resolver.Find(declaring).Should().BeNull("client and admin routes and the plugin UI stay app only");
+        resolver.Find(declaring)!.Id.Should().Be(declaring);
+        resolver.Find(plain).Should().BeNull();
     }
 
     /// <summary>Copies a loaded plugin with a capability list.</summary>

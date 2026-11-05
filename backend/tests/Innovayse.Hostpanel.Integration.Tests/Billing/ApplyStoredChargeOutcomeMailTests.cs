@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Notifications.Seeding;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Notifications;
 using Innovayse.Hostpanel.Shared.Models;
 using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -46,6 +47,21 @@ public sealed class ApplyStoredChargeOutcomeMailTests(IntegrationTestFactory fac
         return (email, invoiceId, claim);
     }
 
+    /// <summary>
+    /// The mails to the client that come from the charge outcome. The welcome mail and the invoice-created mail go to the same
+    /// address, so the outcome mails are told apart by what only they carry: the invoice page link or the confirmation address.
+    /// </summary>
+    /// <param name="emailSender">The fake relay that recorded every mail.</param>
+    /// <param name="email">The client's address.</param>
+    /// <param name="invoiceId">The invoice the charge belongs to.</param>
+    /// <returns>The outcome mails sent to the client.</returns>
+    private static IReadOnlyList<EmailMessage> OutcomeMails(FakeEmailSender emailSender, string email, int invoiceId)
+    {
+        return emailSender.Sent
+            .Where(m => m.To == email && (m.Body.Contains($"/client/invoices/{invoiceId}") || m.Body.Contains(ActionAddress)))
+            .ToList();
+    }
+
     /// <summary>A decline mails the client once, from the declined template, with the invoice link to pay another way.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -58,7 +74,7 @@ public sealed class ApplyStoredChargeOutcomeMailTests(IntegrationTestFactory fac
         await scenario.InvokeAndSettleAsync<Result<InvoiceChargeDto>>(
             new ApplyStoredChargeOutcomeCommand(claim.Id, StoredChargeOutcome.Declined, null, null, null, null));
 
-        var message = emailSender.Sent.Should().ContainSingle(m => m.To == email).Subject;
+        var message = OutcomeMails(emailSender, email, invoiceId).Should().ContainSingle().Subject;
         message.Subject.Should().Contain($"#{invoiceId}");
         message.Body.Should().Contain("10.05").And.Contain("USD").And.Contain($"/client/invoices/{invoiceId}");
         message.Body.Should().NotContain(ActionAddress);
@@ -76,7 +92,7 @@ public sealed class ApplyStoredChargeOutcomeMailTests(IntegrationTestFactory fac
         await scenario.InvokeAndSettleAsync<Result<InvoiceChargeDto>>(
             new ApplyStoredChargeOutcomeCommand(claim.Id, StoredChargeOutcome.ActionRequired, null, null, null, ActionAddress));
 
-        var message = emailSender.Sent.Should().ContainSingle(m => m.To == email).Subject;
+        var message = OutcomeMails(emailSender, email, invoiceId).Should().ContainSingle().Subject;
         message.Subject.Should().Contain($"#{invoiceId}");
         message.Body.Should().Contain("10.05").And.Contain("USD").And.Contain(ActionAddress);
     }
@@ -103,13 +119,13 @@ public sealed class ApplyStoredChargeOutcomeMailTests(IntegrationTestFactory fac
     {
         var emailSender = new FakeEmailSender();
         using var scenario = new StoredCredentialScenario(factory, emailSender);
-        var (email, _, claim) = await OpenClaimAsync(scenario);
+        var (email, invoiceId, claim) = await OpenClaimAsync(scenario);
         var command = new ApplyStoredChargeOutcomeCommand(claim.Id, StoredChargeOutcome.Declined, null, null, null, null);
 
         await scenario.InvokeAndSettleAsync<Result<InvoiceChargeDto>>(command);
         await scenario.InvokeAndSettleAsync<Result<InvoiceChargeDto>>(command);
 
-        emailSender.Sent.Should().ContainSingle(m => m.To == email);
+        OutcomeMails(emailSender, email, invoiceId).Should().ContainSingle();
     }
 
     /// <summary>A reported action required repeated for the same claim mails the link once.</summary>
@@ -135,13 +151,13 @@ public sealed class ApplyStoredChargeOutcomeMailTests(IntegrationTestFactory fac
     {
         var emailSender = new FakeEmailSender();
         using var scenario = new StoredCredentialScenario(factory, emailSender);
-        var (email, _, claim) = await OpenClaimAsync(scenario);
+        var (email, invoiceId, claim) = await OpenClaimAsync(scenario);
 
         var result = await scenario.InvokeAndSettleAsync<Result<InvoiceChargeDto>>(
             new ApplyStoredChargeOutcomeCommand(claim.Id, StoredChargeOutcome.Succeeded, "txn-mail-ok", AmountMinor, Usd, null));
 
         result.Value!.Status.Should().Be(InvoicePaymentClaimStatus.Settled);
-        emailSender.Sent.Should().NotContain(m => m.To == email);
+        OutcomeMails(emailSender, email, invoiceId).Should().BeEmpty();
     }
 
     /// <summary>A charge the gateway has accepted but not settled mails nothing.</summary>
@@ -151,12 +167,12 @@ public sealed class ApplyStoredChargeOutcomeMailTests(IntegrationTestFactory fac
     {
         var emailSender = new FakeEmailSender();
         using var scenario = new StoredCredentialScenario(factory, emailSender);
-        var (email, _, claim) = await OpenClaimAsync(scenario);
+        var (email, invoiceId, claim) = await OpenClaimAsync(scenario);
 
         await scenario.InvokeAndSettleAsync<Result<InvoiceChargeDto>>(
             new ApplyStoredChargeOutcomeCommand(claim.Id, StoredChargeOutcome.Pending, null, null, null, null));
 
-        emailSender.Sent.Should().NotContain(m => m.To == email);
+        OutcomeMails(emailSender, email, invoiceId).Should().BeEmpty();
     }
 
     /// <summary>The declined and action templates exist in English, Russian and Armenian once a mail needed them.</summary>

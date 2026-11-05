@@ -172,12 +172,13 @@ public sealed class CallPluginCallbackDeclaredTests : IAsyncLifetime
     }
 
     /// <summary>
-    /// The capability opens the callback door only: the client and admin routes a payment plugin declares are still 404 for
-    /// a signed-in client and an administrator, and the plugin is never built.
+    /// The <c>endpoints</c> capability opens the client and admin routes of a payment plugin as it does for any non-app type:
+    /// a plugin that declares it answers a signed-in client and an administrator, and one that does not stays a uniform 404
+    /// for both and is never built.
     /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
-    public async Task ThePaymentPluginsClientAndAdminRoutes_StayNotFound()
+    public async Task ThePaymentPluginsClientAndAdminRoutes_FollowTheEndpointsCapability()
     {
         var owner = await ClientsTestSeeds.RegisterClientAsync(_factory, "cb-payment-client");
         using var client = AppPluginFixture.WithBearerOf(_host, owner.Client);
@@ -185,15 +186,21 @@ public sealed class CallPluginCallbackDeclaredTests : IAsyncLifetime
         admin.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", await _factory.GetAdminTokenAsync());
 
+        using var withoutClientCall = await client.GetAsync($"/api/client/plugins/{_paymentWithoutCapabilityId}/ping");
+        using var withoutAdminCall = await admin.GetAsync($"/api/admin/plugins/{_paymentWithoutCapabilityId}/ext/stats");
+
+        withoutClientCall.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        withoutAdminCall.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await withoutClientCall.Content.ReadAsStringAsync()).Should().Contain(HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
+        (await withoutAdminCall.Content.ReadAsStringAsync()).Should().Contain(HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
+        _probe.Constructed.Should().Be(0);
+        _probe.Calls.Should().BeEmpty();
+
         using var clientCall = await client.GetAsync($"/api/client/plugins/{_paymentId}/ping");
         using var adminCall = await admin.GetAsync($"/api/admin/plugins/{_paymentId}/ext/stats");
 
-        clientCall.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        adminCall.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        (await clientCall.Content.ReadAsStringAsync()).Should().Contain(HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
-        (await adminCall.Content.ReadAsStringAsync()).Should().Contain(HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND);
-        _probe.Constructed.Should().Be(0);
-        _probe.Calls.Should().BeEmpty();
+        clientCall.StatusCode.Should().Be(HttpStatusCode.OK);
+        adminCall.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     /// <summary>Only the allow-listed headers reach the plugin: credentials, the proxy's forwarded headers and the host's session headers do not.</summary>

@@ -30,12 +30,15 @@ public sealed class PluginCallbackManifestRulesTests
         PluginManifestValidator.Validate(manifest).Should().NotBeNull().And.Match<PluginManifestViolation>(v => v.Rule == rule);
     }
 
-    /// <summary>Well formed callbacks pass, and the same route may be both a callback and a client route.</summary>
+    /// <summary>
+    /// Well formed callbacks pass, and the same route may be both a callback and a client route, once the plugin declares the
+    /// <c>endpoints</c> capability the client route needs.
+    /// </summary>
     [Fact]
     public void Validate_WellFormedCallbacks_Pass()
     {
         PluginManifestValidator.Validate(Manifest(
-            ""","api":{"callbacks":[{"method":"post","path":"/pay/{order}"},{"method":"get","path":"/ping"}],"client":[{"method":"post","path":"/pay/{order}"}]}"""))
+            ""","capabilities":["endpoints"],"api":{"callbacks":[{"method":"post","path":"/pay/{order}"},{"method":"get","path":"/ping"}],"client":[{"method":"post","path":"/pay/{order}"}]}"""))
             .Should().BeNull();
     }
 

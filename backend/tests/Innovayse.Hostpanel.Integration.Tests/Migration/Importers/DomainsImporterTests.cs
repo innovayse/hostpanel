@@ -142,6 +142,11 @@ public sealed class DomainsImporterTests(IntegrationTestFactory factory) : IClas
         Assert.Equal(DomainStatus.Expired, domain.Status);
         Assert.Null(domain.RegistrarRef);
         Assert.Equal((await payerCurrency.ForClientAsync(domain.ClientId, CancellationToken.None)).Code, domain.PriceCurrency);
-        Assert.Empty(emailSender.Sent);
+
+        // The seeded client's own welcome mail may reach this sender before or after this line, because a durable queue
+        // delivers it, so that one mail alone is set aside, by its recipient and the stored template's body. Any other
+        // mail, to anyone and about anything, still fails here.
+        var welcome = await context.EmailTemplates.AsNoTracking().SingleAsync(t => t.Slug == "welcome" && t.Language == "en");
+        Assert.DoesNotContain(emailSender.Sent, m => m.To != email || m.Body != welcome.Body);
     }
 }

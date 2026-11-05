@@ -26,7 +26,7 @@ the upgrade fails. Run the check script before upgrading — an empty result mea
 the migration will run cleanly.
 
 The script is included starting from the release that adds the unique index
-(the first release after v0.3.1). Fetch it from the release tag you are
+(0.4.0). Fetch it from the release tag you are
 upgrading to (replace `v1.0.0` with the real tag — a 404 means the release
 does not contain the script yet and you can skip this step):
 
@@ -50,6 +50,14 @@ ssh user@your-server 'sh -s -- hostpanel-db' < scripts/check-duplicate-gateway-p
 
 If the script lists any rows, give each a distinct reference (or delete the
 duplicate), then run it again before upgrading.
+
+### Saved cards and the payment plugin
+
+Release 0.4.0 moves the saved card customer references to the payment plugin with
+the id `stripe`, because the only gateway that ever stored them was that one. If your
+clients paid with a saved card, install your card plugin with the id `stripe` before
+upgrading. If your plugin uses another id, rewrite `GatewayModuleId` in
+`GatewayCustomers` to that id. Otherwise those clients are asked for their card again.
 
 ### Uploaded plugins and signed packages
 

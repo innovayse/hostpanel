@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-05
+
+Highlights since 0.3.1:
+
+- Payment providers and other integrations are external plugins now, built on `Hostpanel.Sdk` 3.1.0 and installed as signed packages. The core carries no card or bank gateway.
+- Plugins can store customer credentials and the renewal run charges them. A plugin receives payment callbacks, ships its own icon, has its settings translated and offers a connection test.
+- Plugin widgets appear on the admin client and service pages, a plugin can import a service by its external id, and the admin panel works on phones.
+- Billing gained quarterly, semi-annual and biennial cycles and a recurring billing engine with overdue suspension. Invoices download as PDF.
+- Single sign-on builds use the sign-on package `Innovayse.Auth` 5.2.0.
+- Documentation: an API reference, translated docs and working links between the pages.
+
+Upgrade notes, read before upgrading:
+
+- Saved card customer references are moved to the payment plugin with the id `stripe`. If clients paid with a saved card before, install your card plugin with the id `stripe` before upgrading, or rewrite `GatewayModuleId` in `GatewayCustomers` to your plugin id. Otherwise those clients are asked for their card again.
+- Uploaded plugins must be signed packages, or an administrator must switch on "Allow unsigned plugins" (details below).
+- Run `scripts/check-duplicate-gateway-payments.sh` before upgrading (details below).
+
+
 ### Added
 
 - The plugin SDK is renamed from `Innovayse.SDK` to `Hostpanel.Sdk`: the package id, the assembly and every namespace (`Hostpanel.Sdk.Plugins.*`, `Hostpanel.Sdk.Base`), and the submodule folder is now `backend/src/Hostpanel.Sdk`. A plugin rebuilds against the new package and updates its `using` lines; the host still refuses a package that ships either `Hostpanel.Sdk.dll` or the old `Innovayse.SDK.dll`. Stored plugin settings and data are unchanged (#846).
@@ -30,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Upgrade note: Saved card customers from earlier versions are copied to the new per-gateway table as customers of the plugin with the id `stripe`, because the only gateway that ever wrote them was that one. If your card gateway plugin uses another id, install the plugin as `stripe`, or rewrite `GatewayModuleId` in `GatewayCustomers` to your plugin id before clients pay with a saved card; otherwise those clients are asked for their card again. The plugin assembly conflict check (`PLUGIN_ASSEMBLY_CONFLICT`) applies to every DLL in a package, shared third-party libraries included, so two plugins cannot ship a library of the same file name.
-- Single sign-on builds use the sign-on client package 5.1 (JwtBearer 9.0.21, StackExchange.Redis 3.4.20). The first update signs every admin panel user out once, because the package now scopes its session cache keys per product. A sign-in callback with no matching attempt (a second tab, Back after signing in) redirects to the sign-in page instead of answering an error body, and two sign-ins started in one browser no longer spend each other.
+- Single sign-on builds use the sign-on client package 5.2.0 (JwtBearer 9.0.21, StackExchange.Redis 3.4.20). The first update signs every admin panel user out once, because the package now scopes its session cache keys per product. A sign-in callback with no matching attempt (a second tab, Back after signing in) redirects to the sign-in page instead of answering an error body, and two sign-ins started in one browser no longer spend each other.
 
 - Before upgrading a production server that has uploaded plugins: plugins in the upload folder carry no signature yet, so after this release they are skipped at start (the log names each one) until the plugin is replaced by a signed package, or an administrator switches on "Allow unsigned plugins" on the Plugins page and the server is restarted. Plugins shipped inside the server image keep loading (#638).
 - Ledger transactions record where they came from (gateway payment, gateway refund, manual entry or import), and a gateway payment can be recorded only once per payment method and reference. Manual entries and imports may still share a reference. Before upgrading, `scripts/check-duplicate-gateway-payments.sh` lists existing gateway payment rows that share a reference; the upgrade stops and names them if any are left.
@@ -186,7 +204,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backend sources were tracked as a submodule; they are now part of the repository.
 - Repository URLs in the README and clone instructions.
 
-[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/innovayse/hostpanel/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/innovayse/hostpanel/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/innovayse/hostpanel/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/innovayse/hostpanel/releases/tag/v0.3.0
 [0.1.0]: https://github.com/innovayse/hostpanel/releases/tag/v0.1.0

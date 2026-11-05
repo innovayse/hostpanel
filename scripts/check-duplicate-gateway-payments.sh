@@ -17,6 +17,11 @@
 # row listed here may be a manual entry: if it is, give its reference a distinct value or delete the
 # duplicate, then run this again. An empty result means the migration will run.
 #
+# It works on both schemas. Release 0.4.0 renames every table to PascalCase (columns were PascalCase
+# already), so a 0.3.x database holds "transactions" and "invoices" and a 0.4.0 database holds
+# "Transactions" and "Invoices". The script asks to_regclass which of the two exists and uses that
+# one, so run it before the upgrade (0.3.x names) or after it (0.4.0 names), with the same result.
+#
 # Read-only. Safe to run against production at any time.
 #
 # Usage:
@@ -34,6 +39,13 @@ CONTAINER="${1:-hostpanel-db}"
 
 docker exec -i "$CONTAINER" sh -lc \
   'psql -U "$POSTGRES_USER" -d "${POSTGRES_DB}" -X -q -f -' <<'SQL'
+-- Pick the table names the database has: PascalCase from 0.4.0, snake_case before it. \gset stores
+-- the answers as psql variables, and :tx and :inv paste them in as identifiers.
+SELECT
+  CASE WHEN to_regclass('"Transactions"') IS NOT NULL THEN '"Transactions"' ELSE 'transactions' END AS tx,
+  CASE WHEN to_regclass('"Invoices"') IS NOT NULL THEN '"Invoices"' ELSE 'invoices' END AS inv
+\gset
+
 SELECT
   t."PaymentMethod",
   t."TransactionId",
@@ -41,14 +53,14 @@ SELECT
   string_agg(t."Id"::text, ', ' ORDER BY t."Id") AS "Ids",
   min(t."Date")                             AS "FirstDate",
   max(t."Date")                             AS "LastDate"
-FROM "Transactions" AS t
+FROM :tx AS t
 WHERE t."TransactionId" <> ''
   AND t."AmountIn" > 0
   AND t."PaymentMethod" NOT IN ('Manual', 'Bank Transfer', 'Credit Balance', 'No Charge')
   AND (t."Description" LIKE 'Invoice #% Payment'
        OR t."Description" LIKE 'Gateway payment for Invoice #%'
        OR t."Description" LIKE 'Card payment for Invoice #%')
-  AND NOT EXISTS (SELECT 1 FROM "Invoices" AS i WHERE i."Id" = t."InvoiceId" AND i."ExternalId" IS NOT NULL)
+  AND NOT EXISTS (SELECT 1 FROM :inv AS i WHERE i."Id" = t."InvoiceId" AND i."ExternalId" IS NOT NULL)
 GROUP BY t."PaymentMethod", t."TransactionId"
 HAVING count(*) > 1
 ORDER BY min(t."Id");

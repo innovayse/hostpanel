@@ -28,7 +28,7 @@ const runEntrypoint = (env: Record<string, string | undefined>): { status: numbe
     PATH: process.env.PATH,
     ADMIN_BASE_URL_PATH: '/admin',
     CLIENT_BASE_URL: 'https://host.example.com',
-    DOCS_URL: 'https://innovayse.github.io/hostpanel',
+    DOCS_URL: 'https://hostpanel.innovayse.com/docs',
     ...env
   }
   const result = spawnSync('sh', [SCRIPT], {
@@ -53,7 +53,7 @@ describe('docker/nginx/admin-entrypoint.sh', () => {
   })
 
   it('accepts an http(s) address for both', () => {
-    const { stderr } = runEntrypoint({ DOCS_URL: 'https://innovayse.github.io/hostpanel/', CLIENT_BASE_URL: 'https://host.example.com' })
+    const { stderr } = runEntrypoint({ DOCS_URL: 'https://hostpanel.innovayse.com/docs/', CLIENT_BASE_URL: 'https://host.example.com' })
 
     expect(stderr).not.toContain('DOCS_URL must be')
     expect(stderr).not.toContain('CLIENT_BASE_URL must be')

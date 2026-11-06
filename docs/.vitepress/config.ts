@@ -1,12 +1,9 @@
 /**
  * VitePress site configuration for the Hostpanel documentation website.
- * The site is served under a configurable URL path. The GitHub Pages project
- * path /hostpanel/ is only the default; set `DOCS_BASE` and `DOCS_SITE_URL`
- * (see below) to publish it anywhere else, for example at the root of a
- * custom domain.
- *
- * For the default GitHub Pages deploy, switch the Pages source to "GitHub
- * Actions" in Settings → Pages → Build and deployment before the first deploy.
+ * The site is served under a configurable URL path. The path /docs/ of the
+ * public site (https://hostpanel.innovayse.com/docs) is only the default; set
+ * `DOCS_BASE` and `DOCS_SITE_URL` (see below) to publish it anywhere else, for
+ * example at the root of a custom domain.
  */
 import { defineConfig } from 'vitepress'
 import { existsSync, readFileSync } from 'node:fs'
@@ -72,18 +69,18 @@ const DEMO_CLIENT_URL = process.env.DEMO_CLIENT_URL ?? ''
 /**
  * URL path the site is served under, always with a leading and a trailing slash.
  * Set `DOCS_BASE` when the site is published somewhere other than the default
- * GitHub Pages project path (for example `/` on a custom domain). The value is
+ * path /docs/ (for example `/` on a custom domain). The value is
  * trimmed and normalized, so `docs`, ` /docs ` and `/docs/` all give `/docs/`;
  * an empty or blank value falls back to the default.
  */
-const base: string = `/${(process.env.DOCS_BASE?.trim() || '/hostpanel/').replace(/^\/+|\/+$/g, '')}/`.replace(/^\/\/$/, '/')
+const base: string = `/${(process.env.DOCS_BASE?.trim() || '/docs/').replace(/^\/+|\/+$/g, '')}/`.replace(/^\/\/$/, '/')
 
 /**
  * Public origin plus base path of the published site, without a trailing slash.
  * Used for absolute URLs such as the social preview image. Set `DOCS_SITE_URL`
  * to match `DOCS_BASE` when publishing elsewhere.
  */
-const siteUrl: string = (process.env.DOCS_SITE_URL?.trim() || 'https://innovayse.github.io/hostpanel').replace(/\/+$/, '')
+const siteUrl: string = (process.env.DOCS_SITE_URL?.trim() || 'https://hostpanel.innovayse.com/docs').replace(/\/+$/, '')
 
 /**
  * Which version of the documentation this build is: `DOCS_VERSION` is empty (unversioned, or the latest
@@ -137,8 +134,8 @@ export default defineConfig({
   metaChunk: true,
 
   /**
-   * Defaults to the GitHub Pages project path (/hostpanel/), where the site is
-   * served at https://<org>.github.io/hostpanel/. Override with the `DOCS_BASE`
+   * Defaults to /docs/, where the public site is served at
+   * https://hostpanel.innovayse.com/docs/. Override with the `DOCS_BASE`
    * environment variable to publish under another path.
    */
   base,

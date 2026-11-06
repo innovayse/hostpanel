@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Common;
+using Innovayse.Hostpanel.Application.Provisioning.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -46,7 +47,8 @@ public sealed class GetServiceCredentialsHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The service's current credentials, or <c>SERVICE_NOT_FOUND</c> when the id names no
-    /// service, <c>SERVICE_NOT_PROVISIONED</c> when the service has never been provisioned, or
+    /// service, <c>SERVICE_NOT_PROVISIONED</c> when the service has never been provisioned,
+    /// <c>SERVICE_NOT_ACTIVE</c> when the service is terminated and its account removed, or
     /// <c>SERVICE_CREDENTIALS_UPSTREAM_FAILED</c> when the provider cannot return them.
     /// </returns>
     public async Task<Result<ServiceCredentialsDto>> HandleAsync(GetServiceCredentialsQuery query, CancellationToken ct)
@@ -57,14 +59,15 @@ public sealed class GetServiceCredentialsHandler
             return Result<ServiceCredentialsDto>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_FOUND);
         }
 
-        if (service.ProvisioningRef is null)
+        var account = service.RequireHostingAccount();
+        if (account.IsFailure)
         {
-            return Result<ServiceCredentialsDto>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_PROVISIONED);
+            return Result<ServiceCredentialsDto>.FailureCode(account.ErrorCode!);
         }
 
         try
         {
-            var credentials = await _provisioningProvider.GetCredentialsAsync(service.ProvisioningRef, ct);
+            var credentials = await _provisioningProvider.GetCredentialsAsync(account.Value!, ct);
             return Result<ServiceCredentialsDto>.Success(new ServiceCredentialsDto(
                 credentials.Username,
                 credentials.Password,

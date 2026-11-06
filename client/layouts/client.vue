@@ -73,7 +73,7 @@
  * links the visitor may see, whether the mobile drawer is open, how the platform widget is told
  * who is signed in, and signing out.
  */
-import { clientPluginPagePath, CLIENT_ACCOUNT_PATH, CLIENT_CREDIT_NOTES_PATH, CLIENT_CREDIT_PATH, CLIENT_DASHBOARD_PATH, CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH, CLIENT_TICKETS_PATH } from '~/constants/clientRoutes'
+import { CLIENT_ACCOUNT_PATH, CLIENT_CREDIT_NOTES_PATH, CLIENT_CREDIT_PATH, CLIENT_DASHBOARD_PATH, CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH, CLIENT_TICKETS_PATH } from '~/constants/clientRoutes'
 import {
   LayoutDashboard,
   Server,
@@ -133,11 +133,8 @@ const route = useRoute()
 /** Whether the page on screen is a plugin page declaring the workspace layout: full width, no side menu on a wide screen. */
 const workspace = computed(() => {
   const page = pluginsStore.page
-  if (page?.layout !== PluginPageLayout.Workspace) {
-    return false
-  }
-  const root = clientPluginPagePath(page.pluginId, '')
-  return route.path === root || route.path.startsWith(`${root}/`)
+  // The route's parameter, never its path: outside the default language the path starts with the language.
+  return page?.layout === PluginPageLayout.Workspace && route.params.plugin === page.pluginId
 })
 
 /** Whether the mobile sidebar drawer is open. */

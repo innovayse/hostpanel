@@ -288,6 +288,20 @@ backend:test:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
       changes: [backend/**/*]
 
+# Fails when the client portal's Content-Security-Policy differs between the Caddy and nginx edges.
+edge:test:csp:
+  stage: test
+  tags: [builder]
+  image: $DOTNET_SDK_IMAGE
+  script:
+    - sh scripts/check-edge-csp.sh
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
+      changes:
+        - docker/caddy/Caddyfile
+        - docker/nginx/templates/default.conf.template
+        - scripts/check-edge-csp.sh
+
 # Fails when a top-level folder of the Integration test project is in no shard below (its tests would
 # run nowhere), is in two, or when a shard names a folder that is gone. The same script checks the
 # GitHub workflow, so the shard lists of the two pipelines cannot drift apart.

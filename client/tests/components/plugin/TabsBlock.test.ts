@@ -44,4 +44,14 @@ describe('PluginTabsBlock', () => {
     expect(wrapper.get('[data-testid="plugin-badge"]').text()).toBe('Live')
     expect(api.requests).toHaveLength(1)
   })
+
+  it('draws its actions on the tab row, whichever tab is open', () => {
+    const wrapper = mountBlocks([{
+      kind: PluginBlockKind.Tabs,
+      actions: [{ kind: PluginBlockKind.Action, label: 'New', route: TEST_ROUTES.publish }],
+      tabs: [{ id: 'one', title: 'One', blocks: [] }],
+    }])
+
+    expect(wrapper.get('[data-testid="plugin-action-button"]').text()).toBe('New')
+  })
 })

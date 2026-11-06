@@ -15,6 +15,7 @@ import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import { PluginValueFormat } from '~/types/pluginvalueformat'
 import {
   parsePluginChatResult,
+  pluginActionBody,
   parsePluginChatStep,
   pluginDocumentLoaded,
   pluginFrameAddress,
@@ -457,7 +458,19 @@ describe('pluginDocumentLoaded', () => {
     ['nonsense', false],
     [undefined, false],
   ])('for %s answers %s', (address, expected) => {
-    expect(pluginDocumentLoaded(address, '/client/apps/acme/sites/7')).toBe(expected)
+    expect(pluginDocumentLoaded({ name: address, serverTiming: [{ name: 'plugin-frames' }] }, '/client/apps/acme/sites/7')).toBe(expected)
+  })
+
+  it('refuses a document whose server wrote no origins: one opened signed out stays closed after a sign-in inside it', () => {
+    const address = 'https://p.test/client/apps/acme/sites/7'
+
+    expect(pluginDocumentLoaded({ name: address, serverTiming: [] }, '/client/apps/acme/sites/7')).toBe(false)
+    expect(pluginDocumentLoaded({ name: address }, '/client/apps/acme/sites/7')).toBe(false)
+    expect(pluginDocumentLoaded(undefined, '/client/apps/acme/sites/7')).toBe(false)
+  })
+
+  it('compares a language-prefixed page with its own address', () => {
+    expect(pluginDocumentLoaded({ name: 'https://p.test/hy/client/apps/acme/sites/7', serverTiming: [{ name: 'plugin-frames' }] }, '/hy/client/apps/acme/sites/7')).toBe(true)
   })
 })
 
@@ -486,4 +499,46 @@ describe('parsePluginChatResult', () => {
   it('refuses actions that are not a list', () => {
     expect(parsePluginChatResult({ text: 'T', actions: 'x' }, {}, [])).toBeNull()
   })
+})
+
+describe('parsePluginChatResult until', () => {
+  /** A card whose action starts work that runs on. */
+  const card = (until: unknown) => ({ title: 'T', actions: [{ label: 'Undo', route: { method: 'post', path: '/undo' }, until }] })
+
+  it('keeps the chat blocks reading until the condition holds', () => {
+    const until = { route: { method: 'get', path: '/state' }, field: 'state', equalsAny: ['done'] }
+
+    const block = parsePluginChatResult(card(until), {}, [], ['a'])?.actions[0]?.block
+    expect(block?.followUp).toEqual({ refresh: ['a'], until: { route: until.route, field: 'state', equals: ['done'] } })
+  })
+
+  it('starts no follow-up for a malformed condition', () => {
+    expect(parsePluginChatResult(card({ field: 'state' }), {}, [], ['a'])?.actions[0]?.block?.followUp).toBeUndefined()
+  })
+})
+
+describe('action body from page data', () => {
+  /** A view's body source reading one member. */
+  const source = { route: { method: 'get', path: '/state' }, fields: { expectedVersion: 'publish.version' } }
+
+  it('builds the body from the reply', () => {
+    expect(pluginActionBody(source, { publish: { version: 14 } })).toEqual({ expectedVersion: 14 })
+  })
+
+  it.each([[undefined], [{}], [{ publish: { version: null } }], [{ publish: { version: { a: 1 } } }], [{ publish: { version: Number.NaN } }]])(
+    'refuses to build a partial body from %j', (reply) => {
+      expect(pluginActionBody(source, reply)).toBeNull()
+    })
+
+  /** A result event with one action carrying the given body. */
+  const card = (body: unknown): unknown => ({ title: 'T', actions: [{ label: 'Publish', route: { method: 'post', path: '/publish' }, body }] })
+
+  it('keeps the literal body of a result card\'s action', () => {
+    expect(parsePluginChatResult(card({ expectedVersion: 4 }), {}, [])?.actions[0]?.block?.body).toEqual({ expectedVersion: 4 })
+  })
+
+  it.each([[null], [[1]], ['x'], [{ __proto__x: 1 }], [{ a: { b: 1 } }], [Object.fromEntries(Array.from({ length: 11 }, (_, index) => [`a${index}`, 1]))]])(
+    'drops a result card\'s action whose body is %j', (body) => {
+      expect(parsePluginChatResult(card(body), {}, [])?.actions).toEqual([])
+    })
 })

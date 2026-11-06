@@ -10,8 +10,11 @@
     "previewSource": "Which site",
     "previewDesktop": "Desktop",
     "previewPhone": "Phone",
-    "previewOpen": "Open in a new tab",
+    "previewOpen": "Open",
     "previewEmpty": "Nothing to preview yet.",
-    "chatStepStopped": "Stopped"
+    "previewInsecure": "The preview needs a secure connection. Over plain http this browser hides what the panel checks before showing a site, so the preview stays off. Open the panel over https.",
+    "chatStepStopped": "Stopped",
+    "chatStepsCount": "{done} of {total} steps done",
+    "chatResultDetails": "See details"
   }
 }

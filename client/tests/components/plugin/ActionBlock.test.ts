@@ -57,6 +57,71 @@ describe('PluginActionBlock', () => {
     expect(api.requests).toHaveLength(1)
   })
 
+  it('sends the members its body source read, in one read with the label, and fixes them at the click', async () => {
+    const state = { body: { publishVersion: 14, publishLabel: 'Publish version 14' } }
+    api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7`]: state, [`POST ${ROUTES_URL}/sites/7/publish`]: { body: { message: 'ok' } } })
+    const wrapper = mountBlocks([{
+      ...publish,
+      id: 'publish',
+      confirm: 'Sure?',
+      labelSource: { route: TEST_ROUTES.site, field: 'publishLabel' },
+      bodySource: { route: TEST_ROUTES.site, fields: { expectedVersion: 'publishVersion' } },
+    }])
+    await settle()
+    expect(api.requests.filter(request => request.method === 'GET')).toHaveLength(1)
+    expect(wrapper.get('[data-testid="plugin-action-button"]').text()).toBe('Publish version 14')
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await wrapper.get('[data-testid="ui-confirm-confirm"]').trigger('click')
+    await settle()
+
+    const call = api.requests.find(request => request.method === 'POST')
+    expect(JSON.parse(call?.body ?? '')).toEqual({ expectedVersion: 14 })
+  })
+
+  it('stays disabled and sends nothing while a member of its body is missing', async () => {
+    api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7`]: { body: { publishVersion: null } } })
+    const wrapper = mountBlocks([{ ...publish, id: 'publish', bodySource: { route: TEST_ROUTES.site, fields: { expectedVersion: 'publishVersion' } } }])
+    await settle()
+
+    const button = wrapper.get('[data-testid="plugin-action-button"]')
+    expect(button.attributes('disabled')).toBeDefined()
+    await button.trigger('click')
+    await settle()
+    expect(api.requests.filter(request => request.method === 'POST')).toHaveLength(0)
+  })
+
+  it('reads its data again after a refusal and shows the refusal\'s sentence', async () => {
+    const replies = [{ publishVersion: 14, publishLabel: 'Publish version 14' }, { publishVersion: 15, publishLabel: 'Publish version 15' }]
+    api = await startPluginApi({
+      [`GET ${ROUTES_URL}/sites/7`]: () => ({ body: replies.shift() }),
+      [`POST ${ROUTES_URL}/sites/7/publish`]: problem(409, 'The preview has moved.'),
+    })
+    const wrapper = mountBlocks([{
+      ...publish,
+      id: 'publish',
+      labelSource: { route: TEST_ROUTES.site, field: 'publishLabel' },
+      bodySource: { route: TEST_ROUTES.site, fields: { expectedVersion: 'publishVersion' } },
+    }])
+    await settle()
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    expect(wrapper.get('[data-testid="plugin-action-message"]').text()).toBe('The preview has moved.')
+    expect(wrapper.get('[data-testid="plugin-action-button"]').text()).toBe('Publish version 15')
+  })
+
+  it('sends the body a result card wrote', async () => {
+    api = await startPluginApi({ [`POST ${ROUTES_URL}/sites/7/publish`]: { body: { message: 'ok' } } })
+    const wrapper = mountBlocks([{ ...publish, body: { expectedVersion: 4 } }])
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    expect(JSON.parse(api.requests.at(-1)?.body ?? '')).toEqual({ expectedVersion: 4 })
+  })
+
   it('shows the refusal\'s sentence', async () => {
     api = await startPluginApi({ [`POST ${ROUTES_URL}/sites/7/publish`]: problem(409, 'The site is building.') })
     const wrapper = mountBlocks([publish])
@@ -191,5 +256,16 @@ describe('PluginActionBlock', () => {
       await settle()
       expect(siteReads()).toBe(1)
     })
+  })
+
+  it('takes its label from a route once read, keeping the written one when the value is empty', async () => {
+    api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7`]: { body: { label: 'Publish version 3', blank: '' } } })
+    const wrapper = mountBlocks([
+      { kind: PluginBlockKind.Action, label: 'Publish', route: TEST_ROUTES.publish, labelSource: { route: TEST_ROUTES.site, field: 'label' } },
+      { kind: PluginBlockKind.Action, label: 'Publish', route: TEST_ROUTES.publish, labelSource: { route: TEST_ROUTES.site, field: 'blank' } },
+    ])
+    await settle()
+
+    expect(wrapper.findAll('[data-testid="plugin-action-button"]').map(button => button.text())).toEqual(['Publish version 3', 'Publish'])
   })
 })

@@ -110,6 +110,25 @@ describe('PluginChatBlock', () => {
     expect(wrapper.find('[data-testid="plugin-chat-stop"]').exists()).toBe(false)
   })
 
+  it('reads a reply as Markdown, keeps HTML in it as text and shows the reader\'s own message as typed', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, '**Keep** this')
+
+    reply.send('delta', { text: '**Done** <img src=x onerror=alert(1)>' })
+    reply.send('done', {})
+    reply.close()
+    await settle()
+
+    const answer = wrapper.findAll('[data-testid="plugin-chat-assistant"]').at(-1)!
+    expect(answer.get('strong').text()).toBe('Done')
+    expect(answer.text()).toContain('<img src=x onerror=alert(1)>')
+    expect(answer.find('img').exists()).toBe(false)
+    const own = wrapper.findAll('[data-testid="plugin-chat-user"]').at(-1)!
+    expect(own.text()).toBe('**Keep** this')
+    expect(own.find('strong').exists()).toBe(false)
+  })
+
   it.each([
     ['the plugin\'s own error event', { text: 'The model is busy.' }],
     ['the host\'s error frame after a plugin throw', { code: 'PLUGIN_FAILED', message: 'The plugin failed.', partial: true }],
@@ -468,5 +487,76 @@ describe('PluginChatBlock', () => {
     reply.send('delta', { text: 'Two' })
     await settle()
     expect(element.scrollTop).toBe(100)
+  })
+
+  it('reads the chat\'s blocks again after a card\'s action, as after a reply', async () => {
+    api = await startPluginApi({
+      [`GET ${ROUTES_URL}/sites/7`]: { body: { status: 'Before' } },
+      [`POST ${ROUTES_URL}/sites/7/publish`]: { body: {} },
+    })
+    const reply = stubStream()
+    const wrapper = mountBlocks([
+      { kind: PluginBlockKind.Stat, id: 'status', label: 'Status', source: { route: TEST_ROUTES.site, field: 'status' } },
+      { kind: PluginBlockKind.Chat, send: TEST_ROUTES.chat, refresh: ['status'] },
+    ])
+    await settle()
+    await sendMessage(wrapper, 'Go')
+    reply.send('result', { title: 'Ready', actions: [{ label: 'Undo', route: TEST_ROUTES.publish }] })
+    await settle()
+    /** Counts the reads of the site page so far. */
+    const reads = (): number => api?.requests.filter(request => request.method === 'GET' && request.url.endsWith('/sites/7')).length ?? 0
+    const before = reads()
+
+    await wrapper.get('[data-testid="plugin-chat-result"] [data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    expect(reads()).toBe(before + 1)
+  })
+
+  it('counts a reply\'s finished steps', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, 'Go')
+
+    reply.send('step', { id: 'a', label: 'Read', state: 'done' })
+    reply.send('step', { id: 'b', label: 'Build', state: 'running' })
+    await settle()
+
+    expect(wrapper.find('[data-testid="plugin-chat-steps-count"]').exists()).toBe(true)
+  })
+
+  it('keeps a card\'s details behind a switch, as text, and sends the last message again on a resend action', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, 'Add a page')
+    reply.send('result', { title: 'Failed', details: ['tests <b>failed</b>'], actions: [{ label: 'Try again', resend: true }] })
+    reply.close()
+    await settle()
+
+    expect(wrapper.find('[data-testid="plugin-chat-result-details"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="plugin-chat-result-details-toggle"]').trigger('click')
+    expect(wrapper.get('[data-testid="plugin-chat-result-details"]').text()).toBe('tests <b>failed</b>')
+
+    await wrapper.get('[data-testid="plugin-chat-result-resend"]').trigger('click')
+    await settle()
+    expect(reply.calls).toHaveLength(2)
+  })
+
+  it('keeps what the reader is typing when a card sends the last message again', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, 'Add a page')
+    reply.send('result', { title: 'Failed', actions: [{ label: 'Try again', resend: true }] })
+    reply.close()
+    await settle()
+    const field = wrapper.get('[data-testid="plugin-chat-input"]')
+    await field.setValue('And a blog')
+
+    await wrapper.get('[data-testid="plugin-chat-result-resend"]').trigger('click')
+    await settle()
+
+    expect(reply.calls).toHaveLength(2)
+    expect((field.element as HTMLTextAreaElement).value).toBe('And a blog')
+    expect(wrapper.text()).toContain('Add a page')
   })
 })

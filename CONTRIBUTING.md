@@ -13,8 +13,9 @@ translation and review makes a real difference.
   existing one is a great first PR. See [Translating Hostpanel](docs/developers/translating.md) and
   [Add a new language](docs/developers/add-language.md) for the full guide
 - **Improve the docs**: if something in the README tripped you up, it will trip the next
-  person too
-- **Answer questions** in [Discussions](../../discussions)
+  person too. The published guides are at [hostpanel.innovayse.com/docs](https://hostpanel.innovayse.com/docs/),
+  and [the contributor guide](https://hostpanel.innovayse.com/docs/developers/contributing) explains how they are built
+- **Answer questions** in [Discussions](../../discussions) or on [Discord](https://discord.gg/NfqTkyTgD)
 - **Star the repo** so other hosting companies can find it
 
 ## Your first code contribution

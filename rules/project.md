@@ -468,6 +468,14 @@ docker/                              compose set (shared·dev·prod·platform), 
       condition route, `visibleWhen` outside a block) and `ViewFollowUpInvalid` (`PLUGIN_VIEW_FOLLOW_UP_INVALID`: a bad
       `followUp` shape or place, a `refresh` id no block carries, `resetOnSuccess` not a boolean or outside a `submit`),
       each with its en/ru/hy sentence, 400.
+  - **Action body from page data (#940, no schema change).** `bodySource` on an action block of the client area:
+    exactly a `GET` `route` and 1 to 10 `fields` (a camelCase body member, not a `PluginViews.LabelProperties` name, and a
+    dotted path). The action has an `id`, calls `POST`, `PUT` or `PATCH`, and a `labelSource` reads the same route, because
+    the panel takes label and body from one read so a button cannot send a value other than its label's. Anything else is
+    `PLUGIN_VIEW_ACTION_BODY_INVALID` (`ViewActionBodyInvalid`, `CheckActionBody` in `PluginViewDocumentReader`; the member names are the reader's own constants until the SDK's `PluginViews` documents them). In the
+    client (`ActionBlock.vue`, `pluginActionBody`) the button is disabled until every member is read as a scalar, the body
+    is fixed at the click, and a refused call reads the data and `refresh` again. Absent, an action posts `{}`. A result
+    card's action carries a literal `body` instead (`readResultBody`), and a malformed one drops that action.
   - **Layout, split and preview (#910, SDK 3.2.0, schema stays 1).** A client page's `layout` is a `PluginPageLayouts`
     value and the page answers it (`PluginPageViewDto.Layout`, `standard` when absent); another value or any layout on an
     admin page is `PLUGIN_PAGE_LAYOUT_UNKNOWN` (`CheckPageLayouts` in the manifest validator). `split` holds exactly two
@@ -475,7 +483,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     (exactly `id`, `label`, a GET `route`, a dotted `field`) and an optional `size`, and is allowed **only on a client
     page** (`PLUGIN_VIEW_PREVIEW_INVALID`), because no other document gets the narrowed frame policy.
     - **Origins.** `PluginPageViewDto.FrameOrigins`, computed per request by `PluginFrameOriginResolver` from the one
-      page reader, empty in the admin panel: the manifest's `externalOrigins` that are pure https origins, the domains of
+      page reader, empty in the admin panel, never holding the panel's own origin (`ClientBaseUrl`): the manifest's `externalOrigins` that are pure https origins, the domains (as typed at order) of
       the caller's account's `Active` services on products the operator bound to this plugin (#823 rows through
       `IPluginSlotContextReader`, the rule SSH access follows: no manifest fallback, nothing bound means none;
       `IPluginHostFactsReader.ListActiveServiceDomainsAsync`; the account comes from `ICallerClientResolver`, and only with
@@ -484,11 +492,20 @@ docker/                              compose set (shared·dev·prod·platform), 
       that is not a plain DNS name is dropped, because a domain is what a client typed and the text reaches a response
       header. The list is cut at 2048 characters for the proxies' header limits; what falls off shows nothing.
     - **Browser enforcement.** The panel frames an address only when its origin is exactly on that list and is not the
-      panel's own. The edge CSP keeps `frame-src 'self' https:` (operator content on public pages, and domains cannot be
-      listed statically), and `client/server/middleware/plugin-frame-csp.ts` adds a second header to the document of
-      `/client/apps/<plugin>/**`, `Content-Security-Policy: frame-src <origins>` or `'none'` on any failure. Policies
-      intersect. A CSP belongs to the document, so the renderer loads the page once in full when it arrived by a router
-      move from another document.
+      panel's own. The edges this repository ships (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`, held to one policy by `scripts/check-edge-csp.sh`) keep `frame-src 'self' https:` (operator content on public pages, and domains cannot be
+      listed statically). The workspace's `edge-proxy/nginx.conf` sends that same policy as `Content-Security-Policy-Report-Only` on `host.innovayse.com` while it is reviewed (#938; the workspace's `guard:edge-csp` runs that real file and compares it with the Caddyfile), and a report-only policy does not intersect with an enforcing one, so on that deployment the header below is the only one enforced until the rollout switches it on. `client/server/middleware/plugin-frame-csp.ts` adds a second header to the document of
+      `/client/apps/<plugin>/**` (a language prefix names the same page), `Content-Security-Policy: frame-src <origins>` or
+      `'none'` on any failure. Policies intersect. A document that got the API's origins also carries `Server-Timing:
+      plugin-frames`, the one response header script can read (secure contexts only, which localhost and https are). A CSP belongs to
+      the document, so the renderer loads the page once in full when it arrived by a router move from another document, or
+      when its document lacks that entry, which is the document a visitor opened signed out and then signed in inside.
+    - **Reload.** A refresh of the block's `id` draws a new frame once its read answered, because a site's address does
+      not change with its content; nothing about the sandbox changes for it. With a `note` only a changed note draws one, because a follow-up reads the block every few seconds. A chat's `refresh` also applies after a result
+      card's action, whose `until` (`route`, `field`, `equalsAny`) keeps those blocks reading while work it started runs on.
+    - **Presentation members, no schema change.** The view schema allows extra members on a block, and these are the
+      panel's: a header's `compact`, `titleSource`, `subtitleSource` and any block kind in its `actions`; an action's
+      `labelSource`; a table's `display: "cards"`; a tabs block's `actions`; a preview's `note` (an object of sentences by
+      source id). A chat `result` event may carry `details` (lines behind a switch), and an action `{ label, resend: true }`.
     - **Sandbox decision.** `allow-scripts allow-forms`, **never `allow-same-origin`**: a client chooses a service's
       domain, so it could name the panel's own host, and that pair is an escape from the sandbox on a shared origin. The
       opaque origin also means a framed site's session can never be driven from the panel. Accepted cost: a page that
@@ -1927,7 +1944,9 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
     so the document's scope is the exact page: `pluginDocumentLoaded` compares the navigation entry's path with the page on
     screen, and any router move onto a preview, inside one plugin too, loads it once in full (one session flag per page
     keeps it from looping). `ChatBlock` renders `step`, `result` (`UiToneCard`) and `issue` inside the reply, and Stop
-    aborts the fetch.
+    aborts the fetch. A reply's own text goes through `UiMarkdownText` (`utils/ui/markdownText.ts`): the Markdown subset
+    becomes known tags through the same node tree and `renderRichNode` as `UiRichText`, never `v-html`, and a Markdown link
+    stays text, because an address renders only through `pluginLinkTarget`.
 - **The kit is `components/ui/` (`Ui*`), and screens are composed from it.** `pages/**`, `layouts/**`
   and `templates/*/{pages,sections,layout}/**` carry no raw tag at all; an area's own components
   (`components/<area>/`) compose the kit and may not hold a card-styled `div` or an interactive

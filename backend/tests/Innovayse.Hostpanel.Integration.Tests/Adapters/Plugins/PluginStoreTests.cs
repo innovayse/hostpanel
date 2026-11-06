@@ -4,6 +4,7 @@ using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
+using Innovayse.Hostpanel.Shared.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,7 +30,7 @@ public sealed class PluginStoreTests(IntegrationTestFactory factory) : IClassFix
     private const int Racers = 4;
 
     /// <summary>How many times a two-writer race is repeated, so the writes really overlap at least once.</summary>
-    private const int RaceRounds = 5;
+    private const int RaceRounds = 8;
 
     /// <summary>A quota of <see cref="SmallCap"/> keys and the default size, for the tests about the key cap.</summary>
     private static readonly PluginStoreQuota KeyCapQuota = new(SmallCap, PluginApiOptions.DefaultMaxStoreCharsPerScope);
@@ -352,6 +353,35 @@ public sealed class PluginStoreTests(IntegrationTestFactory factory) : IClassFix
         });
         (await RowsAsync(plugin)).Should().HaveCount(SmallCap);
         await AssertTotalsMatchRowsAsync(plugin, clientRef);
+    }
+
+    /// <summary>
+    /// A key whose scope row is missing, which is what a reader sees when a first writer commits between the scope read and
+    /// the entry read, makes a set and a remove raise the retryable <see cref="ConcurrencyConflictException"/> and never
+    /// the domain guard's <see cref="ArgumentOutOfRangeException"/>, and the attempt leaves nothing behind.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AnEntryWithoutItsScopeRow_SetAndRemoveRaiseAConflictToRetry()
+    {
+        var (plugin, clientRef) = (NewPlugin(), NewRef());
+        await WithFreshContextAsync(async db =>
+        {
+            db.PluginDataEntries.Add(PluginDataEntry.Create(plugin, clientRef, "k", "a-longer-value"));
+            await db.SaveChangesAsync();
+        });
+
+        await WithFreshContextAsync(async db =>
+        {
+            var store = StoreOf(db, plugin, clientRef);
+            await FluentActions.Awaiting(() => store.SetAsync("k", "w", CancellationToken.None))
+                .Should().ThrowAsync<ConcurrencyConflictException>();
+            await FluentActions.Awaiting(() => store.RemoveAsync("k", CancellationToken.None))
+                .Should().ThrowAsync<ConcurrencyConflictException>();
+        });
+
+        (await ScopeAsync(plugin, clientRef)).Should().BeNull();
+        (await RowsAsync(plugin)).Should().ContainSingle().Which.Value.Should().Be("a-longer-value");
     }
 
     /// <summary>

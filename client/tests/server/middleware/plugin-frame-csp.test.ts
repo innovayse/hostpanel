@@ -49,6 +49,26 @@ describe('plugin-frame-csp middleware', () => {
   })
 
 
+  it.each(['ru', 'hy'])('narrows a page under the %s language prefix too, reading the same page', async (language) => {
+    const { event, requests } = await run(`/${language}/client/apps/acme-sites/services/7`, { body: { frameOrigins: ['https://a.example'] } })
+
+    expect(event.responseHeaders['Content-Security-Policy']).toBe('frame-src https://a.example')
+    expect(requests[0]?.url).toBe('/api/client/plugins/ui/acme-sites/pages/by-path?path=%2Fservices%2F7')
+  })
+
+  it('marks a document that received origins, so the preview block can tell it from a closed one', async () => {
+    const { event } = await run('/client/apps/acme-sites/services/7', { body: { frameOrigins: ['https://a.example'] } })
+
+    expect(event.responseHeaders['Server-Timing']).toBe('plugin-frames')
+  })
+
+  it('leaves the mark off a closed document, such as one served to a signed-out visitor', async () => {
+    const { event } = await run('/client/apps/acme-sites/services/7', { status: 401, body: {} })
+
+    expect(event.responseHeaders['Content-Security-Policy']).toBe("frame-src 'none'")
+    expect(event.responseHeaders['Server-Timing']).toBeUndefined()
+  })
+
   it('reads the root page for the plugin address itself', async () => {
     const { requests } = await run('/client/apps/acme-sites', { body: { frameOrigins: [] } })
 

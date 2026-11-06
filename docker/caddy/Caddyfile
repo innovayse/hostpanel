@@ -26,8 +26,9 @@
 }
 
 # Response headers every public answer carries. HSTS is ignored by a browser on a plain-HTTP origin, so
-# it is harmless in the mode that serves HTTP behind another TLS proxy. Caddy sets (never appends) a
-# header, so importing this where the upstream sends the same header cannot duplicate it.
+# it is harmless in the mode that serves HTTP behind another TLS proxy. These are set before the request
+# reaches reverse_proxy, which then adds the upstream's headers beside them, so a header both sides send
+# reaches the client twice. Only a ? default below yields to the upstream's own value.
 (security_headers) {
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"

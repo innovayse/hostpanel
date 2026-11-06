@@ -113,6 +113,7 @@ import {
   TWO_FACTOR,
   TWO_FACTOR_REFUSED,
   PLUGIN_CHAT_PAUSE_MS,
+  PLUGIN_FRAME_ORIGIN,
   PLUGIN_CHAT_REPLY,
   PLUGIN_ID,
   PLUGIN_SITE,
@@ -454,6 +455,10 @@ const routePlugin = (method, path, res, query, language) => {
   }
   if (method === 'GET' && path === `${own}/sites`) {
     send(res, 200, [{ id: PLUGIN_SITE.id, name: PLUGIN_SITE.name, status: pluginSiteStatus }])
+    return true
+  }
+  if (method === 'GET' && path === `${own}/workspace/site`) {
+    send(res, 200, { previewUrl: `${PLUGIN_FRAME_ORIGIN}/__e2e/frame` })
     return true
   }
   if (method === 'GET' && path === `${own}/sites/${PLUGIN_SITE.id}`) {
@@ -1158,6 +1163,11 @@ const server = createServer(async (req, res) => {
   const path = url.pathname
 
   // Test-only control endpoints; never logged themselves.
+  if (path === '/__e2e/frame') {
+    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.end('<!doctype html><title>Framed</title><p>A framed site</p>')
+    return
+  }
   if (path === '/__e2e/requests') {
     send(res, 200, received)
     return

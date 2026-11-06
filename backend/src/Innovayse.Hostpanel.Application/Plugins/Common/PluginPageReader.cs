@@ -39,16 +39,18 @@ public sealed class PluginPageReader
     /// <param name="facts">Reads the domains of the caller's own hosting services.</param>
     /// <param name="slots">Reads the products the operator bound a plugin's slot widgets to.</param>
     /// <param name="preview">The origins allowed over plain http on a developer machine.</param>
+    /// <param name="portal">The panel's own address, whose origin is never framed.</param>
     public PluginPageReader(
         IPluginUiSource source,
         ICallerClientResolver callerClient,
         IPluginHostFactsReader facts,
         IPluginSlotContextReader slots,
-        IOptions<PluginPreviewOptions> preview)
+        IOptions<PluginPreviewOptions> preview,
+        IOptions<ClientPortalOptions> portal)
     {
         _source = source;
         _callerClient = callerClient;
-        _frameOrigins = new PluginFrameOriginResolver(callerClient, facts, slots, preview);
+        _frameOrigins = new PluginFrameOriginResolver(callerClient, facts, slots, preview, portal);
     }
 
     /// <summary>Reads and localises the page <paramref name="select"/> picks from the plugin's pages of the area.</summary>

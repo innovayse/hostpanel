@@ -130,4 +130,10 @@ public enum PluginManifestRule
     /// but on a client page, the one place the host narrows the frames a document may load.
     /// </summary>
     ViewPreviewInvalid = 33,
+
+    /// <summary>
+    /// A view document holds a <c>bodySource</c> that breaks its shape, sits outside an action block, on an action with no
+    /// id, that calls no method with a body, whose label is read from another route, or outside the client area.
+    /// </summary>
+    ViewActionBodyInvalid = 34,
 }

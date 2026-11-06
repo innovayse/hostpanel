@@ -261,6 +261,46 @@ describe('UiDialog and its animation', () => {
     expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(0)
     parent.unmount()
   })
+
+  it('plays the leave on an inert copy when a parent removes the dialog with v-if, and removes the copy when it ends', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: false }))
+    const frame = holdFrames()
+    const show = ref(true)
+    const parent = mount(
+      defineComponent({ render: () => (show.value ? h(UiDialog, { open: true, title: 'Edit' }, () => h('input')) : h('p', 'gone')) }),
+      { attachTo: document.body, global: realGlobal },
+    )
+    await frame.flush()
+
+    show.value = false
+    await nextTick()
+
+    const ghost = document.body.querySelector<HTMLElement>('.group\\/overlay')
+    expect(ghost).not.toBeNull()
+    expect(ghost?.hasAttribute('inert')).toBe(true)
+    expect(ghost?.getAttribute('aria-hidden')).toBe('true')
+    expect(ghost?.classList.contains('ui-from')).toBe(true)
+    expect(ghost?.querySelector('[data-testid], [role="dialog"], [id]')).toBeNull()
+    ghost?.dispatchEvent(new Event('transitionend'))
+    expect(document.body.querySelector('.group\\/overlay')).toBeNull()
+    parent.unmount()
+  })
+
+  it('plays no copy under reduced motion', async () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true }))
+    const show = ref(true)
+    const parent = mount(
+      defineComponent({ render: () => (show.value ? h(UiDialog, { open: true, title: 'Edit' }) : h('p', 'gone')) }),
+      { attachTo: document.body, global: realGlobal },
+    )
+    await flushPromises()
+
+    show.value = false
+    await nextTick()
+
+    expect(document.body.querySelector('.group\\/overlay')).toBeNull()
+    parent.unmount()
+  })
 })
 
 describe('UiDrawer and its animation', () => {

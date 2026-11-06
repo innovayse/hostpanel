@@ -92,3 +92,61 @@ export const modalPanelClasses = {
   /** A drawer's panel on the right edge: slides in from the right. */
   drawerRight: 'transition-transform duration-(--duration-slow) ease-out group-[.ui-from]/overlay:translate-x-full motion-reduce:transition-none motion-reduce:group-[.ui-from]/overlay:translate-x-0',
 } as const
+
+/**
+ * Splits a class string into its classes.
+ *
+ * @param classes - A class string.
+ * @returns The classes.
+ */
+const classList = (classes: string): string[] => classes.split(/\s+/).filter(token => token !== '')
+
+/** Upper bound for a ghost's life, in case the browser never reports the end of its transition. */
+const GHOST_MAX_MS = 1000
+
+/**
+ * Plays the leave of a surface whose component the parent has already removed (`<UiDialog v-if="x">`).
+ *
+ * Vue runs a leave only while the `<Transition>` outlives the element, and a `v-if` on the component takes the
+ * transition away with it, so the surface would vanish at once. This copies the element into `<body>`, makes the
+ * copy inert and unnamed (no test id, id or role, hidden from assistive tech, no pointer events, so nothing finds it
+ * or reaches it) and runs the kind's leave classes on it. The copy removes itself when the transition ends.
+ * Under reduced motion nothing is copied.
+ *
+ * @param element - The surface element that is about to be removed (the backdrop of a dialog or drawer).
+ * @param kind - Which kind of surface it is, so its leave classes are used.
+ * @returns Nothing; the copy plays and removes itself.
+ */
+export const playGhostLeave = (element: HTMLElement, kind: UiTransitionKind): void => {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return
+  }
+  const set = transitionSet[kind]
+  const ghost = element.cloneNode(true) as HTMLElement
+  for (const node of [ghost, ...ghost.querySelectorAll<HTMLElement>('[id], [data-testid], [role], [aria-modal]')]) {
+    for (const attribute of ['id', 'data-testid', 'role', 'aria-modal', 'aria-labelledby']) {
+      node.removeAttribute(attribute)
+    }
+  }
+  ghost.setAttribute('aria-hidden', 'true')
+  ghost.setAttribute('inert', '')
+  ghost.classList.remove(...classList(set.enterActiveClass), ...classList(set.enterFromClass), ...classList(set.enterToClass))
+  ghost.classList.add('pointer-events-none', ...classList(set.leaveActiveClass), ...classList(set.leaveFromClass))
+  document.body.appendChild(ghost)
+  // Read a layout value so the browser paints the start state before the end state is applied.
+  void ghost.offsetWidth
+  ghost.classList.remove(...classList(set.leaveFromClass))
+  ghost.classList.add(...classList(set.leaveToClass))
+  /**
+   * Takes the copy out of the page.
+   *
+   * @returns Nothing; the copy is removed.
+   */
+  const remove = (): void => ghost.remove()
+  ghost.addEventListener('transitionend', (event) => {
+    if (event.target === ghost) {
+      remove()
+    }
+  })
+  window.setTimeout(remove, GHOST_MAX_MS)
+}

@@ -138,6 +138,34 @@ To release, bump the version in `plugin.json` and the project file, merge to `ma
 
 The upload step assumes a registry that takes an API key as a bearer token. If your registry names its header differently, change the one line that writes the header file.
 
+## Rotate or revoke a signing key
+
+Rotate a key on a schedule, when a person who held it leaves, or at once when you think it leaked. A registry keeps every key you registered, active or revoked, and never lets a key id be registered twice, so an old signature cannot be revived under a reused id.
+
+### Rotate on a schedule
+
+Rotation moves new releases to a new key and then retires the old one. Versions already published keep working.
+
+1. Generate a new key pair with a new key id, for example `mycompany-2027`. Never reuse an id.
+2. Register the new public key under your publisher, next to the old one.
+3. Replace the signing key secret and the key id variable of the release workflow with the new values (`PLUGIN_SIGNING_KEY` and `PLUGIN_SIGNING_KEY_ID` in the template).
+4. Release the next version signed with the new key and check that the registry accepts it.
+5. Revoke the old key in the registry with a reason such as "scheduled rotation", and leave **compromised** off.
+
+A normal revocation changes only what happens next: the registry refuses a new package signed with the revoked key, naming the key in the refusal, and the key is listed as revoked together with your reason. Versions the key already signed stay valid, so operators who installed them are not disturbed. Delete the old private key once the revocation is recorded.
+
+### Revoke a key that leaked
+
+If the private key was stolen, lost or exposed (a log, a screenshot, a compromised CI secret), revoke it and mark it **compromised**, with a reason that explains what happened.
+
+- The key is listed as revoked and compromised, with your reason, so a host or an operator that reads the list can distrust anything signed with it.
+- Every version the key signed is withdrawn: published and deprecated versions become **Yanked** with the reason, and a version still waiting for review is refused. A withdrawn version is never offered as the latest again. The registry still serves a yanked version by its exact number, because hosts that installed it need it, but a host that sees the status should warn.
+- Versions signed with your other keys are not touched. A plugin whose every published version was signed by the compromised key leaves the listing until you publish a new version signed with a key that is still active.
+
+Then ship a new version signed with a new key, as in the rotation steps above. A key first revoked normally can still be marked compromised later; a compromised key cannot be changed back.
+
+Operators who install your package from a ZIP and trust the key through `PluginSigning:OperatorKeys` must remove the revoked key from that list themselves, because the host checks the key list on its own server.
+
 ## Verification badge
 
 A registry may show a verification badge beside a plugin. The badge is set by the registry after its own review, usually a manual one, and it is not something the package can claim. A signature proves who published the files and that they are unchanged. It does not prove the code is safe, and it does not stop an older signed version from being installed again.
@@ -147,5 +175,5 @@ To be reviewed, keep the source public or available to the reviewers, list the p
 ## After you publish
 
 - Operators install from the registry or by uploading the ZIP under **Plugins**. An upgrade of a loaded plugin takes effect at the next restart.
-- To withdraw a bad version, follow the registry's yank process and ship a new, higher version. To stop operators trusting a key, remove its registration and tell operators to remove it from `PluginSigning:OperatorKeys`.
+- To withdraw a bad version, follow the registry's yank process and ship a new, higher version. To stop trusting a key, revoke it as described in [Rotate or revoke a signing key](#rotate-or-revoke-a-signing-key) and tell operators to remove it from `PluginSigning:OperatorKeys`.
 - Never paste live credentials or the private key into an issue, a log or a screenshot.

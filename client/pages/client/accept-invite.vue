@@ -57,7 +57,13 @@
  * accepted from the credential, so whoever accepts must already be signed in; a password
  * collected here would have nowhere to go. The page offers the sign-in step instead.
  */
-import { CLIENT_DASHBOARD_PATH, CLIENT_LOGIN_PATH, CLIENT_REDIRECT_QUERY } from '~/constants/clientRoutes'
+import {
+  CLIENT_DASHBOARD_PATH,
+  CLIENT_LOGIN_PATH,
+  CLIENT_REDIRECT_QUERY,
+  RETURN_TO_QUERY,
+  SSO_AUTHORIZE_PATH
+} from '~/constants/clientRoutes'
 import { AlertCircle, LogIn, UserPlus } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useAuthStore } from '~/stores/auth'
@@ -122,7 +128,7 @@ const goToSignIn = (): ReturnType<typeof navigateTo> => {
 
   if (isSso.value) {
     const baseUrl = (config.public.baseUrl as string) || window.location.origin
-    return navigateTo(`${baseUrl}/api/portal/auth/sso/authorize?returnTo=${returnTo}`, { external: true })
+    return navigateTo(`${baseUrl}${SSO_AUTHORIZE_PATH}?${RETURN_TO_QUERY}=${returnTo}`, { external: true })
   }
 
   return navigateTo(`${CLIENT_LOGIN_PATH}?${CLIENT_REDIRECT_QUERY}=${returnTo}`)

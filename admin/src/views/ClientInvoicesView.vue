@@ -18,6 +18,7 @@ import { InvoiceBulkAction, InvoiceOpenAction } from '@/types/invoice'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiCollapse from '@/components/ui/UiCollapse.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import { UiDatePickerDirection } from '@/utils/ui/datePicker'
@@ -405,96 +406,98 @@ onMounted(() => fetchInvoices())
       </UiButton>
     </UiStack>
 
-    <UiCard v-if="showCreateForm" padding="md" data-testid="invoice-create-form">
-      <UiStack>
-        <UiHeading :level="2" variant="card">{{ t('clients.clientInvoices.newInvoice') }}</UiHeading>
+    <UiCollapse :open="showCreateForm">
+      <UiCard padding="md" data-testid="invoice-create-form">
+        <UiStack>
+          <UiHeading :level="2" variant="card">{{ t('clients.clientInvoices.newInvoice') }}</UiHeading>
 
-        <UiGrid :columns="2">
-          <UiField :label="t('shared.dueDate')">
-            <UiDatePicker v-model="newDueDate" :direction="UiDatePickerDirection.Future" :placeholder="t('clients.clientInvoices.selectDueDate')" />
+          <UiGrid :columns="2">
+            <UiField :label="t('shared.dueDate')">
+              <UiDatePicker v-model="newDueDate" :direction="UiDatePickerDirection.Future" :placeholder="t('clients.clientInvoices.selectDueDate')" />
+            </UiField>
+            <UiLabel :variant="UiLabelVariant.Inline">
+              <UiCheckbox
+                v-model="newIsDraft"
+                :aria-label="t('clients.clientInvoices.createAsDraft')"
+                data-testid="invoice-create-draft"
+              />
+              {{ t('clients.clientInvoices.createAsDraft') }}
+            </UiLabel>
+          </UiGrid>
+
+          <UiField :label="t('shared.lineItems')">
+            <UiStack gap="sm">
+              <UiStack
+                v-for="(item, idx) in newItems"
+                :key="idx"
+                direction="row"
+                gap="sm"
+                :align="UiAlignItems.Center"
+              >
+                <UiInput
+                  v-model="item.description"
+                  type="text"
+                  :placeholder="t('shared.description')"
+                  data-testid="invoice-item-description"
+                />
+                <UiNumberInput
+                  v-model="item.unitPrice"
+                  data-testid="invoice-item-price"
+                  :step="0.01"
+                  :min="0"
+                  :placeholder="t('shared.price')"
+                />
+                <UiNumberInput
+                  v-model="item.quantity"
+                  data-testid="invoice-item-quantity"
+                  :min="1"
+                  :placeholder="t('shared.qty')"
+                />
+                <UiIconButton
+                  v-if="newItems.length > 1"
+                  :label="t('shared.delete')"
+                  :size="UiSize.Sm"
+                  :data-testid="`invoice-item-remove-${idx}`"
+                  @click="removeNewItem(idx)"
+                >
+                  <UiIcon :markup="TRASH_ICON" />
+                </UiIconButton>
+              </UiStack>
+              <UiStack direction="row">
+                <UiButton
+                  type="button"
+                  :variant="UiButtonVariant.Link"
+                  data-testid="invoice-item-add"
+                  @click="addNewItem"
+                >
+                  {{ t('clients.clientInvoices.addItem') }}
+                </UiButton>
+              </UiStack>
+            </UiStack>
           </UiField>
-          <UiLabel :variant="UiLabelVariant.Inline">
-            <UiCheckbox
-              v-model="newIsDraft"
-              :aria-label="t('clients.clientInvoices.createAsDraft')"
-              data-testid="invoice-create-draft"
-            />
-            {{ t('clients.clientInvoices.createAsDraft') }}
-          </UiLabel>
-        </UiGrid>
 
-        <UiField :label="t('shared.lineItems')">
-          <UiStack gap="sm">
-            <UiStack
-              v-for="(item, idx) in newItems"
-              :key="idx"
-              direction="row"
-              gap="sm"
-              :align="UiAlignItems.Center"
+          <UiStack direction="row" :justify="UiJustify.End" gap="sm">
+            <UiButton
+              type="button"
+              :variant="UiButtonVariant.Secondary"
+              data-testid="invoice-create-cancel"
+              @click="showCreateForm = false"
             >
-              <UiInput
-                v-model="item.description"
-                type="text"
-                :placeholder="t('shared.description')"
-                data-testid="invoice-item-description"
-              />
-              <UiNumberInput
-                v-model="item.unitPrice"
-                data-testid="invoice-item-price"
-                :step="0.01"
-                :min="0"
-                :placeholder="t('shared.price')"
-              />
-              <UiNumberInput
-                v-model="item.quantity"
-                data-testid="invoice-item-quantity"
-                :min="1"
-                :placeholder="t('shared.qty')"
-              />
-              <UiIconButton
-                v-if="newItems.length > 1"
-                :label="t('shared.delete')"
-                :size="UiSize.Sm"
-                :data-testid="`invoice-item-remove-${idx}`"
-                @click="removeNewItem(idx)"
-              >
-                <UiIcon :markup="TRASH_ICON" />
-              </UiIconButton>
-            </UiStack>
-            <UiStack direction="row">
-              <UiButton
-                type="button"
-                :variant="UiButtonVariant.Link"
-                data-testid="invoice-item-add"
-                @click="addNewItem"
-              >
-                {{ t('clients.clientInvoices.addItem') }}
-              </UiButton>
-            </UiStack>
+              {{ t('shared.cancel') }}
+            </UiButton>
+            <UiButton
+              type="button"
+              :variant="UiButtonVariant.Primary"
+              :disabled="creating"
+              data-testid="invoice-create-submit"
+              @click="handleCreate"
+            >
+              {{ creating ? t('shared.creating') : t('clients.clientInvoices.createInvoice2') }}
+            </UiButton>
           </UiStack>
-        </UiField>
-
-        <UiStack direction="row" :justify="UiJustify.End" gap="sm">
-          <UiButton
-            type="button"
-            :variant="UiButtonVariant.Secondary"
-            data-testid="invoice-create-cancel"
-            @click="showCreateForm = false"
-          >
-            {{ t('shared.cancel') }}
-          </UiButton>
-          <UiButton
-            type="button"
-            :variant="UiButtonVariant.Primary"
-            :disabled="creating"
-            data-testid="invoice-create-submit"
-            @click="handleCreate"
-          >
-            {{ creating ? t('shared.creating') : t('clients.clientInvoices.createInvoice2') }}
-          </UiButton>
         </UiStack>
-      </UiStack>
-    </UiCard>
+      </UiCard>
+    </UiCollapse>
 
     <UiStack direction="row" wrap :align="UiAlignItems.Center" gap="sm">
       <UiSelect v-model="filterStatus" :options="INVOICE_STATUS_OPTIONS" :placeholder="t('clients.clientInvoices.allStatuses')" data-testid="client-invoices-filter-status" />

@@ -16,6 +16,7 @@ import type { PluginPreviewSize } from '~/types/pluginpreviewsize'
 import type { PluginTableDisplay } from '~/types/plugintabledisplay'
 import type { PluginValueFormat } from '~/types/pluginvalueformat'
 import type { PluginViewCondition } from '~/types/pluginviewcondition'
+import type { PluginPreviewSelection } from '~/types/pluginpreviewselection'
 import type { PluginViewRoute } from '~/types/pluginviewroute'
 
 /** A value read from a route: the route's reply, or one field of it. */
@@ -264,6 +265,8 @@ export interface PluginChatBlock extends PluginBlockBase {
   kind: PluginBlockKind.Chat
   /** The streaming POST route a message is sent to. */
   send: PluginViewRoute
+  /** Whether a message carries the elements selected on the document's preview; off when absent. */
+  selection?: boolean
   /** The GET route answering the earlier messages. */
   history?: PluginViewRoute
   /** The placeholder of the message field. */
@@ -328,6 +331,8 @@ export interface PluginPreviewSource extends PluginSource {
 export interface PluginPreviewBlock extends PluginBlockBase {
   /** The kind. */
   kind: PluginBlockKind.Preview
+  /** Lets the reader select elements in the frame; off when absent. */
+  selection?: PluginPreviewSelection
   /** The heading above the frame. */
   title?: string
   /** The size shown first; desktop when absent. */

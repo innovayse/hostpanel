@@ -492,6 +492,18 @@ takes no layout. A bad value is `PLUGIN_PAGE_LAYOUT_UNKNOWN`.
 Up to 5 `sources`, each exactly `id`, `label`, a `GET` `route` and a dotted `field`; `size` is `desktop` or `phone`, and
 the reader can switch both. A bad shape, or a preview in a slot or on an admin page, is `PLUGIN_VIEW_PREVIEW_INVALID`.
 
+**Letting the reader select elements.** A preview may declare `selection`, and a chat in the same document `"selection": true`; both are off when absent:
+
+```json
+"selection": {
+  "sources": ["preview"],
+  "route": { "method": "post", "path": "/services/{serviceId}/site/selection" },
+  "release": { "route": { "method": "get", "path": "/services/{serviceId}/site/state" }, "field": "previewRelease" }
+}
+```
+
+`sources` are the source ids that may select: leave a live site out. The framed page runs your own script and talks to the panel with `postMessage`, `{ "type": "hostpanel.preview.selection", "version": 1, "release": "...", "event": "ready" | "toggle" | "exit", "id": "..." }`, and receives `{ type, version, "event": "state", "active": bool, "selected": [ids] }` from the panel. The select button appears only after `ready`. `id` is a dotted path of letters and digits, at most 128 characters and 20 per selection. **A message is a claim, never trusted:** the panel accepts it only from its own frame's window, in exactly this shape, naming the release your route reports, on a listed source, and a `toggle` only while the mode is on; any script in the frame could still send one. So your `route` gets `{ "releaseId", "ids" }` and answers `{ "items": [{ "id", "label" }] }` with the ids it really knows, and the panel draws only those labels. The next chat message carries `"selection": { "releaseId", "ids" }`, which your server must check again; take no text from the frame. A selection is emptied when the release changes. A bad shape, or a chat selection with no preview selection, is `PLUGIN_VIEW_SELECTION_INVALID`.
+
 **What may be framed.** The address the route returns is shown only when its origin is one of your manifest's
 `externalOrigins` (a pure `https` origin) or a domain of the reader's own active hosting services on a product the
 operator bound to your plugin's slot widgets, as the service's domain was typed at order (with its `www` name, and only for

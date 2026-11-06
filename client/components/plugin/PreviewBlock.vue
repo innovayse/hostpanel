@@ -10,6 +10,14 @@
         size="sm"
         testid="plugin-preview-source"
       />
+      <UiButton
+        v-if="canSelect"
+        :variant="selection.active.value ? 'primary' : 'outline'"
+        size="sm"
+        :aria-pressed="selection.active.value"
+        data-testid="plugin-preview-select"
+        @click="toggleMode"
+      >{{ selection.active.value ? $t('plugins.previewSelectDone') : $t('plugins.previewSelect') }}</UiButton>
       <UiText
         v-if="address"
         size="xs"
@@ -33,6 +41,7 @@
         testid="plugin-preview-open"
       >{{ $t('plugins.previewOpen') }}</UiLink>
     </UiStack>
+    <UiText v-if="canSelect && selection.active.value" size="sm" role="status" data-testid="plugin-preview-select-hint">{{ $t('plugins.previewSelectHint') }}</UiText>
     <UiStack align="center" class="relative min-h-[420px] flex-1" data-testid="plugin-preview-canvas">
       <UiCard
         v-if="showFrame && address"
@@ -40,7 +49,7 @@
         :class="['relative min-h-[420px] w-full flex-1 overflow-hidden shadow-lg', size === PluginPreviewSize.Phone ? 'max-w-[375px]' : 'max-w-[980px]']"
         data-testid="plugin-preview-viewport"
       >
-        <UiPreviewFrame :key="frameKey" :src="address" :title="source?.label ?? ''" testid="plugin-preview-frame" />
+        <UiPreviewFrame ref="frame" :key="frameKey" :src="address" :title="source?.label ?? ''" testid="plugin-preview-frame" />
       </UiCard>
       <UiAlert v-else-if="insecureContext" :variant="UiAlertVariant.Warning" class="w-full" data-testid="plugin-preview-insecure">{{ $t('plugins.previewInsecure') }}</UiAlert>
       <UiText v-else-if="!loading" size="sm" tone="muted" data-testid="plugin-preview-empty">{{ $t('plugins.previewEmpty') }}</UiText>
@@ -64,11 +73,21 @@
  * The address of a site does not change when its content does, so a refresh of this block draws a new frame once its
  * read has answered, or, when the view names a `note`, once the note changed: an address that also changed loads once, and the sandbox stays as it is. The optional `note` reads
  * an object of sentences by source id, written over the frame; it is text, and only ever beside a frame.
+ *
+ * With a `selection` the reader can point at elements in the frame. The panel cannot read an opaque-origin frame, so a small
+ * script there reports what was pointed at, and any script in the frame could send the same thing: a message is a claim. It
+ * is taken only from this frame's window (`event.source`; the origin is `null` and proves nothing), only in the exact versioned
+ * shape, only naming the release the plugin says is on the preview, only on a source the view lets select, and a toggle only
+ * while the mode is on. The select button appears only after the frame said it is ready, so a site without the script, the
+ * live one above all, offers none. What is then selected is what the plugin's server confirms. Messages to the frame go to
+ * target `*`, since an opaque origin cannot be named, so they carry the mode and element ids and nothing else.
  */
+import { usePluginSelection } from '~/composables/usePluginSelection'
 import { usePluginSource, usePluginView } from '~/composables/usePluginView'
+import { PLUGIN_SELECTION_MESSAGE_TYPE, PLUGIN_SELECTION_MESSAGE_VERSION } from '~/constants/pluginSelection'
 import type { PluginPreviewBlock } from '~/types/pluginblock'
 import { PluginPreviewSize } from '~/types/pluginpreviewsize'
-import { pluginDocumentLoaded, pluginFrameAddress, readPluginField } from '~/utils/plugins'
+import { parsePluginSelectionMessage, pluginDocumentLoaded, pluginFrameAddress, readPluginField } from '~/utils/plugins'
 import { UiAlertVariant } from '~/utils/ui/enums'
 
 /** Props of PluginPreviewBlock. */
@@ -89,6 +108,13 @@ const { t } = useI18n()
 const context = usePluginView()
 /** The address of the page on screen, which the document must have been served for. */
 const route = useRoute()
+
+/** The selection this document's chat reads. */
+const selection = usePluginSelection()
+/** The frame on screen. */
+const frame = ref<{ contentWindow: () => Window | null } | null>(null)
+/** Whether the frame on screen said it can select. */
+const frameReady = ref(false)
 
 /** The selected source's id; the first to begin with. */
 const sourceId = ref(props.block.sources[0]?.id ?? '')
@@ -130,6 +156,18 @@ const noteText = computed(() => {
   return typeof note === 'string' ? note : ''
 })
 
+/** The block's release source: read only when the view lets the reader select. */
+const { value: release } = usePluginSource(
+  () => (props.block.selection ? { route: props.block.selection.release.route, field: props.block.selection.release.field } : undefined),
+  () => props.block.id,
+)
+
+/** The release on the preview, as the plugin's server says; empty when unknown. */
+const expectedRelease = computed(() => (typeof release.value === 'string' ? release.value : ''))
+
+/** Whether the source on screen is one the view lets select. */
+const selectableSource = computed(() => props.block.selection?.sources.includes(sourceId.value) === true)
+
 /** How many times a refresh of this block has drawn a new frame. */
 const revision = ref(0)
 /** Whether a refresh was asked for and its read has not answered yet. */
@@ -143,6 +181,71 @@ const address = computed(() => pluginFrameAddress(value.value, context.frameOrig
 
 /** Whether the frame may be drawn. */
 const showFrame = computed(() => address.value !== null && documentReady.value)
+
+/** Whether the select button is offered. */
+const canSelect = computed(() => selectableSource.value && showFrame.value && frameReady.value && expectedRelease.value !== '')
+
+/**
+ * Tells the frame the mode and what is selected.
+ *
+ * @returns Nothing.
+ */
+const tellFrame = (): void => {
+  // '*' because an opaque origin cannot be named as a target; this message holds no secret and no customer data.
+  frame.value?.contentWindow()?.postMessage({
+    type: PLUGIN_SELECTION_MESSAGE_TYPE,
+    version: PLUGIN_SELECTION_MESSAGE_VERSION,
+    event: 'state',
+    active: selection.active.value,
+    selected: selection.chips.value.map(chip => chip.id),
+  }, '*')
+}
+
+/**
+ * Takes one message from a window. Everything failing a check is dropped without a word: the sender may be anything.
+ *
+ * @param event - The message.
+ * @returns Nothing.
+ */
+const onFrameMessage = (event: MessageEvent): void => {
+  const own = frame.value?.contentWindow()
+  if (!props.block.selection || !own || event.source !== own || !selectableSource.value) {
+    return
+  }
+  const message = parsePluginSelectionMessage(event.data, expectedRelease.value)
+  if (!message) {
+    return
+  }
+  if (message.event === 'ready') {
+    frameReady.value = true
+    tellFrame()
+  } else if (selection.active.value && message.event === 'toggle') {
+    void selection.toggle(props.block.selection.route, expectedRelease.value, message.id)
+  } else if (selection.active.value && message.event === 'exit') {
+    selection.active.value = false
+  }
+}
+
+/**
+ * Leaves the mode on Esc when the focus is in the panel; inside the frame the script reports it.
+ *
+ * @param event - The key.
+ * @returns Nothing.
+ */
+const onKeydown = (event: KeyboardEvent): void => {
+  if (event.key === 'Escape' && selection.active.value) {
+    selection.active.value = false
+  }
+}
+
+/**
+ * Turns the mode on or off.
+ *
+ * @returns Nothing.
+ */
+const toggleMode = (): void => {
+  selection.active.value = !selection.active.value
+}
 
 /**
  * Checks the document once an address is admitted: this one holds the frame, or the page is loaded in full once.
@@ -174,6 +277,32 @@ const checkDocument = (): void => {
 }
 
 watch([address, () => route.path], checkDocument)
+onMounted(() => {
+  window.addEventListener('message', onFrameMessage)
+  window.addEventListener('keydown', onKeydown)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('message', onFrameMessage)
+  window.removeEventListener('keydown', onKeydown)
+  selection.clear()
+})
+// What the frame draws follows what the panel holds, never the other way round.
+watch([selection.active, selection.chips], tellFrame, { deep: true })
+// A new frame says again that it is ready, or says nothing and offers no selection.
+watch(() => frameKey.value, () => {
+  frameReady.value = false
+})
+// A selection names paths of one release; a new one may hold other content at them, so nothing carries over.
+watch(expectedRelease, (next, last) => {
+  if (last !== '' && next !== last) {
+    selection.clear()
+    frameReady.value = false
+  }
+})
+watch(sourceId, () => {
+  selection.clear()
+  frameReady.value = false
+})
 watch(sourceId, reload)
 watch(() => (props.block.id ? context.refreshes.value[props.block.id] ?? 0 : 0), () => {
   refreshing = true

@@ -15,6 +15,7 @@
  * every such reference at install, and the server checks the caller again on every call, so nothing here decides
  * who may call what.
  */
+import { providePluginSelection } from '~/composables/usePluginSelection'
 import { providePluginView } from '~/composables/usePluginView'
 import { clientPluginPagePath } from '~/constants/clientRoutes'
 import type { PluginBlock as PluginBlockData, PluginPageLink } from '~/types/pluginblock'
@@ -86,6 +87,8 @@ const open = (link: PluginPageLink, row: unknown): void => {
     void navigateTo(clientPluginPagePath(props.pluginId, path))
   }
 }
+
+providePluginSelection(props.pluginId, props.values)
 
 providePluginView({
   pluginId: props.pluginId,

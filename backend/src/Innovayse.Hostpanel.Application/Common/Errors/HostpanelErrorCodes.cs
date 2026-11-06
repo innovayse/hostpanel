@@ -839,6 +839,9 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string PLUGIN_VIEW_ACTION_BODY_INVALID = "PLUGIN_VIEW_ACTION_BODY_INVALID";
 
+    /// <summary>A view document holds a preview or chat <c>selection</c> this server does not accept.</summary>
+    public const string PLUGIN_VIEW_SELECTION_INVALID = "PLUGIN_VIEW_SELECTION_INVALID";
+
     /// <summary>
     /// A page declares a layout the host does not define, or a layout on an admin page (400, the default arm: it is
     /// answered only by a plugin install).

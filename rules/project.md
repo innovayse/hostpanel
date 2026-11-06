@@ -514,6 +514,9 @@ docker/                              compose set (shared·dev·prod·platform), 
       outside Development (a blank entry counts as unset, which is what `PLUGIN_PREVIEW_DEV_HTTP_ORIGIN`, a dev compose key only,
       passes when empty), and with anything but an http origin on a loopback host (a browser blocks other http frames in
       an https panel as mixed content). This is a refusal on purpose, not a branch in the flow.
+    - **Element selection (#933, no schema change; the members are the reader's own constants until the SDK's `PluginViews` documents them).** A preview's
+      `selection` (exactly `sources`, a POST `route`, and a `release` of a GET `route` and a dotted `field`) and a chat's `selection: true` are off when absent; anything else, or a chat selection with no preview selection in the document, is `PLUGIN_VIEW_SELECTION_INVALID` (`ViewSelectionInvalid`). The sandbox does not change. A frame's message is a claim: `PreviewBlock.vue` takes it only from its frame's
+      `contentWindow` (origin is `null` and proves nothing), `parsePluginSelectionMessage` admits only the exact versioned shape, the release the plugin reports, and an id of `PLUGIN_SELECTION_ID_PATTERN`; a toggle needs the mode on and a source listed in `sources`, so a live source can do nothing. Chips hold only what the plugin's route answered (`usePluginSelection`), and a new release empties them. Host-to-frame messages go to target `*` because an opaque origin cannot be named, so they carry only the mode and ids. The plugin re-validates on its server.
   - **Chat events (#911, SDK 3.2.0).** `PluginChatEvents`: `step`, `result`, `issue`, sent as ordinary plugin events and
     rendered by the client's chat block; `error` and `done` stay reserved (`PluginEventStream`). The host forwards their data
     unread: the client renders text only and takes a result's actions through the same link rule and route door as

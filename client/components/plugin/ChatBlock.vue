@@ -42,6 +42,9 @@
               >{{ block.assistant.label }}</UiText>
               <UiMarkdownText v-if="message.role === PluginChatRole.Assistant" :text="message.text" />
               <template v-else>{{ message.text }}</template>
+              <UiStack v-if="message.selectionLabels?.length" direction="row" gap="xs" wrap class="mt-1" data-testid="plugin-chat-message-selection">
+                <UiBadge v-for="label in message.selectionLabels" :key="label">{{ label }}</UiBadge>
+              </UiStack>
               <template v-for="link in message.links" :key="link.key">
                 <UiLink v-if="link.external" :href="link.href" external class="block" testid="plugin-chat-link">{{ link.text }}</UiLink>
                 <UiLink v-else :to="link.href" class="block" testid="plugin-chat-link">{{ link.text }}</UiLink>
@@ -101,6 +104,27 @@
       </div>
       <UiText v-if="status" size="xs" tone="muted" data-testid="plugin-chat-status">{{ status }}</UiText>
       <UiText v-if="error" size="sm" tone="danger" data-testid="plugin-chat-error">{{ error }}</UiText>
+      <UiStack v-if="selection?.chips.value.length" gap="xs" data-testid="plugin-chat-selection">
+        <UiStack
+          v-for="chip in selection.chips.value"
+          :key="chip.id"
+          direction="row"
+          gap="xs"
+          align="center"
+          class="rounded-md bg-primary-50 px-2 py-1 dark:bg-primary-900/30"
+          data-testid="plugin-chat-selection-chip"
+        >
+          <UiText as="span" size="xs" class="min-w-0 flex-1 truncate">{{ chip.label }}</UiText>
+          <UiButton
+            variant="ghost"
+            size="sm"
+            :aria-label="`${$t('plugins.chatSelectionRemove')}: ${chip.label}`"
+            data-testid="plugin-chat-selection-remove"
+            @click="selection?.remove(chip.id)"
+          >{{ $t('plugins.chatSelectionRemove') }}</UiButton>
+        </UiStack>
+      </UiStack>
+      <UiText v-if="selection?.error.value" size="sm" tone="danger" data-testid="plugin-chat-selection-error">{{ selection.error.value }}</UiText>
       <UiStack direction="row" gap="sm" align="end" data-testid="plugin-chat-composer">
         <UiTextarea
           v-model="draft"
@@ -142,18 +166,22 @@
  *
  * An empty chat shows the block's `intro` and its `suggestions`, which only fill the message field; `assistant.label`
  * signs each reply, `maxLength` caps the field, and once a reply has ended the blocks named in `refresh` read again,
- * since a turn may have changed what they show. When another block refreshes this one by its `id` (a "new
+ * since a turn may have changed what they show. With `selection: true` the elements selected on the document's preview
+ * show as chips over the field, each labelled by the plugin, never by the frame, and go with the next message; sending
+ * ends the selection, and a "try again" sends the same one. When another block refreshes this one by its `id` (a "new
  * conversation" action), the reply in flight is stopped, the messages are cleared and the history is read again.
  */
 import type { Component } from 'vue'
 import { Check, CircleSlash, LoaderCircle, X } from 'lucide-vue-next'
 import { UiChatBubbleSide } from '~/utils/ui/enums'
+import { usePluginSelection } from '~/composables/usePluginSelection'
 import { usePluginPane, usePluginView } from '~/composables/usePluginView'
 import { usePluginsStore } from '~/stores/plugins'
 import type { PluginChatBlock } from '~/types/pluginblock'
 import { PluginChatEventType } from '~/types/pluginchateventtype'
 import type { PluginChatMessage } from '~/types/pluginchatmessage'
 import { PluginChatRole } from '~/types/pluginchatrole'
+import type { PluginSelectionClaim } from '~/types/pluginpreviewselection'
 import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import { PluginChatStepState } from '~/types/pluginchatstepstate'
 import { parsePluginChatResult, parsePluginChatStep, pluginLinkTarget, pluginUiTone, readPluginField } from '~/utils/plugins'
@@ -169,6 +197,8 @@ const props = defineProps<Props>()
 
 /** The view's context: the plugin and the route values. */
 const context = usePluginView()
+/** The selection of the document's preview; null when this chat takes none. */
+const selection = props.block.selection ? usePluginSelection() : null
 /** The plugin store, which reads the history and the stream. */
 const store = usePluginsStore()
 
@@ -410,10 +440,16 @@ const apply = (target: PluginChatMessage, event: PluginStreamEvent): void => {
  * Sends a message and shows the reply as it streams.
  *
  * @param text - The message, already trimmed.
+ * @param claim - The selected elements to send with it, if any.
+ * @param labels - Their labels, shown on the message.
  * @returns Resolves when the reply has ended, been stopped or failed.
  */
-const sendMessage = async (text: string): Promise<void> => {
-  add(PluginChatRole.User, text)
+const sendMessage = async (text: string, claim?: PluginSelectionClaim, labels?: readonly string[]): Promise<void> => {
+  const sent = add(PluginChatRole.User, text)
+  if (claim) {
+    sent.selection = claim
+    sent.selectionLabels = labels ?? []
+  }
   const target = add(PluginChatRole.Assistant, '')
   const asked = generation
   const running = new AbortController()
@@ -424,7 +460,7 @@ const sendMessage = async (text: string): Promise<void> => {
   error.value = ''
 
   const result = await store.streamRoute(
-    context.pluginId, props.block.send, context.values, { message: text }, event => apply(target, event), running.signal)
+    context.pluginId, props.block.send, context.values, claim ? { message: text, selection: claim } : { message: text }, event => apply(target, event), running.signal)
 
   // The conversation was reset while the reply streamed: the reset already stopped it and cleared the screen.
   if (asked !== generation) {
@@ -467,7 +503,10 @@ const send = async (): Promise<void> => {
     return
   }
   draft.value = ''
-  await sendMessage(text)
+  const claim = selection?.claim() ?? undefined
+  const labels = selection?.chips.value.map(chip => chip.label)
+  selection?.clear()
+  await sendMessage(text, claim, labels)
 }
 
 /**
@@ -479,7 +518,7 @@ const send = async (): Promise<void> => {
 const resend = async (): Promise<void> => {
   const last = [...messages.value].reverse().find(message => message.role === PluginChatRole.User)
   if (last && !streaming.value) {
-    await sendMessage(last.text)
+    await sendMessage(last.text, last.selection, last.selectionLabels)
   }
 }
 

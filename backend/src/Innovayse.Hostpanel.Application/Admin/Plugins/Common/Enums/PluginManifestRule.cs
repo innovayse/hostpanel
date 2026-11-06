@@ -136,4 +136,10 @@ public enum PluginManifestRule
     /// id, that calls no method with a body, whose label is read from another route, or outside the client area.
     /// </summary>
     ViewActionBodyInvalid = 34,
+
+    /// <summary>
+    /// A view document holds a preview <c>selection</c> or a chat <c>selection</c> that breaks its shape, or a chat that
+    /// asks for a selection in a document whose preview offers none.
+    /// </summary>
+    ViewSelectionInvalid = 35,
 }

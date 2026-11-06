@@ -261,7 +261,8 @@ builds the images and takes a few minutes. When it is done, open the **Ports** t
 The stack builds and runs the backend, the admin panel and the client portal inside its own containers. The .NET and
 Node installed in the codespace serve your editor and your tools: do not start the host `dotnet` or `yarn dev` against the
 mounted source folders while the stack is up, use `docker compose` to start, stop and read the logs of the apps. The setup
-also gives the API the codespace's forwarded names, so the links in mails and the browser origins point at them.
+also gives the API the codespace's forwarded names, so the links in mails and the browser origins point at them. Outside
+Codespaces nothing changes: the links in mails and the allowed browser origins stay on `localhost`.
 
 **Without Docker** you need the .NET 9 SDK, Node.js 22+, yarn and PostgreSQL 17:
 

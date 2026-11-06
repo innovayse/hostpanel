@@ -7,6 +7,7 @@
  * @module tests/utils/plugins.test
  */
 
+import { PLUGIN_SELECTION_MESSAGE_TYPE, PLUGIN_SELECTION_MESSAGE_VERSION } from '~/constants/pluginSelection'
 import { describe, expect, it, vi } from 'vitest'
 import { Globe, Puzzle } from 'lucide-vue-next'
 import { HttpMethod } from '~/types/httpmethod'
@@ -15,6 +16,7 @@ import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import { PluginValueFormat } from '~/types/pluginvalueformat'
 import {
   parsePluginChatResult,
+  pluginActionBody,
   parsePluginChatStep,
   pluginDocumentLoaded,
   pluginFrameAddress,
@@ -34,6 +36,7 @@ import {
   PLUGIN_STREAM_EVENT_TOO_LARGE,
   readPluginEventStream,
   pluginConditionHolds,
+  parsePluginSelectionMessage,
   readPluginField,
 } from '~/utils/plugins'
 import { UiAlertVariant, UiButtonVariant, UiTone } from '~/utils/ui/enums'
@@ -513,5 +516,65 @@ describe('parsePluginChatResult until', () => {
 
   it('starts no follow-up for a malformed condition', () => {
     expect(parsePluginChatResult(card({ field: 'state' }), {}, [], ['a'])?.actions[0]?.block?.followUp).toBeUndefined()
+  })
+})
+
+describe('action body from page data', () => {
+  /** A view's body source reading one member. */
+  const source = { route: { method: 'get', path: '/state' }, fields: { expectedVersion: 'publish.version' } }
+
+  it('builds the body from the reply', () => {
+    expect(pluginActionBody(source, { publish: { version: 14 } })).toEqual({ expectedVersion: 14 })
+  })
+
+  it.each([[undefined], [{}], [{ publish: { version: null } }], [{ publish: { version: { a: 1 } } }], [{ publish: { version: Number.NaN } }]])(
+    'refuses to build a partial body from %j', (reply) => {
+      expect(pluginActionBody(source, reply)).toBeNull()
+    })
+
+  /** A result event with one action carrying the given body. */
+  const card = (body: unknown): unknown => ({ title: 'T', actions: [{ label: 'Publish', route: { method: 'post', path: '/publish' }, body }] })
+
+  it('keeps the literal body of a result card\'s action', () => {
+    expect(parsePluginChatResult(card({ expectedVersion: 4 }), {}, [])?.actions[0]?.block?.body).toEqual({ expectedVersion: 4 })
+  })
+
+  it.each([[null], [[1]], ['x'], [{ __proto__x: 1 }], [{ a: { b: 1 } }], [Object.fromEntries(Array.from({ length: 11 }, (_, index) => [`a${index}`, 1]))]])(
+    'drops a result card\'s action whose body is %j', (body) => {
+      expect(parsePluginChatResult(card(body), {}, [])?.actions).toEqual([])
+    })
+})
+
+describe('parsePluginSelectionMessage', () => {
+  /** A well-formed toggle. */
+  const toggle = { type: PLUGIN_SELECTION_MESSAGE_TYPE, version: PLUGIN_SELECTION_MESSAGE_VERSION, release: 'r4', event: 'toggle', id: 'pages.0.title' }
+
+  it('takes the exact shapes', () => {
+    expect(parsePluginSelectionMessage(toggle, 'r4')).toEqual({ event: 'toggle', id: 'pages.0.title' })
+    expect(parsePluginSelectionMessage({ ...toggle, event: 'ready', id: undefined, ...{} }, 'r4')).toBeNull()
+    const { id: _id, ...ready } = toggle
+    expect(parsePluginSelectionMessage({ ...ready, event: 'ready' }, 'r4')).toEqual({ event: 'ready' })
+    expect(parsePluginSelectionMessage({ ...ready, event: 'exit' }, 'r4')).toEqual({ event: 'exit' })
+  })
+
+  it.each([
+    ['another type', { ...toggle, type: 'other' }],
+    ['another version', { ...toggle, version: 2 }],
+    ['a string version', { ...toggle, version: '1' }],
+    ['another release', { ...toggle, release: 'r5' }],
+    ['an extra member', { ...toggle, text: 'planted' }],
+    ['an id with markup', { ...toggle, id: '<img src=x>' }],
+    ['an id with a newline', { ...toggle, id: 'name\n' }],
+    ['an id over the bound', { ...toggle, id: `a.${'b'.repeat(200)}` }],
+    ['an unknown event', { ...toggle, event: 'navigate' }],
+    ['an array', [toggle]],
+    ['a string', 'toggle'],
+    ['null', null],
+  ])('refuses %s', (_name, data) => {
+    expect(parsePluginSelectionMessage(data, 'r4')).toBeNull()
+  })
+
+  it('refuses everything while the release is unknown', () => {
+    expect(parsePluginSelectionMessage({ ...toggle, release: '' }, '')).toBeNull()
   })
 })

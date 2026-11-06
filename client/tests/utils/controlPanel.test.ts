@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { canSignInToControlPanel, controlPanelUrl, webmailUrl, websiteUrl } from '~/utils/controlPanel'
+import { canSignInToControlPanel, controlPanelUrl, hasLiveHostingAccount, webmailUrl, websiteUrl } from '~/utils/controlPanel'
 import { ServiceStatus } from '~/types/servicestatus'
 
 describe('control panel addresses', () => {
@@ -24,6 +24,18 @@ describe('control panel addresses', () => {
 
 /** A known server. */
 const SERVER = { name: 'srv', hostname: 'srv.test', ipAddress: null }
+
+describe('hasLiveHostingAccount', () => {
+  it('is true for a pending, active or suspended service', () => {
+    expect(hasLiveHostingAccount({ status: ServiceStatus.Pending })).toBe(true)
+    expect(hasLiveHostingAccount({ status: ServiceStatus.Active })).toBe(true)
+    expect(hasLiveHostingAccount({ status: ServiceStatus.Suspended })).toBe(true)
+  })
+
+  it('is false for a terminated service', () => {
+    expect(hasLiveHostingAccount({ status: ServiceStatus.Terminated })).toBe(false)
+  })
+})
 
 describe('canSignInToControlPanel', () => {
   it('offers the sign-in for an active service on a known server to a person allowed single sign-on', () => {

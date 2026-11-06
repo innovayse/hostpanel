@@ -300,8 +300,8 @@ public sealed class MyServicesController : BaseApiController
     /// <param name="command">The new password.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 on success; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c> or
-    /// <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user
+    /// 200 on success; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c>,
+    /// <c>SERVICE_NOT_ACTIVE</c> for a terminated service or <c>SERVICE_NO_SERVER_ASSIGNED</c>; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user
     /// lacks <c>ViewModifyPasswords</c>; 404 with <c>SERVICE_NOT_FOUND</c> when the service is not the
     /// caller's; 502 with <c>SERVICE_PASSWORD_UPSTREAM_FAILED</c> when the provider rejects the change;
     /// 429 when the rate limit is hit.

@@ -628,6 +628,74 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
         AssertBreaks(StateManifest(), PluginManifestRule.ViewFollowUpInvalid);
     }
 
+    /// <summary>An action whose body and label are read from one declared GET route is accepted.</summary>
+    [Fact]
+    public void Read_ActionBodySource_IsAccepted()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"labelSource":{"route":{"method":"get","path":"/site"},"field":"l"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"expectedVersion":"a.b"}}}]}""");
+
+        var read = PluginViewDocumentReader.Read(_folder, ClientActionManifest(), MaxViewBytes);
+
+        read.Violation.Should().BeNull();
+    }
+
+    /// <summary>A body source of a wrong shape or on a wrong block breaks ViewActionBodyInvalid; nothing guesses what to send.</summary>
+    /// <param name="block">The block JSON.</param>
+    [Theory]
+    [InlineData("""{"kind":"text","text":"Hi","bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}""")]
+    [InlineData("""{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"get","path":"/site"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"post","path":"/publish"},"fields":{"a":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"__proto__":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"label":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b c"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":1}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"},"extra":1}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"labelSource":{"route":{"method":"get","path":"/publish"},"field":"l"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}""")]
+    public void Read_ActionBodySourceMalformed_BreaksViewActionBodyInvalid(string block)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{block}}]}""");
+
+        AssertBreaks(ClientActionManifest(), PluginManifestRule.ViewActionBodyInvalid);
+    }
+
+    /// <summary>A body source naming more members than a page may send breaks ViewActionBodyInvalid.</summary>
+    [Fact]
+    public void Read_ActionBodySourceTooManyFields_BreaksViewActionBodyInvalid()
+    {
+        var fields = string.Join(",", Enumerable.Range(0, 11).Select(index => $"\"a{index}\":\"b\""));
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{""" + fields + """}}}]}""");
+
+        AssertBreaks(ClientActionManifest(), PluginManifestRule.ViewActionBodyInvalid);
+    }
+
+    /// <summary>A body source reading a route the area does not declare breaks ViewRouteUndeclared, like every other reference.</summary>
+    [Fact]
+    public void Read_ActionBodySourceRouteUndeclared_BreaksViewRouteUndeclared()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/other"},"fields":{"a":"b"}}}]}""");
+
+        AssertBreaks(ClientActionManifest(), PluginManifestRule.ViewRouteUndeclared);
+    }
+
+    /// <summary>A body source on an admin page breaks ViewActionBodyInvalid: the admin panel would post without it.</summary>
+    [Fact]
+    public void Read_ActionBodySourceOnAdminPage_BreaksViewActionBodyInvalid()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}]}""");
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewActionBodyInvalid);
+    }
+
+    /// <summary>A manifest whose client page shows <c>views/a.json</c> and whose client api declares GET /site and POST /publish.</summary>
+    /// <returns>The manifest.</returns>
+    private static PluginManifest ClientActionManifest()
+    {
+        return Manifest(""","api":{"client":[{"method":"get","path":"/site","permission":"Any"},{"method":"post","path":"/publish","permission":"Any"}]},"ui":{"client":{"pages":[{"id":"overview","path":"/o","title":"O","permission":"Any","view":"views/a.json"}]}}""");
+    }
+
     /// <summary>Builds a valid document whose nesting reaches the given depth, the root counted as one level.</summary>
     /// <param name="depth">The total nesting depth, at least <see cref="DepthBeforePadding"/>.</param>
     /// <returns>The document text.</returns>
@@ -742,6 +810,83 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
 
         AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewRouteUndeclared);
     }
+
+    /// <summary>A preview selection in its exact shape, with a chat taking it, is accepted.</summary>
+    [Fact]
+    public void Read_ValidSelection_IsAccepted()
+    {
+        Write("views/a.json", SelectionDocument(SelectionMember("""["a"]""", "post"), chatSelection: "true"));
+
+        PluginViewDocumentReader.Read(_folder, ClientPageManifest(), MaxViewBytes).Violation.Should().BeNull();
+    }
+
+    /// <summary>Every broken shape of a selection is refused with its own rule: an unknown source, none, a repeat, a GET lookup, an extra member, a chat value other than true, a chat with no preview selection.</summary>
+    /// <param name="selection">The preview's selection member, or empty for none.</param>
+    /// <param name="chat">The chat's selection value.</param>
+    [Theory]
+    [InlineData("""["nope"]|post""", "true")]
+    [InlineData("""[]|post""", "true")]
+    [InlineData("""["a","a"]|post""", "true")]
+    [InlineData("""["a"]|get""", "true")]
+    [InlineData("""["a"]|post""", "1")]
+    [InlineData("", "true")]
+    public void Read_BrokenSelection_BreaksViewSelectionInvalid(string selection, string chat)
+    {
+        var member = selection.Length == 0 ? string.Empty : SelectionMember(selection.Split('|')[0], selection.Split('|')[1]);
+        Write("views/a.json", SelectionDocument(member, chat));
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewSelectionInvalid);
+    }
+
+    /// <summary>A source id that is no string, with a selection on the preview, is a refusal and not an exception, at install and at load alike.</summary>
+    /// <param name="id">The source's id, as JSON.</param>
+    [Theory]
+    [InlineData("1")]
+    [InlineData("{}")]
+    [InlineData("[]")]
+    [InlineData("null")]
+    [InlineData("true")]
+    public void Read_SelectionWithSourceIdNotAString_BreaksPreviewRule(string id)
+    {
+        Write("views/a.json", $$$"""{"schema":1,"blocks":[{"kind":"preview","sources":[{"id":{{{id}}},"label":"A","route":{"method":"get","path":"/site"},"field":"url"}]{{{SelectionMember("""["a"]""", "post")}}}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewPreviewInvalid);
+    }
+
+    /// <summary>A second preview offering a selection is refused, because a chat's claim does not say which preview made it.</summary>
+    [Fact]
+    public void Read_SecondPreviewSelection_BreaksViewSelectionInvalid()
+    {
+        var member = SelectionMember("""["a"]""", "post");
+        var preview = $$$"""{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]{{{member}}}}""";
+        Write("views/a.json", $$$"""{"schema":1,"blocks":[{"kind":"chat","selection":true,"send":{"method":"post","path":"/publish"}},{{{preview}}},{{{preview}}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewSelectionInvalid);
+    }
+
+    /// <summary>An extra member in a selection, which the panel would otherwise ignore, is refused.</summary>
+    [Fact]
+    public void Read_SelectionExtraMember_BreaksViewSelectionInvalid()
+    {
+        var member = SelectionMember("""["a"]""", "post").Replace("\"sources\"", "\"extra\":1,\"sources\"", StringComparison.Ordinal);
+        Write("views/a.json", SelectionDocument(member, "true"));
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewSelectionInvalid);
+    }
+
+    /// <summary>The selection member of a preview.</summary>
+    /// <param name="sources">The sources, as JSON.</param>
+    /// <param name="method">The lookup route's method.</param>
+    /// <returns>The member, with a leading comma.</returns>
+    private static string SelectionMember(string sources, string method) =>
+        $$$""","selection":{"sources":{{{sources}}},"route":{"method":"{{{method}}}","path":"/publish"},"release":{"route":{"method":"get","path":"/site"},"field":"release"}}""";
+
+    /// <summary>A document with a preview and a chat taking a selection.</summary>
+    /// <param name="member">The preview's selection member.</param>
+    /// <param name="chatSelection">The chat's selection value.</param>
+    /// <returns>The document.</returns>
+    private static string SelectionDocument(string member, string chatSelection) =>
+        $$$"""{"schema":1,"blocks":[{"kind":"chat","selection":{{{chatSelection}}},"send":{"method":"post","path":"/publish"}},{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]{{{member}}}}]}""";
 
     /// <summary>Asserts the violation of reading the admin page manifest names neither the scratch folder nor another host folder.</summary>
     /// <param name="other">A host folder outside the package the detail must not name either.</param>

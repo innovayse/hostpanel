@@ -91,7 +91,8 @@ public static class StatusMapping
                 => new(409, "Conflict"),
             // Exact row: an unpaid invoice stands in the way, a state conflict, and the name carries no
             // CONFLICT / ALREADY token for the generic arms to catch.
-            "RENEWAL_INVOICE_OPEN" or "CLIENT_TAX_EXEMPT" or "CLIENT_CURRENCY_LOCKED_BY_CREDIT" => new(409, "Conflict"),
+            "RENEWAL_INVOICE_OPEN" or "CLIENT_TAX_EXEMPT" or "CLIENT_CURRENCY_LOCKED_BY_CREDIT" or "CREDIT_TOP_UP_TOO_MANY_OPEN"
+                => new(409, "Conflict"),
             // Exact row: the gateway module is off, missing or has no stored credential capability, a state of the
             // deployment rather than a malformed request, and the name carries no CONFLICT / ALREADY token.
             "STORED_CREDENTIALS_NOT_SUPPORTED" => new(409, "Conflict"),
@@ -100,6 +101,10 @@ public static class StatusMapping
             "INVOICE_STORED_CHARGE_UNRESOLVED" => new(409, "Conflict"),
             // Exact row: a stored charge of the invoice is held for an operator, the same state conflict.
             "INVOICE_STORED_CHARGE_HELD" => new(409, "Conflict"),
+            // Exact rows: no bank transfer waits on the invoice (the second of two confirms lands here), and the admin has bank
+            // transfer switched off; both are a state the request cannot change, a conflict, and neither name carries a
+            // CONFLICT / ALREADY token for the generic arms.
+            "INVOICE_BANK_TRANSFER_NOT_PENDING" or "BANK_TRANSFER_NOT_AVAILABLE" => new(409, "Conflict"),
             // Exact row: the hosted gateway refused or failed the refund, an upstream refusal
             // rather than a malformed request, and neither name carries the _UPSTREAM_FAILED suffix.
             "GATEWAY_REFUND_REFUSED" or "REFUND_ADVICE_UNAVAILABLE" => new(502, "Bad Gateway"),
@@ -119,6 +124,12 @@ public static class StatusMapping
             // Exact row: the body parsed but moves no money, a meaning that is wrong rather than a
             // malformed request.
             "TRANSACTION_AMOUNT_REQUIRED" => new(422, "Unprocessable Content"),
+            // Exact row: an entry of the credit history stands in the way of the edit or delete, a state conflict, and the
+            // name carries a LOCKED suffix that the generic arm below would answer 423 for.
+            "TRANSACTION_CREDIT_LOCKED" => new(409, "Conflict"),
+            // Exact rows: the credit note is in a state that refuses the action, a conflict with what is stored and not a malformed
+            // request; neither name carries a CONFLICT token.
+            "CREDIT_NOTE_INVALID_STATE" or "CREDIT_NOTE_REFUND_NOT_VOIDABLE" => new(409, "Conflict"),
 
             // SSH key management: the service is the caller's, but its state or the key's binding
             // does not allow the change, or the hosting server did not confirm it.
@@ -143,6 +154,9 @@ public static class StatusMapping
             // in the way (a conflict); a fulfilment plugin that cannot advise on a refund is a
             // dependency that did not answer (503 with Retry-After). Neither name carries a token.
             "FULFILMENT_RECORD_NOT_RETRYABLE" => new(409, "Conflict"),
+            // Exact row: the line has no claim to release (not a domain renewal, already applied, or not
+            // claimed), a state conflict whose name carries no token for the generic arms.
+            "RENEWAL_CLAIM_NOT_HELD" => new(409, "Conflict"),
             "FULFILMENT_ADVICE_UNAVAILABLE" => new(503, "Service Unavailable"),
             // Exact row: no invoice PDF render slot came free for the request within the configured
             // wait, the server's capacity rather than the request (503 with Retry-After), and the name

@@ -15,6 +15,20 @@ afterEach(() => {
 })
 
 describe('InvoiceCreditTab', () => {
+  it('replaces the credit controls with a notice on a credit top-up invoice, which takes no credit', () => {
+    const wrapper = mountWithApp(InvoiceCreditTab, { props: { invoice: invoiceFixture({ isCreditTopUp: true }) } })
+
+    expect(wrapper.find('[data-testid="billing-invoice-credit-top-up"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="billing-invoice-credit-add"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="billing-invoice-credit-remove"]').exists()).toBe(false)
+  })
+
+  it('shows no top-up notice on an ordinary invoice', () => {
+    const wrapper = mountWithApp(InvoiceCreditTab, { props: { invoice: invoiceFixture() } })
+
+    expect(wrapper.find('[data-testid="billing-invoice-credit-top-up"]').exists()).toBe(false)
+  })
+
   it('keeps both buttons disabled until an amount is typed', () => {
     const wrapper = mountWithApp(InvoiceCreditTab, { props: { invoice: invoiceFixture() } })
 

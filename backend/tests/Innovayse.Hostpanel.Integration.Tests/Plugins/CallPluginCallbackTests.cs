@@ -153,6 +153,9 @@ public sealed class CallPluginCallbackTests : IClassFixture<AppPluginFixture>
         refused.Content.Headers.ContentType!.MediaType.Should().Be("application/problem+json");
         refused.Headers.RetryAfter.Should().NotBeNull();
         refused.Headers.GetValues("X-RateLimit-Remaining").Should().ContainSingle().Which.Should().Be("0");
+        refused.Headers.GetValues("X-RateLimit-Policy").Should().ContainSingle().Which.Should().Be(RateLimitPolicies.PluginCallback);
+        refused.Headers.GetValues("X-RateLimit-Limit").Should().ContainSingle();
+        refused.Headers.GetValues("X-RateLimit-Reset").Should().ContainSingle();
         _fixture.LoggedRateLimitRefusal(RateLimitPolicies.PluginCallback, "callback", _logMark).Should().BeTrue();
         await ClientsTestSeeds.AssertCodeAsync(refused, SharedErrorCodes.RateLimited);
     }

@@ -41,7 +41,7 @@ describe('ClientInnerSidebar', () => {
   it('links every section under the client path', async () => {
     const wrapper = await mountSidebar('/clients/12/summary')
 
-    expect(wrapper.findAll('a')).toHaveLength(13)
+    expect(wrapper.findAll('a')).toHaveLength(14)
     expect(wrapper.get('[data-testid="client-nav-invoices"]').attributes('href')).toBe('/clients/12/invoices')
     expect(wrapper.get('[data-testid="client-nav-billable"]').attributes('href')).toBe('/clients/12/billable-items')
   })
@@ -58,8 +58,8 @@ describe('ClientInnerSidebar', () => {
 
     const strip = wrapper.get('[data-testid="client-nav-strip"]')
     expect(strip.find('[role="tablist"]').exists()).toBe(true)
-    expect(strip.findAll('[role="tab"]')).toHaveLength(13)
-    expect(wrapper.findAll('[data-testid^="client-tab-"]')).toHaveLength(13)
+    expect(strip.findAll('[role="tab"]')).toHaveLength(14)
+    expect(wrapper.findAll('[data-testid^="client-tab-"]')).toHaveLength(14)
     expect(wrapper.get('[data-testid="client-nav-rail"]').find('[data-testid="client-nav-summary"]').exists()).toBe(true)
   })
 

@@ -28,6 +28,7 @@
 
 import {
   LOGIN_HINT_QUERY,
+  RETURN_TO_QUERY,
   SIGN_IN_PROMPT_QUERY,
   SIGN_IN_PROMPT_VALUE,
   SSO_AUTHORIZE_PATH
@@ -37,9 +38,6 @@ import { SessionCookie } from '~/constants/sessionCookie'
 import { SSO_SILENT_COOKIE_MAX_AGE, cookieOptions } from '~/server/utils/auth-cookie'
 import { isDocumentNavigation } from '~/server/utils/documentNavigation'
 import { hasPendingInteractiveTransaction } from '~/server/utils/signon-transaction'
-
-/** The query key that carries the page to return to once the probe finishes. */
-const RETURN_TO_QUERY = 'returnTo'
 
 /** Sends a signed-out page navigation through one silent SSO probe. */
 export default defineEventHandler((event) => {

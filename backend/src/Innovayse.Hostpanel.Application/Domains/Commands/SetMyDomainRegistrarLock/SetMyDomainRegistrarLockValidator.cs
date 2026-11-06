@@ -14,5 +14,6 @@ public sealed class SetMyDomainRegistrarLockValidator : LocalizedValidator<SetMy
         : base(localizer)
     {
         RuleFor(x => x.DomainId).MustBePositiveId(L["DomainIdRequired"]);
+        RuleFor(x => x.Value).NotNull().WithMessage(L["RegistrarLockValueRequired"]);
     }
 }

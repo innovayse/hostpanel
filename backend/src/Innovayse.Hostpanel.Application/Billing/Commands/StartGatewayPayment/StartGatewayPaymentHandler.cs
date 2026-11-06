@@ -23,13 +23,6 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.StartGatewayPayment;
 /// </summary>
 public sealed class StartGatewayPaymentHandler
 {
-    /// <summary>
-    /// How long a started gateway session is considered "live" (matches the hosted gateway's own
-    /// hosted-page session lifetime). A second <c>start</c> for the same invoice inside this
-    /// window is refused unless the existing session is already known to be Declined.
-    /// </summary>
-    private const int SessionWindowMinutes = 20;
-
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
@@ -209,13 +202,7 @@ public sealed class StartGatewayPaymentHandler
     /// <returns><see langword="true"/> when a new session must be refused.</returns>
     private async Task<bool> HasLiveSessionAsync(Invoice invoice, DateTimeOffset now, CancellationToken ct)
     {
-        if (invoice.GatewayStartedAt is not { } startedAt)
-        {
-            return false;
-        }
-
-        var age = now - startedAt;
-        if (age >= TimeSpan.FromMinutes(SessionWindowMinutes))
+        if (!invoice.IsInsideGatewaySessionWindow(now))
         {
             return false;
         }

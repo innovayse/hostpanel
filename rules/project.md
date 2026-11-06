@@ -229,8 +229,7 @@ docker/                              compose set (shared·dev·prod·platform), 
 - **Plugin projects are named `Innovayse.Hostpanel.Plugins.<Name>` (#848).** The .NET plugin convention
   `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`): project, folder, assembly and root
   namespace are `Innovayse.Hostpanel.Plugins.<Name>`, its tests `Innovayse.Hostpanel.Plugins.<Name>.Tests`, and a
-  plugin in its own repository lives in `innovayse/hostpanel-<name>` (Innovayse Sites, #844:
-  `innovayse/hostpanel-sites`, `Innovayse.Hostpanel.Plugins.Sites`). The plugin `id` in `plugin.json` never
+  plugin in its own repository lives in a repository named `hostpanel-<name>`. The plugin `id` in `plugin.json` never
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
@@ -468,6 +467,14 @@ docker/                              compose set (shared·dev·prod·platform), 
       condition route, `visibleWhen` outside a block) and `ViewFollowUpInvalid` (`PLUGIN_VIEW_FOLLOW_UP_INVALID`: a bad
       `followUp` shape or place, a `refresh` id no block carries, `resetOnSuccess` not a boolean or outside a `submit`),
       each with its en/ru/hy sentence, 400.
+  - **Action body from page data (#940, no schema change).** `bodySource` on an action block of the client area:
+    exactly a `GET` `route` and 1 to 10 `fields` (a camelCase body member, not a `PluginViews.LabelProperties` name, and a
+    dotted path). The action has an `id`, calls `POST`, `PUT` or `PATCH`, and a `labelSource` reads the same route, because
+    the panel takes label and body from one read so a button cannot send a value other than its label's. Anything else is
+    `PLUGIN_VIEW_ACTION_BODY_INVALID` (`ViewActionBodyInvalid`, `CheckActionBody` in `PluginViewDocumentReader`; the member names are the reader's own constants until the SDK's `PluginViews` documents them). In the
+    client (`ActionBlock.vue`, `pluginActionBody`) the button is disabled until every member is read as a scalar, the body
+    is fixed at the click, and a refused call reads the data and `refresh` again. Absent, an action posts `{}`. A result
+    card's action carries a literal `body` instead (`readResultBody`), and a malformed one drops that action.
   - **Layout, split and preview (#910, SDK 3.2.0, schema stays 1).** A client page's `layout` is a `PluginPageLayouts`
     value and the page answers it (`PluginPageViewDto.Layout`, `standard` when absent); another value or any layout on an
     admin page is `PLUGIN_PAGE_LAYOUT_UNKNOWN` (`CheckPageLayouts` in the manifest validator). `split` holds exactly two
@@ -484,8 +491,8 @@ docker/                              compose set (shared·dev·prod·platform), 
       that is not a plain DNS name is dropped, because a domain is what a client typed and the text reaches a response
       header. The list is cut at 2048 characters for the proxies' header limits; what falls off shows nothing.
     - **Browser enforcement.** The panel frames an address only when its origin is exactly on that list and is not the
-      panel's own. The edges this repository ships (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`) keep `frame-src 'self' https:` (operator content on public pages, and domains cannot be
-      listed statically); the workspace's `edge-proxy/nginx.conf` sends no CSP at all, so on that deployment the header below is the document's only policy and every other page has none. `client/server/middleware/plugin-frame-csp.ts` adds a second header to the document of
+      panel's own. The edges this repository ships (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`, held to one policy by `scripts/check-edge-csp.sh`) keep `frame-src 'self' https:` (operator content on public pages, and domains cannot be
+      listed statically). An operator's own edge may send that same policy as `Content-Security-Policy-Report-Only` while it is reviewed (#938), and a report-only policy does not intersect with an enforcing one, so on such a deployment, and on a deployment whose edge sends no policy, the header below is the only one enforced. `client/server/middleware/plugin-frame-csp.ts` adds a second header to the document of
       `/client/apps/<plugin>/**` (a language prefix names the same page), `Content-Security-Policy: frame-src <origins>` or
       `'none'` on any failure. Policies intersect. A document that got the API's origins also carries `Server-Timing:
       plugin-frames`, the one response header script can read (secure contexts only, which localhost and https are). A CSP belongs to
@@ -506,6 +513,9 @@ docker/                              compose set (shared·dev·prod·platform), 
       outside Development (a blank entry counts as unset, which is what `PLUGIN_PREVIEW_DEV_HTTP_ORIGIN`, a dev compose key only,
       passes when empty), and with anything but an http origin on a loopback host (a browser blocks other http frames in
       an https panel as mixed content). This is a refusal on purpose, not a branch in the flow.
+    - **Element selection (#933, no schema change; the members are the reader's own constants until the SDK's `PluginViews` documents them).** A preview's
+      `selection` (exactly `sources`, a POST `route`, and a `release` of a GET `route` and a dotted `field`) and a chat's `selection: true` are off when absent; anything else, or a chat selection with no preview selection in the document, is `PLUGIN_VIEW_SELECTION_INVALID` (`ViewSelectionInvalid`). The sandbox does not change. A frame's message is a claim: `PreviewBlock.vue` takes it only from its frame's
+      `contentWindow` (origin is `null` and proves nothing), `parsePluginSelectionMessage` admits only the exact versioned shape, the release the plugin reports, and an id of `PLUGIN_SELECTION_ID_PATTERN`; a toggle needs the mode on and a source listed in `sources`, so a live source can do nothing. One preview per document may declare a selection, because a claim names a release and ids and not a preview (a second is `ViewSelectionInvalid`). Each selection is its preview's own (`usePluginSelection`, opened only by a preview that declares one; any other neither listens, posts nor clears). A `ready` naming a release not read yet is held, one at a time, until the read answers. Chips hold only what the plugin's route answered, lookups run one at a time for the newest wish, and a new release empties them. A resend after that is refused, not sent without its claim, since a plugin reads a message with no selection as free to change anything: `ChatBlock.vue` says the page changed and keeps the text in the field. Host-to-frame messages go to target `*` because an opaque origin cannot be named, so they carry only the mode and ids. The plugin re-validates on its server.
   - **Chat events (#911, SDK 3.2.0).** `PluginChatEvents`: `step`, `result`, `issue`, sent as ordinary plugin events and
     rendered by the client's chat block; `error` and `done` stay reserved (`PluginEventStream`). The host forwards their data
     unread: the client renders text only and takes a result's actions through the same link rule and route door as
@@ -996,6 +1006,13 @@ docker/                              compose set (shared·dev·prod·platform), 
     tests derive a host with an enabled `PluginRateLimiter`. The client account is resolved before the plugin budget
     is checked, so a refused call still costs one lookup, which the global limiter bounds. A refused stream call has
     already spent its tier permit.
+  - **The 429 headers are the limiter's own (#874).** A refusal carries `Retry-After`, `X-RateLimit-Policy`, `-Limit`,
+    `-Remaining` and `-Reset`, all written by `RateLimitingExtensions.WriteRejectionAsync` and nowhere else. Exposing the policy
+    name and the budget is acceptable because both are published (the policy names and defaults are in the API reference and
+    the configuration reference) and name no plugin, provider or account; they let a caller pace itself. The leak guard
+    allows the four `X-RateLimit-*` names on a 429 only, so a header of that name copied onto any other response, a
+    provider's own limit headers for one, is removed like any vendor header (`LeakGuardTests`). CORS does not expose them to
+    a browser script on another origin, and no `Access-Control-Expose-Headers` is to be added for them without a reason.
   - A streamed call ends when the plugin ends, when the client leaves, or when the producer is silent for the call limit
     (see the stream silence limit above).
   - **A streamed call owns its own dependency scope (#851).** A stream is read by the response after the use case has
@@ -1229,7 +1246,27 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   command: the port stages the line on the caller's own context, so the line and the change it records
   commit or fail together, which a separately saving command could not promise. A client's credit
   balance changes the same way through `IClientCredit`, so moving credit between an invoice and the balance
-  (`InvoiceCreditExtensions` in Billing) is one save. The renewal read models belong to their owners and Billing
+  (`InvoiceCreditExtensions` in Billing) is one save. Every change names its `CreditMovementType` (`ClientCreditChange`) and the
+  port writes it to the client ledger in that same save: the `Transaction` that already holds the money is stamped
+  (`CreditMovement`, signed `CreditChange`, `BalanceAfter`), a movement that moved no cash becomes a credit-only entry
+  (`Transaction.CreateCreditMovement`, no money in or out, left out of the cash views by `Transaction.MovedMoneyFilter`), and an
+  entry of the history cannot be edited or deleted (`Transaction.EnsureEditable`). A credit top-up is an `Invoice` with
+  `IsCreditTopUp` (`Invoice.CreateCreditTopUp`); every path that settles an invoice calls `CreditPaidTopUpAsync`
+  (`CreditTopUpExtensions`) in the settling save, so the balance rises once, and a top-up is refunded by hand only.
+  A credit note (`CreditNote`, `CreditNoteItem`, `CreditNoteStatus` Draft/Issued/Applied/Voided, `CreditNoteMethod`
+  AccountCredit/GatewayRefund) reverses part of a paid invoice at the invoice's own tax rate and is not invoice credit. It is numbered
+  `CN-0001` from its own sequence through `INumberSequence` (`NumberKind.CreditNote`), taken as the last step before the save and reused
+  across a retried save; a database sequence cannot promise there are no gaps, and the numbering is a cautious default not checked
+  against any local law (documented in `docs/staff/billing.md`). The cap lives on the invoice (`Invoice.CreditableAmount`,
+  `CreditNotedAmount`, `EnsureCreditable`): the charge before credit less every refund and every account credit note, and every
+  account credit note also lowers `RefundableAmount`, so the same money never goes back twice. `CreditNotedAmount` changes the invoice
+  row, so two notes racing on one invoice fail the row's concurrency check and the loser is retried on what the winner saved. An
+  AccountCredit note moves the balance through `IClientCredit` (`CreditNoteIssued`, voided as `CreditNoteVoided`) in the same save; a
+  GatewayRefund note dispatches `RefundInvoicePaymentCommand` first (one refund, listed once) and records the note under its reference,
+  and cannot be voided. A credit top-up and an unpaid invoice take no note. A note is never deleted. `IncomeExtensions` reads payments
+  and refunds only, so a note adds no income of its own (`CreditNoteIncomeTests`). Its PDF goes through the same renderer and render
+  limit as an invoice (`IInvoicePdfRenderer.RenderCreditNoteAsync`, labels in `CreditNotePdfLabelSets` for en/ru/hy, Armenian
+  fonts as for invoices). The renewal read models belong to their owners and Billing
   reaches them over the bus: Services owns `GetRenewableServices`, `GetServiceBillingStates`,
   `ListOverdueSuspendedServices`, `ListUndatedRenewingServices` and `ExtendServiceRenewal`; Domains owns
   `GetRenewableDomains`, `GetDomainRenewalStates` and `GetTldRenewPrice`. The setup token kept
@@ -1297,6 +1334,35 @@ renewal invoices per client), `SendRenewalRemindersCron` 06:00, `CheckOverdueInv
 `RenewalAttemptAt` claims a domain line before the registrar call. Every suspension carries a `SuspensionSource`
 (`Manual`, `Overdue`, `DomainExpired`, `Other`): payment lifts only `Overdue`, and `DomainRenewedHandler` lifts only
 `DomainExpired`. Renewal alerts go to `Notifications:AdminEmail`, falling back to `Notifications:ContactEmail`.
+
+**A manual bank transfer wait is bounded and never loses a card session's money.** `Invoice.RequestBankTransfer` leaves the hosted
+session on the invoice (the choice is refused only inside `GatewaySessionWindow`). While the transfer waits
+(`IsBankTransferPending`), `ReconcileGatewayPaymentsCronHandler` asks the gateway about that session like an open invoice's, without the
+24 hour limit, and a settled invoice stays in the sweep for the stalled window after its `PaidAt` as well as after the session start (a
+transfer confirmed late). `CompleteGatewayPaymentHandler` settles a pending transfer with a full card payment (`Invoice.WithdrawBankTransfer`,
+then `Settle`), and a payment that finds the invoice already settled goes to the balance through the hand-back path. The wait itself ends
+by `RejectBankTransfer`, by `LapseBankTransfer` (the daily `CheckOverdueInvoicesCron` dispatches `LapseBankTransferCommand` for a wait older
+than the `expiry_days` field of the bank transfer integration, 14 when unset or not a positive number) or by the card payment; each returns
+the invoice to Overdue when its due date has passed, otherwise Unpaid, so the overdue and suspension flow applies again. The method is
+listed and can be chosen only while at least one bank detail or the instructions are set (`BankTransferSettings.HasPayerDetails`), and
+`MyInvoiceDto.IsBankTransferPending` is how the portal tells a real transfer from an imported `PaymentPending` invoice. An account credit
+note is refused while a gateway refund of the invoice is in flight (`Invoice.EnsureCreditable(total, now)`), and an unrecorded refund's
+amount is held out of `CreditableAmount`. The open top-up invoices per client are capped by `billing.credit.topup_max_open`.
+
+**Renewal invoicing is serialised per client.** `RaiseClientRenewalInvoicesHandler` opens a transaction and takes
+a transaction-scoped advisory lock (`IHostpanelDbContext.LockForTransactionAsync`, key
+`RaiseClientRenewalInvoicesHandler.LockKeyOf(clientId)`) before it reads the duplicate guard, and commits after the
+last invoice and credit change. Two callers for one client (the daily sweep, a staff "Generate renewal invoice" click,
+another instance) therefore run one after the other, and the second one finds the first one's invoice. Staff reach the
+same use case through `POST /api/billing/client/{clientId}/renewal-invoices` (`Manual` on the command only adds an
+activity log line). The admin Upcoming Renewals page (`/billing/renewals`) lists services and domains inside a 30, 60 or
+90 day window (`RenewalWindow`), whether or not they renew automatically, switches `AutoRenew` through
+`SetServiceAutoRenew` (domains use the existing `SetAutoRenew`), and lists domain renewal lines left claimed
+(`ListClaimedDomainRenewals`). `ReleaseDomainRenewalClaim` clears `RenewalAttemptAt` through `Invoice.ReleaseRenewalClaim`
+after staff checked the registrar, with an activity log line; the line stays unapplied, so the next sweep renews the
+domain again, which is why the page asks for confirmation. The confirmation dialog is a warning in so many words: a release
+of a renewal the registrar already carried out renews the domain twice and is charged twice, so staff check the registrar
+first (`billing.renewals.releaseMessage`, and `docs/staff/currencies.md`). `ClaimedDomainRenewalDto` carries the client's name.
 
 **Renewal invoice lines are not unique per period, on purpose.** The indexes on `InvoiceItems`
 `(ClientServiceId, RenewalPeriodStart)` and `(RegisteredDomainId, RenewalPeriodStart)` stay non-unique: a
@@ -1484,7 +1550,7 @@ refuses to boot. The GitHub workflow `.github/workflows/ci.yml` builds the stand
 runs the Domain, Architecture, CWP and Integration suites, plus the migration addon's PHP tests.
 
 ```bash
-./dev up hostpanel                # from the workspace root, when working inside the workspace
+docker compose -f docker/docker-compose.shared.yml -f docker/docker-compose.dev.yml -f docker/docker-compose.platform.yml up   # start the Hostpanel stack inside a platform checkout
 ```
 
 To build without touching the dev stack, **run docker through PowerShell, not Git Bash**,
@@ -1575,9 +1641,8 @@ starts the pipeline. The consequences are not obvious and cost time every few mo
   `git submodule update --init --recursive` after every checkout of their deploy directory, the rollback included.
   The SDK project opts out of central package management and pins its two package versions itself, so it
   builds alone; keep those versions equal to the ones in `backend/Directory.Packages.props`.
-- `.gitlab-ci.yml` inlines its templates. This repo cannot see the workspace's shared
-  `ci/templates.yml`, so the hidden jobs are copied in. Change one here and the workspace
-  copy does not move with it.
+- `.gitlab-ci.yml` inlines its templates. This repo cannot see the shared templates they
+  came from, so the hidden jobs are copied in. Changing one here does not change those.
 
 **`deploy:prod` builds the images on the production host** — it consumes no registry images
 and declares `needs: []`, because the build jobs want a `builder` runner this project's prod
@@ -1587,7 +1652,7 @@ migrations on startup, so `up -d` is the moment the schema changes, and a deploy
 undone should not start. The last ten dumps are kept.
 
 `nginx` is deliberately left out of both deploys' service lists. It publishes 80/443, which on
-these hosts belong to the shared Nginx Proxy Manager; naming it would fail the whole deploy.
+these hosts belong to the host's shared reverse proxy; naming it would fail the whole deploy.
 Its own nginx exists for a standalone install.
 
 ## Configuration and the two switches that decide what this product *is*
@@ -1612,7 +1677,7 @@ Its own nginx exists for a standalone install.
 - **Demo mode (`Demo__Enabled`).** Set through `DEMO_*` env in `docker/docker-compose.demo.yml`, an overlay
   placed last in the chain (`shared` + `prod` + `platform` + `demo`, project `hostpanel-demo`). It swaps the
   payment, registrar and provisioning adapters for fakes, sends mail to the demo's own mailhog and resets
-  data every `Demo__ResetIntervalHours`. Everything stateful is `hostpanel-demo-*` so it can sit beside prod; its db, broker, redis and mailhog live on a demo-private network and only the api, client and admin (compose services `hostpanel-demo-*`, the names the edge proxy uses) also join the dedicated external network `hostpanel_demo_edge`, **never** the shared network, so the demo can neither resolve nor reach any production container (the edge proxy is the one production-side container on both networks; `deploy:demo` creates the network when missing, with the **fixed subnet 172.29.0.0/16**, which the edge's `nginx.conf` denies on every host except the two demo ones, so a demo container cannot reach production by sending a production `Host` header; the subnet lives in `deploy:demo`, `edge-proxy/nginx.conf` and `docker/README.md`, and changes in all three together); `deploy:demo` uses its own `DEPLOY_DIR` (one of the demo deployment's CI variables), never prod's;
+  data every `Demo__ResetIntervalHours`. Everything stateful is `hostpanel-demo-*` so it can sit beside prod; its db, broker, redis and mailhog live on a demo-private network and only the api, client and admin (compose services `hostpanel-demo-*`, the names the edge proxy uses) also join the dedicated external network `hostpanel_demo_edge`, **never** the shared network, so the demo can neither resolve nor reach any production container (the edge proxy is the one production-side container on both networks; `deploy:demo` creates the network when missing, with the **fixed subnet 172.29.0.0/16**, which the operator's edge denies on every host except the two demo ones, so a demo container cannot reach production by sending a production `Host` header; the subnet lives in `deploy:demo`, the edge's configuration and `docker/README.md`, and changes in all three together); `deploy:demo` uses its own `DEPLOY_DIR` (one of the demo deployment's CI variables), never prod's;
   the demo passwords are `:?`-required like any secret. Deployed by the manual `deploy:demo` job; it needs
   `AUTH_MODE=local`. Fake adapters live behind the existing ports, never in a code path guarded by a literal.
 - **Settings bind into a sealed `*Options` class naming its own `SectionName`** —
@@ -2079,7 +2144,7 @@ Never spread one of these, and never restructure as a side effect of a feature.
   endpoints). The embedded flow (`create-payment-intent`, `confirm-payment`, `POST api/me/invoices/{id}/pay`,
   `api/me/payment-methods`) is gone; a ledger row recorded as `Card` with no hosted session behind it is refunded by a
   manual refund (`INVOICE_NOT_GATEWAY_PAID` for a Gateway refund). The plugin's stored `integration:<slug>:*` settings and
-  the payment rows are untouched and read by the plugin under the same slug.
+  the payment rows are untouched and read by the plugin under the same slug. Manual bank transfer is built into the host (module `bank_transfer`, settings under the `bank-transfer` integration) while bank gateways are plugins.
 - **Vendor names that remain, on purpose.** Integration slugs (`cwp`, ...) in
   `IntegrationSlugs` / `BuiltInPaymentModules` and the `Integrations/<Vendor>/` adapter folders are
   plugin identifiers: they are stored in settings rows, sent in URLs (`/api/admin/integrations/cwp`)

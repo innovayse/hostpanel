@@ -46,8 +46,9 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
         var admin = host.CreateClient();
         admin.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", await factory.GetAdminTokenAsync());
-        var response = await admin.PutAsJsonAsync(
-            $"/api/admin/integrations/{slug}", new { isEnabled = enabled, config = new Dictionary<string, string>() });
+        // A switched-on transfer needs something to show the payer, or it is not offered (see the case below).
+        var config = enabled ? new Dictionary<string, string> { ["iban"] = BankTransferTestSeeds.Iban } : [];
+        var response = await admin.PutAsJsonAsync($"/api/admin/integrations/{slug}", new { isEnabled = enabled, config });
         response.EnsureSuccessStatusCode();
     }
 
@@ -120,6 +121,31 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
         await SwitchIntegrationAsync(host, BuiltInPaymentModules.BankTransferIntegrationSlug, enabled: true);
 
         (await ListedModulesAsync(host.CreateClient())).Should().Contain(BuiltInPaymentModules.BankTransfer);
+    }
+
+    /// <summary>
+    /// A transfer switched on with no account holder, IBAN, SWIFT, bank name or instructions is not offered: the payer could not pay
+    /// with a card that holds only an amount and a reference. Giving it one detail offers it again.
+    /// </summary>
+    [Fact]
+    public async Task BankTransferIsNotOfferedWhenItHasNothingToShowThePayer()
+    {
+        var host = BuildHost(new FakePluginRegistry());
+        var admin = host.CreateClient();
+        admin.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", await factory.GetAdminTokenAsync());
+        try
+        {
+            await BankTransferTestSeeds.EnableWithoutDetailsAsync(admin);
+            (await ListedModulesAsync(host.CreateClient())).Should().NotContain(BuiltInPaymentModules.BankTransfer);
+
+            await SwitchIntegrationAsync(host, BuiltInPaymentModules.BankTransferIntegrationSlug, enabled: true);
+            (await ListedModulesAsync(host.CreateClient())).Should().Contain(BuiltInPaymentModules.BankTransfer);
+        }
+        finally
+        {
+            await BankTransferTestSeeds.EnableAsync(admin);
+        }
     }
 
     /// <summary>

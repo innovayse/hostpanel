@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Application.Provisioning.Extensions;
-using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
 using Microsoft.EntityFrameworkCore;
@@ -71,16 +70,12 @@ public sealed class GetControlPanelSsoUrlHandler
             return Result<ControlPanelSsoDto>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_FOUND);
         }
 
-        if (service.ProvisioningRef is null)
-        {
-            return Result<ControlPanelSsoDto>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_PROVISIONED);
-        }
-
         // A terminated service's reference outlives its account: the panel no longer holds it, so
         // asking would only come back as an upstream failure that reads like an outage.
-        if (service.Status == ServiceStatus.Terminated)
+        var account = service.RequireHostingAccount();
+        if (account.IsFailure)
         {
-            return Result<ControlPanelSsoDto>.FailureCode(HostpanelErrorCodes.SERVICE_NOT_ACTIVE);
+            return Result<ControlPanelSsoDto>.FailureCode(account.ErrorCode!);
         }
 
         var server = await _bus.FindServerAsync(service, ct);
@@ -95,7 +90,7 @@ public sealed class GetControlPanelSsoUrlHandler
             // The browser that asked is the one that opens the link. Some panels (Plesk) open a
             // session only from the address it was issued for; behind the portal's BFF this is the
             // visitor's address, forwarded in X-Forwarded-For and resolved by the trusted-proxy step.
-            var url = await provider.GetCPanelSsoUrlAsync(service.ProvisioningRef, _caller.IpAddress, ct);
+            var url = await provider.GetCPanelSsoUrlAsync(account.Value!, _caller.IpAddress, ct);
             return Result<ControlPanelSsoDto>.Success(new ControlPanelSsoDto(url));
         }
         catch (Exception ex)

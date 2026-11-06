@@ -14,5 +14,6 @@ public sealed class SetMyDomainAutoRenewValidator : LocalizedValidator<SetMyDoma
         : base(localizer)
     {
         RuleFor(x => x.DomainId).MustBePositiveId(L["DomainIdRequired"]);
+        RuleFor(x => x.Value).NotNull().WithMessage(L["AutoRenewValueRequired"]);
     }
 }

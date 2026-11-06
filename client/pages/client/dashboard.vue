@@ -31,6 +31,8 @@
 
     <ClientDashboardAlerts />
 
+    <ClientDashboardCreditCard v-if="store.mayDo(Permission.ViewPayInvoices)" />
+
     <UiGrid cols="2" gap="lg">
       <ClientDashboardServicesCard v-if="store.mayDo(Permission.ViewProductsServices)" />
       <ClientDashboardInvoicesCard v-if="store.mayDo(Permission.ViewPayInvoices)" />
@@ -53,7 +55,7 @@
 
 <script setup lang="ts">
 /**
- * Client dashboard: the account at a glance, with counters, attention banners, and cards for
+ * Client dashboard: the account at a glance, with counters, attention banners, the credit balance, and cards for
  * services, invoices, domains, tickets, news and a quick domain search, then the cards plugins add.
  *
  * The page loads the data through the stores and lays the cards out; each card reads its own

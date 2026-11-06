@@ -4,6 +4,8 @@ using Innovayse.Hostpanel.Application.Billing.Commands.DeleteInvoice;
 using Innovayse.Hostpanel.Application.Billing.Commands.DuplicateInvoice;
 using Innovayse.Hostpanel.Application.Billing.Commands.MarkInvoiceOverdue;
 using Innovayse.Hostpanel.Application.Billing.Commands.PublishInvoice;
+using Innovayse.Hostpanel.Application.Billing.Commands.RaiseClientRenewalInvoices;
+using Innovayse.Hostpanel.Application.Billing.Commands.ReleaseDomainRenewalClaim;
 using Innovayse.Hostpanel.Application.Billing.Commands.RetryFulfilmentRecord;
 using Innovayse.Hostpanel.Application.Billing.Commands.UpdateInvoiceItems;
 using Innovayse.Hostpanel.Application.Billing.Commands.UpdateInvoiceNotes;
@@ -11,6 +13,7 @@ using Innovayse.Hostpanel.Application.Billing.Commands.UpdateInvoiceOptions;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Queries.GetInvoice;
 using Innovayse.Hostpanel.Application.Billing.Queries.GetInvoicePdf;
+using Innovayse.Hostpanel.Application.Billing.Queries.ListClaimedDomainRenewals;
 using Innovayse.Hostpanel.Application.Billing.Queries.ListInvoiceFulfilment;
 using Innovayse.Hostpanel.Application.Billing.Queries.ListClientInvoices;
 using Innovayse.Hostpanel.Application.Billing.Queries.ListInvoices;
@@ -365,6 +368,75 @@ public sealed class InvoicesController : BaseApiController
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(new DeleteInvoiceCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Lists the domain renewal lines left claimed after an unknown registrar outcome.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the lines, oldest claim first; 401 without a session; 403 for a caller who is not an admin;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("renewal-claims")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(typeof(IReadOnlyList<ClaimedDomainRenewalDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ListRenewalClaimsAsync(CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<ClaimedDomainRenewalDto>>>(new ListClaimedDomainRenewalsQuery(), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Releases a domain renewal line left claimed, after staff checked at the registrar that the domain was not
+    /// renewed, so the next renewal sweep tries it again. The release is recorded in the client activity log.
+    /// </summary>
+    /// <param name="id">Invoice primary key.</param>
+    /// <param name="itemId">Invoice line primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when released; 400 when an id is refused; 401 without a session; 403 for a caller who is not an admin;
+    /// 404 when the invoice or the line is not found; 409 with <c>RENEWAL_CLAIM_NOT_HELD</c> when the line is not a
+    /// claimed, unapplied domain renewal, or when the sweep changed the line at the same moment;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/items/{itemId:int}/release-renewal-claim")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ReleaseRenewalClaimAsync(int id, int itemId, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new ReleaseDomainRenewalClaimCommand(id, itemId), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Raises the renewal invoices a client is due now (everything inside the invoicing lead time that is not
+    /// invoiced yet). Safe to call while the daily sweep runs: a per-client lock makes the second caller wait and
+    /// then find the first one invoice, so nothing is billed twice.
+    /// </summary>
+    /// <param name="clientId">Client primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the number of invoices raised (0 when nothing is due); 400 when the id is refused; 401 without a session;
+    /// 403 for a caller who is not an admin; 404 when the client does not exist (also 403 with CLIENT_SUSPENDED or CLIENT_CLOSED when the account is not billed);
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("client/{clientId:int}/renewal-invoices")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RaiseRenewalInvoicesAsync(int clientId, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<int>>(new RaiseClientRenewalInvoicesCommand(clientId, Manual: true), ct);
         return HandleResult(outcome);
     }
 }

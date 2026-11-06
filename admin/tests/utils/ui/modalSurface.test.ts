@@ -8,6 +8,9 @@ import type { Ref } from 'vue'
 import { afterEach, describe, expect, it } from 'vitest'
 import { useModalSurface } from '@/utils/ui/modalSurface'
 
+/** The `focusIn` of the surface mounted last, which a test calls as the enter animation would at its end. */
+let focusSurface: () => void = () => undefined
+
 /**
  * Builds a surface component whose open state is controlled by the test.
  *
@@ -20,8 +23,9 @@ const surface = (open: Ref<boolean>, onClose: () => void) =>
     setup: () => {
       /** The surface element handed to the behaviour. */
       const panel = ref<HTMLElement | null>(null)
-      const onKeydown = useModalSurface(panel, () => open.value, onClose)
-      return () => h('div', { ref: panel, tabindex: -1, onKeydown }, [h('button', { id: 'inside' }, 'inside')])
+      const { onKeydown, focusIn } = useModalSurface(panel, () => open.value, onClose)
+      focusSurface = focusIn
+      return () => h('div', { ref: panel, id: 'panel', tabindex: -1, onKeydown }, [h('button', { id: 'inside' }, 'inside')])
     },
   })
 
@@ -67,20 +71,58 @@ describe('useModalSurface', () => {
     open.value = true
     await nextTick()
     await nextTick()
+    // At once only the panel itself holds focus, so Escape and Tab already work while it appears.
+    expect(document.activeElement?.id).toBe('panel')
+    focusSurface()
     expect(document.activeElement?.id).toBe('inside')
     open.value = false
     await nextTick()
     expect(document.activeElement).toBe(opener)
   })
 
-  it('takes focus on mount when it starts open', async () => {
+  it('takes focus on mount when it starts open, and moves it to the first control at the end of the enter', async () => {
     mount(
       surface(ref(true), () => undefined),
       { attachTo: document.body },
     )
     await nextTick()
     await nextTick()
+    expect(document.activeElement?.id).toBe('panel')
+    focusSurface()
     expect(document.activeElement?.id).toBe('inside')
+  })
+
+  it('leaves focus alone at the end of the enter when a control inside the panel already has it', async () => {
+    mount(
+      surface(ref(true), () => undefined),
+      { attachTo: document.body },
+    )
+    await nextTick()
+    await nextTick()
+    const inside = document.getElementById('inside')
+    inside?.focus()
+    // A second control the user could have clicked; the first control must not take focus from it.
+    const extra = document.createElement('input')
+    document.getElementById('panel')?.append(extra)
+    extra.focus()
+
+    focusSurface()
+
+    expect(document.activeElement).toBe(extra)
+  })
+
+  it('does not move focus to the first control once the surface has closed', async () => {
+    /** Open flag the test flips. */
+    const open = ref(true)
+    mount(
+      surface(open, () => undefined),
+      { attachTo: document.body },
+    )
+    await nextTick()
+    open.value = false
+    await nextTick()
+    focusSurface()
+    expect(document.activeElement?.id).not.toBe('inside')
   })
 
   it('closes only the topmost of nested surfaces, whichever one the keystroke reached', async () => {
@@ -103,6 +145,71 @@ describe('useModalSurface', () => {
     inner.unmount()
     outer.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }))
     expect(closed).toEqual(['inner', 'inner', 'outer'])
+    outer.unmount()
+  })
+
+  it('keeps focus on the opener when the surface closes in the same tick it opened', async () => {
+    const opener = document.createElement('button')
+    document.body.append(opener)
+    opener.focus()
+    /** Open flag the test flips. */
+    const open = ref(false)
+    mount(
+      surface(open, () => undefined),
+      { attachTo: document.body },
+    )
+    open.value = true
+    await nextTick()
+    open.value = false
+    await nextTick()
+    await nextTick()
+    expect(document.activeElement).toBe(opener)
+  })
+
+  it('keeps focus on the opener when the surface unmounts before its panel took focus', async () => {
+    const opener = document.createElement('button')
+    document.body.append(opener)
+    opener.focus()
+    const wrapper = mount(
+      surface(ref(true), () => undefined),
+      { attachTo: document.body },
+    )
+    wrapper.unmount()
+    await nextTick()
+    await nextTick()
+    expect(document.activeElement).toBe(opener)
+  })
+
+  it('lets only the topmost surface move focus at the end of its enter', async () => {
+    // The `focusIn` of each surface is captured right after it is mounted.
+    const outer = mount(
+      surface(ref(true), () => undefined),
+      { attachTo: document.body },
+    )
+    const focusOuter = focusSurface
+    await nextTick()
+    await nextTick()
+    const inner = mount(
+      surface(ref(true), () => undefined),
+      { attachTo: document.body },
+    )
+    const focusInner = focusSurface
+    await nextTick()
+    await nextTick()
+    const innerPanel = inner.element as HTMLElement
+    expect(document.activeElement).toBe(innerPanel)
+
+    // The parent's late end of enter does not pull focus out of the nested surface.
+    focusOuter()
+    expect(document.activeElement).toBe(innerPanel)
+
+    focusInner()
+    expect(innerPanel.contains(document.activeElement) && document.activeElement !== innerPanel).toBe(true)
+
+    // Once the nested surface is gone the parent is the topmost again and may move focus.
+    inner.unmount()
+    focusOuter()
+    expect(outer.element.contains(document.activeElement) && document.activeElement !== outer.element).toBe(true)
     outer.unmount()
   })
 })

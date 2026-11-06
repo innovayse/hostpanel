@@ -164,6 +164,9 @@ vi.stubGlobal('readSlotQuery', readSlotQuery)
 vi.stubGlobal('pluginQuery', pluginQuery)
 vi.stubGlobal('PluginBackendPaths', PluginBackendPaths)
 
+/** A fixed session encryption key (32 bytes, base64) for tests that start or finish a sign-in attempt. */
+export const TEST_SESSION_KEY = Buffer.alloc(32, 7).toString('base64')
+
 /**
  * Sets runtime-config entries a route reads (auth mode, SSO callback and public addresses).
  *
@@ -190,6 +193,8 @@ export const startBackend = async (handler?: (request: StubRequest) => StubReply
   runtimeConfig['ssoUrl'] = stub.baseUrl
   runtimeConfig['ssoClientId'] = 'client'
   runtimeConfig['ssoClientSecret'] = 'secret'
+  // The sign-in transaction is sealed under this key; outside development an empty key is refused.
+  runtimeConfig['sessionEncryptionKey'] = TEST_SESSION_KEY
   vi.stubGlobal('$fetch', ofetch)
   return stub
 }

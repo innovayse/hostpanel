@@ -25,6 +25,8 @@ public static class InvoiceMapper
             new InvoiceDatesDto(invoice.InvoiceDate, invoice.DueDate, invoice.CreatedAt, invoice.PaidAt),
             new InvoiceAmountsDto(invoice.SubTotal, invoice.Credit, invoice.Tax, invoice.TaxRate, invoice.Total),
             invoice.AmountDue,
+            invoice.CreditableAmount,
+            invoice.IsCreditTopUp,
             new InvoicePaymentDto(invoice.PaymentMethod, invoice.GatewayTransactionId),
             invoice.Notes,
             invoice.Items.Select(ToItemDto).ToList(),
@@ -53,6 +55,8 @@ public static class InvoiceMapper
             invoice.TaxRate,
             invoice.Credit,
             invoice.AmountDue,
+            invoice.IsCreditTopUp,
+            invoice.IsBankTransferPending,
             invoice.PaymentMethod,
             invoice.Items.Select(ToItemDto).ToList(),
             invoice.Transactions.Select(t => new MyInvoiceTransactionDto(t.Id, t.Date, t.Amount, t.Type)).ToList());

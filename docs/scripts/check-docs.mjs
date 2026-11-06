@@ -22,9 +22,9 @@ const distDir = join(docsRoot, '.vitepress', 'dist')
 
 /**
  * URL base the site was built with, same rule as config.ts: leading and trailing slash,
- * default /hostpanel/. Image paths in the built HTML start with it.
+ * default /docs/. Image paths in the built HTML start with it.
  */
-const base = `/${(process.env.DOCS_BASE?.trim() || '/hostpanel/').replace(/^\/+|\/+$/g, '')}/`.replace(/^\/\/$/, '/')
+const base = `/${(process.env.DOCS_BASE?.trim() || '/docs/').replace(/^\/+|\/+$/g, '')}/`.replace(/^\/\/$/, '/')
 
 let failures = 0
 

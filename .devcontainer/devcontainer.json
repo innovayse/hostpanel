@@ -1,0 +1,45 @@
+// Opens Hostpanel in GitHub Codespaces (or any Dev Containers host) with the tools installed and the
+// development stack of docker/ running. The stack is the one the README describes under "Run from source":
+// PostgreSQL, RabbitMQ, Redis and a mail catcher, with the API, the admin panel and the client portal over
+// bind mounts.
+{
+  "name": "Hostpanel",
+  // The plain base image, with .NET added as a feature: the ready-made dotnet image ships an apt source for Yarn whose
+  // signing key has expired, so the apt-get update of the Docker-in-Docker feature fails on it and the codespace falls
+  // into recovery mode. Yarn comes from npm for the same reason (installYarnUsingApt).
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/dotnet:2": { "version": "9.0" },
+    "ghcr.io/devcontainers/features/node:1": { "version": "22", "installYarnUsingApt": false },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  // The stack runs about ten containers and builds the .NET image on the first start.
+  "hostRequirements": { "cpus": 4, "memory": "8gb", "storage": "32gb" },
+  // Fetches the plugin SDK submodule and writes docker/.env once.
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  // Starts (or restarts) the stack every time the codespace starts, once Docker answers.
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+  "forwardPorts": [3001, 5174, 5149, 8027],
+  "portsAttributes": {
+    "3001": { "label": "Client portal", "onAutoForward": "openBrowser" },
+    "5174": { "label": "Admin panel", "onAutoForward": "notify" },
+    "5149": { "label": "API (Swagger at /swagger)", "onAutoForward": "silent" },
+    "8027": { "label": "Mail inbox", "onAutoForward": "silent" }
+  },
+  "customizations": {
+    "vscode": {
+      // The dotnet feature installs the C# extension (C# Dev Kit is left out on purpose). Once the workspace is trusted it
+      // loads the backend in the editor and, finding packages missing, runs a NuGet restore against the mounted source:
+      // that rewrites obj/project.assets.json with the editor's package folder (/home/vscode/.nuget). The API container
+      // then cannot find its packages (NETSDK1064) and dotnet watch waits for a file change forever. The backend builds
+      // inside its own container, so the editor's automatic restore is switched off.
+      "extensions": [
+        "Vue.volar",
+        "dbaeumer.vscode-eslint"
+      ],
+      "settings": {
+        "dotnet.projects.enableAutomaticRestore": false
+      }
+    }
+  }
+}

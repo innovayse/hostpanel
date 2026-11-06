@@ -123,6 +123,12 @@ public interface IHostpanelDbContext
     /// <summary>Gets the quote items table.</summary>
     public DbSet<QuoteItem> QuoteItems { get; }
 
+    /// <summary>Gets the credit notes table.</summary>
+    public DbSet<CreditNote> CreditNotes { get; }
+
+    /// <summary>Gets the credit note lines table.</summary>
+    public DbSet<CreditNoteItem> CreditNoteItems { get; }
+
     /// <summary>Gets the orders table.</summary>
     public DbSet<Order> Orders { get; }
 

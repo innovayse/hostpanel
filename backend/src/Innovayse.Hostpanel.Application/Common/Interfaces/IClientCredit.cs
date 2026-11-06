@@ -13,6 +13,12 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 /// between an invoice and the balance commits or fails as one. A port rather than a Clients command
 /// for that reason: a command dispatched through the bus would save on its own, and a failed
 /// invoice save would leave the balance changed.
+/// <para>
+/// Every change also writes the movement to the client ledger in the same unit of work: the entry that already holds the
+/// money (<see cref="ClientCreditChange.Entry"/>) is stamped with the movement, its signed change and the balance it left, and
+/// a movement that moved no cash gets a credit-only entry of its own. That is the credit history, so a caller cannot move the
+/// balance without saying why.
+/// </para>
 /// </remarks>
 public interface IClientCredit
 {

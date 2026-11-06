@@ -2,6 +2,10 @@
  * Behaviour shared by the modal surfaces (`UiDialog`, `UiDrawer`): close on Escape, keep Tab inside,
  * move focus in when opened and give it back to the opener when closed.
  *
+ * The surface may animate in, so focus is moved in twice: at once to the panel itself, so Escape and Tab
+ * already work while it appears, and to its first control only when the caller says the enter is over
+ * (`focusIn`), because a control that is still moving cannot take focus reliably.
+ *
  * Surfaces can nest (a confirmation opened from a dialog), so the open ones are kept in a stack and
  * Escape always closes only the topmost, whichever surface the keystroke reached.
  */
@@ -10,6 +14,14 @@ import type { Ref } from 'vue'
 import { focusFirst, trapFocus } from '@/utils/ui/focusTrap'
 import { lockScroll, unlockScroll } from '@/utils/ui/scrollLock'
 import { Key } from './keys'
+
+/** What a modal surface hands back to the component that uses it. */
+export interface ModalSurface {
+  /** The `keydown` handler to bind on the surface. */
+  onKeydown: (event: KeyboardEvent) => void
+  /** Moves focus to the first control; call it when the enter animation has ended. */
+  focusIn: () => void
+}
 
 /** One open surface in the stack: what closes it. */
 interface OpenSurface {
@@ -26,35 +38,61 @@ const openSurfaces: OpenSurface[] = []
  * @param panel - The surface element (the dialog or drawer panel).
  * @param isOpen - Whether the surface is currently shown.
  * @param close - Called when the user presses Escape.
- * @returns The `keydown` handler to bind on the surface.
+ * @returns The `keydown` handler to bind on the surface and `focusIn` for the end of the enter.
  */
 export const useModalSurface = (
   panel: Ref<HTMLElement | null>,
   isOpen: () => boolean,
   close: () => void,
-): ((event: KeyboardEvent) => void) => {
+): ModalSurface => {
+  /** The element that had focus when the surface opened; it gets focus back when the surface closes. */
   let opener: HTMLElement | null = null
   /** This surface's place in the stack of open surfaces. */
   const self: OpenSurface = { close }
   /** Whether this surface currently holds the page scroll lock. */
   let locked = false
+  /** Counts the enters and leaves so far; an enter that finds it changed after its wait was overtaken by a leave. */
+  let turn = 0
 
-  /** Remembers the focused element and moves focus into the panel once it is rendered. */
+  /**
+   * Remembers the focused element and moves focus onto the panel itself once it is rendered. If the surface closed
+   * or unmounted while it waited for the render, `leave` has already given focus back and the move is dropped.
+   */
   const enter = async (): Promise<void> => {
+    turn += 1
+    const myTurn = turn
     if (!locked) {
+      opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
       lockScroll()
       openSurfaces.push(self)
       locked = true
     }
-    opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
     await nextTick()
-    if (panel.value !== null) {
-      focusFirst(panel.value)
+    if (myTurn !== turn || !locked) {
+      return
     }
+    panel.value?.focus({ preventScroll: true })
+  }
+
+  /**
+   * Moves focus to the first control of the panel, if the surface is still open. A control inside the panel that
+   * already has focus (the user typed or clicked during the enter) keeps it.
+   */
+  const focusIn = (): void => {
+    // Only the topmost surface may move focus: a parent's late end of enter must not pull it from a nested surface.
+    if (!locked || panel.value === null || openSurfaces[openSurfaces.length - 1] !== self) {
+      return
+    }
+    const active = document.activeElement
+    if (active !== panel.value && active !== null && panel.value.contains(active)) {
+      return
+    }
+    focusFirst(panel.value)
   }
 
   /** Gives focus back to the element that opened the surface. */
   const leave = (): void => {
+    turn += 1
     if (locked) {
       unlockScroll()
       openSurfaces.splice(openSurfaces.indexOf(self), 1)
@@ -80,7 +118,12 @@ export const useModalSurface = (
 
   onBeforeUnmount(leave)
 
-  return (event: KeyboardEvent): void => {
+  /**
+   * Escape closes the topmost open surface; any other key is kept inside the panel by the focus trap.
+   *
+   * @param event - The keystroke that reached the panel.
+   */
+  const onKeydown = (event: KeyboardEvent): void => {
     if (event.key === Key.Escape) {
       event.stopPropagation()
       const topmost = locked ? openSurfaces[openSurfaces.length - 1] : undefined
@@ -92,4 +135,6 @@ export const useModalSurface = (
       trapFocus(panel.value, event)
     }
   }
+
+  return { onKeydown, focusIn }
 }

@@ -134,6 +134,17 @@ public static class AuthenticationRegistration
                     + "must both be set: tokens are accepted only from that issuer and only when issued to that client.");
             }
 
+            // Back-channel logout is answered by the sign-on package, which checks every logout token's issuer
+            // against Auth:BearerIssuer and refuses all of them when it is empty. Nothing else fails
+            // visibly: the provider's sign-out of every application gets a 400 here and this deployment's
+            // sessions simply stay alive. So an empty issuer stops the host at startup instead.
+            if (string.IsNullOrWhiteSpace(configuration["Auth:BearerIssuer"]))
+            {
+                throw new InvalidOperationException(
+                    "Auth:Mode is not 'local', so Auth:BearerIssuer (SSO_ISSUER) must be set: it is the exact issuer "
+                    + "the provider stamps into its tokens, and without it every back-channel logout is refused.");
+            }
+
             var ssoClientId = ssoOptions.ClientId;
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(opts =>

@@ -1,5 +1,3 @@
-using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
-using Innovayse.Hostpanel.Application.Admin.Integrations.Queries.GetIntegration;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Constants;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
@@ -87,9 +85,10 @@ public sealed class ListAvailablePaymentMethodsHandler
             return Result.Success<IReadOnlyList<AvailablePaymentMethodDto>>(methods);
         }
 
-        // Bank transfer has no credentials to be "configured" with, so the admin integrations
-        // flag is its only gate.
-        if (await IsIntegrationEnabledAsync(BuiltInPaymentModules.BankTransferIntegrationSlug, ct))
+        // Bank transfer has no credentials to be "configured" with: the admin's switch is its gate, and it also needs
+        // something to show the payer, or the card would be empty and the payer could not pay.
+        var bankTransfer = await _bus.LoadBankTransferSettingsAsync(ct);
+        if (bankTransfer is { IsEnabled: true, HasPayerDetails: true })
         {
             methods.Add(new(BuiltInPaymentModules.BankTransfer, PaymentMethodNames.BankTransfer));
         }
@@ -142,18 +141,5 @@ public sealed class ListAvailablePaymentMethodsHandler
         }
 
         return (await _context.FindOfferedCurrencyAsync(requested, ct))?.Numeric;
-    }
-
-    /// <summary>
-    /// Reads the admin's <c>is_enabled</c> flag for an integration. A missing setting counts as
-    /// disabled, the way the admin integrations list treats it.
-    /// </summary>
-    /// <param name="slug">Integration slug as the admin integrations page keys it.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns><c>true</c> when the integration reports itself enabled.</returns>
-    private async Task<bool> IsIntegrationEnabledAsync(string slug, CancellationToken ct)
-    {
-        var integration = await _bus.InvokeAsync<Result<IntegrationDetailDto>>(new GetIntegrationQuery(slug), ct);
-        return integration.Value?.IsEnabled == true;
     }
 }

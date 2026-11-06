@@ -8,6 +8,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Common.Enums;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Domains.Events;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Shared.Models;
@@ -152,7 +153,7 @@ public sealed class FulfillPaidOrderHandler
             {
                 // The credit share is already spent, so it is added and saved at once; a concurrent
                 // balance change is retried once there, a second conflict lands in the catch below.
-                var credited = await _clientCredit.AddAndSaveAsync(new ClientCreditChange(clientId, shares.CreditShare), ct);
+                var credited = await _clientCredit.AddAndSaveAsync(new ClientCreditChange(clientId, shares.CreditShare, CreditMovementType.InvoiceReturned, invoiceId), ct);
                 if (credited.IsFailure)
                 {
                     _logger.LogCritical(

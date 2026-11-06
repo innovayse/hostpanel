@@ -40,7 +40,7 @@ public sealed class ChangeMyServicePasswordHandler
     /// <returns>
     /// Success, or <c>SERVICE_NOT_FOUND</c> when the service is not the caller's, when no such
     /// service exists, or when the caller has no client record, or <c>SERVICE_NOT_PROVISIONED</c>,
-    /// <c>SERVICE_NO_SERVER_ASSIGNED</c> or <c>SERVICE_PASSWORD_UPSTREAM_FAILED</c> from the
+    /// <c>SERVICE_NOT_ACTIVE</c>, <c>SERVICE_NO_SERVER_ASSIGNED</c> or <c>SERVICE_PASSWORD_UPSTREAM_FAILED</c> from the
     /// shared use case.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>

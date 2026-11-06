@@ -46,6 +46,12 @@ public static class BillingErrors
     public const string InvoiceNotUnpaid = "INVOICE_NOT_UNPAID";
 
     /// <summary>
+    /// No manual bank transfer is waiting on the invoice (409): <see cref="Invoice.ConfirmBankTransfer"/> and
+    /// <see cref="Invoice.RejectBankTransfer"/>. A second confirm of the same transfer answers with it too.
+    /// </summary>
+    public const string InvoiceBankTransferNotPending = "INVOICE_BANK_TRANSFER_NOT_PENDING";
+
+    /// <summary>
     /// The invoice is not eligible to be marked lapsed (400): <see cref="Invoice.MarkLapsed"/>
     /// requires <c>Overdue</c>.
     /// </summary>
@@ -56,6 +62,12 @@ public static class BillingErrors
     /// <see cref="FulfilmentRecord.Retry"/>.
     /// </summary>
     public const string FulfilmentRecordNotRetryable = "FULFILMENT_RECORD_NOT_RETRYABLE";
+
+    /// <summary>
+    /// The line is not a domain renewal left claimed, so there is no claim to release (409):
+    /// <see cref="Invoice.ReleaseRenewalClaim"/>.
+    /// </summary>
+    public const string RenewalClaimNotHeld = "RENEWAL_CLAIM_NOT_HELD";
 
     /// <summary>
     /// The invoice is past the point where it can be cancelled (400): it is paid, refunded or
@@ -131,4 +143,52 @@ public static class BillingErrors
     /// and <see cref="Transaction.CorrectAmounts"/>.
     /// </summary>
     public const string TransactionAmountRequired = "TRANSACTION_AMOUNT_REQUIRED";
+
+    /// <summary>
+    /// The entry is part of the client's credit history and cannot be edited or deleted (409): <see cref="Transaction.EnsureEditable"/>.
+    /// A mistake is put right with a new credit adjustment.
+    /// </summary>
+    public const string TransactionCreditLocked = "TRANSACTION_CREDIT_LOCKED";
+
+    /// <summary>
+    /// A credit top-up invoice is one fixed line and cannot be edited, taxed or discounted (400): <see cref="Invoice.AddItem"/>
+    /// and every other change to its lines or tax rate.
+    /// </summary>
+    public const string InvoiceTopUpFixed = "INVOICE_TOP_UP_FIXED";
+
+    /// <summary>Credit cannot be applied to a credit top-up invoice, which would pay for credit with credit (400): <see cref="Invoice.ApplyCredit"/>.</summary>
+    public const string InvoiceTopUpNoCredit = "INVOICE_TOP_UP_NO_CREDIT";
+
+    /// <summary>
+    /// A paid credit top-up is refunded by staff by hand only (400): not through the gateway and not back to the balance,
+    /// which would be the same money again.
+    /// </summary>
+    public const string InvoiceTopUpRefundManualOnly = "INVOICE_TOP_UP_REFUND_MANUAL_ONLY";
+
+    /// <summary>The id names no credit note, or none the caller may see (404).</summary>
+    public const string CreditNoteNotFound = "CREDIT_NOTE_NOT_FOUND";
+
+    /// <summary>A credit note cannot be issued on a credit top-up invoice, which is credit already (400): <see cref="Invoice.EnsureCreditable"/>.</summary>
+    public const string CreditNoteTopUpInvoice = "CREDIT_NOTE_TOP_UP_INVOICE";
+
+    /// <summary>
+    /// The credit note is more than the invoice can still be credited once every earlier credit note and refund is counted
+    /// (400): <see cref="Invoice.EnsureCreditable"/>.
+    /// </summary>
+    public const string CreditNoteExceedsCreditable = "CREDIT_NOTE_EXCEEDS_CREDITABLE";
+
+    /// <summary>A credit note needs at least one line, and every line a description, a price and a quantity (400): <see cref="CreditNote.Create"/>.</summary>
+    public const string CreditNoteItemsRequired = "CREDIT_NOTE_ITEMS_REQUIRED";
+
+    /// <summary>The credit note is not in the state the action needs (409): <see cref="CreditNote.Issue"/>, <see cref="CreditNote.MarkApplied"/> and <see cref="CreditNote.Void"/>.</summary>
+    public const string CreditNoteInvalidState = "CREDIT_NOTE_INVALID_STATE";
+
+    /// <summary>The credit note was already voided (409): <see cref="CreditNote.Void"/>.</summary>
+    public const string CreditNoteAlreadyVoided = "CREDIT_NOTE_ALREADY_VOIDED";
+
+    /// <summary>
+    /// A credit note paid out as a gateway refund cannot be voided, because the money has left and no void can bring it back
+    /// (409): <see cref="CreditNote.Void"/>.
+    /// </summary>
+    public const string CreditNoteRefundNotVoidable = "CREDIT_NOTE_REFUND_NOT_VOIDABLE";
 }

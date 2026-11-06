@@ -28,6 +28,12 @@ const completeGatewayMock = vi.fn()
 /** The mocked PDF read. */
 const fetchInvoicePdfMock = vi.fn()
 
+/** The mocked bank transfer choice. */
+const selectBankTransferMock = vi.fn()
+
+/** The mocked bank transfer details read. */
+const fetchBankTransferMock = vi.fn()
+
 /** The mocked browser save, so no test touches the DOM. */
 const saveBlobMock = vi.fn()
 
@@ -44,7 +50,9 @@ vi.mock('~/composables/apis/useBillingApi', () => ({
     fetchInvoice: fetchInvoiceMock,
     fetchGatewayMethods: fetchGatewayMethodsMock,
     completeGatewayPayment: completeGatewayMock,
-    fetchInvoicePdf: fetchInvoicePdfMock
+    fetchInvoicePdf: fetchInvoicePdfMock,
+    selectBankTransfer: selectBankTransferMock,
+    fetchBankTransfer: fetchBankTransferMock
   })
 }))
 
@@ -276,5 +284,115 @@ describe('useInvoicePaymentStore.downloadInvoicePdf', () => {
     await store.downloadInvoicePdf('41')
 
     expect(store.pdfError).toBe('')
+  })
+})
+
+/** The bank details the endpoints answer with. */
+const details = { invoiceId: 41, reference: 'INV-41', amountDue: 50, currency: 'USD', accountName: 'Example LLC', iban: 'AM00', swift: null, bankName: null, instructions: null }
+
+describe('useInvoicePaymentStore bank transfer', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    selectBankTransferMock.mockReset()
+    fetchBankTransferMock.mockReset()
+    fetchInvoiceMock.mockReset()
+    fetchGatewayMethodsMock.mockReset()
+  })
+
+  it('offers the transfer only when the gateway list holds the bank transfer module', async () => {
+    const store = useInvoicePaymentStore()
+    expect(store.bankTransferOffered).toBe(false)
+
+    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'hosted', displayName: 'Card' }])
+    await store.loadPaymentOptions()
+    expect(store.bankTransferOffered).toBe(false)
+
+    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'hosted', displayName: 'Card' }, { module: 'bank_transfer', displayName: 'Bank' }])
+    await store.loadPaymentOptions()
+    expect(store.bankTransferOffered).toBe(true)
+  })
+
+  it('choosing the transfer keeps the details, moves the invoice to waiting and releases the flag', async () => {
+    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'Unpaid' })
+    selectBankTransferMock.mockResolvedValue(details)
+    const store = useInvoicePaymentStore()
+    await store.loadInvoice('41')
+
+    const chosen = await store.selectBankTransfer('41')
+
+    expect(chosen).toBe(true)
+    expect(selectBankTransferMock).toHaveBeenCalledWith('41')
+    expect(store.bankTransfer).toEqual(details)
+    expect(store.invoice?.status).toBe('PaymentPending')
+    expect(store.submitting).toBe(false)
+    expect(store.error).toBe('')
+  })
+
+  it('keeps the API sentence when choosing the transfer is refused', async () => {
+    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'Unpaid' })
+    selectBankTransferMock.mockRejectedValue({ data: { detail: 'Bank transfer is not available right now.' } })
+    const store = useInvoicePaymentStore()
+    await store.loadInvoice('41')
+
+    const chosen = await store.selectBankTransfer('41')
+
+    expect(chosen).toBe(false)
+    expect(store.error).toBe('Bank transfer is not available right now.')
+    expect(store.bankTransfer).toBeNull()
+    expect(store.invoice?.status).toBe('Unpaid')
+    expect(store.submitting).toBe(false)
+  })
+
+  it('reads the details only for an invoice that waits for a transfer', async () => {
+    fetchBankTransferMock.mockResolvedValue(details)
+    const store = useInvoicePaymentStore()
+
+    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'Unpaid' })
+    await store.loadInvoice('41')
+    await store.loadBankTransfer('41')
+    expect(fetchBankTransferMock).not.toHaveBeenCalled()
+    expect(store.bankTransfer).toBeNull()
+
+    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'PaymentPending', isBankTransferPending: true })
+    await store.loadInvoice('41')
+    await store.loadBankTransfer('41')
+    expect(fetchBankTransferMock).toHaveBeenCalledWith('41')
+    expect(store.bankTransfer).toEqual(details)
+  })
+
+  it('does not read details for a pending invoice that is not a bank transfer', async () => {
+    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'PaymentPending', isBankTransferPending: false })
+    const store = useInvoicePaymentStore()
+    await store.loadInvoice('41')
+
+    await store.loadBankTransfer('41')
+
+    expect(fetchBankTransferMock).not.toHaveBeenCalled()
+    expect(store.bankTransfer).toBeNull()
+    expect(store.bankTransferError).toBe('')
+  })
+
+  it('keeps the sentence of a refused details read and no details', async () => {
+    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'PaymentPending', isBankTransferPending: true })
+    fetchBankTransferMock.mockRejectedValue({ data: { detail: 'No bank transfer is waiting on this invoice.' } })
+    const store = useInvoicePaymentStore()
+    await store.loadInvoice('41')
+
+    await store.loadBankTransfer('41')
+
+    expect(store.bankTransfer).toBeNull()
+    expect(store.bankTransferError).toBe('No bank transfer is waiting on this invoice.')
+  })
+
+  it('forgets the details of the previous invoice when another one is read', async () => {
+    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'Unpaid' })
+    selectBankTransferMock.mockResolvedValue(details)
+    const store = useInvoicePaymentStore()
+    await store.loadInvoice('41')
+    await store.selectBankTransfer('41')
+
+    await store.loadInvoice('42')
+
+    expect(store.bankTransfer).toBeNull()
   })
 })

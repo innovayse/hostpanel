@@ -24,16 +24,19 @@ public sealed class GetCreditsReviewerHandler
     /// <param name="query">The filters and the page to apply.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The count and sum of the matching credits per currency, summed in SQL, and one page of them,
+    /// The count and net sum of the matching credit movements per currency, summed in SQL, and one page of them,
     /// newest first. Never refuses.
     /// </returns>
     public async Task<Result<CreditsReviewerDto>> HandleAsync(GetCreditsReviewerQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
 
+        // Every movement of a client's balance is a credit here: a paid top-up, a credit note, staff goodwill, credit applied to an
+        // invoice or handed back (each recorded on the ledger with its signed change), and the older rows that put cash on the
+        // balance before the history existed (added to credit, no movement recorded). The amount is the signed change.
         var credits = _context.Transactions
             .AsNoTracking()
-            .Where(t => t.AddedToCredit && t.AmountIn > 0);
+            .Where(t => t.CreditMovement != null || (t.AddedToCredit && t.AmountIn > 0));
 
         if (query.ClientId.HasValue)
         {
@@ -56,19 +59,19 @@ public sealed class GetCreditsReviewerHandler
         if (query.MinAmount.HasValue)
         {
             var min = query.MinAmount.Value;
-            credits = credits.Where(t => t.AmountIn >= min);
+            credits = credits.Where(t => (t.CreditChange ?? t.AmountIn) >= min);
         }
 
         if (query.MaxAmount.HasValue)
         {
             var max = query.MaxAmount.Value;
-            credits = credits.Where(t => t.AmountIn <= max);
+            credits = credits.Where(t => (t.CreditChange ?? t.AmountIn) <= max);
         }
 
         var totals = await credits
             .GroupBy(t => t.Currency)
             .OrderBy(g => g.Key)
-            .Select(g => new CreditsReviewerCurrencyTotalDto(g.Key, g.Count(), g.Sum(t => t.AmountIn)))
+            .Select(g => new CreditsReviewerCurrencyTotalDto(g.Key, g.Count(), g.Sum(t => t.CreditChange ?? t.AmountIn)))
             .ToListAsync(ct);
 
         var rows = await credits
@@ -82,7 +85,7 @@ public sealed class GetCreditsReviewerHandler
                 t.Date.ToString("yyyy-MM-dd"),
                 t.Description,
                 t.Currency,
-                t.AmountIn))
+                t.CreditChange ?? t.AmountIn))
             .ToListAsync(ct);
 
         var page = new PaginatedList<CreditsReviewerRowDto>(rows, totals.Sum(t => t.TotalCount), query.Page, query.PageSize);

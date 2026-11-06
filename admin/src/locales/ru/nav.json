@@ -19,7 +19,10 @@
     "offlineCc": "Оффлайн-обработка карт",
     "disputes": "Споры",
     "gatewayLog": "Лог платёжного шлюза",
-    "paymentClaims": "Платёжные заявки"
+    "paymentClaims": "Платёжные заявки",
+    "bankTransfers": "Ожидающие банковские переводы",
+    "creditNotes": "Кредит-ноты",
+    "renewals": "Предстоящие продления"
   },
   "reports": "Отчёты",
   "orders": "Заказы",

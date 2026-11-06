@@ -265,6 +265,9 @@
 <data name="InvoicePaymentAmountInvalid" xml:space="preserve">
     <value>The payment amount must be greater than zero.</value>
   </data>
+<data name="BankTransferRejectNoteInvalid" xml:space="preserve">
+    <value>A reason is required and must be at most {0} characters.</value>
+  </data>
 <data name="InvoicePaymentNotesInvalid" xml:space="preserve">
     <value>Notes must be at most {0} characters.</value>
   </data>
@@ -351,6 +354,15 @@
   </data>
   <data name="DomainIdRequired" xml:space="preserve">
     <value>Domain ID must be a positive number.</value>
+  </data>
+  <data name="AutoRenewValueRequired" xml:space="preserve">
+    <value>Auto-renew value is required: send true or false.</value>
+  </data>
+  <data name="RegistrarLockValueRequired" xml:space="preserve">
+    <value>Registrar lock value is required: send true or false.</value>
+  </data>
+  <data name="WhoisPrivacyValueRequired" xml:space="preserve">
+    <value>WHOIS privacy value is required: send true or false.</value>
   </data>
   <data name="DomainEppCodeRequired" xml:space="preserve">
     <value>The EPP/authorization code must be at least 6 characters.</value>
@@ -1398,5 +1410,59 @@
   </data>
   <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
     <value>Choose a valid category.</value>
+  </data>
+  <data name="InvoiceItemIdInvalid" xml:space="preserve">
+    <value>Name a valid invoice line.</value>
+  </data>
+  <data name="RenewalWindowInvalid" xml:space="preserve">
+    <value>Choose a renewal window of 30, 60 or 90 days.</value>
+  </data>
+  <data name="CreditAdjustmentDirectionInvalid" xml:space="preserve">
+    <value>Choose whether to add credit or take it off.</value>
+  </data>
+  <data name="CreditAdjustmentAmountInvalid" xml:space="preserve">
+    <value>The amount must be greater than zero.</value>
+  </data>
+  <data name="CreditAdjustmentReasonRequired" xml:space="preserve">
+    <value>Give a reason for the adjustment.</value>
+  </data>
+  <data name="CreditAdjustmentReasonTooLong" xml:space="preserve">
+    <value>The reason must be 500 characters or fewer.</value>
+  </data>
+  <data name="CreditTopUpAmountInvalid" xml:space="preserve">
+    <value>The amount must be greater than zero.</value>
+  </data>
+  <data name="CreditNoteIdInvalid" xml:space="preserve">
+    <value>Name a valid credit note.</value>
+  </data>
+  <data name="CreditNoteMethodInvalid" xml:space="preserve">
+    <value>Choose whether the credit note goes to the account credit or back through the gateway.</value>
+  </data>
+  <data name="CreditNoteStatusInvalid" xml:space="preserve">
+    <value>Choose a valid credit note status.</value>
+  </data>
+  <data name="CreditNoteReasonRequired" xml:space="preserve">
+    <value>Give a reason for the credit note.</value>
+  </data>
+  <data name="CreditNoteReasonTooLong" xml:space="preserve">
+    <value>The reason must be 500 characters or fewer.</value>
+  </data>
+  <data name="CreditNoteVoidReasonRequired" xml:space="preserve">
+    <value>Give a reason for voiding the credit note.</value>
+  </data>
+  <data name="CreditNoteItemsRequired" xml:space="preserve">
+    <value>Add at least one line to the credit note.</value>
+  </data>
+  <data name="CreditNoteItemsTooMany" xml:space="preserve">
+    <value>A credit note can have at most 100 lines.</value>
+  </data>
+  <data name="CreditNoteItemDescriptionInvalid" xml:space="preserve">
+    <value>Every line needs a description of 500 characters or fewer.</value>
+  </data>
+  <data name="CreditNoteItemPriceInvalid" xml:space="preserve">
+    <value>Every line needs a price greater than zero.</value>
+  </data>
+  <data name="CreditNoteItemQuantityInvalid" xml:space="preserve">
+    <value>Every line needs a quantity between 1 and 100000.</value>
   </data>
 </root>

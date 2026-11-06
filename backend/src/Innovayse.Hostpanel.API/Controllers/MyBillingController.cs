@@ -1,7 +1,10 @@
 using Innovayse.Hostpanel.API.Authorization;
+using Innovayse.Hostpanel.Application.Billing.Commands.ApplyMyInvoiceCredit;
 using Innovayse.Hostpanel.Application.Billing.Commands.CompleteMyGatewayPayment;
+using Innovayse.Hostpanel.Application.Billing.Commands.SelectMyBankTransfer;
 using Innovayse.Hostpanel.Application.Billing.Commands.StartMyGatewayPayment;
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Billing.Queries.GetMyBankTransfer;
 using Innovayse.Hostpanel.Application.Billing.Queries.GetMyInvoice;
 using Innovayse.Hostpanel.Application.Billing.Queries.GetMyInvoicePdf;
 using Innovayse.Hostpanel.Application.Billing.Queries.GetMyInvoices;
@@ -142,6 +145,89 @@ public sealed class MyBillingController : BaseApiController
         int id, [FromBody] StartMyGatewayPaymentCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<RedirectDto>>(command with { InvoiceId = id }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Chooses manual bank transfer for the authenticated client's invoice: the invoice waits for staff to confirm the
+    /// money, and the answer carries the bank details and the reference to write on the transfer.
+    /// </summary>
+    /// <param name="id">Invoice primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the bank details and the reference (also when the transfer was already chosen); 401 without a session;
+    /// 404 with <c>INVOICE_NOT_FOUND</c> when it is not the caller's; 400 with <c>INVOICE_NOT_PAYABLE</c> when the invoice
+    /// is not open for payment; 409 with <c>BANK_TRANSFER_NOT_AVAILABLE</c> when the admin has it switched off,
+    /// <c>GATEWAY_SESSION_ALREADY_STARTED</c> while a hosted payment is still open, or <c>INVOICE_STORED_CHARGE_UNRESOLVED</c>
+    /// or <c>INVOICE_STORED_CHARGE_HELD</c> while a stored card charge blocks it; 403 with <c>CLIENT_PERMISSION_DENIED</c>
+    /// when the user lacks <c>ViewPayInvoices</c>, or with <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c> when the account
+    /// may not pay; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/bank-transfer")]
+    [Authorize(Policy = Policies.Client)]
+    [RequiresClientPermission(ClientPermission.ViewPayInvoices)]
+    [ProducesResponseType(typeof(BankTransferDetailsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SelectBankTransferAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<BankTransferDetailsDto>>(new SelectMyBankTransferCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Returns the bank details and the reference of the manual bank transfer waiting on the authenticated client's invoice.</summary>
+    /// <param name="id">Invoice primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the bank details and the reference; 401 without a session; 404 with <c>INVOICE_NOT_FOUND</c> when it is not
+    /// the caller's; 409 with <c>INVOICE_BANK_TRANSFER_NOT_PENDING</c> when no transfer waits on it; 403 with
+    /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ViewPayInvoices</c>; 400 when the id is not positive;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("{id:int}/bank-transfer")]
+    [Authorize(Policy = Policies.Client)]
+    [RequiresClientPermission(ClientPermission.ViewPayInvoices)]
+    [ProducesResponseType(typeof(BankTransferDetailsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> GetBankTransferAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<BankTransferDetailsDto>>(new GetMyBankTransferQuery(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Pays part or all of the authenticated client's invoice from their credit balance.</summary>
+    /// <param name="id">Invoice primary key; wins over any invoice id in the body.</param>
+    /// <param name="command">The credit amount to apply.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when applied (the invoice turns Paid when the credit covers all that was owed); 401 without a session; 404 with
+    /// <c>INVOICE_NOT_FOUND</c> when it is not the caller's; 400 with <c>CLIENT_CREDIT_INSUFFICIENT</c> when the balance is
+    /// short, <c>INVOICE_CREDIT_EXCEEDS_DUE</c> when more than is owed, <c>INVOICE_NOT_EDITABLE</c> when the invoice no longer
+    /// takes credit, <c>INVOICE_TOP_UP_NO_CREDIT</c> for a top-up invoice, or when the amount fails validation; 403 with
+    /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ViewPayInvoices</c>, or with <c>CLIENT_SUSPENDED</c> or
+    /// <c>CLIENT_CLOSED</c> when the account may not pay; 409 when the invoice or the balance changed under the request;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/credit")]
+    [Authorize(Policy = Policies.Client)]
+    [RequiresClientPermission(ClientPermission.ViewPayInvoices)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ApplyCreditAsync(
+        int id, [FromBody] ApplyMyInvoiceCreditCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command with { InvoiceId = id }, ct);
         return HandleResult(outcome);
     }
 

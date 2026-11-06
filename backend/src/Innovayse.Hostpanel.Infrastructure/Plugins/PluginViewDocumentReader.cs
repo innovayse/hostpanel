@@ -65,6 +65,42 @@ internal static partial class PluginViewDocumentReader
     /// <summary>The block kind that may carry a <c>followUp</c> of its own.</summary>
     private const string ActionKind = "action";
 
+    /// <summary>The member of a preview and of a chat declaring element selection; the host's own contract name until the SDK documents it.</summary>
+    private const string SelectionMember = "selection";
+
+    /// <summary>The member of a preview's selection listing the sources that may select.</summary>
+    private const string SelectionSourcesMember = "sources";
+
+    /// <summary>The member of a preview's selection saying which release the preview holds.</summary>
+    private const string SelectionReleaseMember = "release";
+
+    /// <summary>The members of a preview's selection: sources, route and release.</summary>
+    private const int SelectionMemberCount = 3;
+
+    /// <summary>The members of a selection's release: route and field.</summary>
+    private const int SelectionReleaseMemberCount = 2;
+
+    /// <summary>The block kind of a chat.</summary>
+    private const string ChatKind = "chat";
+
+    /// <summary>The member of an action block that builds the body of its call from what the page has read.</summary>
+    private const string BodySourceMember = "bodySource";
+
+    /// <summary>The member of a body source mapping each body member to a dotted path into the reply.</summary>
+    private const string BodySourceFieldsMember = "fields";
+
+    /// <summary>The number of members a body source holds: route and fields, nothing else.</summary>
+    private const int BodySourceMemberCount = 2;
+
+    /// <summary>The most members a body source may send; an expected version needs one, and a page is no form.</summary>
+    private const int MaxBodySourceFields = 10;
+
+    /// <summary>The member of an action block naming the route it calls.</summary>
+    private const string ActionRouteMember = "route";
+
+    /// <summary>The member of an action block naming where a label that depends on data is read from.</summary>
+    private const string LabelSourceMember = "labelSource";
+
     /// <summary>The member of a condition naming the GET route read.</summary>
     private const string ConditionRouteMember = "route";
 
@@ -167,6 +203,11 @@ internal static partial class PluginViewDocumentReader
     [GeneratedRegex(@"\A[a-z0-9][a-z0-9_-]*\z", RegexOptions.CultureInvariant)]
     private static partial Regex PreviewSourceIdPattern();
 
+    /// <summary>A member of a body a view builds: one camelCase JSON name, so no name can reach an object's prototype.</summary>
+    /// <returns>The pattern.</returns>
+    [GeneratedRegex(@"\A[a-z][A-Za-z0-9]{0,63}\z", RegexOptions.CultureInvariant)]
+    private static partial Regex BodyMemberPattern();
+
     /// <summary>Reads and checks every view document the manifest names, under the plugin folder.</summary>
     /// <param name="pluginDirectory">The plugin folder: the folder holding <c>plugin.json</c>.</param>
     /// <param name="manifest">The manifest, already accepted by <see cref="PluginManifestValidator.Validate"/>.</param>
@@ -195,7 +236,7 @@ internal static partial class PluginViewDocumentReader
 
             foreach (var use in group)
             {
-                violation = CheckPreviewPlace(use, scan) ?? CheckRoutes(manifest, use, scan);
+                violation = CheckPreviewPlace(use, scan) ?? CheckSelectionPlace(use, scan) ?? CheckActionBodyPlace(use, scan) ?? CheckRoutes(manifest, use, scan);
                 if (violation is not null)
                 {
                     return new PluginViewRead(PluginViewDocuments.None, violation);
@@ -678,7 +719,102 @@ internal static partial class PluginViewDocumentReader
         {
             scan.HasPreview = true;
             CheckPreview(block, scan);
+            CheckPreviewSelection(block, scan);
         }
+        else if (string.Equals(kind, ChatKind, StringComparison.Ordinal) && block.TryGetProperty(SelectionMember, out var chatSelection))
+        {
+            scan.HasChatSelection = true;
+            if (chatSelection.ValueKind != JsonValueKind.True)
+            {
+                scan.StateViolation ??= new PluginManifestViolation(
+                    PluginManifestRule.ViewSelectionInvalid, $"has a '{ChatKind}' whose '{SelectionMember}' is anything but true");
+            }
+        }
+        else if (string.Equals(kind, ActionKind, StringComparison.Ordinal) && block.TryGetProperty(BodySourceMember, out var bodySource))
+        {
+            scan.HasActionBody = true;
+            CheckActionBody(block, bodySource, scan);
+        }
+    }
+
+    /// <summary>
+    /// Checks an action's body source: an object holding exactly a GET <c>route</c> and 1 to
+    /// <see cref="MaxBodySourceFields"/> <c>fields</c>, each a body member and the dotted path it is read from. The action
+    /// has an <c>id</c>, so a refresh can read it again, and calls a method that carries a body. A
+    /// <c>labelSource</c> names the same route, because the panel then takes the label and the body from one reply: two
+    /// reads could answer differently, and the button would send a value other than the one on its label.
+    /// </summary>
+    /// <param name="action">The action block.</param>
+    /// <param name="value">The body source.</param>
+    /// <param name="scan">Receives the route and the first broken rule.</param>
+    private static void CheckActionBody(JsonElement action, JsonElement value, DocumentScan scan)
+    {
+        var route = value.ValueKind == JsonValueKind.Object && value.TryGetProperty(ConditionRouteMember, out var routeValue)
+            ? ReadRoute(routeValue)
+            : null;
+        var called = action.TryGetProperty(ActionRouteMember, out var calledValue) ? ReadRoute(calledValue) : null;
+        var valid = route is not null
+            && route.Method == PluginRouteMethod.Get
+            && value.EnumerateObject().Count() == BodySourceMemberCount
+            && value.TryGetProperty(BodySourceFieldsMember, out var fields)
+            && AreBodyFields(fields)
+            && action.TryGetProperty(IdMember, out var id)
+            && id.ValueKind == JsonValueKind.String
+            && !string.IsNullOrEmpty(id.GetString())
+            && called?.Method is PluginRouteMethod.Post or PluginRouteMethod.Put or PluginRouteMethod.Patch
+            && LabelReadsTheSameRoute(action, route);
+        if (route is null || !valid)
+        {
+            scan.StateViolation ??= new PluginManifestViolation(
+                PluginManifestRule.ViewActionBodyInvalid,
+                $"has a '{BodySourceMember}' that is not {{ {ConditionRouteMember}: a GET route, {BodySourceFieldsMember}: 1 to {MaxBodySourceFields} members and dotted paths }} on an action with an id that calls POST, PUT or PATCH and reads its label from that route");
+            return;
+        }
+
+        scan.Routes.Add(route);
+    }
+
+    /// <summary>
+    /// Tells whether a body source's <c>fields</c> are 1 to <see cref="MaxBodySourceFields"/> members, each named once and
+    /// not like a label member, which the localiser would rewrite when the page is served.
+    /// </summary>
+    /// <param name="fields">The value.</param>
+    /// <returns><see langword="true"/> when they are.</returns>
+    private static bool AreBodyFields(JsonElement fields)
+    {
+        if (fields.ValueKind != JsonValueKind.Object)
+        {
+            return false;
+        }
+
+        var members = fields.EnumerateObject().ToList();
+        return members.Count is >= 1 and <= MaxBodySourceFields
+            && members.Select(member => member.Name).Distinct(StringComparer.Ordinal).Count() == members.Count
+            && members.TrueForAll(member =>
+                BodyMemberPattern().IsMatch(member.Name)
+                && !PluginViews.LabelProperties.Contains(member.Name, StringComparer.Ordinal)
+                && member.Value.ValueKind == JsonValueKind.String
+                && member.Value.GetString() is { Length: <= MaxConditionFieldLength } path
+                && ConditionFieldPattern().IsMatch(path));
+    }
+
+    /// <summary>Tells whether an action with a body source has no label source, or one reading the same route.</summary>
+    /// <param name="action">The action block.</param>
+    /// <param name="route">The body source's route.</param>
+    /// <returns><see langword="true"/> when the label and the body come from one read.</returns>
+    private static bool LabelReadsTheSameRoute(JsonElement action, PluginViewRoute route)
+    {
+        if (!action.TryGetProperty(LabelSourceMember, out var label))
+        {
+            return true;
+        }
+
+        var labelRoute = label.ValueKind == JsonValueKind.Object && label.TryGetProperty(ConditionRouteMember, out var labelValue)
+            ? ReadRoute(labelValue)
+            : null;
+        return labelRoute is not null
+            && labelRoute.Method == route.Method
+            && string.Equals(labelRoute.Path, route.Path, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -740,6 +876,82 @@ internal static partial class PluginViewDocumentReader
                 PluginManifestRule.ViewPreviewInvalid,
                 $"has a '{PluginViews.PreviewKind}' whose '{PluginViews.PreviewSourcesProperty}' or '{PluginViews.PreviewSizeProperty}' is not valid");
         }
+    }
+
+    /// <summary>
+    /// Checks a preview's <c>selection</c>, off when absent: exactly the sources that may select (declared by the block, so a
+    /// plugin must name them and a live source can stay out), a POST route that looks a claimed selection up, and a GET route
+    /// and field reading the release on the preview. A message from a frame is only ever measured against these. One preview
+    /// per document may offer it, because a chat's claim names a release and ids and not a preview, so the plugin could not
+    /// tell two apart when their releases are equal.
+    /// </summary>
+    /// <param name="preview">The preview block.</param>
+    /// <param name="scan">Receives the first broken rule.</param>
+    private static void CheckPreviewSelection(JsonElement preview, DocumentScan scan)
+    {
+        if (!preview.TryGetProperty(SelectionMember, out var selection))
+        {
+            return;
+        }
+
+        var second = scan.HasPreviewSelection;
+        scan.HasPreviewSelection = true;
+        if (second || !IsPreviewSelection(preview, selection))
+        {
+            scan.StateViolation ??= new PluginManifestViolation(
+                PluginManifestRule.ViewSelectionInvalid, $"has a '{PluginViews.PreviewKind}' whose '{SelectionMember}' is not valid or is the document's second");
+        }
+    }
+
+    /// <summary>Tells whether a preview's selection holds exactly its three members, each in its shape.</summary>
+    /// <param name="preview">The preview block.</param>
+    /// <param name="selection">Its selection.</param>
+    /// <returns><see langword="true"/> when it does.</returns>
+    private static bool IsPreviewSelection(JsonElement preview, JsonElement selection)
+    {
+        if (selection.ValueKind != JsonValueKind.Object
+            || selection.EnumerateObject().Count() != SelectionMemberCount
+            || !selection.TryGetProperty(ConditionRouteMember, out var route)
+            || ReadRoute(route) is not { Method: PluginRouteMethod.Post }
+            || !selection.TryGetProperty(SelectionReleaseMember, out var release)
+            || release.ValueKind != JsonValueKind.Object
+            || release.EnumerateObject().Count() != SelectionReleaseMemberCount
+            || !release.TryGetProperty(ConditionRouteMember, out var releaseRoute)
+            || ReadRoute(releaseRoute) is not { Method: PluginRouteMethod.Get }
+            || !release.TryGetProperty(ConditionFieldMember, out var field)
+            || field.ValueKind != JsonValueKind.String
+            || field.GetString() is not { Length: <= MaxConditionFieldLength } path
+            || !ConditionFieldPattern().IsMatch(path)
+            || !selection.TryGetProperty(SelectionSourcesMember, out var sources)
+            || sources.ValueKind != JsonValueKind.Array
+            || sources.GetArrayLength() == 0
+            || !preview.TryGetProperty(PluginViews.PreviewSourcesProperty, out var declared)
+            || declared.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        // The sources have not been validated yet when this runs, and GetString throws on anything but a string.
+        var known = declared.EnumerateArray()
+            .Where(source => source.ValueKind == JsonValueKind.Object
+                && source.TryGetProperty(PreviewSourceIdMember, out var id)
+                && id.ValueKind == JsonValueKind.String)
+            .Select(source => source.GetProperty(PreviewSourceIdMember).GetString())
+            .ToHashSet(StringComparer.Ordinal);
+        var named = sources.EnumerateArray().Select(source => source.ValueKind == JsonValueKind.String ? source.GetString() : null).ToList();
+        return named.All(id => id is not null && known.Contains(id)) && named.Distinct(StringComparer.Ordinal).Count() == named.Count;
+    }
+
+    /// <summary>Refuses a chat that takes a selection when no preview of its document offers one.</summary>
+    /// <param name="use">The page or slot showing the document.</param>
+    /// <param name="scan">What the walk found.</param>
+    /// <returns>The violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckSelectionPlace(ViewUse use, DocumentScan scan)
+    {
+        return scan.HasChatSelection && !scan.HasPreviewSelection
+            ? new PluginManifestViolation(
+                PluginManifestRule.ViewSelectionInvalid, $"{use.Where} has a '{ChatKind}' taking a selection no preview offers")
+            : null;
     }
 
     /// <summary>Tells whether a preview source holds exactly an id, a label, a GET route and a dotted field.</summary>
@@ -807,6 +1019,18 @@ internal static partial class PluginViewDocumentReader
             return true;
         }
 
+        if (member.NameEquals(BodySourceMember))
+        {
+            // On an action it was checked with its block; its field names are never content, so it is not walked.
+            if (!string.Equals(kind, ActionKind, StringComparison.Ordinal))
+            {
+                scan.StateViolation ??= new PluginManifestViolation(
+                    PluginManifestRule.ViewActionBodyInvalid, $"has a '{BodySourceMember}' outside an action block");
+            }
+
+            return true;
+        }
+
         if (member.NameEquals(PluginViews.ResetOnSuccessProperty))
         {
             if (!inSubmit || (member.Value.ValueKind != JsonValueKind.True && member.Value.ValueKind != JsonValueKind.False))
@@ -834,6 +1058,18 @@ internal static partial class PluginViewDocumentReader
         }
 
         return false;
+    }
+
+    /// <summary>Refuses a body source anywhere but in the client area, the one panel whose action block sends it.</summary>
+    /// <param name="use">Where the document is shown.</param>
+    /// <param name="scan">What the document holds.</param>
+    /// <returns>The violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckActionBodyPlace(ViewUse use, DocumentScan scan)
+    {
+        return scan.HasActionBody && use.Area != PluginArea.Client
+            ? new PluginManifestViolation(
+                PluginManifestRule.ViewActionBodyInvalid, $"{use.Where} has an action with a '{BodySourceMember}', which only the client area sends")
+            : null;
     }
 
     /// <summary>

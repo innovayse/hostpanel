@@ -776,6 +776,15 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         invoice.Total.Should().Be(3m);
         invoice.Status.Should().Be(InvoiceStatus.Unpaid);
         (await context.Clients.AsNoTracking().FirstAsync(c => c.Id == client.Id)).CreditBalance.Should().Be(0m);
+
+        // The sweep's own move is on the credit history: a credit-only line, the balance it left, tied to the invoice.
+        var line = (await context.Transactions.AsNoTracking().Where(t => t.ClientId == client.Id && t.CreditMovement != null).ToListAsync())
+            .Should().ContainSingle().Subject;
+        line.CreditMovement.Should().Be(CreditMovementType.RenewalAutoApplied);
+        line.CreditChange.Should().Be(-2m);
+        line.BalanceAfter.Should().Be(0m);
+        line.InvoiceId.Should().Be(invoice.Id);
+        line.MovesMoney.Should().BeFalse();
     }
 
     /// <summary>Enough credit pays the invoice, writes no ledger row, and the renewal is applied.</summary>
@@ -800,7 +809,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         (await context.Clients.AsNoTracking().FirstAsync(c => c.Id == client.Id)).CreditBalance.Should().Be(5m);
 
         // The money was booked when the credit was added; paying with it books nothing again.
-        (await context.Transactions.AsNoTracking().AnyAsync(t => t.InvoiceId == invoice.Id)).Should().BeFalse();
+        (await context.Transactions.AsNoTracking().Where(Transaction.MovedMoneyFilter).AnyAsync(t => t.InvoiceId == invoice.Id)).Should().BeFalse();
 
         // The fast path is suppressed on this host, so the command the payment event (or the daily
         // sweep) would send is sent here.

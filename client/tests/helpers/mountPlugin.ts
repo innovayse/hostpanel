@@ -95,7 +95,7 @@ export const mountBlocks = (blocks: PluginBlock[], context: PluginMountContext =
  * @param replies - Reply per `METHOD url`; anything else answers 404 with a problem body.
  * @returns The running stub; close it after the test.
  */
-export const startPluginApi = (replies: Record<string, StubReply | ((request: StubRequest) => StubReply)>): Promise<StubServer> =>
+export const startPluginApi = (replies: Record<string, StubReply | ((request: StubRequest) => StubReply | Promise<StubReply>)>): Promise<StubServer> =>
   startTransport((request) => {
     const reply = replies[`${request.method} ${request.url}`]
     if (reply === undefined) {

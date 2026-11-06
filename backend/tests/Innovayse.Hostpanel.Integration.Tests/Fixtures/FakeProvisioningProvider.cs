@@ -28,6 +28,21 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     /// <summary>How many times <see cref="SuspendAsync"/> was called.</summary>
     public int SuspendCalls { get; private set; }
 
+    /// <summary>How many times <see cref="GetCredentialsAsync"/> was called.</summary>
+    public int CredentialsCalls { get; private set; }
+
+    /// <summary>How many times <see cref="GetCPanelSsoUrlAsync"/> was called.</summary>
+    public int SsoCalls { get; private set; }
+
+    /// <summary>How many times <see cref="ChangePasswordAsync"/> was called.</summary>
+    public int ChangePasswordCalls { get; private set; }
+
+    /// <summary>How many times <see cref="ChangePackageAsync"/> was called.</summary>
+    public int ChangePackageCalls { get; private set; }
+
+    /// <summary>How many calls reached the account-level members the client and staff screens use.</summary>
+    public int AccountCalls => CredentialsCalls + SsoCalls + ChangePasswordCalls + ChangePackageCalls;
+
     /// <inheritdoc/>
     public Task<ProvisioningResult> ProvisionAsync(ProvisionAccountOrder req, CancellationToken ct)
     {
@@ -62,6 +77,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     /// <inheritdoc/>
     public Task<ServiceCredentials> GetCredentialsAsync(string provisioningRef, CancellationToken ct)
     {
+        CredentialsCalls++;
         ThrowIfShouldFail();
         return Task.FromResult(new ServiceCredentials("fake-user", "fake-pass", "fake.example.com", "1.2.3.4", "https://panel.fake.example.com"));
     }
@@ -69,6 +85,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     /// <inheritdoc/>
     public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
     {
+        SsoCalls++;
         ThrowIfShouldFail();
         return Task.FromResult("https://fake-panel.example.com/sso");
     }
@@ -76,6 +93,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     /// <inheritdoc/>
     public Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct)
     {
+        ChangePasswordCalls++;
         ThrowIfShouldFail();
         return Task.CompletedTask;
     }
@@ -83,6 +101,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     /// <inheritdoc/>
     public Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct)
     {
+        ChangePackageCalls++;
         ThrowIfShouldFail();
         return Task.CompletedTask;
     }

@@ -1,13 +1,10 @@
-using Innovayse.Hostpanel.Application.Admin.Common;
-using Innovayse.Hostpanel.Application.Admin.Queries.GetSettingValues;
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
-using Innovayse.Hostpanel.Application.Notifications.Common;
-using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -30,10 +27,6 @@ public sealed class GetInvoicePdfHandler
 
     /// <summary>Decimal places written when the invoice's currency has no <c>Currencies</c> row to say otherwise.</summary>
     private const int FallbackDecimals = 2;
-
-    /// <summary>The portal settings the seller block and logo are read from.</summary>
-    private static readonly List<string> SellerKeys =
-        [PortalSettingKeys.SiteName, PortalSettingKeys.ContactAddress, PortalSettingKeys.LegalTaxId, PortalSettingKeys.Logo];
 
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
@@ -119,44 +112,17 @@ public sealed class GetInvoicePdfHandler
         // FK_Invoices_Clients_ClientId restricts deleting a client that has invoices, so a missing
         // client is a broken database, not an invoice to print without an addressee.
         var client = await _bus.GetRequiredClientBriefAsync(invoice.ClientId, withEmail: false, ct);
+        var seller = await _bus.ReadPdfSellerAsync(DocumentPdfLabels.English.TaxId, ct);
 
-        var rows = await _bus.InvokeAsync<Result<IReadOnlyList<SettingDto>>>(new GetSettingValuesQuery(SellerKeys), ct);
-        var settings = (rows.Value ?? [])
-            .Where(s => s.Value is not null)
-            .ToDictionary(s => s.Key, s => s.Value!.Trim(), StringComparer.Ordinal);
-        string Setting(string key) => settings.GetValueOrDefault(key) ?? string.Empty;
-
-        var sellerName = Setting(PortalSettingKeys.SiteName);
-        var taxId = Setting(PortalSettingKeys.LegalTaxId);
-        var sellerLines = Setting(PortalSettingKeys.ContactAddress)
-            .ReplaceLineEndings("\n")
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .ToList();
-        if (taxId.Length > 0)
-        {
-            sellerLines.Add($"Tax ID: {taxId}");
-        }
-
-        var billTo = new InvoicePdfParty(
-            client.FullName,
-            NonEmpty(
-                client.CompanyName,
-                client.Address.Street,
-                client.Address.Address2,
-                $"{client.Address.PostCode} {client.Address.City}".Trim(),
-                client.Address.State,
-                client.Address.Country));
-
-        var logo = Setting(PortalSettingKeys.Logo);
         var model = new InvoicePdfModel(
             InvoiceId: invoice.Id,
             Status: invoice.Status,
             InvoiceDate: invoice.InvoiceDate,
             DueDate: invoice.DueDate,
             PaidAt: invoice.PaidAt,
-            Seller: new InvoicePdfParty(sellerName.Length > 0 ? sellerName : EmailBranding.DefaultSiteName, sellerLines),
-            BillTo: billTo,
-            LogoPath: logo.Length > 0 ? logo : null,
+            Seller: seller.Party,
+            BillTo: client.ToPdfParty(),
+            LogoPath: seller.LogoPath,
             Lines: invoice.Lines,
             SubTotal: invoice.SubTotal,
             TaxRate: invoice.TaxRate,
@@ -175,10 +141,4 @@ public sealed class GetInvoicePdfHandler
 
         return Result<FileDownloadDto>.Success(new FileDownloadDto(rendered.Value!, PdfContentType, $"invoice-{invoice.Id}.pdf"));
     }
-
-    /// <summary>The values that are not null or blank, trimmed, in order.</summary>
-    /// <param name="values">Candidate address lines.</param>
-    /// <returns>The lines worth printing.</returns>
-    private static List<string> NonEmpty(params string?[] values) =>
-        values.Where(v => !string.IsNullOrWhiteSpace(v)).Select(v => v!.Trim()).ToList();
 }

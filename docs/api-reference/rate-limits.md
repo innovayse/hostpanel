@@ -23,6 +23,7 @@ Each budget is a number of requests in a sliding window, counted per signed-in u
   { name: 'plugin-strict', type: 'budget', default: '20 per 60 s', description: 'A plugin route that is costly or sensitive, such as one that sends messages. Counted per plugin and per caller.' },
   { name: 'plugin-heavy', type: 'budget', default: '6 per 60 s', description: 'A plugin route that does heavy work and is called rarely, such as a report or an export. Counted per plugin and per caller.' },
   { name: 'plugin-stream', type: 'in flight', default: '3 at once', description: 'Streaming plugin routes one caller may hold open at once, per plugin. Counted on top of the tier of the route.' },
+  { name: 'plugin-callback', type: 'budget', default: '120 per 60 s', description: 'The public callback door of the plugins, where a payment gateway reports back. Counted per caller address, over every plugin and path.' },
 ]" />
 
 Both budgets apply. A call to an endpoint with a named policy is counted against that policy and against `global`, and the tighter one decides. Nothing waits in a queue: a call over the budget is refused at once.
@@ -35,16 +36,21 @@ This list is read from the controllers of the API when the site is built. The pl
 
 ## When you are refused
 
-A refused call answers `429 Too Many Requests` with the standard [error body](./errors) and the code `HOSTPANEL_RATE_LIMITED`. Two headers tell you what to do:
+A refused call answers `429 Too Many Requests` with the standard [error body](./errors) and the code `HOSTPANEL_RATE_LIMITED`. The headers say what to do and which budget refused you:
 
 <SettingTable :settings="[
   { name: 'Retry-After', type: 'response header', default: 'None', description: 'How many seconds to wait before you try again. At least 1. For a concurrency policy it is always 1: a slot frees when another call finishes.' },
+  { name: 'X-RateLimit-Policy', type: 'response header', default: 'None', description: 'The name of the policy that refused you, one of the names in the table above, for example auth or global.' },
+  { name: 'X-RateLimit-Limit', type: 'response header', default: 'None', description: 'The size of that budget: requests per window, or calls at once for a concurrency policy.' },
   { name: 'X-RateLimit-Remaining', type: 'response header', default: '0', description: 'How many calls are left in the budget that refused you. Always 0 on a 429.' },
+  { name: 'X-RateLimit-Reset', type: 'response header', default: 'None', description: 'When you can try again, as a Unix timestamp in seconds. It is the moment of the refusal plus Retry-After.' },
 ]" />
 
 <Callout type="warning">
 Respect <code>Retry-After</code>. Trying again at once goes straight back into the same refusal.
 </Callout>
+
+These headers come with a `429` only. The policy names and budgets are the ones on this page, so they tell a caller nothing about the install that is not published here. A script that runs in a browser on another origin cannot read them: the API does not list them in `Access-Control-Expose-Headers`. They reach a server, a command line tool and a page served from the same origin.
 
 Back off for the number of seconds the header gives, then try again. Spread bulk work over time instead of sending it in a burst.
 

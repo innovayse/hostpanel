@@ -197,7 +197,7 @@ describe('client layout', () => {
 
     expect(useAuthStore().user).toBeNull()
 
-    for (const id of ['dashboard', 'services', 'domains', 'invoices', 'tickets', 'account']) {
+    for (const id of ['dashboard', 'services', 'domains', 'invoices', 'credit-notes', 'tickets', 'account']) {
       expect(wrapper.find(`[data-testid="nav-client-${id}"]`).exists()).toBe(true)
     }
     expect(wrapper.find('[data-testid="nav-announcements"]').exists()).toBe(true)

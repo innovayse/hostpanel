@@ -748,6 +748,12 @@
   <data name="INVOICE_ITEM_NOT_FOUND" xml:space="preserve">
     <value>Այս հաշիվ-ապրանքագրում այդպիսի տող չկա։</value>
   </data>
+  <data name="INVOICE_BANK_TRANSFER_NOT_PENDING" xml:space="preserve">
+    <value>Այս հաշվի համար սպասվող բանկային փոխանցում չկա, հաստատելու կամ մերժելու ոչինչ չկա։</value>
+  </data>
+  <data name="BANK_TRANSFER_NOT_AVAILABLE" xml:space="preserve">
+    <value>Բանկային փոխանցումն այս պահին հասանելի չէ։ Ընտրեք վճարման այլ եղանակ։</value>
+  </data>
   <data name="INVOICE_NOT_UNPAID" xml:space="preserve">
     <value>Ժամկետանց կարելի է նշել միայն չվճարված հաշիվ-ապրանքագիրը։</value>
   </data>
@@ -1144,6 +1150,12 @@
   <data name="PLUGIN_VIEW_CONDITION_INVALID" xml:space="preserve">
     <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը բլոկը ցույց է տալիս պայմանով, որը GET երթուղի, դաշտ և մեկ արժեք կամ արժեքների կարճ ցուցակ չէ։</value>
   </data>
+  <data name="PLUGIN_VIEW_ACTION_BODY_INVALID" xml:space="preserve">
+    <value>Այս պլագինի տեսքի փաստաթղթերից մեկը գործողության հարցման մարմինը կազմում է էջի տվյալներից այնպիսի ձևով կամ տեղում, որը այս սերվերը չի ընդունում։</value>
+  </data>
+  <data name="PLUGIN_VIEW_SELECTION_INVALID" xml:space="preserve">
+    <value>Այս պլագինի դիտման փաստաթղթերից մեկը հայտարարում է տարրերի ընտրություն այնպիսի ձևով կամ տեղում, որը այս սերվերը չի ընդունում։</value>
+  </data>
   <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
     <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը գործողությունից հետո թարմացնում է բլոկ, որը չունի, կամ կրկնակի ընթերցումը կամ ձևի մաքրումը նկարագրում է այնպես, ինչպես այս սերվերը չի ընդունում։</value>
   </data>
@@ -1155,5 +1167,50 @@
   </data>
   <data name="PLUGIN_VIEW_PREVIEW_INVALID" xml:space="preserve">
     <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը պարունակում է նախադիտում սխալ աղբյուրներով կամ չափով, կամ այն ցույց է տալիս հաճախորդի էջից դուրս։</value>
+  </data>
+  <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
+    <value>Այս տողի երկարացման արգելափակումը հնարավոր չէ հանել, քանի որ այն արգելափակված չէ։</value>
+  </data>
+  <data name="TRANSACTION_CREDIT_LOCKED" xml:space="preserve">
+    <value>Այս գրառումը մնացորդի պատմության մաս է, այն հնարավոր չէ փոխել կամ ջնջել։ Ուղղելու համար ավելացրեք մնացորդի ճշգրտում։</value>
+  </data>
+  <data name="INVOICE_TOP_UP_FIXED" xml:space="preserve">
+    <value>Մնացորդի համալրման հաշիվ-ապրանքագիրը մեկ ֆիքսված տող է և չի խմբագրվում։</value>
+  </data>
+  <data name="INVOICE_TOP_UP_NO_CREDIT" xml:space="preserve">
+    <value>Մնացորդի համալրման հաշվին կրեդիտ կիրառել հնարավոր չէ։</value>
+  </data>
+  <data name="INVOICE_TOP_UP_REFUND_MANUAL_ONLY" xml:space="preserve">
+    <value>Վճարված համալրումը վերադարձվում է միայն ձեռքով. գրանցեք վերադարձը որպես ձեռքով։</value>
+  </data>
+  <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
+    <value>Գումարը մնացորդի համալրման թույլատրելի միջակայքից դուրս է։</value>
+  </data>
+  <data name="CREDIT_TOP_UP_TOO_MANY_OPEN" xml:space="preserve">
+    <value>Դուք արդեն ունեք չվճարված համալրումներ։ Նոր համալրումից առաջ վճարեք կամ չեղարկեք դրանցից մեկը։</value>
+  </data>
+  <data name="CREDIT_NOTE_NOT_FOUND" xml:space="preserve">
+    <value>Կրեդիտ-նոտան չի գտնվել։</value>
+  </data>
+  <data name="CREDIT_NOTE_TOP_UP_INVOICE" xml:space="preserve">
+    <value>Մնացորդի համալրման հաշիվը արդեն կրեդիտ է, ուստի դրա վրա կրեդիտ-նոտա հնարավոր չէ տալ։ Վճարված համալրումը վերադարձվում է ձեռքով։</value>
+  </data>
+  <data name="CREDIT_NOTE_EXCEEDS_CREDITABLE" xml:space="preserve">
+    <value>Կրեդիտ-նոտան գերազանցում է այն գումարը, որով այս հաշիվը դեռ կարելի է կրեդիտավորել՝ հաշվի առնելով նախորդ կրեդիտ-նոտաներն ու վերադարձները։</value>
+  </data>
+  <data name="CREDIT_NOTE_ITEMS_REQUIRED" xml:space="preserve">
+    <value>Կրեդիտ-նոտայի համար պետք է առնվազն մեկ տող՝ նկարագրությամբ, գնով և քանակով, ինչպես նաև պատճառ։</value>
+  </data>
+  <data name="CREDIT_NOTE_INVALID_STATE" xml:space="preserve">
+    <value>Կրեդիտ-նոտան այնպիսի վիճակում է, որտեղ այս գործողությունը հնարավոր չէ։</value>
+  </data>
+  <data name="CREDIT_NOTE_ALREADY_VOIDED" xml:space="preserve">
+    <value>Այս կրեդիտ-նոտան արդեն չեղարկված է։</value>
+  </data>
+  <data name="CREDIT_NOTE_CURRENCY_MISMATCH" xml:space="preserve">
+    <value>Այս հաշիվ-ապրանքագիրը այլ արժույթով է, քան այն, որով վարվում է հաճախորդի մնացորդը, ուստի այն չի կարելի գրանցել մնացորդում։ Տվեք կրեդիտ-նոտա՝ վճարային դարպասով վերադարձով։</value>
+  </data>
+  <data name="CREDIT_NOTE_REFUND_NOT_VOIDABLE" xml:space="preserve">
+    <value>Այս կրեդիտ-նոտան վճարվել է վճարային դարպասի միջոցով վերադարձով։ Վերադարձը հնարավոր չէ հետ վերցնել, ուստի կրեդիտ-նոտան չի կարելի չեղարկել։</value>
   </data>
 </root>

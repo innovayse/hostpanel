@@ -14,7 +14,7 @@ The SDK project lives at `backend/src/Hostpanel.Sdk` in the repository. Referenc
 
 ### Name the project
 
-Name a plugin project `<Company>.Hostpanel.Plugins.<Name>`, the .NET plugin convention `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`). The project, its folder, its assembly and its root namespace all carry that name, and its test project adds `.Tests`. Innovayse's own plugins are `Innovayse.Hostpanel.Plugins.<Name>`, with tests in `Innovayse.Hostpanel.Plugins.<Name>.Tests`, each in its own repository `innovayse/hostpanel-<name>`: Innovayse Sites, for example, is `Innovayse.Hostpanel.Plugins.Sites` in `innovayse/hostpanel-sites`. The bundled `Innovayse.Providers.*` projects predate the convention and are renamed as they move to their own repositories.
+Name a plugin project `<Company>.Hostpanel.Plugins.<Name>`, the .NET plugin convention `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`). The project, its folder, its assembly and its root namespace all carry that name, and its test project adds `.Tests`. Innovayse's own plugins are `Innovayse.Hostpanel.Plugins.<Name>`, with tests in `Innovayse.Hostpanel.Plugins.<Name>.Tests`, each in its own repository named `hostpanel-<name>`. The bundled `Innovayse.Providers.*` projects predate the convention and are renamed as they move to their own repositories.
 
 The plugin `id` in `plugin.json` is not part of the name and never changes when a project is renamed: the host keys the plugin's stored settings and data by it.
 
@@ -429,7 +429,33 @@ the three routes in its `api` block and the label keys in `locales.en`:
 host's choice, not yours: every 3 seconds, at most 20 times (about a minute). A long job should report its own state on
 the `until` route rather than expect more time.
 
-A view that breaks these rules is refused at install and skipped at startup: `PLUGIN_VIEW_CONDITION_INVALID` (a bad
+**`bodySource`** goes on an action block in the client area and makes the button send what the reader saw. It holds
+exactly a `GET` `route` and 1 to 10 `fields`, each a body member (a camelCase name, not a label member such as `title`)
+and the dotted path it is read from. Without it an action posts `{}`, as before.
+
+```json
+{
+  "kind": "action",
+  "id": "publish",
+  "label": "site.publish",
+  "route": { "method": "post", "path": "/services/{serviceId}/site/publish" },
+  "labelSource": { "route": { "method": "get", "path": "/services/{serviceId}/site" }, "field": "publishLabel" },
+  "bodySource": {
+    "route": { "method": "get", "path": "/services/{serviceId}/site" },
+    "fields": { "expectedVersion": "publishVersion" }
+  }
+}
+```
+
+The action needs an `id` and a `POST`, `PUT` or `PATCH` route, and a `labelSource` must read the same route: the panel
+makes one read for both, so the button sends the value on its label. The button is disabled until every member has been
+read as a string, number or boolean. The body is fixed at the click. A refused call reads the data and the action's
+`refresh` blocks again, so answer a conflict with your own sentence; your route, not the panel, decides whether the value
+is still current. A result card's action in a chat event carries a literal `body` of the same shape; an event with a
+malformed one loses that action.
+
+A view that breaks these rules is refused at install and skipped at startup: `PLUGIN_VIEW_ACTION_BODY_INVALID` (a bad
+`bodySource`, or one in the wrong place), `PLUGIN_VIEW_CONDITION_INVALID` (a bad
 condition, a condition route that is not `GET`, `visibleWhen` outside a block), `PLUGIN_VIEW_FOLLOW_UP_INVALID` (a bad
 `followUp` or one in the wrong place, a `refresh` id no block carries, `resetOnSuccess` that is not a boolean or not in a
 `submit`), and `PLUGIN_VIEW_ROUTE_UNDECLARED` for a condition route the manifest does not declare.
@@ -465,6 +491,18 @@ takes no layout. A bad value is `PLUGIN_PAGE_LAYOUT_UNKNOWN`.
 
 Up to 5 `sources`, each exactly `id`, `label`, a `GET` `route` and a dotted `field`; `size` is `desktop` or `phone`, and
 the reader can switch both. A bad shape, or a preview in a slot or on an admin page, is `PLUGIN_VIEW_PREVIEW_INVALID`.
+
+**Letting the reader select elements.** A preview may declare `selection`, and a chat in the same document `"selection": true`; both are off when absent:
+
+```json
+"selection": {
+  "sources": ["preview"],
+  "route": { "method": "post", "path": "/services/{serviceId}/site/selection" },
+  "release": { "route": { "method": "get", "path": "/services/{serviceId}/site/state" }, "field": "previewRelease" }
+}
+```
+
+`sources` are the source ids that may select: leave a live site out. The framed page runs your own script and talks to the panel with `postMessage`, `{ "type": "hostpanel.preview.selection", "version": 1, "release": "...", "event": "ready" | "toggle" | "exit", "id": "..." }`, and receives `{ type, version, "event": "state", "active": bool, "selected": [ids] }` from the panel. The select button appears only after `ready`. `id` is a dotted path of letters and digits, at most 128 characters and 20 per selection. **A message is a claim, never trusted:** the panel accepts it only from its own frame's window, in exactly this shape, naming the release your route reports, on a listed source, and a `toggle` only while the mode is on; any script in the frame could still send one. So your `route` gets `{ "releaseId", "ids" }` and answers `{ "items": [{ "id", "label" }] }` with the ids it really knows, and the panel draws only those labels. The next chat message carries `"selection": { "releaseId", "ids" }`, which your server must check again; take no text from the frame. Treat `ids` and `releaseId` as untrusted input in both routes: they come from page script, whatever the panel checked first, so validate them against your own data and never use one as a path, a query fragment or text for a model without that check. A selection is emptied when the release changes. The panel then ignores the frame until it says `ready` again, so **the framed page must send `ready` again after a release change** (a new document does so by loading; a page that updates itself in place must send it itself), or the select button stays hidden. A "try again" (`resend`) sends the same selection while its release is on the preview; once the release has changed the panel sends nothing, tells the reader the page changed and to select again, and leaves the text in the message field, because the message without its selection would reach further than what the reader chose. The panel only reads the release when it reads the block, so **your chat route must refuse a `releaseId` that is no longer on the preview, with a problem reply and before it changes anything**: the panel's check is a courtesy, and yours is the one that holds. One preview per document may declare `selection`, since the claim does not say which preview made it. A bad shape, a second selecting preview, or a chat selection with no preview selection, is `PLUGIN_VIEW_SELECTION_INVALID`.
 
 **What may be framed.** The address the route returns is shown only when its origin is one of your manifest's
 `externalOrigins` (a pure `https` origin) or a domain of the reader's own active hosting services on a product the

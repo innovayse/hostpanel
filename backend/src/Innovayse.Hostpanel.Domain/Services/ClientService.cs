@@ -131,6 +131,14 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// </summary>
     public long SshKeyRevision { get; private set; }
 
+    /// <summary>
+    /// Gets whether the service holds a hosting account on its panel: it has a provisioning reference
+    /// and is not terminated. A terminated service keeps the reference for the record, but its account
+    /// is gone and the same reference may later belong to another service, so the reference alone does
+    /// not say an account exists. A suspended service still holds its account.
+    /// </summary>
+    public bool HoldsHostingAccount => ProvisioningRef is not null && Status is not ServiceStatus.Terminated;
+
     /// <summary>Gets whether <see cref="Suspend"/> accepts the service: only an Active one can be suspended.</summary>
     public bool CanSuspend => Status is ServiceStatus.Active;
 
@@ -513,6 +521,13 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
         Username = account.Username;
         Password = account.Password;
     }
+
+    /// <summary>
+    /// Switches the automatic billing of the service on or off without touching the rest of its automation
+    /// settings (the suspension hold and the end-of-cycle termination).
+    /// </summary>
+    /// <param name="value">Whether the billing runs look after the service; see <see cref="AutoRenew"/>.</param>
+    public void SetAutoRenew(bool value) => AutoRenew = value;
 
     /// <summary>
     /// Sets how the billing runs treat the service: whether they look after it at all, whether the

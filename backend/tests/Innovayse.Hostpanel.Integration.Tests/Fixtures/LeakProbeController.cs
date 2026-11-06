@@ -33,6 +33,18 @@ public sealed class LeakProbeController : ControllerBase
         ["X-Vendor-Trace"] = "abc",
     };
 
+    /// <summary>
+    /// Limit headers a provider could set. The guard allows them by name, but only on a 429: on any other response they
+    /// were copied from somewhere else and must not arrive.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, string> RateLimitHeaders = new Dictionary<string, string>
+    {
+        ["X-RateLimit-Limit"] = "5000",
+        ["X-RateLimit-Remaining"] = "4999",
+        ["X-RateLimit-Reset"] = "1893456000",
+        ["X-RateLimit-Policy"] = "vendor-plan",
+    };
+
     /// <summary>Headers that are ours and must survive the guard on a download.</summary>
     public static readonly IReadOnlyDictionary<string, string> AllowedHeaders = new Dictionary<string, string>
     {
@@ -46,7 +58,7 @@ public sealed class LeakProbeController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult Download()
     {
-        foreach (var (name, value) in VendorHeaders)
+        foreach (var (name, value) in VendorHeaders.Concat(RateLimitHeaders))
         {
             Response.Headers[name] = value;
         }
@@ -56,6 +68,20 @@ public sealed class LeakProbeController : ControllerBase
         }
 
         return File(Encoding.UTF8.GetBytes("a,b\n1,2\n"), "text/csv");
+    }
+
+    /// <summary>Answers 429 with the vendor headers and the limit headers, as the limiter does with its own.</summary>
+    /// <returns>A 429 result.</returns>
+    [HttpGet("refused")]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    public IActionResult Refused()
+    {
+        foreach (var (name, value) in VendorHeaders.Concat(RateLimitHeaders))
+        {
+            Response.Headers[name] = value;
+        }
+
+        return StatusCode(StatusCodes.Status429TooManyRequests);
     }
 
     /// <summary>Sets the vendor headers then faults with a message that names the vendor.</summary>

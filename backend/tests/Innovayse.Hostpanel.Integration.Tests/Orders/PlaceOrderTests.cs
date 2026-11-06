@@ -72,7 +72,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         var admin = await AdminClientAsync();
         var response = await admin.PutAsJsonAsync(
             "/api/admin/integrations/bank-transfer",
-            new { isEnabled = true, config = new Dictionary<string, string>() });
+            new { isEnabled = true, config = new Dictionary<string, string> { ["iban"] = BankTransferTestSeeds.Iban } });
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 

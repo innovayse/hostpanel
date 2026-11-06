@@ -37,7 +37,8 @@ public sealed class ListTransactionsHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        IQueryable<Transaction> filtered = _context.Transactions.AsNoTracking();
+        // Credit-only lines moved no cash and belong to the credit history, not to this list.
+        IQueryable<Transaction> filtered = _context.Transactions.AsNoTracking().Where(Transaction.MovedMoneyFilter);
         if (query.ClientId.HasValue)
         {
             filtered = filtered.Where(t => t.ClientId == query.ClientId.Value);

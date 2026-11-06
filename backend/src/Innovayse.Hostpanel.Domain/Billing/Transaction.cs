@@ -1,4 +1,6 @@
+using System.Linq.Expressions;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Billing.Events;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
 
@@ -49,6 +51,30 @@ public sealed class Transaction : BaseEntity
     /// reference are unique among the rows of this source, a manual entry's or an import's are not.
     /// </summary>
     public TransactionSource Source { get; private set; }
+
+    /// <summary>
+    /// Gets why the client's credit balance moved with this entry, or <see langword="null"/> when the entry did not move it
+    /// (or is older than the credit history, which is never reconstructed). Set once, never changed.
+    /// </summary>
+    public CreditMovementType? CreditMovement { get; private set; }
+
+    /// <summary>Gets the signed change to the credit balance (positive adds, negative takes), or <see langword="null"/> when <see cref="CreditMovement"/> is.</summary>
+    public decimal? CreditChange { get; private set; }
+
+    /// <summary>Gets the client's credit balance once this entry was saved, or <see langword="null"/> when <see cref="CreditMovement"/> is.</summary>
+    public decimal? BalanceAfter { get; private set; }
+
+    /// <summary>
+    /// Gets whether the entry moved cash: money in or out. An entry that only moved the credit balance (credit applied to an
+    /// invoice, handed back, added by staff as goodwill) moves none, so cash views and totals leave it out.
+    /// </summary>
+    public bool MovesMoney => AmountIn > 0 || AmountOut > 0;
+
+    /// <summary>
+    /// Gets the filter that keeps the entries that moved cash, for a query. Every entry written before the credit history
+    /// existed moved cash, so none of them is hidden. The cash views (the transaction list, the reports, the export) apply it.
+    /// </summary>
+    public static Expression<Func<Transaction, bool>> MovedMoneyFilter => t => t.AmountIn > 0 || t.AmountOut > 0;
 
     /// <summary>EF Core parameterless constructor: do not call directly.</summary>
     private Transaction() { }
@@ -108,6 +134,48 @@ public sealed class Transaction : BaseEntity
             Currency = CurrencyCode.Normalise(currency),
             Source = source,
         };
+    }
+
+    /// <summary>
+    /// Creates the ledger entry for a movement of the credit balance that moved no cash: credit applied to or taken back from
+    /// an invoice, or credit staff added or took as an adjustment. It carries zero money in and out, so every cash report
+    /// ignores it, and the credit history reads it as a line.
+    /// </summary>
+    /// <param name="clientId">FK to the client whose balance moved.</param>
+    /// <param name="date">UTC timestamp of the movement.</param>
+    /// <param name="description">Human-readable description.</param>
+    /// <param name="invoiceId">The invoice the credit moved to or from, or <see langword="null"/>.</param>
+    /// <param name="currency">ISO 4217 code the balance is held in.</param>
+    /// <param name="movement">Why the balance moved.</param>
+    /// <param name="change">The signed change (not zero).</param>
+    /// <param name="balanceAfter">The balance once the change is saved (not negative).</param>
+    /// <returns>A new credit-only <see cref="Transaction"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The movement is not defined, the change is zero or the balance is negative.</exception>
+    /// <exception cref="ArgumentException">The currency is not a three-letter code.</exception>
+    public static Transaction CreateCreditMovement(
+        int clientId,
+        DateTimeOffset date,
+        string description,
+        int? invoiceId,
+        string currency,
+        CreditMovementType movement,
+        decimal change,
+        decimal balanceAfter)
+    {
+        var entry = new Transaction
+        {
+            ClientId = clientId,
+            Date = date,
+            Description = description,
+            // Unique per entry: the column is required and indexed, and nothing external names a credit-only move.
+            TransactionId = $"credit-{Guid.NewGuid():N}",
+            InvoiceId = invoiceId,
+            PaymentMethod = PaymentMethodNames.CreditBalance,
+            Currency = CurrencyCode.Normalise(currency),
+            Source = TransactionSource.Manual,
+        };
+        entry.RecordCreditMovement(movement, change, balanceAfter);
+        return entry;
     }
 
     /// <summary>
@@ -197,6 +265,57 @@ public sealed class Transaction : BaseEntity
     }
 
     /// <summary>
+    /// Records on this entry that it moved the client's credit balance: why, by how much and what the balance was left at. The
+    /// entry that moved the money is the one that carries it, so the credit history needs no second row for it.
+    /// </summary>
+    /// <param name="movement">Why the balance moved.</param>
+    /// <param name="change">The signed change (not zero).</param>
+    /// <param name="balanceAfter">The balance once the change is saved (not negative).</param>
+    /// <exception cref="ArgumentOutOfRangeException">The movement is not defined, the change is zero or the balance is negative.</exception>
+    /// <exception cref="InvalidOperationException">The entry already records a movement.</exception>
+    public void RecordCreditMovement(CreditMovementType movement, decimal change, decimal balanceAfter)
+    {
+        if (!Enum.IsDefined(movement))
+        {
+            throw new ArgumentOutOfRangeException(nameof(movement), movement, "The credit movement is not a defined value.");
+        }
+
+        ArgumentOutOfRangeException.ThrowIfEqual(change, 0m);
+        // Compared, not ThrowIfNegative: that reads the sign bit, which a decimal zero left by a subtraction can carry.
+        if (balanceAfter < 0m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(balanceAfter), balanceAfter, "The balance a movement leaves is never negative.");
+        }
+
+        if (CreditMovement is not null)
+        {
+            throw new InvalidOperationException("The entry already records a credit movement.");
+        }
+
+        CreditMovement = movement;
+        CreditChange = change;
+        BalanceAfter = balanceAfter;
+        if (movement.NotifiesClient())
+        {
+            AddDomainEvent(new CreditBalanceChangedEvent(ClientId, movement, change, balanceAfter, Currency) { OccurredAt = Date });
+        }
+    }
+
+    /// <summary>
+    /// Refuses to change or delete an entry that is part of the credit history: the history is a record, and a
+    /// mistake is put right by a new movement, never by editing the old one.
+    /// </summary>
+    /// <exception cref="DomainRuleException"><c>TRANSACTION_CREDIT_LOCKED</c> when the entry records a credit movement.</exception>
+    public void EnsureEditable()
+    {
+        if (CreditMovement is not null)
+        {
+            throw new DomainRuleException(
+                BillingErrors.TransactionCreditLocked, "The entry is part of the credit history and cannot be changed or deleted.");
+        }
+    }
+
+    /// <summary>
     /// Corrects how the transaction is recorded: when it happened, what it was for, the external
     /// reference and the method used. The amounts and currency are not touched.
     /// </summary>
@@ -204,8 +323,10 @@ public sealed class Transaction : BaseEntity
     /// <param name="description">Human-readable description.</param>
     /// <param name="transactionId">External transaction reference.</param>
     /// <param name="paymentMethod">Payment method used.</param>
+    /// <exception cref="DomainRuleException"><c>TRANSACTION_CREDIT_LOCKED</c> when the entry is part of the credit history.</exception>
     public void CorrectDetails(DateTimeOffset date, string description, string transactionId, string paymentMethod)
     {
+        EnsureEditable();
         Date = date;
         Description = description;
         TransactionId = transactionId;
@@ -226,9 +347,10 @@ public sealed class Transaction : BaseEntity
     /// <param name="amountIn">Amount credited (≥ 0).</param>
     /// <param name="amountOut">Amount debited (≥ 0).</param>
     /// <param name="fees">Transaction fees (≥ 0).</param>
-    /// <exception cref="DomainRuleException">Neither <paramref name="amountIn"/> nor <paramref name="amountOut"/> is positive.</exception>
+    /// <exception cref="DomainRuleException">Neither <paramref name="amountIn"/> nor <paramref name="amountOut"/> is positive, or the entry is part of the credit history.</exception>
     public void CorrectAmounts(decimal amountIn, decimal amountOut, decimal fees)
     {
+        EnsureEditable();
         EnsureMovesMoney(amountIn, amountOut);
 
         AmountIn = amountIn;

@@ -59,7 +59,7 @@ public sealed class RefundInvoicePaymentHandler
     /// <summary>Resolves the hosted-gateway payment plugin that processed the original payment.</summary>
     private readonly IPaymentPluginResolver _pluginResolver;
 
-    /// <summary>Puts a CreditBalance refund on the client's balance in the same save as the ledger row.</summary>
+    /// <summary>Puts a CreditBalance refund on the client's balance, and takes a refunded top-up off it, in the same save as the ledger row.</summary>
     private readonly IClientCredit _clientCredit;
 
     /// <summary>Asks the enabled fulfilment plugins to cap the refund before any money moves.</summary>
@@ -103,7 +103,8 @@ public sealed class RefundInvoicePaymentHandler
     /// <c>INVOICE_REFUND_CONFLICT</c> when another refund of the invoice is still waiting for its
     /// gateway; <c>INVOICE_REFUND_EXCEEDS_PAID</c> when the amount is more than is still refundable,
     /// or more than the hosted gateway's payments still hold; <c>CLIENT_NOT_FOUND</c>
-    /// when a CreditBalance refund has no client to credit; <c>INVOICE_NOT_GATEWAY_PAID</c> when a
+    /// when a CreditBalance refund has no client to credit; <c>INVOICE_TOP_UP_REFUND_MANUAL_ONLY</c> when a credit top-up is refunded any
+    /// way but by hand; <c>CLIENT_CREDIT_INSUFFICIENT</c> when the client has already spent the credit a top-up put on the balance; <c>INVOICE_NOT_GATEWAY_PAID</c> when a
     /// Gateway refund is asked for money no gateway took; <c>GATEWAY_REFUND_REFUSED</c> when the hosted gateway fails it; or
     /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the session's plugin is gone; <c>REFUND_ADVICE_UNAVAILABLE</c> when an
     /// enabled fulfilment plugin could not say how much may be refunded, or <c>REFUND_BLOCKED_BY_PLUGIN</c> when one allows
@@ -127,6 +128,13 @@ public sealed class RefundInvoicePaymentHandler
         if (!invoice.IsPaid)
         {
             return Result.FailureCode(HostpanelErrorCodes.INVOICE_NOT_PAID);
+        }
+
+        // A top-up is money the client put on their balance, refunded by staff by hand: a gateway refund or a refund back to the
+        // balance would send the same money twice, so both are refused before anything is claimed.
+        if (invoice.IsCreditTopUp && cmd.RefundType != RefundType.Manual)
+        {
+            return Result.FailureCode(HostpanelErrorCodes.INVOICE_TOP_UP_REFUND_MANUAL_ONLY);
         }
 
         var now = _clock.UtcNow;
@@ -186,17 +194,32 @@ public sealed class RefundInvoicePaymentHandler
         }
 
         // A Manual or CreditBalance refund moves no gateway money, so it is recorded on the caller's token.
+        var ledgerRows = new List<Transaction>();
         foreach (var refund in refunds)
         {
             var ledgerRow = invoice.AddRefund(
                 now, refund.Gateway, refund.Reference, refund.Amount, 0m, notes, addedToCredit: toCreditBalance,
                 source: TransactionSource.Manual);
             _context.Transactions.Add(ledgerRow);
+            ledgerRows.Add(ledgerRow);
+        }
+
+        // The refund goes back to the payer, so the credit the top-up put on the balance comes off it in the same save. A client
+        // who has already spent it leaves the balance short and the refund is refused whole, nothing recorded.
+        if (invoice.IsCreditTopUp)
+        {
+            var taken = await _clientCredit.DeductAsync(
+                new ClientCreditChange(invoice.ClientId, amount, CreditMovementType.TopUpRefunded, invoice.Id, Entry: ledgerRows[0]), ct);
+            if (taken.IsFailure)
+            {
+                return Result.FailureCode(taken.ErrorCode!);
+            }
         }
 
         if (toCreditBalance)
         {
-            var credited = await _clientCredit.AddAsync(new ClientCreditChange(invoice.ClientId, amount), ct);
+            var credited = await _clientCredit.AddAsync(
+                new ClientCreditChange(invoice.ClientId, amount, CreditMovementType.RefundToCredit, invoice.Id, Entry: ledgerRows[0]), ct);
             if (credited.IsFailure)
             {
                 return Result.FailureCode(credited.ErrorCode!);

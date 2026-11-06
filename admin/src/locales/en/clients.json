@@ -582,5 +582,36 @@
     "cleared": "External account link cleared.",
     "linkedTo": "Linked to {provider}, account {id}.",
     "notLinked": "Not linked to an external account."
+  },
+  "clientCredit": {
+    "credit": "Credit",
+    "balance": "Credit balance",
+    "currency": "Currency",
+    "adjustTitle": "Add or deduct credit",
+    "direction": "Action",
+    "add": "Add credit",
+    "deduct": "Deduct credit",
+    "reason": "Reason",
+    "reasonPlaceholder": "Why the balance is adjusted",
+    "apply": "Apply",
+    "adjusted": "The credit balance was adjusted and the client was told the new balance.",
+    "history": "History",
+    "historyEmpty": "No movements are recorded yet. A balance the client already had is not itemised.",
+    "change": "Change",
+    "entriesCount": "{count} movements",
+    "movement": {
+      "AdminAdd": "Credit added by staff",
+      "AdminDeduct": "Credit deducted by staff",
+      "InvoiceApplied": "Applied to an invoice",
+      "InvoiceReturned": "Returned from an invoice",
+      "RenewalAutoApplied": "Applied to a renewal",
+      "RefundToCredit": "Refund to credit",
+      "TopUp": "Top-up paid",
+      "TopUpRefunded": "Top-up refunded",
+      "PaymentSurplus": "Payment beyond an invoice",
+      "TransactionReversed": "Ledger entry reversed",
+      "CreditNoteIssued": "Credit note issued as account credit",
+      "CreditNoteVoided": "Credit note voided"
+    }
   }
 }

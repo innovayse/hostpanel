@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,7 +26,7 @@ public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFi
         using (var scope = factory.Services.CreateScope())
         {
             var outcome = await scope.ServiceProvider.GetRequiredService<IClientCredit>()
-                .AddAsync(new ClientCreditChange(clientId, 3m), CancellationToken.None);
+                .AddAsync(new ClientCreditChange(clientId, 3m, CreditMovementType.AdminAdd), CancellationToken.None);
             await scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>().SaveChangesAsync(CancellationToken.None);
 
             outcome.IsSuccess.Should().BeTrue();
@@ -44,7 +45,7 @@ public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFi
         using (var scope = factory.Services.CreateScope())
         {
             await scope.ServiceProvider.GetRequiredService<IClientCredit>()
-                .AddAsync(new ClientCreditChange(clientId, 3m), CancellationToken.None);
+                .AddAsync(new ClientCreditChange(clientId, 3m, CreditMovementType.AdminAdd), CancellationToken.None);
         }
 
         (await BillingTestSeeds.CreditBalanceOfAsync(factory, clientId)).Should().Be(0m);
@@ -60,7 +61,7 @@ public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFi
         using (var scope = factory.Services.CreateScope())
         {
             var outcome = await scope.ServiceProvider.GetRequiredService<IClientCredit>()
-                .DeductAsync(new ClientCreditChange(clientId, 4m), CancellationToken.None);
+                .DeductAsync(new ClientCreditChange(clientId, 4m, CreditMovementType.AdminDeduct), CancellationToken.None);
             await scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>().SaveChangesAsync(CancellationToken.None);
 
             outcome.Value!.Balance.Should().Be(6m);
@@ -79,7 +80,7 @@ public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFi
         using (var scope = factory.Services.CreateScope())
         {
             var outcome = await scope.ServiceProvider.GetRequiredService<IClientCredit>()
-                .DeductAsync(new ClientCreditChange(clientId, 5m), CancellationToken.None);
+                .DeductAsync(new ClientCreditChange(clientId, 5m, CreditMovementType.AdminDeduct), CancellationToken.None);
             await scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>().SaveChangesAsync(CancellationToken.None);
 
             outcome.ErrorCode.Should().Be(HostpanelErrorCodes.CLIENT_CREDIT_INSUFFICIENT);
@@ -95,8 +96,8 @@ public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFi
         using var scope = factory.Services.CreateScope();
         var credit = scope.ServiceProvider.GetRequiredService<IClientCredit>();
 
-        var added = await credit.AddAsync(new ClientCreditChange(BillingTestSeeds.NoSuchId, 1m), CancellationToken.None);
-        var taken = await credit.DeductAsync(new ClientCreditChange(BillingTestSeeds.NoSuchId, 1m), CancellationToken.None);
+        var added = await credit.AddAsync(new ClientCreditChange(BillingTestSeeds.NoSuchId, 1m, CreditMovementType.AdminAdd), CancellationToken.None);
+        var taken = await credit.DeductAsync(new ClientCreditChange(BillingTestSeeds.NoSuchId, 1m, CreditMovementType.AdminDeduct), CancellationToken.None);
 
         added.ErrorCode.Should().Be(HostpanelErrorCodes.CLIENT_NOT_FOUND);
         taken.ErrorCode.Should().Be(HostpanelErrorCodes.CLIENT_NOT_FOUND);
@@ -118,8 +119,8 @@ public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFi
         var secondCredit = second.ServiceProvider.GetRequiredService<IClientCredit>();
 
         // Both contexts load the client while it still holds 100.
-        (await firstCredit.DeductAsync(new ClientCreditChange(clientId, 100m), CancellationToken.None)).IsSuccess.Should().BeTrue();
-        (await secondCredit.DeductAsync(new ClientCreditChange(clientId, 100m), CancellationToken.None)).IsSuccess.Should().BeTrue();
+        (await firstCredit.DeductAsync(new ClientCreditChange(clientId, 100m, CreditMovementType.AdminDeduct), CancellationToken.None)).IsSuccess.Should().BeTrue();
+        (await secondCredit.DeductAsync(new ClientCreditChange(clientId, 100m, CreditMovementType.AdminDeduct), CancellationToken.None)).IsSuccess.Should().BeTrue();
 
         await first.ServiceProvider.GetRequiredService<IHostpanelDbContext>().SaveChangesAsync(CancellationToken.None);
         var act = () => second.ServiceProvider.GetRequiredService<IHostpanelDbContext>().SaveChangesAsync(CancellationToken.None);
@@ -146,7 +147,7 @@ public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFi
         await BillingTestSeeds.GiveCreditAsync(factory, clientId, 5m);
 
         var outcome = await scope.ServiceProvider.GetRequiredService<IClientCredit>()
-            .AddAndSaveAsync(new ClientCreditChange(clientId, 3m), CancellationToken.None);
+            .AddAndSaveAsync(new ClientCreditChange(clientId, 3m, CreditMovementType.AdminAdd), CancellationToken.None);
 
         outcome.Value!.Balance.Should().Be(18m);
         (await BillingTestSeeds.CreditBalanceOfAsync(factory, clientId)).Should().Be(18m);

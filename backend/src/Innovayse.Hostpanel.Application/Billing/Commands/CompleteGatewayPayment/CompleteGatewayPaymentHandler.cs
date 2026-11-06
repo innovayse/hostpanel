@@ -80,7 +80,8 @@ public sealed class CompleteGatewayPaymentHandler
     /// recorded or credited, and staff are alerted once per session through
     /// <see cref="GatewayPaymentWithoutReferenceEvent"/>. When another path settled or closed the
     /// invoice while the session was open, whatever the session took that the ledger does not hold
-    /// goes to the client's balance (<c>INVOICE_NOT_PAYABLE</c> when the invoice was closed unpaid).
+    /// goes to the client's balance (<c>INVOICE_NOT_PAYABLE</c> when the invoice was closed unpaid). An invoice waiting for a
+    /// manual bank transfer is settled by a payment the session took in full: the wait ends and the transfer is not needed.
     /// </returns>
     public async Task<Result<GatewayCompletionDto>> HandleAsync(
         CompleteGatewayPaymentCommand cmd, CancellationToken ct)
@@ -151,11 +152,28 @@ public sealed class CompleteGatewayPaymentHandler
         // The ledger row is saved with the Paid mark; the concurrent-completion guard below then
         // makes "ledger row exists" and "invoice is Paid" one atomic fact.
         var module = invoice.GatewayModule;
+
+        // The payer chose a bank transfer after this session was opened and then finished the card payment anyway: the
+        // gateway has the money, so the invoice is settled with it and the transfer wait ends. A transfer that arrives later
+        // finds nothing waiting and is staff's to return.
+        if (invoice.IsBankTransferPending)
+        {
+            invoice.WithdrawBankTransfer(_clock.UtcNow);
+        }
+
         var ledgerRow = invoice.Settle(
             module, gatewayTransactionId, _clock.UtcNow, TransactionSource.GatewayPayment);
         if (ledgerRow is not null)
         {
             _context.Transactions.Add(ledgerRow);
+        }
+
+        // A credit top-up reaches the balance in this save, the one that marks it paid, so the replay and the racing paths
+        // that find it settled add nothing.
+        var toppedUp = await _clientCredit.CreditPaidTopUpAsync(invoice, ledgerRow, ct);
+        if (toppedUp.IsFailure)
+        {
+            return Result<GatewayCompletionDto>.FailureCode(toppedUp.ErrorCode!);
         }
 
         // The session was opened for the amount due then; a payment recorded while it was open
@@ -164,7 +182,7 @@ public sealed class CompleteGatewayPaymentHandler
         var surplus = CurrencyCode.FromMinorUnits(Math.Max(paidMinor - dueMinor, 0L), invoice.Currency);
         if (paidMinor > dueMinor)
         {
-            var credited = await _clientCredit.AddAsync(new ClientCreditChange(invoice.ClientId, surplus), ct);
+            var credited = await _clientCredit.AddAsync(new ClientCreditChange(invoice.ClientId, surplus, CreditMovementType.PaymentSurplus, invoice.Id), ct);
             if (credited.IsFailure)
             {
                 return Result<GatewayCompletionDto>.FailureCode(credited.ErrorCode!);
@@ -271,7 +289,7 @@ public sealed class CompleteGatewayPaymentHandler
         var current = await _context.Invoices
             .Include(i => i.Transactions)
             .FirstOrDefaultAsync(i => i.Id == invoiceId, ct);
-        if (current is null || current.IsPayable)
+        if (current is null || current.IsPayable || current.IsBankTransferPending)
         {
             return null;
         }
@@ -327,32 +345,26 @@ public sealed class CompleteGatewayPaymentHandler
         }
 
         var amount = CurrencyCode.FromMinorUnits(paidMinor, invoice.Currency);
-        var credit = await MatchesCurrencyAsync(invoice, status, ct)
-            && await _bus.IsClientBillingCurrencyAsync(invoice, invoice.Currency, ct)
-            && (await _clientCredit.AddAsync(new ClientCreditChange(invoice.ClientId, amount), ct)).IsSuccess;
+        var creditable = await MatchesCurrencyAsync(invoice, status, ct)
+            && await _bus.IsClientBillingCurrencyAsync(invoice, invoice.Currency, ct);
+
+        // Not linked to the invoice: none of this money pays it. The entry that holds the gateway money also carries the
+        // credit movement, so the credit history needs no second line for it.
+        var entry = NewHandBackEntry(invoice, module, reference, amount, credited: creditable);
+        var credit = creditable
+            && (await _clientCredit.AddAsync(
+                new ClientCreditChange(invoice.ClientId, amount, CreditMovementType.PaymentSurplus, invoice.Id, Entry: entry), ct)).IsSuccess;
         if (!credit)
         {
             _logger.LogCritical(
                 "Invoice {InvoiceId} gateway payment {Reference} of {Amount} through {Module} could not be recorded or credited; held for an operator.",
                 invoice.Id, reference, amount, module);
+
+            // The credit did not happen (the client is gone), so the entry is rebuilt as held, without a credit movement.
+            entry = NewHandBackEntry(invoice, module, reference, amount, credited: false);
         }
 
-        // Not linked to the invoice: none of this money pays it.
-        _context.Transactions.Add(Transaction.Create(
-            invoice.ClientId,
-            _clock.UtcNow,
-            credit
-                ? $"Gateway payment for Invoice #{invoice.Id} credited to balance"
-                : $"Gateway payment for Invoice #{invoice.Id} held for operator review",
-            reference,
-            null,
-            module,
-            amount,
-            0m,
-            0m,
-            addedToCredit: credit,
-            invoice.Currency,
-            TransactionSource.GatewayPayment));
+        _context.Transactions.Add(entry);
         try
         {
             await _context.SaveChangesAsync(ct);
@@ -384,6 +396,33 @@ public sealed class CompleteGatewayPaymentHandler
             OccurredAt = _clock.UtcNow,
         });
     }
+
+    /// <summary>
+    /// Builds the ledger entry for gateway money the invoice could not take: the whole amount, under the gateway's
+    /// reference, not linked to the invoice.
+    /// </summary>
+    /// <param name="invoice">The invoice the session was opened for.</param>
+    /// <param name="module">The plugin id of the session that took the money.</param>
+    /// <param name="reference">The gateway's reference of the payment.</param>
+    /// <param name="amount">The amount the gateway took, in the invoice currency.</param>
+    /// <param name="credited">Whether the money goes to the client's balance, otherwise it is held for an operator.</param>
+    /// <returns>The entry, not yet added to the context.</returns>
+    private Transaction NewHandBackEntry(Invoice invoice, string module, string reference, decimal amount, bool credited) =>
+        Transaction.Create(
+            invoice.ClientId,
+            _clock.UtcNow,
+            credited
+                ? $"Gateway payment for Invoice #{invoice.Id} credited to balance"
+                : $"Gateway payment for Invoice #{invoice.Id} held for operator review",
+            reference,
+            null,
+            module,
+            amount,
+            0m,
+            0m,
+            addedToCredit: credited,
+            invoice.Currency,
+            TransactionSource.GatewayPayment);
 
     /// <summary>
     /// Tells staff, once per session, that the gateway reported a payment as paid with no reference to

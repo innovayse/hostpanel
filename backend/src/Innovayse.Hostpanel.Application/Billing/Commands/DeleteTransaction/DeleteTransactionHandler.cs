@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,7 +34,7 @@ public sealed class DeleteTransactionHandler
     /// Success, or <c>TRANSACTION_NOT_FOUND</c> when the id names no transaction, or
     /// <c>CLIENT_NOT_FOUND</c> when the transaction's credit adjustment cannot be reversed because
     /// the owning client no longer exists, or <c>CLIENT_CREDIT_INSUFFICIENT</c> when the credit it
-    /// added has already been spent.
+    /// added has already been spent; <c>TRANSACTION_CREDIT_LOCKED</c> (from the domain) when the entry is part of the credit history.
     /// </returns>
     public async Task<Result> HandleAsync(DeleteTransactionCommand cmd, CancellationToken ct)
     {
@@ -45,10 +46,13 @@ public sealed class DeleteTransactionHandler
             return Result.FailureCode(HostpanelErrorCodes.TRANSACTION_NOT_FOUND);
         }
 
+        // An entry of the credit history is a record and stays; a legacy one is deleted and its credit move undone.
+        transaction.EnsureEditable();
+
         if (transaction.AddedToCredit && transaction.AmountIn > 0)
         {
             var taken = await _clientCredit.DeductAsync(
-                new ClientCreditChange(transaction.ClientId, transaction.AmountIn), ct);
+                new ClientCreditChange(transaction.ClientId, transaction.AmountIn, CreditMovementType.TransactionReversed, transaction.InvoiceId), ct);
             if (taken.IsFailure)
             {
                 return Result.FailureCode(taken.ErrorCode!);
@@ -58,7 +62,7 @@ public sealed class DeleteTransactionHandler
         if (transaction.AddedToCredit && transaction.AmountOut > 0)
         {
             var added = await _clientCredit.AddAsync(
-                new ClientCreditChange(transaction.ClientId, transaction.AmountOut), ct);
+                new ClientCreditChange(transaction.ClientId, transaction.AmountOut, CreditMovementType.TransactionReversed, transaction.InvoiceId), ct);
             if (added.IsFailure)
             {
                 return Result.FailureCode(added.ErrorCode!);

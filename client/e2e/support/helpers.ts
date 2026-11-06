@@ -214,6 +214,28 @@ export const enableHostedGateway = async (request: APIRequestContext): Promise<v
 }
 
 /**
+ * Takes the bank transfer off the stub's gateway list until the next {@link resetStub}, so a page with no card gateway
+ * either has nothing to pay through.
+ *
+ * @param request Playwright's API request context.
+ * @returns Resolves once the stub no longer offers the bank transfer.
+ */
+export const disableBankTransfer = async (request: APIRequestContext): Promise<void> => {
+  await request.post(`${STUB_URL}/__e2e/gateways`, { data: { hosted: false, bankTransfer: false } })
+}
+
+/**
+ * Makes the stub's bank transfer carry no bank details and no instructions until the next {@link resetStub}, as when the
+ * operator switched the transfer on without filling anything in.
+ *
+ * @param request Playwright's API request context.
+ * @returns Resolves once the stub answers empty bank details.
+ */
+export const emptyBankTransferDetails = async (request: APIRequestContext): Promise<void> => {
+  await request.post(`${STUB_URL}/__e2e/gateways`, { data: { hosted: false, bankTransferDetailsEmpty: true } })
+}
+
+/**
  * Lists fake plugin widgets in the client area slots until the next {@link resetStub}; with none scripted every slot is empty.
  *
  * @param request Playwright's API request context.

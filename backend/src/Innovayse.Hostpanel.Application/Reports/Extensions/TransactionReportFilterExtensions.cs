@@ -26,7 +26,8 @@ public static class TransactionReportFilterExtensions
     {
         ArgumentNullException.ThrowIfNull(transactions);
 
-        var query = transactions;
+        // Credit-only ledger lines moved no cash, so the cash report does not list them.
+        var query = transactions.Where(Transaction.MovedMoneyFilter);
 
         if (dateFrom.HasValue)
         {

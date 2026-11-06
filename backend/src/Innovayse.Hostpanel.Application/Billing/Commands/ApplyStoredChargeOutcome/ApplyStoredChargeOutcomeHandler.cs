@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -192,6 +193,13 @@ public sealed class ApplyStoredChargeOutcomeHandler
             _context.Transactions.Add(ledgerRow);
         }
 
+        // A credit top-up reaches the balance in the save that marks it paid.
+        var toppedUp = await _clientCredit.CreditPaidTopUpAsync(invoice, ledgerRow, ct);
+        if (toppedUp.IsFailure)
+        {
+            return toppedUp;
+        }
+
         if (paidMinor == dueMinor)
         {
             return Result.Success();
@@ -199,7 +207,7 @@ public sealed class ApplyStoredChargeOutcomeHandler
 
         // The charge was made for more than is due now: the rest belongs to the client and is kept on their balance.
         var surplus = CurrencyCode.FromMinorUnits(paidMinor - dueMinor, invoice.Currency);
-        var credit = await _clientCredit.AddAsync(new ClientCreditChange(invoice.ClientId, surplus), ct);
+        var credit = await _clientCredit.AddAsync(new ClientCreditChange(invoice.ClientId, surplus, CreditMovementType.PaymentSurplus, invoice.Id), ct);
         return credit.IsFailure ? Result.FailureCode(credit.ErrorCode!) : Result.Success();
     }
 

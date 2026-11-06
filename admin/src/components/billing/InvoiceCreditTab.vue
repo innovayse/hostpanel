@@ -8,6 +8,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import InvoiceItemsSection from '@/components/billing/InvoiceItemsSection.vue'
 import InvoiceTransactionsSection from '@/components/billing/InvoiceTransactionsSection.vue'
+import UiAlert from '@/components/ui/UiAlert.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -129,7 +130,11 @@ const removeCredit = async (): Promise<void> => {
 
 <template>
   <UiStack data-testid="billing-invoice-credit">
-    <UiCard padding="md">
+    <UiAlert v-if="invoice.isCreditTopUp" variant="info" data-testid="billing-invoice-credit-top-up">
+      {{ t('billing.invoiceCreditTab.topUpNoCredit') }}
+    </UiAlert>
+
+    <UiCard v-else padding="md">
       <UiStack>
         <UiGrid :columns="2" gap="lg">
           <UiStack align="center" gap="sm">

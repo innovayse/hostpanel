@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Clients.Common.Enums;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -207,6 +208,7 @@ public sealed class ExportClientDataHandler
     /// <returns>The <c>transactions</c> rows.</returns>
     private async Task<IReadOnlyList<ClientExportTransactionDto>> ReadTransactionsAsync(int clientId, CancellationToken ct) =>
         await _context.Transactions.AsNoTracking()
+            .Where(Transaction.MovedMoneyFilter)
             .Where(t => t.ClientId == clientId)
             .OrderByDescending(t => t.Date)
             .ThenByDescending(t => t.Id)

@@ -29,8 +29,9 @@
  *   so only the spec for the verification banner turns it off, until the next reset;
  * - `POST /__e2e/account`: overrides fields of the signed-in person's account (`GET /api/auth/me`), such as
  *   `clientPermissions` or `clientId`, so a spec can sign in a member without a permission or a first-time buyer, until the next reset;
- * - `POST /__e2e/gateways`: adds the hosted card gateway to the gateway list (`GET /api/payment-methods`); only bank
- *   transfer is offered by default, so only the specs for the saved methods and the invoice payment turn it on, until the next reset;
+ * - `POST /__e2e/gateways`: adds the hosted card gateway to the gateway list (`GET /api/payment-methods`) and, with
+ *   `bankTransfer: false`, takes the bank transfer off it, and with `bankTransferDetailsEmpty: true` makes its bank details all empty; only bank transfer is offered by default, so only the specs for the
+ *   saved methods and the invoice payment turn the card on, until the next reset;
  * - `POST /__e2e/reset`: clears the log, the scripted answers, the settings overrides, demo mode and
  *   everything a spec changed: tickets, profile, services, the domain, payment methods, contacts,
  *   the team, the saved payment methods, the hosted gateway and the two-factor flag.
@@ -46,6 +47,10 @@ import {
   ACCESS_TOKEN,
   ACCOUNT,
   ANNOUNCEMENT,
+  BANK_TRANSFER_DETAILS,
+  EMPTY_BANK_TRANSFER_DETAILS,
+  CREDIT,
+  CREDIT_NOTES,
   FAQS,
   LOCATIONS,
   PARTNERS,
@@ -63,6 +68,7 @@ import {
   DEMO_RESET_IN_MS,
   CURRENCIES,
   DEPARTMENTS,
+  TOP_UP_INVOICE_ID,
   DOMAIN,
   DOMAIN_NAMESERVERS,
   DOMAIN_ORDER,
@@ -182,6 +188,42 @@ let demoEnabled = false
 
 /** Whether the gateway list also offers the hosted card gateway; off by default, a spec turns it on, a reset turns it off. */
 let hostedGatewayEnabled = false
+
+/** Whether the gateway list offers the bank transfer; on by default, a spec turns it off, a reset turns it on. */
+let bankTransferEnabled = true
+
+/** Whether the bank transfer's details are all empty (the operator set none); off by default, a spec turns it on, a reset turns it off. */
+let bankTransferDetailsEmpty = false
+
+/**
+ * The bank details the stub answers for the transfer waiting on {@link INVOICE}.
+ *
+ * @returns {typeof BANK_TRANSFER_DETAILS} The filled-in details, or the empty ones when a spec asked for them.
+ */
+const currentBankTransferDetails = () => (bankTransferDetailsEmpty ? EMPTY_BANK_TRANSFER_DETAILS : BANK_TRANSFER_DETAILS)
+
+/** The credit balance of the signed-in client, which applying credit to {@link INVOICE} lowers; a reset restores it. */
+let creditBalance = CREDIT.balance
+
+/** The credit applied to {@link INVOICE} so far; a reset clears it. */
+let invoiceCredit = 0
+
+/**
+ * The invoice as the stub reads it now: waiting for a transfer once chosen, and net of the credit applied to it.
+ *
+ * @returns {typeof INVOICE} The invoice.
+ */
+const currentInvoice = () => ({
+  ...INVOICE,
+  status: bankTransferChosen ? 'PaymentPending' : INVOICE.status,
+  isBankTransferPending: bankTransferChosen,
+  credit: invoiceCredit,
+  total: INVOICE.total - invoiceCredit,
+  amountDue: INVOICE.amountDue - invoiceCredit,
+})
+
+/** Whether the signed-in client has chosen the bank transfer for {@link INVOICE}, which then reads as PaymentPending; a reset clears it. */
+let bankTransferChosen = false
 
 /**
  * Builds the saved payment methods the stub starts with, so a reset can restore them.
@@ -548,7 +590,8 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
     return true
   }
   if (isGet && path === '/api/payment-methods') {
-    send(res, 200, hostedGatewayEnabled ? [...GATEWAY_METHODS, HOSTED_GATEWAY] : GATEWAY_METHODS)
+    const offered = bankTransferEnabled ? GATEWAY_METHODS : []
+    send(res, 200, hostedGatewayEnabled ? [...offered, HOSTED_GATEWAY] : offered)
     return true
   }
 
@@ -734,11 +777,71 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
     }
   }
   if (isGet && path === '/api/me/invoices') {
-    send(res, 200, [INVOICE])
+    send(res, 200, [currentInvoice()])
     return true
   }
   if (isGet && path === `/api/me/invoices/${INVOICE.id}`) {
-    send(res, 200, INVOICE)
+    send(res, 200, currentInvoice())
+    return true
+  }
+  // Credit: the balance with the limits of one top-up and the history; adding funds raises a top-up invoice inside the limits.
+  if (isGet && path === '/api/me/credit') {
+    send(res, 200, { ...CREDIT, balance: creditBalance })
+    return true
+  }
+  if (method === 'POST' && path === '/api/me/credit/top-ups') {
+    const amount = Number(body?.amount)
+    if (!(amount >= CREDIT.topUpMinimum && amount <= CREDIT.topUpMaximum)) {
+      sendProblem(res, 400, 'CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE', 'E2E: the amount is outside the range allowed for adding funds.')
+      return true
+    }
+    send(res, 201, TOP_UP_INVOICE_ID)
+    return true
+  }
+  // Credit notes: the notes issued to the client, and the PDF of one of them as a download (a note of someone else is a 404).
+  if (isGet && path === '/api/me/credit-notes') {
+    send(res, 200, CREDIT_NOTES)
+    return true
+  }
+  const noteDownload = /^\/api\/me\/credit-notes\/(\d+)\/pdf$/.exec(path)
+  if (isGet && noteDownload) {
+    const note = CREDIT_NOTES.find(n => String(n.id) === noteDownload[1])
+    if (!note) {
+      sendProblem(res, 404, 'CREDIT_NOTE_NOT_FOUND', 'E2E: the credit note was not found.')
+      return true
+    }
+    res.writeHead(200, {
+      'content-type': 'application/pdf',
+      'content-disposition': `attachment; filename="credit-note-${note.number}.pdf"`,
+      'cache-control': 'private, no-store'
+    })
+    res.end('%PDF-1.4 e2e')
+    return true
+  }
+  // Applying credit to the invoice lowers the balance and what the invoice owes; more than either is refused.
+  if (method === 'POST' && path === `/api/me/invoices/${INVOICE.id}/credit`) {
+    const amount = Number(body?.amount)
+    if (!(amount > 0) || amount > creditBalance) {
+      sendProblem(res, 400, 'CLIENT_CREDIT_INSUFFICIENT', 'E2E: there is not enough credit on the balance.')
+      return true
+    }
+    creditBalance -= amount
+    invoiceCredit += amount
+    send(res, 204)
+    return true
+  }
+  // Bank transfer: choosing it moves the invoice to waiting and answers the bank details; reading the details is refused until then.
+  if (method === 'POST' && path === `/api/me/invoices/${INVOICE.id}/bank-transfer`) {
+    bankTransferChosen = true
+    send(res, 200, currentBankTransferDetails())
+    return true
+  }
+  if (isGet && path === `/api/me/invoices/${INVOICE.id}/bank-transfer`) {
+    if (bankTransferChosen) {
+      send(res, 200, currentBankTransferDetails())
+    } else {
+      sendProblem(res, 409, 'INVOICE_BANK_TRANSFER_NOT_PENDING', 'E2E: no bank transfer is waiting on this invoice.')
+    }
     return true
   }
   // Hosted-gateway return: the invoice id picks the outcome (an unknown id is a 404, so the page cannot tell); the state is spelled as the API sends its enum.
@@ -1093,6 +1196,11 @@ on('forge-unknown', { event: 'toggle', id: 'pages.9.title' })
     settingOverrides.clear()
     demoEnabled = false
     hostedGatewayEnabled = false
+    bankTransferEnabled = true
+    bankTransferDetailsEmpty = false
+    bankTransferChosen = false
+    creditBalance = CREDIT.balance
+    invoiceCredit = 0
     storedMethods = seedStoredMethods()
     slidesEnabled = false
     pluginSlots = {}
@@ -1138,6 +1246,8 @@ on('forge-unknown', { event: 'toggle', id: 'pages.9.title' })
   if (path === '/__e2e/gateways') {
     const gateways = await readJson(req)
     hostedGatewayEnabled = gateways.hosted === true
+    bankTransferEnabled = gateways.bankTransfer !== false
+    bankTransferDetailsEmpty = gateways.bankTransferDetailsEmpty === true
     send(res, 204)
     return
   }

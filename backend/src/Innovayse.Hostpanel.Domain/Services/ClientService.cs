@@ -515,6 +515,13 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
+    /// Switches the automatic billing of the service on or off without touching the rest of its automation
+    /// settings (the suspension hold and the end-of-cycle termination).
+    /// </summary>
+    /// <param name="value">Whether the billing runs look after the service; see <see cref="AutoRenew"/>.</param>
+    public void SetAutoRenew(bool value) => AutoRenew = value;
+
+    /// <summary>
     /// Sets how the billing runs treat the service: whether they look after it at all, whether the
     /// overdue suspension is held off (and until when), and whether the service ends with its current
     /// cycle (and why).

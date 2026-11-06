@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -272,6 +273,28 @@ public static class BillingTestSeeds
         });
         created.StatusCode.Should().Be(HttpStatusCode.Created);
         return await created.Content.ReadFromJsonAsync<int>();
+    }
+
+    /// <summary>
+    /// Writes a ledger entry that added to a client's credit balance the way entries did before the credit history existed: flagged
+    /// as added to credit, carrying no movement, with the balance raised to match. Such an entry is still deletable.
+    /// </summary>
+    /// <param name="host">The host whose database the client lives in.</param>
+    /// <param name="clientId">The client to credit.</param>
+    /// <param name="amount">The credit to add.</param>
+    /// <returns>The id of the ledger entry.</returns>
+    public static async Task<int> SeedLegacyCreditEntryAsync(WebApplicationFactory<Program> host, int clientId, decimal amount)
+    {
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var client = await context.Clients.FirstAsync(c => c.Id == clientId, CancellationToken.None);
+        client.AddCredit(amount);
+        var entry = Transaction.Create(
+            clientId, DateTimeOffset.UtcNow, "Manual top-up", $"txn-{Guid.NewGuid():N}", null, PaymentMethodNames.Manual,
+            amount, 0m, 0m, addedToCredit: true, "USD", TransactionSource.Manual);
+        context.Transactions.Add(entry);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return entry.Id;
     }
 
     /// <summary>Adds credit to a client's balance directly against the host's database.</summary>

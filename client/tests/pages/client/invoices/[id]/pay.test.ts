@@ -10,7 +10,7 @@ import { InvoiceStatus } from '~/types/invoicestatus'
 
 /** The mocked billing endpoints the store reaches. */
 const billingApi = vi.hoisted(() => ({
-  fetchInvoice: vi.fn(), fetchGatewayMethods: vi.fn()
+  fetchInvoice: vi.fn(), fetchGatewayMethods: vi.fn(), fetchBankTransfer: vi.fn()
 }))
 
 vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => billingApi }))
@@ -21,8 +21,8 @@ vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => billin
  * @param status - Invoice status.
  * @returns The invoice.
  */
-const invoice = (status: InvoiceStatus) => ({
-  id: 41, status, currency: 'USD', subTotal: 100, credit: 0, total: 100, amountDue: 100, items: [{ id: 1, description: 'Hosting', amount: 100 }], transactions: []
+const invoice = (status: InvoiceStatus, isBankTransferPending = status === InvoiceStatus.PaymentPending) => ({
+  id: 41, status, isBankTransferPending, currency: 'USD', subTotal: 100, credit: 0, total: 100, amountDue: 100, items: [{ id: 1, description: 'Hosting', amount: 100 }], transactions: []
 })
 
 describe('invoice payment page', () => {
@@ -103,6 +103,28 @@ describe('invoice payment page', () => {
     const wrapper = await mountPage(PayPage)
 
     expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true)
+  })
+
+  it('shows the bank details of an invoice that waits for a transfer, with no payment choices or gateway notice', async () => {
+    billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.PaymentPending))
+    billingApi.fetchGatewayMethods.mockResolvedValue([{ module: 'hostedbank', displayName: 'Bank' }])
+    billingApi.fetchBankTransfer.mockResolvedValue({ invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null })
+
+    const wrapper = await mountPage(PayPage)
+
+    expect(billingApi.fetchBankTransfer).toHaveBeenCalledWith('41')
+    expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="bank-transfer-reference"]').text()).toBe('INV-41')
+    expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(false)
+  })
+
+  it('does not read bank details for an invoice that does not wait for a transfer', async () => {
+    billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.Unpaid))
+
+    await mountPage(PayPage)
+
+    expect(billingApi.fetchBankTransfer).not.toHaveBeenCalled()
   })
 
   it('links the breadcrumb back to the invoice', async () => {

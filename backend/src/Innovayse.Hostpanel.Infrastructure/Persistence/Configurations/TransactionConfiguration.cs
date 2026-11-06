@@ -37,6 +37,12 @@ public sealed class TransactionConfiguration : IEntityTypeConfiguration<Transact
         builder.Property(x => x.Currency).IsRequired().HasMaxLength(CurrencyCode.Length);
         builder.Property(x => x.Source).IsRequired().HasConversion<string>().HasMaxLength(20);
 
+        // The credit history: why the client's balance moved with this entry, the signed change and the balance it left.
+        // Null on every entry that did not move the balance and on all entries older than the history, which is never reconstructed.
+        builder.Property(x => x.CreditMovement).HasConversion<string>().HasMaxLength(30);
+        builder.Property(x => x.CreditChange).HasColumnType("numeric(18,4)");
+        builder.Property(x => x.BalanceAfter).HasColumnType("numeric(18,4)");
+
         // The ledger lists newest first, per client or across all of them, and every report ranges
         // over the date; an invoice's payments and a gateway reference are looked up on their own.
         builder.HasIndex(x => x.Date);

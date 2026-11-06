@@ -5,4 +5,7 @@ public enum NumberKind
 {
     /// <summary>The counter behind <c>ORD-0001</c>-style order numbers.</summary>
     Order,
+
+    /// <summary>The counter behind <c>CN-0001</c>-style credit note numbers.</summary>
+    CreditNote,
 }

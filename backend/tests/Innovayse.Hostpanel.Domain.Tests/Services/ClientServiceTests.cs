@@ -638,4 +638,28 @@ public class ClientServiceTests
         Assert.Empty(pending.DomainEvents);
         Assert.Null(pending.NextRenewalAt);
     }
+
+    /// <summary>
+    /// Verifies that <see cref="ClientService.SetAutoRenew"/> flips only the billing switch and leaves the hold and
+    /// the end-of-cycle termination as they were.
+    /// </summary>
+    [Fact]
+    public void SetAutoRenew_FlipsOnlyTheBillingSwitch()
+    {
+        var svc = ClientService.Create(1, 2, BillingCycle.Monthly, Now);
+        var holdUntil = new DateTimeOffset(2031, 5, 6, 0, 0, 0, TimeSpan.Zero);
+        svc.ConfigureAutomation(true, true, holdUntil, true, "Moving away");
+
+        svc.SetAutoRenew(false);
+
+        Assert.False(svc.AutoRenew);
+        Assert.True(svc.OverrideAutoSuspend);
+        Assert.Equal(holdUntil, svc.SuspendUntil);
+        Assert.True(svc.AutoTerminateEndOfCycle);
+        Assert.Equal("Moving away", svc.AutoTerminateReason);
+
+        svc.SetAutoRenew(true);
+
+        Assert.True(svc.AutoRenew);
+    }
 }

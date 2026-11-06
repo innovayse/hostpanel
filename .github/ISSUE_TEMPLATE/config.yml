@@ -3,6 +3,9 @@ contact_links:
   - name: 💬 Ask on Discord
     url: https://discord.gg/NfqTkyTgD
     about: Chat with the community and the maintainers.
+  - name: 📖 Read the documentation
+    url: https://hostpanel.innovayse.com/docs/
+    about: Install, configuration, payments, servers and plugin guides.
   - name: ❓ Question or help with setup
     url: https://github.com/innovayse/hostpanel/discussions/categories/q-a
     about: Ask in Discussions, where the answer helps the next person too.

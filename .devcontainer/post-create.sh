@@ -60,3 +60,8 @@ if [ -n "${CODESPACE_NAME:-}" ] && [ -n "${GITHUB_CODESPACES_PORT_FORWARDING_DOM
   replace_default CORS_CLIENT_ORIGIN http://localhost:3001 "https://${CODESPACE_NAME}-3001.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
   replace_default CORS_ADMIN_ORIGIN http://localhost:5174 "https://${CODESPACE_NAME}-5174.${GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN}"
 fi
+
+# The API container runs dotnet watch: the compiler and the app share its memory limit, and on the first start of a
+# codespace the 2G of the example was not enough (seen twice: the kernel killed the process, exit 137, and dotnet watch
+# then waits for a file change forever). The machine has 16 GB, so the codespace gets more; a value set by hand stays.
+replace_default API_MEMORY 2G 4G

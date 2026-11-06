@@ -957,8 +957,8 @@ export const pluginPage = (address, language) => {
         blocks: [{
           kind: 'split',
           panes: [
-            { blocks: [{ kind: 'text', text: text.site }] },
-            { blocks: [{ kind: 'preview', id: 'site-preview', sources: [{ id: 'preview', label: text.preview, route: { method: 'get', path: '/workspace/site' }, field: 'previewUrl' }] }] },
+            { blocks: [{ kind: 'text', text: text.site }, { kind: 'chat', send: { method: 'post', path: '/workspace/chat' }, selection: true }] },
+            { blocks: [{ kind: 'preview', id: 'site-preview', sources: [{ id: 'preview', label: text.preview, route: { method: 'get', path: '/workspace/site' }, field: 'previewUrl' }], selection: { sources: ['preview'], route: { method: 'post', path: '/workspace/selection' }, release: { route: { method: 'get', path: '/workspace/site' }, field: 'release' } } }] },
           ],
         }],
       },

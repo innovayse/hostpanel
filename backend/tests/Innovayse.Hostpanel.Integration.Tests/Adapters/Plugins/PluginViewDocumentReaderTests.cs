@@ -811,6 +811,83 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
         AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewRouteUndeclared);
     }
 
+    /// <summary>A preview selection in its exact shape, with a chat taking it, is accepted.</summary>
+    [Fact]
+    public void Read_ValidSelection_IsAccepted()
+    {
+        Write("views/a.json", SelectionDocument(SelectionMember("""["a"]""", "post"), chatSelection: "true"));
+
+        PluginViewDocumentReader.Read(_folder, ClientPageManifest(), MaxViewBytes).Violation.Should().BeNull();
+    }
+
+    /// <summary>Every broken shape of a selection is refused with its own rule: an unknown source, none, a repeat, a GET lookup, an extra member, a chat value other than true, a chat with no preview selection.</summary>
+    /// <param name="selection">The preview's selection member, or empty for none.</param>
+    /// <param name="chat">The chat's selection value.</param>
+    [Theory]
+    [InlineData("""["nope"]|post""", "true")]
+    [InlineData("""[]|post""", "true")]
+    [InlineData("""["a","a"]|post""", "true")]
+    [InlineData("""["a"]|get""", "true")]
+    [InlineData("""["a"]|post""", "1")]
+    [InlineData("", "true")]
+    public void Read_BrokenSelection_BreaksViewSelectionInvalid(string selection, string chat)
+    {
+        var member = selection.Length == 0 ? string.Empty : SelectionMember(selection.Split('|')[0], selection.Split('|')[1]);
+        Write("views/a.json", SelectionDocument(member, chat));
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewSelectionInvalid);
+    }
+
+    /// <summary>A source id that is no string, with a selection on the preview, is a refusal and not an exception, at install and at load alike.</summary>
+    /// <param name="id">The source's id, as JSON.</param>
+    [Theory]
+    [InlineData("1")]
+    [InlineData("{}")]
+    [InlineData("[]")]
+    [InlineData("null")]
+    [InlineData("true")]
+    public void Read_SelectionWithSourceIdNotAString_BreaksPreviewRule(string id)
+    {
+        Write("views/a.json", $$$"""{"schema":1,"blocks":[{"kind":"preview","sources":[{"id":{{{id}}},"label":"A","route":{"method":"get","path":"/site"},"field":"url"}]{{{SelectionMember("""["a"]""", "post")}}}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewPreviewInvalid);
+    }
+
+    /// <summary>A second preview offering a selection is refused, because a chat's claim does not say which preview made it.</summary>
+    [Fact]
+    public void Read_SecondPreviewSelection_BreaksViewSelectionInvalid()
+    {
+        var member = SelectionMember("""["a"]""", "post");
+        var preview = $$$"""{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]{{{member}}}}""";
+        Write("views/a.json", $$$"""{"schema":1,"blocks":[{"kind":"chat","selection":true,"send":{"method":"post","path":"/publish"}},{{{preview}}},{{{preview}}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewSelectionInvalid);
+    }
+
+    /// <summary>An extra member in a selection, which the panel would otherwise ignore, is refused.</summary>
+    [Fact]
+    public void Read_SelectionExtraMember_BreaksViewSelectionInvalid()
+    {
+        var member = SelectionMember("""["a"]""", "post").Replace("\"sources\"", "\"extra\":1,\"sources\"", StringComparison.Ordinal);
+        Write("views/a.json", SelectionDocument(member, "true"));
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewSelectionInvalid);
+    }
+
+    /// <summary>The selection member of a preview.</summary>
+    /// <param name="sources">The sources, as JSON.</param>
+    /// <param name="method">The lookup route's method.</param>
+    /// <returns>The member, with a leading comma.</returns>
+    private static string SelectionMember(string sources, string method) =>
+        $$$""","selection":{"sources":{{{sources}}},"route":{"method":"{{{method}}}","path":"/publish"},"release":{"route":{"method":"get","path":"/site"},"field":"release"}}""";
+
+    /// <summary>A document with a preview and a chat taking a selection.</summary>
+    /// <param name="member">The preview's selection member.</param>
+    /// <param name="chatSelection">The chat's selection value.</param>
+    /// <returns>The document.</returns>
+    private static string SelectionDocument(string member, string chatSelection) =>
+        $$$"""{"schema":1,"blocks":[{"kind":"chat","selection":{{{chatSelection}}},"send":{"method":"post","path":"/publish"}},{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]{{{member}}}}]}""";
+
     /// <summary>Asserts the violation of reading the admin page manifest names neither the scratch folder nor another host folder.</summary>
     /// <param name="other">A host folder outside the package the detail must not name either.</param>
     private void AssertDetailNamesNoHostPath(string other)

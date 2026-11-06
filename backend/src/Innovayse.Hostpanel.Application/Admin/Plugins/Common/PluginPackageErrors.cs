@@ -72,6 +72,7 @@ public static class PluginPackageErrors
             PluginManifestRule.HostAccessUnknown => HostpanelErrorCodes.PLUGIN_HOST_ACCESS_UNKNOWN,
             PluginManifestRule.ViewConditionInvalid => HostpanelErrorCodes.PLUGIN_VIEW_CONDITION_INVALID,
             PluginManifestRule.ViewActionBodyInvalid => HostpanelErrorCodes.PLUGIN_VIEW_ACTION_BODY_INVALID,
+            PluginManifestRule.ViewSelectionInvalid => HostpanelErrorCodes.PLUGIN_VIEW_SELECTION_INVALID,
             PluginManifestRule.ViewFollowUpInvalid => HostpanelErrorCodes.PLUGIN_VIEW_FOLLOW_UP_INVALID,
             PluginManifestRule.PageLayoutUnknown => HostpanelErrorCodes.PLUGIN_PAGE_LAYOUT_UNKNOWN,
             PluginManifestRule.ViewSplitInvalid => HostpanelErrorCodes.PLUGIN_VIEW_SPLIT_INVALID,

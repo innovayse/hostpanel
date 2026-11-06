@@ -492,6 +492,18 @@ takes no layout. A bad value is `PLUGIN_PAGE_LAYOUT_UNKNOWN`.
 Up to 5 `sources`, each exactly `id`, `label`, a `GET` `route` and a dotted `field`; `size` is `desktop` or `phone`, and
 the reader can switch both. A bad shape, or a preview in a slot or on an admin page, is `PLUGIN_VIEW_PREVIEW_INVALID`.
 
+**Letting the reader select elements.** A preview may declare `selection`, and a chat in the same document `"selection": true`; both are off when absent:
+
+```json
+"selection": {
+  "sources": ["preview"],
+  "route": { "method": "post", "path": "/services/{serviceId}/site/selection" },
+  "release": { "route": { "method": "get", "path": "/services/{serviceId}/site/state" }, "field": "previewRelease" }
+}
+```
+
+`sources` are the source ids that may select: leave a live site out. The framed page runs your own script and talks to the panel with `postMessage`, `{ "type": "hostpanel.preview.selection", "version": 1, "release": "...", "event": "ready" | "toggle" | "exit", "id": "..." }`, and receives `{ type, version, "event": "state", "active": bool, "selected": [ids] }` from the panel. The select button appears only after `ready`. `id` is a dotted path of letters and digits, at most 128 characters and 20 per selection. **A message is a claim, never trusted:** the panel accepts it only from its own frame's window, in exactly this shape, naming the release your route reports, on a listed source, and a `toggle` only while the mode is on; any script in the frame could still send one. So your `route` gets `{ "releaseId", "ids" }` and answers `{ "items": [{ "id", "label" }] }` with the ids it really knows, and the panel draws only those labels. The next chat message carries `"selection": { "releaseId", "ids" }`, which your server must check again; take no text from the frame. Treat `ids` and `releaseId` as untrusted input in both routes: they come from page script, whatever the panel checked first, so validate them against your own data and never use one as a path, a query fragment or text for a model without that check. A selection is emptied when the release changes. The panel then ignores the frame until it says `ready` again, so **the framed page must send `ready` again after a release change** (a new document does so by loading; a page that updates itself in place must send it itself), or the select button stays hidden. A "try again" (`resend`) sends the same selection while its release is on the preview; once the release has changed the panel sends nothing, tells the reader the page changed and to select again, and leaves the text in the message field, because the message without its selection would reach further than what the reader chose. The panel only reads the release when it reads the block, so **your chat route must refuse a `releaseId` that is no longer on the preview, with a problem reply and before it changes anything**: the panel's check is a courtesy, and yours is the one that holds. One preview per document may declare `selection`, since the claim does not say which preview made it. A bad shape, a second selecting preview, or a chat selection with no preview selection, is `PLUGIN_VIEW_SELECTION_INVALID`.
+
 **What may be framed.** The address the route returns is shown only when its origin is one of your manifest's
 `externalOrigins` (a pure `https` origin) or a domain of the reader's own active hosting services on a product the
 operator bound to your plugin's slot widgets, as the service's domain was typed at order (with its `www` name, and only for

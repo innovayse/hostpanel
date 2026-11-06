@@ -7,6 +7,7 @@
  * @module tests/utils/plugins.test
  */
 
+import { PLUGIN_SELECTION_MESSAGE_TYPE, PLUGIN_SELECTION_MESSAGE_VERSION } from '~/constants/pluginSelection'
 import { describe, expect, it, vi } from 'vitest'
 import { Globe, Puzzle } from 'lucide-vue-next'
 import { HttpMethod } from '~/types/httpmethod'
@@ -35,6 +36,7 @@ import {
   PLUGIN_STREAM_EVENT_TOO_LARGE,
   readPluginEventStream,
   pluginConditionHolds,
+  parsePluginSelectionMessage,
   readPluginField,
 } from '~/utils/plugins'
 import { UiAlertVariant, UiButtonVariant, UiTone } from '~/utils/ui/enums'
@@ -541,4 +543,38 @@ describe('action body from page data', () => {
     'drops a result card\'s action whose body is %j', (body) => {
       expect(parsePluginChatResult(card(body), {}, [])?.actions).toEqual([])
     })
+})
+
+describe('parsePluginSelectionMessage', () => {
+  /** A well-formed toggle. */
+  const toggle = { type: PLUGIN_SELECTION_MESSAGE_TYPE, version: PLUGIN_SELECTION_MESSAGE_VERSION, release: 'r4', event: 'toggle', id: 'pages.0.title' }
+
+  it('takes the exact shapes', () => {
+    expect(parsePluginSelectionMessage(toggle, 'r4')).toEqual({ event: 'toggle', id: 'pages.0.title' })
+    expect(parsePluginSelectionMessage({ ...toggle, event: 'ready', id: undefined, ...{} }, 'r4')).toBeNull()
+    const { id: _id, ...ready } = toggle
+    expect(parsePluginSelectionMessage({ ...ready, event: 'ready' }, 'r4')).toEqual({ event: 'ready' })
+    expect(parsePluginSelectionMessage({ ...ready, event: 'exit' }, 'r4')).toEqual({ event: 'exit' })
+  })
+
+  it.each([
+    ['another type', { ...toggle, type: 'other' }],
+    ['another version', { ...toggle, version: 2 }],
+    ['a string version', { ...toggle, version: '1' }],
+    ['another release', { ...toggle, release: 'r5' }],
+    ['an extra member', { ...toggle, text: 'planted' }],
+    ['an id with markup', { ...toggle, id: '<img src=x>' }],
+    ['an id with a newline', { ...toggle, id: 'name\n' }],
+    ['an id over the bound', { ...toggle, id: `a.${'b'.repeat(200)}` }],
+    ['an unknown event', { ...toggle, event: 'navigate' }],
+    ['an array', [toggle]],
+    ['a string', 'toggle'],
+    ['null', null],
+  ])('refuses %s', (_name, data) => {
+    expect(parsePluginSelectionMessage(data, 'r4')).toBeNull()
+  })
+
+  it('refuses everything while the release is unknown', () => {
+    expect(parsePluginSelectionMessage({ ...toggle, release: '' }, '')).toBeNull()
+  })
 })

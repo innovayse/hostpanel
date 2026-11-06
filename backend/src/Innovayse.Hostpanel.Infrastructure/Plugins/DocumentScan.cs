@@ -32,6 +32,12 @@ internal sealed class DocumentScan
     /// <summary>Gets or sets whether the document holds a <c>preview</c> block, which only a client page may show.</summary>
     public bool HasPreview { get; set; }
 
+    /// <summary>Gets or sets whether a <c>preview</c> of the document offers element selection.</summary>
+    public bool HasPreviewSelection { get; set; }
+
+    /// <summary>Gets or sets whether a <c>chat</c> of the document takes the selection.</summary>
+    public bool HasChatSelection { get; set; }
+
     /// <summary>Gets or sets how many <c>split</c> blocks enclose the element being walked; above zero, a split would nest.</summary>
     public int SplitDepth { get; set; }
 

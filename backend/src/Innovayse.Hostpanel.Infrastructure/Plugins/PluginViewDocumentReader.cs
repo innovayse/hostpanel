@@ -65,6 +65,24 @@ internal static partial class PluginViewDocumentReader
     /// <summary>The block kind that may carry a <c>followUp</c> of its own.</summary>
     private const string ActionKind = "action";
 
+    /// <summary>The member of a preview and of a chat declaring element selection; the host's own contract name until the SDK documents it.</summary>
+    private const string SelectionMember = "selection";
+
+    /// <summary>The member of a preview's selection listing the sources that may select.</summary>
+    private const string SelectionSourcesMember = "sources";
+
+    /// <summary>The member of a preview's selection saying which release the preview holds.</summary>
+    private const string SelectionReleaseMember = "release";
+
+    /// <summary>The members of a preview's selection: sources, route and release.</summary>
+    private const int SelectionMemberCount = 3;
+
+    /// <summary>The members of a selection's release: route and field.</summary>
+    private const int SelectionReleaseMemberCount = 2;
+
+    /// <summary>The block kind of a chat.</summary>
+    private const string ChatKind = "chat";
+
     /// <summary>The member of an action block that builds the body of its call from what the page has read.</summary>
     private const string BodySourceMember = "bodySource";
 
@@ -218,7 +236,7 @@ internal static partial class PluginViewDocumentReader
 
             foreach (var use in group)
             {
-                violation = CheckPreviewPlace(use, scan) ?? CheckActionBodyPlace(use, scan) ?? CheckRoutes(manifest, use, scan);
+                violation = CheckPreviewPlace(use, scan) ?? CheckSelectionPlace(use, scan) ?? CheckActionBodyPlace(use, scan) ?? CheckRoutes(manifest, use, scan);
                 if (violation is not null)
                 {
                     return new PluginViewRead(PluginViewDocuments.None, violation);
@@ -701,6 +719,16 @@ internal static partial class PluginViewDocumentReader
         {
             scan.HasPreview = true;
             CheckPreview(block, scan);
+            CheckPreviewSelection(block, scan);
+        }
+        else if (string.Equals(kind, ChatKind, StringComparison.Ordinal) && block.TryGetProperty(SelectionMember, out var chatSelection))
+        {
+            scan.HasChatSelection = true;
+            if (chatSelection.ValueKind != JsonValueKind.True)
+            {
+                scan.StateViolation ??= new PluginManifestViolation(
+                    PluginManifestRule.ViewSelectionInvalid, $"has a '{ChatKind}' whose '{SelectionMember}' is anything but true");
+            }
         }
         else if (string.Equals(kind, ActionKind, StringComparison.Ordinal) && block.TryGetProperty(BodySourceMember, out var bodySource))
         {
@@ -848,6 +876,82 @@ internal static partial class PluginViewDocumentReader
                 PluginManifestRule.ViewPreviewInvalid,
                 $"has a '{PluginViews.PreviewKind}' whose '{PluginViews.PreviewSourcesProperty}' or '{PluginViews.PreviewSizeProperty}' is not valid");
         }
+    }
+
+    /// <summary>
+    /// Checks a preview's <c>selection</c>, off when absent: exactly the sources that may select (declared by the block, so a
+    /// plugin must name them and a live source can stay out), a POST route that looks a claimed selection up, and a GET route
+    /// and field reading the release on the preview. A message from a frame is only ever measured against these. One preview
+    /// per document may offer it, because a chat's claim names a release and ids and not a preview, so the plugin could not
+    /// tell two apart when their releases are equal.
+    /// </summary>
+    /// <param name="preview">The preview block.</param>
+    /// <param name="scan">Receives the first broken rule.</param>
+    private static void CheckPreviewSelection(JsonElement preview, DocumentScan scan)
+    {
+        if (!preview.TryGetProperty(SelectionMember, out var selection))
+        {
+            return;
+        }
+
+        var second = scan.HasPreviewSelection;
+        scan.HasPreviewSelection = true;
+        if (second || !IsPreviewSelection(preview, selection))
+        {
+            scan.StateViolation ??= new PluginManifestViolation(
+                PluginManifestRule.ViewSelectionInvalid, $"has a '{PluginViews.PreviewKind}' whose '{SelectionMember}' is not valid or is the document's second");
+        }
+    }
+
+    /// <summary>Tells whether a preview's selection holds exactly its three members, each in its shape.</summary>
+    /// <param name="preview">The preview block.</param>
+    /// <param name="selection">Its selection.</param>
+    /// <returns><see langword="true"/> when it does.</returns>
+    private static bool IsPreviewSelection(JsonElement preview, JsonElement selection)
+    {
+        if (selection.ValueKind != JsonValueKind.Object
+            || selection.EnumerateObject().Count() != SelectionMemberCount
+            || !selection.TryGetProperty(ConditionRouteMember, out var route)
+            || ReadRoute(route) is not { Method: PluginRouteMethod.Post }
+            || !selection.TryGetProperty(SelectionReleaseMember, out var release)
+            || release.ValueKind != JsonValueKind.Object
+            || release.EnumerateObject().Count() != SelectionReleaseMemberCount
+            || !release.TryGetProperty(ConditionRouteMember, out var releaseRoute)
+            || ReadRoute(releaseRoute) is not { Method: PluginRouteMethod.Get }
+            || !release.TryGetProperty(ConditionFieldMember, out var field)
+            || field.ValueKind != JsonValueKind.String
+            || field.GetString() is not { Length: <= MaxConditionFieldLength } path
+            || !ConditionFieldPattern().IsMatch(path)
+            || !selection.TryGetProperty(SelectionSourcesMember, out var sources)
+            || sources.ValueKind != JsonValueKind.Array
+            || sources.GetArrayLength() == 0
+            || !preview.TryGetProperty(PluginViews.PreviewSourcesProperty, out var declared)
+            || declared.ValueKind != JsonValueKind.Array)
+        {
+            return false;
+        }
+
+        // The sources have not been validated yet when this runs, and GetString throws on anything but a string.
+        var known = declared.EnumerateArray()
+            .Where(source => source.ValueKind == JsonValueKind.Object
+                && source.TryGetProperty(PreviewSourceIdMember, out var id)
+                && id.ValueKind == JsonValueKind.String)
+            .Select(source => source.GetProperty(PreviewSourceIdMember).GetString())
+            .ToHashSet(StringComparer.Ordinal);
+        var named = sources.EnumerateArray().Select(source => source.ValueKind == JsonValueKind.String ? source.GetString() : null).ToList();
+        return named.All(id => id is not null && known.Contains(id)) && named.Distinct(StringComparer.Ordinal).Count() == named.Count;
+    }
+
+    /// <summary>Refuses a chat that takes a selection when no preview of its document offers one.</summary>
+    /// <param name="use">The page or slot showing the document.</param>
+    /// <param name="scan">What the walk found.</param>
+    /// <returns>The violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckSelectionPlace(ViewUse use, DocumentScan scan)
+    {
+        return scan.HasChatSelection && !scan.HasPreviewSelection
+            ? new PluginManifestViolation(
+                PluginManifestRule.ViewSelectionInvalid, $"{use.Where} has a '{ChatKind}' taking a selection no preview offers")
+            : null;
     }
 
     /// <summary>Tells whether a preview source holds exactly an id, a label, a GET route and a dotted field.</summary>

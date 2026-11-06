@@ -7,6 +7,9 @@
  * @module utils/plugins
  */
 
+import { PLUGIN_SELECTION_ID_PATTERN, PLUGIN_SELECTION_MAX_ID_LENGTH, PLUGIN_SELECTION_MESSAGE_TYPE, PLUGIN_SELECTION_MESSAGE_VERSION } from '~/constants/pluginSelection'
+import type { PluginSelectionMessage } from '~/types/pluginpreviewselection'
+import { PluginSelectionEvent } from '~/types/pluginselectionevent'
 import { PLUGIN_FRAME_TIMING } from '~/constants/pluginFrames'
 import type { Component } from 'vue'
 import { AppWindow, BarChart3, Bot, Boxes, Cloud, Globe, LayoutGrid, Mail, MessageSquare, Puzzle, Rocket, Settings, Shield, Sparkles } from 'lucide-vue-next'
@@ -826,3 +829,36 @@ export const pluginMenuLinks = (
     }
     return [{ label: item.label, icon: item.icon, url: clientPluginPagePath(item.pluginId, path) }]
   })
+
+/**
+ * Reads a message from a preview frame, which is a claim from an untrusted page: exactly the fixed members in the fixed
+ * shape, the expected release, and an id of the fixed form. Anything else answers null.
+ *
+ * @param data - What the frame posted.
+ * @param expectedRelease - The release the plugin's server says the preview holds.
+ * @returns The message, or null when it is refused.
+ */
+export const parsePluginSelectionMessage = (data: unknown, expectedRelease: string): PluginSelectionMessage | null => {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    return null
+  }
+  const message = data as Record<string, unknown>
+  const members = Object.keys(message).length
+  if (message.type !== PLUGIN_SELECTION_MESSAGE_TYPE
+    || message.version !== PLUGIN_SELECTION_MESSAGE_VERSION
+    || expectedRelease === ''
+    || message.release !== expectedRelease) {
+    return null
+  }
+  if (message.event === PluginSelectionEvent.Ready && members === 4) {
+    return { event: PluginSelectionEvent.Ready }
+  }
+  if (message.event === PluginSelectionEvent.Exit && members === 4) {
+    return { event: PluginSelectionEvent.Exit }
+  }
+  if (message.event === PluginSelectionEvent.Toggle && members === 5 && typeof message.id === 'string'
+    && message.id.length <= PLUGIN_SELECTION_MAX_ID_LENGTH && PLUGIN_SELECTION_ID_PATTERN.test(message.id)) {
+    return { event: PluginSelectionEvent.Toggle, id: message.id }
+  }
+  return null
+}

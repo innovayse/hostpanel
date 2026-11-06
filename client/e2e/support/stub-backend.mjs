@@ -458,7 +458,7 @@ const routePlugin = (method, path, res, query, language) => {
     return true
   }
   if (method === 'GET' && path === `${own}/workspace/site`) {
-    send(res, 200, { previewUrl: `${PLUGIN_FRAME_ORIGIN}/__e2e/frame` })
+    send(res, 200, { previewUrl: `${PLUGIN_FRAME_ORIGIN}/__e2e/frame`, release: 'r4' })
     return true
   }
   if (method === 'GET' && path === `${own}/sites/${PLUGIN_SITE.id}`) {
@@ -491,6 +491,12 @@ const routePlugin = (method, path, res, query, language) => {
 const route = (method, path, body, res, query = new URLSearchParams(), language = 'en') => {
   const isGet = method === 'GET'
 
+  // The server's lookup behind a preview's selection: it knows one element, labels it itself and leaves any other claim out.
+  if (method === 'POST' && path === `/api/client/plugins/${PLUGIN_ID}/workspace/selection`) {
+    const asked = body?.ids ?? []
+    send(res, 200, { releaseId: 'r4', items: asked.filter(id => id === 'pages.0.title').map(id => ({ id, label: 'Server label' })) })
+    return true
+  }
   if (path.startsWith('/api/client/plugins/') && routePlugin(method, path, res, query, language)) {
     return true
   }
@@ -1165,7 +1171,19 @@ const server = createServer(async (req, res) => {
   // Test-only control endpoints; never logged themselves.
   if (path === '/__e2e/frame') {
     res.writeHead(200, { 'Content-Type': 'text/html' })
-    res.end('<!doctype html><title>Framed</title><p>A framed site</p>')
+    res.end(`<!doctype html><title>Framed</title><p>A framed site</p>
+<h1 data-testid="site-title">Title</h1>
+<button data-testid="forge-bad-id">bad id</button><button data-testid="forge-bad-version">bad version</button><button data-testid="forge-unknown">unknown</button>
+<script>
+const say = (extra) => parent.postMessage({ type: 'hostpanel.preview.selection', version: 1, release: 'r4', ...extra }, '*')
+say({ event: 'ready' })
+const on = (id, extra) => document.querySelector('[data-testid="' + id + '"]').addEventListener('click', () => say(extra))
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { say({ event: 'exit' }) } })
+on('site-title', { event: 'toggle', id: 'pages.0.title' })
+on('forge-bad-id', { event: 'toggle', id: '<img src=x>' })
+on('forge-bad-version', { event: 'toggle', id: 'pages.0.title', version: 2 })
+on('forge-unknown', { event: 'toggle', id: 'pages.9.title' })
+</script>`)
     return
   }
   if (path === '/__e2e/requests') {

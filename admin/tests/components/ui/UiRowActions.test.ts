@@ -82,4 +82,25 @@ describe('UiRowActions', () => {
     expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
     wrapper.unmount()
   })
+
+  it('draws the menu fixed to the screen, so a table that scrolls inside its card cannot clip it', async () => {
+    const wrapper = mountIt()
+    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+
+    const menu = wrapper.get('[data-testid="row-actions-menu"]')
+    expect(menu.classes()).toContain('fixed')
+    expect(menu.classes()).not.toContain('absolute')
+    wrapper.unmount()
+  })
+
+  it('closes the menu when something scrolls, because a fixed menu would be left behind', async () => {
+    const wrapper = mountIt()
+    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+
+    window.dispatchEvent(new Event('scroll'))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
 })

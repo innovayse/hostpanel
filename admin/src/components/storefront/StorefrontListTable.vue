@@ -18,8 +18,9 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiRowActions from '@/components/ui/UiRowActions.vue'
+import type { UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -156,6 +157,42 @@ const move = (index: number, step: number): void => {
   onDragEnd()
 }
 
+/**
+ * The actions of one row's menu: move up, move down, edit and delete.
+ *
+ * @param item - The entry of the row.
+ * @param index - Position of the entry in the list.
+ * @returns The menu items; moving is disabled at the ends of the list.
+ */
+const rowActions = (item: T, index: number): UiRowAction[] => {
+  /**
+   * Moves the entry one place up.
+   * @returns Nothing.
+   */
+  const onMoveUp = (): void => move(index, -1)
+  /**
+   * Moves the entry one place down.
+   * @returns Nothing.
+   */
+  const onMoveDown = (): void => move(index, 1)
+  /**
+   * Asks the page to edit the entry.
+   * @returns Nothing.
+   */
+  const onEdit = (): void => emit('edit', item)
+  /**
+   * Asks the page to delete the entry.
+   * @returns Nothing.
+   */
+  const onDelete = (): void => emit('stageDelete', item)
+  return [
+    { label: props.moveUpLabel, disabled: index === 0, testid: `${props.testids.moveUp}-${item.id}`, onSelect: onMoveUp },
+    { label: props.moveDownLabel, disabled: index === local.value.length - 1, testid: `${props.testids.moveDown}-${item.id}`, onSelect: onMoveDown },
+    { label: props.editLabel, testid: `${props.testids.edit}-${item.id}`, onSelect: onEdit },
+    { label: props.deleteLabel, danger: true, testid: `${props.testids.delete}-${item.id}`, onSelect: onDelete },
+  ]
+}
+
 /** Called after a drag ends: reports the new position of every entry. */
 const onDragEnd = (): void => {
   emit('reorder', local.value.map((item, index) => ({ id: item.id, sortOrder: index })))
@@ -214,40 +251,7 @@ const onDragEnd = (): void => {
               <slot name="row" :item="element" />
 
               <UiTableCell align="right">
-                <UiIconButton
-                  :label="moveUpLabel"
-                  size="sm"
-                  :disabled="index === 0"
-                  :data-testid="`${testids.moveUp}-${element.id}`"
-                  @click="move(index, -1)"
-                >
-                  <UiIcon :markup="Icon.ArrowUp" size="sm" />
-                </UiIconButton>
-                <UiIconButton
-                  :label="moveDownLabel"
-                  size="sm"
-                  :disabled="index === local.length - 1"
-                  :data-testid="`${testids.moveDown}-${element.id}`"
-                  @click="move(index, 1)"
-                >
-                  <UiIcon :markup="Icon.ArrowDown" size="sm" />
-                </UiIconButton>
-                <UiIconButton
-                  :label="editLabel"
-                  size="sm"
-                  :data-testid="`${testids.edit}-${element.id}`"
-                  @click="emit('edit', element)"
-                >
-                  <UiIcon :markup="Icon.Edit" size="sm" />
-                </UiIconButton>
-                <UiIconButton
-                  :label="deleteLabel"
-                  size="sm"
-                  :data-testid="`${testids.delete}-${element.id}`"
-                  @click="emit('stageDelete', element)"
-                >
-                  <UiIcon :markup="Icon.Trash" size="sm" />
-                </UiIconButton>
+                <UiRowActions :actions="rowActions(element, index)" />
               </UiTableCell>
             </UiTableRow>
           </template>

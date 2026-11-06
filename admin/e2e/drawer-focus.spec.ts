@@ -43,6 +43,8 @@ test('a dialog puts focus on its first control when it has appeared', async ({ p
   await stubCrud(page, { root: ApiPath.AdminFaqs, stored: [{ ...sampleFaq }], newId: 72 })
   await page.goto('/storefront/faqs')
 
+  await page.getByTestId(`faq-row-${sampleFaq.id}`).getByTestId('row-actions-trigger').click()
+
   await page.getByTestId(`faq-delete-${sampleFaq.id}`).click()
 
   await expect(page.getByTestId('dialog-close')).toBeFocused()

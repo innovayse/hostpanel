@@ -50,20 +50,38 @@ const triggerRef = ref<HTMLButtonElement | null>(null)
 /** The dropdown panel — used for focus management. */
 const menuRef = ref<HTMLElement | null>(null)
 
+/** Gap between the trigger and the menu, in pixels. */
+const MENU_GAP_PX = 4
+
 /**
- * Whether to render the menu above the trigger instead of below it.
- * Set just before the menu opens so the first render is already in the right position.
+ * Where the menu sits on the screen. The menu is `fixed`, not `absolute`, so a table that scrolls inside its
+ * card (`overflow-x-auto`) cannot clip it or grow a scrollbar for it; its place is worked out from the trigger
+ * just before it opens, so the first render is already right. It opens above the trigger when there is little
+ * room below.
  */
-const flipUp = ref(false)
+const menuPlace = ref<{ right: string; top?: string; bottom?: string }>({ right: '0px' })
 
 /** Toggles the dropdown. */
 const toggle = (): void => {
   if (!open.value && triggerRef.value) {
-    // Decide placement before the menu is inserted into the DOM.
     const rect = triggerRef.value.getBoundingClientRect()
-    flipUp.value = window.innerHeight - rect.bottom < 160
+    const right = `${window.innerWidth - rect.right}px`
+    menuPlace.value = window.innerHeight - rect.bottom < 160
+      ? { right, bottom: `${window.innerHeight - rect.top + MENU_GAP_PX}px` }
+      : { right, top: `${rect.bottom + MENU_GAP_PX}px` }
   }
   open.value = !open.value
+}
+
+/**
+ * Closes the menu when the page or a scrolling table moves under it, because a fixed menu would stay behind.
+ *
+ * @returns Nothing; the menu is closed.
+ */
+const closeOnMove = (): void => {
+  if (open.value) {
+    open.value = false
+  }
 }
 
 /**
@@ -131,11 +149,15 @@ watch(open, async (val) => {
 onMounted(() => {
   document.addEventListener('mousedown', onOutsideClick)
   document.addEventListener('keydown', onKeydown)
+  window.addEventListener('scroll', closeOnMove, { capture: true, passive: true })
+  window.addEventListener('resize', closeOnMove)
 })
 
 onUnmounted(() => {
   document.removeEventListener('mousedown', onOutsideClick)
   document.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('scroll', closeOnMove, true)
+  window.removeEventListener('resize', closeOnMove)
 })
 </script>
 
@@ -160,10 +182,8 @@ onUnmounted(() => {
       v-if="open"
       ref="menuRef"
       role="menu"
-      :class="[
-        'absolute right-0 z-20 min-w-[10rem] rounded-[9px] border border-border bg-surface-base py-1 shadow-lg',
-        flipUp ? 'bottom-full mb-1' : 'top-full mt-1',
-      ]"
+      class="fixed z-20 min-w-[10rem] rounded-[9px] border border-border bg-surface-base py-1 shadow-lg"
+      :style="menuPlace"
       data-testid="row-actions-menu"
     >
       <button

@@ -53,6 +53,7 @@ test('deleting a location asks first and then removes the row', async ({ page })
   const api = await stubLocations(page, [{ ...frankfurtLocation }])
 
   await page.goto('/storefront/locations')
+  await page.getByTestId(`location-row-${frankfurtLocation.id}`).getByTestId('row-actions-trigger').click()
   await page.getByTestId(`location-delete-${frankfurtLocation.id}`).click()
   expect(api.callsTo(HttpMethod.Delete, `${COLLECTION}/${frankfurtLocation.id}`)).toHaveLength(0)
   await page.getByTestId('dialog-confirm').click()

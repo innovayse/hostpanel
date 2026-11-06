@@ -15,6 +15,8 @@
  * @module utils/ui/richText
  */
 
+import { h } from 'vue'
+import type { VNode } from 'vue'
 import { isSafeUrl } from '~/utils/safeUrl'
 import { UiRichNodeType } from '~/utils/ui/enums'
 
@@ -324,4 +326,23 @@ export const parseRichText = (html: string): RichNode[] => {
   }
 
   return root
+}
+
+/**
+ * Converts one parsed node into a VNode, the one place such a tree becomes something the browser draws.
+ *
+ * @param node - A node of a parsed document.
+ * @param tagClasses - The classes each output tag carries.
+ * @returns The VNode (a text node for text).
+ */
+export const renderRichNode = (node: RichNode, tagClasses: Readonly<Record<string, string>>): VNode | string => {
+  if (node.type === UiRichNodeType.Text) {
+    return node.text
+  }
+  const props: Record<string, string> = { ...node.attrs }
+  const classes = tagClasses[node.tag]
+  if (classes) {
+    props.class = classes
+  }
+  return h(node.tag, props, node.children.map((child) => renderRichNode(child, tagClasses)))
 }

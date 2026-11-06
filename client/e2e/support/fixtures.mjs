@@ -867,6 +867,26 @@ export const pluginPage = (address, language) => {
   const text = PLUGIN_TEXTS[language] ?? PLUGIN_TEXTS.en
   const segments = address.split('/').filter(Boolean)
   const base = { pluginId: PLUGIN_ID, externalOrigins: [PLUGIN_ORIGIN] }
+  if (segments.length === 1 && segments[0] === 'workspace') {
+    return {
+      ...base,
+      id: 'workspace',
+      path: '/workspace',
+      title: text.site,
+      layout: 'workspace',
+      frameOrigins: [PLUGIN_FRAME_ORIGIN],
+      view: {
+        schema: 1,
+        blocks: [{
+          kind: 'split',
+          panes: [
+            { blocks: [{ kind: 'text', text: text.site }] },
+            { blocks: [{ kind: 'preview', id: 'site-preview', sources: [{ id: 'preview', label: text.preview, route: { method: 'get', path: '/workspace/site' }, field: 'previewUrl' }] }] },
+          ],
+        }],
+      },
+    }
+  }
   if (segments.length === 1 && segments[0] === 'sites') {
     return {
       ...base,
@@ -908,6 +928,9 @@ export const pluginPage = (address, language) => {
   }
   return null
 }
+
+/** The stub backend's own origin, which the workspace page's preview frames. */
+export const PLUGIN_FRAME_ORIGIN = `http://127.0.0.1:${process.env.E2E_STUB_PORT ?? 5999}`
 
 /** The fake plugin every slot spec uses. */
 export const SLOT_PLUGIN_ID = 'acme-sites'

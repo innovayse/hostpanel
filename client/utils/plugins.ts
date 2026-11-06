@@ -7,6 +7,7 @@
  * @module utils/plugins
  */
 
+import { PLUGIN_FRAME_TIMING } from '~/constants/pluginFrames'
 import type { Component } from 'vue'
 import { AppWindow, BarChart3, Bot, Boxes, Cloud, Globe, LayoutGrid, Mail, MessageSquare, Puzzle, Rocket, Settings, Shield, Sparkles } from 'lucide-vue-next'
 import { formatDateTime } from '~/utils/formatDate'
@@ -376,22 +377,31 @@ export const pluginFrameAddress = (value: unknown, frameOrigins: readonly string
   return url.href
 }
 
+/** What the preview block reads of the navigation that loaded the document. */
+export interface PluginFrameDocument {
+  /** The address the document was loaded from. */
+  name?: string
+  /** The document's `Server-Timing` entries. */
+  serverTiming?: readonly { name: string }[]
+}
+
 /**
- * Whether the document in the browser was served for this very page, and so carries the `frame-src` the panel's server
- * wrote for it. A CSP belongs to the document, so a router move keeps the policy of the address it was first loaded at:
- * another document's wide one, or a closed one when that address named no page the caller may open (that read answers
- * `'none'`), and that holds inside one plugin too, which would leave the frame blank. So the scope is the exact page.
+ * Whether this document was served for this very page with the API's frame origins. A CSP belongs to the document, so a
+ * router move keeps the policy of the address it was first loaded at: another document's wide one, or a closed one when
+ * that address named no page the caller may open, or when the visitor was signed out as it loaded and signed in inside it.
+ * Each would leave the frame blank or too open, so the scope is the exact page, and its policy must be the API's.
  *
- * @param documentAddress - The address of the document's navigation entry.
+ * @param document - The navigation entry of the document.
  * @param pagePath - The path of the page on screen.
- * @returns True when both name one path, a trailing slash aside.
+ * @returns True only when the document was loaded at this path and its server wrote the origins into its policy.
  */
-export const pluginDocumentLoaded = (documentAddress: string | undefined, pagePath: string): boolean => {
-  if (!documentAddress) {
+export const pluginDocumentLoaded = (document: PluginFrameDocument | undefined, pagePath: string): boolean => {
+  // Its address alone says nothing about the policy: a document opened signed out keeps a closed one after a sign-in in it.
+  if (!document?.name || !document.serverTiming?.some(entry => entry.name === PLUGIN_FRAME_TIMING)) {
     return false
   }
   try {
-    return new URL(documentAddress).pathname.replace(/\/+$/, '') === pagePath.replace(/\/+$/, '')
+    return new URL(document.name).pathname.replace(/\/+$/, '') === pagePath.replace(/\/+$/, '')
   } catch {
     return false
   }
@@ -416,6 +426,26 @@ export const parsePluginChatStep = (data: unknown): PluginChatStep | null => {
   return { key: id ?? label, label, state: state as PluginChatStepState }
 }
 
+/** The most lines a result card keeps behind its details switch. */
+const MAX_RESULT_DETAILS = 20
+
+/**
+ * The condition that ends a result action's follow-up; anything of another shape is no condition. An event's `equals`
+ * cannot be an own member name of a C# record, so `equalsAny` is accepted as its spelling.
+ *
+ * @param until - The action's `until` member.
+ * @returns The condition, or undefined.
+ */
+const readResultUntil = (until: unknown): PluginViewCondition | undefined => {
+  const route = readPluginField(until, 'route') as PluginViewRoute | undefined
+  const field = readPluginField(until, 'field')
+  const equals = readPluginField(until, 'equalsAny')
+  if (typeof route?.path !== 'string' || typeof route.method !== 'string' || typeof field !== 'string' || !Array.isArray(equals)) {
+    return undefined
+  }
+  return { route: { method: route.method, path: route.path }, field, equals: equals as PluginConditionValue[] }
+}
+
 /**
  * Reads one action of a result event. A link passes {@link pluginLinkTarget}; a route is shown only when it is a call
  * the page can make: an action is never a GET, and an unfilled parameter has nothing to send.
@@ -431,10 +461,14 @@ const parseResultAction = (
   key: number,
   values: Readonly<Record<string, string>>,
   origins: readonly string[],
+  refresh: readonly string[],
 ): PluginChatResultAction | null => {
   const label = readPluginField(data, 'label')
   const href = readPluginField(data, 'href')
   const route = readPluginField(data, 'route') as PluginViewRoute | undefined
+  if (readPluginField(data, 'resend') === true && href === undefined && route === undefined) {
+    return typeof label === 'string' && label !== '' ? { key, label, link: null, block: null, resend: true } : null
+  }
   // Exactly one of the two: a view cannot leave it to the host which one wins.
   if (typeof label !== 'string' || label === '' || (href === undefined) === (route === undefined)) {
     return null
@@ -448,17 +482,31 @@ const parseResultAction = (
     return null
   }
   const confirm = readPluginField(data, 'confirm')
+  const until = readResultUntil(readPluginField(data, 'until'))
   const block: PluginActionBlock = {
     kind: PluginBlockKind.Action,
     label,
     route: { method: route.method, path: route.path },
     ...(typeof confirm === 'string' && confirm !== '' ? { confirm } : {}),
+    // A card's action changes the same things a turn does, so it reads again what the chat reads again after one.
+    ...(refresh.length > 0 ? { refresh: [...refresh] } : {}),
+    // The work may run on after the reply; `until` keeps those blocks reading, within the host's own bounds.
+    ...(refresh.length > 0 && until ? { followUp: { refresh: [...refresh], until } } : {}),
   }
   return { key, label, link: null, block }
 }
 
 /** The tones a result card may carry; any other reads as information. */
 const RESULT_TONES: readonly unknown[] = [PluginBlockTone.Info, PluginBlockTone.Success, PluginBlockTone.Warning, PluginBlockTone.Danger]
+
+/**
+ * The lines a result card keeps behind its details switch; anything but non-empty text is left out.
+ *
+ * @param details - The event's `details` member.
+ * @returns The lines, at most {@link MAX_RESULT_DETAILS}.
+ */
+const readResultDetails = (details: unknown): string[] =>
+  (Array.isArray(details) ? details : []).filter((line): line is string => typeof line === 'string' && line !== '').slice(0, MAX_RESULT_DETAILS)
 
 /**
  * Reads a result event: `{ tone?, title?, text?, actions? }`.
@@ -472,6 +520,7 @@ export const parsePluginChatResult = (
   data: unknown,
   values: Readonly<Record<string, string>>,
   origins: readonly string[],
+  refresh: readonly string[] = [],
 ): Omit<PluginChatResult, 'key'> | null => {
   const title = readPluginField(data, 'title') ?? ''
   const text = readPluginField(data, 'text') ?? ''
@@ -484,9 +533,10 @@ export const parsePluginChatResult = (
     tone: RESULT_TONES.includes(tone) ? tone as PluginBlockTone : PluginBlockTone.Info,
     title,
     text,
+    details: readResultDetails(readPluginField(data, 'details')),
     // Cut before filtering: the sixth action is dropped even when an earlier one is refused.
     actions: actions.slice(0, MAX_RESULT_ACTIONS).flatMap((action: unknown, position: number) => {
-      const parsed = parseResultAction(action, position, values, origins)
+      const parsed = parseResultAction(action, position, values, origins, refresh)
       return parsed ? [parsed] : []
     }),
   }

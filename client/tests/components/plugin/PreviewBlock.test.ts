@@ -38,7 +38,9 @@ const preview: PluginPreviewBlock = {
  * @returns Nothing.
  */
 const documentAt = (path: string): void => {
-  vi.spyOn(performance, 'getEntriesByType').mockReturnValue([{ name: `${window.location.origin}${path}` } as PerformanceEntry])
+  vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
+    { name: `${window.location.origin}${path}`, serverTiming: [{ name: 'plugin-frames' }] } as unknown as PerformanceEntry,
+  ])
 }
 
 /**
@@ -126,7 +128,7 @@ describe('PluginPreviewBlock', () => {
     expect(wrapper.get('iframe').attributes('title')).toBe('Live')
 
     await wrapper.get('[data-testid="plugin-preview-size-phone"]').trigger('click')
-    expect(wrapper.get('[data-testid="plugin-preview-viewport"]').classes()).toContain('w-[375px]')
+    expect(wrapper.get('[data-testid="plugin-preview-viewport"]').classes()).toContain('max-w-[375px]')
   })
 
   it('starts at the size the view names and hides the source switch for one source', async () => {
@@ -135,7 +137,7 @@ describe('PluginPreviewBlock', () => {
     await settle()
 
     expect(wrapper.find('[data-testid="plugin-preview-source"]').exists()).toBe(false)
-    expect(wrapper.get('[data-testid="plugin-preview-viewport"]').classes()).toContain('w-[375px]')
+    expect(wrapper.get('[data-testid="plugin-preview-viewport"]').classes()).toContain('max-w-[375px]')
   })
 
   it('loads the page in full, once, when the document was served for another page of the same plugin', async () => {
@@ -179,5 +181,74 @@ describe('PluginPreviewBlock', () => {
     await mountPreview(`${ORIGIN}/p`)
     expect(assign).toHaveBeenCalledTimes(1)
     vi.unstubAllGlobals()
+  })
+
+  it('loads the page in full once when its document holds no origins, the address being the same (a sign-in inside it)', async () => {
+    const path = `/client/apps/${TEST_PLUGIN}/sites/7`
+    vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
+      { name: `${window.location.origin}${path}`, serverTiming: [] } as unknown as PerformanceEntry,
+    ])
+    const assign = vi.fn()
+    vi.stubGlobal('location', { ...window.location, origin: window.location.origin, href: `${window.location.origin}${path}`, assign })
+
+    const wrapper = await mountPreview(`${ORIGIN}/stage`)
+
+    expect(assign).toHaveBeenCalledTimes(1)
+    expect(wrapper.find('[data-testid="plugin-preview-frame"]').exists()).toBe(false)
+    vi.unstubAllGlobals()
+  })
+
+  it('draws a new frame when another block refreshes it, the address unchanged, with the sandbox as it was', async () => {
+    api = await startPluginApi({
+      [`GET ${ROUTES_URL}/sites/7`]: { body: { previewUrl: `${ORIGIN}/stage`, liveUrl: `${ORIGIN}/live` } },
+      [`POST ${ROUTES_URL}/sites/7/publish`]: { body: {} },
+    })
+    const wrapper = mountBlocks([
+      preview,
+      { kind: PluginBlockKind.Action, label: 'Change', route: TEST_ROUTES.publish, refresh: ['site-preview'] },
+    ], { frameOrigins: [ORIGIN] })
+    await settle()
+    const first = wrapper.get('[data-testid="plugin-preview-frame"]').element
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    const second = wrapper.get('[data-testid="plugin-preview-frame"]')
+    expect(second.element).not.toBe(first)
+    expect(second.attributes('src')).toBe(`${ORIGIN}/stage`)
+    expect(second.attributes('sandbox')).toBe('allow-scripts allow-forms')
+  })
+
+  it('writes the selected source\'s note over the frame, as text', async () => {
+    api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7`]: { body: { previewUrl: `${ORIGIN}/stage`, liveUrl: `${ORIGIN}/live`, notes: { preview: 'Version 3, <b>not live</b>' } } } })
+    const wrapper = mountBlocks([{ ...preview, note: { route: TEST_ROUTES.site, field: 'notes' } }], { frameOrigins: [ORIGIN] })
+    await settle()
+
+    const note = wrapper.get('[data-testid="plugin-preview-note"]')
+    expect(note.text()).toBe('Version 3, <b>not live</b>')
+    expect(note.find('b').exists()).toBe(false)
+  })
+
+  it('with a note, keeps the frame through a refresh and draws a new one when the note changes', async () => {
+    let note = 'Version 3'
+    api = await startPluginApi({
+      [`GET ${ROUTES_URL}/sites/7`]: () => ({ body: { previewUrl: `${ORIGIN}/stage`, liveUrl: `${ORIGIN}/live`, notes: { preview: note } } }),
+      [`POST ${ROUTES_URL}/sites/7/publish`]: { body: {} },
+    })
+    const wrapper = mountBlocks([
+      { ...preview, note: { route: TEST_ROUTES.site, field: 'notes' } },
+      { kind: PluginBlockKind.Action, label: 'Change', route: TEST_ROUTES.publish, refresh: ['site-preview'] },
+    ], { frameOrigins: [ORIGIN] })
+    await settle()
+    const first = wrapper.get('[data-testid="plugin-preview-frame"]').element
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+    expect(wrapper.get('[data-testid="plugin-preview-frame"]').element).toBe(first)
+
+    note = 'Version 4'
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+    expect(wrapper.get('[data-testid="plugin-preview-frame"]').element).not.toBe(first)
   })
 })

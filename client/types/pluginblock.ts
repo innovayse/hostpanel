@@ -13,6 +13,7 @@ import type { PluginBlockTone } from '~/types/pluginblocktone'
 import type { PluginFieldType } from '~/types/pluginfieldtype'
 import type { PluginFollowUp } from '~/types/pluginfollowup'
 import type { PluginPreviewSize } from '~/types/pluginpreviewsize'
+import type { PluginTableDisplay } from '~/types/plugintabledisplay'
 import type { PluginValueFormat } from '~/types/pluginvalueformat'
 import type { PluginViewCondition } from '~/types/pluginviewcondition'
 import type { PluginViewRoute } from '~/types/pluginviewroute'
@@ -45,10 +46,16 @@ interface PluginBlockBase {
 export interface PluginHeaderBlock extends PluginBlockBase {
   /** The kind. */
   kind: PluginBlockKind.Header
-  /** The title. */
-  title: string
-  /** Buttons shown beside the title. */
-  actions?: PluginActionBlock[]
+  /** The title; a compact header may read it from `titleSource` or go without. */
+  title?: string
+  /** Where the title is read from; replaces `title` once read. */
+  titleSource?: PluginSource
+  /** Where the smaller line under the title is read from. */
+  subtitleSource?: PluginSource
+  /** One slim line holding the back link, the title and the actions, for a workspace page's top. */
+  compact?: boolean
+  /** What is shown beside the title: buttons, and any other block a compact header lines up. */
+  actions?: PluginBlock[]
 }
 
 /** Plain text. */
@@ -97,6 +104,8 @@ export interface PluginTableBlock extends PluginBlockBase {
   rowLink?: PluginPageLink
   /** Rows per page; every row on one page when absent. */
   pageSize?: number
+  /** `cards` draws each row as a card instead of a table row. */
+  display?: PluginTableDisplay
 }
 
 /** One field of a form block. */
@@ -144,6 +153,8 @@ export interface PluginActionBlock extends PluginBlockBase {
   kind: PluginBlockKind.Action
   /** The button label. */
   label: string
+  /** Where a label that depends on data is read from; `label` stands until it is read or when it is empty. */
+  labelSource?: PluginSource
   /** The route called. */
   route: PluginViewRoute
   /** The question asked before the call; no question when absent. */
@@ -220,6 +231,8 @@ export interface PluginTabsBlock extends PluginBlockBase {
   kind: PluginBlockKind.Tabs
   /** The tabs, in order. */
   tabs: PluginTab[]
+  /** Small actions on the tab row's right, shown whichever tab is open. */
+  actions?: PluginActionBlock[]
 }
 
 /** A ready-made message a chat offers before the first one is written. */
@@ -306,6 +319,8 @@ export interface PluginPreviewBlock extends PluginBlockBase {
   size?: PluginPreviewSize
   /** The addresses, 1 to 5; the first is shown first. */
   sources: PluginPreviewSource[]
+  /** Where a note over the frame is read from: an object of sentences by source id. */
+  note?: PluginSource
 }
 
 /** One block of a plugin view. */

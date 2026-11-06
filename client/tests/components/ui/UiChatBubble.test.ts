@@ -14,22 +14,22 @@ describe('UiChatBubble', () => {
     const wrapper = mountWithKit(UiChatBubble, { props: { side: UiChatBubbleSide.Own }, slots: { default: 'Hi' } })
 
     expect(wrapper.classes()).toContain('justify-end')
-    expect(wrapper.get('p').classes()).toContain('bg-primary-500/10')
-    expect(wrapper.get('p').attributes('data-side')).toBe('own')
+    expect(wrapper.get('[data-side]').classes()).toContain('bg-primary-500/10')
+    expect(wrapper.get('[data-side]').attributes('data-side')).toBe('own')
   })
 
   it('defaults to the other party, aligned to the start', () => {
     const wrapper = mountWithKit(UiChatBubble, { slots: { default: 'Hello' } })
 
     expect(wrapper.classes()).toContain('justify-start')
-    expect(wrapper.get('p').attributes('data-side')).toBe('other')
+    expect(wrapper.get('[data-side]').attributes('data-side')).toBe('other')
   })
 
   it('keeps line breaks and shows slot text as text', () => {
     const wrapper = mountWithKit(UiChatBubble, { slots: { default: '{{ "<b>x</b>" }}' } })
 
-    expect(wrapper.get('p').classes()).toContain('whitespace-pre-line')
-    expect(wrapper.get('p').text()).toBe('<b>x</b>')
+    expect(wrapper.get('[data-side]').classes()).toContain('whitespace-pre-line')
+    expect(wrapper.get('[data-side]').text()).toBe('<b>x</b>')
     expect(wrapper.find('b').exists()).toBe(false)
   })
 })

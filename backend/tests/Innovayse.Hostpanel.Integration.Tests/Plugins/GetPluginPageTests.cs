@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Plugins;
@@ -12,6 +13,7 @@ using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Hostpanel.Sdk.Packaging.Naming;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 
@@ -547,6 +549,23 @@ public sealed class GetPluginPageTests : IClassFixture<PluginUiFixture>
         var page = await JsonOfAsync(await http.GetAsync(ClientUrl(_fixture.PluginId, PluginUiFixture.HomePage)));
 
         OriginsOf(page).Should().Equal(PluginUiFixture.ExternalOrigin);
+    }
+
+    /// <summary>
+    /// A client typed the panel's own host as a service's domain: it stays off the list, though the page is the client's.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Client_Page_ThePanelsOwnOrigin_IsNeverAFrameOrigin()
+    {
+        var (owner, http) = await _fixture.OwnerAsync("frame-own");
+        var portal = _fixture.Factory.Services.GetRequiredService<IOptions<ClientPortalOptions>>().Value.BaseUrl;
+        var productId = await SeedActiveServiceAsync(owner.ClientId, new Uri(portal).Host);
+        await BindAsync(_fixture.PluginId, productId);
+
+        var page = await JsonOfAsync(await http.GetAsync(ClientUrl(_fixture.PluginId, PluginUiFixture.HomePage)));
+
+        OriginsOf(page).Should().NotContain(new Uri(portal).GetLeftPart(UriPartial.Authority).ToLowerInvariant());
     }
 
     /// <summary>An admin page carries no frame origins: that panel renders no preview and acts for no client.</summary>

@@ -10,8 +10,10 @@
     "previewSource": "Որ կայքը",
     "previewDesktop": "Համակարգիչ",
     "previewPhone": "Հեռախոս",
-    "previewOpen": "Բացել նոր ներդիրում",
+    "previewOpen": "Բացել",
     "previewEmpty": "Ցուցադրելու բան դեռ չկա։",
-    "chatStepStopped": "Կանգնեցված է"
+    "chatStepStopped": "Կանգնեցված է",
+    "chatStepsCount": "Կատարված է {done} քայլ {total}-ից",
+    "chatResultDetails": "Մանրամասներ"
   }
 }

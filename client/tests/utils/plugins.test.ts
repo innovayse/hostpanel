@@ -457,7 +457,19 @@ describe('pluginDocumentLoaded', () => {
     ['nonsense', false],
     [undefined, false],
   ])('for %s answers %s', (address, expected) => {
-    expect(pluginDocumentLoaded(address, '/client/apps/acme/sites/7')).toBe(expected)
+    expect(pluginDocumentLoaded({ name: address, serverTiming: [{ name: 'plugin-frames' }] }, '/client/apps/acme/sites/7')).toBe(expected)
+  })
+
+  it('refuses a document whose server wrote no origins: one opened signed out stays closed after a sign-in inside it', () => {
+    const address = 'https://p.test/client/apps/acme/sites/7'
+
+    expect(pluginDocumentLoaded({ name: address, serverTiming: [] }, '/client/apps/acme/sites/7')).toBe(false)
+    expect(pluginDocumentLoaded({ name: address }, '/client/apps/acme/sites/7')).toBe(false)
+    expect(pluginDocumentLoaded(undefined, '/client/apps/acme/sites/7')).toBe(false)
+  })
+
+  it('compares a language-prefixed page with its own address', () => {
+    expect(pluginDocumentLoaded({ name: 'https://p.test/hy/client/apps/acme/sites/7', serverTiming: [{ name: 'plugin-frames' }] }, '/hy/client/apps/acme/sites/7')).toBe(true)
   })
 })
 
@@ -485,5 +497,21 @@ describe('parsePluginChatResult', () => {
 
   it('refuses actions that are not a list', () => {
     expect(parsePluginChatResult({ text: 'T', actions: 'x' }, {}, [])).toBeNull()
+  })
+})
+
+describe('parsePluginChatResult until', () => {
+  /** A card whose action starts work that runs on. */
+  const card = (until: unknown) => ({ title: 'T', actions: [{ label: 'Undo', route: { method: 'post', path: '/undo' }, until }] })
+
+  it('keeps the chat blocks reading until the condition holds', () => {
+    const until = { route: { method: 'get', path: '/state' }, field: 'state', equalsAny: ['done'] }
+
+    const block = parsePluginChatResult(card(until), {}, [], ['a'])?.actions[0]?.block
+    expect(block?.followUp).toEqual({ refresh: ['a'], until: { route: until.route, field: 'state', equals: ['done'] } })
+  })
+
+  it('starts no follow-up for a malformed condition', () => {
+    expect(parsePluginChatResult(card({ field: 'state' }), {}, [], ['a'])?.actions[0]?.block?.followUp).toBeUndefined()
   })
 })

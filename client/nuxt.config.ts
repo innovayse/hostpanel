@@ -40,6 +40,10 @@ export default defineNuxtConfig({
     '/fonts/**': { headers: { 'Cache-Control': 'public, max-age=31536000, immutable' } },
     // Auth-gated SPA pages: no SSR, no indexing
     '/client/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    // The same pages under a language prefix: a rule matches the path, and server-rendering them answers 500 on a block
+    // that reads the browser, a difference nobody sees in the default language.
+    '/ru/client/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/hy/client/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/cart/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/checkout/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     // The hosted-gateway returnUrl landing page. It belongs to this group for the same two

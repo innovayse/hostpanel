@@ -25,10 +25,16 @@ const SIGNON_SCOPE = 'openid profile email offline_access'
 export const MAX_LOGIN_HINT_LENGTH = 254
 
 /**
- * The longest return path kept. The path is sealed into a cookie, and a browser keeps about 4 KB
- * per cookie, so an unbounded one could make the whole transaction be dropped.
+ * The longest return path kept, in UTF-8 bytes. The path is sealed into a cookie, and up to
+ * `SSO_MAX_LIVE_TRANSACTIONS` such cookies are sent back with every request to the host, next to the
+ * session cookies. Servers and proxies refuse a request header of about 8 KB with a 400, which would
+ * lock the browser out of the whole host until the cookies expire. The limit is in bytes, not
+ * characters, because the cookie grows with bytes: a path of multibyte characters is two to four
+ * times its character count. 512 bytes keeps five attempts near 5 KB and every path the app builds
+ * (a page address with a short query) far below it. A longer path is dropped, not an error: the
+ * visitor lands on the default page after signing in.
  */
-export const MAX_RETURN_PATH_LENGTH = 1024
+export const MAX_RETURN_PATH_BYTES = 512
 
 /** A started flow: where the provider lives and the authorize query bound to this browser. */
 export interface SignonFlow {
@@ -44,10 +50,10 @@ export interface SignonFlow {
  * again before the path is followed.
  *
  * @param candidate - A requested return path, if any.
- * @returns The path when it is inside this app, not an `/api/` route and not oversized, otherwise null.
+ * @returns The path when it is inside this app, not an `/api/` route and not larger than `MAX_RETURN_PATH_BYTES` in UTF-8, otherwise null.
  */
 export const safeReturnPath = (candidate: unknown): string | null => {
-  return isInternalPath(candidate) && !candidate.startsWith('/api/') && candidate.length <= MAX_RETURN_PATH_LENGTH
+  return isInternalPath(candidate) && !candidate.startsWith('/api/') && Buffer.byteLength(candidate, 'utf8') <= MAX_RETURN_PATH_BYTES
     ? candidate
     : null
 }

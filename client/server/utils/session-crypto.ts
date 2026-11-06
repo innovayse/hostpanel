@@ -48,7 +48,6 @@ export const readSessionKey = (raw: unknown): Buffer | null => {
   return key
 }
 
-
 /**
  * Derives a key for one purpose from the configured key (HKDF-SHA256), so two uses of the same
  * secret never share a key.

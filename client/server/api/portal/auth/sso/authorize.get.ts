@@ -16,7 +16,7 @@
  * @module server/api/portal/auth/sso/authorize.get
  */
 
-import { LOGIN_HINT_QUERY } from '~/constants/clientRoutes'
+import { LOGIN_HINT_QUERY, RETURN_TO_QUERY } from '~/constants/clientRoutes'
 import { readQueryString } from '~/server/utils/readQueryString'
 import { MAX_LOGIN_HINT_LENGTH, safeReturnPath, startSignonFlow } from '~/server/utils/signon-flow'
 import { SignonTransactionKind } from '~/types/signontransactionkind'
@@ -30,7 +30,7 @@ export default defineEventHandler(async (event) => {
   const prompt = readQueryString(query.prompt)
   const loginHint = readQueryString(query[LOGIN_HINT_QUERY])
   // The header widget's add-account link names the page to return to as `redirect`, like its switch link.
-  const requestedReturnTo = readQueryString(query.returnTo) || readQueryString(query.redirect)
+  const requestedReturnTo = readQueryString(query[RETURN_TO_QUERY]) || readQueryString(query.redirect)
 
   // Save current page so callback can return here instead of always going to dashboard
   let returnTo = requestedReturnTo || ''

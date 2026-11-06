@@ -1,0 +1,98 @@
+<script setup lang="ts">
+/**
+ * The operator's light, dark or system theme choice, as a row of three icon buttons.
+ *
+ * The menu drawer on a phone shows it instead of a drop-down list: the list opens downwards from the bottom of
+ * the drawer and is cut off by the screen edge, while a row of icons needs no list. It is a radio group, one
+ * choice at a time; Left and Right arrows move the choice. The caller's `data-testid` goes on the group and each
+ * button adds its theme as a suffix (`sidebar-theme-light`).
+ */
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useThemeStore } from '@/stores/theme'
+import { AdminTheme } from '@/types/admintheme'
+import UiIconButton from '@/components/ui/UiIconButton.vue'
+import { Key } from '@/utils/ui/keys'
+
+/** Props of the theme switch. */
+const props = defineProps<{
+  /** Test id of the group; each button's id is this plus `-` and its theme. */
+  testid: string
+}>()
+
+/** Translation function. */
+const { t } = useI18n()
+
+/** Theme store: the operator's light/dark/system choice. */
+const theme = useThemeStore()
+
+/** One button of the switch. */
+interface ThemeChoice {
+  /** The theme the button picks. */
+  value: AdminTheme
+  /** Accessible name, in the active language. */
+  label: string
+  /** SVG path data of the icon, drawn on a 24 by 24 grid. */
+  icon: string
+}
+
+/**
+ * The three choices in display order.
+ *
+ * @returns One entry per {@link AdminTheme}.
+ */
+const choices = computed<ThemeChoice[]>(() => [
+  { value: AdminTheme.Light, label: t('layout.theme.light'), icon: 'M12 3v2m0 14v2M5.6 5.6l1.4 1.4m10 10 1.4 1.4M3 12h2m14 0h2M5.6 18.4 7 17m10-10 1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z' },
+  { value: AdminTheme.Dark, label: t('layout.theme.dark'), icon: 'M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z' },
+  { value: AdminTheme.System, label: t('layout.theme.system'), icon: 'M4 5h16v11H4zM9 20h6m-3-4v4' },
+])
+
+/**
+ * Moves the choice to the neighbouring theme, wrapping around.
+ *
+ * @param event - The keydown event; only Left and Right are handled.
+ * @param index - Index of the button that has focus.
+ * @returns Nothing; the theme store is updated.
+ */
+const onKeydown = (event: KeyboardEvent, index: number): void => {
+  if (event.key !== Key.ArrowRight && event.key !== Key.ArrowLeft) {
+    return
+  }
+  event.preventDefault()
+  const step = event.key === Key.ArrowRight ? 1 : -1
+  const target = choices.value[(index + step + choices.value.length) % choices.value.length]
+  if (target !== undefined) {
+    theme.setTheme(target.value)
+  }
+}
+</script>
+
+<template>
+  <div
+    role="radiogroup"
+    :aria-label="t('layout.theme.label')"
+    :data-testid="props.testid"
+    class="grid grid-cols-3 gap-1 rounded-[10px] border border-border bg-surface-card p-1"
+  >
+    <UiIconButton
+      v-for="(choice, index) in choices"
+      :key="choice.value"
+      :label="choice.label"
+      size="sm"
+      role="radio"
+      :aria-checked="theme.choice === choice.value"
+      :tabindex="theme.choice === choice.value ? 0 : -1"
+      :data-testid="`${props.testid}-${choice.value}`"
+      class="w-full"
+      :class="theme.choice === choice.value
+        ? 'bg-primary-500/15 text-primary-500 light:text-primary-600'
+        : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover'"
+      @click="theme.setTheme(choice.value)"
+      @keydown="onKeydown($event, index)"
+    >
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path :d="choice.icon" />
+      </svg>
+    </UiIconButton>
+  </div>
+</template>

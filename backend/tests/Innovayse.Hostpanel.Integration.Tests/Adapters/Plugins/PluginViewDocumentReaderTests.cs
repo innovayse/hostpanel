@@ -628,6 +628,74 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
         AssertBreaks(StateManifest(), PluginManifestRule.ViewFollowUpInvalid);
     }
 
+    /// <summary>An action whose body and label are read from one declared GET route is accepted.</summary>
+    [Fact]
+    public void Read_ActionBodySource_IsAccepted()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"labelSource":{"route":{"method":"get","path":"/site"},"field":"l"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"expectedVersion":"a.b"}}}]}""");
+
+        var read = PluginViewDocumentReader.Read(_folder, ClientActionManifest(), MaxViewBytes);
+
+        read.Violation.Should().BeNull();
+    }
+
+    /// <summary>A body source of a wrong shape or on a wrong block breaks ViewActionBodyInvalid; nothing guesses what to send.</summary>
+    /// <param name="block">The block JSON.</param>
+    [Theory]
+    [InlineData("""{"kind":"text","text":"Hi","bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}""")]
+    [InlineData("""{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"get","path":"/site"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"post","path":"/publish"},"fields":{"a":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"__proto__":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"label":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b c"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":1}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"},"extra":1}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"labelSource":{"route":{"method":"get","path":"/publish"},"field":"l"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}""")]
+    public void Read_ActionBodySourceMalformed_BreaksViewActionBodyInvalid(string block)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{block}}]}""");
+
+        AssertBreaks(ClientActionManifest(), PluginManifestRule.ViewActionBodyInvalid);
+    }
+
+    /// <summary>A body source naming more members than a page may send breaks ViewActionBodyInvalid.</summary>
+    [Fact]
+    public void Read_ActionBodySourceTooManyFields_BreaksViewActionBodyInvalid()
+    {
+        var fields = string.Join(",", Enumerable.Range(0, 11).Select(index => $"\"a{index}\":\"b\""));
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{""" + fields + """}}}]}""");
+
+        AssertBreaks(ClientActionManifest(), PluginManifestRule.ViewActionBodyInvalid);
+    }
+
+    /// <summary>A body source reading a route the area does not declare breaks ViewRouteUndeclared, like every other reference.</summary>
+    [Fact]
+    public void Read_ActionBodySourceRouteUndeclared_BreaksViewRouteUndeclared()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/other"},"fields":{"a":"b"}}}]}""");
+
+        AssertBreaks(ClientActionManifest(), PluginManifestRule.ViewRouteUndeclared);
+    }
+
+    /// <summary>A body source on an admin page breaks ViewActionBodyInvalid: the admin panel would post without it.</summary>
+    [Fact]
+    public void Read_ActionBodySourceOnAdminPage_BreaksViewActionBodyInvalid()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}]}""");
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewActionBodyInvalid);
+    }
+
+    /// <summary>A manifest whose client page shows <c>views/a.json</c> and whose client api declares GET /site and POST /publish.</summary>
+    /// <returns>The manifest.</returns>
+    private static PluginManifest ClientActionManifest()
+    {
+        return Manifest(""","api":{"client":[{"method":"get","path":"/site","permission":"Any"},{"method":"post","path":"/publish","permission":"Any"}]},"ui":{"client":{"pages":[{"id":"overview","path":"/o","title":"O","permission":"Any","view":"views/a.json"}]}}""");
+    }
+
     /// <summary>Builds a valid document whose nesting reaches the given depth, the root counted as one level.</summary>
     /// <param name="depth">The total nesting depth, at least <see cref="DepthBeforePadding"/>.</param>
     /// <returns>The document text.</returns>

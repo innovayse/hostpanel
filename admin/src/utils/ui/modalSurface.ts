@@ -45,21 +45,32 @@ export const useModalSurface = (
   isOpen: () => boolean,
   close: () => void,
 ): ModalSurface => {
+  /** The element that had focus when the surface opened; it gets focus back when the surface closes. */
   let opener: HTMLElement | null = null
   /** This surface's place in the stack of open surfaces. */
   const self: OpenSurface = { close }
   /** Whether this surface currently holds the page scroll lock. */
   let locked = false
+  /** Counts the enters and leaves so far; an enter that finds it changed after its wait was overtaken by a leave. */
+  let turn = 0
 
-  /** Remembers the focused element and moves focus onto the panel itself once it is rendered. */
+  /**
+   * Remembers the focused element and moves focus onto the panel itself once it is rendered. If the surface closed
+   * or unmounted while it waited for the render, `leave` has already given focus back and the move is dropped.
+   */
   const enter = async (): Promise<void> => {
+    turn += 1
+    const myTurn = turn
     if (!locked) {
+      opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
       lockScroll()
       openSurfaces.push(self)
       locked = true
     }
-    opener = document.activeElement instanceof HTMLElement ? document.activeElement : null
     await nextTick()
+    if (myTurn !== turn || !locked) {
+      return
+    }
     panel.value?.focus({ preventScroll: true })
   }
 
@@ -68,7 +79,8 @@ export const useModalSurface = (
    * already has focus (the user typed or clicked during the enter) keeps it.
    */
   const focusIn = (): void => {
-    if (!locked || panel.value === null) {
+    // Only the topmost surface may move focus: a parent's late end of enter must not pull it from a nested surface.
+    if (!locked || panel.value === null || openSurfaces[openSurfaces.length - 1] !== self) {
       return
     }
     const active = document.activeElement
@@ -80,6 +92,7 @@ export const useModalSurface = (
 
   /** Gives focus back to the element that opened the surface. */
   const leave = (): void => {
+    turn += 1
     if (locked) {
       unlockScroll()
       openSurfaces.splice(openSurfaces.indexOf(self), 1)

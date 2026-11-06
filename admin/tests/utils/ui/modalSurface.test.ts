@@ -147,4 +147,69 @@ describe('useModalSurface', () => {
     expect(closed).toEqual(['inner', 'inner', 'outer'])
     outer.unmount()
   })
+
+  it('keeps focus on the opener when the surface closes in the same tick it opened', async () => {
+    const opener = document.createElement('button')
+    document.body.append(opener)
+    opener.focus()
+    /** Open flag the test flips. */
+    const open = ref(false)
+    mount(
+      surface(open, () => undefined),
+      { attachTo: document.body },
+    )
+    open.value = true
+    await nextTick()
+    open.value = false
+    await nextTick()
+    await nextTick()
+    expect(document.activeElement).toBe(opener)
+  })
+
+  it('keeps focus on the opener when the surface unmounts before its panel took focus', async () => {
+    const opener = document.createElement('button')
+    document.body.append(opener)
+    opener.focus()
+    const wrapper = mount(
+      surface(ref(true), () => undefined),
+      { attachTo: document.body },
+    )
+    wrapper.unmount()
+    await nextTick()
+    await nextTick()
+    expect(document.activeElement).toBe(opener)
+  })
+
+  it('lets only the topmost surface move focus at the end of its enter', async () => {
+    // The `focusIn` of each surface is captured right after it is mounted.
+    const outer = mount(
+      surface(ref(true), () => undefined),
+      { attachTo: document.body },
+    )
+    const focusOuter = focusSurface
+    await nextTick()
+    await nextTick()
+    const inner = mount(
+      surface(ref(true), () => undefined),
+      { attachTo: document.body },
+    )
+    const focusInner = focusSurface
+    await nextTick()
+    await nextTick()
+    const innerPanel = inner.element as HTMLElement
+    expect(document.activeElement).toBe(innerPanel)
+
+    // The parent's late end of enter does not pull focus out of the nested surface.
+    focusOuter()
+    expect(document.activeElement).toBe(innerPanel)
+
+    focusInner()
+    expect(innerPanel.contains(document.activeElement) && document.activeElement !== innerPanel).toBe(true)
+
+    // Once the nested surface is gone the parent is the topmost again and may move focus.
+    inner.unmount()
+    focusOuter()
+    expect(outer.element.contains(document.activeElement) && document.activeElement !== outer.element).toBe(true)
+    outer.unmount()
+  })
 })

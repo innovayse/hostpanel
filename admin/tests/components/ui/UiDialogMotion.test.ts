@@ -45,16 +45,6 @@ const cancelLeaving = (wrapper: VueWrapper): void => {
 }
 
 /**
- * Waits for the transition's frames to pass.
- *
- * @returns A promise that settles after a few frames.
- */
-const frames = async (): Promise<void> => {
-  await new Promise(resolve => setTimeout(resolve, 60))
-  await flushPromises()
-}
-
-/**
  * Finds an element in the page by test id. A leaving panel is no longer part of the wrapper's rendered tree, but it is
  * still in the page, so these tests read the page.
  *
@@ -126,6 +116,7 @@ const mountOpenDialog = (held = false) =>
 
 describe('UiDialog and its animation', () => {
   it('puts focus on the first control only once the enter has ended', async () => {
+    const frame = holdFrames()
     const wrapper = mountOpenDialog()
     await nextTick()
     await nextTick()
@@ -133,7 +124,7 @@ describe('UiDialog and its animation', () => {
     // Right after opening the panel itself holds focus, so Escape already works while it appears.
     expect(document.activeElement).toBe(wrapper.get('[role="dialog"]').element)
 
-    await frames()
+    await frame.flush()
     expect(document.activeElement).not.toBe(wrapper.get('[role="dialog"]').element)
     expect(wrapper.get('[role="dialog"]').element.contains(document.activeElement)).toBe(true)
     wrapper.unmount()
@@ -141,7 +132,7 @@ describe('UiDialog and its animation', () => {
 
   it('asks to close only once while it is leaving, whichever way it is asked', async () => {
     const wrapper = mountOpenDialog(true)
-    await frames()
+    await flushPromises()
 
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
@@ -162,7 +153,7 @@ describe('UiDialog and its animation', () => {
 
   it('can be asked again after a leave is cancelled by showing it again', async () => {
     const wrapper = mountOpenDialog(true)
-    await frames()
+    await flushPromises()
 
     startLeaving(wrapper)
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
@@ -179,12 +170,13 @@ describe('UiDialog and its animation', () => {
   })
 
   it('can be asked again when it is shown again', async () => {
+    const frame = holdFrames()
     const wrapper = mountOpenDialog()
-    await frames()
+    await frame.flush()
     await wrapper.setProps({ open: false })
-    await frames()
+    await frame.flush()
     await wrapper.setProps({ open: true })
-    await frames()
+    await frame.flush()
 
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     expect(wrapper.emitted('confirm')).toHaveLength(1)
@@ -221,6 +213,7 @@ describe('UiDialog and its animation', () => {
   })
 
   it('does not take focus from a control the user already focused during the enter', async () => {
+    const frame = holdFrames()
     const wrapper = mount(UiDialog, {
       props: { open: true, title: 'Edit' },
       slots: { default: '<input id="first-field" /><input id="second-field" />' },
@@ -232,31 +225,40 @@ describe('UiDialog and its animation', () => {
     const second = document.getElementById('second-field')
     second?.focus()
 
-    await frames()
+    await frame.flush()
 
     expect(document.activeElement).toBe(second)
     wrapper.unmount()
   })
 
-  it('gives back the page scroll and the focus at once when a parent removes it with v-if', async () => {
+  it.each([
+    ['dialog', UiDialog, 'dialog-close'],
+    ['drawer', UiDrawer, 'drawer-close'],
+  ])('gives back the page scroll and the focus at once when a parent removes the %s with v-if, with the real transition and teleport', async (_name, Surface, closeId) => {
+    const frame = holdFrames()
     const opener = document.createElement('button')
     document.body.append(opener)
     opener.focus()
-    /** Whether the parent shows the dialog. */
+    /** Whether the parent shows the surface. */
     const show = ref(true)
     const parent = mount(
-      defineComponent({ render: () => (show.value ? h(UiDialog, { title: 'Edit' }, () => h('input')) : h('p', 'gone')) }),
-      { attachTo: document.body, global },
+      defineComponent({ render: () => (show.value ? h(Surface, { open: true, title: 'Edit' }, () => h('input')) : h('p', 'gone')) }),
+      { attachTo: document.body, global: realGlobal },
     )
-    await frames()
+    await frame.flush()
     expect(document.body.style.overflow).toBe('hidden')
+    expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(1)
 
     show.value = false
     await nextTick()
 
-    expect(parent.find('[role="dialog"]').exists()).toBe(false)
+    // No leave ran: the panel is gone from the page at once, so nothing is left to block a click.
+    expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(0)
+    expect(byTestId(closeId)).toBeNull()
     expect(document.body.style.overflow).toBe('')
     expect(document.activeElement).toBe(opener)
+    await frame.flush()
+    expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(0)
     parent.unmount()
   })
 })
@@ -264,7 +266,7 @@ describe('UiDialog and its animation', () => {
 describe('UiDrawer and its animation', () => {
   it('asks to close only once while it is leaving', async () => {
     const wrapper = mount(UiDrawer, { props: { open: true, title: 'Filters' }, attachTo: document.body, global: heldGlobal })
-    await frames()
+    await flushPromises()
 
     await wrapper.get('[data-testid="drawer-close"]').trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(1)
@@ -281,7 +283,7 @@ describe('UiDrawer and its animation', () => {
 
   it('can be closed and shows its close button again after a leave is cancelled', async () => {
     const wrapper = mount(UiDrawer, { props: { open: true, title: 'Filters' }, attachTo: document.body, global: heldGlobal })
-    await frames()
+    await flushPromises()
     // The enter has not ended under the stubbed transition, so the button starts hidden; the hook below settles it.
     const onEntered = wrapper.findComponent(UiTransition).vm.$attrs.onAfterEnter as () => void
     onEntered()

@@ -16,15 +16,15 @@ test('a dialog shows and goes away without a transition or a transform when redu
 
   await page.getByTestId(`faq-delete-${sampleFaq.id}`).click()
 
-  // The panel is the parent of the body, the part of the dialog that carries a test id.
-  const panel = page.getByTestId('dialog-body').locator('xpath=..')
+  const panel = page.getByTestId('dialog-panel')
+  const backdrop = page.getByTestId('dialog-backdrop')
   await expect(panel).toBeVisible()
   // The panel's own movement is off: no transition property, and the identity transform.
   expect(await panel.evaluate((node) => getComputedStyle(node).transitionProperty)).toBe('none')
   expect(await panel.evaluate((node) => getComputedStyle(node).transform)).toBe('none')
   // The backdrop around it does not fade either: it is fully opaque and either has no transition property (the enter class is still on) or no time (it is gone).
-  const backdropStyle = await panel.evaluate((node) => {
-    const style = getComputedStyle(node.parentElement as HTMLElement)
+  const backdropStyle = await backdrop.evaluate((node) => {
+    const style = getComputedStyle(node)
     return { opacity: style.opacity, moves: style.transitionProperty !== 'none' && style.transitionDuration !== '0s' }
   })
   expect(backdropStyle).toEqual({ opacity: '1', moves: false })
@@ -39,9 +39,10 @@ test.describe('without the preference', () => {
     await page.goto('/storefront/faqs')
     await page.getByTestId(`faq-delete-${sampleFaq.id}`).click()
 
-    // The panel is the parent of the body, the part of the dialog that carries a test id.
-    const panel = page.getByTestId('dialog-body').locator('xpath=..')
+    const panel = page.getByTestId('dialog-panel')
     await expect(panel).toBeVisible()
     expect(await panel.evaluate((node) => getComputedStyle(node).transitionProperty)).not.toBe('none')
+    // The kit's `--duration-base` (200ms) reaches the browser as a real, non-zero duration, not a dropped `var()`.
+    expect(await panel.evaluate((node) => getComputedStyle(node).transitionDuration)).toBe('0.2s')
   })
 })

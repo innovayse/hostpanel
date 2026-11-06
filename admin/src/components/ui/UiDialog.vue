@@ -180,10 +180,12 @@ const onBackdrop = (): void => {
     >
       <div
         v-if="open"
+        data-testid="dialog-backdrop"
         class="group/overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
         @click.self="onBackdrop"
       >
         <div
+          data-testid="dialog-panel"
           v-bind="$attrs"
           ref="panel"
           role="dialog"

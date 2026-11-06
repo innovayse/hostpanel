@@ -1165,4 +1165,19 @@
   <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
     <value>У этой позиции нет блокировки продления, которую можно снять.</value>
   </data>
+  <data name="TRANSACTION_CREDIT_LOCKED" xml:space="preserve">
+    <value>Эта запись входит в историю баланса, её нельзя изменить или удалить. Для исправления добавьте корректировку баланса.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_FIXED" xml:space="preserve">
+    <value>Счёт на пополнение баланса состоит из одной фиксированной строки и не редактируется.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_NO_CREDIT" xml:space="preserve">
+    <value>К счёту на пополнение баланса нельзя применить кредит.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_REFUND_MANUAL_ONLY" xml:space="preserve">
+    <value>Оплаченное пополнение баланса возвращается только вручную: оформите возврат как ручной.</value>
+  </data>
+  <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
+    <value>Сумма вне допустимого диапазона для пополнения баланса.</value>
+  </data>
 </root>

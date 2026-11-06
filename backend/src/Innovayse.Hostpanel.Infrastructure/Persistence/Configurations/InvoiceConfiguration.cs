@@ -49,6 +49,9 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         builder.Property(x => x.GatewayStalledNotifiedAt);
         builder.Property(x => x.GatewayUnreferencedNotifiedAt);
 
+        // A credit top-up invoice: one fixed line that puts its amount on the client's balance when paid. Existing rows are not.
+        builder.Property(x => x.IsCreditTopUp).IsRequired().HasDefaultValue(false);
+
         // Set while the client's manual bank transfer waits for staff; what tells it apart from any other PaymentPending invoice.
         builder.Property(x => x.BankTransferRequestedAt);
 

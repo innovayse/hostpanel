@@ -33,6 +33,8 @@ Click **Add Transaction** to record a payment or payout that happened outside of
 
 A transaction must have an amount in or an amount out (`TRANSACTION_AMOUNT_REQUIRED`).
 
+A transaction ticked **Add to Client's Credit Balance** is also a line of the client's credit history (see the **Credit** tab of the client). It can no longer be edited or deleted (`TRANSACTION_CREDIT_LOCKED`): correct the balance with an adjustment on the Credit tab. Entries from before the credit history existed stay editable and deletable, and deleting one undoes its credit move. This list shows entries that moved money; credit applied to an invoice or adjusted by staff moves none and appears on the Credit tab only.
+
 ## Billable items
 
 Go to **Billable Items** to see items that have been queued for invoicing.

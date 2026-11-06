@@ -156,20 +156,29 @@ public sealed class RaiseClientRenewalInvoicesHandler
                 line.AddTo(invoice);
             }
 
+            Transaction? creditLine = null;
             if (settings.AutoApplyCredit && credit > 0 && invoice.Total > 0)
             {
                 var amount = Math.Min(credit, invoice.Total);
-                var applied = await _clientCredit.ApplyFromBalanceAsync(invoice, amount, ct);
+                var applied = await _clientCredit.ApplyFromBalanceAsync(invoice, amount, CreditMovementType.RenewalAutoApplied, ct);
                 if (applied.IsFailure)
                 {
                     return Result<int>.FailureCode(applied.ErrorCode!);
                 }
 
+                creditLine = applied.Value;
                 credit -= amount;
             }
 
             _context.Invoices.Add(invoice);
             await _context.SaveChangesAsync(ct);
+
+            // The invoice has its id now: the credit-only history line, written before it existed, is tied to it.
+            if (creditLine is not null)
+            {
+                creditLine.LinkToInvoice(invoice.Id);
+                await _context.SaveChangesAsync(ct);
+            }
 
             if (invoice.Total == 0)
             {

@@ -13,6 +13,9 @@ namespace Innovayse.Hostpanel.Domain.Billing;
 /// </summary>
 public sealed class Invoice : BaseEntity, IAggregateRoot
 {
+    /// <summary>The description of the one line of a credit top-up invoice.</summary>
+    public const string TopUpDescription = "Account credit top-up";
+
     /// <summary>Internal mutable list of line items.</summary>
     private readonly List<InvoiceItem> _items = [];
 
@@ -170,6 +173,16 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
 
     /// <summary>Gets the preferred payment method; null when not specified.</summary>
     public string? PaymentMethod { get; private set; }
+
+    /// <summary>
+    /// Gets whether the invoice is a credit top-up: one fixed line the client pays to put that amount on their credit balance.
+    /// It is set when the invoice is created and never changes. It fulfils nothing, takes no tax and no credit, and its amount
+    /// reaches the balance in the same save that marks it paid (<see cref="TopUpAmount"/>).
+    /// </summary>
+    public bool IsCreditTopUp { get; private set; }
+
+    /// <summary>Gets the amount a paid credit top-up puts on the client's balance: the total of a top-up invoice, zero for any other.</summary>
+    public decimal TopUpAmount => IsCreditTopUp ? Total : 0m;
 
     /// <summary>Gets the read-only view of invoice line items.</summary>
     public IReadOnlyList<InvoiceItem> Items => _items.AsReadOnly();
@@ -460,6 +473,31 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         return invoice;
     }
 
+    /// <summary>
+    /// Creates the unpaid invoice a client pays to add funds to their credit balance: one line for the amount, no tax, flagged
+    /// as a top-up so that paying it credits the balance and nothing else (no fulfilment, no renewal, no credit applied to it).
+    /// </summary>
+    /// <param name="clientId">FK to the client who adds funds.</param>
+    /// <param name="amount">The amount to add, in <paramref name="currency"/>; greater than 0.</param>
+    /// <param name="currency">ISO 4217 alpha code of the client's billing currency.</param>
+    /// <param name="issuedAt">When the invoice is issued (UTC).</param>
+    /// <param name="dueDate">Payment due date (UTC).</param>
+    /// <returns>A new Unpaid top-up <see cref="Invoice"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="amount"/> is not positive.</exception>
+    /// <exception cref="ArgumentException">The currency is not a three-letter code.</exception>
+    public static Invoice CreateCreditTopUp(
+        int clientId, decimal amount, string currency, DateTimeOffset issuedAt, DateTimeOffset dueDate)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
+
+        var invoice = Create(clientId, dueDate, currency, issuedAt);
+        invoice.AddItem(TopUpDescription, CurrencyCode.RoundToMinorUnits(amount, invoice.Currency), 1);
+
+        // After the line: the flag freezes the lines, and the factory is the only one allowed to write the one.
+        invoice.IsCreditTopUp = true;
+        return invoice;
+    }
+
     /// <summary>Sets the external system ID for migration deduplication.</summary>
     /// <param name="externalId">Identifier of this invoice in the system it was imported from.</param>
     public void SetExternalId(string externalId) => ExternalId = externalId;
@@ -737,6 +775,12 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         if (amount <= 0)
         {
             throw new ArgumentException("Credit amount must be positive.", nameof(amount));
+        }
+
+        if (IsCreditTopUp)
+        {
+            throw new DomainRuleException(
+                BillingErrors.InvoiceTopUpNoCredit, "Credit cannot be applied to a credit top-up invoice.");
         }
 
         if (Status is not (InvoiceStatus.Draft or InvoiceStatus.Unpaid or InvoiceStatus.Overdue))
@@ -1313,8 +1357,16 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// </remarks>
     /// <param name="issuedAt">When the copy is issued (UTC).</param>
     /// <returns>A new Draft invoice with the same client, due date, currency and lines.</returns>
+    /// <exception cref="DomainRuleException"><c>INVOICE_TOP_UP_FIXED</c> when this is a credit top-up invoice.</exception>
     public Invoice Duplicate(DateTimeOffset issuedAt)
     {
+        // A copy is an ordinary invoice, and an ordinary invoice for "account credit" would take money and credit nothing.
+        if (IsCreditTopUp)
+        {
+            throw new DomainRuleException(
+                BillingErrors.InvoiceTopUpFixed, "A credit top-up invoice cannot be duplicated; the client adds funds again instead.");
+        }
+
         // The same amounts in the same currency: a copy never re-labels the lines it carries.
         var copy = CreateDraft(ClientId, DueDate, Currency, issuedAt);
         // AddItem, never a renewal factory: a copy is not a renewal, and paying it must extend nothing.
@@ -1406,6 +1458,12 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <exception cref="DomainRuleException">The invoice is not Draft or Unpaid.</exception>
     private void EnsureEditable()
     {
+        if (IsCreditTopUp)
+        {
+            throw new DomainRuleException(
+                BillingErrors.InvoiceTopUpFixed, "A credit top-up invoice is one fixed line and cannot be changed.");
+        }
+
         if (Status is not (InvoiceStatus.Draft or InvoiceStatus.Unpaid))
         {
             throw new DomainRuleException(

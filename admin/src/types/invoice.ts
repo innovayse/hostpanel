@@ -95,6 +95,8 @@ export interface InvoiceDetail {
   amounts: InvoiceAmounts
   /** What is still owed, as the API computes it: the total less the payments recorded; 0 for Paid, PartiallyRefunded, Refunded or Cancelled. */
   amountDue: number
+  /** Whether this is a credit top-up invoice: one fixed line that puts its amount on the client's balance when paid. */
+  isCreditTopUp: boolean
   /** Payment method and gateway reference. */
   payment: InvoicePayment
   /** Optional admin notes. */

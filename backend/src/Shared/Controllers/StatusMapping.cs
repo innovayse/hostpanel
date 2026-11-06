@@ -123,6 +123,9 @@ public static class StatusMapping
             // Exact row: the body parsed but moves no money, a meaning that is wrong rather than a
             // malformed request.
             "TRANSACTION_AMOUNT_REQUIRED" => new(422, "Unprocessable Content"),
+            // Exact row: an entry of the credit history stands in the way of the edit or delete, a state conflict, and the
+            // name carries a LOCKED suffix that the generic arm below would answer 423 for.
+            "TRANSACTION_CREDIT_LOCKED" => new(409, "Conflict"),
 
             // SSH key management: the service is the caller's, but its state or the key's binding
             // does not allow the change, or the hosting server did not confirm it.

@@ -1220,7 +1220,13 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   command: the port stages the line on the caller's own context, so the line and the change it records
   commit or fail together, which a separately saving command could not promise. A client's credit
   balance changes the same way through `IClientCredit`, so moving credit between an invoice and the balance
-  (`InvoiceCreditExtensions` in Billing) is one save. The renewal read models belong to their owners and Billing
+  (`InvoiceCreditExtensions` in Billing) is one save. Every change names its `CreditMovementType` (`ClientCreditChange`) and the
+  port writes it to the client ledger in that same save: the `Transaction` that already holds the money is stamped
+  (`CreditMovement`, signed `CreditChange`, `BalanceAfter`), a movement that moved no cash becomes a credit-only entry
+  (`Transaction.CreateCreditMovement`, no money in or out, left out of the cash views by `Transaction.MovedMoneyFilter`), and an
+  entry of the history cannot be edited or deleted (`Transaction.EnsureEditable`). A credit top-up is an `Invoice` with
+  `IsCreditTopUp` (`Invoice.CreateCreditTopUp`); every path that settles an invoice calls `CreditPaidTopUpAsync`
+  (`CreditTopUpExtensions`) in the settling save, so the balance rises once, and a top-up is refunded by hand only. The renewal read models belong to their owners and Billing
   reaches them over the bus: Services owns `GetRenewableServices`, `GetServiceBillingStates`,
   `ListOverdueSuspendedServices`, `ListUndatedRenewingServices` and `ExtendServiceRenewal`; Domains owns
   `GetRenewableDomains`, `GetDomainRenewalStates` and `GetTldRenewPrice`. The setup token kept

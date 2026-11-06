@@ -54,15 +54,33 @@ public static class ClientBillingCurrencyExtensions
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        if (client?.Currency is { } own)
+        return client is null
+            ? CreditCurrency(null, (await context.GetBaseCurrencyAsync(ct)).Code)
+            : await context.GetCreditCurrencyAsync(client.Id, client.Currency, client.CreditBalance, ct);
+    }
+
+    /// <summary>The currency a client's stored credit balance is held in, for a caller that holds the client's facts but not the record.</summary>
+    /// <remarks>The same rule as the overload that takes the client: the billing currency, else the latest invoice's, else the base.</remarks>
+    /// <param name="context">The module's data context.</param>
+    /// <param name="clientId">The client.</param>
+    /// <param name="clientCurrency">The client's billing currency, or <see langword="null"/> when none is set.</param>
+    /// <param name="creditBalance">The client's credit balance.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>ISO 4217 code of the currency the credit balance is in.</returns>
+    public static async Task<string> GetCreditCurrencyAsync(
+        this IHostpanelDbContext context, int clientId, string? clientCurrency, decimal creditBalance, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        if (clientCurrency is not null)
         {
-            return own;
+            return clientCurrency;
         }
 
-        var invoiceCurrency = client is null || client.CreditBalance == 0m
+        var invoiceCurrency = creditBalance == 0m
             ? null
             : await context.Invoices.AsNoTracking()
-                .Where(i => i.ClientId == client.Id)
+                .Where(i => i.ClientId == clientId)
                 .OrderByDescending(i => i.Id)
                 .Select(i => i.Currency)
                 .FirstOrDefaultAsync(ct);

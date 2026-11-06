@@ -1165,4 +1165,19 @@
   <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
     <value>Այս տողի երկարացման արգելափակումը հնարավոր չէ հանել, քանի որ այն արգելափակված չէ։</value>
   </data>
+  <data name="TRANSACTION_CREDIT_LOCKED" xml:space="preserve">
+    <value>Այս գրառումը մնացորդի պատմության մաս է, այն հնարավոր չէ փոխել կամ ջնջել։ Ուղղելու համար ավելացրեք մնացորդի ճշգրտում։</value>
+  </data>
+  <data name="INVOICE_TOP_UP_FIXED" xml:space="preserve">
+    <value>Մնացորդի համալրման հաշիվ-ապրանքագիրը մեկ ֆիքսված տող է և չի խմբագրվում։</value>
+  </data>
+  <data name="INVOICE_TOP_UP_NO_CREDIT" xml:space="preserve">
+    <value>Մնացորդի համալրման հաշվին կրեդիտ կիրառել հնարավոր չէ։</value>
+  </data>
+  <data name="INVOICE_TOP_UP_REFUND_MANUAL_ONLY" xml:space="preserve">
+    <value>Վճարված համալրումը վերադարձվում է միայն ձեռքով. գրանցեք վերադարձը որպես ձեռքով։</value>
+  </data>
+  <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
+    <value>Գումարը մնացորդի համալրման թույլատրելի միջակայքից դուրս է։</value>
+  </data>
 </root>

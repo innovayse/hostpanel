@@ -1408,4 +1408,19 @@
   <data name="RenewalWindowInvalid" xml:space="preserve">
     <value>Ընտրեք երկարացման ժամանակահատվածը՝ 30, 60 կամ 90 օր։</value>
   </data>
+  <data name="CreditAdjustmentDirectionInvalid" xml:space="preserve">
+    <value>Ընտրեք՝ ավելացնել մնացորդը, թե նվազեցնել։</value>
+  </data>
+  <data name="CreditAdjustmentAmountInvalid" xml:space="preserve">
+    <value>Գումարը պետք է լինի զրոյից մեծ։</value>
+  </data>
+  <data name="CreditAdjustmentReasonRequired" xml:space="preserve">
+    <value>Նշեք ճշգրտման պատճառը։</value>
+  </data>
+  <data name="CreditAdjustmentReasonTooLong" xml:space="preserve">
+    <value>Պատճառը պետք է լինի առավելագույնը 500 նիշ։</value>
+  </data>
+  <data name="CreditTopUpAmountInvalid" xml:space="preserve">
+    <value>Գումարը պետք է լինի զրոյից մեծ։</value>
+  </data>
 </root>

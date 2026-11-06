@@ -93,7 +93,8 @@ public sealed class CheckOverdueInvoicesCronHandler
         {
             // Ids only, in keyset batches: nothing is tracked here, and a row that fails is not read again this pass.
             var invoiceIds = await _context.Invoices.AsNoTracking()
-                .Where(i => i.Id > lastId && i.Status == InvoiceStatus.Unpaid && i.DueDate < now)
+                // A credit top-up is never a debt: nothing is owed on it, so it does not go overdue, mail the client or suspend anything.
+                .Where(i => i.Id > lastId && i.Status == InvoiceStatus.Unpaid && i.DueDate < now && !i.IsCreditTopUp)
                 .OrderBy(i => i.Id)
                 .Select(i => i.Id)
                 .Take(JobBatch.Size)

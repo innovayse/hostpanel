@@ -253,9 +253,28 @@ export const INVOICE = {
   tax: 0,
   taxRate: 0,
   credit: 0,
+  isCreditTopUp: false,
   paymentMethod: null,
   items: [{ id: 1, description: 'E2E Starter - monthly', unitPrice: 5, quantity: 1, amount: 5 }],
   transactions: [],
+}
+
+/** The id of the top-up invoice the stub raises when the client adds funds. */
+export const TOP_UP_INVOICE_ID = 777
+
+/** The credit the signed-in client starts with: a balance, the limits of one top-up and one history line. */
+export const CREDIT = {
+  balance: 20,
+  currency: 'USD',
+  topUpMinimum: 5,
+  topUpMaximum: 100,
+  entries: {
+    items: [{ id: 31, date: '2030-01-02T09:00:00Z', movement: 'AdminAdd', change: 20, balanceAfter: 20, invoiceId: null }],
+    pageNumber: 1,
+    pageSize: 10,
+    totalCount: 1,
+    totalPages: 1,
+  },
 }
 
 /** Operator settings the storefront reads; a light default and an uploaded light/dark logo pair. */

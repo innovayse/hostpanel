@@ -9,6 +9,7 @@
 
 import { apiFetch } from '~/composables/useApi'
 import type { BankTransferDetails } from '~/types/banktransferdetails'
+import type { ClientCredit } from '~/types/clientcredit'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { GatewayCompletion } from '~/types/gatewaycompletion'
 import type { GatewayMethod } from '~/types/gatewaymethod'
@@ -150,6 +151,39 @@ export const useBillingApi = () => {
     apiFetch<BankTransferDetails>(`/api/portal/client/invoices/${invoiceId}/bank-transfer`)
 
   /**
+   * Reads the signed-in client's own credit: the balance, the limits of one top-up and a page of the history.
+   *
+   * @param page - 1-based page of the history.
+   * @param pageSize - History lines per page.
+   * @returns The credit.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const fetchCredit = (page = 1, pageSize = 25): Promise<ClientCredit> =>
+    apiFetch<ClientCredit>('/api/portal/client/credit', { query: { page, pageSize } })
+
+  /**
+   * Raises the top-up invoice the client pays to add funds. The balance rises when that invoice is paid, through the same
+   * payment pages as any other invoice.
+   *
+   * @param amount - The amount to add, in the client's billing currency.
+   * @returns The id of the new top-up invoice.
+   * @throws Whatever `apiFetch` throws; a refusal when the amount is outside the limits.
+   */
+  const createCreditTopUp = (amount: number): Promise<number> =>
+    apiFetch<number>('/api/portal/client/credit/top-ups', { method: HttpMethod.Post, body: { amount } })
+
+  /**
+   * Pays part or all of an invoice from the client's credit balance.
+   *
+   * @param invoiceId - Invoice to apply credit to.
+   * @param amount - The credit to apply, in the invoice currency.
+   * @returns Nothing.
+   * @throws Whatever `apiFetch` throws; a refusal when the balance is short or the invoice owes less.
+   */
+  const applyInvoiceCredit = (invoiceId: string | number, amount: number): Promise<undefined> =>
+    apiFetch<undefined>(`/api/portal/client/invoices/${invoiceId}/credit`, { method: HttpMethod.Post, body: { amount } })
+
+  /**
    * Reads an invoice as a PDF.
    *
    * No `responseType` is set: ofetch picks it from the answer, so the PDF arrives as a `Blob`
@@ -171,6 +205,9 @@ export const useBillingApi = () => {
     startInvoiceGatewayPayment,
     selectBankTransfer,
     fetchBankTransfer,
+    fetchCredit,
+    createCreditTopUp,
+    applyInvoiceCredit,
     completeGatewayPayment
   }
 }

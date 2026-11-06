@@ -7,7 +7,8 @@
     "creditRemoved": "Credit removed from the invoice.",
     "confirmRemoveCreditTitle": "Remove credit?",
     "confirmRemoveCreditMessage": "Remove {amount} of credit from invoice #{id}?",
-    "removeCredit": "Remove credit"
+    "removeCredit": "Remove credit",
+    "topUpNoCredit": "This is a credit top-up invoice. Credit cannot be applied to it: it is paid in full, and its amount is added to the client's credit balance once it is paid."
   },
   "invoiceNotesTab": {
     "thereAreNoNotesOn": "There are no notes on this invoice."
@@ -43,7 +44,8 @@
     "selectATransaction": "Select a transaction...",
     "confirmRefundTitle": "Confirm refund",
     "confirmRefundMessage": "Refund {amount} by \"{method}\"? This cannot be undone.",
-    "refunded": "Refund sent."
+    "refunded": "Refund sent.",
+    "topUpRefund": "This is a credit top-up invoice. It can be refunded by hand only, and the refunded amount is taken off the client's credit balance in the same step. A client who has already spent the credit leaves the balance short, and the refund is refused."
   },
   "invoiceSummaryTab": {
     "thisIsADraftInvoice": "This is a Draft Invoice. The client is not able to see or access this invoice until it is published.",

@@ -137,8 +137,38 @@ Limits:
 - Credit can only be applied to Draft, Unpaid, or Overdue invoices.
 
 <Callout type="tip">
-Credit is applied automatically to renewal invoices when the <code>billing.renewal.auto_apply_credit</code> setting is enabled.
+Credit is applied automatically to renewal invoices when the <code>billing.renewal.auto_apply_credit</code> setting is enabled. It is applied to renewal invoices only; every other invoice takes credit when staff or the client apply it.
 </Callout>
+
+A client can also apply credit to their own unpaid invoice from the invoice page. Credit that covers everything the invoice owes settles it, and its order is fulfilled as for any other payment.
+
+### The Credit tab
+
+Every client has a **Credit** tab on their profile. It shows the balance and the credit history, newest first. Each line says why the balance moved, by how much (positive adds, negative takes) and what the balance was left at, and links the invoice it concerned:
+
+- credit added or deducted by staff, with the reason staff gave;
+- credit applied to an invoice, by staff, by the client or by the renewal sweep, and credit returned from an invoice when it is removed, cancelled or lowered;
+- a refund paid back as credit;
+- a paid top-up, and a refund of one;
+- a payment that took more than the invoice owed (or could not be recorded on its invoice) and went to the balance;
+- a legacy ledger entry that was deleted and its credit move undone.
+
+The history is the client ledger itself. An entry that holds the money (a payment, a refund, a transaction added to credit) carries the movement. A movement that moved no cash (credit applied to an invoice, a staff adjustment) is a ledger line with no money in or out; those lines stay out of the transaction list, the transaction reports and the data export. Movements from before the history existed are not itemised; the balance is right regardless.
+
+To correct the balance, use **Add credit** or **Deduct credit** on the tab. A reason is required and is kept on the history line (the client does not see it); the client is emailed the change and the new balance. A deduction never takes more than the balance holds (`CLIENT_CREDIT_INSUFFICIENT`). A ledger entry that is part of the history cannot be edited or deleted (`TRANSACTION_CREDIT_LOCKED`): correct it with a new adjustment.
+
+### Adding funds (top-ups)
+
+A client adds funds from **Credit, Add funds** in the client area. They choose an amount between two limits you set in System Settings, in their billing currency:
+
+- `billing.credit.topup_min`: the least one top-up may add (default 5);
+- `billing.credit.topup_max`: the most one top-up may add (default 1000).
+
+A top-up is an invoice with one fixed line for the amount and no tax, which the client pays through the ordinary payment page: a bank transfer you confirm, or an installed payment gateway. Its amount is added to the balance in the same step that marks the invoice paid, once, however many times the payment is confirmed or retried. The client is emailed the new balance.
+
+A top-up is not an order: paying it fulfils nothing and renews nothing. Its cash counts as income once, when it is paid; credit later spent on another invoice adds no income of its own. Credit cannot be applied to a top-up invoice (`INVOICE_TOP_UP_NO_CREDIT`), and its line, tax rate and amount cannot be edited or duplicated (`INVOICE_TOP_UP_FIXED`). An unpaid top-up never turns overdue and no reminder is sent for it; you can cancel it. A paid top-up cannot be cancelled.
+
+A paid top-up is refunded by hand only, as a **Manual** refund (`INVOICE_TOP_UP_REFUND_MANUAL_ONLY` for a gateway refund or a refund to credit). The refunded amount is taken off the client's balance in the same step. If the client has already spent the credit and the balance is short, the refund is refused whole (`CLIENT_CREDIT_INSUFFICIENT`) and nothing is recorded; refund what is left, or recover the rest outside the system.
 
 ## Refund
 

@@ -147,6 +147,8 @@ export enum ClientSection {
   Quotes = 'quotes',
   /** The client's transactions. */
   Transactions = 'transactions',
+  /** The client's credit: balance, history and manual adjustments. */
+  Credit = 'credit',
   /** The client's tickets. */
   Tickets = 'tickets',
   /** The client's email log. */

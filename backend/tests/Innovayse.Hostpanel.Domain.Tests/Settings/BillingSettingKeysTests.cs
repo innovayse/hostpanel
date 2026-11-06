@@ -90,6 +90,45 @@ public sealed class BillingSettingKeysTests
         BillingSettingKeys.AllowsEmpty(BillingSettingKeys.InvoiceDaysBefore).Should().BeFalse();
     }
 
+    /// <summary>The top-up limits are money above zero with at most two decimals, and refuse anything else.</summary>
+    /// <param name="value">The candidate value.</param>
+    /// <param name="ok">Whether both limit keys accept it.</param>
+    [Theory]
+    [InlineData("5", true)]
+    [InlineData("1000", true)]
+    [InlineData("0.01", true)]
+    [InlineData("12.5", true)]
+    [InlineData("12.50", true)]
+    [InlineData("0", false)]
+    [InlineData("0.00", false)]
+    [InlineData("-5", false)]
+    [InlineData("1.234", false)]
+    [InlineData("", false)]
+    [InlineData("ten", false)]
+    [InlineData("1,000", false)]
+    [InlineData("1234567890", false)]
+    public void TopUpLimits_Pattern(string value, bool ok)
+    {
+        BillingSettingKeys.Patterns[BillingSettingKeys.CreditTopUpMinimum].Regex.IsMatch(value).Should().Be(ok);
+        BillingSettingKeys.Patterns[BillingSettingKeys.CreditTopUpMaximum].Regex.IsMatch(value).Should().Be(ok);
+    }
+
+    /// <summary>The seeded limits are a usable range: a minimum below the maximum, and neither can be cleared.</summary>
+    [Fact]
+    public void TopUpLimits_SeedAUsableRangeAndCannotBeEmptied()
+    {
+        var minimum = decimal.Parse(
+            BillingSettingKeys.Defaults.Single(d => d.Key == BillingSettingKeys.CreditTopUpMinimum).Value,
+            System.Globalization.CultureInfo.InvariantCulture);
+        var maximum = decimal.Parse(
+            BillingSettingKeys.Defaults.Single(d => d.Key == BillingSettingKeys.CreditTopUpMaximum).Value,
+            System.Globalization.CultureInfo.InvariantCulture);
+
+        minimum.Should().BePositive().And.BeLessThan(maximum);
+        BillingSettingKeys.AllowsEmpty(BillingSettingKeys.CreditTopUpMinimum).Should().BeFalse();
+        BillingSettingKeys.AllowsEmpty(BillingSettingKeys.CreditTopUpMaximum).Should().BeFalse();
+    }
+
     /// <summary>No billing key leaks into the anonymous storefront settings.</summary>
     [Fact]
     public void NoBillingKeyIsPublic()

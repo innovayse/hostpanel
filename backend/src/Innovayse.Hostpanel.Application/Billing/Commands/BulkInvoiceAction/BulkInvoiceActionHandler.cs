@@ -61,7 +61,7 @@ public sealed class BulkInvoiceActionHandler
 
         var affected = cmd.Action switch
         {
-            InvoiceBulkAction.MarkPaid => Result<int>.Success(MarkPaid(invoices)),
+            InvoiceBulkAction.MarkPaid => await MarkPaidAsync(invoices, ct),
             InvoiceBulkAction.MarkUnpaid => Result<int>.Success(MarkUnpaid(invoices)),
             InvoiceBulkAction.MarkCancelled => await CancelAsync(invoices, ct),
             InvoiceBulkAction.Duplicate => Result<int>.Success(Duplicate(invoices)),
@@ -79,8 +79,9 @@ public sealed class BulkInvoiceActionHandler
 
     /// <summary>Settles every payable invoice as paid manually, each with its ledger row.</summary>
     /// <param name="invoices">The selected invoices (tracked).</param>
-    /// <returns>How many were settled.</returns>
-    private int MarkPaid(IReadOnlyList<Invoice> invoices)
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>How many were settled, or <c>CLIENT_NOT_FOUND</c> when a credit top-up has no client to credit.</returns>
+    private async Task<Result<int>> MarkPaidAsync(IReadOnlyList<Invoice> invoices, CancellationToken ct)
     {
         var now = _clock.UtcNow;
         var affected = 0;
@@ -93,10 +94,17 @@ public sealed class BulkInvoiceActionHandler
                 _context.Transactions.Add(ledgerRow);
             }
 
+            // A credit top-up reaches the balance in the save that marks it paid.
+            var toppedUp = await _clientCredit.CreditPaidTopUpAsync(invoice, ledgerRow, ct);
+            if (toppedUp.IsFailure)
+            {
+                return Result<int>.FailureCode(toppedUp.ErrorCode!);
+            }
+
             affected++;
         }
 
-        return affected;
+        return Result<int>.Success(affected);
     }
 
     /// <summary>

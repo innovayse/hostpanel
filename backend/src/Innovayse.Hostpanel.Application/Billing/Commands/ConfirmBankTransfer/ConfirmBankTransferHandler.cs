@@ -41,24 +41,30 @@ public sealed class ConfirmBankTransferHandler
     /// <summary>Structured logger.</summary>
     private readonly ILogger<ConfirmBankTransferHandler> _logger;
 
+    /// <summary>Puts the amount of a confirmed credit top-up on the client's balance in the same save.</summary>
+    private readonly IClientCredit _clientCredit;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="bus">Wolverine bus, used to fulfil the order the invoice was raised for.</param>
     /// <param name="clock">The clock the moment of the confirmation is read from.</param>
     /// <param name="activity">Records the activity log line for this action, saved with the change it describes.</param>
     /// <param name="logger">Structured logger.</param>
+    /// <param name="clientCredit">Puts the amount of a confirmed credit top-up on the client's balance in the same save.</param>
     public ConfirmBankTransferHandler(
         IHostpanelDbContext context,
         IMessageBus bus,
         IClock clock,
         IActivityLogger activity,
-        ILogger<ConfirmBankTransferHandler> logger)
+        ILogger<ConfirmBankTransferHandler> logger,
+        IClientCredit clientCredit)
     {
         _context = context;
         _bus = bus;
         _clock = clock;
         _activity = activity;
         _logger = logger;
+        _clientCredit = clientCredit;
     }
 
     /// <summary>Handles <see cref="ConfirmBankTransferCommand"/>.</summary>
@@ -93,6 +99,13 @@ public sealed class ConfirmBankTransferHandler
         if (ledgerRow is not null)
         {
             _context.Transactions.Add(ledgerRow);
+        }
+
+        // A confirmed top-up reaches the balance in the save that marks it paid.
+        var credited = await _clientCredit.CreditPaidTopUpAsync(invoice, ledgerRow, ct);
+        if (credited.IsFailure)
+        {
+            return credited;
         }
 
         await _activity.RecordAsync(

@@ -13,9 +13,12 @@
       <UiCard data-testid="invoice-header">
         <UiStack direction="row" justify="between" align="start" wrap class="mb-4">
           <UiStack gap="xs">
-            <UiHeading :level="1" size="subsection" data-testid="invoice-heading">
-              {{ $t('client.invoices.heading', { id: invoice.id }) }}
-            </UiHeading>
+            <UiStack direction="row" align="center" gap="sm" wrap>
+              <UiHeading :level="1" size="subsection" data-testid="invoice-heading">
+                {{ $t('client.invoices.heading', { id: invoice.id }) }}
+              </UiHeading>
+              <UiBadge v-if="invoice.isCreditTopUp" variant="info" rounded data-testid="invoice-top-up-badge">{{ $t('client.credit.topUpInvoice') }}</UiBadge>
+            </UiStack>
             <UiText size="sm" tone="muted">{{ $t('client.invoices.issued') }} {{ formatDate(invoice.invoiceDate) }}</UiText>
           </UiStack>
           <UiStack direction="row" align="center" gap="sm">
@@ -54,6 +57,9 @@
         {{ paymentStore.bankTransferError }}
       </UiAlert>
       <ClientInvoicesBankTransferCard v-if="paymentStore.bankTransfer" :details="paymentStore.bankTransfer" />
+
+      <!-- Pay with the credit balance: offered only while money is owed, the invoice is no top-up and there is credit. -->
+      <ClientInvoicesApplyCreditCard :invoice="invoice" @applied="reload" />
 
       <UiTable data-testid="invoice-items">
         <UiTableHead>
@@ -140,6 +146,15 @@ const { pending } = await useAsyncData(
 
 /** The invoice being read; null until loaded or after a failed read. */
 const invoice = computed(() => paymentStore.invoice)
+
+/**
+ * Reads the invoice again after credit was applied to it: its credit, total, amount due and status have changed.
+ *
+ * @returns Resolves once the invoice has been read.
+ */
+const reload = async (): Promise<void> => {
+  await paymentStore.loadInvoice(String(route.params.id))
+}
 
 /** The sentence for a failed read. */
 const error = computed(() => paymentStore.invoiceError)

@@ -321,4 +321,50 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         plugin.LastCreatePaymentInstruction!.AmountMinor.Should().Be(1550); // 25.50 - 10.00 due
     }
+
+    /// <summary>
+    /// After credit is applied to the invoice, the gateway session charges what is still due, the total net of that credit:
+    /// the credit is never charged to the bank card a second time.
+    /// </summary>
+    [Fact]
+    public async Task StartAfterCredit_ChargesTheAmountDueNetOfCredit()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-credit");
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        await BillingTestSeeds.GiveCreditAsync(host, clientId, 12m);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 25.50m);
+        (await client.PostAsJsonAsync($"/api/me/invoices/{invoiceId}/credit", new { amount = 12m })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var response = await StartAsync(client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        plugin.LastCreatePaymentInstruction!.AmountMinor.Should().Be(1350); // 25.50 - 12.00 credit
+    }
+
+    /// <summary>
+    /// Credit that covers the whole invoice settles it, so no gateway session can be started for it: nothing is left to charge.
+    /// </summary>
+    [Fact]
+    public async Task StartAfterCreditThatCoversTheInvoice_IsRefusedAsNotPayable()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-credit-all");
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        await BillingTestSeeds.GiveCreditAsync(host, clientId, 30m);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 25.50m);
+        (await client.PostAsJsonAsync($"/api/me/invoices/{invoiceId}/credit", new { amount = 25.50m })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var response = await StartAsync(client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
+        plugin.CreatePaymentCallCount.Should().Be(0);
+    }
 }

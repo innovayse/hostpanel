@@ -143,4 +143,25 @@ public static class BillingErrors
     /// and <see cref="Transaction.CorrectAmounts"/>.
     /// </summary>
     public const string TransactionAmountRequired = "TRANSACTION_AMOUNT_REQUIRED";
+
+    /// <summary>
+    /// The entry is part of the client's credit history and cannot be edited or deleted (409): <see cref="Transaction.EnsureEditable"/>.
+    /// A mistake is put right with a new credit adjustment.
+    /// </summary>
+    public const string TransactionCreditLocked = "TRANSACTION_CREDIT_LOCKED";
+
+    /// <summary>
+    /// A credit top-up invoice is one fixed line and cannot be edited, taxed or discounted (400): <see cref="Invoice.AddItem"/>
+    /// and every other change to its lines or tax rate.
+    /// </summary>
+    public const string InvoiceTopUpFixed = "INVOICE_TOP_UP_FIXED";
+
+    /// <summary>Credit cannot be applied to a credit top-up invoice, which would pay for credit with credit (400): <see cref="Invoice.ApplyCredit"/>.</summary>
+    public const string InvoiceTopUpNoCredit = "INVOICE_TOP_UP_NO_CREDIT";
+
+    /// <summary>
+    /// A paid credit top-up is refunded by staff by hand only (400): not through the gateway and not back to the balance,
+    /// which would be the same money again.
+    /// </summary>
+    public const string InvoiceTopUpRefundManualOnly = "INVOICE_TOP_UP_REFUND_MANUAL_ONLY";
 }

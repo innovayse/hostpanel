@@ -1165,4 +1165,19 @@
   <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
     <value>This line has no renewal claim to release.</value>
   </data>
+  <data name="TRANSACTION_CREDIT_LOCKED" xml:space="preserve">
+    <value>This entry is part of the credit history and cannot be changed or deleted. Add a credit adjustment to correct it.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_FIXED" xml:space="preserve">
+    <value>A credit top-up invoice is a single fixed line and cannot be edited.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_NO_CREDIT" xml:space="preserve">
+    <value>Credit cannot be applied to a credit top-up invoice.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_REFUND_MANUAL_ONLY" xml:space="preserve">
+    <value>A paid credit top-up can only be refunded by hand: record the refund as a manual one.</value>
+  </data>
+  <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
+    <value>The amount is outside the range allowed for adding funds.</value>
+  </data>
 </root>

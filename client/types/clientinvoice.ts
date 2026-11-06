@@ -71,6 +71,11 @@ export interface ClientInvoice {
   taxRate: number
   /** Total credit applied. */
   credit: number
+  /**
+   * Whether this is a credit top-up invoice: one fixed line that puts its amount on the client's balance when paid. Credit
+   * cannot be applied to it.
+   */
+  isCreditTopUp: boolean
   /** Preferred payment method; null when not specified. */
   paymentMethod: string | null
   /** Line items on the invoice. */

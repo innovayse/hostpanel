@@ -1408,4 +1408,19 @@
   <data name="RenewalWindowInvalid" xml:space="preserve">
     <value>Выберите период продления: 30, 60 или 90 дней.</value>
   </data>
+  <data name="CreditAdjustmentDirectionInvalid" xml:space="preserve">
+    <value>Выберите, добавить кредит или списать его.</value>
+  </data>
+  <data name="CreditAdjustmentAmountInvalid" xml:space="preserve">
+    <value>Сумма должна быть больше нуля.</value>
+  </data>
+  <data name="CreditAdjustmentReasonRequired" xml:space="preserve">
+    <value>Укажите причину корректировки.</value>
+  </data>
+  <data name="CreditAdjustmentReasonTooLong" xml:space="preserve">
+    <value>Причина должна быть не длиннее 500 символов.</value>
+  </data>
+  <data name="CreditTopUpAmountInvalid" xml:space="preserve">
+    <value>Сумма должна быть больше нуля.</value>
+  </data>
 </root>

@@ -48,6 +48,7 @@ import {
   ACCOUNT,
   ANNOUNCEMENT,
   BANK_TRANSFER_DETAILS,
+  CREDIT,
   FAQS,
   LOCATIONS,
   PARTNERS,
@@ -65,6 +66,7 @@ import {
   DEMO_RESET_IN_MS,
   CURRENCIES,
   DEPARTMENTS,
+  TOP_UP_INVOICE_ID,
   DOMAIN,
   DOMAIN_NAMESERVERS,
   DOMAIN_ORDER,
@@ -186,6 +188,25 @@ let hostedGatewayEnabled = false
 
 /** Whether the gateway list offers the bank transfer; on by default, a spec turns it off, a reset turns it on. */
 let bankTransferEnabled = true
+
+/** The credit balance of the signed-in client, which applying credit to {@link INVOICE} lowers; a reset restores it. */
+let creditBalance = CREDIT.balance
+
+/** The credit applied to {@link INVOICE} so far; a reset clears it. */
+let invoiceCredit = 0
+
+/**
+ * The invoice as the stub reads it now: waiting for a transfer once chosen, and net of the credit applied to it.
+ *
+ * @returns {typeof INVOICE} The invoice.
+ */
+const currentInvoice = () => ({
+  ...INVOICE,
+  status: bankTransferChosen ? 'PaymentPending' : INVOICE.status,
+  credit: invoiceCredit,
+  total: INVOICE.total - invoiceCredit,
+  amountDue: INVOICE.amountDue - invoiceCredit,
+})
 
 /** Whether the signed-in client has chosen the bank transfer for {@link INVOICE}, which then reads as PaymentPending; a reset clears it. */
 let bankTransferChosen = false
@@ -732,11 +753,37 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
     }
   }
   if (isGet && path === '/api/me/invoices') {
-    send(res, 200, [INVOICE])
+    send(res, 200, [currentInvoice()])
     return true
   }
   if (isGet && path === `/api/me/invoices/${INVOICE.id}`) {
-    send(res, 200, bankTransferChosen ? { ...INVOICE, status: 'PaymentPending' } : INVOICE)
+    send(res, 200, currentInvoice())
+    return true
+  }
+  // Credit: the balance with the limits of one top-up and the history; adding funds raises a top-up invoice inside the limits.
+  if (isGet && path === '/api/me/credit') {
+    send(res, 200, { ...CREDIT, balance: creditBalance })
+    return true
+  }
+  if (method === 'POST' && path === '/api/me/credit/top-ups') {
+    const amount = Number(body?.amount)
+    if (!(amount >= CREDIT.topUpMinimum && amount <= CREDIT.topUpMaximum)) {
+      sendProblem(res, 400, 'CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE', 'E2E: the amount is outside the range allowed for adding funds.')
+      return true
+    }
+    send(res, 201, TOP_UP_INVOICE_ID)
+    return true
+  }
+  // Applying credit to the invoice lowers the balance and what the invoice owes; more than either is refused.
+  if (method === 'POST' && path === `/api/me/invoices/${INVOICE.id}/credit`) {
+    const amount = Number(body?.amount)
+    if (!(amount > 0) || amount > creditBalance) {
+      sendProblem(res, 400, 'CLIENT_CREDIT_INSUFFICIENT', 'E2E: there is not enough credit on the balance.')
+      return true
+    }
+    creditBalance -= amount
+    invoiceCredit += amount
+    send(res, 204)
     return true
   }
   // Bank transfer: choosing it moves the invoice to waiting and answers the bank details; reading the details is refused until then.
@@ -1090,6 +1137,8 @@ const server = createServer(async (req, res) => {
     hostedGatewayEnabled = false
     bankTransferEnabled = true
     bankTransferChosen = false
+    creditBalance = CREDIT.balance
+    invoiceCredit = 0
     storedMethods = seedStoredMethods()
     slidesEnabled = false
     pluginSlots = {}

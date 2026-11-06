@@ -1240,6 +1240,24 @@ public static class HostpanelErrorCodes
     public const string TRANSACTION_AMOUNT_REQUIRED = Domain.Billing.BillingErrors.TransactionAmountRequired;
 
     /// <summary>
+    /// The entry is part of the client's credit history and cannot be edited or deleted (409):
+    /// <see cref="Domain.Billing.Transaction.EnsureEditable"/>.
+    /// </summary>
+    public const string TRANSACTION_CREDIT_LOCKED = Domain.Billing.BillingErrors.TransactionCreditLocked;
+
+    /// <summary>A credit top-up invoice is one fixed line and cannot be edited or taxed (400).</summary>
+    public const string INVOICE_TOP_UP_FIXED = Domain.Billing.BillingErrors.InvoiceTopUpFixed;
+
+    /// <summary>Credit cannot be applied to a credit top-up invoice (400).</summary>
+    public const string INVOICE_TOP_UP_NO_CREDIT = Domain.Billing.BillingErrors.InvoiceTopUpNoCredit;
+
+    /// <summary>A paid credit top-up is refunded by staff by hand only (400).</summary>
+    public const string INVOICE_TOP_UP_REFUND_MANUAL_ONLY = Domain.Billing.BillingErrors.InvoiceTopUpRefundManualOnly;
+
+    /// <summary>The top-up amount is below the minimum or above the maximum the admin allows (400).</summary>
+    public const string CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE = "CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE";
+
+    /// <summary>
     /// The id names no contact on this client (404): <see cref="Domain.Clients.Client.RemoveContact"/>
     /// and <see cref="Domain.Clients.Client.UpdateContact"/>. The one answer for a contact that is
     /// another account's and one that does not exist, on the admin and the client routes alike.

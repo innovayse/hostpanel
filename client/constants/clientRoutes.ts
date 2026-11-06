@@ -44,6 +44,12 @@ export const CLIENT_DOMAINS_PATH = '/client/domains'
 /** The customer's invoices list. */
 export const CLIENT_INVOICES_PATH = '/client/invoices'
 
+/** The customer's credit: balance, history and the way to add funds. */
+export const CLIENT_CREDIT_PATH = '/client/credit'
+
+/** The page where the customer chooses how much to add to their credit balance. */
+export const CLIENT_CREDIT_ADD_PATH = '/client/credit/add'
+
 /** The customer's support tickets list. */
 export const CLIENT_TICKETS_PATH = '/client/tickets'
 

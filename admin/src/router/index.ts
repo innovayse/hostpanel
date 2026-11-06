@@ -105,6 +105,7 @@ const router = createRouter({
             { path: 'invoices', component: lazy('views/ClientInvoicesView.vue') },
             { path: 'quotes', component: lazy('views/ClientQuotesView.vue') },
             { path: 'transactions', component: lazy('views/ClientTransactionsView.vue') },
+            { path: 'credit', component: lazy('views/ClientCreditView.vue') },
             { path: 'tickets', component: lazy('views/ClientTicketsView.vue') },
             { path: 'tickets/new', component: lazy('views/ClientOpenTicketView.vue') },
             { path: 'tickets/:ticketId', component: lazy('views/ClientTicketDetailView.vue') },

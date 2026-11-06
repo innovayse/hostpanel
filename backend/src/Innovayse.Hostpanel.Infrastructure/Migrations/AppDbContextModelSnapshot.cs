@@ -439,6 +439,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("InvoiceDate")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<bool>("IsCreditTopUp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTimeOffset?>("LapsedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -839,8 +844,18 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<decimal>("AmountOut")
                         .HasColumnType("numeric(18,4)");
 
+                    b.Property<decimal?>("BalanceAfter")
+                        .HasColumnType("numeric(18,4)");
+
                     b.Property<int>("ClientId")
                         .HasColumnType("integer");
+
+                    b.Property<decimal?>("CreditChange")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<string>("CreditMovement")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("Currency")
                         .IsRequired()

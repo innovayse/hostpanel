@@ -120,6 +120,10 @@
             "component": "ClientTransactionsView.vue"
           },
           {
+            "path": "credit",
+            "component": "ClientCreditView.vue"
+          },
+          {
             "path": "tickets",
             "component": "ClientTicketsView.vue"
           },

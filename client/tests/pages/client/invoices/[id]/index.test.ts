@@ -14,6 +14,8 @@ const billingApi = vi.hoisted(() => ({
   fetchInvoice: vi.fn(),
   fetchInvoicePdf: vi.fn(),
   fetchBankTransfer: vi.fn(),
+  fetchCredit: vi.fn(),
+  applyInvoiceCredit: vi.fn(),
 }))
 
 /** The mocked browser save. */
@@ -30,9 +32,20 @@ vi.mock('~/utils/saveBlob', () => ({ saveBlob }))
  */
 const invoice = (overrides: Record<string, unknown> = {}) => ({
   id: 41, status: InvoiceStatus.Unpaid, currency: 'USD', invoiceDate: '2026-01-01', dueDate: '2099-01-15', paidAt: null, paymentMethod: 'card',
-  subTotal: 90, tax: 10, credit: 0, total: 100, amountDue: 100,
+  subTotal: 90, tax: 10, credit: 0, total: 100, amountDue: 100, isCreditTopUp: false,
   items: [{ id: 1, description: 'Hosting', amount: 90 }], transactions: [],
   ...overrides
+})
+
+/**
+ * Builds a credit with an empty history.
+ *
+ * @param balance - The balance.
+ * @returns The credit.
+ */
+const credit = (balance: number) => ({
+  balance, currency: 'USD', topUpMinimum: 5, topUpMaximum: 1000,
+  entries: { items: [], pageNumber: 1, pageSize: 10, totalCount: 0, totalPages: 0 }
 })
 
 describe('invoice page', () => {
@@ -40,6 +53,9 @@ describe('invoice page', () => {
     billingApi.fetchInvoice.mockReset()
     billingApi.fetchInvoicePdf.mockReset()
     billingApi.fetchBankTransfer.mockReset()
+    billingApi.fetchCredit.mockReset()
+    billingApi.applyInvoiceCredit.mockReset()
+    billingApi.fetchCredit.mockResolvedValue(credit(0))
     saveBlob.mockReset()
     stubClientRuntime({ params: { id: '41' } })
   })
@@ -100,6 +116,42 @@ describe('invoice page', () => {
     const wrapper = await mountPage(InvoicePage)
 
     expect(wrapper.find('[data-testid="invoice-pay-amount"]').text()).toContain('$60.00')
+  })
+
+  it('offers to pay with credit when the client has some, and reads the invoice again once it is applied', async () => {
+    billingApi.fetchCredit.mockResolvedValue(credit(30))
+    billingApi.applyInvoiceCredit.mockResolvedValue(undefined)
+    billingApi.fetchInvoice.mockResolvedValueOnce(invoice()).mockResolvedValueOnce(invoice({ credit: 30, total: 70, amountDue: 70 }))
+    const wrapper = await mountPage(InvoicePage)
+    await flushPromises()
+
+    await wrapper.get('[data-testid="apply-credit-amount"]').setValue('30')
+    await wrapper.get('[data-testid="apply-credit-card"] form').trigger('submit')
+    await flushPromises()
+
+    expect(billingApi.applyInvoiceCredit).toHaveBeenCalledWith(41, 30)
+    expect(billingApi.fetchInvoice).toHaveBeenCalledTimes(2)
+    expect(wrapper.get('[data-testid="invoice-pay-amount"]').text()).toContain('$70.00')
+  })
+
+  it('offers no credit payment when the client has no credit', async () => {
+    billingApi.fetchInvoice.mockResolvedValue(invoice())
+
+    const wrapper = await mountPage(InvoicePage)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="apply-credit-card"]').exists()).toBe(false)
+  })
+
+  it('marks a credit top-up invoice and offers no credit for it', async () => {
+    billingApi.fetchCredit.mockResolvedValue(credit(30))
+    billingApi.fetchInvoice.mockResolvedValue(invoice({ isCreditTopUp: true }))
+
+    const wrapper = await mountPage(InvoicePage)
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="invoice-top-up-badge"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="apply-credit-card"]').exists()).toBe(false)
   })
 
   it('offers no payment for a paid invoice', async () => {

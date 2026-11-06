@@ -106,6 +106,12 @@ const mountLayout = async () => {
 
 describe('client layout', () => {
   describe('workspace page', () => {
+    it.each(['ru', 'hy'])('hides the side menu on a workspace page under the %s prefix', async (language) => {
+      const wrapper = await mountAt(`/${language}${PAGE_PATH}`, 'workspace')
+
+      expect(wrapper.get('[data-testid="client-sidebar"]').classes()).toContain('lg:hidden')
+    })
+
     /** The address of the workspace page these tests hold in the store. */
     const PAGE_PATH = '/client/apps/acme/sites/7'
 
@@ -117,7 +123,7 @@ describe('client layout', () => {
      * @returns The wrapper.
      */
     const mountAt = async (path: string, layout: string) => {
-      vi.stubGlobal('useRoute', () => ({ params: {}, query: {}, path, fullPath: path, meta: {} }))
+      vi.stubGlobal('useRoute', () => ({ params: path.includes('/client/apps/acme/') ? { plugin: 'acme' } : {}, query: {}, path, fullPath: path, meta: {} }))
       const wrapper = await mountLayout()
       usePluginsStore().page = {
         pluginId: 'acme', id: 'sites', path: '/sites/{id}', title: 'Sites', view: { schema: 1, blocks: [] },

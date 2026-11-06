@@ -10,8 +10,10 @@
     "previewSource": "Which site",
     "previewDesktop": "Desktop",
     "previewPhone": "Phone",
-    "previewOpen": "Open in a new tab",
+    "previewOpen": "Open",
     "previewEmpty": "Nothing to preview yet.",
-    "chatStepStopped": "Stopped"
+    "chatStepStopped": "Stopped",
+    "chatStepsCount": "{done} of {total} steps done",
+    "chatResultDetails": "See details"
   }
 }

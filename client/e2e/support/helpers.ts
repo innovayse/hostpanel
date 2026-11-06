@@ -105,6 +105,18 @@ export const signIn = async (context: BrowserContext, baseURL: string): Promise<
 }
 
 /**
+ * Signs in through the form the client-auth middleware led to, as a reader does.
+ *
+ * @param page - The page on the sign-in form.
+ * @returns Resolves once the form was submitted.
+ */
+export const signInThroughForm = async (page: Page): Promise<void> => {
+  await page.getByTestId('login-email').fill(CLIENT_CREDENTIALS.email)
+  await page.getByTestId('login-password').fill(CLIENT_CREDENTIALS.password)
+  await page.getByTestId('login-submit').click()
+}
+
+/**
  * Clears the stub backend's request log, so a spec asserts only on its own traffic.
  *
  * @param request Playwright's API request context.

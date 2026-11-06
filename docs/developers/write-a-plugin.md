@@ -468,8 +468,9 @@ the reader can switch both. A bad shape, or a preview in a slot or on an admin p
 
 **What may be framed.** The address the route returns is shown only when its origin is one of your manifest's
 `externalOrigins` (a pure `https` origin) or a domain of the reader's own active hosting services on a product the
-operator bound to your plugin's slot widgets (with its `www` name, and only for a reader who may see services; your
-manifest's `productIds` do not count, and nothing bound means no domains). Anything else shows nothing, with no message, and your plugin cannot
+operator bound to your plugin's slot widgets, as the service's domain was typed at order (with its `www` name, and only for
+a reader who may see services; your manifest's `productIds` do not count, nothing bound means no domains, and the panel's
+own origin is never on the list). Anything else shows nothing, with no message, and your plugin cannot
 change that: the host writes the list per reader, and the same list narrows the page's `frame-src`, so a browser refuses
 any other frame too.
 
@@ -479,14 +480,16 @@ will look signed out there, and a site that refuses framing (`X-Frame-Options`, 
 your preview without those headers.
 
 On a developer machine, `PLUGIN_PREVIEW_DEV_HTTP_ORIGIN=http://localhost:8088` in `docker/.env` (the dev compose file maps
-it to `PluginPreview__DevelopmentHttpOrigins__0`; empty means none) allows an exact `http` origin on
-a loopback host. Outside the Development environment the host refuses to start with it set.
+it to `PluginPreview__DevelopmentHttpOrigins__0`, and `PLUGIN_PREVIEW_DEV_HTTP_ORIGIN_2` to `__1`, for a second address;
+empty means none) allows an exact `http` origin on a loopback host. Outside the Development environment the host refuses to start with it set.
 
 ## Chat events
 
 Needs SDK 3.2.0 or later. A `chat` block's streaming route may send these events (`PluginChatEvents`) beside its reply
 text, so a reader can see what happened without reading it out of a paragraph. Text is plain and already in the reader's
-language. `error` and `done` stay the host's.
+language. `error` and `done` stay the host's. The reply text itself (`delta`, `message`, an assistant row of `history`) may
+use a small Markdown subset: paragraphs, `#` headings, `-` and `1.` lists, fenced code, `**bold**`, `*italic*` and
+`` `code` ``. HTML and Markdown links in it stay plain text; send a link with the `link` event.
 
 ```json
 { "event": "step", "data": { "id": "build", "label": "Building the site", "state": "running" } }

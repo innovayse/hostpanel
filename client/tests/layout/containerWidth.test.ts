@@ -30,6 +30,8 @@ const ALLOWED_BY_FILE: Record<string, string[]> = {
   'components/client/layout/Sidebar.vue': ['max-w-[85vw]'],
   'components/layout/Footer.vue': ['max-w-[180px]'],
   'components/layout/Header.vue': ['max-w-[160px]'],
+  // A preview's screen sizes, not page layout: the panel owns them and a frame sits in a pane.
+  'components/plugin/PreviewBlock.vue': ['max-w-[375px]', 'max-w-[980px]'],
   'components/ui/UiBreadcrumbs.vue': ['max-w-[150px]'],
   // A chat bubble is a share of the conversation's width, never the page's: the conversation sits in the container.
   'components/ui/UiChatBubble.vue': ['max-w-[85%]'],

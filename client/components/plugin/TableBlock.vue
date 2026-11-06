@@ -4,6 +4,18 @@
     <UiSkeleton v-if="loading" shape="block" class="h-32" />
     <UiText v-else-if="error" size="sm" tone="muted" data-testid="plugin-table-error">{{ error }}</UiText>
     <UiText v-else-if="rows.length === 0" size="sm" tone="muted" data-testid="plugin-table-empty">{{ $t('plugins.tableEmpty') }}</UiText>
+    <UiStack v-else-if="block.display === PluginTableDisplay.Cards" gap="sm" data-testid="plugin-table-cards">
+      <UiCard v-for="row in visibleRows" :key="row.key" padding="sm" data-testid="plugin-table-card">
+        <UiStack direction="row" gap="sm" align="center" wrap>
+          <template v-for="cell in row.cells" :key="cell.key">
+            <UiBadge v-if="cell.badge" size="sm">{{ cell.text }}</UiBadge>
+            <UiText v-else-if="cell.first" as="span" size="sm" weight="semibold" class="font-mono">{{ cell.text }}</UiText>
+            <UiText v-else as="span" size="xs" tone="muted">{{ cell.text }}</UiText>
+          </template>
+        </UiStack>
+      </UiCard>
+      <UiPagination v-if="pageCount > 1" v-model="page" :total-pages="pageCount" :per-page="perPage" />
+    </UiStack>
     <template v-else>
       <UiTable scrollable :label="block.title">
         <UiTableHead>
@@ -38,10 +50,12 @@
 /**
  * PluginTableBlock - rows read from a GET route, one column per declared field, each value formatted as text with
  * the host's formatters (never as markup), paged in the panel when the view sets `pageSize`. A row link opens a
- * page of the plugin, its parameters read from the row; the view checks the page and every parameter.
+ * page of the plugin, its parameters read from the row; the view checks the page and every parameter. `display: cards`
+ * draws each row as a card, for a narrow pane where a table would scroll sideways.
  */
 import { usePluginSource, usePluginView } from '~/composables/usePluginView'
 import type { PluginTableBlock } from '~/types/pluginblock'
+import { PluginTableDisplay } from '~/types/plugintabledisplay'
 import { PluginValueFormat } from '~/types/pluginvalueformat'
 import { formatPluginValue, readPluginField } from '~/utils/plugins'
 

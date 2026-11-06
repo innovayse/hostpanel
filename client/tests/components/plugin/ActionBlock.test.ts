@@ -192,4 +192,15 @@ describe('PluginActionBlock', () => {
       expect(siteReads()).toBe(1)
     })
   })
+
+  it('takes its label from a route once read, keeping the written one when the value is empty', async () => {
+    api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7`]: { body: { label: 'Publish version 3', blank: '' } } })
+    const wrapper = mountBlocks([
+      { kind: PluginBlockKind.Action, label: 'Publish', route: TEST_ROUTES.publish, labelSource: { route: TEST_ROUTES.site, field: 'label' } },
+      { kind: PluginBlockKind.Action, label: 'Publish', route: TEST_ROUTES.publish, labelSource: { route: TEST_ROUTES.site, field: 'blank' } },
+    ])
+    await settle()
+
+    expect(wrapper.findAll('[data-testid="plugin-action-button"]').map(button => button.text())).toEqual(['Publish version 3', 'Publish'])
+  })
 })

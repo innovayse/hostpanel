@@ -18,6 +18,8 @@ export interface PluginChatResultAction {
   link: PluginLinkTarget | null
   /** The call; null for a link. */
   block: PluginActionBlock | null
+  /** Sends the conversation's last message again; a card action with neither a link nor a call. */
+  resend?: boolean
 }
 
 /** One result card. */
@@ -30,6 +32,8 @@ export interface PluginChatResult {
   title: string
   /** The sentence; empty for none. */
   text: string
+  /** The lines behind the card's details switch; empty for no switch. */
+  details: string[]
   /** The actions, in order. */
   actions: PluginChatResultAction[]
 }

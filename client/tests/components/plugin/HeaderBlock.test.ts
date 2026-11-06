@@ -87,4 +87,20 @@ describe('PluginHeaderBlock action messages', () => {
     expect(line.text()).toBe('The site is building.')
     expect(line.classes().join(' ')).toMatch(/danger|red/)
   })
+
+  it('draws a compact line from routes, with any block kind beside it', async () => {
+    api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7`]: { body: { name: 'Eva Bakery', domain: 'eva.test', live: 'Live: version 2' } } })
+    const wrapper = mountBlocks([{
+      kind: PluginBlockKind.Header,
+      compact: true,
+      titleSource: { route: TEST_ROUTES.site, field: 'name' },
+      subtitleSource: { route: TEST_ROUTES.site, field: 'domain' },
+      actions: [{ kind: PluginBlockKind.Badge, source: { route: TEST_ROUTES.site, field: 'live' } }],
+    }])
+    await settle()
+
+    expect(wrapper.get('[data-testid="plugin-header"]').text()).toBe('Eva Bakery')
+    expect(wrapper.get('[data-testid="plugin-header-subtitle"]').text()).toBe('eva.test')
+    expect(wrapper.get('[data-testid="plugin-badge"]').text()).toBe('Live: version 2')
+  })
 })

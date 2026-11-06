@@ -9,28 +9,8 @@
  * on the server and in the browser, so the output hydrates without a mismatch.
  */
 import { defineComponent, h } from 'vue'
-import type { PropType, VNode } from 'vue'
-import { TAG_CLASSES, parseRichText } from '~/utils/ui/richText'
-import type { RichNode } from '~/utils/ui/richText'
-import { UiRichNodeType } from '~/utils/ui/enums'
-
-/**
- * Converts one sanitised node into a VNode.
- *
- * @param node A node produced by `parseRichText`.
- * @returns The VNode (a text node for text).
- */
-const toVNode = (node: RichNode): VNode | string => {
-  if (node.type === UiRichNodeType.Text) {
-    return node.text
-  }
-  const props: Record<string, string> = { ...node.attrs }
-  const classes = TAG_CLASSES[node.tag]
-  if (classes) {
-    props.class = classes
-  }
-  return h(node.tag, props, node.children.map(toVNode))
-}
+import type { PropType } from 'vue'
+import { TAG_CLASSES, parseRichText, renderRichNode } from '~/utils/ui/richText'
 
 export default defineComponent({
   name: 'UiRichText',
@@ -44,7 +24,7 @@ export default defineComponent({
     return () => h(
       props.as,
       { 'data-testid': 'ui-rich-text', class: 'text-gray-700 dark:text-gray-300 leading-relaxed break-words' },
-      parseRichText(props.html).map(toVNode),
+      parseRichText(props.html).map((node) => renderRichNode(node, TAG_CLASSES)),
     )
   },
 })

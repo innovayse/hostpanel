@@ -10,8 +10,10 @@
     "previewSource": "Какой сайт",
     "previewDesktop": "Компьютер",
     "previewPhone": "Телефон",
-    "previewOpen": "Открыть в новой вкладке",
+    "previewOpen": "Открыть",
     "previewEmpty": "Пока нечего показать.",
-    "chatStepStopped": "Остановлено"
+    "chatStepStopped": "Остановлено",
+    "chatStepsCount": "Выполнено шагов: {done} из {total}",
+    "chatResultDetails": "Подробнее"
   }
 }

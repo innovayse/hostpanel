@@ -14,7 +14,7 @@ export interface AppRuntimeConfig {
    */
   clientBaseUrl: string
   /**
-   * Public address of the documentation website, e.g. `https://innovayse.github.io/hostpanel/`.
+   * Public address of the documentation website, e.g. `https://hostpanel.innovayse.com/docs/`.
    * Empty string means documentation links are hidden.
    */
   docsUrl: string

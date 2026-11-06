@@ -23,7 +23,7 @@ fi
 # Optional: the documentation website address. Empty hides all documentation links.
 DOCS_URL=$(printf '%s' "${DOCS_URL:-}" | sed 's|/*$||')
 if [ -n "$DOCS_URL" ] && ! printf '%s' "$DOCS_URL" | grep -Eq '^(https?://[A-Za-z0-9._~:/-]+)?$'; then
-  echo "DOCS_URL must be empty or an http(s) address such as https://innovayse.github.io/hostpanel" >&2
+  echo "DOCS_URL must be empty or an http(s) address such as https://hostpanel.innovayse.com/docs" >&2
   exit 1
 fi
 

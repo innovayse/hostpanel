@@ -94,6 +94,17 @@ const onLeaving = (): void => {
   leaving.value = true
   settled.value = false
 }
+
+/**
+ * Undoes the start of a leave when the drawer is reopened while it was leaving: the panel is still in, so
+ * requests work again and the close button shows.
+ *
+ * @returns Nothing; the leaving and settled states are restored.
+ */
+const onLeaveCancelled = (): void => {
+  leaving.value = false
+  settled.value = true
+}
 </script>
 
 <template>
@@ -104,6 +115,7 @@ const onLeaving = (): void => {
       @after-enter="onEntered"
       @before-leave="onLeaving"
       @after-leave="leaving = false"
+      @leave-cancelled="onLeaveCancelled"
     >
       <div v-if="open" class="group/overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" @click.self="close">
         <aside

@@ -137,6 +137,7 @@ const onBackdrop = (): void => {
       @after-enter="focusIn"
       @before-leave="leaving = true"
       @after-leave="leaving = false"
+      @leave-cancelled="leaving = false"
     >
     <div
       v-if="open"

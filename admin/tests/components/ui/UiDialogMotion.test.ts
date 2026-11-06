@@ -33,6 +33,17 @@ const startLeaving = (wrapper: VueWrapper): void => {
 }
 
 /**
+ * Cancels a leave the way the transition does when the surface is shown again while it leaves, by calling the
+ * `leave-cancelled` hook the surface gave it.
+ *
+ * @param wrapper - The mounted surface.
+ */
+const cancelLeaving = (wrapper: VueWrapper): void => {
+  const hook = wrapper.findComponent(UiTransition).vm.$attrs.onLeaveCancelled as () => void
+  hook()
+}
+
+/**
  * Waits for the transition's frames to pass.
  *
  * @returns A promise that settles after a few frames.
@@ -95,6 +106,24 @@ describe('UiDialog and its animation', () => {
     wrapper.unmount()
   })
 
+  it('can be asked again after a leave is cancelled by showing it again', async () => {
+    const wrapper = mountOpenDialog(true)
+    await frames()
+
+    startLeaving(wrapper)
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    expect(wrapper.emitted('confirm')).toBeUndefined()
+
+    cancelLeaving(wrapper)
+    await nextTick()
+    await wrapper.get('[data-testid="dialog-close"]').trigger('click')
+    await wrapper.get('[role="dialog"]').trigger('keydown', { key: 'Escape' })
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    expect(wrapper.emitted('close')).toHaveLength(2)
+    expect(wrapper.emitted('confirm')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
   it('can be asked again when it is shown again', async () => {
     const wrapper = mountOpenDialog()
     await frames()
@@ -146,6 +175,30 @@ describe('UiDrawer and its animation', () => {
     await close.trigger('click')
     await wrapper.get('[role="dialog"]').trigger('keydown', { key: 'Escape' })
     expect(wrapper.emitted('close')).toHaveLength(1)
+    wrapper.unmount()
+  })
+
+  it('can be closed and shows its close button again after a leave is cancelled', async () => {
+    const wrapper = mount(UiDrawer, { props: { open: true, title: 'Filters' }, attachTo: document.body, global: heldGlobal })
+    await frames()
+    // The enter has not ended under the stubbed transition, so the button starts hidden; the hook below settles it.
+    const onEntered = wrapper.findComponent(UiTransition).vm.$attrs.onAfterEnter as () => void
+    onEntered()
+    await nextTick()
+    expect(wrapper.get('[data-testid="drawer-close"]').classes()).toContain('opacity-100')
+
+    startLeaving(wrapper)
+    await nextTick()
+    expect(wrapper.get('[data-testid="drawer-close"]').classes()).toContain('invisible')
+    await wrapper.get('[data-testid="drawer-close"]').trigger('click')
+    expect(wrapper.emitted('close')).toBeUndefined()
+
+    cancelLeaving(wrapper)
+    await nextTick()
+    expect(wrapper.get('[data-testid="drawer-close"]').classes()).toContain('opacity-100')
+    await wrapper.get('[data-testid="drawer-close"]').trigger('click')
+    await wrapper.get('[role="dialog"]').trigger('keydown', { key: 'Escape' })
+    expect(wrapper.emitted('close')).toHaveLength(2)
     wrapper.unmount()
   })
 

@@ -43,13 +43,6 @@ export interface UiTransitionClasses {
   leaveToClass: string
 }
 
-/**
- * The marker class a modal backdrop carries while it is entering from or leaving to nothing. The panel
- * inside reads it through the `group/overlay` variants of {@link modalPanelClasses}, so one `<Transition>` on
- * the backdrop moves the panel too.
- */
-export const UI_TRANSITION_FROM_MARKER = 'ui-from'
-
 /** The classes of every kind, one full literal per class. */
 export const transitionSet: Record<UiTransitionKind, UiTransitionClasses> = {
   [UiTransitionKind.Dropdown]: {
@@ -88,8 +81,8 @@ export const transitionSet: Record<UiTransitionKind, UiTransitionClasses> = {
 
 /**
  * Classes of a modal's panel, which move while the backdrop around it (the `group/overlay` element, carrying
- * {@link UI_TRANSITION_FROM_MARKER}) fades. They read the marker, so the panel needs no transition of its own
- * and no second `<Transition>` that could end at a different moment.
+ * the `ui-from` marker class that the Dialog and Drawer sets above put on it) fades. They read the marker, so
+ * the panel needs no transition of its own and no second `<Transition>` that could end at a different moment.
  */
 export const modalPanelClasses = {
   /** A dialog's panel: scales in a little. */

@@ -22,7 +22,7 @@ describe('isHeaderWidgetEnabled', () => {
   })
 
   it('is off for the developer-machine default host', () => {
-    expect(isHeaderWidgetEnabled('sso', 'http://portal.example.test:3000')).toBe(false)
+    expect(isHeaderWidgetEnabled('sso', 'http://portal.local:3000')).toBe(false)
   })
 
   it('is off when the auth mode is not set', () => {

@@ -47,7 +47,7 @@ describe('header-widget plugin', () => {
   })
 
   it('adds nothing for the developer-machine default host', async () => {
-    await runPlugin('http://portal.example.test:3000')
+    await runPlugin('http://portal.local:3000')
 
     expect(useHeadMock).not.toHaveBeenCalled()
   })

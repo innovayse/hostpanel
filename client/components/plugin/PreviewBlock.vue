@@ -190,6 +190,23 @@ const showFrame = computed(() => address.value !== null && documentReady.value)
 /** Whether the select button is offered. */
 const canSelect = computed(() => selectableSource.value && showFrame.value && frameReady.value && expectedRelease.value !== '')
 
+/** A `ready` from this frame naming a release other than the one known yet, taken once the read answers with that release. */
+let heldReady: unknown = null
+
+/**
+ * Takes a `ready` the frame already sent, now that the release it names may be known: a frame says it once, and its script
+ * can run before the release is read, which would otherwise leave the select button hidden for good.
+ *
+ * @returns Nothing.
+ */
+const takeHeldReady = (): void => {
+  if (heldReady !== null && parsePluginSelectionMessage(heldReady, expectedRelease.value)?.event === PluginSelectionEvent.Ready) {
+    heldReady = null
+    frameReady.value = true
+    tellFrame()
+  }
+}
+
 /**
  * Tells the frame the mode and what is selected.
  *
@@ -222,6 +239,11 @@ const onFrameMessage = (event: MessageEvent): void => {
   }
   const message = parsePluginSelectionMessage(event.data, expectedRelease.value)
   if (!message) {
+    // Kept only when it is a well-formed `ready` in itself, and one at a time, so a frame cannot grow what the panel holds.
+    const claimed = readPluginField(event.data, 'release')
+    if (typeof claimed === 'string' && parsePluginSelectionMessage(event.data, claimed)?.event === PluginSelectionEvent.Ready) {
+      heldReady = event.data
+    }
     return
   }
   if (message.event === PluginSelectionEvent.Ready) {
@@ -311,6 +333,7 @@ if (selection) {
 // A new frame says again that it is ready, or says nothing and offers no selection.
 watch(() => frameKey.value, () => {
   frameReady.value = false
+  heldReady = null
 })
 // A selection names paths of one release; a new one may hold other content at them, so nothing carries over.
 watch(expectedRelease, (next, last) => {
@@ -322,10 +345,12 @@ watch(expectedRelease, (next, last) => {
     selection.clear()
     frameReady.value = false
   }
+  takeHeldReady()
 })
 watch(sourceId, () => {
   selection?.clear()
   frameReady.value = false
+  heldReady = null
 })
 watch(sourceId, reload)
 watch(() => (props.block.id ? context.refreshes.value[props.block.id] ?? 0 : 0), () => {

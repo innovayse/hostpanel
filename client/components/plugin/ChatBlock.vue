@@ -125,6 +125,7 @@
         </UiStack>
       </UiStack>
       <UiText v-if="selection?.error.value" size="sm" tone="danger" data-testid="plugin-chat-selection-error">{{ selection.error.value }}</UiText>
+      <UiText v-if="selectionStale && !selection?.chips.value.length" size="sm" tone="danger" role="alert" data-testid="plugin-chat-selection-stale">{{ $t('plugins.chatSelectionStale') }}</UiText>
       <UiStack direction="row" gap="sm" align="end" data-testid="plugin-chat-composer">
         <UiTextarea
           v-model="draft"
@@ -169,7 +170,9 @@
  * since a turn may have changed what they show. With `selection: true` the elements selected on the preview the reader
  * last selected on show as chips over the field, each labelled by the plugin, never by the frame, and go with the next
  * message; sending ends that preview's selection, and a "try again" sends the same one while that preview still holds the
- * release it was selected on, and no selection after that, since the ids may name other content in a new release. When another block refreshes this one by its `id` (a "new
+ * release it was selected on. After that it sends nothing: the ids may name other content in a new release, and the message
+ * without them would reach further than what the reader chose, so the reader is asked to select again and the text waits in
+ * the field. When another block refreshes this one by its `id` (a "new
  * conversation" action), the reply in flight is stopped, the messages are cleared and the history is read again.
  */
 import type { Component } from 'vue'
@@ -245,6 +248,8 @@ const status = ref('')
 const error = ref('')
 /** The keys of the cards whose details are open. */
 const openDetails = ref<ReadonlySet<number>>(new Set())
+/** True when a "try again" was refused because the page changed after its elements were selected. */
+const selectionStale = ref(false)
 /** True while a reply streams. */
 const streaming = ref(false)
 /** The next message key. */
@@ -463,6 +468,7 @@ const sendMessage = async (text: string, claim?: PluginSelectionClaim, chips?: r
   streaming.value = true
   status.value = ''
   error.value = ''
+  selectionStale.value = false
 
   const result = await store.streamRoute(
     context.pluginId, props.block.send, context.values, claim ? { message: text, selection: claim } : { message: text }, event => apply(target, event), running.signal)
@@ -517,17 +523,25 @@ const send = async (): Promise<void> => {
 
 /**
  * Sends the conversation's last message again, for a card's "try again". It never passes through the field, so what the
- * reader has started typing there stays.
+ * reader has started typing there stays. Refused when the message's selection is of a release its preview no longer holds,
+ * or a preview no longer there: the message then waits in an empty field for the reader to select again.
  *
  * @returns Resolves when the reply has ended.
  */
 const resend = async (): Promise<void> => {
   const last = [...messages.value].reverse().find(message => message.role === PluginChatRole.User)
-  if (last && !streaming.value) {
-    // A release moved on since: its ids may name other content now, so the old claim is not sent again.
-    const current = last.selection && selections?.releaseOf(last.selectionOwner ?? '') === last.selection.releaseId
-    await sendMessage(last.text, current ? last.selection : undefined, current ? last.selectionChips : undefined, last.selectionOwner)
+  if (!last || streaming.value) {
+    return
   }
+  // Fails closed: a plugin reads a message with no selection as free to change anything, so dropping the claim would widen the edit.
+  if (last.selection && selections?.releaseOf(last.selectionOwner ?? '') !== last.selection.releaseId) {
+    selectionStale.value = true
+    if (draft.value.trim() === '') {
+      draft.value = last.text
+    }
+    return
+  }
+  await sendMessage(last.text, last.selection, last.selectionChips, last.selectionOwner)
 }
 
 /**
@@ -576,6 +590,7 @@ const restart = async (): Promise<void> => {
   messages.value = []
   status.value = ''
   error.value = ''
+  selectionStale.value = false
   await loadHistory()
 }
 

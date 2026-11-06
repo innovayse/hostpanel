@@ -325,10 +325,13 @@ describe('element selection', () => {
     expect(asked).toHaveLength(lookups)
   })
 
-  it.each([
-    ['resends the claim while its release is on the preview', RELEASE, [ELEMENT]],
-    ['drops the claim from a resend once the release changed', 'r5', null],
-  ])('%s', async (_name, nextRelease, ids) => {
+  /**
+   * Sends a selected message whose reply offers a "try again", then lets the plugin's release move to the one given.
+   *
+   * @param nextRelease - The release after the change.
+   * @returns The view and the stream stub.
+   */
+  const failedTurn = async (nextRelease: string): Promise<{ wrapper: ReturnType<typeof mountBlocks>, reply: ReturnType<typeof stubStream> }> => {
     let release = RELEASE
     api = await startPluginApi({
       [`GET ${ROUTES_URL}/sites/7`]: () => ({ body: { previewUrl: `${ORIGIN}/p`, liveUrl: `${ORIGIN}/l`, release } }),
@@ -351,16 +354,118 @@ describe('element selection', () => {
     release = nextRelease
     await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
     await settle()
+    return { wrapper, reply }
+  }
+
+  it('resends the claim while its release is on the preview', async () => {
+    const { wrapper, reply } = await failedTurn(RELEASE)
+
     await wrapper.get('[data-testid="plugin-chat-result-resend"]').trigger('click')
     await settle()
 
     const body = JSON.parse(String(reply.calls[1]?.init.body)) as { message: string, selection?: { ids: string[] } }
     expect(body.message).toBe('Shorter')
-    expect(body.selection?.ids ?? null).toEqual(ids)
+    expect(body.selection?.ids).toEqual([ELEMENT])
+    expect(wrapper.find('[data-testid="plugin-chat-selection-stale"]').exists()).toBe(false)
     vi.unstubAllGlobals()
   })
 
+  it('refuses a resend once the release changed: nothing is sent, the reader is told and the message waits in the field', async () => {
+    const { wrapper, reply } = await failedTurn('r5')
+    const messages = wrapper.findAll('[data-testid="plugin-chat-user"]').length
+
+    await wrapper.get('[data-testid="plugin-chat-result-resend"]').trigger('click')
+    await settle()
+
+    expect(reply.calls).toHaveLength(1)
+    expect(wrapper.findAll('[data-testid="plugin-chat-user"]')).toHaveLength(messages)
+    expect(wrapper.get('[data-testid="plugin-chat-selection-stale"]').text()).toBe('plugins.chatSelectionStale')
+    expect((wrapper.get('[data-testid="plugin-chat-input"]').element as HTMLTextAreaElement).value).toBe('Shorter')
+    vi.unstubAllGlobals()
+  })
+
+  it('keeps what the reader is typing when a resend is refused', async () => {
+    const { wrapper, reply } = await failedTurn('r5')
+    await wrapper.get('[data-testid="plugin-chat-input"]').setValue('Something new')
+
+    await wrapper.get('[data-testid="plugin-chat-result-resend"]').trigger('click')
+    await settle()
+
+    expect(reply.calls).toHaveLength(1)
+    expect((wrapper.get('[data-testid="plugin-chat-input"]').element as HTMLTextAreaElement).value).toBe('Something new')
+    vi.unstubAllGlobals()
+  })
+
+  it('lets the reader send again after selecting on the new release, which ends the notice', async () => {
+    const { wrapper, reply } = await failedTurn('r5')
+    await wrapper.get('[data-testid="plugin-chat-result-resend"]').trigger('click')
+    await settle()
+
+    await deliver({ ...message('ready'), release: 'r5' }, frameWindow(wrapper))
+    await wrapper.get('[data-testid="plugin-preview-select"]').trigger('click')
+    await settle()
+    await deliver({ ...message('toggle', { id: ELEMENT }), release: 'r5' }, frameWindow(wrapper))
+    expect(wrapper.find('[data-testid="plugin-chat-selection-stale"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="plugin-chat-send"]').trigger('click')
+    await settle()
+
+    const body = JSON.parse(String(reply.calls[1]?.init.body)) as { message: string, selection?: { releaseId: string } }
+    expect(body.message).toBe('Shorter')
+    expect(body.selection?.releaseId).toBe('r5')
+    vi.unstubAllGlobals()
+  })
+
+  it('draws one chip for an id the lookup repeats', async () => {
+    api = await startPluginApi({
+      [`GET ${ROUTES_URL}/sites/7`]: { body: { previewUrl: `${ORIGIN}/p`, liveUrl: `${ORIGIN}/l`, release: RELEASE } },
+      [`GET ${ROUTES_URL}/sites/7/history`]: { body: [] },
+      [`POST ${ROUTES_URL}/sites/7/selection`]: { body: { items: [{ id: ELEMENT, label: 'First' }, { id: ELEMENT, label: 'Again' }] } },
+    })
+    const wrapper = mountBlocks(BLOCKS, { frameOrigins: [ORIGIN], options: { attachToBody: true } })
+    await settle()
+    await enterMode(wrapper)
+    await deliver(message('toggle', { id: ELEMENT }), frameWindow(wrapper))
+
+    const chips = wrapper.findAll('[data-testid="plugin-chat-selection-chip"]')
+    expect(chips).toHaveLength(1)
+    expect(chips[0]?.text()).toContain('First')
+  })
+
+  it.each([
+    ['takes a ready that arrived before the release was read', RELEASE, true],
+    ['leaves a ready that named another release', 'r9', false],
+  ])('%s', async (_name, named, offered) => {
+    let answer: () => void = () => undefined
+    const read = new Promise<void>((resolve) => {
+      answer = resolve
+    })
+    api = await startPluginApi({
+      [`GET ${ROUTES_URL}/sites/7`]: async () => {
+        await read
+        return { body: { release: RELEASE } }
+      },
+      [`GET ${ROUTES_URL}/sites/7/frame`]: { body: { url: `${ORIGIN}/p` } },
+      [`GET ${ROUTES_URL}/sites/7/history`]: { body: [] },
+    })
+    const blocks: PluginBlock[] = [{
+      kind: PluginBlockKind.Preview,
+      id: 'site-preview',
+      sources: [{ id: 'preview', label: 'Preview', route: { method: 'get', path: '/sites/{siteId}/frame' }, field: 'url' }],
+      selection: { sources: ['preview'], route: PICK, release: { route: TEST_ROUTES.site, field: 'release' } },
+    }]
+    const wrapper = mountBlocks(blocks, { frameOrigins: [ORIGIN], options: { attachToBody: true } })
+    await settle()
+
+    await deliver({ ...message('ready'), release: named }, frameWindow(wrapper))
+    expect(wrapper.find('[data-testid="plugin-preview-select"]').exists()).toBe(false)
+
+    answer()
+    await settle()
+    expect(wrapper.find('[data-testid="plugin-preview-select"]').exists()).toBe(offered)
+  })
+
   it('removes its listeners on unmount, so a frame\'s later message moves nothing', async () => {
+    const added = vi.spyOn(window, 'addEventListener')
     const wrapper = await mountView()
     await enterMode(wrapper)
     const source = frameWindow(wrapper)
@@ -369,6 +474,12 @@ describe('element selection', () => {
     wrapper.unmount()
 
     expect(removed.mock.calls.map(call => call[0])).toEqual(expect.arrayContaining(['message', 'keydown']))
+    for (const type of ['message', 'keydown']) {
+      const handlerAdded = added.mock.calls.find(call => call[0] === type)?.[1]
+      const handlerRemoved = removed.mock.calls.find(call => call[0] === type)?.[1]
+      expect(handlerAdded).toBeDefined()
+      expect(handlerRemoved).toBe(handlerAdded)
+    }
     await deliver(message('toggle', { id: ELEMENT }), source)
     expect(asked).toEqual([])
   })

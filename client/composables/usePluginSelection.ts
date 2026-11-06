@@ -55,7 +55,8 @@ export interface PluginSelections {
 const PLUGIN_SELECTION_KEY: InjectionKey<PluginSelections> = Symbol('plugin-selection')
 
 /**
- * Reads the items of a lookup's answer, those asked for and of the right shape.
+ * Reads the items of a lookup's answer, those asked for and of the right shape, each id once: the answer is the plugin's,
+ * and a repeated id would draw two chips under one key and send one element twice.
  *
  * @param data - The answer.
  * @param asked - The ids asked about.
@@ -67,7 +68,7 @@ const chipsOf = (data: unknown, asked: readonly string[]): PluginSelectionChip[]
   for (const item of Array.isArray(items) ? items : []) {
     const id = readPluginField(item, 'id')
     const label = readPluginField(item, 'label')
-    if (typeof id === 'string' && typeof label === 'string' && asked.includes(id)) {
+    if (typeof id === 'string' && typeof label === 'string' && asked.includes(id) && !chips.some(chip => chip.id === id)) {
       chips.push({ id, label })
     }
   }

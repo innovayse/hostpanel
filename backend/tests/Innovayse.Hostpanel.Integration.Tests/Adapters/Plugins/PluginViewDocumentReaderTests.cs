@@ -853,6 +853,17 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
         AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewPreviewInvalid);
     }
 
+    /// <summary>A second preview offering a selection is refused, because a chat's claim does not say which preview made it.</summary>
+    [Fact]
+    public void Read_SecondPreviewSelection_BreaksViewSelectionInvalid()
+    {
+        var member = SelectionMember("""["a"]""", "post");
+        var preview = $$$"""{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]{{{member}}}}""";
+        Write("views/a.json", $$$"""{"schema":1,"blocks":[{"kind":"chat","selection":true,"send":{"method":"post","path":"/publish"}},{{{preview}}},{{{preview}}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewSelectionInvalid);
+    }
+
     /// <summary>An extra member in a selection, which the panel would otherwise ignore, is refused.</summary>
     [Fact]
     public void Read_SelectionExtraMember_BreaksViewSelectionInvalid()

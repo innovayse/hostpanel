@@ -881,7 +881,9 @@ internal static partial class PluginViewDocumentReader
     /// <summary>
     /// Checks a preview's <c>selection</c>, off when absent: exactly the sources that may select (declared by the block, so a
     /// plugin must name them and a live source can stay out), a POST route that looks a claimed selection up, and a GET route
-    /// and field reading the release on the preview. A message from a frame is only ever measured against these.
+    /// and field reading the release on the preview. A message from a frame is only ever measured against these. One preview
+    /// per document may offer it, because a chat's claim names a release and ids and not a preview, so the plugin could not
+    /// tell two apart when their releases are equal.
     /// </summary>
     /// <param name="preview">The preview block.</param>
     /// <param name="scan">Receives the first broken rule.</param>
@@ -892,11 +894,12 @@ internal static partial class PluginViewDocumentReader
             return;
         }
 
+        var second = scan.HasPreviewSelection;
         scan.HasPreviewSelection = true;
-        if (!IsPreviewSelection(preview, selection))
+        if (second || !IsPreviewSelection(preview, selection))
         {
             scan.StateViolation ??= new PluginManifestViolation(
-                PluginManifestRule.ViewSelectionInvalid, $"has a '{PluginViews.PreviewKind}' whose '{SelectionMember}' is not valid");
+                PluginManifestRule.ViewSelectionInvalid, $"has a '{PluginViews.PreviewKind}' whose '{SelectionMember}' is not valid or is the document's second");
         }
     }
 

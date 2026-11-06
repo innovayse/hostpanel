@@ -265,6 +265,9 @@
 <data name="InvoicePaymentAmountInvalid" xml:space="preserve">
     <value>Վճարման գումարը պետք է լինի զրոյից մեծ։</value>
   </data>
+<data name="BankTransferRejectNoteInvalid" xml:space="preserve">
+    <value>Պատճառը պարտադիր է և պետք է լինի առավելագույնը {0} նիշ։</value>
+  </data>
 <data name="InvoicePaymentNotesInvalid" xml:space="preserve">
     <value>Նշումները կարող են ունենալ առավելագույնը {0} նիշ։</value>
   </data>
@@ -1398,5 +1401,59 @@
   </data>
   <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
     <value>Ընտրեք թույլատրելի կատեգորիա։</value>
+  </data>
+  <data name="InvoiceItemIdInvalid" xml:space="preserve">
+    <value>Նշեք վավեր հաշիվ-ապրանքագրի տող։</value>
+  </data>
+  <data name="RenewalWindowInvalid" xml:space="preserve">
+    <value>Ընտրեք երկարացման ժամանակահատվածը՝ 30, 60 կամ 90 օր։</value>
+  </data>
+  <data name="CreditAdjustmentDirectionInvalid" xml:space="preserve">
+    <value>Ընտրեք՝ ավելացնել մնացորդը, թե նվազեցնել։</value>
+  </data>
+  <data name="CreditAdjustmentAmountInvalid" xml:space="preserve">
+    <value>Գումարը պետք է լինի զրոյից մեծ։</value>
+  </data>
+  <data name="CreditAdjustmentReasonRequired" xml:space="preserve">
+    <value>Նշեք ճշգրտման պատճառը։</value>
+  </data>
+  <data name="CreditAdjustmentReasonTooLong" xml:space="preserve">
+    <value>Պատճառը պետք է լինի առավելագույնը 500 նիշ։</value>
+  </data>
+  <data name="CreditTopUpAmountInvalid" xml:space="preserve">
+    <value>Գումարը պետք է լինի զրոյից մեծ։</value>
+  </data>
+  <data name="CreditNoteIdInvalid" xml:space="preserve">
+    <value>Նշեք առկա կրեդիտ-նոտա։</value>
+  </data>
+  <data name="CreditNoteMethodInvalid" xml:space="preserve">
+    <value>Ընտրեք՝ կրեդիտ-նոտան գնում է հաճախորդի մնացորդին, թե վերադարձվում է վճարային դարպասի միջոցով։</value>
+  </data>
+  <data name="CreditNoteStatusInvalid" xml:space="preserve">
+    <value>Ընտրեք կրեդիտ-նոտայի թույլատրելի կարգավիճակ։</value>
+  </data>
+  <data name="CreditNoteReasonRequired" xml:space="preserve">
+    <value>Նշեք կրեդիտ-նոտայի պատճառը։</value>
+  </data>
+  <data name="CreditNoteReasonTooLong" xml:space="preserve">
+    <value>Պատճառը պետք է լինի առավելագույնը 500 նիշ։</value>
+  </data>
+  <data name="CreditNoteVoidReasonRequired" xml:space="preserve">
+    <value>Նշեք կրեդիտ-նոտան չեղարկելու պատճառը։</value>
+  </data>
+  <data name="CreditNoteItemsRequired" xml:space="preserve">
+    <value>Կրեդիտ-նոտային ավելացրեք առնվազն մեկ տող։</value>
+  </data>
+  <data name="CreditNoteItemsTooMany" xml:space="preserve">
+    <value>Կրեդիտ-նոտան կարող է ունենալ առավելագույնը 100 տող։</value>
+  </data>
+  <data name="CreditNoteItemDescriptionInvalid" xml:space="preserve">
+    <value>Յուրաքանչյուր տողին պետք է նկարագրություն՝ առավելագույնը 500 նիշ։</value>
+  </data>
+  <data name="CreditNoteItemPriceInvalid" xml:space="preserve">
+    <value>Յուրաքանչյուր տողի գինը պետք է զրոյից մեծ լինի։</value>
+  </data>
+  <data name="CreditNoteItemQuantityInvalid" xml:space="preserve">
+    <value>Յուրաքանչյուր տողի քանակը պետք է լինի 1-ից մինչև 100000։</value>
   </data>
 </root>

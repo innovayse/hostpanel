@@ -748,6 +748,12 @@
   <data name="INVOICE_ITEM_NOT_FOUND" xml:space="preserve">
     <value>На этом счёте нет такой позиции.</value>
   </data>
+  <data name="INVOICE_BANK_TRANSFER_NOT_PENDING" xml:space="preserve">
+    <value>По этому счёту нет ожидающего банковского перевода, подтверждать или отклонять нечего.</value>
+  </data>
+  <data name="BANK_TRANSFER_NOT_AVAILABLE" xml:space="preserve">
+    <value>Банковский перевод сейчас недоступен. Выберите другой способ оплаты.</value>
+  </data>
   <data name="INVOICE_NOT_UNPAID" xml:space="preserve">
     <value>Просроченным можно пометить только неоплаченный счёт.</value>
   </data>
@@ -1158,5 +1164,50 @@
   </data>
   <data name="PLUGIN_VIEW_PREVIEW_INVALID" xml:space="preserve">
     <value>Один из документов представления этого плагина содержит предпросмотр с неверными источниками или размером либо показывает его не на клиентской странице.</value>
+  </data>
+  <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
+    <value>У этой позиции нет блокировки продления, которую можно снять.</value>
+  </data>
+  <data name="TRANSACTION_CREDIT_LOCKED" xml:space="preserve">
+    <value>Эта запись входит в историю баланса, её нельзя изменить или удалить. Для исправления добавьте корректировку баланса.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_FIXED" xml:space="preserve">
+    <value>Счёт на пополнение баланса состоит из одной фиксированной строки и не редактируется.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_NO_CREDIT" xml:space="preserve">
+    <value>К счёту на пополнение баланса нельзя применить кредит.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_REFUND_MANUAL_ONLY" xml:space="preserve">
+    <value>Оплаченное пополнение баланса возвращается только вручную: оформите возврат как ручной.</value>
+  </data>
+  <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
+    <value>Сумма вне допустимого диапазона для пополнения баланса.</value>
+  </data>
+  <data name="CREDIT_TOP_UP_TOO_MANY_OPEN" xml:space="preserve">
+    <value>У вас уже есть неоплаченные пополнения. Оплатите или отмените одно, прежде чем пополнять баланс снова.</value>
+  </data>
+  <data name="CREDIT_NOTE_NOT_FOUND" xml:space="preserve">
+    <value>Кредит-нота не найдена.</value>
+  </data>
+  <data name="CREDIT_NOTE_TOP_UP_INVOICE" xml:space="preserve">
+    <value>Счёт на пополнение баланса уже является кредитом, поэтому кредит-ноту по нему выписать нельзя. Оплаченное пополнение возвращается вручную.</value>
+  </data>
+  <data name="CREDIT_NOTE_EXCEEDS_CREDITABLE" xml:space="preserve">
+    <value>Кредит-нота превышает ту сумму, на которую этот счёт ещё можно скорректировать с учётом прежних кредит-нот и возвратов.</value>
+  </data>
+  <data name="CREDIT_NOTE_ITEMS_REQUIRED" xml:space="preserve">
+    <value>Для кредит-ноты нужна хотя бы одна строка с описанием, ценой и количеством, а также причина.</value>
+  </data>
+  <data name="CREDIT_NOTE_INVALID_STATE" xml:space="preserve">
+    <value>Кредит-нота находится в состоянии, в котором это действие недоступно.</value>
+  </data>
+  <data name="CREDIT_NOTE_ALREADY_VOIDED" xml:space="preserve">
+    <value>Эта кредит-нота уже аннулирована.</value>
+  </data>
+  <data name="CREDIT_NOTE_CURRENCY_MISMATCH" xml:space="preserve">
+    <value>Счёт выставлен в валюте, отличной от той, в которой ведётся баланс клиента, поэтому зачислить его на баланс нельзя. Выпишите кредит-ноту с возвратом через платёжный шлюз.</value>
+  </data>
+  <data name="CREDIT_NOTE_REFUND_NOT_VOIDABLE" xml:space="preserve">
+    <value>Эта кредит-нота выплачена возвратом через платёжный шлюз. Возврат нельзя отменить, поэтому кредит-ноту нельзя аннулировать.</value>
   </data>
 </root>

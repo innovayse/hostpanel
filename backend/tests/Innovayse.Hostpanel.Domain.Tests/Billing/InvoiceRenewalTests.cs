@@ -120,4 +120,70 @@ public sealed class InvoiceRenewalTests
         FluentActions.Invoking(() => invoice.Items.Single().ClaimRenewal(Start))
             .Should().Throw<InvalidOperationException>();
     }
+
+    /// <summary>Staff release of a claimed domain renewal line clears only the claim and leaves the line unapplied.</summary>
+    [Fact]
+    public void ReleaseRenewalClaim_OnClaimedDomainLine_ClearsOnlyTheClaim()
+    {
+        var invoice = Invoice.Create(1, Start, "USD", Now);
+        invoice.AddDomainRenewal("example.test renewal", 12m, 7, Start, Start.AddYears(1));
+        invoice.Items.Single().ClaimRenewal(Now);
+
+        invoice.ReleaseRenewalClaim(invoice.Items.Single().Id);
+
+        var line = invoice.Items.Single();
+        line.RenewalAttemptAt.Should().BeNull();
+        line.RenewalAppliedAt.Should().BeNull();
+    }
+
+    /// <summary>A line that was never claimed has no claim to release.</summary>
+    [Fact]
+    public void ReleaseRenewalClaim_OnUnclaimedLine_Throws()
+    {
+        var invoice = Invoice.Create(1, Start, "USD", Now);
+        invoice.AddDomainRenewal("example.test renewal", 12m, 7, Start, Start.AddYears(1));
+
+        var act = () => invoice.ReleaseRenewalClaim(invoice.Items.Single().Id);
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.RenewalClaimNotHeld);
+    }
+
+    /// <summary>A claim on a line already applied is not released: the domain was renewed.</summary>
+    [Fact]
+    public void ReleaseRenewalClaim_OnAppliedLine_Throws()
+    {
+        var invoice = Invoice.Create(1, Start, "USD", Now);
+        invoice.AddDomainRenewal("example.test renewal", 12m, 7, Start, Start.AddYears(1));
+        invoice.Items.Single().ClaimRenewal(Now);
+        invoice.Items.Single().MarkRenewalApplied(Now);
+
+        var act = () => invoice.ReleaseRenewalClaim(invoice.Items.Single().Id);
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.RenewalClaimNotHeld);
+    }
+
+    /// <summary>A service renewal line is never released this way: only the domain registrar leaves claims.</summary>
+    [Fact]
+    public void ReleaseRenewalClaim_OnServiceLine_Throws()
+    {
+        var invoice = Invoice.Create(1, Start, "USD", Now);
+        invoice.AddServiceRenewal("Renewal: Starter", 5m, 42, Start, Start.AddMonths(1));
+        invoice.Items.Single().ClaimRenewal(Now);
+
+        var act = () => invoice.ReleaseRenewalClaim(invoice.Items.Single().Id);
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.RenewalClaimNotHeld);
+    }
+
+    /// <summary>A release naming a line the invoice does not have is refused as not found.</summary>
+    [Fact]
+    public void ReleaseRenewalClaim_OnUnknownLine_Throws()
+    {
+        var invoice = Invoice.Create(1, Start, "USD", Now);
+        invoice.AddDomainRenewal("example.test renewal", 12m, 7, Start, Start.AddYears(1));
+
+        var act = () => invoice.ReleaseRenewalClaim(9999);
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceItemNotFound);
+    }
 }

@@ -1244,7 +1244,27 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   command: the port stages the line on the caller's own context, so the line and the change it records
   commit or fail together, which a separately saving command could not promise. A client's credit
   balance changes the same way through `IClientCredit`, so moving credit between an invoice and the balance
-  (`InvoiceCreditExtensions` in Billing) is one save. The renewal read models belong to their owners and Billing
+  (`InvoiceCreditExtensions` in Billing) is one save. Every change names its `CreditMovementType` (`ClientCreditChange`) and the
+  port writes it to the client ledger in that same save: the `Transaction` that already holds the money is stamped
+  (`CreditMovement`, signed `CreditChange`, `BalanceAfter`), a movement that moved no cash becomes a credit-only entry
+  (`Transaction.CreateCreditMovement`, no money in or out, left out of the cash views by `Transaction.MovedMoneyFilter`), and an
+  entry of the history cannot be edited or deleted (`Transaction.EnsureEditable`). A credit top-up is an `Invoice` with
+  `IsCreditTopUp` (`Invoice.CreateCreditTopUp`); every path that settles an invoice calls `CreditPaidTopUpAsync`
+  (`CreditTopUpExtensions`) in the settling save, so the balance rises once, and a top-up is refunded by hand only.
+  A credit note (`CreditNote`, `CreditNoteItem`, `CreditNoteStatus` Draft/Issued/Applied/Voided, `CreditNoteMethod`
+  AccountCredit/GatewayRefund) reverses part of a paid invoice at the invoice's own tax rate and is not invoice credit. It is numbered
+  `CN-0001` from its own sequence through `INumberSequence` (`NumberKind.CreditNote`), taken as the last step before the save and reused
+  across a retried save; a database sequence cannot promise there are no gaps, and the numbering is a cautious default not checked
+  against any local law (documented in `docs/staff/billing.md`). The cap lives on the invoice (`Invoice.CreditableAmount`,
+  `CreditNotedAmount`, `EnsureCreditable`): the charge before credit less every refund and every account credit note, and every
+  account credit note also lowers `RefundableAmount`, so the same money never goes back twice. `CreditNotedAmount` changes the invoice
+  row, so two notes racing on one invoice fail the row's concurrency check and the loser is retried on what the winner saved. An
+  AccountCredit note moves the balance through `IClientCredit` (`CreditNoteIssued`, voided as `CreditNoteVoided`) in the same save; a
+  GatewayRefund note dispatches `RefundInvoicePaymentCommand` first (one refund, listed once) and records the note under its reference,
+  and cannot be voided. A credit top-up and an unpaid invoice take no note. A note is never deleted. `IncomeExtensions` reads payments
+  and refunds only, so a note adds no income of its own (`CreditNoteIncomeTests`). Its PDF goes through the same renderer and render
+  limit as an invoice (`IInvoicePdfRenderer.RenderCreditNoteAsync`, labels in `CreditNotePdfLabelSets` for en/ru/hy, Armenian
+  fonts as for invoices). The renewal read models belong to their owners and Billing
   reaches them over the bus: Services owns `GetRenewableServices`, `GetServiceBillingStates`,
   `ListOverdueSuspendedServices`, `ListUndatedRenewingServices` and `ExtendServiceRenewal`; Domains owns
   `GetRenewableDomains`, `GetDomainRenewalStates` and `GetTldRenewPrice`. The setup token kept
@@ -1312,6 +1332,35 @@ renewal invoices per client), `SendRenewalRemindersCron` 06:00, `CheckOverdueInv
 `RenewalAttemptAt` claims a domain line before the registrar call. Every suspension carries a `SuspensionSource`
 (`Manual`, `Overdue`, `DomainExpired`, `Other`): payment lifts only `Overdue`, and `DomainRenewedHandler` lifts only
 `DomainExpired`. Renewal alerts go to `Notifications:AdminEmail`, falling back to `Notifications:ContactEmail`.
+
+**A manual bank transfer wait is bounded and never loses a card session's money.** `Invoice.RequestBankTransfer` leaves the hosted
+session on the invoice (the choice is refused only inside `GatewaySessionWindow`). While the transfer waits
+(`IsBankTransferPending`), `ReconcileGatewayPaymentsCronHandler` asks the gateway about that session like an open invoice's, without the
+24 hour limit, and a settled invoice stays in the sweep for the stalled window after its `PaidAt` as well as after the session start (a
+transfer confirmed late). `CompleteGatewayPaymentHandler` settles a pending transfer with a full card payment (`Invoice.WithdrawBankTransfer`,
+then `Settle`), and a payment that finds the invoice already settled goes to the balance through the hand-back path. The wait itself ends
+by `RejectBankTransfer`, by `LapseBankTransfer` (the daily `CheckOverdueInvoicesCron` dispatches `LapseBankTransferCommand` for a wait older
+than the `expiry_days` field of the bank transfer integration, 14 when unset or not a positive number) or by the card payment; each returns
+the invoice to Overdue when its due date has passed, otherwise Unpaid, so the overdue and suspension flow applies again. The method is
+listed and can be chosen only while at least one bank detail or the instructions are set (`BankTransferSettings.HasPayerDetails`), and
+`MyInvoiceDto.IsBankTransferPending` is how the portal tells a real transfer from an imported `PaymentPending` invoice. An account credit
+note is refused while a gateway refund of the invoice is in flight (`Invoice.EnsureCreditable(total, now)`), and an unrecorded refund's
+amount is held out of `CreditableAmount`. The open top-up invoices per client are capped by `billing.credit.topup_max_open`.
+
+**Renewal invoicing is serialised per client.** `RaiseClientRenewalInvoicesHandler` opens a transaction and takes
+a transaction-scoped advisory lock (`IHostpanelDbContext.LockForTransactionAsync`, key
+`RaiseClientRenewalInvoicesHandler.LockKeyOf(clientId)`) before it reads the duplicate guard, and commits after the
+last invoice and credit change. Two callers for one client (the daily sweep, a staff "Generate renewal invoice" click,
+another instance) therefore run one after the other, and the second one finds the first one's invoice. Staff reach the
+same use case through `POST /api/billing/client/{clientId}/renewal-invoices` (`Manual` on the command only adds an
+activity log line). The admin Upcoming Renewals page (`/billing/renewals`) lists services and domains inside a 30, 60 or
+90 day window (`RenewalWindow`), whether or not they renew automatically, switches `AutoRenew` through
+`SetServiceAutoRenew` (domains use the existing `SetAutoRenew`), and lists domain renewal lines left claimed
+(`ListClaimedDomainRenewals`). `ReleaseDomainRenewalClaim` clears `RenewalAttemptAt` through `Invoice.ReleaseRenewalClaim`
+after staff checked the registrar, with an activity log line; the line stays unapplied, so the next sweep renews the
+domain again, which is why the page asks for confirmation. The confirmation dialog is a warning in so many words: a release
+of a renewal the registrar already carried out renews the domain twice and is charged twice, so staff check the registrar
+first (`billing.renewals.releaseMessage`, and `docs/staff/currencies.md`). `ClaimedDomainRenewalDto` carries the client's name.
 
 **Renewal invoice lines are not unique per period, on purpose.** The indexes on `InvoiceItems`
 `(ClientServiceId, RenewalPeriodStart)` and `(RegisteredDomainId, RenewalPeriodStart)` stay non-unique: a
@@ -2094,7 +2143,7 @@ Never spread one of these, and never restructure as a side effect of a feature.
   endpoints). The embedded flow (`create-payment-intent`, `confirm-payment`, `POST api/me/invoices/{id}/pay`,
   `api/me/payment-methods`) is gone; a ledger row recorded as `Card` with no hosted session behind it is refunded by a
   manual refund (`INVOICE_NOT_GATEWAY_PAID` for a Gateway refund). The plugin's stored `integration:<slug>:*` settings and
-  the payment rows are untouched and read by the plugin under the same slug.
+  the payment rows are untouched and read by the plugin under the same slug. Manual bank transfer is built into the host (module `bank_transfer`, settings under the `bank-transfer` integration) while bank gateways are plugins.
 - **Vendor names that remain, on purpose.** Integration slugs (`cwp`, ...) in
   `IntegrationSlugs` / `BuiltInPaymentModules` and the `Integrations/<Vendor>/` adapter folders are
   plugin identifiers: they are stored in settings rows, sent in URLs (`/api/admin/integrations/cwp`)

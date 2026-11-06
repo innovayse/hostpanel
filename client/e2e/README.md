@@ -37,6 +37,7 @@ calls Nitro makes while rendering are invisible to `page.route`.
 | `account-contacts.spec.ts` | contact add, nameless refusal, edit, confirmed removal |
 | `stored-payment-methods.spec.ts` | saved methods: list and default badge, consent gate, redirect start, completion on return, make default, confirmed withdrawal |
 | `invoice-pay.spec.ts` | pay page: the gateway button starts the payment and leaves; no gateway shows the unavailable state, no button and no notice |
+| `credit-notes.spec.ts` | credit notes page: the notes listed with where the value went and their state, a PDF download named after the number, the navigation link |
 | `storefront-templates.spec.ts` | home in aurora/nova/classic; seeded cart -> checkout summary in each |
 
 Not covered: a card order (needs the payment provider's element), the domain WHOIS-contact panel,

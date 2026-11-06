@@ -35,6 +35,13 @@ const rows: ExpectedRequest[] = [
   { name: 'createOrder posts the order', call: () => api.createOrder({ items: [], paymentmethod: 'card_gateway' }), method: HttpMethod.Post, url: '/api/portal/order/create', body: { items: [], paymentmethod: 'card_gateway' } },
   { name: 'startOrderGatewayPayment posts module, return address and token', call: () => api.startOrderGatewayPayment(42, 'hosted_gateway', 'https://x/return', 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/gateway-payment/start', body: { module: 'hosted_gateway', returnUrl: 'https://x/return', paymentToken: 'tok' } },
   { name: 'startInvoiceGatewayPayment posts module and return address', call: () => api.startInvoiceGatewayPayment(7, 'hosted_gateway', 'https://x/return'), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/gateway-payment/start', body: { module: 'hosted_gateway', returnUrl: 'https://x/return' } },
+  { name: 'selectBankTransfer posts to the invoice bank transfer route', call: () => api.selectBankTransfer(7), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/bank-transfer', body: {} },
+  { name: 'fetchBankTransfer reads the invoice bank transfer route', call: () => api.fetchBankTransfer(7), method: HttpMethod.Get, url: '/api/portal/client/invoices/7/bank-transfer' },
+  { name: 'fetchCredit reads the credit page', call: () => api.fetchCredit(2, 10), method: HttpMethod.Get, url: '/api/portal/client/credit?page=2&pageSize=10' },
+  { name: 'createCreditTopUp posts the amount to the top-up route', call: () => api.createCreditTopUp(40), method: HttpMethod.Post, url: '/api/portal/client/credit/top-ups', body: { amount: 40 } },
+  { name: 'applyInvoiceCredit posts the amount to the invoice credit route', call: () => api.applyInvoiceCredit(7, 12.5), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/credit', body: { amount: 12.5 } },
+  { name: 'fetchCreditNotes reads the credit notes route', call: () => api.fetchCreditNotes(), method: HttpMethod.Get, url: '/api/portal/client/credit-notes' },
+  { name: 'fetchCreditNotePdf reads the credit note PDF', call: () => api.fetchCreditNotePdf(7), method: HttpMethod.Get, url: '/api/portal/client/credit-notes/7/pdf' },
   { name: 'completeGatewayPayment for an order sends the token', call: () => api.completeGatewayPayment(PaymentTarget.Order, 42, 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/gateway-payment/complete', body: { paymentToken: 'tok' } },
   { name: 'completeGatewayPayment for an invoice sends an empty body', call: () => api.completeGatewayPayment(PaymentTarget.Invoice, 7), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/gateway-payment/complete', body: {} },
 ]

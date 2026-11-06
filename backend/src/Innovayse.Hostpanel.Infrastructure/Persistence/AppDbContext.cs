@@ -169,6 +169,12 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the quote items table.</summary>
     public DbSet<QuoteItem> QuoteItems => Set<QuoteItem>();
 
+    /// <summary>Gets the credit notes table.</summary>
+    public DbSet<CreditNote> CreditNotes => Set<CreditNote>();
+
+    /// <summary>Gets the credit note lines table.</summary>
+    public DbSet<CreditNoteItem> CreditNoteItems => Set<CreditNoteItem>();
+
     /// <summary>Gets the orders table.</summary>
     public DbSet<Order> Orders => Set<Order>();
 
@@ -508,6 +514,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
         // The counter behind order numbers; read through INumberSequence so two concurrent orders
         // can never be handed the same number.
         modelBuilder.HasSequence<long>(NumberSequence.OrderSequenceName);
+
+        // The counter behind credit note numbers (CN-0001), read the same way.
+        modelBuilder.HasSequence<long>(NumberSequence.CreditNoteSequenceName);
 
         // Every entity carries DomainEvents (the kernel's BaseEntity); EF must never try to map
         // it. One convention here rather than an Ignore in each configuration; a configuration

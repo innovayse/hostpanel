@@ -253,10 +253,64 @@ export const INVOICE = {
   tax: 0,
   taxRate: 0,
   credit: 0,
+  isCreditTopUp: false,
+  isBankTransferPending: false,
   paymentMethod: null,
   items: [{ id: 1, description: 'E2E Starter - monthly', unitPrice: 5, quantity: 1, amount: 5 }],
   transactions: [],
 }
+
+/** The id of the top-up invoice the stub raises when the client adds funds. */
+export const TOP_UP_INVOICE_ID = 777
+
+/** The credit the signed-in client starts with: a balance, the limits of one top-up and one history line. */
+export const CREDIT = {
+  balance: 20,
+  currency: 'USD',
+  topUpMinimum: 5,
+  topUpMaximum: 100,
+  entries: {
+    items: [{ id: 31, date: '2030-01-02T09:00:00Z', movement: 'AdminAdd', change: 20, balanceAfter: 20, invoiceId: null }],
+    pageNumber: 1,
+    pageSize: 10,
+    totalCount: 1,
+    totalPages: 1,
+  },
+}
+
+/** The credit notes issued to the signed-in client: an applied account credit note and a voided one, newest first. */
+export const CREDIT_NOTES = [
+  {
+    id: 41,
+    number: 'CN-0041',
+    status: 'Applied',
+    method: 'AccountCredit',
+    invoiceId: 12,
+    currency: 'USD',
+    subTotal: 50,
+    taxRate: 20,
+    tax: 10,
+    total: 60,
+    reason: 'Service was down for two days',
+    issuedAt: '2030-01-03T09:00:00Z',
+    voidedAt: null,
+  },
+  {
+    id: 40,
+    number: 'CN-0040',
+    status: 'Voided',
+    method: 'GatewayRefund',
+    invoiceId: 11,
+    currency: 'USD',
+    subTotal: 10,
+    taxRate: 0,
+    tax: 0,
+    total: 10,
+    reason: 'Issued by mistake',
+    issuedAt: '2030-01-01T09:00:00Z',
+    voidedAt: '2030-01-02T09:00:00Z',
+  },
+]
 
 /** Operator settings the storefront reads; a light default and an uploaded light/dark logo pair. */
 export const PUBLIC_SETTINGS = [
@@ -584,6 +638,29 @@ export const DOMAIN_ORDER = {
 export const GATEWAY_METHODS = [
   { module: 'bank_transfer', displayName: 'Bank transfer' },
 ]
+
+/** The bank details and reference the stub answers once the signed-in client has chosen the bank transfer for {@link INVOICE}. */
+export const BANK_TRANSFER_DETAILS = {
+  invoiceId: 501,
+  reference: 'INV-501',
+  amountDue: 5,
+  currency: 'USD',
+  accountName: 'E2E Hosting LLC',
+  iban: 'AM00 E2E0 0000 0000',
+  swift: 'E2EAAMXX',
+  bankName: 'E2E Bank',
+  instructions: 'Pay within five days.',
+}
+
+/** The details the stub answers when the operator left every bank detail and the instructions empty. */
+export const EMPTY_BANK_TRANSFER_DETAILS = {
+  ...BANK_TRANSFER_DETAILS,
+  accountName: null,
+  iban: null,
+  swift: null,
+  bankName: null,
+  instructions: null,
+}
 
 /** The hosted card gateway the stub adds to the gateway list once a spec enables it (`POST /__e2e/gateways`). */
 export const HOSTED_GATEWAY = { module: 'e2e_card_gateway', displayName: 'E2E Card Gateway' }

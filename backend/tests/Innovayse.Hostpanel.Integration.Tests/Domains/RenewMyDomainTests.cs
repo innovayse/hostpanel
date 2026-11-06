@@ -71,7 +71,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
         // names has to be enabled first, exactly as an operator would.
         var enable = await admin.PutAsJsonAsync(
             "/api/admin/integrations/bank-transfer",
-            new { isEnabled = true, config = new Dictionary<string, string>() });
+            new { isEnabled = true, config = new Dictionary<string, string> { ["iban"] = BankTransferTestSeeds.Iban } });
         enable.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         using var scope = factory.Services.CreateScope();

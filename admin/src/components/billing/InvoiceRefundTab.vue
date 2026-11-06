@@ -55,8 +55,18 @@ const selectedTransactionId = ref('')
 /** Amount to refund. */
 const refundAmount = ref(0)
 
+/** True for a credit top-up invoice, which is refunded by hand only: the refund takes the credit off the balance itself. */
+const isTopUp = computed<boolean>(() => props.invoice.isCreditTopUp)
+
+/**
+ * Kind of refund the form starts on: the only one a top-up allows, else through the gateway.
+ *
+ * @returns The refund kind to start on.
+ */
+const defaultRefundType = (): InvoiceRefundType => (isTopUp.value ? InvoiceRefundType.Manual : InvoiceRefundType.Gateway)
+
 /** Kind of refund. */
-const refundType = ref<InvoiceRefundType>(InvoiceRefundType.Gateway)
+const refundType = ref<InvoiceRefundType>(defaultRefundType())
 
 /** Reference of the refund, for a refund made outside the gateway. */
 const refundReference = ref('')
@@ -122,7 +132,7 @@ const canRefund = computed<boolean>(
   () =>
     selectedTransactionId.value !== ''
     && refundAmount.value > 0
-    && creditAction.value !== CreditAction.None
+    && (isTopUp.value || creditAction.value !== CreditAction.None)
     && !processing.value,
 )
 
@@ -141,11 +151,18 @@ const transactionOptions = computed(() => {
 })
 
 /** Options of the refund-kind select. */
-const refundTypeOptions = computed(() => [
-  { value: InvoiceRefundType.Gateway, label: t('billing.invoiceRefundTab.refundThroughGateway') },
-  { value: InvoiceRefundType.Manual, label: t('billing.invoiceRefundTab.manualRefundProcessedExternally') },
-  { value: InvoiceRefundType.CreditBalance, label: t('billing.addTransaction.addToClientSCredit') },
-])
+const refundTypeOptions = computed(() => {
+  const manual = { value: InvoiceRefundType.Manual, label: t('billing.invoiceRefundTab.manualRefundProcessedExternally') }
+  // A top-up is refunded by hand only: a gateway refund or a refund back to the balance would send the same money twice.
+  if (isTopUp.value) {
+    return [manual]
+  }
+  return [
+    { value: InvoiceRefundType.Gateway, label: t('billing.invoiceRefundTab.refundThroughGateway') },
+    manual,
+    { value: InvoiceRefundType.CreditBalance, label: t('billing.addTransaction.addToClientSCredit') },
+  ]
+})
 
 /** The kind of refund actually sent: removing the credit turns it into a credit-balance refund. */
 const sentKind = computed<InvoiceRefundType>(() =>
@@ -216,7 +233,7 @@ const refund = async (): Promise<void> => {
   }
   selectedTransactionId.value = ''
   refundAmount.value = 0
-  refundType.value = InvoiceRefundType.Gateway
+  refundType.value = defaultRefundType()
   refundReference.value = ''
   creditAction.value = CreditAction.None
   feedback.show(t('billing.invoiceRefundTab.refunded'), false)
@@ -238,6 +255,10 @@ const refund = async (): Promise<void> => {
       </UiAlert>
       <UiAlert v-else-if="isRefunded" variant="warning" data-testid="billing-invoice-refund-refunded">
         {{ t('billing.invoiceRefundTab.thisInvoiceHasAlreadyBeen') }}
+      </UiAlert>
+
+      <UiAlert v-if="isTopUp && !formBlocked" variant="info" data-testid="billing-invoice-refund-top-up">
+        {{ t('billing.invoiceRefundTab.topUpRefund') }}
       </UiAlert>
 
       <UiCard v-if="!formBlocked" padding="md">
@@ -269,7 +290,7 @@ const refund = async (): Promise<void> => {
             </template>
           </UiField>
 
-          <UiStack v-if="selectedPayment" gap="sm" data-testid="billing-invoice-refund-credit">
+          <UiStack v-if="selectedPayment && !isTopUp" gap="sm" data-testid="billing-invoice-refund-credit">
             <UiText tone="danger" size="md">{{ t('billing.invoiceRefundTab.warning') }}</UiText>
             <UiText tone="secondary" size="md">{{ creditWarning }}</UiText>
             <UiText tone="muted" size="md">{{ t('billing.invoiceRefundTab.weCanThereforeAutomaticallyRemove') }}</UiText>

@@ -120,6 +120,10 @@
             "component": "ClientTransactionsView.vue"
           },
           {
+            "path": "credit",
+            "component": "ClientCreditView.vue"
+          },
+          {
             "path": "tickets",
             "component": "ClientTicketsView.vue"
           },
@@ -165,6 +169,18 @@
             "component": "InvoiceDetailView.vue"
           },
           {
+            "path": "renewals",
+            "component": "UpcomingRenewalsView.vue"
+          },
+          {
+            "path": "credit-notes",
+            "component": "CreditNotesListView.vue"
+          },
+          {
+            "path": "credit-notes/:id",
+            "component": "CreditNoteDetailView.vue"
+          },
+          {
             "path": ":id",
             "component": "InvoiceDetailView.vue"
           },
@@ -207,6 +223,10 @@
           {
             "path": "payment-claims",
             "component": "PaymentClaimsView.vue"
+          },
+          {
+            "path": "bank-transfers",
+            "component": "PendingBankTransfersView.vue"
           },
           {
             "path": "transactions",

@@ -409,7 +409,16 @@ export const useCheckoutStore = defineStore('checkout', () => {
         return { kind: CheckoutDestinationKind.External, target: redirectUrl }
       }
 
-      // Bank transfer: the order stays pending and the payer is sent to the invoice.
+      // Bank transfer: the invoice is moved to waiting for the transfer, and the payer is sent to it, where the bank
+      // details and the reference are shown. Best effort: if choosing it fails here (no session yet, the switch was
+      // turned off a moment ago), the order and invoice exist all the same and the payment page offers the choice again.
+      if (result.invoiceId) {
+        try {
+          await billing.selectBankTransfer(result.invoiceId)
+        } catch {
+          // The payer lands on the payment page, which shows the reason if they choose it there.
+        }
+      }
       cart.clear()
       return {
         kind: CheckoutDestinationKind.Route,

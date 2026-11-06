@@ -26,7 +26,7 @@
 
     <UiSplit v-else ratio="start-wide">
       <template #start>
-        <UiCard v-if="optionsError" data-testid="invoice-pay-options-error">
+        <UiCard v-if="optionsError && !isBankTransferPending" data-testid="invoice-pay-options-error">
           <UiStack gap="md">
             <UiAlert variant="error">{{ optionsError }}</UiAlert>
             <UiStack direction="row" gap="none">
@@ -78,10 +78,14 @@ paymentStore.reset()
 
 // Invoice and gateways are read in parallel. The first plugin-backed
 // gateway (not a fixed module id) is the hosted one, so a second gateway plugin is not ignored.
+// The bank details are read after the invoice, because only an invoice that waits for a transfer has any.
 /** Loading flag of the data this page reads. */
 const { pending } = await useAsyncData(
   `client-invoice-pay-${invoiceId}`,
-  () => Promise.all([paymentStore.loadInvoice(invoiceId), paymentStore.loadPaymentOptions()])
+  () => Promise.all([
+    paymentStore.loadInvoice(invoiceId).then(() => paymentStore.loadBankTransfer(invoiceId)),
+    paymentStore.loadPaymentOptions()
+  ])
 )
 
 /** The gateway-list refusal and the hosted gateway, if any. */
@@ -104,8 +108,12 @@ const retryOptions = async (): Promise<void> => {
   }
 }
 
-/** The security notice describes the hosted gateway's page, so it is shown only when one exists. */
-const showSecurityNotice = computed(() => !pending.value && invoice.value !== null && !isInvoicePaid(invoice.value) && hostedGatewayModule.value !== null)
+/** Whether the invoice already waits for a bank transfer, so the payment choices and the gateway notice do not apply. */
+const isBankTransferPending = computed(() => invoice.value?.isBankTransferPending === true)
+
+/** The security notice describes the hosted gateway's page, so it is shown only when one exists and the payer can still use it. */
+const showSecurityNotice = computed(() =>
+  !pending.value && invoice.value !== null && !isInvoicePaid(invoice.value) && !isBankTransferPending.value && hostedGatewayModule.value !== null)
 
 /** The invoice being paid; null until loaded or after a failed read. */
 const invoice = computed(() => paymentStore.invoice)

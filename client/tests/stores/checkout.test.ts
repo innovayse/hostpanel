@@ -20,7 +20,8 @@ import { ProductType } from '~/types/producttype'
 const billing = {
   fetchGatewayMethods: vi.fn(),
   createOrder: vi.fn(),
-  startOrderGatewayPayment: vi.fn()
+  startOrderGatewayPayment: vi.fn(),
+  selectBankTransfer: vi.fn()
 }
 
 /** The auth store stand-in: who is signed in, the account and the sign-in call a guest order makes. */
@@ -289,6 +290,34 @@ describe('useCheckoutStore.placeOrder', () => {
     billing.createOrder.mockResolvedValue({ ...placed, invoiceId: 0 })
     const withoutInvoice = await arrange('bank_transfer').placeOrder(input())
     expect(withoutInvoice).toEqual({ kind: CheckoutDestinationKind.Route, target: '/en/client/invoices' })
+  })
+
+  it('moves the invoice to waiting for the transfer before sending the payer to it', async () => {
+    billing.selectBankTransfer.mockResolvedValue({ invoiceId: 77, reference: 'INV-77' })
+    const store = arrange('bank_transfer')
+
+    const destination = await store.placeOrder(input())
+
+    expect(billing.selectBankTransfer).toHaveBeenCalledWith(77)
+    expect(destination).toEqual({ kind: CheckoutDestinationKind.Route, target: '/en/client/invoices/77/pay' })
+  })
+
+  it('still sends the payer to the invoice when choosing the transfer fails, where the page offers it again', async () => {
+    billing.selectBankTransfer.mockRejectedValue(new Error('refused'))
+    const store = arrange('bank_transfer')
+
+    const destination = await store.placeOrder(input())
+
+    expect(destination).toEqual({ kind: CheckoutDestinationKind.Route, target: '/en/client/invoices/77/pay' })
+    expect(store.error).toBe('')
+  })
+
+  it('does not choose a transfer for an order that has no invoice', async () => {
+    billing.createOrder.mockResolvedValue({ ...placed, invoiceId: 0 })
+
+    await arrange('bank_transfer').placeOrder(input())
+
+    expect(billing.selectBankTransfer).not.toHaveBeenCalled()
   })
 
   it('sends a free order straight to the success page, whatever the method, without paying', async () => {

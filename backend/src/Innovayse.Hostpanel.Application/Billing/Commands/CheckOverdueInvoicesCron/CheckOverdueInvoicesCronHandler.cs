@@ -1,7 +1,10 @@
 using Innovayse.Hostpanel.Application.Billing.Commands.LapseOverdueInvoice;
+using Innovayse.Hostpanel.Application.Billing.Commands.LapseBankTransfer;
 using Innovayse.Hostpanel.Application.Billing.Commands.MarkInvoiceOverdue;
+using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
@@ -77,8 +80,65 @@ public sealed class CheckOverdueInvoicesCronHandler
         // Overdue first, so an invoice that fell due long ago is marked and then judged for lapse in the same pass.
         var marked = await MarkOverdueAsync(now, ct);
         var lapsed = await LapseAsync(now, ct);
+        var released = await LapseBankTransfersAsync(now, ct);
 
-        _logger.LogInformation("CheckOverdueInvoicesCron marked {Count} invoices as overdue and {Lapsed} as lapsed.", marked, lapsed);
+        _logger.LogInformation(
+            "CheckOverdueInvoicesCron marked {Count} invoices as overdue, {Lapsed} as lapsed and let {Released} bank transfers lapse.",
+            marked, lapsed, released);
+    }
+
+    /// <summary>
+    /// Sends a <see cref="LapseBankTransferCommand"/> for every invoice whose manual bank transfer has waited longer than the
+    /// admin's number of days, so a transfer nobody answers cannot pause the overdue and suspension flow for good.
+    /// </summary>
+    /// <param name="now">The moment this pass started.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>How many transfers were lapsed.</returns>
+    private async Task<int> LapseBankTransfersAsync(DateTimeOffset now, CancellationToken ct)
+    {
+        var settings = await _bus.LoadBankTransferSettingsAsync(ct);
+        var requestedBefore = now - TimeSpan.FromDays(settings.ExpiryDays);
+
+        var released = 0;
+        var lastId = 0;
+        while (true)
+        {
+            var invoiceIds = await _context.Invoices.AsNoTracking()
+                .Where(Invoice.BankTransferPendingFilter)
+                .Where(i => i.Id > lastId && i.BankTransferRequestedAt < requestedBefore)
+                .OrderBy(i => i.Id)
+                .Select(i => i.Id)
+                .Take(JobBatch.Size)
+                .ToListAsync(ct);
+            if (invoiceIds.Count == 0)
+            {
+                break;
+            }
+
+            foreach (var invoiceId in invoiceIds)
+            {
+                try
+                {
+                    var outcome = await _bus.InvokeAsync<Result>(new LapseBankTransferCommand(invoiceId), ct);
+                    if (outcome.IsSuccess)
+                    {
+                        released++;
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Lapsing the bank transfer of invoice {InvoiceId} was refused ({ErrorCode}).", invoiceId, outcome.ErrorCode);
+                    }
+                }
+                catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
+                {
+                    _logger.LogError(ex, "Lapsing the bank transfer of invoice {InvoiceId} failed; the next run retries it.", invoiceId);
+                }
+            }
+
+            lastId = invoiceIds[^1];
+        }
+
+        return released;
     }
 
     /// <summary>Sends a <see cref="MarkInvoiceOverdueCommand"/> for every unpaid invoice past its due date.</summary>
@@ -93,7 +153,8 @@ public sealed class CheckOverdueInvoicesCronHandler
         {
             // Ids only, in keyset batches: nothing is tracked here, and a row that fails is not read again this pass.
             var invoiceIds = await _context.Invoices.AsNoTracking()
-                .Where(i => i.Id > lastId && i.Status == InvoiceStatus.Unpaid && i.DueDate < now)
+                // A credit top-up is never a debt: nothing is owed on it, so it does not go overdue, mail the client or suspend anything.
+                .Where(i => i.Id > lastId && i.Status == InvoiceStatus.Unpaid && i.DueDate < now && !i.IsCreditTopUp)
                 .OrderBy(i => i.Id)
                 .Select(i => i.Id)
                 .Take(JobBatch.Size)

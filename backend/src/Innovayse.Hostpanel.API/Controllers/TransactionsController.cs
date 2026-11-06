@@ -120,7 +120,7 @@ public sealed class TransactionsController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 204 on success; 400 when a value is refused; 422 when no money moves; 404 when the id names no transaction;
-    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed;
+    /// 409 with <c>TRANSACTION_CREDIT_LOCKED</c> when the entry is part of the credit history; 401 when the caller is not signed in; 403 when the caller's role is not allowed;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPut("{id:int}")]
@@ -131,6 +131,7 @@ public sealed class TransactionsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateAsync(
         int id, [FromBody] UpdateTransactionCommand command, CancellationToken ct)
     {
@@ -143,7 +144,8 @@ public sealed class TransactionsController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 204 on success; 400 when a value is refused or the credit the transaction added is already
-    /// spent; 404 when the id names no transaction or its client; 401 when the caller is not signed in;
+    /// spent; 404 when the id names no transaction or its client; 409 with <c>TRANSACTION_CREDIT_LOCKED</c> when the entry is
+    /// part of the credit history; 401 when the caller is not signed in;
     /// 403 when the caller's role is not allowed;
     /// 429 when the rate limit is hit.
     /// </returns>
@@ -154,6 +156,7 @@ public sealed class TransactionsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteAsync(int id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(new DeleteTransactionCommand(id), ct);

@@ -503,6 +503,7 @@ describe('PluginChatBlock', () => {
     await sendMessage(wrapper, 'Go')
     reply.send('result', { title: 'Ready', actions: [{ label: 'Undo', route: TEST_ROUTES.publish }] })
     await settle()
+    /** Counts the reads of the site page so far. */
     const reads = (): number => api?.requests.filter(request => request.method === 'GET' && request.url.endsWith('/sites/7')).length ?? 0
     const before = reads()
 

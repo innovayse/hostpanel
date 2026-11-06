@@ -7,8 +7,7 @@
  */
 import { computed, inject } from 'vue'
 import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
-import { alignClasses, cellDensityClasses } from '@/utils/ui/table'
-import { UiAlign } from '@/utils/ui/table'
+import { UiAlign, alignClasses, cellDensityClasses } from '@/utils/ui/table'
 
 /** Props for UiTableCell. */
 const props = withDefaults(defineProps<{

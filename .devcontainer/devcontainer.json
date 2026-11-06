@@ -17,8 +17,8 @@
   "hostRequirements": { "cpus": 4, "memory": "8gb", "storage": "32gb" },
   // Fetches the plugin SDK submodule and writes docker/.env once.
   "postCreateCommand": "bash .devcontainer/post-create.sh",
-  // Starts (or restarts) the stack every time the codespace starts.
-  "postStartCommand": "docker compose --project-directory docker -f docker/docker-compose.shared.yml -f docker/docker-compose.dev.yml up -d",
+  // Starts (or restarts) the stack every time the codespace starts, once Docker answers.
+  "postStartCommand": "bash .devcontainer/post-start.sh",
   "forwardPorts": [3001, 5174, 5149, 8027],
   "portsAttributes": {
     "3001": { "label": "Client portal", "onAutoForward": "openBrowser" },

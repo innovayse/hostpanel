@@ -12,6 +12,7 @@
     "previewPhone": "Phone",
     "previewOpen": "Open",
     "previewEmpty": "Nothing to preview yet.",
+    "previewInsecure": "The preview needs a secure connection. Over plain http this browser hides what the panel checks before showing a site, so the preview stays off. Open the panel over https.",
     "chatStepStopped": "Stopped",
     "chatStepsCount": "{done} of {total} steps done",
     "chatResultDetails": "See details"

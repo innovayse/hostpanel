@@ -42,6 +42,7 @@
       >
         <UiPreviewFrame :key="frameKey" :src="address" :title="source?.label ?? ''" testid="plugin-preview-frame" />
       </UiCard>
+      <UiAlert v-else-if="insecureContext" :variant="UiAlertVariant.Warning" class="w-full" data-testid="plugin-preview-insecure">{{ $t('plugins.previewInsecure') }}</UiAlert>
       <UiText v-else-if="!loading" size="sm" tone="muted" data-testid="plugin-preview-empty">{{ $t('plugins.previewEmpty') }}</UiText>
       <UiBadge v-if="showFrame && noteText" class="absolute right-3 top-3 !bg-gray-900 !text-white shadow-lg" data-testid="plugin-preview-note">{{ noteText }}</UiBadge>
     </UiStack>
@@ -55,7 +56,10 @@
  * The frame shows only an address `pluginFrameAddress` admits against the page's `frameOrigins`, and only in a document
  * the panel's server wrote the narrow `frame-src` for this page. A CSP belongs to the document, so a router move here, from
  * another page of the same plugin too, loads the page once in full; the session flag keeps that to one try per page, so a
- * document that never matches shows nothing rather than reloading for ever. Anything refused shows no frame, no link and no sentence about why.
+ * document that never matches shows nothing rather than reloading for ever. Anything refused shows no frame, no link and no sentence about why,
+ * with one exception that is no refusal: a browser may hide `Server-Timing` outside a secure context (the standard allows
+ * it, Chromium does not), and then over plain http the document's policy cannot be read at all. The frame stays off and a
+ * warning says why, since no reload could change it. Where the entry is readable, plain http works like any other address.
  *
  * The address of a site does not change when its content does, so a refresh of this block draws a new frame once its
  * read has answered, or, when the view names a `note`, once the note changed: an address that also changed loads once, and the sandbox stays as it is. The optional `note` reads
@@ -65,6 +69,7 @@ import { usePluginSource, usePluginView } from '~/composables/usePluginView'
 import type { PluginPreviewBlock } from '~/types/pluginblock'
 import { PluginPreviewSize } from '~/types/pluginpreviewsize'
 import { pluginDocumentLoaded, pluginFrameAddress, readPluginField } from '~/utils/plugins'
+import { UiAlertVariant } from '~/utils/ui/enums'
 
 /** Props of PluginPreviewBlock. */
 interface Props {
@@ -91,6 +96,8 @@ const sourceId = ref(props.block.sources[0]?.id ?? '')
 const size = ref<PluginPreviewSize>(props.block.size === PluginPreviewSize.Phone ? PluginPreviewSize.Phone : PluginPreviewSize.Desktop)
 /** Whether this document may hold the frame. */
 const documentReady = ref(false)
+/** Whether an admitted address cannot be framed because this insecure page's browser hides the document's timing entries. */
+const insecureContext = ref(false)
 
 /** The selected source. */
 const source = computed(() => props.block.sources.find(candidate => candidate.id === sourceId.value))
@@ -145,10 +152,15 @@ const showFrame = computed(() => address.value !== null && documentReady.value)
 const checkDocument = (): void => {
   // Asked afresh on every move: a frame this document could hold on one page says nothing about the next.
   documentReady.value = false
+  insecureContext.value = false
   if (address.value === null) {
     return
   }
   const entry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined
+  if (window.isSecureContext === false && !entry?.serverTiming?.length) {
+    insecureContext.value = true
+    return
+  }
   const reloadKey = `${RELOAD_KEY_PREFIX}${route.path}`
   if (pluginDocumentLoaded(entry, route.path)) {
     sessionStorage.removeItem(reloadKey)

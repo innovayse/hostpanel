@@ -540,4 +540,22 @@ describe('PluginChatBlock', () => {
     await settle()
     expect(reply.calls).toHaveLength(2)
   })
+
+  it('keeps what the reader is typing when a card sends the last message again', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, 'Add a page')
+    reply.send('result', { title: 'Failed', actions: [{ label: 'Try again', resend: true }] })
+    reply.close()
+    await settle()
+    const field = wrapper.get('[data-testid="plugin-chat-input"]')
+    await field.setValue('And a blog')
+
+    await wrapper.get('[data-testid="plugin-chat-result-resend"]').trigger('click')
+    await settle()
+
+    expect(reply.calls).toHaveLength(2)
+    expect((field.element as HTMLTextAreaElement).value).toBe('And a blog')
+    expect(wrapper.text()).toContain('Add a page')
+  })
 })

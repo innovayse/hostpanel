@@ -125,7 +125,7 @@
         </UiStack>
       </UiStack>
       <UiText v-if="selection?.error.value" size="sm" tone="danger" data-testid="plugin-chat-selection-error">{{ selection.error.value }}</UiText>
-      <UiText v-if="selectionStale && !selection?.chips.value.length" size="sm" tone="danger" role="alert" data-testid="plugin-chat-selection-stale">{{ $t('plugins.chatSelectionStale') }}</UiText>
+      <UiText v-if="selectionStale" size="sm" tone="danger" role="alert" data-testid="plugin-chat-selection-stale">{{ $t('plugins.chatSelectionStale') }}</UiText>
       <UiStack direction="row" gap="sm" align="end" data-testid="plugin-chat-composer">
         <UiTextarea
           v-model="draft"
@@ -609,6 +609,10 @@ const onLogScroll = (): void => {
 onMounted(loadHistory)
 
 // After the render, when the new height is known; a reader who scrolled up keeps their place.
+// The notice is about a selection the reader has since replaced once they select again; a refused retry sets it after, so it shows.
+watch(() => selection.value?.chips.value, () => {
+  selectionStale.value = false
+})
 watch(messages, () => {
   if (following && log.value) {
     log.value.scrollTop = log.value.scrollHeight

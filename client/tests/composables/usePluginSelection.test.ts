@@ -415,6 +415,51 @@ describe('element selection', () => {
     vi.unstubAllGlobals()
   })
 
+  it('sends the claim again on a retry when the release was already known at mount', async () => {
+    // The release is never changed after mount, so only the mount-time read can have set it for the chat's check.
+    const reply = stubStream()
+    api = await startPluginApi({
+      [`GET ${ROUTES_URL}/sites/7`]: { body: { previewUrl: `${ORIGIN}/p`, liveUrl: `${ORIGIN}/l`, release: RELEASE } },
+      [`GET ${ROUTES_URL}/sites/7/history`]: { body: [] },
+      [`POST ${ROUTES_URL}/sites/7/selection`]: labelled,
+    })
+    const wrapper = mountBlocks(BLOCKS, { frameOrigins: [ORIGIN], options: { attachToBody: true } })
+    await settle()
+    await enterMode(wrapper)
+    await deliver(message('toggle', { id: ELEMENT }), frameWindow(wrapper))
+    await wrapper.get('[data-testid="plugin-chat-input"]').setValue('Shorter')
+    await wrapper.get('[data-testid="plugin-chat-send"]').trigger('click')
+    await settle()
+    reply.send('result', { title: 'Failed', actions: [{ label: 'Try again', resend: true }] })
+    reply.close()
+    await settle()
+
+    await wrapper.get('[data-testid="plugin-chat-result-resend"]').trigger('click')
+    await settle()
+
+    expect(reply.calls).toHaveLength(2)
+    const body = JSON.parse(String(reply.calls[1]?.init.body)) as { selection?: { releaseId: string, ids: string[] } }
+    expect(body.selection).toEqual({ releaseId: RELEASE, ids: [ELEMENT] })
+    expect(wrapper.find('[data-testid="plugin-chat-selection-stale"]').exists()).toBe(false)
+    vi.unstubAllGlobals()
+  })
+
+  it('still tells the reader a retry was refused when they already hold new chips', async () => {
+    const { wrapper, reply } = await failedTurn('r5')
+    await deliver({ ...message('ready'), release: 'r5' }, frameWindow(wrapper))
+    await wrapper.get('[data-testid="plugin-preview-select"]').trigger('click')
+    await settle()
+    await deliver({ ...message('toggle', { id: ELEMENT }), release: 'r5' }, frameWindow(wrapper))
+    expect(wrapper.findAll('[data-testid="plugin-chat-selection-chip"]')).toHaveLength(1)
+
+    await wrapper.get('[data-testid="plugin-chat-result-resend"]').trigger('click')
+    await settle()
+
+    expect(reply.calls).toHaveLength(1)
+    expect(wrapper.get('[data-testid="plugin-chat-selection-stale"]').text()).toBe('plugins.chatSelectionStale')
+    vi.unstubAllGlobals()
+  })
+
   it('draws one chip for an id the lookup repeats', async () => {
     api = await startPluginApi({
       [`GET ${ROUTES_URL}/sites/7`]: { body: { previewUrl: `${ORIGIN}/p`, liveUrl: `${ORIGIN}/l`, release: RELEASE } },
@@ -473,12 +518,11 @@ describe('element selection', () => {
 
     wrapper.unmount()
 
-    expect(removed.mock.calls.map(call => call[0])).toEqual(expect.arrayContaining(['message', 'keydown']))
-    for (const type of ['message', 'keydown']) {
-      const handlerAdded = added.mock.calls.find(call => call[0] === type)?.[1]
-      const handlerRemoved = removed.mock.calls.find(call => call[0] === type)?.[1]
-      expect(handlerAdded).toBeDefined()
-      expect(handlerRemoved).toBe(handlerAdded)
+    // The component's own handlers, picked by name: other code adds listeners to the window too, so the first one is not ours.
+    for (const [type, name] of [['message', 'onFrameMessage'], ['keydown', 'onKeydown']] as const) {
+      const own = added.mock.calls.find(call => call[0] === type && (call[1] as { name?: string }).name === name)?.[1]
+      expect(own).toBeDefined()
+      expect(removed.mock.calls.some(call => call[0] === type && call[1] === own)).toBe(true)
     }
     await deliver(message('toggle', { id: ELEMENT }), source)
     expect(asked).toEqual([])

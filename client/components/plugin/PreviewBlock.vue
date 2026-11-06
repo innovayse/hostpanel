@@ -336,17 +336,18 @@ watch(() => frameKey.value, () => {
   heldReady = null
 })
 // A selection names paths of one release; a new one may hold other content at them, so nothing carries over.
+// `immediate`, so a release already known at mount reaches the chat's check too, not only a release that later changes.
 watch(expectedRelease, (next, last) => {
   if (!selection) {
     return
   }
   selection.release.value = next
-  if (last !== '' && next !== last) {
+  if (last !== undefined && last !== '' && next !== last) {
     selection.clear()
     frameReady.value = false
   }
   takeHeldReady()
-})
+}, { immediate: true })
 watch(sourceId, () => {
   selection?.clear()
   frameReady.value = false

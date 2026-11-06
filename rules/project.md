@@ -484,8 +484,8 @@ docker/                              compose set (shared·dev·prod·platform), 
       that is not a plain DNS name is dropped, because a domain is what a client typed and the text reaches a response
       header. The list is cut at 2048 characters for the proxies' header limits; what falls off shows nothing.
     - **Browser enforcement.** The panel frames an address only when its origin is exactly on that list and is not the
-      panel's own. The edge CSP keeps `frame-src 'self' https:` (operator content on public pages, and domains cannot be
-      listed statically), and `client/server/middleware/plugin-frame-csp.ts` adds a second header to the document of
+      panel's own. The edges this repository ships (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`) keep `frame-src 'self' https:` (operator content on public pages, and domains cannot be
+      listed statically); the workspace's `edge-proxy/nginx.conf` sends no CSP at all, so on that deployment the header below is the document's only policy and every other page has none. `client/server/middleware/plugin-frame-csp.ts` adds a second header to the document of
       `/client/apps/<plugin>/**` (a language prefix names the same page), `Content-Security-Policy: frame-src <origins>` or
       `'none'` on any failure. Policies intersect. A document that got the API's origins also carries `Server-Timing:
       plugin-frames`, the one response header script can read (secure contexts only, which localhost and https are). A CSP belongs to

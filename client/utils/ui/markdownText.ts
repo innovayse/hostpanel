@@ -34,14 +34,18 @@ const MAX_INLINE_DEPTH = 4
 /** A fence line, opening or closing. */
 const FENCE_LINE = /^\s{0,3}```/
 
-/** A heading line: its text is the first group. */
-const HEADING_LINE = /^\s{0,3}#{1,6}\s+(.+?)\s*$/
+/**
+ * A heading line with its trailing space already trimmed: its text is the first group. A lazy group before `\s*$` retries
+ * at every space of a long line, which held the page for seconds on 80 KB; `s` lets the group take a U+2028 too, because
+ * a `.` stopping there fails `$` and walks the spaces back the same way.
+ */
+const HEADING_LINE = /^\s{0,3}#{1,6}\s+(.+)$/s
 
 /** A bullet line: its text is the first group. */
-const BULLET_LINE = /^\s*[-*+]\s+(.+)$/
+const BULLET_LINE = /^\s*[-*+]\s+(.+)$/s
 
 /** A numbered line: its number and its text. Nine digits at most, so `start` is always a sane number. */
-const NUMBERED_LINE = /^\s*(\d{1,9})[.)]\s+(.+)$/
+const NUMBERED_LINE = /^\s*(\d{1,9})[.)]\s+(.+)$/s
 
 /** Characters a backslash makes literal. */
 const ESCAPABLE = new Set(['\\', '*', '`'])
@@ -191,7 +195,7 @@ export const parseMarkdownText = (text: string): RichNode[] => {
       closeOpenBlocks()
       continue
     }
-    const heading = HEADING_LINE.exec(line)
+    const heading = HEADING_LINE.exec(line.trimEnd())
     if (heading?.[1]) {
       closeOpenBlocks()
       // One level only: a reply's own `#` sits inside a page that already has its headings.

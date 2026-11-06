@@ -59,6 +59,14 @@ describe('transitionSet', () => {
     }
   })
 
+  it('clips the collapsing block only while it moves, so its focus rings are not cut when it is open', () => {
+    const set = transitionSet[UiTransitionKind.Collapse]
+
+    expect(tokens(set.enterActiveClass)).toContain('ui-collapsing')
+    expect(tokens(set.leaveActiveClass)).toContain('ui-collapsing')
+    expect(tokens(set.enterToClass)).not.toContain('ui-collapsing')
+  })
+
   it('removes every transform under reduced motion', () => {
     for (const set of Object.values(transitionSet)) {
       const all = allTokens(set)

@@ -22,6 +22,7 @@ import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiCollapse from '@/components/ui/UiCollapse.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
@@ -470,96 +471,98 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
         </UiButton>
       </UiStack>
 
-      <UiCard v-if="showAddUser" padding="md" data-testid="client-users-add-panel">
-        <UiStack>
-          <UiHeading :level="3" variant="card">{{ t('clients.clientUsers.addUserToAccount') }}</UiHeading>
-          <UiTabs v-model="addMode" :items="modeTabs" data-testid="client-users-add-mode" />
+      <UiCollapse :open="showAddUser">
+        <UiCard padding="md" data-testid="client-users-add-panel">
+          <UiStack>
+            <UiHeading :level="3" variant="card">{{ t('clients.clientUsers.addUserToAccount') }}</UiHeading>
+            <UiTabs v-model="addMode" :items="modeTabs" data-testid="client-users-add-mode" />
 
-          <UiField v-if="addMode === AddUserMode.Search" :label="t('clients.clientUsers.searchExisting')">
-            <template #default="{ id }">
-              <ClientUserPicker
-                v-model="selectedUserToAdd"
-                :search="store.searchUsers"
-                :input-id="id"
-                testid="client-users-picker"
-              />
-            </template>
-          </UiField>
-
-          <UiStack v-else>
-            <UiField :label="t('shared.email')" required>
+            <UiField v-if="addMode === AddUserMode.Search" :label="t('clients.clientUsers.searchExisting')">
               <template #default="{ id }">
-                <UiInput
-                  :id="id"
-                  v-model="inviteEmail"
-                  type="email"
-                  :placeholder="t('shared.examples.email')"
-                  data-testid="client-users-invite-email"
+                <ClientUserPicker
+                  v-model="selectedUserToAdd"
+                  :search="store.searchUsers"
+                  :input-id="id"
+                  testid="client-users-picker"
                 />
               </template>
             </UiField>
-            <UiGrid :columns="2" gap="sm">
-              <UiField :label="t('shared.firstName')" required>
-                <template #default="{ id }">
-                  <UiInput
-                    :id="id"
-                    v-model="inviteFirstName"
-                    type="text"
-                    :placeholder="t('shared.john')"
-                    data-testid="client-users-invite-first-name"
-                  />
-                </template>
-              </UiField>
-              <UiField :label="t('shared.lastName')" required>
-                <template #default="{ id }">
-                  <UiInput
-                    :id="id"
-                    v-model="inviteLastName"
-                    type="text"
-                    :placeholder="t('shared.doe')"
-                    data-testid="client-users-invite-last-name"
-                  />
-                </template>
-              </UiField>
-            </UiGrid>
-          </UiStack>
 
-          <UiStack v-if="addMode === AddUserMode.Invite || selectedUserToAdd">
-            <UiHeading :level="4" variant="card">{{ t('clients.clientUsers.permissions') }}</UiHeading>
-            <UiGrid :columns="2" gap="sm">
-              <UiLabel v-for="perm in PERMISSION_LABELS" :key="perm.flag" :variant="UiLabelVariant.Inline">
-                <UiCheckbox
-                  :model-value="hasPermission(perm.flag)"
-                  :aria-label="perm.label"
-                  :data-testid="`client-users-permission-${perm.flag}`"
-                  @update:model-value="togglePermission(perm.flag)"
-                />
-                {{ perm.label }}
-              </UiLabel>
-            </UiGrid>
-            <UiStack direction="row" :justify="UiJustify.End">
-              <UiButton
-                v-if="addMode === AddUserMode.Search"
-                :variant="UiButtonVariant.Primary"
-                :disabled="addingUser"
-                data-testid="client-users-add-submit"
-                @click="handleAddUser"
-              >
-                {{ addingUser ? t('clients.clientUsers.adding') : t('clients.clientUsers.addUser2') }}
-              </UiButton>
-              <UiButton
-                v-else
-                :variant="UiButtonVariant.Primary"
-                :disabled="inviteSending || !inviteReady"
-                data-testid="client-users-invite-submit"
-                @click="handleSendInvite"
-              >
-                {{ inviteSending ? t('shared.sending') : t('clients.clientUsers.sendInvite') }}
-              </UiButton>
+            <UiStack v-else>
+              <UiField :label="t('shared.email')" required>
+                <template #default="{ id }">
+                  <UiInput
+                    :id="id"
+                    v-model="inviteEmail"
+                    type="email"
+                    :placeholder="t('shared.examples.email')"
+                    data-testid="client-users-invite-email"
+                  />
+                </template>
+              </UiField>
+              <UiGrid :columns="2" gap="sm">
+                <UiField :label="t('shared.firstName')" required>
+                  <template #default="{ id }">
+                    <UiInput
+                      :id="id"
+                      v-model="inviteFirstName"
+                      type="text"
+                      :placeholder="t('shared.john')"
+                      data-testid="client-users-invite-first-name"
+                    />
+                  </template>
+                </UiField>
+                <UiField :label="t('shared.lastName')" required>
+                  <template #default="{ id }">
+                    <UiInput
+                      :id="id"
+                      v-model="inviteLastName"
+                      type="text"
+                      :placeholder="t('shared.doe')"
+                      data-testid="client-users-invite-last-name"
+                    />
+                  </template>
+                </UiField>
+              </UiGrid>
+            </UiStack>
+
+            <UiStack v-if="addMode === AddUserMode.Invite || selectedUserToAdd">
+              <UiHeading :level="4" variant="card">{{ t('clients.clientUsers.permissions') }}</UiHeading>
+              <UiGrid :columns="2" gap="sm">
+                <UiLabel v-for="perm in PERMISSION_LABELS" :key="perm.flag" :variant="UiLabelVariant.Inline">
+                  <UiCheckbox
+                    :model-value="hasPermission(perm.flag)"
+                    :aria-label="perm.label"
+                    :data-testid="`client-users-permission-${perm.flag}`"
+                    @update:model-value="togglePermission(perm.flag)"
+                  />
+                  {{ perm.label }}
+                </UiLabel>
+              </UiGrid>
+              <UiStack direction="row" :justify="UiJustify.End">
+                <UiButton
+                  v-if="addMode === AddUserMode.Search"
+                  :variant="UiButtonVariant.Primary"
+                  :disabled="addingUser"
+                  data-testid="client-users-add-submit"
+                  @click="handleAddUser"
+                >
+                  {{ addingUser ? t('clients.clientUsers.adding') : t('clients.clientUsers.addUser2') }}
+                </UiButton>
+                <UiButton
+                  v-else
+                  :variant="UiButtonVariant.Primary"
+                  :disabled="inviteSending || !inviteReady"
+                  data-testid="client-users-invite-submit"
+                  @click="handleSendInvite"
+                >
+                  {{ inviteSending ? t('shared.sending') : t('clients.clientUsers.sendInvite') }}
+                </UiButton>
+              </UiStack>
             </UiStack>
           </UiStack>
-        </UiStack>
-      </UiCard>
+        </UiCard>
+      </UiCollapse>
 
       <UiCard v-if="users.length > 0" class="overflow-x-auto">
         <UiTable density="comfortable" data-testid="client-users-table">

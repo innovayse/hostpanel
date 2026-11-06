@@ -92,6 +92,10 @@ services:
       Auth__AppName: ${AUTH_APP_NAME:?AUTH_APP_NAME must be set}
       Auth__Authority: ${SSO_URL:-}
       Auth__PublicAuthority: ${SSO_PUBLIC_URL:-}
+      # The issuer the provider stamps into its tokens, byte for byte (copy "issuer" from its
+      # /.well-known/openid-configuration, trailing slash included). Back-channel logout checks every logout
+      # token's issuer against it, so without it a provider sign-out never reaches this API.
+      Auth__BearerIssuer: ${SSO_ISSUER:-}
       Auth__ClientId: ${SSO_CLIENT_ID:-}
       Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET:-}
       BackchannelLogout__Key: ${HOSTPANEL_BACKCHANNEL_LOGOUT_KEY:-}

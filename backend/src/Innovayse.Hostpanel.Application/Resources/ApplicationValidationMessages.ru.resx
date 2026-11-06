@@ -355,6 +355,15 @@
   <data name="DomainIdRequired" xml:space="preserve">
     <value>ID домена должен быть положительным числом.</value>
   </data>
+  <data name="AutoRenewValueRequired" xml:space="preserve">
+    <value>Значение автопродления обязательно: передайте true или false.</value>
+  </data>
+  <data name="RegistrarLockValueRequired" xml:space="preserve">
+    <value>Значение блокировки регистратора обязательно: передайте true или false.</value>
+  </data>
+  <data name="WhoisPrivacyValueRequired" xml:space="preserve">
+    <value>Значение защиты WHOIS обязательно: передайте true или false.</value>
+  </data>
   <data name="DomainEppCodeRequired" xml:space="preserve">
     <value>Код EPP/авторизации должен содержать не менее 6 символов.</value>
   </data>

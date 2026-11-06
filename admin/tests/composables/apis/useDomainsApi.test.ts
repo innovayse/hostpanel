@@ -56,11 +56,20 @@ describe('useDomainsApi', () => {
     await api.setEmailForwarding(3, { enabled: false })
     expect(callOf(mock, 0)).toMatchObject({ url: '/api/domains/3/register', method: 'POST' })
     expect(callOf(mock, 1)).toMatchObject({ url: '/api/domains/3/renew', method: 'POST', body: { years: 2 } })
-    expect(callOf(mock, 2)).toMatchObject({ url: '/api/domains/3/auto-renew', method: 'PUT', body: { enabled: true } })
+    expect(callOf(mock, 2)).toMatchObject({ url: '/api/domains/3/auto-renew', method: 'PUT', body: { value: true } })
     expect(callOf(mock, 3)).toMatchObject({ url: '/api/domains/3/whois-privacy', method: 'PUT', body: { enabled: false } })
     expect(callOf(mock, 4)).toMatchObject({ url: '/api/domains/3/lock', method: 'PUT', body: { enabled: true } })
     expect(callOf(mock, 5)).toMatchObject({ url: '/api/domains/3/dns-management', method: 'PUT', body: { enabled: true } })
     expect(callOf(mock, 6)).toMatchObject({ url: '/api/domains/3/email-forwarding-toggle', method: 'PUT', body: { enabled: false } })
+  })
+
+  it('setAutoRenew sends exactly { value }, the field the API binds, never { enabled }', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+    const api = useDomainsApi()
+    await api.setAutoRenew(3, { enabled: true })
+    await api.setAutoRenew(3, { enabled: false })
+    expect(callOf(mock, 0).body).toEqual({ value: true })
+    expect(callOf(mock, 1).body).toEqual({ value: false })
   })
 
   it('modifyContact POSTs the contact and initiateOutgoingTransfer returns the code', async () => {

@@ -57,7 +57,7 @@ test('turning auto-renew off reaches the backend and moves the switch', async ({
   await expect(toggle).toHaveAttribute('aria-checked', 'false')
 
   const sent = (await stubRequests(request)).find(r => r.method === 'PUT' && r.path === domainPath('auto-renew'))
-  expect(sent?.body).toMatchObject({ enabled: false })
+  expect(sent?.body).toMatchObject({ value: false })
 })
 
 test('unlocking the domain raises the overview warning and ID protection can be turned on', async ({ page, request }) => {
@@ -72,8 +72,8 @@ test('unlocking the domain raises the overview warning and ID protection can be 
   await expect(page.getByTestId('domain-idprotect-row-toggle')).toHaveAttribute('aria-checked', 'true')
 
   const requests = await stubRequests(request)
-  expect(requests.find(r => r.method === 'PUT' && r.path === domainPath('lock'))?.body).toMatchObject({ enabled: false })
-  expect(requests.find(r => r.method === 'PUT' && r.path === domainPath('whois-privacy'))?.body).toMatchObject({ enabled: true })
+  expect(requests.find(r => r.method === 'PUT' && r.path === domainPath('lock'))?.body).toMatchObject({ value: false })
+  expect(requests.find(r => r.method === 'PUT' && r.path === domainPath('whois-privacy'))?.body).toMatchObject({ value: true })
 
   // The state survives leaving the panel: the overview now warns about the unlocked domain.
   await page.getByTestId('domain-tab-overview').click()

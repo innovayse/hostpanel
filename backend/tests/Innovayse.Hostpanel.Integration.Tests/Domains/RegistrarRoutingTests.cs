@@ -104,9 +104,9 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
         var first = await SeedDomainAsync(nameAmTld);
         var second = await SeedDomainAsync(namecheapTld);
 
-        (await admin.PutAsJsonAsync($"/api/domains/{first.Id}/auto-renew", new { enabled = true })).StatusCode
+        (await admin.PutAsJsonAsync($"/api/domains/{first.Id}/auto-renew", new { value = true })).StatusCode
             .Should().Be(HttpStatusCode.NoContent);
-        (await admin.PutAsJsonAsync($"/api/domains/{second.Id}/auto-renew", new { enabled = true })).StatusCode
+        (await admin.PutAsJsonAsync($"/api/domains/{second.Id}/auto-renew", new { value = true })).StatusCode
             .Should().Be(HttpStatusCode.NoContent);
 
         _nameAm.Calls.Should().Contain($"SetAutoRenewAsync {first.Name}").And.NotContain($"SetAutoRenewAsync {second.Name}");
@@ -150,7 +150,7 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
 
         (await admin.PostAsJsonAsync($"/api/domains/{domainId}/renew", new { years = 1 })).StatusCode
             .Should().Be(HttpStatusCode.NoContent);
-        (await admin.PutAsJsonAsync($"/api/domains/{domainId}/auto-renew", new { enabled = true })).StatusCode
+        (await admin.PutAsJsonAsync($"/api/domains/{domainId}/auto-renew", new { value = true })).StatusCode
             .Should().Be(HttpStatusCode.NoContent);
 
         _nameAm.Calls.Should().Contain($"RenewAsync {name}").And.Contain($"SetAutoRenewAsync {name}");

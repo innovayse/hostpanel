@@ -355,6 +355,15 @@
   <data name="DomainIdRequired" xml:space="preserve">
     <value>Դոմենի ID-ն պետք է լինի դրական թիվ։</value>
   </data>
+  <data name="AutoRenewValueRequired" xml:space="preserve">
+    <value>Ավտոմատ երկարաձգման արժեքը պարտադիր է՝ ուղարկեք true կամ false։</value>
+  </data>
+  <data name="RegistrarLockValueRequired" xml:space="preserve">
+    <value>Գրանցողի արգելափակման արժեքը պարտադիր է՝ ուղարկեք true կամ false։</value>
+  </data>
+  <data name="WhoisPrivacyValueRequired" xml:space="preserve">
+    <value>WHOIS գաղտնիության արժեքը պարտադիր է՝ ուղարկեք true կամ false։</value>
+  </data>
   <data name="DomainEppCodeRequired" xml:space="preserve">
     <value>EPP/լիազորման կոդը պետք է պարունակի առնվազն 6 նիշ։</value>
   </data>

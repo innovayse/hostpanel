@@ -8,7 +8,10 @@ namespace Innovayse.Hostpanel.Application.Domains.Commands.SetMyDomainRegistrarL
 /// <c>SetRegistrarLockCommand</c> directly.
 /// </remarks>
 /// <param name="DomainId">Primary key of the domain, which must belong to the caller.</param>
-/// <param name="Value">Whether the domain should be locked.</param>
+/// <param name="Value">
+/// Whether the domain should be locked. Nullable so a body that omits it is refused with 400 by the validator
+/// instead of binding to <see langword="false"/>.
+/// </param>
 public sealed record SetMyDomainRegistrarLockCommand(
     int DomainId,
-    bool Value);
+    bool? Value);

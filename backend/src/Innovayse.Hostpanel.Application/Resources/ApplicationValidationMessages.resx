@@ -355,6 +355,15 @@
   <data name="DomainIdRequired" xml:space="preserve">
     <value>Domain ID must be a positive number.</value>
   </data>
+  <data name="AutoRenewValueRequired" xml:space="preserve">
+    <value>Auto-renew value is required: send true or false.</value>
+  </data>
+  <data name="RegistrarLockValueRequired" xml:space="preserve">
+    <value>Registrar lock value is required: send true or false.</value>
+  </data>
+  <data name="WhoisPrivacyValueRequired" xml:space="preserve">
+    <value>WHOIS privacy value is required: send true or false.</value>
+  </data>
   <data name="DomainEppCodeRequired" xml:space="preserve">
     <value>The EPP/authorization code must be at least 6 characters.</value>
   </data>

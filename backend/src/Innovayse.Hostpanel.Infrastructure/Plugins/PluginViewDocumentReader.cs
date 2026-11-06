@@ -65,6 +65,24 @@ internal static partial class PluginViewDocumentReader
     /// <summary>The block kind that may carry a <c>followUp</c> of its own.</summary>
     private const string ActionKind = "action";
 
+    /// <summary>The member of an action block that builds the body of its call from what the page has read.</summary>
+    private const string BodySourceMember = "bodySource";
+
+    /// <summary>The member of a body source mapping each body member to a dotted path into the reply.</summary>
+    private const string BodySourceFieldsMember = "fields";
+
+    /// <summary>The number of members a body source holds: route and fields, nothing else.</summary>
+    private const int BodySourceMemberCount = 2;
+
+    /// <summary>The most members a body source may send; an expected version needs one, and a page is no form.</summary>
+    private const int MaxBodySourceFields = 10;
+
+    /// <summary>The member of an action block naming the route it calls.</summary>
+    private const string ActionRouteMember = "route";
+
+    /// <summary>The member of an action block naming where a label that depends on data is read from.</summary>
+    private const string LabelSourceMember = "labelSource";
+
     /// <summary>The member of a condition naming the GET route read.</summary>
     private const string ConditionRouteMember = "route";
 
@@ -167,6 +185,11 @@ internal static partial class PluginViewDocumentReader
     [GeneratedRegex(@"\A[a-z0-9][a-z0-9_-]*\z", RegexOptions.CultureInvariant)]
     private static partial Regex PreviewSourceIdPattern();
 
+    /// <summary>A member of a body a view builds: one camelCase JSON name, so no name can reach an object's prototype.</summary>
+    /// <returns>The pattern.</returns>
+    [GeneratedRegex(@"\A[a-z][A-Za-z0-9]{0,63}\z", RegexOptions.CultureInvariant)]
+    private static partial Regex BodyMemberPattern();
+
     /// <summary>Reads and checks every view document the manifest names, under the plugin folder.</summary>
     /// <param name="pluginDirectory">The plugin folder: the folder holding <c>plugin.json</c>.</param>
     /// <param name="manifest">The manifest, already accepted by <see cref="PluginManifestValidator.Validate"/>.</param>
@@ -195,7 +218,7 @@ internal static partial class PluginViewDocumentReader
 
             foreach (var use in group)
             {
-                violation = CheckPreviewPlace(use, scan) ?? CheckRoutes(manifest, use, scan);
+                violation = CheckPreviewPlace(use, scan) ?? CheckActionBodyPlace(use, scan) ?? CheckRoutes(manifest, use, scan);
                 if (violation is not null)
                 {
                     return new PluginViewRead(PluginViewDocuments.None, violation);
@@ -679,6 +702,91 @@ internal static partial class PluginViewDocumentReader
             scan.HasPreview = true;
             CheckPreview(block, scan);
         }
+        else if (string.Equals(kind, ActionKind, StringComparison.Ordinal) && block.TryGetProperty(BodySourceMember, out var bodySource))
+        {
+            scan.HasActionBody = true;
+            CheckActionBody(block, bodySource, scan);
+        }
+    }
+
+    /// <summary>
+    /// Checks an action's body source: an object holding exactly a GET <c>route</c> and 1 to
+    /// <see cref="MaxBodySourceFields"/> <c>fields</c>, each a body member and the dotted path it is read from. The action
+    /// has an <c>id</c>, so a refresh can read it again, and calls a method that carries a body. A
+    /// <c>labelSource</c> names the same route, because the panel then takes the label and the body from one reply: two
+    /// reads could answer differently, and the button would send a value other than the one on its label.
+    /// </summary>
+    /// <param name="action">The action block.</param>
+    /// <param name="value">The body source.</param>
+    /// <param name="scan">Receives the route and the first broken rule.</param>
+    private static void CheckActionBody(JsonElement action, JsonElement value, DocumentScan scan)
+    {
+        var route = value.ValueKind == JsonValueKind.Object && value.TryGetProperty(ConditionRouteMember, out var routeValue)
+            ? ReadRoute(routeValue)
+            : null;
+        var called = action.TryGetProperty(ActionRouteMember, out var calledValue) ? ReadRoute(calledValue) : null;
+        var valid = route is not null
+            && route.Method == PluginRouteMethod.Get
+            && value.EnumerateObject().Count() == BodySourceMemberCount
+            && value.TryGetProperty(BodySourceFieldsMember, out var fields)
+            && AreBodyFields(fields)
+            && action.TryGetProperty(IdMember, out var id)
+            && id.ValueKind == JsonValueKind.String
+            && !string.IsNullOrEmpty(id.GetString())
+            && called?.Method is PluginRouteMethod.Post or PluginRouteMethod.Put or PluginRouteMethod.Patch
+            && LabelReadsTheSameRoute(action, route);
+        if (route is null || !valid)
+        {
+            scan.StateViolation ??= new PluginManifestViolation(
+                PluginManifestRule.ViewActionBodyInvalid,
+                $"has a '{BodySourceMember}' that is not {{ {ConditionRouteMember}: a GET route, {BodySourceFieldsMember}: 1 to {MaxBodySourceFields} members and dotted paths }} on an action with an id that calls POST, PUT or PATCH and reads its label from that route");
+            return;
+        }
+
+        scan.Routes.Add(route);
+    }
+
+    /// <summary>
+    /// Tells whether a body source's <c>fields</c> are 1 to <see cref="MaxBodySourceFields"/> members, each named once and
+    /// not like a label member, which the localiser would rewrite when the page is served.
+    /// </summary>
+    /// <param name="fields">The value.</param>
+    /// <returns><see langword="true"/> when they are.</returns>
+    private static bool AreBodyFields(JsonElement fields)
+    {
+        if (fields.ValueKind != JsonValueKind.Object)
+        {
+            return false;
+        }
+
+        var members = fields.EnumerateObject().ToList();
+        return members.Count is >= 1 and <= MaxBodySourceFields
+            && members.Select(member => member.Name).Distinct(StringComparer.Ordinal).Count() == members.Count
+            && members.TrueForAll(member =>
+                BodyMemberPattern().IsMatch(member.Name)
+                && !PluginViews.LabelProperties.Contains(member.Name, StringComparer.Ordinal)
+                && member.Value.ValueKind == JsonValueKind.String
+                && member.Value.GetString() is { Length: <= MaxConditionFieldLength } path
+                && ConditionFieldPattern().IsMatch(path));
+    }
+
+    /// <summary>Tells whether an action with a body source has no label source, or one reading the same route.</summary>
+    /// <param name="action">The action block.</param>
+    /// <param name="route">The body source's route.</param>
+    /// <returns><see langword="true"/> when the label and the body come from one read.</returns>
+    private static bool LabelReadsTheSameRoute(JsonElement action, PluginViewRoute route)
+    {
+        if (!action.TryGetProperty(LabelSourceMember, out var label))
+        {
+            return true;
+        }
+
+        var labelRoute = label.ValueKind == JsonValueKind.Object && label.TryGetProperty(ConditionRouteMember, out var labelValue)
+            ? ReadRoute(labelValue)
+            : null;
+        return labelRoute is not null
+            && labelRoute.Method == route.Method
+            && string.Equals(labelRoute.Path, route.Path, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -807,6 +915,18 @@ internal static partial class PluginViewDocumentReader
             return true;
         }
 
+        if (member.NameEquals(BodySourceMember))
+        {
+            // On an action it was checked with its block; its field names are never content, so it is not walked.
+            if (!string.Equals(kind, ActionKind, StringComparison.Ordinal))
+            {
+                scan.StateViolation ??= new PluginManifestViolation(
+                    PluginManifestRule.ViewActionBodyInvalid, $"has a '{BodySourceMember}' outside an action block");
+            }
+
+            return true;
+        }
+
         if (member.NameEquals(PluginViews.ResetOnSuccessProperty))
         {
             if (!inSubmit || (member.Value.ValueKind != JsonValueKind.True && member.Value.ValueKind != JsonValueKind.False))
@@ -834,6 +954,18 @@ internal static partial class PluginViewDocumentReader
         }
 
         return false;
+    }
+
+    /// <summary>Refuses a body source anywhere but in the client area, the one panel whose action block sends it.</summary>
+    /// <param name="use">Where the document is shown.</param>
+    /// <param name="scan">What the document holds.</param>
+    /// <returns>The violation, or <see langword="null"/>.</returns>
+    private static PluginManifestViolation? CheckActionBodyPlace(ViewUse use, DocumentScan scan)
+    {
+        return scan.HasActionBody && use.Area != PluginArea.Client
+            ? new PluginManifestViolation(
+                PluginManifestRule.ViewActionBodyInvalid, $"{use.Where} has an action with a '{BodySourceMember}', which only the client area sends")
+            : null;
     }
 
     /// <summary>

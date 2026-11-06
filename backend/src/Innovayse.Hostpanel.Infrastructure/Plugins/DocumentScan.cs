@@ -5,6 +5,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// <summary>What a walk through one view document found: the routes, kinds and labels it names and the first problem, if any.</summary>
 internal sealed class DocumentScan
 {
+    /// <summary>Gets or sets a value indicating whether the document holds an action with a body source.</summary>
+    public bool HasActionBody { get; set; }
+
     /// <summary>Gets the routes the document names, in document order.</summary>
     public List<PluginViewRoute> Routes { get; } = [];
 

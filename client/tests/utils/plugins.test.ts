@@ -15,6 +15,7 @@ import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import { PluginValueFormat } from '~/types/pluginvalueformat'
 import {
   parsePluginChatResult,
+  pluginActionBody,
   parsePluginChatStep,
   pluginDocumentLoaded,
   pluginFrameAddress,
@@ -514,4 +515,30 @@ describe('parsePluginChatResult until', () => {
   it('starts no follow-up for a malformed condition', () => {
     expect(parsePluginChatResult(card({ field: 'state' }), {}, [], ['a'])?.actions[0]?.block?.followUp).toBeUndefined()
   })
+})
+
+describe('action body from page data', () => {
+  /** A view's body source reading one member. */
+  const source = { route: { method: 'get', path: '/state' }, fields: { expectedVersion: 'publish.version' } }
+
+  it('builds the body from the reply', () => {
+    expect(pluginActionBody(source, { publish: { version: 14 } })).toEqual({ expectedVersion: 14 })
+  })
+
+  it.each([[undefined], [{}], [{ publish: { version: null } }], [{ publish: { version: { a: 1 } } }], [{ publish: { version: Number.NaN } }]])(
+    'refuses to build a partial body from %j', (reply) => {
+      expect(pluginActionBody(source, reply)).toBeNull()
+    })
+
+  /** A result event with one action carrying the given body. */
+  const card = (body: unknown): unknown => ({ title: 'T', actions: [{ label: 'Publish', route: { method: 'post', path: '/publish' }, body }] })
+
+  it('keeps the literal body of a result card\'s action', () => {
+    expect(parsePluginChatResult(card({ expectedVersion: 4 }), {}, [])?.actions[0]?.block?.body).toEqual({ expectedVersion: 4 })
+  })
+
+  it.each([[null], [[1]], ['x'], [{ __proto__x: 1 }], [{ a: { b: 1 } }], [Object.fromEntries(Array.from({ length: 11 }, (_, index) => [`a${index}`, 1]))]])(
+    'drops a result card\'s action whose body is %j', (body) => {
+      expect(parsePluginChatResult(card(body), {}, [])?.actions).toEqual([])
+    })
 })

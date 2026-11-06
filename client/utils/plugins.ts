@@ -14,7 +14,7 @@ import { formatDateTime } from '~/utils/formatDate'
 import { clientPluginPagePath } from '~/constants/clientRoutes'
 import type { PluginMenuItem } from '~/types/pluginmenuitem'
 import type { PluginMenuLink } from '~/types/pluginmenulink'
-import type { PluginActionBlock, PluginPageLink } from '~/types/pluginblock'
+import type { PluginActionBlock, PluginActionBodySource, PluginActionBodyValue, PluginPageLink } from '~/types/pluginblock'
 import { PluginBlockKind } from '~/types/pluginblockkind'
 import { PluginBlockTone } from '~/types/pluginblocktone'
 import type { PluginChatResult, PluginChatResultAction } from '~/types/pluginchatresult'
@@ -429,6 +429,57 @@ export const parsePluginChatStep = (data: unknown): PluginChatStep | null => {
 /** The most lines a result card keeps behind its details switch. */
 const MAX_RESULT_DETAILS = 20
 
+/** The most members a result card's action body may hold; the same cap the API sets on a view's `bodySource`. */
+const MAX_RESULT_BODY_MEMBERS = 10
+
+/** A member of an action's body: one camelCase JSON name, the API's rule for a view's `bodySource`. */
+const BODY_MEMBER = /^[a-z][A-Za-z0-9]{0,63}$/
+
+/**
+ * Whether a value may be sent as a member of an action's body.
+ *
+ * @param value - The value.
+ * @returns True for a string, a finite number or a boolean.
+ */
+const isBodyValue = (value: unknown): value is PluginActionBodyValue =>
+  typeof value === 'string' || typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value))
+
+/**
+ * Builds the body of an action's call from the reply its `bodySource` read.
+ *
+ * @param source - The body source.
+ * @param reply - The reply; undefined until it is read and after a failed read.
+ * @returns The body, or null when a member is absent or is no scalar: a call with part of its body must not be sent,
+ *   since the route could then not tell what the reader saw.
+ */
+export const pluginActionBody = (source: PluginActionBodySource, reply: unknown): Record<string, PluginActionBodyValue> | null => {
+  const body: Record<string, PluginActionBodyValue> = {}
+  for (const [member, field] of Object.entries(source.fields)) {
+    const value = readPluginField(reply, field)
+    if (!BODY_MEMBER.test(member) || !isBodyValue(value)) {
+      return null
+    }
+    body[member] = value
+  }
+  return body
+}
+
+/**
+ * Reads the body of a result card's action. An event is not checked at install as a view is, so its body is checked here.
+ *
+ * @param body - The action's `body` member.
+ * @returns The body, or null for anything but a flat object of scalars under valid names, at most {@link MAX_RESULT_BODY_MEMBERS}.
+ */
+const readResultBody = (body: unknown): Record<string, PluginActionBodyValue> | null => {
+  if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+    return null
+  }
+  const members = Object.entries(body)
+  return members.length <= MAX_RESULT_BODY_MEMBERS && members.every(([member, value]) => BODY_MEMBER.test(member) && isBodyValue(value))
+    ? Object.fromEntries(members) as Record<string, PluginActionBodyValue>
+    : null
+}
+
 /**
  * The condition that ends a result action's follow-up; anything of another shape is no condition. An event's `equals`
  * cannot be an own member name of a C# record, so `equalsAny` is accepted as its spelling.
@@ -481,12 +532,19 @@ const parseResultAction = (
   if (!route || typeof route.path !== 'string' || method === undefined || method === HttpMethod.Get || fillPluginPath(route.path, values) === null) {
     return null
   }
+  const declaredBody = readPluginField(data, 'body')
+  const body = declaredBody === undefined ? undefined : readResultBody(declaredBody)
+  // Dropped whole: a button sent without the body its plugin wrote would act without saying what the reader saw.
+  if (body === null) {
+    return null
+  }
   const confirm = readPluginField(data, 'confirm')
   const until = readResultUntil(readPluginField(data, 'until'))
   const block: PluginActionBlock = {
     kind: PluginBlockKind.Action,
     label,
     route: { method: route.method, path: route.path },
+    ...(body ? { body } : {}),
     ...(typeof confirm === 'string' && confirm !== '' ? { confirm } : {}),
     // A card's action changes the same things a turn does, so it reads again what the chat reads again after one.
     ...(refresh.length > 0 ? { refresh: [...refresh] } : {}),

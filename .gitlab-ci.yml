@@ -606,8 +606,8 @@ deploy:demo:
     - git -C "$DEPLOY_DIR" submodule update --init --recursive --force
     - cd "$DEPLOY_DIR"
     # The demo's edge network is external (docker-compose.demo.yml) and is not the platform network: create it
-    # when missing. The edge proxy must also be attached to it (edge-proxy/docker-compose.yml) to route here.
-    # The subnet is fixed (DEMO_EDGE_NETWORK_SUBNET): the edge's nginx.conf denies it on every host except the demo ones, so a
+    # when missing. The operator's edge proxy must also be attached to it to route here.
+    # The subnet is fixed (DEMO_EDGE_NETWORK_SUBNET): the operator's edge denies it on every host except the demo ones, so a
     # demo container cannot reach production through the proxy. Keep it equal to the `deny` line there.
     - docker network inspect hostpanel_demo_edge >/dev/null 2>&1 || docker network create --subnet "$DEMO_EDGE_NETWORK_SUBNET" hostpanel_demo_edge
     - docker compose pull --ignore-buildable

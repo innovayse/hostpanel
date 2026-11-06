@@ -70,6 +70,31 @@ describe('transitionSet', () => {
     }
   })
 
+  it('gives a modal panel the same duration token as its overlay, since Vue times the transition from the overlay only', () => {
+    /**
+     * Reads the duration token of a class string.
+     *
+     * @param classes - A class string with exactly one duration class.
+     * @returns The token name, such as `base`.
+     */
+    const durationOf = (classes: string): string => {
+      const found = tokens(classes).filter(token => token.startsWith('duration-'))
+      expect(found).toHaveLength(1)
+      return (found[0] ?? '').replace('duration-(--duration-', '').replace(')', '')
+    }
+    const pairs: [UiTransitionKind, string[]][] = [
+      [UiTransitionKind.Dialog, [modalPanelClasses.dialog]],
+      [UiTransitionKind.Drawer, [modalPanelClasses.drawerLeft, modalPanelClasses.drawerRight]],
+    ]
+    for (const [kind, panels] of pairs) {
+      const enter = durationOf(transitionSet[kind].enterActiveClass)
+      expect(durationOf(transitionSet[kind].leaveActiveClass)).toBe(enter)
+      for (const panel of panels) {
+        expect(durationOf(panel)).toBe(enter)
+      }
+    }
+  })
+
   it('removes the panel transform under reduced motion too', () => {
     for (const panel of Object.values(modalPanelClasses)) {
       const moving = tokens(panel).filter(token => /^group-\[\.ui-from\]\/overlay:-?(?:translate-x|scale)/.test(token))

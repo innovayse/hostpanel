@@ -7,7 +7,7 @@
  * edge (`UiTransition`, nothing moves under reduced motion); focus goes to the first control when the enter has
  * ended, the close button shows only once the panel is in, and a request made while it is leaving is ignored.
  */
-import { ref, useId } from 'vue'
+import { nextTick, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
@@ -78,11 +78,27 @@ const { onKeydown, focusIn } = useModalSurface(panel, () => props.open, close)
 /**
  * Marks the panel as in and moves focus to its first control, once the enter has ended.
  *
- * @returns Nothing; the settled state is set and focus is moved.
+ * The close button turns visible with the `settled` state and a hidden control cannot take focus, so the focus
+ * move waits for the DOM update that shows it. A control the user already focused is left alone.
+ *
+ * @returns A promise that settles once focus has been moved (or left where it was).
  */
-const onEntered = (): void => {
+const onEntered = async (): Promise<void> => {
   settled.value = true
+  await nextTick()
   focusIn()
+}
+
+/**
+ * Ends the leave: the old panel is gone, so requests are accepted again.
+ *
+ * With `v-if` this also runs, for the old element, when the drawer is reopened during its leave (the transition
+ * ends the old element's leave and mounts a fresh one); the fresh panel then settles through the enter hook.
+ *
+ * @returns Nothing; the leaving state is cleared.
+ */
+const onLeft = (): void => {
+  leaving.value = false
 }
 
 /**
@@ -96,8 +112,10 @@ const onLeaving = (): void => {
 }
 
 /**
- * Undoes the start of a leave when the drawer is reopened while it was leaving: the panel is still in, so
- * requests work again and the close button shows.
+ * Undoes the start of a leave when the very same element is shown again while it was leaving. Vue raises
+ * `leave-cancelled` only for an element that persists (`v-show`); a `v-if` surface gets `after-leave` on the old
+ * element and a new element instead, see {@link onLeft}. Kept so a persisted panel is usable again: requests work
+ * and the close button shows.
  *
  * @returns Nothing; the leaving and settled states are restored.
  */
@@ -114,7 +132,7 @@ const onLeaveCancelled = (): void => {
       appear
       @after-enter="onEntered"
       @before-leave="onLeaving"
-      @after-leave="leaving = false"
+      @after-leave="onLeft"
       @leave-cancelled="onLeaveCancelled"
     >
       <div v-if="open" class="group/overlay fixed inset-0 z-50 bg-black/60 backdrop-blur-sm" @click.self="close">

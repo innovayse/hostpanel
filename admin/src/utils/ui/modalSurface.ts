@@ -63,11 +63,19 @@ export const useModalSurface = (
     panel.value?.focus({ preventScroll: true })
   }
 
-  /** Moves focus to the first control of the panel, if the surface is still open. */
+  /**
+   * Moves focus to the first control of the panel, if the surface is still open. A control inside the panel that
+   * already has focus (the user typed or clicked during the enter) keeps it.
+   */
   const focusIn = (): void => {
-    if (locked && panel.value !== null) {
-      focusFirst(panel.value)
+    if (!locked || panel.value === null) {
+      return
     }
+    const active = document.activeElement
+    if (active !== panel.value && active !== null && panel.value.contains(active)) {
+      return
+    }
+    focusFirst(panel.value)
   }
 
   /** Gives focus back to the element that opened the surface. */

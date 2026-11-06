@@ -92,6 +92,25 @@ describe('useModalSurface', () => {
     expect(document.activeElement?.id).toBe('inside')
   })
 
+  it('leaves focus alone at the end of the enter when a control inside the panel already has it', async () => {
+    mount(
+      surface(ref(true), () => undefined),
+      { attachTo: document.body },
+    )
+    await nextTick()
+    await nextTick()
+    const inside = document.getElementById('inside')
+    inside?.focus()
+    // A second control the user could have clicked; the first control must not take focus from it.
+    const extra = document.createElement('input')
+    document.getElementById('panel')?.append(extra)
+    extra.focus()
+
+    focusSurface()
+
+    expect(document.activeElement).toBe(extra)
+  })
+
   it('does not move focus to the first control once the surface has closed', async () => {
     /** Open flag the test flips. */
     const open = ref(true)

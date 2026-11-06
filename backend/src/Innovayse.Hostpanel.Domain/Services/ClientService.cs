@@ -131,6 +131,14 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// </summary>
     public long SshKeyRevision { get; private set; }
 
+    /// <summary>
+    /// Gets whether the service holds a hosting account on its panel: it has a provisioning reference
+    /// and is not terminated. A terminated service keeps the reference for the record, but its account
+    /// is gone and the same reference may later belong to another service, so the reference alone does
+    /// not say an account exists. A suspended service still holds its account.
+    /// </summary>
+    public bool HoldsHostingAccount => ProvisioningRef is not null && Status is not ServiceStatus.Terminated;
+
     /// <summary>Gets whether <see cref="Suspend"/> accepts the service: only an Active one can be suspended.</summary>
     public bool CanSuspend => Status is ServiceStatus.Active;
 

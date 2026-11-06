@@ -38,6 +38,20 @@ export const webmailUrl = (host: string): string => `${HTTPS_PREFIX}${host}:${WE
 export const websiteUrl = (domain: string): string => `${HTTPS_PREFIX}${domain}`
 
 /**
+ * Whether a service still has a hosting account on its server to act on.
+ *
+ * A terminated service keeps its server for the record but its account is gone, so the webmail
+ * link, the password panel and the SSH panel are not offered for it. A suspended service still has
+ * its account. The API refuses the requests too; this only decides what to show.
+ *
+ * @param service - The service, only its status is read.
+ * @returns False for a terminated service, true otherwise.
+ */
+export const hasLiveHostingAccount = (service: Pick<ClientService, 'status'>): boolean => {
+  return service.status !== ServiceStatus.Terminated
+}
+
+/**
  * Whether the control panel sign-in is offered for a service.
  *
  * It needs an active service (the panel is not reachable on a pending, suspended or terminated

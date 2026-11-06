@@ -51,6 +51,7 @@ public sealed class ChangePackageHandler
     /// <returns>
     /// Success, or <c>SERVICE_NOT_FOUND</c> when the id names no service,
     /// <c>SERVICE_NOT_PROVISIONED</c> when the service has never been provisioned,
+    /// <c>SERVICE_NOT_ACTIVE</c> when the service is terminated and its account removed,
     /// <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server, or
     /// <c>SERVICE_PACKAGE_UPSTREAM_FAILED</c> when the provider rejects the change.
     /// </returns>
@@ -62,9 +63,10 @@ public sealed class ChangePackageHandler
             return Result.FailureCode(HostpanelErrorCodes.SERVICE_NOT_FOUND);
         }
 
-        if (service.ProvisioningRef is null)
+        var account = service.RequireHostingAccount();
+        if (account.IsFailure)
         {
-            return Result.FailureCode(HostpanelErrorCodes.SERVICE_NOT_PROVISIONED);
+            return Result.FailureCode(account.ErrorCode!);
         }
 
         var server = await _bus.FindServerAsync(service, ct);
@@ -76,7 +78,7 @@ public sealed class ChangePackageHandler
         try
         {
             var provider = _providerFactory.CreateFor(server);
-            await provider.ChangePackageAsync(service.ProvisioningRef, cmd.NewPackage, ct);
+            await provider.ChangePackageAsync(account.Value!, cmd.NewPackage, ct);
         }
         catch (Exception ex)
         {

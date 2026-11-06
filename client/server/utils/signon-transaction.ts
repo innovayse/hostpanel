@@ -91,26 +91,28 @@ interface PresentTransaction {
   transaction: SignonTransaction | null
 }
 
-/** The key used when no session encryption key is configured (development, tests); lives for this process only. */
+/** The key used when no session encryption key is configured (development only); lives for this process only. */
 let processKey: Buffer | null = null
 
 /**
  * The key transactions are sealed with.
  *
  * Derived from the configured session encryption key, which every replica shares, so any replica can
- * open what another sealed. When none is configured the sessions are kept in this process's memory
- * (the key is only required with Redis), so a key that lives for this process is just as wide.
+ * open what another sealed. In development with no key the sessions are kept in this process's memory,
+ * so a key that lives for this process is just as wide.
+ *
+ * Fails closed: the key is read through `readSessionKey`, which refuses an empty or malformed key
+ * outside development, so a deployment that forgot the key cannot start a sign-in with a key that
+ * differs per replica and per restart. Only development, where `readSessionKey` answers null, uses
+ * the process key.
  *
  * @returns A 32-byte key.
- * @throws Error when a configured key is malformed.
+ * @throws Error when the key is empty outside development, or is malformed.
  */
 const transactionKey = (): Buffer => {
-  const configured = useRuntimeConfig().sessionEncryptionKey
-  if (typeof configured === 'string' && configured.trim()) {
-    const base = readSessionKey(configured)
-    if (base) {
-      return deriveKey(base, KEY_PURPOSE)
-    }
+  const base = readSessionKey(useRuntimeConfig().sessionEncryptionKey)
+  if (base) {
+    return deriveKey(base, KEY_PURPOSE)
   }
   processKey ??= randomBytes(PROCESS_KEY_BYTES)
   return processKey
@@ -238,23 +240,26 @@ const presentTransactions = (event: H3Event): PresentTransaction[] => {
  * Starts a transaction: seals it into its own cookie.
  *
  * First tidies the browser's other attempts: unreadable and expired ones are dropped, and when
- * `SSO_MAX_LIVE_TRANSACTIONS` live ones remain, the oldest are dropped until there is room, so the
- * cookies a browser sends back stay bounded. A newer attempt never replaces a live one that is
- * within the limit.
+ * `SSO_MAX_LIVE_TRANSACTIONS` live ones remain, silent probes are dropped before interactive
+ * sign-ins (a probe is cheap to repeat, a person's sign-in is not), the oldest first within each
+ * kind, until there is room, so the cookies a browser sends back stay bounded. A newer attempt
+ * never replaces a live one that is within the limit.
  *
  * @param event - The request being answered.
  * @param input - The attempt to remember.
+ * @throws Error when the session encryption key is empty outside development, or is malformed.
  */
 export const createTransaction = (event: H3Event, input: NewSignonTransaction): void => {
-  const live: { name: string, createdAt: number }[] = []
+  const live: { name: string, createdAt: number, silent: boolean }[] = []
   for (const { name, transaction } of presentTransactions(event)) {
     if (transaction !== null && isLive(transaction)) {
-      live.push({ name, createdAt: transaction.createdAt })
+      live.push({ name, createdAt: transaction.createdAt, silent: transaction.kind === SignonTransactionKind.Silent })
     } else {
       clearCookie(event, name)
     }
   }
-  live.sort((a, b) => a.createdAt - b.createdAt)
+  // Eviction order: silent before interactive, then oldest first.
+  live.sort((a, b) => Number(b.silent) - Number(a.silent) || a.createdAt - b.createdAt)
   while (live.length >= SSO_MAX_LIVE_TRANSACTIONS) {
     const oldest = live.shift()
     if (oldest) {

@@ -8,15 +8,16 @@
 
 import { createHash } from 'node:crypto'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { makeEvent, refusal, setRuntimeConfig } from '../../helpers/bffHarness'
+import { TEST_SESSION_KEY, makeEvent, refusal, setRuntimeConfig } from '../../helpers/bffHarness'
 import { startAttempt } from '../../helpers/signonAttempt'
-import { MAX_RETURN_PATH_LENGTH, safeReturnPath, startSignonFlow } from '~/server/utils/signon-flow'
+import { MAX_RETURN_PATH_BYTES, safeReturnPath, startSignonFlow } from '~/server/utils/signon-flow'
 import { openTransaction, transactionCookieName } from '~/server/utils/signon-transaction'
 import { SignonTransactionKind } from '~/types/signontransactionkind'
-import { SSO_FLOW_COOKIE_MAX_AGE } from '~/server/utils/auth-cookie'
+import { SSO_FLOW_COOKIE_MAX_AGE, SSO_MAX_LIVE_TRANSACTIONS } from '~/server/utils/auth-cookie'
 
 beforeEach(() => {
   setRuntimeConfig({
+    sessionEncryptionKey: TEST_SESSION_KEY,
     ssoClientId: 'client',
     ssoCallbackUrl: 'https://portal.test/api/portal/auth/sso/callback',
     public: { ssoPublicUrl: 'https://sso.test' },
@@ -123,9 +124,38 @@ describe('safeReturnPath', () => {
     expect(safeReturnPath('/client/domains')).toBe('/client/domains')
   })
 
-  it('refuses a path longer than the sealed cookie can safely hold', () => {
-    expect(safeReturnPath(`/${'a'.repeat(MAX_RETURN_PATH_LENGTH)}`)).toBeNull()
-    expect(safeReturnPath(`/${'a'.repeat(MAX_RETURN_PATH_LENGTH - 1)}`)).not.toBeNull()
+  it('limits the path by UTF-8 bytes, 512 of them', () => {
+    expect(MAX_RETURN_PATH_BYTES).toBe(512)
+    expect(safeReturnPath(`/${'a'.repeat(511)}`)).not.toBeNull()
+    expect(safeReturnPath(`/${'a'.repeat(512)}`)).toBeNull()
+  })
+
+  it('counts multibyte characters by their bytes, not as one each', () => {
+    // 1 + 170 x 3 bytes = 511 fits; 1 + 171 x 3 = 514 does not, though it is only 172 characters.
+    expect(safeReturnPath(`/${'€'.repeat(170)}`)).not.toBeNull()
+    expect(safeReturnPath(`/${'€'.repeat(171)}`)).toBeNull()
+    // 1 + 255 x 2 bytes = 511 fits; 1 + 256 x 2 = 513 does not.
+    expect(safeReturnPath(`/${'я'.repeat(255)}`)).not.toBeNull()
+    expect(safeReturnPath(`/${'я'.repeat(256)}`)).toBeNull()
+  })
+
+  it('falls back to no return path for an oversized one, without an error', () => {
+    const event = makeEvent()
+
+    const { params } = startSignonFlow(event, safeReturnPath(`/${'a'.repeat(2000)}`))
+
+    const state = params.get('state') ?? ''
+    const name = transactionCookieName(state)
+    const lookup = openTransaction(makeEvent({ cookies: { [name]: event.written[name]?.value ?? '' } }), state)
+    expect(lookup.transaction?.returnTo).toBeNull()
+  })
+
+  it('keeps the pages the app builds, with a long query, under the limit', () => {
+    const invite = `/client/accept-invite?token=${'t'.repeat(86)}`
+    const filtered = '/client/invoices?status=unpaid&page=12&sort=dueDate&order=desc&search=example.test'
+
+    expect(safeReturnPath(invite)).toBe(invite)
+    expect(safeReturnPath(filtered)).toBe(filtered)
   })
 
   it.each([undefined, 42, '', 'https://elsewhere.test/x', '//elsewhere.test', '/\\elsewhere.test', '/api/portal/x'])(
@@ -134,4 +164,38 @@ describe('safeReturnPath', () => {
       expect(safeReturnPath(candidate)).toBeNull()
     },
   )
+})
+
+describe('cookies of the worst case', () => {
+  /** The limit of a request header on the servers and proxies in front of the app. */
+  const HEADER_LIMIT_BYTES = 8192
+
+  /** The session cookie as large as the app writes plus the readable flags, about 1 KB. */
+  const SESSION_COOKIES = { portal_session: 's'.repeat(900), authed: '1', sso_silent_tried: '1' }
+
+  /**
+   * The size of the `Cookie` request header a browser sends for these cookies.
+   *
+   * @param cookies - The cookies held.
+   * @returns The header size in bytes.
+   */
+  const headerBytes = (cookies: Record<string, string>): number => {
+    return Buffer.byteLength(Object.entries(cookies).map(([name, value]) => `${name}=${value}`).join('; '), 'utf8')
+  }
+
+  it.each([
+    ['ASCII', `/${'a'.repeat(1023)}`],
+    ['multibyte (3 bytes each)', `/${'€'.repeat(1023)}`],
+    ['multibyte (2 bytes each)', `/${'я'.repeat(1023)}`],
+    ['the longest ASCII path that is kept', `/${'a'.repeat(511)}`],
+    ['the longest multibyte path that is kept', `/${'€'.repeat(170)}`],
+  ])('keeps five live attempts and the session cookies under 8192 bytes (%s)', (_label, candidate) => {
+    let cookies: Record<string, string> = { ...SESSION_COOKIES }
+    for (let index = 0; index < SSO_MAX_LIVE_TRANSACTIONS; index += 1) {
+      cookies = startAttempt(cookies, safeReturnPath(candidate)).cookies
+    }
+
+    expect(Object.keys(cookies).filter(name => name.includes('sso_tx_'))).toHaveLength(SSO_MAX_LIVE_TRANSACTIONS)
+    expect(headerBytes(cookies)).toBeLessThan(HEADER_LIMIT_BYTES)
+  })
 })

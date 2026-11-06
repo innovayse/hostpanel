@@ -1,8 +1,8 @@
 #!/bin/sh
 # Fails when the client portal's Content-Security-Policy differs between the two edges this repository
 # ships. Caddy and nginx cannot include one file (different syntax, different variable spelling), so
-# the Caddyfile is the definition and this holds the nginx template to it. The workspace's
-# edge-proxy/nginx.conf is held to the same Caddyfile by a guard of that repository.
+# the Caddyfile is the definition and this holds the nginx template to it. An operator's own
+# edge is outside this repository and is the operator's to keep in step.
 #
 # Usage: check-edge-csp.sh [Caddyfile] [nginx template]
 set -eu

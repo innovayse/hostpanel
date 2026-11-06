@@ -14,8 +14,8 @@
 #     therefore cannot resolve or route to any production container (hostpanel-db, ...);
 #     the one production-side peer it can address is the proxy itself, which routes by Host header.
 #     Create it once per host:  docker network create --subnet 172.29.0.0/16 hostpanel_demo_edge  (deploy:demo does,
-#     idempotently). The subnet is fixed because the edge proxy denies it on every production host (nginx.conf,
-#     `deny 172.29.0.0/16`), so a demo container cannot reach production by sending a production Host header.
+#     idempotently). The subnet is fixed because the operator's edge proxy denies it on every production host,
+#     so a demo container cannot reach production by sending a production Host header.
 #     Each of the three is its own compose service named hostpanel-demo-*: compose always adds the SERVICE name
 #     as an alias on every network, so keeping the names unique stops a hostpanel-api alias from ever
 #     existing next to production's. The original hostpanel-api/-client/-admin are parked.

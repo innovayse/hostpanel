@@ -14,7 +14,7 @@ The SDK project lives at `backend/src/Hostpanel.Sdk` in the repository. Referenc
 
 ### Name the project
 
-Name a plugin project `<Company>.Hostpanel.Plugins.<Name>`, the .NET plugin convention `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`). The project, its folder, its assembly and its root namespace all carry that name, and its test project adds `.Tests`. Innovayse's own plugins are `Innovayse.Hostpanel.Plugins.<Name>`, with tests in `Innovayse.Hostpanel.Plugins.<Name>.Tests`, each in its own repository `innovayse/hostpanel-<name>`: Innovayse Sites, for example, is `Innovayse.Hostpanel.Plugins.Sites` in `innovayse/hostpanel-sites`. The bundled `Innovayse.Providers.*` projects predate the convention and are renamed as they move to their own repositories.
+Name a plugin project `<Company>.Hostpanel.Plugins.<Name>`, the .NET plugin convention `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`). The project, its folder, its assembly and its root namespace all carry that name, and its test project adds `.Tests`. Innovayse's own plugins are `Innovayse.Hostpanel.Plugins.<Name>`, with tests in `Innovayse.Hostpanel.Plugins.<Name>.Tests`, each in its own repository named `hostpanel-<name>`. The bundled `Innovayse.Providers.*` projects predate the convention and are renamed as they move to their own repositories.
 
 The plugin `id` in `plugin.json` is not part of the name and never changes when a project is renamed: the host keys the plugin's stored settings and data by it.
 

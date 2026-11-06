@@ -229,8 +229,7 @@ docker/                              compose set (shared·dev·prod·platform), 
 - **Plugin projects are named `Innovayse.Hostpanel.Plugins.<Name>` (#848).** The .NET plugin convention
   `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`): project, folder, assembly and root
   namespace are `Innovayse.Hostpanel.Plugins.<Name>`, its tests `Innovayse.Hostpanel.Plugins.<Name>.Tests`, and a
-  plugin in its own repository lives in `innovayse/hostpanel-<name>` (Innovayse Sites, #844:
-  `innovayse/hostpanel-sites`, `Innovayse.Hostpanel.Plugins.Sites`). The plugin `id` in `plugin.json` never
+  plugin in its own repository lives in a repository named `hostpanel-<name>`. The plugin `id` in `plugin.json` never
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
@@ -493,7 +492,7 @@ docker/                              compose set (shared·dev·prod·platform), 
       header. The list is cut at 2048 characters for the proxies' header limits; what falls off shows nothing.
     - **Browser enforcement.** The panel frames an address only when its origin is exactly on that list and is not the
       panel's own. The edges this repository ships (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`, held to one policy by `scripts/check-edge-csp.sh`) keep `frame-src 'self' https:` (operator content on public pages, and domains cannot be
-      listed statically). The workspace's `edge-proxy/nginx.conf` sends that same policy as `Content-Security-Policy-Report-Only` on `host.innovayse.com` while it is reviewed (#938; the workspace's `guard:edge-csp` runs that real file and compares it with the Caddyfile), and a report-only policy does not intersect with an enforcing one, so on that deployment the header below is the only one enforced until the rollout switches it on. `client/server/middleware/plugin-frame-csp.ts` adds a second header to the document of
+      listed statically). An operator's own edge may send that same policy as `Content-Security-Policy-Report-Only` while it is reviewed (#938), and a report-only policy does not intersect with an enforcing one, so on such a deployment, and on a deployment whose edge sends no policy, the header below is the only one enforced. `client/server/middleware/plugin-frame-csp.ts` adds a second header to the document of
       `/client/apps/<plugin>/**` (a language prefix names the same page), `Content-Security-Policy: frame-src <origins>` or
       `'none'` on any failure. Policies intersect. A document that got the API's origins also carries `Server-Timing:
       plugin-frames`, the one response header script can read (secure contexts only, which localhost and https are). A CSP belongs to
@@ -1548,7 +1547,7 @@ refuses to boot. The GitHub workflow `.github/workflows/ci.yml` builds the stand
 runs the Domain, Architecture, CWP and Integration suites, plus the migration addon's PHP tests.
 
 ```bash
-./dev up hostpanel                # from the workspace root, when working inside the workspace
+docker compose -f docker/docker-compose.shared.yml -f docker/docker-compose.dev.yml -f docker/docker-compose.platform.yml up   # start the Hostpanel stack inside a platform checkout
 ```
 
 To build without touching the dev stack, **run docker through PowerShell, not Git Bash**,
@@ -1639,9 +1638,8 @@ starts the pipeline. The consequences are not obvious and cost time every few mo
   `git submodule update --init --recursive` after every checkout of their deploy directory, the rollback included.
   The SDK project opts out of central package management and pins its two package versions itself, so it
   builds alone; keep those versions equal to the ones in `backend/Directory.Packages.props`.
-- `.gitlab-ci.yml` inlines its templates. This repo cannot see the workspace's shared
-  `ci/templates.yml`, so the hidden jobs are copied in. Change one here and the workspace
-  copy does not move with it.
+- `.gitlab-ci.yml` inlines its templates. This repo cannot see the shared templates they
+  came from, so the hidden jobs are copied in. Changing one here does not change those.
 
 **`deploy:prod` builds the images on the production host** — it consumes no registry images
 and declares `needs: []`, because the build jobs want a `builder` runner this project's prod
@@ -1651,7 +1649,7 @@ migrations on startup, so `up -d` is the moment the schema changes, and a deploy
 undone should not start. The last ten dumps are kept.
 
 `nginx` is deliberately left out of both deploys' service lists. It publishes 80/443, which on
-these hosts belong to the shared Nginx Proxy Manager; naming it would fail the whole deploy.
+these hosts belong to the host's shared reverse proxy; naming it would fail the whole deploy.
 Its own nginx exists for a standalone install.
 
 ## Configuration and the two switches that decide what this product *is*
@@ -1676,7 +1674,7 @@ Its own nginx exists for a standalone install.
 - **Demo mode (`Demo__Enabled`).** Set through `DEMO_*` env in `docker/docker-compose.demo.yml`, an overlay
   placed last in the chain (`shared` + `prod` + `platform` + `demo`, project `hostpanel-demo`). It swaps the
   payment, registrar and provisioning adapters for fakes, sends mail to the demo's own mailhog and resets
-  data every `Demo__ResetIntervalHours`. Everything stateful is `hostpanel-demo-*` so it can sit beside prod; its db, broker, redis and mailhog live on a demo-private network and only the api, client and admin (compose services `hostpanel-demo-*`, the names the edge proxy uses) also join the dedicated external network `hostpanel_demo_edge`, **never** the shared network, so the demo can neither resolve nor reach any production container (the edge proxy is the one production-side container on both networks; `deploy:demo` creates the network when missing, with the **fixed subnet 172.29.0.0/16**, which the edge's `nginx.conf` denies on every host except the two demo ones, so a demo container cannot reach production by sending a production `Host` header; the subnet lives in `deploy:demo`, `edge-proxy/nginx.conf` and `docker/README.md`, and changes in all three together); `deploy:demo` uses its own `DEPLOY_DIR` (one of the demo deployment's CI variables), never prod's;
+  data every `Demo__ResetIntervalHours`. Everything stateful is `hostpanel-demo-*` so it can sit beside prod; its db, broker, redis and mailhog live on a demo-private network and only the api, client and admin (compose services `hostpanel-demo-*`, the names the edge proxy uses) also join the dedicated external network `hostpanel_demo_edge`, **never** the shared network, so the demo can neither resolve nor reach any production container (the edge proxy is the one production-side container on both networks; `deploy:demo` creates the network when missing, with the **fixed subnet 172.29.0.0/16**, which the operator's edge denies on every host except the two demo ones, so a demo container cannot reach production by sending a production `Host` header; the subnet lives in `deploy:demo`, the edge's configuration and `docker/README.md`, and changes in all three together); `deploy:demo` uses its own `DEPLOY_DIR` (one of the demo deployment's CI variables), never prod's;
   the demo passwords are `:?`-required like any secret. Deployed by the manual `deploy:demo` job; it needs
   `AUTH_MODE=local`. Fake adapters live behind the existing ports, never in a code path guarded by a literal.
 - **Settings bind into a sealed `*Options` class naming its own `SectionName`** —

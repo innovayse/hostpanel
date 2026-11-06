@@ -148,7 +148,10 @@ public sealed class PluginRateLimitTests : IClassFixture<AppPluginFixture>
         response.Headers.GetValues("X-RateLimit-Remaining").Should().ContainSingle().Which.Should().Be("0");
         response.Headers.GetValues("X-RateLimit-Policy").Should().ContainSingle().Which.Should().Be(policy);
         long.Parse(response.Headers.GetValues("X-RateLimit-Limit").Single(), CultureInfo.InvariantCulture).Should().BePositive();
-        long.Parse(response.Headers.GetValues("X-RateLimit-Reset").Single(), CultureInfo.InvariantCulture).Should().BePositive();
+        // Reset is the moment of the refusal plus Retry-After, so taking Retry-After off gives back a moment within seconds of now.
+        var reset = long.Parse(response.Headers.GetValues("X-RateLimit-Reset").Single(), CultureInfo.InvariantCulture);
+        var retryAfterSeconds = (long)response.Headers.RetryAfter!.Delta!.Value.TotalSeconds;
+        (reset - retryAfterSeconds).Should().BeCloseTo(DateTimeOffset.UtcNow.ToUnixTimeSeconds(), 30);
         _fixture.LoggedRateLimitRefusal(policy, _fixture.PluginId, _logMark).Should().BeTrue();
         await ClientsTestSeeds.AssertCodeAsync(response, SharedErrorCodes.RateLimited);
     }

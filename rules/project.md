@@ -954,6 +954,13 @@ docker/                              compose set (shared·dev·prod·platform), 
     tests derive a host with an enabled `PluginRateLimiter`. The client account is resolved before the plugin budget
     is checked, so a refused call still costs one lookup, which the global limiter bounds. A refused stream call has
     already spent its tier permit.
+  - **The 429 headers are the limiter's own (#874).** A refusal carries `Retry-After`, `X-RateLimit-Policy`, `-Limit`,
+    `-Remaining` and `-Reset`, all written by `RateLimitingExtensions.WriteRejectionAsync` and nowhere else. Exposing the policy
+    name and the budget is acceptable because both are published (the policy names and defaults are in the API reference and
+    the configuration reference) and name no plugin, provider or account; they let a caller pace itself. The leak guard
+    allows the four `X-RateLimit-*` names on a 429 only, so a header of that name copied onto any other response, a
+    provider's own limit headers for one, is removed like any vendor header (`LeakGuardTests`). CORS does not expose them to
+    a browser script on another origin, and no `Access-Control-Expose-Headers` is to be added for them without a reason.
   - A streamed call ends when the plugin ends, when the client leaves, or when the producer is silent for the call limit
     (see the stream silence limit above).
   - **A streamed call owns its own dependency scope (#851).** A stream is read by the response after the use case has

@@ -48,6 +48,8 @@ A refused call answers `429 Too Many Requests` with the standard [error body](./
 Respect <code>Retry-After</code>. Trying again at once goes straight back into the same refusal.
 </Callout>
 
+These headers come with a `429` only. The policy names and budgets are the ones on this page, so they tell a caller nothing about the install that is not published here. A script that runs in a browser on another origin cannot read them: the API does not list them in `Access-Control-Expose-Headers`. They reach a server, a command line tool and a page served from the same origin.
+
 Back off for the number of seconds the header gives, then try again. Spread bulk work over time instead of sending it in a burst.
 
 ## Behind a proxy

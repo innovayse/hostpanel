@@ -6,6 +6,8 @@
  * component only reports `toggle`, `selectAll` and `clearAll`.
  */
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import UiTransition from '@/components/ui/UiTransition.vue'
+import { UiTransitionKind } from '@/utils/ui/transition'
 import { useI18n } from 'vue-i18n'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 
@@ -79,14 +81,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
     </button>
 
     <!-- Dropdown -->
-    <Transition
-      enter-active-class="transition duration-100 ease-out"
-      enter-from-class="opacity-0 scale-95 -translate-y-1"
-      enter-to-class="opacity-100 scale-100 translate-y-0"
-      leave-active-class="transition duration-75 ease-in"
-      leave-from-class="opacity-100 scale-100 translate-y-0"
-      leave-to-class="opacity-0 scale-95 -translate-y-1"
-    >
+    <UiTransition :kind="UiTransitionKind.Dropdown">
       <div v-if="open" class="absolute z-50 mt-1.5 left-0 bg-surface-card border border-border rounded-[10px] shadow-xl w-[320px] overflow-hidden">
         <!-- Select all / clear all -->
         <div class="flex items-center justify-between px-3 py-2 border-b border-border bg-surface-field">
@@ -132,6 +127,6 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
           </button>
         </div>
       </div>
-    </Transition>
+    </UiTransition>
   </div>
 </template>

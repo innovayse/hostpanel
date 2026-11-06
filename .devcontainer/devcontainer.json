@@ -28,8 +28,10 @@
   },
   "customizations": {
     "vscode": {
+      // No C# extension on purpose: it loads the backend in the editor and runs a NuGet restore against the mounted
+      // source, which rewrites obj/project.assets.json with the editor's package folder (/home/vscode/.nuget). The API
+      // container then cannot find its packages (NETSDK1064) and dotnet watch waits for a file change forever.
       "extensions": [
-        "ms-dotnettools.csdevkit",
         "Vue.volar",
         "dbaeumer.vscode-eslint"
       ]

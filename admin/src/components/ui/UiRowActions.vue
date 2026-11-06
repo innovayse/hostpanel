@@ -12,6 +12,8 @@
  * - Escape closes the menu and returns focus to the trigger button.
  */
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import UiTransition from '@/components/ui/UiTransition.vue'
+import { UiTransitionKind } from '@/utils/ui/transition'
 import { useI18n } from 'vue-i18n'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import { Icon } from '@/lib/icons'
@@ -178,27 +180,29 @@ onUnmounted(() => {
     </button>
 
     <!-- Dropdown -->
-    <div
-      v-if="open"
-      ref="menuRef"
-      role="menu"
-      class="fixed z-20 min-w-[10rem] rounded-[9px] border border-border bg-surface-base py-1 shadow-lg"
-      :style="menuPlace"
-      data-testid="row-actions-menu"
-    >
-      <button
-        v-for="action in props.actions"
-        :key="action.testid ?? action.label"
-        type="button"
-        role="menuitem"
-        :data-testid="action.testid"
-        :disabled="action.disabled"
-        class="flex w-full items-center px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-40"
-        :class="action.danger ? 'text-danger-600 dark:text-danger-400' : 'text-text-primary'"
-        @click="select(action)"
+    <UiTransition :kind="UiTransitionKind.Dropdown">
+      <div
+        v-if="open"
+        ref="menuRef"
+        role="menu"
+        class="fixed z-20 min-w-[10rem] rounded-[9px] border border-border bg-surface-base py-1 shadow-lg"
+        :style="menuPlace"
+        data-testid="row-actions-menu"
       >
-        {{ action.label }}
-      </button>
-    </div>
+        <button
+          v-for="action in props.actions"
+          :key="action.testid ?? action.label"
+          type="button"
+          role="menuitem"
+          :data-testid="action.testid"
+          :disabled="action.disabled"
+          class="flex w-full items-center px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-40"
+          :class="action.danger ? 'text-danger-600 dark:text-danger-400' : 'text-text-primary'"
+          @click="select(action)"
+        >
+          {{ action.label }}
+        </button>
+      </div>
+    </UiTransition>
   </div>
 </template>

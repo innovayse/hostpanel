@@ -1547,7 +1547,7 @@ refuses to boot. The GitHub workflow `.github/workflows/ci.yml` builds the stand
 runs the Domain, Architecture, CWP and Integration suites, plus the migration addon's PHP tests.
 
 ```bash
-./dev up hostpanel                # from the workspace root, when working inside the workspace
+docker compose -f docker/docker-compose.shared.yml -f docker/docker-compose.dev.yml -f docker/docker-compose.platform.yml up   # start the Hostpanel stack inside a platform checkout
 ```
 
 To build without touching the dev stack, **run docker through PowerShell, not Git Bash**,

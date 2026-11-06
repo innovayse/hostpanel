@@ -30,7 +30,7 @@ run directly in the app).
 | Where | Compose files (all `-f docker/...` from the project root, or plain from `docker/`) |
 |---|---|
 | laptop, product alone | `shared` + `dev` |
-| laptop, inside the workspace | `shared` + `dev` + `platform` (or the workspace's `./dev up hostpanel`) |
+| laptop, inside the workspace | `shared` + `dev` + `platform` |
 | deployed host | `shared` + `prod` + `platform` (stage and production) |
 | demo, beside prod on a deployed host | `shared` + `prod` + `platform` + `demo`, project `-p hostpanel-demo` |
 | demo, laptop | `shared` + `prod` + `demo` |

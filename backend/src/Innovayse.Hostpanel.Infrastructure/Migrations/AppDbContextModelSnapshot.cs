@@ -22,6 +22,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.HasSequence("CreditNoteNumberSequence");
+
             modelBuilder.HasSequence("OrderNumberSequence");
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Admin.LatestRelease", b =>
@@ -225,6 +227,127 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("CardChargeConsents");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.CreditNote", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("AppliedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int>("InvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("IssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Number")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("RefundReference")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("SubTotal")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<decimal>("Tax")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<decimal>("TaxRate")
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<string>("VoidReason")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTimeOffset?>("VoidedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasFilter("\"Number\" IS NOT NULL");
+
+                    b.ToTable("CreditNotes");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.CreditNoteItem", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<int>("CreditNoteId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreditNoteId");
+
+                    b.ToTable("CreditNoteItems");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.Currency", b =>
                 {
                     b.Property<int>("Id")
@@ -386,6 +509,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<decimal>("Credit")
                         .HasColumnType("numeric(18,4)");
+
+                    b.Property<decimal>("CreditNotedAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(18,4)")
+                        .HasDefaultValue(0m);
 
                     b.Property<string>("Currency")
                         .IsRequired()
@@ -4474,6 +4602,30 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.CreditNote", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Clients.Client", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Innovayse.Hostpanel.Domain.Billing.Invoice", null)
+                        .WithMany()
+                        .HasForeignKey("InvoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.CreditNoteItem", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Billing.CreditNote", null)
+                        .WithMany("Items")
+                        .HasForeignKey("CreditNoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.FulfilmentRecord", b =>
                 {
                     b.HasOne("Innovayse.Hostpanel.Domain.Billing.Invoice", null)
@@ -4986,6 +5138,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.CreditNote", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Billing.Invoice", b =>

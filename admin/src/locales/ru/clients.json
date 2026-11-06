@@ -609,7 +609,9 @@
       "TopUp": "Пополнение оплачено",
       "TopUpRefunded": "Пополнение возвращено",
       "PaymentSurplus": "Платёж сверх счёта",
-      "TransactionReversed": "Запись журнала отменена"
+      "TransactionReversed": "Запись журнала отменена",
+      "CreditNoteIssued": "Кредит-нота выписана на баланс клиента",
+      "CreditNoteVoided": "Кредит-нота аннулирована"
     }
   }
 }

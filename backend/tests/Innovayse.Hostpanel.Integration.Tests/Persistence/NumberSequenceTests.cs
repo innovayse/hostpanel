@@ -46,4 +46,37 @@ public sealed class NumberSequenceTests(IntegrationTestFactory factory) : IClass
         // Assert
         second.Should().BeGreaterThan(first);
     }
+
+    /// <summary>Many concurrent callers of the credit note counter receive distinct numbers.</summary>
+    [Fact]
+    public async Task ConcurrentCreditNoteCallersReceiveDistinctNumbers()
+    {
+        const int Callers = 40;
+
+        var numbers = await Task.WhenAll(Enumerable.Range(0, Callers).Select(async _ =>
+        {
+            using var scope = factory.Services.CreateScope();
+            return await scope.ServiceProvider.GetRequiredService<INumberSequence>()
+                .NextAsync(NumberKind.CreditNote, CancellationToken.None);
+        }));
+
+        numbers.Should().OnlyHaveUniqueItems();
+        numbers.Should().OnlyContain(n => n > 0);
+    }
+
+    /// <summary>
+    /// A value that was taken and not used is not handed out again. This is the property of a database sequence the credit note
+    /// numbering relies on, and the reason the numbering cannot promise there are no gaps when a caller stops after taking one.
+    /// </summary>
+    [Fact]
+    public async Task ATakenCreditNoteNumberIsNeverHandedOutAgain()
+    {
+        using var scope = factory.Services.CreateScope();
+        var sequence = scope.ServiceProvider.GetRequiredService<INumberSequence>();
+        var abandoned = await sequence.NextAsync(NumberKind.CreditNote, CancellationToken.None);
+
+        var next = await sequence.NextAsync(NumberKind.CreditNote, CancellationToken.None);
+
+        next.Should().BeGreaterThan(abandoned);
+    }
 }

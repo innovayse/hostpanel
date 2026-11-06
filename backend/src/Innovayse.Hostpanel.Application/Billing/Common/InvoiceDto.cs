@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <param name="Dates">Issue, due, creation and payment dates.</param>
 /// <param name="Amounts">Sub total, credit, tax, tax rate and total.</param>
 /// <param name="AmountDue">What is still owed: the total less the payments recorded against it; zero once the invoice is closed.</param>
+/// <param name="CreditableAmount">What a credit note may still cover: zero unless the invoice is paid, and zero for a credit top-up.</param>
 /// <param name="IsCreditTopUp">Whether this is a credit top-up invoice: one fixed line that puts its amount on the client's balance when paid.</param>
 /// <param name="Payment">Payment method and gateway reference.</param>
 /// <param name="Notes">Optional invoice notes.</param>
@@ -25,6 +26,7 @@ public sealed record InvoiceDto(
     InvoiceDatesDto Dates,
     InvoiceAmountsDto Amounts,
     decimal AmountDue,
+    decimal CreditableAmount,
     bool IsCreditTopUp,
     InvoicePaymentDto Payment,
     string? Notes,

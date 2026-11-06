@@ -188,10 +188,28 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
     /// <c>INVOICE_PDF_RENDER_BUSY</c>, logged at Warning so a deployment that keeps hitting the cap
     /// can see it.
     /// </remarks>
-    public async Task<Result<byte[]>> RenderAsync(InvoicePdfModel model, CancellationToken ct)
+    public Task<Result<byte[]>> RenderAsync(InvoicePdfModel model, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(model);
 
+        return RenderInSlotAsync(() => Render(model), ct);
+    }
+
+    /// <inheritdoc/>
+    /// <remarks>Takes a slot in the same gate as an invoice render, so credit notes and invoices share one limit.</remarks>
+    public Task<Result<byte[]>> RenderCreditNoteAsync(CreditNotePdfModel model, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(model);
+
+        return RenderInSlotAsync(() => RenderCreditNote(model), ct);
+    }
+
+    /// <summary>Waits for a render slot, then runs one render inside it.</summary>
+    /// <param name="render">Draws the document; runs only once a slot is held.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The PDF bytes, or <c>INVOICE_PDF_RENDER_BUSY</c> when no slot came free in time.</returns>
+    private async Task<Result<byte[]>> RenderInSlotAsync(Func<byte[]> render, CancellationToken ct)
+    {
         using var slot = await _gate.TryEnterAsync(ct);
         if (slot is null)
         {
@@ -202,7 +220,7 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
             return Result<byte[]>.FailureCode(HostpanelErrorCodes.INVOICE_PDF_RENDER_BUSY);
         }
 
-        return Result<byte[]>.Success(Render(model));
+        return Result<byte[]>.Success(render());
     }
 
     /// <summary>Lays out and renders the invoice.</summary>
@@ -210,17 +228,75 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
     /// <returns>The PDF file's bytes.</returns>
     private byte[] Render(InvoicePdfModel model)
     {
+        var document = NewDocument($"Invoice #{model.InvoiceId}", model.Seller.Name, out var section);
+        var labels = DocumentPdfLabels.English;
+
+        AddHeader(
+            section,
+            model.Seller,
+            LoadLogo(model.LogoPath),
+            $"Invoice #{model.InvoiceId}",
+            [
+                ("Invoice date", model.InvoiceDate.ToString(DateFormat, CultureInfo.InvariantCulture)),
+                ("Due date", model.DueDate.ToString(DateFormat, CultureInfo.InvariantCulture)),
+                ("Status", StatusText(model.Status.ToString())),
+            ]);
+        AddParty(section.Elements, labels.BillTo, model.BillTo).Format.SpaceBefore = SectionGap;
+        AddItems(section, model.Lines, model.Money, labels);
+        AddTotals(section, model.Money, model.SubTotal, model.TaxRate, model.Tax, model.Credit, model.Total, labels, labels.Total);
+        AddFooter(section, labels);
+
+        return Save(document, page => DrawStamp(page, InvoiceStamp(model)));
+    }
+
+    /// <summary>Lays out and renders a credit note in the language of its labels.</summary>
+    /// <param name="model">Everything the PDF prints, already resolved.</param>
+    /// <returns>The PDF file's bytes.</returns>
+    private byte[] RenderCreditNote(CreditNotePdfModel model)
+    {
+        var labels = model.Labels;
+        var document = NewDocument($"{labels.Title} {model.Number}", model.Seller.Name, out var section);
+
+        AddHeader(
+            section,
+            model.Seller,
+            LoadLogo(model.LogoPath),
+            $"{labels.Title} {model.Number}",
+            [
+                (labels.IssueDate, model.IssuedAt.ToString(DateFormat, CultureInfo.InvariantCulture)),
+                (labels.Invoice, $"#{model.InvoiceId}"),
+                (labels.Status, CreditNoteStatusText(model.Status, labels)),
+            ]);
+        AddParty(section.Elements, labels.Document.BillTo, model.BillTo).Format.SpaceBefore = SectionGap;
+        AddItems(section, model.Lines, model.Money, labels.Document);
+        AddTotals(section, model.Money, model.SubTotal, model.TaxRate, model.Tax, 0m, model.Total, labels.Document, labels.TotalCredited);
+
+        // The reason is printed on the note itself: the client reads why they were credited.
+        AddText(section.Elements, labels.Reason, bold: true, SmallSize, Muted).Format.SpaceBefore = SectionGap;
+        AddText(section.Elements, model.Reason);
+        AddFooter(section, labels.Document);
+
+        return Save(document, page => DrawStamp(page, CreditNoteStamp(model)));
+    }
+
+    /// <summary>Starts an A4 document with the panel font, margins and footer room.</summary>
+    /// <param name="title">The title stored in the document properties.</param>
+    /// <param name="author">The author stored in the document properties: the seller.</param>
+    /// <param name="section">Receives the one section the content is added to.</param>
+    /// <returns>The new document.</returns>
+    private static Document NewDocument(string title, string author, out Section section)
+    {
         PdfFonts.EnsureInitialized();
 
         var document = new Document();
-        document.Info.Title = $"Invoice #{model.InvoiceId}";
-        document.Info.Author = model.Seller.Name;
+        document.Info.Title = title;
+        document.Info.Author = author;
         var normal = document.Styles[StyleNames.Normal]!;
         normal.Font.Name = PdfFonts.Primary;
         normal.Font.Size = BodySize;
         normal.Font.Color = Ink;
 
-        var section = document.AddSection();
+        section = document.AddSection();
         var setup = section.PageSetup;
         setup.PageWidth = PageWidth;
         setup.PageHeight = PageHeight;
@@ -229,17 +305,19 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
         setup.RightMargin = Margin;
         setup.BottomMargin = Margin + FooterHeight;
         setup.FooterDistance = Margin - SmallSize;
+        return document;
+    }
 
-        AddHeader(section, model, LoadLogo(model.LogoPath));
-        AddParty(section.Elements, "Bill to", model.BillTo).Format.SpaceBefore = SectionGap;
-        AddItems(section, model);
-        AddTotals(section, model);
-        AddFooter(section);
-
+    /// <summary>Renders the built document, lets the caller stamp its first page, and returns the file's bytes.</summary>
+    /// <param name="document">The finished document.</param>
+    /// <param name="stampFirstPage">Draws the stamp onto the rendered first page.</param>
+    /// <returns>The PDF file's bytes.</returns>
+    private static byte[] Save(Document document, Action<PdfSharp.Pdf.PdfPage> stampFirstPage)
+    {
         var renderer = new PdfDocumentRenderer { Document = document };
         renderer.RenderDocument();
         using var pdf = renderer.PdfDocument;
-        DrawStamp(pdf.Pages[0], model);
+        stampFirstPage(pdf.Pages[0]);
 
         using var output = new MemoryStream();
         pdf.Save(output, false);
@@ -336,9 +414,12 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
     /// them, and whatever follows starts below the taller side.
     /// </summary>
     /// <param name="section">The section being built.</param>
-    /// <param name="model">The invoice.</param>
+    /// <param name="seller">The company issuing the document.</param>
     /// <param name="logo">The logo and the size to draw it at, or null for none.</param>
-    private static void AddHeader(Section section, InvoicePdfModel model, PdfLogo? logo)
+    /// <param name="title">The document name and number, set large on the right.</param>
+    /// <param name="rows">The label and value pairs set under the title: dates, the credited invoice, the status.</param>
+    private static void AddHeader(
+        Section section, InvoicePdfParty seller, PdfLogo? logo, string title, IReadOnlyList<(string Label, string Value)> rows)
     {
         var table = section.AddTable();
         table.LeftPadding = 0;
@@ -349,26 +430,21 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
         table.AddColumn(HeaderRightBlockWidth);
         var row = table.AddRow();
 
-        var seller = row.Cells[0];
+        var sellerCell = row.Cells[0];
         if (logo is not null)
         {
-            var picture = seller.AddImage("base64:" + Convert.ToBase64String(logo.Bytes));
+            var picture = sellerCell.AddImage("base64:" + Convert.ToBase64String(logo.Bytes));
             picture.LockAspectRatio = false;
             picture.Width = logo.Width;
             picture.Height = logo.Height;
         }
 
-        AddParty(seller.Elements, null, model.Seller, firstSpaceBefore: logo is null ? 0 : RuleGap);
+        AddParty(sellerCell.Elements, null, seller, firstSpaceBefore: logo is null ? 0 : RuleGap);
 
         var details = row.Cells[1].Elements;
-        AddText(details, $"Invoice #{model.InvoiceId}", bold: true, TitleSize, alignment: ParagraphAlignment.Right)
+        AddText(details, title, bold: true, TitleSize, alignment: ParagraphAlignment.Right)
             .Format.SpaceAfter = TitleGap;
-        foreach (var (label, value) in new[]
-        {
-            ("Invoice date", model.InvoiceDate.ToString(DateFormat, CultureInfo.InvariantCulture)),
-            ("Due date", model.DueDate.ToString(DateFormat, CultureInfo.InvariantCulture)),
-            ("Status", StatusText(model.Status.ToString())),
-        })
+        foreach (var (label, value) in rows)
         {
             // Right-aligned tab stops: the label ends where the value column starts, the value at the edge.
             var paragraph = details.AddParagraph();
@@ -408,8 +484,11 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
 
     /// <summary>Adds the items table, its header row repeated on every page it runs onto.</summary>
     /// <param name="section">The section being built.</param>
-    /// <param name="model">The invoice.</param>
-    private static void AddItems(Section section, InvoicePdfModel model)
+    /// <param name="lines">The lines printed, in their stored order.</param>
+    /// <param name="money">How amounts are written.</param>
+    /// <param name="labels">The column headings.</param>
+    private static void AddItems(
+        Section section, IReadOnlyList<InvoicePdfLine> lines, InvoicePdfMoneyFormat money, DocumentPdfLabels labels)
     {
         var table = section.AddTable();
         table.LeftPadding = 0;
@@ -426,34 +505,50 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
         var header = table.AddRow();
         header.HeadingFormat = true;
         header.TopPadding = TableGap;
-        AddText(header.Cells[0].Elements, "Description", bold: true, color: Muted);
-        AddText(header.Cells[1].Elements, "Qty", bold: true, color: Muted, alignment: ParagraphAlignment.Right);
-        AddText(header.Cells[2].Elements, "Unit price", bold: true, color: Muted, alignment: ParagraphAlignment.Right);
-        AddText(header.Cells[3].Elements, "Amount", bold: true, color: Muted, alignment: ParagraphAlignment.Right);
+        AddText(header.Cells[0].Elements, labels.Description, bold: true, color: Muted);
+        AddText(header.Cells[1].Elements, labels.Quantity, bold: true, color: Muted, alignment: ParagraphAlignment.Right);
+        AddText(header.Cells[2].Elements, labels.UnitPrice, bold: true, color: Muted, alignment: ParagraphAlignment.Right);
+        AddText(header.Cells[3].Elements, labels.Amount, bold: true, color: Muted, alignment: ParagraphAlignment.Right);
 
-        foreach (var line in model.Lines)
+        foreach (var line in lines)
         {
             var row = table.AddRow();
             AddText(row.Cells[0].Elements, line.Description);
             AddText(row.Cells[1].Elements, line.Quantity.ToString(CultureInfo.InvariantCulture), alignment: ParagraphAlignment.Right);
-            AddText(row.Cells[2].Elements, FormatMoney(model.Money, line.UnitPrice), alignment: ParagraphAlignment.Right);
-            AddText(row.Cells[3].Elements, FormatMoney(model.Money, line.Amount), alignment: ParagraphAlignment.Right);
+            AddText(row.Cells[2].Elements, FormatMoney(money, line.UnitPrice), alignment: ParagraphAlignment.Right);
+            AddText(row.Cells[3].Elements, FormatMoney(money, line.Amount), alignment: ParagraphAlignment.Right);
         }
     }
 
     /// <summary>Adds subtotal, tax, credit when there is any, and the total, kept together on one page.</summary>
     /// <param name="section">The section being built.</param>
-    /// <param name="model">The invoice.</param>
-    private static void AddTotals(Section section, InvoicePdfModel model)
+    /// <param name="money">How amounts are written.</param>
+    /// <param name="subTotal">Sum of the lines before tax.</param>
+    /// <param name="taxRate">Tax rate as a percentage.</param>
+    /// <param name="tax">Tax amount.</param>
+    /// <param name="credit">Credit applied; the line is left out when zero.</param>
+    /// <param name="totalAmount">The total.</param>
+    /// <param name="labels">The words of the totals.</param>
+    /// <param name="totalLabel">The label of the total line.</param>
+    private static void AddTotals(
+        Section section,
+        InvoicePdfMoneyFormat money,
+        decimal subTotal,
+        decimal taxRate,
+        decimal tax,
+        decimal credit,
+        decimal totalAmount,
+        DocumentPdfLabels labels,
+        string totalLabel)
     {
         var rows = new List<(string Label, string Value)>
         {
-            ("Subtotal", FormatMoney(model.Money, model.SubTotal)),
-            ($"Tax ({model.TaxRate.ToString("0.##", CultureInfo.InvariantCulture)}%)", FormatMoney(model.Money, model.Tax)),
+            (labels.Subtotal, FormatMoney(money, subTotal)),
+            ($"{labels.Tax} ({taxRate.ToString("0.##", CultureInfo.InvariantCulture)}%)", FormatMoney(money, tax)),
         };
-        if (model.Credit > 0)
+        if (credit > 0)
         {
-            rows.Add(("Credit", "-" + FormatMoney(model.Money, model.Credit)));
+            rows.Add((labels.Credit, "-" + FormatMoney(money, credit)));
         }
 
         var table = section.AddTable();
@@ -479,35 +574,33 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
 
         var total = table.AddRow();
         total.TopPadding = RuleGap;
-        AddText(total.Cells[0].Elements, "Total", bold: true, EmphasisSize);
-        AddText(total.Cells[1].Elements, FormatMoney(model.Money, model.Total), bold: true, EmphasisSize, alignment: ParagraphAlignment.Right);
+        AddText(total.Cells[0].Elements, totalLabel, bold: true, EmphasisSize);
+        AddText(total.Cells[1].Elements, FormatMoney(money, totalAmount), bold: true, EmphasisSize, alignment: ParagraphAlignment.Right);
 
         table.Rows[0].KeepWith = rows.Count;
     }
 
     /// <summary>Adds "Page n of m", centred in the bottom margin of every page.</summary>
     /// <param name="section">The section being built.</param>
-    private static void AddFooter(Section section)
+    /// <param name="labels">The footer words.</param>
+    private static void AddFooter(Section section, DocumentPdfLabels labels)
     {
         var footer = section.Footers.Primary.AddParagraph();
         footer.Format.Alignment = ParagraphAlignment.Center;
         footer.Format.Font.Size = SmallSize;
         footer.Format.Font.Color = Muted;
-        footer.AddText("Page ");
+        footer.Format.Font.Name = PdfFonts.Primary;
+        footer.AddText($"{labels.Page} ");
         footer.AddPageField();
-        footer.AddText(" of ");
+        footer.AddText($" {labels.Of} ");
         footer.AddNumPagesField();
     }
 
-    /// <summary>
-    /// Stamps the first page PAID (with the date), DRAFT, CANCELLED, PARTIALLY REFUNDED or REFUNDED;
-    /// other statuses get no stamp.
-    /// </summary>
-    /// <param name="page">The rendered first page.</param>
+    /// <summary>The stamp an invoice carries: PAID (with the date), DRAFT, CANCELLED, PARTIALLY REFUNDED or REFUNDED; other statuses get none.</summary>
     /// <param name="model">The invoice.</param>
-    private static void DrawStamp(PdfSharp.Pdf.PdfPage page, InvoicePdfModel model)
-    {
-        var (text, color) = model.Status switch
+    /// <returns>The stamp text and colour, or a null text for no stamp.</returns>
+    private static (string? Text, XColor Color) InvoiceStamp(InvoicePdfModel model) =>
+        model.Status switch
         {
             InvoiceStatus.Paid => (
                 model.PaidAt is { } paidAt ? $"PAID {paidAt.ToString(DateFormat, CultureInfo.InvariantCulture)}" : "PAID",
@@ -518,7 +611,37 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
             InvoiceStatus.Refunded => ("REFUNDED", RefundedStamp),
             _ => (null, XColors.Transparent),
         };
-        if (text is null)
+
+    /// <summary>The stamp a credit note carries, in the language of its labels: a draft or a voided note is stamped, a standing one is not.</summary>
+    /// <param name="model">The credit note.</param>
+    /// <returns>The stamp text and colour, or a null text for no stamp.</returns>
+    private static (string? Text, XColor Color) CreditNoteStamp(CreditNotePdfModel model) =>
+        model.Status switch
+        {
+            CreditNoteStatus.Draft => (model.Labels.StampDraft, DraftStamp),
+            CreditNoteStatus.Voided => (model.Labels.StampVoided, CancelledStamp),
+            _ => (null, XColors.Transparent),
+        };
+
+    /// <summary>The status text of a credit note in the language of its labels.</summary>
+    /// <param name="status">The note status.</param>
+    /// <param name="labels">The credit note labels.</param>
+    /// <returns>The words for the status.</returns>
+    private static string CreditNoteStatusText(CreditNoteStatus status, CreditNotePdfLabels labels) =>
+        status switch
+        {
+            CreditNoteStatus.Draft => labels.StatusDraft,
+            CreditNoteStatus.Issued => labels.StatusIssued,
+            CreditNoteStatus.Applied => labels.StatusApplied,
+            _ => labels.StatusVoided,
+        };
+
+    /// <summary>Stamps the first page with a text across it; no text means no stamp.</summary>
+    /// <param name="page">The rendered first page.</param>
+    /// <param name="stamp">The stamp text and colour.</param>
+    private static void DrawStamp(PdfSharp.Pdf.PdfPage page, (string? Text, XColor Color) stamp)
+    {
+        if (stamp.Text is null)
         {
             return;
         }
@@ -526,10 +649,12 @@ public sealed partial class MigraDocInvoicePdfRenderer : IInvoicePdfRenderer
         using var graphics = XGraphics.FromPdfPage(page, XGraphicsPdfPageOptions.Append);
         var centre = new XPoint(PageWidth / 2, StampCentreY);
         graphics.RotateAtTransform(StampAngle, centre);
+
+        // The text goes through the same font fallback as every other string, so an Armenian or Russian stamp is never blank.
         graphics.DrawString(
-            text,
+            PdfFonts.ReplaceUncovered(stamp.Text, bold: true),
             new XFont(PdfFonts.Primary, StampSize, XFontStyleEx.Bold),
-            new XSolidBrush(color),
+            new XSolidBrush(stamp.Color),
             centre,
             XStringFormats.Center);
     }

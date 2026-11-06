@@ -95,6 +95,8 @@ export interface InvoiceDetail {
   amounts: InvoiceAmounts
   /** What is still owed, as the API computes it: the total less the payments recorded; 0 for Paid, PartiallyRefunded, Refunded or Cancelled. */
   amountDue: number
+  /** What a credit note may still cover: the charge before credit less every refund and every account credit note; 0 unless the invoice is paid, and 0 for a credit top-up. */
+  creditableAmount: number
   /** Whether this is a credit top-up invoice: one fixed line that puts its amount on the client's balance when paid. */
   isCreditTopUp: boolean
   /** Payment method and gateway reference. */
@@ -293,6 +295,8 @@ export enum InvoiceTab {
   Refund = 'refund',
   Notes = 'notes',
   Fulfilment = 'fulfilment',
+  /** The credit notes of the invoice. */
+  CreditNotes = 'creditNotes',
 }
 
 /** What a fulfilment record does for the invoice. */

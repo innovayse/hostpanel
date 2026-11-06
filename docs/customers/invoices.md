@@ -77,6 +77,12 @@ Click **Add funds**, enter an amount between the two limits shown and continue t
 
 On an unpaid invoice, **Pay with credit** lets you apply part or all of your balance to it. Credit that covers everything the invoice owes pays it. Credit is applied automatically to renewal invoices when the provider has switched that on.
 
+## Your credit notes
+
+Go to **Credit notes** to see the credit notes your hosting provider has issued to you. A credit note is a numbered document that reverses part or all of an invoice you already paid. It is **not the same as your credit balance**, which you spend on invoices.
+
+Each line shows its number, the date, the invoice it concerns, where the value went (to your credit balance, or back to your payment method), the total and whether it stands or was voided. A voided note keeps its number and stays in the list. Click **Download PDF** to save the note in your language. You see only your own notes, and you are emailed each one when it is issued.
+
 ## Download a PDF
 
 Open an invoice and click **Download PDF** to save a copy.

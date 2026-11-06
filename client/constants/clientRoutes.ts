@@ -50,6 +50,9 @@ export const CLIENT_CREDIT_PATH = '/client/credit'
 /** The page where the customer chooses how much to add to their credit balance. */
 export const CLIENT_CREDIT_ADD_PATH = '/client/credit/add'
 
+/** The customer's credit notes: documents that reverse part of an invoice that was already paid. */
+export const CLIENT_CREDIT_NOTES_PATH = '/client/credit-notes'
+
 /** The customer's support tickets list. */
 export const CLIENT_TICKETS_PATH = '/client/tickets'
 

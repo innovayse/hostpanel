@@ -173,6 +173,14 @@
             "component": "UpcomingRenewalsView.vue"
           },
           {
+            "path": "credit-notes",
+            "component": "CreditNotesListView.vue"
+          },
+          {
+            "path": "credit-notes/:id",
+            "component": "CreditNoteDetailView.vue"
+          },
+          {
             "path": ":id",
             "component": "InvoiceDetailView.vue"
           },

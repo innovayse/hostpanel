@@ -21,6 +21,7 @@
     "gatewayLog": "Gateway Log",
     "paymentClaims": "Payment Claims",
     "bankTransfers": "Pending Bank Transfers",
+    "creditNotes": "Credit Notes",
     "renewals": "Upcoming Renewals"
   },
   "reports": "Reports",

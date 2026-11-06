@@ -9,6 +9,7 @@ public static class CreditMovementTypeExtensions
     /// Whether the client is told by email that the balance moved. The movements the client did not
     /// start and cannot see coming are announced; moving credit between the balance and an invoice is
     /// the client's own action or the renewal sweep's, and the invoice already says it.
+    /// A credit note is mailed as the note itself, which already says what it put on the balance, so it sends no second mail.
     /// </summary>
     /// <param name="movement">The movement.</param>
     /// <returns><see langword="true"/> when the client is mailed the new balance.</returns>

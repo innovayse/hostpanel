@@ -1423,4 +1423,37 @@
   <data name="CreditTopUpAmountInvalid" xml:space="preserve">
     <value>Сумма должна быть больше нуля.</value>
   </data>
+  <data name="CreditNoteIdInvalid" xml:space="preserve">
+    <value>Укажите существующую кредит-ноту.</value>
+  </data>
+  <data name="CreditNoteMethodInvalid" xml:space="preserve">
+    <value>Выберите, куда пойдёт кредит-нота: на баланс клиента или возвратом через платёжный шлюз.</value>
+  </data>
+  <data name="CreditNoteStatusInvalid" xml:space="preserve">
+    <value>Выберите допустимый статус кредит-ноты.</value>
+  </data>
+  <data name="CreditNoteReasonRequired" xml:space="preserve">
+    <value>Укажите причину кредит-ноты.</value>
+  </data>
+  <data name="CreditNoteReasonTooLong" xml:space="preserve">
+    <value>Причина должна быть не длиннее 500 символов.</value>
+  </data>
+  <data name="CreditNoteVoidReasonRequired" xml:space="preserve">
+    <value>Укажите причину аннулирования кредит-ноты.</value>
+  </data>
+  <data name="CreditNoteItemsRequired" xml:space="preserve">
+    <value>Добавьте в кредит-ноту хотя бы одну строку.</value>
+  </data>
+  <data name="CreditNoteItemsTooMany" xml:space="preserve">
+    <value>В кредит-ноте может быть не более 100 строк.</value>
+  </data>
+  <data name="CreditNoteItemDescriptionInvalid" xml:space="preserve">
+    <value>У каждой строки должно быть описание не длиннее 500 символов.</value>
+  </data>
+  <data name="CreditNoteItemPriceInvalid" xml:space="preserve">
+    <value>У каждой строки цена должна быть больше нуля.</value>
+  </data>
+  <data name="CreditNoteItemQuantityInvalid" xml:space="preserve">
+    <value>У каждой строки количество должно быть от 1 до 100000.</value>
+  </data>
 </root>

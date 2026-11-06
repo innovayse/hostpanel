@@ -18,6 +18,12 @@ namespace Innovayse.Hostpanel.Application.Billing.Extensions;
 /// A partially refunded one counts the same way, less its refund rows. A refunded one keeps its <c>PaidAt</c>, so its total and its refund rows cancel out; a Refunded
 /// invoice with no refund row (imported history) took and gave back nothing here.
 /// Credit top-ups and credit refunds live only in the client ledger and are not invoice income.
+/// <para>
+/// Credit notes are deliberately not read here, so they cannot count money twice. A credit note given as account credit moves no
+/// cash: the payment stays income and the credit it created is a balance, which adds no income when it is spent. A credit note
+/// paid out as a gateway refund is one ordinary refund row of its invoice, counted once as that refund and never again as the note
+/// (<c>CreditNoteIncomeTests</c> pins both).
+/// </para>
 /// Amounts stay in the invoice currency; a caller groups them by currency in SQL and converts
 /// the few sums with <see cref="GetBaseCurrencyRatesAsync"/>.
 /// </remarks>

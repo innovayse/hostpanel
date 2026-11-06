@@ -122,6 +122,8 @@ const router = createRouter({
             { path: 'invoices', component: lazy('views/InvoicesListView.vue') },
             { path: 'invoices/:id/:action', component: lazy('views/InvoiceDetailView.vue') },
             { path: 'renewals', component: lazy('views/UpcomingRenewalsView.vue') },
+            { path: 'credit-notes', component: lazy('views/CreditNotesListView.vue') },
+            { path: 'credit-notes/:id', component: lazy('views/CreditNoteDetailView.vue') },
             { path: ':id', component: lazy('views/InvoiceDetailView.vue') },
             { path: 'billable-items', component: lazy('views/BillableItemsView.vue') },
             { path: 'billable-items/add', component: lazy('views/AddBillableItemView.vue') },

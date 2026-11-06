@@ -1226,7 +1226,21 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   (`Transaction.CreateCreditMovement`, no money in or out, left out of the cash views by `Transaction.MovedMoneyFilter`), and an
   entry of the history cannot be edited or deleted (`Transaction.EnsureEditable`). A credit top-up is an `Invoice` with
   `IsCreditTopUp` (`Invoice.CreateCreditTopUp`); every path that settles an invoice calls `CreditPaidTopUpAsync`
-  (`CreditTopUpExtensions`) in the settling save, so the balance rises once, and a top-up is refunded by hand only. The renewal read models belong to their owners and Billing
+  (`CreditTopUpExtensions`) in the settling save, so the balance rises once, and a top-up is refunded by hand only.
+  A credit note (`CreditNote`, `CreditNoteItem`, `CreditNoteStatus` Draft/Issued/Applied/Voided, `CreditNoteMethod`
+  AccountCredit/GatewayRefund) reverses part of a paid invoice at the invoice's own tax rate and is not invoice credit. It is numbered
+  `CN-0001` from its own sequence through `INumberSequence` (`NumberKind.CreditNote`), taken as the last step before the save and reused
+  across a retried save; a database sequence cannot promise there are no gaps, and the numbering is a cautious default not checked
+  against any local law (documented in `docs/staff/billing.md`). The cap lives on the invoice (`Invoice.CreditableAmount`,
+  `CreditNotedAmount`, `EnsureCreditable`): the charge before credit less every refund and every account credit note, and every
+  account credit note also lowers `RefundableAmount`, so the same money never goes back twice. `CreditNotedAmount` changes the invoice
+  row, so two notes racing on one invoice fail the row's concurrency check and the loser is retried on what the winner saved. An
+  AccountCredit note moves the balance through `IClientCredit` (`CreditNoteIssued`, voided as `CreditNoteVoided`) in the same save; a
+  GatewayRefund note dispatches `RefundInvoicePaymentCommand` first (one refund, listed once) and records the note under its reference,
+  and cannot be voided. A credit top-up and an unpaid invoice take no note. A note is never deleted. `IncomeExtensions` reads payments
+  and refunds only, so a note adds no income of its own (`CreditNoteIncomeTests`). Its PDF goes through the same renderer and render
+  limit as an invoice (`IInvoicePdfRenderer.RenderCreditNoteAsync`, labels in `CreditNotePdfLabelSets` for en/ru/hy, Armenian
+  fonts as for invoices). The renewal read models belong to their owners and Billing
   reaches them over the bus: Services owns `GetRenewableServices`, `GetServiceBillingStates`,
   `ListOverdueSuspendedServices`, `ListUndatedRenewingServices` and `ExtendServiceRenewal`; Domains owns
   `GetRenewableDomains`, `GetDomainRenewalStates` and `GetTldRenewPrice`. The setup token kept

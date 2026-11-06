@@ -49,6 +49,7 @@ import {
   ANNOUNCEMENT,
   BANK_TRANSFER_DETAILS,
   CREDIT,
+  CREDIT_NOTES,
   FAQS,
   LOCATIONS,
   PARTNERS,
@@ -772,6 +773,26 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
       return true
     }
     send(res, 201, TOP_UP_INVOICE_ID)
+    return true
+  }
+  // Credit notes: the notes issued to the client, and the PDF of one of them as a download (a note of someone else is a 404).
+  if (isGet && path === '/api/me/credit-notes') {
+    send(res, 200, CREDIT_NOTES)
+    return true
+  }
+  const noteDownload = /^\/api\/me\/credit-notes\/(\d+)\/pdf$/.exec(path)
+  if (isGet && noteDownload) {
+    const note = CREDIT_NOTES.find(n => String(n.id) === noteDownload[1])
+    if (!note) {
+      sendProblem(res, 404, 'CREDIT_NOTE_NOT_FOUND', 'E2E: the credit note was not found.')
+      return true
+    }
+    res.writeHead(200, {
+      'content-type': 'application/pdf',
+      'content-disposition': `attachment; filename="credit-note-${note.number}.pdf"`,
+      'cache-control': 'private, no-store'
+    })
+    res.end('%PDF-1.4 e2e')
     return true
   }
   // Applying credit to the invoice lowers the balance and what the invoice owes; more than either is refused.

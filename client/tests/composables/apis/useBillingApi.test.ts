@@ -40,6 +40,8 @@ const rows: ExpectedRequest[] = [
   { name: 'fetchCredit reads the credit page', call: () => api.fetchCredit(2, 10), method: HttpMethod.Get, url: '/api/portal/client/credit?page=2&pageSize=10' },
   { name: 'createCreditTopUp posts the amount to the top-up route', call: () => api.createCreditTopUp(40), method: HttpMethod.Post, url: '/api/portal/client/credit/top-ups', body: { amount: 40 } },
   { name: 'applyInvoiceCredit posts the amount to the invoice credit route', call: () => api.applyInvoiceCredit(7, 12.5), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/credit', body: { amount: 12.5 } },
+  { name: 'fetchCreditNotes reads the credit notes route', call: () => api.fetchCreditNotes(), method: HttpMethod.Get, url: '/api/portal/client/credit-notes' },
+  { name: 'fetchCreditNotePdf reads the credit note PDF', call: () => api.fetchCreditNotePdf(7), method: HttpMethod.Get, url: '/api/portal/client/credit-notes/7/pdf' },
   { name: 'completeGatewayPayment for an order sends the token', call: () => api.completeGatewayPayment(PaymentTarget.Order, 42, 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/gateway-payment/complete', body: { paymentToken: 'tok' } },
   { name: 'completeGatewayPayment for an invoice sends an empty body', call: () => api.completeGatewayPayment(PaymentTarget.Invoice, 7), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/gateway-payment/complete', body: {} },
 ]

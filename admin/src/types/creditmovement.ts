@@ -24,6 +24,10 @@ export enum CreditMovement {
   PaymentSurplus = 'PaymentSurplus',
   /** A legacy ledger entry was deleted and its credit move undone. */
   TransactionReversed = 'TransactionReversed',
+  /** A credit note issued as account credit put its value on the balance. */
+  CreditNoteIssued = 'CreditNoteIssued',
+  /** A credit note issued as account credit was voided and its value came off the balance. */
+  CreditNoteVoided = 'CreditNoteVoided',
 }
 
 /** Which way staff move a client's credit balance by hand, as `CreditAdjustment` serialises. */

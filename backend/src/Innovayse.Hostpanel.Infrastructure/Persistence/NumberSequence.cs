@@ -13,6 +13,9 @@ public sealed class NumberSequence : INumberSequence
     /// <summary>Name of the database sequence behind <see cref="NumberKind.Order"/>.</summary>
     public const string OrderSequenceName = "OrderNumberSequence";
 
+    /// <summary>Name of the database sequence behind <see cref="NumberKind.CreditNote"/>.</summary>
+    public const string CreditNoteSequenceName = "CreditNoteNumberSequence";
+
     /// <summary>The application DbContext.</summary>
     private readonly AppDbContext _db;
 
@@ -32,6 +35,9 @@ public sealed class NumberSequence : INumberSequence
         {
             NumberKind.Order => await _db.Database
                 .SqlQuery<long>($"SELECT nextval('\"OrderNumberSequence\"') AS \"Value\"")
+                .ToListAsync(ct),
+            NumberKind.CreditNote => await _db.Database
+                .SqlQuery<long>($"SELECT nextval('\"CreditNoteNumberSequence\"') AS \"Value\"")
                 .ToListAsync(ct),
             _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "No sequence exists for this kind of number."),
         };

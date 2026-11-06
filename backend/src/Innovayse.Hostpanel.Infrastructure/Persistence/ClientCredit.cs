@@ -159,6 +159,8 @@ public sealed class ClientCredit : IClientCredit
                 CreditMovementType.TopUpRefunded => $"Top-up {invoice} refunded",
                 CreditMovementType.PaymentSurplus => $"Payment beyond {invoice} credited to balance",
                 CreditMovementType.TransactionReversed => "Ledger entry deleted, credit movement undone",
+                CreditMovementType.CreditNoteIssued => $"Credit note issued against {invoice}",
+                CreditMovementType.CreditNoteVoided => $"Credit note against {invoice} voided",
                 _ => change.Movement.ToString(),
             };
         return text.Length <= MaxDescriptionLength ? text : text[..MaxDescriptionLength];

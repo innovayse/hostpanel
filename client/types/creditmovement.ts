@@ -28,5 +28,9 @@ export enum CreditMovement {
   /** A payment beyond an invoice, or one that could not be recorded on it, went to the balance. */
   PaymentSurplus = 'PaymentSurplus',
   /** A legacy ledger entry was deleted and its credit move undone. */
-  TransactionReversed = 'TransactionReversed'
+  TransactionReversed = 'TransactionReversed',
+  /** A credit note issued as account credit put its value on the balance. */
+  CreditNoteIssued = 'CreditNoteIssued',
+  /** A credit note issued as account credit was voided and its value came off the balance. */
+  CreditNoteVoided = 'CreditNoteVoided'
 }

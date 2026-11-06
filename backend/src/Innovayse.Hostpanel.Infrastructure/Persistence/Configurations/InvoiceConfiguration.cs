@@ -58,6 +58,8 @@ public sealed class InvoiceConfiguration : IEntityTypeConfiguration<Invoice>
         // The idempotency key of a gateway refund that was claimed and not yet recorded, and the amount it was for.
         builder.Property(x => x.PendingRefundId);
         builder.Property(x => x.PendingRefundAmount).HasColumnType("numeric(18,4)");
+        // The sum of the account credit notes issued and not voided; defaults to nothing for every invoice raised before credit notes.
+        builder.Property(x => x.CreditNotedAmount).HasColumnType("numeric(18,4)").IsRequired().HasDefaultValue(0m);
         builder.Property(x => x.TaxRate).HasColumnType("numeric(5,2)").IsRequired();
         builder.Property(x => x.Tax).HasColumnType("numeric(18,4)").IsRequired();
         builder.Property(x => x.SubTotal).HasColumnType("numeric(18,4)").IsRequired();

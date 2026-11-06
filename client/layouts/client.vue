@@ -73,11 +73,12 @@
  * links the visitor may see, whether the mobile drawer is open, how the platform widget is told
  * who is signed in, and signing out.
  */
-import { clientPluginPagePath, CLIENT_ACCOUNT_PATH, CLIENT_CREDIT_PATH, CLIENT_DASHBOARD_PATH, CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH, CLIENT_TICKETS_PATH } from '~/constants/clientRoutes'
+import { clientPluginPagePath, CLIENT_ACCOUNT_PATH, CLIENT_CREDIT_NOTES_PATH, CLIENT_CREDIT_PATH, CLIENT_DASHBOARD_PATH, CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH, CLIENT_TICKETS_PATH } from '~/constants/clientRoutes'
 import {
   LayoutDashboard,
   Server,
   Globe,
+  FileMinus,
   FileText,
   MessageSquare,
   UserCog,
@@ -222,6 +223,7 @@ const navItems = computed<NavEntry[]>(() => [
   { to: CLIENT_DOMAINS_PATH, label: t('client.nav.domains'), icon: Globe, permission: Permission.ViewDomains },
   { to: CLIENT_INVOICES_PATH, label: t('client.nav.invoices'), icon: FileText, permission: Permission.ViewPayInvoices },
   { to: CLIENT_CREDIT_PATH, label: t('client.nav.credit'), icon: Wallet, permission: Permission.ViewPayInvoices },
+  { to: CLIENT_CREDIT_NOTES_PATH, label: t('client.nav.creditNotes'), icon: FileMinus, permission: Permission.ViewPayInvoices },
   { to: CLIENT_TICKETS_PATH, label: t('client.nav.support'), icon: MessageSquare, permission: Permission.ViewOpenSupportTickets },
   { to: '/announcements', label: t('announcements.title'), icon: Megaphone, permission: Permission.None },
   { to: '/knowledgebase', label: t('kb.title'), icon: BookOpen, permission: Permission.None },

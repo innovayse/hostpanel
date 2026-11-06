@@ -20,14 +20,16 @@ public sealed class CreditMovementTypeExtensionsTests
         movement.NotifiesClient().Should().BeTrue();
     }
 
-    /// <summary>Moving credit to or from an invoice is the client's own act or the renewal sweep's, and the invoice says it.</summary>
+    /// <summary>Moving credit to or from an invoice is the client own act or the renewal sweep, and the invoice says it; a credit note is mailed as the note itself.</summary>
     /// <param name="movement">A quiet movement.</param>
     [Theory]
     [InlineData(CreditMovementType.InvoiceApplied)]
     [InlineData(CreditMovementType.InvoiceReturned)]
     [InlineData(CreditMovementType.RenewalAutoApplied)]
     [InlineData(CreditMovementType.TransactionReversed)]
-    public void NotifiesClient_IsFalseForMovementsBetweenTheBalanceAndAnInvoice(CreditMovementType movement)
+    [InlineData(CreditMovementType.CreditNoteIssued)]
+    [InlineData(CreditMovementType.CreditNoteVoided)]
+    public void NotifiesClient_IsFalseForMovementsTheInvoiceOrTheCreditNoteAlreadySay(CreditMovementType movement)
     {
         movement.NotifiesClient().Should().BeFalse();
     }

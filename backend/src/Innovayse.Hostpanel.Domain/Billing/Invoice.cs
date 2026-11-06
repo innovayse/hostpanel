@@ -348,8 +348,27 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// invoice is refunded, and an imported Refunded invoice has no refund rows, so without the status
     /// rule it would offer its whole total again. This is the cap every refund is held to: what was
     /// paid less every earlier refund, so two partial refunds in a row can never return more than was paid.
+    /// Credit already given back to the client's balance through a credit note (<see cref="CreditNotedAmount"/>) is held
+    /// out too, so the same money cannot be refunded to the payer as well.
     /// </summary>
-    public decimal RefundableAmount => IsPaid ? Math.Max(0m, AmountPaid - AmountRefunded) : 0m;
+    public decimal RefundableAmount => IsPaid ? Math.Max(0m, AmountPaid - AmountRefunded - CreditNotedAmount) : 0m;
+
+    /// <summary>
+    /// Gets the sum of the credit notes issued against this invoice as account credit and not voided since. The credit already
+    /// went to the client's balance, so it is held out of <see cref="RefundableAmount"/> and <see cref="CreditableAmount"/>:
+    /// the same money is never given back twice. A credit note paid out as a gateway refund is not counted here, because
+    /// the refund itself is already in <see cref="AmountRefunded"/>. Written on every such credit note, so the invoice row
+    /// changes and two credit notes racing on one invoice cannot both pass the same cap.
+    /// </summary>
+    public decimal CreditNotedAmount { get; private set; }
+
+    /// <summary>
+    /// Gets what a credit note may still cover: the invoice's charge before credit (<see cref="SubTotal"/> plus <see cref="Tax"/>)
+    /// less every refund and every credit note kept as account credit, never negative. Zero unless the invoice
+    /// <see cref="IsPaid"/>, and always zero for a credit top-up, which is credit already and is refunded by hand instead.
+    /// </summary>
+    public decimal CreditableAmount =>
+        IsPaid && !IsCreditTopUp ? Math.Max(0m, SubTotal + Tax - AmountRefunded - CreditNotedAmount) : 0m;
 
     /// <summary>
     /// Gets the credit the invoice holds beyond what it still needs: the amount <see cref="Total"/>
@@ -1388,6 +1407,67 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
 
         Status = InvoiceStatus.Refunded;
         GatewayTransactionId = null;
+    }
+
+    /// <summary>
+    /// Refuses a credit note that this invoice cannot take: the invoice is not paid, is a credit top-up, or the note is
+    /// more than <see cref="CreditableAmount"/> still allows once every earlier note and refund is counted.
+    /// </summary>
+    /// <param name="total">The credit note's total, tax included, in the invoice currency.</param>
+    /// <exception cref="DomainRuleException">
+    /// <c>INVOICE_NOT_PAID</c>, <c>CREDIT_NOTE_TOP_UP_INVOICE</c> or <c>CREDIT_NOTE_EXCEEDS_CREDITABLE</c>.
+    /// </exception>
+    public void EnsureCreditable(decimal total)
+    {
+        if (IsCreditTopUp)
+        {
+            throw new DomainRuleException(
+                BillingErrors.CreditNoteTopUpInvoice, "A credit top-up invoice is credit already; a credit note cannot be issued on it.");
+        }
+
+        if (!IsPaid)
+        {
+            throw new DomainRuleException(
+                BillingErrors.InvoiceNotPaid, $"A credit note needs a Paid or PartiallyRefunded invoice; current status is {Status}.");
+        }
+
+        if (total > CreditableAmount)
+        {
+            throw new DomainRuleException(
+                BillingErrors.CreditNoteExceedsCreditable, $"Credit note {total} is more than the {CreditableAmount} still creditable.");
+        }
+    }
+
+    /// <summary>
+    /// Records a credit note kept as account credit against this invoice, holding its amount out of every later refund and
+    /// credit note. Changes the invoice row, so a racing refund or credit note fails the row's concurrency check.
+    /// </summary>
+    /// <param name="total">The credit note's total, tax included, in the invoice currency; greater than 0.</param>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="total"/> is not positive.</exception>
+    /// <exception cref="DomainRuleException">The invoice cannot take it (see <see cref="EnsureCreditable"/>).</exception>
+    public void AddCreditNoted(decimal total)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(total);
+        EnsureCreditable(total);
+
+        CreditNotedAmount += total;
+    }
+
+    /// <summary>Takes a voided credit note's amount back out of <see cref="CreditNotedAmount"/>, so the invoice can be credited or refunded again.</summary>
+    /// <param name="total">The voided credit note's total; greater than 0.</param>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="total"/> is not positive.</exception>
+    /// <exception cref="DomainRuleException"><c>CREDIT_NOTE_INVALID_STATE</c> when more is released than was noted.</exception>
+    public void RemoveCreditNoted(decimal total)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(total);
+
+        if (total > CreditNotedAmount)
+        {
+            throw new DomainRuleException(
+                BillingErrors.CreditNoteInvalidState, $"Cannot release {total} of credit notes: only {CreditNotedAmount} is noted.");
+        }
+
+        CreditNotedAmount -= total;
     }
 
     /// <summary>Refuses a refund of an invoice that holds no paid money: anything but Paid or PartiallyRefunded.</summary>

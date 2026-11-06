@@ -21,6 +21,8 @@ export enum AppRoute {
   BillingInvoices = '/billing/invoices',
   /** The `/billing/offline-cc` screen. */
   BillingOfflineCc = '/billing/offline-cc',
+  /** The `/billing/credit-notes` screen. */
+  BillingCreditNotes = '/billing/credit-notes',
   /** The `/billing/bank-transfers` screen. */
   BillingBankTransfers = '/billing/bank-transfers',
   /** The `/billing/payment-claims` screen. */
@@ -220,6 +222,14 @@ export const clientTicketNewPath = (clientId: RouteId): string => `${clientSecti
  * @returns `/billing/<id>`.
  */
 export const invoicePath = (id: RouteId): string => `${AppRoute.Billing}/${id}`
+
+/**
+ * Path of a credit note's page.
+ *
+ * @param id - Credit note ID.
+ * @returns `/billing/credit-notes/<id>`.
+ */
+export const creditNotePath = (id: RouteId): string => `${AppRoute.BillingCreditNotes}/${id}`
 
 /**
  * Path of an invoice's read-only page.

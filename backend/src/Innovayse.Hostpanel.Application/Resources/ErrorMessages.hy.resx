@@ -1180,4 +1180,28 @@
   <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
     <value>Գումարը մնացորդի համալրման թույլատրելի միջակայքից դուրս է։</value>
   </data>
+  <data name="CREDIT_NOTE_NOT_FOUND" xml:space="preserve">
+    <value>Կրեդիտ-նոտան չի գտնվել։</value>
+  </data>
+  <data name="CREDIT_NOTE_TOP_UP_INVOICE" xml:space="preserve">
+    <value>Մնացորդի համալրման հաշիվը արդեն կրեդիտ է, ուստի դրա վրա կրեդիտ-նոտա հնարավոր չէ տալ։ Վճարված համալրումը վերադարձվում է ձեռքով։</value>
+  </data>
+  <data name="CREDIT_NOTE_EXCEEDS_CREDITABLE" xml:space="preserve">
+    <value>Կրեդիտ-նոտան գերազանցում է այն գումարը, որով այս հաշիվը դեռ կարելի է կրեդիտավորել՝ հաշվի առնելով նախորդ կրեդիտ-նոտաներն ու վերադարձները։</value>
+  </data>
+  <data name="CREDIT_NOTE_ITEMS_REQUIRED" xml:space="preserve">
+    <value>Կրեդիտ-նոտայի համար պետք է առնվազն մեկ տող՝ նկարագրությամբ, գնով և քանակով, ինչպես նաև պատճառ։</value>
+  </data>
+  <data name="CREDIT_NOTE_INVALID_STATE" xml:space="preserve">
+    <value>Կրեդիտ-նոտան այնպիսի վիճակում է, որտեղ այս գործողությունը հնարավոր չէ։</value>
+  </data>
+  <data name="CREDIT_NOTE_ALREADY_VOIDED" xml:space="preserve">
+    <value>Այս կրեդիտ-նոտան արդեն չեղարկված է։</value>
+  </data>
+  <data name="CREDIT_NOTE_CURRENCY_MISMATCH" xml:space="preserve">
+    <value>Այս հաշիվ-ապրանքագիրը այլ արժույթով է, քան այն, որով վարվում է հաճախորդի մնացորդը, ուստի այն չի կարելի գրանցել մնացորդում։ Տվեք կրեդիտ-նոտա՝ վճարային դարպասով վերադարձով։</value>
+  </data>
+  <data name="CREDIT_NOTE_REFUND_NOT_VOIDABLE" xml:space="preserve">
+    <value>Այս կրեդիտ-նոտան վճարվել է վճարային դարպասի միջոցով վերադարձով։ Վերադարձը հնարավոր չէ հետ վերցնել, ուստի կրեդիտ-նոտան չի կարելի չեղարկել։</value>
+  </data>
 </root>

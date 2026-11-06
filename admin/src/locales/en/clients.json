@@ -609,7 +609,9 @@
       "TopUp": "Top-up paid",
       "TopUpRefunded": "Top-up refunded",
       "PaymentSurplus": "Payment beyond an invoice",
-      "TransactionReversed": "Ledger entry reversed"
+      "TransactionReversed": "Ledger entry reversed",
+      "CreditNoteIssued": "Credit note issued as account credit",
+      "CreditNoteVoided": "Credit note voided"
     }
   }
 }

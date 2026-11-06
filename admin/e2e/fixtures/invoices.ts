@@ -46,6 +46,7 @@ export const unpaidInvoiceDetail: InvoiceDetail = {
   },
   amounts: { subTotal: 120, credit: 0, tax: 0, taxRate: 0, total: 120 },
   amountDue: 120,
+  creditableAmount: 0,
   isCreditTopUp: false,
   payment: { method: null, gatewayTransactionId: null },
   notes: null,

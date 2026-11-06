@@ -609,7 +609,9 @@
       "TopUp": "Համալրումը վճարվեց",
       "TopUpRefunded": "Համալրումը վերադարձվեց",
       "PaymentSurplus": "Հաշվից ավել վճարում",
-      "TransactionReversed": "Մատյանի գրառումը չեղարկվեց"
+      "TransactionReversed": "Մատյանի գրառումը չեղարկվեց",
+      "CreditNoteIssued": "Կրեդիտ-նոտան տրվեց հաճախորդի մնացորդին",
+      "CreditNoteVoided": "Կրեդիտ-նոտան չեղարկվեց"
     }
   }
 }

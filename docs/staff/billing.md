@@ -152,6 +152,7 @@ Every client has a **Credit** tab on their profile. It shows the balance and the
 - a paid top-up, and a refund of one;
 - a payment that took more than the invoice owed (or could not be recorded on its invoice) and went to the balance;
 - a legacy ledger entry that was deleted and its credit move undone.
+- a credit note given as account credit, and a credit note voided (see Credit notes below).
 
 The history is the client ledger itself. An entry that holds the money (a payment, a refund, a transaction added to credit) carries the movement. A movement that moved no cash (credit applied to an invoice, a staff adjustment) is a ledger line with no money in or out; those lines stay out of the transaction list, the transaction reports and the data export. Movements from before the history existed are not itemised; the balance is right regardless.
 
@@ -214,6 +215,69 @@ A refund through the gateway cannot be undone. Confirm the amount carefully befo
 
 Refund limits:
 - Cannot refund more than what was paid and not yet refunded (`INVOICE_REFUND_EXCEEDS_PAID`).
+
+## Credit notes
+
+A credit note reverses part or all of an invoice that was already paid. It is a numbered document the client receives, and it is **not the same as invoice credit**: invoice credit is balance a client spends on an invoice (the Credit tab above), a credit note is issued against a paid invoice and gives value back.
+
+<Callout type="warning">
+The numbering is a cautious default and has not been checked against any law. Credit notes are numbered `CN-0001`, `CN-0002` and so on from their own counter, and the PDF carries the seller details you set in System Settings. Before you rely on them, check with an accountant or your local authority what your jurisdiction requires of the numbering, the content, the retention and the delivery of such a document. The panel does not connect to any tax authority.
+</Callout>
+
+### Issue a credit note
+
+Open the **Credit notes** tab of a paid or partially refunded invoice and click **Issue credit note**.
+
+<Steps>
+<li>
+
+Enter the **lines** credited: a description, a price before tax and a quantity. **Use the invoice lines** copies the invoice's own lines, which credits the whole invoice.
+
+</li>
+<li>
+
+Choose where the value goes:
+- **Account credit** puts the total on the client's credit balance. It shows in the credit history as a credit note, and the client can spend it on invoices.
+- **Gateway refund** pays the total back through the gateway that took the money. It is one refund of the invoice, made by the same operation as **Refund**, so the money moves once and the refund is listed once in the invoice, the ledger and the reports.
+
+</li>
+<li>
+
+Enter the **reason**. It is printed on the note, so the client reads it.
+
+</li>
+<li>
+
+Click **Issue**. The note gets its number, the value goes back, and the client is emailed the note.
+
+</li>
+</Steps>
+
+The tax on the note follows the invoice at the invoice's own rate. The sub total, the tax and the total are shown as you type.
+
+How much can be credited: the invoice's charge before credit (sub total plus tax) less every refund and every earlier credit note given as account credit. A note above that is refused (`CREDIT_NOTE_EXCEEDS_CREDITABLE`); the same limit holds when two staff members issue notes for one invoice at the same moment, and the second is refused or waits for the first. A gateway refund note is also held to the money the gateway took and can still return (`INVOICE_REFUND_EXCEEDS_PAID`), and the refund is refused as it is anywhere else when the gateway declines it (`GATEWAY_REFUND_REFUSED`); no note is created then.
+
+A credit note given as account credit also lowers what the invoice can still be refunded in cash, so the same money cannot go back twice. A refund made on its own, with **Refund**, does not create a credit note; issue a gateway refund note instead when you need the document.
+
+A credit top-up invoice takes no credit note (`CREDIT_NOTE_TOP_UP_INVOICE`): it is credit already, and a paid top-up is refunded by hand. An invoice that is not paid takes none either (`INVOICE_NOT_PAID`).
+
+### Numbers, gaps and retention
+
+A number is taken as the last step before the note is saved, once every check has passed, and a save that fails is retried under the same number. The counter is a database sequence, which hands a value out for good, so it **cannot promise there are no gaps**: a server that stops between taking a number and saving the note, or a note that is refused only after the invoice changed under it, leaves its number unused. If your jurisdiction requires gap-free numbering, check that against how you operate before relying on it.
+
+An issued credit note is never deleted. It can only be voided, and a voided note keeps its number and stays in the list and in the client's list, stamped **VOIDED** on its PDF.
+
+### List, open, void and PDF
+
+**Billing, Credit Notes** lists every note, newest first, with a status filter. Open a note to see its lines, its totals, the refund reference of a gateway refund note and, for a voided one, why it was voided.
+
+- **Void credit note** asks for a reason. For a note given as account credit, the value comes off the client's balance and off the invoice's credited amount, so the invoice can be credited or refunded again. If the client has already spent the credit and the balance is short, the void is refused whole (`CLIENT_CREDIT_INSUFFICIENT`).
+- A note paid out as a gateway refund cannot be voided (`CREDIT_NOTE_REFUND_NOT_VOIDABLE`): the refund cannot be taken back.
+- **Download PDF** prints the note in the client's language (English, Russian or Armenian), with the seller from System Settings. A note over the line limit (`InvoicePdf__MaxLines`) cannot be rendered (`INVOICE_PDF_EXCEEDS_LIMIT`).
+
+### Reports
+
+Credit notes add no income of their own. A note given as account credit leaves the income as the payment made it (the cash stays taken; the credit is a balance, and credit spent later on another invoice adds no income). A gateway refund note counts its refund once, as the refund. The credit-only history line a note writes stays out of the transaction list and the transaction reports like every other balance movement.
 
 ## Cancel and delete
 

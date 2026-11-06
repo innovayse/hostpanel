@@ -1180,4 +1180,28 @@
   <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
     <value>Сумма вне допустимого диапазона для пополнения баланса.</value>
   </data>
+  <data name="CREDIT_NOTE_NOT_FOUND" xml:space="preserve">
+    <value>Кредит-нота не найдена.</value>
+  </data>
+  <data name="CREDIT_NOTE_TOP_UP_INVOICE" xml:space="preserve">
+    <value>Счёт на пополнение баланса уже является кредитом, поэтому кредит-ноту по нему выписать нельзя. Оплаченное пополнение возвращается вручную.</value>
+  </data>
+  <data name="CREDIT_NOTE_EXCEEDS_CREDITABLE" xml:space="preserve">
+    <value>Кредит-нота превышает ту сумму, на которую этот счёт ещё можно скорректировать с учётом прежних кредит-нот и возвратов.</value>
+  </data>
+  <data name="CREDIT_NOTE_ITEMS_REQUIRED" xml:space="preserve">
+    <value>Для кредит-ноты нужна хотя бы одна строка с описанием, ценой и количеством, а также причина.</value>
+  </data>
+  <data name="CREDIT_NOTE_INVALID_STATE" xml:space="preserve">
+    <value>Кредит-нота находится в состоянии, в котором это действие недоступно.</value>
+  </data>
+  <data name="CREDIT_NOTE_ALREADY_VOIDED" xml:space="preserve">
+    <value>Эта кредит-нота уже аннулирована.</value>
+  </data>
+  <data name="CREDIT_NOTE_CURRENCY_MISMATCH" xml:space="preserve">
+    <value>Счёт выставлен в валюте, отличной от той, в которой ведётся баланс клиента, поэтому зачислить его на баланс нельзя. Выпишите кредит-ноту с возвратом через платёжный шлюз.</value>
+  </data>
+  <data name="CREDIT_NOTE_REFUND_NOT_VOIDABLE" xml:space="preserve">
+    <value>Эта кредит-нота выплачена возвратом через платёжный шлюз. Возврат нельзя отменить, поэтому кредит-ноту нельзя аннулировать.</value>
+  </data>
 </root>

@@ -10,6 +10,7 @@
 import { apiFetch } from '~/composables/useApi'
 import type { BankTransferDetails } from '~/types/banktransferdetails'
 import type { ClientCredit } from '~/types/clientcredit'
+import type { ClientCreditNote } from '~/types/clientcreditnote'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { GatewayCompletion } from '~/types/gatewaycompletion'
 import type { GatewayMethod } from '~/types/gatewaymethod'
@@ -196,6 +197,29 @@ export const useBillingApi = () => {
   const fetchInvoicePdf = (id: string): Promise<Blob> =>
     apiFetch<Blob>(`/api/portal/client/invoices/${encodeURIComponent(id)}/pdf`)
 
+  /**
+   * Reads the credit notes issued to the signed-in client, newest first. A credit note is not invoice credit: it is a numbered
+   * document that reverses part of an invoice that was already paid.
+   *
+   * @returns The notes; drafts are never sent to a client.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const fetchCreditNotes = (): Promise<ClientCreditNote[]> =>
+    apiFetch<ClientCreditNote[]>('/api/portal/client/credit-notes')
+
+  /**
+   * Reads one of the client's credit notes as a PDF, printed in the client's language.
+   *
+   * No `responseType` is set, for the reason {@link fetchInvoicePdf} gives: the PDF arrives as a `Blob` while a refusal still arrives
+   * as parsed JSON.
+   *
+   * @param id - Credit note id.
+   * @returns The PDF.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const fetchCreditNotePdf = (id: number): Promise<Blob> =>
+    apiFetch<Blob>(`/api/portal/client/credit-notes/${encodeURIComponent(String(id))}/pdf`)
+
   return {
     fetchInvoice,
     fetchInvoicePdf,
@@ -208,6 +232,8 @@ export const useBillingApi = () => {
     fetchCredit,
     createCreditTopUp,
     applyInvoiceCredit,
+    fetchCreditNotes,
+    fetchCreditNotePdf,
     completeGatewayPayment
   }
 }

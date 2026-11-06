@@ -1257,6 +1257,30 @@ public static class HostpanelErrorCodes
     /// <summary>The top-up amount is below the minimum or above the maximum the admin allows (400).</summary>
     public const string CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE = "CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE";
 
+    /// <summary>The id names no credit note, or none the caller may see (404).</summary>
+    public const string CREDIT_NOTE_NOT_FOUND = Domain.Billing.BillingErrors.CreditNoteNotFound;
+
+    /// <summary>A credit note cannot be issued on a credit top-up invoice, which is credit already (400).</summary>
+    public const string CREDIT_NOTE_TOP_UP_INVOICE = Domain.Billing.BillingErrors.CreditNoteTopUpInvoice;
+
+    /// <summary>The credit note is more than the invoice can still be credited once earlier notes and refunds are counted (400).</summary>
+    public const string CREDIT_NOTE_EXCEEDS_CREDITABLE = Domain.Billing.BillingErrors.CreditNoteExceedsCreditable;
+
+    /// <summary>A credit note needs at least one valid line and a reason (400).</summary>
+    public const string CREDIT_NOTE_ITEMS_REQUIRED = Domain.Billing.BillingErrors.CreditNoteItemsRequired;
+
+    /// <summary>The credit note is not in the state the action needs (409).</summary>
+    public const string CREDIT_NOTE_INVALID_STATE = Domain.Billing.BillingErrors.CreditNoteInvalidState;
+
+    /// <summary>The credit note was already voided (409).</summary>
+    public const string CREDIT_NOTE_ALREADY_VOIDED = Domain.Billing.BillingErrors.CreditNoteAlreadyVoided;
+
+    /// <summary>A credit note paid out as a gateway refund cannot be voided, because the refund cannot be taken back (409).</summary>
+    public const string CREDIT_NOTE_REFUND_NOT_VOIDABLE = Domain.Billing.BillingErrors.CreditNoteRefundNotVoidable;
+
+    /// <summary>Account credit cannot be given for an invoice in a currency other than the one the client balance is kept in (400).</summary>
+    public const string CREDIT_NOTE_CURRENCY_MISMATCH = "CREDIT_NOTE_CURRENCY_MISMATCH";
+
     /// <summary>
     /// The id names no contact on this client (404): <see cref="Domain.Clients.Client.RemoveContact"/>
     /// and <see cref="Domain.Clients.Client.UpdateContact"/>. The one answer for a contact that is

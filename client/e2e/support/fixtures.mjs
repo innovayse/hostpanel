@@ -277,6 +277,40 @@ export const CREDIT = {
   },
 }
 
+/** The credit notes issued to the signed-in client: an applied account credit note and a voided one, newest first. */
+export const CREDIT_NOTES = [
+  {
+    id: 41,
+    number: 'CN-0041',
+    status: 'Applied',
+    method: 'AccountCredit',
+    invoiceId: 12,
+    currency: 'USD',
+    subTotal: 50,
+    taxRate: 20,
+    tax: 10,
+    total: 60,
+    reason: 'Service was down for two days',
+    issuedAt: '2030-01-03T09:00:00Z',
+    voidedAt: null,
+  },
+  {
+    id: 40,
+    number: 'CN-0040',
+    status: 'Voided',
+    method: 'GatewayRefund',
+    invoiceId: 11,
+    currency: 'USD',
+    subTotal: 10,
+    taxRate: 0,
+    tax: 0,
+    total: 10,
+    reason: 'Issued by mistake',
+    issuedAt: '2030-01-01T09:00:00Z',
+    voidedAt: '2030-01-02T09:00:00Z',
+  },
+]
+
 /** Operator settings the storefront reads; a light default and an uploaded light/dark logo pair. */
 export const PUBLIC_SETTINGS = [
   { key: 'portal.template', value: 'aurora' },

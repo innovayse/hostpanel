@@ -126,6 +126,9 @@ public static class StatusMapping
             // Exact row: an entry of the credit history stands in the way of the edit or delete, a state conflict, and the
             // name carries a LOCKED suffix that the generic arm below would answer 423 for.
             "TRANSACTION_CREDIT_LOCKED" => new(409, "Conflict"),
+            // Exact rows: the credit note is in a state that refuses the action, a conflict with what is stored and not a malformed
+            // request; neither name carries a CONFLICT token.
+            "CREDIT_NOTE_INVALID_STATE" or "CREDIT_NOTE_REFUND_NOT_VOIDABLE" => new(409, "Conflict"),
 
             // SSH key management: the service is the caller's, but its state or the key's binding
             // does not allow the change, or the hosting server did not confirm it.

@@ -164,4 +164,31 @@ public static class BillingErrors
     /// which would be the same money again.
     /// </summary>
     public const string InvoiceTopUpRefundManualOnly = "INVOICE_TOP_UP_REFUND_MANUAL_ONLY";
+
+    /// <summary>The id names no credit note, or none the caller may see (404).</summary>
+    public const string CreditNoteNotFound = "CREDIT_NOTE_NOT_FOUND";
+
+    /// <summary>A credit note cannot be issued on a credit top-up invoice, which is credit already (400): <see cref="Invoice.EnsureCreditable"/>.</summary>
+    public const string CreditNoteTopUpInvoice = "CREDIT_NOTE_TOP_UP_INVOICE";
+
+    /// <summary>
+    /// The credit note is more than the invoice can still be credited once every earlier credit note and refund is counted
+    /// (400): <see cref="Invoice.EnsureCreditable"/>.
+    /// </summary>
+    public const string CreditNoteExceedsCreditable = "CREDIT_NOTE_EXCEEDS_CREDITABLE";
+
+    /// <summary>A credit note needs at least one line, and every line a description, a price and a quantity (400): <see cref="CreditNote.Create"/>.</summary>
+    public const string CreditNoteItemsRequired = "CREDIT_NOTE_ITEMS_REQUIRED";
+
+    /// <summary>The credit note is not in the state the action needs (409): <see cref="CreditNote.Issue"/>, <see cref="CreditNote.MarkApplied"/> and <see cref="CreditNote.Void"/>.</summary>
+    public const string CreditNoteInvalidState = "CREDIT_NOTE_INVALID_STATE";
+
+    /// <summary>The credit note was already voided (409): <see cref="CreditNote.Void"/>.</summary>
+    public const string CreditNoteAlreadyVoided = "CREDIT_NOTE_ALREADY_VOIDED";
+
+    /// <summary>
+    /// A credit note paid out as a gateway refund cannot be voided, because the money has left and no void can bring it back
+    /// (409): <see cref="CreditNote.Void"/>.
+    /// </summary>
+    public const string CreditNoteRefundNotVoidable = "CREDIT_NOTE_REFUND_NOT_VOIDABLE";
 }

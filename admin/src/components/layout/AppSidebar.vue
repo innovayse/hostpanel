@@ -136,6 +136,7 @@ const navItems: NavItem[] = [
       { to: AppRoute.BillingGatewayLog, labelKey: 'nav.billingChildren.gatewayLog' },
       { to: AppRoute.BillingPaymentClaims, labelKey: 'nav.billingChildren.paymentClaims' },
       { to: AppRoute.BillingBankTransfers, labelKey: 'nav.billingChildren.bankTransfers' },
+      { to: AppRoute.BillingCreditNotes, labelKey: 'nav.billingChildren.creditNotes' },
       { to: AppRoute.BillingRenewals, labelKey: 'nav.billingChildren.renewals' },
     ],
   },

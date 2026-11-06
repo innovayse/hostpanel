@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Plugins: a preview can offer element selection to a chat, off unless the view declares it. Each preview keeps its own selection, a frame's messages are treated as claims, and the plugin's server names what is selected.
+
 ### Fixed
 
 - Plugins: two first writes of one plugin key at the same time could fail with an out of range error instead of being retried. The store now retries the write from a fresh read.

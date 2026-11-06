@@ -12,12 +12,12 @@
       />
       <UiButton
         v-if="canSelect"
-        :variant="selection.active.value ? 'primary' : 'outline'"
+        :variant="selection?.active.value ? UiButtonVariant.Primary : UiButtonVariant.Outline"
         size="sm"
-        :aria-pressed="selection.active.value"
+        :aria-pressed="selection?.active.value"
         data-testid="plugin-preview-select"
         @click="toggleMode"
-      >{{ selection.active.value ? $t('plugins.previewSelectDone') : $t('plugins.previewSelect') }}</UiButton>
+      >{{ selection?.active.value ? $t('plugins.previewSelectDone') : $t('plugins.previewSelect') }}</UiButton>
       <UiText
         v-if="address"
         size="xs"
@@ -41,7 +41,7 @@
         testid="plugin-preview-open"
       >{{ $t('plugins.previewOpen') }}</UiLink>
     </UiStack>
-    <UiText v-if="canSelect && selection.active.value" size="sm" role="status" data-testid="plugin-preview-select-hint">{{ $t('plugins.previewSelectHint') }}</UiText>
+    <UiText v-if="canSelect && selection?.active.value" size="sm" role="status" data-testid="plugin-preview-select-hint">{{ $t('plugins.previewSelectHint') }}</UiText>
     <UiStack align="center" class="relative min-h-[420px] flex-1" data-testid="plugin-preview-canvas">
       <UiCard
         v-if="showFrame && address"
@@ -80,15 +80,18 @@
  * shape, only naming the release the plugin says is on the preview, only on a source the view lets select, and a toggle only
  * while the mode is on. The select button appears only after the frame said it is ready, so a site without the script, the
  * live one above all, offers none. What is then selected is what the plugin's server confirms. Messages to the frame go to
- * target `*`, since an opaque origin cannot be named, so they carry the mode and element ids and nothing else.
+ * target `*`, since an opaque origin cannot be named, so they carry the mode and element ids and nothing else, and only to a
+ * frame that said it is ready. The selection is this block's own: another preview on the page neither sees nor clears it, and
+ * a preview that declares none holds none, listens to nothing, posts nothing and clears nothing.
  */
 import { usePluginSelection } from '~/composables/usePluginSelection'
 import { usePluginSource, usePluginView } from '~/composables/usePluginView'
 import { PLUGIN_SELECTION_MESSAGE_TYPE, PLUGIN_SELECTION_MESSAGE_VERSION } from '~/constants/pluginSelection'
 import type { PluginPreviewBlock } from '~/types/pluginblock'
 import { PluginPreviewSize } from '~/types/pluginpreviewsize'
+import { PluginSelectionEvent } from '~/types/pluginselectionevent'
 import { parsePluginSelectionMessage, pluginDocumentLoaded, pluginFrameAddress, readPluginField } from '~/utils/plugins'
-import { UiAlertVariant } from '~/utils/ui/enums'
+import { UiAlertVariant, UiButtonVariant } from '~/utils/ui/enums'
 
 /** Props of PluginPreviewBlock. */
 interface Props {
@@ -109,8 +112,10 @@ const context = usePluginView()
 /** The address of the page on screen, which the document must have been served for. */
 const route = useRoute()
 
-/** The selection this document's chat reads. */
-const selection = usePluginSelection()
+/** The view's selections, which this block joins only when it declares one. */
+const selections = usePluginSelection()
+/** This block's own selection; null when the view declares none for it. */
+const selection = props.block.selection ? selections.open() : null
 /** The frame on screen. */
 const frame = ref<{ contentWindow: () => Window | null } | null>(null)
 /** Whether the frame on screen said it can select. */
@@ -191,11 +196,14 @@ const canSelect = computed(() => selectableSource.value && showFrame.value && fr
  * @returns Nothing.
  */
 const tellFrame = (): void => {
+  if (!selection || !frameReady.value) {
+    return
+  }
   // '*' because an opaque origin cannot be named as a target; this message holds no secret and no customer data.
   frame.value?.contentWindow()?.postMessage({
     type: PLUGIN_SELECTION_MESSAGE_TYPE,
     version: PLUGIN_SELECTION_MESSAGE_VERSION,
-    event: 'state',
+    event: PluginSelectionEvent.State,
     active: selection.active.value,
     selected: selection.chips.value.map(chip => chip.id),
   }, '*')
@@ -209,19 +217,19 @@ const tellFrame = (): void => {
  */
 const onFrameMessage = (event: MessageEvent): void => {
   const own = frame.value?.contentWindow()
-  if (!props.block.selection || !own || event.source !== own || !selectableSource.value) {
+  if (!selection || !props.block.selection || !own || event.source !== own || !selectableSource.value) {
     return
   }
   const message = parsePluginSelectionMessage(event.data, expectedRelease.value)
   if (!message) {
     return
   }
-  if (message.event === 'ready') {
+  if (message.event === PluginSelectionEvent.Ready) {
     frameReady.value = true
     tellFrame()
-  } else if (selection.active.value && message.event === 'toggle') {
+  } else if (selection.active.value && message.event === PluginSelectionEvent.Toggle) {
     void selection.toggle(props.block.selection.route, expectedRelease.value, message.id)
-  } else if (selection.active.value && message.event === 'exit') {
+  } else if (selection.active.value && message.event === PluginSelectionEvent.Exit) {
     selection.active.value = false
   }
 }
@@ -233,7 +241,7 @@ const onFrameMessage = (event: MessageEvent): void => {
  * @returns Nothing.
  */
 const onKeydown = (event: KeyboardEvent): void => {
-  if (event.key === 'Escape' && selection.active.value) {
+  if (selection && event.key === 'Escape' && selection.active.value) {
     selection.active.value = false
   }
 }
@@ -244,7 +252,13 @@ const onKeydown = (event: KeyboardEvent): void => {
  * @returns Nothing.
  */
 const toggleMode = (): void => {
+  if (!selection) {
+    return
+  }
   selection.active.value = !selection.active.value
+  if (selection.active.value) {
+    selection.focus()
+  }
 }
 
 /**
@@ -278,29 +292,39 @@ const checkDocument = (): void => {
 
 watch([address, () => route.path], checkDocument)
 onMounted(() => {
-  window.addEventListener('message', onFrameMessage)
-  window.addEventListener('keydown', onKeydown)
+  if (selection) {
+    window.addEventListener('message', onFrameMessage)
+    window.addEventListener('keydown', onKeydown)
+  }
 })
 onBeforeUnmount(() => {
-  window.removeEventListener('message', onFrameMessage)
-  window.removeEventListener('keydown', onKeydown)
-  selection.clear()
+  if (selection) {
+    window.removeEventListener('message', onFrameMessage)
+    window.removeEventListener('keydown', onKeydown)
+    selections.close(selection)
+  }
 })
-// What the frame draws follows what the panel holds, never the other way round.
-watch([selection.active, selection.chips], tellFrame, { deep: true })
+if (selection) {
+  // What the frame draws follows what the panel holds, never the other way round.
+  watch([selection.active, selection.chips], tellFrame, { deep: true })
+}
 // A new frame says again that it is ready, or says nothing and offers no selection.
 watch(() => frameKey.value, () => {
   frameReady.value = false
 })
 // A selection names paths of one release; a new one may hold other content at them, so nothing carries over.
 watch(expectedRelease, (next, last) => {
+  if (!selection) {
+    return
+  }
+  selection.release.value = next
   if (last !== '' && next !== last) {
     selection.clear()
     frameReady.value = false
   }
 })
 watch(sourceId, () => {
-  selection.clear()
+  selection?.clear()
   frameReady.value = false
 })
 watch(sourceId, reload)

@@ -9,6 +9,7 @@
 
 import { PLUGIN_SELECTION_ID_PATTERN, PLUGIN_SELECTION_MAX_ID_LENGTH, PLUGIN_SELECTION_MESSAGE_TYPE, PLUGIN_SELECTION_MESSAGE_VERSION } from '~/constants/pluginSelection'
 import type { PluginSelectionMessage } from '~/types/pluginpreviewselection'
+import { PluginSelectionEvent } from '~/types/pluginselectionevent'
 import { PLUGIN_FRAME_TIMING } from '~/constants/pluginFrames'
 import type { Component } from 'vue'
 import { AppWindow, BarChart3, Bot, Boxes, Cloud, Globe, LayoutGrid, Mail, MessageSquare, Puzzle, Rocket, Settings, Shield, Sparkles } from 'lucide-vue-next'
@@ -849,13 +850,15 @@ export const parsePluginSelectionMessage = (data: unknown, expectedRelease: stri
     || message.release !== expectedRelease) {
     return null
   }
-  if ((message.event === 'ready' || message.event === 'exit') && members === 4) {
-    return { event: message.event }
+  if (message.event === PluginSelectionEvent.Ready && members === 4) {
+    return { event: PluginSelectionEvent.Ready }
   }
-  if (message.event === 'toggle' && members === 5 && typeof message.id === 'string'
+  if (message.event === PluginSelectionEvent.Exit && members === 4) {
+    return { event: PluginSelectionEvent.Exit }
+  }
+  if (message.event === PluginSelectionEvent.Toggle && members === 5 && typeof message.id === 'string'
     && message.id.length <= PLUGIN_SELECTION_MAX_ID_LENGTH && PLUGIN_SELECTION_ID_PATTERN.test(message.id)) {
-    return { event: 'toggle', id: message.id }
+    return { event: PluginSelectionEvent.Toggle, id: message.id }
   }
   return null
 }
-

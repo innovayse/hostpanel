@@ -838,6 +838,21 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
         AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewSelectionInvalid);
     }
 
+    /// <summary>A source id that is no string, with a selection on the preview, is a refusal and not an exception, at install and at load alike.</summary>
+    /// <param name="id">The source's id, as JSON.</param>
+    [Theory]
+    [InlineData("1")]
+    [InlineData("{}")]
+    [InlineData("[]")]
+    [InlineData("null")]
+    [InlineData("true")]
+    public void Read_SelectionWithSourceIdNotAString_BreaksPreviewRule(string id)
+    {
+        Write("views/a.json", $$$"""{"schema":1,"blocks":[{"kind":"preview","sources":[{"id":{{{id}}},"label":"A","route":{"method":"get","path":"/site"},"field":"url"}]{{{SelectionMember("""["a"]""", "post")}}}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewPreviewInvalid);
+    }
+
     /// <summary>An extra member in a selection, which the panel would otherwise ignore, is refused.</summary>
     [Fact]
     public void Read_SelectionExtraMember_BreaksViewSelectionInvalid()

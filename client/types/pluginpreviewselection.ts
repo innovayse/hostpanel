@@ -4,6 +4,7 @@
  * @module types/pluginpreviewselection
  */
 
+import type { PluginSelectionEvent } from '~/types/pluginselectionevent'
 import type { PluginViewRoute } from '~/types/pluginviewroute'
 
 /** A preview block's `selection`: declared by the view, off when absent. */
@@ -23,9 +24,9 @@ export interface PluginPreviewSelection {
 
 /** What a frame's message may say, once it passed every check. */
 export type PluginSelectionMessage =
-  | { /** The frame's script runs. */ event: 'ready' }
-  | { /** The reader asked to leave the mode. */ event: 'exit' }
-  | { /** The reader pointed at an element. */ event: 'toggle', /** The element id, still only a claim. */ id: string }
+  | { /** The frame's script runs. */ event: PluginSelectionEvent.Ready }
+  | { /** The reader asked to leave the mode. */ event: PluginSelectionEvent.Exit }
+  | { /** The reader pointed at an element. */ event: PluginSelectionEvent.Toggle, /** The element id, still only a claim. */ id: string }
 
 /** A selected element as the plugin's server named it. */
 export interface PluginSelectionChip {

@@ -42,8 +42,8 @@
               >{{ block.assistant.label }}</UiText>
               <UiMarkdownText v-if="message.role === PluginChatRole.Assistant" :text="message.text" />
               <template v-else>{{ message.text }}</template>
-              <UiStack v-if="message.selectionLabels?.length" direction="row" gap="xs" wrap class="mt-1" data-testid="plugin-chat-message-selection">
-                <UiBadge v-for="label in message.selectionLabels" :key="label">{{ label }}</UiBadge>
+              <UiStack v-if="message.selectionChips?.length" direction="row" gap="xs" wrap class="mt-1" data-testid="plugin-chat-message-selection">
+                <UiBadge v-for="chip in message.selectionChips" :key="chip.id">{{ chip.label }}</UiBadge>
               </UiStack>
               <template v-for="link in message.links" :key="link.key">
                 <UiLink v-if="link.external" :href="link.href" external class="block" testid="plugin-chat-link">{{ link.text }}</UiLink>
@@ -116,7 +116,7 @@
         >
           <UiText as="span" size="xs" class="min-w-0 flex-1 truncate">{{ chip.label }}</UiText>
           <UiButton
-            variant="ghost"
+            :variant="UiButtonVariant.Ghost"
             size="sm"
             :aria-label="`${$t('plugins.chatSelectionRemove')}: ${chip.label}`"
             data-testid="plugin-chat-selection-remove"
@@ -166,14 +166,15 @@
  *
  * An empty chat shows the block's `intro` and its `suggestions`, which only fill the message field; `assistant.label`
  * signs each reply, `maxLength` caps the field, and once a reply has ended the blocks named in `refresh` read again,
- * since a turn may have changed what they show. With `selection: true` the elements selected on the document's preview
- * show as chips over the field, each labelled by the plugin, never by the frame, and go with the next message; sending
- * ends the selection, and a "try again" sends the same one. When another block refreshes this one by its `id` (a "new
+ * since a turn may have changed what they show. With `selection: true` the elements selected on the preview the reader
+ * last selected on show as chips over the field, each labelled by the plugin, never by the frame, and go with the next
+ * message; sending ends that preview's selection, and a "try again" sends the same one while that preview still holds the
+ * release it was selected on, and no selection after that, since the ids may name other content in a new release. When another block refreshes this one by its `id` (a "new
  * conversation" action), the reply in flight is stopped, the messages are cleared and the history is read again.
  */
 import type { Component } from 'vue'
 import { Check, CircleSlash, LoaderCircle, X } from 'lucide-vue-next'
-import { UiChatBubbleSide } from '~/utils/ui/enums'
+import { UiButtonVariant, UiChatBubbleSide } from '~/utils/ui/enums'
 import { usePluginSelection } from '~/composables/usePluginSelection'
 import { usePluginPane, usePluginView } from '~/composables/usePluginView'
 import { usePluginsStore } from '~/stores/plugins'
@@ -181,7 +182,7 @@ import type { PluginChatBlock } from '~/types/pluginblock'
 import { PluginChatEventType } from '~/types/pluginchateventtype'
 import type { PluginChatMessage } from '~/types/pluginchatmessage'
 import { PluginChatRole } from '~/types/pluginchatrole'
-import type { PluginSelectionClaim } from '~/types/pluginpreviewselection'
+import type { PluginSelectionChip, PluginSelectionClaim } from '~/types/pluginpreviewselection'
 import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import { PluginChatStepState } from '~/types/pluginchatstepstate'
 import { parsePluginChatResult, parsePluginChatStep, pluginLinkTarget, pluginUiTone, readPluginField } from '~/utils/plugins'
@@ -197,8 +198,10 @@ const props = defineProps<Props>()
 
 /** The view's context: the plugin and the route values. */
 const context = usePluginView()
-/** The selection of the document's preview; null when this chat takes none. */
-const selection = props.block.selection ? usePluginSelection() : null
+/** The selections of the document's previews; null when this chat takes none. */
+const selections = props.block.selection ? usePluginSelection() : null
+/** The selection this chat shows and sends: the one of the preview last selected on. */
+const selection = computed(() => selections?.current.value ?? null)
 /** The plugin store, which reads the history and the stream. */
 const store = usePluginsStore()
 
@@ -441,14 +444,16 @@ const apply = (target: PluginChatMessage, event: PluginStreamEvent): void => {
  *
  * @param text - The message, already trimmed.
  * @param claim - The selected elements to send with it, if any.
- * @param labels - Their labels, shown on the message.
+ * @param chips - Those elements as the plugin named them, shown on the message.
+ * @param owner - The preview they were selected on.
  * @returns Resolves when the reply has ended, been stopped or failed.
  */
-const sendMessage = async (text: string, claim?: PluginSelectionClaim, labels?: readonly string[]): Promise<void> => {
+const sendMessage = async (text: string, claim?: PluginSelectionClaim, chips?: readonly PluginSelectionChip[], owner?: string): Promise<void> => {
   const sent = add(PluginChatRole.User, text)
   if (claim) {
     sent.selection = claim
-    sent.selectionLabels = labels ?? []
+    sent.selectionChips = chips ?? []
+    sent.selectionOwner = owner ?? ''
   }
   const target = add(PluginChatRole.Assistant, '')
   const asked = generation
@@ -503,10 +508,11 @@ const send = async (): Promise<void> => {
     return
   }
   draft.value = ''
-  const claim = selection?.claim() ?? undefined
-  const labels = selection?.chips.value.map(chip => chip.label)
-  selection?.clear()
-  await sendMessage(text, claim, labels)
+  const source = selection.value
+  const claim = source?.claim() ?? undefined
+  const chips = source ? [...source.chips.value] : undefined
+  source?.clear()
+  await sendMessage(text, claim, chips, source?.owner)
 }
 
 /**
@@ -518,7 +524,9 @@ const send = async (): Promise<void> => {
 const resend = async (): Promise<void> => {
   const last = [...messages.value].reverse().find(message => message.role === PluginChatRole.User)
   if (last && !streaming.value) {
-    await sendMessage(last.text, last.selection, last.selectionLabels)
+    // A release moved on since: its ids may name other content now, so the old claim is not sent again.
+    const current = last.selection && selections?.releaseOf(last.selectionOwner ?? '') === last.selection.releaseId
+    await sendMessage(last.text, current ? last.selection : undefined, current ? last.selectionChips : undefined, last.selectionOwner)
   }
 }
 

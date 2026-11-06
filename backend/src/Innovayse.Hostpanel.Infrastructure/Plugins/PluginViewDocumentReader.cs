@@ -928,8 +928,11 @@ internal static partial class PluginViewDocumentReader
             return false;
         }
 
+        // The sources have not been validated yet when this runs, and GetString throws on anything but a string.
         var known = declared.EnumerateArray()
-            .Where(source => source.ValueKind == JsonValueKind.Object && source.TryGetProperty(PreviewSourceIdMember, out _))
+            .Where(source => source.ValueKind == JsonValueKind.Object
+                && source.TryGetProperty(PreviewSourceIdMember, out var id)
+                && id.ValueKind == JsonValueKind.String)
             .Select(source => source.GetProperty(PreviewSourceIdMember).GetString())
             .ToHashSet(StringComparer.Ordinal);
         var named = sources.EnumerateArray().Select(source => source.ValueKind == JsonValueKind.String ? source.GetString() : null).ToList();

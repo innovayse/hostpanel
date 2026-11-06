@@ -20,17 +20,20 @@ import DemoLink from './components/DemoLink.vue'
 import HomeDemoButton from './components/HomeDemoButton.vue'
 import VersionBanner from './components/VersionBanner.vue'
 import VersionSwitcher from './components/VersionSwitcher.vue'
+import HomeLandmark from './components/HomeLandmark'
 
 /** The theme object exported to VitePress. */
 export default {
   extends: DefaultTheme,
   /**
    * Wraps the default layout: the PageFeedback widget after every documentation page (`doc-after`),
-   * the version notice above the page (`layout-top`) and the version list in the top bar.
+   * the version notice above the page (`layout-top`), the version list in the top bar and the main
+   * landmark of the home page (`layout-bottom`).
    */
   Layout() {
     return h(DefaultTheme.Layout, null, {
       'layout-top': () => h(VersionBanner),
+      'layout-bottom': () => h(HomeLandmark),
       'nav-bar-content-after': () => h(VersionSwitcher),
       'doc-after': () => h(PageFeedback),
       'home-hero-actions-after': () => h(HomeDemoButton),

@@ -83,6 +83,15 @@ jobs:
       - name: Check every test folder is in exactly one shard
         run: sh scripts/check-integration-shards.sh .github/workflows/ci.yml .gitlab-ci.yml
 
+  edge-csp:
+    name: Edge CSP (Caddy and nginx send one policy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Compare the client policy of both edges
+        run: sh scripts/check-edge-csp.sh
+
   # The Integration suite starts a full API host for every test class (about 690 of them), each on
   # a database of its own on one shared PostgreSQL container. The test project's
   # integration.runsettings (picked up by dotnet test) bounds its native memory, and the suite is

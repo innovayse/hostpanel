@@ -167,6 +167,25 @@
     "emptyDomains": "No domains expire in this window.",
     "emptyClaims": "No domain renewals are waiting for staff."
   },
+  "bankTransfers": {
+    "heading": "Pending Bank Transfers",
+    "subtitle": "Invoices whose client chose to pay by bank transfer. Check your bank statement, then confirm or reject each one.",
+    "reference": "Reference",
+    "requested": "Chosen",
+    "empty": "No bank transfers are waiting.",
+    "confirm": "Confirm",
+    "reject": "Reject",
+    "confirmTitle": "Confirm bank transfer",
+    "confirmMessage": "Confirm that {amount} arrived for invoice #{id} (reference {reference})? The invoice will be marked paid.",
+    "rejectTitle": "Reject bank transfer",
+    "rejectMessage": "The money for invoice #{id} (reference {reference}) did not arrive. The invoice will be open again and the client will read your note.",
+    "note": "Note for the client",
+    "noteHint": "The client reads this in the email.",
+    "notePlaceholder": "For example: the amount received was lower than the invoice total",
+    "noteRequired": "Write a note for the client.",
+    "confirmed": "Invoice #{id} is paid.",
+    "rejected": "Invoice #{id} is open again and the client was told why."
+  },
   "paymentClaims": {
     "heading": "Held Payment Claims",
     "subtitle": "Charges where the gateway took money the invoice could not record. Settle them by hand.",

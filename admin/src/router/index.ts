@@ -132,6 +132,7 @@ const router = createRouter({
             { path: 'disputes', component: lazy('views/DisputesView.vue') },
             { path: 'gateway-log', component: lazy('views/GatewayLogView.vue') },
             { path: 'payment-claims', component: lazy('views/PaymentClaimsView.vue') },
+            { path: 'bank-transfers', component: lazy('views/PendingBankTransfersView.vue') },
             { path: 'transactions', component: lazy('views/TransactionsListView.vue') },
             { path: 'add-transaction', component: lazy('views/AddTransactionView.vue') },
             { path: 'transactions/:id/edit', component: lazy('views/EditTransactionView.vue') },

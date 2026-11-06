@@ -14,9 +14,12 @@ import { defineStore } from 'pinia'
 import { useBillingApi } from '~/composables/apis/useBillingApi'
 import { apiErrorMessage } from '~/lib/errorHandler'
 import { saveBlob } from '~/utils/saveBlob'
+import type { BankTransferDetails } from '~/types/banktransferdetails'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { GatewayMethod } from '~/types/gatewaymethod'
 import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
+import { InvoiceStatus } from '~/types/invoicestatus'
+import { PaymentModule } from '~/types/paymentmodule'
 import type { PaymentTarget } from '~/types/paymenttarget'
 import { isSafeRedirectUrl } from '~/utils/externalRedirect'
 import { isHostedGatewayModule } from '~/utils/paymentModules'
@@ -54,6 +57,19 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
       .find(m => isHostedGatewayModule(m.module))?.module ?? null)
 
   /**
+   * Whether the manual bank transfer is among the ways this invoice can be paid, which the admin switches on in the
+   * integrations; the panel offers the choice only then.
+   */
+  const bankTransferOffered = computed<boolean>(() =>
+    gatewayMethods.value.some(m => m.module === PaymentModule.BankTransfer))
+
+  /** The bank details and the reference of the transfer waiting on the invoice; null while none waits or before it is read. */
+  const bankTransfer = ref<BankTransferDetails | null>(null)
+
+  /** The sentence for a failed bank details read; empty when there is none to show. */
+  const bankTransferError = ref('')
+
+  /**
    * Reads one invoice with its line items.
    *
    * @param id - Invoice id.
@@ -63,6 +79,8 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
     invoiceLoading.value = true
     invoiceError.value = ''
     invoice.value = null
+    bankTransfer.value = null
+    bankTransferError.value = ''
     try {
       invoice.value = await billing.fetchInvoice(id)
     } catch (e: unknown) {
@@ -71,6 +89,26 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
       invoiceLoading.value = false
     }
     return invoice.value
+  }
+
+  /**
+   * Reads the bank details of the transfer waiting on the loaded invoice. Nothing is asked unless the invoice is
+   * PaymentPending, so an open or paid invoice never shows bank details.
+   *
+   * @param id - Invoice id.
+   * @returns Nothing; a refused read leaves its sentence in {@link bankTransferError}.
+   */
+  const loadBankTransfer = async (id: string): Promise<void> => {
+    bankTransfer.value = null
+    bankTransferError.value = ''
+    if (invoice.value?.status !== InvoiceStatus.PaymentPending) {
+      return
+    }
+    try {
+      bankTransfer.value = await billing.fetchBankTransfer(id)
+    } catch (e: unknown) {
+      bankTransferError.value = apiErrorMessage(e)
+    }
   }
 
   /**
@@ -178,6 +216,31 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
     }
   }
 
+  /**
+   * Chooses the manual bank transfer for the invoice. On success the invoice is PaymentPending, its bank details are in
+   * {@link bankTransfer} and the page shows them; a refusal leaves its sentence in {@link error}.
+   *
+   * @param invoiceId - Invoice to pay by bank transfer.
+   * @returns True when the transfer was chosen (or already was).
+   */
+  const selectBankTransfer = async (invoiceId: string): Promise<boolean> => {
+    error.value = ''
+    submitting.value = true
+    try {
+      bankTransfer.value = await billing.selectBankTransfer(invoiceId)
+      bankTransferError.value = ''
+      if (invoice.value) {
+        invoice.value = { ...invoice.value, status: InvoiceStatus.PaymentPending }
+      }
+      return true
+    } catch (e: unknown) {
+      error.value = apiErrorMessage(e)
+      return false
+    } finally {
+      submitting.value = false
+    }
+  }
+
   /** True while an invoice PDF is being downloaded. */
   const pdfDownloading = ref(false)
 
@@ -212,6 +275,11 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
     gatewayMethods,
     optionsError,
     hostedGatewayModule,
+    bankTransferOffered,
+    bankTransfer,
+    bankTransferError,
+    loadBankTransfer,
+    selectBankTransfer,
     loadInvoice,
     loadPaymentOptions,
     verifyGatewayPayment,

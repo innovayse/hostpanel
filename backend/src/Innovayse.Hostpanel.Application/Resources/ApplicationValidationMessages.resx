@@ -265,6 +265,9 @@
 <data name="InvoicePaymentAmountInvalid" xml:space="preserve">
     <value>The payment amount must be greater than zero.</value>
   </data>
+<data name="BankTransferRejectNoteInvalid" xml:space="preserve">
+    <value>A reason is required and must be at most {0} characters.</value>
+  </data>
 <data name="InvoicePaymentNotesInvalid" xml:space="preserve">
     <value>Notes must be at most {0} characters.</value>
   </data>

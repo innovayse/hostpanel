@@ -265,6 +265,9 @@
 <data name="InvoicePaymentAmountInvalid" xml:space="preserve">
     <value>Сумма платежа должна быть больше нуля.</value>
   </data>
+<data name="BankTransferRejectNoteInvalid" xml:space="preserve">
+    <value>Укажите причину, не длиннее {0} символов.</value>
+  </data>
 <data name="InvoicePaymentNotesInvalid" xml:space="preserve">
     <value>Примечания не должны превышать {0} символов.</value>
   </data>

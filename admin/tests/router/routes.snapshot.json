@@ -213,6 +213,10 @@
             "component": "PaymentClaimsView.vue"
           },
           {
+            "path": "bank-transfers",
+            "component": "PendingBankTransfersView.vue"
+          },
+          {
             "path": "transactions",
             "component": "TransactionsListView.vue"
           },

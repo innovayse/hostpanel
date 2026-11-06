@@ -21,6 +21,8 @@ export enum AppRoute {
   BillingInvoices = '/billing/invoices',
   /** The `/billing/offline-cc` screen. */
   BillingOfflineCc = '/billing/offline-cc',
+  /** The `/billing/bank-transfers` screen. */
+  BillingBankTransfers = '/billing/bank-transfers',
   /** The `/billing/payment-claims` screen. */
   BillingPaymentClaims = '/billing/payment-claims',
   /** The `/billing/quotes` screen. */

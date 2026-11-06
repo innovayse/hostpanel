@@ -585,6 +585,19 @@ export const GATEWAY_METHODS = [
   { module: 'bank_transfer', displayName: 'Bank transfer' },
 ]
 
+/** The bank details and reference the stub answers once the signed-in client has chosen the bank transfer for {@link INVOICE}. */
+export const BANK_TRANSFER_DETAILS = {
+  invoiceId: 501,
+  reference: 'INV-501',
+  amountDue: 5,
+  currency: 'USD',
+  accountName: 'E2E Hosting LLC',
+  iban: 'AM00 E2E0 0000 0000',
+  swift: 'E2EAAMXX',
+  bankName: 'E2E Bank',
+  instructions: 'Pay within five days.',
+}
+
 /** The hosted card gateway the stub adds to the gateway list once a spec enables it (`POST /__e2e/gateways`). */
 export const HOSTED_GATEWAY = { module: 'e2e_card_gateway', displayName: 'E2E Card Gateway' }
 

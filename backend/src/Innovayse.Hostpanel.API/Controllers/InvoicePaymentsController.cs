@@ -1,10 +1,13 @@
 using Innovayse.Hostpanel.Application.Billing.Commands.AddInvoicePayment;
 using Innovayse.Hostpanel.Application.Billing.Commands.ApplyInvoiceCredit;
 using Innovayse.Hostpanel.Application.Billing.Commands.BulkInvoiceAction;
+using Innovayse.Hostpanel.Application.Billing.Commands.ConfirmBankTransfer;
+using Innovayse.Hostpanel.Application.Billing.Commands.RejectBankTransfer;
 using Innovayse.Hostpanel.Application.Billing.Commands.RefundInvoicePayment;
 using Innovayse.Hostpanel.Application.Billing.Commands.RemoveInvoiceCredit;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Queries.ListInvoicePaymentClaims;
+using Innovayse.Hostpanel.Application.Billing.Queries.ListPendingBankTransfers;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
@@ -172,6 +175,76 @@ public sealed class InvoicePaymentsController : BaseApiController
         [FromQuery] ListInvoicePaymentClaimsQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<PaginatedList<InvoicePaymentClaimDto>>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Lists the manual bank transfers that wait for staff to confirm or reject them, the one waiting longest first.</summary>
+    /// <param name="query">The page and page size.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with a page of waiting transfers; 400 when a value is refused; 401 when the caller is not signed in;
+    /// 403 when the caller's role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("bank-transfers/pending")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(typeof(PaginatedList<PendingBankTransferDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ListPendingBankTransfersAsync(
+        [FromQuery] ListPendingBankTransfersQuery query, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<PaginatedList<PendingBankTransferDto>>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Confirms that the manual bank transfer of an invoice arrived: the invoice is paid through the same path as any other
+    /// payment, so the payment event, the ledger and the order's fulfilment follow.
+    /// </summary>
+    /// <param name="id">Invoice primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when confirmed; 400 when the id is not positive; 404 with <c>INVOICE_NOT_FOUND</c> when the id names no invoice;
+    /// 409 with <c>INVOICE_BANK_TRANSFER_NOT_PENDING</c> when no transfer waits on it (a second confirm lands here) or with
+    /// <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> while a stored card charge of the invoice has not finished;
+    /// 401 without a session; 403 for a caller who is not an admin; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/bank-transfer/confirm")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ConfirmBankTransferAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new ConfirmBankTransferCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Rejects the manual bank transfer of an invoice: the invoice is open again and the client is told why.</summary>
+    /// <param name="id">Invoice primary key; wins over any invoice id in the body.</param>
+    /// <param name="command">The reason the client reads.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when rejected; 400 when the id is not positive or the note is missing or too long; 404 with
+    /// <c>INVOICE_NOT_FOUND</c> when the id names no invoice; 409 with <c>INVOICE_BANK_TRANSFER_NOT_PENDING</c> when no
+    /// transfer waits on it; 401 without a session; 403 for a caller who is not an admin; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/bank-transfer/reject")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RejectBankTransferAsync(
+        int id, [FromBody] RejectBankTransferCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command with { InvoiceId = id }, ct);
         return HandleResult(outcome);
     }
 }

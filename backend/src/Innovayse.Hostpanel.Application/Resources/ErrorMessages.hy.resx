@@ -748,6 +748,12 @@
   <data name="INVOICE_ITEM_NOT_FOUND" xml:space="preserve">
     <value>Այս հաշիվ-ապրանքագրում այդպիսի տող չկա։</value>
   </data>
+  <data name="INVOICE_BANK_TRANSFER_NOT_PENDING" xml:space="preserve">
+    <value>Այս հաշվի համար սպասվող բանկային փոխանցում չկա, հաստատելու կամ մերժելու ոչինչ չկա։</value>
+  </data>
+  <data name="BANK_TRANSFER_NOT_AVAILABLE" xml:space="preserve">
+    <value>Բանկային փոխանցումն այս պահին հասանելի չէ։ Ընտրեք վճարման այլ եղանակ։</value>
+  </data>
   <data name="INVOICE_NOT_UNPAID" xml:space="preserve">
     <value>Ժամկետանց կարելի է նշել միայն չվճարված հաշիվ-ապրանքագիրը։</value>
   </data>

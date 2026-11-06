@@ -34,6 +34,13 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// </summary>
     public static readonly InvoiceStatus[] PaidStatuses = [InvoiceStatus.Paid, InvoiceStatus.PartiallyRefunded];
 
+    /// <summary>
+    /// How long a started gateway session is considered "live" (matches the hosted gateway's own hosted-page session
+    /// lifetime). A second hosted payment for the same invoice, or a switch to a bank transfer, inside this window is
+    /// refused unless the existing session is already known to be Declined.
+    /// </summary>
+    public static readonly TimeSpan GatewaySessionWindow = TimeSpan.FromMinutes(20);
+
     /// <summary>Gets the FK to the owning client.</summary>
     public int ClientId { get; private set; }
 
@@ -151,6 +158,13 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <summary>Gets the amount, in the invoice currency, of the refund <see cref="PendingRefundId"/> belongs to; null when none is pending.</summary>
     public decimal? PendingRefundAmount { get; private set; }
 
+    /// <summary>
+    /// Gets the UTC moment the client chose to pay by manual bank transfer and the invoice began waiting for staff to
+    /// confirm the money arrived; null when it is not waiting for one. It is what tells a bank transfer wait apart from
+    /// any other <see cref="InvoiceStatus.PaymentPending"/> invoice, and every way out of the wait clears it.
+    /// </summary>
+    public DateTimeOffset? BankTransferRequestedAt { get; private set; }
+
     /// <summary>Gets optional notes for this invoice.</summary>
     public string? Notes { get; private set; }
 
@@ -192,6 +206,34 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
 
     /// <summary>Gets whether the invoice is open for payment: Unpaid or Overdue.</summary>
     public bool IsPayable => Status is InvoiceStatus.Unpaid or InvoiceStatus.Overdue;
+
+    /// <summary>
+    /// Gets the filter form of <see cref="IsBankTransferPending"/> for queries, so the admin list of transfers to confirm
+    /// and the guard of the confirm and reject actions can never disagree on which invoices are waiting.
+    /// </summary>
+    public static Expression<Func<Invoice, bool>> BankTransferPendingFilter =>
+        i => i.Status == InvoiceStatus.PaymentPending && i.BankTransferRequestedAt != null;
+
+    /// <summary>
+    /// Gets whether the client chose a manual bank transfer and staff have not yet confirmed or rejected it: the invoice is
+    /// <see cref="InvoiceStatus.PaymentPending"/> and holds a <see cref="BankTransferRequestedAt"/>.
+    /// </summary>
+    public bool IsBankTransferPending => Status == InvoiceStatus.PaymentPending && BankTransferRequestedAt is not null;
+
+    /// <summary>
+    /// Whether the latest hosted-gateway session was started less than <see cref="GatewaySessionWindow"/> ago, so the payer
+    /// may still be paying through it.
+    /// </summary>
+    /// <param name="now">The moment of the request (UTC).</param>
+    /// <returns><see langword="true"/> when a session was started and its window has not passed.</returns>
+    public bool IsInsideGatewaySessionWindow(DateTimeOffset now) =>
+        GatewayStartedAt is { } startedAt && now - startedAt < GatewaySessionWindow;
+
+    /// <summary>
+    /// Gets the reference the payer writes on the bank transfer, built from the invoice number alone so the internal client
+    /// id never reaches the payer; staff trace it back to the invoice, and through it to the client.
+    /// </summary>
+    public string BankTransferReference => $"INV-{Id}";
 
     /// <summary>
     /// Gets whether the invoice was paid and still holds at least part of that money: Paid or
@@ -851,6 +893,79 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         return Transaction.CreateInvoicePayment(this, paidAt, paymentMethod, reference, taken, 0m, source);
     }
 
+    /// <summary>
+    /// Records that the client chose to pay by manual bank transfer: the invoice leaves Unpaid or Overdue for
+    /// <see cref="InvoiceStatus.PaymentPending"/> and waits for staff to confirm the money arrived. Choosing it again while
+    /// it already waits changes nothing, so a double click is harmless. The invoice is not payable while it waits, so no
+    /// other payment can start beside the transfer.
+    /// </summary>
+    /// <param name="at">When the client chose it (UTC).</param>
+    /// <returns>
+    /// <see langword="true"/> when the invoice began waiting now and the caller should announce it;
+    /// <see langword="false"/> when it was already waiting.
+    /// </returns>
+    /// <exception cref="DomainRuleException"><c>INVOICE_NOT_PAYABLE</c> when the invoice is neither Unpaid nor Overdue, or owes nothing.</exception>
+    public bool RequestBankTransfer(DateTimeOffset at)
+    {
+        if (IsBankTransferPending)
+        {
+            return false;
+        }
+
+        EnsurePayable();
+        if (AmountDue <= 0m)
+        {
+            throw new DomainRuleException(BillingErrors.InvoiceNotPayable, "Invoice owes nothing, so there is nothing to transfer.");
+        }
+
+        Status = InvoiceStatus.PaymentPending;
+        BankTransferRequestedAt = at;
+        AddDomainEvent(new BankTransferRequestedEvent(Id, ClientId, BankTransferReference) { OccurredAt = at });
+        return true;
+    }
+
+    /// <summary>
+    /// Confirms that the manual bank transfer arrived: the invoice returns to open for the length of this call and is settled
+    /// through <see cref="Settle"/>, the one path every full payment takes, so the payment history, the ledger row,
+    /// <see cref="PaymentReceivedEvent"/> and fulfilment behave exactly as for any other payment.
+    /// </summary>
+    /// <param name="paidAt">When staff confirmed the money (UTC).</param>
+    /// <returns>The client ledger row for the amount taken, to be saved with the invoice; null when nothing was due.</returns>
+    /// <exception cref="DomainRuleException">
+    /// <c>INVOICE_BANK_TRANSFER_NOT_PENDING</c> when no bank transfer is waiting, which is also the answer to a second confirm.
+    /// </exception>
+    public Transaction? ConfirmBankTransfer(DateTimeOffset paidAt)
+    {
+        EnsureBankTransferPending();
+
+        // Back to open first: Settle takes money only from an open invoice, and the wait ends with this call either way.
+        Status = InvoiceStatus.Unpaid;
+        BankTransferRequestedAt = null;
+        var ledgerRow = Settle(PaymentMethodNames.BankTransfer, BankTransferReference, paidAt, TransactionSource.Manual);
+        AddDomainEvent(new BankTransferConfirmedEvent(Id, ClientId, BankTransferReference) { OccurredAt = paidAt });
+        return ledgerRow;
+    }
+
+    /// <summary>
+    /// Rejects the manual bank transfer: the money did not arrive. The invoice returns to <see cref="InvoiceStatus.Unpaid"/>,
+    /// so the client can pay again by any method, and the reason is announced for the client's mail.
+    /// </summary>
+    /// <param name="note">The reason staff give the client.</param>
+    /// <param name="at">When staff rejected it (UTC).</param>
+    /// <exception cref="DomainRuleException">
+    /// <c>INVOICE_BANK_TRANSFER_NOT_PENDING</c> when no bank transfer is waiting.
+    /// </exception>
+    public void RejectBankTransfer(string note, DateTimeOffset at)
+    {
+        ArgumentNullException.ThrowIfNull(note);
+
+        EnsureBankTransferPending();
+
+        Status = InvoiceStatus.Unpaid;
+        BankTransferRequestedAt = null;
+        AddDomainEvent(new BankTransferRejectedEvent(Id, ClientId, BankTransferReference, note) { OccurredAt = at });
+    }
+
     /// <summary>Clears the stored hosted-gateway session fields and the reconciliation bookkeeping of that session.</summary>
     private void ClearGatewaySession()
     {
@@ -1231,6 +1346,17 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         {
             throw new DomainRuleException(
                 BillingErrors.InvoiceNotPaid, $"Only Paid or PartiallyRefunded invoices can be refunded; current status is {Status}.");
+        }
+    }
+
+    /// <summary>Refuses a confirm or a reject while no bank transfer waits on the invoice.</summary>
+    /// <exception cref="DomainRuleException">The invoice is not waiting for a bank transfer.</exception>
+    private void EnsureBankTransferPending()
+    {
+        if (!IsBankTransferPending)
+        {
+            throw new DomainRuleException(
+                BillingErrors.InvoiceBankTransferNotPending, $"No bank transfer is waiting on an invoice with status {Status}.");
         }
     }
 

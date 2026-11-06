@@ -20,6 +20,7 @@
     "disputes": "Disputes",
     "gatewayLog": "Gateway Log",
     "paymentClaims": "Payment Claims",
+    "bankTransfers": "Pending Bank Transfers",
     "renewals": "Upcoming Renewals"
   },
   "reports": "Reports",

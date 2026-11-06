@@ -8,6 +8,7 @@
  */
 
 import { apiFetch } from '~/composables/useApi'
+import type { BankTransferDetails } from '~/types/banktransferdetails'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { GatewayCompletion } from '~/types/gatewaycompletion'
 import type { GatewayMethod } from '~/types/gatewaymethod'
@@ -125,6 +126,30 @@ export const useBillingApi = () => {
     )
 
   /**
+   * Chooses manual bank transfer for an invoice: the invoice waits for staff to confirm the money, and the answer carries
+   * the bank details and the reference to write on the transfer. Choosing it again answers the same details.
+   *
+   * @param invoiceId - Invoice to pay by bank transfer.
+   * @returns The bank details and the reference.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const selectBankTransfer = (invoiceId: string | number): Promise<BankTransferDetails> =>
+    apiFetch<BankTransferDetails>(`/api/portal/client/invoices/${invoiceId}/bank-transfer`, {
+      method: HttpMethod.Post,
+      body: {}
+    })
+
+  /**
+   * Reads the bank details and the reference of the transfer waiting on an invoice.
+   *
+   * @param invoiceId - Invoice the transfer waits on.
+   * @returns The bank details and the reference.
+   * @throws Whatever `apiFetch` throws; a refusal when no transfer waits.
+   */
+  const fetchBankTransfer = (invoiceId: string | number): Promise<BankTransferDetails> =>
+    apiFetch<BankTransferDetails>(`/api/portal/client/invoices/${invoiceId}/bank-transfer`)
+
+  /**
    * Reads an invoice as a PDF.
    *
    * No `responseType` is set: ofetch picks it from the answer, so the PDF arrives as a `Blob`
@@ -144,6 +169,8 @@ export const useBillingApi = () => {
     createOrder,
     startOrderGatewayPayment,
     startInvoiceGatewayPayment,
+    selectBankTransfer,
+    fetchBankTransfer,
     completeGatewayPayment
   }
 }

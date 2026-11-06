@@ -748,6 +748,12 @@
   <data name="INVOICE_ITEM_NOT_FOUND" xml:space="preserve">
     <value>На этом счёте нет такой позиции.</value>
   </data>
+  <data name="INVOICE_BANK_TRANSFER_NOT_PENDING" xml:space="preserve">
+    <value>По этому счёту нет ожидающего банковского перевода, подтверждать или отклонять нечего.</value>
+  </data>
+  <data name="BANK_TRANSFER_NOT_AVAILABLE" xml:space="preserve">
+    <value>Банковский перевод сейчас недоступен. Выберите другой способ оплаты.</value>
+  </data>
   <data name="INVOICE_NOT_UNPAID" xml:space="preserve">
     <value>Просроченным можно пометить только неоплаченный счёт.</value>
   </data>

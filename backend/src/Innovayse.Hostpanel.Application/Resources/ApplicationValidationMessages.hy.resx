@@ -265,6 +265,9 @@
 <data name="InvoicePaymentAmountInvalid" xml:space="preserve">
     <value>Վճարման գումարը պետք է լինի զրոյից մեծ։</value>
   </data>
+<data name="BankTransferRejectNoteInvalid" xml:space="preserve">
+    <value>Պատճառը պարտադիր է և պետք է լինի առավելագույնը {0} նիշ։</value>
+  </data>
 <data name="InvoicePaymentNotesInvalid" xml:space="preserve">
     <value>Նշումները կարող են ունենալ առավելագույնը {0} նիշ։</value>
   </data>

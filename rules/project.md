@@ -2081,7 +2081,7 @@ Never spread one of these, and never restructure as a side effect of a feature.
   endpoints). The embedded flow (`create-payment-intent`, `confirm-payment`, `POST api/me/invoices/{id}/pay`,
   `api/me/payment-methods`) is gone; a ledger row recorded as `Card` with no hosted session behind it is refunded by a
   manual refund (`INVOICE_NOT_GATEWAY_PAID` for a Gateway refund). The plugin's stored `integration:<slug>:*` settings and
-  the payment rows are untouched and read by the plugin under the same slug.
+  the payment rows are untouched and read by the plugin under the same slug. Manual bank transfer is built into the host (module `bank_transfer`, settings under the `bank-transfer` integration) while bank gateways are plugins.
 - **Vendor names that remain, on purpose.** Integration slugs (`cwp`, ...) in
   `IntegrationSlugs` / `BuiltInPaymentModules` and the `Integrations/<Vendor>/` adapter folders are
   plugin identifiers: they are stored in settings rows, sent in URLs (`/api/admin/integrations/cwp`)

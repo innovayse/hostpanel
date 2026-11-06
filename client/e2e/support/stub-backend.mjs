@@ -29,8 +29,9 @@
  *   so only the spec for the verification banner turns it off, until the next reset;
  * - `POST /__e2e/account`: overrides fields of the signed-in person's account (`GET /api/auth/me`), such as
  *   `clientPermissions` or `clientId`, so a spec can sign in a member without a permission or a first-time buyer, until the next reset;
- * - `POST /__e2e/gateways`: adds the hosted card gateway to the gateway list (`GET /api/payment-methods`); only bank
- *   transfer is offered by default, so only the specs for the saved methods and the invoice payment turn it on, until the next reset;
+ * - `POST /__e2e/gateways`: adds the hosted card gateway to the gateway list (`GET /api/payment-methods`) and, with
+ *   `bankTransfer: false`, takes the bank transfer off it; only bank transfer is offered by default, so only the specs for the
+ *   saved methods and the invoice payment turn the card on, until the next reset;
  * - `POST /__e2e/reset`: clears the log, the scripted answers, the settings overrides, demo mode and
  *   everything a spec changed: tickets, profile, services, the domain, payment methods, contacts,
  *   the team, the saved payment methods, the hosted gateway and the two-factor flag.
@@ -46,6 +47,7 @@ import {
   ACCESS_TOKEN,
   ACCOUNT,
   ANNOUNCEMENT,
+  BANK_TRANSFER_DETAILS,
   FAQS,
   LOCATIONS,
   PARTNERS,
@@ -181,6 +183,12 @@ let demoEnabled = false
 
 /** Whether the gateway list also offers the hosted card gateway; off by default, a spec turns it on, a reset turns it off. */
 let hostedGatewayEnabled = false
+
+/** Whether the gateway list offers the bank transfer; on by default, a spec turns it off, a reset turns it on. */
+let bankTransferEnabled = true
+
+/** Whether the signed-in client has chosen the bank transfer for {@link INVOICE}, which then reads as PaymentPending; a reset clears it. */
+let bankTransferChosen = false
 
 /**
  * Builds the saved payment methods the stub starts with, so a reset can restore them.
@@ -537,7 +545,8 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
     return true
   }
   if (isGet && path === '/api/payment-methods') {
-    send(res, 200, hostedGatewayEnabled ? [...GATEWAY_METHODS, HOSTED_GATEWAY] : GATEWAY_METHODS)
+    const offered = bankTransferEnabled ? GATEWAY_METHODS : []
+    send(res, 200, hostedGatewayEnabled ? [...offered, HOSTED_GATEWAY] : offered)
     return true
   }
 
@@ -727,7 +736,21 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
     return true
   }
   if (isGet && path === `/api/me/invoices/${INVOICE.id}`) {
-    send(res, 200, INVOICE)
+    send(res, 200, bankTransferChosen ? { ...INVOICE, status: 'PaymentPending' } : INVOICE)
+    return true
+  }
+  // Bank transfer: choosing it moves the invoice to waiting and answers the bank details; reading the details is refused until then.
+  if (method === 'POST' && path === `/api/me/invoices/${INVOICE.id}/bank-transfer`) {
+    bankTransferChosen = true
+    send(res, 200, BANK_TRANSFER_DETAILS)
+    return true
+  }
+  if (isGet && path === `/api/me/invoices/${INVOICE.id}/bank-transfer`) {
+    if (bankTransferChosen) {
+      send(res, 200, BANK_TRANSFER_DETAILS)
+    } else {
+      sendProblem(res, 409, 'INVOICE_BANK_TRANSFER_NOT_PENDING', 'E2E: no bank transfer is waiting on this invoice.')
+    }
     return true
   }
   // Hosted-gateway return: the invoice id picks the outcome (an unknown id is a 404, so the page cannot tell); the state is spelled as the API sends its enum.
@@ -1065,6 +1088,8 @@ const server = createServer(async (req, res) => {
     settingOverrides.clear()
     demoEnabled = false
     hostedGatewayEnabled = false
+    bankTransferEnabled = true
+    bankTransferChosen = false
     storedMethods = seedStoredMethods()
     slidesEnabled = false
     pluginSlots = {}
@@ -1110,6 +1135,7 @@ const server = createServer(async (req, res) => {
   if (path === '/__e2e/gateways') {
     const gateways = await readJson(req)
     hostedGatewayEnabled = gateways.hosted === true
+    bankTransferEnabled = gateways.bankTransfer !== false
     send(res, 204)
     return
   }

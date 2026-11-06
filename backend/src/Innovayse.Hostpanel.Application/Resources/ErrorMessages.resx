@@ -748,6 +748,12 @@
   <data name="INVOICE_ITEM_NOT_FOUND" xml:space="preserve">
     <value>No such line item on this invoice.</value>
   </data>
+  <data name="INVOICE_BANK_TRANSFER_NOT_PENDING" xml:space="preserve">
+    <value>No bank transfer is waiting on this invoice, so there is nothing to confirm or reject.</value>
+  </data>
+  <data name="BANK_TRANSFER_NOT_AVAILABLE" xml:space="preserve">
+    <value>Bank transfer is not available right now. Please choose another payment method.</value>
+  </data>
   <data name="INVOICE_NOT_UNPAID" xml:space="preserve">
     <value>Only an unpaid invoice can be marked overdue.</value>
   </data>

@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Billing.Constants;
 using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
 
@@ -42,10 +43,11 @@ public static class IntegrationCatalogue
     {
         [IntegrationSlugs.BankTransfer] = new("Bank Transfer", PaymentGateways,
             [
-                new("account_name", "Account Name", Text, Required: false),
-                new("iban", "IBAN", Text, Required: false),
-                new("bank_name", "Bank Name", Text, Required: false),
-                new("instructions", "Payment Instructions", TextArea, Required: false),
+                new(BankTransferFields.AccountName, "Account Name", Text, Required: false),
+                new(BankTransferFields.Iban, "IBAN", Text, Required: false),
+                new(BankTransferFields.Swift, "SWIFT / BIC", Text, Required: false),
+                new(BankTransferFields.BankName, "Bank Name", Text, Required: false),
+                new(BankTransferFields.Instructions, "Payment Instructions", TextArea, Required: false),
             ],
             []),
         [IntegrationSlugs.Namecheap] = new("Namecheap", DomainRegistrars,

@@ -1198,6 +1198,15 @@ public static class HostpanelErrorCodes
     public const string INVOICE_NOT_UNPAID = Domain.Billing.BillingErrors.InvoiceNotUnpaid;
 
     /// <summary>
+    /// No manual bank transfer is waiting on the invoice, so there is nothing to confirm or reject; also the answer to a
+    /// second confirm of the same transfer (409): <see cref="Domain.Billing.Invoice.ConfirmBankTransfer"/>.
+    /// </summary>
+    public const string INVOICE_BANK_TRANSFER_NOT_PENDING = Domain.Billing.BillingErrors.InvoiceBankTransferNotPending;
+
+    /// <summary>The admin has not switched manual bank transfer on, so the client cannot choose it (409).</summary>
+    public const string BANK_TRANSFER_NOT_AVAILABLE = "BANK_TRANSFER_NOT_AVAILABLE";
+
+    /// <summary>
     /// The invoice is not eligible to be marked lapsed (400): <see cref="Domain.Billing.Invoice.MarkLapsed"/>
     /// requires Overdue.
     /// </summary>

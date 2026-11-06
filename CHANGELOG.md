@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Billing: manual bank transfer. A client can choose it on the checkout and invoice pages: the invoice moves to Payment Pending and shows the bank details (account holder, bank, IBAN, SWIFT, instructions) with copy buttons and a reference built from the invoice number, and the client is emailed the same details. Staff get a notice, and a Pending Bank Transfers page under Billing lists each transfer to confirm (the invoice is paid like any other payment, so the receipt, the ledger and the order fulfilment follow) or reject with a note the client reads (the invoice is open again). A second confirm of the same transfer is refused. The bank details, including the new SWIFT field, are edited in the Bank Transfer integration settings. Uploading a payment receipt is not part of this change.
+
 - Admin panel: an Upcoming Renewals page under Billing lists the services and domains renewing in the next 30, 60 or 90 days. A row switches automatic renewal on or off and raises that client's renewal invoice by hand. A third list shows paid domain renewal lines left claimed after the registrar gave no clear answer; staff release one after checking the registrar, and the release is written to the client's activity log.
 
 ### Fixed

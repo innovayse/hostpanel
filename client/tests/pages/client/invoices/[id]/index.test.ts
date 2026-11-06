@@ -13,6 +13,7 @@ import { InvoiceTransactionType } from '~/types/invoicetransactiontype'
 const billingApi = vi.hoisted(() => ({
   fetchInvoice: vi.fn(),
   fetchInvoicePdf: vi.fn(),
+  fetchBankTransfer: vi.fn(),
 }))
 
 /** The mocked browser save. */
@@ -38,8 +39,29 @@ describe('invoice page', () => {
   beforeEach(() => {
     billingApi.fetchInvoice.mockReset()
     billingApi.fetchInvoicePdf.mockReset()
+    billingApi.fetchBankTransfer.mockReset()
     saveBlob.mockReset()
     stubClientRuntime({ params: { id: '41' } })
+  })
+
+  it('shows the bank details of an invoice that waits for a transfer and no pay button', async () => {
+    billingApi.fetchInvoice.mockResolvedValue(invoice({ status: InvoiceStatus.PaymentPending }))
+    billingApi.fetchBankTransfer.mockResolvedValue({ invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null })
+
+    const wrapper = await mountPage(InvoicePage)
+
+    expect(billingApi.fetchBankTransfer).toHaveBeenCalledWith('41')
+    expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(false)
+  })
+
+  it('shows no bank details for an invoice that owes money and waits for nothing', async () => {
+    billingApi.fetchInvoice.mockResolvedValue(invoice())
+
+    const wrapper = await mountPage(InvoicePage)
+
+    expect(billingApi.fetchBankTransfer).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(false)
   })
 
   it('reads this invoice and shows its heading and line items', async () => {

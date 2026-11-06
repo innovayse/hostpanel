@@ -46,6 +46,12 @@ public static class BillingErrors
     public const string InvoiceNotUnpaid = "INVOICE_NOT_UNPAID";
 
     /// <summary>
+    /// No manual bank transfer is waiting on the invoice (409): <see cref="Invoice.ConfirmBankTransfer"/> and
+    /// <see cref="Invoice.RejectBankTransfer"/>. A second confirm of the same transfer answers with it too.
+    /// </summary>
+    public const string InvoiceBankTransferNotPending = "INVOICE_BANK_TRANSFER_NOT_PENDING";
+
+    /// <summary>
     /// The invoice is not eligible to be marked lapsed (400): <see cref="Invoice.MarkLapsed"/>
     /// requires <c>Overdue</c>.
     /// </summary>

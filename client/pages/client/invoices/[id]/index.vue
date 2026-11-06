@@ -49,6 +49,12 @@
         </UiGrid>
       </UiCard>
 
+      <!-- The bank details of a transfer the client chose and staff have not confirmed yet. -->
+      <UiAlert v-if="paymentStore.bankTransferError" variant="error" data-testid="invoice-bank-transfer-error">
+        {{ paymentStore.bankTransferError }}
+      </UiAlert>
+      <ClientInvoicesBankTransferCard v-if="paymentStore.bankTransfer" :details="paymentStore.bankTransfer" />
+
       <UiTable data-testid="invoice-items">
         <UiTableHead>
           <UiTableRow :hoverable="false">
@@ -125,7 +131,11 @@ const paymentStore = useInvoicePaymentStore()
 /** Loading flag of the data this page reads. */
 const { pending } = await useAsyncData(
   () => `client-invoice-${String(route.params.id)}`,
-  () => paymentStore.loadInvoice(String(route.params.id))
+  async () => {
+    const loaded = await paymentStore.loadInvoice(String(route.params.id))
+    await paymentStore.loadBankTransfer(String(route.params.id))
+    return loaded
+  }
 )
 
 /** The invoice being read; null until loaded or after a failed read. */

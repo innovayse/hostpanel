@@ -468,6 +468,14 @@ docker/                              compose set (shared·dev·prod·platform), 
       condition route, `visibleWhen` outside a block) and `ViewFollowUpInvalid` (`PLUGIN_VIEW_FOLLOW_UP_INVALID`: a bad
       `followUp` shape or place, a `refresh` id no block carries, `resetOnSuccess` not a boolean or outside a `submit`),
       each with its en/ru/hy sentence, 400.
+  - **Action body from page data (#940, no schema change).** `bodySource` on an action block of the client area:
+    exactly a `GET` `route` and 1 to 10 `fields` (a camelCase body member, not a `PluginViews.LabelProperties` name, and a
+    dotted path). The action has an `id`, calls `POST`, `PUT` or `PATCH`, and a `labelSource` reads the same route, because
+    the panel takes label and body from one read so a button cannot send a value other than its label's. Anything else is
+    `PLUGIN_VIEW_ACTION_BODY_INVALID` (`ViewActionBodyInvalid`, `CheckActionBody` in `PluginViewDocumentReader`; the member names are the reader's own constants until the SDK's `PluginViews` documents them). In the
+    client (`ActionBlock.vue`, `pluginActionBody`) the button is disabled until every member is read as a scalar, the body
+    is fixed at the click, and a refused call reads the data and `refresh` again. Absent, an action posts `{}`. A result
+    card's action carries a literal `body` instead (`readResultBody`), and a malformed one drops that action.
   - **Layout, split and preview (#910, SDK 3.2.0, schema stays 1).** A client page's `layout` is a `PluginPageLayouts`
     value and the page answers it (`PluginPageViewDto.Layout`, `standard` when absent); another value or any layout on an
     admin page is `PLUGIN_PAGE_LAYOUT_UNKNOWN` (`CheckPageLayouts` in the manifest validator). `split` holds exactly two

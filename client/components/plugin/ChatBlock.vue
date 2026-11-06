@@ -407,17 +407,13 @@ const apply = (target: PluginChatMessage, event: PluginStreamEvent): void => {
 }
 
 /**
- * Sends the draft and shows the reply as it streams.
+ * Sends a message and shows the reply as it streams.
  *
+ * @param text - The message, already trimmed.
  * @returns Resolves when the reply has ended, been stopped or failed.
  */
-const send = async (): Promise<void> => {
-  const text = draft.value.trim()
-  if (!text || streaming.value) {
-    return
-  }
+const sendMessage = async (text: string): Promise<void> => {
   add(PluginChatRole.User, text)
-  draft.value = ''
   const target = add(PluginChatRole.Assistant, '')
   const asked = generation
   const running = new AbortController()
@@ -461,15 +457,29 @@ const send = async (): Promise<void> => {
 }
 
 /**
- * Sends the conversation's last message again, for a card's "try again".
+ * Sends the draft and empties the field.
+ *
+ * @returns Resolves when the reply has ended, been stopped or failed.
+ */
+const send = async (): Promise<void> => {
+  const text = draft.value.trim()
+  if (!text || streaming.value) {
+    return
+  }
+  draft.value = ''
+  await sendMessage(text)
+}
+
+/**
+ * Sends the conversation's last message again, for a card's "try again". It never passes through the field, so what the
+ * reader has started typing there stays.
  *
  * @returns Resolves when the reply has ended.
  */
 const resend = async (): Promise<void> => {
   const last = [...messages.value].reverse().find(message => message.role === PluginChatRole.User)
-  if (last) {
-    draft.value = last.text
-    await send()
+  if (last && !streaming.value) {
+    await sendMessage(last.text)
   }
 }
 

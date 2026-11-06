@@ -1,8 +1,8 @@
 /**
  * Server middleware: narrows `frame-src` on the document of a plugin page.
  *
- * The edge CSP keeps `frame-src 'self' https:`, because public pages embed operator content and a client's domains
- * cannot be listed statically. Policies intersect in a browser, so this adds a second header holding only `frame-src`:
+ * The edges this repository ships keep `frame-src 'self' https:`, because public pages embed operator content and a
+ * client's domains cannot be listed statically; an edge with no CSP leaves this header as the only policy. Policies intersect in a browser, so this adds a second header holding only `frame-src`:
  * the origins the API computed for this visitor and this page, and `'none'` whenever anything is unsure (no session, a
  * refused or failed read, an origin of an unexpected shape). A failure never blocks the page, it only closes frames.
  * `'self'` is left out on purpose: nothing on these pages frames the panel.

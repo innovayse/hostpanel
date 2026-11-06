@@ -10,6 +10,12 @@ import { parseMarkdownText } from '~/utils/ui/markdownText'
 import type { RichNode } from '~/utils/ui/richText'
 import { UiRichNodeType } from '~/utils/ui/enums'
 
+/** A line long enough that quadratic scanning takes tens of seconds, while a linear one takes milliseconds. */
+const LONG_RUN = 200_000
+
+/** Far above any linear parse on a loaded runner and far below the quadratic one, so the check does not flake. */
+const LINEAR_BUDGET_MS = 3_000
+
 /**
  * Writes a tree in a compact form, so an expectation reads like the output.
  *
@@ -75,5 +81,22 @@ describe('parseMarkdownText', () => {
 
     expect(() => parseMarkdownText(deep + nested + '*'.repeat(50000))).not.toThrow()
     expect(performance.now() - started).toBeLessThan(2000)
+  })
+
+  it.each([
+    ['a heading with a long run of inner spaces', `# a${' '.repeat(LONG_RUN)}b`],
+    ['a heading with a long run of trailing spaces', `# a${' '.repeat(LONG_RUN)}`],
+    ['a heading with a line separator past the spaces', `# ${' '.repeat(LONG_RUN)}\u2028b`],
+    ['a bullet with a line separator past the spaces', `- ${' '.repeat(LONG_RUN)}\u2028b`],
+    ['a numbered line with a line separator past the spaces', `1. ${' '.repeat(LONG_RUN)}\u2028b`],
+  ])('reads %s in linear time', (_name, line) => {
+    const started = performance.now()
+
+    expect(parseMarkdownText(line)).toHaveLength(1)
+    expect(performance.now() - started).toBeLessThan(LINEAR_BUDGET_MS)
+  })
+
+  it('still trims a heading and reads its text', () => {
+    expect(shape(parseMarkdownText('## Title   '))).toBe('h4(Title)')
   })
 })

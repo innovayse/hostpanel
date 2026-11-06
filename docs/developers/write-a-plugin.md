@@ -429,7 +429,33 @@ the three routes in its `api` block and the label keys in `locales.en`:
 host's choice, not yours: every 3 seconds, at most 20 times (about a minute). A long job should report its own state on
 the `until` route rather than expect more time.
 
-A view that breaks these rules is refused at install and skipped at startup: `PLUGIN_VIEW_CONDITION_INVALID` (a bad
+**`bodySource`** goes on an action block in the client area and makes the button send what the reader saw. It holds
+exactly a `GET` `route` and 1 to 10 `fields`, each a body member (a camelCase name, not a label member such as `title`)
+and the dotted path it is read from. Without it an action posts `{}`, as before.
+
+```json
+{
+  "kind": "action",
+  "id": "publish",
+  "label": "site.publish",
+  "route": { "method": "post", "path": "/services/{serviceId}/site/publish" },
+  "labelSource": { "route": { "method": "get", "path": "/services/{serviceId}/site" }, "field": "publishLabel" },
+  "bodySource": {
+    "route": { "method": "get", "path": "/services/{serviceId}/site" },
+    "fields": { "expectedVersion": "publishVersion" }
+  }
+}
+```
+
+The action needs an `id` and a `POST`, `PUT` or `PATCH` route, and a `labelSource` must read the same route: the panel
+makes one read for both, so the button sends the value on its label. The button is disabled until every member has been
+read as a string, number or boolean. The body is fixed at the click. A refused call reads the data and the action's
+`refresh` blocks again, so answer a conflict with your own sentence; your route, not the panel, decides whether the value
+is still current. A result card's action in a chat event carries a literal `body` of the same shape; an event with a
+malformed one loses that action.
+
+A view that breaks these rules is refused at install and skipped at startup: `PLUGIN_VIEW_ACTION_BODY_INVALID` (a bad
+`bodySource`, or one in the wrong place), `PLUGIN_VIEW_CONDITION_INVALID` (a bad
 condition, a condition route that is not `GET`, `visibleWhen` outside a block), `PLUGIN_VIEW_FOLLOW_UP_INVALID` (a bad
 `followUp` or one in the wrong place, a `refresh` id no block carries, `resetOnSuccess` that is not a boolean or not in a
 `submit`), and `PLUGIN_VIEW_ROUTE_UNDECLARED` for a condition route the manifest does not declare.

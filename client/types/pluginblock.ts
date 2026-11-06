@@ -26,6 +26,17 @@ export interface PluginSource {
   field?: string
 }
 
+/** The body of an action's call, built from a route's reply; `fields` maps each body member to a dotted path into it. */
+export interface PluginActionBodySource {
+  /** The GET route read. */
+  route: PluginViewRoute
+  /** The body members and where each is read from. */
+  fields: Record<string, string>
+}
+
+/** One value of a body built from page data. */
+export type PluginActionBodyValue = string | number | boolean
+
 /** A plugin page to open, its parameters taken from fields of the row or reply at hand. */
 export interface PluginPageLink {
   /** The page id. */
@@ -157,6 +168,10 @@ export interface PluginActionBlock extends PluginBlockBase {
   labelSource?: PluginSource
   /** The route called. */
   route: PluginViewRoute
+  /** Where the call's body is read from, in one read with `labelSource`; the button is disabled until every member is read. */
+  bodySource?: PluginActionBodySource
+  /** The call's body as written by a result card, which shows one version for as long as it stands. */
+  body?: Record<string, PluginActionBodyValue>
   /** The question asked before the call; no question when absent. */
   confirm?: string
   /** The button's tone. */

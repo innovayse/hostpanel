@@ -198,6 +198,29 @@ describe('PluginPreviewBlock', () => {
     vi.unstubAllGlobals()
   })
 
+  it('on plain http frames as usual where the browser still shows the timing entry', async () => {
+    vi.stubGlobal('isSecureContext', false)
+    const wrapper = await mountPreview(`${ORIGIN}/a`, `${ORIGIN}/b`)
+
+    expect(wrapper.find('[data-testid="plugin-preview-insecure"]').exists()).toBe(false)
+    expect(wrapper.find('iframe').exists()).toBe(true)
+  })
+
+  it('on plain http with the timing entry hidden warns why, frames nothing and does not reload', async () => {
+    vi.stubGlobal('isSecureContext', false)
+    const assign = vi.fn()
+    vi.stubGlobal('location', { origin: window.location.origin, href: 'http://panel.test/client/apps/x', assign })
+    vi.spyOn(performance, 'getEntriesByType').mockReturnValue([
+      { name: `${window.location.origin}/client/apps/${TEST_PLUGIN}/sites/7`, serverTiming: [] } as unknown as PerformanceEntry,
+    ])
+    const wrapper = await mountPreview(`${ORIGIN}/a`, `${ORIGIN}/b`)
+
+    expect(wrapper.find('[data-testid="plugin-preview-insecure"]').exists()).toBe(true)
+    expect(wrapper.find('iframe').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-preview-open"]').exists()).toBe(false)
+    expect(assign).not.toHaveBeenCalled()
+  })
+
   it('draws a new frame when another block refreshes it, the address unchanged, with the sandbox as it was', async () => {
     api = await startPluginApi({
       [`GET ${ROUTES_URL}/sites/7`]: { body: { previewUrl: `${ORIGIN}/stage`, liveUrl: `${ORIGIN}/live` } },

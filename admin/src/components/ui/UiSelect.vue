@@ -8,7 +8,9 @@
  */
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import UiTransition from '@/components/ui/UiTransition.vue'
 import { fieldInvalidClasses } from '@/utils/ui/input'
+import { UiTransitionKind } from '@/utils/ui/transition'
 
 const { t } = useI18n()
 
@@ -32,7 +34,7 @@ const props = defineProps<{
   invalid?: boolean
   /**
    * The small, quiet look for toolbars: a trigger sized like a small button and a softer list (inset
-   * rounded rows, a tinted selection instead of a solid one, a slower fade). Forms keep the default.
+   * rounded rows, a tinted selection instead of a solid one). Forms keep the default.
    */
   compact?: boolean
 }>()
@@ -63,30 +65,6 @@ const panelClasses = computed<string>(() => {
     ? `absolute z-50 mt-1 min-w-[5.5rem] origin-top overflow-hidden rounded-xl border border-border bg-surface-card p-1 shadow-lg shadow-black/20 ${width}`
     : `absolute z-50 mt-1.5 overflow-hidden rounded-[10px] border border-border bg-surface-card shadow-xl ${width}`
 })
-
-/**
- * The fade the list opens and closes with: quick by default, slower and gentler when compact.
- *
- * @returns The transition classes for each stage of the open and close animation.
- */
-const fade = computed(() => props.compact
-  ? {
-      enterActive: 'transition duration-200 ease-out',
-      enterFrom: 'opacity-0 -translate-y-1 scale-[0.98]',
-      enterTo: 'opacity-100 translate-y-0 scale-100',
-      leaveActive: 'transition duration-150 ease-in',
-      leaveFrom: 'opacity-100 translate-y-0 scale-100',
-      leaveTo: 'opacity-0 -translate-y-1 scale-[0.98]',
-    }
-  : {
-      enterActive: 'transition duration-100 ease-out',
-      enterFrom: 'opacity-0 scale-95 -translate-y-1',
-      enterTo: 'opacity-100 scale-100 translate-y-0',
-      leaveActive: 'transition duration-75 ease-in',
-      leaveFrom: 'opacity-100 scale-100 translate-y-0',
-      leaveTo: 'opacity-0 scale-95 -translate-y-1',
-    },
-)
 
 /**
  * The classes of one row of the list.
@@ -217,14 +195,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
     </button>
 
     <!-- Dropdown panel -->
-    <Transition
-      :enter-active-class="fade.enterActive"
-      :enter-from-class="fade.enterFrom"
-      :enter-to-class="fade.enterTo"
-      :leave-active-class="fade.leaveActive"
-      :leave-from-class="fade.leaveFrom"
-      :leave-to-class="fade.leaveTo"
-    >
+    <UiTransition :kind="UiTransitionKind.Dropdown">
       <div
         v-if="open"
         role="listbox"
@@ -273,6 +244,6 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
           </p>
         </div>
       </div>
-    </Transition>
+    </UiTransition>
   </div>
 </template>

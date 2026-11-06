@@ -123,6 +123,54 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
         (await InvoiceCountAsync(host, clientId)).Should().Be(1);
     }
 
+    /// <summary>
+    /// The balance is read after the lock is taken: credit spent by the run that held the lock first is not applied a second time.
+    /// While the caller waits for the lock the client's balance is spent elsewhere; the invoice it raises then carries no credit.
+    /// </summary>
+    [Fact]
+    public async Task TheBalance_IsReadAfterTheLock_NotBeforeTheWait()
+    {
+        var host = Host();
+        using var holderScope = host.Services.CreateScope();
+        var holder = holderScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var clientId = await SeedDueClientAsync(holder);
+        await BillingTestSeeds.GiveCreditAsync(host, clientId, 5m);
+
+        Task<Result<int>> waiting;
+        await using (var transaction = await holder.BeginTransactionAsync(CancellationToken.None))
+        {
+            await holder.LockForTransactionAsync(RaiseClientRenewalInvoicesHandler.LockKeyOf(clientId), CancellationToken.None);
+
+            waiting = Task.Run(async () =>
+            {
+                using var scope = host.Services.CreateScope();
+                return await scope.ServiceProvider.GetRequiredService<IMessageBus>()
+                    .InvokeAsync<Result<int>>(new RaiseClientRenewalInvoicesCommand(clientId), CancellationToken.None);
+            });
+            (await Task.WhenAny(waiting, Task.Delay(TimeSpan.FromSeconds(2)))).Should().NotBe(waiting);
+
+            // The run that held the lock spent the credit on its own invoice.
+            using (var spender = host.Services.CreateScope())
+            {
+                var other = spender.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+                var client = await other.Clients.SingleAsync(c => c.Id == clientId, CancellationToken.None);
+                client.DeductCredit(5m);
+                await other.SaveChangesAsync(CancellationToken.None);
+            }
+
+            await transaction.CommitAsync(CancellationToken.None);
+        }
+
+        var result = await waiting.WaitAsync(TimeSpan.FromSeconds(30));
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().Be(1);
+        using var check = host.Services.CreateScope();
+        var context = check.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var invoice = await context.Invoices.AsNoTracking().SingleAsync(i => i.ClientId == clientId);
+        invoice.Credit.Should().Be(0m, "the credit was already spent when the lock was released");
+        (await context.Clients.AsNoTracking().SingleAsync(c => c.Id == clientId)).CreditBalance.Should().Be(0m);
+    }
+
     /// <summary>The staff endpoint raises the due invoice once, answers the count, logs the run, and a second click raises nothing.</summary>
     [Fact]
     public async Task StaffEndpoint_RaisesOnce_AndLogsTheRun()

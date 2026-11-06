@@ -65,7 +65,8 @@ public sealed class MyCreditController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 201 with the id of the new invoice; 400 with <c>CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE</c> when the amount is below the
-    /// minimum or above the maximum, or when it fails validation; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c>
+    /// minimum or above the maximum, or when it fails validation; 409 with <c>CREDIT_TOP_UP_TOO_MANY_OPEN</c> when the client
+    /// already has as many unpaid top-up invoices as the admin allows; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c>
     /// when the user lacks <c>ViewPayInvoices</c>, or with <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c> when the account may
     /// not transact; 404 with <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller has no client record; 429 when the rate limit is hit.
     /// </returns>
@@ -77,6 +78,7 @@ public sealed class MyCreditController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateTopUpAsync([FromBody] CreateMyCreditTopUpCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<int>>(command, ct);

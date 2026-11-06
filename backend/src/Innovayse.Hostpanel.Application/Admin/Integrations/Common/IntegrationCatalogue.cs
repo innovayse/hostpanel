@@ -48,6 +48,7 @@ public static class IntegrationCatalogue
                 new(BankTransferFields.Swift, "SWIFT / BIC", Text, Required: false),
                 new(BankTransferFields.BankName, "Bank Name", Text, Required: false),
                 new(BankTransferFields.Instructions, "Payment Instructions", TextArea, Required: false),
+                new(BankTransferFields.ExpiryDays, "Days until an unconfirmed transfer lapses", Text, Required: false),
             ],
             []),
         [IntegrationSlugs.Namecheap] = new("Namecheap", DomainRegistrars,

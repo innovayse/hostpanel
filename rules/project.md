@@ -1309,6 +1309,20 @@ renewal invoices per client), `SendRenewalRemindersCron` 06:00, `CheckOverdueInv
 (`Manual`, `Overdue`, `DomainExpired`, `Other`): payment lifts only `Overdue`, and `DomainRenewedHandler` lifts only
 `DomainExpired`. Renewal alerts go to `Notifications:AdminEmail`, falling back to `Notifications:ContactEmail`.
 
+**A manual bank transfer wait is bounded and never loses a card session's money.** `Invoice.RequestBankTransfer` leaves the hosted
+session on the invoice (the choice is refused only inside `GatewaySessionWindow`). While the transfer waits
+(`IsBankTransferPending`), `ReconcileGatewayPaymentsCronHandler` asks the gateway about that session like an open invoice's, without the
+24 hour limit, and a settled invoice stays in the sweep for the stalled window after its `PaidAt` as well as after the session start (a
+transfer confirmed late). `CompleteGatewayPaymentHandler` settles a pending transfer with a full card payment (`Invoice.WithdrawBankTransfer`,
+then `Settle`), and a payment that finds the invoice already settled goes to the balance through the hand-back path. The wait itself ends
+by `RejectBankTransfer`, by `LapseBankTransfer` (the daily `CheckOverdueInvoicesCron` dispatches `LapseBankTransferCommand` for a wait older
+than the `expiry_days` field of the bank transfer integration, 14 when unset or not a positive number) or by the card payment; each returns
+the invoice to Overdue when its due date has passed, otherwise Unpaid, so the overdue and suspension flow applies again. The method is
+listed and can be chosen only while at least one bank detail or the instructions are set (`BankTransferSettings.HasPayerDetails`), and
+`MyInvoiceDto.IsBankTransferPending` is how the portal tells a real transfer from an imported `PaymentPending` invoice. An account credit
+note is refused while a gateway refund of the invoice is in flight (`Invoice.EnsureCreditable(total, now)`), and an unrecorded refund's
+amount is held out of `CreditableAmount`. The open top-up invoices per client are capped by `billing.credit.topup_max_open`.
+
 **Renewal invoicing is serialised per client.** `RaiseClientRenewalInvoicesHandler` opens a transaction and takes
 a transaction-scoped advisory lock (`IHostpanelDbContext.LockForTransactionAsync`, key
 `RaiseClientRenewalInvoicesHandler.LockKeyOf(clientId)`) before it reads the duplicate guard, and commits after the
@@ -1320,7 +1334,9 @@ activity log line). The admin Upcoming Renewals page (`/billing/renewals`) lists
 `SetServiceAutoRenew` (domains use the existing `SetAutoRenew`), and lists domain renewal lines left claimed
 (`ListClaimedDomainRenewals`). `ReleaseDomainRenewalClaim` clears `RenewalAttemptAt` through `Invoice.ReleaseRenewalClaim`
 after staff checked the registrar, with an activity log line; the line stays unapplied, so the next sweep renews the
-domain again, which is why the page asks for confirmation.
+domain again, which is why the page asks for confirmation. The confirmation dialog is a warning in so many words: a release
+of a renewal the registrar already carried out renews the domain twice and is charged twice, so staff check the registrar
+first (`billing.renewals.releaseMessage`, and `docs/staff/currencies.md`). `ClaimedDomainRenewalDto` carries the client's name.
 
 **Renewal invoice lines are not unique per period, on purpose.** The indexes on `InvoiceItems`
 `(ClientServiceId, RenewalPeriodStart)` and `(RegisteredDomainId, RenewalPeriodStart)` stay non-unique: a

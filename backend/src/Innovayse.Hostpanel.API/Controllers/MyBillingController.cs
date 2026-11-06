@@ -212,7 +212,8 @@ public sealed class MyBillingController : BaseApiController
     /// short, <c>INVOICE_CREDIT_EXCEEDS_DUE</c> when more than is owed, <c>INVOICE_NOT_EDITABLE</c> when the invoice no longer
     /// takes credit, <c>INVOICE_TOP_UP_NO_CREDIT</c> for a top-up invoice, or when the amount fails validation; 403 with
     /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ViewPayInvoices</c>, or with <c>CLIENT_SUSPENDED</c> or
-    /// <c>CLIENT_CLOSED</c> when the account may not pay; 429 when the rate limit is hit.
+    /// <c>CLIENT_CLOSED</c> when the account may not pay; 409 when the invoice or the balance changed under the request;
+    /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{id:int}/credit")]
     [Authorize(Policy = Policies.Client)]
@@ -222,6 +223,7 @@ public sealed class MyBillingController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> ApplyCreditAsync(
         int id, [FromBody] ApplyMyInvoiceCreditCommand command, CancellationToken ct)
     {

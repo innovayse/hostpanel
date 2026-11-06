@@ -52,7 +52,7 @@ public sealed class InvoiceCreditNoteCapTests
         var topUp = Invoice.CreateCreditTopUp(clientId: 1, 50m, "USD", Now, Now.AddDays(7));
         topUp.RecordPaidHistory("ref", Now);
 
-        var act = () => topUp.EnsureCreditable(10m);
+        var act = () => topUp.EnsureCreditable(10m, Now);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.CreditNoteTopUpInvoice);
         topUp.CreditableAmount.Should().Be(0m);
@@ -65,7 +65,7 @@ public sealed class InvoiceCreditNoteCapTests
         var invoice = Invoice.Create(clientId: 1, dueDate: Now.AddDays(7), currency: "USD", issuedAt: Now);
         invoice.AddItem("Hosting Plan", unitPrice: 100m, quantity: 1);
 
-        var act = () => invoice.EnsureCreditable(10m);
+        var act = () => invoice.EnsureCreditable(10m, Now);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceNotPaid);
     }
@@ -78,7 +78,7 @@ public sealed class InvoiceCreditNoteCapTests
         invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 30m, 0m, null, false, TransactionSource.Manual);
 
         invoice.CreditableAmount.Should().Be(70m);
-        var act = () => invoice.EnsureCreditable(70.01m);
+        var act = () => invoice.EnsureCreditable(70.01m, Now);
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.CreditNoteExceedsCreditable);
     }
 
@@ -87,11 +87,11 @@ public sealed class InvoiceCreditNoteCapTests
     public void AddCreditNoted_IsHeldToWhatEarlierNotesLeft()
     {
         var invoice = PaidFor(100m);
-        invoice.AddCreditNoted(60m);
+        invoice.AddCreditNoted(60m, Now);
 
         invoice.CreditNotedAmount.Should().Be(60m);
         invoice.CreditableAmount.Should().Be(40m);
-        var act = () => invoice.AddCreditNoted(40.01m);
+        var act = () => invoice.AddCreditNoted(40.01m, Now);
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.CreditNoteExceedsCreditable);
         invoice.CreditNotedAmount.Should().Be(60m);
     }
@@ -102,7 +102,7 @@ public sealed class InvoiceCreditNoteCapTests
     {
         var invoice = PaidFor(100m);
 
-        invoice.AddCreditNoted(60m);
+        invoice.AddCreditNoted(60m, Now);
 
         invoice.RefundableAmount.Should().Be(40m);
         var act = () => invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 40.01m, 0m, null, false, TransactionSource.Manual);
@@ -116,9 +116,9 @@ public sealed class InvoiceCreditNoteCapTests
         var invoice = PaidFor(100m);
         invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 70m, 0m, null, false, TransactionSource.Manual);
 
-        var tooMuch = () => invoice.AddCreditNoted(30.01m);
+        var tooMuch = () => invoice.AddCreditNoted(30.01m, Now);
         tooMuch.Should().Throw<DomainRuleException>();
-        invoice.AddCreditNoted(30m);
+        invoice.AddCreditNoted(30m, Now);
 
         invoice.CreditableAmount.Should().Be(0m);
         invoice.RefundableAmount.Should().Be(0m);
@@ -129,7 +129,7 @@ public sealed class InvoiceCreditNoteCapTests
     public void RemoveCreditNoted_GivesTheAmountBack()
     {
         var invoice = PaidFor(100m);
-        invoice.AddCreditNoted(60m);
+        invoice.AddCreditNoted(60m, Now);
 
         invoice.RemoveCreditNoted(60m);
 
@@ -143,7 +143,7 @@ public sealed class InvoiceCreditNoteCapTests
     public void RemoveCreditNoted_MoreThanWasNoted_IsRefused()
     {
         var invoice = PaidFor(100m);
-        invoice.AddCreditNoted(10m);
+        invoice.AddCreditNoted(10m, Now);
 
         var act = () => invoice.RemoveCreditNoted(10.01m);
 
@@ -159,8 +159,60 @@ public sealed class InvoiceCreditNoteCapTests
     {
         var invoice = PaidFor(100m);
 
-        var act = () => invoice.AddCreditNoted(amount);
+        var act = () => invoice.AddCreditNoted(amount, Now);
 
         act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    /// <summary>A gateway refund that is claimed and not recorded yet blocks an account credit note: both would give the same money back.</summary>
+    [Fact]
+    public void EnsureCreditable_WhileAGatewayRefundIsInFlight_IsRefusedAsAConflict()
+    {
+        var invoice = PaidFor(100m);
+        invoice.BeginGatewayRefund(Now, 40m);
+
+        var act = () => invoice.EnsureCreditable(10m, Now.AddMinutes(1));
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceRefundConflict);
+        var add = () => invoice.AddCreditNoted(10m, Now.AddMinutes(1));
+        add.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceRefundConflict);
+        invoice.CreditNotedAmount.Should().Be(0m);
+    }
+
+    /// <summary>The amount an in-flight refund will take is already out of what a credit note may cover.</summary>
+    [Fact]
+    public void CreditableAmount_SubtractsTheRefundThatIsStillPending()
+    {
+        var invoice = PaidFor(100m);
+
+        invoice.BeginGatewayRefund(Now, 40m);
+
+        invoice.CreditableAmount.Should().Be(60m);
+    }
+
+    /// <summary>Once the refund is recorded the claim is over: the amount counts once, as a refund, and a note may follow.</summary>
+    [Fact]
+    public void EnsureCreditable_AfterTheRefundIsRecorded_CountsItOnce()
+    {
+        var invoice = PaidFor(100m);
+        invoice.BeginGatewayRefund(Now, 40m);
+        invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 40m, 0m, null, false, TransactionSource.GatewayRefund);
+
+        invoice.CreditableAmount.Should().Be(60m);
+        invoice.AddCreditNoted(60m, Now.AddMinutes(1));
+        invoice.CreditableAmount.Should().Be(0m);
+    }
+
+    /// <summary>An unanswered refund whose lease ran out no longer blocks a note, but its amount is still held back.</summary>
+    [Fact]
+    public void EnsureCreditable_AfterTheRefundLeaseRanOut_StillHoldsBackTheUnansweredAmount()
+    {
+        var invoice = PaidFor(100m);
+        invoice.BeginGatewayRefund(Now, 40m);
+        var later = Now + Invoice.RefundClaimLease + TimeSpan.FromMinutes(1);
+
+        var tooMuch = () => invoice.EnsureCreditable(60.01m, later);
+        tooMuch.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.CreditNoteExceedsCreditable);
+        invoice.EnsureCreditable(60m, later);
     }
 }

@@ -224,4 +224,90 @@ public sealed class InvoiceBankTransferTests
         invoice.IsInsideGatewaySessionWindow(Now.AddMinutes(19)).Should().BeTrue();
         invoice.IsInsideGatewaySessionWindow(Now.AddMinutes(20)).Should().BeFalse();
     }
+
+    /// <summary>Rejecting a transfer on an invoice whose due date has passed returns it to Overdue, not Unpaid, so the overdue flow carries on.</summary>
+    [Fact]
+    public void RejectBankTransfer_AfterTheDueDate_ReturnsToOverdue()
+    {
+        var invoice = UnpaidInvoice();
+        invoice.RequestBankTransfer(Now);
+
+        invoice.RejectBankTransfer("No money arrived", Now.AddDays(20));
+
+        invoice.Status.Should().Be(InvoiceStatus.Overdue);
+        invoice.BankTransferRequestedAt.Should().BeNull();
+        invoice.IsPayable.Should().BeTrue();
+    }
+
+    /// <summary>A lapsed wait returns the invoice to open, tells the client through the rejection event and clears the marker.</summary>
+    [Fact]
+    public void LapseBankTransfer_ReturnsToOpenAndAnnouncesTheFixedReason()
+    {
+        var invoice = UnpaidInvoice();
+        invoice.RequestBankTransfer(Now);
+        invoice.ClearDomainEvents();
+
+        invoice.LapseBankTransfer(Now.AddDays(5));
+
+        invoice.Status.Should().Be(InvoiceStatus.Unpaid);
+        invoice.IsBankTransferPending.Should().BeFalse();
+        var lapsed = invoice.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<BankTransferRejectedEvent>().Subject;
+        lapsed.Note.Should().Be(Invoice.BankTransferLapsedNote);
+    }
+
+    /// <summary>A wait that lapses after the due date returns the invoice to Overdue.</summary>
+    [Fact]
+    public void LapseBankTransfer_AfterTheDueDate_ReturnsToOverdue()
+    {
+        var invoice = UnpaidInvoice();
+        invoice.RequestBankTransfer(Now);
+
+        invoice.LapseBankTransfer(Now.AddDays(15));
+
+        invoice.Status.Should().Be(InvoiceStatus.Overdue);
+    }
+
+    /// <summary>Only a waiting transfer can lapse; a confirmed one cannot be turned back.</summary>
+    [Fact]
+    public void LapseBankTransfer_WhenNoTransferWaits_IsRefused()
+    {
+        var invoice = UnpaidInvoice();
+        invoice.RequestBankTransfer(Now);
+        invoice.ConfirmBankTransfer(Now.AddDays(1));
+
+        var act = () => invoice.LapseBankTransfer(Now.AddDays(30));
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceBankTransferNotPending);
+        invoice.Status.Should().Be(InvoiceStatus.Paid);
+    }
+
+    /// <summary>A gateway payment that arrives first withdraws the wait without an announcement, so the invoice can be settled with it.</summary>
+    [Fact]
+    public void WithdrawBankTransfer_ReopensTheInvoiceSilentlySoTheGatewayPaymentCanSettleIt()
+    {
+        var invoice = UnpaidInvoice();
+        invoice.RequestBankTransfer(Now);
+        invoice.ClearDomainEvents();
+
+        invoice.WithdrawBankTransfer(Now.AddMinutes(30));
+        var ledgerRow = invoice.Settle("gw", "ref-1", Now.AddMinutes(30), TransactionSource.GatewayPayment);
+
+        invoice.DomainEvents.Should().NotContain(e => e is BankTransferRejectedEvent);
+        invoice.Status.Should().Be(InvoiceStatus.Paid);
+        invoice.IsBankTransferPending.Should().BeFalse();
+        ledgerRow.Should().NotBeNull();
+    }
+
+    /// <summary>Confirming a transfer after the due date still settles the invoice.</summary>
+    [Fact]
+    public void ConfirmBankTransfer_AfterTheDueDate_StillSettles()
+    {
+        var invoice = UnpaidInvoice();
+        invoice.RequestBankTransfer(Now);
+
+        var ledgerRow = invoice.ConfirmBankTransfer(Now.AddDays(30));
+
+        invoice.Status.Should().Be(InvoiceStatus.Paid);
+        ledgerRow.Should().NotBeNull();
+    }
 }

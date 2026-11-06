@@ -44,6 +44,7 @@ import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 
+/** Translates a key into the active locale. */
 const { t } = useI18n()
 
 /** Current route, source of the client id. */
@@ -73,6 +74,9 @@ const processing = ref(false)
 /** The outcome line of the last adjustment. */
 const feedback = useResultBanner()
 
+/** Sentence for a page of the history that could not be read while an earlier page is still on screen; empty when none. */
+const pageError = ref('')
+
 /** Tone of the outcome line: danger for a refusal, success otherwise. */
 const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
 
@@ -100,8 +104,14 @@ const money = (value: number): string => formatPlainAmount(value, store.credit?.
  * @returns Resolves when the page is loaded or refused.
  */
 const load = async (target = page.value): Promise<void> => {
-  page.value = target
-  await store.fetchCredit(clientId.value, target)
+  const loaded = await store.fetchCredit(clientId.value, target)
+  if (loaded) {
+    page.value = target
+    pageError.value = ''
+    return
+  }
+  // A refused first read is the error state below; a refused later page leaves the loaded one on screen and says why.
+  pageError.value = store.credit === null ? '' : store.error ?? t('errors.noAnswer')
 }
 
 /**
@@ -194,6 +204,7 @@ onMounted(() => load(1))
 
       <UiCard class="overflow-x-auto">
         <UiHeading :level="3" variant="card">{{ t('clients.clientCredit.history') }}</UiHeading>
+        <UiStatusMessage :message="pageError" :tone="UiTone.Danger" data-testid="client-credit-page-error" />
         <UiText v-if="store.credit.entries.items.length === 0" :tone="UiTextTone.Muted" data-testid="client-credit-empty">
           {{ t('clients.clientCredit.historyEmpty') }}
         </UiText>

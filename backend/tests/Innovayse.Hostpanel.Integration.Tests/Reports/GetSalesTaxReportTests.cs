@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -72,6 +73,55 @@ public sealed class GetSalesTaxReportTests(IntegrationTestFactory factory) : ICl
         rows.GetProperty("items").GetArrayLength().Should().Be(2);
         rows.GetProperty("totalCount").GetInt32().Should().Be(3);
         rows.GetProperty("items")[0].GetProperty("datePaid").GetString().Should().Be("2022-05-10");
+    }
+
+    /// <summary>
+    /// The tax of an account credit note issued in the period comes off the liability of its currency: the note reversed part of the
+    /// tax the invoice collected, though no refund row says so. The invoice itself is still listed and counted.
+    /// </summary>
+    [Fact]
+    public async Task SubtractsTheTaxOfAnAccountCreditNoteIssuedInThePeriod()
+    {
+        var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"TaxNote{Guid.NewGuid():N}");
+        int invoiceId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var now = DateTimeOffset.UtcNow;
+            var invoice = Invoice.Create(clientId, now.AddDays(7), "PLN", now);
+            invoice.AddItem("Hosting", 100m, 1);
+            invoice.UpdateOptions(now, now.AddDays(7), null, 20m);
+            db.Invoices.Add(invoice);
+            await db.SaveChangesAsync();
+            db.Transactions.Add(invoice.AddPayment(now, PaymentMethodNames.Manual, $"pay-{Guid.NewGuid():N}", invoice.Total, 0m, null, TransactionSource.Manual));
+            await db.SaveChangesAsync();
+            invoiceId = invoice.Id;
+        }
+
+        var admin = await ReportsTestSeeds.AdminClientAsync(factory);
+        var today = DateTimeOffset.UtcNow.ToString("yyyy-MM-dd");
+        var before = await PlnTotalAsync(admin, today);
+        before.GetProperty("taxLiability").GetDecimal().Should().Be(20m);
+
+        var noteId = await CreditNoteTestSeeds.IssueOkAsync(admin, invoiceId, 50m);
+
+        var after = await PlnTotalAsync(admin, today);
+        after.GetProperty("totalInvoices").GetInt32().Should().Be(1);
+        after.GetProperty("totalInvoiced").GetDecimal().Should().Be(120m);
+        after.GetProperty("taxLiability").GetDecimal().Should().Be(10m, "the 60 note carried 10 of tax");
+
+        (await admin.PostAsJsonAsync($"/api/billing/credit-notes/{noteId}/void", new { reason = "Mistake" })).EnsureSuccessStatusCode();
+        (await PlnTotalAsync(admin, today)).GetProperty("taxLiability").GetDecimal().Should().Be(20m, "a voided note reverses nothing");
+    }
+
+    /// <summary>Reads the PLN totals of the report for one day.</summary>
+    /// <param name="admin">The authenticated admin client.</param>
+    /// <param name="day">The day, <c>yyyy-MM-dd</c>.</param>
+    /// <returns>The PLN totals object.</returns>
+    private static async Task<JsonElement> PlnTotalAsync(HttpClient admin, string day)
+    {
+        var body = await admin.GetFromJsonAsync<JsonElement>($"/api/reports/sales-tax?from={day}&to={day}&pageSize=200");
+        return body.GetProperty("totals").EnumerateArray().Single(t => t.GetProperty("currency").GetString() == "PLN");
     }
 
     /// <summary>A page size above the report ceiling is refused by the validator.</summary>

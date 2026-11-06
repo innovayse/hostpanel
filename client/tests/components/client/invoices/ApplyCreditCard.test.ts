@@ -50,6 +50,7 @@ const invoice = (overrides: Record<string, unknown> = {}): ClientInvoice => ({
   total: 100,
   amountDue: 100,
   isCreditTopUp: false,
+  isBankTransferPending: false,
   ...overrides
 }) as unknown as ClientInvoice
 

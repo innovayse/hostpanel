@@ -32,7 +32,7 @@ vi.mock('~/utils/saveBlob', () => ({ saveBlob }))
  */
 const invoice = (overrides: Record<string, unknown> = {}) => ({
   id: 41, status: InvoiceStatus.Unpaid, currency: 'USD', invoiceDate: '2026-01-01', dueDate: '2099-01-15', paidAt: null, paymentMethod: 'card',
-  subTotal: 90, tax: 10, credit: 0, total: 100, amountDue: 100, isCreditTopUp: false,
+  subTotal: 90, tax: 10, credit: 0, total: 100, amountDue: 100, isCreditTopUp: false, isBankTransferPending: false,
   items: [{ id: 1, description: 'Hosting', amount: 90 }], transactions: [],
   ...overrides
 })
@@ -61,7 +61,7 @@ describe('invoice page', () => {
   })
 
   it('shows the bank details of an invoice that waits for a transfer and no pay button', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice({ status: InvoiceStatus.PaymentPending }))
+    billingApi.fetchInvoice.mockResolvedValue(invoice({ status: InvoiceStatus.PaymentPending, isBankTransferPending: true }))
     billingApi.fetchBankTransfer.mockResolvedValue({ invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null })
 
     const wrapper = await mountPage(InvoicePage)

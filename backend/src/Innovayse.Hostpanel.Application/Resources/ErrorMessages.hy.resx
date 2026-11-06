@@ -1180,6 +1180,9 @@
   <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
     <value>Գումարը մնացորդի համալրման թույլատրելի միջակայքից դուրս է։</value>
   </data>
+  <data name="CREDIT_TOP_UP_TOO_MANY_OPEN" xml:space="preserve">
+    <value>Դուք արդեն ունեք չվճարված համալրումներ։ Նոր համալրումից առաջ վճարեք կամ չեղարկեք դրանցից մեկը։</value>
+  </data>
   <data name="CREDIT_NOTE_NOT_FOUND" xml:space="preserve">
     <value>Կրեդիտ-նոտան չի գտնվել։</value>
   </data>

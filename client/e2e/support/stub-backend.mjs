@@ -30,7 +30,7 @@
  * - `POST /__e2e/account`: overrides fields of the signed-in person's account (`GET /api/auth/me`), such as
  *   `clientPermissions` or `clientId`, so a spec can sign in a member without a permission or a first-time buyer, until the next reset;
  * - `POST /__e2e/gateways`: adds the hosted card gateway to the gateway list (`GET /api/payment-methods`) and, with
- *   `bankTransfer: false`, takes the bank transfer off it; only bank transfer is offered by default, so only the specs for the
+ *   `bankTransfer: false`, takes the bank transfer off it, and with `bankTransferDetailsEmpty: true` makes its bank details all empty; only bank transfer is offered by default, so only the specs for the
  *   saved methods and the invoice payment turn the card on, until the next reset;
  * - `POST /__e2e/reset`: clears the log, the scripted answers, the settings overrides, demo mode and
  *   everything a spec changed: tickets, profile, services, the domain, payment methods, contacts,
@@ -48,6 +48,7 @@ import {
   ACCOUNT,
   ANNOUNCEMENT,
   BANK_TRANSFER_DETAILS,
+  EMPTY_BANK_TRANSFER_DETAILS,
   CREDIT,
   CREDIT_NOTES,
   FAQS,
@@ -190,6 +191,16 @@ let hostedGatewayEnabled = false
 /** Whether the gateway list offers the bank transfer; on by default, a spec turns it off, a reset turns it on. */
 let bankTransferEnabled = true
 
+/** Whether the bank transfer's details are all empty (the operator set none); off by default, a spec turns it on, a reset turns it off. */
+let bankTransferDetailsEmpty = false
+
+/**
+ * The bank details the stub answers for the transfer waiting on {@link INVOICE}.
+ *
+ * @returns {typeof BANK_TRANSFER_DETAILS} The filled-in details, or the empty ones when a spec asked for them.
+ */
+const currentBankTransferDetails = () => (bankTransferDetailsEmpty ? EMPTY_BANK_TRANSFER_DETAILS : BANK_TRANSFER_DETAILS)
+
 /** The credit balance of the signed-in client, which applying credit to {@link INVOICE} lowers; a reset restores it. */
 let creditBalance = CREDIT.balance
 
@@ -204,6 +215,7 @@ let invoiceCredit = 0
 const currentInvoice = () => ({
   ...INVOICE,
   status: bankTransferChosen ? 'PaymentPending' : INVOICE.status,
+  isBankTransferPending: bankTransferChosen,
   credit: invoiceCredit,
   total: INVOICE.total - invoiceCredit,
   amountDue: INVOICE.amountDue - invoiceCredit,
@@ -810,12 +822,12 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
   // Bank transfer: choosing it moves the invoice to waiting and answers the bank details; reading the details is refused until then.
   if (method === 'POST' && path === `/api/me/invoices/${INVOICE.id}/bank-transfer`) {
     bankTransferChosen = true
-    send(res, 200, BANK_TRANSFER_DETAILS)
+    send(res, 200, currentBankTransferDetails())
     return true
   }
   if (isGet && path === `/api/me/invoices/${INVOICE.id}/bank-transfer`) {
     if (bankTransferChosen) {
-      send(res, 200, BANK_TRANSFER_DETAILS)
+      send(res, 200, currentBankTransferDetails())
     } else {
       sendProblem(res, 409, 'INVOICE_BANK_TRANSFER_NOT_PENDING', 'E2E: no bank transfer is waiting on this invoice.')
     }
@@ -1157,6 +1169,7 @@ const server = createServer(async (req, res) => {
     demoEnabled = false
     hostedGatewayEnabled = false
     bankTransferEnabled = true
+    bankTransferDetailsEmpty = false
     bankTransferChosen = false
     creditBalance = CREDIT.balance
     invoiceCredit = 0
@@ -1206,6 +1219,7 @@ const server = createServer(async (req, res) => {
     const gateways = await readJson(req)
     hostedGatewayEnabled = gateways.hosted === true
     bankTransferEnabled = gateways.bankTransfer !== false
+    bankTransferDetailsEmpty = gateways.bankTransferDetailsEmpty === true
     send(res, 204)
     return
   }

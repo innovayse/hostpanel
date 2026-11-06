@@ -51,22 +51,46 @@ public static class BankTransferTestSeeds
 
     /// <summary>Switches the bank transfer integration on through the real admin endpoint, with bank details.</summary>
     /// <param name="admin">The authenticated admin client.</param>
+    /// <param name="expiryDays">The days an unconfirmed transfer may wait, as typed in the form; <see langword="null"/> leaves it unset.</param>
     /// <returns>A task that completes once the settings are saved.</returns>
-    public static async Task EnableAsync(HttpClient admin)
+    public static async Task EnableAsync(HttpClient admin, string? expiryDays = null)
     {
+        var config = new Dictionary<string, string>
+        {
+            ["account_name"] = "Example Hosting LLC",
+            ["iban"] = Iban,
+            ["swift"] = "EXAMPAMX",
+            ["bank_name"] = "Example Bank",
+            ["instructions"] = "Pay within five days.",
+        };
+        var clearFields = new List<string>();
+        if (expiryDays is not null)
+        {
+            config["expiry_days"] = expiryDays;
+        }
+        else
+        {
+            // A save keeps the fields it does not mention, so an earlier test's expiry is cleared explicitly.
+            clearFields.Add("expiry_days");
+        }
+
+        var response = await admin.PutAsJsonAsync("/api/admin/integrations/bank-transfer", new { isEnabled = true, config, clearFields });
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    /// <summary>Switches the bank transfer integration on with every bank detail and the instructions left empty.</summary>
+    /// <param name="admin">The authenticated admin client.</param>
+    /// <returns>A task that completes once the settings are saved.</returns>
+    public static async Task EnableWithoutDetailsAsync(HttpClient admin)
+    {
+        // A save keeps the fields it does not mention, so every detail is cleared explicitly.
         var response = await admin.PutAsJsonAsync(
             "/api/admin/integrations/bank-transfer",
             new
             {
                 isEnabled = true,
-                config = new Dictionary<string, string>
-                {
-                    ["account_name"] = "Example Hosting LLC",
-                    ["iban"] = Iban,
-                    ["swift"] = "EXAMPAMX",
-                    ["bank_name"] = "Example Bank",
-                    ["instructions"] = "Pay within five days.",
-                },
+                config = new Dictionary<string, string>(),
+                clearFields = new[] { "account_name", "iban", "swift", "bank_name", "instructions", "expiry_days" },
             });
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }

@@ -4,6 +4,7 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <param name="InvoiceId">The invoice the line is on.</param>
 /// <param name="ItemId">The line.</param>
 /// <param name="ClientId">The client the invoice belongs to.</param>
+/// <param name="ClientName">The client's full name, so staff need not open the client to see whose line it is.</param>
 /// <param name="RegisteredDomainId">The domain the line renews.</param>
 /// <param name="Description">The line text, which names the domain and the term.</param>
 /// <param name="PeriodStart">Start of the period the line pays for.</param>
@@ -13,6 +14,7 @@ public sealed record ClaimedDomainRenewalDto(
     int InvoiceId,
     int ItemId,
     int ClientId,
+    string ClientName,
     int RegisteredDomainId,
     string Description,
     DateTimeOffset PeriodStart,

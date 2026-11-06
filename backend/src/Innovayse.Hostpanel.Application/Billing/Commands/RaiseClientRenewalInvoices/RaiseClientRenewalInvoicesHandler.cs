@@ -129,6 +129,20 @@ public sealed class RaiseClientRenewalInvoicesHandler
         await using var transaction = await _context.BeginTransactionAsync(ct);
         await _context.LockForTransactionAsync(LockKeyOf(client.Id), ct);
 
+        // Read again under the lock: a run that held it before us may have applied credit to its invoices, and the balance
+        // read above, before the wait, would let this run apply the same money a second time.
+        client = await _bus.FindClientBriefAsync(cmd.ClientId, withEmail: false, ct);
+        if (client is null)
+        {
+            return Result<int>.FailureCode(HostpanelErrorCodes.CLIENT_NOT_FOUND);
+        }
+
+        mayBill = client.Status.EnsureMayTransact();
+        if (mayBill.IsFailure)
+        {
+            return Result<int>.FailureCode(mayBill.ErrorCode!);
+        }
+
         var settings = await _settings.ReadAsync(ct);
         var now = _clock.UtcNow;
         var horizon = now.AddDays(settings.InvoiceDaysBefore);

@@ -53,7 +53,8 @@ public sealed class ClientCreditController : BaseApiController
     /// <returns>
     /// 204 when adjusted; 400 when a value is refused, or with <c>CLIENT_CREDIT_INSUFFICIENT</c> when the deduction is more than
     /// the balance holds; 401 when the caller is not signed in; 403 when the caller's role is not allowed; 404 with
-    /// <c>CLIENT_NOT_FOUND</c> when the id names no client; 429 when the rate limit is hit.
+    /// <c>CLIENT_NOT_FOUND</c> when the id names no client; 409 when the balance changed under the adjustment; 429 when the
+    /// rate limit is hit.
     /// </returns>
     [HttpPost("adjustments")]
     [Authorize(Policy = Policies.Admin)]
@@ -62,6 +63,7 @@ public sealed class ClientCreditController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AdjustAsync(
         int clientId, [FromBody] AdjustClientCreditCommand command, CancellationToken ct)
     {

@@ -1180,6 +1180,9 @@
   <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
     <value>Сумма вне допустимого диапазона для пополнения баланса.</value>
   </data>
+  <data name="CREDIT_TOP_UP_TOO_MANY_OPEN" xml:space="preserve">
+    <value>У вас уже есть неоплаченные пополнения. Оплатите или отмените одно, прежде чем пополнять баланс снова.</value>
+  </data>
   <data name="CREDIT_NOTE_NOT_FOUND" xml:space="preserve">
     <value>Кредит-нота не найдена.</value>
   </data>

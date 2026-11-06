@@ -163,7 +163,8 @@ To correct the balance, use **Add credit** or **Deduct credit** on the tab. A re
 A client adds funds from **Credit, Add funds** in the client area. They choose an amount between two limits you set in System Settings, in their billing currency:
 
 - `billing.credit.topup_min`: the least one top-up may add (default 5);
-- `billing.credit.topup_max`: the most one top-up may add (default 1000).
+- `billing.credit.topup_max`: the most one top-up may add (default 1000);
+- `billing.credit.topup_max_open`: the most unpaid top-up invoices one client may hold at once (default 3, from 1 to 20). A further top-up is refused with `CREDIT_TOP_UP_TOO_MANY_OPEN` until one is paid or cancelled.
 
 A top-up is an invoice with one fixed line for the amount and no tax, which the client pays through the ordinary payment page: a bank transfer you confirm, or an installed payment gateway. Its amount is added to the balance in the same step that marks the invoice paid, once, however many times the payment is confirmed or retried. The client is emailed the new balance.
 
@@ -258,6 +259,8 @@ The tax on the note follows the invoice at the invoice's own rate. The sub total
 How much can be credited: the invoice's charge before credit (sub total plus tax) less every refund and every earlier credit note given as account credit. A note above that is refused (`CREDIT_NOTE_EXCEEDS_CREDITABLE`); the same limit holds when two staff members issue notes for one invoice at the same moment, and the second is refused or waits for the first. A gateway refund note is also held to the money the gateway took and can still return (`INVOICE_REFUND_EXCEEDS_PAID`), and the refund is refused as it is anywhere else when the gateway declines it (`GATEWAY_REFUND_REFUSED`); no note is created then.
 
 A credit note given as account credit also lowers what the invoice can still be refunded in cash, so the same money cannot go back twice. A refund made on its own, with **Refund**, does not create a credit note; issue a gateway refund note instead when you need the document.
+
+A credit note given as account credit cannot be issued while a gateway refund of the same invoice is still waiting for its gateway (`INVOICE_REFUND_CONFLICT`); the amount that refund will take is already counted as not creditable. Issue the note once the refund is recorded or its claim has run out. In the other order, a credit note already issued is taken out of what a later refund may return.
 
 A credit top-up invoice takes no credit note (`CREDIT_NOTE_TOP_UP_INVOICE`): it is credit already, and a paid top-up is refunded by hand. An invoice that is not paid takes none either (`INVOICE_NOT_PAID`).
 

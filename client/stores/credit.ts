@@ -36,6 +36,9 @@ export const useCreditStore = defineStore('credit', () => {
   /** The history page on screen, 1-based. */
   const page = ref(1)
 
+  /** The history page the last read asked for, 1-based; it is the one to ask again after a failed read. */
+  const requestedPage = ref(1)
+
   /** Whether a top-up invoice is being raised. */
   const topUpBusy = ref(false)
 
@@ -63,6 +66,7 @@ export const useCreditStore = defineStore('credit', () => {
   const load = async (nextPage: number = page.value): Promise<ClientCredit | null> => {
     loading.value = true
     error.value = ''
+    requestedPage.value = nextPage
     try {
       credit.value = await billing.fetchCredit(nextPage, CREDIT_PAGE_SIZE)
       page.value = nextPage
@@ -122,6 +126,7 @@ export const useCreditStore = defineStore('credit', () => {
     loading,
     error,
     page,
+    requestedPage,
     topUpBusy,
     topUpError,
     applyBusy,

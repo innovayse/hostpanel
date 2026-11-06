@@ -3,8 +3,11 @@ using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -394,6 +397,35 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
         exact.StatusCode.Should().Be(HttpStatusCode.Created);
         plugin.RefundInstructions.Should().ContainSingle().Which.AmountMinor.Should().Be(3000);
         (await CreditNoteTestSeeds.InvoiceAsync(host, invoiceId)).RefundableAmount.Should().Be(0m);
+    }
+
+    /// <summary>
+    /// A gateway refund that is claimed and not recorded yet holds the invoice: an account credit note for the same money is refused
+    /// with 409 <c>INVOICE_REFUND_CONFLICT</c>, no number is taken and the balance is untouched.
+    /// </summary>
+    [Fact]
+    public async Task AccountCredit_WhileAGatewayRefundIsInFlight_IsRefusedAsAConflict()
+    {
+        var plugin = new FakePaymentPlugin { RefundResult = "gw-refund-unused" };
+        var host = CreditNoteTestSeeds.HostWithGateway(factory, plugin);
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var clientId = await BillingTestSeeds.SeedClientAsync(host);
+        var invoiceId = await CreditNoteTestSeeds.GatewayPaidInvoiceAsync(host, clientId, price: 100m);
+        using (var scope = host.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var invoice = await context.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
+            invoice.BeginGatewayRefund(DateTimeOffset.UtcNow, 40m);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var response = await CreditNoteTestSeeds.IssueAsync(admin, invoiceId, 10m);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_REFUND_CONFLICT);
+        (await CreditNoteTestSeeds.NotesOfAsync(host, invoiceId)).Should().BeEmpty();
+        (await BillingTestSeeds.CreditBalanceOfAsync(host, clientId)).Should().Be(0m);
+        (await CreditNoteTestSeeds.InvoiceAsync(host, invoiceId)).CreditNotedAmount.Should().Be(0m);
     }
 
     /// <summary>

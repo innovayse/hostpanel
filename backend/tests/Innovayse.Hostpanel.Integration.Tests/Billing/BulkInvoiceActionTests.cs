@@ -63,6 +63,29 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
         outcome.ErrorCode.Should().Be(HostpanelErrorCodes.BULK_INVOICE_ACTION_UNKNOWN);
     }
 
+    /// <summary>
+    /// A bulk duplicate copies the invoices that may be copied and skips a credit top-up, instead of failing the whole selection:
+    /// the count is the copies made, and no copy of the top-up exists.
+    /// </summary>
+    [Fact]
+    public async Task BulkDuplicateSkipsATopUpInsteadOfFailingTheSelection()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var (owner, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, null, "bulk-dup-topup");
+        var ordinary = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 19.99m);
+        var topUp = await CreditTestSeeds.TopUpAsync(owner, 30m);
+
+        var response = await admin.PostAsJsonAsync("/api/billing/bulk", new { invoiceIds = new[] { topUp, ordinary }, action = "Duplicate" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadFromJsonAsync<int>()).Should().Be(1);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var copies = await context.Invoices.AsNoTracking().Where(i => i.ClientId == clientId).ToListAsync();
+        copies.Should().HaveCount(3, "the ordinary invoice, its copy and the top-up; the top-up is not copied");
+        copies.Count(i => i.IsCreditTopUp).Should().Be(1);
+    }
+
     /// <summary>A <c>MarkPaid</c> bulk action against a Draft invoice affects nothing and answers zero.</summary>
     [Fact]
     public async Task BulkActionMarkPaidCountsOnlyEligibleInvoices()

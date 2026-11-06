@@ -56,6 +56,7 @@ public static class InvoiceMapper
             invoice.Credit,
             invoice.AmountDue,
             invoice.IsCreditTopUp,
+            invoice.IsBankTransferPending,
             invoice.PaymentMethod,
             invoice.Items.Select(ToItemDto).ToList(),
             invoice.Transactions.Select(t => new MyInvoiceTransactionDto(t.Id, t.Date, t.Amount, t.Type)).ToList());

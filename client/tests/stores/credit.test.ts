@@ -56,6 +56,19 @@ describe('useCreditStore.load', () => {
     fetchCreditMock.mockReset()
   })
 
+  it('remembers the page a failed read asked for, so a retry asks for that one', async () => {
+    fetchCreditMock.mockResolvedValueOnce(credit(5))
+    const store = useCreditStore()
+    await store.load(1)
+
+    fetchCreditMock.mockRejectedValueOnce(new Error('down'))
+    await store.load(3)
+
+    expect(store.error).not.toBe('')
+    expect(store.page).toBe(1)
+    expect(store.requestedPage).toBe(3)
+  })
+
   it('reads the credit page and exposes the balance', async () => {
     fetchCreditMock.mockResolvedValue(credit(12.5))
     const store = useCreditStore()

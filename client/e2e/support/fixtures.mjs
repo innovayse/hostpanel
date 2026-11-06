@@ -254,6 +254,7 @@ export const INVOICE = {
   taxRate: 0,
   credit: 0,
   isCreditTopUp: false,
+  isBankTransferPending: false,
   paymentMethod: null,
   items: [{ id: 1, description: 'E2E Starter - monthly', unitPrice: 5, quantity: 1, amount: 5 }],
   transactions: [],
@@ -649,6 +650,16 @@ export const BANK_TRANSFER_DETAILS = {
   swift: 'E2EAAMXX',
   bankName: 'E2E Bank',
   instructions: 'Pay within five days.',
+}
+
+/** The details the stub answers when the operator left every bank detail and the instructions empty. */
+export const EMPTY_BANK_TRANSFER_DETAILS = {
+  ...BANK_TRANSFER_DETAILS,
+  accountName: null,
+  iban: null,
+  swift: null,
+  bankName: null,
+  instructions: null,
 }
 
 /** The hosted card gateway the stub adds to the gateway list once a spec enables it (`POST /__e2e/gateways`). */

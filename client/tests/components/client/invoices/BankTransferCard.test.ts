@@ -74,6 +74,19 @@ describe('BankTransferCard', () => {
     expect(wrapper.find('[data-testid="bank-transfer-row-iban"]').exists()).toBe(true)
   })
 
+  it('tells the payer to contact the provider when every account detail and the instructions are empty', () => {
+    const wrapper = mountCard({ ...full, accountName: null, iban: null, swift: null, bankName: null, instructions: null })
+
+    expect(wrapper.get('[data-testid="bank-transfer-no-details"]').text()).toContain('invoicePay.bankTransfer.noDetails')
+    expect(wrapper.get('[data-testid="bank-transfer-reference"]').text()).toBe('INV-9')
+  })
+
+  it('shows no contact notice while any account detail or the instructions are set', () => {
+    expect(mountCard(full).find('[data-testid="bank-transfer-no-details"]').exists()).toBe(false)
+    const onlyInstructions = mountCard({ ...full, accountName: null, iban: null, swift: null, bankName: null })
+    expect(onlyInstructions.find('[data-testid="bank-transfer-no-details"]').exists()).toBe(false)
+  })
+
   it('shows no client id', () => {
     const wrapper = mountCard(full)
 

@@ -56,6 +56,7 @@ const invoice = (over: Partial<ClientInvoice> = {}): ClientInvoice => ({
   credit: 0,
   amountDue: 20000,
   isCreditTopUp: false,
+  isBankTransferPending: false,
   paymentMethod: null,
   items: [],
   transactions: [],

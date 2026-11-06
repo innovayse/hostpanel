@@ -91,7 +91,8 @@ public static class StatusMapping
                 => new(409, "Conflict"),
             // Exact row: an unpaid invoice stands in the way, a state conflict, and the name carries no
             // CONFLICT / ALREADY token for the generic arms to catch.
-            "RENEWAL_INVOICE_OPEN" or "CLIENT_TAX_EXEMPT" or "CLIENT_CURRENCY_LOCKED_BY_CREDIT" => new(409, "Conflict"),
+            "RENEWAL_INVOICE_OPEN" or "CLIENT_TAX_EXEMPT" or "CLIENT_CURRENCY_LOCKED_BY_CREDIT" or "CREDIT_TOP_UP_TOO_MANY_OPEN"
+                => new(409, "Conflict"),
             // Exact row: the gateway module is off, missing or has no stored credential capability, a state of the
             // deployment rather than a malformed request, and the name carries no CONFLICT / ALREADY token.
             "STORED_CREDENTIALS_NOT_SUPPORTED" => new(409, "Conflict"),

@@ -24,7 +24,7 @@
       <UiTableBody>
         <UiTableRow v-for="entry in entries" :key="entry.id" :data-testid="`credit-entry-${entry.id}`">
           <UiTableTd>
-            <UiText as="span" size="sm" tone="subtle">{{ formatDateTime(entry.date) }}</UiText>
+            <UiText as="span" size="sm" :tone="UiTextTone.Subtle">{{ formatDateTime(entry.date) }}</UiText>
           </UiTableTd>
           <UiTableTd>
             <UiText as="span" size="sm" :data-testid="`credit-entry-type-${entry.id}`">{{ $t(`client.credit.movement.${entry.movement}`) }}</UiText>
@@ -33,14 +33,14 @@
             <UiLink v-if="entry.invoiceId !== null" :to="clientInvoicePath(entry.invoiceId)" :data-testid="`credit-entry-invoice-${entry.id}`">
               #{{ entry.invoiceId }}
             </UiLink>
-            <UiText v-else as="span" size="sm" tone="subtle">{{ EMPTY_DATE }}</UiText>
+            <UiText v-else as="span" size="sm" :tone="UiTextTone.Subtle">{{ EMPTY_DATE }}</UiText>
           </UiTableTd>
           <UiTableTd align="right">
             <UiText
               as="span"
               size="sm"
               weight="semibold"
-              :tone="entry.change >= 0 ? 'success' : 'danger'"
+              :tone="entry.change >= 0 ? UiTextTone.Success : UiTextTone.Danger"
               :data-testid="`credit-entry-change-${entry.id}`"
             >
               {{ signed(entry.change) }}
@@ -67,6 +67,7 @@ import { clientInvoicePath } from '~/constants/clientRoutes'
 import type { ClientCreditEntry } from '~/types/clientcreditentry'
 import { formatCurrency } from '~/utils/formatCurrency'
 import { EMPTY_DATE, formatDateTime } from '~/utils/formatDate'
+import { UiTextTone } from '~/utils/ui/enums'
 
 /** Props of HistoryTable. */
 interface Props {

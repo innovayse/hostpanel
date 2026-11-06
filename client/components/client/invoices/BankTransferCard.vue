@@ -40,6 +40,11 @@
         </UiStack>
       </UiStack>
 
+      <!-- Nothing to send the money to: say so, so the payer asks the provider instead of guessing. -->
+      <UiAlert v-if="hasNoAccountDetails" variant="warning" data-testid="bank-transfer-no-details">
+        <UiText as="span" size="sm">{{ $t('invoicePay.bankTransfer.noDetails') }}</UiText>
+      </UiAlert>
+
       <UiAlert v-if="details.instructions" variant="info" data-testid="bank-transfer-instructions">
         <UiText as="span" size="sm" class="whitespace-pre-line">{{ details.instructions }}</UiText>
       </UiAlert>
@@ -56,7 +61,8 @@
  *
  * Shown on the payment page and the invoice page while the transfer waits for staff to confirm it. The reference is the invoice
  * number, never an internal id. A detail the operator left empty is not shown; the amount is always shown, as digits only in
- * its copy button so a bank form accepts it.
+ * its copy button so a bank form accepts it. When the operator left every detail empty the card says to contact the provider
+ * for the account to pay into, since the amount and reference alone cannot be paid.
  */
 import { computed } from 'vue'
 import type { BankTransferDetails } from '~/types/banktransferdetails'
@@ -109,5 +115,11 @@ const rows = computed<DetailRow[]>(() => {
     }
   }
   return lines
+})
+
+/** Whether the operator gave no account detail and no instructions, so the card holds only the amount and the reference. */
+const hasNoAccountDetails = computed<boolean>(() => {
+  const { accountName, bankName, iban, swift, instructions } = props.details
+  return !accountName && !bankName && !iban && !swift && !instructions
 })
 </script>

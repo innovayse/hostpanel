@@ -3,7 +3,20 @@
     <UiPageHeader :title="$t('client.credit.title')" :description="$t('client.credit.subtitle')" :icon="Wallet" class="!mb-0" />
 
     <!-- Not a customer account: the API said so with a code, so this is one explanation with somewhere to go. -->
-    <UiAlert v-if="store.error" variant="error" data-testid="credit-error">{{ store.error }}</UiAlert>
+    <UiAlert v-if="store.error" variant="error" data-testid="credit-error">
+      <UiStack direction="row" justify="between" align="center" gap="sm" wrap>
+        <UiText as="span" size="sm">{{ store.error }}</UiText>
+        <UiButton
+          :variant="UiButtonVariant.Secondary"
+          size="sm"
+          :loading="store.loading"
+          data-testid="credit-error-retry"
+          @click="store.load(store.requestedPage)"
+        >
+          {{ $t('common.retry') }}
+        </UiButton>
+      </UiStack>
+    </UiAlert>
 
     <template v-else>
       <ClientCreditBalanceCard :credit="store.credit" :loading="store.loading && !store.credit" />
@@ -32,6 +45,7 @@
  */
 import { Wallet } from 'lucide-vue-next'
 import { CREDIT_PAGE_SIZE, useCreditStore } from '~/stores/credit'
+import { UiButtonVariant } from '~/utils/ui/enums'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
 

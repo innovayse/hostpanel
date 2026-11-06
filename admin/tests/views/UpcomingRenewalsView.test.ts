@@ -29,7 +29,7 @@ const domain = {
 
 /** One claimed line. */
 const claim = {
-  invoiceId: 5, itemId: 11, clientId: 9, registeredDomainId: 7, description: 'example.test renewal',
+  invoiceId: 5, itemId: 11, clientId: 9, clientName: 'Ada Lovelace', registeredDomainId: 7, description: 'example.test renewal',
   periodStart: '2027-01-12T00:00:00Z', periodEnd: '2028-01-12T00:00:00Z', claimedAt: '2027-01-01T10:00:00Z',
 }
 
@@ -134,12 +134,43 @@ describe('UpcomingRenewalsView', () => {
     await wrapper.get('[data-testid="renewals-claim-release-11"]').trigger('click')
     await flushPromises()
     expect(released()).toBe(false)
-    expect(wrapper.text()).toContain('Confirm at the registrar that this domain was not renewed')
+    expect(wrapper.text()).toContain('Warning: releasing this claim lets the next renewal run send the renewal to the registrar again')
+    expect(wrapper.text()).toContain('Check the domain at the registrar first')
 
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
     expect(released()).toBe(true)
+  })
+
+  it('names the client of a claimed line instead of showing their id', async () => {
+    stubRoutes({ ...lists })
+    const wrapper = await mountView()
+
+    const client = wrapper.get('[data-testid="renewals-claim-client-11"]')
+
+    expect(client.text()).toBe('Ada Lovelace')
+    expect(client.text()).not.toContain('#9')
+  })
+
+  it('words the invoice button as acting on all of the client\'s due renewals', async () => {
+    stubRoutes({ ...lists })
+    const wrapper = await mountView()
+
+    expect(wrapper.get('[data-testid="renewals-service-generate-4"]').text()).toBe('Invoice all due renewals for this client')
+  })
+
+  it('leaves the switch where it was when the change is refused', async () => {
+    stubRoutes({ ...lists, 'PUT /api/services/4/auto-renew': () => problem('The registrar refused.', 502) })
+    const wrapper = await mountView()
+    const toggle = wrapper.get('[data-testid="renewals-service-auto-renew-4"]')
+    expect(toggle.attributes('aria-checked')).toBe('true')
+
+    await toggle.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="renewals-service-auto-renew-4"]').attributes('aria-checked')).toBe('true')
+    expect(wrapper.get('[data-testid="renewals-action-error"]').text()).toContain('The registrar refused.')
   })
 
   it('shows the API sentence of a refused action', async () => {

@@ -145,7 +145,7 @@ public sealed class CreditNote : BaseEntity, IAggregateRoot
         note.Tax = CurrencyCode.RoundToMinorUnits(note.SubTotal * note.TaxRate / 100, note.Currency);
         note.Total = note.SubTotal + note.Tax;
 
-        invoice.EnsureCreditable(note.Total);
+        invoice.EnsureCreditable(note.Total, createdAt);
 
         // A refund pays cash back, so it is also held to the cash the gateway can still return.
         if (method == CreditNoteMethod.GatewayRefund && note.Total > invoice.RefundableAmount)

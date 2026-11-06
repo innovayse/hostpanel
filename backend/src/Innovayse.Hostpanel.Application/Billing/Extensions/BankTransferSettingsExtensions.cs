@@ -35,8 +35,17 @@ public static class BankTransferSettingsExtensions
             FieldOf(integration, BankTransferFields.Iban),
             FieldOf(integration, BankTransferFields.Swift),
             FieldOf(integration, BankTransferFields.BankName),
-            FieldOf(integration, BankTransferFields.Instructions));
+            FieldOf(integration, BankTransferFields.Instructions),
+            ExpiryDaysOf(FieldOf(integration, BankTransferFields.ExpiryDays)));
     }
+
+    /// <summary>Reads the stored expiry as a whole number of days, falling back to the default for blank, zero or non-numeric input.</summary>
+    /// <param name="stored">The stored text, or null.</param>
+    /// <returns>The days an unconfirmed transfer may wait.</returns>
+    private static int ExpiryDaysOf(string? stored) =>
+        int.TryParse(stored, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var days) && days > 0
+            ? days
+            : BankTransferSettings.DefaultExpiryDays;
 
     /// <summary>Reads one stored field, treating a blank value as not set.</summary>
     /// <param name="integration">The integration's stored state.</param>

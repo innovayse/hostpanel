@@ -22,6 +22,7 @@ test('the renewals screen lists services, domains and claimed lines', async ({ p
   await expect(page.getByTestId('renewals-services-table')).toContainText('Starter')
   await expect(page.getByTestId('renewals-domains-table')).toContainText('example.test')
   await expect(page.getByTestId('renewals-claims-table')).toContainText('example.test renewal')
+  await expect(page.getByTestId('renewals-claim-client-11')).toHaveText('Ada Lovelace')
 })
 
 test('another window is requested from its tab', async ({ page }) => {
@@ -55,6 +56,7 @@ test('a claimed line is released only after the confirmation', async ({ page }) 
 
   await page.getByTestId('renewals-claim-release-11').click()
   expect(api.callsTo(HttpMethod.Post, '/api/billing/5/items/11/release-renewal-claim')).toHaveLength(0)
+  await expect(page.getByRole('dialog')).toContainText('Check the domain at the registrar first')
   await page.getByRole('dialog').getByRole('button', { name: 'Release claim' }).click()
 
   await expect(page.getByTestId('renewals-notice')).toContainText('The claim was released.')

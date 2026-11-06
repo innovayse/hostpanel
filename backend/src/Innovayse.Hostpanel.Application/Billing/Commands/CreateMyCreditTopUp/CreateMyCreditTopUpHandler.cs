@@ -4,7 +4,9 @@ using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;
+using Microsoft.EntityFrameworkCore;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Commands.CreateMyCreditTopUp;
@@ -72,7 +74,8 @@ public sealed class CreateMyCreditTopUpHandler
     /// <returns>
     /// Success with the new invoice's id; <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller acts for no account;
     /// <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c> when the account may not transact;
-    /// <c>CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE</c> when the amount is below the minimum or above the maximum.
+    /// <c>CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE</c> when the amount is below the minimum or above the maximum;
+    /// <c>CREDIT_TOP_UP_TOO_MANY_OPEN</c> (409) when the client already holds as many unpaid top-up invoices as the admin allows.
     /// </returns>
     public async Task<Result<int>> HandleAsync(CreateMyCreditTopUpCommand cmd, CancellationToken ct)
     {
@@ -98,6 +101,17 @@ public sealed class CreateMyCreditTopUpHandler
         if (!limits.Allows(amount))
         {
             return Result<int>.FailureCode(HostpanelErrorCodes.CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE);
+        }
+
+        // Unpaid top-ups are capped per client, so a client cannot leave a pile of open invoices behind. The count is read
+        // just before the insert, so two requests racing at the very edge can overshoot the cap by one, which is harmless.
+        var open = await _context.Invoices.CountAsync(
+            i => i.ClientId == clientId.Value && i.IsCreditTopUp
+                && (i.Status == InvoiceStatus.Unpaid || i.Status == InvoiceStatus.Overdue || i.Status == InvoiceStatus.PaymentPending),
+            ct);
+        if (open >= limits.MaxOpen)
+        {
+            return Result<int>.FailureCode(HostpanelErrorCodes.CREDIT_TOP_UP_TOO_MANY_OPEN);
         }
 
         var now = _clock.UtcNow;

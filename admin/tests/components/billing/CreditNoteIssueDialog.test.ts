@@ -64,6 +64,30 @@ describe('CreditNoteIssueDialog', () => {
     expect(wrapper.emitted('submit')).toBeUndefined()
   })
 
+  it('does not call a note over-credited when the typed price times quantity is exactly what is left', async () => {
+    // 0.1 * 3 is 0.30000000000000004 in floating point, which is above 0.3 until the sums are kept in whole cents.
+    const wrapper = mountWithApp(CreditNoteIssueDialog, {
+      props: { invoice: invoiceFixture({ creditableAmount: 0.3, amounts: { subTotal: 0.3, credit: 0, tax: 0, taxRate: 0, total: 0.3 } }) },
+    })
+
+    await typeLine(wrapper, 'Small fee', '0.1')
+    await wrapper.get('[data-testid="billing-credit-note-line-0-quantity"] input').setValue('3')
+
+    expect(wrapper.find('[data-testid="billing-credit-note-over"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="billing-credit-note-total"]').text()).toContain('0.30')
+  })
+
+  it('calls a note over-credited by a single cent', async () => {
+    const wrapper = mountWithApp(CreditNoteIssueDialog, {
+      props: { invoice: invoiceFixture({ creditableAmount: 0.29, amounts: { subTotal: 0.3, credit: 0, tax: 0, taxRate: 0, total: 0.3 } }) },
+    })
+
+    await typeLine(wrapper, 'Small fee', '0.1')
+    await wrapper.get('[data-testid="billing-credit-note-line-0-quantity"] input').setValue('3')
+
+    expect(wrapper.find('[data-testid="billing-credit-note-over"]').exists()).toBe(true)
+  })
+
   it('keeps the form open with a sentence when the reason or the line is missing', async () => {
     const wrapper = mountWithApp(CreditNoteIssueDialog, { props: { invoice: paid() } })
 

@@ -87,6 +87,21 @@ public static class CreditTestSeeds
         return restore;
     }
 
+    /// <summary>Sets how many unpaid top-ups a client may hold and returns what puts the setting back.</summary>
+    /// <param name="factory">The host whose database holds the setting.</param>
+    /// <param name="maxOpen">The most unpaid top-up invoices a client may hold, as stored.</param>
+    /// <returns>A disposable that restores the value the test found.</returns>
+    public static async Task<IAsyncDisposable> MaxOpenAsync(WebApplicationFactory<Program> factory, string maxOpen)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var row = await context.Settings.FirstAsync(s => s.Key == BillingSettingKeys.CreditTopUpMaxOpen);
+        var before = row.Value ?? string.Empty;
+        row.UpdateValue(maxOpen);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return new RestoreMaxOpen(factory, before);
+    }
+
     /// <summary>Writes both limits and reads back the values they replaced.</summary>
     /// <param name="host">The host whose database holds the settings.</param>
     /// <param name="minimum">The new minimum.</param>
@@ -103,6 +118,22 @@ public static class CreditTestSeeds
         high.UpdateValue(maximum);
         await context.SaveChangesAsync(CancellationToken.None);
         return before;
+    }
+
+    /// <summary>Puts the open top-up limit back to what a test found when it is disposed.</summary>
+    /// <param name="host">The host whose database holds the setting.</param>
+    /// <param name="before">The value to put back.</param>
+    private sealed class RestoreMaxOpen(WebApplicationFactory<Program> host, string before) : IAsyncDisposable
+    {
+        /// <inheritdoc/>
+        public async ValueTask DisposeAsync()
+        {
+            using var scope = host.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var row = await context.Settings.FirstAsync(s => s.Key == BillingSettingKeys.CreditTopUpMaxOpen);
+            row.UpdateValue(before);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
     }
 
     /// <summary>Puts the top-up limits back to what a test found when it is disposed.</summary>

@@ -21,8 +21,8 @@ vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => billin
  * @param status - Invoice status.
  * @returns The invoice.
  */
-const invoice = (status: InvoiceStatus) => ({
-  id: 41, status, currency: 'USD', subTotal: 100, credit: 0, total: 100, amountDue: 100, items: [{ id: 1, description: 'Hosting', amount: 100 }], transactions: []
+const invoice = (status: InvoiceStatus, isBankTransferPending = status === InvoiceStatus.PaymentPending) => ({
+  id: 41, status, isBankTransferPending, currency: 'USD', subTotal: 100, credit: 0, total: 100, amountDue: 100, items: [{ id: 1, description: 'Hosting', amount: 100 }], transactions: []
 })
 
 describe('invoice payment page', () => {

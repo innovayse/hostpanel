@@ -1257,6 +1257,9 @@ public static class HostpanelErrorCodes
     /// <summary>The top-up amount is below the minimum or above the maximum the admin allows (400).</summary>
     public const string CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE = "CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE";
 
+    /// <summary>The client already holds as many unpaid top-up invoices as the admin allows (409).</summary>
+    public const string CREDIT_TOP_UP_TOO_MANY_OPEN = "CREDIT_TOP_UP_TOO_MANY_OPEN";
+
     /// <summary>The id names no credit note, or none the caller may see (404).</summary>
     public const string CREDIT_NOTE_NOT_FOUND = Domain.Billing.BillingErrors.CreditNoteNotFound;
 

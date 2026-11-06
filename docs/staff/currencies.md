@@ -45,6 +45,12 @@ When a service or domain is approaching its renewal date, the system:
 3. If `billing.renewal.auto_apply_credit` is enabled, automatically applies any credit balance toward the renewal invoice.
 4. Once the invoice is paid, renews the service or domain for another billing cycle.
 
+## Upcoming renewals and claimed domain renewals
+
+**Billing, Upcoming Renewals** lists the services and domains renewing in the next 30, 60 or 90 days. A row can switch automatic billing on or off, and **Invoice all due renewals for this client** raises every renewal invoice that client is due now, not only the one on that row.
+
+When a paid domain renewal is sent to the registrar and the registrar gives no clear answer, the invoice line stays **claimed** and is listed under *Domain renewals waiting for staff*, with the client's name. **Check the domain at the registrar before you release a claim.** Releasing it lets the next renewal run send the renewal to the registrar again. If the registrar already renewed the domain, it is renewed a second time and the registrar charges for it a second time; release only when the domain was not renewed.
+
 ## Overdue handling
 
 If a renewal invoice is not paid by its due date, it becomes **Overdue**. From there:

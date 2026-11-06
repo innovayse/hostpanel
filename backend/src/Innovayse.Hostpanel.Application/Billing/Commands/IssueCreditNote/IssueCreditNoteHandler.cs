@@ -136,7 +136,7 @@ public sealed class IssueCreditNoteHandler
             try
             {
                 note = BuildNote(invoice, cmd, now);
-                invoice.AddCreditNoted(note.Total);
+                invoice.AddCreditNoted(note.Total, now);
             }
             catch (DomainRuleException) when (number is not null)
             {

@@ -108,6 +108,32 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
         (await StoredAsync(invoiceId)).Status.Should().Be(InvoiceStatus.Unpaid);
     }
 
+    /// <summary>
+    /// A transfer switched on with every bank detail empty cannot be chosen: 409 <c>BANK_TRANSFER_NOT_AVAILABLE</c>, invoice
+    /// untouched, so the payer is never left with a reference and nowhere to send the money.
+    /// </summary>
+    [Fact]
+    public async Task Select_WhenTheAdminSetNoBankDetails_Returns409()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var (owner, clientId, _, _) = await BillingTestSeeds.RegisterClientAsync(factory, null, "bt-empty");
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
+        try
+        {
+            await BankTransferTestSeeds.EnableWithoutDetailsAsync(admin);
+
+            var response = await owner.PostAsync($"/api/me/invoices/{invoiceId}/bank-transfer", content: null);
+
+            response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.BANK_TRANSFER_NOT_AVAILABLE);
+            (await StoredAsync(invoiceId)).Status.Should().Be(InvoiceStatus.Unpaid);
+        }
+        finally
+        {
+            await BankTransferTestSeeds.EnableAsync(admin);
+        }
+    }
+
     /// <summary>A paid invoice is not open for payment: 400 <c>INVOICE_NOT_PAYABLE</c>.</summary>
     [Fact]
     public async Task Select_APaidInvoice_Returns400NotPayable()

@@ -81,8 +81,9 @@ An installed gateway plugin lists its own fields on its integration page. The fo
 | `swift` | SWIFT / BIC | Text | No | For clients paying from abroad |
 | `bank_name` | Bank Name | Text | No | |
 | `instructions` | Payment Instructions | Text Area | No | Free text shown below the account details |
+| `expiry_days` | Days until an unconfirmed transfer lapses | Text | No | A whole number of days, 14 when blank or not a positive number |
 
-All fields are optional. A detail left blank is not shown to the client.
+All fields are optional. A detail left blank is not shown to the client. Bank transfer is offered to clients only while it is switched on **and** at least one of the account name, IBAN, SWIFT, bank name or instructions is filled in: a transfer that holds only an amount and a reference could not be paid. If a transfer is already waiting when every detail is cleared, the client is told to contact you for the account to pay into.
 
 #### How a bank transfer is paid
 
@@ -91,6 +92,10 @@ All fields are optional. A detail left blank is not shown to the client.
 3. If the money did not arrive, press **Reject** and write a note. The invoice is open again, the client reads your note by email and can pay again, by bank transfer or another method.
 
 A transfer waits only while the invoice is Payment Pending; the invoice cannot be cancelled meanwhile, so decide the transfer first. Attaching a receipt to a transfer is not supported.
+
+A transfer nobody answers does not wait for ever. The daily overdue job lets a transfer that has waited longer than **Days until an unconfirmed transfer lapses** lapse: the invoice is open again (Overdue when its due date has passed, so the overdue and suspension rules apply again), and the client is emailed that the transfer was not confirmed in time. A reject after the due date also returns the invoice to Overdue.
+
+If the client started a card payment first, then chose the bank transfer and also finished the card payment, the card money is not lost. The invoice is settled with the card payment and the transfer wait ends; if you had already confirmed the transfer, the card money is added to the client's credit balance and you get the usual notice. A transfer that arrives after the card payment settled the invoice is yours to return by hand.
 
 ## Currencies and gateways
 

@@ -33,6 +33,7 @@ public sealed class ListClaimedDomainRenewalsTests(IntegrationTestFactory factor
         var row = listed.Single(e => e.GetProperty("itemId").GetInt32() == older.ItemId);
         row.GetProperty("invoiceId").GetInt32().Should().Be(older.InvoiceId);
         row.GetProperty("clientId").GetInt32().Should().Be(older.ClientId);
+        row.GetProperty("clientName").GetString().Should().NotBeNullOrWhiteSpace();
     }
 
     /// <summary>A line nobody claimed is not listed.</summary>

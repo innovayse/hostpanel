@@ -30,6 +30,9 @@ public static class BillingSettingKeys
     /// <summary>The most a client may add to their credit balance in one top-up, in the client's billing currency.</summary>
     public const string CreditTopUpMaximum = "billing.credit.topup_max";
 
+    /// <summary>The most unpaid credit top-up invoices a client may hold at once, so top-ups cannot pile up without being paid.</summary>
+    public const string CreditTopUpMaxOpen = "billing.credit.topup_max_open";
+
     /// <summary>
     /// The largest day count any of these settings accepts (the day-count and reminder patterns
     /// stop at 90). A reader that must look as far ahead as any setting can reach uses this instead
@@ -66,6 +69,13 @@ public static class BillingSettingKeys
         "an amount above zero with at most two decimals",
         v => v);
 
+    /// <summary>A whole number from 1 to 20: how many unpaid top-up invoices one client may hold.</summary>
+    /// <remarks>Declared before <see cref="Patterns"/>: static fields initialise in textual order.</remarks>
+    private static readonly ValuePattern OpenCount = new(
+        new Regex("^([1-9]|1[0-9]|20)$", RegexOptions.CultureInvariant),
+        "a whole number from 1 to 20",
+        v => v);
+
     /// <summary>The shape each key accepts, with its canonical spelling.</summary>
     public static readonly IReadOnlyDictionary<string, ValuePattern> Patterns =
         new Dictionary<string, ValuePattern>
@@ -79,6 +89,7 @@ public static class BillingSettingKeys
                 v => string.Join(',', v.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))),
             [CreditTopUpMinimum] = TopUpAmount,
             [CreditTopUpMaximum] = TopUpAmount,
+            [CreditTopUpMaxOpen] = OpenCount,
             [AutoApplyCredit] = new(
                 new Regex("^(true|false)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
                 "true or false",
@@ -95,6 +106,7 @@ public static class BillingSettingKeys
         new(TerminateAfterSuspendedDays, "14", "Days a service suspended for non-payment stays suspended before it is terminated and its hosting account removed."),
         new(CreditTopUpMinimum, "5", "Least a client can add to their credit balance in one top-up, in the client's billing currency."),
         new(CreditTopUpMaximum, "1000", "Most a client can add to their credit balance in one top-up, in the client's billing currency."),
+        new(CreditTopUpMaxOpen, "3", "Most unpaid top-up invoices a client can hold at once; they pay or cancel one before raising another."),
     ];
 
     /// <summary>Keys that may be saved empty although they seed with a value.</summary>

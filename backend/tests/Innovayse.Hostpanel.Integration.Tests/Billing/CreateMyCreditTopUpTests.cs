@@ -175,6 +175,58 @@ public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : I
         (await CreditTestSeeds.InvoiceAsync(factory, invoiceId)).ClientId.Should().Be(clientId);
     }
 
+    /// <summary>
+    /// A client holds at most the admin's number of unpaid top-up invoices: the next one is refused with 409
+    /// <c>CREDIT_TOP_UP_TOO_MANY_OPEN</c> and raises nothing, and a paid or cancelled one no longer counts.
+    /// </summary>
+    [Fact]
+    public async Task RefusesAnotherTopUpWhileTheOpenOnesReachTheLimit()
+    {
+        await using var limit = await CreditTestSeeds.MaxOpenAsync(factory, "2");
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var (owner, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, null, "topup-open");
+        var first = await CreditTestSeeds.TopUpAsync(owner, 20m);
+        await CreditTestSeeds.TopUpAsync(owner, 20m);
+
+        var refused = await owner.PostAsJsonAsync("/api/me/credit/top-ups", new { amount = 20m });
+
+        refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await BillingTestSeeds.CodeOfAsync(refused)).Should().Be(HostpanelErrorCodes.CREDIT_TOP_UP_TOO_MANY_OPEN);
+        await CountTopUpsAsync(clientId, 2);
+
+        (await admin.PostAsync($"/api/billing/{first}/cancel", content: null)).EnsureSuccessStatusCode();
+        var allowed = await owner.PostAsJsonAsync("/api/me/credit/top-ups", new { amount = 20m });
+        allowed.StatusCode.Should().Be(HttpStatusCode.Created);
+    }
+
+    /// <summary>
+    /// An open top-up is an invoice, so moving the client to another currency is refused while it exists: the money it will credit is
+    /// in the currency it was raised in, and the balance is kept in the client's.
+    /// </summary>
+    [Fact]
+    public async Task AnOpenTopUp_KeepsTheClientsCurrencyFromChanging()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var (owner, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, null, "topup-currency-lock");
+        await CreditTestSeeds.TopUpAsync(owner, 20m);
+
+        var changed = await admin.PutAsJsonAsync($"/api/clients/{clientId}", ClientsTestSeeds.UpdateBody(currency: "AMD"));
+
+        changed.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await ClientsTestSeeds.AssertCodeAsync(changed, HostpanelErrorCodes.CLIENT_CURRENCY_ALREADY_INVOICED);
+    }
+
+    /// <summary>Asserts that the client holds exactly <paramref name="expected"/> top-up invoices.</summary>
+    /// <param name="clientId">The client.</param>
+    /// <param name="expected">How many top-up invoices must exist.</param>
+    /// <returns>A task that completes once the check has run.</returns>
+    private async Task CountTopUpsAsync(int clientId, int expected)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Invoices.AsNoTracking().CountAsync(i => i.ClientId == clientId && i.IsCreditTopUp)).Should().Be(expected);
+    }
+
     /// <summary>Asserts that the client has no invoice at all.</summary>
     /// <param name="clientId">The client.</param>
     /// <returns>A task that completes once the check has run.</returns>

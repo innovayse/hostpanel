@@ -149,18 +149,23 @@ public sealed class BulkInvoiceActionHandler
         return Result<int>.Success(cancellable.Count);
     }
 
-    /// <summary>Adds a Draft copy of every invoice.</summary>
+    /// <summary>
+    /// Adds a Draft copy of every invoice that may be copied. A credit top-up is skipped, not refused: a copy of it would take
+    /// money and credit nothing, and one such invoice in a selection must not fail the copies of the others.
+    /// </summary>
     /// <param name="invoices">The selected invoices.</param>
     /// <returns>How many copies were made.</returns>
     private int Duplicate(IReadOnlyList<Invoice> invoices)
     {
         var now = _clock.UtcNow;
-        foreach (var invoice in invoices)
+        var copied = 0;
+        foreach (var invoice in invoices.Where(i => !i.IsCreditTopUp))
         {
             _context.Invoices.Add(invoice.Duplicate(now));
+            copied++;
         }
 
-        return invoices.Count;
+        return copied;
     }
 
     /// <summary>Deletes every invoice that may be deleted, releasing the billable items that were put on them.</summary>

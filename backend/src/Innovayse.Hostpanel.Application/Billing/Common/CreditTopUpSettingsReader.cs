@@ -9,7 +9,7 @@ using Wolverine;
 namespace Innovayse.Hostpanel.Application.Billing.Common;
 
 /// <summary>
-/// Reads the two top-up limits of <see cref="BillingSettingKeys"/> into <see cref="CreditTopUpSettings"/>. A missing,
+/// Reads the top-up limits (least, most, and how many may be open) of <see cref="BillingSettingKeys"/> into <see cref="CreditTopUpSettings"/>. A missing,
 /// unparsable or contradictory pair (a minimum above the maximum) falls back to the seeded defaults with a warning: a typo
 /// in System Settings must not let a client add funds without any limit. The settings belong to the Admin module, so the rows
 /// are read through its <see cref="GetSettingValuesQuery"/>.
@@ -36,7 +36,10 @@ public sealed class CreditTopUpSettingsReader
     /// <returns>The parsed limits, the defaults when the stored pair is unusable.</returns>
     public async Task<CreditTopUpSettings> ReadAsync(CancellationToken ct)
     {
-        var keys = new List<string> { BillingSettingKeys.CreditTopUpMinimum, BillingSettingKeys.CreditTopUpMaximum };
+        var keys = new List<string>
+        {
+            BillingSettingKeys.CreditTopUpMinimum, BillingSettingKeys.CreditTopUpMaximum, BillingSettingKeys.CreditTopUpMaxOpen,
+        };
         var result = await _bus.InvokeAsync<Result<IReadOnlyList<SettingDto>>>(new GetSettingValuesQuery(keys), ct);
         IReadOnlyDictionary<string, string> rows = (result.Value ?? [])
             .Where(s => s.Value is not null)
@@ -44,13 +47,15 @@ public sealed class CreditTopUpSettingsReader
 
         var minimum = Parse(rows, BillingSettingKeys.CreditTopUpMinimum);
         var maximum = Parse(rows, BillingSettingKeys.CreditTopUpMaximum);
+        var maxOpen = (int)Parse(rows, BillingSettingKeys.CreditTopUpMaxOpen);
         if (minimum <= maximum)
         {
-            return new CreditTopUpSettings(minimum, maximum);
+            return new CreditTopUpSettings(minimum, maximum, maxOpen);
         }
 
         _logger.LogWarning("The top-up minimum {Minimum} is above the maximum {Maximum}; using the defaults.", minimum, maximum);
-        return new CreditTopUpSettings(Default(BillingSettingKeys.CreditTopUpMinimum), Default(BillingSettingKeys.CreditTopUpMaximum));
+        return new CreditTopUpSettings(
+            Default(BillingSettingKeys.CreditTopUpMinimum), Default(BillingSettingKeys.CreditTopUpMaximum), maxOpen);
     }
 
     /// <summary>The seeded default of <paramref name="key"/>.</summary>
@@ -62,7 +67,7 @@ public sealed class CreditTopUpSettingsReader
     /// <summary>Reads a stored amount, or the default with a warning when it is missing or does not match its pattern.</summary>
     /// <param name="rows">The stored rows.</param>
     /// <param name="key">A top-up limit key.</param>
-    /// <returns>An amount above zero.</returns>
+    /// <returns>A number above zero.</returns>
     private decimal Parse(IReadOnlyDictionary<string, string> rows, string key)
     {
         if (rows.TryGetValue(key, out var value) && BillingSettingKeys.Patterns[key].Regex.IsMatch(value))

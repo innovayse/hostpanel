@@ -353,15 +353,27 @@ describe('useInvoicePaymentStore bank transfer', () => {
     expect(fetchBankTransferMock).not.toHaveBeenCalled()
     expect(store.bankTransfer).toBeNull()
 
-    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'PaymentPending' })
+    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'PaymentPending', isBankTransferPending: true })
     await store.loadInvoice('41')
     await store.loadBankTransfer('41')
     expect(fetchBankTransferMock).toHaveBeenCalledWith('41')
     expect(store.bankTransfer).toEqual(details)
   })
 
+  it('does not read details for a pending invoice that is not a bank transfer', async () => {
+    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'PaymentPending', isBankTransferPending: false })
+    const store = useInvoicePaymentStore()
+    await store.loadInvoice('41')
+
+    await store.loadBankTransfer('41')
+
+    expect(fetchBankTransferMock).not.toHaveBeenCalled()
+    expect(store.bankTransfer).toBeNull()
+    expect(store.bankTransferError).toBe('')
+  })
+
   it('keeps the sentence of a refused details read and no details', async () => {
-    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'PaymentPending' })
+    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'PaymentPending', isBankTransferPending: true })
     fetchBankTransferMock.mockRejectedValue({ data: { detail: 'No bank transfer is waiting on this invoice.' } })
     const store = useInvoicePaymentStore()
     await store.loadInvoice('41')

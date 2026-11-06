@@ -21,4 +21,7 @@ public static class BankTransferFields
 
     /// <summary>Free text the operator wants every payer to read.</summary>
     public const string Instructions = "instructions";
+
+    /// <summary>The number of days an unconfirmed transfer may wait before it lapses and the invoice is open for payment again.</summary>
+    public const string ExpiryDays = "expiry_days";
 }

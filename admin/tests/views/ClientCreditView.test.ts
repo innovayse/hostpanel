@@ -124,6 +124,21 @@ describe('ClientCreditView', () => {
     expect(wrapper.get('[data-testid="client-credit-feedback"]').text()).toBe('There is not enough credit.')
   })
 
+  it('keeps the loaded page and says why when a later page cannot be read', async () => {
+    const paged = { ...credit, entries: { ...credit.entries, totalCount: 60, totalPages: 3 } }
+    stubRoutes({
+      'GET /api/clients/9/credit?page=1&pageSize=25': () => json(paged),
+      'GET /api/clients/9/credit?page=2&pageSize=25': () => problem('The history could not be read.', 500),
+    })
+    const wrapper = await mountCredit()
+
+    await wrapper.get('[data-testid="client-credit-pagination-next"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="client-credit-page-error"]').text()).toBe('The history could not be read.')
+    expect(wrapper.find('[data-testid="client-credit-table"]').exists()).toBe(true)
+  })
+
   it('shows the API sentence with a retry when the load is refused', async () => {
     stubRoutes({ 'GET /api/clients/9/credit?page=1&pageSize=25': () => problem('The client was not found.', 404) })
     const wrapper = await mountCredit()

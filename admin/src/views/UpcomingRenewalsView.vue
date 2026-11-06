@@ -102,7 +102,7 @@ onMounted(() => store.fetchAll())
 
     <UiTabs
       :items="windowTabs"
-      :model-value="store.window"
+      :model-value="store.renewalWindow"
       :aria-label="t('billing.renewals.windowLabel')"
       @update:model-value="chooseWindow"
     />
@@ -277,7 +277,7 @@ onMounted(() => store.fetchAll())
                 </UiTableCell>
                 <UiTableCell>
                   <UiLink variant="link" :to="clientPath(claim.clientId)" :data-testid="`renewals-claim-client-${claim.itemId}`">
-                    #{{ claim.clientId }}
+                    {{ claim.clientName }}
                   </UiLink>
                 </UiTableCell>
                 <UiTableCell>{{ claim.description }}</UiTableCell>

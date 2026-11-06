@@ -28,7 +28,7 @@ const domain = {
 
 /** One claimed line. */
 const claim = {
-  invoiceId: 5, itemId: 11, clientId: 9, registeredDomainId: 7, description: 'example.test renewal',
+  invoiceId: 5, itemId: 11, clientId: 9, clientName: 'Ada Lovelace', registeredDomainId: 7, description: 'example.test renewal',
   periodStart: '2027-01-12T00:00:00Z', periodEnd: '2028-01-12T00:00:00Z', claimedAt: '2027-01-01T10:00:00Z',
 }
 
@@ -72,6 +72,19 @@ describe('renewalsStore', () => {
     expect(await store.fetchAll()).toBe(false)
 
     expect(store.error).toBe('Not allowed.')
+  })
+
+  it('keeps the chosen window in renewalWindow', async () => {
+    stubRoutes({
+      'GET /api/services/renewals/upcoming': () => json(emptyPage),
+      'GET /api/domains/renewals/upcoming': () => json(emptyPage),
+      'GET /api/billing/renewal-claims': () => json([]),
+    })
+    const store = useRenewalsStore()
+
+    await store.setWindow(RenewalWindow.Next90Days)
+
+    expect(store.renewalWindow).toBe(RenewalWindow.Next90Days)
   })
 
   it('setServiceAutoRenew sends value and updates the row', async () => {

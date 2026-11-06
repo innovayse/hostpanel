@@ -46,6 +46,8 @@ export interface ClaimedDomainRenewal {
   itemId: number
   /** The client the invoice belongs to. */
   clientId: number
+  /** Full name of that client. */
+  clientName: string
   /** The domain the line renews. */
   registeredDomainId: number
   /** Line text, which names the domain and the term. */

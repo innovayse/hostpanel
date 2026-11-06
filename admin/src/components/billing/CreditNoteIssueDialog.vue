@@ -27,10 +27,12 @@ import type { IssueCreditNotePayload } from '@/types/creditnote'
 import type { InvoiceDetail } from '@/types/invoice'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogSize } from '@/utils/ui/dialog'
-import { UiTone } from '@/utils/ui/tone'
+import { UiTextTone } from '@/utils/ui/text'
 
+/** Translates a key into the active locale. */
 const { t } = useI18n()
 
+/** The props of the dialog. */
 const props = defineProps<{
   /** The paid invoice being credited. */
   invoice: InvoiceDetail
@@ -42,6 +44,7 @@ const props = defineProps<{
   fieldErrors?: Record<string, string>
 }>()
 
+/** The events of the dialog. */
 const emit = defineEmits<{
   /** The form is valid and confirmed; carries the request body. */
   submit: [payload: IssueCreditNotePayload]
@@ -95,20 +98,40 @@ const methodOptions = computed(() => [
   { value: CreditNoteMethod.GatewayRefund, label: t('billing.creditNotes.method.GatewayRefund') },
 ])
 
-/** Sum of the typed lines before tax. */
-const subTotal = computed<number>(() => lines.reduce((sum, line) => sum + Number(line.unitPrice || 0) * Number(line.quantity || 0), 0))
+/**
+ * Converts an amount to whole minor units (cents), so sums and comparisons are done on integers and a value such as 0.1 + 0.2
+ * cannot be told apart from 0.3 by a floating point error.
+ *
+ * @param amount - The amount in the invoice currency.
+ * @returns The amount in minor units, rounded to the nearest one.
+ */
+const toCents = (amount: number): number => Math.round(amount * 100)
 
-/** Tax on the sub total at the invoice's own rate, rounded to cents. */
-const tax = computed<number>(() => Math.round((subTotal.value * props.invoice.amounts.taxRate) / 100 * 100) / 100)
+/** Sum of the typed lines before tax, in whole cents (each line is rounded to cents before it is added). */
+const subTotalCents = computed<number>(() =>
+  lines.reduce((sum, line) => sum + toCents(Number(line.unitPrice || 0) * Number(line.quantity || 0)), 0),
+)
+
+/** Sum of the typed lines before tax. */
+const subTotal = computed<number>(() => subTotalCents.value / 100)
+
+/** Tax on the sub total at the invoice's own rate, in whole cents. */
+const taxCents = computed<number>(() => Math.round((subTotalCents.value * props.invoice.amounts.taxRate) / 100))
+
+/** Tax on the sub total at the invoice's own rate. */
+const tax = computed<number>(() => taxCents.value / 100)
+
+/** What the note would credit in all, in whole cents. */
+const totalCents = computed<number>(() => subTotalCents.value + taxCents.value)
 
 /** What the note would credit in all. */
-const total = computed<number>(() => Math.round((subTotal.value + tax.value) * 100) / 100)
+const total = computed<number>(() => totalCents.value / 100)
 
 /** What the invoice can still be credited. */
 const creditable = computed<number>(() => props.invoice.creditableAmount)
 
-/** True when the typed lines credit more than the invoice can still take. */
-const overCredit = computed<boolean>(() => total.value > creditable.value)
+/** True when the typed lines credit more than the invoice can still take; compared in whole cents, never as floats. */
+const overCredit = computed<boolean>(() => totalCents.value > toCents(creditable.value))
 
 /** True when every line has a description, a price above zero and at least one unit. */
 const linesValid = computed<boolean>(() =>
@@ -195,12 +218,12 @@ const submit = (): void => {
 
       <UiStack gap="sm">
         <UiStack direction="row" justify="between">
-          <UiText tone="primary">{{ t('billing.creditNotes.lines') }}</UiText>
+          <UiText :tone="UiTextTone.Primary">{{ t('billing.creditNotes.lines') }}</UiText>
           <UiButton size="sm" :variant="UiButtonVariant.Secondary" data-testid="billing-credit-note-use-invoice-lines" @click="useInvoiceLines">
             {{ t('billing.creditNotes.useInvoiceLines') }}
           </UiButton>
         </UiStack>
-        <UiText v-if="linesError" :tone="UiTone.Danger" size="sm" data-testid="billing-credit-note-lines-error">{{ linesError }}</UiText>
+        <UiText v-if="linesError" :tone="UiTextTone.Danger" size="sm" data-testid="billing-credit-note-lines-error">{{ linesError }}</UiText>
         <UiGrid v-for="(line, index) in lines" :key="line.key" :columns="4" :data-testid="`billing-credit-note-line-${index}`">
           <UiInput
             v-model="line.description"
@@ -273,13 +296,13 @@ const submit = (): void => {
       <UiStack gap="xs" data-testid="billing-credit-note-totals">
         <UiText>{{ t('billing.creditNotes.subTotal') }}: {{ formatPlainAmount(subTotal, invoice.currency) }}</UiText>
         <UiText>{{ t('billing.creditNotes.taxAt', { rate: invoice.amounts.taxRate }) }}: {{ formatPlainAmount(tax, invoice.currency) }}</UiText>
-        <UiText tone="primary" data-testid="billing-credit-note-total">
+        <UiText :tone="UiTextTone.Primary" data-testid="billing-credit-note-total">
           {{ t('billing.creditNotes.total') }}: {{ formatPlainAmount(total, invoice.currency) }}
         </UiText>
-        <UiText tone="muted" size="sm" data-testid="billing-credit-note-creditable">
+        <UiText :tone="UiTextTone.Muted" size="sm" data-testid="billing-credit-note-creditable">
           {{ t('billing.creditNotes.creditable', { amount: formatPlainAmount(creditable, invoice.currency) }) }}
         </UiText>
-        <UiText v-if="overCredit" :tone="UiTone.Danger" size="sm" data-testid="billing-credit-note-over">
+        <UiText v-if="overCredit" :tone="UiTextTone.Danger" size="sm" data-testid="billing-credit-note-over">
           {{ t('billing.creditNotes.overCredit') }}
         </UiText>
       </UiStack>

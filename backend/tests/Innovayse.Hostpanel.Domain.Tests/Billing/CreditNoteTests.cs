@@ -85,7 +85,7 @@ public sealed class CreditNoteTests
     {
         var invoice = PaidInvoice(taxRate: 0m);
         invoice.AddRefund(Now, PaymentMethodNames.Manual, "r1", 30m, 0m, null, false, TransactionSource.Manual);
-        invoice.AddCreditNoted(50m);
+        invoice.AddCreditNoted(50m, Now);
 
         Draft(invoice, 20m).Total.Should().Be(20m);
         var act = () => Draft(invoice, 20.01m);

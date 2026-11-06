@@ -26,6 +26,7 @@
       "swift": "SWIFT / BIC",
       "copy": "Copy {field}",
       "copied": "Copied",
+      "noDetails": "No bank account details are set up for this transfer yet. Please contact us for the account to pay into, and quote the reference above.",
       "afterwards": "We also emailed you these details. The invoice stays pending until we see the money in our account; this can take a few banking days."
     }
   }

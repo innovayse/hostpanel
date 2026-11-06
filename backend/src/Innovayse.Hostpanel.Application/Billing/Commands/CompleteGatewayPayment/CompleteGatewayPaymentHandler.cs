@@ -80,7 +80,8 @@ public sealed class CompleteGatewayPaymentHandler
     /// recorded or credited, and staff are alerted once per session through
     /// <see cref="GatewayPaymentWithoutReferenceEvent"/>. When another path settled or closed the
     /// invoice while the session was open, whatever the session took that the ledger does not hold
-    /// goes to the client's balance (<c>INVOICE_NOT_PAYABLE</c> when the invoice was closed unpaid).
+    /// goes to the client's balance (<c>INVOICE_NOT_PAYABLE</c> when the invoice was closed unpaid). An invoice waiting for a
+    /// manual bank transfer is settled by a payment the session took in full: the wait ends and the transfer is not needed.
     /// </returns>
     public async Task<Result<GatewayCompletionDto>> HandleAsync(
         CompleteGatewayPaymentCommand cmd, CancellationToken ct)
@@ -151,6 +152,15 @@ public sealed class CompleteGatewayPaymentHandler
         // The ledger row is saved with the Paid mark; the concurrent-completion guard below then
         // makes "ledger row exists" and "invoice is Paid" one atomic fact.
         var module = invoice.GatewayModule;
+
+        // The payer chose a bank transfer after this session was opened and then finished the card payment anyway: the
+        // gateway has the money, so the invoice is settled with it and the transfer wait ends. A transfer that arrives later
+        // finds nothing waiting and is staff's to return.
+        if (invoice.IsBankTransferPending)
+        {
+            invoice.WithdrawBankTransfer(_clock.UtcNow);
+        }
+
         var ledgerRow = invoice.Settle(
             module, gatewayTransactionId, _clock.UtcNow, TransactionSource.GatewayPayment);
         if (ledgerRow is not null)
@@ -279,7 +289,7 @@ public sealed class CompleteGatewayPaymentHandler
         var current = await _context.Invoices
             .Include(i => i.Transactions)
             .FirstOrDefaultAsync(i => i.Id == invoiceId, ct);
-        if (current is null || current.IsPayable)
+        if (current is null || current.IsPayable || current.IsBankTransferPending)
         {
             return null;
         }

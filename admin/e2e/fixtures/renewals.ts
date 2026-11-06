@@ -30,7 +30,7 @@ export const upcomingDomainsPage = pageOf<DomainRegistration>([
 /** `GET /api/billing/renewal-claims`: one line left claimed. */
 export const claimedLines: ClaimedDomainRenewal[] = [
   {
-    invoiceId: 5, itemId: 11, clientId: 9, registeredDomainId: 7, description: 'example.test renewal',
+    invoiceId: 5, itemId: 11, clientId: 9, clientName: 'Ada Lovelace', registeredDomainId: 7, description: 'example.test renewal',
     periodStart: '2027-01-12T00:00:00Z', periodEnd: '2028-01-12T00:00:00Z', claimedAt: '2027-01-01T10:00:00Z',
   },
 ]

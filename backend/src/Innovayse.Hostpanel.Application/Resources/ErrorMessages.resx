@@ -1180,6 +1180,9 @@
   <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
     <value>The amount is outside the range allowed for adding funds.</value>
   </data>
+  <data name="CREDIT_TOP_UP_TOO_MANY_OPEN" xml:space="preserve">
+    <value>You already have unpaid top-ups. Pay or cancel one before adding more funds.</value>
+  </data>
   <data name="CREDIT_NOTE_NOT_FOUND" xml:space="preserve">
     <value>The credit note was not found.</value>
   </data>

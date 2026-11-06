@@ -104,7 +104,7 @@ describe('PayPanel', () => {
   it('shows the bank details instead of the payment choices when the invoice already waits for a transfer', () => {
     const wrapper = mountPanel({
       gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }, { module: 'bank_transfer', displayName: 'Transfer' }],
-      invoice: { id: 9, status: 'PaymentPending' },
+      invoice: { id: 9, status: 'PaymentPending', isBankTransferPending: true },
       bankTransfer: { invoiceId: 9, reference: 'INV-9', amountDue: 10, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null }
     })
 
@@ -113,8 +113,19 @@ describe('PayPanel', () => {
     expect(wrapper.find('[data-testid="invoice-pay-bank-transfer"]').exists()).toBe(false)
   })
 
+  it('keeps the payment choices for a pending invoice that is not a bank transfer (an imported one)', () => {
+    const wrapper = mountPanel({
+      gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }, { module: 'bank_transfer', displayName: 'Transfer' }],
+      invoice: { id: 9, status: 'PaymentPending', isBankTransferPending: false }
+    })
+
+    expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="invoice-pay-bank-transfer"]').exists()).toBe(true)
+  })
+
   it('shows the sentence of a refused details read while the invoice waits for a transfer', () => {
-    const wrapper = mountPanel({ invoice: { id: 9, status: 'PaymentPending' }, bankTransferError: 'Could not read the bank details.' })
+    const wrapper = mountPanel({ invoice: { id: 9, status: 'PaymentPending', isBankTransferPending: true }, bankTransferError: 'Could not read the bank details.' })
 
     expect(wrapper.find('[data-testid="invoice-bank-transfer-error"]').text()).toBe('Could not read the bank details.')
     expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(false)

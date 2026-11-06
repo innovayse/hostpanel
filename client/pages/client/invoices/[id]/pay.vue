@@ -58,7 +58,6 @@ import { CLIENT_INVOICES_PATH, clientInvoicePath } from '~/constants/clientRoute
 import { AlertCircle, CheckCircle } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
-import { InvoiceStatus } from '~/types/invoicestatus'
 import { isInvoicePaid } from '~/utils/invoice'
 
 definePageMeta({ layout: 'client', middleware: 'client-auth' })
@@ -110,7 +109,7 @@ const retryOptions = async (): Promise<void> => {
 }
 
 /** Whether the invoice already waits for a bank transfer, so the payment choices and the gateway notice do not apply. */
-const isBankTransferPending = computed(() => invoice.value?.status === InvoiceStatus.PaymentPending)
+const isBankTransferPending = computed(() => invoice.value?.isBankTransferPending === true)
 
 /** The security notice describes the hosted gateway's page, so it is shown only when one exists and the payer can still use it. */
 const showSecurityNotice = computed(() =>

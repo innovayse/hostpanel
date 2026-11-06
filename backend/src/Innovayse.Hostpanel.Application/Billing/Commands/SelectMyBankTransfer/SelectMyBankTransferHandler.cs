@@ -94,7 +94,8 @@ public sealed class SelectMyBankTransferHandler
             return Result.Success(settings.ToDetails(invoice));
         }
 
-        if (!settings.IsEnabled)
+        // A transfer with nothing to show the payer cannot be paid, so it is as unavailable as one switched off.
+        if (!settings.IsEnabled || !settings.HasPayerDetails)
         {
             return Result<BankTransferDetailsDto>.FailureCode(HostpanelErrorCodes.BANK_TRANSFER_NOT_AVAILABLE);
         }

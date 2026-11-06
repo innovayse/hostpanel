@@ -1,5 +1,5 @@
 /**
- * Pinia store for the upcoming renewals screen: the chosen window, the services and domains renewing inside it,
+ * Pinia store for the upcoming renewals screen: the chosen look-ahead window, the services and domains renewing inside it,
  * the domain renewal lines left claimed, and the staff actions on them.
  *
  * It is the only caller of `useRenewalsApi`. A load puts its sentence in `error`; an action puts its sentence in
@@ -29,8 +29,8 @@ export const useRenewalsStore = defineStore('renewals', () => {
   /** The renewals endpoints; this store is their only caller. */
   const api = useRenewalsApi()
 
-  /** The window staff look ahead over. */
-  const window = ref<RenewalWindow>(RenewalWindow.Next30Days)
+  /** The look-ahead window staff chose; named so it never reads as the browser's global `window`. */
+  const renewalWindow = ref<RenewalWindow>(RenewalWindow.Next30Days)
 
   /** Services renewing inside the window, current page. */
   const services = ref<UpcomingServiceRenewal[]>([])
@@ -81,7 +81,7 @@ export const useRenewalsStore = defineStore('renewals', () => {
    * @returns True when loaded; false when refused (see `error`).
    */
   const fetchServices = async (page: number): Promise<boolean> => {
-    const result = await runAction(error, () => api.listServices(window.value, page, pageSize))
+    const result = await runAction(error, () => api.listServices(renewalWindow.value, page, pageSize))
     if (result.ok) {
       services.value = result.value.items
       servicesTotal.value = result.value.totalCount
@@ -97,7 +97,7 @@ export const useRenewalsStore = defineStore('renewals', () => {
    * @returns True when loaded; false when refused (see `error`).
    */
   const fetchDomains = async (page: number): Promise<boolean> => {
-    const result = await runAction(error, () => api.listDomains(window.value, page, pageSize))
+    const result = await runAction(error, () => api.listDomains(renewalWindow.value, page, pageSize))
     if (result.ok) {
       domains.value = result.value.items
       domainsTotal.value = result.value.totalCount
@@ -145,7 +145,7 @@ export const useRenewalsStore = defineStore('renewals', () => {
    * @returns True when loaded.
    */
   const setWindow = (next: RenewalWindow): Promise<boolean> => {
-    window.value = next
+    renewalWindow.value = next
     return fetchAll()
   }
 
@@ -230,7 +230,7 @@ export const useRenewalsStore = defineStore('renewals', () => {
   }
 
   return {
-    window, services, servicesPage, servicesTotal, domains, domainsPage, domainsTotal, claims, pageSize,
+    renewalWindow, services, servicesPage, servicesTotal, domains, domainsPage, domainsTotal, claims, pageSize,
     loading, acting, error, actionError, notice, noticeCount,
     fetchServices, fetchDomains, fetchClaims, fetchAll, setWindow,
     setServiceAutoRenew, setDomainAutoRenew, generateInvoices, releaseClaim,

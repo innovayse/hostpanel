@@ -76,6 +76,11 @@ export interface ClientInvoice {
    * cannot be applied to it.
    */
   isCreditTopUp: boolean
+  /**
+   * Whether the client chose a manual bank transfer that staff have not yet confirmed or rejected. A `PaymentPending`
+   * invoice that is not a transfer (an imported one) is `false`, so bank details are asked for and shown only for a real one.
+   */
+  isBankTransferPending: boolean
   /** Preferred payment method; null when not specified. */
   paymentMethod: string | null
   /** Line items on the invoice. */

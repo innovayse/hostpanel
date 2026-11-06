@@ -53,7 +53,6 @@
  */
 import { storeToRefs } from 'pinia'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
-import { InvoiceStatus } from '~/types/invoicestatus'
 import { redirectToExternal } from '~/utils/externalRedirect'
 import { UiButtonVariant } from '~/utils/ui/enums'
 
@@ -83,7 +82,7 @@ const {
 } = storeToRefs(paymentStore)
 
 /** Whether the invoice already waits for a bank transfer, so its details are shown in place of the payment choices. */
-const awaitingBankTransfer = computed<boolean>(() => invoice.value?.status === InvoiceStatus.PaymentPending)
+const awaitingBankTransfer = computed<boolean>(() => invoice.value?.isBankTransferPending === true)
 
 /** The bank transfer button is the main action unless a card button sits above it, then it is the quieter one. */
 const bankTransferVariant = computed<UiButtonVariant>(() =>

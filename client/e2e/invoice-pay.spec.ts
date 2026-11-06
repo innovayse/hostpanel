@@ -8,7 +8,7 @@
  */
 import { expect, test } from './support/test'
 import { BANK_TRANSFER_DETAILS, GATEWAY_PAGE_URL, HOSTED_GATEWAY, INVOICE } from './support/fixtures.mjs'
-import { disableBankTransfer, enableHostedGateway, resetStub, signIn, stubRequests, waitForHydration } from './support/helpers'
+import { disableBankTransfer, emptyBankTransferDetails, enableHostedGateway, resetStub, signIn, stubRequests, waitForHydration } from './support/helpers'
 
 test.beforeEach(async ({ context, request, baseURL }) => {
   await resetStub(request)
@@ -78,6 +78,19 @@ test('choosing the bank transfer shows the bank details, the reference and copy 
   await expect(page.getByTestId('bank-transfer-card')).toBeVisible()
   await expect(page.getByTestId('bank-transfer-reference')).toHaveText(BANK_TRANSFER_DETAILS.reference)
   await expect(page.getByTestId('invoice-pay-now')).toHaveCount(0)
+})
+
+test('a transfer with no bank details tells the payer to contact the provider and still shows the reference', async ({ page, request }) => {
+  await emptyBankTransferDetails(request)
+  await page.goto(`/client/invoices/${INVOICE.id}/pay`)
+  await waitForHydration(page)
+
+  await page.getByTestId('invoice-pay-bank-transfer').click()
+
+  await expect(page.getByTestId('bank-transfer-card')).toBeVisible()
+  await expect(page.getByTestId('bank-transfer-no-details')).toBeVisible()
+  await expect(page.getByTestId('bank-transfer-reference')).toHaveText(BANK_TRANSFER_DETAILS.reference)
+  await expect(page.getByTestId('bank-transfer-iban')).toHaveCount(0)
 })
 
 test('the pay page of an invoice that waits for a transfer shows the details again after a reload', async ({ page }) => {

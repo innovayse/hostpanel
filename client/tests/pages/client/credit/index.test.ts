@@ -90,6 +90,23 @@ describe('credit page', () => {
     expect(billingApi.fetchCredit).toHaveBeenCalledWith(2, 10)
   })
 
+  it('offers a retry on the failed read that asks for the same page again', async () => {
+    billingApi.fetchCredit.mockResolvedValueOnce(credit(10, 3))
+    const wrapper = await mountPage(CreditPage)
+    billingApi.fetchCredit.mockRejectedValueOnce(new Error('down'))
+    await wrapper.get('[data-testid="ui-pagination-next"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.find('[data-testid="credit-error"]').exists()).toBe(true)
+
+    billingApi.fetchCredit.mockResolvedValueOnce(credit(10, 3))
+    await wrapper.get('[data-testid="credit-error-retry"]').trigger('click')
+    await flushPromises()
+
+    expect(billingApi.fetchCredit).toHaveBeenLastCalledWith(2, 10)
+    expect(wrapper.find('[data-testid="credit-error"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="credit-balance"]').exists()).toBe(true)
+  })
+
   it('shows the sentence of a failed read instead of the balance', async () => {
     billingApi.fetchCredit.mockRejectedValue(new Error('down'))
 

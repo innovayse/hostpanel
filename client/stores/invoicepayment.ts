@@ -92,8 +92,8 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
   }
 
   /**
-   * Reads the bank details of the transfer waiting on the loaded invoice. Nothing is asked unless the invoice is
-   * PaymentPending, so an open or paid invoice never shows bank details.
+   * Reads the bank details of the transfer waiting on the loaded invoice. Nothing is asked unless the invoice says a bank
+   * transfer waits on it, so an open, paid or imported pending invoice never shows bank details.
    *
    * @param id - Invoice id.
    * @returns Nothing; a refused read leaves its sentence in {@link bankTransferError}.
@@ -101,7 +101,7 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
   const loadBankTransfer = async (id: string): Promise<void> => {
     bankTransfer.value = null
     bankTransferError.value = ''
-    if (invoice.value?.status !== InvoiceStatus.PaymentPending) {
+    if (!invoice.value?.isBankTransferPending) {
       return
     }
     try {
@@ -230,7 +230,7 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
       bankTransfer.value = await billing.selectBankTransfer(invoiceId)
       bankTransferError.value = ''
       if (invoice.value) {
-        invoice.value = { ...invoice.value, status: InvoiceStatus.PaymentPending }
+        invoice.value = { ...invoice.value, status: InvoiceStatus.PaymentPending, isBankTransferPending: true }
       }
       return true
     } catch (e: unknown) {

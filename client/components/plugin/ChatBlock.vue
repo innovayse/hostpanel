@@ -40,39 +40,59 @@
                 class="block"
                 data-testid="plugin-chat-assistant-label"
               >{{ block.assistant.label }}</UiText>
-              {{ message.text }}
+              <UiMarkdownText v-if="message.role === PluginChatRole.Assistant" :text="message.text" />
+              <template v-else>{{ message.text }}</template>
               <template v-for="link in message.links" :key="link.key">
                 <UiLink v-if="link.external" :href="link.href" external class="block" testid="plugin-chat-link">{{ link.text }}</UiLink>
                 <UiLink v-else :to="link.href" class="block" testid="plugin-chat-link">{{ link.text }}</UiLink>
               </template>
             </UiChatBubble>
-            <UiStack v-if="message.steps.length" as="ul" gap="xs" data-testid="plugin-chat-steps">
-              <UiStack
-                v-for="step in message.steps"
-                :key="step.key"
-                as="li"
-                direction="row"
-                gap="xs"
-                align="center"
-                :data-state="step.state"
-                data-testid="plugin-chat-step"
-              >
-                <component :is="STEP_ICONS[step.state]" :size="14" :class="STEP_ICON_CLASSES[step.state]" aria-hidden="true" />
-                <UiText as="span" size="xs" tone="muted">{{ step.label }}</UiText>
-                <UiText v-if="step.state === PluginChatStepState.Stopped" as="span" size="xs" tone="muted" data-testid="plugin-chat-step-stopped">{{ $t('plugins.chatStepStopped') }}</UiText>
+            <UiCard
+              v-if="message.steps.length"
+              padding="none"
+              class="px-2.5 py-2"
+              data-testid="plugin-chat-steps-box"
+            >
+              <UiStack as="ul" gap="xs" data-testid="plugin-chat-steps">
+                <UiStack
+                  v-for="step in message.steps"
+                  :key="step.key"
+                  as="li"
+                  direction="row"
+                  gap="xs"
+                  align="center"
+                  :data-state="step.state"
+                  data-testid="plugin-chat-step"
+                >
+                  <component :is="STEP_ICONS[step.state]" :size="14" :class="STEP_ICON_CLASSES[step.state]" aria-hidden="true" />
+                  <UiText as="span" size="xs" tone="muted">{{ step.label }}</UiText>
+                  <UiText v-if="step.state === PluginChatStepState.Stopped" as="span" size="xs" tone="muted" data-testid="plugin-chat-step-stopped">{{ $t('plugins.chatStepStopped') }}</UiText>
+                </UiStack>
               </UiStack>
-            </UiStack>
+              <UiText as="p" size="xs" tone="muted" class="mt-1" data-testid="plugin-chat-steps-count">{{ $t('plugins.chatStepsCount', { done: doneSteps(message), total: message.steps.length }) }}</UiText>
+            </UiCard>
             <UiAlert v-for="issue in message.issues" :key="issue.key" variant="error" data-testid="plugin-chat-issue">{{ issue.text }}</UiAlert>
             <UiToneCard v-for="result in message.results" :key="result.key" :tone="pluginUiTone(result.tone)" data-testid="plugin-chat-result">
               <UiStack gap="xs">
                 <UiText v-if="result.title" as="p" weight="semibold" data-testid="plugin-chat-result-title">{{ result.title }}</UiText>
                 <UiText v-if="result.text" as="p" size="sm" tone="muted" data-testid="plugin-chat-result-text">{{ result.text }}</UiText>
-                <UiStack v-if="result.actions.length" direction="row" gap="sm" align="center" wrap>
+                <UiStack v-if="result.actions.length || result.details.length" direction="row" gap="sm" align="center" wrap>
                   <template v-for="action in result.actions" :key="action.key">
                     <PluginActionBlock v-if="action.block" :block="action.block" />
+                    <UiButton v-else-if="action.resend" size="sm" :disabled="streaming" data-testid="plugin-chat-result-resend" @click="resend">{{ action.label }}</UiButton>
                     <UiLink v-else-if="action.link?.external" :href="action.link.href" external testid="plugin-chat-result-link">{{ action.label }}</UiLink>
                     <UiLink v-else-if="action.link" :to="action.link.href" testid="plugin-chat-result-link">{{ action.label }}</UiLink>
                   </template>
+                  <UiButton
+                    v-if="result.details.length"
+                    variant="outline"
+                    size="sm"
+                    data-testid="plugin-chat-result-details-toggle"
+                    @click="toggleDetails(result.key)"
+                  >{{ $t('plugins.chatResultDetails') }}</UiButton>
+                </UiStack>
+                <UiStack v-if="openDetails.has(result.key)" as="ul" gap="xs" data-testid="plugin-chat-result-details">
+                  <UiText v-for="line in result.details" :key="line" as="li" size="xs" tone="muted">{{ line }}</UiText>
                 </UiStack>
               </UiStack>
             </UiToneCard>
@@ -81,15 +101,16 @@
       </div>
       <UiText v-if="status" size="xs" tone="muted" data-testid="plugin-chat-status">{{ status }}</UiText>
       <UiText v-if="error" size="sm" tone="danger" data-testid="plugin-chat-error">{{ error }}</UiText>
-      <UiTextarea
-        v-model="draft"
-        :label="$t('plugins.chatMessage')"
-        :placeholder="block.placeholder ?? $t('plugins.chatMessage')"
-        :rows="3"
-        :max-length="block.maxLength"
-        testid="plugin-chat-input"
-      />
-      <UiStack direction="row" gap="sm" justify="end">
+      <UiStack direction="row" gap="sm" align="end" data-testid="plugin-chat-composer">
+        <UiTextarea
+          v-model="draft"
+          class="min-w-0 flex-1"
+          :label="$t('plugins.chatMessage')"
+          :placeholder="block.placeholder ?? $t('plugins.chatMessage')"
+          :rows="2"
+          :max-length="block.maxLength"
+          testid="plugin-chat-input"
+        />
         <UiButton v-if="streaming" variant="outline" size="sm" data-testid="plugin-chat-stop" @click="stop">{{ $t('plugins.chatStop') }}</UiButton>
         <UiButton v-else size="sm" :disabled="!canSend" data-testid="plugin-chat-send" @click="send">{{ $t('plugins.chatSend') }}</UiButton>
       </UiStack>
@@ -107,13 +128,17 @@
  * `step` (`{ id?, label, state }`) keeps a compact list inside the reply, a repeated key updating its row; `result`
  * adds a card with a tone edge and actions under the same link and route rules as other blocks; `issue` shows the
  * plugin's own failure in the danger tone while the stream goes on, `error` and `done` staying the host's. A malformed
- * event of these three is ignored whole. Everything is shown as text, never HTML.
+ * event of these three is ignored whole. Everything is shown as text, never HTML; a reply's own text is read as the
+ * small Markdown subset of `UiMarkdownText`, which builds known tags with `h()`, and the reader's own message stays as typed.
  *
  * The stream is read through the store, which opens it with `apiStream` (fetch through the panel's own server,
  * with the CSRF and language headers), never with `EventSource`. Stop, leaving the page and a lost connection end
  * it, and the plugin's call ends with it. After a Stop a step still running shows as stopped and no failure is shown.
  *
  * The log scrolls on its own and follows the reply, unless the reader scrolled up.
+ *
+ * A card's action reads again the blocks named in `refresh`, as a finished reply does. A card may also keep `details`
+ * lines behind a switch, and an action with `resend: true` sends the conversation's last message again.
  *
  * An empty chat shows the block's `intro` and its `suggestions`, which only fill the message field; `assistant.label`
  * signs each reply, `maxLength` caps the field, and once a reply has ended the blocks named in `refresh` read again,
@@ -185,6 +210,8 @@ const draft = ref('')
 const status = ref('')
 /** The sentence of a failure; empty when there is none. */
 const error = ref('')
+/** The keys of the cards whose details are open. */
+const openDetails = ref<ReadonlySet<number>>(new Set())
 /** True while a reply streams. */
 const streaming = ref(false)
 /** The next message key. */
@@ -317,7 +344,7 @@ const applyStep = (target: PluginChatMessage, data: unknown): void => {
  * @returns Nothing.
  */
 const applyResult = (target: PluginChatMessage, data: unknown): void => {
-  const result = parsePluginChatResult(data, context.values, context.externalOrigins)
+  const result = parsePluginChatResult(data, context.values, context.externalOrigins, props.block.refresh ?? [])
   if (result && target.results.length < MAX_REPLY_PARTS) {
     target.results.push({ ...result, key: nextKey.value++ })
   }
@@ -380,17 +407,13 @@ const apply = (target: PluginChatMessage, event: PluginStreamEvent): void => {
 }
 
 /**
- * Sends the draft and shows the reply as it streams.
+ * Sends a message and shows the reply as it streams.
  *
+ * @param text - The message, already trimmed.
  * @returns Resolves when the reply has ended, been stopped or failed.
  */
-const send = async (): Promise<void> => {
-  const text = draft.value.trim()
-  if (!text || streaming.value) {
-    return
-  }
+const sendMessage = async (text: string): Promise<void> => {
   add(PluginChatRole.User, text)
-  draft.value = ''
   const target = add(PluginChatRole.Assistant, '')
   const asked = generation
   const running = new AbortController()
@@ -432,6 +455,56 @@ const send = async (): Promise<void> => {
     messages.value = messages.value.filter(message => message.key !== target.key)
   }
 }
+
+/**
+ * Sends the draft and empties the field.
+ *
+ * @returns Resolves when the reply has ended, been stopped or failed.
+ */
+const send = async (): Promise<void> => {
+  const text = draft.value.trim()
+  if (!text || streaming.value) {
+    return
+  }
+  draft.value = ''
+  await sendMessage(text)
+}
+
+/**
+ * Sends the conversation's last message again, for a card's "try again". It never passes through the field, so what the
+ * reader has started typing there stays.
+ *
+ * @returns Resolves when the reply has ended.
+ */
+const resend = async (): Promise<void> => {
+  const last = [...messages.value].reverse().find(message => message.role === PluginChatRole.User)
+  if (last && !streaming.value) {
+    await sendMessage(last.text)
+  }
+}
+
+/**
+ * Opens or closes a card's details.
+ *
+ * @param key - The card's key.
+ * @returns Nothing.
+ */
+const toggleDetails = (key: number): void => {
+  const next = new Set(openDetails.value)
+  if (!next.delete(key)) {
+    next.add(key)
+  }
+  openDetails.value = next
+}
+
+/**
+ * How many of a reply's steps have finished.
+ *
+ * @param message - The reply.
+ * @returns The count.
+ */
+const doneSteps = (message: PluginChatMessage): number =>
+  message.steps.filter(step => step.state === PluginChatStepState.Done).length
 
 /**
  * Stops the reply streaming now; what arrived stays.

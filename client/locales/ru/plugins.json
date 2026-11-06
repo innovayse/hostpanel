@@ -10,8 +10,11 @@
     "previewSource": "Какой сайт",
     "previewDesktop": "Компьютер",
     "previewPhone": "Телефон",
-    "previewOpen": "Открыть в новой вкладке",
+    "previewOpen": "Открыть",
     "previewEmpty": "Пока нечего показать.",
-    "chatStepStopped": "Остановлено"
+    "previewInsecure": "Для предпросмотра нужно защищённое соединение. По обычному http браузер скрывает то, что панель проверяет перед показом сайта, поэтому предпросмотр отключён. Откройте панель по https.",
+    "chatStepStopped": "Остановлено",
+    "chatStepsCount": "Выполнено шагов: {done} из {total}",
+    "chatResultDetails": "Подробнее"
   }
 }

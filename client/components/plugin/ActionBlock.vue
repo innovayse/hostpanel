@@ -8,7 +8,7 @@
       data-testid="plugin-action-button"
       @click="start"
     >
-      {{ block.label }}
+      {{ label }}
     </UiButton>
     <UiText v-if="message && !outlet" size="xs" :tone="failed ? 'danger' : 'success'" data-testid="plugin-action-message">{{ message }}</UiText>
     <UiConfirmDialog
@@ -32,9 +32,10 @@
  *
  * Who may call the route is decided by the server on the call; a refusal is shown like any other failure. A
  * standalone action shows its sentence under its button; inside a header it hands the sentence to the header's
- * outlet instead, so the sentence never grows one button's column and the row of buttons stays aligned.
+ * outlet instead, so the sentence never grows one button's column and the row of buttons stays aligned. A `labelSource`
+ * lets the label follow data (a version number); `label` stands until it is read and whenever it is empty.
  */
-import { usePluginActionMessageOutlet, usePluginFollowUp, usePluginView } from '~/composables/usePluginView'
+import { usePluginActionMessageOutlet, usePluginFollowUp, usePluginSource, usePluginView } from '~/composables/usePluginView'
 import { usePluginsStore } from '~/stores/plugins'
 import type { PluginActionBlock } from '~/types/pluginblock'
 import { PluginBlockTone } from '~/types/pluginblocktone'
@@ -67,6 +68,12 @@ const running = ref(false)
 const message = ref('')
 /** Whether the last call failed. */
 const failed = ref(false)
+
+/** The label read, when the view names a source for it. */
+const { value: labelRead } = usePluginSource(() => props.block.labelSource, () => props.block.id)
+
+/** The button's text. */
+const label = computed(() => (typeof labelRead.value === 'string' && labelRead.value !== '' ? labelRead.value : props.block.label))
 
 /** The button's variant. */
 const variant = computed(() => pluginButtonVariant(props.block.style))

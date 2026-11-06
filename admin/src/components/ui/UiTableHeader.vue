@@ -13,7 +13,7 @@ import { UiAlign, alignClasses, headerDensityClasses, UiSortDirection } from '@/
 
 /** Props for UiTableHeader. */
 const props = withDefaults(defineProps<{
-  /** Horizontal alignment; omitted leaves it to the screen. */
+  /** Horizontal alignment (left when omitted). */
   align?: UiAlign
   /** Makes the caption a sort button. */
   sortable?: boolean

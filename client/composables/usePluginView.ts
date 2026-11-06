@@ -65,6 +65,34 @@ export const providePluginPane = (): void => {
  */
 export const usePluginPane = (): boolean => inject(PLUGIN_PANE_KEY, false)
 
+/** The link back from a workspace page. */
+export interface PluginBackLink {
+  /** Where it goes. */
+  to: string
+  /** Its text. */
+  label: string
+}
+
+/** The injection key of the page's back link. */
+const PLUGIN_BACK_LINK_KEY: InjectionKey<ComputedRef<PluginBackLink | null>> = Symbol('plugin-back-link')
+
+/**
+ * Offers the page's back link to a compact header below, which draws it on its own line.
+ *
+ * @param link - The link; null while the page has none.
+ * @returns Nothing.
+ */
+export const providePluginBackLink = (link: ComputedRef<PluginBackLink | null>): void => {
+  provide(PLUGIN_BACK_LINK_KEY, link)
+}
+
+/**
+ * Reads the page's back link.
+ *
+ * @returns The link, or null outside a page that offers one.
+ */
+export const usePluginBackLink = (): PluginBackLink | null => inject(PLUGIN_BACK_LINK_KEY, null)?.value ?? null
+
 /** What {@link usePluginSource} answers. */
 export interface PluginSourceState {
   /** The value read: the reply, or its `field`; undefined until read or after a failure. */

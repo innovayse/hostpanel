@@ -17,7 +17,17 @@
   <a href="LICENSE"><img alt="License: AGPL v3" src="https://img.shields.io/badge/license-AGPL--3.0-blue"></a>
   <a href="https://hub.docker.com/r/innovayse/hostpanel"><img alt="Docker Hub" src="https://img.shields.io/docker/pulls/innovayse/hostpanel?logo=docker&logoColor=white&label=Docker%20Hub"></a>
   <a href="https://github.com/innovayse/hostpanel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/innovayse/hostpanel/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://www.nuget.org/packages/Hostpanel.Sdk"><img alt="Hostpanel.Sdk on NuGet" src="https://img.shields.io/nuget/v/Hostpanel.Sdk?label=Hostpanel.Sdk"></a>
   <a href="https://discord.gg/NfqTkyTgD"><img alt="Chat on Discord" src="https://img.shields.io/badge/chat-on%20Discord-5865F2?logo=discord&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <a href="https://hostpanel.innovayse.com">Website</a> ·
+  <a href="https://hostpanel.innovayse.com/docs/">Documentation</a> ·
+  <a href="https://plugins-hostpanel.innovayse.com">Plugin marketplace</a> ·
+  <a href="https://github.com/innovayse/hostpanel-sdk">Plugin SDK</a> ·
+  <a href="https://github.com/innovayse/hostpanel/releases">Releases</a> ·
+  <a href="https://discord.gg/NfqTkyTgD">Discord</a>
 </p>
 
 <p align="center">
@@ -38,7 +48,8 @@ your own machine and extend.
 - **You own it.** AGPL-3.0, self-hosted with Docker, no per-client licence fee.
 - **Modern stack.** ASP.NET Core 9 and PostgreSQL behind a Nuxt 4 storefront and a Vue 3 admin panel.
 - **Built to be extended.** Payment gateways, registrars and control panels sit behind small
-  interfaces. You can add your own with the plugin SDK, without changing the core.
+  interfaces. You can add your own with the plugin SDK, without changing the core, or install a
+  ready-made one from the [plugin marketplace](https://plugins-hostpanel.innovayse.com).
 - **Ready in minutes.** Prebuilt multi-arch images (`amd64`, `arm64`) on Docker Hub and an installer
   that sets up HTTPS for you.
 
@@ -69,6 +80,7 @@ Taken from the local development stack with its seeded sample data.
 | Admin panel | Clients, orders, products, gateways, integrations, e-mail templates, plugins, reports, audit log |
 | Demo mode | Fake payments, registrar and provisioning, caught mail, fixed sample data reset on a schedule, on a network isolated from production |
 | Languages | English, Russian and Armenian in both the portal and the admin panel |
+| Plugin marketplace | [plugins-hostpanel.innovayse.com](https://plugins-hostpanel.innovayse.com) lists installable plugins, among them the payment gateways Stripe, PayPal, Inecobank, Idram and Ameriabank. See [Payment gateways](https://hostpanel.innovayse.com/docs/payments/gateways) |
 | Plugin SDK | `Hostpanel.Sdk` (MIT, a NuGet package, developed in [hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk)) for your own payment, registrar, provisioning, identity, fulfilment and hosted plugins |
 | Integrations | Payments: bank transfer built in; card and bank gateways install as plugins. Registrars: Namecheap, Name.am. Control panels: CWP7, Plesk. Notifications: Telegram |
 | Data import from WHMCS | A PHP addon you install in WHMCS. HostPanel pulls clients, contacts, products, orders, services, domains, invoices, transactions, quotes, tickets, announcements, knowledge base, downloads and network issues from it, page by page. See [Moving from another billing system](docs/migration/from-another-system.md) |
@@ -90,7 +102,7 @@ This table compares what HostPanel and WHMCS offer today. WHMCS facts come from 
 | Control panels | CWP7, Plesk | cPanel, Plesk, DirectAdmin and others |
 | Domain registrars | Namecheap, Name.am | Many, including Namecheap, OpenSRS and Nominet |
 | Payment gateways | Bank transfer built in, gateways as plugins | Many, including Authorize.net, BitPay and bank transfer |
-| Extensions | A plugin SDK (MIT). Few plugins exist so far | A large marketplace of third-party modules |
+| Extensions | A plugin SDK (MIT) and a [plugin marketplace](https://plugins-hostpanel.innovayse.com) with a small but growing catalogue | A large marketplace of third-party modules |
 | Moving over | An importer that pulls your data out of WHMCS | Not applicable |
 
 ### What HostPanel does not have yet
@@ -101,9 +113,12 @@ This table compares what HostPanel and WHMCS offer today. WHMCS facts come from 
 - Automatic tax calculation. Staff set a tax rate on each invoice by hand.
 - Automatic fraud checks on new orders. Staff can mark an order as fraud by hand.
 - A hosted option. You run HostPanel on your own server.
-- A marketplace of ready-made modules.
+- A catalogue of ready-made modules as large as WHMCS has. The [plugin marketplace](https://plugins-hostpanel.innovayse.com) is new and still small.
 
 ## Quick start with Docker
+
+Full guides are in the [documentation](https://hostpanel.innovayse.com/docs/): [quick start](https://hostpanel.innovayse.com/docs/get-started/quick-start),
+[requirements](https://hostpanel.innovayse.com/docs/get-started/requirements) and [install](https://hostpanel.innovayse.com/docs/operators/install).
 
 On a Linux server with [Docker](https://docs.docker.com/get-docker/) and Compose v2, point the DNS of your
 domain and admin domain at the server, keep ports 80 and 443 open, and run one command:
@@ -283,7 +298,11 @@ or control-panel integration is one of the most useful contributions: open an is
 
 ### Writing a plugin
 
-Start with [docs/developers/write-a-plugin.md](docs/developers/write-a-plugin.md). In short:
+Start with [docs/developers/write-a-plugin.md](docs/developers/write-a-plugin.md) (also on the
+[documentation site](https://hostpanel.innovayse.com/docs/developers/write-a-plugin)). The contract lives in the
+[`Hostpanel.Sdk`](https://www.nuget.org/packages/Hostpanel.Sdk) package, and
+[Publishing a plugin](https://hostpanel.innovayse.com/docs/developers/publishing-a-plugin) explains how to list one on the
+[marketplace](https://plugins-hostpanel.innovayse.com). In short:
 
 - **Manifest v2.** `plugin.json` with `"manifestVersion": 2` declares typed `settings`, `capabilities`, `locales`, an `api`
   block (the HTTP routes the plugin answers), a `ui` block (menus, pages and slot widgets) and `externalOrigins`.
@@ -331,6 +350,7 @@ More detail, including the rules for pull requests, is in [CONTRIBUTING.md](CONT
   read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). Questions go to
   [Discussions](https://github.com/innovayse/hostpanel/discussions).
 - **Community:** chat and ask questions on [Discord](https://discord.gg/NfqTkyTgD).
+- **Documentation:** [hostpanel.innovayse.com/docs](https://hostpanel.innovayse.com/docs/). Product site: [hostpanel.innovayse.com](https://hostpanel.innovayse.com).
 - **Changes and help:** see the [CHANGELOG](CHANGELOG.md) for release notes and [SUPPORT.md](SUPPORT.md) for where to get help.
 - **Security:** report problems privately as described in [SECURITY.md](SECURITY.md), not in a public issue.
 - **License:** Copyright (c) 2024-2026 Innovayse LLC. Free software under the

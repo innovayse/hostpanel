@@ -10,7 +10,9 @@ using Microsoft.Extensions.Options;
  * the account the token acts for, so no request value can name another client's, and they follow the same visibility
  * rule as the host API: a sub-user who may not see services does not get their addresses here either. And a plugin
  * reaches a client's sites only on products the operator bound to it (#823), the rule SSH access follows: a manifest's own
- * productIds are the author's claim and never count, and nothing bound means no domains.
+ * productIds are the author's claim and never count, and nothing bound means no domains. A client types a service's
+ * domain at order, so it could name the panel's own host: the browser check refuses that too, and leaving it out here keeps
+ * it off the frame policy as well.
  */
 
 namespace Innovayse.Hostpanel.Application.Plugins.Common;
@@ -36,21 +38,27 @@ public sealed class PluginFrameOriginResolver
     /// <summary>The origins allowed over plain http on a developer machine.</summary>
     private readonly IOptions<PluginPreviewOptions> _options;
 
+    /// <summary>The panel's own address, whose origin is never framed.</summary>
+    private readonly IOptions<ClientPortalOptions> _portal;
+
     /// <summary>Initializes the resolver.</summary>
     /// <param name="callerClient">The account the caller acts for.</param>
     /// <param name="facts">Reads the domains of that account's services.</param>
     /// <param name="slots">Reads the products the operator bound the plugin's slot widgets to (#823).</param>
     /// <param name="options">The origins allowed over plain http on a developer machine.</param>
+    /// <param name="portal">The panel's own address, whose origin is never framed.</param>
     public PluginFrameOriginResolver(
         ICallerClientResolver callerClient,
         IPluginHostFactsReader facts,
         IPluginSlotContextReader slots,
-        IOptions<PluginPreviewOptions> options)
+        IOptions<PluginPreviewOptions> options,
+        IOptions<ClientPortalOptions> portal)
     {
         _callerClient = callerClient;
         _facts = facts;
         _slots = slots;
         _options = options;
+        _portal = portal;
     }
 
     /// <summary>Lists the origins, first what the plugin declares, then the caller's own, then the development ones.</summary>
@@ -89,7 +97,17 @@ public sealed class PluginFrameOriginResolver
             }
         }
 
-        return Bound(origins);
+        var own = OwnOrigin();
+        return Bound(origins.Where(origin => !string.Equals(origin, own, StringComparison.Ordinal)));
+    }
+
+    /// <summary>The panel's own origin in the list's canonical form.</summary>
+    /// <returns>The origin, or null for an address that is not absolute, which then matches nothing.</returns>
+    private string? OwnOrigin()
+    {
+        return Uri.TryCreate(_portal.Value.BaseUrl, UriKind.Absolute, out var address)
+            ? address.GetLeftPart(UriPartial.Authority).ToLowerInvariant()
+            : null;
     }
 
     /// <summary>Removes repeats and cuts the list at the header bound.</summary>

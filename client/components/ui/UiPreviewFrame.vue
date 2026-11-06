@@ -6,7 +6,7 @@
     referrerpolicy="no-referrer"
     allow=""
     loading="lazy"
-    class="h-full w-full border-0 bg-white"
+    class="absolute inset-0 h-full w-full border-0 bg-white"
     :data-testid="testid"
   />
 </template>
@@ -18,6 +18,9 @@
  * No `allow-same-origin`: the frame gets an opaque origin, so it can never reach the panel or drive a signed-in session
  * of the framed site. No `allow-top-navigation*`, `allow-popups*`, `allow-modals` or `allow-downloads` either: a preview
  * shows a site, it does not operate it. A caller checks the address first; a target refusing framing stays blank.
+ *
+ * It fills the nearest positioned box: a percentage height needs an ancestor with a definite height, which a flex item
+ * that grows does not have, and an iframe left without one is drawn 150 pixels tall.
  */
 
 /** Props of UiPreviewFrame. */

@@ -1,7 +1,6 @@
 using JasperFx.CommandLine;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 
@@ -11,7 +10,14 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 /// The Redis the sign-on client package keeps sessions and its key ring in. The default is an address nothing
 /// listens on, which is enough for tests that never reach a session or protect a cookie.
 /// </param>
-internal sealed class SsoModeFactory(string connectionString, string redisConnection = "localhost:6379") : WebApplicationFactory<Program>
+/// <param name="bearerIssuer">
+/// The issuer the provider stamps into its tokens (<c>Auth:BearerIssuer</c>). Null leaves it unset, which a host
+/// in single sign-on mode refuses to start with.
+/// </param>
+internal sealed class SsoModeFactory(
+    string connectionString,
+    string redisConnection = "localhost:6379",
+    string? bearerIssuer = "https://sso.invalid/") : WebApplicationFactory<Program>
 {
     /// <summary>
     /// Lets the API's entry point start the host under the test server, as <see cref="IntegrationTestFactory"/>
@@ -48,6 +54,12 @@ internal sealed class SsoModeFactory(string connectionString, string redisConnec
         builder.UseSetting("Auth:Authority", "https://sso.invalid");
         builder.UseSetting("Auth:PublicAuthority", "https://sso.invalid");
         builder.UseSetting("Auth:ClientId", "hostpanel");
+        if (bearerIssuer is not null)
+        {
+            // Back-channel logout checks every logout token's issuer against it; startup refuses to proceed without it.
+            builder.UseSetting("Auth:BearerIssuer", bearerIssuer);
+        }
+
         builder.UseSetting("Auth:ClientSecret", "test-secret");
         builder.UseSetting("Auth:RedisConnection", redisConnection);
         builder.UseSetting("Sso:Authority", "https://sso.invalid");
@@ -58,10 +70,9 @@ internal sealed class SsoModeFactory(string connectionString, string redisConnec
         // refuses to boot without it.
         builder.UseSetting("BackchannelLogout:Key", "test-backchannel-key");
 
-        builder.ConfigureAppConfiguration((_, config) =>
-            config.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["ConnectionStrings:DefaultConnection"] = connectionString,
-            }));
+        // A host setting too: Wolverine reads the connection string for its message store while Program.cs
+        // composes the builder, and a source added through ConfigureAppConfiguration only reaches the
+        // configuration after Build(), so the host refused to start and none of these tests could run.
+        builder.UseSetting("ConnectionStrings:DefaultConnection", connectionString);
     }
 }

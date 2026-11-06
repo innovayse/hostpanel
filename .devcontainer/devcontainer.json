@@ -4,9 +4,13 @@
 // bind mounts.
 {
   "name": "Hostpanel",
-  "image": "mcr.microsoft.com/devcontainers/dotnet:1-9.0-bookworm",
+  // The plain base image, with .NET added as a feature: the ready-made dotnet image ships an apt source for Yarn whose
+  // signing key has expired, so the apt-get update of the Docker-in-Docker feature fails on it and the codespace falls
+  // into recovery mode. Yarn comes from npm for the same reason (installYarnUsingApt).
+  "image": "mcr.microsoft.com/devcontainers/base:bookworm",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
+    "ghcr.io/devcontainers/features/dotnet:2": { "version": "9.0" },
+    "ghcr.io/devcontainers/features/node:1": { "version": "22", "installYarnUsingApt": false },
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
   // The stack runs about ten containers and builds the .NET image on the first start.

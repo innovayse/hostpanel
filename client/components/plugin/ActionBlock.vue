@@ -60,8 +60,8 @@ const props = defineProps<Props>()
 const context = usePluginView()
 /** The plugin store, which makes the call. */
 const store = usePluginsStore()
-/** Starts the follow-up refresh; stopped when the block unmounts. */
-const followUp = usePluginFollowUp()
+/** Starts the follow-up refresh; the view ends it when the page is left, not when this block hides. */
+const followUp = usePluginFollowUp(() => props.block.id)
 /** The header's message line, when the action sits in one; null for a standalone action. */
 const outlet = usePluginActionMessageOutlet()
 
@@ -133,10 +133,18 @@ const run = async (): Promise<void> => {
   failed.value = !result.ok
   const answered = readPluginField(result.data, 'message')
   message.value = result.ok ? (typeof answered === 'string' ? answered : '') : result.error
-  outlet?.({ text: message.value, failed: failed.value })
+  const sentence = message.value
+  const takeBack = outlet?.({ text: sentence, failed: failed.value })
   if (result.ok) {
     context.refresh(props.block.refresh ?? [])
-    followUp(props.block.followUp)
+    // The sentence tells what is going on ("being published"); once the work has ended, the blocks show the result and
+    // the sentence would only say the work is still running.
+    followUp(props.block.followUp, () => {
+      takeBack?.()
+      if (message.value === sentence) {
+        message.value = ''
+      }
+    })
     if (props.block.navigate) {
       context.open(props.block.navigate, result.data)
     }

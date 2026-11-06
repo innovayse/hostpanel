@@ -391,7 +391,10 @@ back to empty.
 **`followUp`** goes on an action block or inside a form's `submit`, with exactly `refresh` and `until`. After a
 successful call (and its normal `refresh`), the panel reads `until.route` again and again, refreshing the listed blocks
 each time, until the condition holds (then once more), it runs out of attempts, or the reader leaves the page. A failed
-read counts as an attempt. Show a publish result without a reload:
+read counts as an attempt. The watch outlives the button that started it, so a button that hides itself once its work is
+done (a `visibleWhen` on the same data) does not stop it. The sentence the action answered with is taken down when the
+condition holds, so a line like "is being published" does not outlive the publish. Show a publish result without a
+reload:
 
 ```json
 {

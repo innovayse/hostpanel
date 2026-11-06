@@ -460,7 +460,9 @@ docker/                              compose set (shared·dev·prod·platform), 
     - `followUp: { "refresh": [ids], "until": <condition> }` (an action block or a form's `submit`): after a successful
       call and its normal `refresh`, the panel reads `until.route` on an interval, refreshes the listed block ids on
       each attempt, and stops once the condition holds (after one last refresh), after the last attempt, or when the
-      page is left (late answers dropped). A failed read counts as an attempt. `refresh` is 1 to 20 ids, each the `id`
+      page is left (late answers dropped); the watch belongs to the view (`PluginViewContext.adopt`), so the block that
+      started it hiding itself, as a publish button does once its version is live, does not end it, and when the condition
+      holds the sentence the action showed is taken down. A failed read counts as an attempt. `refresh` is 1 to 20 ids, each the `id`
       of a block in the same document. **The bounds are the host's, never the plugin's**:
       `PLUGIN_FOLLOW_UP_MAX_ATTEMPTS` 20 and `PLUGIN_FOLLOW_UP_INTERVAL_MS` 3000 (about a minute) in the client.
     - Refused at install and load: `ViewConditionInvalid` (`PLUGIN_VIEW_CONDITION_INVALID`: a bad condition, a non-`GET`

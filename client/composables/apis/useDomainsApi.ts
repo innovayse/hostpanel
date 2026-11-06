@@ -37,6 +37,8 @@ export const useDomainsApi = () => {
   /**
    * Switches automatic renewal on or off.
    *
+   * The backend reads this switch from `value` and refuses a body without it.
+   *
    * @param id - Domain id.
    * @param enabled - True to renew automatically at expiry.
    * @returns Whatever the endpoint answers with.
@@ -45,14 +47,15 @@ export const useDomainsApi = () => {
   const setAutoRenew = (id: string, enabled: boolean): Promise<unknown> =>
     apiFetch(`/api/portal/client/domains/${id}/autorenew`, {
       method: HttpMethod.Put,
-      body: { enabled }
+      body: { value: enabled }
     })
 
   /**
    * Locks or unlocks the domain against transfer away.
    *
-   * The field is `enabled`, not `locked`: the three toggles on a domain share one request
-   * shape, and this endpoint reads the same key as the other two.
+   * The field is `value`, not `locked`: the three client toggles on a domain share one request
+   * shape, and the backend reads the same key for each. A body without `value` is refused with 400,
+   * so a wrong key can never switch the lock off.
    *
    * @param id - Domain id.
    * @param enabled - True to lock.
@@ -62,11 +65,13 @@ export const useDomainsApi = () => {
   const setLock = (id: string, enabled: boolean): Promise<unknown> =>
     apiFetch(`/api/portal/client/domains/${id}/lock`, {
       method: HttpMethod.Put,
-      body: { enabled }
+      body: { value: enabled }
     })
 
   /**
    * Switches WHOIS privacy on or off.
+   *
+   * The backend reads this switch from `value` and refuses a body without it.
    *
    * @param id - Domain id.
    * @param enabled - True to hide the registrant's details.
@@ -76,7 +81,7 @@ export const useDomainsApi = () => {
   const setIdProtect = (id: string, enabled: boolean): Promise<unknown> =>
     apiFetch(`/api/portal/client/domains/${id}/idprotect`, {
       method: HttpMethod.Put,
-      body: { enabled }
+      body: { value: enabled }
     })
 
   /**

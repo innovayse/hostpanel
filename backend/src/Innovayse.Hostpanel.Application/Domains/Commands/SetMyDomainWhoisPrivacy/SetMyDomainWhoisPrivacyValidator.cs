@@ -14,5 +14,6 @@ public sealed class SetMyDomainWhoisPrivacyValidator : LocalizedValidator<SetMyD
         : base(localizer)
     {
         RuleFor(x => x.DomainId).MustBePositiveId(L["DomainIdRequired"]);
+        RuleFor(x => x.Value).NotNull().WithMessage(L["WhoisPrivacyValueRequired"]);
     }
 }

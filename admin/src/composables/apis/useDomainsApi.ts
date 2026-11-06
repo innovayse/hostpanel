@@ -84,12 +84,19 @@ export const useDomainsApi = () => {
   /**
    * Turns auto-renew on or off.
    *
+   * The API reads this switch from `value`, unlike the other domain toggles that read `enabled`.
+   * Sending `enabled` binds nothing, so the flag silently falls back to false and switches
+   * auto-renew off whatever the admin chose.
+   *
    * @param id - Domain id.
    * @param toggle - The wanted state.
    * @returns Nothing.
    */
   const setAutoRenew = (id: number | string, toggle: DomainToggle): Promise<void> =>
-    request<void>(`${ApiPath.Domains}/${id}/auto-renew`, { method: HttpMethod.Put, body: JSON.stringify(toggle) })
+    request<void>(`${ApiPath.Domains}/${id}/auto-renew`, {
+      method: HttpMethod.Put,
+      body: JSON.stringify({ value: toggle.enabled }),
+    })
 
   /**
    * Turns WHOIS privacy on or off.

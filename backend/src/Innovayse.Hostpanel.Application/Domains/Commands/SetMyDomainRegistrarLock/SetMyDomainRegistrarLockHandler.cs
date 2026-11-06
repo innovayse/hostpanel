@@ -50,6 +50,6 @@ public sealed class SetMyDomainRegistrarLockHandler
             return ownershipOutcome;
         }
 
-        return await _bus.InvokeAsync<Result>(new SetRegistrarLockCommand(cmd.DomainId, cmd.Value), ct);
+        return await _bus.InvokeAsync<Result>(new SetRegistrarLockCommand(cmd.DomainId, cmd.Value!.Value), ct);
     }
 }

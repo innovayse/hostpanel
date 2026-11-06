@@ -8,7 +8,10 @@ namespace Innovayse.Hostpanel.Application.Domains.Commands.SetMyDomainWhoisPriva
 /// <c>SetWhoisPrivacyCommand</c> directly.
 /// </remarks>
 /// <param name="DomainId">Primary key of the domain, which must belong to the caller.</param>
-/// <param name="Value">The desired WHOIS privacy flag value.</param>
+/// <param name="Value">
+/// The desired WHOIS privacy flag value. Nullable so a body that omits it is refused with 400 by the validator
+/// instead of binding to <see langword="false"/>.
+/// </param>
 public sealed record SetMyDomainWhoisPrivacyCommand(
     int DomainId,
-    bool Value);
+    bool? Value);

@@ -50,6 +50,6 @@ public sealed class SetMyDomainWhoisPrivacyHandler
             return ownershipOutcome;
         }
 
-        return await _bus.InvokeAsync<Result>(new SetWhoisPrivacyCommand(cmd.DomainId, cmd.Value), ct);
+        return await _bus.InvokeAsync<Result>(new SetWhoisPrivacyCommand(cmd.DomainId, cmd.Value!.Value), ct);
     }
 }

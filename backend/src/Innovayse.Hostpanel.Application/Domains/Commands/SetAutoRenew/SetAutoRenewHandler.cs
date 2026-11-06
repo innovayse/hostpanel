@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -12,6 +13,8 @@ namespace Innovayse.Hostpanel.Application.Domains.Commands.SetAutoRenew;
 
 /// <summary>
 /// Enables or disables automatic renewal for a domain at both the registrar and aggregate levels.
+/// The change is recorded in the owning client's activity log, saved together with it; the line is stamped with the
+/// caller, so a staff change and a client's own change both show who made them.
 /// </summary>
 public sealed class SetAutoRenewHandler
 {
@@ -24,18 +27,24 @@ public sealed class SetAutoRenewHandler
     /// <summary>Logger that records the registrar's refusal code for operators.</summary>
     private readonly ILogger<SetAutoRenewHandler> _logger;
 
+    /// <summary>Records the activity log line, saved with the change it describes.</summary>
+    private readonly IActivityLogger _activity;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="registrars">Resolves the registrar that holds the domain's TLD.</param>
     /// <param name="context">The data context the domain aggregate is loaded, mutated and saved through.</param>
     /// <param name="logger">Logger that records the registrar's refusal code for operators.</param>
+    /// <param name="activity">Records the activity log line, saved with the change it describes.</param>
     public SetAutoRenewHandler(
         RegistrarProviderResolver registrars,
         IHostpanelDbContext context,
-        ILogger<SetAutoRenewHandler> logger)
+        ILogger<SetAutoRenewHandler> logger,
+        IActivityLogger activity)
     {
         _registrars = registrars;
         _context = context;
         _logger = logger;
+        _activity = activity;
     }
 
     /// <summary>
@@ -61,7 +70,7 @@ public sealed class SetAutoRenewHandler
         {
             var registrar = await _registrars.ResolveAsync(domain, ct);
             var result = await registrar.SetAutoRenewAsync(
-                new RegistrarFlagChange(new DomainRef(domain.Name, domain.RegistrarRef), cmd.Value), ct);
+                new RegistrarFlagChange(new DomainRef(domain.Name, domain.RegistrarRef), cmd.Value!.Value), ct);
 
             if (!result.Success)
             {
@@ -72,7 +81,9 @@ public sealed class SetAutoRenewHandler
             }
         }
 
-        domain.SetAutoRenew(cmd.Value);
+        domain.SetAutoRenew(cmd.Value!.Value);
+        await _activity.RecordAsync(
+            new ActivityLogEntry(domain.ClientId, $"Set Domain Auto Renew - Domain ID: {domain.Id}, Auto Renew: {cmd.Value}"), ct);
         await _context.SaveChangesAsync(ct);
         return Result.Success();
     }

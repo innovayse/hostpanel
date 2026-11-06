@@ -100,7 +100,7 @@ describe('domainsStore writes', () => {
     expect(await store.setAutoRenew(3, true)).toBe(true)
     expect(await store.addForwardingRule(3, 'info', 'me@example.com')).toBe(true)
     expect(await store.addDnsRecord(3, { type: 'A', host: '@', value: '1.2.3.4', ttl: 3600, priority: null })).toBe(true)
-    expect(callOf(mock, 0)).toMatchObject({ url: '/api/domains/3/auto-renew', method: 'PUT', body: { enabled: true } })
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/domains/3/auto-renew', method: 'PUT', body: { value: true } })
     expect(callOf(mock, 1)).toMatchObject({ url: '/api/domains/3/email-forwarding', body: { source: 'info', destination: 'me@example.com' } })
     expect(callOf(mock, 2)).toMatchObject({ url: '/api/domains/3/dns', method: 'POST' })
   })

@@ -39,7 +39,7 @@ interface Props {
 const props = defineProps<Props>()
 
 /** Whether the block shows: always without a condition, otherwise only while its condition holds. */
-const visible = usePluginCondition(() => props.block.visibleWhen, () => props.block.id)
+const visible = usePluginCondition(() => props.block.visibleWhen, () => (props.block.id ? [props.block.id] : []))
 
 /** The component of each block kind; exhaustive over the enum, so a new kind fails the type check until drawn. */
 const RENDERERS: Readonly<Record<PluginBlockKind, Component>> = {

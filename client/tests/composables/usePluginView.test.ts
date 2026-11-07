@@ -204,13 +204,16 @@ const condition = ref<PluginViewCondition | undefined>(undefined)
 /** The ids the test view was asked to refresh, one entry per call. */
 const refreshed: string[][] = []
 
+/** The block ids whose refresh reads the test block's condition again. */
+const watched = ref<string[]>(['status'])
+
 /** Starts the test block's follow-up; set when the block mounts. */
 let follow: (followUp: PluginFollowUp | undefined, settled?: () => void) => void = () => undefined
 
 /** A block that shows `shown` while its condition holds and can start a follow-up. */
 const Watcher = defineComponent({
   setup() {
-    const visible = usePluginCondition(() => condition.value, () => 'status')
+    const visible = usePluginCondition(() => condition.value, () => watched.value)
     follow = usePluginFollowUp(() => 'publish')
     return () => h('span', { 'data-testid': 'visible' }, visible.value ? 'shown' : 'hidden')
   },
@@ -257,6 +260,7 @@ describe('usePluginCondition', () => {
   beforeEach(() => {
     condition.value = undefined
     refreshed.length = 0
+    watched.value = ['status']
   })
 
   it('shows a block with no condition and reads nothing', async () => {
@@ -283,6 +287,43 @@ describe('usePluginCondition', () => {
 
     expect(wrapper.get('[data-testid="visible"]').text()).toBe('shown')
     expect(calls()).toHaveLength(2)
+  })
+
+  it('reads again when any of several named blocks is refreshed, and for no other block', async () => {
+    stub.respondWith(() => ({ body: { status: 'building' } }))
+    condition.value = LIVE
+    watched.value = ['top', 'versions']
+
+    const wrapper = mountWithKit(WatchHost)
+    await settle()
+    expect(calls()).toHaveLength(1)
+
+    refreshes.value = { elsewhere: 1 }
+    await nextTick()
+    await settle()
+    expect(calls()).toHaveLength(1)
+
+    stub.respondWith(() => ({ body: { status: 'live' } }))
+    refreshes.value = { elsewhere: 1, versions: 1 }
+    await nextTick()
+    await settle()
+
+    expect(calls()).toHaveLength(2)
+    expect(wrapper.get('[data-testid="visible"]').text()).toBe('shown')
+  })
+
+  it('reads once, on mounting, when it names no block', async () => {
+    stub.respondWith(() => ({ body: { status: 'live' } }))
+    condition.value = LIVE
+    watched.value = []
+
+    mountWithKit(WatchHost)
+    await settle()
+    refreshes.value = { status: 1 }
+    await nextTick()
+    await settle()
+
+    expect(calls()).toHaveLength(1)
   })
 
   it('hides the block when the read is refused or the field is absent', async () => {

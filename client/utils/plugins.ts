@@ -7,6 +7,7 @@
  * @module utils/plugins
  */
 
+import { PLUGIN_CONDITION_FIELD_PATTERN, PLUGIN_CONDITION_MAX_FIELD_LENGTH, PLUGIN_CONDITION_MAX_VALUES } from '~/constants/pluginCondition'
 import { PLUGIN_SELECTION_ID_PATTERN, PLUGIN_SELECTION_MAX_ID_LENGTH, PLUGIN_SELECTION_MESSAGE_TYPE, PLUGIN_SELECTION_MESSAGE_VERSION } from '~/constants/pluginSelection'
 import type { PluginSelectionMessage } from '~/types/pluginpreviewselection'
 import { PluginSelectionEvent } from '~/types/pluginselectionevent'
@@ -484,30 +485,49 @@ const readResultBody = (body: unknown): Record<string, PluginActionBodyValue> | 
 }
 
 /**
- * The condition that ends a result action's follow-up; anything of another shape is no condition. An event's `equals`
- * cannot be an own member name of a C# record, so `equalsAny` is accepted as its spelling.
+ * Whether a value is one JSON scalar a condition may compare against.
  *
- * @param until - The action's `until` member.
- * @returns The condition, or undefined.
+ * @param value - The value.
+ * @returns True for a string, a finite number, a boolean or null.
  */
-const readResultUntil = (until: unknown): PluginViewCondition | undefined => {
-  const route = readPluginField(until, 'route') as PluginViewRoute | undefined
-  const field = readPluginField(until, 'field')
-  const equals = readPluginField(until, 'equalsAny')
-  if (typeof route?.path !== 'string' || typeof route.method !== 'string' || typeof field !== 'string' || !Array.isArray(equals)) {
+const isConditionValue = (value: unknown): value is PluginConditionValue =>
+  value === null || typeof value === 'string' || typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value))
+
+/**
+ * Reads a condition a plugin wrote into a chat event (a result card action's `until` or `visibleWhen`). An event is not
+ * checked at install as a view is, so it is checked here with the view's own rules: a GET route the page can fill, a
+ * dotted field, and one to {@link PLUGIN_CONDITION_MAX_VALUES} scalars. An event's `equals` cannot be an own member
+ * name of a C# record, so `equalsAny` is its spelling.
+ *
+ * @param condition - The condition member of the event.
+ * @param values - The page's parameter values, which the route's path is filled from.
+ * @returns The condition, or undefined when it is of another shape.
+ */
+const readResultCondition = (condition: unknown, values: Readonly<Record<string, string>>): PluginViewCondition | undefined => {
+  const route = readPluginField(condition, 'route') as PluginViewRoute | undefined
+  const field = readPluginField(condition, 'field')
+  const equals = readPluginField(condition, 'equalsAny')
+  if (
+    typeof route?.path !== 'string' || typeof route.method !== 'string' || pluginRouteMethod(route) !== HttpMethod.Get
+    || fillPluginPath(route.path, values) === null
+    || typeof field !== 'string' || field.length > PLUGIN_CONDITION_MAX_FIELD_LENGTH || !PLUGIN_CONDITION_FIELD_PATTERN.test(field)
+    || !Array.isArray(equals) || equals.length === 0 || equals.length > PLUGIN_CONDITION_MAX_VALUES || !equals.every(isConditionValue)
+  ) {
     return undefined
   }
-  return { route: { method: route.method, path: route.path }, field, equals: equals as PluginConditionValue[] }
+  return { route: { method: route.method, path: route.path }, field, equals }
 }
 
 /**
  * Reads one action of a result event. A link passes {@link pluginLinkTarget}; a route is shown only when it is a call
- * the page can make: an action is never a GET, and an unfilled parameter has nothing to send.
+ * the page can make: an action is never a GET, and an unfilled parameter has nothing to send. A `visibleWhen` condition
+ * (any kind of action) is kept for the card to evaluate; one that cannot be read drops the action.
  *
  * @param data - The action.
  * @param key - Its place in the card.
  * @param values - The page's parameter values.
  * @param origins - The plugin's allowed link origins.
+ * @param refresh - The block ids the chat reads again after a turn, which a call action reads again too.
  * @returns The action, or null when it is not to be rendered.
  */
 const parseResultAction = (
@@ -520,8 +540,15 @@ const parseResultAction = (
   const label = readPluginField(data, 'label')
   const href = readPluginField(data, 'href')
   const route = readPluginField(data, 'route') as PluginViewRoute | undefined
+  const declaredVisibleWhen = readPluginField(data, 'visibleWhen')
+  const visibleWhen = declaredVisibleWhen === undefined ? undefined : readResultCondition(declaredVisibleWhen, values)
+  // Dropped whole: an action meant to hide itself must never show because its condition could not be read.
+  if (declaredVisibleWhen !== undefined && !visibleWhen) {
+    return null
+  }
+  const shown = visibleWhen ? { visibleWhen } : {}
   if (readPluginField(data, 'resend') === true && href === undefined && route === undefined) {
-    return typeof label === 'string' && label !== '' ? { key, label, link: null, block: null, resend: true } : null
+    return typeof label === 'string' && label !== '' ? { key, label, link: null, block: null, resend: true, ...shown } : null
   }
   // Exactly one of the two: a view cannot leave it to the host which one wins.
   if (typeof label !== 'string' || label === '' || (href === undefined) === (route === undefined)) {
@@ -529,7 +556,7 @@ const parseResultAction = (
   }
   if (href !== undefined) {
     const link = pluginLinkTarget(href, origins)
-    return link ? { key, label, link, block: null } : null
+    return link ? { key, label, link, block: null, ...shown } : null
   }
   const method = pluginRouteMethod(route)
   if (!route || typeof route.path !== 'string' || method === undefined || method === HttpMethod.Get || fillPluginPath(route.path, values) === null) {
@@ -542,7 +569,7 @@ const parseResultAction = (
     return null
   }
   const confirm = readPluginField(data, 'confirm')
-  const until = readResultUntil(readPluginField(data, 'until'))
+  const until = readResultCondition(readPluginField(data, 'until'), values)
   const block: PluginActionBlock = {
     kind: PluginBlockKind.Action,
     label,
@@ -554,7 +581,7 @@ const parseResultAction = (
     // The work may run on after the reply; `until` keeps those blocks reading, within the host's own bounds.
     ...(refresh.length > 0 && until ? { followUp: { refresh: [...refresh], until } } : {}),
   }
-  return { key, label, link: null, block }
+  return { key, label, link: null, block, ...shown }
 }
 
 /** The tones a result card may carry; any other reads as information. */

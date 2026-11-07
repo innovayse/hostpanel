@@ -180,20 +180,22 @@ export const usePluginSource = (
 }
 
 /**
- * Whether a block shows, by its `visibleWhen` condition: read when the block mounts and again whenever an action asks
- * the block's own id to refresh, so a follow-up can reveal or hide it.
+ * Whether a block, or a part of one, shows by its `visibleWhen` condition: read when it mounts and again whenever an
+ * action asks any of the named block ids to refresh, so a follow-up can reveal or hide it. A block names its own id; a
+ * result card's action has no id of its own and names the blocks its chat reads again after a turn, since those are the
+ * ones whose data the condition is about.
  *
  * A block with no condition always shows and reads nothing. A block with one is hidden while the condition is being
  * read, when the read fails or is unavailable, and when the field is absent or matches none of the values: it shows
  * only once the condition is known to hold, so a create form never flashes up for a site that already exists.
  *
- * @param condition - The block's condition; undefined for none.
- * @param blockId - The block's id, which actions name to refresh it.
+ * @param condition - The condition; undefined for none.
+ * @param refreshIds - The block ids whose refresh reads the condition again; none means it is read once, on mounting.
  * @returns Whether the block shows.
  */
 export const usePluginCondition = (
   condition: () => PluginViewCondition | undefined,
-  blockId: () => string | undefined,
+  refreshIds: () => readonly string[],
 ): ComputedRef<boolean> => {
   const context = usePluginView()
   const store = usePluginsStore()
@@ -231,10 +233,8 @@ export const usePluginCondition = (
       context.track(reload())
     }
   })
-  watch(() => {
-    const id = blockId()
-    return id ? context.refreshes.value[id] ?? 0 : 0
-  }, reload)
+  // The counters only ever rise, so their sum changes exactly when one of the named blocks was refreshed.
+  watch(() => refreshIds().reduce((sum, id) => sum + (context.refreshes.value[id] ?? 0), 0), reload)
 
   return computed(() => !condition() || holds.value)
 }

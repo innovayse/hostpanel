@@ -557,6 +557,16 @@ use a small Markdown subset: paragraphs, `#` headings, `-` and `1.` lists, fence
 - `result` is a card. `tone` is `info` (default), `success`, `warning` or `danger`; at least one of `title` and `text`.
   At most 5 `actions`, each with a `label` and exactly one of `route` (one of your own, called through the host, so an
   undeclared route or a missing permission is refused as usual) or `href` (under the rule of a link block).
+  A card stays in the conversation after what it offers has changed, so an action may carry `visibleWhen`: the same
+  condition a view block has, except that the event spells the value list `equalsAny` (a C# record cannot have a member
+  named `equals`): `{ "route": { "method": "get", "path": "/services/{serviceId}/site" }, "field": "publishVersion",
+  "equalsAny": [5] }`. The route is a `GET` route of your own that the page can fill, `field` a dotted path, and
+  `equalsAny` one to 20 strings, numbers, booleans or `null`; the action shows only while the field strictly equals one
+  of them. The panel reads it when the card is drawn and again whenever a block named in the chat's `refresh` is read
+  again (after a turn, and after a card action), and hides the action while it is being read, when the read fails and
+  when the condition does not hold. It applies to a route, an `href` and a `resend` action alike. Without it an action
+  always shows. A condition the panel cannot read drops the action, since a button meant to hide must never show.
+  Your route still decides whether a call is current: the condition is a courtesy to the reader, not the check.
 - `issue` is your own failure, in the danger tone. The stream goes on; end it when you are done.
 
 A panel ignores an event it cannot read. **Stop** cancels the stream: your enumerator's token fires (`EnumeratorCancellation`)

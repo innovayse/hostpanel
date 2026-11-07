@@ -35,7 +35,7 @@ export interface StubRequest {
 export interface StubReply {
   /** HTTP status; defaults to 200. */
   status?: number
-  /** Body; objects are sent as JSON, strings as text. */
+  /** Body; objects are sent as JSON, strings as text, a Buffer as the raw bytes it holds. */
   body?: unknown
   /** Extra response headers. */
   headers?: Record<string, string>
@@ -105,7 +105,7 @@ export const startStubServer = async (
         'content-type': isText ? 'text/plain' : 'application/json',
         ...reply.headers,
       })
-      res.end(reply.body === undefined ? '' : isText ? (reply.body as string) : JSON.stringify(reply.body))
+      res.end(reply.body === undefined ? '' : isText || Buffer.isBuffer(reply.body) ? (reply.body as string | Buffer) : JSON.stringify(reply.body))
     })
   })
 

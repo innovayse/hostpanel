@@ -16,7 +16,7 @@
  * @module server/routes/uploads/[...path]
  */
 
-import { defineReadOnlyEventHandler, isHeadRequest } from '~/server/utils/readOnlyEventHandler'
+import { answeredContentLength, defineReadOnlyEventHandler, isHeadRequest } from '~/server/utils/readOnlyEventHandler'
 import { requireUploadPath } from '~/server/utils/uploadPath'
 import { HttpMethod } from '~/types/httpmethod'
 
@@ -24,7 +24,7 @@ import { HttpMethod } from '~/types/httpmethod'
 const FORWARDED_REQUEST_HEADERS = ['accept', 'if-none-match', 'if-modified-since', 'range']
 
 /** Response headers worth returning: what a browser needs to render and cache a static file. */
-const RETURNED_RESPONSE_HEADERS = ['content-type', 'content-length', 'cache-control', 'etag', 'last-modified', 'content-range', 'accept-ranges']
+const RETURNED_RESPONSE_HEADERS = ['content-type', 'cache-control', 'etag', 'last-modified', 'content-range', 'accept-ranges']
 
 /** The response header that gives the size of the file; a `HEAD` answer is the only place it tells a probe how big the file is. */
 const CONTENT_LENGTH = 'content-length'
@@ -58,14 +58,15 @@ export default defineReadOnlyEventHandler(async (event) => {
   })
 
   const returned: Record<string, string> = { 'X-Content-Type-Options': 'nosniff' }
-  // The fetch layer undoes a content coding on its own, so for a coded answer the upstream length is
-  // the size of bytes this route never sends; passing it on would promise a size the body does not have.
-  const isCoded = Boolean(upstream.headers.get('content-encoding'))
   for (const name of RETURNED_RESPONSE_HEADERS) {
     const value = upstream.headers.get(name)
-    if (value && !(name === CONTENT_LENGTH && isCoded)) {
+    if (value) {
       returned[name] = value
     }
+  }
+  const length = answeredContentLength(upstream.headers)
+  if (length) {
+    returned[CONTENT_LENGTH] = length
   }
   setResponseStatus(event, upstream.status)
   setResponseHeaders(event, returned)

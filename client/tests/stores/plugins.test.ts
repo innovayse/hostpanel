@@ -349,8 +349,8 @@ describe('stores/plugins: streams', () => {
 
     expect(result).toMatchObject({ ok: true, error: '', unavailable: false })
     expect(events).toEqual([{ type: 'delta', data: { text: 'Hi' } }, { type: 'done', data: {} }])
-    // A stream is a turn of work, so it counts as a write once it ended.
-    expect(store.writes).toBe(1)
+    // A stream is a turn of work, so it counts as a write when it starts and again when it ended.
+    expect(store.writes).toBe(2)
     const sent = stub.requests.at(-1)!
     expect(sent.url).toBe('/api/portal/client/plugins/acme-sites/stream/sites/7/chat')
     expect(JSON.parse(sent.body)).toEqual({ message: 'hi' })
@@ -364,7 +364,7 @@ describe('stores/plugins: streams', () => {
     const result = await store.streamRoute('acme-sites', CHAT, { siteId: '7' }, {}, () => undefined, new AbortController().signal)
 
     expect(result).toMatchObject({ ok: false, error: 'Too many requests.', unavailable: false })
-    expect(store.writes).toBe(1)
+    expect(store.writes).toBe(2)
   })
 
   it('opens nothing for a send route that is not a POST, or that the address cannot fill', async () => {
@@ -401,6 +401,8 @@ describe('stores/plugins: streams', () => {
     try {
       const result = await store.streamRoute('acme-sites', CHAT, { siteId: '7' }, {}, (event) => {
         events.push(event)
+        // The turn is under way, so a read made now already follows the write the stream began.
+        expect(store.writes).toBe(1)
         controller.abort()
         // Written after the abort: the reader must not hand it over.
         response?.write('event: delta\ndata: {"text":"b"}\n\n')

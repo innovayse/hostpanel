@@ -13,6 +13,7 @@
 
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
 import { PLUGIN_FOLLOW_UP_INTERVAL_MS, PLUGIN_FOLLOW_UP_MAX_ATTEMPTS } from '~/constants/pluginFollowUp'
+import { PLUGIN_VIEW_READ_MAX_AGE_MS } from '~/constants/pluginViewReads'
 import { usePluginsStore } from '~/stores/plugins'
 import type { PluginSource } from '~/types/pluginblock'
 import type { PluginFollowUp } from '~/types/pluginfollowup'
@@ -105,8 +106,10 @@ export const usePluginBackLink = (): PluginBackLink | null => inject(PLUGIN_BACK
 interface PluginViewReads {
   /** The sum of the view's refresh counts when these reads were made. */
   refreshed: number
-  /** The store's count of ended writes when these reads were made. */
+  /** The store's count of writes (starts and ends) when these reads were made. */
   written: number
+  /** The moment the first of these reads was made, in milliseconds since the epoch; the picture is not kept past its age limit. */
+  since: number
   /** The answer of each request, or the read still out for it, by the request's address. */
   reads: Map<string, Promise<PluginCallResult>>
 }
@@ -115,8 +118,9 @@ interface PluginViewReads {
 const VIEW_READS = new WeakMap<PluginViewContext, PluginViewReads>()
 
 /**
- * The reads a view's blocks share right now. They start empty again whenever the view was refreshed or a call that may
- * change the plugin's data ended: those are the moments the view knows its picture is out of date.
+ * The reads a view's blocks share right now. They start empty again whenever the view was refreshed, a call that may
+ * change the plugin's data started or ended, or the picture grew older than {@link PLUGIN_VIEW_READ_MAX_AGE_MS}: those
+ * are the moments the view knows its picture may be out of date.
  *
  * @param context - The view's context.
  * @param store - The plugin store, which counts the writes.
@@ -125,9 +129,10 @@ const VIEW_READS = new WeakMap<PluginViewContext, PluginViewReads>()
 const sharedReads = (context: PluginViewContext, store: ReturnType<typeof usePluginsStore>): PluginViewReads => {
   const refreshed = Object.values(context.refreshes.value).reduce((sum, count) => sum + count, 0)
   const written = store.writes
+  const now = Date.now()
   let current = VIEW_READS.get(context)
-  if (current === undefined || current.refreshed !== refreshed || current.written !== written) {
-    current = { refreshed, written, reads: new Map() }
+  if (current === undefined || current.refreshed !== refreshed || current.written !== written || now - current.since >= PLUGIN_VIEW_READ_MAX_AGE_MS) {
+    current = { refreshed, written, since: now, reads: new Map() }
     VIEW_READS.set(context, current)
   }
   return current

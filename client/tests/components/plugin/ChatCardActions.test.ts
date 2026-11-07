@@ -17,6 +17,7 @@ import { PLUGIN_COMPONENTS, ROUTES_URL, startPluginApi, TEST_ROUTES } from '~/te
 import { settle } from '~/tests/helpers/settle'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { PluginBlockKind } from '~/types/pluginblockkind'
+import { PluginBlockTone } from '~/types/pluginblocktone'
 import type { PluginChatResult, PluginChatResultAction } from '~/types/pluginchatresult'
 import type { PluginViewCondition } from '~/types/pluginviewcondition'
 
@@ -33,7 +34,7 @@ let publishVersion: number | null = 5
 const refreshes = ref<Record<string, number>>({})
 
 /** The card under test, replaced per test. */
-const result = ref<PluginChatResult>({ key: 0, tone: 'info' as PluginChatResult['tone'], title: '', text: '', details: [], actions: [] })
+const result = ref<PluginChatResult>({ key: 0, tone: PluginBlockTone.Info, title: '', text: '', details: [], actions: [] })
 
 /** How many details toggles the row reported. */
 let toggles = 0
@@ -111,7 +112,7 @@ beforeEach(async () => {
   publishVersion = 5
   toggles = 0
   refreshes.value = {}
-  result.value = { key: 0, tone: 'info' as PluginChatResult['tone'], title: '', text: '', details: [], actions: [PUBLISH] }
+  result.value = { key: 0, tone: PluginBlockTone.Info, title: '', text: '', details: [], actions: [PUBLISH] }
   api = await startPluginApi({
     [`GET ${ROUTES_URL}/sites/7`]: () => ({ body: { publishVersion } }),
   })

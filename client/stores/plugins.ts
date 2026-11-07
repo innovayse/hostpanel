@@ -53,8 +53,10 @@ export const usePluginsStore = defineStore('plugins', () => {
   /** The number of the latest page read; an answer to an older one is dropped. */
   let pageRequest = 0
   /**
-   * How many calls that may change what a plugin reports have ended (every call that is not a read, and every
-   * stream). A view that shares reads asks for a new one whenever this moved, so it never answers from before a change.
+   * How many times a call that may change what a plugin reports has started or ended (every call that is not a read
+   * ends one, and every stream starts one and ends one). A view that shares reads asks for a new one whenever this
+   * moved, so it never answers from before a change: a stream counts when it opens as well, because the cards it draws
+   * read while it is still open and must not be shown the picture from before the turn.
    */
   const writes = ref(0)
 
@@ -247,6 +249,9 @@ export const usePluginsStore = defineStore('plugins', () => {
     if (pluginRouteMethod(route) !== HttpMethod.Post || path === null) {
       return UNAVAILABLE
     }
+    // Counted before the first event, not only when the stream ends: a result card is drawn while the stream is open and
+    // reads its condition then, which has to be a read made after the turn began.
+    writes.value += 1
     try {
       await readPluginEventStream(await api.openStream(pluginId, path, body, signal), onEvent, signal)
       return { ok: true, data: null, error: '', fieldErrors: {}, unavailable: false }
@@ -256,7 +261,7 @@ export const usePluginsStore = defineStore('plugins', () => {
       }
       return { ok: false, data: null, error: apiErrorMessage(err), fieldErrors: apiFieldErrors(err), unavailable: false }
     } finally {
-      // A stream is a turn of work the plugin did, however it ended.
+      // A stream is a turn of work the plugin did, however it ended; the state it left is read after it ended too.
       writes.value += 1
     }
   }

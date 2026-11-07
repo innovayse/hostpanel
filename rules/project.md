@@ -483,8 +483,12 @@ docker/                              compose set (shared·dev·prod·platform), 
     - **Reads are shared inside a view (`readPluginRoute` in `usePluginView`).** A page is one picture of the plugin's
       data: every source, condition and card action of a view that names the same `GET` request (the filled address and
       its query, from `pluginRouteRequest`) takes one answer, and a new request is sent only when the picture is out of
-      date, which is when the sum of the view's refresh counts moved or the store's `writes` did (a call that is not a
-      read, a stream, however it ended). A block that mounts later is answered from the picture as well, and a read that
+      date, which is when the sum of the view's refresh counts moved, the store's `writes` did (a call that is not a read
+      when it ended, a stream when it opened and again when it ended, however it ended) or the picture is older than
+      `PLUGIN_VIEW_READ_MAX_AGE_MS` (`constants/pluginViewReads.ts`, 10 seconds, the host's and never the plugin's). A
+      stream counts when it opens because a result card is drawn while it is still open: its condition must be read after
+      the turn began, or a chat with no `refresh` list would keep a card's action hidden for good on the picture from
+      before it. A block that mounts later is answered from the picture as well, and a read that
       failed is not kept, so the next reader tries again. The picture belongs to the view's context and ends with it.
       The follow-up hands the answer it read to the picture it then refreshes (`shareReadResult`), so a poll costs one
       request and the blocks show exactly what the condition saw. This replaced one request per reader per refresh,

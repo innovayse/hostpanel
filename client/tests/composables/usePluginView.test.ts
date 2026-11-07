@@ -17,6 +17,7 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { usePluginsStore } from '~/stores/plugins'
 import { providePluginView, usePluginCondition, usePluginFollowUp, usePluginSource, usePluginView } from '~/composables/usePluginView'
 import { PLUGIN_FOLLOW_UP_INTERVAL_MS, PLUGIN_FOLLOW_UP_MAX_ATTEMPTS } from '~/constants/pluginFollowUp'
+import { PLUGIN_VIEW_READ_MAX_AGE_MS } from '~/constants/pluginViewReads'
 import type { PluginSource } from '~/types/pluginblock'
 import type { PluginFollowUp } from '~/types/pluginfollowup'
 import type { PluginViewCondition } from '~/types/pluginviewcondition'
@@ -567,6 +568,26 @@ describe('reads shared inside a view', () => {
     await nextTick()
     await settle()
 
+    expect(siteReads()).toHaveLength(2)
+  })
+
+  it('answers a block that mounts within the age limit from the picture, and one that mounts after it with a new read', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    mountWithKit(SharedHost)
+    await settle()
+
+    vi.advanceTimersByTime(PLUGIN_VIEW_READ_MAX_AGE_MS - 1)
+    lateReader.value = true
+    await nextTick()
+    await settle()
+    expect(siteReads()).toHaveLength(1)
+
+    lateReader.value = false
+    await nextTick()
+    vi.advanceTimersByTime(1)
+    lateReader.value = true
+    await nextTick()
+    await settle()
     expect(siteReads()).toHaveLength(2)
   })
 

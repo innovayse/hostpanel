@@ -318,20 +318,47 @@ describe('PluginView shared reads', () => {
       ],
     })
     await settle()
-    // The cards were drawn from the read the page already holds.
-    expect(stateReads()).toBe(1)
+    // The cards were drawn while the stream is open, after the turn began: both took one new read, not the picture from before it.
+    expect(stateReads()).toBe(2)
     reply.close()
     await settle()
 
     // The turn ended: the page, the cards and the conversation's own blocks read again, once.
-    expect(stateReads()).toBe(2)
+    expect(stateReads()).toBe(3)
 
     await wrapper.get('[data-testid="plugin-header-block"] [data-testid="plugin-action-button"]').trigger('click')
     await settle()
 
     // The publish call refreshed the page: one read for all of it, and the button went with the condition.
-    expect(stateReads()).toBe(3)
+    expect(stateReads()).toBe(4)
     expect(wrapper.find('[data-testid="plugin-header-block"] [data-testid="plugin-action-button"]').exists()).toBe(false)
+  })
+
+  it('shows a result card the action the turn made applicable, though the chat names no block to read again', async () => {
+    let publishVersion = 5
+    api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7`]: () => ({ body: { publishVersion } }) })
+    const wrapper = mountBlocks([
+      { kind: PluginBlockKind.Stat, id: 'version', label: 'Version', source: { route: state, field: 'publishVersion' } },
+      { kind: PluginBlockKind.Chat, id: 'conversation', send: TEST_ROUTES.chat },
+    ])
+    await settle()
+    expect(wrapper.get('[data-testid="plugin-stat"]').text()).toContain('5')
+
+    const reply = stubStream()
+    await wrapper.get('[data-testid="plugin-chat-input"]').setValue('Go')
+    await wrapper.get('[data-testid="plugin-chat-send"]').trigger('click')
+    await settle()
+    // The turn changes what the card's condition checks, and the card is drawn while the stream is still open.
+    publishVersion = 6
+    reply.send('result', {
+      title: 'Version 6 is ready',
+      actions: [{ label: 'Publish version 6', route: TEST_ROUTES.publish, visibleWhen: { route: state, field: 'publishVersion', equalsAny: [6] } }],
+    })
+    await settle()
+
+    const card = wrapper.get('[data-testid="plugin-chat-result-actions"]')
+    expect(card.attributes('style') ?? '').not.toContain('display: none')
+    expect(card.get('[data-testid="plugin-action-button"]').text()).toBe('Publish version 6')
   })
 
   it('reads the state route once per poll of a follow-up, and shows the poll\'s answer in every block at once', async () => {

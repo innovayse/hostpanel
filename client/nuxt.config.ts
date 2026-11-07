@@ -292,7 +292,8 @@ export default defineNuxtConfig({
     locales: [
       { code: 'en', name: 'English', language: 'en-US' },
       { code: 'ru', name: 'Русский', language: 'ru-RU' },
-      { code: 'hy', name: 'Հայերեն', language: 'hy-AM' }
+      { code: 'hy', name: 'Հայերեն', language: 'hy-AM' },
+      { code: 'fr', name: 'Français', language: 'fr-FR' }
     ],
     defaultLocale: 'en',
     strategy: 'prefix_except_default',

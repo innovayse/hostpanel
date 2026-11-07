@@ -1,0 +1,19 @@
+{
+  "currency": "Divisa",
+  "currencies": "Divisas",
+  "createCurrency": "Crear Divisa",
+  "currencyDetails": "Detalles de la Divisa",
+  "code": "Código",
+  "symbol": "Símbolo",
+  "name": "Nombre",
+  "rate": "Tasa",
+  "baseCurrency": "Divisa Base",
+  "isBase": "Es Divisa Base",
+  "active": "Activo",
+  "inactive": "Inactivo",
+  "symbolPosition": "Posición del Símbolo",
+  "left": "Izquierda",
+  "right": "Derecha",
+  "noCurrencies": "No hay divisas",
+  "createFirstCurrency": "Crear primera divisa"
+}

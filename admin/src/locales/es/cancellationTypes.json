@@ -1,0 +1,10 @@
+{
+  "cancellationType": "Tipo de Cancelación",
+  "cancellationTypes": "Tipos de Cancelación",
+  "name": "Nombre",
+  "description": "Descripción",
+  "active": "Activo",
+  "inactive": "Inactivo",
+  "delete": "Eliminar",
+  "noCancellationTypes": "No hay tipos de cancelación"
+}

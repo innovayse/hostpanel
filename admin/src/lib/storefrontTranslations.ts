@@ -7,7 +7,7 @@ import { MessageLanguage } from '@/locales/messages'
 import type { StorefrontTranslations } from '@/types/storefront'
 
 /** Every locale the forms carry a tab for, in tab order. */
-export const STOREFRONT_LOCALES: MessageLanguage[] = [MessageLanguage.En, MessageLanguage.Ru, MessageLanguage.Hy]
+export const STOREFRONT_LOCALES: MessageLanguage[] = [MessageLanguage.En, MessageLanguage.Ru, MessageLanguage.Hy, MessageLanguage.Es]
 
 /**
  * Builds one blank form per locale.
@@ -23,6 +23,7 @@ export const blankTranslations = <T>(blank: () => T): Record<MessageLanguage, T>
   [MessageLanguage.En]: blank(),
   [MessageLanguage.Ru]: blank(),
   [MessageLanguage.Hy]: blank(),
+  [MessageLanguage.Es]: blank(),
 })
 
 /**

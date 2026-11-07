@@ -1,0 +1,18 @@
+{
+  "dashboard": "Panel de Control",
+  "overview": "Resumen",
+  "totalClients": "Total de Clientes",
+  "totalServices": "Total de Servicios",
+  "totalRevenue": "Ingresos Totales",
+  "monthlyRevenue": "Ingresos Mensuales",
+  "totalOrders": "Órdenes Totales",
+  "activeServices": "Servicios Activos",
+  "inactiveServices": "Servicios Inactivos",
+  "today": "Hoy",
+  "thisWeek": "Esta Semana",
+  "thisMonth": "Este Mes",
+  "lastMonth": "Mes Anterior",
+  "widget": "Widget",
+  "widgets": "Widgets",
+  "noData": "Sin Datos"
+}

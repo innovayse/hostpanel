@@ -1,0 +1,21 @@
+{
+  "constants": "Constantes",
+  "serviceStatusOptions": "Opciones de Estado del Servicio",
+  "allStages": "Todas las Etapas",
+  "pendingRegistration": "Registro Pendiente",
+  "pendingTransfer": "Transferencia Pendiente",
+  "expired": "Expirado",
+  "redemption": "Redención",
+  "transferred": "Transferido",
+  "cancelled": "Cancelado",
+  "serviceStatusOptionsPending": "Pendiente",
+  "serviceStatusOptionsActive": "Activo",
+  "serviceStatusOptionsTerminated": "Terminado",
+  "domainStatusOptions": "Opciones de Estado de Dominio",
+  "domainStatusOptionsPendingRegistration": "Registro Pendiente de Dominio",
+  "domainStatusOptionsPendingTransfer": "Transferencia Pendiente de Dominio",
+  "domainStatusOptionsExpired": "Expirado de Dominio",
+  "domainStatusOptionsRedemption": "Redención de Dominio",
+  "domainStatusOptionsTransferred": "Transferido de Dominio",
+  "domainStatusOptionsCancelled": "Cancelado de Dominio"
+}

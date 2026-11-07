@@ -1,0 +1,28 @@
+{
+  "storefront": "Tienda",
+  "products": "Productos",
+  "product": "Producto",
+  "categories": "Categorías",
+  "category": "Categoría",
+  "addProduct": "Añadir Producto",
+  "productName": "Nombre del Producto",
+  "productDescription": "Descripción del Producto",
+  "productPrice": "Precio del Producto",
+  "productStock": "Stock del Producto",
+  "productSKU": "SKU del Producto",
+  "productImage": "Imagen del Producto",
+  "productCategories": "Categorías del Producto",
+  "publish": "Publicar",
+  "unpublish": "Quitar Publicación",
+  "draft": "Borrador",
+  "active": "Activo",
+  "inactive": "Inactivo",
+  "noProducts": "No hay productos",
+  "createFirstProduct": "Crear primera producto",
+  "locales": {
+    "en": "English",
+    "ru": "Русский",
+    "hy": "Հայերեն",
+    "es": "Español"
+  }
+}

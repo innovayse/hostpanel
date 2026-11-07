@@ -1,0 +1,16 @@
+{
+  "event": "Evento",
+  "events": "Eventos",
+  "createEvent": "Crear Evento",
+  "eventDetails": "Detalles del Evento",
+  "title": "Título",
+  "description": "Descripción",
+  "start": "Inicio",
+  "end": "Fin",
+  "allDay": "Todo el día",
+  "startTime": "Hora de Inicio",
+  "endTime": "Hora de Fin",
+  "calendar": "Calendario",
+  "noEvents": "No hay eventos",
+  "createFirstEvent": "Crear primer evento"
+}

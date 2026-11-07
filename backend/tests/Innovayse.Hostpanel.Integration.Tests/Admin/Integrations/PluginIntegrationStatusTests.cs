@@ -210,6 +210,7 @@ public sealed class PluginIntegrationStatusTests(IntegrationTestFactory factory)
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         body.GetProperty("success").GetBoolean().Should().BeFalse();
+        body.GetProperty("message").GetString().Should().Be("PLUGIN_STATUS_TIMED_OUT");
     }
 
     /// <summary>A switched-off plugin is not called and the test reports it as not active.</summary>

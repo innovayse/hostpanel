@@ -1,0 +1,15 @@
+{
+  "migrationEntities": "Entidades de Migración",
+  "entity": "Entidad",
+  "entities": "Entidades",
+  "name": "Nombre",
+  "type": "Tipo",
+  "fields": "Campos",
+  "migration": "Migración",
+  "fieldKey": "Clave del Campo",
+  "fieldValue": "Valor del Campo",
+  "required": "Requerido",
+  "optional": "Opcional",
+  "noEntities": "No hay entidades",
+  "createFirstEntity": "Crear primera entidad"
+}

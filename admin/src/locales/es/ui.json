@@ -1,0 +1,79 @@
+{
+  "uiAdvancedFilters": {
+    "filterValue": "Filtrar {value}",
+    "selectField": "Seleccionar campo...",
+    "enterValue": "Ingresar valor...",
+    "addFilter": "Añadir Filtro",
+    "exactMatch": "Coincidencia Exacta",
+    "containing": "Contiene"
+  },
+  "uiClientSelect": {
+    "noClientsFound": "No se encontraron clientes"
+  },
+  "uiCountrySelect": {
+    "selectCountry": "Seleccionar país..."
+  },
+  "uiDatePicker": {
+    "ddMmYyyy": "DD/MM/YYYY",
+    "month": "Mes",
+    "year": "Año",
+    "yesterday": "Ayer",
+    "7DaysAgo": "Hace 7 Días",
+    "1MonthAgo": "Hace 1 Mes",
+    "1YearAgo": "Hace 1 Año"
+  },
+  "uiDatePickerFuture": {
+    "tomorrow": "Mañana",
+    "in7Days": "En 7 Días",
+    "1MonthFromNow": "En 1 Mes",
+    "1YearFromNow": "En 1 Año"
+  },
+  "uiDateRangePicker": {
+    "ddMmYyyyDdMm": "DD/MM/YYYY - DD/MM/YYYY",
+    "yesterday": "Ayer",
+    "last7Days": "Últimos 7 Días",
+    "last30Days": "Últimos 30 Días",
+    "thisMonth": "Este Mes",
+    "1MonthAgo": "Hace 1 Mes",
+    "thisYear": "Este Año",
+    "1YearAgo": "Hace 1 Año",
+    "selectDateRange": "Seleccionar Rango de Fechas"
+  },
+  "uiFieldSelector": {
+    "fields": "Campos",
+    "clearAll": "Limpiar Todo"
+  },
+  "uiSelect": {
+    "noResults": "Sin resultados"
+  },
+  "phoneInput": {
+    "countryCode": "Código de País",
+    "searchCountry": "Buscar país o código"
+  },
+  "selectCountry": "Seleccionar País",
+  "dialog": {
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "processing": "Procesando..."
+  },
+  "pagination": {
+    "navigation": "Navegación",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "page": "Página"
+  },
+  "table": {
+    "empty": "No hay datos"
+  },
+  "chart": {
+    "empty": "Sin datos para chart"
+  },
+  "uploadZone": {
+    "dropOr": "Suelta un archivo o",
+    "browse": "examinar",
+    "uploading": "Subiendo..."
+  },
+  "errorState": {
+    "retry": "Reintentar"
+  }
+}

@@ -18,6 +18,17 @@
   --vp-c-brand-2: #4a7de8;
 }
 
+/* Code comments. The code highlighter writes a comment as #6A737D in both themes. That is 3.75:1 on the dark code
+   background (#161618) and 4.46:1 on the light one (#f6f6f7), under the 4.5:1 that WCAG AA asks for normal text.
+   The lighter grey below gives 5.88:1 on dark and the darker one 5.07:1 on light; the look stays a quiet grey. */
+.vp-code span[style*="--shiki-light:#6A737D"] {
+  --shiki-light: #636c76 !important;
+}
+
+.dark .vp-code span[style*="--shiki-dark:#6A737D"] {
+  --shiki-dark: #8b949e !important;
+}
+
 /* API reference ------------------------------------------------------------------------------
    Endpoint pages are generated from the OpenAPI document (scripts/generate-api-reference.mjs).
    The page body sits on the left and the request and response examples in a column on the right,

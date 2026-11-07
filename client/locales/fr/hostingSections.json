@@ -1,0 +1,114 @@
+{
+  "hostingSections": {
+    "locations": {
+      "badge": "Locations",
+      "title": "Servers close to your visitors",
+      "subtitle": "Pick the data centre nearest to your audience for faster pages."
+    },
+    "performance": {
+      "badge": "Performance",
+      "title": "Speed and reliability you can measure",
+      "subtitle": "The numbers behind every hosting plan.",
+      "stats": {
+        "uptime": "Uptime",
+        "response_time": "Average response time",
+        "sites_hosted": "Sites hosted",
+        "support_response": "Support response"
+      }
+    },
+    "security": {
+      "badge": "Security",
+      "title": "Your sites stay protected",
+      "subtitle": "Protection that is built into every plan.",
+      "features": {
+        "ssl": {
+          "title": "Free SSL",
+          "description": "Encrypted connections for every domain you host."
+        },
+        "backups": {
+          "title": "Automatic backups",
+          "description": "Regular copies of your files and databases, ready to restore."
+        },
+        "ddos": {
+          "title": "DDoS protection",
+          "description": "Attack traffic is filtered before it reaches your site."
+        },
+        "malware": {
+          "title": "Malware scanning",
+          "description": "Files are scanned continuously and threats are removed."
+        },
+        "firewall": {
+          "title": "Firewall",
+          "description": "A web application firewall blocks common exploits."
+        }
+      }
+    },
+    "apps": {
+      "badge": "One-click apps",
+      "title": "Install popular apps in one click",
+      "subtitle": "Launch a site without touching a command line.",
+      "count": "{count} apps ready to install",
+      "categories": {
+        "cms": "Content management",
+        "shop": "Online shops",
+        "forum": "Forums",
+        "wiki": "Wikis",
+        "blog": "Blogs",
+        "gallery": "Galleries"
+      }
+    },
+    "guarantees": {
+      "badge": "Guarantees",
+      "title": "Hosting you can trust",
+      "subtitle": "Clear promises, no surprises.",
+      "items": {
+        "free_migration": {
+          "title": "Free migration",
+          "description": "We move your existing site to us at no cost."
+        },
+        "money_back": {
+          "title": "{days}-day money back",
+          "description": "Not happy within {days} days? You get a full refund."
+        },
+        "no_hidden_fees": {
+          "title": "No hidden fees",
+          "description": "The price you see is the price you pay."
+        }
+      }
+    },
+    "support": {
+      "badge": "Support",
+      "title": "Real people, ready to help",
+      "subtitle": "Reach the team the way that suits you.",
+      "responseTime": "Replies in {time}",
+      "channels": {
+        "chat": {
+          "title": "Live chat",
+          "description": "Ask a question and get an answer right away.",
+          "action": "Open chat"
+        },
+        "ticket": {
+          "title": "Support ticket",
+          "description": "Describe the problem and we follow it through.",
+          "action": "Open a ticket"
+        },
+        "email": {
+          "title": "Email",
+          "description": "Write to us at any time.",
+          "action": "Send an email"
+        },
+        "phone": {
+          "title": "Phone",
+          "description": "Talk to someone on the team.",
+          "action": "Call us"
+        }
+      }
+    },
+    "plans": {
+      "badge": "Hosting and domains",
+      "title": "Everything your site needs",
+      "subtitle": "Hosting plans, domains and more, with clear pricing.",
+      "viewAll": "View all plans"
+    }
+  }
+}

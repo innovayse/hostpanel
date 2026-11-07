@@ -1,0 +1,14 @@
+{
+  "client": "Client",
+  "account": "Compte",
+  "myAccount": "Mon Compte",
+  "editProfile": "Modifier mon profil",
+  "orders": "Commandes",
+  "invoices": "Factures",
+  "support": "Support",
+  "settings": "Paramètres",
+  "logout": "Déconnexion",
+  "login": "Connexion",
+  "welcome": "Bienvenue sur Hostpanel",
+  "dashboard": "Tableau de bord"
+}

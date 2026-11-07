@@ -1,0 +1,18 @@
+{
+  "plugins": "Extensions",
+  "availablePlugins": "Extensions disponibles",
+  "installedPlugins": "Extensions installées",
+  "createPlugin": "Créer extension",
+  "pluginDetails": "Détails de l'extension",
+  "pluginName": "Nom de l'extension",
+  "pluginStatus": "Statut de l'extension",
+  "enabled": "Activé",
+  "disabled": "Désactivé",
+  "configure": "Configurer",
+  "testConnection": "Tester la connexion",
+  "connected": "Connecté",
+  "connectionFailed": "Échec de la connexion",
+  "noPlugins": "Aucune extension",
+  "uploadPlugin": "Télécharger extension",
+  "dragDropZip": "Glissez-déposez un fichier ZIP"
+}

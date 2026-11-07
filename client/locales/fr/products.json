@@ -1,0 +1,15 @@
+{
+  "products": "Produits",
+  "product": "Produit",
+  "productsList": "Liste de produits",
+  "productDetails": "Détails du produit",
+  "productName": "Nom du produit",
+  "productDescription": "Description du produit",
+  "productPrice": "Prix du produit",
+  "productSKU": "SKU du produit",
+  "productImage": "Image du produit",
+  "productCategories": "Catégories",
+  "stock": "Stock",
+  "addToCart": "Ajouter au panier",
+  "noProducts": "Aucun produit"
+}

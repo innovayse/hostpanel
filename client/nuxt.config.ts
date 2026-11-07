@@ -44,12 +44,15 @@ export default defineNuxtConfig({
     // that reads the browser, a difference nobody sees in the default language.
     '/ru/client/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/hy/client/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/fr/client/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/cart/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/ru/cart/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/hy/cart/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/fr/cart/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/checkout/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/ru/checkout/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/hy/checkout/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/fr/checkout/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     // The hosted-gateway returnUrl landing page. It belongs to this group for the same two
     // reasons: it has nothing to server-render (the payment outcome is only known after the
     // on-mount verification call), and a page whose URL carries an invoice/order id must
@@ -60,6 +63,7 @@ export default defineNuxtConfig({
     '/payment/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/ru/payment/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/hy/payment/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    '/fr/payment/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     // The live-chat SDK (plugins/live-chat.ts) draws its launcher bubble in *this* page and
     // points the inbox icon at a root-relative `/brand-assets/` path, which would 404 into the
     // Vue Router. When the operator names a chat server (NUXT_PUBLIC_PORTAL_CHAT_BASE_URL) the
@@ -291,8 +295,9 @@ export default defineNuxtConfig({
     // No langDir/files needed here: the plugin handles all locale JSON imports.
     locales: [
       { code: 'en', name: 'English', language: 'en-US' },
-      { code: 'ru', name: 'Русский', language: 'ru-RU' },
-      { code: 'hy', name: 'Հայերեն', language: 'hy-AM' }
+      { code: 'ru', name: 'D����?�?D�D,D1', language: 'ru-RU' },
+      { code: 'hy', name: 'O?O�O�O��?O�O', language: 'hy-AM' },
+      { code: 'fr', name: 'Français', language: 'fr-FR' }
     ],
     defaultLocale: 'en',
     strategy: 'prefix_except_default',

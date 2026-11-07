@@ -1,0 +1,12 @@
+{
+  "announcements": "Annonces",
+  "announcement": "Annonce",
+  "title": "Titre",
+  "content": "Contenu",
+  "date": "Date",
+  "author": "Auteur",
+  "published": "Publié",
+  "draft": "Brouillon",
+  "noAnnouncements": "Aucune annonce",
+  "createAnnouncement": "Créer une annonce"
+}

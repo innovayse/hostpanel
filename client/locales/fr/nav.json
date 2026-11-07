@@ -1,0 +1,14 @@
+{
+  "nav": "Navigation",
+  "home": "Accueil",
+  "products": "Produits",
+  "cart": "Panier",
+  "checkout": "Checkout",
+  "myAccount": "Mon compte",
+  "login": "Connexion",
+  "register": "Inscription",
+  "contact": "Contact",
+  "FAQ": "FAQ",
+  "terms": "Conditions",
+  "privacy": "Confidentialité"
+}

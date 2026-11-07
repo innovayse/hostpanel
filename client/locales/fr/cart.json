@@ -1,0 +1,15 @@
+{
+  "cart": "Panier",
+  "product": "Produit",
+  "price": "Prix",
+  "quantity": "Quantité",
+  "remove": "Supprimer",
+  "update": "Mettre à jour",
+  "checkout": "Passer commande",
+  "applyPromo": "Appliquer promo",
+  "subtotal": "Sous-total",
+  "shipping": "Livraison",
+  "total": "Total",
+  "emptyCart": "Panier vide",
+  "continueShopping": "Continuer vos achats"
+}

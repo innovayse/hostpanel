@@ -1,0 +1,9 @@
+{
+  "invoicePay": "Payer la facture",
+  "amount": "Montant",
+  "dueDate": "Date d'échéance",
+  "paymentMethod": "Méthode de paiement",
+  "payNow": "Payer maintenant",
+  "paymentFailed": "Échec du paiement",
+  "paymentSuccess": "Paiement réussi"
+}

@@ -1,0 +1,44 @@
+{
+  "hosting": {
+    "badge": "Web Hosting Plans",
+    "title": "Fast & Reliable",
+    "titleHighlight": "Web Hosting",
+    "subtitle": "Choose the perfect hosting plan for your website. SSD storage, free SSL, support included.",
+    "recommended": "Recommended",
+    "getStarted": "Get Started",
+    "addToCart": "Add to Cart",
+    "inCart": "In Cart",
+    "orderNow": "Order Now",
+    "custom": "Custom",
+    "loadError": "Unable to load hosting plans. Please try again later.",
+    "planNotFound": "Plan not found.",
+    "viewAllPlans": "View all plans",
+    "backToPlans": "Back to Hosting Plans",
+    "billingCycles": "Billing Cycles",
+    "includedFeatures": "Included Features",
+    "cycles": {
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "semiannually": "6 Months",
+      "annually": "Annually",
+      "biennially": "2 Years",
+      "triennially": "3 Years",
+      "free": "Free"
+    },
+    "comparison": {
+      "title": "Compare Plans",
+      "subtitle": "Choose the features that best fit your requirements.",
+      "notIncluded": "Not included",
+      "feature": "Feature"
+    },
+    "customContact": "Contact us for custom solutions",
+    "getStartedForFree": "Get Started for Free",
+    "foreverFree": "Free Forever",
+    "viewAllFeatures": "View all features",
+    "premiumSolutions": "Premium Hosting Solutions",
+    "enterpriseSolutions": "Agency & Enterprise Solutions",
+    "agencyBadge": "Ultimate Performance",
+    "select": "Select",
+    "free": "Free"
+  }
+}

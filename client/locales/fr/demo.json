@@ -1,0 +1,11 @@
+{
+  "demo": {
+    "label": "Demo mode",
+    "resetsIn": "Resets in {time}",
+    "resetsSoon": "Resets any moment now",
+    "hoursMinutes": "{hours}h {minutes}m",
+    "minutes": "{minutes}m",
+    "note": "Everything here is sample data and is reset regularly.",
+    "guide": "New here? Read the guide"
+  }
+}

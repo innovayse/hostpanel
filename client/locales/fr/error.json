@@ -1,0 +1,24 @@
+{
+  "error": {
+    "403": {
+      "title": "Accès Refusé",
+      "message": "Vous n'avez pas la permission d'accéder à cette page."
+    },
+    "404": {
+      "title": "Page Introuvable",
+      "message": "La page que vous cherchez n'existe pas ou a été déplacée."
+    },
+    "500": {
+      "title": "Erreur Serveur",
+      "message": "Quelque chose s'est mal passé de notre côté. Nous travaillons à le réparer."
+    },
+    "goBack": "Revenir en arrière",
+    "goHome": "Accueil",
+    "helpText": "Si vous avez besoin d'aide, n'hésitez pas à",
+    "contactUs": "nous contacter",
+    "default": {
+      "title": "Oups ! Quelque chose s'est mal passé",
+      "message": "Une erreur inattendue s'est produite. Veuillez réessayer plus tard."
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "paymentResult": "Résultat du paiement",
+  "success": "Succès",
+  "failed": "Échec",
+  "pending": "En attente",
+  "transactionId": "ID de transaction",
+  "amount": "Montant",
+  "currency": "Devise",
+  "date": "Date",
+  "reference": "Référence"
+}

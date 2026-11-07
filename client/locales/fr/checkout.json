@@ -1,0 +1,19 @@
+{
+  "checkout": "Checkout",
+  "orderSummary": "Résumé de la commande",
+  "customerInformation": "Informations du client",
+  "billingAddress": "Adresse de facturation",
+  "shippingAddress": "Adresse de livraison",
+  "paymentMethod": "Méthode de paiement",
+  "paymentDetails": "Détails de paiement",
+  "cardNumber": "Numéro de carte",
+  "expiryDate": "Date d'expiration",
+  "cvv": "CVV",
+  "promoCode": "Code promotionnel",
+  "apply": "Appliquer",
+  "placeOrder": "Passer la commande",
+  "orderSuccess": "Commande réussie!",
+  "orderFailed": "Échec de la commande",
+  "orderCancelled": "Commande annulée",
+  "backToShop": "Retourner au magasin"
+}

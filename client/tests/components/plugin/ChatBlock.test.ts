@@ -547,6 +547,35 @@ describe('PluginChatBlock', () => {
     expect(card.get('[data-testid="plugin-chat-result-link"]').text()).toBe('Open')
   })
 
+  it('leaves no empty actions row on a card once every action is hidden', async () => {
+    let publishVersion: number | null = 5
+    api = await startPluginApi({
+      [`GET ${ROUTES_URL}/sites/7`]: () => ({ body: { publishVersion } }),
+      [`POST ${ROUTES_URL}/sites/7/publish`]: () => {
+        publishVersion = null
+        return { status: 204 }
+      },
+    })
+    const reply = stubStream()
+    const wrapper = mountBlocks([{ kind: PluginBlockKind.Chat, send: TEST_ROUTES.chat, refresh: ['top'] }])
+    await settle()
+    await sendMessage(wrapper, 'Go')
+    reply.send('result', {
+      title: 'Version 5 is ready',
+      actions: [{ label: 'Publish version 5', route: TEST_ROUTES.publish, visibleWhen: { route: TEST_ROUTES.site, field: 'publishVersion', equalsAny: [5] } }],
+    })
+    await settle()
+
+    expect(wrapper.get('[data-testid="plugin-chat-result-actions"]').attributes('style') ?? '').not.toContain('display: none')
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    expect(wrapper.find('[data-testid="plugin-action-button"]').exists()).toBe(false)
+    // Hidden, not removed: the hidden action stays mounted to read its condition again.
+    expect(wrapper.get('[data-testid="plugin-chat-result-actions"]').attributes('style')).toContain('display: none')
+  })
+
   it('never shows a card\'s action whose condition cannot be read', async () => {
     api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7/history`]: { body: [] } })
     const reply = stubStream()

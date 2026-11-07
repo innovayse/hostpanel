@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { PLUGIN_FOLLOW_UP_INTERVAL_MS } from '~/constants/pluginFollowUp'
 import type { StubServer } from '~/tests/helpers/stubServer'
-import { mountBlocks, ROUTES_URL, startPluginApi, TEST_ROUTES } from '~/tests/helpers/mountPlugin'
+import { mountBlocks, ROUTES_URL, startPluginApi, stubStream, TEST_ROUTES } from '~/tests/helpers/mountPlugin'
 import type { PluginActionBlock, PluginBlock } from '~/types/pluginblock'
 import { PluginBlockKind } from '~/types/pluginblockkind'
 import { settle } from '~/tests/helpers/settle'
@@ -198,5 +198,165 @@ describe('PluginView follow-ups', () => {
 
     // One read for each watch: a click on the second block did not end the first block's watch.
     expect(counts.state).toBe(2)
+  })
+})
+
+describe('PluginView shared reads', () => {
+  /** The state route every block and card below names. */
+  const state = TEST_ROUTES.site
+
+  /** The ids the publish button and the chat refresh (not the chat's own, which would start a new conversation). */
+  const WATCHED = ['top', 'live', 'credits', 'publish', 'failed', 'domain']
+
+  /** What the stub's state route answers; the publish call starts the work and `finish` ends it. */
+  const server = { live: 'Live: version 5', publishable: true, state: 'idle' }
+
+  /**
+   * Ends the work the publish call started.
+   *
+   * @returns Nothing.
+   */
+  const finish = (): void => {
+    server.live = 'Live: version 6'
+    server.state = 'done'
+  }
+
+  /**
+   * A page the way a site builder lays it out: a header with a title and a line read from the state route, two badges
+   * and a publish button in it, an alert, a stat, and a conversation whose result cards offer an action by the same state.
+   *
+   * @returns The blocks.
+   */
+  const builder = (): PluginBlock[] => [
+    {
+      kind: PluginBlockKind.Header,
+      id: 'top',
+      compact: true,
+      titleSource: { route: state, field: 'name' },
+      subtitleSource: { route: state, field: 'domain' },
+      actions: [
+        { kind: PluginBlockKind.Badge, id: 'live', source: { route: state, field: 'liveText' } },
+        { kind: PluginBlockKind.Badge, id: 'credits', source: { route: state, field: 'creditsText' } },
+        {
+          kind: PluginBlockKind.Action,
+          id: 'publish',
+          label: 'Publish',
+          labelSource: { route: state, field: 'publishLabel' },
+          bodySource: { route: state, fields: { expectedVersion: 'publishVersion' } },
+          visibleWhen: { route: state, field: 'canPublish', equals: true },
+          route: TEST_ROUTES.publish,
+          refresh: WATCHED,
+          followUp: { refresh: WATCHED, until: { route: state, field: 'publishState', equals: 'done' } },
+        },
+      ],
+    },
+    { kind: PluginBlockKind.Alert, id: 'failed', text: 'Publishing failed.', visibleWhen: { route: state, field: 'publishState', equals: 'failed' } },
+    { kind: PluginBlockKind.Stat, id: 'domain', label: 'Domain', source: { route: state, field: 'domain' } },
+    { kind: PluginBlockKind.Chat, id: 'conversation', send: TEST_ROUTES.chat, refresh: WATCHED },
+  ]
+
+  /**
+   * Starts the stub API and counts the reads of the state route.
+   *
+   * @returns The requests the state route received, to be read at any time.
+   */
+  const startBuilderApi = async (): Promise<() => number> => {
+    server.live = 'Live: version 5'
+    server.publishable = true
+    server.state = 'idle'
+    api = await startPluginApi({
+      [`GET ${ROUTES_URL}/sites/7`]: () => ({
+        body: {
+          name: 'Bakery',
+          domain: 'bakery.example.test',
+          liveText: server.live,
+          creditsText: '99 credits',
+          publishLabel: 'Publish version 6',
+          publishVersion: 6,
+          canPublish: server.publishable,
+          publishState: server.state,
+        },
+      }),
+      [`POST ${ROUTES_URL}/sites/7/publish`]: () => {
+        // The work starts; it ends when the test says so, as the plugin's does some time after the call.
+        server.publishable = false
+        server.state = 'running'
+        return { body: { message: 'Publishing.' } }
+      },
+    })
+    return () => api?.requests.filter(request => request.method === 'GET' && request.url === `${ROUTES_URL}/sites/7`).length ?? 0
+  }
+
+  /**
+   * The text of the badges of the page, in order.
+   *
+   * @param wrapper - The mounted view.
+   * @returns The texts.
+   */
+  const badges = (wrapper: ReturnType<typeof mountBlocks>): string[] => wrapper.findAll('[data-testid="plugin-badge"]').map(badge => badge.text())
+
+  it('reads the state route once for every block and card of a page that names it, on load and on each refresh', async () => {
+    const stateReads = await startBuilderApi()
+    const wrapper = mountBlocks(builder())
+    await settle()
+
+    // Header title and line, two badges, the button's label, body and condition, the alert's condition and the stat.
+    expect(stateReads()).toBe(1)
+    expect(wrapper.get('[data-testid="plugin-header"]').text()).toBe('Bakery')
+    expect(badges(wrapper)).toEqual(['Live: version 5', '99 credits'])
+
+    // A conversation turn ends: the result card offers an action by the same state, and the blocks read again.
+    const reply = stubStream()
+    await wrapper.get('[data-testid="plugin-chat-input"]').setValue('Go')
+    await wrapper.get('[data-testid="plugin-chat-send"]').trigger('click')
+    await settle()
+    reply.send('result', {
+      title: 'Version 6 is ready',
+      actions: [
+        { label: 'Publish version 6', route: TEST_ROUTES.publish, visibleWhen: { route: state, field: 'publishVersion', equalsAny: [6] } },
+        { label: 'Not now', route: TEST_ROUTES.publish, visibleWhen: { route: state, field: 'canPublish', equalsAny: [true] } },
+      ],
+    })
+    await settle()
+    // The cards were drawn from the read the page already holds.
+    expect(stateReads()).toBe(1)
+    reply.close()
+    await settle()
+
+    // The turn ended: the page, the cards and the conversation's own blocks read again, once.
+    expect(stateReads()).toBe(2)
+
+    await wrapper.get('[data-testid="plugin-header-block"] [data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    // The publish call refreshed the page: one read for all of it, and the button went with the condition.
+    expect(stateReads()).toBe(3)
+    expect(wrapper.find('[data-testid="plugin-header-block"] [data-testid="plugin-action-button"]').exists()).toBe(false)
+  })
+
+  it('reads the state route once per poll of a follow-up, and shows the poll\'s answer in every block at once', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const stateReads = await startBuilderApi()
+    const wrapper = mountBlocks(builder())
+    await settle()
+    expect(stateReads()).toBe(1)
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+    expect(stateReads()).toBe(2)
+    expect(badges(wrapper)).toEqual(['Live: version 5', '99 credits'])
+
+    vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS)
+    await settle()
+    // The poll's read and the refresh it asks for are one request, not one for each block.
+    expect(stateReads()).toBe(3)
+
+    finish()
+    vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS)
+    await settle()
+
+    expect(stateReads()).toBe(4)
+    expect(badges(wrapper)).toEqual(['Live: version 6', '99 credits'])
+    expect(wrapper.get('[data-testid="plugin-header-subtitle"]').text()).toBe('bakery.example.test')
   })
 })

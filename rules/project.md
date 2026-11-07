@@ -455,6 +455,9 @@ docker/                              compose set (shared·dev·prod·platform), 
     - `visibleWhen` (any block, header actions and tab blocks included): the panel hides the block while the condition
       is read, on a failed read, an absent field or no match, and shows it only when it holds; it is read again when the
       block's own `id` is refreshed. Use it to hide a create form once the thing exists.
+    - **Chat result card actions.** An action on a chat result card takes the same condition as `visibleWhen`, spelled as the
+      event spells it (`equalsAny`), and is held to the same bounds; the card is not checked at install, so the panel
+      checks it when it reads the event. See "Reload" under the preview rules below for how it is read.
     - `resetOnSuccess: true` (a form's `submit` only, boolean): after a successful submit every field returns to its
       empty value.
     - `followUp: { "refresh": [ids], "until": <condition> }` (an action block or a form's `submit`): after a successful
@@ -477,6 +480,17 @@ docker/                              compose set (shared·dev·prod·platform), 
       carries its place), and the limit is that a refresh of that id reaches all its blocks and one follow-up watch per id
       is kept (`View.test.ts`, `PluginLoaderTests`, `InstallPluginTests`). **The bounds are the host's, never the plugin's**:
       `PLUGIN_FOLLOW_UP_MAX_ATTEMPTS` 20 and `PLUGIN_FOLLOW_UP_INTERVAL_MS` 3000 (about a minute) in the client.
+    - **Reads are shared inside a view (`readPluginRoute` in `usePluginView`).** A page is one picture of the plugin's
+      data: every source, condition and card action of a view that names the same `GET` request (the filled address and
+      its query, from `pluginRouteRequest`) takes one answer, and a new request is sent only when the picture is out of
+      date, which is when the sum of the view's refresh counts moved or the store's `writes` did (a call that is not a
+      read, a stream, however it ended). A block that mounts later is answered from the picture as well, and a read that
+      failed is not kept, so the next reader tries again. The picture belongs to the view's context and ends with it.
+      The follow-up hands the answer it read to the picture it then refreshes (`shareReadResult`), so a poll costs one
+      request and the blocks show exactly what the condition saw. This replaced one request per reader per refresh,
+      which on a route the plugin answers one call at a time made the last readers' answers arrive after the next
+      refresh began, so `latest` dropped them and a header stayed on the old live version for several polls while a block
+      answered earlier already showed the new one (#986).
     - Refused at install and load (rules from the start of view state): `ViewConditionInvalid` (`PLUGIN_VIEW_CONDITION_INVALID`: a bad condition, a non-`GET`
       condition route, `visibleWhen` outside a block) and `ViewFollowUpInvalid` (`PLUGIN_VIEW_FOLLOW_UP_INVALID`: a bad
       `followUp` shape or place, a `refresh` id no block carries, `resetOnSuccess` not a boolean or outside a `submit`),
@@ -522,7 +536,9 @@ docker/                              compose set (shared·dev·prod·platform), 
       cannot accept drops the action whole, where a malformed `until` only loses its follow-up. `PluginChatCardAction` draws
       each action and evaluates the condition with `usePluginCondition`, which takes the block ids whose refresh reads it
       again: a block names its own id, a card action the chat's `refresh` list. With no `refresh` list the condition is read
-      once, when the card is drawn.
+      once, when the card is drawn. `PluginChatCardActions` is the row under a card: it hides itself while every action is
+      hidden and the card has no details switch, and never removes it, because a hidden action stays mounted to read its
+      condition again and bring the row back.
     - **Presentation members, no schema change.** The view schema allows extra members on a block, and these are the
       panel's: a header's `compact`, `titleSource`, `subtitleSource` and any block kind in its `actions`; an action's
       `labelSource`; a table's `display: "cards"`; a tabs block's `actions`; a preview's `note` (an object of sentences by

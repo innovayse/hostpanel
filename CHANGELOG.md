@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Admin panel: an Upcoming Renewals page under Billing lists the services and domains renewing in the next 30, 60 or 90 days. A row switches automatic renewal on or off and raises that client's renewal invoice by hand. A third list shows paid domain renewal lines left claimed after the registrar gave no clear answer; staff release one after checking the registrar, and the release is written to the client's activity log.
 
+### Removed
+
+- Admin panel: the Send Email checkbox on the Open Ticket page is gone. It was never sent to the API, so it changed nothing: the department is always notified of a new ticket when it has an email address.
+
 ### Fixed
 
 - Services: the credentials of a hosting service are now read from the control panel of the server the service is on, as the sign-in link already was, instead of fixed development values. A service with no server assigned answers that it has none.

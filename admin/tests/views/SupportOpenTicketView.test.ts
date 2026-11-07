@@ -27,6 +27,15 @@ describe('SupportOpenTicketView', () => {
     expect(wrapper.get('[data-testid="support-open-ticket-client"]').attributes('placeholder')).toBeTruthy()
   })
 
+  it('has no Send Email checkbox, because the department notification is not optional', async () => {
+    stubPathRoutes([{ path: '/tickets/departments', body: [{ id: 1, name: 'Support', email: 'support@example.test' }] }])
+
+    const wrapper = await mountView(SupportOpenTicketView)
+
+    expect(wrapper.find('[data-testid="support-open-ticket-send-email"]').exists()).toBe(false)
+    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false)
+  })
+
   it('shows the departments sentence with a Retry in place of the selector, then the selector again', async () => {
     let healthy = false
     stubRoutes({

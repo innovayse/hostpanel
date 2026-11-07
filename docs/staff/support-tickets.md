@@ -29,18 +29,15 @@ There is no admin screen to create or edit departments yet. The API has endpoint
 |--------|---------------|
 | Open | Ticket is open, waiting for a staff response |
 | Awaiting Reply | Staff replied; waiting for the client |
-| Answered | Ticket has been answered |
 | Closed | Ticket is closed |
 
 **Priorities:** Low, Medium, High.
-
-The filter names on the ticket list do not match the status names: the **Answered** filter shows tickets in **Awaiting Reply** status, and the **Customer-Reply** filter shows tickets in **Answered** status.
 
 ## The ticket list
 
 Go to **Support → Support Tickets**. Subtitle: "Manage all client support requests."
 
-**Filters:** All Active Tickets, Flagged, Open, Answered, Customer-Reply, Closed.
+**Filters:** All Active Tickets, Flagged, Open, Awaiting Reply, Closed.
 
 **Search:** by ticket subject.
 

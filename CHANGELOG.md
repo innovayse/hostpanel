@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+
+- Support: the ticket status Answered is gone. A ticket is Open, Awaiting Reply or Closed. Existing Answered tickets become Awaiting Reply in a data migration, the Customer-Reply filter of the admin ticket list is removed, and the old Answered filter is now named Awaiting Reply. Importing tickets from another system is unchanged.
+
 ### Added
 
 - Installer: an upgrade now backs up the database first and can be rolled back. Running `install.sh` on an existing install dumps the database through the db container into `backups/` (file and folder readable by the owner only), in a file named with the UTC date, time and the `IMAGE_TAG` it belongs to, and stops before changing anything if the dump fails, is empty or is cut short (a finished dump ends with the pg_dump completion line). A stopped database whose volume exists is started on its own first; a first install that never started its database has nothing to back up and can be rerun. The newest 5 backups are kept (`--keep` or `HOSTPANEL_BACKUP_KEEP`) together with the oldest backup of each version and the one just made. `install.sh --rollback` returns to the newest backup whose version differs from the installed one: it asks for confirmation (`--yes` for scripts), stops the services listed by `docker compose config --services`, saves the current database as `pre-rollback-*`, restores the backup into a temporary database that replaces the live one only on success, then downloads the old compose files, sets `IMAGE_TAG`, pulls those images and starts the stack. A failure after the services were stopped prints the state and the exact commands to run. Uploads, plugin volumes and new `.env` keys are not rolled back. `--skip-backup` upgrades without a dump and leaves the data unprotected. A backup taken on the moving `latest` tag cannot be rolled back automatically, so pass `--version` on upgrades. Covered by `scripts/test-install-backup.sh`.

@@ -21,8 +21,7 @@
   "ticketFilterOptions": {
     "allActiveTickets": "All Active Tickets",
     "flagged": "Flagged",
-    "answered": "Answered",
-    "customerReply": "Customer-Reply"
+    "awaitingReply": "Awaiting Reply"
   },
   "recurringPeriodOptions": {
     "weekly": "Weekly",

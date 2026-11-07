@@ -9,9 +9,6 @@ public enum TicketStatus
     /// <summary>Staff replied, awaiting client response.</summary>
     AwaitingReply = 1,
 
-    /// <summary>Ticket has been answered.</summary>
-    Answered = 2,
-
     /// <summary>Ticket is closed.</summary>
     Closed = 3,
 }

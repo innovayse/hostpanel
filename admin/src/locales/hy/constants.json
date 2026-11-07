@@ -21,8 +21,7 @@
   "ticketFilterOptions": {
     "allActiveTickets": "Բոլոր ակտիվ տոմսերը",
     "flagged": "Դրոշակավորված",
-    "answered": "Պատասխանված",
-    "customerReply": "Հաճախորդի պատասխան"
+    "awaitingReply": "Սպասում է պատասխանի"
   },
   "recurringPeriodOptions": {
     "weekly": "Շաբաթական",

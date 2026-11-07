@@ -6,6 +6,7 @@
       :checked="modelValue"
       :disabled="disabled"
       :required="required"
+      :aria-describedby="descriptionId"
       :data-testid="testid ? `${testid}-input` : undefined"
       class="sr-only"
       @change="handleChange"
@@ -14,6 +15,8 @@
       type="button"
       role="checkbox"
       :aria-checked="modelValue"
+      :aria-labelledby="label || $slots.default ? labelId : undefined"
+      :aria-describedby="descriptionId"
       :disabled="disabled"
       :data-testid="testid"
       class="ui-check flex-shrink-0 mt-0.5 w-5 h-5 rounded border-2 transition-all duration-150 flex items-center justify-center"
@@ -32,6 +35,7 @@
     </button>
     <div v-if="label || $slots.default" class="flex-1 text-sm leading-relaxed">
       <label
+        :id="labelId"
         :for="inputId"
         class="font-medium text-gray-700 dark:text-gray-300 transition-colors"
         :class="disabled ? 'cursor-not-allowed' : 'cursor-pointer hover:text-gray-900 dark:hover:text-white'"
@@ -40,7 +44,7 @@
         {{ label }}
         <slot />
       </label>
-      <p v-if="description" class="text-gray-500 dark:text-gray-400 text-xs mt-1">{{ description }}</p>
+      <p v-if="description" :id="descriptionId" class="text-gray-500 dark:text-gray-400 text-xs mt-1">{{ description }}</p>
     </div>
   </div>
 </template>
@@ -95,6 +99,12 @@ const generatedId = useId()
 
 /** The id bound to the native checkbox and the label. */
 const inputId = computed(() => props.id ?? generatedId)
+
+/** Id of the label, so the visible box (a button) takes its accessible name from it. */
+const labelId = computed(() => `${inputId.value}-label`)
+
+/** Id of the description when there is one; the box and the native input are described by it, so the agreement text is read with the control. */
+const descriptionId = computed((): string | undefined => (props.description ? `${inputId.value}-description` : undefined))
 
 /** Flips the value unless disabled. */
 const toggle = (): void => {

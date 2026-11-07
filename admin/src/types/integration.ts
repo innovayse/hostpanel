@@ -37,10 +37,7 @@ export type IntegrationCategoryName = (typeof IntegrationCategoryName)[keyof typ
 
 /** Closed set of integration slugs. */
 export const IntegrationSlug = {
-  Stripe: 'stripe',
-  Paypal: 'paypal',
   BankTransfer: 'bank-transfer',
-  Inecobank: 'inecobank',
   Namecheap: 'namecheap',
   Nameam: 'nameam',
   Resellerclub: 'resellerclub',
@@ -72,6 +69,38 @@ export interface IntegrationDto {
   isPlugin: boolean
   /** The type a plugin's manifest declares; null for a built-in integration. */
   pluginType: PluginType | null
+  /** Address of the plugin's icon; null for a built-in integration or a plugin without one. */
+  iconUrl: string | null
+  /**
+   * Last known connection state of a switched-on plugin that implements the status capability; null for a built-in
+   * integration and every other plugin.
+   */
+  connection: IntegrationConnection | null
+}
+
+/** Closed set of connection states the API reports for a plugin integration; the strings are the API's enum names. */
+export const IntegrationConnectionState = {
+  /** The plugin reports that it works. */
+  Connected: 'Connected',
+  /** The plugin works with reduced function. */
+  Degraded: 'Degraded',
+  /** The plugin does not work, failed to answer or did not answer in time. */
+  Unavailable: 'Unavailable',
+  /** The plugin is switched off or not fully configured, so it was not asked. */
+  Inactive: 'Inactive',
+} as const
+
+/** One of the {@link IntegrationConnectionState} values. */
+export type IntegrationConnectionState = (typeof IntegrationConnectionState)[keyof typeof IntegrationConnectionState]
+
+/** The connection state of a plugin integration, as the API words it in the reader's language. */
+export interface IntegrationConnection {
+  /** The state. */
+  state: IntegrationConnectionState
+  /** One sentence for the administrator, already in the request language. */
+  message: string
+  /** ISO 8601 UTC moment the plugin was asked; a cached state keeps the moment of its check. */
+  checkedAt: string
 }
 
 /** Metadata for one configuration field, returned by the detail endpoint. */
@@ -84,12 +113,18 @@ export interface FieldDefinitionDto {
   type: IntegrationFieldType
   /** Whether the field is required before the integration can be enabled. */
   required: boolean
-  /** Allowed values for "select" type fields; absent for all others. */
-  options?: string[]
+  /** Allowed values for "select" type fields; absent or null for all others. */
+  options?: string[] | null
   /** Lowest accepted value of a "Number" field; absent or null when unbounded. */
   min?: number | null
   /** Highest accepted value of a "Number" field; absent or null when unbounded. */
   max?: number | null
+  /** Help text shown under the field, already in the request language; absent or null for none. */
+  description?: string | null
+  /** Hint shown in the empty input, already in the request language; absent or null for none. */
+  placeholder?: string | null
+  /** The text shown for each option value, keyed by the value; absent or null when an option shows its value. */
+  optionLabels?: Record<string, string> | null
 }
 
 /** The stored state of one integration field. */
@@ -110,6 +145,10 @@ export interface IntegrationDetailDto {
   name: string
   /** Whether this integration is currently enabled. */
   isEnabled: boolean
+  /** True if this integration comes from an installed plugin (not built-in). */
+  isPlugin?: boolean
+  /** Address of the plugin's icon; null or absent for a built-in integration or a plugin without one. */
+  iconUrl?: string | null
   /** Field key to its stored state; a secret field answers only whether it is set. */
   config: Record<string, IntegrationFieldValue>
   /**
@@ -117,6 +156,10 @@ export interface IntegrationDetailDto {
    * Source of truth for which fields to show and their input types.
    */
   fieldDefinitions: FieldDefinitionDto[]
+  /** Whether Test Connection can check this integration; the button is hidden when it cannot. */
+  canTestConnection: boolean
+  /** Last known connection state of a plugin that implements the status capability; null otherwise. */
+  connection: IntegrationConnection | null
 }
 
 /** Payload sent to PUT /api/admin/integrations/:slug. */

@@ -6,7 +6,7 @@ namespace Innovayse.Hostpanel.Domain.Tests.Settings;
 /// <summary>Unit tests for the <see cref="Setting"/> aggregate.</summary>
 public sealed class SettingTests
 {
-    /// <summary>A plugin id that meets the plugin id rule.</summary>
+    /// <summary>A plugin id.</summary>
     private const string PluginId = "acme-reports";
 
     /// <summary>The moment every removal in these tests is stamped with.</summary>
@@ -50,7 +50,7 @@ public sealed class SettingTests
 
     /// <summary>
     /// A plugin installed under an id that was reserved later (<c>ui</c>) is still switched off on removal: the switch
-    /// checks only the id's shape.
+    /// does not look at reserved ids.
     /// </summary>
     [Fact]
     public void SwitchOffRemovedPlugin_ReservedId_StoresOff()
@@ -78,15 +78,14 @@ public sealed class SettingTests
         setting.Value.Should().Be(IntegrationSettingKeys.EnabledValue);
     }
 
-    /// <summary>An id breaking the plugin id rule is refused, even on a row whose key it would match.</summary>
+    /// <summary>An empty id is refused, even on a row whose key it would match.</summary>
     [Fact]
-    public void SwitchOffRemovedPlugin_InvalidId_Throws()
+    public void SwitchOffRemovedPlugin_EmptyId_Throws()
     {
-        const string invalidId = "Not_Valid";
         var setting = Setting.Create(
-            IntegrationSettingKeys.EnabledKey(invalidId), IntegrationSettingKeys.EnabledValue, null);
+            IntegrationSettingKeys.EnabledKey(string.Empty), IntegrationSettingKeys.EnabledValue, null);
 
-        var act = () => setting.SwitchOffRemovedPlugin(invalidId, RemovedAt);
+        var act = () => setting.SwitchOffRemovedPlugin(string.Empty, RemovedAt);
 
         act.Should().Throw<ArgumentException>();
     }
@@ -103,11 +102,11 @@ public sealed class SettingTests
         setting.DomainEvents.Should().ContainSingle().Which.Should().Be(new PluginRemovedEvent(PluginId, RemovedAt));
     }
 
-    /// <summary>The factory refuses an id breaking the plugin id rule, so no key can be built from it.</summary>
+    /// <summary>The factory refuses an empty id, so no key can be built from it.</summary>
     [Fact]
-    public void CreateSwitchedOffForRemovedPlugin_InvalidId_Throws()
+    public void CreateSwitchedOffForRemovedPlugin_EmptyId_Throws()
     {
-        var act = () => Setting.CreateSwitchedOffForRemovedPlugin("../outside", RemovedAt);
+        var act = () => Setting.CreateSwitchedOffForRemovedPlugin(" ", RemovedAt);
 
         act.Should().Throw<ArgumentException>();
     }

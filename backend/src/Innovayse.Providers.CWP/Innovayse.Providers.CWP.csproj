@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Innovayse.SDK\Innovayse.SDK.csproj" />
+    <ProjectReference Include="..\Hostpanel.Sdk\Hostpanel.Sdk.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <None Include="plugin.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="icon.svg" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

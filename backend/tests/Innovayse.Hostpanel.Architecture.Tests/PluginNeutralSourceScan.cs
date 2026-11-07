@@ -11,12 +11,19 @@ namespace Innovayse.Hostpanel.Architecture.Tests;
 /// </summary>
 internal static class PluginNeutralSourceScan
 {
-    /// <summary>The plugin ids and entry point type names every in-tree plugin manifest declares.</summary>
+    /// <summary>
+    /// The ids and entry point type names of plugins that no longer live in this repository. Their manifests are
+    /// gone from <c>Innovayse.Providers.*</c>, so nothing would derive them any more, yet the core must keep not
+    /// naming them. The list only grows when a plugin moves out of the tree.
+    /// </summary>
+    private static readonly string[] ExternalPluginNames = ["inecobank", "InecobankPaymentGateway", "paypal", "PayPalPaymentGateway", "idram", "IdramPaymentGateway", "ameriabank", "AmeriabankPaymentGateway"];
+
+    /// <summary>The plugin ids and entry point type names every in-tree plugin manifest declares, plus those of plugins moved out of the tree.</summary>
     /// <param name="backendRoot">The directory that holds the solution file.</param>
-    /// <returns>The distinct names, each a whole token a core source must not contain.</returns>
+    /// <returns>The distinct names, each a whole token a core source must not contain, including <see cref="ExternalPluginNames"/>.</returns>
     public static IReadOnlyList<string> PluginNames(string backendRoot)
     {
-        var names = new SortedSet<string>(StringComparer.Ordinal);
+        var names = new SortedSet<string>(ExternalPluginNames, StringComparer.Ordinal);
         var providers = Directory.EnumerateDirectories(Path.Combine(backendRoot, "src"), "Innovayse.Providers.*");
         foreach (var manifest in providers.Select(directory => Path.Combine(directory, "plugin.json")).Where(File.Exists))
         {

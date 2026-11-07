@@ -331,7 +331,7 @@ public sealed class MessagingRegistrationTests(IntegrationTestFactory factory) :
 
         return assembly.StartsWith("Innovayse.Hostpanel.", StringComparison.Ordinal)
             || assembly.StartsWith("Innovayse.Providers.", StringComparison.Ordinal)
-            || assembly == "Innovayse.SDK";
+            || assembly == "Hostpanel.Sdk";
     }
 
     /// <summary>A readable name for a type in an offender line.</summary>

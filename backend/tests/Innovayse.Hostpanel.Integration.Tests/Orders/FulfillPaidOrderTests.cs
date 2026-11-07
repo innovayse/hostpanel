@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillPaidOrder;
@@ -24,7 +23,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 /// <summary>
 /// <see cref="FulfillPaidOrderHandler"/> against Postgres: the not-found and not-invoiced
 /// refusals, the idempotent no-op, the plain-service happy path and the automatic refund of a
-/// rejected domain line, through a hosted gateway plugin or the card gateway.
+/// rejected domain line, through the hosted gateway plugin.
 /// </summary>
 /// <remarks>
 /// The handler is built by hand from a DI scope rather than resolved from one, the same way
@@ -47,19 +46,15 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
             scope.ServiceProvider.GetRequiredService<IClientCredit>());
 
     /// <summary>
-    /// Builds a host whose refund command reaches <paramref name="pluginResolver"/> and
-    /// <paramref name="cardGateway"/> instead of a real gateway.
+    /// Builds a host whose refund command reaches <paramref name="pluginResolver"/> instead of a real gateway.
     /// </summary>
     /// <param name="pluginResolver">The fake plugin resolver the refund resolves hosted gateways through.</param>
-    /// <param name="cardGateway">The fake card gateway the refund calls for a card payment.</param>
     /// <param name="useRealRegistrar">Whether domain registration goes to the real, unconfigured registrar provider.</param>
     /// <returns>The test host.</returns>
-    private WebApplicationFactory<Program> BuildHost(
-        FakePaymentPluginResolver pluginResolver, FakeCardPaymentGateway cardGateway, bool useRealRegistrar = false) =>
+    private WebApplicationFactory<Program> BuildHost(FakePaymentPluginResolver pluginResolver, bool useRealRegistrar = false) =>
         factory.WithWebHostBuilder(b => b.ConfigureTestServices(s =>
         {
             s.AddSingleton<IPaymentPluginResolver>(pluginResolver);
-            s.AddSingleton<ICardPaymentGateway>(cardGateway);
             if (useRealRegistrar)
             {
                 s.AddScoped<IRegistrarProvider, NameAmRegistrarProvider>();
@@ -232,7 +227,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var plugin = new FakePaymentPlugin { RefundResult = "plugin-refund-1" };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register("bank-gateway", plugin);
-        var host = BuildHost(resolver, new FakeCardPaymentGateway { IsConfigured = true });
+        var host = BuildHost(resolver);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, _) = await SeedClientAndProductAsync(context);
@@ -261,7 +256,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var plugin = new FakePaymentPlugin { RefundResult = "plugin-refund-mixed" };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register("bank-gateway", plugin);
-        var host = BuildHost(resolver, new FakeCardPaymentGateway { IsConfigured = true });
+        var host = BuildHost(resolver);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, productId) = await SeedClientAndProductAsync(context);
@@ -277,28 +272,30 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>
-    /// A card-paid invoice is refunded at the card gateway for the rejected line's amount in the
-    /// invoice currency, against the original charge, and the refund is on the ledger. The line was
+    /// A gateway-paid invoice is refunded through the hosted gateway for the rejected line's amount in the
+    /// invoice currency, and the refund is on the ledger. The line was
     /// the whole invoice, so the invoice ends Refunded.
     /// </summary>
     [Fact]
-    public async Task RejectedDomainOnACardPaymentRefundsTheLineAtTheCardGateway()
+    public async Task RejectedDomainOnAGatewayPaymentRefundsTheLineAtTheHostedGateway()
     {
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_card_1" };
-        var host = BuildHost(new FakePaymentPluginResolver(), cardGateway);
+        var plugin = new FakePaymentPlugin { RefundResult = "re_card_1" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, _) = await SeedClientAndProductAsync(context);
         var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
-        var payment = invoice.Settle(PaymentMethodNames.Card, "ch_card_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
-        context.Transactions.Add(payment!);
+        invoice.SetGatewaySession("bank-gateway", "gw-order-card-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+        invoice.Settle("bank-gateway", "ch_card_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        cardGateway.RefundInstructions.Should().ContainSingle()
-            .Which.Should().Be(new CardRefundInstruction("ch_card_1", 25m, "USD", $"refund-{invoice.Id}-ch_card_1-0"));
+        plugin.LastRefundGatewayOrderId.Should().Be("gw-order-card-1");
+        plugin.LastRefundAmountMinor.Should().Be(2500);
         var ledger = await context.Transactions.AsNoTracking()
             .Where(t => t.InvoiceId == invoice.Id && t.AmountOut > 0).ToListAsync(CancellationToken.None);
         ledger.Should().ContainSingle(t => t.AmountOut == 25m && t.TransactionId == "re_card_1");
@@ -306,29 +303,29 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>
-    /// The automatic refund of a rejected domain in a mixed card-paid order goes through the same refund
-    /// use case as the admin action: the card gateway gets the original charge's reference for the
-    /// line's amount only, the refund's ledger row is written, and the invoice is left
+    /// The automatic refund of a rejected domain in a mixed gateway-paid order goes through the same refund
+    /// use case as the admin action: the hosted gateway gets the line's amount only, the refund's ledger row is written, and the invoice is left
     /// PartiallyRefunded because the hosting line stays paid.
     /// </summary>
     [Fact]
-    public async Task RejectedDomainInAMixedCardOrderLeavesTheInvoicePartiallyRefunded()
+    public async Task RejectedDomainInAMixedGatewayOrderLeavesTheInvoicePartiallyRefunded()
     {
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_mixed_card" };
-        var host = BuildHost(new FakePaymentPluginResolver(), cardGateway);
+        var plugin = new FakePaymentPlugin { RefundResult = "re_mixed_card" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, productId) = await SeedClientAndProductAsync(context);
         var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 10m, productId);
-        var payment = invoice.Settle(PaymentMethodNames.Card, "ch_mixed_card", DateTimeOffset.UtcNow, TransactionSource.Manual);
-        context.Transactions.Add(payment!);
+        invoice.SetGatewaySession("bank-gateway", "gw-order-mixed-card", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+        invoice.Settle("bank-gateway", "ch_mixed_card", DateTimeOffset.UtcNow, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        cardGateway.RefundInstructions.Should().ContainSingle()
-            .Which.Should().Be(new CardRefundInstruction("ch_mixed_card", 10m, "USD", $"refund-{invoice.Id}-ch_mixed_card-0"));
+        plugin.LastRefundAmountMinor.Should().Be(1000);
         var ledger = await context.Transactions.AsNoTracking()
             .Where(t => t.InvoiceId == invoice.Id && t.AmountOut > 0).ToListAsync(CancellationToken.None);
         ledger.Should().ContainSingle(t => t.AmountOut == 10m && t.TransactionId == "re_mixed_card");
@@ -352,24 +349,25 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     [Fact]
     public async Task RejectedDomainOnATaxedInvoiceRefundsTheLineWithItsTax()
     {
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_taxed_1" };
-        var host = BuildHost(new FakePaymentPluginResolver(), cardGateway);
+        var plugin = new FakePaymentPlugin { RefundResult = "re_taxed_1" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, _) = await SeedClientAndProductAsync(context);
         var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
         await context.InvoiceItems.Where(i => i.InvoiceId == invoice.Id).LoadAsync(CancellationToken.None);
         invoice.UpdateOptions(invoice.InvoiceDate, invoice.DueDate, invoice.PaymentMethod, taxRate: 10m);
-        var payment = invoice.Settle(PaymentMethodNames.Card, "ch_taxed_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
-        context.Transactions.Add(payment!);
+        invoice.SetGatewaySession("bank-gateway", "gw-order-taxed-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+        invoice.Settle("bank-gateway", "ch_taxed_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
         invoice.Total.Should().Be(27.5m);
-        cardGateway.RefundInstructions.Should().ContainSingle()
-            .Which.Should().Be(new CardRefundInstruction("ch_taxed_1", 27.5m, "USD", $"refund-{invoice.Id}-ch_taxed_1-0"));
+        plugin.LastRefundAmountMinor.Should().Be(2750);
     }
 
     /// <summary>
@@ -382,7 +380,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var plugin = new FakePaymentPlugin { RefundResult = "plugin-refund-2" };
         var resolver = new FakePaymentPluginResolver();
         resolver.Register("bank-gateway", plugin);
-        var host = BuildHost(resolver, new FakeCardPaymentGateway { IsConfigured = true }, useRealRegistrar: true);
+        var host = BuildHost(resolver, useRealRegistrar: true);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, _) = await SeedClientAndProductAsync(context);
@@ -410,28 +408,29 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
 
     /// <summary>
     /// A rejected line on an invoice paid partly with credit gives the credit share back to the
-    /// client's credit balance and only the paid share back through the card gateway.
+    /// client's credit balance and only the paid share back through the hosted gateway.
     /// </summary>
     [Fact]
     public async Task RejectedDomainPaidPartlyWithCreditRefundsEachShareItsOwnWay()
     {
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_split_1" };
-        var host = BuildHost(new FakePaymentPluginResolver(), cardGateway);
+        var plugin = new FakePaymentPlugin { RefundResult = "re_split_1" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, _) = await SeedClientAndProductAsync(context);
         var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
         await context.InvoiceItems.Where(i => i.InvoiceId == invoice.Id).LoadAsync(CancellationToken.None);
         invoice.ApplyCredit(10m);
-        var payment = invoice.Settle(PaymentMethodNames.Card, "ch_split_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
-        context.Transactions.Add(payment!);
+        invoice.SetGatewaySession("bank-gateway", "gw-order-split-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+        invoice.Settle("bank-gateway", "ch_split_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        cardGateway.RefundInstructions.Should().ContainSingle()
-            .Which.Should().Be(new CardRefundInstruction("ch_split_1", 15m, "USD", $"refund-{invoice.Id}-ch_split_1-0"));
+        plugin.LastRefundAmountMinor.Should().Be(1500);
         (await CreditBalanceOfAsync(host, clientId)).Should().Be(10m);
     }
 
@@ -442,8 +441,10 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     [Fact]
     public async Task RejectedDomainPaidWhollyWithCreditRefundsToCreditOnly()
     {
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_never" };
-        var host = BuildHost(new FakePaymentPluginResolver(), cardGateway);
+        var plugin = new FakePaymentPlugin { RefundResult = "re_never" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var (clientId, _) = await SeedClientAndProductAsync(context);
@@ -456,41 +457,8 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        cardGateway.RefundInstructions.Should().BeEmpty();
+        plugin.LastRefundGatewayOrderId.Should().BeNull();
         (await CreditBalanceOfAsync(host, clientId)).Should().Be(25m);
-    }
-
-    /// <summary>
-    /// When the card gateway fails part way through the line's refund, the part it returned is on
-    /// the ledger and the critical log asks for a manual refund of only what is left.
-    /// </summary>
-    [Fact]
-    public async Task RejectedDomainWithAPartlyFailedRefundLogsOnlyTheRemainingAmount()
-    {
-        var cardGateway = new FakeCardPaymentGateway { IsConfigured = true, RefundId = "re_part_1", ThrowsOnRefundCall = 2 };
-        var host = BuildHost(new FakePaymentPluginResolver(), cardGateway);
-        using var scope = host.Services.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var (clientId, _) = await SeedClientAndProductAsync(context);
-        var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
-        await context.InvoiceItems.Where(i => i.InvoiceId == invoice.Id).LoadAsync(CancellationToken.None);
-        var now = DateTimeOffset.UtcNow;
-        context.Transactions.Add(invoice.AddPayment(now.AddMinutes(-5), PaymentMethodNames.Card, "ch_part_old", 10m, 0m, null, TransactionSource.Manual));
-        context.Transactions.Add(invoice.Settle(PaymentMethodNames.Card, "ch_part_new", now, TransactionSource.Manual)!);
-        await context.SaveChangesAsync(CancellationToken.None);
-        var logger = new CapturingLogger<FulfillPaidOrderHandler>();
-
-        var result = await BuildHandler(scope, logger).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
-
-        result.IsSuccess.Should().BeTrue();
-        cardGateway.RefundInstructions.Should().Equal(
-            new CardRefundInstruction("ch_part_new", 15m, "USD", $"refund-{invoice.Id}-ch_part_new-0"),
-            new CardRefundInstruction("ch_part_old", 10m, "USD", $"refund-{invoice.Id}-ch_part_old-0"));
-        var ledger = await context.Transactions.AsNoTracking()
-            .Where(t => t.InvoiceId == invoice.Id && t.AmountOut > 0).ToListAsync(CancellationToken.None);
-        ledger.Should().ContainSingle(t => t.AmountOut == 15m && t.TransactionId == "re_part_1");
-        logger.Messages.Should().ContainSingle(m => m.StartsWith("REFUND FAILED", StringComparison.Ordinal))
-            .Which.Should().Contain("remaining 10");
     }
 
     /// <summary>Reads a client's credit balance from a fresh scope, so the value is what was saved.</summary>

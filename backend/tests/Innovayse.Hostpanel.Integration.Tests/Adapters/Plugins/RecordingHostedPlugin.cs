@@ -1,4 +1,4 @@
-using Innovayse.SDK.Plugins.Hosting;
+using Hostpanel.Sdk.Plugins.Hosting;
 using Microsoft.Extensions.Configuration;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;

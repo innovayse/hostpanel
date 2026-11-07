@@ -53,6 +53,7 @@ afterEach(async () => {
 
 describe('usePluginSlot', () => {
   it('reads the slot with its context once mounted, and again when the context changes', async () => {
+    /** The service the slot is read for; changed to make the composable read again. */
     const serviceId = ref('4')
     mountClient(hostFor(serviceId))
 
@@ -65,6 +66,7 @@ describe('usePluginSlot', () => {
   })
 
   it('reads again when the slot id a getter answers changes', async () => {
+    /** The slot id a getter answers; changed to make the composable read again. */
     const slotId = ref<PluginSlotId>(PluginSlotId.ServiceTabs)
     mountClient(defineComponent({
       setup: () => {
@@ -83,6 +85,7 @@ describe('usePluginSlot', () => {
   it('8. keeps the latest context\'s widgets when an older reply arrives after it', async () => {
     const held = heldReply()
     stub.respondWith(request => queryOf(request).serviceId === '4' ? held.reply() : { body: slotIndex(PluginSlotId.ServiceTabs, ['five']) })
+    /** The service the slot is read for; held back while its first reply is pending. */
     const serviceId = ref('4')
     mountClient(hostFor(serviceId))
     await vi.waitFor(() => expect(held.waiting()).toBe(1))
@@ -97,6 +100,7 @@ describe('usePluginSlot', () => {
   })
 
   it('9. empties the widgets at once when the context changes, before the new reply', async () => {
+    /** The service the slot is read for; changed while a reply is still pending. */
     const serviceId = ref('4')
     mountClient(hostFor(serviceId))
     await vi.waitFor(() => expect(seen).toEqual(['tab']))

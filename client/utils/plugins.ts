@@ -1,26 +1,39 @@
 /**
  * Pure helpers of the plugin views: the method of a block's route and filling its path, reading a page's
- * parameters from its address, the address of a linked page, reading a field of a reply, checking a link against the plugin's allowed origins, formatting a bound value, and reading a server-sent event stream.
+ * parameters from its address, the address of a linked page, reading a field of a reply, testing a view condition, checking a link against the plugin's allowed origins, formatting a bound value, and reading a server-sent event stream.
  *
  * Nothing here renders markup: every value a plugin sends is text, and the components put it in the page as text.
  *
  * @module utils/plugins
  */
 
+import { PLUGIN_CONDITION_FIELD_PATTERN, PLUGIN_CONDITION_MAX_FIELD_LENGTH, PLUGIN_CONDITION_MAX_VALUES } from '~/constants/pluginCondition'
+import { PLUGIN_SELECTION_ID_PATTERN, PLUGIN_SELECTION_MAX_ID_LENGTH, PLUGIN_SELECTION_MESSAGE_TYPE, PLUGIN_SELECTION_MESSAGE_VERSION } from '~/constants/pluginSelection'
+import type { PluginSelectionMessage } from '~/types/pluginpreviewselection'
+import { PluginSelectionEvent } from '~/types/pluginselectionevent'
+import { PLUGIN_FRAME_TIMING } from '~/constants/pluginFrames'
 import type { Component } from 'vue'
 import { AppWindow, BarChart3, Bot, Boxes, Cloud, Globe, LayoutGrid, Mail, MessageSquare, Puzzle, Rocket, Settings, Shield, Sparkles } from 'lucide-vue-next'
 import { formatDateTime } from '~/utils/formatDate'
 import { clientPluginPagePath } from '~/constants/clientRoutes'
 import type { PluginMenuItem } from '~/types/pluginmenuitem'
 import type { PluginMenuLink } from '~/types/pluginmenulink'
-import type { PluginPageLink } from '~/types/pluginblock'
+import type { PluginActionBlock, PluginActionBodySource, PluginActionBodyValue, PluginPageLink } from '~/types/pluginblock'
+import { PluginBlockKind } from '~/types/pluginblockkind'
 import { PluginBlockTone } from '~/types/pluginblocktone'
+import type { PluginChatResult, PluginChatResultAction } from '~/types/pluginchatresult'
+import type { PluginChatStep } from '~/types/pluginchatstep'
+import { PluginChatStepState } from '~/types/pluginchatstepstate'
 import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import { PluginValueFormat } from '~/types/pluginvalueformat'
 import type { PluginUiPage } from '~/types/pluginuipage'
+import type { PluginConditionValue, PluginViewCondition } from '~/types/pluginviewcondition'
 import type { PluginViewRoute } from '~/types/pluginviewroute'
 import { HttpMethod } from '~/types/httpmethod'
 import { UiAlertVariant, UiButtonVariant, UiTone } from '~/utils/ui/enums'
+
+/** The most actions a result card shows. */
+const MAX_RESULT_ACTIONS = 5
 
 /** The event name of a server-sent event that names none. */
 const DEFAULT_EVENT = 'message'
@@ -216,6 +229,24 @@ export const readPluginField = (data: unknown, field: string | undefined): unkno
 }
 
 /**
+ * Whether a view condition holds for a route's reply: the condition's field, read like {@link readPluginField},
+ * strictly equals one of its values. A field the reply lacks never holds, not even against `null`.
+ *
+ * @param condition - The condition.
+ * @param data - The reply of the condition's route.
+ * @returns True when the field equals one of the values.
+ */
+export const pluginConditionHolds = (condition: PluginViewCondition, data: unknown): boolean => {
+  const value = readPluginField(data, condition.field)
+  if (value === undefined) {
+    return false
+  }
+  const expected: readonly PluginConditionValue[] = Array.isArray(condition.equals) ? condition.equals : [condition.equals]
+  // Strict on purpose: the view names `"1"` or `1`, and a status of 1 is not the word "1".
+  return expected.some(candidate => candidate === value)
+}
+
+/**
  * The values of a page link's parameters, read from a row or a reply.
  *
  * @param link - The link.
@@ -321,6 +352,282 @@ export const pluginLinkTarget = (href: unknown, origins: readonly string[]): Plu
     return null
   }
   return origins.some(pattern => originMatches(pattern, url)) ? { href, external: true } : null
+}
+
+/**
+ * The address a preview block may frame, failing closed. The origin must be an exact member of the page's
+ * `frameOrigins`, with no suffix or wildcard match, and never the panel's own: a framed page on the panel's origin
+ * could reach the panel. `javascript:` and `data:` have the origin `null`, which no list holds; http passes only when
+ * the host listed that origin, which it does in development alone.
+ *
+ * @param value - The value read from the route.
+ * @param frameOrigins - The page's allowed frame origins.
+ * @param ownOrigin - The panel's own origin.
+ * @returns The normalised address, or null when nothing may be shown.
+ */
+export const pluginFrameAddress = (value: unknown, frameOrigins: readonly string[], ownOrigin: string): string | null => {
+  if (typeof value !== 'string') {
+    return null
+  }
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    return null
+  }
+  if (url.username !== '' || url.password !== '' || url.origin === ownOrigin || !frameOrigins.includes(url.origin)) {
+    return null
+  }
+  return url.href
+}
+
+/** What the preview block reads of the navigation that loaded the document. */
+export interface PluginFrameDocument {
+  /** The address the document was loaded from. */
+  name?: string
+  /** The document's `Server-Timing` entries. */
+  serverTiming?: readonly { name: string }[]
+}
+
+/**
+ * Whether this document was served for this very page with the API's frame origins. A CSP belongs to the document, so a
+ * router move keeps the policy of the address it was first loaded at: another document's wide one, or a closed one when
+ * that address named no page the caller may open, or when the visitor was signed out as it loaded and signed in inside it.
+ * Each would leave the frame blank or too open, so the scope is the exact page, and its policy must be the API's.
+ *
+ * @param document - The navigation entry of the document.
+ * @param pagePath - The path of the page on screen.
+ * @returns True only when the document was loaded at this path and its server wrote the origins into its policy.
+ */
+export const pluginDocumentLoaded = (document: PluginFrameDocument | undefined, pagePath: string): boolean => {
+  // Its address alone says nothing about the policy: a document opened signed out keeps a closed one after a sign-in in it.
+  if (!document?.name || !document.serverTiming?.some(entry => entry.name === PLUGIN_FRAME_TIMING)) {
+    return false
+  }
+  try {
+    return new URL(document.name).pathname.replace(/\/+$/, '') === pagePath.replace(/\/+$/, '')
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Reads a step event: `{ id?, label, state }`.
+ *
+ * @param data - The event's data.
+ * @returns The step, its key the `id` or else the label; null for a malformed event or an unknown state.
+ */
+export const parsePluginChatStep = (data: unknown): PluginChatStep | null => {
+  const label = readPluginField(data, 'label')
+  const id = readPluginField(data, 'id')
+  const state = readPluginField(data, 'state')
+  if (typeof label !== 'string' || label === '' || (id !== undefined && (typeof id !== 'string' || id === ''))) {
+    return null
+  }
+  if (!(Object.values(PluginChatStepState) as unknown[]).includes(state) || state === PluginChatStepState.Stopped) {
+    return null
+  }
+  return { key: id ?? label, label, state: state as PluginChatStepState }
+}
+
+/** The most lines a result card keeps behind its details switch. */
+const MAX_RESULT_DETAILS = 20
+
+/** The most members a result card's action body may hold; the same cap the API sets on a view's `bodySource`. */
+const MAX_RESULT_BODY_MEMBERS = 10
+
+/** A member of an action's body: one camelCase JSON name, the API's rule for a view's `bodySource`. */
+const BODY_MEMBER = /^[a-z][A-Za-z0-9]{0,63}$/
+
+/**
+ * Whether a value may be sent as a member of an action's body.
+ *
+ * @param value - The value.
+ * @returns True for a string, a finite number or a boolean.
+ */
+const isBodyValue = (value: unknown): value is PluginActionBodyValue =>
+  typeof value === 'string' || typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value))
+
+/**
+ * Builds the body of an action's call from the reply its `bodySource` read.
+ *
+ * @param source - The body source.
+ * @param reply - The reply; undefined until it is read and after a failed read.
+ * @returns The body, or null when a member is absent or is no scalar: a call with part of its body must not be sent,
+ *   since the route could then not tell what the reader saw.
+ */
+export const pluginActionBody = (source: PluginActionBodySource, reply: unknown): Record<string, PluginActionBodyValue> | null => {
+  const body: Record<string, PluginActionBodyValue> = {}
+  for (const [member, field] of Object.entries(source.fields)) {
+    const value = readPluginField(reply, field)
+    if (!BODY_MEMBER.test(member) || !isBodyValue(value)) {
+      return null
+    }
+    body[member] = value
+  }
+  return body
+}
+
+/**
+ * Reads the body of a result card's action. An event is not checked at install as a view is, so its body is checked here.
+ *
+ * @param body - The action's `body` member.
+ * @returns The body, or null for anything but a flat object of scalars under valid names, at most {@link MAX_RESULT_BODY_MEMBERS}.
+ */
+const readResultBody = (body: unknown): Record<string, PluginActionBodyValue> | null => {
+  if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+    return null
+  }
+  const members = Object.entries(body)
+  return members.length <= MAX_RESULT_BODY_MEMBERS && members.every(([member, value]) => BODY_MEMBER.test(member) && isBodyValue(value))
+    ? Object.fromEntries(members) as Record<string, PluginActionBodyValue>
+    : null
+}
+
+/**
+ * Whether a value is one JSON scalar a condition may compare against.
+ *
+ * @param value - The value.
+ * @returns True for a string, a finite number, a boolean or null.
+ */
+const isConditionValue = (value: unknown): value is PluginConditionValue =>
+  value === null || typeof value === 'string' || typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value))
+
+/**
+ * Reads a condition a plugin wrote into a chat event (a result card action's `until` or `visibleWhen`). An event is not
+ * checked at install as a view is, so it is checked here with the view's own rules: a GET route the page can fill, a
+ * dotted field, and one to {@link PLUGIN_CONDITION_MAX_VALUES} scalars. An event's `equals` cannot be an own member
+ * name of a C# record, so `equalsAny` is its spelling.
+ *
+ * @param condition - The condition member of the event.
+ * @param values - The page's parameter values, which the route's path is filled from.
+ * @returns The condition, or undefined when it is of another shape.
+ */
+const readResultCondition = (condition: unknown, values: Readonly<Record<string, string>>): PluginViewCondition | undefined => {
+  const route = readPluginField(condition, 'route') as PluginViewRoute | undefined
+  const field = readPluginField(condition, 'field')
+  const equals = readPluginField(condition, 'equalsAny')
+  if (
+    typeof route?.path !== 'string' || typeof route.method !== 'string' || pluginRouteMethod(route) !== HttpMethod.Get
+    || fillPluginPath(route.path, values) === null
+    || typeof field !== 'string' || field.length > PLUGIN_CONDITION_MAX_FIELD_LENGTH || !PLUGIN_CONDITION_FIELD_PATTERN.test(field)
+    || !Array.isArray(equals) || equals.length === 0 || equals.length > PLUGIN_CONDITION_MAX_VALUES || !equals.every(isConditionValue)
+  ) {
+    return undefined
+  }
+  return { route: { method: route.method, path: route.path }, field, equals }
+}
+
+/**
+ * Reads one action of a result event. A link passes {@link pluginLinkTarget}; a route is shown only when it is a call
+ * the page can make: an action is never a GET, and an unfilled parameter has nothing to send. A `visibleWhen` condition
+ * (any kind of action) is kept for the card to evaluate; one that cannot be read drops the action.
+ *
+ * @param data - The action.
+ * @param key - Its place in the card.
+ * @param values - The page's parameter values.
+ * @param origins - The plugin's allowed link origins.
+ * @param refresh - The block ids the chat reads again after a turn, which a call action reads again too.
+ * @returns The action, or null when it is not to be rendered.
+ */
+const parseResultAction = (
+  data: unknown,
+  key: number,
+  values: Readonly<Record<string, string>>,
+  origins: readonly string[],
+  refresh: readonly string[],
+): PluginChatResultAction | null => {
+  const label = readPluginField(data, 'label')
+  const href = readPluginField(data, 'href')
+  const route = readPluginField(data, 'route') as PluginViewRoute | undefined
+  const declaredVisibleWhen = readPluginField(data, 'visibleWhen')
+  const visibleWhen = declaredVisibleWhen === undefined ? undefined : readResultCondition(declaredVisibleWhen, values)
+  // Dropped whole: an action meant to hide itself must never show because its condition could not be read.
+  if (declaredVisibleWhen !== undefined && !visibleWhen) {
+    return null
+  }
+  const shown = visibleWhen ? { visibleWhen } : {}
+  if (readPluginField(data, 'resend') === true && href === undefined && route === undefined) {
+    return typeof label === 'string' && label !== '' ? { key, label, link: null, block: null, resend: true, ...shown } : null
+  }
+  // Exactly one of the two: a view cannot leave it to the host which one wins.
+  if (typeof label !== 'string' || label === '' || (href === undefined) === (route === undefined)) {
+    return null
+  }
+  if (href !== undefined) {
+    const link = pluginLinkTarget(href, origins)
+    return link ? { key, label, link, block: null, ...shown } : null
+  }
+  const method = pluginRouteMethod(route)
+  if (!route || typeof route.path !== 'string' || method === undefined || method === HttpMethod.Get || fillPluginPath(route.path, values) === null) {
+    return null
+  }
+  const declaredBody = readPluginField(data, 'body')
+  const body = declaredBody === undefined ? undefined : readResultBody(declaredBody)
+  // Dropped whole: a button sent without the body its plugin wrote would act without saying what the reader saw.
+  if (body === null) {
+    return null
+  }
+  const confirm = readPluginField(data, 'confirm')
+  const until = readResultCondition(readPluginField(data, 'until'), values)
+  const block: PluginActionBlock = {
+    kind: PluginBlockKind.Action,
+    label,
+    route: { method: route.method, path: route.path },
+    ...(body ? { body } : {}),
+    ...(typeof confirm === 'string' && confirm !== '' ? { confirm } : {}),
+    // A card's action changes the same things a turn does, so it reads again what the chat reads again after one.
+    ...(refresh.length > 0 ? { refresh: [...refresh] } : {}),
+    // The work may run on after the reply; `until` keeps those blocks reading, within the host's own bounds.
+    ...(refresh.length > 0 && until ? { followUp: { refresh: [...refresh], until } } : {}),
+  }
+  return { key, label, link: null, block, ...shown }
+}
+
+/** The tones a result card may carry; any other reads as information. */
+const RESULT_TONES: readonly unknown[] = [PluginBlockTone.Info, PluginBlockTone.Success, PluginBlockTone.Warning, PluginBlockTone.Danger]
+
+/**
+ * The lines a result card keeps behind its details switch; anything but non-empty text is left out.
+ *
+ * @param details - The event's `details` member.
+ * @returns The lines, at most {@link MAX_RESULT_DETAILS}.
+ */
+const readResultDetails = (details: unknown): string[] =>
+  (Array.isArray(details) ? details : []).filter((line): line is string => typeof line === 'string' && line !== '').slice(0, MAX_RESULT_DETAILS)
+
+/**
+ * Reads a result event: `{ tone?, title?, text?, actions? }`.
+ *
+ * @param data - The event's data.
+ * @param values - The page's parameter values, which route actions are filled from.
+ * @param origins - The plugin's allowed link origins.
+ * @returns The card without its key; null for a malformed event (no title or text, or a member of the wrong type).
+ */
+export const parsePluginChatResult = (
+  data: unknown,
+  values: Readonly<Record<string, string>>,
+  origins: readonly string[],
+  refresh: readonly string[] = [],
+): Omit<PluginChatResult, 'key'> | null => {
+  const title = readPluginField(data, 'title') ?? ''
+  const text = readPluginField(data, 'text') ?? ''
+  const actions = readPluginField(data, 'actions') ?? []
+  if (typeof title !== 'string' || typeof text !== 'string' || (title === '' && text === '') || !Array.isArray(actions)) {
+    return null
+  }
+  const tone = readPluginField(data, 'tone')
+  return {
+    tone: RESULT_TONES.includes(tone) ? tone as PluginBlockTone : PluginBlockTone.Info,
+    title,
+    text,
+    details: readResultDetails(readPluginField(data, 'details')),
+    // Cut before filtering: the sixth action is dropped even when an earlier one is refused.
+    actions: actions.slice(0, MAX_RESULT_ACTIONS).flatMap((action: unknown, position: number) => {
+      const parsed = parseResultAction(action, position, values, origins, refresh)
+      return parsed ? [parsed] : []
+    }),
+  }
 }
 
 /** A money value as a plugin sends it. */
@@ -549,3 +856,36 @@ export const pluginMenuLinks = (
     }
     return [{ label: item.label, icon: item.icon, url: clientPluginPagePath(item.pluginId, path) }]
   })
+
+/**
+ * Reads a message from a preview frame, which is a claim from an untrusted page: exactly the fixed members in the fixed
+ * shape, the expected release, and an id of the fixed form. Anything else answers null.
+ *
+ * @param data - What the frame posted.
+ * @param expectedRelease - The release the plugin's server says the preview holds.
+ * @returns The message, or null when it is refused.
+ */
+export const parsePluginSelectionMessage = (data: unknown, expectedRelease: string): PluginSelectionMessage | null => {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    return null
+  }
+  const message = data as Record<string, unknown>
+  const members = Object.keys(message).length
+  if (message.type !== PLUGIN_SELECTION_MESSAGE_TYPE
+    || message.version !== PLUGIN_SELECTION_MESSAGE_VERSION
+    || expectedRelease === ''
+    || message.release !== expectedRelease) {
+    return null
+  }
+  if (message.event === PluginSelectionEvent.Ready && members === 4) {
+    return { event: PluginSelectionEvent.Ready }
+  }
+  if (message.event === PluginSelectionEvent.Exit && members === 4) {
+    return { event: PluginSelectionEvent.Exit }
+  }
+  if (message.event === PluginSelectionEvent.Toggle && members === 5 && typeof message.id === 'string'
+    && message.id.length <= PLUGIN_SELECTION_MAX_ID_LENGTH && PLUGIN_SELECTION_ID_PATTERN.test(message.id)) {
+    return { event: PluginSelectionEvent.Toggle, id: message.id }
+  }
+  return null
+}

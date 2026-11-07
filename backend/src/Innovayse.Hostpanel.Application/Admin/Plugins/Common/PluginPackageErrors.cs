@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using PluginSignatureRule = Hostpanel.Sdk.Packaging.Enums.PluginSignatureRule;
 
 namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 
@@ -23,8 +24,10 @@ public static class PluginPackageErrors
             PluginPackageOutcome.SdkVersionUnsupported => HostpanelErrorCodes.PLUGIN_SDK_VERSION_UNSUPPORTED,
             PluginPackageOutcome.IdInvalid => HostpanelErrorCodes.PLUGIN_ID_INVALID,
             PluginPackageOutcome.ArchiveUnsafe => HostpanelErrorCodes.PLUGIN_ARCHIVE_UNSAFE,
+            PluginPackageOutcome.ArchiveUnwritable => HostpanelErrorCodes.PLUGIN_ARCHIVE_UNWRITABLE,
             PluginPackageOutcome.ArchiveTooLarge => HostpanelErrorCodes.PLUGIN_ARCHIVE_TOO_LARGE,
             PluginPackageOutcome.HostAssemblyRefused => HostpanelErrorCodes.PLUGIN_HOST_ASSEMBLY_REFUSED,
+            PluginPackageOutcome.AssemblyConflict => HostpanelErrorCodes.PLUGIN_ASSEMBLY_CONFLICT,
             PluginPackageOutcome.NotTrusted => HostpanelErrorCodes.PLUGIN_NOT_TRUSTED,
             PluginPackageOutcome.SignatureRefused => CodeFor(
                 result.SignatureRule ?? throw new ArgumentOutOfRangeException(nameof(result), result, "A refused signature must be named.")),
@@ -67,11 +70,23 @@ public static class PluginPackageErrors
             PluginManifestRule.EndpointsNotDeclared => HostpanelErrorCodes.PLUGIN_ENDPOINTS_NOT_DECLARED,
             PluginManifestRule.CapabilityNotAllowed => HostpanelErrorCodes.PLUGIN_CAPABILITY_NOT_ALLOWED,
             PluginManifestRule.HostAccessUnknown => HostpanelErrorCodes.PLUGIN_HOST_ACCESS_UNKNOWN,
+            PluginManifestRule.ViewConditionInvalid => HostpanelErrorCodes.PLUGIN_VIEW_CONDITION_INVALID,
+            PluginManifestRule.ViewActionBodyInvalid => HostpanelErrorCodes.PLUGIN_VIEW_ACTION_BODY_INVALID,
+            PluginManifestRule.ViewSelectionInvalid => HostpanelErrorCodes.PLUGIN_VIEW_SELECTION_INVALID,
+            PluginManifestRule.ViewFollowUpInvalid => HostpanelErrorCodes.PLUGIN_VIEW_FOLLOW_UP_INVALID,
+            PluginManifestRule.PageLayoutUnknown => HostpanelErrorCodes.PLUGIN_PAGE_LAYOUT_UNKNOWN,
+            PluginManifestRule.ViewSplitInvalid => HostpanelErrorCodes.PLUGIN_VIEW_SPLIT_INVALID,
+            PluginManifestRule.ViewPreviewInvalid => HostpanelErrorCodes.PLUGIN_VIEW_PREVIEW_INVALID,
+            PluginManifestRule.ViewBlockIdRepeated => HostpanelErrorCodes.PLUGIN_VIEW_BLOCK_ID_REPEATED,
+            PluginManifestRule.CallbackInvalid => HostpanelErrorCodes.PLUGIN_CALLBACK_INVALID,
+            PluginManifestRule.IconMissing => HostpanelErrorCodes.PLUGIN_ICON_MISSING,
+            PluginManifestRule.IconInvalid => HostpanelErrorCodes.PLUGIN_ICON_INVALID,
+            PluginManifestRule.EndpointsNotImplemented => HostpanelErrorCodes.PLUGIN_ENDPOINTS_NOT_IMPLEMENTED,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a manifest rule."),
         };
     }
 
-    /// <summary>The error code for a failed signature check.</summary>
+    /// <summary>The error code for a failed signature check, as the plugin packaging package names it.</summary>
     /// <param name="rule">The check the package failed.</param>
     /// <returns>The matching <see cref="HostpanelErrorCodes"/> constant.</returns>
     /// <exception cref="ArgumentOutOfRangeException">The rule is not a defined one.</exception>

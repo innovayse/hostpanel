@@ -23,8 +23,6 @@ using Innovayse.Hostpanel.Infrastructure.Integrations.NameAm.Settings;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Namecheap;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Namecheap.Settings;
 using Innovayse.Hostpanel.Infrastructure.Integrations.SshAgent;
-using Innovayse.Hostpanel.Infrastructure.Integrations.Stripe;
-using Innovayse.Hostpanel.Infrastructure.Integrations.Stripe.Settings;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Telegram;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Telegram.Settings;
 using Innovayse.Hostpanel.Infrastructure.Monitoring;
@@ -34,6 +32,7 @@ using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Persistence.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.Hostpanel.Infrastructure.Provisioning;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
@@ -51,7 +50,7 @@ using Innovayse.Hostpanel.Infrastructure.Time;
 using Innovayse.Hostpanel.Shared.Settings;
 using Innovayse.Providers.CWP;
 using Innovayse.Providers.CWP7;
-using Innovayse.SDK.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -521,19 +520,6 @@ public static class DependencyInjection
         })
             .AddReadOnlyResilience(o => o.Cba);
 
-        // Stripe
-        // Optional in the same way cPanel is: no Stripe section at all is a deployment that takes
-        // no card payments, and StripeService fails on the first call that needs a key. A section
-        // with only some of the keys filled in is refused here instead.
-        services.AddOptions<StripeOptions>()
-            .Bind(configuration.GetSection(StripeOptions.SectionName))
-            .Validate(
-                o => o.IsUsable,
-                $"{StripeOptions.SectionName} is partly configured: SecretKey must be set, or the "
-                    + "whole section left unset.")
-            .ValidateOnStart();
-        services.AddScoped<ICardPaymentGateway, StripeService>();
-
         // Payment plugins (hosted-gateway providers)
         services.AddHttpClient();
 
@@ -545,32 +531,6 @@ public static class DependencyInjection
         // what configures the default client itself.
         services.AddHttpClient(string.Empty)
             .AddNoRetryResilience(o => o.Default);
-
-        // The Inecobank gateway plugin's own named client.
-        //
-        // The plugin asks the factory for its plugin id, and until this existed that name matched
-        // no registration, and IHttpClientFactory answers an unknown name with a default client
-        // rather than an error. So the one payment gateway in this product was also the last
-        // 100-second path in it: no handler, no retry, no breaker, and a bank having a bad
-        // afternoon holding a checkout thread for a minute and a half.
-        //
-        // Registered here rather than in the provider because the provider has no composition
-        // root of its own: PluginLoader reflects it out of plugins/ and Infrastructure
-        // deliberately does not reference it, so the client name is the whole contract between
-        // the two ends. It is spelled once, on HttpClientResilienceExtensions.
-        //
-        // Retries only getOrderStatusExtended.do. register.do and refund.do are POSTs to the same
-        // host over the same verb, so the method separates nothing and the predicate reads the
-        // endpoint out of the path: a repeated refund.do is a second refund. The timeout, and
-        // why this money-moving client gets a breaker when the others do not, are argued on
-        // HttpResilienceOptions.Inecobank.
-        services.AddHttpClient(HttpClientResilienceExtensions.InecobankClientName, client =>
-        {
-            // Outer backstop only. The pipeline below decides in 15s and 40s; this catches a
-            // pipeline that was configured wrong, nothing else.
-            client.Timeout = HttpBackstopTimeouts.Inecobank;
-        })
-            .AddInecobankResilience();
 
         services.AddScoped<IPaymentPluginResolver, PaymentPluginResolver>();
         services.AddScoped<IStoredCredentialPluginResolver, StoredCredentialPluginResolver>();
@@ -695,12 +655,14 @@ public static class DependencyInjection
         // re-reading a consumed request body, and guessing wrong re-creates a hosting account.
         // The breaker is off because the server is a per-call argument rather than a base
         // address, so one dead node would open it for every healthy one.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
         services.AddHttpClient<IHostingPanelApiClient, CwpApiClient>(client =>
         {
             client.Timeout = HttpBackstopTimeouts.Cwp;
         })
             .AddOutboundAddressGuard()
             .AddNoRetryResilience(o => o.Cwp);
+#pragma warning restore CS0618
         // Named twin of the typed registration above, for the same reason the CWP7 pair exists:
         // CwpProvisioningProvider builds its own CwpApiClient (the interface exposes only the
         // server-info call) and resolves this client by name. That keeps the
@@ -722,12 +684,14 @@ public static class DependencyInjection
         })
             .AddOutboundAddressGuard()
             .AddNoRetryResilience(o => o.Cwp7);
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
         services.AddHttpClient<IHostingPanelV7ApiClient, Cwp7ApiClient>(client =>
         {
             client.Timeout = HttpBackstopTimeouts.Cwp7;
         })
             .AddOutboundAddressGuard()
             .AddNoRetryResilience(o => o.Cwp7);
+#pragma warning restore CS0618
 
         // Plesk XML API client, named only: the provider factory and the connection tester both
         // build a PleskApiClient over it per server, so one registration covers both paths.
@@ -887,6 +851,31 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(PluginSigningOptions.SectionName))
             .ValidateOnStart();
         var signingOptions = configuration.GetSection(PluginSigningOptions.SectionName).Get<PluginSigningOptions>() ?? new PluginSigningOptions();
+
+        // The http origins a preview may frame exist only on a developer machine; the validator refuses them anywhere else.
+        services.AddSingleton<IValidateOptions<PluginPreviewOptions>, PluginPreviewOptionsValidator>();
+        services.AddOptions<PluginPreviewOptions>()
+            .Bind(configuration.GetSection(PluginPreviewOptions.SectionName))
+            .ValidateOnStart();
+
+        // The plugin registry: off until an operator sets an https address. Its client follows redirects itself, only inside
+        // the registry's origin, so the handler's own redirect handling is switched off; the time limit is the client's own
+        // (a download included), so the HttpClient default of 100 seconds must not cut it short. The connect callback
+        // refuses loopback, link-local and metadata addresses, so a registry name cannot aim the call at the host itself.
+        services.AddSingleton<IValidateOptions<PluginRegistryOptions>, PluginRegistryOptionsValidator>();
+        services.AddOptions<PluginRegistryOptions>()
+            .Bind(configuration.GetSection(PluginRegistryOptions.SectionName))
+            .ValidateOnStart();
+        services.AddHttpClient<IPluginRegistryClient, PluginRegistryClient>(client =>
+        {
+            client.Timeout = Timeout.InfiniteTimeSpan;
+        })
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+            {
+                AllowAutoRedirect = false,
+                ConnectCallback = PluginRegistryConnector.ConnectAsync,
+            });
+        services.AddScoped<IPluginPackageInspector, PluginPackageInspector>();
         var signatureVerifier = PluginSignatureVerifier.Create(signingOptions, environment);
         services.AddSingleton(signatureVerifier);
         var allowUnsigned = signatureVerifier.Enforced
@@ -914,6 +903,9 @@ public static class DependencyInjection
         services.AddScoped<IPluginEndpointResolver, PluginEndpointResolver>();
         services.AddScoped<IPluginUiSource, PluginUiSource>();
 
+        // A plugin's IPluginStatus, through the same activation gates, bounded by PluginApi:StatusTimeoutSeconds.
+        services.AddScoped<IPluginStatusProbe, PluginStatusProbe>();
+
         // The panels' plugin availability, computed for every plugin in one pass and remembered for a few seconds, so an
         // index request is not one settings read per plugin and a page lookup costs the same for any id. Singletons: one
         // remembered set per process, dropped through the invalidator by every use case that writes plugin settings.
@@ -921,6 +913,11 @@ public static class DependencyInjection
         services.AddSingleton<IPluginAvailabilityInvalidator, PluginAvailabilityInvalidator>();
         services.AddSingleton<IPluginReferences>(new PluginReferences(encryptionKey));
         services.AddScoped<IPluginCallServices, HostPluginCallServices>();
+
+        // A streamed call owns a scope of its own, opened from the root container and disposed once its stream is over,
+        // because the use case's scope ends before the response reads the stream (#851). Singleton: it holds only the
+        // container's scope factory.
+        services.AddSingleton<IPluginCallScopeFactory, PluginCallScopeFactory>();
 
         // Hosted plugins start once the host is up and stop as it begins to stop, each failure kept to its plugin.
         // Registered in every environment: with no hosted plugin loaded it opens nothing and reads nothing.

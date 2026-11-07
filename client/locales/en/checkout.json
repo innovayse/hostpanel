@@ -5,7 +5,6 @@
     "yourOrder": "Your Order",
     "account": "Account",
     "paymentMethod": "Payment Method",
-    "cardDetails": "Card details",
     "loggedInAs": "Logged in as",
     "notYou": "Not you? Switch account",
     "guestNotice": "You are checking out as a guest",
@@ -46,7 +45,6 @@
     "identifyPrompt": "How should we identify you?",
     "choosePayment": "Select your preferred payment way",
     "gatewayKinds": {
-      "card": "Pay by card",
       "bankTransfer": "Pay by bank transfer"
     },
     "needHelp": "Need Help?",
@@ -59,10 +57,7 @@
       "password": "••••••••"
     },
     "totalChangedConfirm": "The total changed from {shown} to {charged}. Pay the new total?",
-    "card": {
-      "notInitialized": "The card form is not ready yet. Please wait a moment and try again.",
-      "failed": "The card payment could not be completed.",
-      "noIntent": "The payment could not be confirmed."
-    }
+    "saveForRenewals": "Save this payment method for automatic renewals",
+    "saveForRenewalsAgreement": "I agree that, after this payment, the payment method I confirm on the payment provider's page may be saved and charged automatically for my renewal invoices until I withdraw this permission. I can withdraw it at any time under Saved payment methods."
   }
 }

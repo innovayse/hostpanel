@@ -7,6 +7,7 @@
  * @module tests/utils/plugins.test
  */
 
+import { PLUGIN_SELECTION_MESSAGE_TYPE, PLUGIN_SELECTION_MESSAGE_VERSION } from '~/constants/pluginSelection'
 import { describe, expect, it, vi } from 'vitest'
 import { Globe, Puzzle } from 'lucide-vue-next'
 import { HttpMethod } from '~/types/httpmethod'
@@ -14,6 +15,11 @@ import { PluginBlockTone } from '~/types/pluginblocktone'
 import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import { PluginValueFormat } from '~/types/pluginvalueformat'
 import {
+  parsePluginChatResult,
+  pluginActionBody,
+  parsePluginChatStep,
+  pluginDocumentLoaded,
+  pluginFrameAddress,
   fillPluginPath,
   pluginMenuLinks,
   formatPluginValue,
@@ -29,6 +35,8 @@ import {
   MAX_PLUGIN_EVENT_CHARS,
   PLUGIN_STREAM_EVENT_TOO_LARGE,
   readPluginEventStream,
+  pluginConditionHolds,
+  parsePluginSelectionMessage,
   readPluginField,
 } from '~/utils/plugins'
 import { UiAlertVariant, UiButtonVariant, UiTone } from '~/utils/ui/enums'
@@ -170,6 +178,27 @@ describe('readPluginField and pluginLinkParams', () => {
     expect(pluginLinkParams({ page: 'site', params: { siteId: 'id' } }, {})).toBeNull()
     expect(pluginLinkParams({ page: 'site', params: { siteId: 'id' } }, { id: '' })).toBeNull()
     expect(pluginLinkParams({ page: 'sites' }, null)).toEqual({})
+  })
+})
+
+describe('pluginConditionHolds', () => {
+  /** The route every condition below reads. */
+  const route = { method: 'get', path: '/sites/{siteId}' }
+
+  it('holds when the field equals the one value or one of the list', () => {
+    expect(pluginConditionHolds({ route, field: 'site.status', equals: 'live' }, { site: { status: 'live' } })).toBe(true)
+    expect(pluginConditionHolds({ route, field: 'site.status', equals: ['ready', 'live'] }, { site: { status: 'ready' } })).toBe(true)
+    expect(pluginConditionHolds({ route, field: 'exists', equals: true }, { exists: true })).toBe(true)
+    expect(pluginConditionHolds({ route, field: 'site', equals: null }, { site: null })).toBe(true)
+  })
+
+  it('does not hold for another value, an absent field or a value of another type', () => {
+    expect(pluginConditionHolds({ route, field: 'site.status', equals: ['ready', 'live'] }, { site: { status: 'building' } })).toBe(false)
+    expect(pluginConditionHolds({ route, field: 'site.status', equals: null }, { site: {} })).toBe(false)
+    expect(pluginConditionHolds({ route, field: 'site.status', equals: null }, null)).toBe(false)
+    expect(pluginConditionHolds({ route, field: 'version', equals: '1' }, { version: 1 })).toBe(false)
+    expect(pluginConditionHolds({ route, field: 'version', equals: 1 }, { version: '1' })).toBe(false)
+    expect(pluginConditionHolds({ route, field: 'exists', equals: true }, { exists: 'true' })).toBe(false)
   })
 })
 
@@ -389,5 +418,220 @@ describe('pluginMenuLinks', () => {
     const menus = [{ pluginId: 'acme', id: 'p', label: 'P', page: 'p', icon: null, order: 0 }]
 
     expect(pluginMenuLinks(menus, pages)).toEqual([])
+  })
+})
+
+describe('pluginFrameAddress', () => {
+  /** The allowed origin. */
+  const origins = ['https://a.example']
+
+  it('answers the normalised address on an exact origin', () => {
+    expect(pluginFrameAddress('https://A.example/p', origins, 'https://panel.test')).toBe('https://a.example/p')
+  })
+
+  it.each([
+    'https://evil.test/',
+    'https://b.a.example/',
+    'http://a.example/',
+    'javascript:alert(1)',
+    'data:text/html,x',
+    'https://u:p@a.example/',
+    'not a url',
+    5,
+    null,
+  ])('refuses %s', (value) => {
+    expect(pluginFrameAddress(value, origins, 'https://panel.test')).toBeNull()
+  })
+
+  it('refuses the panel\'s own origin even when listed', () => {
+    expect(pluginFrameAddress('https://a.example/', origins, 'https://a.example')).toBeNull()
+  })
+})
+
+describe('pluginDocumentLoaded', () => {
+  it.each([
+    ['https://p.test/client/apps/acme/sites/7', true],
+    ['https://p.test/client/apps/acme/sites/7/', true],
+    ['https://p.test/client/apps/acme/sites/7?a=1', true],
+    ['https://p.test/client/apps/acme/overview', false],
+    ['https://p.test/client/apps/acme', false],
+    ['https://p.test/client/apps/acme-two/sites/7', false],
+    ['https://p.test/client/dashboard', false],
+    ['nonsense', false],
+    [undefined, false],
+  ])('for %s answers %s', (address, expected) => {
+    expect(pluginDocumentLoaded({ name: address, serverTiming: [{ name: 'plugin-frames' }] }, '/client/apps/acme/sites/7')).toBe(expected)
+  })
+
+  it('refuses a document whose server wrote no origins: one opened signed out stays closed after a sign-in inside it', () => {
+    const address = 'https://p.test/client/apps/acme/sites/7'
+
+    expect(pluginDocumentLoaded({ name: address, serverTiming: [] }, '/client/apps/acme/sites/7')).toBe(false)
+    expect(pluginDocumentLoaded({ name: address }, '/client/apps/acme/sites/7')).toBe(false)
+    expect(pluginDocumentLoaded(undefined, '/client/apps/acme/sites/7')).toBe(false)
+  })
+
+  it('compares a language-prefixed page with its own address', () => {
+    expect(pluginDocumentLoaded({ name: 'https://p.test/hy/client/apps/acme/sites/7', serverTiming: [{ name: 'plugin-frames' }] }, '/hy/client/apps/acme/sites/7')).toBe(true)
+  })
+})
+
+describe('parsePluginChatStep', () => {
+  it('keys a step by its id, else its label', () => {
+    expect(parsePluginChatStep({ id: 'a', label: 'L', state: 'running' })?.key).toBe('a')
+    expect(parsePluginChatStep({ label: 'L', state: 'done' })?.key).toBe('L')
+  })
+
+  it.each([[{ label: 'L', state: 'stopped' }], [{ label: 'L', state: 'odd' }], [{ state: 'done' }], [{ id: 1, label: 'L', state: 'done' }], ['text']])('ignores %j', (data) => {
+    expect(parsePluginChatStep(data)).toBeNull()
+  })
+})
+
+describe('parsePluginChatResult', () => {
+  it('drops actions past the fifth and any action with both or neither of route and href', () => {
+    const link = { label: 'L', href: '/client/x' }
+    const result = parsePluginChatResult({
+      text: 'T',
+      actions: [link, { label: 'Both', href: '/client/x', route: { method: 'post', path: '/x' } }, { label: 'Neither' }, link, link, link],
+    }, {}, [])
+
+    expect(result?.actions.map(action => action.key)).toEqual([0, 3, 4])
+  })
+
+  it('refuses actions that are not a list', () => {
+    expect(parsePluginChatResult({ text: 'T', actions: 'x' }, {}, [])).toBeNull()
+  })
+})
+
+describe('parsePluginChatResult until', () => {
+  /** A card whose action starts work that runs on. */
+  const card = (until: unknown) => ({ title: 'T', actions: [{ label: 'Undo', route: { method: 'post', path: '/undo' }, until }] })
+
+  it('keeps the chat blocks reading until the condition holds', () => {
+    const until = { route: { method: 'get', path: '/state' }, field: 'state', equalsAny: ['done'] }
+
+    const block = parsePluginChatResult(card(until), {}, [], ['a'])?.actions[0]?.block
+    expect(block?.followUp).toEqual({ refresh: ['a'], until: { route: until.route, field: 'state', equals: ['done'] } })
+  })
+
+  it('starts no follow-up for a malformed condition', () => {
+    expect(parsePluginChatResult(card({ field: 'state' }), {}, [], ['a'])?.actions[0]?.block?.followUp).toBeUndefined()
+  })
+})
+
+describe('parsePluginChatResult visibleWhen', () => {
+  /** A condition as an event spells it: `equalsAny`, since a C# record cannot have a member named `equals`. */
+  const when = { route: { method: 'get', path: '/state/{siteId}' }, field: 'publishVersion', equalsAny: [5] }
+
+  /** A card with one action of each kind, each carrying the given condition. */
+  const card = (visibleWhen: unknown) => ({
+    title: 'T',
+    actions: [
+      { label: 'Publish', route: { method: 'post', path: '/publish' }, visibleWhen },
+      { label: 'Open', href: '/client/x', visibleWhen },
+      { label: 'Try again', resend: true, visibleWhen },
+    ],
+  })
+
+  it('keeps a condition on every kind of action, as the view reads one', () => {
+    const actions = parsePluginChatResult(card(when), { siteId: '7' }, [])?.actions
+
+    const expected = { route: when.route, field: 'publishVersion', equals: [5] }
+    expect(actions?.map(action => action.visibleWhen)).toEqual([expected, expected, expected])
+  })
+
+  it('leaves an action with no condition always shown', () => {
+    const actions = parsePluginChatResult(card(undefined), {}, [])?.actions
+
+    expect(actions).toHaveLength(3)
+    expect(actions?.some(action => 'visibleWhen' in action)).toBe(false)
+  })
+
+  it.each([
+    ['null', null],
+    ['a string', 'x'],
+    ['a route that is not a GET', { ...when, route: { method: 'post', path: '/state' } }],
+    ['a route the page cannot fill', { ...when, route: { method: 'get', path: '/state/{missing}' } }],
+    ['no route', { field: 'publishVersion', equalsAny: [5] }],
+    ['a field with a bad character', { ...when, field: 'a b' }],
+    ['a field over the bound', { ...when, field: 'a'.repeat(201) }],
+    ['no field', { route: when.route, equalsAny: [5] }],
+    ['no values', { ...when, equalsAny: [] }],
+    ['values that are not a list', { ...when, equalsAny: 5 }],
+    ['too many values', { ...when, equalsAny: Array.from({ length: 21 }, (_, index) => index) }],
+    ['a value that is no scalar', { ...when, equalsAny: [{ a: 1 }] }],
+    ['a value that is not finite', { ...when, equalsAny: [Number.POSITIVE_INFINITY] }],
+    ['the C# spelling used for the view document', { route: when.route, field: 'publishVersion', equals: [5] }],
+  ])('drops the action whose condition is %s, never showing what it meant to hide', (_name, visibleWhen) => {
+    const result = parsePluginChatResult(card(visibleWhen), { siteId: '7' }, [])
+
+    expect(result?.actions).toEqual([])
+  })
+
+  it('accepts a single value, a string, a boolean and null among the values', () => {
+    const values = [5, 'live', true, null]
+    const actions = parsePluginChatResult(card({ ...when, equalsAny: values }), { siteId: '7' }, [])?.actions
+
+    expect(actions?.[0]?.visibleWhen?.equals).toEqual(values)
+  })
+})
+
+describe('action body from page data', () => {
+  /** A view's body source reading one member. */
+  const source = { route: { method: 'get', path: '/state' }, fields: { expectedVersion: 'publish.version' } }
+
+  it('builds the body from the reply', () => {
+    expect(pluginActionBody(source, { publish: { version: 14 } })).toEqual({ expectedVersion: 14 })
+  })
+
+  it.each([[undefined], [{}], [{ publish: { version: null } }], [{ publish: { version: { a: 1 } } }], [{ publish: { version: Number.NaN } }]])(
+    'refuses to build a partial body from %j', (reply) => {
+      expect(pluginActionBody(source, reply)).toBeNull()
+    })
+
+  /** A result event with one action carrying the given body. */
+  const card = (body: unknown): unknown => ({ title: 'T', actions: [{ label: 'Publish', route: { method: 'post', path: '/publish' }, body }] })
+
+  it('keeps the literal body of a result card\'s action', () => {
+    expect(parsePluginChatResult(card({ expectedVersion: 4 }), {}, [])?.actions[0]?.block?.body).toEqual({ expectedVersion: 4 })
+  })
+
+  it.each([[null], [[1]], ['x'], [{ __proto__x: 1 }], [{ a: { b: 1 } }], [Object.fromEntries(Array.from({ length: 11 }, (_, index) => [`a${index}`, 1]))]])(
+    'drops a result card\'s action whose body is %j', (body) => {
+      expect(parsePluginChatResult(card(body), {}, [])?.actions).toEqual([])
+    })
+})
+
+describe('parsePluginSelectionMessage', () => {
+  /** A well-formed toggle. */
+  const toggle = { type: PLUGIN_SELECTION_MESSAGE_TYPE, version: PLUGIN_SELECTION_MESSAGE_VERSION, release: 'r4', event: 'toggle', id: 'pages.0.title' }
+
+  it('takes the exact shapes', () => {
+    expect(parsePluginSelectionMessage(toggle, 'r4')).toEqual({ event: 'toggle', id: 'pages.0.title' })
+    expect(parsePluginSelectionMessage({ ...toggle, event: 'ready', id: undefined, ...{} }, 'r4')).toBeNull()
+    const { id: _id, ...ready } = toggle
+    expect(parsePluginSelectionMessage({ ...ready, event: 'ready' }, 'r4')).toEqual({ event: 'ready' })
+    expect(parsePluginSelectionMessage({ ...ready, event: 'exit' }, 'r4')).toEqual({ event: 'exit' })
+  })
+
+  it.each([
+    ['another type', { ...toggle, type: 'other' }],
+    ['another version', { ...toggle, version: 2 }],
+    ['a string version', { ...toggle, version: '1' }],
+    ['another release', { ...toggle, release: 'r5' }],
+    ['an extra member', { ...toggle, text: 'planted' }],
+    ['an id with markup', { ...toggle, id: '<img src=x>' }],
+    ['an id with a newline', { ...toggle, id: 'name\n' }],
+    ['an id over the bound', { ...toggle, id: `a.${'b'.repeat(200)}` }],
+    ['an unknown event', { ...toggle, event: 'navigate' }],
+    ['an array', [toggle]],
+    ['a string', 'toggle'],
+    ['null', null],
+  ])('refuses %s', (_name, data) => {
+    expect(parsePluginSelectionMessage(data, 'r4')).toBeNull()
+  })
+
+  it('refuses everything while the release is unknown', () => {
+    expect(parsePluginSelectionMessage({ ...toggle, release: '' }, '')).toBeNull()
   })
 })

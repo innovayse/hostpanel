@@ -31,6 +31,15 @@ describe('UiAlert', () => {
     expect(mount(UiAlert, { props: { variant: 'success' } }).attributes('role')).toBe('status')
   })
 
+  it('lets the message take the remaining width of the row', () => {
+    const body = mount(UiAlert, { slots: { default: 'Server said no' } }).get('[data-testid="ui-alert-body"]')
+
+    // A block that grows: content laid out inside it (an action pushed right) spans the alert.
+    expect(body.element.tagName).toBe('DIV')
+    expect(body.classes()).toEqual(expect.arrayContaining(['flex-1', 'min-w-0']))
+    expect(body.text()).toBe('Server said no')
+  })
+
   it('keeps data-testid', () => {
     expect(mount(UiAlert, { attrs: { 'data-testid': 'probe' } }).attributes('data-testid')).toBe('probe')
   })

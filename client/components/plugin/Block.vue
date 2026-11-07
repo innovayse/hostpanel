@@ -1,12 +1,13 @@
 <template>
-  <component :is="renderer" v-if="renderer" :block="block" />
+  <component :is="renderer" v-if="renderer && visible" :block="block" />
 </template>
 
 <script setup lang="ts">
 /**
  * PluginBlock - picks the host component of one plugin block by its kind (`PluginViews.BlockKinds`). A kind this
  * host does not know renders nothing, so a view written for a newer minor schema still shows what this host can;
- * the install check already refuses a kind outside the schema the host accepts.
+ * the install check already refuses a kind outside the schema the host accepts. A block with `visibleWhen` shows only
+ * while its condition holds (`usePluginCondition`), read again whenever its own id is refreshed.
  */
 import type { Component } from 'vue'
 import PluginActionBlock from '~/components/plugin/ActionBlock.vue'
@@ -17,11 +18,14 @@ import PluginEmptyBlock from '~/components/plugin/EmptyBlock.vue'
 import PluginFormBlock from '~/components/plugin/FormBlock.vue'
 import PluginHeaderBlock from '~/components/plugin/HeaderBlock.vue'
 import PluginLinkBlock from '~/components/plugin/LinkBlock.vue'
+import PluginPreviewBlock from '~/components/plugin/PreviewBlock.vue'
 import PluginProgressBlock from '~/components/plugin/ProgressBlock.vue'
+import PluginSplitBlock from '~/components/plugin/SplitBlock.vue'
 import PluginStatBlock from '~/components/plugin/StatBlock.vue'
 import PluginTableBlock from '~/components/plugin/TableBlock.vue'
 import PluginTabsBlock from '~/components/plugin/TabsBlock.vue'
 import PluginTextBlock from '~/components/plugin/TextBlock.vue'
+import { usePluginCondition } from '~/composables/usePluginView'
 import type { PluginBlock } from '~/types/pluginblock'
 import { PluginBlockKind } from '~/types/pluginblockkind'
 
@@ -33,6 +37,9 @@ interface Props {
 
 /** The props. */
 const props = defineProps<Props>()
+
+/** Whether the block shows: always without a condition, otherwise only while its condition holds. */
+const visible = usePluginCondition(() => props.block.visibleWhen, () => (props.block.id ? [props.block.id] : []))
 
 /** The component of each block kind; exhaustive over the enum, so a new kind fails the type check until drawn. */
 const RENDERERS: Readonly<Record<PluginBlockKind, Component>> = {
@@ -49,6 +56,8 @@ const RENDERERS: Readonly<Record<PluginBlockKind, Component>> = {
   [PluginBlockKind.Tabs]: PluginTabsBlock,
   [PluginBlockKind.Chat]: PluginChatBlock,
   [PluginBlockKind.Progress]: PluginProgressBlock,
+  [PluginBlockKind.Split]: PluginSplitBlock,
+  [PluginBlockKind.Preview]: PluginPreviewBlock,
 }
 
 /** The component of this block, or undefined for an unknown kind (`hasOwn`, so `__proto__` is no kind either). */

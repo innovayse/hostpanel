@@ -1,5 +1,7 @@
 ---
 title: Transactions, billable items and quotes
+description: "Review transactions in Hostpanel and manage billable items, client quotes, cancellation requests and the client statement."
+keywords: "transactions, billable items, quotes, cancellation requests, client statement"
 ---
 
 # Transactions, billable items and quotes <Label type="admin" />
@@ -30,6 +32,8 @@ Click **Add Transaction** to record a payment or payout that happened outside of
 | Add to Client's Credit Balance | Tick to add any net amount as credit |
 
 A transaction must have an amount in or an amount out (`TRANSACTION_AMOUNT_REQUIRED`).
+
+A transaction ticked **Add to Client's Credit Balance** is also a line of the client's credit history (see the **Credit** tab of the client). It can no longer be edited or deleted (`TRANSACTION_CREDIT_LOCKED`): correct the balance with an adjustment on the Credit tab. Entries from before the credit history existed stay editable and deletable, and deleting one undoes its credit move. This list shows entries that moved money; credit applied to an invoice or adjusted by staff moves none and appears on the Credit tab only.
 
 ## Billable items
 

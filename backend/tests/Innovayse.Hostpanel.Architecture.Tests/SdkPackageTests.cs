@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
 namespace Innovayse.Hostpanel.Architecture.Tests;
@@ -12,7 +13,7 @@ public sealed class SdkPackageTests
 {
     /// <summary>The SDK project's folder, found from the solution root (a git submodule of its own repository).</summary>
     private static readonly string SdkRoot = Path.Combine(
-        UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory), "src", "Innovayse.SDK");
+        UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory), "src", "Hostpanel.Sdk");
 
     /// <summary>The package licence is the MIT expression and no licence file overrides it.</summary>
     [Fact]
@@ -43,7 +44,7 @@ public sealed class SdkPackageTests
 
         Property(project, "PackageReadmeFile").Should().Be("README.md");
         PackedFiles(project).Should().Contain("README.md");
-        File.ReadAllText(Path.Combine(SdkRoot, "README.md")).Should().Contain("dotnet add package Innovayse.SDK --version");
+        File.ReadAllText(Path.Combine(SdkRoot, "README.md")).Should().Contain("dotnet add package Hostpanel.Sdk --version");
     }
 
     /// <summary>The metadata a feed shows is filled in and points at the SDK's own public repository.</summary>
@@ -52,8 +53,8 @@ public sealed class SdkPackageTests
     {
         var project = LoadProject();
 
-        Property(project, "PackageId").Should().Be("Innovayse.SDK");
-        Property(project, "Version").Should().MatchRegex(@"^\d+\.\d+\.\d+$");
+        Property(project, "PackageId").Should().Be("Hostpanel.Sdk");
+        Property(LoadSharedProps(), "Version").Should().MatchRegex(@"^\d+\.\d+\.\d+$");
         Property(project, "Description").Should().NotBeNullOrWhiteSpace();
         Property(project, "PackageTags").Should().NotBeNullOrWhiteSpace();
         Property(project, "RepositoryUrl").Should().Be("https://github.com/innovayse/hostpanel-sdk.git");
@@ -69,7 +70,7 @@ public sealed class SdkPackageTests
     [Fact]
     public void Package_IsAtLeastTheVersionTheHostNeeds()
     {
-        var version = Version.Parse(Property(LoadProject(), "Version") ?? "0.0.0");
+        var version = Version.Parse(Property(LoadSharedProps(), "Version") ?? "0.0.0");
 
         version.Should().BeGreaterThanOrEqualTo(new Version(2, 1, 0));
     }
@@ -90,11 +91,63 @@ public sealed class SdkPackageTests
             .Should().NotContain(name => name.StartsWith("Microsoft.AspNetCore", StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>
+    /// The SDK assembly carries the version its own props file sets. A plugin is built against that number and the
+    /// loader refuses it against any other, so an image whose SDK was stamped with the host's version (0.0.0.0 from the
+    /// image's default version) left every plugin unloadable.
+    /// </summary>
+    [Fact]
+    public void Assembly_CarriesTheVersionTheSdkSetsForItself()
+    {
+        var declared = Version.Parse(Property(LoadSharedProps(), "Version")!);
+
+        Layers.Sdk.GetName().Version.Should().Be(new Version(declared.Major, declared.Minor, declared.Build, 0));
+    }
+
+    /// <summary>
+    /// The image build hands the host its version as <c>HostVersion</c>, never as the global property <c>Version</c>:
+    /// a global property reaches every referenced project, the SDK included, and overrides the version the SDK sets for
+    /// itself. Passing it that way is what stamped the SDK in the production image with 0.0.0.0.
+    /// </summary>
+    [Fact]
+    public void Dockerfile_PassesTheImageVersionWithoutOverridingTheSdkVersion()
+    {
+        var dockerfile = File.ReadAllLines(Path.Combine(UseCaseShapeTests.FindBackendRoot(AppContext.BaseDirectory), "Dockerfile"))
+            .Where(line => !line.TrimStart().StartsWith('#'))
+            .ToList();
+
+        dockerfile.Should().NotContain(line => Regex.IsMatch(line, @"[/-]p:(Version|InformationalVersion|AssemblyVersion|FileVersion|PackageVersion)=", RegexOptions.IgnoreCase));
+        dockerfile.Should().Contain(line => line.Contains("/p:HostVersion=$VERSION", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A build with <c>HostVersion</c> set gives the host's projects that version and leaves the SDK on its own, which is
+    /// how the image is built. The props are read, not evaluated: the host's maps <c>HostVersion</c> onto <c>Version</c>
+    /// and the SDK's own props set <c>Version</c> after importing it.
+    /// </summary>
+    [Fact]
+    public void HostProps_MapHostVersionOntoVersion_AndTheSdkSetsItsOwnAfterImportingThem()
+    {
+        var hostProps = File.ReadAllText(Path.Combine(SdkRoot, "..", "Directory.Build.props"));
+        var sdkProps = File.ReadAllText(Path.Combine(SdkRoot, "Directory.Build.props"));
+
+        hostProps.Should().Contain("<Version>$(HostVersion)</Version>");
+        sdkProps.IndexOf("<Import Project=\"$(HostBackendProps)\"", StringComparison.Ordinal)
+            .Should().BeGreaterThan(-1).And.BeLessThan(sdkProps.IndexOf("<Version>", StringComparison.Ordinal));
+    }
+
     /// <summary>Reads the SDK project file.</summary>
     /// <returns>The parsed project.</returns>
     private static XDocument LoadProject()
     {
-        return XDocument.Load(Path.Combine(SdkRoot, "Innovayse.SDK.csproj"));
+        return XDocument.Load(Path.Combine(SdkRoot, "Hostpanel.Sdk.csproj"));
+    }
+
+    /// <summary>Reads the props file beside the SDK project, where the one version of both packages is set.</summary>
+    /// <returns>The parsed props file.</returns>
+    private static XDocument LoadSharedProps()
+    {
+        return XDocument.Load(Path.Combine(SdkRoot, "Directory.Build.props"));
     }
 
     /// <summary>The value of a project property, or null when the project does not set it.</summary>

@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Domain.Plugins;
+using Hostpanel.Sdk.Packaging.Naming;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

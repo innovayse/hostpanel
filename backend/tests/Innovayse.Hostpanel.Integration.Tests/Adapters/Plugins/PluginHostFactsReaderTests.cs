@@ -124,6 +124,56 @@ public sealed class PluginHostFactsReaderTests(IntegrationTestFactory factory) :
         (await reader.ListNewestInvoicesAsync(int.MaxValue, CancellationToken.None)).Should().BeEmpty();
     }
 
+    /// <summary>Only the client's own active services with a domain on the given products are listed, newest first.</summary>
+    [Fact]
+    public async Task ListActiveServiceDomains_IsOnlyTheClientsOwnActiveOnes_NewestFirstAsync()
+    {
+        var clientId = await SeedClientAsync($"facts-dom-{Guid.NewGuid():N}", null);
+        var otherId = await SeedClientAsync($"facts-dom-other-{Guid.NewGuid():N}", null);
+        int productId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            productId = await SeedProductAsync(context);
+            var unlistedProductId = await SeedProductAsync(context);
+            context.ClientServices.AddRange(
+                DomainService(clientId, unlistedProductId, "unlisted.example", active: true, Origin.AddDays(5)),
+                DomainService(clientId, productId, "older.example", active: true, Origin),
+                DomainService(clientId, productId, "newer.example", active: true, Origin.AddDays(1)),
+                DomainService(clientId, productId, "pending.example", active: false, Origin.AddDays(2)),
+                DomainService(clientId, productId, null, active: true, Origin.AddDays(3)),
+                DomainService(otherId, productId, "foreign.example", active: true, Origin.AddDays(4)));
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        using var readScope = factory.Services.CreateScope();
+        var reader = readScope.ServiceProvider.GetRequiredService<IPluginHostFactsReader>();
+        var listed = await reader.ListActiveServiceDomainsAsync(clientId, [productId], CancellationToken.None);
+        var none = await reader.ListActiveServiceDomainsAsync(clientId, [], CancellationToken.None);
+
+        listed.Should().Equal("newer.example", "older.example");
+        none.Should().BeEmpty();
+    }
+
+    /// <summary>Raises a service on a domain, active or still pending.</summary>
+    /// <param name="clientId">The owner.</param>
+    /// <param name="productId">The product.</param>
+    /// <param name="domain">The domain, or <see langword="null"/> for none.</param>
+    /// <param name="active">Whether the service is activated.</param>
+    /// <param name="createdAt">The creation moment (UTC).</param>
+    /// <returns>The service, not yet saved.</returns>
+    private static ClientService DomainService(int clientId, int productId, string? domain, bool active, DateTimeOffset createdAt)
+    {
+        var service = ClientService.CreateOrdered(clientId, productId, BillingCycle.Monthly, domain, 0m, 0m, null, null, createdAt);
+        service.Backdate(createdAt);
+        if (active)
+        {
+            service.Activate("ref", createdAt, createdAt);
+        }
+
+        return service;
+    }
+
     /// <summary>Seeds a client named Ada Lovelace.</summary>
     /// <param name="ownerSubject">The owner's identity subject.</param>
     /// <param name="companyName">The company name, or <see langword="null"/>.</param>

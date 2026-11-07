@@ -1,5 +1,7 @@
 ---
 title: Clients, users and contacts
+description: "Manage Hostpanel client accounts: the client list, adding a client, profile, users and contacts, and suspending, deactivating or closing an account."
+keywords: "clients, client accounts, users, contacts, suspend client"
 ---
 
 # Clients, users and contacts <Label type="admin" />

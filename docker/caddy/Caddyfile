@@ -26,8 +26,9 @@
 }
 
 # Response headers every public answer carries. HSTS is ignored by a browser on a plain-HTTP origin, so
-# it is harmless in the mode that serves HTTP behind another TLS proxy. Caddy sets (never appends) a
-# header, so importing this where the upstream sends the same header cannot duplicate it.
+# it is harmless in the mode that serves HTTP behind another TLS proxy. These are set before the request
+# reaches reverse_proxy, which then adds the upstream's headers beside them, so a header both sides send
+# reaches the client twice. Only a ? default below yields to the upstream's own value.
 (security_headers) {
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
@@ -51,7 +52,7 @@
 	# (maps, videos, logos), so any https origin may supply them; a form may post to a payment page on any
 	# https origin. EDGE_CLIENT_CSP_SOURCES adds origins a deployment needs (a chat server, other
 	# analytics) to the script, connect, frame and image sources.
-	header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://js.stripe.com https://www.googletagmanager.com {$EDGE_CLIENT_CSP_SOURCES:}; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https: {$EDGE_CLIENT_CSP_SOURCES:}; connect-src 'self' https://api.stripe.com https://m.stripe.network https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com {$EDGE_CLIENT_CSP_SOURCES:}; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self' https:; frame-ancestors 'none'"
+	header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com {$EDGE_CLIENT_CSP_SOURCES:}; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https: {$EDGE_CLIENT_CSP_SOURCES:}; connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com {$EDGE_CLIENT_CSP_SOURCES:}; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self' https:; frame-ancestors 'none'"
 	request_body {
 		max_size {$EDGE_MAX_BODY_SIZE}
 	}

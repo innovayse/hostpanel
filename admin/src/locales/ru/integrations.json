@@ -74,5 +74,11 @@
   },
   "integrationDetail": {
     "saved": "Настройки сохранены."
+  },
+  "connectionState": {
+    "Connected": "Подключено",
+    "Degraded": "С ограничениями",
+    "Unavailable": "Недоступно",
+    "Inactive": "Не проверено"
   }
 }

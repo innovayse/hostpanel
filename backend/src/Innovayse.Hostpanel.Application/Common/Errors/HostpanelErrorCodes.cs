@@ -158,6 +158,12 @@ public static class HostpanelErrorCodes
     public const string FULFILMENT_RECORD_NOT_RETRYABLE = Domain.Billing.BillingErrors.FulfilmentRecordNotRetryable;
 
     /// <summary>
+    /// The line is not a domain renewal left claimed, so there is no claim to release (409, an exact
+    /// <c>StatusMapping</c> row): <see cref="Domain.Billing.Invoice.ReleaseRenewalClaim"/>.
+    /// </summary>
+    public const string RENEWAL_CLAIM_NOT_HELD = Domain.Billing.BillingErrors.RenewalClaimNotHeld;
+
+    /// <summary>
     /// A fulfilment plugin could not be asked how much of the payment may be refunded, so the refund
     /// is refused and no money moved (503, an exact <c>StatusMapping</c> row).
     /// </summary>
@@ -177,15 +183,6 @@ public static class HostpanelErrorCodes
     /// <summary>The invoice carries no hosted-gateway session to verify (404).</summary>
     public const string GATEWAY_SESSION_NOT_FOUND = "GATEWAY_SESSION_NOT_FOUND";
 
-    /// <summary>The card gateway payment method id does not belong to the caller's account (400).</summary>
-    public const string PAYMENT_METHOD_NOT_OWNED = "PAYMENT_METHOD_NOT_OWNED";
-
-    /// <summary>
-    /// The deployment has no card gateway configured, so no card payment can be taken, refunded, opened or
-    /// confirmed and no saved payment method can be charged, set as the default or removed (409).
-    /// </summary>
-    public const string PAYMENT_METHOD_UNAVAILABLE = "PAYMENT_METHOD_UNAVAILABLE";
-
     /// <summary>The caller's account has no saved payment method yet (400).</summary>
     public const string NO_SAVED_PAYMENT_METHODS = "NO_SAVED_PAYMENT_METHODS";
 
@@ -201,35 +198,11 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string IDENTITY_PLUGIN_UNAVAILABLE = "IDENTITY_PLUGIN_UNAVAILABLE";
 
-    /// <summary>The payment gateway declined or otherwise failed to charge the client (502).</summary>
-    public const string GATEWAY_CHARGE_UPSTREAM_FAILED = "GATEWAY_CHARGE_UPSTREAM_FAILED";
-
     /// <summary>
     /// The card gateway could not be reached or failed on its side, so nothing was charged or
     /// nothing is known yet; the same attempt may be retried (503).
     /// </summary>
     public const string PAYMENT_GATEWAY_SERVICE_UNAVAILABLE = "PAYMENT_GATEWAY_SERVICE_UNAVAILABLE";
-
-    /// <summary>
-    /// The card gateway refused a saved-payment-method call (listing, changing the default,
-    /// removing, or looking up a charge); repeating it unchanged will not help (502).
-    /// </summary>
-    public const string PAYMENT_METHOD_UPSTREAM_FAILED = "PAYMENT_METHOD_UPSTREAM_FAILED";
-
-    /// <summary>
-    /// The payment gateway reported the charge as successful but returned no transaction id to
-    /// record against the invoice (502).
-    /// </summary>
-    public const string GATEWAY_TRANSACTION_MISSING_UPSTREAM_FAILED = "GATEWAY_TRANSACTION_MISSING_UPSTREAM_FAILED";
-
-    /// <summary>
-    /// The card payment intent does not pay this order's invoice: its amount, currency, order or
-    /// invoice differs from what the invoice is due for (400).
-    /// </summary>
-    public const string PAYMENT_INTENT_MISMATCH = "PAYMENT_INTENT_MISMATCH";
-
-    /// <summary>The card payment intent was already recorded as a payment (409).</summary>
-    public const string PAYMENT_INTENT_ALREADY_USED = "PAYMENT_INTENT_ALREADY_USED";
 
     /// <summary>The caller has no row in the clients table, so there is no account to act on (404).</summary>
     public const string CLIENT_PROFILE_NOT_FOUND = "CLIENT_PROFILE_NOT_FOUND";
@@ -815,11 +788,29 @@ public static class HostpanelErrorCodes
     /// <summary>A plugin menu names an icon that is not 1 to 64 lowercase letters, digits and hyphens (400).</summary>
     public const string PLUGIN_MENU_ICON_INVALID = "PLUGIN_MENU_ICON_INVALID";
 
+    /// <summary>The plugin manifest names an <c>icon</c> file the package does not hold (400).</summary>
+    public const string PLUGIN_ICON_MISSING = "PLUGIN_ICON_MISSING";
+
+    /// <summary>
+    /// The plugin manifest <c>icon</c> is not a package-relative SVG or PNG file, is too large, is not a real PNG, or is
+    /// an SVG that carries script, event handlers or external references (400).
+    /// </summary>
+    public const string PLUGIN_ICON_INVALID = "PLUGIN_ICON_INVALID";
+
+    /// <summary>The plugin manifest declares the <c>endpoints</c> capability but the plugin class does not implement the endpoints contract (400).</summary>
+    public const string PLUGIN_ENDPOINTS_NOT_IMPLEMENTED = "PLUGIN_ENDPOINTS_NOT_IMPLEMENTED";
+
+    /// <summary>The plugin has no icon to serve: it is unknown, refused, or declares none (404).</summary>
+    public const string PLUGIN_ICON_NOT_FOUND = "PLUGIN_ICON_NOT_FOUND";
+
     /// <summary>
     /// A plugin page id is not 1 to 64 lowercase letters, digits, hyphens and underscores starting with a letter or
     /// digit, or is declared twice in one panel (400); such a page could never be served.
     /// </summary>
     public const string PLUGIN_PAGE_ID_INVALID = "PLUGIN_PAGE_ID_INVALID";
+
+    /// <summary>A plugin declares a callback route that carries a permission or streams, which a public callback cannot (400).</summary>
+    public const string PLUGIN_CALLBACK_INVALID = "PLUGIN_CALLBACK_INVALID";
 
     /// <summary>The plugin is not available to this panel or declares no such page there (404); the two answer alike.</summary>
     public const string PLUGIN_PAGE_NOT_FOUND = "PLUGIN_PAGE_NOT_FOUND";
@@ -837,11 +828,62 @@ public static class HostpanelErrorCodes
     public const string PLUGIN_HOST_ACCESS_UNKNOWN = "PLUGIN_HOST_ACCESS_UNKNOWN";
 
     /// <summary>
+    /// A view document holds a visibility or follow-up condition that is not a GET route, a dotted field and one value
+    /// or a bounded list of values (400, the default arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_CONDITION_INVALID = "PLUGIN_VIEW_CONDITION_INVALID";
+
+    /// <summary>
+    /// A view document holds a follow-up refresh that is malformed or names a block the document does not hold, or a
+    /// form reset flag that is not a boolean (400, the default arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_FOLLOW_UP_INVALID = "PLUGIN_VIEW_FOLLOW_UP_INVALID";
+
+    /// <summary>
+    /// A view document holds an action body built from page data in a shape or place the host does not accept (400, the
+    /// default arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_ACTION_BODY_INVALID = "PLUGIN_VIEW_ACTION_BODY_INVALID";
+
+    /// <summary>A view document holds a preview or chat <c>selection</c> this server does not accept.</summary>
+    public const string PLUGIN_VIEW_SELECTION_INVALID = "PLUGIN_VIEW_SELECTION_INVALID";
+
+    /// <summary>
+    /// A page declares a layout the host does not define, or a layout on an admin page (400, the default arm: it is
+    /// answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_PAGE_LAYOUT_UNKNOWN = "PLUGIN_PAGE_LAYOUT_UNKNOWN";
+
+    /// <summary>
+    /// A view document holds a split that is not exactly two panes of blocks, or one inside another (400, the default
+    /// arm: it is answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_SPLIT_INVALID = "PLUGIN_VIEW_SPLIT_INVALID";
+
+    /// <summary>
+    /// A view document holds a preview with bad sources or size, or outside a client page (400, the default arm: it is
+    /// answered only by a plugin install).
+    /// </summary>
+    public const string PLUGIN_VIEW_PREVIEW_INVALID = "PLUGIN_VIEW_PREVIEW_INVALID";
+
+    /// <summary>
+    /// A view document gives one block id to more than one block (400, the default arm: it is answered only by a plugin
+    /// install).
+    /// </summary>
+    public const string PLUGIN_VIEW_BLOCK_ID_REPEATED = "PLUGIN_VIEW_BLOCK_ID_REPEATED";
+
+    /// <summary>
     /// One of the archive's entries would write outside the plugin's own directory (400). The
     /// zip-slip guard's refusal, named for what a caller can act on rather than the attack it
     /// blocks.
     /// </summary>
     public const string PLUGIN_ARCHIVE_UNSAFE = "PLUGIN_ARCHIVE_UNSAFE";
+
+    /// <summary>
+    /// One of the archive's entries could not be written into the unpack folder, because a file and a folder of the
+    /// archive share a name or the path is not writable (400). The package is at fault, not the server.
+    /// </summary>
+    public const string PLUGIN_ARCHIVE_UNWRITABLE = "PLUGIN_ARCHIVE_UNWRITABLE";
 
     /// <summary>
     /// The plugin id does not meet the plugin id rule (lower-case letters, digits and single
@@ -860,6 +902,12 @@ public static class HostpanelErrorCodes
     /// would be loaded in place of the host's copy (400).
     /// </summary>
     public const string PLUGIN_HOST_ASSEMBLY_REFUSED = "PLUGIN_HOST_ASSEMBLY_REFUSED";
+
+    /// <summary>
+    /// The archive carries an assembly whose file name (compared without regard to case) another installed or staged
+    /// plugin already ships, which would make one plugin run on the other's copy (400).
+    /// </summary>
+    public const string PLUGIN_ASSEMBLY_CONFLICT = "PLUGIN_ASSEMBLY_CONFLICT";
 
     /// <summary>A trusted-package list is configured and the archive is not on it (400).</summary>
     public const string PLUGIN_NOT_TRUSTED = "PLUGIN_NOT_TRUSTED";
@@ -959,6 +1007,27 @@ public static class HostpanelErrorCodes
 
     /// <summary>A saved field value does not fit the declared type of the field (400); <c>errors[key]</c> says what is expected.</summary>
     public const string INTEGRATION_FIELD_INVALID = "INTEGRATION_FIELD_INVALID";
+
+    /// <summary>The integration has no connection test: a plugin that does not implement <c>IPluginStatus</c> (400).</summary>
+    public const string INTEGRATION_NOT_TESTABLE = "INTEGRATION_NOT_TESTABLE";
+
+    /// <summary>Not a refusal: the sentence of a plugin integration that reports it works, shown on its card and in a connection test.</summary>
+    public const string PLUGIN_STATUS_HEALTHY = "PLUGIN_STATUS_HEALTHY";
+
+    /// <summary>Not a refusal: the sentence of a plugin integration that reports it works with reduced function.</summary>
+    public const string PLUGIN_STATUS_DEGRADED = "PLUGIN_STATUS_DEGRADED";
+
+    /// <summary>Not a refusal: the sentence of a plugin integration that reports it cannot do its work.</summary>
+    public const string PLUGIN_STATUS_REPORTED_DOWN = "PLUGIN_STATUS_REPORTED_DOWN";
+
+    /// <summary>Not a refusal: the plugin was not asked for its state, because it is switched off, misses a required setting or waits for its data migration.</summary>
+    public const string PLUGIN_STATUS_INACTIVE = "PLUGIN_STATUS_INACTIVE";
+
+    /// <summary>Not a refusal: the plugin did not answer its status check within the host's time limit.</summary>
+    public const string PLUGIN_STATUS_TIMED_OUT = "PLUGIN_STATUS_TIMED_OUT";
+
+    /// <summary>Not a refusal: the plugin's status check failed or gave no valid answer; the cause is in the server log.</summary>
+    public const string PLUGIN_STATUS_FAILED = "PLUGIN_STATUS_FAILED";
 
     // Products
 
@@ -1144,6 +1213,15 @@ public static class HostpanelErrorCodes
     public const string INVOICE_NOT_UNPAID = Domain.Billing.BillingErrors.InvoiceNotUnpaid;
 
     /// <summary>
+    /// No manual bank transfer is waiting on the invoice, so there is nothing to confirm or reject; also the answer to a
+    /// second confirm of the same transfer (409): <see cref="Domain.Billing.Invoice.ConfirmBankTransfer"/>.
+    /// </summary>
+    public const string INVOICE_BANK_TRANSFER_NOT_PENDING = Domain.Billing.BillingErrors.InvoiceBankTransferNotPending;
+
+    /// <summary>The admin has not switched manual bank transfer on, so the client cannot choose it (409).</summary>
+    public const string BANK_TRANSFER_NOT_AVAILABLE = "BANK_TRANSFER_NOT_AVAILABLE";
+
+    /// <summary>
     /// The invoice is not eligible to be marked lapsed (400): <see cref="Domain.Billing.Invoice.MarkLapsed"/>
     /// requires Overdue.
     /// </summary>
@@ -1175,6 +1253,51 @@ public static class HostpanelErrorCodes
     /// and <see cref="Domain.Billing.Transaction.CorrectAmounts"/>.
     /// </summary>
     public const string TRANSACTION_AMOUNT_REQUIRED = Domain.Billing.BillingErrors.TransactionAmountRequired;
+
+    /// <summary>
+    /// The entry is part of the client's credit history and cannot be edited or deleted (409):
+    /// <see cref="Domain.Billing.Transaction.EnsureEditable"/>.
+    /// </summary>
+    public const string TRANSACTION_CREDIT_LOCKED = Domain.Billing.BillingErrors.TransactionCreditLocked;
+
+    /// <summary>A credit top-up invoice is one fixed line and cannot be edited or taxed (400).</summary>
+    public const string INVOICE_TOP_UP_FIXED = Domain.Billing.BillingErrors.InvoiceTopUpFixed;
+
+    /// <summary>Credit cannot be applied to a credit top-up invoice (400).</summary>
+    public const string INVOICE_TOP_UP_NO_CREDIT = Domain.Billing.BillingErrors.InvoiceTopUpNoCredit;
+
+    /// <summary>A paid credit top-up is refunded by staff by hand only (400).</summary>
+    public const string INVOICE_TOP_UP_REFUND_MANUAL_ONLY = Domain.Billing.BillingErrors.InvoiceTopUpRefundManualOnly;
+
+    /// <summary>The top-up amount is below the minimum or above the maximum the admin allows (400).</summary>
+    public const string CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE = "CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE";
+
+    /// <summary>The client already holds as many unpaid top-up invoices as the admin allows (409).</summary>
+    public const string CREDIT_TOP_UP_TOO_MANY_OPEN = "CREDIT_TOP_UP_TOO_MANY_OPEN";
+
+    /// <summary>The id names no credit note, or none the caller may see (404).</summary>
+    public const string CREDIT_NOTE_NOT_FOUND = Domain.Billing.BillingErrors.CreditNoteNotFound;
+
+    /// <summary>A credit note cannot be issued on a credit top-up invoice, which is credit already (400).</summary>
+    public const string CREDIT_NOTE_TOP_UP_INVOICE = Domain.Billing.BillingErrors.CreditNoteTopUpInvoice;
+
+    /// <summary>The credit note is more than the invoice can still be credited once earlier notes and refunds are counted (400).</summary>
+    public const string CREDIT_NOTE_EXCEEDS_CREDITABLE = Domain.Billing.BillingErrors.CreditNoteExceedsCreditable;
+
+    /// <summary>A credit note needs at least one valid line and a reason (400).</summary>
+    public const string CREDIT_NOTE_ITEMS_REQUIRED = Domain.Billing.BillingErrors.CreditNoteItemsRequired;
+
+    /// <summary>The credit note is not in the state the action needs (409).</summary>
+    public const string CREDIT_NOTE_INVALID_STATE = Domain.Billing.BillingErrors.CreditNoteInvalidState;
+
+    /// <summary>The credit note was already voided (409).</summary>
+    public const string CREDIT_NOTE_ALREADY_VOIDED = Domain.Billing.BillingErrors.CreditNoteAlreadyVoided;
+
+    /// <summary>A credit note paid out as a gateway refund cannot be voided, because the refund cannot be taken back (409).</summary>
+    public const string CREDIT_NOTE_REFUND_NOT_VOIDABLE = Domain.Billing.BillingErrors.CreditNoteRefundNotVoidable;
+
+    /// <summary>Account credit cannot be given for an invoice in a currency other than the one the client balance is kept in (400).</summary>
+    public const string CREDIT_NOTE_CURRENCY_MISMATCH = "CREDIT_NOTE_CURRENCY_MISMATCH";
 
     /// <summary>
     /// The id names no contact on this client (404): <see cref="Domain.Clients.Client.RemoveContact"/>
@@ -1408,9 +1531,6 @@ public static class HostpanelErrorCodes
     /// <summary>A gateway refund was asked for an invoice no payment gateway took money for (400).</summary>
     public const string INVOICE_NOT_GATEWAY_PAID = "INVOICE_NOT_GATEWAY_PAID";
 
-    /// <summary>The card gateway refused a refund (502); any part it had already returned stays recorded.</summary>
-    public const string CARD_REFUND_REFUSED = "CARD_REFUND_REFUSED";
-
     /// <summary>The hosted payment gateway refused or failed a refund (502); nothing was returned through it.</summary>
     public const string GATEWAY_REFUND_REFUSED = "GATEWAY_REFUND_REFUSED";
 
@@ -1425,4 +1545,60 @@ public static class HostpanelErrorCodes
 
     /// <summary>Only a Draft or Cancelled invoice may be deleted (400): <see cref="Domain.Billing.Invoice.CanDelete"/>.</summary>
     public const string INVOICE_NOT_DELETABLE = "INVOICE_NOT_DELETABLE";
+
+    /// <summary>The payment gateway module is not installed, is not enabled, or its plugin does not offer stored credentials (409).</summary>
+    public const string STORED_CREDENTIALS_NOT_SUPPORTED = "STORED_CREDENTIALS_NOT_SUPPORTED";
+
+    /// <summary>The client holds no active consent for a stored payment method, so none may be charged (400).</summary>
+    public const string CARD_CONSENT_REQUIRED = "CARD_CONSENT_REQUIRED";
+
+    /// <summary>The id names no stored charge consent of the caller (404).</summary>
+    public const string CARD_CONSENT_NOT_FOUND = "CARD_CONSENT_NOT_FOUND";
+
+    /// <summary>The payer did not finish saving a payment method: the gateway session was abandoned or expired (400).</summary>
+    public const string STORED_METHOD_NOT_SAVED = "STORED_METHOD_NOT_SAVED";
+
+    /// <summary>The invoice already has a stored charge in flight, so no second one starts (409).</summary>
+    public const string STORED_CHARGE_ALREADY_IN_PROGRESS = "STORED_CHARGE_ALREADY_IN_PROGRESS";
+
+    /// <summary>The id names no stored charge claim (404).</summary>
+    public const string INVOICE_PAYMENT_CLAIM_NOT_FOUND = "INVOICE_PAYMENT_CLAIM_NOT_FOUND";
+
+    /// <summary>The invoice has a stored card charge that has not finished (in flight, or waiting for the payer or the gateway), so it cannot be cancelled or paid by hand yet, and no hosted payment can start (409).</summary>
+    public const string INVOICE_STORED_CHARGE_UNRESOLVED = "INVOICE_STORED_CHARGE_UNRESOLVED";
+
+    /// <summary>The invoice has a stored card charge held for an operator (the gateway took money the invoice could not record), so no hosted payment can start until an operator settles it by a manual payment or by cancelling the invoice (409).</summary>
+    public const string INVOICE_STORED_CHARGE_HELD = "INVOICE_STORED_CHARGE_HELD";
+
+    /// <summary>The consent already covers a different payment method than the one the finished save session stored (409).</summary>
+    public const string CARD_CONSENT_ALREADY_ATTACHED = "CARD_CONSENT_ALREADY_ATTACHED";
+
+    // Plugin registry
+
+    /// <summary>The plugin registry is switched off or has no address in this deployment's configuration (409).</summary>
+    public const string PLUGIN_REGISTRY_DISABLED = "PLUGIN_REGISTRY_DISABLED";
+
+    /// <summary>The plugin registry could not be reached or answered with an error status; nothing of the failure is passed on (502).</summary>
+    public const string PLUGIN_REGISTRY_UNAVAILABLE = "PLUGIN_REGISTRY_UNAVAILABLE";
+
+    /// <summary>The plugin registry did not answer within the configured time limit (504).</summary>
+    public const string PLUGIN_REGISTRY_TIMED_OUT = "PLUGIN_REGISTRY_TIMED_OUT";
+
+    /// <summary>The plugin registry answered with something that is not a well-formed reply (502).</summary>
+    public const string PLUGIN_REGISTRY_RESPONSE_INVALID = "PLUGIN_REGISTRY_RESPONSE_INVALID";
+
+    /// <summary>The registry lists no such plugin or no such version of it (404).</summary>
+    public const string PLUGIN_REGISTRY_PLUGIN_NOT_FOUND = "PLUGIN_REGISTRY_PLUGIN_NOT_FOUND";
+
+    /// <summary>
+    /// The registry's package address points away from the registry's host, redirects elsewhere, or the package is over
+    /// the download limit or is not the plugin asked for (502).
+    /// </summary>
+    public const string PLUGIN_REGISTRY_PACKAGE_REFUSED = "PLUGIN_REGISTRY_PACKAGE_REFUSED";
+
+    /// <summary>The downloaded package does not match the SHA-256 the registry published for it (502).</summary>
+    public const string PLUGIN_REGISTRY_CHECKSUM_MISMATCH = "PLUGIN_REGISTRY_CHECKSUM_MISMATCH";
+
+    /// <summary>The operator's registry trust policy does not admit this plugin or the key it is signed with (403).</summary>
+    public const string PLUGIN_REGISTRY_NOT_TRUSTED = "PLUGIN_REGISTRY_NOT_TRUSTED";
 }

@@ -8,6 +8,8 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { useDocsGuide } from '@/composables/useDocsGuide'
+import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -81,6 +83,8 @@ const loadError = ref<string | null>(null)
 
 /** The outcome line of the last action. */
 const feedback = useResultBanner()
+/** Link to the docs guide for this screen, or null when docsUrl is not configured. */
+const { guideUrl } = useDocsGuide()
 
 /** Tone of the outcome line: danger for a refusal, success otherwise. */
 const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
@@ -240,6 +244,7 @@ onMounted(() => load(1))
   <UiStack data-testid="billing-invoices-view">
     <UiPageHeader :title="t('shared.invoices')" :subtitle="t('billing.invoicesList.manageBillingInvoices')">
       <template #actions>
+        <PageHelpLink :url="guideUrl" />
         <UiButton variant="secondary" data-testid="billing-invoices-filter-toggle" @click="filtersOpen = !filtersOpen">
           {{ filtersOpen ? t('shared.hideFilters') : t('shared.searchFilter') }}
         </UiButton>
@@ -329,7 +334,7 @@ onMounted(() => load(1))
             <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.invoiceDate') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.dueDate') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.total') }}</UiTableHeader>
+            <UiTableHeader align="right">{{ t('shared.total') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
@@ -349,7 +354,7 @@ onMounted(() => load(1))
             <UiTableCell>{{ invoice.clientName }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(invoice.createdAt) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(invoice.dueDate) }}</UiTableCell>
-            <UiTableCell>{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
+            <UiTableCell align="right">{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
             <UiTableCell muted>{{ invoice.paymentMethod || '—' }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="invoiceStatusTone(invoice.status)">{{ invoice.status }}</UiBadge>

@@ -62,18 +62,18 @@ public sealed class TestIntegrationConnectionTests(IntegrationTestFactory factor
     }
 
     /// <summary>
-    /// A failed hosted gateway probe still answers 200 and never puts the gateway's own exception text
+    /// A failed payment plugin probe still answers 200 and never puts the gateway's own exception text
     /// on the wire.
     /// </summary>
     [Fact]
-    public async Task HostedGatewayProbeFails_NeverLeaksGatewayDetailAsync()
+    public async Task PaymentPluginProbeFails_NeverLeaksGatewayDetailAsync()
     {
         var resolver = new FakePaymentPluginResolver();
         var plugin = new FakePaymentPlugin
         {
             StatusThrows = new InvalidOperationException("gateway detail nobody should see"),
         };
-        resolver.Register("inecobank", plugin);
+        resolver.Register("example-gateway", plugin);
 
         var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
@@ -82,14 +82,7 @@ public sealed class TestIntegrationConnectionTests(IntegrationTestFactory factor
         var client = host.CreateClient();
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
-        // Planted directly: the hosted gateway is a plugin, and the save endpoint accepts only the
-        // fields a loaded plugin declares, which this host need not have loaded.
-        await SecretSettingTestSeeds.StoreAsync(factory, "integration:inecobank:is_enabled", "true");
-        await SecretSettingTestSeeds.StoreAsync(factory, "integration:inecobank:gateway_url", "https://gateway.example.com");
-        await SecretSettingTestSeeds.StoreAsync(factory, "integration:inecobank:username", "merchant");
-        await SecretSettingTestSeeds.StoreAsync(factory, "integration:inecobank:password", "secret");
-
-        var response = await client.PostAsync("/api/admin/integrations/inecobank/test", null);
+        var response = await client.PostAsync("/api/admin/integrations/example-gateway/test", null);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadAsStringAsync();

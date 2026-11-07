@@ -323,6 +323,8 @@ export const MigrationSkipReason = {
   NoProductLines: 'NoProductLines',
   /** The record carries a currency that is not a three-letter code. */
   CurrencyInvalid: 'CurrencyInvalid',
+  /** The record carries a source id longer than the column that keeps it. */
+  ExternalIdInvalid: 'ExternalIdInvalid',
 } as const
 
 /** One of the {@link MigrationSkipReason} values. */

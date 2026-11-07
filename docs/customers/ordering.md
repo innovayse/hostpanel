@@ -1,5 +1,7 @@
 ---
 title: Ordering
+description: "Order hosting in the Hostpanel client portal: choose a plan and billing cycle, search for a domain, review the cart and check out."
+keywords: "order hosting, hosting plans, billing cycle, domain search, checkout"
 ---
 
 # Ordering
@@ -67,7 +69,7 @@ If you are signed in your name is shown as **Logged in as**. If you are a guest,
 </li>
 <li>
 
-Choose a **Payment Method**: **Pay by card** or **Pay by bank transfer**.
+Choose a **Payment Method**: one of the payment methods your provider offers, such as **Pay by bank transfer**.
 
 </li>
 <li>

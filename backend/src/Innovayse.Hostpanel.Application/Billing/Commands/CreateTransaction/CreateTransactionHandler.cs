@@ -102,7 +102,7 @@ public sealed class CreateTransactionHandler
 
         if (cmd.AddToCredit && cmd.AmountIn > 0)
         {
-            var added = await _clientCredit.AddAsync(new ClientCreditChange(cmd.ClientId, cmd.AmountIn), ct);
+            var added = await _clientCredit.AddAsync(new ClientCreditChange(cmd.ClientId, cmd.AmountIn, CreditMovementType.AdminAdd, cmd.InvoiceId, Entry: transaction), ct);
             if (added.IsFailure)
             {
                 return Result<int>.FailureCode(added.ErrorCode!);
@@ -111,7 +111,8 @@ public sealed class CreateTransactionHandler
 
         if (cmd.AddToCredit && cmd.AmountOut > 0)
         {
-            var taken = await _clientCredit.DeductAsync(new ClientCreditChange(cmd.ClientId, cmd.AmountOut), ct);
+            var taken = await _clientCredit.DeductAsync(new ClientCreditChange(
+                cmd.ClientId, cmd.AmountOut, CreditMovementType.AdminDeduct, cmd.InvoiceId, Entry: cmd.AmountIn > 0 ? null : transaction), ct);
             if (taken.IsFailure)
             {
                 return Result<int>.FailureCode(taken.ErrorCode!);

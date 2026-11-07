@@ -1,13 +1,20 @@
 <script setup lang="ts">
 /**
- * Collapsible inner sidebar for client detail sub-pages.
- * Shows icons only by default and expands to show labels on hover (the kit's `UiSidebar`).
+ * Section navigation of the client detail pages.
+ *
+ * From the medium breakpoint up it is the collapsible icon rail (the kit's `UiSidebar`: icons only,
+ * captions on hover). Below it the rail would take a column of a phone's width, so the same entries
+ * are a horizontal, scrollable tab strip (the kit's `UiTabs`) that the layout puts above the content.
  */
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiSidebar from '@/components/ui/UiSidebar.vue'
+import UiStack from '@/components/ui/UiStack.vue'
+import UiTabs from '@/components/ui/UiTabs.vue'
+import { UiBreakpoint } from '@/utils/ui/layout'
 import type { UiSidebarItem } from '@/utils/ui/sidebar'
+import type { UiTabItem } from '@/utils/ui/tabs'
 import { ClientSection, clientSectionPath } from '@/lib/routes'
 
 const { t } = useI18n()
@@ -21,6 +28,9 @@ const props = defineProps<{
 /** Current route, used to mark the active entry. */
 const route = useRoute()
 
+/** Router, used to open the section a tab names. */
+const router = useRouter()
+
 /** Keys of the sidebar entries; also the suffix of each entry's `data-testid`. */
 const ClientNavKey = {
   Summary: 'summary',
@@ -33,6 +43,7 @@ const ClientNavKey = {
   Invoices: 'invoices',
   Quotes: 'quotes',
   Transactions: 'transactions',
+  Credit: 'credit',
   Tickets: 'tickets',
   Emails: 'emails',
   Log: 'log',
@@ -50,6 +61,7 @@ const ICONS: Record<(typeof ClientNavKey)[keyof typeof ClientNavKey], string> = 
   invoices: '<path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />',
   quotes: '<path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /><line x1="8" y1="11" x2="16" y2="11" /><line x1="8" y1="15" x2="12" y2="15" />',
   transactions: '<rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" />',
+  credit: '<path d="M21 12V7a2 2 0 00-2-2H5a2 2 0 000 4h14a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2V7" /><circle cx="16" cy="14" r="1" />',
   tickets: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />',
   emails: '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" />',
   log: '<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><line x1="9" y1="12" x2="15" y2="12" /><line x1="9" y1="16" x2="13" y2="16" />',
@@ -67,6 +79,7 @@ const SEGMENTS: Record<(typeof ClientNavKey)[keyof typeof ClientNavKey], ClientS
   invoices: ClientSection.Invoices,
   quotes: ClientSection.Quotes,
   transactions: ClientSection.Transactions,
+  credit: ClientSection.Credit,
   tickets: ClientSection.Tickets,
   emails: ClientSection.Emails,
   log: ClientSection.Log,
@@ -98,6 +111,7 @@ const navItems = computed<UiSidebarItem[]>(() => [
   entry(ClientNavKey.Invoices, t('shared.invoices')),
   entry(ClientNavKey.Quotes, t('shared.quotes')),
   entry(ClientNavKey.Transactions, t('shared.transactions')),
+  entry(ClientNavKey.Credit, t('clients.clientCredit.credit')),
   entry(ClientNavKey.Tickets, t('clients.clientTickets.tickets')),
   entry(ClientNavKey.Emails, t('clients.clientEmails.emails')),
   entry(ClientNavKey.Log, t('clients.clientInnerSidebar.log')),
@@ -108,8 +122,85 @@ const activeKey = computed<string | undefined>(() => {
   const active = navItems.value.find(item => route.path.startsWith(String(item.to)))
   return active?.key
 })
+
+/** The same entries as tabs for the strip shown on small screens. */
+const tabItems = computed<UiTabItem[]>(() =>
+  navItems.value.map(item => ({ value: item.key, label: item.label, testid: `client-tab-${item.key}` })),
+)
+
+/** The tab strip; its element is searched for the selected tab so the strip can bring it into view. */
+const strip = ref<{ $el: HTMLElement } | null>(null)
+
+/**
+ * Scrolls the strip so the selected tab is visible: a section far to the right is out of sight on load and
+ * after a route change otherwise. Only the strip scrolls (`inline`), never the page (`block: 'nearest'`).
+ *
+ * @returns Resolves once the strip has been updated and scrolled.
+ */
+const revealActiveTab = async (): Promise<void> => {
+  await nextTick()
+  const tab = strip.value?.$el.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+  tab?.scrollIntoView?.({ inline: 'center', block: 'nearest' })
+}
+
+/**
+ * Watches the strip's size and the size of every tab. The strip narrows after the first scroll when the page
+ * below it grows a scroll bar (the content loads after the strip), and a tab changes width when the web font
+ * replaces the fallback one after that scroll. The list keeps its box in the second case (it scrolls, so its
+ * width does not follow its content), so the tabs are watched too. A selected tab scrolled into view before
+ * either change then sits past the edge, so every change brings it back.
+ */
+let stripResize: ResizeObserver | null = null
+
+/** Brings the selected tab into view, then keeps it there while the strip or its tabs change size. */
+onMounted(() => {
+  void revealActiveTab()
+  const list = strip.value?.$el.querySelector<HTMLElement>('[role="tablist"]')
+  if (list) {
+    stripResize = new ResizeObserver(() => {
+      void revealActiveTab()
+    })
+    stripResize.observe(list)
+    list.querySelectorAll<HTMLElement>('[role="tab"]').forEach((tab) => {
+      stripResize?.observe(tab)
+    })
+  }
+})
+
+/** Stops watching the strip, so a left page holds no observer. */
+onBeforeUnmount(() => {
+  stripResize?.disconnect()
+  stripResize = null
+})
+
+watch(activeKey, revealActiveTab)
+
+/**
+ * Opens the section of the tab the visitor picked.
+ *
+ * @param key - Key of the picked entry.
+ * @returns Resolves when the navigation is over.
+ */
+const openSection = async (key: string): Promise<void> => {
+  const target = navItems.value.find(item => item.key === key)
+  if (target) {
+    await router.push(String(target.to))
+  }
+}
 </script>
 
 <template>
-  <UiSidebar :items="navItems" :active-key="activeKey" testid="client-nav" />
+  <UiTabs
+    ref="strip"
+    class="min-w-0 md:hidden"
+    :items="tabItems"
+    :model-value="activeKey ?? ''"
+    :aria-label="t('clients.clientNav.strip')"
+    hide-scrollbar
+    data-testid="client-nav-strip"
+    @update:model-value="openSection"
+  />
+  <UiStack :visible-from="UiBreakpoint.Md" direction="row" gap="none" class="shrink-0" data-testid="client-nav-rail">
+    <UiSidebar :items="navItems" :active-key="activeKey" :aria-label="t('clients.clientNav.rail')" testid="client-nav" />
+  </UiStack>
 </template>

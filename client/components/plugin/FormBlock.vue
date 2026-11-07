@@ -54,10 +54,11 @@
  * PluginFormBlock - fields sent as one JSON object to one of the plugin's routes, named by `{ method, path }`:
  * text, number, address, secret, several lines, a choice or a switch. A refusal's sentence is shown by the form and
  * its field sentences under their fields (both from the store, so from the API's `detail` and `errors`); a success
- * shows the plugin's `message`, if any, and reads the named blocks again. Validation is the server's: the form sends
- * what was typed and renders the answer.
+ * shows the plugin's `message`, if any, reads the named blocks again, empties every field when the submit asks for
+ * `resetOnSuccess`, and runs its `followUp` (`usePluginFollowUp`). Validation is the server's: the form sends what was
+ * typed and renders the answer.
  */
-import { usePluginView } from '~/composables/usePluginView'
+import { usePluginFollowUp, usePluginView } from '~/composables/usePluginView'
 import { usePluginsStore } from '~/stores/plugins'
 import type { PluginFormBlock, PluginFormField } from '~/types/pluginblock'
 import { PluginFieldType } from '~/types/pluginfieldtype'
@@ -85,15 +86,31 @@ const props = defineProps<Props>()
 const context = usePluginView()
 /** The plugin store, which makes the call. */
 const store = usePluginsStore()
+/** Starts the follow-up refresh; the view ends it when the page is left, not when this block hides. */
+const followUp = usePluginFollowUp(() => props.block.id)
+
+/**
+ * The empty text values: every text field empty.
+ *
+ * @returns The values, by field key.
+ */
+const emptyTexts = (): Record<string, string> => Object.fromEntries(props.block.fields
+  .filter(field => field.type !== PluginFieldType.Boolean)
+  .map(field => [field.key, '']))
+
+/**
+ * The empty switch values: every switch off.
+ *
+ * @returns The values, by field key.
+ */
+const emptyFlags = (): Record<string, boolean> => Object.fromEntries(props.block.fields
+  .filter(field => field.type === PluginFieldType.Boolean)
+  .map(field => [field.key, false]))
 
 /** The text values, by field key; every text field starts empty. */
-const texts = ref<Record<string, string>>(Object.fromEntries(props.block.fields
-  .filter(field => field.type !== PluginFieldType.Boolean)
-  .map(field => [field.key, ''])))
+const texts = ref<Record<string, string>>(emptyTexts())
 /** The switch values, by field key; every switch starts off. */
-const flags = ref<Record<string, boolean>>(Object.fromEntries(props.block.fields
-  .filter(field => field.type === PluginFieldType.Boolean)
-  .map(field => [field.key, false])))
+const flags = ref<Record<string, boolean>>(emptyFlags())
 /** True while the form is being sent. */
 const sending = ref(false)
 /** The sentence of the last send: the plugin's `message`, or the refusal; empty when there is none. */
@@ -158,7 +175,12 @@ const submit = async (): Promise<void> => {
   const answered = readPluginField(result.data, 'message')
   message.value = result.ok ? (typeof answered === 'string' ? answered : '') : result.error
   if (result.ok) {
+    if (props.block.submit.resetOnSuccess === true) {
+      texts.value = emptyTexts()
+      flags.value = emptyFlags()
+    }
     context.refresh(props.block.submit.refresh ?? [])
+    followUp(props.block.submit.followUp)
   }
 }
 </script>

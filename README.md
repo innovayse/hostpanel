@@ -17,7 +17,17 @@
   <a href="LICENSE"><img alt="License: AGPL v3" src="https://img.shields.io/badge/license-AGPL--3.0-blue"></a>
   <a href="https://hub.docker.com/r/innovayse/hostpanel"><img alt="Docker Hub" src="https://img.shields.io/docker/pulls/innovayse/hostpanel?logo=docker&logoColor=white&label=Docker%20Hub"></a>
   <a href="https://github.com/innovayse/hostpanel/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/innovayse/hostpanel/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://www.nuget.org/packages/Hostpanel.Sdk"><img alt="Hostpanel.Sdk on NuGet" src="https://img.shields.io/nuget/v/Hostpanel.Sdk?label=Hostpanel.Sdk"></a>
   <a href="https://discord.gg/NfqTkyTgD"><img alt="Chat on Discord" src="https://img.shields.io/badge/chat-on%20Discord-5865F2?logo=discord&logoColor=white"></a>
+</p>
+
+<p align="center">
+  <a href="https://hostpanel.innovayse.com">Website</a> ·
+  <a href="https://hostpanel.innovayse.com/docs/">Documentation</a> ·
+  <a href="https://plugins-hostpanel.innovayse.com">Plugin marketplace</a> ·
+  <a href="https://github.com/innovayse/hostpanel-sdk">Plugin SDK</a> ·
+  <a href="https://github.com/innovayse/hostpanel/releases">Releases</a> ·
+  <a href="https://discord.gg/NfqTkyTgD">Discord</a>
 </p>
 
 <p align="center">
@@ -38,7 +48,8 @@ your own machine and extend.
 - **You own it.** AGPL-3.0, self-hosted with Docker, no per-client licence fee.
 - **Modern stack.** ASP.NET Core 9 and PostgreSQL behind a Nuxt 4 storefront and a Vue 3 admin panel.
 - **Built to be extended.** Payment gateways, registrars and control panels sit behind small
-  interfaces. You can add your own with the plugin SDK, without changing the core.
+  interfaces. You can add your own with the plugin SDK, without changing the core, or install a
+  ready-made one from the [plugin marketplace](https://plugins-hostpanel.innovayse.com).
 - **Ready in minutes.** Prebuilt multi-arch images (`amd64`, `arm64`) on Docker Hub and an installer
   that sets up HTTPS for you.
 
@@ -69,8 +80,9 @@ Taken from the local development stack with its seeded sample data.
 | Admin panel | Clients, orders, products, gateways, integrations, e-mail templates, plugins, reports, audit log |
 | Demo mode | Fake payments, registrar and provisioning, caught mail, fixed sample data reset on a schedule, on a network isolated from production |
 | Languages | English, Russian and Armenian in both the portal and the admin panel |
-| Plugin SDK | `Innovayse.SDK` (MIT, a NuGet package, developed in [hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk)) for your own payment, registrar, provisioning, identity, fulfilment and hosted plugins |
-| Integrations | Payments: Stripe (cards, saved cards), Inecobank (as a plugin), bank transfer. Registrars: Namecheap, Name.am. Control panels: CWP7, Plesk. Notifications: Telegram |
+| Plugin marketplace | [plugins-hostpanel.innovayse.com](https://plugins-hostpanel.innovayse.com) lists installable plugins, among them the payment gateways Stripe, PayPal, Inecobank, Idram and Ameriabank. See [Payment gateways](https://hostpanel.innovayse.com/docs/payments/gateways) |
+| Plugin SDK | `Hostpanel.Sdk` (MIT, a NuGet package, developed in [hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk)) for your own payment, registrar, provisioning, identity, fulfilment and hosted plugins |
+| Integrations | Payments: bank transfer built in; card and bank gateways install as plugins. Registrars: Namecheap, Name.am. Control panels: CWP7, Plesk. Notifications: Telegram |
 | Data import from WHMCS | A PHP addon you install in WHMCS. HostPanel pulls clients, contacts, products, orders, services, domains, invoices, transactions, quotes, tickets, announcements, knowledge base, downloads and network issues from it, page by page. See [Moving from another billing system](docs/migration/from-another-system.md) |
 
 See the [open feature requests](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
@@ -89,21 +101,24 @@ This table compares what HostPanel and WHMCS offer today. WHMCS facts come from 
 | Where it runs | Self-hosted, with Docker | Self-hosted, or WHMCS Cloud run by the vendor |
 | Control panels | CWP7, Plesk | cPanel, Plesk, DirectAdmin and others |
 | Domain registrars | Namecheap, Name.am | Many, including Namecheap, OpenSRS and Nominet |
-| Payment gateways | Stripe, Inecobank, bank transfer | Many, including Authorize.net, BitPay and bank transfer |
-| Extensions | A plugin SDK (MIT). Few plugins exist so far | A large marketplace of third-party modules |
+| Payment gateways | Bank transfer built in, gateways as plugins | Many, including Authorize.net, BitPay and bank transfer |
+| Extensions | A plugin SDK (MIT) and a [plugin marketplace](https://plugins-hostpanel.innovayse.com) with a small but growing catalogue | A large marketplace of third-party modules |
 | Moving over | An importer that pulls your data out of WHMCS | Not applicable |
 
 ### What HostPanel does not have yet
 
 - cPanel and DirectAdmin provisioning.
-- PayPal and other payment gateways beyond the three above.
+- Built-in payment gateways. Card and bank gateways come as plugins.
 - Registrars other than Namecheap and Name.am, such as ResellerClub or OpenSRS.
 - Automatic tax calculation. Staff set a tax rate on each invoice by hand.
 - Automatic fraud checks on new orders. Staff can mark an order as fraud by hand.
 - A hosted option. You run HostPanel on your own server.
-- A marketplace of ready-made modules.
+- A catalogue of ready-made modules as large as WHMCS has. The [plugin marketplace](https://plugins-hostpanel.innovayse.com) is new and still small.
 
 ## Quick start with Docker
+
+Full guides are in the [documentation](https://hostpanel.innovayse.com/docs/): [quick start](https://hostpanel.innovayse.com/docs/get-started/quick-start),
+[requirements](https://hostpanel.innovayse.com/docs/get-started/requirements) and [install](https://hostpanel.innovayse.com/docs/operators/install).
 
 On a Linux server with [Docker](https://docs.docker.com/get-docker/) and Compose v2, point the DNS of your
 domain and admin domain at the server, keep ports 80 and 443 open, and run one command:
@@ -173,7 +188,7 @@ the root path, so serve it on its own host. Use `EDGE_SCHEME=http://` for plain 
 
 | Task | How |
 |---|---|
-| Upgrade | Re-run the install script (an existing `.env` is kept; with `--version` it moves `IMAGE_TAG`), or `docker compose -f docker-compose.hub.yml pull && docker compose -f docker-compose.hub.yml up -d` |
+| Upgrade | Re-run the install script (an existing `.env` is kept; with `--version` it moves `IMAGE_TAG`; the database is backed up to `backups/` first, and `install.sh --rollback` goes back to the backed up version and data), or `docker compose -f docker-compose.hub.yml pull && docker compose -f docker-compose.hub.yml up -d` |
 | Pin a version | Set `IMAGE_TAG=1.4.0` in `.env` instead of `latest` |
 | Logs | `docker compose -f docker-compose.hub.yml logs -f hostpanel-api` (or `hostpanel-client`, `hostpanel-admin`) |
 | Back up the database | `docker compose -f docker-compose.hub.yml exec -T hostpanel-db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql`, or snapshot the `hostpanel_pgdata` volume |
@@ -238,7 +253,7 @@ docker compose -f docker-compose.shared.yml -f docker-compose.dev.yml up -d
 docker compose -f docker-compose.shared.yml -f docker-compose.dev.yml logs -f hostpanel-api   # migrations and seeding run on startup
 ```
 
-The plugin SDK in `backend/src/Innovayse.SDK` is a git submodule from its own repository,
+The plugin SDK in `backend/src/Hostpanel.Sdk` is a git submodule from its own repository,
 [innovayse/hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk). After a plain `git clone`, and after every pull
 that moves it, run `git submodule update --init` from the repository root; without it the backend has no SDK to build.
 
@@ -251,6 +266,18 @@ that moves it, run `git submodule update --init` from the repository root; witho
 
 In Development the API seeds an admin `admin@example.test` / `Admin123!` and sample clients such as `customer@example.test`.
 Every compose stack (shared, dev, prod, platform, demo, hub) is described in [docker/README.md](docker/README.md).
+
+**In GitHub Codespaces** you need nothing installed. On the repository page choose **Code**, then **Codespaces**, then
+**Create codespace on develop** and pick a machine with 4 cores or more. The setup in `.devcontainer/` installs .NET 9 and
+Node 22, fetches the plugin SDK submodule, writes `docker/.env` and starts the development stack above. The first start
+builds the images and takes a few minutes. When it is done, open the **Ports** tab and use the forwarded **Client portal**
+(3001) and **Admin panel** (5174) with the sample accounts above.
+
+The stack builds and runs the backend, the admin panel and the client portal inside its own containers. The .NET and
+Node installed in the codespace serve your editor and your tools: do not start the host `dotnet` or `yarn dev` against the
+mounted source folders while the stack is up, use `docker compose` to start, stop and read the logs of the apps. The setup
+also gives the API the codespace's forwarded names, so the links in mails and the browser origins point at them. Outside
+Codespaces nothing changes: the links in mails and the allowed browser origins stay on `localhost`.
 
 **Without Docker** you need the .NET 9 SDK, Node.js 22+, yarn and PostgreSQL 17:
 
@@ -275,7 +302,7 @@ its own PostgreSQL through Testcontainers, so Docker must be running). Run `yarn
 | Messaging | RabbitMQ with the Wolverine outbox | Reliable events between modules |
 | Client portal `client/` | Nuxt 4, Vue 3, TypeScript, Tailwind, Pinia | Server-rendered storefront; pages own data and SEO, `templates/` hold the switchable designs |
 | Admin panel `admin/` | Vite, Vue 3, TypeScript, Tailwind | Single-page app served by nginx |
-| Plugins | `Innovayse.SDK` and `Innovayse.Providers.*` | Six plugin types behind small interfaces, loaded at run time: payment, registrar and provisioning providers, plus fulfilment (`IFulfilmentPlugin`: deliver digital products after payment, advise on refunds), identity (`IClientResolver`: decide which client a signed-in user acts for) and hosted (`IHostedPlugin`: a background worker). The integrations listed under Features are built into the core; today only Inecobank ships as a run-time plugin. The core names no deployment-specific plugin namespace; an architecture test enforces it |
+| Plugins | `Hostpanel.Sdk` and `Innovayse.Providers.*` | Six plugin types behind small interfaces, loaded at run time: payment, registrar and provisioning providers, plus fulfilment (`IFulfilmentPlugin`: deliver digital products after payment, advise on refunds), identity (`IClientResolver`: decide which client a signed-in user acts for) and hosted (`IHostedPlugin`: a background worker). The integrations listed under Features are built into the core; payment gateways such as card processors are not built in and are installed as plugins. The core names no deployment-specific plugin namespace; an architecture test enforces it |
 | Auth | ASP.NET Core Identity, JWT in an httpOnly cookie | `local` mode by default |
 
 Each app owns its Dockerfile (`backend/Dockerfile`, `client/Dockerfile`, `admin/Dockerfile`). A new payment gateway, registrar
@@ -283,7 +310,11 @@ or control-panel integration is one of the most useful contributions: open an is
 
 ### Writing a plugin
 
-Start with [docs/developers/write-a-plugin.md](docs/developers/write-a-plugin.md). In short:
+Start with [docs/developers/write-a-plugin.md](docs/developers/write-a-plugin.md) (also on the
+[documentation site](https://hostpanel.innovayse.com/docs/developers/write-a-plugin)). The contract lives in the
+[`Hostpanel.Sdk`](https://www.nuget.org/packages/Hostpanel.Sdk) package, and
+[Publishing a plugin](https://hostpanel.innovayse.com/docs/developers/publishing-a-plugin) explains how to list one on the
+[marketplace](https://plugins-hostpanel.innovayse.com). In short:
 
 - **Manifest v2.** `plugin.json` with `"manifestVersion": 2` declares typed `settings`, `capabilities`, `locales`, an `api`
   block (the HTTP routes the plugin answers), a `ui` block (menus, pages and slot widgets) and `externalOrigins`.
@@ -298,19 +329,47 @@ Start with [docs/developers/write-a-plugin.md](docs/developers/write-a-plugin.md
   **Allow unsigned plugins** (off by default, audited) or pin archive digests with `Plugins:TrustedPackageSha256`. With no
   plugin installed the panels look exactly as the core ships them.
 
+## Contributing in 5 minutes
+
+1. **Fork and clone** with the submodule, then start your change from `develop` (not `main`):
+
+   ```bash
+   git clone --recurse-submodules https://github.com/<your-user>/hostpanel.git
+   cd hostpanel
+   git switch -c my-change --no-track origin/develop
+   ```
+
+2. **Start the development stack.** The first start takes a few minutes while the images build:
+
+   ```bash
+   cd docker
+   cp .env.example .env
+   docker compose -f docker-compose.shared.yml -f docker-compose.dev.yml up -d
+   ```
+
+3. **Open the admin panel** at http://localhost:5174 and sign in with `admin@example.test` / `Admin123!`.
+   The client portal is at http://localhost:3001. Both come with sample data.
+4. **Pick an issue** labelled [`good first issue`](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+   and leave a comment saying you are taking it.
+5. **Make the change, run the tests** (see [Run from source](#run-from-source)) and open a pull request **against
+   `develop`**. A first review comes within 3 working days.
+
+More detail, including the rules for pull requests, is in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Contributing, security, license
 
 - **Contributing:** start with [good first issues](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22),
   read [CONTRIBUTING.md](CONTRIBUTING.md) and the [Code of Conduct](CODE_OF_CONDUCT.md). Questions go to
   [Discussions](https://github.com/innovayse/hostpanel/discussions).
 - **Community:** chat and ask questions on [Discord](https://discord.gg/NfqTkyTgD).
+- **Documentation:** [hostpanel.innovayse.com/docs](https://hostpanel.innovayse.com/docs/). Product site: [hostpanel.innovayse.com](https://hostpanel.innovayse.com).
 - **Changes and help:** see the [CHANGELOG](CHANGELOG.md) for release notes and [SUPPORT.md](SUPPORT.md) for where to get help.
 - **Security:** report problems privately as described in [SECURITY.md](SECURITY.md), not in a public issue.
 - **License:** Copyright (c) 2024-2026 Innovayse LLC. Free software under the
   [GNU Affero General Public License v3.0 or later](LICENSE): use, modify and self-host it, including commercially. If you
   run a modified version as a network service, offer your users its source.
-- **Plugin SDK license:** the plugin SDK (`backend/src/Innovayse.SDK`, a git submodule of its own repository
+- **Plugin SDK license:** the plugin SDK (`backend/src/Hostpanel.Sdk`, a git submodule of its own repository
   [innovayse/hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk), where it is developed and published) is under the
-  [MIT License](https://github.com/innovayse/hostpanel-sdk/blob/main/LICENSE) and ships as the `Innovayse.SDK` NuGet package,
+  [MIT License](https://github.com/innovayse/hostpanel-sdk/blob/main/LICENSE) and ships as the `Hostpanel.Sdk` NuGet package,
   so a plugin may be free or paid, open or closed source, as its author decides. Everything else in this repository stays
   AGPL-3.0-or-later.

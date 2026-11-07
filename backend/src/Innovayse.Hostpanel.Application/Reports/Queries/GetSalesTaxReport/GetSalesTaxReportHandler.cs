@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
 using Innovayse.Hostpanel.Application.Reports.Extensions;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -12,8 +13,8 @@ namespace Innovayse.Hostpanel.Application.Reports.Queries.GetSalesTaxReport;
 /// <remarks>
 /// Tax becomes a liability when it is collected, so the period is matched on the day the invoice
 /// was paid, not the day it was raised. Amounts in different currencies are never added together:
-/// the totals come one per invoice currency, summed in SQL over every matching invoice, and the
-/// rows are paged.
+/// the totals come one per invoice currency, summed in SQL over every matching invoice, less the tax of the
+/// account credit notes issued in the period, and the rows are paged.
 /// </remarks>
 public sealed class GetSalesTaxReportHandler
 {
@@ -49,11 +50,45 @@ public sealed class GetSalesTaxReportHandler
             paid = paid.Where(i => i.PaidAt < toExclusive);
         }
 
-        var totals = await paid
+        var invoiced = await paid
             .GroupBy(i => i.Currency)
-            .OrderBy(g => g.Key)
-            .Select(g => new SalesTaxCurrencyTotalDto(g.Key, g.Count(), g.Sum(i => i.Total), g.Sum(i => i.Tax)))
+            .Select(g => new { Currency = g.Key, Count = g.Count(), Total = g.Sum(i => i.Total), Tax = g.Sum(i => i.Tax) })
             .ToListAsync(ct);
+
+        // A credit note given as account credit reverses part of the invoice's tax without any refund row, so the tax it
+        // reversed comes off the liability in the period the note was issued. A gateway refund note is left out: it is
+        // one ordinary refund of its invoice. Draft and voided notes reverse nothing.
+        var notes = _context.CreditNotes
+            .AsNoTracking()
+            .Where(n => n.Method == CreditNoteMethod.AccountCredit
+                && (n.Status == CreditNoteStatus.Issued || n.Status == CreditNoteStatus.Applied)
+                && n.IssuedAt != null);
+        if (query.From.HasValue)
+        {
+            var from = query.From.Value.StartOfDayUtc();
+            notes = notes.Where(n => n.IssuedAt >= from);
+        }
+
+        if (query.To.HasValue)
+        {
+            var toExclusive = query.To.Value.EndOfDayExclusiveUtc();
+            notes = notes.Where(n => n.IssuedAt < toExclusive);
+        }
+
+        var reversed = await notes
+            .GroupBy(n => n.Currency)
+            .Select(g => new { Currency = g.Key, Tax = g.Sum(n => n.Tax) })
+            .ToListAsync(ct);
+
+        var totals = invoiced.Select(i => i.Currency).Union(reversed.Select(r => r.Currency))
+            .OrderBy(currency => currency, StringComparer.Ordinal)
+            .Select(currency =>
+            {
+                var sold = invoiced.FirstOrDefault(i => i.Currency == currency);
+                var credited = reversed.FirstOrDefault(r => r.Currency == currency)?.Tax ?? 0m;
+                return new SalesTaxCurrencyTotalDto(currency, sold?.Count ?? 0, sold?.Total ?? 0m, (sold?.Tax ?? 0m) - credited);
+            })
+            .ToList();
 
         var totalCount = totals.Sum(t => t.TotalInvoices);
 

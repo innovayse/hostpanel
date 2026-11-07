@@ -1,8 +1,12 @@
 ---
 title: SSH key agent
+description: "Install the Hostpanel SSH key agent so clients can add ED25519 public keys to their hosting accounts: setup, configuration, errors, uninstall."
+keywords: "ssh key agent, ed25519, ssh keys, agent configuration, host fingerprint"
 ---
 
 # SSH key agent <Label type="admin" />
+
+<DemoLink path="/servers" />
 
 The SSH key agent lets clients add their own ED25519 public keys to their hosting accounts. Each server runs a small agent process; Hostpanel connects to it over SSH using a per-server identity key and a pinned host fingerprint.
 

@@ -163,15 +163,14 @@ public sealed class SshKeyTests
         act.Should().Throw<ArgumentException>();
     }
 
-    /// <summary>A key can be issued only to a plugin id that meets the plugin id rule; a valid one is kept.</summary>
+    /// <summary>A key can be issued only to a plugin id that is not blank; a non-blank one is kept. The plugin id shape is checked at plugin load, not here.</summary>
     /// <param name="pluginId">The plugin id.</param>
     /// <param name="valid">Whether it is accepted.</param>
     [Theory]
     [InlineData("acme-sites", true)]
-    [InlineData("Acme_Sites", false)]
-    [InlineData("ui", false)]
+    [InlineData(" ", false)]
     [InlineData("", false)]
-    public void Create_IssuedToPluginId_MustMeetThePluginIdRule(string pluginId, bool valid)
+    public void Create_IssuedToPluginId_MustNotBeBlank(string pluginId, bool valid)
     {
         var act = () => SshKey.Create(10, 1, "web", "deploy", "ssh-ed25519 AAAA", "SHA256:x", pluginId);
 

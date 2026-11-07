@@ -22,7 +22,7 @@ describe('transactionForm', () => {
       clientId: '7',
       description: 'Hosting payment',
       transactionId: 'ch_9',
-      paymentMethod: 'Stripe',
+      paymentMethod: 'Example Gateway',
       amountIn: 120,
       fees: 3.5,
       invoiceIds: '1',

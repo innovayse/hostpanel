@@ -1,13 +1,17 @@
 /**
- * Endpoints behind the plugins store: the installed list, ZIP install or upgrade, removal, data purge and the restart.
+ * Endpoints behind the plugins store: the installed list, ZIP install or upgrade, removal, data purge, the restart and the registry (browse, updates, install).
  *
  * No state lives here; every function rejects with an `ApiError` carrying the problem+json body.
  */
 
-import { useApi } from '@/composables/useApi'
+import { buildQuery, useApi } from '@/composables/useApi'
 import type {
+  InstallRegistryPluginBody,
   PluginActionResultDto,
   PluginListItemDto,
+  PluginRegistryItemDto,
+  PluginRegistryPageDto,
+  PluginRegistryQuery,
   PluginSlotWidgetBindingDto,
   SavePluginSlotWidgetProductsBody,
 } from '@/types/plugin'
@@ -95,5 +99,40 @@ export const usePluginsApi = () => {
       body: JSON.stringify(body),
     })
 
-  return { listPlugins, installPlugin, removePlugin, purgePluginData, restartServer, listSlotWidgets, saveSlotWidgetProducts }
+  /**
+   * Lists one page of the plugins the registry offers.
+   *
+   * @param query - Search text, category and page.
+   * @returns The page; rejects with the registry-disabled code when the registry is switched off.
+   */
+  const browseRegistry = (query: PluginRegistryQuery): Promise<PluginRegistryPageDto> =>
+    request<PluginRegistryPageDto>(
+      `${ApiPath.AdminPlugins}/registry${buildQuery({ q: query.q, category: query.category, page: query.page })}`,
+    )
+
+  /**
+   * Lists the installed plugins the registry has a newer version of.
+   *
+   * @returns One entry per plugin with an update.
+   */
+  const listRegistryUpdates = (): Promise<PluginRegistryItemDto[]> =>
+    request<PluginRegistryItemDto[]>(`${ApiPath.AdminPlugins}/registry/updates`)
+
+  /**
+   * Installs (or stages an upgrade of) a plugin from the registry.
+   *
+   * @param id - Plugin id as listed by the registry.
+   * @param body - The version to install.
+   * @returns Whether a restart is needed, and the staged version for an upgrade.
+   */
+  const installFromRegistry = (id: string, body: InstallRegistryPluginBody): Promise<PluginActionResultDto> =>
+    request<PluginActionResultDto>(`${ApiPath.AdminPlugins}/registry/${id}/install`, {
+      method: HttpMethod.Post,
+      body: JSON.stringify(body),
+    })
+
+  return {
+    listPlugins, installPlugin, removePlugin, purgePluginData, restartServer, listSlotWidgets, saveSlotWidgetProducts,
+    browseRegistry, listRegistryUpdates, installFromRegistry,
+  }
 }

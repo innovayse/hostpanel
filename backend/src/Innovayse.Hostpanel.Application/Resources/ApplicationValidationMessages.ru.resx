@@ -63,10 +63,6 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="SetAsDefaultMustBeTrue" xml:space="preserve">
-    <value>Данные карты изменить нельзя. Удалите её и добавьте новую.</value>
-    <comment>SetDefaultPaymentMethodValidator. The only update this endpoint accepts is making a card the default.</comment>
-  </data>
   <data name="ContactEmailInvalid" xml:space="preserve">
     <value>Укажите корректный адрес электронной почты.</value>
     <comment>SendContactMessageHandler.</comment>
@@ -269,6 +265,9 @@
 <data name="InvoicePaymentAmountInvalid" xml:space="preserve">
     <value>Сумма платежа должна быть больше нуля.</value>
   </data>
+<data name="BankTransferRejectNoteInvalid" xml:space="preserve">
+    <value>Укажите причину, не длиннее {0} символов.</value>
+  </data>
 <data name="InvoicePaymentNotesInvalid" xml:space="preserve">
     <value>Примечания не должны превышать {0} символов.</value>
   </data>
@@ -355,6 +354,15 @@
   </data>
   <data name="DomainIdRequired" xml:space="preserve">
     <value>ID домена должен быть положительным числом.</value>
+  </data>
+  <data name="AutoRenewValueRequired" xml:space="preserve">
+    <value>Значение автопродления обязательно: передайте true или false.</value>
+  </data>
+  <data name="RegistrarLockValueRequired" xml:space="preserve">
+    <value>Значение блокировки регистратора обязательно: передайте true или false.</value>
+  </data>
+  <data name="WhoisPrivacyValueRequired" xml:space="preserve">
+    <value>Значение защиты WHOIS обязательно: передайте true или false.</value>
   </data>
   <data name="DomainEppCodeRequired" xml:space="preserve">
     <value>Код EPP/авторизации должен содержать не менее 6 символов.</value>
@@ -536,9 +544,6 @@
   <data name="PaymentMethodRequired" xml:space="preserve">
     <value>Выберите способ оплаты.</value>
   </data>
-  <data name="PaymentAttemptRequired" xml:space="preserve">
-    <value>Начните оплату заново.</value>
-  </data>
   <data name="PlaceOrderItemsRequired" xml:space="preserve">
     <value>Добавьте в заказ хотя бы один товар.</value>
   </data>
@@ -566,14 +571,14 @@
   <data name="GatewayModuleRequired" xml:space="preserve">
     <value>Выберите платёжный шлюз.</value>
   </data>
+  <data name="ConsentTextVersionInvalid" xml:space="preserve">
+    <value>Версия текста согласия обязательна, не более {0} символов.</value>
+  </data>
   <data name="ReturnUrlRequired" xml:space="preserve">
     <value>Необходим адрес возврата.</value>
   </data>
   <data name="ReturnUrlInvalid" xml:space="preserve">
     <value>Адрес возврата должен быть абсолютным адресом http или https.</value>
-  </data>
-  <data name="PaymentIntentIdRequired" xml:space="preserve">
-    <value>Необходим идентификатор платёжного намерения.</value>
   </data>
   <data name="InvitationTokenRequired" xml:space="preserve">
     <value>Необходим токен приглашения.</value>
@@ -1295,9 +1300,6 @@
   <data name="InvoiceStatusInvalid" xml:space="preserve">
     <value>Статус должен быть одним из известных статусов счёта.</value>
   </data>
-  <data name="PaymentMethodIdRequired" xml:space="preserve">
-    <value>Укажите сохранённый способ оплаты.</value>
-  </data>
   <data name="ClientNewEmailInvalid" xml:space="preserve">
     <value>Укажите корректный новый адрес электронной почты.</value>
   </data>
@@ -1381,5 +1383,86 @@
   </data>
   <data name="IntegrationFieldExpectValue" xml:space="preserve">
     <value>непустое значение</value>
+  </data>
+  <data name="CardConsentRequired" xml:space="preserve">
+    <value>Подтвердите согласие на списания с сохранённого способа оплаты по вашим счетам.</value>
+  </data>
+  <data name="StoredChargeSessionIdRequired" xml:space="preserve">
+    <value>Укажите сеанс сохранения.</value>
+  </data>
+  <data name="CardConsentIdInvalid" xml:space="preserve">
+    <value>Укажите согласие.</value>
+  </data>
+  <data name="StoredChargeInvalid" xml:space="preserve">
+    <value>Укажите списание и чем оно закончилось.</value>
+  </data>
+  <data name="InvoicePaymentClaimStatusInvalid" xml:space="preserve">
+    <value>Статус должен быть одним из известных статусов платёжной заявки.</value>
+  </data>
+  <data name="PluginVersionRequired" xml:space="preserve">
+    <value>Версия плагина обязательна.</value>
+  </data>
+  <data name="PluginVersionInvalid" xml:space="preserve">
+    <value>Версия плагина должна быть семантической, например 1.2.3.</value>
+  </data>
+  <data name="PluginRegistrySearchTooLong" xml:space="preserve">
+    <value>Текст поиска может содержать не более 100 символов.</value>
+  </data>
+  <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
+    <value>Выберите допустимую категорию.</value>
+  </data>
+  <data name="InvoiceItemIdInvalid" xml:space="preserve">
+    <value>Укажите корректную позицию счёта.</value>
+  </data>
+  <data name="RenewalWindowInvalid" xml:space="preserve">
+    <value>Выберите период продления: 30, 60 или 90 дней.</value>
+  </data>
+  <data name="CreditAdjustmentDirectionInvalid" xml:space="preserve">
+    <value>Выберите, добавить кредит или списать его.</value>
+  </data>
+  <data name="CreditAdjustmentAmountInvalid" xml:space="preserve">
+    <value>Сумма должна быть больше нуля.</value>
+  </data>
+  <data name="CreditAdjustmentReasonRequired" xml:space="preserve">
+    <value>Укажите причину корректировки.</value>
+  </data>
+  <data name="CreditAdjustmentReasonTooLong" xml:space="preserve">
+    <value>Причина должна быть не длиннее 500 символов.</value>
+  </data>
+  <data name="CreditTopUpAmountInvalid" xml:space="preserve">
+    <value>Сумма должна быть больше нуля.</value>
+  </data>
+  <data name="CreditNoteIdInvalid" xml:space="preserve">
+    <value>Укажите существующую кредит-ноту.</value>
+  </data>
+  <data name="CreditNoteMethodInvalid" xml:space="preserve">
+    <value>Выберите, куда пойдёт кредит-нота: на баланс клиента или возвратом через платёжный шлюз.</value>
+  </data>
+  <data name="CreditNoteStatusInvalid" xml:space="preserve">
+    <value>Выберите допустимый статус кредит-ноты.</value>
+  </data>
+  <data name="CreditNoteReasonRequired" xml:space="preserve">
+    <value>Укажите причину кредит-ноты.</value>
+  </data>
+  <data name="CreditNoteReasonTooLong" xml:space="preserve">
+    <value>Причина должна быть не длиннее 500 символов.</value>
+  </data>
+  <data name="CreditNoteVoidReasonRequired" xml:space="preserve">
+    <value>Укажите причину аннулирования кредит-ноты.</value>
+  </data>
+  <data name="CreditNoteItemsRequired" xml:space="preserve">
+    <value>Добавьте в кредит-ноту хотя бы одну строку.</value>
+  </data>
+  <data name="CreditNoteItemsTooMany" xml:space="preserve">
+    <value>В кредит-ноте может быть не более 100 строк.</value>
+  </data>
+  <data name="CreditNoteItemDescriptionInvalid" xml:space="preserve">
+    <value>У каждой строки должно быть описание не длиннее 500 символов.</value>
+  </data>
+  <data name="CreditNoteItemPriceInvalid" xml:space="preserve">
+    <value>У каждой строки цена должна быть больше нуля.</value>
+  </data>
+  <data name="CreditNoteItemQuantityInvalid" xml:space="preserve">
+    <value>У каждой строки количество должно быть от 1 до 100000.</value>
   </data>
 </root>

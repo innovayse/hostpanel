@@ -1,5 +1,4 @@
 using System.Globalization;
-using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Domain.Plugins.Events;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
@@ -42,11 +41,11 @@ public sealed class Setting : BaseEntity, IAggregateRoot
     /// <see cref="PluginRemovedEvent"/>. Its stored data is kept.
     /// </summary>
     /// <param name="pluginId">
-    /// The removed plugin's id; must have the plugin id shape (<see cref="PluginIdentifier.IsWellFormed"/>).
+    /// The removed plugin's id; not empty. Its shape is the caller's to check: the use case's validator holds the plugin id rule.
     /// </param>
     /// <param name="removedAt">When the plugin was removed, UTC, read by the caller from its clock.</param>
     /// <returns>A new, unpersisted switch row holding <see cref="IntegrationSettingKeys.DisabledValue"/>.</returns>
-    /// <exception cref="ArgumentException"><paramref name="pluginId"/> breaks the plugin id shape.</exception>
+    /// <exception cref="ArgumentException"><paramref name="pluginId"/> is null, empty or white space.</exception>
     public static Setting CreateSwitchedOffForRemovedPlugin(string pluginId, DateTimeOffset removedAt)
     {
         EnsurePluginId(pluginId);
@@ -75,12 +74,12 @@ public sealed class Setting : BaseEntity, IAggregateRoot
     /// deletes it.
     /// </summary>
     /// <param name="pluginId">
-    /// The removed plugin's id; must have the plugin id shape (<see cref="PluginIdentifier.IsWellFormed"/>) and name this
-    /// row's plugin.
+    /// The removed plugin's id; not empty, and it must name this row's plugin. The plugin id rule itself is checked by the
+    /// use case's validator, so the domain does not depend on the plugin packaging package.
     /// </param>
     /// <param name="removedAt">When the plugin was removed, UTC, read by the caller from its clock.</param>
     /// <exception cref="ArgumentException">
-    /// <paramref name="pluginId"/> breaks the plugin id shape, or this row is not that plugin's switch.
+    /// <paramref name="pluginId"/> is empty, or this row is not that plugin's switch.
     /// </exception>
     public void SwitchOffRemovedPlugin(string pluginId, DateTimeOffset removedAt)
     {
@@ -94,10 +93,10 @@ public sealed class Setting : BaseEntity, IAggregateRoot
     /// purge of the plugin's stored data are one unit: the event is written to the outbox in the save that stores
     /// the request's audit line.
     /// </summary>
-    /// <param name="pluginId">The plugin whose data is purged; must have the plugin id shape and name this row's plugin.</param>
+    /// <param name="pluginId">The plugin whose data is purged; not empty, and it must name this row's plugin.</param>
     /// <param name="requestedAt">When the operator asked for the purge, UTC, read by the caller from its clock.</param>
     /// <exception cref="ArgumentException">
-    /// <paramref name="pluginId"/> breaks the plugin id shape, or this row is not that plugin's switch.
+    /// <paramref name="pluginId"/> is empty, or this row is not that plugin's switch.
     /// </exception>
     public void RequestDataPurge(string pluginId, DateTimeOffset requestedAt)
     {
@@ -105,9 +104,9 @@ public sealed class Setting : BaseEntity, IAggregateRoot
         AddDomainEvent(new PluginDataPurgeRequestedEvent(pluginId, requestedAt));
     }
 
-    /// <summary>Refuses a plugin id without the plugin id shape, or a row that is not that plugin's switch.</summary>
+    /// <summary>Refuses an empty plugin id, or a row that is not that plugin's switch.</summary>
     /// <param name="pluginId">The candidate plugin id.</param>
-    /// <exception cref="ArgumentException">The id breaks the plugin id shape, or this row is another setting.</exception>
+    /// <exception cref="ArgumentException">The id is empty, or this row is another setting.</exception>
     private void EnsureSwitchOf(string pluginId)
     {
         EnsurePluginId(pluginId);
@@ -121,16 +120,16 @@ public sealed class Setting : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
-    /// Refuses an id without the plugin id shape, before it can name a key or select rows. Only the shape: a plugin
-    /// installed under an id that was reserved later must still be switched off and purged when it is removed.
+    /// Refuses an empty id, before it can name a key. The plugin id rule (shape and length) is not repeated here: the
+    /// domain does not reference the plugin packaging package, and the use cases that reach this code
+    /// (<c>RemovePlugin</c>, <c>PurgePluginData</c>) refuse a malformed id in their validators before a handler runs.
+    /// Only the shape is ever checked there, never the reserved ids: a plugin installed under an id that was reserved
+    /// later must still be switched off and purged when it is removed.
     /// </summary>
     /// <param name="pluginId">The candidate plugin id.</param>
-    /// <exception cref="ArgumentException"><paramref name="pluginId"/> breaks the plugin id shape.</exception>
+    /// <exception cref="ArgumentException"><paramref name="pluginId"/> is null, empty or white space.</exception>
     private static void EnsurePluginId(string pluginId)
     {
-        if (!PluginIdentifier.IsWellFormed(pluginId))
-        {
-            throw new ArgumentException("The plugin id breaks the plugin id shape.", nameof(pluginId));
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
     }
 }

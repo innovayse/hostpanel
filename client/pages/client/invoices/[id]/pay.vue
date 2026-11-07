@@ -26,25 +26,37 @@
 
     <UiSplit v-else ratio="start-wide">
       <template #start>
-        <ClientInvoicesPayPanel :invoice-id="invoiceId" />
+        <UiCard v-if="optionsError && !isBankTransferPending" data-testid="invoice-pay-options-error">
+          <UiStack gap="md">
+            <UiAlert variant="error">{{ optionsError }}</UiAlert>
+            <UiStack direction="row" gap="none">
+              <UiButton variant="outline" :loading="retrying" data-testid="invoice-pay-options-retry" @click="retryOptions">
+                {{ $t('invoicePay.retry') }}
+              </UiButton>
+            </UiStack>
+          </UiStack>
+        </UiCard>
+        <ClientInvoicesPayPanel v-else :invoice-id="invoiceId" />
       </template>
       <template #end>
         <ClientInvoicesPaySummary :invoice="invoice" />
       </template>
     </UiSplit>
 
-    <UiAlert variant="warning" :icon-size="14" data-testid="invoice-pay-security">{{ $t('invoicePay.securityNotice') }}</UiAlert>
+    <UiAlert v-if="showSecurityNotice" variant="warning" :icon-size="14" data-testid="invoice-pay-security">{{ $t('invoicePay.securityNotice') }}</UiAlert>
   </UiStack>
 </template>
 
 <script setup lang="ts">
 /**
- * Invoice payment page: the payment form beside the invoice recap. The invoice, the saved
- * payment methods and the available gateways are read through the invoice payment store, which
- * also owns the in-flight flag, the success flag and the refusal sentence.
+ * Invoice payment page: the hosted-gateway payment panel beside the invoice recap. The invoice and
+ * the available gateways are read through the invoice payment store, which also owns the in-flight
+ * flag and the refusal sentence. A gateway list that could not be read shows an error with a retry,
+ * which is not the same as "no gateway is enabled" (the panel says that itself).
  */
 import { CLIENT_INVOICES_PATH, clientInvoicePath } from '~/constants/clientRoutes'
 import { AlertCircle, CheckCircle } from 'lucide-vue-next'
+import { storeToRefs } from 'pinia'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
 import { isInvoicePaid } from '~/utils/invoice'
 
@@ -64,13 +76,44 @@ const invoiceId = route.params.id as string
 const paymentStore = useInvoicePaymentStore()
 paymentStore.reset()
 
-// Invoice, saved payment methods and gateways are read in parallel. The first plugin-backed
+// Invoice and gateways are read in parallel. The first plugin-backed
 // gateway (not a fixed module id) is the hosted one, so a second gateway plugin is not ignored.
+// The bank details are read after the invoice, because only an invoice that waits for a transfer has any.
 /** Loading flag of the data this page reads. */
 const { pending } = await useAsyncData(
   `client-invoice-pay-${invoiceId}`,
-  () => Promise.all([paymentStore.loadInvoice(invoiceId), paymentStore.loadPaymentOptions()])
+  () => Promise.all([
+    paymentStore.loadInvoice(invoiceId).then(() => paymentStore.loadBankTransfer(invoiceId)),
+    paymentStore.loadPaymentOptions()
+  ])
 )
+
+/** The gateway-list refusal and the hosted gateway, if any. */
+const { optionsError, hostedGatewayModule } = storeToRefs(paymentStore)
+
+/** Whether the gateway list is being read again after a failed read. */
+const retrying = ref(false)
+
+/**
+ * Reads the gateway list again after a failed read.
+ *
+ * @returns Resolves when the read has ended.
+ */
+const retryOptions = async (): Promise<void> => {
+  retrying.value = true
+  try {
+    await paymentStore.loadPaymentOptions()
+  } finally {
+    retrying.value = false
+  }
+}
+
+/** Whether the invoice already waits for a bank transfer, so the payment choices and the gateway notice do not apply. */
+const isBankTransferPending = computed(() => invoice.value?.isBankTransferPending === true)
+
+/** The security notice describes the hosted gateway's page, so it is shown only when one exists and the payer can still use it. */
+const showSecurityNotice = computed(() =>
+  !pending.value && invoice.value !== null && !isInvoicePaid(invoice.value) && !isBankTransferPending.value && hostedGatewayModule.value !== null)
 
 /** The invoice being paid; null until loaded or after a failed read. */
 const invoice = computed(() => paymentStore.invoice)

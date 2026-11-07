@@ -90,4 +90,62 @@ public enum PluginManifestRule
     /// appears in a version 1 manifest.
     /// </summary>
     HostAccessUnknown = 24,
+
+    /// <summary>
+    /// A view document holds a <c>visibleWhen</c>, or a follow-up <c>until</c>, that is not a condition: an object with a
+    /// GET <c>route</c>, a dotted <c>field</c> and an <c>equals</c> value or list of 1 to
+    /// <c>PluginViews.MaxConditionValues</c> values; or a <c>visibleWhen</c> on something that is not a block.
+    /// </summary>
+    ViewConditionInvalid = 25,
+
+    /// <summary>
+    /// A view document holds a <c>followUp</c> that is not <c>{ refresh, until }</c> on an action block or a form's
+    /// <c>submit</c>, whose <c>refresh</c> lists a block id the document does not hold, or a <c>resetOnSuccess</c> that is
+    /// not a boolean in a form's <c>submit</c>.
+    /// </summary>
+    ViewFollowUpInvalid = 26,
+    /// <summary>A callback route in <c>api.callbacks</c> declares a permission or streams; a callback has no signed-in caller and one reply.</summary>
+    CallbackInvalid = 27,
+
+    /// <summary>The manifest names an <c>icon</c> file the package does not hold.</summary>
+    IconMissing = 28,
+
+    /// <summary>
+    /// The manifest <c>icon</c> is not a package-relative <c>.svg</c> or <c>.png</c> path, is over the size limit, is not a
+    /// real PNG, or is an SVG that is not well-formed or carries script, event handlers or external references.
+    /// </summary>
+    IconInvalid = 29,
+
+    /// <summary>The manifest declares the <c>endpoints</c> capability, but the entry type does not implement <c>IPluginEndpoints</c>.</summary>
+    EndpointsNotImplemented = 30,
+
+    /// <summary>A page declares a <c>layout</c> that is not one of <c>PluginPageLayouts.All</c>, or any <c>layout</c> on an admin page.</summary>
+    PageLayoutUnknown = 31,
+
+    /// <summary>A view document holds a <c>split</c> that does not have exactly two panes of blocks, or that nests inside a split.</summary>
+    ViewSplitInvalid = 32,
+
+    /// <summary>
+    /// A view document holds a <c>preview</c> whose <c>sources</c> or <c>size</c> break the shape, or that is shown anywhere
+    /// but on a client page, the one place the host narrows the frames a document may load.
+    /// </summary>
+    ViewPreviewInvalid = 33,
+
+    /// <summary>
+    /// A view document holds a <c>bodySource</c> that breaks its shape, sits outside an action block, on an action with no
+    /// id, that calls no method with a body, whose label is read from another route, or outside the client area.
+    /// </summary>
+    ViewActionBodyInvalid = 34,
+
+    /// <summary>
+    /// A view document holds a preview <c>selection</c> or a chat <c>selection</c> that breaks its shape, or a chat that
+    /// asks for a selection in a document whose preview offers none.
+    /// </summary>
+    ViewSelectionInvalid = 35,
+
+    /// <summary>
+    /// A view document gives one <c>id</c> to more than one block, at any depth. The panel keys a block's refresh, its
+    /// follow-up watch and its render on the id, so blocks sharing one would act as a single block.
+    /// </summary>
+    ViewBlockIdRepeated = 36,
 }

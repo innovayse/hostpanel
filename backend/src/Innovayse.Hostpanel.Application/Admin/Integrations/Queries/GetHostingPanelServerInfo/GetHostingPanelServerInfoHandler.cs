@@ -3,12 +3,13 @@ using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
-using Innovayse.SDK.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Application.Admin.Integrations.Queries.GetHostingPanelServerInfo;
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
 /// <summary>Handles <see cref="GetHostingPanelServerInfoQuery"/>: fetches live hosting panel server status, cached for 5 minutes.</summary>
 public sealed class GetHostingPanelServerInfoHandler
 {
@@ -124,3 +125,4 @@ public sealed class GetHostingPanelServerInfoHandler
         }
     }
 }
+#pragma warning restore CS0618

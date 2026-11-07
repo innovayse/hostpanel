@@ -1,5 +1,7 @@
 ---
 title: Domains
+description: "Manage your domains in the Hostpanel client portal: nameservers, lock, transfer code and privacy, renewal, contact details and transfers in."
+keywords: "client domains, nameservers, domain renewal, domain transfer, domain lock"
 ---
 
 # Domains

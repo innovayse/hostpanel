@@ -1,6 +1,6 @@
 /**
- * Endpoints for money: invoices under `/api/portal/client/invoices`, the saved payment
- * methods at `/api/portal/client/payment-methods`, and ordering under `/api/portal/order`.
+ * Endpoints for money: invoices under `/api/portal/client/invoices`, the gateways an invoice
+ * or order may be paid through, and ordering under `/api/portal/order`.
  *
  * Every function returns a plain `Promise`. Nothing here is cached or held.
  *
@@ -8,13 +8,14 @@
  */
 
 import { apiFetch } from '~/composables/useApi'
+import type { BankTransferDetails } from '~/types/banktransferdetails'
+import type { ClientCredit } from '~/types/clientcredit'
+import type { ClientCreditNote } from '~/types/clientcreditnote'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { GatewayCompletion } from '~/types/gatewaycompletion'
 import type { GatewayMethod } from '~/types/gatewaymethod'
-import type { PaymentMethod, PaymentMethodWire } from '~/types/payment'
 import type { PlaceOrderResult } from '~/types/placeorderresult'
 import { PaymentTarget } from '~/types/paymenttarget'
-import { toPaymentMethod } from '~/utils/paymentMethodMapper'
 import { HttpMethod } from '~/types/httpmethod'
 
 /**
@@ -34,17 +35,6 @@ export const useBillingApi = () => {
     apiFetch<ClientInvoice>(`/api/portal/client/invoices/${id}`)
 
   /**
-   * Reads the client's saved cards and bank accounts as a one-shot call.
-   *
-   * @returns Every saved payment method on the account, mapped from the API's camelCase to {@link PaymentMethod}.
-   * @throws Whatever `apiFetch` throws.
-   */
-  const fetchPaymentMethods = async (): Promise<PaymentMethod[]> => {
-    const wire = await apiFetch<PaymentMethodWire[]>('/api/portal/client/payment-methods')
-    return Array.isArray(wire) ? wire.map(toPaymentMethod) : []
-  }
-
-  /**
    * Reads the gateways an order may be paid through.
    *
    * Note the path: this is under `/api/portal/order`, not `/api/portal/client`, because the
@@ -55,45 +45,6 @@ export const useBillingApi = () => {
    */
   const fetchGatewayMethods = (): Promise<GatewayMethod[]> =>
     apiFetch<GatewayMethod[]>('/api/portal/order/payment-methods')
-
-  /**
-   * Pays an invoice with a saved payment method.
-   *
-   * @param invoiceId - Invoice to pay.
-   * @param payMethodId - Saved payment method to charge.
-   * @param attemptId - The payment attempt, new for each pay action and the same on a retry of it,
-   * so a retried request is one charge and a new action after a decline is a new one.
-   * @returns Whatever the endpoint answers with.
-   * @throws Whatever `apiFetch` throws: a declined card included.
-   */
-  const payInvoice = (invoiceId: string, payMethodId: string | number, attemptId: string): Promise<unknown> =>
-    apiFetch(`/api/portal/client/invoices/${invoiceId}/pay`, {
-      method: HttpMethod.Post,
-      body: { paymentMethodId: payMethodId, attemptId }
-    })
-
-  /**
-   * Makes a saved payment method the account default.
-   *
-   * @param id - Payment method to promote.
-   * @returns Whatever the endpoint answers with.
-   * @throws Whatever `apiFetch` throws.
-   */
-  const setDefaultPaymentMethod = (id: string): Promise<unknown> =>
-    apiFetch(`/api/portal/client/payment-methods/${id}`, {
-      method: HttpMethod.Put,
-      body: { setAsDefault: true }
-    })
-
-  /**
-   * Removes a saved payment method.
-   *
-   * @param id - Payment method to delete.
-   * @returns Whatever the endpoint answers with.
-   * @throws Whatever `apiFetch` throws.
-   */
-  const removePaymentMethod = (id: string): Promise<unknown> =>
-    apiFetch(`/api/portal/client/payment-methods/${id}`, { method: HttpMethod.Delete })
 
   /**
    * Places an order, creating the order and its invoice on the backend.
@@ -107,23 +58,6 @@ export const useBillingApi = () => {
     apiFetch<PlaceOrderResult>('/api/portal/order/create', {
       method: HttpMethod.Post,
       body: order
-    })
-
-  /**
-   * Opens a Stripe PaymentIntent for an order.
-   *
-   * @param orderId - Order to charge.
-   * @param paymentToken - The order's payment token, returned when it was placed.
-   * @returns The client secret Stripe.js needs to confirm the card.
-   * @throws Whatever `apiFetch` throws.
-   */
-  const createOrderPaymentIntent = (
-    orderId: string | number,
-    paymentToken: string
-  ): Promise<{ clientSecret: string }> =>
-    apiFetch<{ clientSecret: string }>(`/api/portal/order/${orderId}/create-payment-intent`, {
-      method: HttpMethod.Post,
-      body: { paymentToken }
     })
 
   /**
@@ -194,23 +128,61 @@ export const useBillingApi = () => {
     )
 
   /**
-   * Confirms a card payment against an order after the gateway has authorised it.
+   * Chooses manual bank transfer for an invoice: the invoice waits for staff to confirm the money, and the answer carries
+   * the bank details and the reference to write on the transfer. Choosing it again answers the same details.
    *
-   * @param orderId - Order the payment belongs to.
-   * @param body - Whatever the gateway handed back for confirmation.
-   * @param paymentToken - The order's payment token, returned when it was placed.
-   * @returns Whatever the endpoint answers with.
+   * @param invoiceId - Invoice to pay by bank transfer.
+   * @returns The bank details and the reference.
    * @throws Whatever `apiFetch` throws.
    */
-  const confirmOrderPayment = (
-    orderId: string | number,
-    body: Record<string, unknown>,
-    paymentToken: string
-  ): Promise<unknown> =>
-    apiFetch(`/api/portal/order/${orderId}/confirm-payment`, {
+  const selectBankTransfer = (invoiceId: string | number): Promise<BankTransferDetails> =>
+    apiFetch<BankTransferDetails>(`/api/portal/client/invoices/${invoiceId}/bank-transfer`, {
       method: HttpMethod.Post,
-      body: { ...body, paymentToken }
+      body: {}
     })
+
+  /**
+   * Reads the bank details and the reference of the transfer waiting on an invoice.
+   *
+   * @param invoiceId - Invoice the transfer waits on.
+   * @returns The bank details and the reference.
+   * @throws Whatever `apiFetch` throws; a refusal when no transfer waits.
+   */
+  const fetchBankTransfer = (invoiceId: string | number): Promise<BankTransferDetails> =>
+    apiFetch<BankTransferDetails>(`/api/portal/client/invoices/${invoiceId}/bank-transfer`)
+
+  /**
+   * Reads the signed-in client's own credit: the balance, the limits of one top-up and a page of the history.
+   *
+   * @param page - 1-based page of the history.
+   * @param pageSize - History lines per page.
+   * @returns The credit.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const fetchCredit = (page = 1, pageSize = 25): Promise<ClientCredit> =>
+    apiFetch<ClientCredit>('/api/portal/client/credit', { query: { page, pageSize } })
+
+  /**
+   * Raises the top-up invoice the client pays to add funds. The balance rises when that invoice is paid, through the same
+   * payment pages as any other invoice.
+   *
+   * @param amount - The amount to add, in the client's billing currency.
+   * @returns The id of the new top-up invoice.
+   * @throws Whatever `apiFetch` throws; a refusal when the amount is outside the limits.
+   */
+  const createCreditTopUp = (amount: number): Promise<number> =>
+    apiFetch<number>('/api/portal/client/credit/top-ups', { method: HttpMethod.Post, body: { amount } })
+
+  /**
+   * Pays part or all of an invoice from the client's credit balance.
+   *
+   * @param invoiceId - Invoice to apply credit to.
+   * @param amount - The credit to apply, in the invoice currency.
+   * @returns Nothing.
+   * @throws Whatever `apiFetch` throws; a refusal when the balance is short or the invoice owes less.
+   */
+  const applyInvoiceCredit = (invoiceId: string | number, amount: number): Promise<undefined> =>
+    apiFetch<undefined>(`/api/portal/client/invoices/${invoiceId}/credit`, { method: HttpMethod.Post, body: { amount } })
 
   /**
    * Reads an invoice as a PDF.
@@ -225,19 +197,43 @@ export const useBillingApi = () => {
   const fetchInvoicePdf = (id: string): Promise<Blob> =>
     apiFetch<Blob>(`/api/portal/client/invoices/${encodeURIComponent(id)}/pdf`)
 
+  /**
+   * Reads the credit notes issued to the signed-in client, newest first. A credit note is not invoice credit: it is a numbered
+   * document that reverses part of an invoice that was already paid.
+   *
+   * @returns The notes; drafts are never sent to a client.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const fetchCreditNotes = (): Promise<ClientCreditNote[]> =>
+    apiFetch<ClientCreditNote[]>('/api/portal/client/credit-notes')
+
+  /**
+   * Reads one of the client's credit notes as a PDF, printed in the client's language.
+   *
+   * No `responseType` is set, for the reason {@link fetchInvoicePdf} gives: the PDF arrives as a `Blob` while a refusal still arrives
+   * as parsed JSON.
+   *
+   * @param id - Credit note id.
+   * @returns The PDF.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const fetchCreditNotePdf = (id: number): Promise<Blob> =>
+    apiFetch<Blob>(`/api/portal/client/credit-notes/${encodeURIComponent(String(id))}/pdf`)
+
   return {
     fetchInvoice,
     fetchInvoicePdf,
-    fetchPaymentMethods,
     fetchGatewayMethods,
     createOrder,
-    createOrderPaymentIntent,
     startOrderGatewayPayment,
     startInvoiceGatewayPayment,
-    completeGatewayPayment,
-    payInvoice,
-    setDefaultPaymentMethod,
-    removePaymentMethod,
-    confirmOrderPayment
+    selectBankTransfer,
+    fetchBankTransfer,
+    fetchCredit,
+    createCreditTopUp,
+    applyInvoiceCredit,
+    fetchCreditNotes,
+    fetchCreditNotePdf,
+    completeGatewayPayment
   }
 }

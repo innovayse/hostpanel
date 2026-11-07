@@ -33,6 +33,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Fixtures\model-diff-baseline.txt" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The message store schema Wolverine 5.41 created (WolverineStartupTests starts the current version on it). -->
+    <None Include="Fixtures\wolverine-5.41-schema.sql" CopyToOutputDirectory="PreserveNewest" />
     <!-- Caps how many test classes run at once: each starts an API host, and starting one compiles Wolverine's handler code, which takes gigabytes of native memory for a moment (issue 373). -->
     <None Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

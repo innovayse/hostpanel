@@ -14,6 +14,8 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import { useDocsGuide } from '@/composables/useDocsGuide'
+import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -26,6 +28,8 @@ import { useSettingsStore } from '@/stores/settings'
 import type { EmailTemplate, EmailTemplateContent, EmailTemplateGroup } from '@/types/emailtemplate'
 
 const { t } = useI18n()
+/** Link to the docs guide for this screen, or null when docsUrl is not configured. */
+const { guideUrl } = useDocsGuide()
 
 /** Settings store: holds the templates and the load state. */
 const store = useSettingsStore()
@@ -95,7 +99,11 @@ onMounted(() => store.fetchEmailTemplates())
 
 <template>
   <UiStack>
-    <UiPageHeader :title="t('settings.emailTemplates.emailTemplates')" data-testid="email-templates-header" />
+    <UiPageHeader :title="t('settings.emailTemplates.emailTemplates')" data-testid="email-templates-header">
+      <template v-if="guideUrl" #actions>
+        <PageHelpLink :url="guideUrl" />
+      </template>
+    </UiPageHeader>
 
     <UiErrorState
       v-if="store.error"

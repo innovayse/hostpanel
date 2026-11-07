@@ -350,19 +350,6 @@ export const useDomainsStore = defineStore('domains', () => {
     }
   }
 
-  /**
-   * Reads the account's saved payment methods for the renewal form.
-   *
-   * @returns The methods; an empty list when they could not be read, so the form stays blank.
-   */
-  const fetchPaymentMethods = async () => {
-    try {
-      return await billing.fetchPaymentMethods()
-    } catch {
-      return []
-    }
-  }
-
   // -- Toggles ----------------------------------------------------------------------------
 
   /** Whether an auto-renew change is in flight. */
@@ -627,7 +614,6 @@ export const useDomainsStore = defineStore('domains', () => {
     renewError,
     renewSaving,
     placeRenewal,
-    fetchPaymentMethods,
     autoRenewSaving,
     lockSaving,
     idProtectSaving,

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Slots;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Slots;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 

@@ -11,7 +11,8 @@
     "remove": "Remove",
     "refused": "Refused",
     "staged": "Version {version} staged, applies after restart",
-    "brokenRule": "{id} · broken rule: {rule}"
+    "brokenRule": "{id} · broken rule: {rule}",
+    "updateAvailable": "Update available: {version}"
   },
   "pluginUploader": {
     "dropYourPlugin": "Drop your plugin",
@@ -55,7 +56,10 @@
     "confirmDowngradeTitle": "Install an older version?",
     "confirmDowngradeMessage": "This version is older than the installed one. Downgrading can break data written by the newer version.",
     "forceDowngrade": "Downgrade anyway",
-    "pluginStaged": "Version {version} uploaded and staged. It replaces the installed version after the server restarts."
+    "pluginStaged": "Version {version} uploaded and staged. It replaces the installed version after the server restarts.",
+    "tabInstalled": "Installed",
+    "tabBrowse": "Browse",
+    "registryInstalled": "Plugin installed from the registry."
   },
   "pluginSlotWidgets": {
     "title": "Slot widgets: {plugin}",
@@ -73,6 +77,49 @@
     "purge": "Purge data",
     "purging": "Purging…"
   },
+  "pluginRegistry": {
+    "search": "Search the registry",
+    "searchLabel": "Search",
+    "categoryPlaceholder": "Category",
+    "allCategories": "All categories",
+    "byAuthor": "by {author}",
+    "version": "v{version}",
+    "sdkVersion": "SDK {version}",
+    "verified": "Verified",
+    "install": "Install",
+    "update": "Update to {version}",
+    "installing": "Installing…",
+    "installed": "Installed {version}",
+    "emptyTitle": "No plugins found",
+    "emptyDescription": "Try another search or category.",
+    "total": "{total} plugins",
+    "category": {
+      "Payment": "Payment",
+      "Provisioning": "Provisioning",
+      "Registrar": "Registrar",
+      "App": "App",
+      "Other": "Other"
+    },
+    "pricing": {
+      "Free": "Free",
+      "Paid": "Paid",
+      "Private": "Private"
+    }
+  },
+  "registryTrust": {
+    "title": "Registry trust",
+    "description": "Choose whose plugins this server may install from the registry. Packages must still pass every signature and manifest check.",
+    "label": "Who may be installed",
+    "placeholder": "Choose a trust level",
+    "hint": "A change applies to the next install at once.",
+    "notSeeded": "The {key} setting has not been seeded yet, so it cannot be changed here.",
+    "warning": "Any registry publisher includes publishers nobody has verified. A plugin runs inside the server, so choose this only if you accept that risk.",
+    "options": {
+      "VerifiedOnly": "Verified publishers only",
+      "AnyRegistryPublisher": "Any registry publisher",
+      "OwnKeysOnly": "Packages signed with my own keys only"
+    }
+  },
   "rules": {
     "ManifestVersionUnknown": "The manifest version is not one this server reads.",
     "SdkAssemblyOutdated": "The plugin was built against an older SDK version than this server uses.",
@@ -89,5 +136,11 @@
     "PluginIdInvalid": "The plugin id is not valid: use lowercase words joined by single hyphens.",
     "EndpointsNotDeclared": "The plugin declares routes, pages or slots, but it is not an app plugin and does not declare the endpoints capability.",
     "CapabilityNotAllowed": "The plugin declares a capability this server does not know or its plugin type cannot carry."
+  },
+  "pluginSlot": {
+    "hide": "Hide widget",
+    "unavailable": "This widget could not be shown.",
+    "timedOut": "This widget took too long to load.",
+    "hideNotSeeded": "The setting {key} does not exist on this server, so the widget cannot be hidden."
   }
 }

@@ -33,6 +33,7 @@ const loadHandler = async (fullPath: string): Promise<Handler> => {
   vi.stubGlobal('useRouter', () => ({ currentRoute: { value: { fullPath, path: fullPath.split('?')[0] } } }))
   vi.stubGlobal('useCookie', () => authed)
   vi.stubGlobal('navigateTo', navigateToMock)
+  /** The auth guard plugin, imported after the Nuxt globals are stubbed. */
   const plugin = (await import('~/plugins/auth-guard')).default as unknown as () => { provide: { handleAuthExpired: Handler } }
   return plugin().provide.handleAuthExpired
 }

@@ -140,6 +140,17 @@ public sealed class RateLimitOptions
     public RateLimitTierOptions PluginHeavy { get; set; } = new() { PermitLimit = 6, WindowSeconds = 60 };
 
     /// <summary>
+    /// Gets or sets the tier for <see cref="Constants.RateLimitPolicies.PluginCallback"/>: the public callback door of the
+    /// plugins. 120 requests a minute for one caller address.
+    /// </summary>
+    /// <remarks>
+    /// Counted per caller address only, over every plugin and every path (declared or not), because the caller has no
+    /// account and a key made from the plugin in the URL would let a scanner mint a bucket per invented id. A payment
+    /// gateway retries a failed delivery a handful of times, far below two a second; a flood from one address is what this stops.
+    /// </remarks>
+    public RateLimitTierOptions PluginCallback { get; set; } = new() { PermitLimit = 120, WindowSeconds = 60 };
+
+    /// <summary>
     /// How many streaming plugin routes one caller may hold open at once, per plugin. Three.
     /// </summary>
     /// <remarks>

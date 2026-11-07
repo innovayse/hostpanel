@@ -1,10 +1,11 @@
+using Hostpanel.Sdk.Plugins.Store;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Manifest;
-using Innovayse.SDK.Plugins.StoredCredentials;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -223,7 +224,51 @@ public sealed class PluginActivator
             id,
             PluginActivationOutcome.Activated,
             () => (TContract)ActivatorUtilities.CreateInstance(
-                _serviceProvider, plugin.ImplementationType, (IConfiguration)composed));
+                _serviceProvider, plugin.ImplementationType, ConstructorArguments(plugin.ImplementationType, composed, id)));
+    }
+
+    /// <summary>
+    /// Picks the arguments the plugin's constructor can take from the host: its own configuration and, for a plugin that asks
+    /// for it, its plugin-wide store. <see cref="ActivatorUtilities"/> refuses an argument no constructor parameter accepts,
+    /// so a plugin that takes only <see cref="IConfiguration"/> must not be handed a store it never asked for.
+    /// </summary>
+    /// <param name="implementation">The plugin's implementation type.</param>
+    /// <param name="composed">The configuration composed for this plugin alone.</param>
+    /// <param name="id">The id of the plugin being activated.</param>
+    /// <returns>The arguments to pass; the store is built only when a public constructor takes <see cref="IPluginStore"/>.</returns>
+    private object[] ConstructorArguments(Type implementation, IConfiguration composed, string id)
+    {
+        var arguments = new List<object> { composed };
+
+        if (AcceptsConstructorParameter(implementation, typeof(PluginWideStore)))
+        {
+            arguments.Add(PluginWideStoreOf(id));
+        }
+
+        return [.. arguments];
+    }
+
+    /// <summary>Whether a public constructor of a type has a parameter a given argument type can fill.</summary>
+    /// <param name="implementation">The type whose constructors are read.</param>
+    /// <param name="argument">The type of the argument on offer.</param>
+    /// <returns><see langword="true"/> when some public constructor parameter is assignable from <paramref name="argument"/>.</returns>
+    private static bool AcceptsConstructorParameter(Type implementation, Type argument)
+    {
+        return implementation.GetConstructors()
+            .Any(constructor => constructor.GetParameters().Any(parameter => parameter.ParameterType.IsAssignableFrom(argument)));
+    }
+
+    /// <summary>
+    /// Builds the plugin-wide store a plugin may take as <see cref="IPluginStore"/> in its constructor: bound to this plugin's
+    /// id and to no client, with a data context of its own for every operation, so it reads and writes the same rows as a call store without a client and never a client's rows
+    /// or another plugin's. Its limits are the call store's, and its rows are the ones the plugin purge removes.
+    /// </summary>
+    /// <param name="id">The id of the plugin being activated.</param>
+    /// <returns>The store; a plugin whose constructor does not ask for it simply never sees it.</returns>
+    private PluginWideStore PluginWideStoreOf(string id)
+    {
+        // Its own context per operation, never _db: a store write must not save what the caller has staged there.
+        return new PluginWideStore(id, _serviceProvider.GetRequiredService<IServiceScopeFactory>());
     }
 
     /// <summary>Finds the first capability the manifest declares that the implementation type does not implement.</summary>

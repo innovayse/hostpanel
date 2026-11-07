@@ -208,7 +208,7 @@ export const CLIENT = {
   address: { street: null, address2: null, city: null, state: null, postCode: null, country: 'US' },
   language: null,
   currency: 'USD',
-  paymentMethod: 'stripe',
+  paymentMethod: 'bank_transfer',
   notifications: {
     general: true,
     invoice: true,
@@ -253,21 +253,64 @@ export const INVOICE = {
   tax: 0,
   taxRate: 0,
   credit: 0,
+  isCreditTopUp: false,
+  isBankTransferPending: false,
   paymentMethod: null,
   items: [{ id: 1, description: 'E2E Starter - monthly', unitPrice: 5, quantity: 1, amount: 5 }],
   transactions: [],
 }
 
-/** The saved card the pay page preselects, in the camelCase shape the backend sends. */
-export const SAVED_CARD = {
-  id: 'pm_e2e',
-  type: 'card',
-  brand: 'visa',
-  last4: '4242',
-  expiryMonth: 12,
-  expiryYear: 2030,
-  isDefault: false,
+/** The id of the top-up invoice the stub raises when the client adds funds. */
+export const TOP_UP_INVOICE_ID = 777
+
+/** The credit the signed-in client starts with: a balance, the limits of one top-up and one history line. */
+export const CREDIT = {
+  balance: 20,
+  currency: 'USD',
+  topUpMinimum: 5,
+  topUpMaximum: 100,
+  entries: {
+    items: [{ id: 31, date: '2030-01-02T09:00:00Z', movement: 'AdminAdd', change: 20, balanceAfter: 20, invoiceId: null }],
+    pageNumber: 1,
+    pageSize: 10,
+    totalCount: 1,
+    totalPages: 1,
+  },
 }
+
+/** The credit notes issued to the signed-in client: an applied account credit note and a voided one, newest first. */
+export const CREDIT_NOTES = [
+  {
+    id: 41,
+    number: 'CN-0041',
+    status: 'Applied',
+    method: 'AccountCredit',
+    invoiceId: 12,
+    currency: 'USD',
+    subTotal: 50,
+    taxRate: 20,
+    tax: 10,
+    total: 60,
+    reason: 'Service was down for two days',
+    issuedAt: '2030-01-03T09:00:00Z',
+    voidedAt: null,
+  },
+  {
+    id: 40,
+    number: 'CN-0040',
+    status: 'Voided',
+    method: 'GatewayRefund',
+    invoiceId: 11,
+    currency: 'USD',
+    subTotal: 10,
+    taxRate: 0,
+    tax: 0,
+    total: 10,
+    reason: 'Issued by mistake',
+    issuedAt: '2030-01-01T09:00:00Z',
+    voidedAt: '2030-01-02T09:00:00Z',
+  },
+]
 
 /** Operator settings the storefront reads; a light default and an uploaded light/dark logo pair. */
 export const PUBLIC_SETTINGS = [
@@ -582,6 +625,9 @@ export const ORDER = {
   currency: 'USD',
 }
 
+/** Id of an order whose hosted-gateway payment the stub reports as declined (the placed order, {@link ORDER}, is the paid one). */
+export const ORDER_DECLINED_ID = 302
+
 /** Order raised by a domain renewal or transfer; the invoice is the unpaid one. */
 export const DOMAIN_ORDER = {
   orderId: 701,
@@ -592,6 +638,56 @@ export const DOMAIN_ORDER = {
 export const GATEWAY_METHODS = [
   { module: 'bank_transfer', displayName: 'Bank transfer' },
 ]
+
+/** The bank details and reference the stub answers once the signed-in client has chosen the bank transfer for {@link INVOICE}. */
+export const BANK_TRANSFER_DETAILS = {
+  invoiceId: 501,
+  reference: 'INV-501',
+  amountDue: 5,
+  currency: 'USD',
+  accountName: 'E2E Hosting LLC',
+  iban: 'AM00 E2E0 0000 0000',
+  swift: 'E2EAAMXX',
+  bankName: 'E2E Bank',
+  instructions: 'Pay within five days.',
+}
+
+/** The details the stub answers when the operator left every bank detail and the instructions empty. */
+export const EMPTY_BANK_TRANSFER_DETAILS = {
+  ...BANK_TRANSFER_DETAILS,
+  accountName: null,
+  iban: null,
+  swift: null,
+  bankName: null,
+  instructions: null,
+}
+
+/** The hosted card gateway the stub adds to the gateway list once a spec enables it (`POST /__e2e/gateways`). */
+export const HOSTED_GATEWAY = { module: 'e2e_card_gateway', displayName: 'E2E Card Gateway' }
+
+/** The address the stub sends the payer to for a hosted gateway page; the offline guard blocks the navigation itself, the request is observable. */
+export const GATEWAY_PAGE_URL = 'https://gateway.e2e.test/hosted/session'
+
+/** The card the stub holds as already saved, the default one. */
+export const STORED_CARD_DEFAULT = {
+  consentId: 11, gatewayModuleId: HOSTED_GATEWAY.module, detailsAvailable: true, brand: 'visa', last4: '4242',
+  expiryMonth: 9, expiryYear: 2031, isDefault: true,
+}
+
+/** A second saved card, not the default. */
+export const STORED_CARD_OTHER = {
+  consentId: 12, gatewayModuleId: HOSTED_GATEWAY.module, detailsAvailable: true, brand: 'mastercard', last4: '1111',
+  expiryMonth: 3, expiryYear: 2032, isDefault: false,
+}
+
+/** The session id the stub opens for a save, and the card it adds when that session is completed. */
+export const STORED_SESSION_ID = 'e2e-session-1'
+
+/** The card a completed save session adds. */
+export const STORED_CARD_NEW = {
+  consentId: 13, gatewayModuleId: HOSTED_GATEWAY.module, detailsAvailable: true, brand: 'amex', last4: '0005',
+  expiryMonth: 12, expiryYear: 2033, isDefault: false,
+}
 
 /** The enrolment the stub answers `POST /api/me/2fa/setup` with. */
 export const TWO_FACTOR = {
@@ -848,6 +944,50 @@ export const pluginPage = (address, language) => {
   const text = PLUGIN_TEXTS[language] ?? PLUGIN_TEXTS.en
   const segments = address.split('/').filter(Boolean)
   const base = { pluginId: PLUGIN_ID, externalOrigins: [PLUGIN_ORIGIN] }
+  if (segments.length === 1 && segments[0] === 'workspace') {
+    return {
+      ...base,
+      id: 'workspace',
+      path: '/workspace',
+      title: text.site,
+      layout: 'workspace',
+      frameOrigins: [PLUGIN_FRAME_ORIGIN],
+      view: {
+        schema: 1,
+        blocks: [{
+          kind: 'split',
+          panes: [
+            { blocks: [{ kind: 'text', text: text.site }, { kind: 'chat', send: { method: 'post', path: '/workspace/chat' }, selection: true }] },
+            { blocks: [{ kind: 'preview', id: 'site-preview', sources: [{ id: 'preview', label: text.preview, route: { method: 'get', path: '/workspace/site' }, field: 'previewUrl' }], selection: { sources: ['preview'], route: { method: 'post', path: '/workspace/selection' }, release: { route: { method: 'get', path: '/workspace/site' }, field: 'release' } } }] },
+          ],
+        }],
+      },
+    }
+  }
+  if (segments.length === 1 && segments[0] === 'stage') {
+    // A publish button that sends the version on its label (#940): its label and body come from one read of the state.
+    return {
+      ...base,
+      id: 'stage',
+      path: '/stage',
+      title: text.site,
+      view: {
+        schema: 1,
+        blocks: [
+          { id: 'live', kind: 'stat', label: text.status, source: { route: { method: 'get', path: '/stage/state' }, field: 'live' } },
+          {
+            id: 'publish',
+            kind: 'action',
+            label: text.publish,
+            route: { method: 'post', path: '/stage/publish' },
+            refresh: ['live'],
+            labelSource: { route: { method: 'get', path: '/stage/state' }, field: 'publishLabel' },
+            bodySource: { route: { method: 'get', path: '/stage/state' }, fields: { expectedVersion: 'publishVersion' } },
+          },
+        ],
+      },
+    }
+  }
   if (segments.length === 1 && segments[0] === 'sites') {
     return {
       ...base,
@@ -889,6 +1029,9 @@ export const pluginPage = (address, language) => {
   }
   return null
 }
+
+/** The stub backend's own origin, which the workspace page's preview frames. */
+export const PLUGIN_FRAME_ORIGIN = `http://127.0.0.1:${process.env.E2E_STUB_PORT ?? 5999}`
 
 /** The fake plugin every slot spec uses. */
 export const SLOT_PLUGIN_ID = 'acme-sites'

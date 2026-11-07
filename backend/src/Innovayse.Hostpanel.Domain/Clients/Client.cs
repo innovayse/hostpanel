@@ -81,12 +81,6 @@ public sealed class Client : BaseEntity, IAggregateRoot
     public string? PaymentMethod { get; private set; }
 
     /// <summary>
-    /// Gets the card gateway customer ID this client's saved cards are attached to, or
-    /// <see langword="null"/> until the client has added their first card.
-    /// </summary>
-    public string? CardGatewayCustomerId { get; private set; }
-
-    /// <summary>
     /// Gets the name of the other system this client is linked to (for example a CRM), or
     /// <see langword="null"/> when the client has no external account link. Set and cleared
     /// together with <see cref="ExternalAccountId"/>, so one is never present without the other.
@@ -315,19 +309,6 @@ public sealed class Client : BaseEntity, IAggregateRoot
         }
 
         Currency = normalised;
-    }
-
-    /// <summary>
-    /// Records the card gateway customer this client's saved cards attach to.
-    /// </summary>
-    /// <param name="customerId">The card gateway customer ID.</param>
-    /// <remarks>
-    /// Set once, the first time the client adds a card: a client is never expected to move
-    /// to a different card gateway customer afterward, so this does not need to support clearing it.
-    /// </remarks>
-    public void SetCardGatewayCustomerId(string customerId)
-    {
-        CardGatewayCustomerId = customerId;
     }
 
     /// <summary>

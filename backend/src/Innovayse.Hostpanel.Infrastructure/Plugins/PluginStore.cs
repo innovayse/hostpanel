@@ -3,7 +3,7 @@ using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Infrastructure;
-using Innovayse.SDK.Plugins.Store;
+using Hostpanel.Sdk.Plugins.Store;
 using Microsoft.EntityFrameworkCore;
 
 /*
@@ -48,6 +48,9 @@ internal sealed class PluginStore : IPluginStore
     /// worst case and a few attempts cover a burst; past that the call fails rather than loop.
     /// </summary>
     private const int MaxAttempts = 5;
+
+    /// <summary>The conflict message when an entry exists but its scope row did not at the time it was read.</summary>
+    private const string ScopeOpenedUnderEntryMessage = "The plugin store scope was first written while this write was reading it.";
 
     /// <summary>The plugin whose values these are.</summary>
     private readonly string _pluginId;
@@ -150,12 +153,19 @@ internal sealed class PluginStore : IPluginStore
     /// <param name="ct">Cancellation token.</param>
     /// <returns><see langword="true"/> once the write is saved.</returns>
     /// <exception cref="DomainRuleException">Thrown with <see cref="PluginStoreErrors.QuotaExceeded"/> when the write would pass the quota.</exception>
-    /// <exception cref="ConcurrencyConflictException">Thrown when another write of the scope or the key committed first.</exception>
+    /// <exception cref="ConcurrencyConflictException">Thrown when another write of the scope or the key committed first, including a first write that committed between reading the scope and the entry.</exception>
     private async Task<bool> SetOnceAsync(string key, string value, List<object> tracked, CancellationToken ct)
     {
-        var scope = await LoadScopeAsync(tracked, ct);
+        var (scope, opened) = await LoadScopeAsync(tracked, ct);
         var size = PluginDataEntry.CharsOf(key, value);
         var existing = await Scoped(key).FirstOrDefaultAsync(ct);
+        if (existing is not null && opened)
+        {
+            // The scope row was missing when it was read but the entry is here, so a first writer committed between the
+            // two reads. The empty scope this attempt opened cannot be admitted against; retry from a fresh read.
+            throw new ConcurrencyConflictException(ScopeOpenedUnderEntryMessage);
+        }
+
         if (existing is null)
         {
             // The quota is asked before the row exists, so a refused key is never staged.
@@ -180,17 +190,24 @@ internal sealed class PluginStore : IPluginStore
     /// <param name="tracked">Receives every entity this attempt tracks.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns><see langword="true"/> when the key was there and is now removed; <see langword="false"/> when it was not there.</returns>
-    /// <exception cref="ConcurrencyConflictException">Thrown when another write of the scope committed first.</exception>
+    /// <exception cref="ConcurrencyConflictException">Thrown when another write of the scope committed first, including a first write that committed between reading the scope and the entry.</exception>
     private async Task<bool> RemoveOnceAsync(string key, List<object> tracked, CancellationToken ct)
     {
         // The totals are read before the entry, never after: a removal that commits between the two reads would
         // otherwise pair an entry that is gone with totals that no longer count it. Read in this order, the entry is
         // never older than the totals, and totals that turn stale before the save meet the scope's xmin token.
-        var scope = await LoadScopeAsync(tracked, ct);
+        var (scope, opened) = await LoadScopeAsync(tracked, ct);
         var existing = await Scoped(key).FirstOrDefaultAsync(ct);
         if (existing is null)
         {
             return false;
+        }
+
+        if (opened)
+        {
+            // The scope row was missing when it was read but the entry is here: a first writer committed between the
+            // two reads, so there are no totals to release from. Retry from a fresh read.
+            throw new ConcurrencyConflictException(ScopeOpenedUnderEntryMessage);
         }
 
         tracked.Add(existing);
@@ -203,12 +220,13 @@ internal sealed class PluginStore : IPluginStore
     /// <summary>Loads this store's scope totals tracked, or opens and stages them when the scope has never been written.</summary>
     /// <param name="tracked">Receives the scope row.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The scope row, tracked by the context.</returns>
-    private async Task<PluginDataScope> LoadScopeAsync(List<object> tracked, CancellationToken ct)
+    /// <returns>The scope row, tracked by the context, and whether this call opened it because no row existed.</returns>
+    private async Task<(PluginDataScope Scope, bool Opened)> LoadScopeAsync(List<object> tracked, CancellationToken ct)
     {
         var scope = await _context.PluginDataScopes
             .Where(row => row.PluginId == _pluginId && row.ClientRef == _clientRef)
             .FirstOrDefaultAsync(ct);
+        var opened = scope is null;
         if (scope is null)
         {
             scope = PluginDataScope.Open(_pluginId, _clientRef);
@@ -216,7 +234,7 @@ internal sealed class PluginStore : IPluginStore
         }
 
         tracked.Add(scope);
-        return scope;
+        return (scope, opened);
     }
 
     /// <summary>Stops tracking what one attempt tracked, so neither its changes nor its stale totals outlive it.</summary>

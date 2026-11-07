@@ -1,7 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 
@@ -31,6 +31,12 @@ public sealed class CountingPluginEndpointResolver : IPluginEndpointResolver
     public PluginManifest? Find(string pluginId)
     {
         return _inner.Find(pluginId);
+    }
+
+    /// <inheritdoc/>
+    public PluginManifest? FindForCallback(string pluginId)
+    {
+        return _inner.FindForCallback(pluginId);
     }
 
     /// <inheritdoc/>

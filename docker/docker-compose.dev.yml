@@ -82,6 +82,9 @@ services:
       MigrationSource__AllowPrivateNetworks: "true"
 
       # Sign-in passwords of the accounts DevDataSeeder creates. Published development fixtures, required by the seeder.
+      # An http origin a plugin preview may frame on this machine, such as a local site host; empty means none.
+      PluginPreview__DevelopmentHttpOrigins__0: ${PLUGIN_PREVIEW_DEV_HTTP_ORIGIN:-}
+      PluginPreview__DevelopmentHttpOrigins__1: ${PLUGIN_PREVIEW_DEV_HTTP_ORIGIN_2}
       DevDataSeed__AdminPassword: ${DEV_SEED_ADMIN_PASSWORD:-Admin123!}
       DevDataSeed__ClientPassword: ${DEV_SEED_CLIENT_PASSWORD:-Test@12345}
 
@@ -108,6 +111,9 @@ services:
       DefaultDepartments__BillingEmail: ${DEPARTMENT_BILLING_EMAIL:?DEPARTMENT_BILLING_EMAIL must be set}
       DefaultDepartments__SalesEmail: ${DEPARTMENT_SALES_EMAIL:?DEPARTMENT_SALES_EMAIL must be set}
       DefaultDepartments__GeneralEmail: ${DEPARTMENT_GENERAL_EMAIL:?DEPARTMENT_GENERAL_EMAIL must be set}
+      # The plugin registry the admin panel installs plugins from; off until PLUGIN_REGISTRY_BASE_URL (https) is set.
+      PluginRegistry__Enabled: ${PLUGIN_REGISTRY_ENABLED}
+      PluginRegistry__BaseUrl: ${PLUGIN_REGISTRY_BASE_URL}
       Telegram__BotToken: ${TELEGRAM_BOT_TOKEN}
       Telegram__ChatId: ${TELEGRAM_CHAT_ID}
 
@@ -121,6 +127,10 @@ services:
       Auth__AppName: ${AUTH_APP_NAME:?AUTH_APP_NAME must be set}
       Auth__Authority: ${SSO_URL}
       Auth__PublicAuthority: ${SSO_PUBLIC_URL}
+      # The issuer the provider stamps into its tokens, byte for byte (copy "issuer" from its
+      # /.well-known/openid-configuration, trailing slash included). Back-channel logout checks every logout
+      # token's issuer against it, so without it a provider sign-out never reaches this API.
+      Auth__BearerIssuer: ${SSO_ISSUER:-}
       Auth__ClientId: ${SSO_CLIENT_ID}
       Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET}
 
@@ -232,6 +242,7 @@ services:
       NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_RU}
       NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY: ${NUXT_PUBLIC_PORTAL_CHAT_WEBSITE_TOKEN_HY}
       BILLING_PORTAL_URL: ${BILLING_PORTAL_URL}
+      NUXT_PUBLIC_DOCS_URL: ${DOCS_URL:-}
       # Where the signed-in sessions are kept (the tokens never reach the browser): the API's Redis.
       NUXT_SESSION_REDIS: ${REDIS_CONNECTION}
       # Key the stored sessions are encrypted with; optional here because the dev server runs in development mode.
@@ -241,7 +252,6 @@ services:
       # Extra host names the dev server answers to besides localhost (comma separated); empty when the portal is reached on localhost only.
       NUXT_DEV_ALLOWED_HOSTS: ${CLIENT_DEV_ALLOWED_HOSTS:-}
 
-      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY}
       WATCHPACK_POLLING: ${DEV_FILE_POLLING:?DEV_FILE_POLLING must be set}
       CHOKIDAR_USEPOLLING: ${DEV_FILE_POLLING:?DEV_FILE_POLLING must be set}
     healthcheck:

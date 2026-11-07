@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Integrations.Commands.SaveIntegrationConfig;
+using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Queries.GetIntegration;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -9,8 +10,8 @@ using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
@@ -132,7 +133,10 @@ public sealed class PluginIntegrationSecretTests(IntegrationTestFactory factory)
         using var scope = factory.Services.CreateScope();
         await SaveAsync(scope, registry, id);
 
-        var handler = new GetIntegrationHandler(scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>(), registry);
+        var handler = new GetIntegrationHandler(
+            scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>(),
+            registry,
+            scope.ServiceProvider.GetRequiredService<PluginConnectionReader>());
         var result = await handler.HandleAsync(new GetIntegrationQuery(id), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();

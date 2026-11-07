@@ -10,6 +10,7 @@ import { flushPromises } from '@vue/test-utils'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AuroraCheckout from '~/templates/aurora/pages/AuroraCheckout.vue'
 import GatewayOption from '~/components/checkout/GatewayOption.vue'
+import SaveOption from '~/components/checkout/SaveOption.vue'
 import SubmitHint from '~/components/checkout/SubmitHint.vue'
 import { Permission } from '~/composables/usePermissions'
 import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
@@ -56,22 +57,13 @@ interface FakeCheckout {
   placeOrder: ReturnType<typeof vi.fn>
 }
 
-/** Stand-in for the card form, which mounts the payment provider's element. */
-const StripeCardFormStub = defineComponent({
-  name: 'CheckoutStripeCardForm',
-  setup: (_props, { expose }) => {
-    expose({ confirmPayment: () => Promise.resolve({ id: 'pi_1' }) })
-    return () => h('div', { 'data-testid': 'card-form-stub' })
-  },
-})
-
 /**
  * Rebuilds the three fake stores.
  *
  * @param options Whether the cart is empty and which payment methods the gateway offers.
  * @returns The settable parts of the fake checkout store.
  */
-const buildStores = (options: { empty?: boolean, methods?: { module: string, displayName: string }[] } = {}): FakeCheckout => {
+const buildStores = (options: { empty?: boolean, canSave?: boolean, methods?: { module: string, displayName: string }[] } = {}): FakeCheckout => {
   const placeOrder = vi.fn(async () => ({ kind: CheckoutDestinationKind.Route, target: '/client/order-success' }))
   fakes.cart = reactive({
     isEmpty: options.empty ?? false,
@@ -87,7 +79,9 @@ const buildStores = (options: { empty?: boolean, methods?: { module: string, dis
   /** The sentence the fake store shows above the button. */
   const error = ref('')
   /** The payment method the fake store has selected. */
-  const selectedMethod = ref('paypal')
+  const selectedMethod = ref('example_gateway')
+  /** Whether the fake store offers the renewal-save box. */
+  const canSaveForRenewals = ref(options.canSave ?? false)
   /** Whether the fake store is placing an order. */
   const submitting = ref(false)
   /** The button label the fake store shows while placing an order. */
@@ -99,8 +93,10 @@ const buildStores = (options: { empty?: boolean, methods?: { module: string, dis
     totalLabel: ref('$9.99'),
     submittingLabel,
     submittingHint,
-    paymentMethods: ref(options.methods ?? [{ module: 'stripe', displayName: 'Card' }, { module: 'paypal', displayName: 'PayPal' }]),
+    paymentMethods: ref(options.methods ?? [{ module: 'card_gateway', displayName: 'Card' }, { module: 'example_gateway', displayName: 'Example Gateway' }]),
     selectedMethod,
+    saveForRenewals: ref(false),
+    canSaveForRenewals,
     submitting,
     error,
     itemPrice: () => '$9.99',
@@ -120,7 +116,7 @@ const buildStores = (options: { empty?: boolean, methods?: { module: string, dis
  */
 const mountPage = async () => {
   const Host = defineComponent({ render: () => h(Suspense, null, { default: () => h(AuroraCheckout) }) })
-  const wrapper = mountWithKit(Host, { components: { CheckoutStripeCardForm: StripeCardFormStub, CheckoutGatewayOption: GatewayOption, CheckoutSubmitHint: SubmitHint } })
+  const wrapper = mountWithKit(Host, { components: { CheckoutGatewayOption: GatewayOption, CheckoutSaveOption: SaveOption, CheckoutSubmitHint: SubmitHint } })
   await flushPromises()
   return wrapper
 }
@@ -139,6 +135,20 @@ describe('AuroraCheckout', () => {
     expect(wrapper.find('[data-testid="checkout-empty"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="checkout-browse-hosting"]').attributes('href')).toBe('/hosting')
     expect(wrapper.find('[data-testid="checkout-account"]').exists()).toBe(false)
+  })
+
+  it('offers the renewal-save box, unticked, only when the store says so', async () => {
+    stubAuroraGlobals()
+    buildStores({ canSave: true })
+    const offered = await mountPage()
+
+    expect(offered.find('[data-testid="checkout-save-for-renewals"]').attributes('aria-checked')).toBe('false')
+    expect(offered.text()).toContain('checkout.saveForRenewalsAgreement')
+
+    buildStores({ canSave: false })
+    const hidden = await mountPage()
+
+    expect(hidden.find('[data-testid="checkout-save-for-renewals"]').exists()).toBe(false)
   })
 
   it('gives every guest field a translated placeholder', async () => {
@@ -169,9 +179,9 @@ describe('AuroraCheckout', () => {
     buildStores()
     const wrapper = await mountPage()
 
-    expect(wrapper.find('[data-testid="checkout-method-paypal"]').classes()).toContain('border-ac1')
-    expect(wrapper.find('[data-testid="checkout-method-stripe"]').classes()).not.toContain('border-ac1')
-    expect(wrapper.find('[data-testid="checkout-method-stripe"]').text()).toContain('Card')
+    expect(wrapper.find('[data-testid="checkout-method-example_gateway"]').classes()).toContain('border-ac1')
+    expect(wrapper.find('[data-testid="checkout-method-card_gateway"]').classes()).not.toContain('border-ac1')
+    expect(wrapper.find('[data-testid="checkout-method-card_gateway"]').text()).toContain('Card')
   })
 
   it('says so when no payment method is available', async () => {
@@ -246,7 +256,7 @@ describe('AuroraCheckout', () => {
       const wrapper = await mountPage()
 
       expect(wrapper.find('[data-testid="checkout-permission-denied"]').exists()).toBe(false)
-      expect(wrapper.find('[data-testid="checkout-method-stripe-input"]').attributes('disabled')).toBeUndefined()
+      expect(wrapper.find('[data-testid="checkout-method-card_gateway-input"]').attributes('disabled')).toBeUndefined()
       expect(wrapper.find('[data-testid="checkout-place-order"]').attributes('disabled')).toBeUndefined()
     })
 
@@ -257,21 +267,12 @@ describe('AuroraCheckout', () => {
       const wrapper = await mountPage()
 
       expect(wrapper.find('[data-testid="checkout-permission-denied"]').text()).toContain('checkout.permissionDenied')
-      expect(wrapper.find('[data-testid="checkout-method-stripe-input"]').attributes('disabled')).toBeDefined()
+      expect(wrapper.find('[data-testid="checkout-method-card_gateway-input"]').attributes('disabled')).toBeDefined()
       expect(wrapper.find('[data-testid="checkout-place-order"]').attributes('disabled')).toBeDefined()
 
       await wrapper.find('[data-testid="checkout-place-order"]').trigger('click')
       await flushPromises()
       expect(placeOrder).not.toHaveBeenCalled()
-    })
-
-    it('does not open the card form for a member who may not place orders', async () => {
-      stubAuroraGlobals()
-      fakes.held = Permission.None
-      buildStores().selectedMethod.value = 'stripe'
-      const wrapper = await mountPage()
-
-      expect(wrapper.find('[data-testid="card-form-stub"]').exists()).toBe(false)
     })
 
     it('keeps the checkout open for a signed-in first-time buyer who acts for no account', async () => {

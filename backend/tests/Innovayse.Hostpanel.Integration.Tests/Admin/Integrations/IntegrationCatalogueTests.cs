@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
-using Innovayse.Hostpanel.Domain.Settings;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Integrations;
 
@@ -18,25 +17,17 @@ public sealed class IntegrationCatalogueTests
         }
     }
 
-    /// <summary>The hosted gateway is not a built-in: it is listed through the plugin registry.</summary>
+    /// <summary>The connection test knows every built-in, and a payment plugin is not in the catalogue.</summary>
     [Fact]
-    public void HostedGatewayIsNotBuiltIn()
+    public void ConnectionTestKnowsEveryBuiltInButNoPlugin()
     {
-        IntegrationCatalogue.TryGet(IntegrationSlugs.Inecobank, out _).Should().BeFalse();
-        IntegrationCatalogue.All.Should().NotContainKey(IntegrationSlugs.Inecobank);
-    }
-
-    /// <summary>The connection test knows the hosted gateway as well as every built-in.</summary>
-    [Fact]
-    public void ConnectionTestKnowsTheHostedGatewayAndEveryBuiltIn()
-    {
-        IntegrationCatalogue.TryGetTestable(IntegrationSlugs.Inecobank, out var gateway).Should().BeTrue();
-        gateway.RequiredFields.Should().Equal("gateway_url", "username", "password");
-
         foreach (var slug in IntegrationCatalogue.All.Keys)
         {
             IntegrationCatalogue.TryGetTestable(slug, out _).Should().BeTrue();
         }
+
+        IntegrationCatalogue.TryGet("example-gateway", out _).Should().BeFalse();
+        IntegrationCatalogue.TryGetTestable("example-gateway", out _).Should().BeFalse();
     }
 
     /// <summary>An unknown slug is found by neither lookup.</summary>
@@ -45,15 +36,5 @@ public sealed class IntegrationCatalogueTests
     {
         IntegrationCatalogue.TryGet("no-such-integration", out _).Should().BeFalse();
         IntegrationCatalogue.TryGetTestable("no-such-integration", out _).Should().BeFalse();
-    }
-
-    /// <summary>The form and the completeness check have always differed for the card gateway; the catalogue keeps both.</summary>
-    [Fact]
-    public void StripeKeepsItsFormAndCompletenessRulesApart()
-    {
-        IntegrationCatalogue.TryGet(IntegrationSlugs.Stripe, out var stripe).Should().BeTrue();
-
-        stripe.Fields.Single(f => f.Key == "publishable_key").Required.Should().BeTrue();
-        stripe.RequiredFields.Should().Equal("secret_key");
     }
 }

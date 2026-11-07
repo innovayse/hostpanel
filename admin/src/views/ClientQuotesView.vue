@@ -191,7 +191,7 @@ onMounted(() => fetchQuotes())
       <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientQuotes.loadingQuotes') }}</UiText>
     </UiStack>
 
-    <UiCard v-else>
+    <UiCard v-else class="overflow-x-auto">
       <UiTable
         density="comfortable"
         :empty="store.clientQuotes.length === 0"

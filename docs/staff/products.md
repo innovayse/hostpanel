@@ -1,8 +1,12 @@
 ---
 title: Products and pricing
+description: "Create and price hosting products in Hostpanel: groups, types, billing cycles and prices per currency, plan specification and hidden products."
+keywords: "products, product pricing, billing cycles, plan specification, product groups"
 ---
 
 # Products and pricing <Label type="admin" />
+
+<DemoLink path="/settings/products" />
 
 Opening a product that does not exist returns `PRODUCT_NOT_FOUND`. Ordering a product that is not Active returns `PRODUCT_NOT_AVAILABLE`. If no base currency has been set up, price lookups return `BASE_CURRENCY_NOT_CONFIGURED`.
 

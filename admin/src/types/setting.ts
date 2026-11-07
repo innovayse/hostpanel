@@ -156,6 +156,8 @@ export type SettingKey = (typeof SettingKey)[keyof typeof SettingKey]
 export const PluginSettingKey = {
   /** Whether a production server still installs and loads plugins whose signature is missing or invalid. */
   AllowUnsigned: 'plugins.allow_unsigned',
+  /** Which registry publishers may be installed: a `PluginRegistryTrust` value. */
+  RegistryTrust: 'plugins.registry_trust',
 } as const
 
 /** One of the {@link PluginSettingKey} values. */

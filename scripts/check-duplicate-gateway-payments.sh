@@ -12,12 +12,20 @@
 # A row is a gateway payment when it is not linked to an imported invoice, it took money in, its
 # reference is not empty, its method is not one staff record by hand (Manual, Bank Transfer, Credit
 # Balance, No Charge) and its description is one of the three the gateway paths write
-# ("Invoice #N Payment", "Gateway payment for Invoice #N ...", "Card payment for Invoice #N ...").
+# ("Invoice #N Payment", "Gateway payment for Invoice #N" and "Card payment for Invoice #N", each followed by more text).
 # It cannot tell a payment staff recorded by hand under a gateway's name from the gateway's own, so a
 # row listed here may be a manual entry: if it is, give its reference a distinct value or delete the
 # duplicate, then run this again. An empty result means the migration will run.
 #
+# It works on both schemas. Release 0.4.0 renames every table to PascalCase (columns were PascalCase
+# already), so a 0.3.x database holds "transactions" and "invoices" and a 0.4.0 database holds
+# "Transactions" and "Invoices". The script asks to_regclass which of the two exists and uses that
+# one, so run it before the upgrade (0.3.x names) or after it (0.4.0 names), with the same result.
+#
 # Read-only. Safe to run against production at any time.
+#
+# Exit status: 0 when the query ran, whether or not it found duplicates (read the output for that), and
+# non zero when the SQL failed, because psql stops at the first error (ON_ERROR_STOP).
 #
 # Usage:
 #   scripts/check-duplicate-gateway-payments.sh [container]
@@ -33,7 +41,14 @@ set -eu
 CONTAINER="${1:-hostpanel-db}"
 
 docker exec -i "$CONTAINER" sh -lc \
-  'psql -U "$POSTGRES_USER" -d "${POSTGRES_DB}" -X -q -f -' <<'SQL'
+  'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "${POSTGRES_DB}" -X -q -f -' <<'SQL'
+-- Pick the table names the database has: PascalCase from 0.4.0, snake_case before it. \gset stores
+-- the answers as psql variables, and :tx and :inv paste them in as identifiers.
+SELECT
+  CASE WHEN to_regclass('"Transactions"') IS NOT NULL THEN '"Transactions"' ELSE 'transactions' END AS tx,
+  CASE WHEN to_regclass('"Invoices"') IS NOT NULL THEN '"Invoices"' ELSE 'invoices' END AS inv
+\gset
+
 SELECT
   t."PaymentMethod",
   t."TransactionId",
@@ -41,14 +56,14 @@ SELECT
   string_agg(t."Id"::text, ', ' ORDER BY t."Id") AS "Ids",
   min(t."Date")                             AS "FirstDate",
   max(t."Date")                             AS "LastDate"
-FROM "Transactions" AS t
+FROM :tx AS t
 WHERE t."TransactionId" <> ''
   AND t."AmountIn" > 0
   AND t."PaymentMethod" NOT IN ('Manual', 'Bank Transfer', 'Credit Balance', 'No Charge')
   AND (t."Description" LIKE 'Invoice #% Payment'
        OR t."Description" LIKE 'Gateway payment for Invoice #%'
        OR t."Description" LIKE 'Card payment for Invoice #%')
-  AND NOT EXISTS (SELECT 1 FROM "Invoices" AS i WHERE i."Id" = t."InvoiceId" AND i."ExternalId" IS NOT NULL)
+  AND NOT EXISTS (SELECT 1 FROM :inv AS i WHERE i."Id" = t."InvoiceId" AND i."ExternalId" IS NOT NULL)
 GROUP BY t."PaymentMethod", t."TransactionId"
 HAVING count(*) > 1
 ORDER BY min(t."Id");

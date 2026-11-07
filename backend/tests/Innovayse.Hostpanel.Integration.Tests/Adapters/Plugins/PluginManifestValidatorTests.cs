@@ -2,7 +2,8 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.SDK.Plugins.Manifest;
+using Innovayse.Hostpanel.Integration.Tests.Fixtures;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
@@ -463,7 +464,6 @@ public sealed class PluginManifestValidatorTests : IDisposable
     [Theory]
     [InlineData("Innovayse.Providers.CWP")]
     [InlineData("Innovayse.Providers.CWP7")]
-    [InlineData("Innovayse.Providers.Inecobank")]
     public void TryRead_ShippedManifest_Loads(string project)
     {
         var manifestPath = ShippedManifestPath(project);
@@ -533,5 +533,40 @@ public sealed class PluginManifestValidatorTests : IDisposable
         }
 
         throw new FileNotFoundException($"The manifest of {project} was not found above {AppContext.BaseDirectory}.");
+    }
+
+    /// <summary>A client page may ask for the workspace layout or the standard one, or for none.</summary>
+    /// <param name="layout">The layout member, or empty for none.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData(""","layout":"standard" """)]
+    [InlineData(""","layout":"workspace" """)]
+    public void Validate_ClientPageLayoutKnown_Passes(string layout)
+    {
+        var manifest = Manifest($$$""","ui":{"client":{"pages":[{"id":"p","path":"/p","title":"P","view":"views/p.json","permission":"Any"{{{layout}}}}]}}""");
+
+        PluginManifestValidator.Validate(manifest).Should().BeNull();
+    }
+
+    /// <summary>A layout outside the SDK's list, in any other case too, breaks PageLayoutUnknown.</summary>
+    /// <param name="layout">The layout value.</param>
+    [Theory]
+    [InlineData("full")]
+    [InlineData("Workspace")]
+    [InlineData("")]
+    public void Validate_ClientPageLayoutUnknown_BreaksPageLayoutUnknown(string layout)
+    {
+        AssertBreaks(
+            Manifest($$$""","ui":{"client":{"pages":[{"id":"p","path":"/p","title":"P","view":"views/p.json","permission":"Any","layout":"{{{layout}}}"}]}}"""),
+            PluginManifestRule.PageLayoutUnknown);
+    }
+
+    /// <summary>Any layout on an admin page breaks PageLayoutUnknown: the admin panel has none to honour.</summary>
+    [Fact]
+    public void Validate_AdminPageLayout_BreaksPageLayoutUnknown()
+    {
+        AssertBreaks(
+            Manifest(""","ui":{"admin":{"pages":[{"id":"p","path":"/p","title":"P","view":"views/p.json","layout":"workspace"}]}}"""),
+            PluginManifestRule.PageLayoutUnknown);
     }
 }

@@ -11,8 +11,8 @@ public static class HttpBackstopTimeouts
     /// <summary>cPanel/WHM provisioning client.</summary>
     public static readonly TimeSpan CPanel = TimeSpan.FromSeconds(60);
 
-    /// <summary>Inecobank gateway client.</summary>
-    public static readonly TimeSpan Inecobank = TimeSpan.FromSeconds(60);
+    /// <summary>The named client of every loaded plugin, keyed by its plugin id.</summary>
+    public static readonly TimeSpan Plugin = TimeSpan.FromSeconds(60);
 
     /// <summary>Telegram enquiry notifier; short because it sits between an enquiry and the visitor's answer.</summary>
     public static readonly TimeSpan Telegram = TimeSpan.FromSeconds(10);

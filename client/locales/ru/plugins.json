@@ -4,6 +4,22 @@
     "chatMessage": "Ваше сообщение",
     "chatSend": "Отправить",
     "chatStop": "Остановить",
-    "unavailable": "Этот раздел сейчас недоступен."
+    "unavailable": "Этот раздел сейчас недоступен.",
+    "workspaceBack": "Назад",
+    "previewSize": "Размер экрана",
+    "previewSource": "Какой сайт",
+    "previewDesktop": "Компьютер",
+    "previewPhone": "Телефон",
+    "previewOpen": "Открыть",
+    "previewSelect": "Выбрать",
+    "previewSelectDone": "Завершить выбор",
+    "previewSelectHint": "Режим выбора: нажмите на элемент. Повторное нажатие снимает выбор. Esc — выйти.",
+    "chatSelectionRemove": "Убрать",
+    "chatSelectionStale": "Страница изменилась после того, как вы выбрали эти элементы. Выберите их заново и отправьте сообщение.",
+    "previewEmpty": "Пока нечего показать.",
+    "previewInsecure": "Для предпросмотра нужно защищённое соединение. По обычному http браузер скрывает то, что панель проверяет перед показом сайта, поэтому предпросмотр отключён. Откройте панель по https.",
+    "chatStepStopped": "Остановлено",
+    "chatStepsCount": "Выполнено шагов: {done} из {total}",
+    "chatResultDetails": "Подробнее"
   }
 }

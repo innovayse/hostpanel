@@ -1,7 +1,7 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
@@ -101,6 +101,10 @@ public sealed class PluginRegistry : IPluginRegistry
     /// <inheritdoc/>
     public IReadOnlyCollection<PluginManifest> GetLoadedManifests()
         => _plugins.Values.Select(p => p.Manifest).ToList();
+
+    /// <inheritdoc/>
+    public PluginIconDto? GetIcon(string pluginId)
+        => _plugins.GetValueOrDefault(pluginId)?.Icon;
 
     /// <inheritdoc/>
     public IReadOnlyCollection<RefusedPlugin> GetRefusedPlugins()

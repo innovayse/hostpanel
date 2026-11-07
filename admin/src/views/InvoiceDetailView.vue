@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Invoice detail: the invoice loaded by id and shown in seven tabs (summary, add payment, options,
- * credit, refund, fulfilment, notes). The route decides the mode (`/view` is read-only, `/edit` lets the
+ * Invoice detail: the invoice loaded by id and shown in eight tabs (summary, add payment, options,
+ * credit, refund, credit notes, fulfilment, notes). The route decides the mode (`/view` is read-only, `/edit` lets the
  * operator change the invoice) and a button on the page toggles it. Every tab shows the outcome
  * of its own actions next to them, and the PDF download shows its refusal beside its button; the
  * page itself only reports a failed load, with Retry.
@@ -10,6 +10,7 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import InvoiceCreditTab from '@/components/billing/InvoiceCreditTab.vue'
+import InvoiceCreditNotesTab from '@/components/billing/InvoiceCreditNotesTab.vue'
 import InvoiceFulfilmentTab from '@/components/billing/InvoiceFulfilmentTab.vue'
 import InvoiceNotesTab from '@/components/billing/InvoiceNotesTab.vue'
 import InvoiceOptionsTab from '@/components/billing/InvoiceOptionsTab.vue'
@@ -73,6 +74,7 @@ const tabs = computed<UiTabItem[]>(() => {
     { value: InvoiceTab.Options, label: t('billing.invoiceDetail.options'), testid: 'billing-invoice-tab-options' },
     { value: InvoiceTab.Credit, label: t('billing.invoiceDetail.tabCredit'), testid: 'billing-invoice-tab-credit' },
     { value: InvoiceTab.Refund, label: t('billing.invoiceDetail.tabRefund'), testid: 'billing-invoice-tab-refund' },
+    { value: InvoiceTab.CreditNotes, label: t('billing.invoiceDetail.tabCreditNotes'), testid: 'billing-invoice-tab-credit-notes' },
     { value: InvoiceTab.Fulfilment, label: t('billing.invoiceDetail.tabFulfilment'), testid: 'billing-invoice-tab-fulfilment' },
     { value: InvoiceTab.Notes, label: t('shared.notes'), testid: 'billing-invoice-tab-notes' },
   ]
@@ -165,6 +167,7 @@ watch(invoiceId, load)
         <InvoiceOptionsTab v-else-if="activeTab === InvoiceTab.Options" :invoice="invoice" />
         <InvoiceCreditTab v-else-if="activeTab === InvoiceTab.Credit" :invoice="invoice" :readonly="!manageMode" />
         <InvoiceRefundTab v-else-if="activeTab === InvoiceTab.Refund" :invoice="invoice" :readonly="!manageMode" />
+        <InvoiceCreditNotesTab v-else-if="activeTab === InvoiceTab.CreditNotes" :invoice="invoice" :readonly="!manageMode" />
         <InvoiceFulfilmentTab v-else-if="activeTab === InvoiceTab.Fulfilment" :invoice="invoice" :readonly="!manageMode" />
         <InvoiceNotesTab v-else-if="activeTab === InvoiceTab.Notes" :invoice="invoice" :readonly="!manageMode" />
       </UiTabs>

@@ -21,6 +21,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ServicesImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The id of the last job <see cref="ImportBySourceIdAsync"/> ran, for reading the skip reasons it logged.</summary>
+    private int _lastJobId;
+
     /// <summary>A service for a known client and an existing product is imported.</summary>
     [Fact]
     public async Task RunAsync_Services_ImportsAServiceForAKnownClientAsync()
@@ -225,6 +228,131 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
             runs: 2);
 
         Assert.Single(services);
+    }
+
+    /// <summary>A record with a source id and no domain or username is imported once, however often the job runs.</summary>
+    [Fact]
+    public async Task RunAsync_Services_DeduplicatesBySourceIdWithoutADomainOrUsernameAsync()
+    {
+        var tag = Guid.NewGuid().ToString("N")[..12];
+        var services = await ImportBySourceIdAsync(
+            tag, 2, null, $$"""{"ExternalId":"s{{tag}}","Domain":null,"Username":null}""");
+
+        Assert.Single(services);
+    }
+
+    /// <summary>Two source services that share a domain but have different source ids are both imported, and stay so on a retry.</summary>
+    [Fact]
+    public async Task RunAsync_Services_ImportsTwoServicesWithTheSameDomainAndDifferentSourceIdsAsync()
+    {
+        var tag = Guid.NewGuid().ToString("N")[..12];
+        var domain = $"shared-{tag}.test";
+        var services = await ImportBySourceIdAsync(
+            tag, 2, null,
+            $$"""{"ExternalId":"a{{tag}}","Domain":"{{domain}}","Username":null}""",
+            $$"""{"ExternalId":"b{{tag}}","Domain":"{{domain}}","Username":null}""");
+
+        Assert.Equal(2, services.Count);
+        Assert.Equal(new[] { $"a{tag}", $"b{tag}" }, services.Select(s => s.ExternalId).Order().ToArray());
+    }
+
+    /// <summary>
+    /// A source id is trimmed before it is kept and matched, so the same id repeated in one file with stray spaces is
+    /// imported once and the repeat is skipped as already existing.
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_Services_TrimsTheSourceIdAndSkipsARepeatInTheSameFileAsync()
+    {
+        var tag = Guid.NewGuid().ToString("N")[..12];
+        var services = await ImportBySourceIdAsync(
+            tag, 1, null,
+            $$"""{"ExternalId":"  s{{tag}}","Domain":null,"Username":"first{{tag}}"}""",
+            $$"""{"ExternalId":"s{{tag}}  ","Domain":null,"Username":"second{{tag}}"}""");
+
+        var service = Assert.Single(services);
+        Assert.Equal($"s{tag}", service.ExternalId);
+        await using var scope = factory.Services.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var skipped = await context.MigrationLogs.AsNoTracking().Where(l => l.JobId == _lastJobId && l.SkipReason != null).ToListAsync();
+        Assert.Equal(MigrationSkipReason.AlreadyExists, Assert.Single(skipped).SkipReason);
+    }
+
+    /// <summary>A source id longer than the column that keeps it is skipped with its own reason and nothing is imported.</summary>
+    [Fact]
+    public async Task RunAsync_Services_SkipsASourceIdLongerThanTheColumnAsync()
+    {
+        var tag = Guid.NewGuid().ToString("N")[..12];
+        var tooLong = new string('x', ClientService.MaxExternalIdLength + 1);
+        var services = await ImportBySourceIdAsync(
+            tag, 1, null, $$"""{"ExternalId":"{{tooLong}}","Domain":null,"Username":"u{{tag}}"}""");
+
+        Assert.Empty(services);
+        await using var scope = factory.Services.CreateAsyncScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var log = await context.MigrationLogs.AsNoTracking().SingleAsync(l => l.JobId == _lastJobId);
+        Assert.Equal(MigrationSkipReason.ExternalIdInvalid, log.SkipReason);
+    }
+
+    /// <summary>A row imported before source ids were kept (no id) is still matched by domain, and is not imported again.</summary>
+    [Fact]
+    public async Task RunAsync_Services_MatchesALegacyRowWithoutASourceIdByDomainAsync()
+    {
+        var tag = Guid.NewGuid().ToString("N")[..12];
+        var domain = $"legacy-{tag}.test";
+        var services = await ImportBySourceIdAsync(
+            tag, 1, domain, $$"""{"ExternalId":"s{{tag}}","Domain":"{{domain}}","Username":null}""");
+
+        var service = Assert.Single(services);
+        Assert.Null(service.ExternalId);
+    }
+
+    /// <summary>
+    /// Imports service records that carry source ids for a fresh client and product, <paramref name="runs"/> times,
+    /// after a legacy service (no source id) on <paramref name="legacyDomain"/> exists when one is given.
+    /// </summary>
+    /// <param name="tag">The unique token the record ids are built from.</param>
+    /// <param name="runs">How many import jobs run over the same records.</param>
+    /// <param name="legacyDomain">Domain of a service seeded without a source id first, or <see langword="null"/> for none.</param>
+    /// <param name="records">Each record's <c>ExternalId</c>, <c>Domain</c> and <c>Username</c> members, written as a JSON object.</param>
+    /// <returns>The services stored for the client.</returns>
+    private async Task<List<ClientService>> ImportBySourceIdAsync(string tag, int runs, string? legacyDomain, params string[] records)
+    {
+        var source = new FakeMigrationPullSource { Totals = MigrationSourceTotals.Empty with { Hosting = new MigrationHostingTotals(Services: records.Length) } };
+        using var host = MigrationTestSeeds.HostWithFakeSource(factory, source);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var email = await MigrationTestSeeds.SeedClientAsync(scope.ServiceProvider, context);
+        var userId = await MigrationTestSeeds.UserIdForEmailAsync(scope.ServiceProvider, email);
+        var clientId = await context.Clients.AsNoTracking().Where(c => c.UserId == userId).Select(c => c.Id).SingleAsync();
+        var group = ProductGroup.Create($"group-{Guid.NewGuid():N}", null);
+        context.ProductGroups.Add(group);
+        await context.SaveChangesAsync(CancellationToken.None);
+        var productName = $"product-{Guid.NewGuid():N}";
+        var product = Product.Create(group.Id, productName, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, DateTimeOffset.UtcNow);
+        context.Products.Add(product);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        if (legacyDomain is not null)
+        {
+            context.ClientServices.Add(ClientService.Import(new ServiceImport(
+                clientId, product.Id, BillingCycle.Monthly, ServiceStatus.Active, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow,
+                SuspensionSource.Other, new ServiceHostingAccount(null, legacyDomain, null, null, null, null))));
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var rest = ",\"BillingCycle\":\"Monthly\",\"Status\":\"Active\",\"NextDueDate\":null,\"TerminatedAt\":null,\"SubscriptionId\":null,\"AdminNotes\":null,\"RecurringAmount\":9.99,\"FirstPaymentAmount\":9.99,\"PaymentMethod\":null,\"RegisteredAt\":null";
+        var json = records.Select(r => r[..^1] + $",\"ClientEmail\":\"{email}\",\"ProductName\":\"{productName}\"" + rest + "}");
+        source.SetDatasetJson("services", "[" + string.Join(",", json) + "]");
+
+        var worker = scope.ServiceProvider.GetRequiredService<MigrationPullWorker>();
+        for (var run = 0; run < runs; run++)
+        {
+            var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Services);
+            await worker.RunAsync(job.Id, CancellationToken.None);
+            _lastJobId = job.Id;
+        }
+
+        return await context.ClientServices.AsNoTracking().Where(s => s.ClientId == clientId).ToListAsync();
     }
 
     /// <summary>

@@ -1,23 +1,25 @@
 /**
- * Pinia store for one invoice: reading it, paying it from `pages/client/invoices/[id]/pay.vue`,
- * and verifying a hosted-gateway payment on `pages/payment/result.vue`.
+ * Pinia store for one invoice: reading it, starting its hosted-gateway payment from
+ * `pages/client/invoices/[id]/pay.vue`, and verifying that payment on `pages/payment/result.vue`.
  *
- * Owns the loaded invoice, the saved and hosted payment methods, the in-flight flag, the success
+ * Owns the loaded invoice, the payment gateways (and whether reading them failed), the in-flight
  * flag and the refusal sentence, so the pages render them and never wrap an API call in their
- * own try/catch. URLs and transport belong to {@link useBillingApi}.
+ * own try/catch. Invoices are paid only through a hosted gateway; there are no saved methods here.
+ * URLs and transport belong to {@link useBillingApi}.
  *
  * @module stores/invoicepayment
  */
 
 import { defineStore } from 'pinia'
 import { useBillingApi } from '~/composables/apis/useBillingApi'
-import { ActionOutcome } from '~/types/actionoutcome'
 import { apiErrorMessage } from '~/lib/errorHandler'
 import { saveBlob } from '~/utils/saveBlob'
+import type { BankTransferDetails } from '~/types/banktransferdetails'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { GatewayMethod } from '~/types/gatewaymethod'
 import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
-import type { PaymentMethod } from '~/types/payment'
+import { InvoiceStatus } from '~/types/invoicestatus'
+import { PaymentModule } from '~/types/paymentmodule'
 import type { PaymentTarget } from '~/types/paymenttarget'
 import { isSafeRedirectUrl } from '~/utils/externalRedirect'
 import { isHostedGatewayModule } from '~/utils/paymentModules'
@@ -40,19 +42,32 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
   /** The sentence for the last failed invoice read; empty when there is none to show. */
   const invoiceError = ref('')
 
-  /** The client's saved cards and bank accounts; empty until {@link loadPaymentOptions}. */
-  const savedMethods = ref<PaymentMethod[]>([])
-
   /** The gateways an invoice can be paid through; empty until {@link loadPaymentOptions}. */
   const gatewayMethods = ref<GatewayMethod[]>([])
 
+  /** The sentence for a failed gateway-list read; empty when the list was read (even if it is empty). */
+  const optionsError = ref('')
+
   /**
    * The first plugin-backed gateway (not a fixed module id, so a second gateway plugin is not
-   * silently ignored), or null when the card and bank-transfer built-ins are all there is.
+   * silently ignored), or null when the bank transfer is all there is.
    */
   const hostedGatewayModule = computed<string | null>(() =>
     gatewayMethods.value
       .find(m => isHostedGatewayModule(m.module))?.module ?? null)
+
+  /**
+   * Whether the manual bank transfer is among the ways this invoice can be paid, which the admin switches on in the
+   * integrations; the panel offers the choice only then.
+   */
+  const bankTransferOffered = computed<boolean>(() =>
+    gatewayMethods.value.some(m => m.module === PaymentModule.BankTransfer))
+
+  /** The bank details and the reference of the transfer waiting on the invoice; null while none waits or before it is read. */
+  const bankTransfer = ref<BankTransferDetails | null>(null)
+
+  /** The sentence for a failed bank details read; empty when there is none to show. */
+  const bankTransferError = ref('')
 
   /**
    * Reads one invoice with its line items.
@@ -64,6 +79,8 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
     invoiceLoading.value = true
     invoiceError.value = ''
     invoice.value = null
+    bankTransfer.value = null
+    bankTransferError.value = ''
     try {
       invoice.value = await billing.fetchInvoice(id)
     } catch (e: unknown) {
@@ -75,18 +92,39 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
   }
 
   /**
-   * Reads what the payer can pay with: the saved methods and the available gateways. Either list
-   * that cannot be read stays empty, which the page already renders as "nothing selectable".
+   * Reads the bank details of the transfer waiting on the loaded invoice. Nothing is asked unless the invoice says a bank
+   * transfer waits on it, so an open, paid or imported pending invoice never shows bank details.
+   *
+   * @param id - Invoice id.
+   * @returns Nothing; a refused read leaves its sentence in {@link bankTransferError}.
+   */
+  const loadBankTransfer = async (id: string): Promise<void> => {
+    bankTransfer.value = null
+    bankTransferError.value = ''
+    if (!invoice.value?.isBankTransferPending) {
+      return
+    }
+    try {
+      bankTransfer.value = await billing.fetchBankTransfer(id)
+    } catch (e: unknown) {
+      bankTransferError.value = apiErrorMessage(e)
+    }
+  }
+
+  /**
+   * Reads what the payer can pay with: the available gateways. A list that cannot be read is
+   * kept apart from "no gateway": {@link optionsError} holds the sentence so the page can offer a retry.
    *
    * @returns Nothing.
    */
   const loadPaymentOptions = async (): Promise<void> => {
-    const [saved, gateways] = await Promise.all([
-      billing.fetchPaymentMethods().catch((): PaymentMethod[] => []),
-      billing.fetchGatewayMethods().catch((): GatewayMethod[] => [])
-    ])
-    savedMethods.value = saved
-    gatewayMethods.value = gateways
+    optionsError.value = ''
+    try {
+      gatewayMethods.value = await billing.fetchGatewayMethods()
+    } catch (e: unknown) {
+      gatewayMethods.value = []
+      optionsError.value = apiErrorMessage(e)
+    }
   }
 
   /** The number of the order the last verified payment was for; empty for an invoice or before an answer. */
@@ -121,9 +159,6 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
   /** True while a payment request is in flight (and after a gateway hand-off, until the browser leaves). */
   const submitting = ref(false)
 
-  /** True once a saved-method payment has been accepted. */
-  const paySuccess = ref(false)
-
   /** The sentence to show for the last refused payment; empty when there is nothing to report. */
   const error = ref('')
 
@@ -134,7 +169,6 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
    */
   const reset = (): void => {
     submitting.value = false
-    paySuccess.value = false
     error.value = ''
   }
 
@@ -145,30 +179,6 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
    */
   const clearError = (): void => {
     error.value = ''
-  }
-
-  /**
-   * Charges the invoice to a saved payment method.
-   *
-   * @param invoiceId - Invoice to pay.
-   * @param methodId - Id of the saved payment method.
-   * @param attemptId - The payment attempt the caller chose for this pay action; a retry of the
-   * same action passes the same one, so the gateway takes the money once.
-   * @returns How the attempt ended; on failure {@link error} holds the sentence to show.
-   */
-  const payWithSavedMethod = async (invoiceId: string, methodId: string, attemptId: string): Promise<ActionOutcome> => {
-    error.value = ''
-    submitting.value = true
-    try {
-      await billing.payInvoice(invoiceId, methodId, attemptId)
-      paySuccess.value = true
-      return ActionOutcome.Succeeded
-    } catch (e: unknown) {
-      error.value = apiErrorMessage(e)
-      return ActionOutcome.Failed
-    } finally {
-      submitting.value = false
-    }
   }
 
   /**
@@ -206,6 +216,31 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
     }
   }
 
+  /**
+   * Chooses the manual bank transfer for the invoice. On success the invoice is PaymentPending, its bank details are in
+   * {@link bankTransfer} and the page shows them; a refusal leaves its sentence in {@link error}.
+   *
+   * @param invoiceId - Invoice to pay by bank transfer.
+   * @returns True when the transfer was chosen (or already was).
+   */
+  const selectBankTransfer = async (invoiceId: string): Promise<boolean> => {
+    error.value = ''
+    submitting.value = true
+    try {
+      bankTransfer.value = await billing.selectBankTransfer(invoiceId)
+      bankTransferError.value = ''
+      if (invoice.value) {
+        invoice.value = { ...invoice.value, status: InvoiceStatus.PaymentPending, isBankTransferPending: true }
+      }
+      return true
+    } catch (e: unknown) {
+      error.value = apiErrorMessage(e)
+      return false
+    } finally {
+      submitting.value = false
+    }
+  }
+
   /** True while an invoice PDF is being downloaded. */
   const pdfDownloading = ref(false)
 
@@ -237,19 +272,22 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
     pdfError,
     downloadInvoicePdf,
     invoiceError,
-    savedMethods,
     gatewayMethods,
+    optionsError,
     hostedGatewayModule,
+    bankTransferOffered,
+    bankTransfer,
+    bankTransferError,
+    loadBankTransfer,
+    selectBankTransfer,
     loadInvoice,
     loadPaymentOptions,
     verifyGatewayPayment,
     verifiedOrderNumber,
     submitting,
-    paySuccess,
     error,
     reset,
     clearError,
-    payWithSavedMethod,
     startGatewayPayment
   }
 })

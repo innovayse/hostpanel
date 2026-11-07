@@ -1,6 +1,6 @@
 /**
- * Tests for `plugins/header-widget.ts`: the shared header script is requested from the
- * configured portal, and not at all when none is configured.
+ * Tests for `plugins/header-widget.ts`: the shared header script is requested from this portal's own
+ * origin (relayed by `server/routes/widget`), and not at all when no shell is configured.
  *
  * @module tests/plugins/header-widget.test
  */
@@ -31,12 +31,12 @@ beforeEach(() => {
 })
 
 describe('header-widget plugin', () => {
-  it('adds the deferred widget script from the configured portal', async () => {
+  it("adds the deferred widget script from this portal's own origin, so the widget builds its addresses here", async () => {
     await runPlugin('https://main.example.test')
 
     const head = useHeadMock.mock.calls[0]![0] as { script: Array<{ src: string, defer: boolean }> }
     expect(head.script).toHaveLength(1)
-    expect(head.script[0]!.src.startsWith('https://main.example.test/widget/header.js?v=')).toBe(true)
+    expect(head.script[0]!.src.startsWith('/widget/header.js?v=')).toBe(true)
     expect(head.script[0]!.defer).toBe(true)
   })
 
@@ -47,7 +47,7 @@ describe('header-widget plugin', () => {
   })
 
   it('adds nothing for the developer-machine default host', async () => {
-    await runPlugin('http://innovayse.local:3000')
+    await runPlugin('http://portal.local:3000')
 
     expect(useHeadMock).not.toHaveBeenCalled()
   })

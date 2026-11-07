@@ -1,8 +1,12 @@
 ---
 title: Email templates
+description: "Edit Hostpanel transactional email templates per language (English, Russian, Armenian), use placeholders and check mail delivery."
+keywords: "email templates, placeholders, transactional email, mail delivery"
 ---
 
 # Email templates <Label type="admin" />
+
+<DemoLink path="/settings/email-templates" />
 
 ## How templates work
 
@@ -47,7 +51,7 @@ Click **Save**.
 
 ## Placeholders
 
-Placeholders use the Liquid template language. A variable is written as `{{ name }}` or `{{ object.field }}`, with names in lowercase and underscores. Every template has access to the brand and site variables:
+Placeholders use the Liquid template language. A variable is written as <code v-pre>{{ name }}</code> or <code v-pre>{{ object.field }}</code>, with names in lowercase and underscores. Every template has access to the brand and site variables:
 
 ```liquid
 {{ brand.primary }}       — primary brand colour

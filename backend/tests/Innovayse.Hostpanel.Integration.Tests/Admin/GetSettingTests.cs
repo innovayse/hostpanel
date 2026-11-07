@@ -46,7 +46,7 @@ public sealed class GetSettingTests(IntegrationTestFactory factory) : IClassFixt
     [Fact]
     public async Task RowOutsideTheCatalogue_RefusesNotFoundAsync()
     {
-        var id = await SecretSettingTestSeeds.StoreAsync(factory, "integration:stripe:publishable_key", "pk_test_read");
+        var id = await SecretSettingTestSeeds.StoreAsync(factory, "integration:gateway:publishable_key", "pk_test_read");
         var client = await AdminTestSeeds.AdminClientAsync(factory);
 
         var response = await client.GetAsync($"/api/admin/settings/{id}");

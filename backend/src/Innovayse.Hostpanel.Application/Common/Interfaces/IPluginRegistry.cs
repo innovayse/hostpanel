@@ -1,5 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 
@@ -35,4 +35,11 @@ public interface IPluginRegistry
     /// </summary>
     /// <returns>Read-only collection of refused plugins; empty when none was refused.</returns>
     IReadOnlyCollection<RefusedPlugin> GetRefusedPlugins();
+
+    /// <summary>
+    /// Returns the icon a loaded plugin ships, as it was checked at load.
+    /// </summary>
+    /// <param name="pluginId">The plugin identifier as declared in <c>plugin.json</c>.</param>
+    /// <returns>The icon; <see langword="null"/> when the plugin is not loaded or declares none.</returns>
+    PluginIconDto? GetIcon(string pluginId);
 }

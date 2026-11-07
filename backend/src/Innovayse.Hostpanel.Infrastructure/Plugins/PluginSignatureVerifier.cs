@@ -1,11 +1,9 @@
-using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
+using Hostpanel.Sdk.Packaging.Signing;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Org.BouncyCastle.Crypto.Parameters;
-using Org.BouncyCastle.Crypto.Signers;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 
@@ -17,8 +15,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 /// <remarks>
 /// <para>
 /// A package is signed when it has a <c>plugin.sig</c> naming one of the trusted keys and the Ed25519 signature
-/// matches <see cref="PluginSignaturePayload"/>. <see cref="Inspect"/> answers that and nothing else;
-/// <see cref="Check"/> adds the policy of the host.
+/// matches <see cref="PluginSignaturePayload"/>. <see cref="Inspect"/> answers that and nothing else, through the
+/// plugin packaging package's <see cref="PluginSignatureValidator"/>, the code that also signs and checks a package
+/// for a plugin author; <see cref="Check"/> adds the policy of the host, which the package does not have.
 /// </para>
 /// <para>
 /// The policy: a plugin shipped inside the host image (<see cref="PluginOrigin.BuiltIn"/>) is never checked, because
@@ -75,20 +74,24 @@ public sealed class PluginSignatureVerifier
     /// <param name="origin">Where the plugin comes from.</param>
     /// <param name="allowUnsigned">Whether the admin setting "allow unsigned plugins" is on.</param>
     /// <param name="logger">Records an admission despite a failed check.</param>
+    /// <param name="require">
+    /// Whether the signature is checked even on a host that does not enforce signatures (Development, Testing). Set for a
+    /// package fetched from the plugin registry; "allow unsigned" does not override it.
+    /// </param>
     /// <returns>The check the plugin fails and the host refuses it for, or <see langword="null"/> when it is admitted.</returns>
     public PluginSignatureViolation? Check(
-        string pluginDir, string pluginId, PluginOrigin origin, bool allowUnsigned, ILogger logger)
+        string pluginDir, string pluginId, PluginOrigin origin, bool allowUnsigned, ILogger logger, bool require = false)
     {
         ArgumentNullException.ThrowIfNull(logger);
 
         // The host's own files: authenticity is that of the image they shipped in.
-        if (origin == PluginOrigin.BuiltIn || !Enforced)
+        if (origin == PluginOrigin.BuiltIn || (!Enforced && !require))
         {
             return null;
         }
 
         var violation = Inspect(pluginDir);
-        if (violation is not null && allowUnsigned)
+        if (violation is not null && allowUnsigned && !require)
         {
             logger.LogWarning(
                 "Plugin {PluginId} fails the signature check ({Rule}: {Detail}) and is admitted because allow unsigned plugins is on.",
@@ -104,50 +107,6 @@ public sealed class PluginSignatureVerifier
     /// <returns>The check the package fails, or <see langword="null"/> when it is signed by a trusted key and unchanged since.</returns>
     public PluginSignatureViolation? Inspect(string pluginDir)
     {
-        var path = Path.Combine(pluginDir, PluginSignatureFile.FileName);
-        if (!File.Exists(path))
-        {
-            return new PluginSignatureViolation(PluginSignatureRule.Unsigned, $"{PluginSignatureFile.FileName} is missing");
-        }
-
-        try
-        {
-            if (new FileInfo(path).Length > PluginSignatureFile.MaxFileBytes)
-            {
-                return new PluginSignatureViolation(
-                    PluginSignatureRule.Malformed, $"{PluginSignatureFile.FileName} is larger than {PluginSignatureFile.MaxFileBytes} bytes");
-            }
-
-            var file = PluginSignatureFile.Parse(File.ReadAllText(path));
-            if (!_keys.TryGetValue(file.KeyId, out var publicKey))
-            {
-                return new PluginSignatureViolation(PluginSignatureRule.UnknownKey, $"key '{file.KeyId}' is not a trusted key");
-            }
-
-            var payload = PluginSignaturePayload.Build(pluginDir, file.KeyId);
-            var verifier = new Ed25519Signer();
-            verifier.Init(forSigning: false, new Ed25519PublicKeyParameters(publicKey, 0));
-            verifier.BlockUpdate(payload, 0, payload.Length);
-
-            return verifier.VerifySignature(file.Signature)
-                ? null
-                : new PluginSignatureViolation(PluginSignatureRule.Invalid, $"the signature of key '{file.KeyId}' does not match the files of the package");
-        }
-        catch (FormatException ex)
-        {
-            return new PluginSignatureViolation(PluginSignatureRule.Malformed, ex.Message);
-        }
-        catch (InvalidDataException ex)
-        {
-            return new PluginSignatureViolation(PluginSignatureRule.Malformed, ex.Message);
-        }
-        catch (IOException ex)
-        {
-            return new PluginSignatureViolation(PluginSignatureRule.Malformed, $"the package could not be read: {ex.Message}");
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            return new PluginSignatureViolation(PluginSignatureRule.Malformed, $"the package could not be read: {ex.Message}");
-        }
+        return PluginSignatureValidator.Verify(pluginDir, _keys);
     }
 }

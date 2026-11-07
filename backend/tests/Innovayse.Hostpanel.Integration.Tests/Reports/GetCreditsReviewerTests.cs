@@ -61,6 +61,33 @@ public sealed class GetCreditsReviewerTests(IntegrationTestFactory factory) : IC
         body.GetProperty("rows").GetProperty("totalCount").GetInt32().Should().Be(3);
     }
 
+    /// <summary>
+    /// Every movement of the balance is a credit here, not only cash added to it: a paid top-up, a credit note, staff goodwill and
+    /// credit applied to an invoice are listed with their signed change, and the totals are the net of them.
+    /// </summary>
+    [Fact]
+    public async Task ShowsTopUpsAndCreditMovementsWithTheirSignedChange()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        var (owner, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, null, "credits-movements");
+        var topUp = await CreditTestSeeds.TopUpAsync(owner, 40m);
+        await BillingTestSeeds.MarkPaidAsync(admin, topUp, 40m);
+        var paid = await CreditNoteTestSeeds.PaidInvoiceAsync(factory, clientId, price: 100m);
+        await CreditNoteTestSeeds.IssueOkAsync(admin, paid, 25m);
+        (await admin.PostAsJsonAsync($"/api/clients/{clientId}/credit/adjustments", new { direction = "Deduct", amount = 10m, reason = "Correction" }))
+            .EnsureSuccessStatusCode();
+
+        var response = await admin.GetAsync($"/api/reports/credits-reviewer?clientId={clientId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var amounts = body.GetProperty("rows").GetProperty("items").EnumerateArray().Select(r => r.GetProperty("amount").GetDecimal()).ToList();
+        amounts.Should().BeEquivalentTo([40m, 25m, -10m]);
+        var total = body.GetProperty("totals").EnumerateArray().Single(t => t.GetProperty("currency").GetString() == "USD");
+        total.GetProperty("totalAmount").GetDecimal().Should().Be(55m);
+        total.GetProperty("totalCount").GetInt32().Should().Be(3);
+    }
+
     /// <summary>The route is not for anonymous callers.</summary>
     [Fact]
     public async Task RefusesAnonymous()

@@ -18,7 +18,11 @@
     "quotes": "Quotes",
     "offlineCc": "Offline CC Processing",
     "disputes": "Disputes",
-    "gatewayLog": "Gateway Log"
+    "gatewayLog": "Gateway Log",
+    "paymentClaims": "Payment Claims",
+    "bankTransfers": "Pending Bank Transfers",
+    "creditNotes": "Credit Notes",
+    "renewals": "Upcoming Renewals"
   },
   "reports": "Reports",
   "orders": "Orders",
@@ -57,5 +61,6 @@
     "faqs": "FAQ",
     "locations": "Server locations"
   },
-  "servicesTitle": "Services"
+  "servicesTitle": "Services",
+  "documentation": "Documentation"
 }

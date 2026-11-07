@@ -18,6 +18,32 @@ afterEach(() => {
 })
 
 describe('InvoiceRefundTab', () => {
+  it('offers only a manual refund on a credit top-up invoice, explains why and asks for the reference of the manual refund', () => {
+    const wrapper = mountWithApp(InvoiceRefundTab, { props: { invoice: invoiceFixture({ isCreditTopUp: true }) } })
+
+    const kinds = wrapper.findAllComponents(UiSelect)
+      .map((select) => (select.props() as { options: { value: string }[] }).options.map((option) => option.value))
+      .find((values) => values.includes(InvoiceRefundType.Manual))
+    expect(kinds).toEqual([InvoiceRefundType.Manual])
+    expect(wrapper.find('[data-testid="billing-invoice-refund-top-up"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="billing-invoice-refund-reference"]').exists()).toBe(true)
+  })
+
+  it('offers all three kinds of refund on an ordinary invoice', () => {
+    const wrapper = mountWithApp(InvoiceRefundTab, { props: { invoice: invoiceFixture() } })
+
+    const kinds = wrapper.findAllComponents(UiSelect)
+      .map((select) => (select.props() as { options: { value: string }[] }).options.map((option) => option.value))
+      .find((values) => values.includes(InvoiceRefundType.Manual))
+    expect(kinds).toEqual([InvoiceRefundType.Gateway, InvoiceRefundType.Manual, InvoiceRefundType.CreditBalance])
+  })
+
+  it('shows no top-up notice and keeps the credit question on an ordinary invoice', () => {
+    const wrapper = mountWithApp(InvoiceRefundTab, { props: { invoice: invoiceFixture() } })
+
+    expect(wrapper.find('[data-testid="billing-invoice-refund-top-up"]').exists()).toBe(false)
+  })
+
   it('replaces the form with a notice for a draft, a cancelled and a refunded invoice', () => {
     const draft = mountWithApp(InvoiceRefundTab, { props: { invoice: invoiceFixture({ status: 'Draft' }) } })
     const cancelled = mountWithApp(InvoiceRefundTab, { props: { invoice: invoiceFixture({ status: 'Cancelled' }) } })
@@ -114,7 +140,7 @@ describe('InvoiceRefundTab', () => {
             {
               id: 21,
               date: '2026-10-15T00:00:00Z',
-              gateway: 'Stripe',
+              gateway: 'Example Gateway',
               transactionId: 'ch_1',
               amount: 24000,
               fees: 500,
@@ -176,7 +202,7 @@ describe('InvoiceRefundTab', () => {
     expect(JSON.parse(String((post?.[1] as RequestInit | undefined)?.body))).toEqual({
       amount: 30,
       refundType: InvoiceRefundType.Manual,
-      gateway: 'Stripe',
+      gateway: 'Example Gateway',
       refundTransactionId: 'EXT-1',
     })
   })
@@ -187,14 +213,14 @@ describe('InvoiceRefundTab', () => {
         invoice: invoiceFixture({
           currency: 'AMD',
           transactions: [
-            { id: 21, date: '2026-10-15T00:00:00Z', gateway: 'Stripe', transactionId: 'ch_1', amount: 24000, fees: 500, type: 'Payment' },
+            { id: 21, date: '2026-10-15T00:00:00Z', gateway: 'Example Gateway', transactionId: 'ch_1', amount: 24000, fees: 500, type: 'Payment' },
           ],
         }),
       },
     })
 
     const options = (wrapper.getComponent(UiSelect).props() as { options: { label: string }[] }).options
-    expect(options.map((option) => option.label)).toContain('#21 — 24000.00 AMD (Stripe)')
+    expect(options.map((option) => option.label)).toContain('#21 — 24000.00 AMD (Example Gateway)')
     expect(options.map((option) => option.label).join(' ')).not.toContain('$')
   })
 })

@@ -65,6 +65,20 @@ public sealed class SsoModeAuthenticationSchemeTests : IAsyncLifetime
         await _postgres.DisposeAsync();
     }
 
+    /// <summary>
+    /// A host in single sign-on mode without the provider's issuer refuses to start, naming the setting: without it the
+    /// provider's back-channel logout would be refused on every call while the host looked healthy.
+    /// </summary>
+    [Fact]
+    public void StartupIsRefused_WhenTheProviderIssuerIsNotConfigured()
+    {
+        using var factory = new SsoModeFactory(_postgres.GetConnectionString(), bearerIssuer: null);
+
+        var act = () => factory.Services;
+
+        act.Should().Throw<Exception>().Which.ToString().Should().Contain("Auth:BearerIssuer");
+    }
+
     /// <summary>The default scheme is the selector, not the cookie.</summary>
     [Fact]
     public void TheDefaultSchemeIsTheSelector_NotTheCookie()

@@ -7,12 +7,13 @@ import TableTd from '~/components/ui/UiTableTd.vue'
 import { UiAlign } from '~/utils/ui/enums'
 
 describe('TableTd', () => {
-  it('is a td with the standard padding and no forced alignment', () => {
+  it('is a td with the standard padding, left-aligned like the header', () => {
     const wrapper = mountWithKit(TableTd, { slots: { default: 'Value' } })
 
     expect(wrapper.element.tagName).toBe('TD')
     expect(wrapper.text()).toBe('Value')
     expect(wrapper.classes()).toContain('p-4')
+    expect(wrapper.classes()).toContain('text-left')
     expect(wrapper.classes()).not.toContain('text-right')
   })
 

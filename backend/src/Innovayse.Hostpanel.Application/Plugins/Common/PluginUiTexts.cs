@@ -3,8 +3,8 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Innovayse.Hostpanel.Shared.Constants;
-using Innovayse.SDK.Plugins.Manifest;
-using Innovayse.SDK.Plugins.Ui;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Ui;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Common;
 

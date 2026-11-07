@@ -32,5 +32,9 @@ export enum PluginBlockKind {
   /** A chat streamed from a route. */
   Chat = 'chat',
   /** A progress bar. */
-  Progress = 'progress'
+  Progress = 'progress',
+  /** Two panes side by side, stacked on a phone. */
+  Split = 'split',
+  /** One address of the plugin's or the client's own site in a sandboxed frame. */
+  Preview = 'preview'
 }

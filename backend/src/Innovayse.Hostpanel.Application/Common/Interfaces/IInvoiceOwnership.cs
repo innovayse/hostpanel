@@ -8,7 +8,7 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 /// <remarks>
 /// <para>
 /// The check travels with the command, not the endpoint: it is called by the client-facing
-/// handlers (<c>PayMyInvoiceCommand</c>, <c>StartGatewayPaymentCommand</c> and the rest), so no
+/// handlers (<c>StartMyGatewayPaymentCommand</c> and the rest), so no
 /// dispatch path can skip it.
 /// </para>
 /// <para>

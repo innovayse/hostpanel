@@ -124,6 +124,10 @@ services:
       Auth__AppName: ${AUTH_APP_NAME:?AUTH_APP_NAME must be set}
       Auth__Authority: ${SSO_URL:-}
       Auth__PublicAuthority: ${SSO_PUBLIC_URL:-}
+      # The issuer the provider stamps into its tokens, byte for byte (copy "issuer" from its
+      # /.well-known/openid-configuration, trailing slash included). Back-channel logout checks every logout
+      # token's issuer against it, so without it a provider sign-out never reaches this API.
+      Auth__BearerIssuer: ${SSO_ISSUER:-}
       Auth__ClientId: ${SSO_CLIENT_ID:-}
       Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET:-}
       BackchannelLogout__Key: ${HOSTPANEL_BACKCHANNEL_LOGOUT_KEY:-}
@@ -143,6 +147,12 @@ services:
       SshAgent__SourceAddresses: ${SSH_AGENT_SOURCE_ADDRESSES:-}
       PanelNetwork__HostAddresses: ${PANEL_HOST_ADDRESSES:-}
       ScheduledJobs__DisableReleaseUpdateChecks: ${DISABLE_RELEASE_UPDATE_CHECKS:-false}
+      # The plugin registry the admin panel installs plugins from; off until PLUGIN_REGISTRY_BASE_URL (https) is set.
+      PluginRegistry__Enabled: ${PLUGIN_REGISTRY_ENABLED:-false}
+      PluginRegistry__BaseUrl: ${PLUGIN_REGISTRY_BASE_URL:-}
+      # An extra plugin signing key the operator trusts (see PLUGIN_OPERATOR_KEY_ID in .env.example). Both empty: no key is added.
+      PluginSigning__OperatorKeys__0__KeyId: ${PLUGIN_OPERATOR_KEY_ID:-}
+      PluginSigning__OperatorKeys__0__PublicKey: ${PLUGIN_OPERATOR_PUBLIC_KEY:-}
     volumes:
       # Operator-uploaded branding lives in the web root; without a volume every deploy erases it.
       - hostpanel_branding:/app/wwwroot/uploads/branding
@@ -197,6 +207,8 @@ services:
       NUXT_PUBLIC_PORTAL_SOCIAL_LINKEDIN: ${NUXT_PUBLIC_PORTAL_SOCIAL_LINKEDIN:-}
       NUXT_PUBLIC_PORTAL_SOCIAL_FACEBOOK: ${NUXT_PUBLIC_PORTAL_SOCIAL_FACEBOOK:-}
       NUXT_PUBLIC_PORTAL_HOSTING_DEMO_URL: ${NUXT_PUBLIC_PORTAL_HOSTING_DEMO_URL:-}
+      # Public address of the documentation website; empty hides all documentation links.
+      NUXT_PUBLIC_DOCS_URL: ${DOCS_URL:-}
       NUXT_PUBLIC_PORTAL_CONTACT_ADDRESS: ${NUXT_PUBLIC_PORTAL_CONTACT_ADDRESS:-}
       NUXT_PUBLIC_PORTAL_CONTACT_MAP_URL: ${NUXT_PUBLIC_PORTAL_CONTACT_MAP_URL:-}
       NUXT_PUBLIC_PORTAL_STATS_CLIENTS: ${NUXT_PUBLIC_PORTAL_STATS_CLIENTS:-}
@@ -226,7 +238,6 @@ services:
       NUXT_PUBLIC_EMAIL_URL: ${NUXT_PUBLIC_EMAIL_URL:-}
       NUXT_PUBLIC_DRIVE_URL: ${NUXT_PUBLIC_DRIVE_URL:-}
       NUXT_PUBLIC_BILLING_PORTAL_URL: ${BILLING_PORTAL_URL:-}
-      NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
 
       NUXT_SSO_CLIENT_ID: ${SSO_CLIENT_ID:-}
       NUXT_SSO_CLIENT_SECRET: ${CLIENT_HOSTPANEL_SECRET:-}
@@ -255,6 +266,8 @@ services:
       ADMIN_BASE_URL_PATH: ${ADMIN_BASE_URL_PATH:?ADMIN_BASE_URL_PATH must be set}
       # The storefront's public origin: the admin resolves the storefront's relative image paths against it.
       CLIENT_BASE_URL: ${CLIENT_BASE_URL:-}
+      # Public address of the documentation website; empty hides all documentation links.
+      DOCS_URL: ${DOCS_URL:-}
     healthcheck:
       test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/config.js"]
       interval: 30s

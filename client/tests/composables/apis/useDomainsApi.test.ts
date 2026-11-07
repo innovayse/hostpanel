@@ -29,9 +29,9 @@ const api = useDomainsApi()
 /** Every endpoint function with the request it must send. */
 const rows: ExpectedRequest[] = [
   { name: 'fetchDomain reads one domain', call: () => api.fetchDomain('4'), method: HttpMethod.Get, url: '/api/portal/client/domains/4' },
-  { name: 'setAutoRenew puts the flag', call: () => api.setAutoRenew('4', true), method: HttpMethod.Put, url: '/api/portal/client/domains/4/autorenew', body: { enabled: true } },
-  { name: 'setLock puts the flag', call: () => api.setLock('4', false), method: HttpMethod.Put, url: '/api/portal/client/domains/4/lock', body: { enabled: false } },
-  { name: 'setIdProtect puts the flag', call: () => api.setIdProtect('4', true), method: HttpMethod.Put, url: '/api/portal/client/domains/4/idprotect', body: { enabled: true } },
+  { name: 'setAutoRenew puts the flag', call: () => api.setAutoRenew('4', true), method: HttpMethod.Put, url: '/api/portal/client/domains/4/autorenew', body: { value: true } },
+  { name: 'setLock puts the flag', call: () => api.setLock('4', false), method: HttpMethod.Put, url: '/api/portal/client/domains/4/lock', body: { value: false } },
+  { name: 'setIdProtect puts the flag', call: () => api.setIdProtect('4', true), method: HttpMethod.Put, url: '/api/portal/client/domains/4/idprotect', body: { value: true } },
   { name: 'setNameservers puts the list', call: () => api.setNameservers('4', ['ns1.a.com', 'ns2.a.com']), method: HttpMethod.Put, url: '/api/portal/client/domains/4/nameservers', body: { nameservers: ['ns1.a.com', 'ns2.a.com'] } },
   { name: 'setWhois puts the registrant contact wrapped in `contact`', call: () => api.setWhois('4', { ...emptyContact(), firstName: 'A' }), method: HttpMethod.Put, url: '/api/portal/client/domains/4/whois', body: { contact: { ...emptyContact(), firstName: 'A' } } },
   { name: 'fetchWhois reads the record', call: () => api.fetchWhois('4'), method: HttpMethod.Get, url: '/api/portal/client/domains/4/whois' },

@@ -15,6 +15,9 @@ namespace Innovayse.Hostpanel.Domain.Services;
 /// </summary>
 public sealed class ClientService : BaseEntity, IAggregateRoot
 {
+    /// <summary>The longest source service id the <see cref="ExternalId"/> column holds, in characters.</summary>
+    public const int MaxExternalIdLength = 100;
+
     /// <summary>Gets the FK to the owning client.</summary>
     public int ClientId { get; private set; }
 
@@ -78,6 +81,12 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// <summary>Gets the applied promotion code.</summary>
     public string? PromotionCode { get; private set; }
 
+    /// <summary>
+    /// Gets the service's own id in the system it was imported from, used to recognise it on a retried
+    /// import; <see langword="null"/> for a service created here or imported before the source sent ids.
+    /// </summary>
+    public string? ExternalId { get; private set; }
+
     /// <summary>Gets the external subscription reference.</summary>
     public string? SubscriptionId { get; private set; }
 
@@ -121,6 +130,14 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// exact (the count and the insert are otherwise two statements another add could fall between).
     /// </summary>
     public long SshKeyRevision { get; private set; }
+
+    /// <summary>
+    /// Gets whether the service holds a hosting account on its panel: it has a provisioning reference
+    /// and is not terminated. A terminated service keeps the reference for the record, but its account
+    /// is gone and the same reference may later belong to another service, so the reference alone does
+    /// not say an account exists. A suspended service still holds its account.
+    /// </summary>
+    public bool HoldsHostingAccount => ProvisioningRef is not null && Status is not ServiceStatus.Terminated;
 
     /// <summary>Gets whether <see cref="Suspend"/> accepts the service: only an Active one can be suspended.</summary>
     public bool CanSuspend => Status is ServiceStatus.Active;
@@ -224,6 +241,7 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
             BillingCycle = import.BillingCycle,
             Status = import.Status,
             CreatedAt = import.RegisteredAt,
+            ExternalId = string.IsNullOrWhiteSpace(import.ExternalId) ? null : import.ExternalId,
         };
 
         // A pending service has not started a billing period yet, as with Activate.
@@ -503,6 +521,13 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
         Username = account.Username;
         Password = account.Password;
     }
+
+    /// <summary>
+    /// Switches the automatic billing of the service on or off without touching the rest of its automation
+    /// settings (the suspension hold and the end-of-cycle termination).
+    /// </summary>
+    /// <param name="value">Whether the billing runs look after the service; see <see cref="AutoRenew"/>.</param>
+    public void SetAutoRenew(bool value) => AutoRenew = value;
 
     /// <summary>
     /// Sets how the billing runs treat the service: whether they look after it at all, whether the

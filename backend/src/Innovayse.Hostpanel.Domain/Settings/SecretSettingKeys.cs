@@ -57,7 +57,7 @@ public static class SecretSettingKeys
     }
 
     /// <summary>Tells whether a full setting key names a secret this registry knows.</summary>
-    /// <param name="key">The full setting key, e.g. <c>integration:stripe:secret_key</c>.</param>
+    /// <param name="key">The full setting key, e.g. <c>integration:gateway:secret_key</c>.</param>
     /// <returns><c>true</c> when the key is a standalone secret or an integration secret field.</returns>
     public static bool IsSecret(string key)
     {

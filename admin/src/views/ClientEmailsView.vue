@@ -86,7 +86,7 @@ onMounted(load)
       <UiText :tone="UiTextTone.Secondary">{{ t('clients.clientEmails.loadingEmails') }}</UiText>
     </UiStack>
 
-    <UiCard v-else>
+    <UiCard v-else class="overflow-x-auto">
       <UiTable
         density="comfortable"
         :empty="store.emails.length === 0"

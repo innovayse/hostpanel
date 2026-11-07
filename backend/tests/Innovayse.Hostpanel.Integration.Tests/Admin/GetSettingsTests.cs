@@ -28,12 +28,12 @@ public sealed class GetSettingsTests(IntegrationTestFactory factory) : IClassFix
     [Fact]
     public async Task OmitsRowsOutsideTheCatalogueAsync()
     {
-        await SecretSettingTestSeeds.StoreAsync(factory, "integration:stripe:publishable_key", "pk_test_listed");
+        await SecretSettingTestSeeds.StoreAsync(factory, "integration:gateway:publishable_key", "pk_test_listed");
         var client = await AdminTestSeeds.AdminClientAsync(factory);
 
         var rows = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/settings");
 
-        rows!.Should().NotContain(r => r.GetProperty("key").GetString() == "integration:stripe:publishable_key");
+        rows!.Should().NotContain(r => r.GetProperty("key").GetString() == "integration:gateway:publishable_key");
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>

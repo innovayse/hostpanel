@@ -20,6 +20,8 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <param name="TaxRate">Tax rate percentage.</param>
 /// <param name="Credit">Total credit applied.</param>
 /// <param name="AmountDue">What is still owed: the total less the payments recorded against it; zero once the invoice is closed. The pay button and payment page charge this.</param>
+/// <param name="IsCreditTopUp">Whether this is a credit top-up invoice: credit cannot be applied to it, and paying it puts its amount on the balance.</param>
+/// <param name="IsBankTransferPending">Whether the client chose a manual bank transfer that staff have not yet confirmed or rejected. A <c>PaymentPending</c> invoice that is not (an imported one) is false, so the portal shows bank details only for a real transfer.</param>
 /// <param name="PaymentMethod">Preferred payment method; null when not specified.</param>
 /// <param name="Items">Line items on the invoice.</param>
 /// <param name="Transactions">Money movements recorded against the invoice.</param>
@@ -37,6 +39,8 @@ public sealed record MyInvoiceDto(
     decimal TaxRate,
     decimal Credit,
     decimal AmountDue,
+    bool IsCreditTopUp,
+    bool IsBankTransferPending,
     string? PaymentMethod,
     IReadOnlyList<InvoiceItemDto> Items,
     IReadOnlyList<MyInvoiceTransactionDto> Transactions);

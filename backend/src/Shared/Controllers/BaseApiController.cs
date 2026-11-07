@@ -173,6 +173,27 @@ public abstract class BaseApiController : ControllerBase
         return File(result.Value.FileContent, result.Value.ContentType, result.Value.FileName);
     }
 
+    /// <summary>An image the host serves inline from memory (a plugin icon), with the headers that keep it inert.</summary>
+    /// <remarks>
+    /// The body is untrusted markup when it is an SVG: <c>X-Content-Type-Options: nosniff</c> pins the declared type and
+    /// the policy <c>default-src 'none'; style-src 'unsafe-inline'</c> stops script, frames and every fetch if the file is
+    /// opened on its own. The strong entity tag lets the browser revalidate and be answered 304 (<c>File</c> compares it
+    /// with <c>If-None-Match</c>), so a plugin upgrade shows its new icon after at most the max-age window.
+    /// </remarks>
+    /// <param name="content">The checked image bytes.</param>
+    /// <param name="contentType">The media type of the bytes.</param>
+    /// <param name="eTag">The strong entity tag of the bytes, quoted.</param>
+    /// <returns>The image response, or 304 when the caller already holds it.</returns>
+    protected IActionResult InlineImage(byte[] content, string contentType, string eTag)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+
+        Response.Headers.XContentTypeOptions = "nosniff";
+        Response.Headers.ContentSecurityPolicy = "default-src 'none'; style-src 'unsafe-inline'";
+        Response.Headers.CacheControl = "private, max-age=300, must-revalidate";
+        return File(content, contentType, null, new Microsoft.Net.Http.Headers.EntityTagHeaderValue(eTag));
+    }
+
     /// <summary>202 with no body for queued work, or the mapped refusal.</summary>
     /// <param name="result">The handler's outcome.</param>
     /// <returns>The response.</returns>
@@ -215,6 +236,12 @@ public abstract class BaseApiController : ControllerBase
         if (reply.Stream is { } stream)
         {
             return HandleStream(Result<StreamedReply>.Success(stream));
+        }
+
+        // A raw reply is written as the sender chose: its bytes, media type and status, with no serialisation.
+        if (reply.RawBody is { } raw && reply.ContentType is { } contentType)
+        {
+            return new RawReplyResult(reply.Status, raw, contentType);
         }
 
         // A JsonResult, not an ObjectResult: content negotiation would write a plugin's bare string as text/plain, and a

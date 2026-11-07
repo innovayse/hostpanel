@@ -4,7 +4,7 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -198,6 +198,40 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
         plugin.CreatePaymentCallCount.Should().Be(1);
     }
 
+    /// <summary>
+    /// An invoice with a blocking stored charge claim (unfinished or held) is refused before the plugin is called, with
+    /// <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c>, so no second payment is registered.
+    /// </summary>
+    /// <param name="held"><see langword="true"/> for a held claim, <see langword="false"/> for a pending one.</param>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task InvoiceWithABlockingStoredChargeClaimRefusesWithoutCallingTheGateway(bool held)
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, held ? "gw-start-held" : "gw-start-claim");
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 10m);
+        if (held)
+        {
+            await BillingTestSeeds.SeedHeldClaimAsync(host, invoiceId, clientId);
+        }
+        else
+        {
+            await BillingTestSeeds.SeedUnresolvedClaimAsync(host, invoiceId, clientId, pending: true);
+        }
+
+        var response = await StartAsync(client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(
+            held ? HostpanelErrorCodes.INVOICE_STORED_CHARGE_HELD : HostpanelErrorCodes.INVOICE_STORED_CHARGE_UNRESOLVED);
+        plugin.CreatePaymentCallCount.Should().Be(0);
+    }
+
     /// <summary>A fresh session already known to be declined is replaced with a new one.</summary>
     [Fact]
     public async Task FreshLiveSessionAlreadyDeclinedIsReplaced()
@@ -286,5 +320,51 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         plugin.LastCreatePaymentInstruction!.AmountMinor.Should().Be(1550); // 25.50 - 10.00 due
+    }
+
+    /// <summary>
+    /// After credit is applied to the invoice, the gateway session charges what is still due, the total net of that credit:
+    /// the credit is never charged to the bank card a second time.
+    /// </summary>
+    [Fact]
+    public async Task StartAfterCredit_ChargesTheAmountDueNetOfCredit()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-credit");
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        await BillingTestSeeds.GiveCreditAsync(host, clientId, 12m);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 25.50m);
+        (await client.PostAsJsonAsync($"/api/me/invoices/{invoiceId}/credit", new { amount = 12m })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var response = await StartAsync(client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        plugin.LastCreatePaymentInstruction!.AmountMinor.Should().Be(1350); // 25.50 - 12.00 credit
+    }
+
+    /// <summary>
+    /// Credit that covers the whole invoice settles it, so no gateway session can be started for it: nothing is left to charge.
+    /// </summary>
+    [Fact]
+    public async Task StartAfterCreditThatCoversTheInvoice_IsRefusedAsNotPayable()
+    {
+        var plugin = new FakePaymentPlugin { CurrencyCode = "840" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (client, clientId) = await BillingTestSeeds.RegisterClientAsync(factory, host, "gw-credit-all");
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, host);
+        await BillingTestSeeds.GiveCreditAsync(host, clientId, 30m);
+        var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, clientId, 25.50m);
+        (await client.PostAsJsonAsync($"/api/me/invoices/{invoiceId}/credit", new { amount = 25.50m })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var response = await StartAsync(client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_NOT_PAYABLE);
+        plugin.CreatePaymentCallCount.Should().Be(0);
     }
 }

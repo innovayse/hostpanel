@@ -37,9 +37,9 @@ describe('integration value sets', () => {
     expect(INTEGRATION_CATEGORIES.at(-1)?.label).toBe('Background workers')
   })
 
-  it('offer the payment modes through the enum', () => {
-    const modeField = INTEGRATION_META.stripe.fields.find((field) => field.key === 'mode')
+  it('offer the encryption modes through the enum', () => {
+    const encryptionField = INTEGRATION_META.smtp.fields.find((field) => field.key === 'encryption')
 
-    expect(modeField?.options).toEqual([IntegrationMode.Live, IntegrationMode.Test])
+    expect(encryptionField?.options).toEqual([IntegrationEncryption.Tls, IntegrationEncryption.Ssl, IntegrationEncryption.None])
   })
 })

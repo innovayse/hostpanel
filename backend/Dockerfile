@@ -19,15 +19,14 @@ COPY src/Innovayse.Hostpanel.Domain/Innovayse.Hostpanel.Domain.csproj ./src/Inno
 COPY src/Innovayse.Hostpanel.Application/Innovayse.Hostpanel.Application.csproj ./src/Innovayse.Hostpanel.Application/
 COPY src/Innovayse.Hostpanel.Infrastructure/Innovayse.Hostpanel.Infrastructure.csproj ./src/Innovayse.Hostpanel.Infrastructure/
 COPY src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj ./src/Innovayse.Hostpanel.API/
-COPY src/Innovayse.SDK/Innovayse.SDK.csproj ./src/Innovayse.SDK/
+COPY src/Hostpanel.Sdk/Hostpanel.Sdk.csproj ./src/Hostpanel.Sdk/
+COPY src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging/Hostpanel.Sdk.Packaging.csproj ./src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging/
 COPY src/Innovayse.Providers.CWP/Innovayse.Providers.CWP.csproj ./src/Innovayse.Providers.CWP/
 COPY src/Innovayse.Providers.CWP7/Innovayse.Providers.CWP7.csproj ./src/Innovayse.Providers.CWP7/
-COPY src/Innovayse.Providers.Inecobank/Innovayse.Providers.Inecobank.csproj ./src/Innovayse.Providers.Inecobank/
 COPY tests/Innovayse.Hostpanel.Domain.Tests/Innovayse.Hostpanel.Domain.Tests.csproj ./tests/Innovayse.Hostpanel.Domain.Tests/
 COPY tests/Innovayse.Hostpanel.Architecture.Tests/Innovayse.Hostpanel.Architecture.Tests.csproj ./tests/Innovayse.Hostpanel.Architecture.Tests/
 COPY tests/Innovayse.Hostpanel.Integration.Tests/Innovayse.Hostpanel.Integration.Tests.csproj ./tests/Innovayse.Hostpanel.Integration.Tests/
 COPY tests/Innovayse.CWP.Tests/Innovayse.CWP.Tests.csproj ./tests/Innovayse.CWP.Tests/
-COPY tests/Innovayse.Inecobank.Tests/Innovayse.Inecobank.Tests.csproj ./tests/Innovayse.Inecobank.Tests/
 # AUTH_MODE=sso builds with -p:InnovayseSso=true so a missing registry credential fails here, not at boot.
 ARG AUTH_MODE
 
@@ -63,15 +62,14 @@ COPY src/Innovayse.Hostpanel.Domain/Innovayse.Hostpanel.Domain.csproj ./src/Inno
 COPY src/Innovayse.Hostpanel.Application/Innovayse.Hostpanel.Application.csproj ./src/Innovayse.Hostpanel.Application/
 COPY src/Innovayse.Hostpanel.Infrastructure/Innovayse.Hostpanel.Infrastructure.csproj ./src/Innovayse.Hostpanel.Infrastructure/
 COPY src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj ./src/Innovayse.Hostpanel.API/
-COPY src/Innovayse.SDK/Innovayse.SDK.csproj ./src/Innovayse.SDK/
+COPY src/Hostpanel.Sdk/Hostpanel.Sdk.csproj ./src/Hostpanel.Sdk/
+COPY src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging/Hostpanel.Sdk.Packaging.csproj ./src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging/
 COPY src/Innovayse.Providers.CWP/Innovayse.Providers.CWP.csproj ./src/Innovayse.Providers.CWP/
 COPY src/Innovayse.Providers.CWP7/Innovayse.Providers.CWP7.csproj ./src/Innovayse.Providers.CWP7/
-COPY src/Innovayse.Providers.Inecobank/Innovayse.Providers.Inecobank.csproj ./src/Innovayse.Providers.Inecobank/
 COPY tests/Innovayse.Hostpanel.Domain.Tests/Innovayse.Hostpanel.Domain.Tests.csproj ./tests/Innovayse.Hostpanel.Domain.Tests/
 COPY tests/Innovayse.Hostpanel.Architecture.Tests/Innovayse.Hostpanel.Architecture.Tests.csproj ./tests/Innovayse.Hostpanel.Architecture.Tests/
 COPY tests/Innovayse.Hostpanel.Integration.Tests/Innovayse.Hostpanel.Integration.Tests.csproj ./tests/Innovayse.Hostpanel.Integration.Tests/
 COPY tests/Innovayse.CWP.Tests/Innovayse.CWP.Tests.csproj ./tests/Innovayse.CWP.Tests/
-COPY tests/Innovayse.Inecobank.Tests/Innovayse.Inecobank.Tests.csproj ./tests/Innovayse.Inecobank.Tests/
 ARG AUTH_MODE
 
 # The private feed credentials arrive as the BuildKit secret nuget_credentials (docker build --secret
@@ -103,16 +101,33 @@ RUN SSO=$([ "$AUTH_MODE" = "sso" ] && echo "-p:InnovayseSso=true"); \
     ConnectionStrings__DefaultConnection="Host=codegen.invalid;Database=codegen;Username=codegen;Password=codegen" \
     Sso__Authority=https://sign-on.invalid Sso__ClientId=codegen \
     Auth__AppName=codegen Auth__Authority=https://sign-on.invalid Auth__PublicAuthority=https://sign-on.invalid \
+    Auth__BearerIssuer=https://sign-on.invalid \
     Auth__ClientId=codegen Auth__ClientSecret=codegen Auth__RedisConnection=localhost:6379 \
     dotnet run -c Release --no-restore --no-launch-profile $SSO -- codegen write
 
 ARG VERSION=0.0.0-dev
 
+# The published host runs the code generated above (TypeLoadMode.Static) and never compiles, so Wolverine's
+# runtime compiler package (WolverineFx.RuntimeCompilation, which Wolverine 6 moved out of core) stays out of
+# it, with the scripting and Visual Basic Roslyn assemblies it adds. The codegen step above still needed it,
+# so it is dropped only here, by restoring the API project again with OmitRuntimeCompilation=true (a property
+# of the API project, set on restore and publish alike: the restore decides which packages the publish
+# copies). The packages are already in the cache from the first restore; the secret is mounted again only so
+# a cache miss cannot fail on a private feed.
+RUN --mount=type=secret,id=nuget_credentials,required=false \
+    SSO=$([ "$AUTH_MODE" = "sso" ] && echo "-p:InnovayseSso=true"); \
+    if [ -s /run/secrets/nuget_credentials ]; then export NuGetPackageSourceCredentials_innovayse="$(cat /run/secrets/nuget_credentials)"; fi; \
+    dotnet restore src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj -p:OmitRuntimeCompilation=true $SSO
+
+# The image version goes in as HostVersion, never as Version: a global Version reaches every referenced project and
+# would overwrite the version the plugin SDK sets for itself (backend/src/Directory.Build.props maps HostVersion onto
+# the host's own projects only). A plugin is built against the SDK's own number and refuses to load against another,
+# so an SDK stamped 0.0.0.0 made every plugin's entry point type unloadable.
 RUN SSO=$([ "$AUTH_MODE" = "sso" ] && echo "-p:InnovayseSso=true"); \
     dotnet publish src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj -c Release -o /out --no-restore \
+        /p:OmitRuntimeCompilation=true \
         /p:ErrorOnDuplicatePublishOutputFiles=false \
-        /p:Version=$VERSION \
-        /p:InformationalVersion=$VERSION \
+        /p:HostVersion=$VERSION \
         $SSO
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0.22-alpine3.24@sha256:c8e9a3262af499a08fd3911542af57a35c7a11819ba5db2a0a1658e47417d11b AS prod

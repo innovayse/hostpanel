@@ -11,7 +11,12 @@
 import type { PluginBlockKind } from '~/types/pluginblockkind'
 import type { PluginBlockTone } from '~/types/pluginblocktone'
 import type { PluginFieldType } from '~/types/pluginfieldtype'
+import type { PluginFollowUp } from '~/types/pluginfollowup'
+import type { PluginPreviewSize } from '~/types/pluginpreviewsize'
+import type { PluginTableDisplay } from '~/types/plugintabledisplay'
 import type { PluginValueFormat } from '~/types/pluginvalueformat'
+import type { PluginViewCondition } from '~/types/pluginviewcondition'
+import type { PluginPreviewSelection } from '~/types/pluginpreviewselection'
 import type { PluginViewRoute } from '~/types/pluginviewroute'
 
 /** A value read from a route: the route's reply, or one field of it. */
@@ -21,6 +26,17 @@ export interface PluginSource {
   /** A dotted path into the reply, e.g. `site.previewUrl`; the whole reply when absent. */
   field?: string
 }
+
+/** The body of an action's call, built from a route's reply; `fields` maps each body member to a dotted path into it. */
+export interface PluginActionBodySource {
+  /** The GET route read. */
+  route: PluginViewRoute
+  /** The body members and where each is read from. */
+  fields: Record<string, string>
+}
+
+/** One value of a body built from page data. */
+export type PluginActionBodyValue = string | number | boolean
 
 /** A plugin page to open, its parameters taken from fields of the row or reply at hand. */
 export interface PluginPageLink {
@@ -34,16 +50,24 @@ export interface PluginPageLink {
 interface PluginBlockBase {
   /** The block id, which an action's `refresh` names; optional. */
   id?: string
+  /** The block shows only while this condition holds; always shown when absent. */
+  visibleWhen?: PluginViewCondition
 }
 
 /** A title with optional actions beside it. */
 export interface PluginHeaderBlock extends PluginBlockBase {
   /** The kind. */
   kind: PluginBlockKind.Header
-  /** The title. */
-  title: string
-  /** Buttons shown beside the title. */
-  actions?: PluginActionBlock[]
+  /** The title; a compact header may read it from `titleSource` or go without. */
+  title?: string
+  /** Where the title is read from; replaces `title` once read. */
+  titleSource?: PluginSource
+  /** Where the smaller line under the title is read from. */
+  subtitleSource?: PluginSource
+  /** One slim line holding the back link, the title and the actions, for a workspace page's top. */
+  compact?: boolean
+  /** What is shown beside the title: buttons, and any other block a compact header lines up. */
+  actions?: PluginBlock[]
 }
 
 /** Plain text. */
@@ -92,6 +116,8 @@ export interface PluginTableBlock extends PluginBlockBase {
   rowLink?: PluginPageLink
   /** Rows per page; every row on one page when absent. */
   pageSize?: number
+  /** `cards` draws each row as a card instead of a table row. */
+  display?: PluginTableDisplay
 }
 
 /** One field of a form block. */
@@ -126,6 +152,10 @@ export interface PluginFormBlock extends PluginBlockBase {
     label: string
     /** The ids of the blocks read again after a successful submit. */
     refresh?: string[]
+    /** Whether every field returns to empty after a successful submit. */
+    resetOnSuccess?: boolean
+    /** The blocks read again after a successful submit until a route read reaches a final value. */
+    followUp?: PluginFollowUp
   }
 }
 
@@ -135,8 +165,14 @@ export interface PluginActionBlock extends PluginBlockBase {
   kind: PluginBlockKind.Action
   /** The button label. */
   label: string
+  /** Where a label that depends on data is read from; `label` stands until it is read or when it is empty. */
+  labelSource?: PluginSource
   /** The route called. */
   route: PluginViewRoute
+  /** Where the call's body is read from, in one read with `labelSource`; the button is disabled until every member is read. */
+  bodySource?: PluginActionBodySource
+  /** The call's body as written by a result card, which shows one version for as long as it stands. */
+  body?: Record<string, PluginActionBodyValue>
   /** The question asked before the call; no question when absent. */
   confirm?: string
   /** The button's tone. */
@@ -145,6 +181,8 @@ export interface PluginActionBlock extends PluginBlockBase {
   refresh?: string[]
   /** The page opened after a successful call, its parameters taken from the reply. */
   navigate?: PluginPageLink
+  /** The blocks read again after a successful call until a route read reaches a final value. */
+  followUp?: PluginFollowUp
 }
 
 /** A link to one of the plugin's allowed origins. */
@@ -209,6 +247,8 @@ export interface PluginTabsBlock extends PluginBlockBase {
   kind: PluginBlockKind.Tabs
   /** The tabs, in order. */
   tabs: PluginTab[]
+  /** Small actions on the tab row's right, shown whichever tab is open. */
+  actions?: PluginActionBlock[]
 }
 
 /** A ready-made message a chat offers before the first one is written. */
@@ -225,6 +265,8 @@ export interface PluginChatBlock extends PluginBlockBase {
   kind: PluginBlockKind.Chat
   /** The streaming POST route a message is sent to. */
   send: PluginViewRoute
+  /** Whether a message carries the elements selected on the document's preview; off when absent. */
+  selection?: boolean
   /** The GET route answering the earlier messages. */
   history?: PluginViewRoute
   /** The placeholder of the message field. */
@@ -263,6 +305,44 @@ export interface PluginProgressBlock extends PluginBlockBase {
   source?: PluginSource
 }
 
+/** One pane of a split block. */
+export interface PluginSplitPane {
+  /** The blocks the pane shows, in order. */
+  blocks: PluginBlock[]
+}
+
+/** Two panes side by side, the first on top on a phone. */
+export interface PluginSplitBlock extends PluginBlockBase {
+  /** The kind. */
+  kind: PluginBlockKind.Split
+  /** The two panes; the install check refuses any other number. */
+  panes: PluginSplitPane[]
+}
+
+/** One named address a preview block can show. */
+export interface PluginPreviewSource extends PluginSource {
+  /** The source id, unique within the block. */
+  id: string
+  /** The switch's label and the frame's title. */
+  label: string
+}
+
+/** One address in a sandboxed frame, with a source and a size switch. */
+export interface PluginPreviewBlock extends PluginBlockBase {
+  /** The kind. */
+  kind: PluginBlockKind.Preview
+  /** Lets the reader select elements in the frame; off when absent. */
+  selection?: PluginPreviewSelection
+  /** The heading above the frame. */
+  title?: string
+  /** The size shown first; desktop when absent. */
+  size?: PluginPreviewSize
+  /** The addresses, 1 to 5; the first is shown first. */
+  sources: PluginPreviewSource[]
+  /** Where a note over the frame is read from: an object of sentences by source id. */
+  note?: PluginSource
+}
+
 /** One block of a plugin view. */
 export type PluginBlock =
   | PluginHeaderBlock
@@ -278,3 +358,5 @@ export type PluginBlock =
   | PluginTabsBlock
   | PluginChatBlock
   | PluginProgressBlock
+  | PluginSplitBlock
+  | PluginPreviewBlock

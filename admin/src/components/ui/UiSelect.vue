@@ -8,7 +8,9 @@
  */
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
+import UiTransition from '@/components/ui/UiTransition.vue'
 import { fieldInvalidClasses } from '@/utils/ui/input'
+import { UiTransitionKind } from '@/utils/ui/transition'
 
 const { t } = useI18n()
 
@@ -30,12 +32,57 @@ const props = defineProps<{
   id?: string
   /** Marks the value as refused by the server (red border, `aria-invalid`). */
   invalid?: boolean
+  /**
+   * The small, quiet look for toolbars: a trigger sized like a small button and a softer list (inset
+   * rounded rows, a tinted selection instead of a solid one). Forms keep the default.
+   */
+  compact?: boolean
 }>()
 
 const emit = defineEmits<{
   /** Emitted when the user picks an option. */
   'update:modelValue': [value: T]
 }>()
+
+/**
+ * Trigger padding, type size and radius: the default field look, or a small button's when compact.
+ *
+ * @returns The trigger's size and shape classes.
+ */
+const triggerSizeClasses = computed<string>(() =>
+  props.compact ? 'px-2.5 py-1 text-[0.75rem] rounded-lg' : 'px-3 py-2 text-[0.82rem] rounded-[10px]',
+)
+
+/**
+ * The list's frame: the default, or a softer inset one when compact.
+ *
+ * @returns The panel's position, border, surface and width classes.
+ */
+const panelClasses = computed<string>(() => {
+  // A wide list is at least 18rem, but never wider than the screen less a margin, so on a phone it cannot reach past the page edge and widen the page.
+  const width = props.wide ? 'min-w-[18rem] max-w-[calc(100vw-4rem)]' : 'w-full'
+  return props.compact
+    ? `absolute z-50 mt-1 min-w-[5.5rem] origin-top overflow-hidden rounded-xl border border-border bg-surface-card p-1 shadow-lg shadow-black/20 ${width}`
+    : `absolute z-50 mt-1.5 overflow-hidden rounded-[10px] border border-border bg-surface-card shadow-xl ${width}`
+})
+
+/**
+ * The classes of one row of the list.
+ *
+ * @param selected - Whether the row is the chosen option.
+ * @returns The row's size, shape and colours.
+ */
+const optionClasses = (selected: boolean): string => {
+  const base = props.compact ? 'rounded-lg px-2.5 py-1.5 text-[0.78rem]' : 'px-3 py-1.5 text-[0.82rem]'
+  if (props.compact) {
+    return selected
+      ? `${base} bg-primary-500/10 font-medium text-primary-400 light:text-primary-700`
+      : `${base} text-text-secondary hover:bg-surface-hover hover:text-text-primary focus-visible:bg-surface-hover focus-visible:text-text-primary`
+  }
+  return selected
+    ? `${base} bg-primary-600 light:bg-primary-700 text-white font-medium`
+    : `${base} text-text-secondary hover:text-text-primary hover:bg-surface-hover focus-visible:text-text-primary focus-visible:bg-surface-hover`
+}
 
 /** Whether the dropdown panel is open. */
 const open = ref(false)
@@ -127,16 +174,16 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
       data-testid="ui-select-trigger"
       :id="props.id"
       :aria-invalid="props.invalid || undefined"
-      class="w-full flex items-center justify-between gap-2 bg-surface-field border border-border rounded-[10px] px-3 py-2 text-[0.82rem] text-text-primary outline-none focus-visible:border-primary-500/50 focus-visible:ring-2 focus-visible:ring-primary-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-      :class="[open ? 'border-primary-500/50 ring-2 ring-primary-500/20' : '', props.invalid ? fieldInvalidClasses : '']"
+      class="w-full flex items-center justify-between gap-2 bg-surface-field border border-border text-text-primary outline-none focus-visible:border-primary-500/50 focus-visible:ring-2 focus-visible:ring-primary-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+      :class="[triggerSizeClasses, open ? 'border-primary-500/50 ring-2 ring-primary-500/20' : '', props.invalid ? fieldInvalidClasses : '']"
       @click="toggle"
     >
       <span class="truncate" :class="showingPlaceholder ? 'text-text-muted' : 'text-text-primary'">
         {{ selectedLabel }}
       </span>
       <svg
-        class="w-4 h-4 text-text-secondary shrink-0 transition-transform duration-150"
-        :class="open ? 'rotate-180' : ''"
+        class="text-text-secondary shrink-0 transition-transform duration-200"
+        :class="[compact ? 'w-3.5 h-3.5' : 'w-4 h-4', open ? 'rotate-180' : '']"
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
@@ -148,19 +195,11 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
     </button>
 
     <!-- Dropdown panel -->
-    <Transition
-      enter-active-class="transition duration-100 ease-out"
-      enter-from-class="opacity-0 scale-95 -translate-y-1"
-      enter-to-class="opacity-100 scale-100 translate-y-0"
-      leave-active-class="transition duration-75 ease-in"
-      leave-from-class="opacity-100 scale-100 translate-y-0"
-      leave-to-class="opacity-0 scale-95 -translate-y-1"
-    >
+    <UiTransition :kind="UiTransitionKind.Dropdown">
       <div
         v-if="open"
         role="listbox"
-        class="absolute z-50 mt-1.5 bg-surface-card border border-border rounded-[10px] shadow-xl overflow-hidden"
-        :class="wide ? 'min-w-[18rem]' : 'w-full'"
+        :class="panelClasses"
       >
         <!-- Search input -->
         <div v-if="props.searchable" class="p-1.5 border-b border-border">
@@ -174,7 +213,7 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
           >
         </div>
 
-        <div class="max-h-56 overflow-y-auto py-1">
+        <div class="max-h-56 overflow-y-auto" :class="compact ? 'flex flex-col gap-0.5' : 'py-1'">
           <button
             v-for="opt in filteredOptions"
             :key="String(opt.value)"
@@ -182,16 +221,15 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
             role="option"
             data-testid="ui-select-option"
             :aria-selected="opt.value === props.modelValue"
-            class="w-full flex items-center justify-between px-3 py-1.5 text-[0.82rem] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/40"
-            :class="opt.value === props.modelValue
-              ? 'bg-primary-600 light:bg-primary-700 text-white font-medium'
-              : 'text-text-secondary hover:text-text-primary hover:bg-surface-hover focus-visible:text-text-primary focus-visible:bg-surface-hover'"
+            class="w-full flex items-center justify-between transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500/40"
+            :class="optionClasses(opt.value === props.modelValue)"
             @mousedown.prevent.stop="select(opt.value)"
           >
             <span class="truncate">{{ opt.displayLabel ?? opt.label }}</span>
             <svg
               v-if="opt.value === props.modelValue"
-              class="w-3.5 h-3.5 text-white shrink-0 ml-2"
+              class="w-3.5 h-3.5 shrink-0 ml-2"
+              :class="compact ? 'text-primary-400 light:text-primary-700' : 'text-white'"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -206,6 +244,6 @@ onUnmounted(() => document.removeEventListener('mousedown', onOutsideClick))
           </p>
         </div>
       </div>
-    </Transition>
+    </UiTransition>
   </div>
 </template>

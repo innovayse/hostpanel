@@ -4,19 +4,19 @@
     class="z-30 flex flex-shrink-0 items-center justify-between border-b border-gray-200 bg-ui-surface px-4 py-3 dark:border-white/10 lg:px-8 lg:py-4"
     data-testid="client-topbar"
   >
-    <!-- Left: logo on mobile, welcome text on desktop -->
+    <!-- Left: the brand, the same lockup the storefront header draws, at every width -->
     <div class="mr-3 min-w-0">
-      <UiLink to="/" tone="inherit" :underline="false" testid="client-topbar-brand" class="text-lg font-bold lg:hidden">
-        {{ $t('client.nav.brand', { site: siteName }) }}
+      <UiLink to="/" tone="inherit" :underline="false" testid="client-topbar-brand" class="flex items-center gap-2">
+        <LogoLockup img-class="h-8 w-auto object-contain" mark-class="h-8 w-8" name-class="text-lg font-bold" />
       </UiLink>
+    </div>
+
+    <!-- Right: welcome text on desktop, then the controls -->
+    <div class="flex min-w-0 flex-shrink-0 items-center gap-2 lg:gap-3">
       <UiText as="span" size="sm" tone="muted" truncate class="hidden lg:block">
         {{ $t('client.nav.welcomeBack') }}
         <UiText as="span" size="sm" weight="medium" data-testid="client-topbar-name">{{ fullName }}</UiText>
       </UiText>
-    </div>
-
-    <!-- Right: controls -->
-    <div class="flex flex-shrink-0 items-center gap-2 lg:gap-3">
       <!-- Desktop only: theme toggle, language switcher, app launcher -->
       <div class="hidden items-center gap-3 lg:flex">
         <UiThemeToggle />
@@ -54,11 +54,12 @@
 
 <script setup lang="ts">
 /**
- * The client area's top bar: welcome text, theme and language controls, the platform widget
- * mounts and the mobile menu button.
+ * The client area's top bar: the brand lockup on the left, then the welcome text, theme and language
+ * controls, the platform widget mounts and the mobile menu button on the right.
  */
 import { Menu, X } from 'lucide-vue-next'
 import type { ClientNavItem } from '~/types/clientnavitem'
+import LogoLockup from '~/components/LogoLockup.vue'
 import { useHeaderWidget } from '~/composables/useHeaderWidget'
 
 /** Props of ClientLayoutTopBar. */
@@ -78,9 +79,6 @@ interface Props {
   /** Whether the mobile sidebar is open, so the button shows a cross. */
   sidebarOpen: boolean
 }
-
-/** Operator-set site name shown as the brand. */
-const { name: siteName } = useSiteIdentity()
 
 /** Whether the platform widget fills the mounts here, or the local account menu is drawn instead. */
 const { enabled: widgetEnabled } = useHeaderWidget()

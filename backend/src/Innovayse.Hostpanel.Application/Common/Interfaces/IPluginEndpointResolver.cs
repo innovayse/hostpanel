@@ -1,5 +1,5 @@
-using Innovayse.SDK.Plugins.Endpoints;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 
@@ -18,6 +18,18 @@ public interface IPluginEndpointResolver
     /// plugin, which are the same answer on purpose.
     /// </returns>
     PluginManifest? Find(string pluginId);
+
+    /// <summary>
+    /// Finds the manifest of a loaded plugin that answers public callbacks: an app plugin, or a plugin of any other type
+    /// whose manifest declares the <c>endpoints</c> capability. Only the callback door asks; the client and admin doors
+    /// and the plugin UI stay with <see cref="Find"/>, which is app plugins only.
+    /// </summary>
+    /// <param name="pluginId">The plugin id from the URL.</param>
+    /// <returns>
+    /// The manifest, or <see langword="null"/> when no such plugin is loaded or it does not answer callbacks, which are
+    /// the same answer on purpose.
+    /// </returns>
+    PluginManifest? FindForCallback(string pluginId);
 
     /// <summary>
     /// Checks that the plugin is switched on and configured, without building it, and returns the way to build it.

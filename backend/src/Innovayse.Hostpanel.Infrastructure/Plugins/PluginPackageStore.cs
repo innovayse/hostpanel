@@ -4,11 +4,12 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Plugins;
-using Innovayse.Hostpanel.Domain.Plugins.Enums;
+using Hostpanel.Sdk.Packaging.Archive;
+using Hostpanel.Sdk.Packaging.Naming;
+using PluginVersionChange = Hostpanel.Sdk.Packaging.Enums.PluginVersionChange;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -55,6 +56,9 @@ public sealed class PluginPackageStore : IPluginPackageStore
 
     /// <summary>Tells whether a plugin is loaded, whose folder must then never be overwritten in place.</summary>
     private readonly IPluginRegistry _registry;
+
+    /// <summary>The entry count and uncompressed size limits of an upload, in the form the archive guards of the packaging package take.</summary>
+    private PluginArchiveLimits Limits => new(_options.MaxEntryCount, _options.MaxUncompressedBytes);
 
     /// <summary>Initializes the store.</summary>
     /// <param name="options">Upload folder, limits and the trusted-package list.</param>
@@ -312,11 +316,11 @@ public sealed class PluginPackageStore : IPluginPackageStore
         // Declared sizes are checked up front so an obviously oversized archive is refused before
         // anything is unpacked; the real byte count is enforced again while unpacking, since the
         // declared size is only what the archive claims.
-        if (archive.Entries.Count > _options.MaxEntryCount
-            || archive.Entries.Sum(e => e.Length) > _options.MaxUncompressedBytes)
+        var declared = PluginArchiveGuard.CheckDeclared(archive, Limits);
+        if (declared is not null)
         {
-            _logger.LogWarning("Plugin install refused: the archive exceeds the entry count or size limit.");
-            return Refused(PluginPackageOutcome.ArchiveTooLarge);
+            _logger.LogWarning("Plugin install refused: the archive exceeds the entry count or size limit ({Rule}).", declared.Rule);
+            return Refused(PluginRuleMap.ToHost(declared.Rule));
         }
 
         var manifestEntry = archive.GetEntry(ManifestFileName);
@@ -372,10 +376,24 @@ public sealed class PluginPackageStore : IPluginPackageStore
             return new PluginPackageResult(PluginPackageOutcome.BuiltIn, id, sha256);
         }
 
-        if (archive.Entries.Any(e => HostAssemblyNames.IsHostAssembly(e.Name)))
+        if (archive.Entries.Any(e => PluginHostAssemblies.IsProvided(e.Name)))
         {
             _logger.LogWarning("Plugin install refused: {PluginId} carries an assembly the host provides.", id);
             return new PluginPackageResult(PluginPackageOutcome.HostAssemblyRefused, id, sha256);
+        }
+
+        // LoadFrom binds a name to the first copy loaded, so a DLL name another installed or staged plugin already ships
+        // would run this plugin on that plugin's copy. The plugin's own installed and staged folders are skipped (an upgrade).
+        var conflictingId = PluginAssemblyConflicts.Find(
+            id,
+            archive.Entries.Where(e => PluginAssemblyConflicts.IsAssembly(e.Name)).Select(e => e.Name).ToList(),
+            installRoot,
+            PluginOptions.BuiltInRoot);
+        if (conflictingId is not null)
+        {
+            _logger.LogWarning(
+                "Plugin install refused: {PluginId} carries an assembly file name that plugin {OtherPluginId} already ships.", id, conflictingId);
+            return new PluginPackageResult(PluginPackageOutcome.AssemblyConflict, id, sha256);
         }
 
         var violation = PluginManifestValidator.Validate(manifest);
@@ -385,7 +403,7 @@ public sealed class PluginPackageStore : IPluginPackageStore
         }
 
         var contentDir = Path.Combine(work, "content");
-        var unpacked = await UnpackAsync(archive, contentDir, id, ct);
+        var unpacked = Unpack(archive, contentDir, id);
         if (unpacked != PluginPackageOutcome.Installed)
         {
             return new PluginPackageResult(unpacked, id, sha256);
@@ -398,14 +416,22 @@ public sealed class PluginPackageStore : IPluginPackageStore
             return RuleBroken(id, sha256, violation);
         }
 
-        violation = PluginViewDocumentReader.Read(contentDir, manifest, _options.MaxViewBytes).Violation;
+        // Every view rule applies to an upload, the ones added after plugins were installed included; the loader warns
+        // about those instead (PluginViewRead.Advisories), so an installed plugin is not lost to a host upgrade.
+        violation = PluginViewDocumentReader.Read(contentDir, manifest, _options.MaxViewBytes).RefusedAtInstall;
+        if (violation is not null)
+        {
+            return RuleBroken(id, sha256, violation);
+        }
+
+        violation = PluginIconReader.Read(contentDir, manifest).Violation;
         if (violation is not null)
         {
             return RuleBroken(id, sha256, violation);
         }
 
         // The signature covers the unpacked files, so it is checked here, after the archive is unpacked and before the move into place.
-        var signature = _signatures.Check(contentDir, id, PluginOrigin.Uploaded, upload.AllowUnsigned, _logger);
+        var signature = _signatures.Check(contentDir, id, PluginOrigin.Uploaded, upload.AllowUnsigned, _logger, upload.RequireSignature);
         if (signature is not null)
         {
             _logger.LogWarning(
@@ -501,58 +527,25 @@ public sealed class PluginPackageStore : IPluginPackageStore
         }
     }
 
-    /// <summary>Unpacks every entry into <paramref name="contentDir"/>, counting the real bytes written.</summary>
+    /// <summary>
+    /// Unpacks the archive into <paramref name="contentDir"/> through the packaging package's
+    /// <see cref="PluginArchiveGuard.Extract"/>, the one unpack routine, and maps the guard it reports to an outcome.
+    /// </summary>
     /// <param name="archive">The open archive.</param>
     /// <param name="contentDir">The staging folder to unpack into.</param>
     /// <param name="id">The plugin id, for the log.</param>
-    /// <param name="ct">Cancellation token.</param>
     /// <returns><see cref="PluginPackageOutcome.Installed"/> when everything was unpacked, otherwise the refusal.</returns>
-    private async Task<PluginPackageOutcome> UnpackAsync(
-        ZipArchive archive, string contentDir, string id, CancellationToken ct)
+    private PluginPackageOutcome Unpack(ZipArchive archive, string contentDir, string id)
     {
-        Directory.CreateDirectory(contentDir);
-        var resolvedContentDir = Path.GetFullPath(contentDir) + Path.DirectorySeparatorChar;
-        var buffer = new byte[BufferSize];
-        long written = 0;
-
-        foreach (var entry in archive.Entries)
+        var violation = PluginArchiveGuard.Extract(archive, contentDir, Limits);
+        if (violation is null)
         {
-            var targetPath = Path.GetFullPath(Path.Combine(contentDir, entry.FullName.Replace('\\', '/')));
-
-            // Every entry must land inside this plugin's own folder.
-            if (!targetPath.StartsWith(resolvedContentDir, StringComparison.OrdinalIgnoreCase))
-            {
-                _logger.LogWarning(
-                    "Plugin install refused: an entry of {PluginId} would write outside the plugin folder.", id);
-                return PluginPackageOutcome.ArchiveUnsafe;
-            }
-
-            if (string.IsNullOrEmpty(entry.Name))
-            {
-                // A folder entry: nothing to write.
-                continue;
-            }
-
-            Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-
-            await using var source = entry.Open();
-            await using var target = new FileStream(
-                targetPath, FileMode.Create, FileAccess.Write, FileShare.None, BufferSize, useAsync: true);
-            int read;
-            while ((read = await source.ReadAsync(buffer, ct)) > 0)
-            {
-                written += read;
-                if (written > _options.MaxUncompressedBytes)
-                {
-                    _logger.LogWarning("Plugin install refused: {PluginId} unpacks past the size limit.", id);
-                    return PluginPackageOutcome.ArchiveTooLarge;
-                }
-
-                await target.WriteAsync(buffer.AsMemory(0, read), ct);
-            }
+            return PluginPackageOutcome.Installed;
         }
 
-        return PluginPackageOutcome.Installed;
+        _logger.LogWarning(
+            "Plugin install refused: the archive of {PluginId} breaks archive rule {Rule}: {Detail}.", id, violation.Rule, violation.Detail);
+        return PluginRuleMap.ToHost(violation.Rule);
     }
 
     /// <summary>

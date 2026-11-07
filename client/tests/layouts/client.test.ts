@@ -36,9 +36,11 @@ const { default: LayoutDemoBanner } = await import('~/components/layout/DemoBann
 const { Permission } = await import('~/composables/usePermissions')
 const { useAuthStore } = await import('~/stores/auth')
 const { useClientStore } = await import('~/stores/client')
+const { usePluginsStore } = await import('~/stores/plugins')
+const { default: ClientLayoutSidebar } = await import('~/components/client/layout/Sidebar.vue')
 
 /** The theme and language controls need runtime services this test does not provide. */
-const STUBS = { UiThemeToggle: true, UiLanguageSwitcher: true, UiCookieBanner: { template: '<div data-testid="cookie-banner" />' } }
+const STUBS = { UiThemeToggle: true, UiLanguageSwitcher: true, LogoLockup: true, UiCookieBanner: { template: '<div data-testid="cookie-banner" />' } }
 
 /** The signed-in person the identity call answers with. */
 const ME = makeClientUser({ email: 'ada@example.com', permissions: Permission.All })
@@ -103,6 +105,57 @@ const mountLayout = async () => {
 }
 
 describe('client layout', () => {
+  describe('workspace page', () => {
+    it.each(['ru', 'hy'])('hides the side menu on a workspace page under the %s prefix', async (language) => {
+      const wrapper = await mountAt(`/${language}${PAGE_PATH}`, 'workspace')
+
+      expect(wrapper.get('[data-testid="client-sidebar"]').classes()).toContain('lg:hidden')
+    })
+
+    /** The address of the workspace page these tests hold in the store. */
+    const PAGE_PATH = '/client/apps/acme/sites/7'
+
+    /**
+     * Mounts the layout at an address with a plugin page in the store.
+     *
+     * @param path - The address on screen.
+     * @param layout - The page's layout.
+     * @returns The wrapper.
+     */
+    const mountAt = async (path: string, layout: string) => {
+      vi.stubGlobal('useRoute', () => ({ params: path.includes('/client/apps/acme/') ? { plugin: 'acme' } : {}, query: {}, path, fullPath: path, meta: {} }))
+      const wrapper = await mountLayout()
+      usePluginsStore().page = {
+        pluginId: 'acme', id: 'sites', path: '/sites/{id}', title: 'Sites', view: { schema: 1, blocks: [] },
+        externalOrigins: [], layout, frameOrigins: [],
+      } as never
+      await nextTick()
+      return wrapper
+    }
+
+    it('drops the gutter and hides the side menu on a wide screen', async () => {
+      const wrapper = await mountAt(PAGE_PATH, 'workspace')
+
+      expect(wrapper.get('main > div').classes()).not.toContain('p-6')
+      expect(wrapper.get('main > div').classes()).toContain('flex-1')
+      expect(wrapper.findComponent(ClientLayoutSidebar).classes()).toContain('lg:hidden')
+    })
+
+    it('keeps the usual frame for a standard page', async () => {
+      const wrapper = await mountAt(PAGE_PATH, 'standard')
+
+      expect(wrapper.get('main > div').classes()).toContain('p-6')
+      expect(wrapper.findComponent(ClientLayoutSidebar).classes()).not.toContain('lg:hidden')
+    })
+
+    it('keeps the usual frame once the reader left the page the store still holds', async () => {
+      const wrapper = await mountAt('/client/dashboard', 'workspace')
+
+      expect(wrapper.get('main > div').classes()).toContain('p-6')
+      expect(wrapper.findComponent(ClientLayoutSidebar).classes()).not.toContain('lg:hidden')
+    })
+  })
+
   it('mounts the cookie banner inside the client area', async () => {
     const wrapper = await mountLayout()
 
@@ -144,7 +197,7 @@ describe('client layout', () => {
 
     expect(useAuthStore().user).toBeNull()
 
-    for (const id of ['dashboard', 'services', 'domains', 'invoices', 'tickets', 'account']) {
+    for (const id of ['dashboard', 'services', 'domains', 'invoices', 'credit-notes', 'tickets', 'account']) {
       expect(wrapper.find(`[data-testid="nav-client-${id}"]`).exists()).toBe(true)
     }
     expect(wrapper.find('[data-testid="nav-announcements"]').exists()).toBe(true)
@@ -178,6 +231,7 @@ describe('client layout', () => {
   })
 
   it('reads the plugin index again when the reader switches language, so the plugin labels follow', async () => {
+    /** The reader language; switched to prove the plugin index is read again. */
     const locale = ref('en')
     vi.stubGlobal('useI18n', () => ({ t: (key: string) => key, locale }))
     await mountLayout()
@@ -258,7 +312,7 @@ describe('client layout', () => {
     expect(wrapper.find('[data-testid="client-sidebar"]').classes()).toContain('-translate-x-full')
   })
 
-  it('opens one drawer below the top bar, with a single brand and close control', async () => {
+  it('opens one drawer below the top bar, with no brand of its own and no close control', async () => {
     const wrapper = await mountLayout()
     await wrapper.find('[data-testid="client-menu-toggle"]').trigger('click')
 
@@ -266,7 +320,9 @@ describe('client layout', () => {
     expect(classes).toContain('absolute')
     expect(classes).not.toContain('fixed')
     expect(wrapper.find('[data-testid="client-sidebar-backdrop"]').classes()).toContain('absolute')
-    expect(wrapper.find('[data-testid="client-sidebar-brand"]').element.parentElement?.classList.contains('hidden')).toBe(true)
+    // The brand lives in the top bar only; the drawer starts with the menu.
+    expect(wrapper.find('[data-testid="client-sidebar-brand"]').exists()).toBe(false)
+    expect(wrapper.findAll('[data-testid="client-topbar-brand"]')).toHaveLength(1)
     expect(wrapper.find('[data-testid="client-sidebar-close"]').exists()).toBe(false)
   })
 

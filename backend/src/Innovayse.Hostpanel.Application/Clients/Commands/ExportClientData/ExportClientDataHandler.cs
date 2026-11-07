@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Clients.Common.Enums;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -70,6 +71,9 @@ public sealed class ExportClientDataHandler
             return Result<ClientExportDto>.FailureCode(HostpanelErrorCodes.CLIENT_NOT_FOUND);
         }
 
+        // Whether any payment module holds a customer for this client: the saved-card flag of the export.
+        var hasSavedCard = await _context.GatewayCustomers.AsNoTracking().AnyAsync(g => g.ClientId == clientId, ct);
+
         var account = await _identity.FindBySubjectAsync(client.UserId, ct);
         var email = account?.Email ?? string.Empty;
 
@@ -103,9 +107,9 @@ public sealed class ExportClientDataHandler
                 ? new[] { new ClientExportConsentDto(ConsentPurpose.Marketing, client.MarketingOptIn) }
                 : null,
 
-            // Card details live at the card gateway; what is held here is the preference and whether a gateway customer exists.
+            // Card details live at the card gateway; what is held here is the preference and whether a payment module keeps a customer for the client.
             PayMethods = wanted.Contains(ClientExportSections.PayMethods)
-                ? MapPayMethods(client)
+                ? MapPayMethods(client, hasSavedCard)
                 : null,
         };
 
@@ -153,10 +157,10 @@ public sealed class ExportClientDataHandler
 
     /// <summary>Builds the <c>payMethods</c> section.</summary>
     /// <param name="client">The client being exported.</param>
-    /// <returns>One entry when the account has a payment preference or a card gateway customer, none otherwise.</returns>
-    private static IReadOnlyList<ClientExportPayMethodDto> MapPayMethods(Client client)
+    /// <param name="hasSavedCard">Whether a payment module keeps a customer for the client.</param>
+    /// <returns>One entry when the account has a payment preference or a gateway customer, none otherwise.</returns>
+    private static IReadOnlyList<ClientExportPayMethodDto> MapPayMethods(Client client, bool hasSavedCard)
     {
-        var hasSavedCard = !string.IsNullOrEmpty(client.CardGatewayCustomerId);
         if (client.PaymentMethod is null && !hasSavedCard)
         {
             return [];
@@ -204,6 +208,7 @@ public sealed class ExportClientDataHandler
     /// <returns>The <c>transactions</c> rows.</returns>
     private async Task<IReadOnlyList<ClientExportTransactionDto>> ReadTransactionsAsync(int clientId, CancellationToken ct) =>
         await _context.Transactions.AsNoTracking()
+            .Where(Transaction.MovedMoneyFilter)
             .Where(t => t.ClientId == clientId)
             .OrderByDescending(t => t.Date)
             .ThenByDescending(t => t.Id)

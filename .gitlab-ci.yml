@@ -46,7 +46,7 @@ variables:
   COMPOSE_FILES_DEPLOYED: docker/docker-compose.shared.yml:docker/docker-compose.prod.yml:docker/docker-compose.platform.yml
   # How long a deploy waits for the health endpoint to answer before the job fails.
   HEALTH_TIMEOUT_SECONDS: "180"
-  # The plugin SDK (backend/src/Innovayse.SDK) is a git submodule from its own public repository,
+  # The plugin SDK (backend/src/Hostpanel.Sdk) is a git submodule from its own public repository,
   # so every job the runner checks out fetches it too. The deploy jobs run with GIT_STRATEGY: none
   # and sync their own checkout, so they run `git submodule update` themselves after each checkout.
   GIT_SUBMODULE_STRATEGY: recursive
@@ -54,12 +54,24 @@ variables:
 # ── Reusable templates (inlined — this project runs on a GitLab pull-mirror
 #    of the GitHub repo, so the shared job definitions are copied here) ───────────
 
-# The job's own token as the private package feed credential (see the note on .test-dotnet). Defined here
-# once and extended only by the jobs that restore NuGet (.test-dotnet, .build-image, .deploy-staging and
+# The private package feed credential (see the note on .test-dotnet), composed here and nowhere else.
+# Extended only by the jobs that restore NuGet (.test-dotnet, .build-image, .deploy-staging and
 # deploy:prod), so no other job sees the token as a variable.
+#
+# One secret under one name: the CI/CD variable PRIVATE_FEED_TOKEN (masked, protected) holds only the
+# password of the feed's deploy token, and PRIVATE_FEED_USER (protected) its user name. A pipeline on a
+# protected ref gets both from the project. Any other ref (a merge request, a feature branch) is not given
+# protected variables, so the defaults below apply: the job's own token, valid only while the job runs.
+# That is why the two defaults are defined here under the same names; a project variable wins over them.
+#
+# The result is the exact spelling NuGet reads (the source name is part of the variable name). The jobs
+# that build the API image hand it to docker as the BuildKit secret "nuget_credentials", and the deploy
+# jobs pass it on to docker compose as NUGET_INNOVAYSE_CREDENTIALS.
 .nuget-credentials:
   variables:
-    PRIVATE_FEED_CREDENTIALS: "Username=gitlab-ci-token;Password=${CI_JOB_TOKEN}"
+    PRIVATE_FEED_USER: "gitlab-ci-token"
+    PRIVATE_FEED_TOKEN: $CI_JOB_TOKEN
+    NuGetPackageSourceCredentials_innovayse: "Username=${PRIVATE_FEED_USER};Password=${PRIVATE_FEED_TOKEN}"
 
 # Every test job a deploy waits for. A job's rules may leave a test out of a
 # pipeline (the `changes:` filters), so each is optional: a test that did not run does not block, a test
@@ -87,16 +99,14 @@ variables:
   variables:
     DOTNET_CLI_TELEMETRY_OPTOUT: "1"
     # The credential for the private authentication package, which lives in a private package
-    # registry. backend/nuget.config deliberately carries no credentials and expects them from
-    # the environment.
+    # registry, comes from .nuget-credentials (NuGetPackageSourceCredentials_innovayse).
+    # backend/nuget.config deliberately carries no credentials and expects them from the environment.
     #
-    # This exact spelling is the one NuGet reads (the source name is part of the variable name).
     # The NUGET_PACKAGE_SOURCE_CREDENTIALS_ form is read by nothing.
     #
-    # It is the job's own token, valid only while the job runs. For it to be accepted the
-    # registry's project must list this project in its CI_JOB_TOKEN allowlist, since a job
-    # token is scoped to its own project by default.
-    NuGetPackageSourceCredentials_innovayse: $PRIVATE_FEED_CREDENTIALS
+    # On an unprotected ref it is the job's own token, valid only while the job runs. For it to be
+    # accepted the registry's project must list this project in its CI_JOB_TOKEN allowlist, since a
+    # job token is scoped to its own project by default.
     # Testcontainers starts Ryuk, its reaper container, before the first real container and
     # then dials it on a mapped port. On the builder runner that connection is never made:
     # it waits its full minute, throws "ResourceReaperException: Initialization has been
@@ -184,7 +194,7 @@ variables:
     # build arg), so it is not stored in the image layers or its history. The client and admin
     # Dockerfiles never mount the secret. NUXT_PUBLIC_PORTAL_CHAT_BASE_URL is the client's build-time
     # proxy target; an unset CI/CD variable expands to empty (no proxy).
-    - docker build --secret id=nuget_credentials,env=PRIVATE_FEED_CREDENTIALS --build-arg AUTH_MODE=sso --build-arg "NUXT_PUBLIC_PORTAL_CHAT_BASE_URL=$NUXT_PUBLIC_PORTAL_CHAT_BASE_URL" --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
+    - docker build --secret id=nuget_credentials,env=NuGetPackageSourceCredentials_innovayse --build-arg AUTH_MODE=sso --build-arg "NUXT_PUBLIC_PORTAL_CHAT_BASE_URL=$NUXT_PUBLIC_PORTAL_CHAT_BASE_URL" --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
     - docker push "$IMAGE:$TAG"
     - docker push "$IMAGE:$CI_COMMIT_SHORT_SHA"
   rules:
@@ -199,7 +209,7 @@ variables:
     GIT_STRATEGY: none
     # The build below restores the private authentication package from the package registry, so the
     # credential has to reach it here the same way it does on production.
-    NUGET_INNOVAYSE_CREDENTIALS: $PRIVATE_FEED_CREDENTIALS
+    NUGET_INNOVAYSE_CREDENTIALS: $NuGetPackageSourceCredentials_innovayse
     COMPOSE_FILE: $COMPOSE_FILES_DEPLOYED
     # The local image names docker/docker-compose.prod.yml builds and runs: the project's own registry path.
     IMAGE_REGISTRY: $CI_REGISTRY_IMAGE
@@ -269,7 +279,6 @@ backend:test:
       Innovayse.Hostpanel.Domain.Tests
       Innovayse.Hostpanel.Architecture.Tests
       Innovayse.CWP.Tests
-      Innovayse.Inecobank.Tests
   rules:
     # main is reached only through a GitHub PR whose CI ran these same suites before the
     # merge; running them again here only delayed the deploy by ~20 minutes. Set
@@ -278,6 +287,50 @@ backend:test:
       when: never
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
       changes: [backend/**/*]
+
+# Fails when the client portal's Content-Security-Policy differs between the Caddy and nginx edges.
+edge:test:csp:
+  stage: test
+  tags: [builder]
+  image: $DOTNET_SDK_IMAGE
+  script:
+    - sh scripts/check-edge-csp.sh
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
+      changes:
+        - docker/caddy/Caddyfile
+        - docker/nginx/templates/default.conf.template
+        - scripts/check-edge-csp.sh
+
+# Runs the shipped Caddy and nginx edges and the admin image's nginx in front of a stub upstream and fails when
+# the Content-Security-Policy headers a browser would receive differ from what the edges promise. The script
+# copies files into its containers instead of mounting them, so it works against the runner's shared Docker socket.
+edge:test:headers:
+  stage: test
+  tags: [builder]
+  image: $DOCKER_IMAGE
+  script:
+    - sh scripts/check-edge-headers.sh
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
+      changes:
+        - docker/caddy/Caddyfile
+        - docker/nginx/**/*
+        - scripts/check-edge-headers.sh
+        - scripts/edge-headers-assert.sh
+
+# Runs install.sh against a fake docker: the upgrade backup, its retention and --rollback.
+installer:test:backup:
+  stage: test
+  tags: [builder]
+  image: $DOTNET_SDK_IMAGE
+  script:
+    - bash scripts/test-install-backup.sh
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
+      changes:
+        - install.sh
+        - scripts/test-install-backup.sh
 
 # Fails when a top-level folder of the Integration test project is in no shard below (its tests would
 # run nowhere), is in two, or when a shard names a folder that is gone. The same script checks the
@@ -583,8 +636,8 @@ deploy:demo:
     - git -C "$DEPLOY_DIR" submodule update --init --recursive --force
     - cd "$DEPLOY_DIR"
     # The demo's edge network is external (docker-compose.demo.yml) and is not the platform network: create it
-    # when missing. The edge proxy must also be attached to it (edge-proxy/docker-compose.yml) to route here.
-    # The subnet is fixed (DEMO_EDGE_NETWORK_SUBNET): the edge's nginx.conf denies it on every host except the demo ones, so a
+    # when missing. The operator's edge proxy must also be attached to it to route here.
+    # The subnet is fixed (DEMO_EDGE_NETWORK_SUBNET): the operator's edge denies it on every host except the demo ones, so a
     # demo container cannot reach production through the proxy. Keep it equal to the `deny` line there.
     - docker network inspect hostpanel_demo_edge >/dev/null 2>&1 || docker network create --subnet "$DEMO_EDGE_NETWORK_SUBNET" hostpanel_demo_edge
     - docker compose pull --ignore-buildable
@@ -653,7 +706,7 @@ deploy:prod:
     # credential has to reach the restore here too — docker-compose.prod.yml passes it
     # through as a BuildKit secret (id nuget_credentials) read from this variable. The host's .env does
     # not carry it, and without it the restore goes to the feed anonymously and the build fails 401.
-    NUGET_INNOVAYSE_CREDENTIALS: $PRIVATE_FEED_CREDENTIALS
+    NUGET_INNOVAYSE_CREDENTIALS: $NuGetPackageSourceCredentials_innovayse
     # The public health endpoint, waited for after the deploy.
     HEALTH_URL: $PROD_PUBLIC_URL/health
   script:

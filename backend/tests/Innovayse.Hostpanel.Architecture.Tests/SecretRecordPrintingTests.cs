@@ -47,7 +47,6 @@ public sealed class SecretRecordPrintingTests
         Layers.Sdk,
         Layers.ProviderCwp,
         Layers.ProviderCwp7,
-        Layers.ProviderInecobank,
     ];
 
     /// <summary>A record with a secret property declares its own <c>PrintMembers</c>.</summary>

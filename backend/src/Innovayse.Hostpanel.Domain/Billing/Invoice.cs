@@ -13,6 +13,12 @@ namespace Innovayse.Hostpanel.Domain.Billing;
 /// </summary>
 public sealed class Invoice : BaseEntity, IAggregateRoot
 {
+    /// <summary>The description of the one line of a credit top-up invoice.</summary>
+    public const string TopUpDescription = "Account credit top-up";
+
+    /// <summary>The reason the client is given when a bank transfer wait lapses (<see cref="LapseBankTransfer"/>).</summary>
+    public const string BankTransferLapsedNote = "The bank transfer was not confirmed in time, so the invoice is open for payment again.";
+
     /// <summary>Internal mutable list of line items.</summary>
     private readonly List<InvoiceItem> _items = [];
 
@@ -33,6 +39,13 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// a renewal sweep and the entity itself never disagree on which invoices count as paid.
     /// </summary>
     public static readonly InvoiceStatus[] PaidStatuses = [InvoiceStatus.Paid, InvoiceStatus.PartiallyRefunded];
+
+    /// <summary>
+    /// How long a started gateway session is considered "live" (matches the hosted gateway's own hosted-page session
+    /// lifetime). A second hosted payment for the same invoice, or a switch to a bank transfer, inside this window is
+    /// refused unless the existing session is already known to be Declined.
+    /// </summary>
+    public static readonly TimeSpan GatewaySessionWindow = TimeSpan.FromMinutes(20);
 
     /// <summary>Gets the FK to the owning client.</summary>
     public int ClientId { get; private set; }
@@ -140,11 +153,39 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// </summary>
     public DateTimeOffset? RefundStartedAt { get; private set; }
 
+    /// <summary>
+    /// Gets the stable id of the gateway refund that was claimed and not yet recorded, or null when none is pending. It is
+    /// saved with the claim, before the gateway is called, and handed to the gateway as its idempotency key, so a retry of
+    /// the same refund after a timeout or a crash (see <see cref="BeginGatewayRefund"/>) sends the same id and the
+    /// gateway cannot refund twice. A recorded refund (<see cref="AddRefund"/>) ends the attempt and clears it.
+    /// </summary>
+    public Guid? PendingRefundId { get; private set; }
+
+    /// <summary>Gets the amount, in the invoice currency, of the refund <see cref="PendingRefundId"/> belongs to; null when none is pending.</summary>
+    public decimal? PendingRefundAmount { get; private set; }
+
+    /// <summary>
+    /// Gets the UTC moment the client chose to pay by manual bank transfer and the invoice began waiting for staff to
+    /// confirm the money arrived; null when it is not waiting for one. It is what tells a bank transfer wait apart from
+    /// any other <see cref="InvoiceStatus.PaymentPending"/> invoice, and every way out of the wait clears it.
+    /// </summary>
+    public DateTimeOffset? BankTransferRequestedAt { get; private set; }
+
     /// <summary>Gets optional notes for this invoice.</summary>
     public string? Notes { get; private set; }
 
     /// <summary>Gets the preferred payment method; null when not specified.</summary>
     public string? PaymentMethod { get; private set; }
+
+    /// <summary>
+    /// Gets whether the invoice is a credit top-up: one fixed line the client pays to put that amount on their credit balance.
+    /// It is set when the invoice is created and never changes. It fulfils nothing, takes no tax and no credit, and its amount
+    /// reaches the balance in the same save that marks it paid (<see cref="TopUpAmount"/>).
+    /// </summary>
+    public bool IsCreditTopUp { get; private set; }
+
+    /// <summary>Gets the amount a paid credit top-up puts on the client's balance: the total of a top-up invoice, zero for any other.</summary>
+    public decimal TopUpAmount => IsCreditTopUp ? Total : 0m;
 
     /// <summary>Gets the read-only view of invoice line items.</summary>
     public IReadOnlyList<InvoiceItem> Items => _items.AsReadOnly();
@@ -181,6 +222,34 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
 
     /// <summary>Gets whether the invoice is open for payment: Unpaid or Overdue.</summary>
     public bool IsPayable => Status is InvoiceStatus.Unpaid or InvoiceStatus.Overdue;
+
+    /// <summary>
+    /// Gets the filter form of <see cref="IsBankTransferPending"/> for queries, so the admin list of transfers to confirm
+    /// and the guard of the confirm and reject actions can never disagree on which invoices are waiting.
+    /// </summary>
+    public static Expression<Func<Invoice, bool>> BankTransferPendingFilter =>
+        i => i.Status == InvoiceStatus.PaymentPending && i.BankTransferRequestedAt != null;
+
+    /// <summary>
+    /// Gets whether the client chose a manual bank transfer and staff have not yet confirmed or rejected it: the invoice is
+    /// <see cref="InvoiceStatus.PaymentPending"/> and holds a <see cref="BankTransferRequestedAt"/>.
+    /// </summary>
+    public bool IsBankTransferPending => Status == InvoiceStatus.PaymentPending && BankTransferRequestedAt is not null;
+
+    /// <summary>
+    /// Whether the latest hosted-gateway session was started less than <see cref="GatewaySessionWindow"/> ago, so the payer
+    /// may still be paying through it.
+    /// </summary>
+    /// <param name="now">The moment of the request (UTC).</param>
+    /// <returns><see langword="true"/> when a session was started and its window has not passed.</returns>
+    public bool IsInsideGatewaySessionWindow(DateTimeOffset now) =>
+        GatewayStartedAt is { } startedAt && now - startedAt < GatewaySessionWindow;
+
+    /// <summary>
+    /// Gets the reference the payer writes on the bank transfer, built from the invoice number alone so the internal client
+    /// id never reaches the payer; staff trace it back to the invoice, and through it to the client.
+    /// </summary>
+    public string BankTransferReference => $"INV-{Id}";
 
     /// <summary>
     /// Gets whether the invoice was paid and still holds at least part of that money: Paid or
@@ -282,8 +351,30 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// invoice is refunded, and an imported Refunded invoice has no refund rows, so without the status
     /// rule it would offer its whole total again. This is the cap every refund is held to: what was
     /// paid less every earlier refund, so two partial refunds in a row can never return more than was paid.
+    /// Credit already given back to the client's balance through a credit note (<see cref="CreditNotedAmount"/>) is held
+    /// out too, so the same money cannot be refunded to the payer as well.
     /// </summary>
-    public decimal RefundableAmount => IsPaid ? Math.Max(0m, AmountPaid - AmountRefunded) : 0m;
+    public decimal RefundableAmount => IsPaid ? Math.Max(0m, AmountPaid - AmountRefunded - CreditNotedAmount) : 0m;
+
+    /// <summary>
+    /// Gets the sum of the credit notes issued against this invoice as account credit and not voided since. The credit already
+    /// went to the client's balance, so it is held out of <see cref="RefundableAmount"/> and <see cref="CreditableAmount"/>:
+    /// the same money is never given back twice. A credit note paid out as a gateway refund is not counted here, because
+    /// the refund itself is already in <see cref="AmountRefunded"/>. Written on every such credit note, so the invoice row
+    /// changes and two credit notes racing on one invoice cannot both pass the same cap.
+    /// </summary>
+    public decimal CreditNotedAmount { get; private set; }
+
+    /// <summary>
+    /// Gets what a credit note may still cover: the invoice's charge before credit (<see cref="SubTotal"/> plus <see cref="Tax"/>)
+    /// less every refund, every credit note kept as account credit and a gateway refund that is claimed and not recorded yet
+    /// (<see cref="PendingRefundAmount"/>), never negative. Zero unless the invoice
+    /// <see cref="IsPaid"/>, and always zero for a credit top-up, which is credit already and is refunded by hand instead.
+    /// </summary>
+    public decimal CreditableAmount =>
+        IsPaid && !IsCreditTopUp
+            ? Math.Max(0m, SubTotal + Tax - AmountRefunded - CreditNotedAmount - (PendingRefundAmount ?? 0m))
+            : 0m;
 
     /// <summary>
     /// Gets the credit the invoice holds beyond what it still needs: the amount <see cref="Total"/>
@@ -407,6 +498,31 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         return invoice;
     }
 
+    /// <summary>
+    /// Creates the unpaid invoice a client pays to add funds to their credit balance: one line for the amount, no tax, flagged
+    /// as a top-up so that paying it credits the balance and nothing else (no fulfilment, no renewal, no credit applied to it).
+    /// </summary>
+    /// <param name="clientId">FK to the client who adds funds.</param>
+    /// <param name="amount">The amount to add, in <paramref name="currency"/>; greater than 0.</param>
+    /// <param name="currency">ISO 4217 alpha code of the client's billing currency.</param>
+    /// <param name="issuedAt">When the invoice is issued (UTC).</param>
+    /// <param name="dueDate">Payment due date (UTC).</param>
+    /// <returns>A new Unpaid top-up <see cref="Invoice"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="amount"/> is not positive.</exception>
+    /// <exception cref="ArgumentException">The currency is not a three-letter code.</exception>
+    public static Invoice CreateCreditTopUp(
+        int clientId, decimal amount, string currency, DateTimeOffset issuedAt, DateTimeOffset dueDate)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(amount);
+
+        var invoice = Create(clientId, dueDate, currency, issuedAt);
+        invoice.AddItem(TopUpDescription, CurrencyCode.RoundToMinorUnits(amount, invoice.Currency), 1);
+
+        // After the line: the flag freezes the lines, and the factory is the only one allowed to write the one.
+        invoice.IsCreditTopUp = true;
+        return invoice;
+    }
+
     /// <summary>Sets the external system ID for migration deduplication.</summary>
     /// <param name="externalId">Identifier of this invoice in the system it was imported from.</param>
     public void SetExternalId(string externalId) => ExternalId = externalId;
@@ -509,6 +625,31 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         EnsureChargeCoversPayments(SubTotal - item.Amount, TaxRate);
         _items.Remove(item);
         RecalculateTotals();
+    }
+
+    /// <summary>
+    /// Lets a domain renewal line left claimed after an unknown registrar outcome be tried again, on a staff
+    /// decision made after checking the registrar. Only the claim is cleared: the line stays unapplied and
+    /// unpaid status is untouched, so the next renewal sweep renews the domain.
+    /// </summary>
+    /// <param name="itemId">Id of the renewal line whose claim is released.</param>
+    /// <exception cref="DomainRuleException">
+    /// <see cref="BillingErrors.InvoiceItemNotFound"/> when the invoice has no such line, or
+    /// <see cref="BillingErrors.RenewalClaimNotHeld"/> when the line is not a domain renewal, is already applied, or is not claimed.
+    /// </exception>
+    public void ReleaseRenewalClaim(int itemId)
+    {
+        var item = _items.FirstOrDefault(i => i.Id == itemId)
+            ?? throw new DomainRuleException(BillingErrors.InvoiceItemNotFound, $"Invoice item {itemId} not found.");
+
+        if (item.RegisteredDomainId is null || !item.IsRenewal || item.RenewalAppliedAt is not null || item.RenewalAttemptAt is null)
+        {
+            throw new DomainRuleException(
+                BillingErrors.RenewalClaimNotHeld,
+                $"Invoice item {itemId} is not a domain renewal line left claimed.");
+        }
+
+        item.ReleaseRenewalClaim();
     }
 
     /// <summary>
@@ -659,6 +800,12 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         if (amount <= 0)
         {
             throw new ArgumentException("Credit amount must be positive.", nameof(amount));
+        }
+
+        if (IsCreditTopUp)
+        {
+            throw new DomainRuleException(
+                BillingErrors.InvoiceTopUpNoCredit, "Credit cannot be applied to a credit top-up invoice.");
         }
 
         if (Status is not (InvoiceStatus.Draft or InvoiceStatus.Unpaid or InvoiceStatus.Overdue))
@@ -813,6 +960,116 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
             Id, paidAt, paymentMethod, reference, taken, InvoiceTransactionType.Payment, 0m, null));
         ApplyPaid(reference, paidAt);
         return Transaction.CreateInvoicePayment(this, paidAt, paymentMethod, reference, taken, 0m, source);
+    }
+
+    /// <summary>
+    /// Records that the client chose to pay by manual bank transfer: the invoice leaves Unpaid or Overdue for
+    /// <see cref="InvoiceStatus.PaymentPending"/> and waits for staff to confirm the money arrived. Choosing it again while
+    /// it already waits changes nothing, so a double click is harmless. The invoice is not payable while it waits, so no
+    /// other payment can start beside the transfer.
+    /// </summary>
+    /// <param name="at">When the client chose it (UTC).</param>
+    /// <returns>
+    /// <see langword="true"/> when the invoice began waiting now and the caller should announce it;
+    /// <see langword="false"/> when it was already waiting.
+    /// </returns>
+    /// <exception cref="DomainRuleException"><c>INVOICE_NOT_PAYABLE</c> when the invoice is neither Unpaid nor Overdue, or owes nothing.</exception>
+    public bool RequestBankTransfer(DateTimeOffset at)
+    {
+        if (IsBankTransferPending)
+        {
+            return false;
+        }
+
+        EnsurePayable();
+        if (AmountDue <= 0m)
+        {
+            throw new DomainRuleException(BillingErrors.InvoiceNotPayable, "Invoice owes nothing, so there is nothing to transfer.");
+        }
+
+        Status = InvoiceStatus.PaymentPending;
+        BankTransferRequestedAt = at;
+        AddDomainEvent(new BankTransferRequestedEvent(Id, ClientId, BankTransferReference) { OccurredAt = at });
+        return true;
+    }
+
+    /// <summary>
+    /// Confirms that the manual bank transfer arrived: the invoice returns to open for the length of this call and is settled
+    /// through <see cref="Settle"/>, the one path every full payment takes, so the payment history, the ledger row,
+    /// <see cref="PaymentReceivedEvent"/> and fulfilment behave exactly as for any other payment.
+    /// </summary>
+    /// <param name="paidAt">When staff confirmed the money (UTC).</param>
+    /// <returns>The client ledger row for the amount taken, to be saved with the invoice; null when nothing was due.</returns>
+    /// <exception cref="DomainRuleException">
+    /// <c>INVOICE_BANK_TRANSFER_NOT_PENDING</c> when no bank transfer is waiting, which is also the answer to a second confirm.
+    /// </exception>
+    public Transaction? ConfirmBankTransfer(DateTimeOffset paidAt)
+    {
+        EnsureBankTransferPending();
+
+        // Back to open first: Settle takes money only from an open invoice, and the wait ends with this call either way.
+        ReturnFromBankTransfer(paidAt);
+        var ledgerRow = Settle(PaymentMethodNames.BankTransfer, BankTransferReference, paidAt, TransactionSource.Manual);
+        AddDomainEvent(new BankTransferConfirmedEvent(Id, ClientId, BankTransferReference) { OccurredAt = paidAt });
+        return ledgerRow;
+    }
+
+    /// <summary>
+    /// Rejects the manual bank transfer: the money did not arrive. The invoice returns to open (<see cref="InvoiceStatus.Overdue"/>
+    /// when its due date has passed, otherwise <see cref="InvoiceStatus.Unpaid"/>), so the client can pay again by any method,
+    /// and the reason is announced for the client's mail.
+    /// </summary>
+    /// <param name="note">The reason staff give the client.</param>
+    /// <param name="at">When staff rejected it (UTC).</param>
+    /// <exception cref="DomainRuleException">
+    /// <c>INVOICE_BANK_TRANSFER_NOT_PENDING</c> when no bank transfer is waiting.
+    /// </exception>
+    public void RejectBankTransfer(string note, DateTimeOffset at)
+    {
+        ArgumentNullException.ThrowIfNull(note);
+
+        EnsureBankTransferPending();
+
+        ReturnFromBankTransfer(at);
+        AddDomainEvent(new BankTransferRejectedEvent(Id, ClientId, BankTransferReference, note) { OccurredAt = at });
+    }
+
+    /// <summary>
+    /// Ends a bank transfer wait that nobody answered in time: the invoice returns to open exactly as after a rejection, so
+    /// the overdue and suspension flow runs again, and the client is told through the rejection mail with a fixed reason.
+    /// </summary>
+    /// <param name="at">When the wait lapsed (UTC).</param>
+    /// <exception cref="DomainRuleException"><c>INVOICE_BANK_TRANSFER_NOT_PENDING</c> when no bank transfer is waiting.</exception>
+    public void LapseBankTransfer(DateTimeOffset at)
+    {
+        EnsureBankTransferPending();
+
+        ReturnFromBankTransfer(at);
+        AddDomainEvent(new BankTransferRejectedEvent(Id, ClientId, BankTransferReference, BankTransferLapsedNote) { OccurredAt = at });
+    }
+
+    /// <summary>
+    /// Ends a bank transfer wait because a hosted gateway session took the money first: the wait is dropped without an
+    /// announcement and the invoice is open again, so the caller settles it with the gateway payment through <see cref="Settle"/>.
+    /// </summary>
+    /// <param name="at">When the gateway payment was seen (UTC).</param>
+    /// <exception cref="DomainRuleException"><c>INVOICE_BANK_TRANSFER_NOT_PENDING</c> when no bank transfer is waiting.</exception>
+    public void WithdrawBankTransfer(DateTimeOffset at)
+    {
+        EnsureBankTransferPending();
+
+        ReturnFromBankTransfer(at);
+    }
+
+    /// <summary>
+    /// Closes the bank transfer wait: the invoice is open again, Overdue when its due date has passed (the overdue notice was
+    /// sent, or the overdue job sends it, so none is raised here) and Unpaid otherwise.
+    /// </summary>
+    /// <param name="at">When the wait ended (UTC).</param>
+    private void ReturnFromBankTransfer(DateTimeOffset at)
+    {
+        Status = DueDate < at ? InvoiceStatus.Overdue : InvoiceStatus.Unpaid;
+        BankTransferRequestedAt = null;
     }
 
     /// <summary>Clears the stored hosted-gateway session fields and the reconciliation bookkeeping of that session.</summary>
@@ -1048,6 +1305,10 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         // Written on every refund, so the invoice row itself changes and a concurrent refund's save
         // fails the row's concurrency check instead of passing the same RefundableAmount twice.
         RefundStartedAt = date;
+
+        // A recorded refund ends the attempt whose id the gateway was given.
+        PendingRefundId = null;
+        PendingRefundAmount = null;
         var tx = InvoiceTransaction.Create(Id, date, gateway, transactionId, amount, InvoiceTransactionType.Refund, fees, notes);
         _transactions.Add(tx);
         if (RefundableAmount == 0)
@@ -1066,8 +1327,9 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// Claims the invoice for a refund that must ask a gateway before it can be recorded. The caller
     /// saves the claim before the gateway call, so of two refunds racing on the same invoice only one
     /// gets to move money; the other fails the save or finds the claim held. The parts the gateway
-    /// returns are then recorded with <see cref="AddRefund"/> under the same <paramref name="at"/>, or
-    /// the claim is given back with <see cref="ReleaseRefundClaim"/> when it returned nothing.
+    /// returns are then recorded with <see cref="AddRefund"/> under the same <paramref name="at"/>. A claim whose gateway call
+    /// returned nothing is never given back early: a plugin reports a refusal and a fault alike by throwing, so the outcome
+    /// is unknown and the claim, with its refund id, stays until <see cref="RefundClaimLease"/> runs out.
     /// </summary>
     /// <param name="at">When the refund begins (UTC); also the date its parts are recorded under.</param>
     /// <exception cref="DomainRuleException">The invoice is not Paid or PartiallyRefunded, or another refund is still in flight.</exception>
@@ -1085,17 +1347,28 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
-    /// Gives back a refund claim the gateway answered without returning any money, so the next
-    /// refund need not wait for the lease to run out. A claim that already recorded a part is no
-    /// longer in flight and is left as the latest refund's start.
+    /// Claims the invoice like <see cref="BeginRefund"/> and fixes the id the gateway is given for this refund. A claim whose
+    /// attempt left no recorded refund (the gateway call timed out, threw or the process stopped, so the outcome is unknown)
+    /// keeps its id: a retry of the same amount once the claim's lease has run out gets that id back, so the gateway answers
+    /// the first attempt again instead of refunding twice. A different amount is a different refund and gets a new id.
     /// </summary>
-    /// <param name="now">The current moment (UTC).</param>
-    public void ReleaseRefundClaim(DateTimeOffset now)
+    /// <param name="at">When the refund begins (UTC); also the date its parts are recorded under.</param>
+    /// <param name="amount">The amount to refund, in the invoice currency.</param>
+    /// <returns>The stable refund id to send the gateway.</returns>
+    /// <exception cref="DomainRuleException">The invoice is not Paid or PartiallyRefunded, or another refund is still in flight.</exception>
+    public Guid BeginGatewayRefund(DateTimeOffset at, decimal amount)
     {
-        if (IsRefundInFlight(now))
+        BeginRefund(at);
+
+        // A different amount is a different refund. A gateway treats a repeated idempotency key as the same request and
+        // either replays the first answer or refuses the changed amount, so the old id must not carry a new amount.
+        if (PendingRefundId is null || PendingRefundAmount != amount)
         {
-            RefundStartedAt = null;
+            PendingRefundId = Guid.NewGuid();
+            PendingRefundAmount = amount;
         }
+
+        return PendingRefundId.Value;
     }
 
     /// <summary>
@@ -1146,8 +1419,16 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// </remarks>
     /// <param name="issuedAt">When the copy is issued (UTC).</param>
     /// <returns>A new Draft invoice with the same client, due date, currency and lines.</returns>
+    /// <exception cref="DomainRuleException"><c>INVOICE_TOP_UP_FIXED</c> when this is a credit top-up invoice.</exception>
     public Invoice Duplicate(DateTimeOffset issuedAt)
     {
+        // A copy is an ordinary invoice, and an ordinary invoice for "account credit" would take money and credit nothing.
+        if (IsCreditTopUp)
+        {
+            throw new DomainRuleException(
+                BillingErrors.InvoiceTopUpFixed, "A credit top-up invoice cannot be duplicated; the client adds funds again instead.");
+        }
+
         // The same amounts in the same currency: a copy never re-labels the lines it carries.
         var copy = CreateDraft(ClientId, DueDate, Currency, issuedAt);
         // AddItem, never a renewal factory: a copy is not a renewal, and paying it must extend nothing.
@@ -1171,6 +1452,76 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         GatewayTransactionId = null;
     }
 
+    /// <summary>
+    /// Refuses a credit note that this invoice cannot take: the invoice is not paid, is a credit top-up, or the note is
+    /// more than <see cref="CreditableAmount"/> still allows once every earlier note and refund is counted.
+    /// </summary>
+    /// <param name="total">The credit note's total, tax included, in the invoice currency.</param>
+    /// <param name="now">The current moment (UTC), to tell whether a gateway refund is still waiting for its gateway.</param>
+    /// <exception cref="DomainRuleException">
+    /// <c>INVOICE_NOT_PAID</c>, <c>CREDIT_NOTE_TOP_UP_INVOICE</c>, <c>INVOICE_REFUND_CONFLICT</c> while a gateway refund of the
+    /// invoice is in flight (the note and the refund would give back the same money) or <c>CREDIT_NOTE_EXCEEDS_CREDITABLE</c>.
+    /// </exception>
+    public void EnsureCreditable(decimal total, DateTimeOffset now)
+    {
+        if (IsCreditTopUp)
+        {
+            throw new DomainRuleException(
+                BillingErrors.CreditNoteTopUpInvoice, "A credit top-up invoice is credit already; a credit note cannot be issued on it.");
+        }
+
+        if (!IsPaid)
+        {
+            throw new DomainRuleException(
+                BillingErrors.InvoiceNotPaid, $"A credit note needs a Paid or PartiallyRefunded invoice; current status is {Status}.");
+        }
+
+        if (IsRefundInFlight(now))
+        {
+            throw new DomainRuleException(
+                BillingErrors.InvoiceRefundConflict, "A refund of this invoice is still waiting for its gateway, so a credit note cannot be issued on it yet.");
+        }
+
+        if (total > CreditableAmount)
+        {
+            throw new DomainRuleException(
+                BillingErrors.CreditNoteExceedsCreditable, $"Credit note {total} is more than the {CreditableAmount} still creditable.");
+        }
+    }
+
+    /// <summary>
+    /// Records a credit note kept as account credit against this invoice, holding its amount out of every later refund and
+    /// credit note. Changes the invoice row, so a racing refund or credit note fails the row's concurrency check.
+    /// </summary>
+    /// <param name="total">The credit note's total, tax included, in the invoice currency; greater than 0.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="total"/> is not positive.</exception>
+    /// <exception cref="DomainRuleException">The invoice cannot take it (see <see cref="EnsureCreditable"/>).</exception>
+    public void AddCreditNoted(decimal total, DateTimeOffset now)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(total);
+        EnsureCreditable(total, now);
+
+        CreditNotedAmount += total;
+    }
+
+    /// <summary>Takes a voided credit note's amount back out of <see cref="CreditNotedAmount"/>, so the invoice can be credited or refunded again.</summary>
+    /// <param name="total">The voided credit note's total; greater than 0.</param>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="total"/> is not positive.</exception>
+    /// <exception cref="DomainRuleException"><c>CREDIT_NOTE_INVALID_STATE</c> when more is released than was noted.</exception>
+    public void RemoveCreditNoted(decimal total)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(total);
+
+        if (total > CreditNotedAmount)
+        {
+            throw new DomainRuleException(
+                BillingErrors.CreditNoteInvalidState, $"Cannot release {total} of credit notes: only {CreditNotedAmount} is noted.");
+        }
+
+        CreditNotedAmount -= total;
+    }
+
     /// <summary>Refuses a refund of an invoice that holds no paid money: anything but Paid or PartiallyRefunded.</summary>
     /// <exception cref="DomainRuleException"><c>INVOICE_NOT_PAID</c> when <see cref="IsPaid"/> is false.</exception>
     private void EnsureRefundable()
@@ -1179,6 +1530,17 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         {
             throw new DomainRuleException(
                 BillingErrors.InvoiceNotPaid, $"Only Paid or PartiallyRefunded invoices can be refunded; current status is {Status}.");
+        }
+    }
+
+    /// <summary>Refuses a confirm or a reject while no bank transfer waits on the invoice.</summary>
+    /// <exception cref="DomainRuleException">The invoice is not waiting for a bank transfer.</exception>
+    private void EnsureBankTransferPending()
+    {
+        if (!IsBankTransferPending)
+        {
+            throw new DomainRuleException(
+                BillingErrors.InvoiceBankTransferNotPending, $"No bank transfer is waiting on an invoice with status {Status}.");
         }
     }
 
@@ -1228,6 +1590,12 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// <exception cref="DomainRuleException">The invoice is not Draft or Unpaid.</exception>
     private void EnsureEditable()
     {
+        if (IsCreditTopUp)
+        {
+            throw new DomainRuleException(
+                BillingErrors.InvoiceTopUpFixed, "A credit top-up invoice is one fixed line and cannot be changed.");
+        }
+
         if (Status is not (InvoiceStatus.Draft or InvoiceStatus.Unpaid))
         {
             throw new DomainRuleException(

@@ -9,7 +9,7 @@ using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk.Models;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
 using Innovayse.Hostpanel.Infrastructure.Resilience;
-using Innovayse.SDK.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -18,11 +18,13 @@ namespace Innovayse.Hostpanel.Infrastructure.Provisioning;
 /// <summary>Tests server connectivity using the appropriate API client based on server module.</summary>
 public sealed class ServerConnectionTester : IServerConnectionTester
 {
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>The CWP API client, for servers on the CWP module.</summary>
     private readonly IHostingPanelApiClient _cwpClient;
 
     /// <summary>The CWP7 API client, for servers on the CWP7 module.</summary>
     private readonly IHostingPanelV7ApiClient _cwp7Client;
+#pragma warning restore CS0618
 
     /// <summary>Builds the named Plesk HTTP client, so the Plesk timeout and resilience profile apply.</summary>
     private readonly IHttpClientFactory _httpClientFactory;
@@ -44,8 +46,10 @@ public sealed class ServerConnectionTester : IServerConnectionTester
     /// <param name="options">The port Plesk servers answer on.</param>
     /// <param name="logger">Records why a connection test failed, detail the caller never sees.</param>
     public ServerConnectionTester(
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
         IHostingPanelApiClient cwpClient,
         IHostingPanelV7ApiClient cwp7Client,
+#pragma warning restore CS0618
         IHttpClientFactory httpClientFactory,
         ILoggerFactory loggerFactory,
         IOptions<ProvisioningOptions> options,
@@ -151,7 +155,9 @@ public sealed class ServerConnectionTester : IServerConnectionTester
         var client = new PleskApiClient(
             _httpClientFactory.CreateClient(HttpClientNames.Plesk),
             _loggerFactory.CreateLogger<PleskApiClient>());
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
         var connection = new PleskConnection(HostingPanelAddress.BaseUrl(server.Hostname, _options.Value.PleskPort), apiKey);
+#pragma warning restore CS0618
         try
         {
             var info = await client.GetServerInfoAsync(connection, ct);
@@ -194,10 +200,12 @@ public sealed class ServerConnectionTester : IServerConnectionTester
         }
     }
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>Builds the panel connection for a server on the panel's default API port.</summary>
     /// <param name="server">The server to reach.</param>
     /// <param name="apiKey">The credential the server stores for its panel API.</param>
     /// <returns>The connection to hand the panel client.</returns>
     private static HostingPanelConnection ConnectionTo(Server server, string apiKey) =>
         new(server.Hostname, IHostingPanelApiClient.DefaultApiPort, apiKey);
+#pragma warning restore CS0618
 }

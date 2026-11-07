@@ -1,5 +1,7 @@
 ---
 title: Provisioning
+description: "How Hostpanel creates, suspends and terminates hosting accounts on control panel servers, with auto-management settings and scheduled jobs."
+keywords: "provisioning, hosting accounts, suspension, termination, auto-management, scheduled jobs"
 ---
 
 # Provisioning <Label type="admin" />

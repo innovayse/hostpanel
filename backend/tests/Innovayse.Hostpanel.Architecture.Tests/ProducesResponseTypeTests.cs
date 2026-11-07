@@ -69,6 +69,14 @@ public sealed class ProducesResponseTypeTests
         return status is >= 200 and < 300;
     }
 
+    /// <summary>Whether a status is an error: 4xx or 5xx. A 304 answers with no body at all, so it carries no error body.</summary>
+    /// <param name="status">The HTTP status.</param>
+    /// <returns><c>true</c> for 400 and above.</returns>
+    private static bool IsError(int status)
+    {
+        return status >= 400;
+    }
+
     /// <summary>The scan finds the controllers; a rule over zero actions would pass for the wrong reason.</summary>
     [Fact]
     public void TheScan_FindsTheActions()
@@ -88,13 +96,13 @@ public sealed class ProducesResponseTypeTests
         offenders.Should().BeEmpty("every action declares [ProducesResponseType] for the success it answers");
     }
 
-    /// <summary>Every non-2xx status an action declares carries <see cref="ErrorResponse"/>.</summary>
+    /// <summary>Every 4xx and 5xx status an action declares carries <see cref="ErrorResponse"/>.</summary>
     [Fact]
     public void EveryFailureStatus_CarriesTheErrorBody()
     {
         var offenders = AllActions()
             .SelectMany(a => DeclarationsOf(a.Controller, a.Action)
-                .Where(d => !IsSuccess(d.StatusCode) && d.Type != typeof(ErrorResponse))
+                .Where(d => IsError(d.StatusCode) && d.Type != typeof(ErrorResponse))
                 .Select(d => $"{a.Controller.Name}.{a.Action.Name} {d.StatusCode}"))
             .ToList();
 

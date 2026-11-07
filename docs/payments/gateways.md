@@ -1,26 +1,29 @@
 ---
 title: Payment gateways
+description: "Configure payment methods in Hostpanel: bank transfer, payment gateway plugins, gateway settings, currencies and what customers see at checkout."
+keywords: "payment gateways, bank transfer, gateway settings, currencies, checkout"
 ---
 
 # Payment gateways <Label type="admin" />
 
-Hostpanel ships with three payment methods. No payment gateway is enabled by default; an operator enables each one after entering their credentials.
+<DemoLink path="/integrations/payments" />
 
-## What ships with Hostpanel
+Hostpanel ships with one payment method, bank transfer. Every online payment gateway comes from a plugin that you install. No payment gateway is enabled by default; an operator enables each one after entering their credentials.
+
+## Payment methods
 
 | Method | How it works | When to use |
 |--------|-------------|-------------|
-| **Bundled card gateway** | Card form on the checkout page; the card number never reaches Hostpanel | Accepting debit and credit cards directly at checkout |
-| **Bundled bank gateway** | Plugin; the client is redirected to the bank's hosted card page | Card payments routed through a local bank gateway |
-| **Bank Transfer** | Offline; the client pays by bank transfer and staff record the payment manually | Markets where bank transfer is the norm, or as a fallback |
+| **Bank Transfer** | Built in; offline. The client sees your bank details and a reference, and staff confirm or reject the transfer in **Billing**, **Pending Bank Transfers** | Markets where bank transfer is the norm, or as a fallback |
+| **Gateway plugins** | Installed by the operator; the client is usually redirected to the gateway's hosted payment page | Accepting cards or local payment methods online |
 
 <Callout type="note">
-The gateway names shown in your admin panel depend on which plugins are installed. The bundled bank gateway ships as a plugin pre-installed in the server image; it does not appear in the Plugin Manager.
+The gateways shown in your admin panel depend on which plugins are installed. To accept online payments, install a payment gateway plugin from the Plugin Manager, then configure it on its integration page. See [Plugin manager](./plugins).
 </Callout>
 
 ## The Payment Gateways screen
 
-Go to **Integrations**, category **Payment Gateways**. Each method appears as a card showing:
+Go to **Integrations**, category **Payment Gateways**. Bank Transfer and each installed gateway appear as a card showing:
 
 - **Active** — configured and enabled
 - **Inactive** — configured but not enabled
@@ -62,32 +65,12 @@ Toggle **Enabled** on. The card on the Integrations page now shows **Active**.
 ## Gateway settings
 
 <Callout type="tip">
-Use the gateway's test mode or test address before switching to live. For the card gateway, set Mode to Test or Sandbox. For the bank gateway, point Gateway base URL at the bank's test address.
+Use the gateway's test mode or test address before switching to live. Each gateway plugin documents its own fields and test setup.
 </Callout>
 
-### Bundled card gateway
+### Gateway plugins
 
-| Key | Label | Type | Required | Notes |
-|-----|-------|------|----------|-------|
-| `secret_key` | Secret Key | Secret | Yes | Never shown again after saving |
-| `publishable_key` | Publishable Key | Text | Yes | Used by the client portal's card form |
-| `mode` | Mode | Select | No | Live or Test |
-
-The client portal's card form also needs `STRIPE_PUBLISHABLE_KEY` set in the deployment environment (see [Configuration reference](/operators/configuration)). This is the same key as `publishable_key` above.
-
-### Bundled bank gateway
-
-The bank gateway is installed as a plugin and configured on its integration page.
-
-| Key | Label | Type | Required | Notes |
-|-----|-------|------|----------|-------|
-| `gateway_url` | Gateway base URL | Text | Yes | e.g. `https://pg.example.am` — use the bank's test address to run test payments |
-| `username` | API Username | Text | Yes | |
-| `password` | API Password | Secret | Yes | |
-| `currency` | Currency (ISO 4217 numeric) | Text | No | Default: `051` |
-| `language` | Payment page language | Text | No | Default: `hy` |
-
-There is no test mode switch. Point `gateway_url` at the bank's test address to run test payments.
+An installed gateway plugin lists its own fields on its integration page. The form labels, required fields and the Test Connection button are defined by the plugin, so follow the plugin's own documentation for its settings.
 
 ### Bank Transfer
 
@@ -95,10 +78,24 @@ There is no test mode switch. Point `gateway_url` at the bank's test address to 
 |-----|-------|------|----------|-------|
 | `account_name` | Account Name | Text | No | Shown to the client on the payment page |
 | `iban` | IBAN | Text | No | |
+| `swift` | SWIFT / BIC | Text | No | For clients paying from abroad |
 | `bank_name` | Bank Name | Text | No | |
 | `instructions` | Payment Instructions | Text Area | No | Free text shown below the account details |
+| `expiry_days` | Days until an unconfirmed transfer lapses | Text | No | A whole number of days, 14 when blank or not a positive number |
 
-All fields are optional. An operator can leave them all blank and record payments manually without showing any instructions.
+All fields are optional. A detail left blank is not shown to the client. Bank transfer is offered to clients only while it is switched on **and** at least one of the account name, IBAN, SWIFT, bank name or instructions is filled in: a transfer that holds only an amount and a reference could not be paid. If a transfer is already waiting when every detail is cleared, the client is told to contact you for the account to pay into.
+
+#### How a bank transfer is paid
+
+1. The client chooses **Pay by bank transfer** on the checkout or the invoice page. The invoice moves to **Payment Pending**, and the page shows your bank details with a copy button for each, the amount, and a reference built from the invoice number (for example `INV-123`). The client gets the same details by email and you get a notice.
+2. When the money reaches your bank, open **Billing**, **Pending Bank Transfers** and press **Confirm**. The invoice is paid exactly like any payment you record by hand: the receipt email goes out, the payment is written to the ledger and the order is fulfilled. Pressing Confirm twice, or from two screens at once, pays the invoice once.
+3. If the money did not arrive, press **Reject** and write a note. The invoice is open again, the client reads your note by email and can pay again, by bank transfer or another method.
+
+A transfer waits only while the invoice is Payment Pending; the invoice cannot be cancelled meanwhile, so decide the transfer first. Attaching a receipt to a transfer is not supported.
+
+A transfer nobody answers does not wait for ever. The daily overdue job lets a transfer that has waited longer than **Days until an unconfirmed transfer lapses** lapse: the invoice is open again (Overdue when its due date has passed, so the overdue and suspension rules apply again), and the client is emailed that the transfer was not confirmed in time. A reject after the due date also returns the invoice to Overdue.
+
+If the client started a card payment first, then chose the bank transfer and also finished the card payment, the card money is not lost. The invoice is settled with the card payment and the transfer wait ends; if you had already confirmed the transfer, the card money is added to the client's credit balance and you get the usual notice. A transfer that arrives after the card payment settled the invoice is yours to return by hand.
 
 ## Currencies and gateways
 
@@ -106,7 +103,7 @@ A gateway charges only in the currencies it supports. When a client tries to pay
 
 ## What customers see
 
-Clients choose their payment method on the checkout page ("Pay by card", "Pay by bank transfer") and on the invoice pay page. After a card payment they land on the payment result page. See the [client portal guide](/customers/portal) for the full flow.
+Clients choose their payment method on the checkout page (for example "Pay by bank transfer") and on the invoice pay page. After an online payment they land on the payment result page. See the [client portal guide](/customers/portal) for the full flow.
 
 ## Screens that are not built yet
 

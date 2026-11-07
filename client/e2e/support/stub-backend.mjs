@@ -11,7 +11,7 @@
  * Playwright starts it as the first `webServer` entry (see `playwright.config.ts`); the Nuxt
  * server is started with `API_URL` pointing here.
  *
- * Besides the backend routes it exposes six test-only endpoints:
+ * Besides the backend routes it exposes eight test-only endpoints:
  * - `GET  /__e2e/requests`: every request received so far (method, path, body and the
  *   `X-Language` it carried), so a spec can assert that a form submission really reached the
  *   backend with the right body and in the right language;
@@ -23,15 +23,20 @@
  *   the demo banner and the sign-in hint turns it on, until the next reset;
  * - `POST /__e2e/slides`: switches the home-page slides on; the feed is empty by default (the home shows the
  *   text hero), so only the spec that covers the slider turns them on, until the next reset;
+ * - `POST /__e2e/plugin-stage`: moves the fake plugin's staged version on (`{ "version": 15 }`) behind a page that still shows
+ *   the old one, until the next reset;
  * - `POST /__e2e/plugin-slots`: lists fake plugin widgets per slot (`{ "client.dashboard.cards": ["ok"] }`) until
  *   the next reset; every slot is empty by default;
  * - `POST /__e2e/email-verified`: sets whether the signed-in address reads as confirmed (it does by default),
  *   so only the spec for the verification banner turns it off, until the next reset;
  * - `POST /__e2e/account`: overrides fields of the signed-in person's account (`GET /api/auth/me`), such as
  *   `clientPermissions` or `clientId`, so a spec can sign in a member without a permission or a first-time buyer, until the next reset;
+ * - `POST /__e2e/gateways`: adds the hosted card gateway to the gateway list (`GET /api/payment-methods`) and, with
+ *   `bankTransfer: false`, takes the bank transfer off it, and with `bankTransferDetailsEmpty: true` makes its bank details all empty; only bank transfer is offered by default, so only the specs for the
+ *   saved methods and the invoice payment turn the card on, until the next reset;
  * - `POST /__e2e/reset`: clears the log, the scripted answers, the settings overrides, demo mode and
  *   everything a spec changed: tickets, profile, services, the domain, payment methods, contacts,
- *   the team and the two-factor flag.
+ *   the team, the saved payment methods, the hosted gateway and the two-factor flag.
  *
  * Anything it does not know answers 404 with a problem+json body, exactly as the real API
  * does for an unknown route, so a missing fixture shows up as a visible failure and not as a
@@ -44,6 +49,10 @@ import {
   ACCESS_TOKEN,
   ACCOUNT,
   ANNOUNCEMENT,
+  BANK_TRANSFER_DETAILS,
+  EMPTY_BANK_TRANSFER_DETAILS,
+  CREDIT,
+  CREDIT_NOTES,
   FAQS,
   LOCATIONS,
   PARTNERS,
@@ -61,6 +70,7 @@ import {
   DEMO_RESET_IN_MS,
   CURRENCIES,
   DEPARTMENTS,
+  TOP_UP_INVOICE_ID,
   DOMAIN,
   DOMAIN_NAMESERVERS,
   DOMAIN_ORDER,
@@ -68,15 +78,21 @@ import {
   GATEWAY_DECLINED_INVOICE,
   GATEWAY_METHODS,
   GATEWAY_PAID_INVOICE,
+  GATEWAY_PAGE_URL,
   GATEWAY_PENDING_INVOICE,
+  HOSTED_GATEWAY,
+  STORED_CARD_DEFAULT,
+  STORED_CARD_NEW,
+  STORED_CARD_OTHER,
+  STORED_SESSION_ID,
   INVOICE,
   KB_ARTICLES,
   ORDER,
+  ORDER_DECLINED_ID,
   PRODUCT_GROUPS,
   HOSTING_SPECIFICATIONS,
   productsIn,
   PUBLIC_SETTINGS,
-  SAVED_CARD,
   SEEDED_CONTACT,
   SEEDED_TICKET,
   SEEDED_TICKET_THREAD,
@@ -99,6 +115,7 @@ import {
   TWO_FACTOR,
   TWO_FACTOR_REFUSED,
   PLUGIN_CHAT_PAUSE_MS,
+  PLUGIN_FRAME_ORIGIN,
   PLUGIN_CHAT_REPLY,
   PLUGIN_ID,
   PLUGIN_SITE,
@@ -171,6 +188,55 @@ let account = { ...ACCOUNT }
 /** Whether the stub reports a demo; off by default, a spec turns it on, a reset turns it off. */
 let demoEnabled = false
 
+/** Whether the gateway list also offers the hosted card gateway; off by default, a spec turns it on, a reset turns it off. */
+let hostedGatewayEnabled = false
+
+/** Whether the gateway list offers the bank transfer; on by default, a spec turns it off, a reset turns it on. */
+let bankTransferEnabled = true
+
+/** Whether the bank transfer's details are all empty (the operator set none); off by default, a spec turns it on, a reset turns it off. */
+let bankTransferDetailsEmpty = false
+
+/**
+ * The bank details the stub answers for the transfer waiting on {@link INVOICE}.
+ *
+ * @returns {typeof BANK_TRANSFER_DETAILS} The filled-in details, or the empty ones when a spec asked for them.
+ */
+const currentBankTransferDetails = () => (bankTransferDetailsEmpty ? EMPTY_BANK_TRANSFER_DETAILS : BANK_TRANSFER_DETAILS)
+
+/** The credit balance of the signed-in client, which applying credit to {@link INVOICE} lowers; a reset restores it. */
+let creditBalance = CREDIT.balance
+
+/** The credit applied to {@link INVOICE} so far; a reset clears it. */
+let invoiceCredit = 0
+
+/**
+ * The invoice as the stub reads it now: waiting for a transfer once chosen, and net of the credit applied to it.
+ *
+ * @returns {typeof INVOICE} The invoice.
+ */
+const currentInvoice = () => ({
+  ...INVOICE,
+  status: bankTransferChosen ? 'PaymentPending' : INVOICE.status,
+  isBankTransferPending: bankTransferChosen,
+  credit: invoiceCredit,
+  total: INVOICE.total - invoiceCredit,
+  amountDue: INVOICE.amountDue - invoiceCredit,
+})
+
+/** Whether the signed-in client has chosen the bank transfer for {@link INVOICE}, which then reads as PaymentPending; a reset clears it. */
+let bankTransferChosen = false
+
+/**
+ * Builds the saved payment methods the stub starts with, so a reset can restore them.
+ *
+ * @returns {Record<string, unknown>[]} A fresh list: a default card and a second card.
+ */
+const seedStoredMethods = () => [{ ...STORED_CARD_DEFAULT }, { ...STORED_CARD_OTHER }]
+
+/** @type {Record<string, unknown>[]} The client's saved payment methods; a save, a revoke or a default change edits it, a reset restores it. */
+let storedMethods = seedStoredMethods()
+
 /** Whether the stub serves home-page slides; off by default, a spec turns it on, a reset turns it off. */
 let slidesEnabled = false
 
@@ -213,9 +279,6 @@ let nameservers = seedNameservers()
  * @returns {Record<string, unknown>} The domain.
  */
 const domainView = () => ({ ...domainState, management: { ...DOMAIN.management, nameservers } })
-
-/** @type {Record<string, unknown>[]} The saved payment methods; a removal changes them, a reset restores them. */
-let savedCards = [{ ...SAVED_CARD }]
 
 /** @type {Record<string, unknown>[]} The account's contacts; an add, an edit and a removal change them. */
 let contacts = [{ ...SEEDED_CONTACT }]
@@ -314,6 +377,9 @@ const sendProblem = (res, status, code, detail, errors) => {
 /** @type {string} The fake plugin site's status; publishing sets it, a reset restores it. */
 let pluginSiteStatus = PLUGIN_SITE.status
 
+/** @type {{ stage: number, live: number }} The fake plugin's staged and live versions; a reset restores them. */
+let pluginVersions = { stage: 14, live: 13 }
+
 /**
  * Streams the fake plugin's chat reply: one `delta` per piece with a pause between them, then `done`, keeping the
  * response open until the last event, so a spec sees the reply grow while the stream runs (only an unbuffered path
@@ -343,9 +409,10 @@ const streamPluginChat = async (res) => {
  * @param {import('node:http').ServerResponse} res The response to write.
  * @param {URLSearchParams} query The request's query string; the page lookup reads `path`.
  * @param {string} language The request's `X-Language`.
+ * @param {Record<string, unknown> | null} body Parsed JSON body, or `null`; the staged publish reads the version it was given.
  * @returns {boolean} True when the route was handled.
  */
-const routePlugin = (method, path, res, query, language) => {
+const routePlugin = (method, path, res, query, language, body) => {
   const own = `/api/client/plugins/${PLUGIN_ID}`
   if (method === 'GET' && path === '/api/client/plugins/ui') {
     send(res, 200, pluginUi(language))
@@ -396,6 +463,24 @@ const routePlugin = (method, path, res, query, language) => {
     send(res, 200, [{ id: PLUGIN_SITE.id, name: PLUGIN_SITE.name, status: pluginSiteStatus }])
     return true
   }
+  if (method === 'GET' && path === `${own}/stage/state`) {
+    send(res, 200, { publishVersion: pluginVersions.stage, publishLabel: `Publish version ${pluginVersions.stage}`, live: `Version ${pluginVersions.live}` })
+    return true
+  }
+  // Publishes only the version the caller saw: a body naming another one is refused and nothing changes.
+  if (method === 'POST' && path === `${own}/stage/publish`) {
+    if (body?.expectedVersion !== pluginVersions.stage) {
+      sendProblem(res, 409, 'PLUGIN_STAGE_CHANGED', 'The staged version changed. Check the new version, then publish again.')
+      return true
+    }
+    pluginVersions.live = pluginVersions.stage
+    send(res, 200, { message: `Version ${pluginVersions.live} is published.` })
+    return true
+  }
+  if (method === 'GET' && path === `${own}/workspace/site`) {
+    send(res, 200, { previewUrl: `${PLUGIN_FRAME_ORIGIN}/__e2e/frame`, release: 'r4' })
+    return true
+  }
   if (method === 'GET' && path === `${own}/sites/${PLUGIN_SITE.id}`) {
     send(res, 200, { status: pluginSiteStatus })
     return true
@@ -426,7 +511,13 @@ const routePlugin = (method, path, res, query, language) => {
 const route = (method, path, body, res, query = new URLSearchParams(), language = 'en') => {
   const isGet = method === 'GET'
 
-  if (path.startsWith('/api/client/plugins/') && routePlugin(method, path, res, query, language)) {
+  // The server's lookup behind a preview's selection: it knows one element, labels it itself and leaves any other claim out.
+  if (method === 'POST' && path === `/api/client/plugins/${PLUGIN_ID}/workspace/selection`) {
+    const asked = body?.ids ?? []
+    send(res, 200, { releaseId: 'r4', items: asked.filter(id => id === 'pages.0.title').map(id => ({ id, label: 'Server label' })) })
+    return true
+  }
+  if (path.startsWith('/api/client/plugins/') && routePlugin(method, path, res, query, language, body)) {
     return true
   }
 
@@ -519,7 +610,8 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
     return true
   }
   if (isGet && path === '/api/payment-methods') {
-    send(res, 200, GATEWAY_METHODS)
+    const offered = bankTransferEnabled ? GATEWAY_METHODS : []
+    send(res, 200, hostedGatewayEnabled ? [...offered, HOSTED_GATEWAY] : offered)
     return true
   }
 
@@ -705,15 +797,71 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
     }
   }
   if (isGet && path === '/api/me/invoices') {
-    send(res, 200, [INVOICE])
+    send(res, 200, [currentInvoice()])
     return true
   }
   if (isGet && path === `/api/me/invoices/${INVOICE.id}`) {
-    send(res, 200, INVOICE)
+    send(res, 200, currentInvoice())
     return true
   }
-  if (isGet && path === '/api/me/payment-methods') {
-    send(res, 200, savedCards)
+  // Credit: the balance with the limits of one top-up and the history; adding funds raises a top-up invoice inside the limits.
+  if (isGet && path === '/api/me/credit') {
+    send(res, 200, { ...CREDIT, balance: creditBalance })
+    return true
+  }
+  if (method === 'POST' && path === '/api/me/credit/top-ups') {
+    const amount = Number(body?.amount)
+    if (!(amount >= CREDIT.topUpMinimum && amount <= CREDIT.topUpMaximum)) {
+      sendProblem(res, 400, 'CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE', 'E2E: the amount is outside the range allowed for adding funds.')
+      return true
+    }
+    send(res, 201, TOP_UP_INVOICE_ID)
+    return true
+  }
+  // Credit notes: the notes issued to the client, and the PDF of one of them as a download (a note of someone else is a 404).
+  if (isGet && path === '/api/me/credit-notes') {
+    send(res, 200, CREDIT_NOTES)
+    return true
+  }
+  const noteDownload = /^\/api\/me\/credit-notes\/(\d+)\/pdf$/.exec(path)
+  if (isGet && noteDownload) {
+    const note = CREDIT_NOTES.find(n => String(n.id) === noteDownload[1])
+    if (!note) {
+      sendProblem(res, 404, 'CREDIT_NOTE_NOT_FOUND', 'E2E: the credit note was not found.')
+      return true
+    }
+    res.writeHead(200, {
+      'content-type': 'application/pdf',
+      'content-disposition': `attachment; filename="credit-note-${note.number}.pdf"`,
+      'cache-control': 'private, no-store'
+    })
+    res.end('%PDF-1.4 e2e')
+    return true
+  }
+  // Applying credit to the invoice lowers the balance and what the invoice owes; more than either is refused.
+  if (method === 'POST' && path === `/api/me/invoices/${INVOICE.id}/credit`) {
+    const amount = Number(body?.amount)
+    if (!(amount > 0) || amount > creditBalance) {
+      sendProblem(res, 400, 'CLIENT_CREDIT_INSUFFICIENT', 'E2E: there is not enough credit on the balance.')
+      return true
+    }
+    creditBalance -= amount
+    invoiceCredit += amount
+    send(res, 204)
+    return true
+  }
+  // Bank transfer: choosing it moves the invoice to waiting and answers the bank details; reading the details is refused until then.
+  if (method === 'POST' && path === `/api/me/invoices/${INVOICE.id}/bank-transfer`) {
+    bankTransferChosen = true
+    send(res, 200, currentBankTransferDetails())
+    return true
+  }
+  if (isGet && path === `/api/me/invoices/${INVOICE.id}/bank-transfer`) {
+    if (bankTransferChosen) {
+      send(res, 200, currentBankTransferDetails())
+    } else {
+      sendProblem(res, 409, 'INVOICE_BANK_TRANSFER_NOT_PENDING', 'E2E: no bank transfer is waiting on this invoice.')
+    }
     return true
   }
   // Hosted-gateway return: the invoice id picks the outcome (an unknown id is a 404, so the page cannot tell); the state is spelled as the API sends its enum.
@@ -727,18 +875,38 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
     }
     return true
   }
+  // Hosted-gateway start: the stub answers the address of the bank's page; the id of an unknown invoice is a 404.
+  const gatewayStartMatch = path.match(/^\/api\/me\/invoices\/(\d+)\/gateway-payment\/start$/)
+  if (method === 'POST' && gatewayStartMatch) {
+    if (gatewayStartMatch[1] === String(INVOICE.id)) {
+      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL })
+    } else {
+      sendProblem(res, 404, 'NOT_FOUND', 'Invoice not found.')
+    }
+    return true
+  }
   if (method === 'POST' && path === '/api/auth/accept-invite') {
     send(res, 200, { success: true })
     return true
   }
-  if (method === 'POST' && path === `/api/me/invoices/${INVOICE.id}/pay`) {
-    send(res, 200, { success: true })
-    return true
-  }
-
   // Order placement: the order, its invoice and the token that proves the order is the caller's.
   if (method === 'POST' && path === '/api/orders') {
     send(res, 200, ORDER)
+    return true
+  }
+  // Hosted-gateway payment of a placed order: start answers the address of the bank's page; the return check
+  // reports the placed order as paid and the declined fixture order as declined (the order id picks the outcome).
+  const orderGatewayMatch = path.match(/^\/api\/orders\/(\d+)\/gateway-payment\/(start|complete)$/)
+  if (method === 'POST' && orderGatewayMatch) {
+    if (orderGatewayMatch[2] === 'start') {
+      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL })
+    } else if (orderGatewayMatch[1] === String(ORDER.orderId)) {
+      send(res, 200, { state: 'Paid', orderNumber: `ORD-${ORDER.orderId}` })
+    } else if (orderGatewayMatch[1] === String(ORDER_DECLINED_ID)) {
+      send(res, 200, { state: 'Declined' })
+    } else {
+      sendProblem(res, 404, 'NOT_FOUND', 'Order not found.')
+    }
     return true
   }
 
@@ -747,7 +915,7 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
 
 /**
  * Answers the routes of the client area's management screens: one service, one domain, the
- * account's payment methods, contacts, team and two-factor.
+ * account's contacts, team and two-factor.
  *
  * @param {string} method HTTP method.
  * @param {string} path Request path without the query string.
@@ -894,20 +1062,6 @@ const routeManagement = (method, path, body, res) => {
     }
   }
 
-  // Saved payment methods: set the default, remove.
-  const cardMatch = path.match(/^\/api\/me\/payment-methods\/([^/]+)$/)
-  if (cardMatch && (method === 'PUT' || method === 'DELETE')) {
-    if (!savedCards.some((card) => card.id === cardMatch[1])) {
-      sendProblem(res, 404, 'NOT_FOUND', 'Payment method not found.')
-      return true
-    }
-    if (method === 'DELETE') {
-      savedCards = savedCards.filter((card) => card.id !== cardMatch[1])
-    }
-    send(res, 204)
-    return true
-  }
-
   // Contacts of the account, kept in memory so an add, an edit and a removal show on the next read.
   if (isGet && path === '/api/clients/me/contacts') {
     send(res, 200, contacts)
@@ -957,6 +1111,47 @@ const routeManagement = (method, path, body, res) => {
     return true
   }
 
+  // Saved payment methods: list, open a save session (a redirect to the gateway), complete it on return,
+  // make one the default and withdraw the consent.
+  if (isGet && path === '/api/me/stored-payment-methods') {
+    send(res, 200, storedMethods)
+    return true
+  }
+  if (method === 'POST' && path === '/api/me/stored-payment-methods/sessions') {
+    // As the real validator: the wording version is required and at most 50 characters (CardChargeConsent.MaxTextVersionLength).
+    const version = body?.consentTextVersion
+    if (typeof version !== 'string' || version.trim() === '' || version.length > 50) {
+      sendProblem(res, 400, 'VALIDATION_ERROR', 'Validation failed.', { consentTextVersion: ['The consent text version is required.'] })
+      return true
+    }
+    send(res, 200, { sessionId: STORED_SESSION_ID, mode: 'Redirect', clientToken: null, redirectUrl: GATEWAY_PAGE_URL })
+    return true
+  }
+  const completeMatch = path.match(/^\/api\/me\/stored-payment-methods\/sessions\/([^/]+)\/complete$/)
+  if (method === 'POST' && completeMatch) {
+    if (completeMatch[1] !== STORED_SESSION_ID) {
+      sendProblem(res, 404, 'NOT_FOUND', 'No such save session.')
+      return true
+    }
+    if (!storedMethods.some((m) => m.consentId === STORED_CARD_NEW.consentId)) {
+      storedMethods = [...storedMethods, { ...STORED_CARD_NEW }]
+    }
+    send(res, 200, STORED_CARD_NEW)
+    return true
+  }
+  const defaultMatch = path.match(/^\/api\/me\/stored-payment-methods\/consents\/(\d+)\/default$/)
+  if (method === 'POST' && defaultMatch) {
+    storedMethods = storedMethods.map((m) => ({ ...m, isDefault: String(m.consentId) === defaultMatch[1] }))
+    send(res, 204)
+    return true
+  }
+  const consentMatch = path.match(/^\/api\/me\/stored-payment-methods\/consents\/(\d+)$/)
+  if (method === 'DELETE' && consentMatch) {
+    storedMethods = storedMethods.filter((m) => String(m.consentId) !== consentMatch[1])
+    send(res, 204)
+    return true
+  }
+
   // Two-factor: enrolment, then the flag on the profile follows the accepted code.
   if (method === 'POST' && path === '/api/me/2fa/setup') {
     send(res, 200, { secret: TWO_FACTOR.secret, qrCodeUri: TWO_FACTOR.qrCodeUri })
@@ -994,6 +1189,23 @@ const server = createServer(async (req, res) => {
   const path = url.pathname
 
   // Test-only control endpoints; never logged themselves.
+  if (path === '/__e2e/frame') {
+    res.writeHead(200, { 'Content-Type': 'text/html' })
+    res.end(`<!doctype html><title>Framed</title><p>A framed site</p>
+<h1 data-testid="site-title">Title</h1>
+<button data-testid="forge-bad-id">bad id</button><button data-testid="forge-bad-version">bad version</button><button data-testid="forge-unknown">unknown</button>
+<script>
+const say = (extra) => parent.postMessage({ type: 'hostpanel.preview.selection', version: 1, release: 'r4', ...extra }, '*')
+say({ event: 'ready' })
+const on = (id, extra) => document.querySelector('[data-testid="' + id + '"]').addEventListener('click', () => say(extra))
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { say({ event: 'exit' }) } })
+on('site-title', { event: 'toggle', id: 'pages.0.title' })
+on('forge-bad-id', { event: 'toggle', id: '<img src=x>' })
+on('forge-bad-version', { event: 'toggle', id: 'pages.0.title', version: 2 })
+on('forge-unknown', { event: 'toggle', id: 'pages.9.title' })
+</script>`)
+    return
+  }
   if (path === '/__e2e/requests') {
     send(res, 200, received)
     return
@@ -1003,6 +1215,13 @@ const server = createServer(async (req, res) => {
     scripted.clear()
     settingOverrides.clear()
     demoEnabled = false
+    hostedGatewayEnabled = false
+    bankTransferEnabled = true
+    bankTransferDetailsEmpty = false
+    bankTransferChosen = false
+    creditBalance = CREDIT.balance
+    invoiceCredit = 0
+    storedMethods = seedStoredMethods()
     slidesEnabled = false
     pluginSlots = {}
     account = { ...ACCOUNT }
@@ -1012,11 +1231,11 @@ const server = createServer(async (req, res) => {
     services = seedServices()
     domainState = { ...DOMAIN }
     nameservers = seedNameservers()
-    savedCards = [{ ...SAVED_CARD }]
     contacts = [{ ...SEEDED_CONTACT }]
     team = [{ ...TEAM_OWNER }, { ...TEAM_MEMBER }]
     sshKeys = []
     pluginSiteStatus = PLUGIN_SITE.status
+    pluginVersions = { stage: 14, live: 13 }
     lastSshKey = 0
     lastContactId = Number(SEEDED_CONTACT.id)
     send(res, 204)
@@ -1042,6 +1261,20 @@ const server = createServer(async (req, res) => {
   if (path === '/__e2e/demo') {
     const demo = await readJson(req)
     demoEnabled = demo.enabled === true
+    send(res, 204)
+    return
+  }
+  if (path === '/__e2e/gateways') {
+    const gateways = await readJson(req)
+    hostedGatewayEnabled = gateways.hosted === true
+    bankTransferEnabled = gateways.bankTransfer !== false
+    bankTransferDetailsEmpty = gateways.bankTransferDetailsEmpty === true
+    send(res, 204)
+    return
+  }
+  if (path === '/__e2e/plugin-stage') {
+    // Moves the staged version on, as another tab or a finishing deployment would.
+    pluginVersions.stage = (await readJson(req)).version
     send(res, 204)
     return
   }

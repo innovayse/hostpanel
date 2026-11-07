@@ -1,5 +1,7 @@
 ---
 title: Services and SSH keys
+description: "Manage your hosting services in the Hostpanel client portal: set up a new service, see its status and add SSH keys to your hosting account."
+keywords: "hosting services, service setup, ssh keys, client portal"
 ---
 
 # Services and SSH keys

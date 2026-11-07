@@ -44,6 +44,15 @@ export const CLIENT_DOMAINS_PATH = '/client/domains'
 /** The customer's invoices list. */
 export const CLIENT_INVOICES_PATH = '/client/invoices'
 
+/** The customer's credit: balance, history and the way to add funds. */
+export const CLIENT_CREDIT_PATH = '/client/credit'
+
+/** The page where the customer chooses how much to add to their credit balance. */
+export const CLIENT_CREDIT_ADD_PATH = '/client/credit/add'
+
+/** The customer's credit notes: documents that reverse part of an invoice that was already paid. */
+export const CLIENT_CREDIT_NOTES_PATH = '/client/credit-notes'
+
 /** The customer's support tickets list. */
 export const CLIENT_TICKETS_PATH = '/client/tickets'
 
@@ -70,6 +79,12 @@ export const SSO_AUTHORIZE_PATH = '/api/portal/auth/sso/authorize'
 
 /** The query parameter that carries the page to return to after signing in. */
 export const CLIENT_REDIRECT_QUERY = 'redirect'
+
+/**
+ * The query parameter of the authorize route (`SSO_AUTHORIZE_PATH`) that names the page to return to
+ * once the sign-in finishes. The links, the silent probe and the route itself all spell it here.
+ */
+export const RETURN_TO_QUERY = 'returnTo'
 
 /**
  * The query parameter that asks a page to show the sign-in prompt. The sign-in callback adds it

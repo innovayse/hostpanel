@@ -241,7 +241,7 @@ public static class OrdersTestSeeds
         var admin = await AdminClientAsync(factory);
         var response = await admin.PutAsJsonAsync(
             "/api/admin/integrations/bank-transfer",
-            new { isEnabled = true, config = new Dictionary<string, string>() });
+            new { isEnabled = true, config = new Dictionary<string, string> { ["iban"] = BankTransferTestSeeds.Iban } });
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.NoContent);
     }
 

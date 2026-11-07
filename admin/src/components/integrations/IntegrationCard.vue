@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * Displays a single integration as a clickable card with logo, title, description, and status,
- * marking a plugin with its declared type and an integration whose required fields are not all stored
- * as not configured.
+ * marking a plugin with its declared type, an integration whose required fields are not all stored
+ * as not configured, and a plugin that reports its connection state with that state.
  *
  * Clicking the card navigates to the integration's configuration page.
  */
@@ -14,10 +14,13 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiImage from '@/components/ui/UiImage.vue'
 import UiLink from '@/components/ui/UiLink.vue'
+import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { integrationConfigurePath } from '@/lib/routes'
+import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
+import { integrationConnectionTone } from '@/lib/tones'
 
 /** Translation function. */
 const { t } = useI18n()
@@ -37,7 +40,14 @@ const meta = INTEGRATION_META[props.integration.slug as IntegrationSlug]
     <UiCard padding="md" class="h-full">
       <UiStack gap="md" class="h-full">
         <UiStack direction="row" align="start" justify="between">
-          <UiStack align="center" justify="center" class="h-12 w-12 rounded-xl p-2.5" :class="meta?.color ?? 'bg-text-muted'">
+          <UiPluginAvatar
+            v-if="integration.isPlugin"
+            :name="integration.name"
+            :icon-url="integration.iconUrl"
+            :size="UiSize.Lg"
+            data-testid="integration-plugin-avatar"
+          />
+          <UiStack v-else align="center" justify="center" class="h-12 w-12 rounded-xl p-2.5" :class="meta?.color ?? 'bg-text-muted'">
             <UiImage
               v-if="meta?.logo"
               :src="meta.logo"
@@ -71,6 +81,14 @@ const meta = INTEGRATION_META[props.integration.slug as IntegrationSlug]
           >
             {{ t('integrations.integrationCard.notConfigured') }}
           </UiBadge>
+        </UiStack>
+
+        <!-- The plugin's own report (IPluginStatus), worded by the API; absent for built-ins and other plugins. -->
+        <UiStack v-if="integration.connection" gap="xs" :data-testid="`integration-connection-${integration.slug}`">
+          <UiBadge :tone="integrationConnectionTone[integration.connection.state]" dot small>
+            {{ t(`integrations.connectionState.${integration.connection.state}`) }}
+          </UiBadge>
+          <UiText tone="muted" size="sm">{{ integration.connection.message }}</UiText>
         </UiStack>
 
         <UiText tone="muted" size="md" class="flex-1">

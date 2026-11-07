@@ -17,7 +17,7 @@ products, billing, provisioning and integrations. A public demo
 is the same build with `Demo__Enabled=true` (`deploy:demo`); its sign-in page shows the demo accounts,
 served by `GET /api/public/demo` — they are not written in `README.md`.
 
-**This is a public, separately licensed repository.** AGPL-3.0-or-later, except the plugin SDK (`backend/src/Innovayse.SDK`), which is MIT (its own `LICENSE`, packed into the package) so a plugin may be free or paid, open or closed; `SdkPackageTests` pins the package metadata. The SDK lives in its own public repository, **github.com/innovayse/hostpanel-sdk**, and is a git submodule at that same path (`.gitmodules`): clone with `--recurse-submodules` (or run `git submodule update --init` after a plain clone), and an SDK change lands as a pull request there first, then as a submodule bump here. `origin` is **github.com/innovayse/hostpanel**, not GitLab. Anything written here
+**This is a public, separately licensed repository.** AGPL-3.0-or-later, except the plugin SDK (`backend/src/Hostpanel.Sdk`), which is MIT (its own `LICENSE`, packed into the package) so a plugin may be free or paid, open or closed; `SdkPackageTests` pins the package metadata. The SDK lives in its own public repository, **github.com/innovayse/hostpanel-sdk**, and is a git submodule at that same path (`.gitmodules`): clone with `--recurse-submodules` (or run `git submodule update --init` after a plain clone), and an SDK change lands as a pull request there first, then as a submodule bump here. `origin` is **github.com/innovayse/hostpanel**. Anything written here
 is read by people who have never seen the rest of the workspace, and the repo must build from
 a clone of itself alone (with its submodule) — that is why `Innovayse.Auth` is consumed as an optional package (only in an
 `InnovayseSso=true` build, see `backend/Directory.Build.props`) rather than a project reference, and why `backend/nuget.config` restricts `auditSources` to nuget.org.
@@ -139,9 +139,9 @@ backend/src/
                                      Common/Interfaces/ (every port), Common/Errors/, Resources/
   Innovayse.Hostpanel.Infrastructure/ AppDbContext, migrations, <Capability>/ adapters, Integrations/
   Innovayse.Hostpanel.API/           controllers, Program.cs, composition root
-  Innovayse.SDK/                     the plugin contract third parties compile against (git submodule, own repository)
-  Innovayse.Providers.CWP/ CWP7/ Inecobank/   provisioning and payment providers (Inecobank is net8.0)
-backend/tests/                       Domain, Integration, Architecture, CWP, Inecobank
+  Hostpanel.Sdk/                     the plugin contract third parties compile against (git submodule, own repository)
+  Innovayse.Providers.CWP/ CWP7/   provisioning providers (payment gateways are external plugins, none ships here)
+backend/tests/                       Domain, Integration, Architecture, CWP
 client/  admin/                    Nuxt 4 portal, Vite admin SPA — each owns its Dockerfile (backend/Dockerfile too)
 docker/                              compose set (shared·dev·prod·platform), nginx/, scripts/, .env.example — docker/README.md
 ```
@@ -159,7 +159,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   `IHostpanelDbContext.SaveChangesAsync`, which also translates a concurrency conflict to
   `ConcurrencyConflictException`. There is no separate unit-of-work port.
   Domain has no `Interfaces/` folders.
-- **Every application port is in `Application/Common/Interfaces/`** (`ICardPaymentGateway`,
+- **Every application port is in `Application/Common/Interfaces/`** (`IPaymentPluginResolver`,
   `IProvisioningProvider`, `IEmailSender`, `IIdentityProvider`, `IUserService`, …) and
   `PortPlacementTests` fails on one anywhere else. Adapters sit in Infrastructure under a
   capability folder (`Storage/`, `Email/`, `Integrations/<Provider>/`, `Auth/`); EF configurations sit in `Persistence/Configurations/`.
@@ -180,6 +180,29 @@ docker/                              compose set (shared·dev·prod·platform), 
   the provider's own text never reaches the response. `NameAmClient` reads the e-mail, password,
   API URL and test mode saved on the admin Integrations page over the bound options
   (`IsConfiguredAsync`), so the page configures what requests use.
+- **Plugin integrations on the Integrations page (#854, #855, #856).** A plugin's form texts are resolved per request:
+  `IntegrationFields.Resolve` maps each `GetSettings()` entry with `ToFieldDefinition(PluginUiTexts)`, so the label, the
+  help text (`description`), the `placeholder` and every select option label (`optionLabels`, keyed by the stored value;
+  `options` stays the values) come in the admin's `X-Language` from the plugin's locales, English where a locale lacks the
+  key, else the text as written. Nothing is resolved at load: the loader's `PluginIntegrationEntry` carries only the
+  `RequiredSettingKeys` the list needs. A plugin is tested and shown connected through the SDK's optional `IPluginStatus`
+  only: the port `IPluginStatusProbe` (`Infrastructure/Plugins/PluginStatusProbe`) checks the implementation type without
+  running plugin code (`Supports`), then goes through `PluginActivator.PrepareAsync<IPluginStatus>` (switched on, configured,
+  no pending migration; otherwise `Inactive`, the plugin is not called) and waits at most `PluginApi:StatusTimeoutSeconds`
+  (default 5, 1 to 60): the token fires and the host stops waiting at the same moment, even for a plugin that ignores it.
+  It fails closed: a throw, a null report or an undefined health is `Failed`, no answer in time is `TimedOut`, both logged by
+  plugin id and exception type only (never the message); the plugin's `Detail` is trimmed and cut to 500 characters.
+  `PluginConnectionReader` (Application, the one reader) caches the language-neutral result per plugin
+  (`PluginStatusCacheKeys`, `PluginApi:StatusCacheSeconds`, default 300, like the hosting panel's server info), and words it
+  per read: the plugin's own `Detail` through its locales (`PluginText`) when it reported, else the host's sentence by code
+  (`PLUGIN_STATUS_HEALTHY`, `_DEGRADED`, `_REPORTED_DOWN`, `_INACTIVE`, `_TIMED_OUT`, `_FAILED`, sentences in
+  `ErrorMessages` en/ru/hy; they are answer sentences, never refusals). The list (`IntegrationListItemDto.Connection`, only
+  for a switched-on plugin) and the detail (`Connection`) read the cache; Test Connection (`TestIntegrationConnectionHandler`,
+  for a slug that is not a built-in) asks now and replaces the cache entry, answering success for `Connected` and
+  `Degraded`; a save of the integration drops the entry. `IntegrationDetailDto.CanTestConnection` is true for a built-in the
+  test knows and for a plugin that implements `IPluginStatus`; the admin hides Test Connection otherwise, and the route
+  answers 400 `INTEGRATION_NOT_TESTABLE` for such a plugin. The admin card and the status sidebar show the state
+  (`integrations.connectionState.*`, tone from `lib/tones.ts`) with the API's sentence.
 - **Enums live in `Enums/` namespaces** (`Domain/<Area>/Enums/`, `SharedKernel/Domain/Enums/`,
   `Infrastructure/Email/Enums/`); `EnumPlacementTests` enforces it.
 - **Domain refusals are `DomainException(code, message)`** (abstract, in the kernel); the exception
@@ -187,30 +210,39 @@ docker/                              compose set (shared·dev·prod·platform), 
   and whose sentence is the localised one for that code. A handler that can foresee a refusal returns
   `Result.Failure` instead.
 - **Plugins are loaded reflectively, not linked.** `PluginLoader.DiscoverAndRegister` scans
-  `AppContext.BaseDirectory/plugins`, so `Innovayse.Hostpanel.API.csproj` references
-  `Innovayse.Providers.Inecobank` with `ReferenceOutputAssembly=false` purely for build order and
-  stages exactly two files — the provider assembly and its `plugin.json`. Never widen that to a
-  `**\*.*` glob: the provider's `bin` also holds a build-time copy of `Innovayse.SDK.dll`, and
-  `Assembly.LoadFrom` over it would give the process two distinct `IPaymentPlugin` types with the
-  same name, after which every cast in `PluginActivator` fails. The CWP providers are
+  `AppContext.BaseDirectory/plugins`. No plugin is built or staged with the host: payment gateways (card, bank) are
+  external plugins an operator installs from the Plugins page. A plugin package must never carry its own copy of
+  `Hostpanel.Sdk.dll` into the load path: `Assembly.LoadFrom` over it would give the process two distinct
+  `IPaymentPlugin` types with the same name, after which every cast in `PluginActivator` fails. The CWP providers are
   deliberately **not** staged, so they cannot activate at runtime by accident.
+- **Plugin assembly names.** `PluginAssemblyNames` (the plugin packaging package, "Plugin package checks"; the host's names go in as a `PluginAssemblyOptions`, written once in `Infrastructure/Plugins/PluginHostAssemblies.Options` and used by every caller) reserves `Innovayse.Hostpanel.`, `System.`, `Microsoft.`, the SDK (`Hostpanel.Sdk`, and its former name `Innovayse.SDK`, which a plugin still may not ship) and every
+  trusted platform assembly (`PLUGIN_HOST_ASSEMBLY_REFUSED`), with one carve-out: `Innovayse.Hostpanel.Plugins.<Name>` is the
+  plugin namespace and official plugins are named that way (`Innovayse.Hostpanel.Plugins.Stripe.dll`). The trailing dot is the
+  boundary, so `Innovayse.Hostpanel.PluginsX` and `Innovayse.Hostpanel.Plugins` stay reserved. No host assembly or project may
+  start with `Innovayse.Hostpanel.Plugins.` (`PluginAssemblyNamespaceTests`, which reads the prefix from `PluginHostAssemblies.Options`), so a plugin can never shadow a host assembly.
+  `PluginAssemblyNamesTests` (in the SDK repository) and `InstallPluginTests` pin the accepted and refused names.
+  `Assembly.LoadFrom` binds a name to the first copy loaded, so the same check also refuses a package whose assembly file
+  name (case-insensitive) is shipped by another installed, staged or built-in plugin (`PLUGIN_ASSEMBLY_CONFLICT`, 400,
+  `PluginAssemblyConflicts`, run right after the host-assembly check). The plugin's own installed and staged folders are
+  skipped, so an upgrade never conflicts with itself; the conflicting plugin id goes to the log, not the response.
+  `PluginAssemblyConflictsTests` and `InstallPluginTests` pin it.
 - **Plugin projects are named `Innovayse.Hostpanel.Plugins.<Name>` (#848).** The .NET plugin convention
   `<Company>.<Product>.<Type>.<Name>` (as in `Serilog.Sinks.Console`): project, folder, assembly and root
   namespace are `Innovayse.Hostpanel.Plugins.<Name>`, its tests `Innovayse.Hostpanel.Plugins.<Name>.Tests`, and a
-  plugin in its own repository lives in `innovayse/hostpanel-<name>` (Innovayse Sites, #844:
-  `innovayse/hostpanel-sites`, `Innovayse.Hostpanel.Plugins.Sites`). The plugin `id` in `plugin.json` never
+  plugin in its own repository lives in a repository named `hostpanel-<name>`. The plugin `id` in `plugin.json` never
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
-- **The SDK is grouped by area (since SDK 2.0.0; the submodule pins 2.1.0, commit `6a725c2`, which adds the `Ui`
-  view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`).** Every SDK type lives in
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.2.0, which keeps what 2.1.0 added, the `Ui`
+  view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, and adds the plugin
+  packaging package, `Hostpanel.Sdk.Packaging`).** Every SDK type lives in
   `Plugins/<Area>/` and its namespace equals the folder: `Payment`, `Provisioning`, `Registrar`, `HostingPanel`, `Hosting`,
   `Fulfilment`, `Identity`, `StoredCredentials`, `Manifest`, `Api`, `Endpoints`, `Host`, `Store`,
   `Lifecycle`, `Slots`, `Ui`, `Enums`. Each interface sits next to the records it uses; there is no
   `Interfaces/` folder (file-layout allows one only in Domain, `Application/Common/Interfaces/` and
   Shared) and nothing at the `Plugins/` root. Enums are in `Plugins/Enums/` with explicit values:
   `PluginType` keeps its released values starting at 0, every other enum starts at 1. The abstract base
-  classes a plugin derives from live in the `Innovayse.SDK.Base` namespace (`Base/`), not in an area. Inputs are `*Instruction` or `*Context`, outputs `*Result`, `*Status`,
+  classes a plugin derives from live in the `Hostpanel.Sdk.Base` namespace (`Base/`), not in an area. Inputs are `*Instruction` or `*Context`, outputs `*Result`, `*Status`,
   `*Lookup` or `*Session`; never `*Request`. `SdkContractTests` pins every namespace.
 - **Seven plugin types, one activator.** The loader registers each plugin under the SDK contract of the
   type its manifest declares: provisioning, payment, registrar, identity (`IClientResolver`),
@@ -303,9 +335,11 @@ docker/                              compose set (shared·dev·prod·platform), 
     are in "Manifest v2" and "One manifest validator" in this section and in "Menu icons and page ids".
   - **View schema** (`PluginViews` in the SDK, version 1): a JSON document `{ "schema": 1, "blocks": [...] }` named by the
     `view` member of a page or slot entry. Block kinds: `header`, `text`, `stat`, `table`, `form`, `action`, `link`, `badge`,
-    `empty`, `alert`, `tabs`, `chat`, `progress`. Label members (`title`, `label`, `confirm`, `placeholder`, `text`) are
+    `empty`, `alert`, `tabs`, `chat`, `progress`, `split`, `preview`. Label members (`title`, `label`, `confirm`, `placeholder`, `text`) are
     localised by the host; route members (`route`, `send`, `history`) name a declared `api` route by method and path. Checked
     at load and install (`PluginViewDocumentReader`, the `PLUGIN_VIEW_*` rules); rendered as text only, never `v-html`.
+    View state (#852, SDK 2.2.0, schema stays 1): `visibleWhen` on a block, `resetOnSuccess` in a form's `submit`,
+    `followUp` on an action or a form's `submit`; see "View state" under the view document rules.
   - **Slot ids** (`PluginSlots`): `client.dashboard.cards`, `client.service.tabs` (context `serviceId`), `admin.client.panels`
     (`clientId`), `admin.service.panels` (`serviceId`, `clientId`); indexes at `GET api/{client|admin}/plugins/slots/{slotId}`
     (see "Plugin slot index"). The plugin ids `ui` and `slots` are reserved.
@@ -344,7 +378,8 @@ docker/                              compose set (shared·dev·prod·platform), 
   (`PluginManifestReader.Deserialize`, the plugin does not load), and anywhere an undefined settings kind still
   reaches the classifier it counts as secret: an unknown type never reads as plain text. A `null` `settings`
   or `fields` list reads as empty, as in the SDK. The wire
-  shape of a field definition (`FieldDefinitionDto`) is unchanged; a select carries the values of its options.
+  shape of a field definition (`FieldDefinitionDto`) keeps its members; a select carries the values of its options, and a
+  plugin setting adds its translated `description`, `placeholder` and `optionLabels` (#854).
 - **Two plugin folders: built-in and uploaded (`PluginOptions`, section `Plugins`).** The build's own
   `plugins/` folder (`PluginOptions.BuiltInRoot`) holds the plugins shipped with the build; they load
   first, are listed with `isBuiltIn: true`, and cannot be removed or replaced from the admin panel
@@ -354,10 +389,10 @@ docker/                              compose set (shared·dev·prod·platform), 
   (`Infrastructure/Plugins/PluginPackageStore`); Application never touches the disk. An upload is
   streamed to a staging folder (`.staging`, which fails the plugin id rule and so is never loaded),
   checked, unpacked there and moved into place with one rename, so a refusal leaves nothing behind.
-  The checks: the plugin id rule (`Domain/Plugins/PluginIdentifier`: lower-case letters, digits and
+  The checks: the plugin id rule (`PluginIdentifier` of the plugin packaging package: lower-case letters, digits and
   single hyphens, at most 64 characters) and a resolved path that stays a direct child of the upload
   folder; every entry inside the plugin's own folder; `Plugins:MaxEntryCount` and
-  `Plugins:MaxUncompressedBytes` (counted while unpacking; `PLUGIN_ARCHIVE_TOO_LARGE`, 413); no
+  `Plugins:MaxUncompressedBytes` (counted while unpacking; `PLUGIN_ARCHIVE_TOO_LARGE`, 413); an entry that cannot be written into the unpack folder (a file and a folder of one name; the package's `PluginArchiveRule.EntryNotWritable`, mapped by `PluginRuleMap` to `PluginPackageOutcome.ArchiveUnwritable`) is `PLUGIN_ARCHIVE_UNWRITABLE`, 400; no
   assembly named like the SDK, `Innovayse.Hostpanel.*`, `System.*`, `Microsoft.*` or anything in the
   host's trusted platform assembly list (`PLUGIN_HOST_ASSEMBLY_REFUSED`); and, when
   `Plugins:TrustedPackageSha256` lists any digest, the archive's SHA-256 must be one of them
@@ -409,6 +444,104 @@ docker/                              compose set (shared·dev·prod·platform), 
   `ViewRouteUndeclared` (`PLUGIN_VIEW_ROUTE_UNDECLARED`, a `PluginViewRoute` that no route of the page's or slot's area
   declares), and `LabelKeyMissing` for a key-shaped label under `PluginViews.LabelProperties` that `en` lacks
   (the same `PluginManifestValidator` check as manifest labels).
+  - **View state (#852).** Three optional members let a view react to its own data without a reload; names and caps
+    are `PluginViews` constants (`VisibleWhenProperty`, `ResetOnSuccessProperty`, `FollowUpProperty`,
+    `MaxConditionValues` 20, `MaxFollowUpRefresh` 20). One **condition** shape serves `visibleWhen` and
+    `followUp.until`: exactly `{ "route": { "method": "get", "path": … }, "field": "a.b", "equals": … }`. `route` is a
+    `GET` route declared in the page's or slot's area (undeclared is `PLUGIN_VIEW_ROUTE_UNDECLARED`, another method
+    `PLUGIN_VIEW_CONDITION_INVALID`); `field` is a dotted path (`[A-Za-z0-9_-]` segments, at most 200 characters) read
+    like `readPluginField`; `equals` is one JSON scalar or an array of 1 to 20 scalars, and the condition holds when the
+    field strictly equals one of them (no number/string coercion). Condition strings are values, never walked as labels.
+    - `visibleWhen` (any block, header actions and tab blocks included): the panel hides the block while the condition
+      is read, on a failed read, an absent field or no match, and shows it only when it holds; it is read again when the
+      block's own `id` is refreshed. Use it to hide a create form once the thing exists.
+    - `resetOnSuccess: true` (a form's `submit` only, boolean): after a successful submit every field returns to its
+      empty value.
+    - `followUp: { "refresh": [ids], "until": <condition> }` (an action block or a form's `submit`): after a successful
+      call and its normal `refresh`, the panel reads `until.route` on an interval, refreshes the listed block ids on
+      each attempt, and stops once the condition holds (after one last refresh), after the last attempt, or when the
+      page is left (late answers dropped); the watch belongs to the view (`PluginViewContext.adopt`), so the block that
+      started it hiding itself, as a publish button does once its version is live, does not end it, and when the condition
+      holds the sentence the action showed is taken down. A failed read counts as an attempt. `refresh` is 1 to 20 ids, each the `id`
+      of a block in the same document. Two blocks with one `id`, at any depth, are refused **at install only**
+      (`ViewBlockIdRepeated`, `PLUGIN_VIEW_BLOCK_ID_REPEATED`), because the client keys a block's refresh and its watch on the id;
+      the `id` of a tab or of a preview source is not a block id. The reader also checks the display members the panel would otherwise ignore when mistyped (`PLUGIN_VIEW_INVALID`): a header's `compact` (boolean), `titleSource` and `subtitleSource`, an action's `labelSource` and a preview's `note` (each a GET route and, when given, a dotted `field`), and a table's `display` (`table` or `cards`); also at install only.
+      **Decision (owner, #976): a rule added after plugins were installed refuses at install and only warns at load.** A host
+      upgrade must not take a working plugin, one that may take payments, out of production because the host learned to
+      check one more thing. The reader keeps the two apart in its result, not with a flag: `PluginViewRead.Violation` holds
+      the rules enforced from the start (refused at install and at load), `PluginViewRead.Advisories` holds the faults of
+      rules added later (the repeated id and the display members), and `PluginViewRead.RefusedAtInstall` is the violation, else
+      the first advisory. `PluginPackageStore` asks `RefusedAtInstall`; `PluginLoader` asks `Violation` and logs each advisory
+      at Warning with the plugin id and the rule. A later tightening goes to `DocumentScan.Advisories`, never to `Malformed`
+      or `StateViolation`, which refuse at load. The panel stays safe with a repeated id: every block renders (a block's key
+      carries its place), and the limit is that a refresh of that id reaches all its blocks and one follow-up watch per id
+      is kept (`View.test.ts`, `PluginLoaderTests`, `InstallPluginTests`). **The bounds are the host's, never the plugin's**:
+      `PLUGIN_FOLLOW_UP_MAX_ATTEMPTS` 20 and `PLUGIN_FOLLOW_UP_INTERVAL_MS` 3000 (about a minute) in the client.
+    - Refused at install and load (rules from the start of view state): `ViewConditionInvalid` (`PLUGIN_VIEW_CONDITION_INVALID`: a bad condition, a non-`GET`
+      condition route, `visibleWhen` outside a block) and `ViewFollowUpInvalid` (`PLUGIN_VIEW_FOLLOW_UP_INVALID`: a bad
+      `followUp` shape or place, a `refresh` id no block carries, `resetOnSuccess` not a boolean or outside a `submit`),
+      each with its en/ru/hy sentence, 400.
+  - **Action body from page data (#940, no schema change).** `bodySource` on an action block of the client area:
+    exactly a `GET` `route` and 1 to 10 `fields` (a camelCase body member, not a `PluginViews.LabelProperties` name, and a
+    dotted path). The action has an `id`, calls `POST`, `PUT` or `PATCH`, and a `labelSource` reads the same route, because
+    the panel takes label and body from one read so a button cannot send a value other than its label's. Anything else is
+    `PLUGIN_VIEW_ACTION_BODY_INVALID` (`ViewActionBodyInvalid`, `CheckActionBody` in `PluginViewDocumentReader`; the member names are the reader's own constants until the SDK's `PluginViews` documents them). In the
+    client (`ActionBlock.vue`, `pluginActionBody`) the button is disabled until every member is read as a scalar, the body
+    is fixed at the click, and a refused call reads the data and `refresh` again. Absent, an action posts `{}`. A result
+    card's action carries a literal `body` instead (`readResultBody`), and a malformed one drops that action.
+  - **Layout, split and preview (#910, SDK 3.2.0, schema stays 1).** A client page's `layout` is a `PluginPageLayouts`
+    value and the page answers it (`PluginPageViewDto.Layout`, `standard` when absent); another value or any layout on an
+    admin page is `PLUGIN_PAGE_LAYOUT_UNKNOWN` (`CheckPageLayouts` in the manifest validator). `split` holds exactly two
+    panes of `{ blocks }` and never nests in a split (`PLUGIN_VIEW_SPLIT_INVALID`). `preview` holds 1 to 5 `sources`
+    (exactly `id`, `label`, a GET `route`, a dotted `field`) and an optional `size`, and is allowed **only on a client
+    page** (`PLUGIN_VIEW_PREVIEW_INVALID`), because no other document gets the narrowed frame policy.
+    - **Origins.** `PluginPageViewDto.FrameOrigins`, computed per request by `PluginFrameOriginResolver` from the one
+      page reader, empty in the admin panel, never holding the panel's own origin (`ClientBaseUrl`): the manifest's `externalOrigins` that are pure https origins, the domains (as typed at order) of
+      the caller's account's `Active` services on products the operator bound to this plugin (#823 rows through
+      `IPluginSlotContextReader`, the rule SSH access follows: no manifest fallback, nothing bound means none;
+      `IPluginHostFactsReader.ListActiveServiceDomainsAsync`; the account comes from `ICallerClientResolver`, and only with
+      `ViewProductsServices`, as in the host API) as `https://d` and
+      `https://www.d`, then `PluginPreview:DevelopmentHttpOrigins`. `PluginFrameOrigin` is the one parser, and everything
+      that is not a plain DNS name is dropped, because a domain is what a client typed and the text reaches a response
+      header. The list is cut at 2048 characters for the proxies' header limits; what falls off shows nothing.
+    - **Browser enforcement.** The panel frames an address only when its origin is exactly on that list and is not the
+      panel's own. The edges this repository ships (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`, held to one policy by `scripts/check-edge-csp.sh`, which compares the text, and run as they are in front of a stub upstream by `scripts/check-edge-headers.sh` with `edge-headers-assert.sh`, which asserts the response headers: one policy on `/`, the edge policy plus the plugin page's narrow `frame-src` as two headers on `/client/apps/*` (also under a language prefix), the upload policy on `/uploads/`, the admin upstream's policy passed through alone, and every location of the admin image's own configuration (`docker/nginx/admin.conf` with `snippets/admin-csp.conf`) sending exactly one; the plugin page's narrow policy there comes from the stub upstream, not from the portal middleware, so the script proves that the edges pass it and not that the portal sends it; the same script runs in the GitHub `edge-csp` job and the GitLab `edge:test:headers` job) keep `frame-src 'self' https:` (operator content on public pages, and domains cannot be
+      listed statically). An operator's own edge may send that same policy as `Content-Security-Policy-Report-Only` while it is reviewed (#938), and a report-only policy does not intersect with an enforcing one, so on such a deployment, and on a deployment whose edge sends no policy, the header below is the only one enforced. `client/server/middleware/plugin-frame-csp.ts` adds a second header to the document of
+      `/client/apps/<plugin>/**` (a language prefix names the same page), `Content-Security-Policy: frame-src <origins>` or
+      `'none'` on any failure. Policies intersect. A document that got the API's origins also carries `Server-Timing:
+      plugin-frames`, the one response header script can read (secure contexts only, which localhost and https are). A CSP belongs to
+      the document, so the renderer loads the page once in full when it arrived by a router move from another document, or
+      when its document lacks that entry, which is the document a visitor opened signed out and then signed in inside.
+    - **Reload.** A refresh of the block's `id` draws a new frame once its read answered, because a site's address does
+      not change with its content; nothing about the sandbox changes for it. With a `note` only a changed note draws one, because a follow-up reads the block every few seconds. A chat's `refresh` also applies after a result
+      card's action, whose `until` (`route`, `field`, `equalsAny`) keeps those blocks reading while work it started runs on.
+      A card action (a call, a link or a resend) may also carry `visibleWhen`, the view condition in the event's spelling
+      (`route`, `field`, `equalsAny`); both conditions go through one reader, `readResultCondition` in `utils/plugins.ts`,
+      which holds an event to the view's own bounds (`constants/pluginCondition.ts`: a GET route the page can fill, a dotted
+      field of at most 200 characters, 1 to 20 scalars). A card is not checked at install, so a `visibleWhen` the reader
+      cannot accept drops the action whole, where a malformed `until` only loses its follow-up. `PluginChatCardAction` draws
+      each action and evaluates the condition with `usePluginCondition`, which takes the block ids whose refresh reads it
+      again: a block names its own id, a card action the chat's `refresh` list. With no `refresh` list the condition is read
+      once, when the card is drawn.
+    - **Presentation members, no schema change.** The view schema allows extra members on a block, and these are the
+      panel's: a header's `compact`, `titleSource`, `subtitleSource` and any block kind in its `actions`; an action's
+      `labelSource`; a table's `display: "cards"`; a tabs block's `actions`; a preview's `note` (an object of sentences by
+      source id). A chat `result` event may carry `details` (lines behind a switch), and an action `{ label, resend: true }`.
+    - **Sandbox decision.** `allow-scripts allow-forms`, **never `allow-same-origin`**: a client chooses a service's
+      domain, so it could name the panel's own host, and that pair is an escape from the sandbox on a shared origin. The
+      opaque origin also means a framed site's session can never be driven from the panel. Accepted cost: a page that
+      needs its own cookies or storage degrades in the preview.
+    - **http only in Development.** `PluginPreviewOptionsValidator` refuses to start with `DevelopmentHttpOrigins` set
+      outside Development (a blank entry counts as unset, which is what `PLUGIN_PREVIEW_DEV_HTTP_ORIGIN`, a dev compose key only,
+      passes when empty), and with anything but an http origin on a loopback host (a browser blocks other http frames in
+      an https panel as mixed content). This is a refusal on purpose, not a branch in the flow.
+    - **Element selection (#933, no schema change; the members are the reader's own constants until the SDK's `PluginViews` documents them).** A preview's
+      `selection` (exactly `sources`, a POST `route`, and a `release` of a GET `route` and a dotted `field`) and a chat's `selection: true` are off when absent; anything else, or a chat selection with no preview selection in the document, is `PLUGIN_VIEW_SELECTION_INVALID` (`ViewSelectionInvalid`). The sandbox does not change. A frame's message is a claim: `PreviewBlock.vue` takes it only from its frame's
+      `contentWindow` (origin is `null` and proves nothing), `parsePluginSelectionMessage` admits only the exact versioned shape, the release the plugin reports, and an id of `PLUGIN_SELECTION_ID_PATTERN`; a toggle needs the mode on and a source listed in `sources`, so a live source can do nothing. One preview per document may declare a selection, because a claim names a release and ids and not a preview (a second is `ViewSelectionInvalid`). Each selection is its preview's own (`usePluginSelection`, opened only by a preview that declares one; any other neither listens, posts nor clears). A `ready` naming a release not read yet is held, one at a time, until the read answers. Chips hold only what the plugin's route answered, lookups run one at a time for the newest wish, and a new release empties them. A resend after that is refused, not sent without its claim, since a plugin reads a message with no selection as free to change anything: `ChatBlock.vue` says the page changed and keeps the text in the field. Host-to-frame messages go to target `*` because an opaque origin cannot be named, so they carry only the mode and ids. The plugin re-validates on its server.
+  - **Chat events (#911, SDK 3.2.0).** `PluginChatEvents`: `step`, `result`, `issue`, sent as ordinary plugin events and
+    rendered by the client's chat block; `error` and `done` stay reserved (`PluginEventStream`). The host forwards their data
+    unread: the client renders text only and takes a result's actions through the same link rule and route door as
+    other blocks. Stop aborts the fetch, which cancels the plugin through `RequestAborted`; no event and no route of its own.
   - **Structure.** The root is an object with an integer `schema` and a `blocks` array. Every entry of a `blocks`
     array (the root's or a tab's) and of a block's `actions` array is an object with a string `kind`; a block's `tabs`
     is an array of objects whose `blocks`, when present, follow the same rule. A block the panel would skip or crash on
@@ -435,9 +568,38 @@ docker/                              compose set (shared·dev·prod·platform), 
     reads no file. A localised copy is cached per path and language (`PluginViewDocuments.Localised`, key
     `LocalisedViewKey`), always: the language is first normalised by `PluginUiTexts` to a supported one (`en`, `ru`,
     `hy`, anything else becomes `en`), so the cache holds at most documents times three and a caller cannot grow it.
+- **Plugin rules added with SDK 3.0.0.** Short notes; the code and its tests are the detail.
+  - **`endpoints` capability on a non-App plugin serves callbacks only.** Only the public callback routes
+    (`api.callbacks`) are opened; client and admin routes, pages and slots stay App-only for now. A plugin that declares the
+    capability but whose class does not implement `IPluginEndpoints` is refused (`PluginManifestRule.EndpointsNotImplemented`).
+  - **Plugin-wide `IPluginStore` by constructor.** A plugin may take `IPluginStore` in its constructor for data it needs
+    outside a routed call. It is scoped to the plugin id and no client, and each operation runs in its own unit of work.
+  - **`RefundInstruction.AlreadyRefundedMinor`.** What the host already recorded as refunded through the gateway order before
+    this `RefundId`. A gateway with no idempotency key compares its refunded total with it to tell a retry from a new refund.
+  - **Plugin assembly namespace.** `Innovayse.Hostpanel.Plugins.<Name>` is the one carve-out from the reserved
+    `Innovayse.Hostpanel.` prefix, and a file name already shipped by another plugin is refused with `PLUGIN_ASSEMBLY_CONFLICT`
+    (see "Plugin assembly names" above).
+  - **Callback door.** Only an allow-list of request headers (plus non-refused `X-*` ones) reaches a plugin on a callback, never
+    the caller's credentials. A raw reply is accepted on a callback only, with a media type from an allow-list (markup and
+    script refused) and a size cap, and is sent with `nosniff` and `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`.
+- **Plugin icon (#845).** The manifest's optional `icon` is a package-relative `.svg` or `.png` path. `PluginIconReader`
+  (`Infrastructure/Plugins`, an adapter over the packaging package's `PluginIconChecker`) checks it at load (`PluginLoader`) and at install (`PluginPackageStore`, on the unpacked
+  files): plain lowercase path segments with no `..`, no link on the way, at most 256 KiB read from one bounded handle,
+  a PNG signature plus `IHDR`, an SVG parsed as XML with DTDs prohibited and no resolver, refused when it holds
+  `script`, `foreignObject`, other embedding elements, an `on*` attribute, a non-fragment `href`, a non-fragment
+  `url(...)`, `@import`, a processing instruction, or an `animate`/`set` aimed at `href` or an event handler. A missing
+  file is `PLUGIN_ICON_MISSING` (`PluginManifestRule.IconMissing`), anything else `PLUGIN_ICON_INVALID`
+  (`IconInvalid`); details carry the package-relative path only. The checked bytes and a strong tag live in
+  `LoadedPlugin.Icon` (`PluginIconDto`); `IPluginRegistry.GetIcon` serves them with no file read.
+  `GET /api/admin/plugins/{id}/icon` (`GetPluginIconQuery`, admin only) answers through
+  `BaseApiController.InlineImage`: declared type, `X-Content-Type-Options: nosniff`, `Content-Security-Policy:
+  default-src 'none'; style-src 'unsafe-inline'`, `Cache-Control: private, max-age=300, must-revalidate`, `ETag` (304 on
+  a match); an unknown plugin and a plugin without an icon both answer `PLUGIN_ICON_NOT_FOUND` (404).
+  `PluginListItemDto`, `IntegrationListItemDto` and `IntegrationDetailDto` carry `iconUrl` (the endpoint path, `null`
+  without an icon), the integration DTOs also `isPlugin`.
 - **Menu icons and page ids (#643).** A menu `icon` is a plain name, `\A[a-z0-9-]{1,64}\z`
   (`PLUGIN_MENU_ICON_INVALID`, `PluginManifestRule.MenuIconInvalid`); the panels map a name to a built-in icon only and
-  never load it as a URL. A page id is a `PluginPageIdentifier` (`Domain/Plugins`: `\A[a-z0-9][a-z0-9_-]*\z`, at most 64
+  never load it as a URL. A page id is a `PluginPageIdentifier` (plugin packaging package: `\A[a-z0-9][a-z0-9_-]*\z`, at most 64
   characters, not the reserved `by-path`) and unique within its area (`PLUGIN_PAGE_ID_INVALID`,
   `PluginManifestRule.PageIdInvalid`), so every page the installer accepts is reachable by the page lookup.
 - **Plugin upgrade, refused plugins and data purge (#649, #785).** An upload of a plugin id that is already installed
@@ -460,7 +622,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   loaded plugin of the same version is replaced at once. An older version, one older than the already staged upload, or
   one compared with an unparseable installed version is refused with `PLUGIN_DOWNGRADE_REFUSED` (409) unless the request
   carries `?force=true`; staging, a forced downgrade and a refused downgrade are audited. Versions are strict semantic
-  versions (`Domain/Plugins/PluginVersion`, `PluginManifestRule.VersionInvalid`, `PLUGIN_MANIFEST_VERSION_INVALID`).
+  versions (`PluginVersion` of the plugin packaging package, `PluginManifestRule.VersionInvalid`, `PLUGIN_MANIFEST_VERSION_INVALID`).
   Settings and the plugin store are never touched by an upgrade. A refused plugin claims its id (a same-named upload never
   loads or overwrites its refusal). The data purge looks at the package folder (`IPluginPackageStore.HasPackageFolder`) and
   counts slot widget bindings as kept data. `PluginLoader` keeps every plugin it refused for a broken manifest rule
@@ -468,6 +630,21 @@ docker/                              compose set (shared·dev·prod·platform), 
   (`IPluginRegistry.GetRefusedPlugins`); `GET /api/admin/plugins` lists it with `status: "Refused"`, `refusedRule` and
   `refusedDetail`, never as loaded, and it can be removed like any upload. A removed plugin that still keeps data is listed
   with `status: "Removed"` so the operator can purge it. Needs no database migration.
+- **Plugin package checks come from `Hostpanel.Sdk.Packaging` (SDK 3.1.0).** The checks a plugin package must pass are written
+  once, in the SDK repository's second package (MIT, versioned in step with `Hostpanel.Sdk`, project reference at
+  `backend/src/Hostpanel.Sdk/Hostpanel.Sdk.Packaging`): the signature format, signing and verification (`PluginSignatureFile`,
+  `PluginSignaturePayload`, `PluginSigner`, `PluginSignatureValidator`, `TrustedKeyId`), `PluginIdentifier`,
+  `PluginPageIdentifier`, `PluginVersion`, `PluginAssemblyNames`, `PluginArchiveGuard`, `PluginIconChecker` and the structural
+  manifest rules (`PluginManifestChecker`). A plugin author runs the same code the host installs with. The host keeps its
+  policy and nothing else: `PluginSignatureVerifier` (built-in plugins exempt, Development and Testing relaxed, the admin
+  `plugins.allow_unsigned` setting, the trusted key list), `PluginAssemblyConflicts`, built-in ids, the view document rules
+  (`PluginViewDocumentReader`), the entry point and endpoints checks and every `PLUGIN_*` code. The package reports its own rule
+  enums; `PluginRuleMap` (`Infrastructure/Plugins`) maps them to the host's `PluginManifestRule` and `PluginPackageOutcome` by
+  name, in one place and never by a cast, and `PluginPackageErrors` maps a package `PluginSignatureRule` to its code.
+  `PluginManifestValidator` and `PluginIconReader` are thin adapters that call the package and map the answer. The domain
+  does not reference the packaging package (`KernelPurityTests` allows the kernel only): the plugin id rule is checked by the
+  validators of the use cases that take a plugin id, and the domain refuses only an empty id. `PluginPackagingRulesTests` fails when a host layer declares a type the package owns. The signing tool
+  (`backend/tools/Innovayse.Hostpanel.PluginSigner`) references the package, not the host.
 - **Signed plugin packages (`Infrastructure/Plugins/PluginSignatureVerifier`, section `PluginSigning`).** An uploaded
   package carries a detached Ed25519 signature, `plugin.sig` at its root, checked in one place by both paths, like the
   manifest validator: at install (`PluginPackageStore`, on the unpacked files, before the move into place) and at load
@@ -479,7 +656,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   (`PLUGIN_SIGNATURE_INVALID`, a file was changed, added or removed after signing). At install the response is the rule's
   localised error and nothing is left behind (`PluginPackageOutcome.SignatureRefused`); at load only that plugin is
   skipped and one warning carries its id and the rule.
-  - **The format** (`PluginSignatureFile`, `PluginSignaturePayload`; both the signing tool and the host use this code).
+  - **The format** (`PluginSignatureFile`, `PluginSignaturePayload` of the plugin packaging package; the signing tool, a plugin author's pipeline and the host all use this one code, and `PluginSignatureGoldenTests` pins that the host works on the payload the package builds).
     `plugin.sig` is `{"keyId":"...","signature":"<base64 of the 64-byte Ed25519 signature>"}`. The signature covers
     this UTF-8 text (no byte order mark, every line ends in `\n`): the line `innovayse-plugin-signature-v1`, the
     line `key <keyId>`, then one line per file, `<lower-case hex SHA-256> <path>`, where `<path>` is relative to the
@@ -529,6 +706,56 @@ docker/                              compose set (shared·dev·prod·platform), 
     zipped, after its last change. The future plugin repositories (#780) sign in their release pipeline with the same tool.
   - **Admin.** The plugins page shows the `plugins.allow_unsigned` switch (`PluginSigningCard`) with a visible warning,
     saved through the settings store like every other settings row.
+- **Plugin registry (#866).** The admin panel can browse and install plugins from a remote catalogue the operator points it
+  at. Off by default and no address is shipped: `PluginRegistryOptions` (sealed, section `PluginRegistry`, validated on
+  start by `PluginRegistryOptionsValidator`) has `Enabled` (false), `BaseUrl` (absolute `https`, no user info, query or
+  fragment; `PluginRegistry__BaseUrl`, compose `PLUGIN_REGISTRY_BASE_URL`, with `PLUGIN_REGISTRY_ENABLED`; the compose
+  files give them no default), `Timeout` (one call, a download included; 1 s to 5 min, default 30 s) and `MaxDownloadBytes`
+  (default 50 MiB, at most 100 MiB). While it is off every registry route answers 409 `PLUGIN_REGISTRY_DISABLED`.
+  - **Where it sits.** Port `IPluginRegistryClient` (Application) and one adapter, `Infrastructure/Plugins/Registry/PluginRegistryClient`
+    (typed `HttpClient`, `*Wire` records beside it, `internal`). `IPluginPackageInspector` reads what an archive claims
+    (plugin id, version, signing key id) and answers `IsOperatorKey`. Use cases (`Admin/Plugins`): `ListRegistryPluginsQuery`
+    (`GET /api/admin/plugins/registry?q=&category=&page=&pageSize=`), `CheckPluginUpdatesQuery`
+    (`GET .../registry/updates`) and `InstallRegistryPluginCommand` (`POST .../registry/{id}/install`, body `{version}`,
+    demo restricted). One type each for a plugin (`RegistryPluginDto`) and a page (`RegistryPluginPageDto`): the client fills
+    the registry's members, the handler sets `installed`, `installedVersion` and `updateAvailable` (`PluginUpdateRule`, a
+    newer semantic version than the installed one and than any staged upload).
+  - **What is sent to the registry.** Only `GET {BaseUrl}plugins?q&category&page&pageSize`, `POST {BaseUrl}plugins/latest` with
+    the ids of the installed, uploaded plugins (`{"ids":[...]}`), `GET {BaseUrl}plugins/{id}/versions/{version}` and the
+    package address that reply names. No cookie, no token, no host name, no setting, no client or user data; an `Accept`
+    header per request. The update check sends plugin ids, so an operator who does not want
+    that leaves the registry off.
+  - **Network rules.** Every request, redirect hop and package address must have the registry's scheme, host and port; a
+    redirect is followed by hand (GET only, three hops) and only inside that origin, otherwise `PLUGIN_REGISTRY_PACKAGE_REFUSED`.
+    `PluginRegistryConnector` (the handler's connect callback) resolves the name itself and refuses loopback, link-local
+    (the cloud metadata address), unspecified, multicast and the other known metadata addresses, IPv4-mapped forms
+    included; private ranges stay allowed. JSON replies are read with a 1 MiB bound; a package is streamed to a temporary file
+    in the plugin `.staging` folder with a bounded write (never held in memory) and the file is deleted when the stream is
+    disposed or on any failure. Free text from the registry is cleaned by `UntrustedText.Clean` (control characters to
+    spaces, trimmed; name and author 200, description 2000 characters), the same cleaner `InstallPluginHandler` uses for
+    its audit lines; an icon address is kept only when it is on the registry's host.
+  - **Error codes** (`HostpanelErrorCodes`, resx en/ru/hy, `StatusMapping`; no upstream text ever reaches a response, the log
+    gets the exception type only): `PLUGIN_REGISTRY_DISABLED` 409, `PLUGIN_REGISTRY_UNAVAILABLE` 502 (unreachable, an error
+    status, a 404 anywhere but a release lookup), `PLUGIN_REGISTRY_TIMED_OUT` 504, `PLUGIN_REGISTRY_RESPONSE_INVALID` 502,
+    `PLUGIN_REGISTRY_PLUGIN_NOT_FOUND` 404 (a 404 on the release lookup only), `PLUGIN_REGISTRY_PACKAGE_REFUSED` 502 (off-host
+    address or redirect, over the size limit, a package of another plugin or version), `PLUGIN_REGISTRY_CHECKSUM_MISMATCH` 502,
+    `PLUGIN_REGISTRY_NOT_TRUSTED` 403. The install also answers every refusal of `InstallPluginHandler` (manifest,
+    signature, size, built-in, downgrade).
+  - **Trust model.** Three checks, none replaces another. (1) The operator's policy, the setting `plugins.registry_trust`
+    (`PluginRegistryTrust`, seeded `VerifiedOnly` by `PortalSettingsSeeder`, every change audited; an unknown stored value
+    reads as `VerifiedOnly`): `VerifiedOnly` installs only entries the registry marks verified, `AnyRegistryPublisher` any
+    listed publisher, `OwnKeysOnly` only a package whose `plugin.sig` key id is in `PluginSigning:OperatorKeys` (the
+    maintainers' shipped keys do not count). (2) The checksum: the package must hash to the SHA-256 the registry published,
+    its `plugin.json` must name the plugin id and version that were asked for, both read with the code the store and the
+    loader use (`PluginManifestReader`, `PluginSignatureFile.Parse`, from a stream bounded at the cap plus one byte), and an
+    archive with two entries differing only in case for either file is refused. (3) The signature: `PluginPackageUpload.RequireSignature`
+    makes the package store check `plugin.sig` against the trusted keys **in every environment**, Development and Testing
+    included, and the `plugins.allow_unsigned` setting does not override it; a registry package is never admitted unsigned.
+    The registry is a catalogue, not a root of trust: a compromised registry can offer a package but cannot make the host
+    install one a trusted key did not sign. A refusal before the install (trust, checksum, another plugin or version) is
+    audited as `Refused Plugin From Registry` with a fixed reason; a success as `Installed Plugin From Registry` or `Staged
+    Plugin Upgrade From Registry` with the id, version and digest the store reports. An install of an installed plugin is
+    an upgrade like any upload: staged, applied at the next restart, downgrades refused.
 - **Plugin routes: one safe door for every serving plugin (#639, #818).** A serving plugin (`PluginType.App`, or any type
   declaring `endpoints`; `IPluginEndpoints`)
   answers HTTP-shaped calls the host forwards, never a request or a token. Two thin catch-all controllers bind the request
@@ -801,8 +1028,28 @@ docker/                              compose set (shared·dev·prod·platform), 
     tests derive a host with an enabled `PluginRateLimiter`. The client account is resolved before the plugin budget
     is checked, so a refused call still costs one lookup, which the global limiter bounds. A refused stream call has
     already spent its tier permit.
+  - **The 429 headers are the limiter's own (#874).** A refusal carries `Retry-After`, `X-RateLimit-Policy`, `-Limit`,
+    `-Remaining` and `-Reset`, all written by `RateLimitingExtensions.WriteRejectionAsync` and nowhere else. Exposing the policy
+    name and the budget is acceptable because both are published (the policy names and defaults are in the API reference and
+    the configuration reference) and name no plugin, provider or account; they let a caller pace itself. The leak guard
+    allows the four `X-RateLimit-*` names on a 429 only, so a header of that name copied onto any other response, a
+    provider's own limit headers for one, is removed like any vendor header (`LeakGuardTests`). CORS does not expose them to
+    a browser script on another origin, and no `Access-Control-Expose-Headers` is to be added for them without a reason.
   - A streamed call ends when the plugin ends, when the client leaves, or when the producer is silent for the call limit
     (see the stream silence limit above).
+  - **A streamed call owns its own dependency scope (#851).** A stream is read by the response after the use case has
+    returned, and Wolverine disposes the use case's scope, with the `AppDbContext` the store and the host API write through,
+    as soon as the handler returns; every streamed call that touched its store then read a disposed context. So
+    `PluginCallRunner` opens an `IPluginCallScope` (`IPluginCallScopeFactory`, `Infrastructure/Plugins/PluginCallScopeFactory`,
+    a scope of the root container) for every call to a route that declares `streaming`, before the plugin is built, and takes
+    the plugin (through that scope's `IPluginEndpointResolver`, which checks the switch and settings once more; a plugin
+    switched off since the gate answers the same 404 `PLUGIN_ROUTE_NOT_FOUND`), its store and its host API from it. When the
+    plugin answers with a stream the scope travels with it as `StreamedReply.Owner`, and `EventStreamResult` disposes it once
+    the stream ended, failed or the client left; a producer step abandoned after the settle wait keeps it until that step
+    ends, so it is never disposed under running plugin code. Any other outcome of a streaming route (JSON, problem, refusal,
+    timeout, throw) disposes it before the runner returns. Every route that does not declare `streaming` runs on the use
+    case's scope as before. `PluginStreamScopeTests` proves both doors, the store and the host API between events, and the
+    disposal after the end and after a disconnect.
 - **Plugin slot index: widgets for a verified context (#644).** The answer is `PluginSlotIndexDto` with
   `PluginSlotWidgetDto` items. **Nothing of a plugin is built or called**: the index is read from manifests, so a foreign
   id cannot reach plugin code.
@@ -889,10 +1136,27 @@ docker/                              compose set (shared·dev·prod·platform), 
 
 ## CQRS — Wolverine, conforming
 
-Wolverine 5.41.0. `Extensions/MessagingRegistration.cs` registers discovery over the API and
+Wolverine 6.61.0. `Extensions/MessagingRegistration.cs` registers discovery over the API and
 Application assemblies; handlers are never registered by hand and never called directly. One
 folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
 
+- **Handler code is generated at image build time and loaded, never compiled, in production.**
+  `MessagingRegistration.TypeLoadModeFor` picks `Static` everywhere except Development (`Auto`) and the
+  Testing environment of the integration suite (`Dynamic`). The API Dockerfile runs `codegen write`, which
+  compiles with Roslyn and so needs the `WolverineFx.RuntimeCompilation` package (Wolverine 6 moved the
+  compiler out of core), then restores and publishes the API with `OmitRuntimeCompilation=true`, which the
+  API csproj honours by leaving that one reference out: the published image carries neither the package
+  nor the scripting and Visual Basic Roslyn assemblies it adds (about 9 MB). The core Roslyn assemblies
+  (`Microsoft.CodeAnalysis*`, `BuildHost-*`) stay in the image regardless, because
+  `WolverineFx.EntityFrameworkCore` depends on `Microsoft.CodeAnalysis.CSharp.Workspaces`,
+  `Microsoft.CodeAnalysis.Workspaces.MSBuild` and `Microsoft.EntityFrameworkCore.Design` itself; dropping them
+  would mean hand-listing a transitive closure of a package that may load it. A plain restore or build leaves
+  the property unset, so Development, the tests and `dotnet watch` keep the package.
+  Since Wolverine 6.30 a `Static` host refuses to start (`MissingPreBuiltTypesException`, naming the chains)
+  when a handler chain's generated type is missing, where earlier versions started healthy and lost the
+  messages of that type; `Production.AssertAllPreGeneratedTypesExist` is set in `Static` mode as well, for the
+  environment check over every code collection. `WolverineStartupTests` pins both, and starts the current
+  Wolverine on a message store schema created by 5.41 (`Fixtures/wolverine-5.41-schema.sql`).
 - **Handlers return `Result` / `Result<T>`** (`Shared/Models`); controllers derive from
   `BaseApiController` and return through `HandleResult`, which maps the failure code to a status
   with `StatusMapping`. Every controller derives from it (`ControllerBaseTests`); handlers and
@@ -978,7 +1242,7 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
 - **Architecture tests** (`Architecture.Tests`): `ControllerBase`, `ExplicitConstructor`,
   `NoRequestTypes`, `NoIdentityOnMessages`, `PortPlacement`, `EnumPlacement`, `NoVendorNames`, `PluginNeutralCore`,
   plus resource coverage, kernel purity, SDK contract and use-case shape. Application types carry
-  no vendor names (`ICardPaymentGateway`, `GetControlPanelSsoUrl`,
+  no vendor names (`GetControlPanelSsoUrl`,
   `GetHostingPanelServerInfo`/`V7`).
 - **A test per use case, enforced.** `UseCaseShapeTests` fails when
   `Application/<Feature>/{Commands,Queries}/<UseCase>/` has no
@@ -1004,7 +1268,27 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   command: the port stages the line on the caller's own context, so the line and the change it records
   commit or fail together, which a separately saving command could not promise. A client's credit
   balance changes the same way through `IClientCredit`, so moving credit between an invoice and the balance
-  (`InvoiceCreditExtensions` in Billing) is one save. The renewal read models belong to their owners and Billing
+  (`InvoiceCreditExtensions` in Billing) is one save. Every change names its `CreditMovementType` (`ClientCreditChange`) and the
+  port writes it to the client ledger in that same save: the `Transaction` that already holds the money is stamped
+  (`CreditMovement`, signed `CreditChange`, `BalanceAfter`), a movement that moved no cash becomes a credit-only entry
+  (`Transaction.CreateCreditMovement`, no money in or out, left out of the cash views by `Transaction.MovedMoneyFilter`), and an
+  entry of the history cannot be edited or deleted (`Transaction.EnsureEditable`). A credit top-up is an `Invoice` with
+  `IsCreditTopUp` (`Invoice.CreateCreditTopUp`); every path that settles an invoice calls `CreditPaidTopUpAsync`
+  (`CreditTopUpExtensions`) in the settling save, so the balance rises once, and a top-up is refunded by hand only.
+  A credit note (`CreditNote`, `CreditNoteItem`, `CreditNoteStatus` Draft/Issued/Applied/Voided, `CreditNoteMethod`
+  AccountCredit/GatewayRefund) reverses part of a paid invoice at the invoice's own tax rate and is not invoice credit. It is numbered
+  `CN-0001` from its own sequence through `INumberSequence` (`NumberKind.CreditNote`), taken as the last step before the save and reused
+  across a retried save; a database sequence cannot promise there are no gaps, and the numbering is a cautious default not checked
+  against any local law (documented in `docs/staff/billing.md`). The cap lives on the invoice (`Invoice.CreditableAmount`,
+  `CreditNotedAmount`, `EnsureCreditable`): the charge before credit less every refund and every account credit note, and every
+  account credit note also lowers `RefundableAmount`, so the same money never goes back twice. `CreditNotedAmount` changes the invoice
+  row, so two notes racing on one invoice fail the row's concurrency check and the loser is retried on what the winner saved. An
+  AccountCredit note moves the balance through `IClientCredit` (`CreditNoteIssued`, voided as `CreditNoteVoided`) in the same save; a
+  GatewayRefund note dispatches `RefundInvoicePaymentCommand` first (one refund, listed once) and records the note under its reference,
+  and cannot be voided. A credit top-up and an unpaid invoice take no note. A note is never deleted. `IncomeExtensions` reads payments
+  and refunds only, so a note adds no income of its own (`CreditNoteIncomeTests`). Its PDF goes through the same renderer and render
+  limit as an invoice (`IInvoicePdfRenderer.RenderCreditNoteAsync`, labels in `CreditNotePdfLabelSets` for en/ru/hy, Armenian
+  fonts as for invoices). The renewal read models belong to their owners and Billing
   reaches them over the bus: Services owns `GetRenewableServices`, `GetServiceBillingStates`,
   `ListOverdueSuspendedServices`, `ListUndatedRenewingServices` and `ExtendServiceRenewal`; Domains owns
   `GetRenewableDomains`, `GetDomainRenewalStates` and `GetTldRenewPrice`. The setup token kept
@@ -1073,6 +1357,35 @@ renewal invoices per client), `SendRenewalRemindersCron` 06:00, `CheckOverdueInv
 (`Manual`, `Overdue`, `DomainExpired`, `Other`): payment lifts only `Overdue`, and `DomainRenewedHandler` lifts only
 `DomainExpired`. Renewal alerts go to `Notifications:AdminEmail`, falling back to `Notifications:ContactEmail`.
 
+**A manual bank transfer wait is bounded and never loses a card session's money.** `Invoice.RequestBankTransfer` leaves the hosted
+session on the invoice (the choice is refused only inside `GatewaySessionWindow`). While the transfer waits
+(`IsBankTransferPending`), `ReconcileGatewayPaymentsCronHandler` asks the gateway about that session like an open invoice's, without the
+24 hour limit, and a settled invoice stays in the sweep for the stalled window after its `PaidAt` as well as after the session start (a
+transfer confirmed late). `CompleteGatewayPaymentHandler` settles a pending transfer with a full card payment (`Invoice.WithdrawBankTransfer`,
+then `Settle`), and a payment that finds the invoice already settled goes to the balance through the hand-back path. The wait itself ends
+by `RejectBankTransfer`, by `LapseBankTransfer` (the daily `CheckOverdueInvoicesCron` dispatches `LapseBankTransferCommand` for a wait older
+than the `expiry_days` field of the bank transfer integration, 14 when unset or not a positive number) or by the card payment; each returns
+the invoice to Overdue when its due date has passed, otherwise Unpaid, so the overdue and suspension flow applies again. The method is
+listed and can be chosen only while at least one bank detail or the instructions are set (`BankTransferSettings.HasPayerDetails`), and
+`MyInvoiceDto.IsBankTransferPending` is how the portal tells a real transfer from an imported `PaymentPending` invoice. An account credit
+note is refused while a gateway refund of the invoice is in flight (`Invoice.EnsureCreditable(total, now)`), and an unrecorded refund's
+amount is held out of `CreditableAmount`. The open top-up invoices per client are capped by `billing.credit.topup_max_open`.
+
+**Renewal invoicing is serialised per client.** `RaiseClientRenewalInvoicesHandler` opens a transaction and takes
+a transaction-scoped advisory lock (`IHostpanelDbContext.LockForTransactionAsync`, key
+`RaiseClientRenewalInvoicesHandler.LockKeyOf(clientId)`) before it reads the duplicate guard, and commits after the
+last invoice and credit change. Two callers for one client (the daily sweep, a staff "Generate renewal invoice" click,
+another instance) therefore run one after the other, and the second one finds the first one's invoice. Staff reach the
+same use case through `POST /api/billing/client/{clientId}/renewal-invoices` (`Manual` on the command only adds an
+activity log line). The admin Upcoming Renewals page (`/billing/renewals`) lists services and domains inside a 30, 60 or
+90 day window (`RenewalWindow`), whether or not they renew automatically, switches `AutoRenew` through
+`SetServiceAutoRenew` (domains use the existing `SetAutoRenew`), and lists domain renewal lines left claimed
+(`ListClaimedDomainRenewals`). `ReleaseDomainRenewalClaim` clears `RenewalAttemptAt` through `Invoice.ReleaseRenewalClaim`
+after staff checked the registrar, with an activity log line; the line stays unapplied, so the next sweep renews the
+domain again, which is why the page asks for confirmation. The confirmation dialog is a warning in so many words: a release
+of a renewal the registrar already carried out renews the domain twice and is charged twice, so staff check the registrar
+first (`billing.renewals.releaseMessage`, and `docs/staff/currencies.md`). `ClaimedDomainRenewalDto` carries the client's name.
+
 **Renewal invoice lines are not unique per period, on purpose.** The indexes on `InvoiceItems`
 `(ClientServiceId, RenewalPeriodStart)` and `(RegisteredDomainId, RenewalPeriodStart)` stay non-unique: a
 cancelled invoice's renewal line must not block raising that period again. Double raising is prevented
@@ -1104,10 +1417,10 @@ never deleted):
   current customer; its services and renewals carry on.
 - **Suspended**: portal sign-in still works and everything is readable, so the client can see their invoices
   and open tickets, but the account cannot place orders (`PlaceOrder`, `OrderMyService`), cannot start a
-  new card or gateway payment (`PayMyInvoice`, `StartGatewayPayment`, `CreateOrderPaymentIntent`) and is not
+  new gateway payment or stored-method save (`StartGatewayPayment`, `BeginSaveStoredMethod`) and is not
   billed: `RaiseClientRenewalInvoices` refuses it and `ProcessRenewalsCron` leaves it out. The refusal is
   403 `CLIENT_SUSPENDED`. Settling a payment that is already in flight (`CompleteMyGatewayPayment`,
-  `ConfirmOrderPayment`, `CompleteOrderGatewayPayment`) is never blocked, so money already taken is recorded.
+  `CompleteOrderGatewayPayment`) is never blocked, so money already taken is recorded.
   Suspending the client does not suspend its services; staff do that per service.
 - **Closed**: everything a suspended account cannot do, with 403 `CLIENT_CLOSED`, and the closing is
   settled by three handlers of `ClientClosedEvent`, each failure-isolated and logged:
@@ -1147,9 +1460,9 @@ feature does not exist is not kept. The decisions:
   (`SendRenewalReminder`) goes only to a client with both `NotifyInvoice` and `OverdueNotices` on. The
   reminder threshold is still recorded when nobody is mailed, so it is not retried every day. No other
   overdue mail exists.
-- **`DisableCcProcessing`.** The two card flows refuse an account with it on, with 403
-  `CLIENT_CARD_PAYMENT_DISABLED`: `PayMyInvoice` (charge of a saved card) and
-  `CreateOrderPaymentIntent` (a new card payment). The check is
+- **`DisableCcProcessing`.** The stored-method flows refuse an account with it on, with 403
+  `CLIENT_CARD_PAYMENT_DISABLED`: `BeginSaveStoredMethod` (saving a method) and
+  `ChargeInvoiceStoredMethod` (charging one). The check is
   `ClientSettingsExtensions.EnsureClientMayPayByCardAsync`, beside the status guard
   `EnsureClientMayTransactAsync`. Hosted gateway sessions (`StartGatewayPayment`) and staff-entered
   payments are not card processing and are not refused.
@@ -1211,7 +1524,7 @@ feature does not exist is not kept. The decisions:
   The demo accounts' own credentials are protected by one rule, `IDemoAccountGuard` (Application port, `Infrastructure/Demo/DemoAccountGuard`):
   with demo on, the email and password of `Demo__AdminEmail` / `Demo__ClientEmail` cannot change; password
   reset (`ResetPasswordCommand`) and `UpdateClientHandler`'s email change ask it and answer 403 `DEMO_ACTION_DISABLED`. Local sign-in (`UserService`) asks it too: wrong passwords are not counted against those two accounts, so no visitor can lock them.
-- **Demo stored charges.** The demo payment plugin implements `IStoredCredentialPlugin` in memory; the last two digits of the amount in minor units pick the outcome: 02 declined, 03 action required, 04 pending, 05 money taken and then `TimeoutException`, 06 `TimeoutException` before anything is taken, anything else succeeded. The first result per idempotency key is final: a repeat answers it and never throws (a 06 key records nothing, so it throws again). The book is `DemoStoredCredentialState`, a singleton shared by every resolve and cleared by the demo reset beside `DemoCardState`.
+- **Demo stored charges.** The demo payment plugin implements `IStoredCredentialPlugin` in memory; the last two digits of the amount in minor units pick the outcome: 02 declined, 03 action required, 04 pending, 05 money taken and then `TimeoutException`, 06 `TimeoutException` before anything is taken, anything else succeeded. The first result per idempotency key is final: a repeat answers it and never throws (a 06 key records nothing, so it throws again). The book is `DemoStoredCredentialState`, a singleton shared by every resolve and cleared by the demo reset.
 - **Currency.** The demo payment plugin accepts every currency stored (`IPaymentPlugin.AcceptsCurrency`), not only USD.
 - **Data.** `IDemoDataManager` resets (wipes and reseeds) at startup instead of running `DevDataSeeder`, so every deploy shows the current seed, and
   `ResetDemoDataCommand` truncates every table except the identity roles and reseeds in one
@@ -1228,9 +1541,9 @@ feature does not exist is not kept. The decisions:
 
 ## Stack
 
-.NET 9 · Wolverine 5.41.0 (WolverineFx.Postgresql, WolverineFx.EntityFrameworkCore) · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
+.NET 9 · Wolverine 6.61.0 (WolverineFx.Postgresql, WolverineFx.EntityFrameworkCore) · EF Core 9 + Npgsql 9 · PostgreSQL 17 · ASP.NET Identity (local
 mode) + JWT bearer · `Innovayse.Auth` (cookie session for the admin SPA, sso builds only) · SkiaSharp (branding images) ·
-Serilog · Scalar + Swashbuckle · Mapster · Stripe.net · MailKit · Otp.NET · Fluid.Core ·
+Serilog · Scalar + Swashbuckle · Mapster · MailKit · Otp.NET · Fluid.Core ·
 DnsClient · Redis (sessions + data-protection key ring) · RabbitMQ · xUnit + FluentAssertions +
 Testcontainers.PostgreSql 4.0.0 · Nuxt 4.3 / Vue 3.5 / Pinia / Tailwind / vitest (client,
 **yarn**) · Vite + Vue 3.5 / Tailwind 4 / vitest (admin, **npm**).
@@ -1256,10 +1569,10 @@ and `SsoModeAuthenticationSchemeTests`. The cookie scheme name is the one consta
 `backend/Dockerfile` passes `-p:InnovayseSso=true` to restore and publish when `AUTH_MODE=sso`
 is the build arg, so a missing credential fails the build rather than yielding an image that
 refuses to boot. The GitHub workflow `.github/workflows/ci.yml` builds the standalone flavour and
-runs the Domain, Architecture, CWP, Inecobank and Integration suites, plus the migration addon's PHP tests.
+runs the Domain, Architecture, CWP and Integration suites, plus the migration addon's PHP tests.
 
 ```bash
-./dev up hostpanel                # from the workspace root, when working inside the workspace
+docker compose -f docker/docker-compose.shared.yml -f docker/docker-compose.dev.yml -f docker/docker-compose.platform.yml up   # start the Hostpanel stack inside a platform checkout
 ```
 
 To build without touching the dev stack, **run docker through PowerShell, not Git Bash**,
@@ -1291,7 +1604,7 @@ both `-e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal` and
 `--add-host=host.docker.internal:host-gateway`. Without them the resource reaper cannot start
 and every test in the suite fails with a stack trace that looks nothing like a networking
 problem. **Do not pass `--no-build` to the integration suite** — it silently produces no output
-and exits 0 whether or not the assembly is there. The Domain, Architecture, CWP and Inecobank suites are fine with it.
+and exits 0 whether or not the assembly is there. The Domain, Architecture and CWP suites are fine with it.
 
 Containers: `hostpanel-api` (5148), `hostpanel-client` (3000, published 3001),
 `hostpanel-admin`, `hostpanel-db`, plus `hostpanel-redis`, `hostpanel-rabbitmq`,
@@ -1317,6 +1630,13 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   (`AppDbContext` translates the violation), which the settlement handlers already answer as a replay.
 - `scripts/pack-cwp-plugin.sh` — publishes `Innovayse.Providers.CWP` (Release, net8.0) on the host, strips
   PDB/XML and framework DLLs, adds `plugin.json` and writes `dist/innovayse-cwp.zip`.
+- `scripts/test-install-backup.sh [install.sh]` — runs `install.sh` against a fake `docker` and `curl` (no Docker, no
+  network) and checks the upgrade backup (a failed, empty, truncated or table-less dump, a stopped database, mode 600
+  and 700, retention that keeps the oldest backup of each version, UTC names) and `--rollback` (confirmation, the
+  newest backup of another version, the safety copy, restore before the compose files change, a failed restore, the
+  state printed after a failed stop, download, pull or start). Needs bash and GNU `stat`. With
+  `HOSTPANEL_TEST_POSTGRES=1` it also dumps, restores and restores a corrupt dump against a real postgres container
+  (the GitHub `install-backup` job sets it; the GitLab `installer:test:backup` job runs the fake-docker part only).
 - `scripts/check-empty-plugins.sh <test project> ...` — fails when `plugins/` or `plugins-installed/` in a
   built test project's output holds anything. Every backend test job of both pipelines runs it between the
   build and the tests, so the whole suite is proven green with no plugin loaded in the jobs that already
@@ -1324,6 +1644,8 @@ backend on the shared network, and Docker's DNS round-robins between the two.
 
 All are `*.sh`, which `.gitattributes` (`*.sh text eol=lf`) pins to LF: the ssh pipe above fails with
 "Illegal option" on a CRLF copy.
+
+A Held stored charge claim (the gateway took money the invoice could not record) is resolved by an operator through a manual payment or by cancelling the invoice; only a hosted payment start and an automatic charge treat it as blocking.
 
 ## CI is on GitLab. Pull requests are on GitHub. Both halves are load-bearing.
 
@@ -1340,7 +1662,7 @@ starts the pipeline. The consequences are not obvious and cost time every few mo
   setting for.
 - Tests, image builds and both deploys live in `.gitlab-ci.yml`. `deploy:staging` runs on
   `develop` against the staging host; `deploy:prod` is **manual** on `main` against the production host.
-- **The plugin SDK package is not published from here.** `backend/src/Innovayse.SDK` is a submodule of
+- **The plugin SDK package is not published from here.** `backend/src/Hostpanel.Sdk` is a submodule of
   github.com/innovayse/hostpanel-sdk, whose own workflows build, pack and publish it (a raised `<Version>` on its
   `main`, or a version tag). This repository only builds against the commit the submodule pins. Every checkout
   fetches it: `submodules: true` on each `actions/checkout`, `GIT_SUBMODULE_STRATEGY: recursive` in
@@ -1348,9 +1670,8 @@ starts the pipeline. The consequences are not obvious and cost time every few mo
   `git submodule update --init --recursive` after every checkout of their deploy directory, the rollback included.
   The SDK project opts out of central package management and pins its two package versions itself, so it
   builds alone; keep those versions equal to the ones in `backend/Directory.Packages.props`.
-- `.gitlab-ci.yml` inlines its templates. This repo cannot see the workspace's shared
-  `ci/templates.yml`, so the hidden jobs are copied in. Change one here and the workspace
-  copy does not move with it.
+- `.gitlab-ci.yml` inlines its templates. This repo cannot see the shared templates they
+  came from, so the hidden jobs are copied in. Changing one here does not change those.
 
 **`deploy:prod` builds the images on the production host** — it consumes no registry images
 and declares `needs: []`, because the build jobs want a `builder` runner this project's prod
@@ -1360,7 +1681,7 @@ migrations on startup, so `up -d` is the moment the schema changes, and a deploy
 undone should not start. The last ten dumps are kept.
 
 `nginx` is deliberately left out of both deploys' service lists. It publishes 80/443, which on
-these hosts belong to the shared Nginx Proxy Manager; naming it would fail the whole deploy.
+these hosts belong to the host's shared reverse proxy; naming it would fail the whole deploy.
 Its own nginx exists for a standalone install.
 
 ## Configuration and the two switches that decide what this product *is*
@@ -1385,11 +1706,11 @@ Its own nginx exists for a standalone install.
 - **Demo mode (`Demo__Enabled`).** Set through `DEMO_*` env in `docker/docker-compose.demo.yml`, an overlay
   placed last in the chain (`shared` + `prod` + `platform` + `demo`, project `hostpanel-demo`). It swaps the
   payment, registrar and provisioning adapters for fakes, sends mail to the demo's own mailhog and resets
-  data every `Demo__ResetIntervalHours`. Everything stateful is `hostpanel-demo-*` so it can sit beside prod; its db, broker, redis and mailhog live on a demo-private network and only the api, client and admin (compose services `hostpanel-demo-*`, the names the edge proxy uses) also join the dedicated external network `hostpanel_demo_edge`, **never** the shared network, so the demo can neither resolve nor reach any production container (the edge proxy is the one production-side container on both networks; `deploy:demo` creates the network when missing, with the **fixed subnet 172.29.0.0/16**, which the edge's `nginx.conf` denies on every host except the two demo ones, so a demo container cannot reach production by sending a production `Host` header; the subnet lives in `deploy:demo`, `edge-proxy/nginx.conf` and `docker/README.md`, and changes in all three together); `deploy:demo` uses its own `DEPLOY_DIR` (one of the demo deployment's CI variables), never prod's;
+  data every `Demo__ResetIntervalHours`. Everything stateful is `hostpanel-demo-*` so it can sit beside prod; its db, broker, redis and mailhog live on a demo-private network and only the api, client and admin (compose services `hostpanel-demo-*`, the names the edge proxy uses) also join the dedicated external network `hostpanel_demo_edge`, **never** the shared network, so the demo can neither resolve nor reach any production container (the edge proxy is the one production-side container on both networks; `deploy:demo` creates the network when missing, with the **fixed subnet 172.29.0.0/16**, which the operator's edge denies on every host except the two demo ones, so a demo container cannot reach production by sending a production `Host` header; the subnet lives in `deploy:demo`, the edge's configuration and `docker/README.md`, and changes in all three together); `deploy:demo` uses its own `DEPLOY_DIR` (one of the demo deployment's CI variables), never prod's;
   the demo passwords are `:?`-required like any secret. Deployed by the manual `deploy:demo` job; it needs
   `AUTH_MODE=local`. Fake adapters live behind the existing ports, never in a code path guarded by a literal.
 - **Settings bind into a sealed `*Options` class naming its own `SectionName`** —
-  `BillingOptions`, `CPanelOptions`, `NamecheapOptions`, `NameAmOptions`, `StripeOptions`, each
+  `BillingOptions`, `CPanelOptions`, `NamecheapOptions`, `NameAmOptions`, each
   in an `Options/` folder inside the feature or integration that owns it.
 
 ## Storefront content — in the database, not in the code
@@ -1429,14 +1750,24 @@ default, so `docker/docker-compose.prod.yml` spells every one of them that way. 
 in `docker/docker-compose.dev.yml` are silently ignored on a deployed host**, so the value stays
 at its build-time default and no `.env` edit can change it.
 
-**The client image has no build args.** The app-launcher `<script src="…/widget/header.js">` tag is
-added by `plugins/header-widget.ts` from `runtimeConfig.public.mainUrl`, so `NUXT_PUBLIC_MAIN_URL`
+**The client image has no build args.** The app-launcher `<script src="/widget/header.js">` tag is
+added by `plugins/header-widget.ts` when `runtimeConfig.public.mainUrl` is set, so `NUXT_PUBLIC_MAIN_URL`
 is plain runtime env. `site.url` is read at runtime by nuxt-site-config from `NUXT_PUBLIC_SITE_URL`
 (set in `docker-compose.prod.yml`); the esbuild `drop` depends only on `NODE_ENV`, not on a
 deployment. Do not add a `process.env` read outside `runtimeConfig` that differs per deployment.
 
-That widget is a host-provided header widget, not served by this product. It must be HTTPS on an HTTPS
-deployment or the browser blocks it as mixed content and the client dashboard's hydration
+That widget is a host-provided header widget, written elsewhere, but it is **served from this portal's own origin**:
+`server/routes/widget/[file].get.ts` relays `header.js` and `header.v2.js` from `MAIN_APP_URL` (five minutes' cache, the last copy kept when the host is unreachable, only those two names). The script builds every
+address for switching account, adding an account, its configuration and its launcher from the origin it was
+served from; loaded from the host's origin it sent the switch through the host's sign-in client and callback, so
+the visitor landed on a page that does not exist here and kept the old account. Served from here, those
+addresses are this portal's own: `GET /api/portal/auth/sso/switch` and `GET /api/portal/auth/sso/authorize`
+(which reads the page to return to as `returnTo` or, as the widget spells it, `redirect`). The three other
+addresses the widget asks of its origin are answered by `server/routes/api/portal/public/config.get.ts` (the
+sign-on address), `.../apps.get.ts` (the launcher list, read from the host, empty when it is unreachable) and
+`server/routes/account.get.ts` (a redirect to the host's account centre). All of them answer 404 unless the
+widget is enabled (`isHeaderWidgetEnabled`). The host's address must be HTTPS on an HTTPS
+deployment or the browser blocks the script as mixed content and the client dashboard's hydration
 hangs.
 
 **The `dark` / `light` class on `<html>` has exactly one writer: `client/plugins/color-mode.ts`.**
@@ -1643,6 +1974,16 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
     as text, never `v-html`. A link renders only through `pluginLinkTarget`: a host-relative path (one leading `/`,
     never `//`, and never `/api` or below once resolved and decoded once, in any case), or an `https` URL without user
     info on one of the plugin's `externalOrigins`, opened with `noopener noreferrer`; anything else is not rendered.
+  - **Workspace, split, preview, chat events (#910, #911).** `layouts/client.vue` drops the gutter and hides the side menu
+    on a wide screen while the page on screen declares `workspace`. `SplitBlock` stacks on a phone. `PreviewBlock` frames
+    through `UiPreviewFrame`, the one `<iframe>` (see "Layout, split and preview"), and `pluginFrameAddress` admits an
+    address. `server/middleware/plugin-frame-csp.ts` writes the document's `frame-src`, read from the page of that address,
+    so the document's scope is the exact page: `pluginDocumentLoaded` compares the navigation entry's path with the page on
+    screen, and any router move onto a preview, inside one plugin too, loads it once in full (one session flag per page
+    keeps it from looping). `ChatBlock` renders `step`, `result` (`UiToneCard`) and `issue` inside the reply, and Stop
+    aborts the fetch. A reply's own text goes through `UiMarkdownText` (`utils/ui/markdownText.ts`): the Markdown subset
+    becomes known tags through the same node tree and `renderRichNode` as `UiRichText`, never `v-html`, and a Markdown link
+    stays text, because an address renders only through `pluginLinkTarget`.
 - **The kit is `components/ui/` (`Ui*`), and screens are composed from it.** `pages/**`, `layouts/**`
   and `templates/*/{pages,sections,layout}/**` carry no raw tag at all; an area's own components
   (`components/<area>/`) compose the kit and may not hold a card-styled `div` or an interactive
@@ -1751,8 +2092,8 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
 
 ## Tests
 
-`backend/tests/` has five projects: `Domain.Tests`, `Integration.Tests`, `Architecture.Tests`,
-`Innovayse.CWP.Tests`, `Innovayse.Inecobank.Tests`. **There is no `Application.Tests` or
+`backend/tests/` has four projects: `Domain.Tests`, `Integration.Tests`, `Architecture.Tests`,
+`Innovayse.CWP.Tests`. **There is no `Application.Tests` or
 `Infrastructure.Tests`** — use-case tests are `Integration.Tests/<Feature>/<UseCase>Tests.cs`
 (Testcontainers Postgres, fakes in `Fixtures/` for external ports only), and adapter tests live in
 `Integration.Tests/Adapters/{Auth,Billing,Integrations}`. Do not add either project.
@@ -1823,13 +2164,23 @@ the letters of a split folder do not cover A to Z exactly once.
 
 Never spread one of these, and never restructure as a side effect of a feature.
 
-- **Vendor names that remain, on purpose.** Integration slugs (`stripe`, `cwp`, ...) in
+- **No card or bank provider ships in the host.** Card and bank gateways are external payment plugins; the host carries
+  no gateway SDK, options, catalogue entry or built-in module. The default Content-Security-Policy names no gateway
+  origin: a plugin whose checkout loads a script or calls an API from another origin has that origin added by the
+  operator through `EDGE_CLIENT_CSP_SOURCES` (the manifest's `externalOrigins` only feeds link rendering, not the policy). There is no on-site card gateway port any more: card
+  payments start through the redirect flow (`StartGatewayPayment` and `StartMyGatewayPayment`, then the matching complete
+  use case), and methods stored for later charges go through `IStoredCredentialPlugin` (the `api/me/stored-payment-methods`
+  endpoints). The embedded flow (`create-payment-intent`, `confirm-payment`, `POST api/me/invoices/{id}/pay`,
+  `api/me/payment-methods`) is gone; a ledger row recorded as `Card` with no hosted session behind it is refunded by a
+  manual refund (`INVOICE_NOT_GATEWAY_PAID` for a Gateway refund). The plugin's stored `integration:<slug>:*` settings and
+  the payment rows are untouched and read by the plugin under the same slug. Manual bank transfer is built into the host (module `bank_transfer`, settings under the `bank-transfer` integration) while bank gateways are plugins.
+- **Vendor names that remain, on purpose.** Integration slugs (`cwp`, ...) in
   `IntegrationSlugs` / `BuiltInPaymentModules` and the `Integrations/<Vendor>/` adapter folders are
-  plugin identifiers: they are stored in settings rows, sent in URLs (`/api/admin/integrations/stripe`)
+  plugin identifiers: they are stored in settings rows, sent in URLs (`/api/admin/integrations/cwp`)
   and chosen in the admin UI, so renaming them would break stored configuration. They are the only
-  place a vendor is named. Persisted *data* is neutral: `Client.CardGatewayCustomerId` and the ledger
+  place a vendor is named. Persisted *data* is neutral: the `GatewayCustomers` rows and the ledger
   payment method `Card` (the `ConformanceFixes` migration renamed the column and rewrote old
-  `Stripe` ledger rows).
+  old card-gateway ledger rows).
 - **`ClientRegisteredIntegrationEvent` carries five parameters nothing fills.**
   `RegisterHandler` publishes four arguments and stops, so `IpAddress`,
   `UserAgent`, `DeviceType`, `OperatingSystem` and `Browser` arrive null and `Client.Create`
@@ -1922,6 +2273,3 @@ Never spread one of these, and never restructure as a side effect of a feature.
 - **Role seeding is skipped when this deployment does not own its users.** Under `sso` mode
   Identity is not registered, so `GetRequiredService<RoleManager<…>>` threw before the API
   finished starting and the container never came up.
-- **`Innovayse.Providers.Inecobank` targets `net8.0`** while everything else targets `net9.0`;
-  the MSBuild staging target pins that TFM in its copy paths. Retargeting the provider means
-  editing those paths.

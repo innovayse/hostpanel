@@ -21,5 +21,5 @@ internal sealed class RecordingLogger(ConcurrentQueue<LogEntry> entries) : ILogg
         TState state,
         Exception? exception,
         Func<TState, Exception?, string> formatter) =>
-        entries.Enqueue(new LogEntry(logLevel, formatter(state, exception)));
+        entries.Enqueue(new LogEntry(logLevel, formatter(state, exception), exception));
 }

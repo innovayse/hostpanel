@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Billing.Commands.CompleteGatewayPayment;
+using Innovayse.Hostpanel.Application.Billing.Commands.ReconcileInvoicePaymentClaims;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common;
@@ -116,14 +117,24 @@ public sealed class ReconcileGatewayPaymentsCronHandler
             .Select(i => new GatewaySessionCheck(
                 i.Id, i.ClientId, i.GatewayModule!, i.GatewayStartedAt!.Value, i.GatewayCheckedAt, i.GatewayCheckCount, false))
             .ToListAsync(ct);
+        // An invoice waiting for a manual bank transfer still holds the session the payer may finish at the bank, however old
+        // it is: it is asked about like an open one until the gateway concludes it, and the completion settles the invoice.
+        var transferring = await open
+            .Where(Invoice.BankTransferPendingFilter)
+            .Select(i => new GatewaySessionCheck(
+                i.Id, i.ClientId, i.GatewayModule!, i.GatewayStartedAt!.Value, i.GatewayCheckedAt, i.GatewayCheckCount, false))
+            .ToListAsync(ct);
+
+        // A settled invoice is swept for the stalled window after the session began, and after it was settled: a transfer
+        // confirmed late (or any payment recorded late) leaves a session that is old but may still take money.
         var settled = await open
-            .Where(i => i.GatewayStartedAt > sweptAfter)
+            .Where(i => i.GatewayStartedAt > sweptAfter || i.PaidAt > sweptAfter)
             .Where(Invoice.SettledWithUnrecordedSessionFilter)
             .Select(i => new GatewaySessionCheck(
                 i.Id, i.ClientId, i.GatewayModule!, i.GatewayStartedAt!.Value, i.GatewayCheckedAt, i.GatewayCheckCount, true))
             .ToListAsync(ct);
 
-        var due = payable.Concat(settled).Where(session => IsDue(session, now)).ToList();
+        var due = payable.Concat(transferring).Concat(settled).Where(session => IsDue(session, now)).ToList();
 
         _logger.LogInformation("Gateway payment reconciliation: {Count} session(s) due.", due.Count);
 
@@ -131,6 +142,28 @@ public sealed class ReconcileGatewayPaymentsCronHandler
         {
             var concluded = await CompleteAsync(session, ct);
             await RecordCheckAsync(session, concluded, now, ct);
+        }
+
+        await ReconcileStoredChargesAsync(ct);
+    }
+
+    /// <summary>
+    /// Resolves the stored method charges that stayed unresolved, in the same pass and under the same lease as the
+    /// hosted sessions: a charge whose answer was lost is found by its idempotency key. A failure is logged and never
+    /// stops the job or its schedule.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task.</returns>
+    private async Task ReconcileStoredChargesAsync(CancellationToken ct)
+    {
+        try
+        {
+            var looked = await _bus.InvokeAsync<Result<int>>(new ReconcileInvoicePaymentClaimsCommand(), ct);
+            _logger.LogInformation("Stored charge reconciliation looked at {Count} claim(s).", looked.Value);
+        }
+        catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
+        {
+            _logger.LogError(ex, "Stored charge reconciliation failed; the next pass retries it.");
         }
     }
 
@@ -206,7 +239,7 @@ public sealed class ReconcileGatewayPaymentsCronHandler
 
             var pendingFor = now - session.StartedAt;
             var stalled = !concluded
-                && invoice.IsPayable
+                && (invoice.IsPayable || invoice.IsBankTransferPending)
                 && invoice.GatewayStalledNotifiedAt is null
                 && pendingFor >= _jobs.Schedules.GatewayStalledAfter;
             if (stalled)

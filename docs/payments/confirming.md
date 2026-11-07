@@ -1,5 +1,7 @@
 ---
 title: How online payments are confirmed
+description: "How Hostpanel confirms online payments by polling the gateway, with no webhooks: reconciliation, amount checks, refunds and troubleshooting."
+keywords: "payment confirmation, reconciliation, gateway transaction log, gateway refunds, no webhooks"
 ---
 
 # How online payments are confirmed <Label type="admin" />
@@ -10,13 +12,9 @@ Hostpanel does not use webhooks. There is nothing to register at the gateway sid
 
 ## Hosted page payments
 
-When a client pays with the card or bank gateway, they are redirected to the gateway's hosted page. After they complete (or abandon) the payment, the gateway sends them back to Hostpanel's payment result page. Hostpanel then queries the gateway for the final result.
+When a client pays through an installed payment gateway plugin, they are redirected to the gateway's hosted page. After they complete (or abandon) the payment, the gateway sends them back to Hostpanel's payment result page. Hostpanel then queries the gateway for the final result.
 
 Because the redirect can be interrupted (browser closed, network lost), Hostpanel does not rely solely on the return visit — the reconciliation job asks again on its own schedule.
-
-## Card payments at checkout
-
-For the bundled card gateway, the card form is embedded on the checkout page. The client enters their card details and Hostpanel tokenises the card directly with the gateway. After the client confirms the order, Hostpanel charges the token.
 
 ## Reconciliation
 
@@ -44,7 +42,7 @@ When the gateway reports back, Hostpanel checks that the amount and currency mat
 
 ## Refunds through a gateway
 
-Online payments made through the card gateway can be refunded from the invoice detail page. See [Invoices and payments](/staff/billing). If the gateway refuses or fails the refund, the error is `GATEWAY_REFUND_REFUSED` ("The payment gateway refused or failed the refund. Nothing was returned through it.").
+Online payments made through a gateway plugin can be refunded from the invoice detail page. See [Invoices and payments](/staff/billing). If the gateway refuses or fails the refund, the error is `GATEWAY_REFUND_REFUSED` ("The payment gateway refused or failed the refund. Nothing was returned through it.").
 
 ## The Gateway Transaction Log <Label type="admin" />
 
@@ -60,13 +58,8 @@ Each row shows the gateway, result, amount and date. Click a row to see the full
 |-------|--------------|
 | `GATEWAY_SESSION_ALREADY_STARTED` — "A payment attempt is already in progress for this invoice." | A concurrent checkout attempt is running. Wait a moment and try again. |
 | `GATEWAY_SESSION_NOT_FOUND` — "This invoice has no gateway payment session to verify." | The session expired or was never created. Ask the client to start the payment again. |
-| `GATEWAY_CHARGE_UPSTREAM_FAILED` — "The payment gateway declined the charge." | The gateway refused the card. The client should try a different card. |
-| `GATEWAY_TRANSACTION_MISSING_UPSTREAM_FAILED` — "The payment gateway reported success but returned no transaction reference." | The gateway responded with success but gave no reference. Check the gateway log for the raw response. |
 | `GATEWAY_PAYMENT_MISMATCH` — "The payment gateway reported an amount or currency that does not match the invoice." | The gateway settled for a different amount or currency. Check the gateway log debug data. |
 | `GATEWAY_REFUND_REFUSED` — "The payment gateway refused or failed the refund." | The gateway did not accept the refund request. Check the gateway log and retry manually through the gateway dashboard. |
 | `PAYMENT_PLUGIN_NOT_CONFIGURED` — "No payment plugin is configured for that invoice's gateway." | The plugin for this gateway is not installed or the integration has no credentials. |
 | `PAYMENT_GATEWAY_SERVICE_UNAVAILABLE` — "The payment gateway is temporarily unavailable." | The gateway is down or unreachable. Try again later. |
-| `PAYMENT_METHOD_UNAVAILABLE` — "That payment method is not available right now." | The selected gateway is disabled or not configured. |
-| `PAYMENT_INTENT_MISMATCH` — "This card payment does not match the invoice for this order." | The card payment token belongs to a different order. Do not reuse a checkout session for multiple orders. |
-| `PAYMENT_INTENT_ALREADY_USED` — "This card payment has already been recorded." | The payment was already applied to the invoice. Reload the invoice. |
 | `GATEWAY_CURRENCY_MISMATCH` — "This payment method does not charge in the currency this invoice bills in." | Configure a gateway that supports the invoice currency, or change the invoice currency. |

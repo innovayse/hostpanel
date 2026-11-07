@@ -23,7 +23,7 @@ afterEach(() => {
 describe('integrationsStore.fetchAll', () => {
   it('maps the backend category strings to the frontend keys', async () => {
     stubFetch(json([
-      { slug: 'stripe', category: 'Payment Gateways' },
+      { slug: 'bank-transfer', category: 'Payment Gateways' },
       { slug: 'x', category: 'Unknown Group' },
     ]))
     const store = useIntegrationsStore()
@@ -59,11 +59,11 @@ describe('integrationsStore.fetchAll', () => {
 
 describe('integrationsStore.fetchOne', () => {
   it('loads the detail', async () => {
-    stubFetch(json({ slug: 'stripe' }))
+    stubFetch(json({ slug: 'bank-transfer' }))
     const store = useIntegrationsStore()
 
-    await store.fetchOne('stripe')
-    expect(store.current).toEqual({ slug: 'stripe' })
+    await store.fetchOne('bank-transfer')
+    expect(store.current).toEqual({ slug: 'bank-transfer' })
   })
 
   it('empties current and keeps the no-answer sentence offline', async () => {
@@ -71,7 +71,7 @@ describe('integrationsStore.fetchOne', () => {
     const store = useIntegrationsStore()
     store.current = { slug: 'old' } as never
 
-    await store.fetchOne('stripe')
+    await store.fetchOne('bank-transfer')
     expect(store.current).toBeNull()
     expect(store.error).toBe(NO_ANSWER)
   })
@@ -79,19 +79,19 @@ describe('integrationsStore.fetchOne', () => {
 
 describe('integrationsStore.saveConfig', () => {
   it('re-reads the detail after the 204 instead of blanking the page', async () => {
-    const mock = stubFetch(new Response(null, { status: 204 }), json({ slug: 'stripe', enabled: true }))
+    const mock = stubFetch(new Response(null, { status: 204 }), json({ slug: 'bank-transfer', enabled: true }))
     const store = useIntegrationsStore()
 
-    expect(await store.saveConfig('stripe', { enabled: true, config: {} } as never)).toBe(true)
+    expect(await store.saveConfig('bank-transfer', { enabled: true, config: {} } as never)).toBe(true)
     expect(mock).toHaveBeenCalledTimes(2)
-    expect(store.current).toEqual({ slug: 'stripe', enabled: true })
+    expect(store.current).toEqual({ slug: 'bank-transfer', enabled: true })
   })
 
   it('keeps the API sentence and does not re-read on refusal', async () => {
     const mock = stubFetch(problem('Required field missing.', 422))
     const store = useIntegrationsStore()
 
-    expect(await store.saveConfig('stripe', {} as never)).toBe(false)
+    expect(await store.saveConfig('bank-transfer', {} as never)).toBe(false)
     expect(store.error).toBe('Required field missing.')
     expect(mock).toHaveBeenCalledTimes(1)
   })
@@ -101,7 +101,7 @@ describe('integrationsStore.testConnection', () => {
   it('keeps the result with its test time and a duration', async () => {
     stubFetch(json({ success: true, message: 'ok', testedAt: '2026-01-01T00:00:00Z' }))
     const store = useIntegrationsStore()
-    await store.testConnection('stripe')
+    await store.testConnection('bank-transfer')
     expect(store.testResult?.success).toBe(true)
     expect(store.testResult?.durationMs).toBeTypeOf('number')
     expect(store.testResult?.testedAt).toBe('2026-01-01T00:00:00Z')
@@ -112,7 +112,7 @@ describe('integrationsStore.testConnection', () => {
     stubFetch(problem('Credentials rejected.', 502))
     const store = useIntegrationsStore()
 
-    await store.testConnection('stripe')
+    await store.testConnection('bank-transfer')
     expect(store.testResult).toMatchObject({ success: false, message: 'Credentials rejected.' })
     expect(store.testing).toBe(false)
   })
@@ -121,7 +121,7 @@ describe('integrationsStore.testConnection', () => {
     stubOffline()
     const store = useIntegrationsStore()
 
-    await store.testConnection('stripe')
+    await store.testConnection('bank-transfer')
     expect(store.testResult).toMatchObject({ success: false, message: NO_ANSWER })
   })
 })

@@ -14,7 +14,7 @@ using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Infrastructure;
-using Innovayse.SDK.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -931,7 +931,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         {
             using var other = factory.Services.CreateScope();
             (await other.ServiceProvider.GetRequiredService<IClientCredit>()
-                .AddAndSaveAsync(new ClientCreditChange(clientId, 1m), CancellationToken.None)).IsSuccess.Should().BeTrue();
+                .AddAndSaveAsync(new ClientCreditChange(clientId, 1m, CreditMovementType.AdminAdd), CancellationToken.None)).IsSuccess.Should().BeTrue();
         });
         await using var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>
@@ -1024,7 +1024,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             {
                 using var other = factory.Services.CreateScope();
                 (await other.ServiceProvider.GetRequiredService<IClientCredit>()
-                    .AddAndSaveAsync(new ClientCreditChange(clientId, 1m), CancellationToken.None)).IsSuccess.Should().BeTrue();
+                    .AddAndSaveAsync(new ClientCreditChange(clientId, 1m, CreditMovementType.AdminAdd), CancellationToken.None)).IsSuccess.Should().BeTrue();
             });
         await using var host = factory.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services =>

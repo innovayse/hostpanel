@@ -148,6 +148,15 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the fulfilment records: one plugin told one thing about one invoice, and how far it got.</summary>
     public DbSet<FulfilmentRecord> FulfilmentRecords => Set<FulfilmentRecord>();
 
+    /// <summary>Gets the customers payment gateway modules keep for clients: one per client and module.</summary>
+    public DbSet<GatewayCustomer> GatewayCustomers => Set<GatewayCustomer>();
+
+    /// <summary>Gets the clients' consents to have a stored payment method charged without them present.</summary>
+    public DbSet<CardChargeConsent> CardChargeConsents => Set<CardChargeConsent>();
+
+    /// <summary>Gets the claims on invoices while a stored payment method charge is in flight.</summary>
+    public DbSet<InvoicePaymentClaim> InvoicePaymentClaims => Set<InvoicePaymentClaim>();
+
     /// <summary>Gets the transactions table.</summary>
     public DbSet<Transaction> Transactions => Set<Transaction>();
 
@@ -159,6 +168,12 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
 
     /// <summary>Gets the quote items table.</summary>
     public DbSet<QuoteItem> QuoteItems => Set<QuoteItem>();
+
+    /// <summary>Gets the credit notes table.</summary>
+    public DbSet<CreditNote> CreditNotes => Set<CreditNote>();
+
+    /// <summary>Gets the credit note lines table.</summary>
+    public DbSet<CreditNoteItem> CreditNoteItems => Set<CreditNoteItem>();
 
     /// <summary>Gets the orders table.</summary>
     public DbSet<Order> Orders => Set<Order>();
@@ -397,6 +412,28 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException
         {
             SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: GatewayCustomerConfiguration.ClientModuleIndex,
+        })
+        {
+            // Two first requests for one client's customer at a gateway module ran at once: the same lost race as
+            // a concurrent save, so it takes the same path. The caller re-reads the customer the winner recorded.
+            throw new ConcurrencyConflictException(
+                "Another call recorded the same gateway customer concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: InvoicePaymentClaimConfiguration.UnresolvedInvoiceIndex,
+        })
+        {
+            // Two stored charges were started for one invoice at once: the loser writes no charge and answers that
+            // one is already in progress, so the invoice is never charged twice.
+            throw new ConcurrencyConflictException(
+                "Another call claimed the same invoice for a stored charge concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
             ConstraintName: SshKeyConfiguration.ServiceFingerprintIndex,
         })
         {
@@ -477,6 +514,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
         // The counter behind order numbers; read through INumberSequence so two concurrent orders
         // can never be handed the same number.
         modelBuilder.HasSequence<long>(NumberSequence.OrderSequenceName);
+
+        // The counter behind credit note numbers (CN-0001), read the same way.
+        modelBuilder.HasSequence<long>(NumberSequence.CreditNoteSequenceName);
 
         // Every entity carries DomainEvents (the kernel's BaseEntity); EF must never try to map
         // it. One convention here rather than an Ignore in each configuration; a configuration

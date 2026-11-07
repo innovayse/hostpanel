@@ -6,7 +6,7 @@ using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
 using Innovayse.Hostpanel.Infrastructure.Provisioning;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
-using Innovayse.SDK.Plugins.HostingPanel;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -49,6 +49,7 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
     private static ProvisioningProviderFactory BuildFactory(IHttpClientFactory http, ProvisioningOptions options) =>
         new(http, NullLoggerFactory.Instance, Options.Create(options));
 
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>With no port configured, the provider calls the contract's default API port.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
@@ -63,6 +64,7 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
         http.RequestedUris.Should().ContainSingle().Which.ToString()
             .Should().Be($"https://panel.example.test:{IHostingPanelApiClient.DefaultApiPort}/v1/account");
     }
+#pragma warning restore CS0618
 
     /// <summary>A configured API port is the one the provider calls.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>

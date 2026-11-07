@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Extensions;
 using Innovayse.Hostpanel.Domain.Settings;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Architecture.Tests;
 
@@ -80,7 +80,7 @@ public sealed class SecretSettingClassificationTests
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory is not null)
         {
-            var candidate = Path.Combine(directory.FullName, "src", "Innovayse.SDK");
+            var candidate = Path.Combine(directory.FullName, "src", "Hostpanel.Sdk");
             if (Directory.Exists(candidate))
             {
                 return Path.Combine(directory.FullName, "src");

@@ -3,7 +3,7 @@
  * (label, logo and settings fields) the admin renders.
  */
 
-import { IntegrationEncryption, IntegrationFieldType, IntegrationMode, IntegrationYesNo } from '@/types/integration'
+import { IntegrationEncryption, IntegrationFieldType, IntegrationYesNo } from '@/types/integration'
 import type { IntegrationMeta, IntegrationSlug, IntegrationCategory } from '@/types/integration'
 import { PluginType } from '@/types/plugin'
 import { translate } from '@/lib/translate'
@@ -38,30 +38,6 @@ const logoUrl = (file: string): string =>
  * Keyed by slug for O(1) lookup.
  */
 export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
-  stripe: {
-    slug: 'stripe',
-    color: 'bg-[#635bff]',
-    logo: logoUrl('stripe.svg'),
-    get shortDescription() { return translate('integrationMeta.stripe.shortDescription') },
-    category: 'payments',
-    fields: [
-      { key: 'secretKey', get label() { return translate('integrationMeta.stripe.fieldSecretKey') }, type: IntegrationFieldType.Password },
-      { key: 'publishableKey', get label() { return translate('integrationMeta.stripe.fieldPublishableKey') }, type: IntegrationFieldType.Text },
-      { key: 'mode', get label() { return translate('integrationMeta.stripe.fieldMode') }, type: IntegrationFieldType.Select, options: [IntegrationMode.Live, IntegrationMode.Test] },
-    ],
-  },
-  paypal: {
-    slug: 'paypal',
-    color: 'bg-[#009cde]',
-    logo: logoUrl('paypal.svg'),
-    get shortDescription() { return translate('integrationMeta.paypal.shortDescription') },
-    category: 'payments',
-    fields: [
-      { key: 'clientId', get label() { return translate('reports.creditsReviewer.clientId') }, type: IntegrationFieldType.Text },
-      { key: 'clientSecret', get label() { return translate('integrationMeta.paypal.fieldClientSecret') }, type: IntegrationFieldType.Password },
-      { key: 'mode', get label() { return translate('integrationMeta.stripe.fieldMode') }, type: IntegrationFieldType.Select, options: [IntegrationMode.Live, IntegrationMode.Sandbox] },
-    ],
-  },
   'bank-transfer': {
     slug: 'bank-transfer',
     color: 'bg-green-600',
@@ -75,22 +51,6 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
       { key: 'instructions', get label() { return translate('integrationMeta.bankTransfer.fieldInstructions') }, type: IntegrationFieldType.Textarea },
     ],
   },
-  // Slug is the plugin id from its plugin.json, not a short name: the backend keys plugin
-  // integrations by that id, and a mismatch here silently falls back to a blank grey tile.
-  'inecobank': {
-    slug: 'inecobank',
-    color: 'bg-[#006038]',
-    logo: logoUrl('inecobank.svg'),
-    get shortDescription() { return translate('integrationMeta.inecobank.shortDescription') },
-    category: 'payments',
-    fields: [
-      { key: 'gateway_url', get label() { return translate('integrationMeta.inecobank.fieldGateway_url') }, type: IntegrationFieldType.Text },
-      { key: 'username', get label() { return translate('integrationMeta.inecobank.fieldUsername') }, type: IntegrationFieldType.Text },
-      { key: 'password', get label() { return translate('integrationMeta.inecobank.fieldPassword') }, type: IntegrationFieldType.Password },
-      { key: 'currency', get label() { return translate('integrationMeta.inecobank.fieldCurrency') }, type: IntegrationFieldType.Text },
-      { key: 'language', get label() { return translate('integrationMeta.inecobank.fieldLanguage') }, type: IntegrationFieldType.Text },
-    ],
-  },
   namecheap: {
     slug: 'namecheap',
     color: 'bg-amber-600',
@@ -99,7 +59,7 @@ export const INTEGRATION_META: Record<IntegrationSlug, IntegrationMeta> = {
     category: 'registrars',
     fields: [
       { key: 'apiKey', get label() { return translate('integrationMeta.namecheap.fieldApiKey') }, type: IntegrationFieldType.Password },
-      { key: 'apiUsername', get label() { return translate('integrationMeta.inecobank.fieldUsername') }, type: IntegrationFieldType.Text },
+      { key: 'apiUsername', get label() { return translate('integrationMeta.namecheap.fieldApiUsername') }, type: IntegrationFieldType.Text },
       { key: 'clientIp', get label() { return translate('integrationMeta.namecheap.fieldClientIp') }, type: IntegrationFieldType.Text },
     ],
   },

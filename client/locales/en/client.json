@@ -14,8 +14,11 @@
       "signOut": "Sign Out",
       "welcomeBack": "Welcome back,",
       "account": "Account",
-      "brand": "{site}",
-      "toggleMenu": "Toggle menu"
+      "toggleMenu": "Toggle menu",
+      "documentation": "Documentation",
+      "help": "Help",
+      "credit": "Credit",
+      "creditNotes": "Credit notes"
     },
     "login": {
       "title": "Sign in to your account",
@@ -581,25 +584,31 @@
       }
     },
     "payment": {
-      "title": "Payment Methods",
       "permissionDenied": "Your account is not allowed to view or manage payment methods. Ask the account owner to grant you the permission to view and pay invoices.",
-      "empty": "No payment methods saved",
-      "emptyDesc": "You have no saved cards. To pay, open an unpaid invoice and choose Pay by card: you finish the payment on the payment provider's secure page.",
-      "viewInvoices": "View invoices",
-      "remove": "Remove",
-      "removeConfirm": "Remove payment method?",
-      "removeConfirmDesc": "This action cannot be undone.",
-      "expires": "Expires",
-      "statusActive": "Active",
+      "expires": "Expires"
+    },
+    "storedMethods": {
+      "title": "Saved payment methods",
+      "subtitle": "Save a card with a payment provider so invoices can be charged to it later. You can withdraw the permission at any time.",
+      "card": "Card",
+      "gateway": "Payment provider",
+      "gatewayPlaceholder": "Choose a payment provider",
+      "consent": "I agree that this payment method may be charged for my invoices and renewals until I withdraw this permission.",
+      "start": "Save a payment method",
+      "empty": "No saved payment methods.",
+      "detailsUnavailable": "Details unavailable",
       "defaultBadge": "Default",
-      "type": {
-        "card": "Card",
-        "bankAccount": "Bank account",
-        "other": "Payment method"
-      },
-      "removeSuccess": "Payment method removed",
-      "setDefault": "Set as Default",
-      "defaultSet": "Default payment method updated"
+      "makeDefault": "Make default",
+      "makeDefaultLabel": "Make {method} the default payment method",
+      "revokeLabel": "Withdraw permission to charge {method}",
+      "noGateways": "No payment provider is available for saving a method right now.",
+      "defaultSet": "Default payment method updated",
+      "revoke": "Withdraw permission",
+      "revokeConfirm": "Withdraw permission to charge this method?",
+      "revokeConfirmDesc": "This payment method will not be charged again.",
+      "revokeSuccess": "Permission withdrawn",
+      "saved": "Payment method saved",
+      "unsupportedMode": "This payment provider cannot be used to save a method here."
     },
     "users": {
       "currentUsers": "Account Users",
@@ -822,6 +831,83 @@
       "confirmed": "Your sign-in email has changed.",
       "signInAgain": "Every session was signed out. Sign in again with your new address.",
       "backToAccount": "Back to account"
+    },
+    "creditNotes": {
+      "title": "Credit notes",
+      "subtitle": "Documents we issued that reverse part of an invoice you already paid.",
+      "explain": "A credit note is a numbered document that reverses part of an invoice you already paid. It is not the same as your credit balance, which you spend on invoices. Where the value of a note went is shown on each line.",
+      "empty": "You have no credit notes",
+      "emptyHint": "If we ever reverse part of a paid invoice, the credit note will appear here.",
+      "colNumber": "Number",
+      "colDate": "Issued",
+      "colInvoice": "Invoice",
+      "colMethod": "Value went to",
+      "colTotal": "Total",
+      "colStatus": "Status",
+      "download": "Download PDF",
+      "method": {
+        "AccountCredit": "Your credit balance",
+        "GatewayRefund": "Refunded to your payment method"
+      },
+      "status": {
+        "Issued": "Issued",
+        "Applied": "Applied",
+        "Voided": "Voided"
+      }
+    },
+    "credit": {
+      "title": "Credit",
+      "subtitle": "Your balance, what moved it, and how to add funds.",
+      "balance": "Available credit",
+      "balanceNote": "Credit pays your invoices. Funds you add are credited when their payment is confirmed.",
+      "addFunds": "Add funds",
+      "view": "View credit",
+      "topUpInvoice": "Credit top-up",
+      "history": {
+        "title": "History",
+        "empty": "Nothing has moved your balance yet.",
+        "emptyHint": "Movements from now on are listed here. A balance you already had is not itemised.",
+        "colDate": "Date",
+        "colType": "Type",
+        "colInvoice": "Invoice",
+        "colChange": "Change",
+        "colBalance": "Balance"
+      },
+      "movement": {
+        "AdminAdd": "Credit added",
+        "AdminDeduct": "Credit deducted",
+        "InvoiceApplied": "Applied to an invoice",
+        "InvoiceReturned": "Returned from an invoice",
+        "RenewalAutoApplied": "Applied to a renewal",
+        "RefundToCredit": "Refund to credit",
+        "TopUp": "Funds added",
+        "TopUpRefunded": "Top-up refunded",
+        "PaymentSurplus": "Extra payment credited",
+        "TransactionReversed": "Entry reversed",
+        "CreditNoteIssued": "Credit note added to your balance",
+        "CreditNoteVoided": "Credit note voided, taken off your balance"
+      },
+      "add": {
+        "title": "Add funds",
+        "subtitle": "Choose an amount. You pay it like an invoice, and it is added to your balance once the payment is confirmed.",
+        "back": "Back to credit",
+        "limits": "You can add between {min} and {max} at a time.",
+        "amount": "Amount",
+        "amountPlaceholder": "For example 50",
+        "amountInvalid": "Enter an amount between {min} and {max}.",
+        "note": "Credit from a top-up cannot be used to pay for another top-up.",
+        "cancel": "Cancel",
+        "submit": "Continue to payment"
+      },
+      "apply": {
+        "title": "Pay with credit",
+        "available": "Available credit: {balance}",
+        "amount": "Amount to apply",
+        "amountPlaceholder": "For example 10",
+        "amountInvalid": "Enter an amount of up to {max}.",
+        "useMost": "Use as much as possible",
+        "submit": "Apply credit"
+      }
     }
   }
 }

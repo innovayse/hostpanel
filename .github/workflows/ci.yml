@@ -8,7 +8,7 @@ name: CI
 # the private authentication package left out (-p:InnovayseSso=false, see backend/Directory.Build.props).
 # It needs no secrets, which is also what makes it safe to run on pull requests from forks.
 #
-# The plugin SDK (backend/src/Innovayse.SDK) is a git submodule from its own public repository, so
+# The plugin SDK (backend/src/Hostpanel.Sdk) is a git submodule from its own public repository, so
 # every checkout below fetches submodules; without them the backend has no SDK project to build.
 #
 # Third-party actions are pinned to a commit SHA with the version in a comment; Dependabot
@@ -62,10 +62,10 @@ jobs:
         run: >-
           sh ../scripts/check-empty-plugins.sh
           tests/Innovayse.Hostpanel.Domain.Tests tests/Innovayse.Hostpanel.Architecture.Tests
-          tests/Innovayse.CWP.Tests tests/Innovayse.Inecobank.Tests
+          tests/Innovayse.CWP.Tests
       - name: Unit tests
         run: |
-          for suite in Hostpanel.Domain Hostpanel.Architecture CWP Inecobank; do
+          for suite in Hostpanel.Domain Hostpanel.Architecture CWP; do
             dotnet test "tests/Innovayse.$suite.Tests" -c Release --no-build
           done
 
@@ -82,6 +82,28 @@ jobs:
           submodules: true
       - name: Check every test folder is in exactly one shard
         run: sh scripts/check-integration-shards.sh .github/workflows/ci.yml .gitlab-ci.yml
+
+  edge-csp:
+    name: Edge CSP (Caddy and nginx send one policy, headers checked on running edges)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Compare the client policy of both edges
+        run: sh scripts/check-edge-csp.sh
+      - name: Run both edges and the admin image and check their response headers
+        run: sh scripts/check-edge-headers.sh
+
+  install-backup:
+    name: Installer upgrade backup and rollback
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Run the installer backup and rollback tests, with dump and restore on a real postgres container
+        env:
+          HOSTPANEL_TEST_POSTGRES: "1"
+        run: bash scripts/test-install-backup.sh
 
   # The Integration suite starts a full API host for every test class (about 690 of them), each on
   # a database of its own on one shared PostgreSQL container. The test project's

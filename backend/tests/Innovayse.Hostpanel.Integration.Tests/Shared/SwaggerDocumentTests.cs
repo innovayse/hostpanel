@@ -37,6 +37,56 @@ public sealed class SwaggerDocumentTests(IntegrationTestFactory factory) : IClas
         tags.Should().Contain([SwaggerRegistration.AdminTag, SwaggerRegistration.PublicTag, SwaggerRegistration.AuthTag]);
     }
 
+    /// <summary>The operations any signed-in user may call carry the Member tag, not the Admin one.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Document_TagsOperationsOpenToAnySignedInUserAsMemberAsync()
+    {
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync(SwaggerRegistration.DocumentPath);
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var paths = document.RootElement.GetProperty("paths");
+        (string Path, string Method)[] memberOperations =
+        [
+            ("/api/me/2fa/setup", "post"),
+            ("/api/me/2fa/enable", "post"),
+            ("/api/me/2fa/disable", "post"),
+            ("/api/reference/countries", "get"),
+            ("/api/announcements/published", "get"),
+        ];
+
+        foreach (var (path, method) in memberOperations)
+        {
+            var tags = paths.GetProperty(path).GetProperty(method).GetProperty("tags").EnumerateArray()
+                .Select(tag => tag.GetString())
+                .ToList();
+            tags.Should().Equal([SwaggerRegistration.MemberTag], because: $"{method.ToUpperInvariant()} {path} is open to any signed-in user");
+        }
+    }
+
+    /// <summary>The sign-in answers 200 with a token or with a second factor challenge, and the document shows both bodies.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Document_DescribesBothBodiesOfTheSignInOkAsync()
+    {
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync(SwaggerRegistration.DocumentPath);
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var ok = document.RootElement.GetProperty("paths").GetProperty("/api/auth/login").GetProperty("post")
+            .GetProperty("responses").GetProperty("200").GetProperty("content").GetProperty("application/json").GetProperty("schema");
+        var variants = ok.GetProperty("oneOf").EnumerateArray()
+            .Select(variant => variant.GetProperty("$ref").GetString())
+            .ToList();
+
+        variants.Should().HaveCount(2);
+        variants.Should().Contain(reference => reference!.EndsWith(".SessionIssuedDto", StringComparison.Ordinal));
+        variants.Should().Contain(reference => reference!.EndsWith(".TwoFactorPendingDto", StringComparison.Ordinal));
+    }
+
     /// <summary>Failures in the document are described by the one error body.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]

@@ -2,7 +2,8 @@ using System.Text;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
-using Innovayse.SDK.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Ui;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 
@@ -26,6 +27,10 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
 
     /// <summary>The longest plain icon name accepted, in characters.</summary>
     private const int MaxIconNameLength = 64;
+
+    /// <summary>A view holding one valid preview, reading GET /site.</summary>
+    private const string ValidPreviewDocument =
+        """{"schema":1,"blocks":[{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]}]}""";
 
     /// <summary>A scratch plugin folder per test instance, removed on disposal.</summary>
     private readonly string _folder = Path.Combine(Path.GetTempPath(), $"view-rules-{Guid.NewGuid():N}");
@@ -77,6 +82,23 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
         read.Violation.Should().NotBeNull();
         read.Violation!.Rule.Should().Be(rule);
         read.Views.Paths.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Asserts that reading finds a fault of a rule added after plugins were installed: the plugin is refused at
+    /// install and not at load, where its documents are kept.
+    /// </summary>
+    /// <param name="manifest">The manifest.</param>
+    /// <param name="rule">The rule the first advisory must break.</param>
+    private void AssertAdvisory(PluginManifest manifest, PluginManifestRule rule)
+    {
+        var read = PluginViewDocumentReader.Read(_folder, manifest, MaxViewBytes);
+        read.Violation.Should().BeNull("a plugin that is already installed must still load");
+        read.Advisories.Should().NotBeEmpty();
+        read.Advisories[0].Rule.Should().Be(rule);
+        read.RefusedAtInstall.Should().NotBeNull();
+        read.RefusedAtInstall!.Rule.Should().Be(rule);
+        read.Views.Paths.Should().NotBeEmpty("the documents are served at load");
     }
 
     /// <summary>A manifest with no pages or slots reads nothing and passes.</summary>
@@ -531,6 +553,166 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
         read.Violation.Detail.Should().NotContain(_folder);
     }
 
+    /// <summary>A manifest whose admin page shows <c>views/a.json</c> and whose admin api declares GET /site and POST /publish.</summary>
+    /// <returns>The manifest.</returns>
+    private static PluginManifest StateManifest()
+    {
+        return Manifest(""","api":{"admin":[{"method":"get","path":"/site"},{"method":"post","path":"/publish"}]},"ui":{"admin":{"pages":[{"id":"overview","path":"/o","title":"O","view":"views/a.json"}]}}""");
+    }
+
+    /// <summary>A visibility condition, a form reset and follow-ups on an action and a form submit are accepted, and a condition value is not read as a label key.</summary>
+    [Fact]
+    public void Read_ViewStateMembers_AreAccepted()
+    {
+        Write("views/a.json", """
+            {"schema":1,"blocks":[
+              {"kind":"stat","id":"status","label":"Status","source":{"route":{"method":"get","path":"/site"},"field":"site.status"}},
+              {"kind":"form","fields":[],"visibleWhen":{"route":{"method":"get","path":"/site"},"field":"site","equals":null},
+               "submit":{"route":{"method":"post","path":"/publish"},"label":"Create","resetOnSuccess":true,
+                 "followUp":{"refresh":["status"],"until":{"route":{"method":"get","path":"/site"},"field":"site.status","equals":"ready"}}}},
+              {"kind":"action","label":"Publish","route":{"method":"post","path":"/publish"},
+               "followUp":{"refresh":["status"],"until":{"route":{"method":"get","path":"/site"},"field":"site.status","equals":["live","failed.key",3,true]}}}
+            ]}
+            """);
+
+        var read = PluginViewDocumentReader.Read(_folder, StateManifest(), MaxViewBytes);
+
+        read.Violation.Should().BeNull();
+    }
+
+    /// <summary>A condition that is not exactly a GET route, a dotted field and a value or bounded list of scalars breaks ViewConditionInvalid.</summary>
+    /// <param name="condition">The condition JSON.</param>
+    [Theory]
+    [InlineData("""{"route":{"method":"post","path":"/publish"},"field":"a","equals":"x"}""")]
+    [InlineData("""{"field":"a","equals":"x"}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"equals":"x"}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"field":"a"}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"field":"a..b","equals":"x"}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"field":"a","equals":[]}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"field":"a","equals":{"v":1}}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"field":"a","equals":[["x"]]}""")]
+    [InlineData("""{"route":{"method":"get","path":"/site"},"field":"a","equals":"x","extra":1}""")]
+    [InlineData("\"ready\"")]
+    public void Read_ConditionMalformed_BreaksViewConditionInvalid(string condition)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{"kind":"text","text":"Hi","visibleWhen":{{condition}}}]}""");
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewConditionInvalid);
+    }
+
+    /// <summary>A condition listing more values than the SDK bound breaks ViewConditionInvalid.</summary>
+    [Fact]
+    public void Read_ConditionOverValueBound_BreaksViewConditionInvalid()
+    {
+        var values = string.Join(",", Enumerable.Range(0, PluginViews.MaxConditionValues + 1));
+        Write("views/a.json", $$$"""{"schema":1,"blocks":[{"kind":"text","text":"Hi","visibleWhen":{"route":{"method":"get","path":"/site"},"field":"a","equals":[{{{values}}}]}}]}""");
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewConditionInvalid);
+    }
+
+    /// <summary>A visibility condition on an object that is not a block breaks ViewConditionInvalid.</summary>
+    [Fact]
+    public void Read_VisibleWhenOutsideBlock_BreaksViewConditionInvalid()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"tabs","tabs":[{"id":"t","title":"T","visibleWhen":{"route":{"method":"get","path":"/site"},"field":"a","equals":"x"},"blocks":[]}]}]}""");
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewConditionInvalid);
+    }
+
+    /// <summary>A condition route the area does not declare breaks ViewRouteUndeclared, like every other route reference.</summary>
+    [Fact]
+    public void Read_ConditionRouteUndeclared_BreaksViewRouteUndeclared()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"text","text":"Hi","visibleWhen":{"route":{"method":"get","path":"/other"},"field":"a","equals":"x"}}]}""");
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewRouteUndeclared);
+    }
+
+    /// <summary>A follow-up that is malformed, misplaced or refreshes an unknown block, and a reset flag that is not a boolean in a submit, break ViewFollowUpInvalid.</summary>
+    /// <param name="block">The block JSON placed beside a stat block whose id is <c>status</c>.</param>
+    [Theory]
+    [InlineData("""{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"followUp":{"refresh":["nope"],"until":{"route":{"method":"get","path":"/site"},"field":"a","equals":"x"}}}""")]
+    [InlineData("""{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"followUp":{"refresh":[],"until":{"route":{"method":"get","path":"/site"},"field":"a","equals":"x"}}}""")]
+    [InlineData("""{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"followUp":{"refresh":["status"]}}""")]
+    [InlineData("""{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"followUp":{"refresh":[""],"until":{"route":{"method":"get","path":"/site"},"field":"a","equals":"x"}}}""")]
+    [InlineData("""{"kind":"text","text":"Hi","followUp":{"refresh":["status"],"until":{"route":{"method":"get","path":"/site"},"field":"a","equals":"x"}}}""")]
+    [InlineData("""{"kind":"form","fields":[],"resetOnSuccess":true,"submit":{"route":{"method":"post","path":"/publish"},"label":"S"}}""")]
+    [InlineData("""{"kind":"form","fields":[],"submit":{"route":{"method":"post","path":"/publish"},"label":"S","resetOnSuccess":"yes"}}""")]
+    public void Read_FollowUpOrResetMalformed_BreaksViewFollowUpInvalid(string block)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{"kind":"stat","id":"status","label":"S","value":"x"},{{block}}]}""");
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewFollowUpInvalid);
+    }
+
+    /// <summary>An action whose body and label are read from one declared GET route is accepted.</summary>
+    [Fact]
+    public void Read_ActionBodySource_IsAccepted()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"labelSource":{"route":{"method":"get","path":"/site"},"field":"l"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"expectedVersion":"a.b"}}}]}""");
+
+        var read = PluginViewDocumentReader.Read(_folder, ClientActionManifest(), MaxViewBytes);
+
+        read.Violation.Should().BeNull();
+    }
+
+    /// <summary>A body source of a wrong shape or on a wrong block breaks ViewActionBodyInvalid; nothing guesses what to send.</summary>
+    /// <param name="block">The block JSON.</param>
+    [Theory]
+    [InlineData("""{"kind":"text","text":"Hi","bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}""")]
+    [InlineData("""{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"get","path":"/site"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"post","path":"/publish"},"fields":{"a":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"__proto__":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"label":"b"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b c"}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":1}}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"},"extra":1}}""")]
+    [InlineData("""{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"labelSource":{"route":{"method":"get","path":"/publish"},"field":"l"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}""")]
+    public void Read_ActionBodySourceMalformed_BreaksViewActionBodyInvalid(string block)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{block}}]}""");
+
+        AssertBreaks(ClientActionManifest(), PluginManifestRule.ViewActionBodyInvalid);
+    }
+
+    /// <summary>A body source naming more members than a page may send breaks ViewActionBodyInvalid.</summary>
+    [Fact]
+    public void Read_ActionBodySourceTooManyFields_BreaksViewActionBodyInvalid()
+    {
+        var fields = string.Join(",", Enumerable.Range(0, 11).Select(index => $"\"a{index}\":\"b\""));
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{""" + fields + """}}}]}""");
+
+        AssertBreaks(ClientActionManifest(), PluginManifestRule.ViewActionBodyInvalid);
+    }
+
+    /// <summary>A body source reading a route the area does not declare breaks ViewRouteUndeclared, like every other reference.</summary>
+    [Fact]
+    public void Read_ActionBodySourceRouteUndeclared_BreaksViewRouteUndeclared()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/other"},"fields":{"a":"b"}}}]}""");
+
+        AssertBreaks(ClientActionManifest(), PluginManifestRule.ViewRouteUndeclared);
+    }
+
+    /// <summary>A body source on an admin page breaks ViewActionBodyInvalid: the admin panel would post without it.</summary>
+    [Fact]
+    public void Read_ActionBodySourceOnAdminPage_BreaksViewActionBodyInvalid()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"action","id":"p","label":"P","route":{"method":"post","path":"/publish"},"bodySource":{"route":{"method":"get","path":"/site"},"fields":{"a":"b"}}}]}""");
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewActionBodyInvalid);
+    }
+
+    /// <summary>A manifest whose client page shows <c>views/a.json</c> and whose client api declares GET /site and POST /publish.</summary>
+    /// <returns>The manifest.</returns>
+    private static PluginManifest ClientActionManifest()
+    {
+        return Manifest(""","api":{"client":[{"method":"get","path":"/site","permission":"Any"},{"method":"post","path":"/publish","permission":"Any"}]},"ui":{"client":{"pages":[{"id":"overview","path":"/o","title":"O","permission":"Any","view":"views/a.json"}]}}""");
+    }
+
     /// <summary>Builds a valid document whose nesting reaches the given depth, the root counted as one level.</summary>
     /// <param name="depth">The total nesting depth, at least <see cref="DepthBeforePadding"/>.</param>
     /// <returns>The document text.</returns>
@@ -541,6 +723,298 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
         var close = string.Concat(Enumerable.Repeat("]", padding));
         return $$"""{"schema":1,"blocks":[{"kind":"text","text":"x","data":{{open}}{{close}}}]}""";
     }
+
+    /// <summary>A manifest whose client page shows <c>views/a.json</c> and whose client api declares GET /site and POST /publish.</summary>
+    /// <returns>The manifest.</returns>
+    private static PluginManifest ClientPageManifest()
+    {
+        return Manifest(""","api":{"client":[{"method":"get","path":"/site","permission":"Any"},{"method":"post","path":"/publish","permission":"Any"}]},"ui":{"client":{"pages":[{"id":"overview","path":"/o","title":"O","view":"views/a.json","permission":"Any"}]}}""");
+    }
+
+    /// <summary>A split holding a chat beside a preview with two sources, on a client page, is accepted.</summary>
+    [Fact]
+    public void Read_SplitWithPreviewOnClientPage_IsAccepted()
+    {
+        Write("views/a.json", """
+            {"schema":1,"blocks":[{"kind":"split","panes":[
+              {"blocks":[{"kind":"chat","send":{"method":"post","path":"/publish"}}]},
+              {"blocks":[{"kind":"preview","size":"phone","sources":[
+                {"id":"preview","label":"Preview","route":{"method":"get","path":"/site"},"field":"urls.preview"},
+                {"id":"live","label":"Live","route":{"method":"get","path":"/site"},"field":"urls.live"}]}]}
+            ]}]}
+            """);
+
+        PluginViewDocumentReader.Read(_folder, ClientPageManifest(), MaxViewBytes).Violation.Should().BeNull();
+    }
+
+    /// <summary>
+    /// A block id given to a second block, at the root or nested in a tab, a header, a pane or a tab of a pane, is a
+    /// ViewBlockIdRepeated advisory: refused at install, not at load.
+    /// </summary>
+    /// <param name="blocks">The blocks of the document root.</param>
+    [Theory]
+    [InlineData("""{"kind":"text","id":"a","text":"x"},{"kind":"text","id":"a","text":"y"}""")]
+    [InlineData(
+        """{"kind":"text","id":"a","text":"x"},""" +
+        """{"kind":"tabs","tabs":[{"id":"t","title":"T","blocks":[{"kind":"text","id":"a","text":"y"}]}]}""")]
+    [InlineData(
+        """{"kind":"header","id":"h","title":"H","actions":[{"kind":"badge","id":"a","text":"b"}]},""" +
+        """{"kind":"text","id":"a","text":"y"}""")]
+    [InlineData(
+        """{"kind":"header","id":"a","title":"H"},""" +
+        """{"kind":"split","panes":[{"blocks":[{"kind":"text","id":"a","text":"y"}]},{"blocks":[]}]}""")]
+    [InlineData(
+        """{"kind":"split","panes":[{"blocks":[{"kind":"tabs","tabs":[""" +
+        """{"id":"t","title":"T","blocks":[{"kind":"text","id":"a","text":"x"}]}]}]},""" +
+        """{"blocks":[{"kind":"text","id":"a","text":"y"}]}]}""")]
+    public void Read_BlockIdRepeated_IsAnAdvisoryForViewBlockIdRepeated(string blocks)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{blocks}}]}""");
+
+        AssertAdvisory(ClientPageManifest(), PluginManifestRule.ViewBlockIdRepeated);
+    }
+
+    /// <summary>
+    /// A compact header with title and subtitle sources, an action label source, a cards table and a preview note are
+    /// accepted.
+    /// </summary>
+    [Fact]
+    public void Read_DisplayMembersWellFormed_AreAccepted()
+    {
+        Write("views/a.json", """
+            {"schema":1,"blocks":[
+              {"kind":"header","compact":true,
+               "titleSource":{"route":{"method":"get","path":"/site"},"field":"site.name"},
+               "subtitleSource":{"route":{"method":"get","path":"/site"},"field":"site.domain"}},
+              {"kind":"action","label":"P","route":{"method":"post","path":"/publish"},
+               "labelSource":{"route":{"method":"get","path":"/site"},"field":"label"}},
+              {"kind":"table","display":"cards","source":{"route":{"method":"get","path":"/site"}},"columns":[]},
+              {"kind":"preview","size":"phone","note":{"route":{"method":"get","path":"/site"},"field":"notes"},
+               "sources":[{"id":"preview","label":"P","route":{"method":"get","path":"/site"},"field":"urls.preview"}]}
+            ]}
+            """);
+
+        PluginViewDocumentReader.Read(_folder, ClientPageManifest(), MaxViewBytes).Violation.Should().BeNull();
+    }
+
+    /// <summary>
+    /// A display member of the wrong type, or a source that is not a GET route with a dotted field, is a ViewInvalid
+    /// advisory: refused at install, not at load.
+    /// </summary>
+    /// <param name="block">The block JSON.</param>
+    [Theory]
+    [InlineData("""{"kind":"header","compact":"yes"}""")]
+    [InlineData("""{"kind":"header","titleSource":"name"}""")]
+    [InlineData("""{"kind":"header","titleSource":{"route":{"method":"post","path":"/publish"},"field":"a"}}""")]
+    [InlineData("""{"kind":"header","subtitleSource":{"route":{"method":"get","path":"/site"},"field":5}}""")]
+    [InlineData("""{"kind":"header","subtitleSource":{"route":{"method":"get","path":"/site"},"field":"a..b"}}""")]
+    [InlineData(
+        """{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"labelSource":{"field":"a"}}""")]
+    [InlineData("""{"kind":"table","display":"grid","columns":[]}""")]
+    [InlineData("""{"kind":"table","display":true,"columns":[]}""")]
+    [InlineData(
+        """{"kind":"preview","size":"phone","note":["x"],"sources":[""" +
+        """{"id":"preview","label":"P","route":{"method":"get","path":"/site"},"field":"u"}]}""")]
+    public void Read_DisplayMemberMalformed_IsAnAdvisoryForViewInvalid(string block)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{block}}]}""");
+
+        AssertAdvisory(ClientPageManifest(), PluginManifestRule.ViewInvalid);
+    }
+
+    /// <summary>
+    /// A document that breaks an old rule and also carries an advisory fault is a hard violation: the advisory never
+    /// softens a rule that was already enforced at load.
+    /// </summary>
+    [Fact]
+    public void Read_OldRuleBrokenBesideAnAdvisory_StillBreaksTheOldRule()
+    {
+        Write(
+            "views/a.json",
+            """
+            {"schema":1,"blocks":[
+              {"kind":"text","id":"a","text":"x"},{"kind":"text","id":"a","text":"y"},{"kind":"nope"}]}
+            """);
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewBlockKindUnknown);
+    }
+
+    /// <summary>
+    /// A tab id and a preview source id may match a block's id: only blocks share the id space the panel keys on.
+    /// </summary>
+    [Fact]
+    public void Read_IdsOfTabsAndPreviewSourcesMatchingABlockId_AreAccepted()
+    {
+        Write("views/a.json", """
+            {"schema":1,"blocks":[
+              {"kind":"tabs","tabs":[
+                {"id":"versions","title":"V","blocks":[{"kind":"text","id":"versions","text":"x"}]}]},
+              {"kind":"preview","id":"live","size":"phone","sources":[
+                {"id":"preview","label":"P","route":{"method":"get","path":"/site"},"field":"urls.preview"},
+                {"id":"live","label":"L","route":{"method":"get","path":"/site"},"field":"urls.live"}]}
+            ]}
+            """);
+
+        PluginViewDocumentReader.Read(_folder, ClientPageManifest(), MaxViewBytes).Violation.Should().BeNull();
+    }
+
+    /// <summary>A split without exactly two panes of blocks, or inside another split at any depth, breaks ViewSplitInvalid.</summary>
+    /// <param name="block">The block under test.</param>
+    [Theory]
+    [InlineData("""{"kind":"split"}""")]
+    [InlineData("""{"kind":"split","panes":{}}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]}]}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]},{"blocks":[]},{"blocks":[]}]}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]},{}]}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]},{"blocks":[],"extra":1}]}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]},{"blocks":[{"nokind":1}]}]}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]},{"blocks":[{"kind":"split","panes":[{"blocks":[]},{"blocks":[]}]}]}]}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[]},{"blocks":[{"kind":"tabs","tabs":[{"blocks":[{"kind":"split","panes":[{"blocks":[]},{"blocks":[]}]}]}]}]}]}""")]
+    public void Read_SplitMalformed_BreaksViewSplitInvalid(string block)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{block}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewSplitInvalid);
+    }
+
+    /// <summary>A preview with bad sources or size breaks ViewPreviewInvalid: the frame must never be guessed at.</summary>
+    /// <param name="block">The block under test.</param>
+    [Theory]
+    [InlineData("""{"kind":"preview"}""")]
+    [InlineData("""{"kind":"preview","sources":[]}""")]
+    [InlineData("""{"kind":"preview","sources":{}}""")]
+    [InlineData("""{"kind":"preview","size":"tablet","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]}""")]
+    [InlineData("""{"kind":"preview","size":1,"sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"id":"A b","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"label":"A","route":{"method":"get","path":"/site"},"field":"url"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"id":"a","label":"","route":{"method":"get","path":"/site"},"field":"url"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"post","path":"/publish"},"field":"url"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"a..b"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url","address":"https://evil.example"}]}""")]
+    [InlineData("""{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"u"},{"id":"a","label":"B","route":{"method":"get","path":"/site"},"field":"v"}]}""")]
+    public void Read_PreviewMalformed_BreaksViewPreviewInvalid(string block)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{block}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewPreviewInvalid);
+    }
+
+    /// <summary>More sources than the SDK bound break ViewPreviewInvalid.</summary>
+    [Fact]
+    public void Read_PreviewOverSourceBound_BreaksViewPreviewInvalid()
+    {
+        var sources = string.Join(',', Enumerable.Range(0, PluginViews.MaxPreviewSources + 1).Select(i =>
+            $$"""{"id":"s{{i}}","label":"S","route":{"method":"get","path":"/site"},"field":"url"}"""));
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{"kind":"preview","sources":[{{sources}}]}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewPreviewInvalid);
+    }
+
+    /// <summary>A preview on an admin page breaks ViewPreviewInvalid: no document there gets the narrowed frame policy.</summary>
+    [Fact]
+    public void Read_PreviewOnAdminPage_BreaksViewPreviewInvalid()
+    {
+        Write("views/a.json", ValidPreviewDocument);
+
+        AssertBreaks(StateManifest(), PluginManifestRule.ViewPreviewInvalid);
+    }
+
+    /// <summary>A preview in a client slot breaks ViewPreviewInvalid: a slot lives in a document with the wide frame policy.</summary>
+    [Fact]
+    public void Read_PreviewInSlot_BreaksViewPreviewInvalid()
+    {
+        Write("views/a.json", ValidPreviewDocument);
+
+        AssertBreaks(
+            Manifest(""","api":{"client":[{"method":"get","path":"/site","permission":"Any"}]},"ui":{"slots":[{"id":"w","slot":"client.dashboard.cards","title":"T","view":"views/a.json","permission":"Any"}]}"""),
+            PluginManifestRule.ViewPreviewInvalid);
+    }
+
+    /// <summary>A preview source naming a route the area does not declare breaks ViewRouteUndeclared.</summary>
+    [Fact]
+    public void Read_PreviewRouteUndeclared_BreaksViewRouteUndeclared()
+    {
+        Write("views/a.json", """{"schema":1,"blocks":[{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/other"},"field":"url"}]}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewRouteUndeclared);
+    }
+
+    /// <summary>A preview selection in its exact shape, with a chat taking it, is accepted.</summary>
+    [Fact]
+    public void Read_ValidSelection_IsAccepted()
+    {
+        Write("views/a.json", SelectionDocument(SelectionMember("""["a"]""", "post"), chatSelection: "true"));
+
+        PluginViewDocumentReader.Read(_folder, ClientPageManifest(), MaxViewBytes).Violation.Should().BeNull();
+    }
+
+    /// <summary>Every broken shape of a selection is refused with its own rule: an unknown source, none, a repeat, a GET lookup, an extra member, a chat value other than true, a chat with no preview selection.</summary>
+    /// <param name="selection">The preview's selection member, or empty for none.</param>
+    /// <param name="chat">The chat's selection value.</param>
+    [Theory]
+    [InlineData("""["nope"]|post""", "true")]
+    [InlineData("""[]|post""", "true")]
+    [InlineData("""["a","a"]|post""", "true")]
+    [InlineData("""["a"]|get""", "true")]
+    [InlineData("""["a"]|post""", "1")]
+    [InlineData("", "true")]
+    public void Read_BrokenSelection_BreaksViewSelectionInvalid(string selection, string chat)
+    {
+        var member = selection.Length == 0 ? string.Empty : SelectionMember(selection.Split('|')[0], selection.Split('|')[1]);
+        Write("views/a.json", SelectionDocument(member, chat));
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewSelectionInvalid);
+    }
+
+    /// <summary>A source id that is no string, with a selection on the preview, is a refusal and not an exception, at install and at load alike.</summary>
+    /// <param name="id">The source's id, as JSON.</param>
+    [Theory]
+    [InlineData("1")]
+    [InlineData("{}")]
+    [InlineData("[]")]
+    [InlineData("null")]
+    [InlineData("true")]
+    public void Read_SelectionWithSourceIdNotAString_BreaksPreviewRule(string id)
+    {
+        Write("views/a.json", $$$"""{"schema":1,"blocks":[{"kind":"preview","sources":[{"id":{{{id}}},"label":"A","route":{"method":"get","path":"/site"},"field":"url"}]{{{SelectionMember("""["a"]""", "post")}}}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewPreviewInvalid);
+    }
+
+    /// <summary>A second preview offering a selection is refused, because a chat's claim does not say which preview made it.</summary>
+    [Fact]
+    public void Read_SecondPreviewSelection_BreaksViewSelectionInvalid()
+    {
+        var member = SelectionMember("""["a"]""", "post");
+        var preview = $$$"""{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]{{{member}}}}""";
+        Write("views/a.json", $$$"""{"schema":1,"blocks":[{"kind":"chat","selection":true,"send":{"method":"post","path":"/publish"}},{{{preview}}},{{{preview}}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewSelectionInvalid);
+    }
+
+    /// <summary>An extra member in a selection, which the panel would otherwise ignore, is refused.</summary>
+    [Fact]
+    public void Read_SelectionExtraMember_BreaksViewSelectionInvalid()
+    {
+        var member = SelectionMember("""["a"]""", "post").Replace("\"sources\"", "\"extra\":1,\"sources\"", StringComparison.Ordinal);
+        Write("views/a.json", SelectionDocument(member, "true"));
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewSelectionInvalid);
+    }
+
+    /// <summary>The selection member of a preview.</summary>
+    /// <param name="sources">The sources, as JSON.</param>
+    /// <param name="method">The lookup route's method.</param>
+    /// <returns>The member, with a leading comma.</returns>
+    private static string SelectionMember(string sources, string method) =>
+        $$$""","selection":{"sources":{{{sources}}},"route":{"method":"{{{method}}}","path":"/publish"},"release":{"route":{"method":"get","path":"/site"},"field":"release"}}""";
+
+    /// <summary>A document with a preview and a chat taking a selection.</summary>
+    /// <param name="member">The preview's selection member.</param>
+    /// <param name="chatSelection">The chat's selection value.</param>
+    /// <returns>The document.</returns>
+    private static string SelectionDocument(string member, string chatSelection) =>
+        $$$"""{"schema":1,"blocks":[{"kind":"chat","selection":{{{chatSelection}}},"send":{"method":"post","path":"/publish"}},{"kind":"preview","sources":[{"id":"a","label":"A","route":{"method":"get","path":"/site"},"field":"url"}]{{{member}}}}]}""";
 
     /// <summary>Asserts the violation of reading the admin page manifest names neither the scratch folder nor another host folder.</summary>
     /// <param name="other">A host folder outside the package the detail must not name either.</param>

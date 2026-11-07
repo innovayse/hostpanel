@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import IntegrationStatusSidebar from '@/components/integrations/IntegrationStatusSidebar.vue'
 import { mountWithApp } from '../../helpers/mount'
+import { IntegrationConnectionState } from '@/types/integration'
 
 /**
  * Mounts the sidebar.
@@ -45,5 +46,26 @@ describe('IntegrationStatusSidebar', () => {
   it('shows the hint callout only when there is one', () => {
     expect(mountSidebar().find('[data-testid="integration-status-hint"]').exists()).toBe(false)
     expect(mountSidebar({ hint: 'Add the webhook.' }).get('[data-testid="integration-status-hint"]').text()).toContain('Add the webhook.')
+  })
+
+  it('shows the state a plugin last reported while nothing was tested on the page', () => {
+    const wrapper = mountSidebar({
+      connection: { state: IntegrationConnectionState.Unavailable, message: 'No answer in time.', checkedAt: '2026-11-04T10:00:00Z' },
+    })
+
+    const connection = wrapper.get('[data-testid="integration-status-connection"]')
+    expect(connection.text()).toContain('Unavailable')
+    expect(connection.text()).toContain('No answer in time.')
+    expect(wrapper.find('[data-testid="integration-status-idle"]').exists()).toBe(false)
+  })
+
+  it('prefers the result of a test run on the page to the reported state', () => {
+    const wrapper = mountSidebar({
+      testResult: { success: true, message: 'ok' },
+      connection: { state: IntegrationConnectionState.Unavailable, message: 'old', checkedAt: '2026-11-04T10:00:00Z' },
+    })
+
+    expect(wrapper.find('[data-testid="integration-status-result"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="integration-status-connection"]').exists()).toBe(false)
   })
 })

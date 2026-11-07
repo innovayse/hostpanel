@@ -12,13 +12,19 @@
  * full list.
  */
 
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, relative, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const docsRoot = join(__dirname, '..')
 const distDir = join(docsRoot, '.vitepress', 'dist')
+
+/**
+ * URL base the site was built with, same rule as config.ts: leading and trailing slash,
+ * default /docs/. Image paths in the built HTML start with it.
+ */
+const base = `/${(process.env.DOCS_BASE?.trim() || '/docs/').replace(/^\/+|\/+$/g, '')}/`.replace(/^\/\/$/, '/')
 
 let failures = 0
 
@@ -52,8 +58,15 @@ for (const htmlFile of collectHtml(distDir)) {
     const src = m[1]
     // Skip external URLs and data URIs.
     if (src.startsWith('http') || src.startsWith('data:')) { continue }
+    // A root-relative address must sit under the base: anything else works in a dev server but is a 404 once
+    // the site is served from its base path.
+    if (src.startsWith('/') && !src.startsWith('//') && !src.startsWith(base)) {
+      console.error(`Image outside the base ${base}: ${src}  (referenced in ${relative(distDir, htmlFile)})`)
+      failures++
+      continue
+    }
     // Strip query/hash, strip leading slash.
-    const clean = src.split('?')[0].split('#')[0].replace(/^\/hostpanel\//, '')
+    const clean = src.split('?')[0].split('#')[0].replace(base.length > 1 ? new RegExp(`^${base}`) : /^\//, '')
     const abs = join(distDir, clean)
     try {
       statSync(abs)
@@ -96,8 +109,8 @@ const sidebarLinks = () => {
 const collectMd = (dir, base = '') => {
   const entries = readdirSync(dir, { withFileTypes: true })
   return entries.flatMap((e) => {
-    // Skip directories that are not user-facing docs pages.
-    if (e.isDirectory() && (e.name === 'brand' || e.name === 'node_modules' || e.name.startsWith('.'))) { return [] }
+    // Skip directories that are not user-facing docs pages (generated partials start with _).
+    if (e.isDirectory() && (e.name === 'brand' || e.name === 'node_modules' || e.name.startsWith('.') || e.name.startsWith('_'))) { return [] }
     if (e.isDirectory()) { return collectMd(join(dir, e.name), `${base}/${e.name}`) }
     if (extname(e.name) !== '.md') { return [] }
     const stem = e.name.replace(/\.md$/, '')
@@ -107,6 +120,22 @@ const collectMd = (dir, base = '') => {
 }
 
 const links = sidebarLinks()
+
+/**
+ * Adds every link of a sidebar item and, recursively, of the groups inside it.
+ * @param {{ link?: string, items?: object[] }} item
+ */
+const addSidebarLinks = (item) => {
+  if (item.link) { links.add(item.link.replace(/\/$/, '')) }
+  for (const child of item.items ?? []) { addSidebarLinks(child) }
+}
+
+// Also collect links from generated-sidebar.json when present (API reference endpoint pages,
+// grouped by audience and then by area).
+const generatedSidebarPath = join(docsRoot, 'api-reference', 'generated-sidebar.json')
+if (existsSync(generatedSidebarPath)) {
+  for (const group of JSON.parse(readFileSync(generatedSidebarPath, 'utf8'))) { addSidebarLinks(group) }
+}
 
 // Pages intentionally excluded from the sidebar (home page, components demo).
 const excluded = new Set(['', '/components'])

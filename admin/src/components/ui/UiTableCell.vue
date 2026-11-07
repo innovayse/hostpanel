@@ -7,12 +7,11 @@
  */
 import { computed, inject } from 'vue'
 import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
-import { alignClasses, cellDensityClasses } from '@/utils/ui/table'
-import type { UiAlign } from '@/utils/ui/table'
+import { UiAlign, alignClasses, cellDensityClasses } from '@/utils/ui/table'
 
 /** Props for UiTableCell. */
 const props = withDefaults(defineProps<{
-  /** Horizontal alignment; omitted leaves it to the browser/screen. */
+  /** Horizontal alignment, the same source as the header (left when omitted). */
   align?: UiAlign
   /** Greys the value. */
   muted?: boolean
@@ -27,7 +26,7 @@ const context = inject(UI_TABLE_CONTEXT, { density: UiTableDensity.Plain })
 /** Padding, alignment and tone classes. */
 const classes = computed<string[]>(() => [
   cellDensityClasses[context.density],
-  props.align === undefined ? '' : alignClasses[props.align],
+  alignClasses[props.align ?? UiAlign.Left],
   props.muted ? 'text-text-muted' : '',
 ])
 </script>

@@ -1,5 +1,5 @@
-using Innovayse.SDK.Plugins.Enums;
-using Innovayse.SDK.Plugins.Hosting;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

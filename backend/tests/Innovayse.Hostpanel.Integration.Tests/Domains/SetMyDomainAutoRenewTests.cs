@@ -56,4 +56,16 @@ public sealed class SetMyDomainAutoRenewTests(IntegrationTestFactory factory) : 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await DomainsTestSeeds.ReadErrorCodeAsync(response)).Should().Be(SharedErrorCodes.ValidationError);
     }
+
+    /// <summary>A body without <c>value</c> is refused with 400 <c>VALIDATION_ERROR</c>, not read as <c>false</c>.</summary>
+    [Fact]
+    public async Task SetAutoRenew_WithoutValue_Returns400ValidationErrorAsync()
+    {
+        var (client, _) = await DomainsTestSeeds.RegisterOwnerAsync(factory, "setmydomainautorenew-novalue");
+
+        var response = await client.PutAsJsonAsync("/api/me/domains/1/auto-renew", new { enabled = true });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await DomainsTestSeeds.ReadErrorCodeAsync(response)).Should().Be(SharedErrorCodes.ValidationError);
+    }
 }

@@ -4,6 +4,22 @@
     "chatMessage": "Ձեր հաղորդագրությունը",
     "chatSend": "Ուղարկել",
     "chatStop": "Կանգնեցնել",
-    "unavailable": "Այս բաժինը հիմա հասանելի չէ։"
+    "unavailable": "Այս բաժինը հիմա հասանելի չէ։",
+    "workspaceBack": "Հետ",
+    "previewSize": "Էկրանի չափը",
+    "previewSource": "Որ կայքը",
+    "previewDesktop": "Համակարգիչ",
+    "previewPhone": "Հեռախոս",
+    "previewOpen": "Բացել",
+    "previewSelect": "Ընտրել",
+    "previewSelectDone": "Ավարտել ընտրությունը",
+    "previewSelectHint": "Ընտրության ռեժիմ. սեղմեք տարրի վրա։ Կրկին սեղմելով կհանեք։ Esc՝ դուրս գալու համար։",
+    "chatSelectionRemove": "Հանել",
+    "chatSelectionStale": "Էջը փոխվել է այս տարրերն ընտրելուց հետո։ Ընտրեք դրանք նորից, ապա ուղարկեք հաղորդագրությունը։",
+    "previewEmpty": "Ցուցադրելու բան դեռ չկա։",
+    "previewInsecure": "Նախադիտման համար անհրաժեշտ է անվտանգ կապ։ Սովորական http-ով դիտարկիչը թաքցնում է այն, ինչ վահանակը ստուգում է կայքը ցույց տալուց առաջ, ուստի նախադիտումն անջատված է։ Բացեք վահանակը https-ով։",
+    "chatStepStopped": "Կանգնեցված է",
+    "chatStepsCount": "Կատարված է {done} քայլ {total}-ից",
+    "chatResultDetails": "Մանրամասներ"
   }
 }

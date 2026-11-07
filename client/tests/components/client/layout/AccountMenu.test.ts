@@ -6,9 +6,11 @@
  */
 
 import { Home, UserCog } from 'lucide-vue-next'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import AccountMenu from '~/components/client/layout/AccountMenu.vue'
+
+afterEach(() => { vi.unstubAllGlobals() })
 
 /** The person and links the menu is built from. */
 const PROPS = {
@@ -66,5 +68,24 @@ describe('ClientLayoutAccountMenu', () => {
 
     expect(wrapper.emitted('signOut')).toHaveLength(1)
     expect(wrapper.find('[data-testid="ui-popover-panel"]').exists()).toBe(false)
+  })
+
+  it('hides the docs link when docsUrl is empty', async () => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { docsUrl: '' } }))
+    const wrapper = mountClient(AccountMenu, { props: PROPS })
+    await wrapper.find('[data-testid="client-account-trigger"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="client-account-help"]').exists()).toBe(false)
+  })
+
+  it('shows the docs link with the correct href when docsUrl is set', async () => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { docsUrl: 'https://docs.example.com' } }))
+    const wrapper = mountClient(AccountMenu, { props: PROPS })
+    await wrapper.find('[data-testid="client-account-trigger"]').trigger('click')
+
+    const link = wrapper.find('[data-testid="client-account-help"]')
+    expect(link.exists()).toBe(true)
+    expect(link.attributes('href')).toBe('https://docs.example.com')
+    expect(link.attributes('rel')).toContain('noopener')
   })
 })

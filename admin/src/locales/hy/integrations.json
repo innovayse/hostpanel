@@ -74,5 +74,11 @@
   },
   "integrationDetail": {
     "saved": "Կարգավորումները պահպանվեցին։"
+  },
+  "connectionState": {
+    "Connected": "Միացված է",
+    "Degraded": "Սահմանափակ",
+    "Unavailable": "Անհասանելի",
+    "Inactive": "Չի ստուգվել"
   }
 }

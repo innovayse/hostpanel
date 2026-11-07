@@ -2,8 +2,7 @@
  * Pinia store for the one order flow both checkout templates share.
  *
  * It owns the gateway list, the chosen method, the in-flight flag and the failure sentence, and
- * walks the order through its steps: place the order, sign a guest in, then settle it by card
- * (the page supplies the card element through {@link PlaceOrderInput.confirmCard}), by hosted
+ * walks the order through its steps: place the order, sign a guest in, then settle it by hosted
  * gateway or by bank transfer. It reports where the payer goes next as a
  * {@link CheckoutDestination} instead of navigating, so the page keeps the router and a test
  * needs none. Templates differ only in markup; the flow is here once.
@@ -33,7 +32,7 @@ import type { PlaceOrderInput } from '~/types/placeorderinput'
 import type { PlaceOrderResult } from '~/types/placeorderresult'
 import { isSafeRedirectUrl } from '~/utils/externalRedirect'
 import { formatMoney } from '~/utils/formatMoney'
-import { PaymentModule } from '~/types/paymentmodule'
+import { forgetCheckoutSave, rememberCheckoutSave } from '~/utils/pendingCheckoutSave'
 import { isHostedGatewayModule } from '~/utils/paymentModules'
 import { translate } from '~/utils/translate'
 import { CartItemType } from '~/types/cartitemtype'
@@ -83,20 +82,18 @@ export const useCheckoutStore = defineStore('checkout', () => {
    */
   const pendingOrder = ref<PlaceOrderResult | null>(null)
 
-  /**
-   * The id of the card payment the provider already took for {@link pendingOrder}, kept from the
-   * moment the card was confirmed until the backend has accepted it. When the backend call fails
-   * after the provider charged the card, a retry only repeats that call with this id: opening a
-   * new intent and confirming the card again would charge the payer twice.
-   */
-  const pendingPaymentIntentId = ref<string | null>(null)
-
   /** The order whose changed total the payer has agreed to pay; a retry of it is not asked again. */
   const acceptedTotalOrderId = ref<number | null>(null)
 
+  /**
+   * Whether the payer ticked "save this payment method for automatic renewals". Off by default; it
+   * only counts while {@link canSaveForRenewals} holds, and it is acted on after the payment is
+   * confirmed, never at checkout.
+   */
+  const saveForRenewals = ref(false)
+
   watch(() => cart.items, () => {
     pendingOrder.value = null
-    pendingPaymentIntentId.value = null
   }, { deep: true })
 
   /** Items priced in a currency other than the payer's current one: excluded from the order. */
@@ -110,6 +107,17 @@ export const useCheckoutStore = defineStore('checkout', () => {
 
   /** Whether the chosen method is a hosted gateway, which hands the browser off to the bank. */
   const isHostedGateway = computed(() => isHostedGatewayModule(selectedMethod.value))
+
+  /**
+   * Whether the renewal-save choice may be offered and honoured: a signed-in client (the stored
+   * methods belong to an account) paying through a hosted gateway, never by bank transfer.
+   *
+   * @returns True when the box is offered.
+   */
+  const mayOfferSave = (): boolean => authStore.isLoggedIn && isHostedGatewayModule(selectedMethod.value)
+
+  /** Whether the "save for automatic renewals" box is shown at checkout. */
+  const canSaveForRenewals = computed(mayOfferSave)
 
   /** Short submit-button label while the order is being placed; the sentence lives in {@link submittingHint}. */
   const submittingLabel = computed(() =>
@@ -359,27 +367,6 @@ export const useCheckoutStore = defineStore('checkout', () => {
         return null
       }
 
-      if (method === PaymentModule.Stripe) {
-        // The card is confirmed once. If the backend call below fails after the provider took the
-        // payment, the id stays in pendingPaymentIntentId and a retry repeats only that call.
-        if (pendingPaymentIntentId.value === null) {
-          const { clientSecret } = await billing.createOrderPaymentIntent(result.orderId, result.paymentToken)
-          const paymentIntent = await input.confirmCard(clientSecret)
-          pendingPaymentIntentId.value = paymentIntent.id
-        }
-
-        // Tell the backend the payment succeeded: it accepts the order and creates services.
-        await billing.confirmOrderPayment(
-          result.orderId,
-          { paymentIntentId: pendingPaymentIntentId.value },
-          result.paymentToken
-        )
-
-        const destination = successDestination(result, input)
-        cart.clear()
-        return destination
-      }
-
       if (isHostedGatewayModule(method)) {
         // Any plugin-backed payment method is a hosted gateway: register the payment and hand
         // the browser to the bank, so a second gateway plugin never falls through to the
@@ -393,6 +380,8 @@ export const useCheckoutStore = defineStore('checkout', () => {
         // navigation that knows only the order id, and that page has to prove the order is
         // theirs before the backend will say whether the payment went through.
         rememberPaymentToken(result.orderId, result.paymentToken, result.invoiceId)
+        // A retry of the same order must not inherit a choice made on an earlier attempt.
+        forgetCheckoutSave(result.orderId)
         const { redirectUrl } = await billing.startOrderGatewayPayment(
           result.orderId,
           method,
@@ -402,12 +391,34 @@ export const useCheckoutStore = defineStore('checkout', () => {
         if (!isSafeRedirectUrl(redirectUrl)) {
           throw new Error(translate('checkout.errors.generic'))
         }
+        // The renewal-save choice rides the same trip as the payment token. Nothing is started here:
+        // the return page starts the stored-method session only once the payment is confirmed.
+        if (saveForRenewals.value && mayOfferSave()) {
+          // Best effort: the gateway session is already registered, so a failure here must not turn a set
+          // up payment into an error. The payer still goes to the bank; the choice is just not kept.
+          try {
+            // Bound to the signed-in account: another account on this browser must not act on it.
+            await authStore.fetchUser()
+            rememberCheckoutSave(result.orderId, method, authStore.user?.email)
+          } catch {
+            // Nothing is saved after this payment; the payment itself is unaffected.
+          }
+        }
         // The cart is kept: the result page empties it once the bank confirms the payment, so a
         // declined or abandoned payment leaves the payer's choices where they were.
         return { kind: CheckoutDestinationKind.External, target: redirectUrl }
       }
 
-      // Bank transfer: the order stays pending and the payer is sent to the invoice.
+      // Bank transfer: the invoice is moved to waiting for the transfer, and the payer is sent to it, where the bank
+      // details and the reference are shown. Best effort: if choosing it fails here (no session yet, the switch was
+      // turned off a moment ago), the order and invoice exist all the same and the payment page offers the choice again.
+      if (result.invoiceId) {
+        try {
+          await billing.selectBankTransfer(result.invoiceId)
+        } catch {
+          // The payer lands on the payment page, which shows the reason if they choose it there.
+        }
+      }
       cart.clear()
       return {
         kind: CheckoutDestinationKind.Route,
@@ -427,11 +438,12 @@ export const useCheckoutStore = defineStore('checkout', () => {
     paymentMethods,
     methodsLoading,
     selectedMethod,
+    saveForRenewals,
+    canSaveForRenewals,
     submitting,
     error,
     fieldErrors,
     pendingOrder,
-    pendingPaymentIntentId,
     staleItems,
     totalLabel,
     submittingLabel,

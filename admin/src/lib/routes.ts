@@ -21,10 +21,18 @@ export enum AppRoute {
   BillingInvoices = '/billing/invoices',
   /** The `/billing/offline-cc` screen. */
   BillingOfflineCc = '/billing/offline-cc',
+  /** The `/billing/credit-notes` screen. */
+  BillingCreditNotes = '/billing/credit-notes',
+  /** The `/billing/bank-transfers` screen. */
+  BillingBankTransfers = '/billing/bank-transfers',
+  /** The `/billing/payment-claims` screen. */
+  BillingPaymentClaims = '/billing/payment-claims',
   /** The `/billing/quotes` screen. */
   BillingQuotes = '/billing/quotes',
   /** The `/billing/quotes/add` screen. */
   BillingQuotesAdd = '/billing/quotes/add',
+  /** The `/billing/renewals` screen. */
+  BillingRenewals = '/billing/renewals',
   /** The `/billing/transactions` screen. */
   BillingTransactions = '/billing/transactions',
   /** The `/clients` screen. */
@@ -141,6 +149,8 @@ export enum ClientSection {
   Quotes = 'quotes',
   /** The client's transactions. */
   Transactions = 'transactions',
+  /** The client's credit: balance, history and manual adjustments. */
+  Credit = 'credit',
   /** The client's tickets. */
   Tickets = 'tickets',
   /** The client's email log. */
@@ -212,6 +222,14 @@ export const clientTicketNewPath = (clientId: RouteId): string => `${clientSecti
  * @returns `/billing/<id>`.
  */
 export const invoicePath = (id: RouteId): string => `${AppRoute.Billing}/${id}`
+
+/**
+ * Path of a credit note's page.
+ *
+ * @param id - Credit note ID.
+ * @returns `/billing/credit-notes/<id>`.
+ */
+export const creditNotePath = (id: RouteId): string => `${AppRoute.BillingCreditNotes}/${id}`
 
 /**
  * Path of an invoice's read-only page.

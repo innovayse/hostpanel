@@ -37,6 +37,39 @@ public sealed class LeakGuardTests(IntegrationTestFactory factory) : IClassFixtu
         }
     }
 
+    /// <summary>Limit headers on a response that is not a 429 are removed: they were copied from somewhere else.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task RateLimitHeaders_OnASuccess_AreStrippedAsync()
+    {
+        var response = await ProbeClient().GetAsync("/api/leak-probe/download");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        foreach (var name in LeakProbeController.RateLimitHeaders.Keys)
+        {
+            response.Headers.Select(h => h.Key).Should().NotContain(name, because: "only a 429 may carry the limiter's headers");
+        }
+    }
+
+    /// <summary>Limit headers on a 429 survive, and the vendor headers next to them do not.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task RateLimitHeaders_OnA429_SurviveAsync()
+    {
+        var response = await ProbeClient().GetAsync("/api/leak-probe/refused");
+
+        response.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+        foreach (var (name, value) in LeakProbeController.RateLimitHeaders)
+        {
+            response.Headers.GetValues(name).Should().ContainSingle().Which.Should().Be(value);
+        }
+
+        foreach (var name in LeakProbeController.VendorHeaders.Keys)
+        {
+            response.Headers.Select(h => h.Key).Should().NotContain(name);
+        }
+    }
+
     /// <summary>No response names the web server: there is no <c>Server</c> header.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]

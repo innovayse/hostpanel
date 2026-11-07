@@ -16,11 +16,15 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import { useDocsGuide } from '@/composables/useDocsGuide'
+import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 
 /** Translation function. */
 const { t } = useI18n()
+/** Link to the docs guide for this screen, or null when docsUrl is not configured. */
+const { guideUrl } = useDocsGuide()
 
 /** Current route, whose param names the category. */
 const route = useRoute()
@@ -60,7 +64,11 @@ onMounted(store.fetchAll)
 
 <template>
   <UiStack gap="md" class="w-full">
-    <UiPageHeader :title="activeCategoryLabel" :subtitle="subtitle" />
+    <UiPageHeader :title="activeCategoryLabel" :subtitle="subtitle">
+      <template v-if="guideUrl" #actions>
+        <PageHelpLink :url="guideUrl" />
+      </template>
+    </UiPageHeader>
 
     <!-- Loading -->
     <UiSkeleton v-if="store.loading && filtered.length === 0" :lines="3" data-testid="integrations-loading" />

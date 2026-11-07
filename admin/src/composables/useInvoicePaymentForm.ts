@@ -17,8 +17,8 @@ import type { InvoicePaymentPayload } from '@/types/invoice'
 import { PaymentGateway } from '@/types/gateway'
 import { UiTone } from '@/utils/ui/tone'
 
-/** Gateway preselected in the form. */
-export const DEFAULT_PAYMENT_GATEWAY: PaymentGateway = PaymentGateway.Stripe
+/** Gateway preselected in the form: the built-in offline one, since gateways from plugins are not known here. */
+export const DEFAULT_PAYMENT_GATEWAY: PaymentGateway = PaymentGateway.BankTransfer
 
 /** What the caller supplies to {@link useInvoicePaymentForm}. */
 export interface InvoicePaymentFormOptions {

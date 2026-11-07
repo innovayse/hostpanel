@@ -11,9 +11,9 @@
  * It owns the view's context for the blocks below it: the plugin id, the values a route's `{param}` segments are
  * filled from (the page's path parameters or the slot's verified context), the origins a link may open, the
  * refresh signals an action or a form sends to other blocks, how a row or an action opens another page of
- * the plugin, and the follow-ups it keeps running until the view is left. A block names a route by `{ method, path }` exactly as the manifest declares it; the host checked
- * every such reference at install, and the server checks the caller again on every call, so nothing here decides
- * who may call what.
+ * the plugin, and the follow-ups it keeps running until the view is left. A block names a route by
+ * `{ method, path }` exactly as the manifest declares it; the host checked every such reference at install, and the
+ * server checks the caller again on every call, so nothing here decides who may call what.
  */
 import { providePluginSelection } from '~/composables/usePluginSelection'
 import { providePluginView } from '~/composables/usePluginView'
@@ -66,7 +66,7 @@ const refresh = (ids: string[]): void => {
   refreshes.value = next
 }
 
-/** The follow-ups running in this view, each with the function that ends it, by the key of the block that started it. */
+/** The follow-ups running in this view: the function that ends each, by the id of the block that started it. */
 const watches = new Map<string, () => void>()
 
 /**

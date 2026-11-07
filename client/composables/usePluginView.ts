@@ -288,6 +288,16 @@ export const usePluginFollowUp = (
   }
 
   /**
+   * Lets the view go of the running watch, which has ended on its own.
+   *
+   * @returns Nothing.
+   */
+  const letGo = (): void => {
+    release?.()
+    release = undefined
+  }
+
+  /**
    * One attempt: reads the condition, refreshes the named blocks and waits for the next attempt unless it is over.
    *
    * @param current - The follow-up this attempt belongs to.
@@ -296,18 +306,28 @@ export const usePluginFollowUp = (
    * @param settled - Told when the condition held.
    * @returns Resolves when the attempt has ended.
    */
-  const attemptOnce = async (current: number, followUp: PluginFollowUp, attempt: number, settled: (() => void) | undefined): Promise<void> => {
+  const attemptOnce = async (
+    current: number,
+    followUp: PluginFollowUp,
+    attempt: number,
+    settled: (() => void) | undefined,
+  ): Promise<void> => {
     timer = undefined
     const result = await store.callRoute(context.pluginId, followUp.until.route, context.values)
-    if (current !== run || result.unavailable) {
+    // An answer for an older follow-up, or one after the view was left, is not this run's: leave the view's keeping alone.
+    if (current !== run) {
+      return
+    }
+    // A route the page cannot read ends the watch without a refresh; the view must not keep its stop function.
+    if (result.unavailable) {
+      letGo()
       return
     }
     const done = result.ok && pluginConditionHolds(followUp.until, result.data)
     // Refreshed after the read, so the final value the condition saw is also what the blocks show.
     context.refresh([...followUp.refresh])
     if (done || attempt >= PLUGIN_FOLLOW_UP_MAX_ATTEMPTS) {
-      release?.()
-      release = undefined
+      letGo()
       if (done) {
         settled?.()
       }
@@ -320,8 +340,7 @@ export const usePluginFollowUp = (
 
   return (followUp: PluginFollowUp | undefined, settled?: () => void): void => {
     stop()
-    release?.()
-    release = undefined
+    letGo()
     // A condition on a route that is not a GET is refused at install and could never end the watch: not started.
     if (!followUp || pluginRouteMethod(followUp.until.route) !== HttpMethod.Get) {
       return

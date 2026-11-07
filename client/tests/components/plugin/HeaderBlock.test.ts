@@ -109,12 +109,12 @@ describe('PluginHeaderBlock action messages', () => {
 })
 
 describe('PluginHeaderBlock publish follow-up', () => {
-  /** What the site route answers while the version waits on the preview. */
-  const ready = { canPublish: true, publishState: 'none', liveText: 'Live: version 26' }
-  /** While the publish runs: the live site still shows the old version. */
-  const running = { canPublish: true, publishState: 'running', liveText: 'Live: version 26' }
-  /** Once it ended: the version is live, and there is nothing left to publish. */
-  const done = { canPublish: false, publishState: 'done', liveText: 'Live: version 27' }
+  /** The route the badge reads: the live version's text. */
+  const liveRoute = TEST_ROUTES.site
+  /** The route the publish button's own `visibleWhen` reads: whether a version waits to be published. */
+  const publishableRoute = { method: 'get', path: '/sites/{siteId}/publishable' } as const
+  /** The route the follow-up watches: the state of the publish. */
+  const stateRoute = { method: 'get', path: '/sites/{siteId}/state' } as const
 
   /** The compact header of the builder: a live badge and a publish button that shows only while there is a version to publish. */
   const builderHeader: PluginHeaderBlock = {
@@ -122,74 +122,100 @@ describe('PluginHeaderBlock publish follow-up', () => {
     id: 'top',
     compact: true,
     actions: [
-      { kind: PluginBlockKind.Badge, id: 'liveState', source: { route: TEST_ROUTES.site, field: 'liveText' } },
+      { kind: PluginBlockKind.Badge, id: 'liveState', source: { route: liveRoute, field: 'liveText' } },
       {
         kind: PluginBlockKind.Action,
         id: 'publish',
         label: 'Publish',
         route: TEST_ROUTES.publish,
-        visibleWhen: { route: TEST_ROUTES.site, field: 'canPublish', equals: true },
+        visibleWhen: { route: publishableRoute, field: 'publishable', equals: true },
         refresh: ['liveState', 'publish'],
         followUp: {
           refresh: ['liveState', 'publish'],
-          until: { route: TEST_ROUTES.site, field: 'publishState', equals: ['done', 'failed'] },
+          until: { route: stateRoute, field: 'state', equals: ['done', 'failed'] },
         },
       },
     ],
   }
 
   /**
-   * Starts the stub API with the site route answering the current phase, and the publish route answering its sentence.
-   * The phase turns to `done` once `readsBeforeDone` reads of the site route have been answered, which is how a
-   * publish can end between two reads of one refresh.
-   *
-   * @returns The phase control: set `readsBeforeDone` to the number of reads still to answer as `running`.
+   * When each route starts to answer the ended publish, as the number of its read that is the first to say so. Reads are
+   * counted per route, so the test does not depend on which of the three routes a refresh reads first: a route that is
+   * never to change keeps `Infinity`.
    */
-  const startBuilderApi = async (): Promise<{ readsBeforeDone: number }> => {
-    const control = { readsBeforeDone: Number.POSITIVE_INFINITY }
-    let phase: Record<string, unknown> = ready
+  interface PublishTimeline {
+    /** The read of the state route that finds the publish `done`. */
+    doneAtStateRead: number
+    /** The read of the publishable route that finds nothing left to publish, which hides the button. */
+    hiddenAtPublishableRead: number
+    /** The read of the live route that shows the new version. */
+    newVersionAtLiveRead: number
+  }
+
+  /**
+   * Starts the stub API. Each route counts its own reads and answers by that count against the timeline, so a publish
+   * that ends "between two reads of one refresh" is stated as: the button's route says it ended one read before the
+   * badge's route does.
+   *
+   * @returns The timeline to set and the number of reads each route has answered so far.
+   */
+  const startBuilderApi = async (): Promise<{ timeline: PublishTimeline, reads: Record<string, number> }> => {
+    const timeline: PublishTimeline = {
+      doneAtStateRead: Number.POSITIVE_INFINITY,
+      hiddenAtPublishableRead: Number.POSITIVE_INFINITY,
+      newVersionAtLiveRead: Number.POSITIVE_INFINITY,
+    }
+    const reads: Record<string, number> = { live: 0, publishable: 0, state: 0 }
     api = await startPluginApi({
       [`GET ${ROUTES_URL}/sites/7`]: () => {
-        control.readsBeforeDone -= 1
-        if (control.readsBeforeDone < 0) {
-          phase = done
-        }
-        return { body: phase }
+        reads.live! += 1
+        return { body: { liveText: reads.live! >= timeline.newVersionAtLiveRead ? 'Live: version 27' : 'Live: version 26' } }
       },
-      [`POST ${ROUTES_URL}/sites/7/publish`]: () => {
-        phase = running
-        return { body: { message: 'Version 27 is being published to your live site.' } }
+      [`GET ${ROUTES_URL}/sites/7/publishable`]: () => {
+        reads.publishable! += 1
+        return { body: { publishable: reads.publishable! < timeline.hiddenAtPublishableRead } }
       },
+      [`GET ${ROUTES_URL}/sites/7/state`]: () => {
+        reads.state! += 1
+        return { body: { state: reads.state! >= timeline.doneAtStateRead ? 'done' : 'running' } }
+      },
+      [`POST ${ROUTES_URL}/sites/7/publish`]: { body: { message: 'Version 27 is being published to your live site.' } },
     })
-    return control
+    return { timeline, reads }
   }
 
   it('still shows the new live version when the publish ends between two reads of one refresh', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
-    const control = await startBuilderApi()
+    const { timeline, reads } = await startBuilderApi()
+    // Reads of each route by round: 1 on mount; 2 after the click (its own refresh); 3 after the first attempt; 4 after
+    // the second. The button's route turns to "nothing left to publish" on its 3rd read, one round before the badge's
+    // route shows the new version (4th), and the watch's own route says "done" on its 2nd read.
+    timeline.hiddenAtPublishableRead = 3
+    timeline.newVersionAtLiveRead = 4
+    timeline.doneAtStateRead = 2
     const wrapper = mountBlocks([builderHeader])
     await settle()
     await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
     await settle()
     expect(wrapper.get('[data-testid="plugin-badge"]').text()).toBe('Live: version 26')
 
-    // The follow-up's own read and the badge's read answer "running"; the publish ends before the button's condition is
-    // read, so the button hides in the same round in which the badge was last read as the old version.
-    control.readsBeforeDone = 2
     vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS)
     await settle()
+    expect(reads).toEqual({ live: 3, publishable: 3, state: 1 })
     expect(wrapper.find('[data-testid="plugin-action-button"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="plugin-badge"]').text()).toBe('Live: version 26')
 
     // The hidden button must not end the watch: the next attempt reads the ended publish and refreshes the badge.
     vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS)
     await settle()
+    expect(reads.state).toBe(2)
     expect(wrapper.get('[data-testid="plugin-badge"]').text()).toBe('Live: version 27')
   })
 
   it('takes the "being published" sentence away once the publish has ended, and keeps it until then', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
-    const control = await startBuilderApi()
+    const { timeline } = await startBuilderApi()
+    timeline.doneAtStateRead = 2
     const wrapper = mountBlocks([builderHeader])
     await settle()
     await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
@@ -200,16 +226,15 @@ describe('PluginHeaderBlock publish follow-up', () => {
     await settle()
     expect(wrapper.find('[data-testid="plugin-header-message"]').exists()).toBe(true)
 
-    control.readsBeforeDone = 0
     vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS)
     await settle()
-    expect(wrapper.get('[data-testid="plugin-badge"]').text()).toBe('Live: version 27')
     expect(wrapper.find('[data-testid="plugin-header-message"]').exists()).toBe(false)
   })
 
   it('leaves a newer sentence alone when the earlier publish ends', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
-    const control = await startBuilderApi()
+    const { timeline } = await startBuilderApi()
+    timeline.doneAtStateRead = 2
     const wrapper = mountBlocks([{
       ...builderHeader,
       actions: [...(builderHeader.actions ?? []), { kind: PluginBlockKind.Action, id: 'other', label: 'Other', route: { method: 'post', path: '/sites/{siteId}/other' } }],
@@ -224,7 +249,8 @@ describe('PluginHeaderBlock publish follow-up', () => {
     const newer = wrapper.get('[data-testid="plugin-header-message"]').text()
     expect(newer).not.toBe('Version 27 is being published to your live site.')
 
-    control.readsBeforeDone = 0
+    vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS)
+    await settle()
     vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS)
     await settle()
     expect(wrapper.get('[data-testid="plugin-header-message"]').text()).toBe(newer)

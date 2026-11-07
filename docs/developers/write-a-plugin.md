@@ -428,7 +428,9 @@ the three routes in its `api` block and the label keys in `locales.en`:
 }
 ```
 
-`refresh` lists 1 to 20 block `id`s, each present in the same view. How often and how long the panel polls is the
+`refresh` lists 1 to 20 block `id`s, each present in the same view. Give every block that has an `id` its own: the panel
+treats blocks that share one as one block, so a refresh reaches all of them and a new follow-up of one ends the running
+follow-up of the other. How often and how long the panel polls is the
 host's choice, not yours: every 3 seconds, at most 20 times (about a minute). A long job should report its own state on
 the `until` route rather than expect more time.
 

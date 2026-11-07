@@ -8,7 +8,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, nextTick, onUnmounted, ref } from 'vue'
+import { defineComponent, h, nextTick, ref } from 'vue'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { startHeldServer } from '../helpers/heldServer'
 import { startTransport } from '../helpers/stubTransport'
@@ -19,7 +19,7 @@ import { PLUGIN_FOLLOW_UP_INTERVAL_MS, PLUGIN_FOLLOW_UP_MAX_ATTEMPTS } from '~/c
 import type { PluginSource } from '~/types/pluginblock'
 import type { PluginFollowUp } from '~/types/pluginfollowup'
 import type { PluginViewCondition } from '~/types/pluginviewcondition'
-import { settle, until } from '~/tests/helpers/settle'
+import { settle } from '~/tests/helpers/settle'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -33,27 +33,20 @@ const query = ref<Record<string, string>>({})
 /** The source the test block reads; tests replace it. */
 const source = ref<PluginSource>({ route: { method: 'get', path: '/sites/{siteId}' }, field: 'status' })
 
+/** What the recording view context was told: the keys watches were adopted under, and how many were let go of. */
+const adopted = { keys: [] as string[], released: 0 }
+
 /**
- * What a view does with the follow-ups it adopts, as `PluginView` does it: a later watch of the same key ends the
- * earlier one, and leaving the view ends them all. Called in the view's setup.
+ * The view context's `adopt` for these tests: it only records, because keeping and ending watches is the view's own
+ * work and is tested against the real `PluginView` (tests/components/plugin/View.test.ts).
  *
- * @returns The context's `adopt`.
+ * @param key - Who the watch belongs to.
+ * @returns Lets go of the watch, which is counted.
  */
-const keepsWatches = (): ((key: string, stop: () => void) => () => void) => {
-  const watches = new Map<string, () => void>()
-  onUnmounted(() => {
-    for (const stop of watches.values()) {
-      stop()
-    }
-  })
-  return (key, stop) => {
-    watches.get(key)?.()
-    watches.set(key, stop)
-    return () => {
-      if (watches.get(key) === stop) {
-        watches.delete(key)
-      }
-    }
+const recordAdoption = (key: string): (() => void) => {
+  adopted.keys.push(key)
+  return () => {
+    adopted.released += 1
   }
 }
 
@@ -80,7 +73,7 @@ const Host = defineComponent({
       refreshes,
       refresh: () => undefined,
       open: () => undefined,
-      adopt: keepsWatches(),
+      adopt: recordAdoption,
       track: () => undefined,
     })
     return () => h(Reader)
@@ -214,9 +207,6 @@ const refreshed: string[][] = []
 /** Starts the test block's follow-up; set when the block mounts. */
 let follow: (followUp: PluginFollowUp | undefined, settled?: () => void) => void = () => undefined
 
-/** Whether the watching block is on the page; a test turns it off to hide the block that started the watch. */
-const watcherShown = ref(true)
-
 /** A block that shows `shown` while its condition holds and can start a follow-up. */
 const Watcher = defineComponent({
   setup() {
@@ -239,10 +229,10 @@ const WatchHost = defineComponent({
         refreshed.push(ids)
       },
       open: () => undefined,
-      adopt: keepsWatches(),
+      adopt: recordAdoption,
       track: () => undefined,
     })
-    return () => (watcherShown.value ? h(Watcher) : h('span', { 'data-testid': 'gone' }))
+    return () => h(Watcher)
   },
 })
 
@@ -323,7 +313,8 @@ describe('usePluginFollowUp', () => {
   beforeEach(() => {
     condition.value = undefined
     refreshed.length = 0
-    watcherShown.value = true
+    adopted.keys.length = 0
+    adopted.released = 0
     // Only the follow-up's own wait is faked; `setImmediate` stays real so the stub's replies arrive.
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
   })
@@ -374,51 +365,38 @@ describe('usePluginFollowUp', () => {
     expect(refreshed).toHaveLength(PLUGIN_FOLLOW_UP_MAX_ATTEMPTS)
   })
 
-  it('stops when the view is left: no further read, and a read still out refreshes nothing', async () => {
-    const server = await startHeldServer()
-    try {
-      const wrapper = mountWithKit(WatchHost)
-      follow(UNTIL_LIVE)
-      await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS)
-      await until(() => server.held.length === 1, 'the first follow-up read')
-
-      wrapper.unmount()
-      server.held[0]?.answer({ status: 'building' })
-      await settle()
-      await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS * 3)
-
-      expect(server.held).toHaveLength(1)
-      expect(refreshed).toHaveLength(0)
-    } finally {
-      await server.close()
-    }
-  })
-
-  it('goes on when only the block that started it leaves the page, and tells that the work ended', async () => {
+  it('adopts its watch under the block id, tells that the work ended, and lets the view go of the watch', async () => {
     let reads = 0
-    stub.respondWith(() => ({ body: { status: ++reads < 3 ? 'building' : 'live' } }))
+    stub.respondWith(() => ({ body: { status: ++reads < 2 ? 'building' : 'live' } }))
     const settled = vi.fn()
     mountWithKit(WatchHost)
     await settle()
 
     follow(UNTIL_LIVE, settled)
+    expect(adopted.keys).toEqual(['publish'])
     await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS)
-    expect(calls()).toHaveLength(1)
-
-    // The block hides itself (a publish button whose own condition stopped holding) while the work still runs.
-    watcherShown.value = false
-    await nextTick()
-    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS)
-    expect(calls()).toHaveLength(2)
+    expect(adopted.released).toBe(0)
     expect(settled).not.toHaveBeenCalled()
 
     await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS)
-    expect(calls()).toHaveLength(3)
     expect(settled).toHaveBeenCalledTimes(1)
-    expect(refreshed).toHaveLength(3)
+    expect(adopted.released).toBe(1)
+    expect(refreshed).toHaveLength(2)
+  })
 
-    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS * 5)
-    expect(calls()).toHaveLength(3)
+  it('lets the view go of its watch when the route cannot be read, and refreshes nothing', async () => {
+    mountWithKit(WatchHost)
+    await settle()
+
+    // A follow-up whose condition names a route with a parameter the page does not hold is unavailable to read.
+    follow({ refresh: ['status'], until: { ...UNTIL_LIVE.until, route: { method: 'get', path: '/sites/{missing}' } } })
+    expect(adopted.keys).toEqual(['publish'])
+    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS)
+
+    expect(adopted.released).toBe(1)
+    expect(refreshed).toHaveLength(0)
+    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS * 3)
+    expect(calls()).toHaveLength(0)
   })
 
   it('does not say the work ended when it gave up', async () => {

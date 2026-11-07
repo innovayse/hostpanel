@@ -31,7 +31,7 @@ public static class CreditNoteQueryExtensions
     /// <param name="notes">The credit notes.</param>
     /// <param name="from">Start of the window (UTC), inclusive.</param>
     /// <param name="to">End of the window (UTC), exclusive.</param>
-    /// <returns>The filtered query; the bounds compare the date column itself, so its index stays usable.</returns>
+    /// <returns>The filtered query; the bounds compare the date column itself, with no function over it, so the filter stays a plain range comparison.</returns>
     public static IQueryable<CreditNote> IssuedWithin(this IQueryable<CreditNote> notes, DateTimeOffset from, DateTimeOffset to)
     {
         ArgumentNullException.ThrowIfNull(notes);

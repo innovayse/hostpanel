@@ -242,6 +242,69 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
         row.GetProperty("totalVatCollected").GetDecimal().Should().Be(21m);
     }
 
+    /// <summary>
+    /// A gateway refund note with its refund row reduces the quarter once, by the refund row: the note itself is not read again, so
+    /// a 50 note at 20% leaves 50 net and 10 VAT, not 0 and 0.
+    /// </summary>
+    [Fact]
+    public async Task CountsAGatewayRefundNoteOnceThroughItsRefundRow()
+    {
+        var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"VatHr{Guid.NewGuid():N}", country: "HR");
+        var invoiceId = await SeedPaidInvoiceAsync(clientId, "USD", 20m, 100m, At(2037, 1, 9));
+        await SeedCreditNoteAsync(invoiceId, 50m, At(2037, 2, 9), CreditNoteStatus.Applied, CreditNoteMethod.GatewayRefund);
+
+        var row = await RowAsync(2037, 1, "HR", 20m, "USD");
+
+        row.GetProperty("numberOfInvoices").GetInt32().Should().Be(1);
+        row.GetProperty("totalExclVat").GetDecimal().Should().Be(50m);
+        row.GetProperty("totalVatCollected").GetDecimal().Should().Be(10m);
+    }
+
+    /// <summary>An account credit note already Applied to the client's balance still reverses its net and VAT.</summary>
+    [Fact]
+    public async Task NetsAnAppliedAccountCreditNote()
+    {
+        var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"VatBg{Guid.NewGuid():N}", country: "BG");
+        var invoiceId = await SeedPaidInvoiceAsync(clientId, "USD", 20m, 100m, At(2038, 1, 9));
+        await SeedCreditNoteAsync(invoiceId, 40m, At(2038, 2, 9), CreditNoteStatus.Applied);
+
+        var row = await RowAsync(2038, 1, "BG", 20m, "USD");
+
+        row.GetProperty("totalExclVat").GetDecimal().Should().Be(60m);
+        row.GetProperty("totalVatCollected").GetDecimal().Should().Be(12m);
+    }
+
+    /// <summary>A note issued at the first instant of a quarter belongs to that quarter, not to the one before it.</summary>
+    [Fact]
+    public async Task BooksANoteIssuedAtTheFirstInstantOfAQuarterInThatQuarter()
+    {
+        var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"VatRo{Guid.NewGuid():N}", country: "RO");
+        var invoiceId = await SeedPaidInvoiceAsync(clientId, "USD", 19m, 100m, At(2039, 3, 20));
+        await SeedCreditNoteAsync(invoiceId, 50m, new DateTimeOffset(2039, 4, 1, 0, 0, 0, TimeSpan.Zero));
+
+        var previous = await RowAsync(2039, 1, "RO", 19m, "USD");
+        previous.GetProperty("totalExclVat").GetDecimal().Should().Be(100m);
+        previous.GetProperty("totalVatCollected").GetDecimal().Should().Be(19m);
+
+        var next = await RowAsync(2039, 2, "RO", 19m, "USD");
+        next.GetProperty("totalExclVat").GetDecimal().Should().Be(-50m);
+        next.GetProperty("totalVatCollected").GetDecimal().Should().Be(-9.5m);
+    }
+
+    /// <summary>A note whose tax rounds to zero still reduces the net, because the rate is what makes a note taxed.</summary>
+    [Fact]
+    public async Task NetsANoteWhoseTaxRoundedToZero()
+    {
+        var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"VatPl{Guid.NewGuid():N}", country: "PL");
+        var invoiceId = await SeedPaidInvoiceAsync(clientId, "USD", 20m, 100m, At(2040, 1, 9));
+        await SeedCreditNoteAsync(invoiceId, 0.01m, At(2040, 2, 9));
+
+        var row = await RowAsync(2040, 1, "PL", 20m, "USD");
+
+        row.GetProperty("totalExclVat").GetDecimal().Should().Be(99.99m);
+        row.GetProperty("totalVatCollected").GetDecimal().Should().Be(20m);
+    }
+
     /// <summary>Builds a UTC moment at noon of a day.</summary>
     /// <param name="year">The year.</param>
     /// <param name="month">The month.</param>
@@ -271,12 +334,15 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
         return invoice.Id;
     }
 
-    /// <summary>Seeds an account credit note of one line on a paid invoice, in the given state.</summary>
+    /// <summary>Seeds a credit note of one line on a paid invoice, in the given state.</summary>
     /// <param name="invoiceId">The paid invoice to credit.</param>
     /// <param name="price">The unit price of the one line, before tax.</param>
     /// <param name="issuedAt">When the note is issued (UTC).</param>
-    /// <param name="status">Draft, Issued or Voided; Issued by default.</param>
-    private async Task SeedCreditNoteAsync(int invoiceId, decimal price, DateTimeOffset issuedAt, CreditNoteStatus status = CreditNoteStatus.Issued)
+    /// <param name="status">Draft, Issued, Applied or Voided; Issued by default.</param>
+    /// <param name="method">Account credit by default; a gateway refund note also records its refund row, as the real use case does.</param>
+    private async Task SeedCreditNoteAsync(
+        int invoiceId, decimal price, DateTimeOffset issuedAt, CreditNoteStatus status = CreditNoteStatus.Issued,
+        CreditNoteMethod method = CreditNoteMethod.AccountCredit)
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -284,7 +350,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
         var note = CreditNote.Create(
             invoice,
             [CreditNoteItem.Create("Credit for hosting", price, 1, invoice.Currency)],
-            CreditNoteMethod.AccountCredit,
+            method,
             "Service was down",
             issuedAt);
         if (status != CreditNoteStatus.Draft)
@@ -292,9 +358,21 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
             note.Issue($"CN-T{Guid.NewGuid():N}"[..20], issuedAt);
         }
 
-        if (status == CreditNoteStatus.Voided)
+        if (method == CreditNoteMethod.GatewayRefund)
+        {
+            // The real use case pays the refund out first, so the refund row exists before the note is applied.
+            var reference = $"rf-{Guid.NewGuid():N}";
+            db.Transactions.Add(invoice.AddRefund(issuedAt, "Manual", reference, note.Total, 0m, null, false, TransactionSource.Manual));
+            note.MarkApplied(issuedAt, reference);
+        }
+        else if (status == CreditNoteStatus.Voided)
         {
             note.Void("Mistake", issuedAt);
+        }
+        else if (status == CreditNoteStatus.Applied)
+        {
+            note.MarkApplied(issuedAt, null);
+            invoice.AddCreditNoted(note.Total, issuedAt);
         }
         else if (status == CreditNoteStatus.Issued)
         {

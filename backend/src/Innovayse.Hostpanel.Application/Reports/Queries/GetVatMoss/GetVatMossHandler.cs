@@ -18,7 +18,7 @@ namespace Innovayse.Hostpanel.Application.Reports.Queries.GetVatMoss;
 /// subtotal and tax, and subtracted from its row, so a partial refund reduces the figures by only
 /// what it gave back. An account credit note reverses its net and VAT the same way, at its own rate and
 /// in its own currency, in the quarter it was issued in (the date of the correction, not of the invoice
-/// it corrects); a gateway refund note is not read again, because its refund is already one of the
+/// it corrects, so voiding a note later takes its reduction back out of the quarter it was issued in); a gateway refund note is not read again, because its refund is already one of the
 /// refund rows. A Refunded invoice with no refund recorded here (imported history) took and
 /// returned its money elsewhere, so it is not counted as a sale.
 /// </remarks>
@@ -99,7 +99,7 @@ public sealed class GetVatMossHandler
         var notes = await _context.CreditNotes.AsNoTracking()
             .ReversingTax()
             .IssuedWithin(from, until)
-            .Where(n => n.Tax > 0)
+            .Where(n => n.TaxRate > 0)
             .Join(_context.Clients.AsNoTracking(), n => n.ClientId, c => c.Id,
                 (n, c) => new { c.Country, n.TaxRate, n.Currency, n.SubTotal, n.Tax })
             .Where(x => x.Country != null && memberStates.Contains(x.Country))

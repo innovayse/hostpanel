@@ -258,18 +258,23 @@ public sealed class WhmApiClientTests : IAsyncLifetime
     public async Task Call_ResponseLargerThanTheCap_IsUnreadableAsync()
     {
         var filler = new string('a', (int)WhmApiClient.MaxResponseBytes);
-        whm.Enqueue(VersionReply(filler));
-
         var logs = new RecordingLoggerProvider();
         using var loggerFactory = LoggerFactory.Create(b => b.AddProvider(logs));
         var client = new WhmApiClient(new HttpClient(), loggerFactory.CreateLogger<WhmApiClient>());
 
+        // Each call gets its own oversized reply, queued right before it, so the reply a call
+        // asserts on is the one that call receives.
+        whm.Enqueue(VersionReply(filler));
         var version = () => client.GetVersionAsync(Connection(), CancellationToken.None);
+        await version.Should().ThrowAsync<InvalidOperationException>("an unreadable reply makes the version call throw");
+        whm.Requests.Should().ContainSingle().Which.PathAndQuery.Should().StartWith("/json-api/version");
+
+        whm.Enqueue(VersionReply(filler));
         var lookup = await client.FindAccountAsync(Connection(), "testuser", CancellationToken.None);
 
-        await version.Should().ThrowAsync<InvalidOperationException>("an unreadable reply makes the version call throw");
         lookup.Outcome.Should().Be(WhmLookupOutcome.Unknown, "a body past the cap never reads as a positive answer");
-        logs.Entries.Should().Contain(e => e.Message.Contains("could not be sent") && e.Message.Contains(nameof(HttpRequestException)));
+        whm.Requests.Should().HaveCount(2).And.Subject.Last().PathAndQuery.Should().StartWith("/json-api/listaccts");
+        logs.Entries.Count(e => e.Message.Contains("could not be sent") && e.Message.Contains(nameof(HttpRequestException))).Should().Be(2);
     }
 
     /// <summary>A body just under the cap is still read.</summary>

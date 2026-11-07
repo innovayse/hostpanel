@@ -281,6 +281,51 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>
+    /// A provider that cannot tell whether the account was created answers 503 with its own
+    /// <c>PROVISIONING_OUTCOME_UNKNOWN</c>, distinct from a refusal, and the service stays Pending so
+    /// the caller can retry.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Provision_ProviderOutcomeUnknown_Returns503WithItsOwnCodeAndStaysPendingAsync()
+    {
+        var setupHttp = factory.CreateClient();
+        var serviceId = await ProvisioningTestSeeds.SeedServiceAsync(factory, setupHttp, await factory.GetAdminTokenAsync());
+        var provider = new FakeProvisioningProvider
+        {
+            FailWith = new DomainRuleException(HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN, "the answer was lost"),
+        };
+        var http = await ProvisioningTestSeeds.AdminClientWithFakeProviderAsync(factory, provider);
+
+        var response = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN);
+        (await response.Content.ReadAsStringAsync()).Should().NotContain("the answer was lost");
+        provider.ProvisionCalls.Should().Be(1);
+        (await ReloadAsync(serviceId)).Status.Should().Be(ServiceStatus.Pending);
+    }
+
+    /// <summary>
+    /// An unexpected provider failure is still a 502 <c>PROVISIONING_UPSTREAM_FAILED</c>: only the
+    /// provider's own unknown-outcome signal changes the answer.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Provision_ProviderThrowsAnythingElse_StillReturns502Async()
+    {
+        var setupHttp = factory.CreateClient();
+        var serviceId = await ProvisioningTestSeeds.SeedServiceAsync(factory, setupHttp, await factory.GetAdminTokenAsync());
+        var provider = new FakeProvisioningProvider { FailWith = new InvalidOperationException("boom") };
+        var http = await ProvisioningTestSeeds.AdminClientWithFakeProviderAsync(factory, provider);
+
+        var response = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PROVISIONING_UPSTREAM_FAILED);
+    }
+
+    /// <summary>
     /// The first billing period starts when provisioning succeeds, not on the order date: a service
     /// ordered months ago renews one cycle after its activation.
     /// </summary>

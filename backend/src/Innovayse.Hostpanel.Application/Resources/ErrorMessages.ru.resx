@@ -372,6 +372,9 @@
 <data name="PROVISIONING_UPSTREAM_FAILED" xml:space="preserve">
     <value>Не удалось развернуть услугу. Пожалуйста, повторите попытку или обратитесь в поддержку.</value>
   </data>
+<data name="PROVISIONING_OUTCOME_UNKNOWN" xml:space="preserve">
+    <value>Не удалось подтвердить, был ли создан хостинг-аккаунт. Пожалуйста, повторите попытку через несколько минут.</value>
+  </data>
 <data name="SERVICE_FIRST_INVOICE_UNPAID" xml:space="preserve">
     <value>Эту услугу можно будет настроить после полной оплаты первого счёта.</value>
   </data>

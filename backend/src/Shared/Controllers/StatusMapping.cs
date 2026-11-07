@@ -41,6 +41,9 @@ public static class StatusMapping
             // Capacity, not configuration: naming it *_NOT_CONFIGURED would answer correctly by
             // accident and mislabel a full fleet as an unfinished deployment.
             "NO_ELIGIBLE_SERVER" => new(503, "Service Unavailable"),
+            // Exact row: the panel could not be asked or its answer was lost, so the outcome is unknown and a retry
+            // settles it; the name carries no token for a generic arm.
+            "PROVISIONING_OUTCOME_UNKNOWN" => new(503, "Service Unavailable"),
             // Exact row: the order number sequence outgrew the configured number length, a state of
             // the deployment rather than of the request, and the name carries no token for it.
             "ORDER_NUMBER_RANGE_EXHAUSTED" => new(503, "Service Unavailable"),

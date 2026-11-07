@@ -633,6 +633,13 @@ public static class HostpanelErrorCodes
     public const string PROVISIONING_UPSTREAM_FAILED = "PROVISIONING_UPSTREAM_FAILED";
 
     /// <summary>
+    /// The provisioning provider could not be reached, or its answer was lost, so nobody knows
+    /// whether the account was created (503). Unlike a refusal this is a retry signal: the service
+    /// stays Pending and a later attempt adopts the account when it exists.
+    /// </summary>
+    public const string PROVISIONING_OUTCOME_UNKNOWN = "PROVISIONING_OUTCOME_UNKNOWN";
+
+    /// <summary>
     /// The service's first invoice is not paid in full, so the client may not set it up yet (402).
     /// Staff provisioning is not bound by it.
     /// </summary>

@@ -372,6 +372,9 @@
 <data name="PROVISIONING_UPSTREAM_FAILED" xml:space="preserve">
     <value>Provisioning the service failed. Please try again or contact support.</value>
   </data>
+<data name="PROVISIONING_OUTCOME_UNKNOWN" xml:space="preserve">
+    <value>We could not confirm whether the hosting account was created. Please try again in a few minutes.</value>
+  </data>
 <data name="SERVICE_FIRST_INVOICE_UNPAID" xml:space="preserve">
     <value>This service can be set up once its first invoice is paid in full.</value>
   </data>

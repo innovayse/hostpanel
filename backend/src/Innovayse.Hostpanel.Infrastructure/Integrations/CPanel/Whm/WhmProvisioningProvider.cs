@@ -72,9 +72,10 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <see cref="HostpanelErrorCodes.CPANEL_DOMAIN_INVALID"/>, before WHM is called, when the
     /// username or the domain is not one cPanel accepts.
     /// </exception>
-    /// <exception cref="WhmUnavailableException">
-    /// Thrown when the create could not be sent or its answer was lost and the follow up lookup
-    /// could not tell whether the account exists, so a later retry can settle it.
+    /// <exception cref="DomainRuleException">
+    /// Also thrown with <see cref="HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN"/> when the
+    /// create could not be sent or its answer was lost and the follow up lookup could not tell
+    /// whether the account exists, so a later retry can settle it.
     /// </exception>
     /// <remarks>
     /// An existing account is never built on. WHM cannot say who made it, so it is reported with
@@ -116,7 +117,7 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
         if (!created.IsRefusal && lookup.Outcome is WhmLookupOutcome.Unknown)
         {
             _logger.LogWarning("WHM could not be asked to create the account for service {ServiceId}; its state is unknown.", req.ServiceId);
-            throw new WhmUnavailableException("WHM did not answer the account creation and the account could not be looked up.");
+            throw new DomainRuleException(HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN, "WHM did not answer the account creation and the account could not be looked up.");
         }
 
         _logger.LogWarning("WHM refused to create the account for service {ServiceId}.", req.ServiceId);
@@ -187,9 +188,9 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <param name="provisioningRef">The account's username.</param>
     /// <param name="callerIp">Not used: WHM's <c>create_user_session</c> does not bind the session to an address.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The URL WHM returned, once it is shown to be an https address on this server.</returns>
+    /// <returns>The absolute URL WHM returned, in its parsed form, once it is shown to be an https address on this server and on its cPanel port.</returns>
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses the session.</exception>
-    /// <exception cref="DomainRuleException">Thrown with <see cref="HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED"/> when the URL WHM returned is not an https address on this server.</exception>
+    /// <exception cref="DomainRuleException">Thrown with <see cref="HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED"/> when the URL WHM returned is not an https address on this server and its cPanel port.</exception>
     public async Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
     {
         RequireReference(provisioningRef);
@@ -200,15 +201,17 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
         }
 
         // The URL is handed to a browser, so it is only passed on when it points at this server:
-        // https, no user information, and the server's own host. Nothing of it is logged.
-        if (!WhmInputRules.IsSessionUrlOf(url, _connection.BaseUrl, _serverIp))
+        // https, no user information, the server's own host and the cPanel port. What is returned
+        // is the parsed address that was checked, never the original text. Nothing of it is logged.
+        var session = WhmInputRules.ParseSessionUrl(url, _panelUrl, _connection.BaseUrl, _serverIp);
+        if (session is null)
         {
             _logger.LogWarning("WHM returned a cPanel session URL that is not on the server for {User}.", provisioningRef);
             throw new DomainRuleException(HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED, "The cPanel session URL is not on the server.");
         }
 
         _logger.LogInformation("cPanel session opened for {User}.", provisioningRef);
-        return url;
+        return session.AbsoluteUri;
     }
 
     /// <summary>Changes the service's account password.</summary>

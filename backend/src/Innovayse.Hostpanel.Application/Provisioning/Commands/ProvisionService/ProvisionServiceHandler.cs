@@ -90,7 +90,8 @@ public sealed class ProvisionServiceHandler
     /// or <c>CPANEL_DOMAIN_INVALID</c> when the panel would never accept the stored username or domain, <c>PROVISIONING_ACCOUNT_CONFLICT</c>
     /// when the panel holds an account under the username that is not this service's, or
     /// <c>PROVISIONING_UPSTREAM_FAILED</c> when the provider rejects the request or answers a
-    /// success without an account reference.
+    /// success without an account reference, or <c>PROVISIONING_OUTCOME_UNKNOWN</c> when the
+    /// provider could not tell whether the account was created and the call is to be retried.
     /// </returns>
     public async Task<Result> HandleAsync(ProvisionServiceCommand cmd, CancellationToken ct)
     {
@@ -169,6 +170,14 @@ public sealed class ProvisionServiceHandler
             // is one the panel can never accept, which staff can fix, so the caller is told which.
             _logger.LogWarning("Provisioning service {ServiceId} on server {ServerId} was stopped: {ErrorCode}.", service.Id, server.Id, ex.Code);
             return Result.FailureCode(ex.Code);
+        }
+        catch (DomainRuleException ex) when (ex.Code is HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN)
+        {
+            // The create may or may not have happened on the panel. This is not a refusal: the
+            // service stays Pending with its saved password, and the caller is told to retry,
+            // which adopts the account if the first attempt made it.
+            _logger.LogWarning("Provisioning service {ServiceId} on server {ServerId} has an unknown outcome.", service.Id, server.Id);
+            return Result.FailureCode(HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN);
         }
         catch (Exception ex)
         {

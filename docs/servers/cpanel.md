@@ -74,6 +74,9 @@ are HTTPS. Change them for every cPanel server at once in the `Provisioning` set
 - The account username of a new account must be 1 to 16 lowercase letters and digits and start with
   a letter. Accounts that already exist keep working under their stored name. A username that
   breaks the rule stops the setup with `CPANEL_USERNAME_INVALID`, and WHM is not called.
+  The same rule is applied where staff save the hosting account of a Pending service on a cPanel
+  server, and an existing account added by staff must carry a name WHM can address (letters, digits,
+  underscore, hyphen or dot, up to 32 characters), so a bad name fails early.
 - The domain must be a well formed domain name with at least two labels, in ASCII (an
   internationalised name is entered in its `xn--` form). Otherwise the setup stops with
   `CPANEL_DOMAIN_INVALID`.
@@ -91,6 +94,8 @@ are HTTPS. Change them for every cPanel server at once in the `Provisioning` set
 - Terminate: a refusal is accepted only when WHM positively reports no such account.
 - Change package: a refusal is accepted when the account is already on the asked package.
 - If Hostpanel cannot read WHM's answer, it never assumes the account is gone or created.
+- Create with a lost answer: if the lookup that follows is lost too, the setup answers
+  `PROVISIONING_OUTCOME_UNKNOWN` (503) instead of a refusal, the service stays Pending and a retry settles it.
 
 WHM's own error text is never shown or logged, because it can name the account.
 
@@ -106,8 +111,9 @@ WHM's own error text is never shown or logged, because it can name the account.
   connection. Install a trusted certificate on WHM first.
 - Single sign-on links from `create_user_session` are single-use and expire. WHM does not bind them
   to the browser's address. Hostpanel hands a link to the browser only when it is an `https` address
-  with no user name or password in it and its host is the server's own host name or IP address,
-  compared without regard to case. Any other link is dropped, the client sees
+  with no user name or password in it, its host is the server's own host name or IP address,
+  compared without regard to case (a trailing dot makes it a different name), and its port is the
+  cPanel port (`Provisioning__CPanelUserPort`). The browser is given the checked address in its parsed form. Any other link is dropped, the client sees
   `SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED`, and nothing of the link is logged.
 - WHM calls go through the outbound address guard, like the other panels. A server on a private
   address needs a [private network route](./servers#private-network-routes).

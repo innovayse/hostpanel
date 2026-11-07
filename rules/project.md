@@ -455,6 +455,9 @@ docker/                              compose set (shared·dev·prod·platform), 
     - `visibleWhen` (any block, header actions and tab blocks included): the panel hides the block while the condition
       is read, on a failed read, an absent field or no match, and shows it only when it holds; it is read again when the
       block's own `id` is refreshed. Use it to hide a create form once the thing exists.
+    - **Chat result card actions.** An action on a chat result card takes the same condition as `visibleWhen`, spelled as the
+      event spells it (`equalsAny`), and is held to the same bounds; the card is not checked at install, so the panel
+      checks it when it reads the event. See "Reload" under the preview rules below for how it is read.
     - `resetOnSuccess: true` (a form's `submit` only, boolean): after a successful submit every field returns to its
       empty value.
     - `followUp: { "refresh": [ids], "until": <condition> }` (an action block or a form's `submit`): after a successful
@@ -533,7 +536,9 @@ docker/                              compose set (shared·dev·prod·platform), 
       cannot accept drops the action whole, where a malformed `until` only loses its follow-up. `PluginChatCardAction` draws
       each action and evaluates the condition with `usePluginCondition`, which takes the block ids whose refresh reads it
       again: a block names its own id, a card action the chat's `refresh` list. With no `refresh` list the condition is read
-      once, when the card is drawn.
+      once, when the card is drawn. `PluginChatCardActions` is the row under a card: it hides itself while every action is
+      hidden and the card has no details switch, and never removes it, because a hidden action stays mounted to read its
+      condition again and bring the row back.
     - **Presentation members, no schema change.** The view schema allows extra members on a block, and these are the
       panel's: a header's `compact`, `titleSource`, `subtitleSource` and any block kind in its `actions`; an action's
       `labelSource`; a table's `display: "cards"`; a tabs block's `actions`; a preview's `note` (an object of sentences by

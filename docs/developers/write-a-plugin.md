@@ -574,6 +574,7 @@ use a small Markdown subset: paragraphs, `#` headings, `-` and `1.` lists, fence
   when the condition does not hold. It applies to a route, an `href` and a `resend` action alike. Without it an action
   always shows. A condition the panel cannot read drops the action, since a button meant to hide must never show.
   Your route still decides whether a call is current: the condition is a courtesy to the reader, not the check.
+  A row left with no visible action is hidden too.
 - `issue` is your own failure, in the danger tone. The stream goes on; end it when you are done.
 
 A panel ignores an event it cannot read. **Stop** cancels the stream: your enumerator's token fires (`EnumeratorCancellation`)

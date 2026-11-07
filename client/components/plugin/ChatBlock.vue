@@ -79,23 +79,14 @@
               <UiStack gap="xs">
                 <UiText v-if="result.title" as="p" weight="semibold" data-testid="plugin-chat-result-title">{{ result.title }}</UiText>
                 <UiText v-if="result.text" as="p" size="sm" tone="muted" data-testid="plugin-chat-result-text">{{ result.text }}</UiText>
-                <UiStack v-if="result.actions.length || result.details.length" direction="row" gap="sm" align="center" wrap>
-                  <PluginChatCardAction
-                    v-for="action in result.actions"
-                    :key="action.key"
-                    :action="action"
-                    :refresh="block.refresh ?? []"
-                    :disabled="streaming"
-                    @resend="resend"
-                  />
-                  <UiButton
-                    v-if="result.details.length"
-                    variant="outline"
-                    size="sm"
-                    data-testid="plugin-chat-result-details-toggle"
-                    @click="toggleDetails(result.key)"
-                  >{{ $t('plugins.chatResultDetails') }}</UiButton>
-                </UiStack>
+                <PluginChatCardActions
+                  v-if="result.actions.length || result.details.length"
+                  :result="result"
+                  :refresh="block.refresh ?? []"
+                  :disabled="streaming"
+                  @resend="resend"
+                  @toggle-details="toggleDetails(result.key)"
+                />
                 <UiStack v-if="openDetails.has(result.key)" as="ul" gap="xs" data-testid="plugin-chat-result-details">
                   <UiText v-for="line in result.details" :key="line" as="li" size="xs" tone="muted">{{ line }}</UiText>
                 </UiStack>
@@ -167,7 +158,8 @@
  * A card's action reads again the blocks named in `refresh`, as a finished reply does. A card may also keep `details`
  * lines behind a switch, and an action with `resend: true` sends the conversation's last message again. An action with
  * `visibleWhen` shows only while its condition holds, read again whenever a block named in `refresh` is refreshed
- * (PluginChatCardAction), so a card stops offering what no longer applies.
+ * (PluginChatCardAction), so a card stops offering what no longer applies; the row of actions hides itself when every
+ * action is hidden (PluginChatCardActions).
  *
  * An empty chat shows the block's `intro` and its `suggestions`, which only fill the message field; `assistant.label`
  * signs each reply, `maxLength` caps the field, and once a reply has ended the blocks named in `refresh` read again,

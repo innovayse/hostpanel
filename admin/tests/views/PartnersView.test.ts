@@ -83,6 +83,7 @@ describe('PartnersView', () => {
       expect(router.currentRoute.value.path).toBe('/storefront/partners/create')
     })
 
+    await wrapper.get('[data-testid="partner-row-2"] [data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="partner-edit-2"]').trigger('click')
     await vi.waitFor(() => {
       expect(router.currentRoute.value.path).toBe('/storefront/partners/2/edit')
@@ -96,6 +97,7 @@ describe('PartnersView', () => {
     })
     const { wrapper } = await mountScreen(PartnersView)
 
+    await wrapper.get('[data-testid="partner-row-1"] [data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="partner-delete-1"]').trigger('click')
     expect(wrapper.get('[role="dialog"]').text()).toContain('Delete the partner "Acme"?')
     expect(requestsOf(mock)).not.toContain('DELETE /admin/partners/1')
@@ -117,6 +119,7 @@ describe('PartnersView', () => {
     })
     const { wrapper } = await mountScreen(PartnersView)
 
+    await wrapper.get('[data-testid="partner-row-1"] [data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="partner-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
 

@@ -52,6 +52,20 @@ export const cycleAmount = (pricing: PortalProductPricing | null | undefined, cy
   pricing?.[cycle] ?? null
 
 /**
+ * The billing cycles at least one of the given plans is priced for, shortest first.
+ *
+ * Every surface that offers a choice of cycle for a set of plans (the family page, the classic
+ * hosting page, the home page toggles) lists them through this, so they agree on which cycles
+ * exist and in which order, and none keeps its own list.
+ *
+ * @param plans The plans to inspect, of whatever shape the caller holds.
+ * @param isPriced Whether a plan carries a price for the cycle.
+ * @returns The offered cycles in `PRICING_CYCLES` order.
+ */
+export const pricedCycles = <T>(plans: readonly T[], isPriced: (plan: T, cycle: PricingCycle) => boolean): PricingCycle[] =>
+  PRICING_CYCLES.filter(cycle => plans.some(plan => isPriced(plan, cycle)))
+
+/**
  * The first cycle a plan is priced for, and that price.
  *
  * @param pricing The plan's prices, or null/undefined when it has none.

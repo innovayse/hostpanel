@@ -2,9 +2,9 @@
   <component
     :is="hosting"
     :plans="plans"
-    :yearly="yearly"
+    :cycle="cycle"
     :comparison-rows="comparisonRows"
-    @update:yearly="(value: boolean) => (yearly = value)"
+    @update:cycle="(value: PricingCycle) => (cycle = value)"
   />
 </template>
 
@@ -22,6 +22,7 @@ import { HOSTING_GROUP_ID } from '~/constants/catalogGroup'
 import { usePayerAsyncData } from '~/composables/usePayerAsyncData'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
+import { PricingCycle } from '~/types/pricingcycle'
 import { SeoPageType } from '~/types/seopagetype'
 import { TemplateSlot } from '~/types/templateslot'
 
@@ -68,8 +69,8 @@ await Promise.all([
 
 /** The hosting plans as the storefront cards, each linking to its configure page. */
 const plans = computed(() => catalogStore.planCards(id => localePath(`/configure/${id}`), catalogStore.featuresFor(HOSTING_GROUP_ID)))
-/** Whether the visitor chose yearly billing; the template reports changes through `update:yearly`. */
-const yearly = ref(false)
+/** The billing cycle the visitor chose; the template reports changes through `update:cycle`. */
+const cycle = ref(PricingCycle.Monthly)
 
 onMounted(() => {
   currencyStore.init()

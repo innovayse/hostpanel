@@ -6,8 +6,8 @@
     <NovaPricingSection
       v-if="isVisible(HomeSection.Plans)"
       :plans="plans"
-      :yearly="yearly"
-      @update:yearly="value => emit('update:yearly', value)"
+      :cycle="cycle"
+      @update:cycle="value => emit('update:cycle', value)"
     />
     <NovaComparisonTable v-if="isVisible(HomeSection.Comparison)" :plans="plans" :rows="comparisonRows" />
     <NovaWhyChooseUs v-if="isVisible(HomeSection.Services)" />
@@ -66,6 +66,7 @@ import { HomeSection } from '~/constants/homeSection'
 import { isPartnersVisible } from '~/utils/partnersVisible'
 import type { DomainResult } from '~/templates/aurora/types/domainresult'
 import type { PlanCard } from '~/types/plancard'
+import { PricingCycle } from '~/types/pricingcycle'
 import type { ComparisonRow } from '~/types/comparisonrow'
 import type { TldPriceRow } from '~/types/tldpricerow'
 
@@ -73,8 +74,8 @@ import type { TldPriceRow } from '~/types/tldpricerow'
 withDefaults(defineProps<{
   /** Plans as the catalogue store formats them. */
   plans?: PlanCard[]
-  /** Whether the yearly price is selected. */
-  yearly?: boolean
+  /** The billing cycle the prices are shown for. */
+  cycle?: PricingCycle
   /** Specification lines, already aligned to the plan columns. */
   comparisonRows?: ComparisonRow[]
   /** Domain-search results; declared but unused, see the file header. */
@@ -87,7 +88,7 @@ withDefaults(defineProps<{
   priceHints?: TldPriceRow[]
 }>(), {
   plans: () => [],
-  yearly: false,
+  cycle: PricingCycle.Monthly,
   comparisonRows: () => [],
   domainResults: () => [],
   domainPending: false,
@@ -102,7 +103,7 @@ const { isVisible } = useHomeSections()
 const emit = defineEmits<{
   /** A domain search was requested; declared so the shared page can bind it. */
   search: [term: string]
-  /** The reader chose the monthly or the yearly price. */
-  'update:yearly': [value: boolean]
+  /** The reader chose another billing cycle. */
+  'update:cycle': [value: PricingCycle]
 }>()
 </script>

@@ -44,11 +44,9 @@
     "plans": {
       "eyebrow": "Хостинг",
       "title": "Тарифы, которые растут вместе с вами",
-      "monthly": "Помесячно",
-      "yearly": "На год",
       "billingLabel": "Период оплаты",
       "perMonth": "/ месяц",
-      "perMonthAnnual": "/ месяц при оплате за год",
+      "perMonthBilled": "/ месяц, оплата: {cycle}",
       "cta": "Выбрать тариф",
       "moreFeatures": "ещё {count}",
       "includedTitle": "Входит в каждый тариф",

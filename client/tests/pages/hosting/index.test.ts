@@ -8,6 +8,7 @@ import { defineComponent, h } from 'vue'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import HostingPage from '~/pages/hosting/index.vue'
+import { PricingCycle } from '~/types/pricingcycle'
 import { buildComparisonRows } from '~/utils/comparisonRows'
 import type { BillingCurrency } from '~/types/currency'
 import type { PortalProduct } from '~/types/portalproduct'
@@ -48,11 +49,11 @@ const received = { props: {} as Record<string, unknown> }
 /** Stand-in for the template's hosting component: records its props and offers a way to emit. */
 const TemplateHosting = defineComponent({
   name: 'TemplateHosting',
-  props: { plans: { type: Array, default: () => [] }, yearly: { type: Boolean, default: false }, comparisonRows: { type: Array, default: () => [] } },
-  emits: ['update:yearly'],
+  props: { plans: { type: Array, default: () => [] }, cycle: { type: String, default: 'monthly' }, comparisonRows: { type: Array, default: () => [] } },
+  emits: ['update:cycle'],
   setup(props) {
     received.props = props
-    return () => h('div', { 'data-testid': 'template-hosting' }, `${props.plans.length} plans, yearly ${String(props.yearly)}`)
+    return () => h('div', { 'data-testid': 'template-hosting' }, `${props.plans.length} plans, cycle ${props.cycle}`)
   },
 })
 
@@ -97,12 +98,12 @@ describe('hosting page', () => {
 
   it('starts on monthly billing and follows the template when it toggles', async () => {
     const wrapper = await mountHosting()
-    expect(received.props.yearly).toBe(false)
+    expect(received.props.cycle).toBe(PricingCycle.Monthly)
 
-    wrapper.findComponent(TemplateHosting).vm.$emit('update:yearly', true)
+    wrapper.findComponent(TemplateHosting).vm.$emit('update:cycle', PricingCycle.Biennial)
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="template-hosting"]').text()).toContain('yearly true')
+    expect(wrapper.find('[data-testid="template-hosting"]').text()).toContain('cycle biennial')
   })
 
   it('hands over the comparison rows built from the group features', async () => {

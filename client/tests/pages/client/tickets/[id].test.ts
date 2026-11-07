@@ -59,7 +59,7 @@ describe('ticket page', () => {
   })
 
   it('offers the reply form while the ticket is open', async () => {
-    supportApi.fetchTicket.mockResolvedValue(thread(TicketStatus.Answered))
+    supportApi.fetchTicket.mockResolvedValue(thread(TicketStatus.AwaitingReply))
 
     const wrapper = await mountPage(TicketPage)
 

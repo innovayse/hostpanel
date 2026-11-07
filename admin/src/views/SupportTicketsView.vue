@@ -66,8 +66,7 @@ const filterOptions = computed<FilterOption[]>(() => [
   { value: null, label: t('constants.ticketFilterOptions.allActiveTickets'), key: 'all' },
   { value: TicketFlagFilter.Flagged, label: t('constants.ticketFilterOptions.flagged'), key: 'flagged' },
   { value: TicketStatus.Open, label: t('support.networkIssues.open'), key: 'open' },
-  { value: TicketStatus.AwaitingReply, label: t('constants.ticketFilterOptions.answered'), key: 'awaiting-reply' },
-  { value: TicketStatus.Answered, label: t('constants.ticketFilterOptions.customerReply'), key: 'answered' },
+  { value: TicketStatus.AwaitingReply, label: t('constants.ticketFilterOptions.awaitingReply'), key: 'awaiting-reply' },
   { value: TicketStatus.Closed, label: t('clients.clientForm.closed'), key: 'closed' },
 ])
 

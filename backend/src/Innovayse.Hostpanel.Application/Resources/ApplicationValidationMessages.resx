@@ -326,7 +326,7 @@
     <value>Priority must be one of: Low, Medium, High.</value>
   </data>
 <data name="TicketStatusInvalid" xml:space="preserve">
-    <value>Status must be one of: Open, AwaitingReply, Answered, Closed.</value>
+    <value>Status must be one of: Open, AwaitingReply, Closed.</value>
   </data>
 <data name="TicketTagRequired" xml:space="preserve">
     <value>The tag is required and must be at most 64 characters.</value>

@@ -273,7 +273,6 @@ export const reportStatusTone = (status: string): UiTone => toneOf(REPORT_STATUS
 export const ticketStatusTone: Record<TicketStatus, UiTone> = {
   [TicketStatus.Open]: UiTone.Primary,
   [TicketStatus.AwaitingReply]: UiTone.Warning,
-  [TicketStatus.Answered]: UiTone.Success,
   [TicketStatus.Closed]: UiTone.Neutral,
 }
 

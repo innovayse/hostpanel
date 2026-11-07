@@ -23,7 +23,6 @@ describe('SupportTicketStatusBadge', () => {
   })
 
   it('colours an answered ticket as a success and a waiting one as a warning', () => {
-    expect(mountBadge(TicketStatus.Answered).classes().join(' ')).toContain('text-status-green')
     expect(mountBadge(TicketStatus.AwaitingReply).classes().join(' ')).toContain('text-status-yellow')
   })
 })

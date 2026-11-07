@@ -16,8 +16,6 @@ export enum BadgeStatus {
   Open = 'Open',
   /** A ticket the client replied to, waiting for staff. */
   AwaitingReply = 'AwaitingReply',
-  /** A ticket staff replied to. */
-  Answered = 'Answered',
   /** Ordered, not finished yet. */
   Pending = 'Pending',
   /** A domain whose registration is under way. */

@@ -136,7 +136,8 @@ public sealed class ProvisioningController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the credentials; 400 with <c>VALIDATION_ERROR</c>, <c>SERVICE_NOT_PROVISIONED</c>
-    /// when the service has never been provisioned or <c>SERVICE_NOT_ACTIVE</c> when it is terminated; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service;
+    /// when the service has never been provisioned, <c>SERVICE_NOT_ACTIVE</c> when it is terminated or
+    /// <c>SERVICE_NO_SERVER_ASSIGNED</c> when it has no usable server; 401 without a session; 403 for a caller who is not staff; 404 with <c>SERVICE_NOT_FOUND</c> when the id names no service;
     /// 502 with <c>SERVICE_CREDENTIALS_UPSTREAM_FAILED</c> when the provider cannot return them;
     /// 429 when the rate limit is hit.
     /// </returns>

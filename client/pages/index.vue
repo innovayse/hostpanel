@@ -7,9 +7,9 @@
     :price-hints="offeredTlds"
     :plans="plans"
     :comparison-rows="comparisonRows"
-    :yearly="yearly"
+    :cycle="cycle"
     @search="search"
-    @update:yearly="setYearly"
+    @update:cycle="setCycle"
   />
 </template>
 
@@ -27,6 +27,7 @@ import { usePayerAsyncData } from '~/composables/usePayerAsyncData'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
 import { useDomainsStore } from '~/stores/domains'
+import { PricingCycle } from '~/types/pricingcycle'
 import { SeoPageType } from '~/types/seopagetype'
 import { TemplateSlot } from '~/types/templateslot'
 
@@ -101,16 +102,16 @@ onMounted(() => {
   currencyStore.init()
 })
 
-/** Whether the plan prices are shown per year instead of per month. */
-const yearly = ref(false)
+/** The billing cycle the plan prices are shown for. */
+const cycle = ref(PricingCycle.Monthly)
 
 /**
- * Stores the billing period the visitor picked in the template.
+ * Stores the billing cycle the visitor picked in the template.
  *
- * @param value - True for yearly prices.
+ * @param value - The cycle the visitor chose.
  */
-const setYearly = (value: boolean): void => {
-  yearly.value = value
+const setCycle = (value: PricingCycle): void => {
+  cycle.value = value
 }
 
 // Assembled here rather than in the template, for the same reason

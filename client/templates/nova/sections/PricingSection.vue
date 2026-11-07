@@ -9,12 +9,14 @@
         class="min-w-0"
       />
 
+      <!-- Only worth showing when there is a choice; many cycles scroll inside the control, not the page. -->
       <UiSegmentedControl
-        :model-value="yearly"
+        v-if="cycles.length > 1"
+        :model-value="activeCycle"
         :options="options"
         :label="t('nova.plans.billingLabel')"
         testid="nova-billing-toggle"
-        @update:model-value="emit('update:yearly', $event)"
+        @update:model-value="emit('update:cycle', $event)"
       />
     </UiStack>
 
@@ -41,7 +43,7 @@
         v-for="plan in novaPlans"
         :key="plan.id"
         :plan="plan"
-        :yearly="yearly"
+        :cycle="activeCycle"
       />
     </UiBalancedGrid>
   </UiSection>
@@ -57,24 +59,27 @@
  */
 import NovaPricingCard from '~/templates/nova/sections/PricingCard.vue'
 import NovaSectionHeader from '~/templates/nova/sections/NovaSectionHeader.vue'
+import { PRICING_CYCLE_I18N_KEY } from '~/constants/pricingCycle'
 import { toNovaPlans } from '~/templates/nova/pricing'
 import type { PlanCard } from '~/types/plancard'
+import { PricingCycle } from '~/types/pricingcycle'
 import type { SegmentedOption } from '~/types/segmentedoption'
+import { cycleSegments, effectiveCycle, planCardCycles } from '~/utils/planCycles'
 
 /** Props of PricingSection. */
 const props = withDefaults(defineProps<{
   /** Plans as the catalogue store formats them. */
   plans?: PlanCard[]
-  /** Whether the yearly price is selected. */
-  yearly?: boolean
+  /** The billing cycle the prices are shown for; falls back to the shortest one the plans offer. */
+  cycle?: PricingCycle
   /** Off on the hosting page, whose own hero already says the same thing. */
   showHeader?: boolean
-}>(), { plans: () => [], yearly: false, showHeader: true })
+}>(), { plans: () => [], cycle: PricingCycle.Monthly, showHeader: true })
 
 /** Emits the section raises. */
 const emit = defineEmits<{
-  /** The reader chose the monthly or the yearly price. */
-  'update:yearly': [value: boolean]
+  /** The reader chose another billing cycle. */
+  'update:cycle': [value: PricingCycle]
 }>()
 
 /** Translator for the copy. */
@@ -83,9 +88,13 @@ const { t } = useI18n()
 /** The plans in the shape the cards render. */
 const novaPlans = computed(() => toNovaPlans(props.plans))
 
-/** The two billing options; `true` is the yearly price. */
-const options = computed<SegmentedOption<boolean>[]>(() => [
-  { value: false, label: t('nova.plans.monthly'), testid: 'nova-billing-monthly' },
-  { value: true, label: t('nova.plans.yearly'), testid: 'nova-billing-yearly' },
-])
+/** Every cycle at least one plan is priced on, shortest first. */
+const cycles = computed(() => planCardCycles(props.plans))
+
+/** The cycle in effect: the reader's pick, or the shortest one on offer when no plan has it. */
+const activeCycle = computed(() => effectiveCycle(cycles.value, props.cycle))
+
+/** The toggle's segments, one per cycle on offer. */
+const options = computed<SegmentedOption<PricingCycle>[]>(() =>
+  cycleSegments(cycles.value, cycle => t(`hosting.cycles.${PRICING_CYCLE_I18N_KEY[cycle]}`), 'nova-billing'))
 </script>

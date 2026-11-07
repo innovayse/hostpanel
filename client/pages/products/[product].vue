@@ -41,7 +41,7 @@
  * external order links, the head and the family's structured data (a `Product` with an `Offer` per plan).
  */
 import { Package } from 'lucide-vue-next'
-import { PRICING_CYCLES, PRICING_CYCLE_I18N_KEY, PRICING_CYCLE_ISO_DURATION } from '~/constants/pricingCycle'
+import { PRICING_CYCLE_I18N_KEY, PRICING_CYCLE_ISO_DURATION } from '~/constants/pricingCycle'
 import { useCartStore } from '~/stores/cart'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
@@ -49,7 +49,7 @@ import { PricingCycle } from '~/types/pricingcycle'
 import type { ProductPlan } from '~/types/productplan'
 import { buildComparisonRows } from '~/utils/comparisonRows'
 import { formatMoney } from '~/utils/formatMoney'
-import { findProductDetail, firstOfferedPrice } from '~/utils/productFamilies'
+import { findProductDetail, firstOfferedPrice, pricedCycles } from '~/utils/productFamilies'
 import { buildSeoLinks, localizedUrl } from '~/utils/seoLinks'
 import { shareImageMeta } from '~/utils/shareImage'
 
@@ -104,7 +104,7 @@ const comparisonRows = computed(() => {
 
 /** The cycles at least one plan is priced for. */
 const availableCycles = computed<PricingCycle[]>(() =>
-  PRICING_CYCLES.filter((cycle) => productData.value?.plans.some((plan) => plan.pricing?.[cycle] !== null && plan.pricing?.[cycle] !== undefined)))
+  pricedCycles(productData.value?.plans ?? [], (plan, cycle) => plan.pricing?.[cycle] !== null && plan.pricing?.[cycle] !== undefined))
 
 /** The cycle the prices are shown for. */
 const selectedCycle = ref<PricingCycle>(PricingCycle.Monthly)

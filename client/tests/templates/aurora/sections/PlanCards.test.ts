@@ -7,6 +7,7 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import PlanCards from '~/templates/aurora/sections/PlanCards.vue'
 import { balancedColumns } from '~/utils/balancedGrid'
 import type { PlanCard } from '~/types/plancard'
+import { PricingCycle } from '~/types/pricingcycle'
 import { stubAuroraGlobals, PLANS } from '../auroraGlobals'
 
 describe('PlanCards', () => {
@@ -50,29 +51,58 @@ describe('PlanCards', () => {
     expect(paid).toContain('hover:border-ac1')
   })
 
-  it('shows the monthly price by default and the per-month annual price when yearly', () => {
+  it('shows the monthly price by default and the per-month price of the chosen cycle otherwise', () => {
     stubAuroraGlobals()
+    /** Mounts the cards with the given cycle and returns the text of the paid plan's card. */
+    const card = (cycle?: PricingCycle) => mountWithKit(PlanCards, { props: { plans: PLANS, cycle } }).find('[data-testid="plan-card-2"]').text()
 
-    expect(mountWithKit(PlanCards, { props: { plans: PLANS } }).find('[data-testid="plan-card-1"]').text()).toContain('$4.99')
-    expect(mountWithKit(PlanCards, { props: { plans: PLANS, yearly: true } }).find('[data-testid="plan-card-1"]').text()).toContain('$3.99')
+    expect(card()).toContain('$9.99')
+    expect(card(PricingCycle.Quarterly)).toContain('$8.99')
+    expect(card(PricingCycle.Annual)).toContain('$7.99')
+    expect(card(PricingCycle.Annual)).toContain('aurora.plans.perMonthBilled')
   })
 
-  it('reports the billing period the visitor picks', async () => {
+  it('shows a dash on a card whose plan is not priced on the chosen cycle', () => {
+    stubAuroraGlobals()
+    const wrapper = mountWithKit(PlanCards, { props: { plans: PLANS, cycle: PricingCycle.Quarterly } })
+
+    expect(wrapper.find('[data-testid="plan-card-1"]').text()).toContain('\u2014')
+  })
+
+  it('offers every cycle some plan is priced on, shortest first, as segments', () => {
+    stubAuroraGlobals()
+    const wrapper = mountWithKit(PlanCards, { props: { plans: PLANS } })
+
+    expect(wrapper.findAll('[data-testid="billing-toggle"] [role="radio"]').map(segment => segment.attributes('data-testid'))).toEqual([
+      'billing-monthly',
+      'billing-quarterly',
+      'billing-annual',
+    ])
+  })
+
+  it('hides the toggle when the plans offer a single cycle', () => {
+    stubAuroraGlobals()
+    const plans = PLANS.map(plan => ({ ...plan, cyclePrices: { monthly: plan.priceMonthly } }))
+
+    expect(mountWithKit(PlanCards, { props: { plans } }).find('[data-testid="billing-toggle"]').exists()).toBe(false)
+  })
+
+  it('reports the billing cycle the visitor picks', async () => {
     stubAuroraGlobals()
 
     const monthly = mountWithKit(PlanCards, { props: { plans: PLANS } })
-    await monthly.find('[data-testid="billing-yearly"]').trigger('click')
-    const yearly = mountWithKit(PlanCards, { props: { plans: PLANS, yearly: true } })
-    await yearly.find('[data-testid="billing-monthly"]').trigger('click')
+    await monthly.find('[data-testid="billing-annual"]').trigger('click')
+    const annual = mountWithKit(PlanCards, { props: { plans: PLANS, cycle: PricingCycle.Annual } })
+    await annual.find('[data-testid="billing-quarterly"]').trigger('click')
 
-    expect(monthly.emitted('update:yearly')).toEqual([[true]])
-    expect(yearly.emitted('update:yearly')).toEqual([[false]])
+    expect(monthly.emitted('update:cycle')).toEqual([[PricingCycle.Annual]])
+    expect(annual.emitted('update:cycle')).toEqual([[PricingCycle.Quarterly]])
   })
 
-  it('renders the toggle as the kit segmented control with the active period checked', () => {
+  it('renders the toggle as the kit segmented control with the active cycle checked', () => {
     stubAuroraGlobals()
-    const wrapper = mountWithKit(PlanCards, { props: { plans: PLANS, yearly: true } })
-    const active = wrapper.find('[data-testid="billing-yearly"]')
+    const wrapper = mountWithKit(PlanCards, { props: { plans: PLANS, cycle: PricingCycle.Annual } })
+    const active = wrapper.find('[data-testid="billing-annual"]')
 
     expect(wrapper.find('[data-testid="billing-toggle"]').attributes('role')).toBe('radiogroup')
     expect(active.attributes('aria-checked')).toBe('true')

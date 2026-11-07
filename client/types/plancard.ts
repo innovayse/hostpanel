@@ -3,6 +3,7 @@
  *
  * @module types/plancard
  */
+import type { PricingCycle } from '~/types/pricingcycle'
 
 /**
  * A hosting plan as a template's plan cards render it.
@@ -29,6 +30,11 @@ export interface PlanCard {
   priceMonthly: string
   /** Formatted annual price expressed per month. */
   priceAnnual: string
+  /**
+   * Formatted price per month for every billing cycle the plan is priced on (a quarterly price
+   * divided by three, and so on). A cycle the plan is not priced on has no entry.
+   */
+  cyclePrices: Partial<Record<PricingCycle, string>>
   /** Route to begin ordering this plan. */
   href: string
   /**

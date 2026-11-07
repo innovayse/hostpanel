@@ -1,5 +1,5 @@
 /**
- * GET /site.webmanifest
+ * GET and HEAD /site.webmanifest
  *
  * The web app manifest, built from the operator's branding rather than shipped as a file.
  *
@@ -10,6 +10,7 @@
  */
 
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { defineReadOnlyEventHandler } from '~/server/utils/readOnlyEventHandler'
 
 /** Sizes an installable PWA is expected to declare, and the file each maps to. */
 const MANIFEST_ICON_SIZES = [
@@ -29,7 +30,7 @@ const MANIFEST_ICON_SIZES = [
  */
 const UPLOADS_PREFIX = '/uploads/branding/'
 
-export default defineEventHandler(async (event) => {
+export default defineReadOnlyEventHandler(async (event) => {
   // No baseURL on purpose. Nitro's $fetch dispatches a leading-slash path straight into this
   // same process; giving it an absolute origin instead sends a real HTTP request, which on a
   // deployed host means the container resolving its own public hostname, hairpinning through

@@ -83,6 +83,24 @@ describe('BFF contract', () => {
     expect(offenders).toEqual([])
   })
 
+  it('serves every file route through defineReadOnlyEventHandler, so a HEAD is answered and no other method is', () => {
+    // A route file named `*.get.ts` is registered for GET alone and h3 does not fall back to it for
+    // HEAD, so a HEAD of a file reached the page renderer instead of the file. A file route has no
+    // method suffix and the wrapper keeps it to GET and HEAD. `account.get.ts` is a redirect, not a file.
+    const redirects = new Set(['routes/account.get.ts'])
+    const fileRoutes = walk(join(SERVER, 'routes'))
+      .map((path) => relative(SERVER, path).replace(/\\/g, '/'))
+      .filter((path) => !path.startsWith('routes/api/'))
+      .filter((path) => !redirects.has(path))
+
+    expect(fileRoutes.length).toBeGreaterThan(4)
+    const suffixed = fileRoutes.filter((path) => /\.(get|head|post|put|patch|delete)\.ts$/.test(path))
+    const unwrapped = fileRoutes.filter((path) => !/defineReadOnlyEventHandler\s*\(/.test(code(join(SERVER, path))))
+
+    expect(suffixed).toEqual([])
+    expect(unwrapped).toEqual([])
+  })
+
   it('has retired the hand-translated sentence table and the x-locale header', () => {
     const offenders = walk(SERVER)
       .filter((path) => /serverT|x-locale/i.test(code(path)))

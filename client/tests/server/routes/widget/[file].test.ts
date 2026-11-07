@@ -1,14 +1,16 @@
 /**
- * Tests for `GET /widget/:file`: the shell's header widget is served from this portal's own origin,
- * which is what makes its account-switch and add-account addresses this portal's own.
+ * Tests for `GET` and `HEAD /widget/:file`: the shell's header widget is served from this portal's own origin,
+ * which is what makes its account-switch and add-account addresses this portal's own. A `HEAD` is
+ * answered as the `GET` is, and no other method is.
  *
- * @module tests/server/routes/widget/[file].get.test
+ * @module tests/server/routes/widget/[file].test
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { makeEvent, refusal, setRuntimeConfig, startBackend } from '../../../helpers/bffHarness'
 import type { RouteModule } from '../../../helpers/bffHarness'
 import type { StubServer } from '../../../helpers/stubServer'
+import { HttpMethod } from '~/types/httpmethod'
 
 /** The stub standing in for the platform shell. */
 let shell: StubServer
@@ -20,14 +22,37 @@ beforeEach(async () => {
   shell = await startBackend(() => ({ body: '(function(){/* widget */})()' }))
   setRuntimeConfig({ public: { authMode: 'sso', mainUrl: shell.baseUrl } })
   vi.resetModules()
-  route = await import('~/server/routes/widget/[file].get')
+  route = await import('~/server/routes/widget/[file]')
 })
 
 afterEach(async () => {
   await shell.close()
 })
 
-describe('GET /widget/:file', () => {
+describe('GET and HEAD /widget/:file', () => {
+  it('answers a HEAD with the status and headers of the GET', async () => {
+    const get = makeEvent({ params: { file: 'header.js' } })
+    const head = makeEvent({ params: { file: 'header.js' }, method: HttpMethod.Head })
+
+    await route.default(get)
+    await route.default(head)
+
+    expect(head.responseHeaders).toEqual(get.responseHeaders)
+  })
+
+  it('answers a HEAD of an unknown name with the 404 of the GET', async () => {
+    const error = await refusal(() => route.default(makeEvent({ params: { file: 'index.html' }, method: HttpMethod.Head })))
+
+    expect(error).toMatchObject({ statusCode: 404, data: { code: 'WIDGET_FILE_NOT_FOUND' } })
+  })
+
+  it('refuses a POST with 405, without asking the shell', async () => {
+    const error = await refusal(() => route.default(makeEvent({ params: { file: 'header.js' }, method: HttpMethod.Post })))
+
+    expect(error).toMatchObject({ statusCode: 405, data: { code: 'METHOD_NOT_ALLOWED' } })
+    expect(shell.requests).toHaveLength(0)
+  })
+
   it.each(['header.js', 'header.v2.js'])('relays %s as a script with the headers a script needs', async (file) => {
     const event = makeEvent({ params: { file } })
 

@@ -5,7 +5,7 @@
  * the path is the whole attack surface. This module decodes it exactly once, refuses everything
  * that could address anything but a plain file below the uploads folder, and hands back the path
  * re-encoded segment by segment, which is the only form a route may append to the upstream
- * address. Both `uploads/[...path].get.ts` and `uploads/branding/[...path].get.ts` use it, so the
+ * address. Both `uploads/[...path].ts` and `uploads/branding/[...path].ts` use it, so the
  * two cannot drift apart.
  *
  * @module server/utils/uploadPath

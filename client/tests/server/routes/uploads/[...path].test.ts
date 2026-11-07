@@ -1,15 +1,18 @@
 /**
- * Tests for `GET /uploads/**`: it proxies the request for an uploaded file to the same path under
+ * Tests for `GET` and `HEAD /uploads/**`: it proxies the request for an uploaded file to the same path under
  * `/uploads` on the C# API, refuses every path that could leave that folder, forwards only an allow
- * list of request headers and returns only an allow list of response headers.
+ * list of request headers and returns only an allow list of response headers. A `HEAD` is asked of
+ * the file server as a `HEAD` and answered with the same status and headers and no body; no other
+ * method is answered.
  *
- * @module tests/server/routes/uploads/[...path].get.test
+ * @module tests/server/routes/uploads/[...path].test
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { makeEvent, refusal, startBackend } from '../../../helpers/bffHarness'
 import type { RouteModule } from '../../../helpers/bffHarness'
 import type { StubServer } from '../../../helpers/stubServer'
+import { HttpMethod } from '~/types/httpmethod'
 
 /** The stub playing the C# API. */
 let backend: StubServer
@@ -29,14 +32,50 @@ const bodyOf = async (event: ReturnType<typeof makeEvent>): Promise<string> => {
 
 beforeEach(async () => {
   backend = await startBackend()
-  route = await import('~/server/routes/uploads/[...path].get')
+  route = await import('~/server/routes/uploads/[...path]')
 })
 
 afterEach(async () => {
   await backend.close()
 })
 
-describe('GET /uploads/**', () => {
+describe('GET and HEAD /uploads/**', () => {
+  it('asks the file server for a HEAD, answers its status and headers and sends no body', async () => {
+    backend.respondWith(() => ({ body: 'file-bytes', headers: { 'content-type': 'application/pdf', etag: '"v1"' } }))
+    const event = makeEvent({ params: { path: 'docs/a.pdf' }, method: HttpMethod.Head })
+
+    const body = await route.default(event)
+
+    expect(backend.requests[0]?.method).toBe('HEAD')
+    expect(backend.requests[0]?.url).toBe('/uploads/docs/a.pdf')
+    expect(body).toBeUndefined()
+    expect(event.noContentStatus).toBe(200)
+    expect(event.status).toBe(200)
+    expect(event.responseHeaders['content-type']).toBe('application/pdf')
+    expect(event.responseHeaders['etag']).toBe('"v1"')
+    expect(event.responseHeaders['X-Content-Type-Options']).toBe('nosniff')
+  })
+
+  it('answers a HEAD of a missing file with the 404 of the GET', async () => {
+    backend.respondWith(() => ({ status: 404, body: 'missing' }))
+    const event = makeEvent({ params: { path: 'docs/gone.pdf' }, method: HttpMethod.Head })
+
+    await route.default(event)
+
+    expect(event.status).toBe(404)
+    expect(event.noContentStatus).toBe(404)
+  })
+
+  it.each([HttpMethod.Post, HttpMethod.Put, HttpMethod.Patch, HttpMethod.Delete, HttpMethod.Options])(
+    'refuses %s with 405, without calling the backend',
+    async (method) => {
+      const error = await refusal(() => route.default(makeEvent({ params: { path: 'docs/a.pdf' }, method })))
+
+      expect(error).toMatchObject({ statusCode: 405, data: { code: 'METHOD_NOT_ALLOWED' } })
+      expect(backend.requests).toHaveLength(0)
+    }
+  )
+
   it('requests the same path under /uploads on the backend and returns its answer', async () => {
     backend.respondWith(() => ({ body: 'file-bytes', headers: { 'content-type': 'application/pdf' } }))
     const event = makeEvent({ params: { path: 'docs/a.pdf' } })

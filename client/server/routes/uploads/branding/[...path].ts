@@ -1,5 +1,5 @@
 /**
- * GET /uploads/branding/**
+ * GET and HEAD /uploads/branding/**
  *
  * Serves operator-uploaded branding files (the logo, the favicon and the icon set
  * generated from them) from the storefront's own origin.
@@ -30,6 +30,7 @@
  *   upstream URL.
  */
 
+import { defineReadOnlyEventHandler } from '~/server/utils/readOnlyEventHandler'
 import { requireUploadPath } from '~/server/utils/uploadPath'
 
 /** Extensions this route will serve, and the type each is served as. */
@@ -38,7 +39,7 @@ const ALLOWED_TYPES: Record<string, string> = {
   '.ico': 'image/x-icon',
 }
 
-export default defineEventHandler(async (event) => {
+export default defineReadOnlyEventHandler(async (event) => {
   // The upstream is a file server, so a `..` that survived this far would be resolved by it, not
   // by us; the shared reader refuses it, and every other way out of the folder, first.
   const path = requireUploadPath(event)

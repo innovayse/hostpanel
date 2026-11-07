@@ -1,5 +1,5 @@
 /**
- * GET /robots.txt
+ * GET and HEAD /robots.txt
  *
  * The crawler rules, built per request so the `Sitemap:` line carries the operator's own origin
  * (the configured public address, else the one the request came in on, honouring a proxy's
@@ -9,8 +9,10 @@
  * One `*` group on purpose: a crawler that matches a named group ignores `*`, so a per-bot group
  * that only said `Allow: /` would let that bot into the private areas.
  *
- * @module server/routes/robots.txt.get
+ * @module server/routes/robots.txt
  */
+
+import { defineReadOnlyEventHandler } from '~/server/utils/readOnlyEventHandler'
 
 /** Areas that belong to a signed-in visitor and must not be crawled, before the locale prefix. */
 const PRIVATE_AREAS = ['client', 'cart', 'checkout', 'order'] as const
@@ -46,7 +48,7 @@ const buildRobotsTxt = (origin: string): string => {
 }
 
 /** Handler: the robots.txt text for the operator's origin, served as plain text. */
-export default defineEventHandler((event) => {
+export default defineReadOnlyEventHandler((event) => {
   const config = useRuntimeConfig()
   const origin = (config.public.baseUrl as string | undefined)
     || getRequestURL(event, { xForwardedHost: true, xForwardedProto: true }).origin

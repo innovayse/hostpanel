@@ -5,7 +5,8 @@
  * Draws the `<table>` and shares its `density` with the header and data cells (set the padding
  * once here instead of on every cell). `loading` and `empty` append a full-width status row, so a
  * screen needs no separate "no rows" markup; the `empty` slot replaces the default message. The table sits in a
- * box that scrolls sideways when the columns are wider than the screen.
+ * box that scrolls sideways when the columns are wider than the screen. That box clips anything that opens
+ * below a cell, so an editable table whose cells hold a dropdown turns it off with `scrollable="false"`.
  */
 import { provide } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -27,11 +28,14 @@ const props = withDefaults(defineProps<{
   empty?: boolean
   /** Number of columns, for the width of the status row. */
   colspan?: number
+  /** Whether the table scrolls sideways inside its own box; off for a table whose cells open dropdowns. */
+  scrollable?: boolean
 }>(), {
   density: UiTableDensity.Comfortable,
   loading: false,
   empty: false,
   colspan: 100,
+  scrollable: true,
 })
 
 // A getter keeps the shared density reactive without handing parts a ref they must unwrap.
@@ -43,7 +47,7 @@ provide(UI_TABLE_CONTEXT, {
 </script>
 
 <template>
-  <div class="overflow-x-auto">
+  <div :class="scrollable ? 'overflow-x-auto' : ''">
     <table v-bind="$attrs" class="[:where(&)]:w-full">
       <slot />
       <tbody v-if="loading || empty">

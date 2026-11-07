@@ -31,6 +31,13 @@ describe('UiTable', () => {
     expect(wrapper.element.firstElementChild?.tagName).toBe('TABLE')
   })
 
+  it('can drop its scrolling box, so a dropdown opened from a cell is not clipped', () => {
+    const wrapper = mount(UiTable, { props: { scrollable: false }, global: global() })
+
+    expect(wrapper.classes()).not.toContain('overflow-x-auto')
+    expect(wrapper.find('table').exists()).toBe(true)
+  })
+
   it('passes classes and data attributes through', () => {
     const wrapper = mount(UiTable, { attrs: { class: 'x-class', 'data-testid': 'probe' }, global: global() })
 

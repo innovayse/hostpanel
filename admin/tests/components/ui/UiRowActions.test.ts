@@ -103,4 +103,52 @@ describe('UiRowActions', () => {
     expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
     wrapper.unmount()
   })
+
+  describe('placement of the fixed menu', () => {
+    /**
+     * Opens the menu with the trigger drawn at a given box and the page at a given size.
+     *
+     * @param trigger - The trigger's bounding box (right, top, bottom).
+     * @param page - The page's inner height and width, and the width without the scrollbar.
+     * @returns The menu's inline style and the wrapper.
+     */
+    const openAt = async (
+      trigger: { right: number; top: number; bottom: number },
+      page: { innerHeight: number; innerWidth: number; clientWidth: number },
+    ) => {
+      vi.stubGlobal('innerHeight', page.innerHeight)
+      vi.stubGlobal('innerWidth', page.innerWidth)
+      vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(page.clientWidth)
+      const wrapper = mountIt()
+      vi.spyOn(wrapper.get('[data-testid="row-actions-trigger"]').element, 'getBoundingClientRect').mockReturnValue(
+        { ...trigger, left: 0, width: 0, height: trigger.bottom - trigger.top, x: 0, y: trigger.top, toJSON: () => ({}) },
+      )
+      await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+      return { style: wrapper.get('[data-testid="row-actions-menu"]').attributes('style') ?? '', wrapper }
+    }
+
+    it('opens below the trigger, 4px under it, with its right edge on the trigger\'s', async () => {
+      const { style, wrapper } = await openAt({ right: 900, top: 100, bottom: 130 }, { innerHeight: 800, innerWidth: 1000, clientWidth: 1000 })
+
+      expect(style).toContain('top: 134px')
+      expect(style).toContain('right: 100px')
+      expect(style).not.toContain('bottom')
+      wrapper.unmount()
+    })
+
+    it('opens above the trigger when less than 160px is left below it', async () => {
+      const { style, wrapper } = await openAt({ right: 900, top: 700, bottom: 730 }, { innerHeight: 800, innerWidth: 1000, clientWidth: 1000 })
+
+      expect(style).toContain('bottom: 104px')
+      expect(style).not.toContain('top')
+      wrapper.unmount()
+    })
+
+    it('measures the right edge from the width without the page scrollbar, not from innerWidth', async () => {
+      const { style, wrapper } = await openAt({ right: 900, top: 100, bottom: 130 }, { innerHeight: 800, innerWidth: 1000, clientWidth: 985 })
+
+      expect(style).toContain('right: 85px')
+      wrapper.unmount()
+    })
+  })
 })

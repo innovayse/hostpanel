@@ -65,7 +65,8 @@ const menuPlace = ref<{ right: string; top?: string; bottom?: string }>({ right:
 const toggle = (): void => {
   if (!open.value && triggerRef.value) {
     const rect = triggerRef.value.getBoundingClientRect()
-    const right = `${window.innerWidth - rect.right}px`
+    // `clientWidth` is the width without the page scrollbar, which a `fixed` box's `right` is measured from.
+    const right = `${document.documentElement.clientWidth - rect.right}px`
     menuPlace.value = window.innerHeight - rect.bottom < 160
       ? { right, bottom: `${window.innerHeight - rect.top + MENU_GAP_PX}px` }
       : { right, top: `${rect.bottom + MENU_GAP_PX}px` }

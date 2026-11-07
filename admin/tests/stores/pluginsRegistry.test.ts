@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { usePluginsStore } from '@/stores/plugins'
 import { PluginCategory, PluginErrorCode, PluginPricing } from '@/types/plugin'
-import type { PluginRegistryItemDto } from '@/types/plugin'
+import type { PluginRegistryItemDto, RegistryPluginDetailsDto } from '@/types/plugin'
 import { callOf, json, problem, stubFetch } from '../helpers/fetch'
 import { requestsOf, stubRoutes } from '../helpers/routes'
 
@@ -166,7 +166,7 @@ describe('pluginsStore.installFromRegistry', () => {
     expect(store.stagedVersion).toBe('2.0.0')
     expect(store.registryInstallingId).toBeNull()
     const post = mock.mock.calls.find(([, init]) => init?.method === 'POST')
-    expect(JSON.parse(String(post?.[1]?.body))).toEqual({ version: '2.0.0' })
+    expect(JSON.parse(String(post?.[1]?.body))).toEqual({ version: '2.0.0', allowDowngrade: false })
     expect(requestsOf(mock)).toEqual(expect.arrayContaining([
       'GET /admin/plugins',
       'GET /admin/plugins/registry?page=1',
@@ -198,5 +198,157 @@ describe('pluginsStore.installFromRegistry', () => {
     expect(store.registryInstallError).toBe('That publisher is not trusted.')
     expect(store.requiresRestart).toBe(false)
     expect(store.registryInstallingId).toBeNull()
+  })
+})
+
+/** Details of the example plugin, as the details endpoint answers. */
+const details: RegistryPluginDetailsDto = {
+  ...listing,
+  stagedVersion: null,
+  requiresLicence: true,
+  hasLicenceKey: false,
+  buyUrl: null,
+  documentationUrl: null,
+  supportUrl: null,
+  repositoryUrl: null,
+  licence: null,
+  versions: [],
+}
+
+describe('pluginsStore.fetchRegistryDetails', () => {
+  it('keeps the details by plugin id with the load state', async () => {
+    const mock = stubFetch(json(details))
+    const store = usePluginsStore()
+
+    await store.fetchRegistryDetails('example-pay')
+
+    expect(store.registryDetails['example-pay']).toEqual({ details, loading: false, error: null, errorCode: null, notFound: false })
+    expect(callOf(mock).url).toBe('/api/admin/plugins/registry/example-pay')
+  })
+
+  it('keeps the sentence for that plugin only and the earlier details on show', async () => {
+    stubFetch(json(details), problem('Registry unavailable.', 503))
+    const store = usePluginsStore()
+
+    await store.fetchRegistryDetails('example-pay')
+    await store.fetchRegistryDetails('example-pay')
+
+    expect(store.registryDetails['example-pay']).toEqual({ details, loading: false, error: 'Registry unavailable.', errorCode: 'REFUSED', notFound: false })
+    expect(store.registryDetails.other).toBeUndefined()
+  })
+
+  it('marks a 404 answer as not found, without a retryable sentence or stale details', async () => {
+    stubFetch(json(details), problem('No such plugin.', 404))
+    const store = usePluginsStore()
+
+    await store.fetchRegistryDetails('example-pay')
+    await store.fetchRegistryDetails('example-pay')
+
+    expect(store.registryDetails['example-pay']).toEqual({ details: null, loading: false, error: null, errorCode: null, notFound: true })
+  })
+
+  it('marks the registry not-found code as not found whatever the status', async () => {
+    stubFetch(json({ type: PluginErrorCode.RegistryPluginNotFound, title: 'Not found', status: 400, detail: 'No such plugin.' }, 400))
+    const store = usePluginsStore()
+
+    await store.fetchRegistryDetails('example-pay')
+
+    expect(store.registryDetails['example-pay']?.notFound).toBe(true)
+  })
+
+  it.each([PluginErrorCode.RegistryLicenceRequired, PluginErrorCode.RegistryLicenceInvalid])(
+    'keeps the %s code with the sentence so the page can offer the licence key',
+    async code => {
+      stubFetch(json({ type: code, title: 'Licence', status: 422, detail: 'A licence key is needed.' }, 422))
+      const store = usePluginsStore()
+
+      await store.fetchRegistryDetails('example-pay')
+
+      expect(store.registryDetails['example-pay']).toEqual({
+        details: null,
+        loading: false,
+        error: 'A licence key is needed.',
+        errorCode: code,
+        notFound: false,
+      })
+    },
+  )
+})
+
+describe('pluginsStore licence key', () => {
+  it('saves the key and reloads the details', async () => {
+    const mock = stubRoutes({
+      'PUT /api/admin/plugins/registry/example-pay/licence': () => new Response(null, { status: 204 }),
+      'GET /api/admin/plugins/registry/example-pay': () => json({ ...details, hasLicenceKey: true }),
+    })
+    const store = usePluginsStore()
+
+    expect(await store.saveLicenceKey('example-pay', 'abc')).toBe(true)
+
+    const put = mock.mock.calls.find(([, init]) => init?.method === 'PUT')
+    expect(JSON.parse(String(put?.[1]?.body))).toEqual({ key: 'abc' })
+    expect(store.registryDetails['example-pay']?.details?.hasLicenceKey).toBe(true)
+    expect(store.isBusy('example-pay')).toBe(false)
+  })
+
+  it('removes the key and reloads the details', async () => {
+    const mock = stubRoutes({
+      'DELETE /api/admin/plugins/registry/example-pay/licence': () => new Response(null, { status: 204 }),
+      'GET /api/admin/plugins/registry/example-pay': () => json(details),
+    })
+    const store = usePluginsStore()
+
+    expect(await store.removeLicenceKey('example-pay')).toBe(true)
+    expect(requestsOf(mock)).toEqual(expect.arrayContaining(['DELETE /admin/plugins/registry/example-pay/licence']))
+  })
+
+  it('keeps the API sentence when refused', async () => {
+    stubFetch(problem('That key is not valid.', 400))
+    const store = usePluginsStore()
+
+    expect(await store.saveLicenceKey('example-pay', 'bad')).toBe(false)
+    expect(store.licenceError).toBe('That key is not valid.')
+    expect(store.isBusy('example-pay')).toBe(false)
+  })
+})
+
+describe('pluginsStore busy state', () => {
+  it('marks only the installing plugin busy and sends the downgrade flag', async () => {
+    let seen: boolean[] = []
+    const store = usePluginsStore()
+    const mock = stubRoutes({
+      'POST /api/admin/plugins/registry/example-pay/install': () => {
+        seen = [store.isBusy('example-pay'), store.isBusy('other'), store.registryInstallingId === 'example-pay']
+        return json({ requiresRestart: false })
+      },
+      'GET /api/admin/plugins/registry/updates': () => json([]),
+      'GET /api/admin/plugins/registry': () => json({ items: [], total: 0, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([]),
+    })
+
+    await store.installFromRegistry('example-pay', '1.0.0', true)
+
+    expect(seen).toEqual([true, false, true])
+    expect(store.isBusy('example-pay')).toBe(false)
+    expect(store.registryInstallingId).toBeNull()
+    const post = mock.mock.calls.find(([, init]) => init?.method === 'POST')
+    expect(JSON.parse(String(post?.[1]?.body))).toEqual({ version: '1.0.0', allowDowngrade: true })
+  })
+
+  it('reloads the details of a plugin that is on show', async () => {
+    const mock = stubRoutes({
+      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: false }),
+      'GET /api/admin/plugins/registry/updates': () => json([]),
+      'GET /api/admin/plugins/registry/example-pay': () => json(details),
+      'GET /api/admin/plugins/registry': () => json({ items: [], total: 0, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([]),
+    })
+    const store = usePluginsStore()
+    await store.fetchRegistryDetails('example-pay')
+
+    await store.installFromRegistry('example-pay', '2.0.0')
+
+    const reads = requestsOf(mock).filter(line => line === 'GET /admin/plugins/registry/example-pay')
+    expect(reads).toHaveLength(2)
   })
 })

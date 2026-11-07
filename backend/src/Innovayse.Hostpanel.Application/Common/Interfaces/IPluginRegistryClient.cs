@@ -23,11 +23,15 @@ public interface IPluginRegistryClient
     Task<Result<IReadOnlyList<RegistryPluginDto>>> GetLatestAsync(IReadOnlyCollection<string> pluginIds, CancellationToken ct);
 
     /// <summary>Resolves one published version of a plugin to its package address and published checksum.</summary>
-    /// <param name="pluginId">The plugin id.</param>
-    /// <param name="version">The version.</param>
+    /// <param name="target">The plugin id and version to resolve.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The release, <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c> when the registry does not list it, or another <c>PLUGIN_REGISTRY_*</c> failure.</returns>
-    Task<Result<RegistryPluginRelease>> GetReleaseAsync(string pluginId, string version, CancellationToken ct);
+    /// <param name="licenceKey">The licence key of a paid or private plugin, sent as a header and never logged; <see langword="null"/> or blank sends none.</param>
+    /// <returns>
+    /// The release, <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c> when the registry does not list it,
+    /// <c>PLUGIN_REGISTRY_LICENCE_REQUIRED</c> (the registry answered 401) or <c>PLUGIN_REGISTRY_LICENCE_INVALID</c> (403),
+    /// or another <c>PLUGIN_REGISTRY_*</c> failure.
+    /// </returns>
+    Task<Result<RegistryPluginRelease>> GetReleaseAsync(RegistryPluginVersionRef target, CancellationToken ct, string? licenceKey = null);
 
     /// <summary>
     /// Downloads a release's package from the registry's own host only, within the configured size limit, into a
@@ -35,9 +39,31 @@ public interface IPluginRegistryClient
     /// </summary>
     /// <param name="release">The release to download.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="licenceKey">The licence key of a paid or private plugin, sent as a header and never logged; <see langword="null"/> or blank sends none.</param>
     /// <returns>
     /// A seekable stream positioned at the start, owned and disposed by the caller; disposing it deletes the file. Or a
-    /// <c>PLUGIN_REGISTRY_*</c> failure, with nothing left on disk.
+    /// <c>PLUGIN_REGISTRY_*</c> failure (<c>PLUGIN_REGISTRY_LICENCE_REQUIRED</c> for a 401, <c>PLUGIN_REGISTRY_LICENCE_INVALID</c>
+    /// for a 403), with nothing left on disk.
     /// </returns>
-    Task<Result<Stream>> DownloadAsync(RegistryPluginRelease release, CancellationToken ct);
+    Task<Result<Stream>> DownloadAsync(RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null);
+
+    /// <summary>Reads the registry's full page for one plugin.</summary>
+    /// <param name="pluginId">The plugin id.</param>
+    /// <param name="licenceKey">The licence key of a paid or private plugin, sent as a header and never logged; <see langword="null"/> or blank sends none.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The details, a successful result holding <see langword="null"/> when the registry does not list the plugin (404), or a
+    /// <c>PLUGIN_REGISTRY_*</c> failure.
+    /// </returns>
+    Task<Result<RegistryPluginDetails?>> GetPluginAsync(string pluginId, string? licenceKey, CancellationToken ct);
+
+    /// <summary>Lists every version of a plugin the registry shows.</summary>
+    /// <param name="pluginId">The plugin id.</param>
+    /// <param name="licenceKey">The licence key of a paid or private plugin, sent as a header and never logged; <see langword="null"/> or blank sends none.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The versions in the registry's order (a version with an unknown status or a bad number is left out), or
+    /// <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c> for a 404, or another <c>PLUGIN_REGISTRY_*</c> failure.
+    /// </returns>
+    Task<Result<IReadOnlyList<RegistryPluginVersion>>> ListVersionsAsync(string pluginId, string? licenceKey, CancellationToken ct);
 }

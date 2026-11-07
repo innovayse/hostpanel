@@ -44,4 +44,30 @@ describe('usePluginsApi', () => {
 
     await expect(usePluginsApi().installPlugin(new File(['x'], 'a.zip'))).rejects.toBeTruthy()
   })
+
+  it('getRegistryDetails reads the registry entry by id', async () => {
+    const mock = stubFetch(json({ id: 'p', versions: [] }))
+
+    expect(await usePluginsApi().getRegistryDetails('p')).toEqual({ id: 'p', versions: [] })
+    expect(callOf(mock)).toMatchObject({ url: '/api/admin/plugins/registry/p', method: 'GET' })
+  })
+
+  it('saveLicenceKey PUTs the key and removeLicenceKey DELETEs the same path', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }), new Response(null, { status: 204 }))
+    const api = usePluginsApi()
+
+    await api.saveLicenceKey('p', { key: 'abc' })
+    await api.removeLicenceKey('p')
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/plugins/registry/p/licence', method: 'PUT' })
+    expect(JSON.parse(String(callOf(mock, 0).init.body))).toEqual({ key: 'abc' })
+    expect(callOf(mock, 1)).toMatchObject({ url: '/api/admin/plugins/registry/p/licence', method: 'DELETE' })
+  })
+
+  it('installFromRegistry posts the version and the downgrade flag', async () => {
+    const mock = stubFetch(json({ requiresRestart: false }))
+
+    await usePluginsApi().installFromRegistry('p', { version: '1.0.0', allowDowngrade: true })
+    expect(callOf(mock)).toMatchObject({ url: '/api/admin/plugins/registry/p/install', method: 'POST' })
+    expect(JSON.parse(String(callOf(mock).init.body))).toEqual({ version: '1.0.0', allowDowngrade: true })
+  })
 })

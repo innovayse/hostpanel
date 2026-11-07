@@ -417,7 +417,7 @@ describe('PluginsView', () => {
     await flushPromises()
 
     const post = mock.mock.calls.find(([, init]) => init?.method === 'POST')
-    expect(JSON.parse(String(post?.[1]?.body))).toEqual({ version: '2.0.0' })
+    expect(JSON.parse(String(post?.[1]?.body))).toEqual({ version: '2.0.0', allowDowngrade: false })
     expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Version 2.0.0 uploaded and staged')
   })
@@ -450,5 +450,65 @@ describe('PluginsView', () => {
     const wrapper = await mountPlugins()
 
     expect(wrapper.get('[data-testid="plugin-update-example-pay"]').text()).toContain('2.0.0')
+  })
+
+  it('opens the details page from a registry card and from the installed list', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins/registry/updates': () => json([listing]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const { wrapper, router } = await mountRouted(PluginsView, '/plugins', '/plugins')
+    await flushPromises()
+
+    await wrapper.get('[data-testid="plugin-details-example-pay"]').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/plugins/example-pay')
+
+    await router.push('/plugins')
+    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+    await wrapper.get('[data-testid="registry-card-example-pay"]').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/plugins/example-pay')
+  })
+
+  it('updates an installed plugin from its Update button', async () => {
+    const mock = stubRoutes({
+      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true, stagedVersion: '2.0.0' }),
+      'GET /api/admin/plugins/registry/updates': () => json([listing]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+
+    await wrapper.get('[data-testid="plugin-update-button-example-pay"]').trigger('click')
+    await flushPromises()
+
+    const post = mock.mock.calls.find(([, init]) => init?.method === 'POST')
+    expect(JSON.parse(String(post?.[1]?.body))).toEqual({ version: '2.0.0', allowDowngrade: false })
+    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Version 2.0.0 uploaded and staged')
+  })
+
+  it('uninstalls from a registry card behind the same removal confirmation', async () => {
+    const mock = stubRoutes({
+      'DELETE /api/admin/plugins/example-pay': () => json({ requiresRestart: true }),
+      'GET /api/admin/plugins/registry/updates': () => json([]),
+      'GET /api/admin/plugins/registry': () => json({ items: [{ ...listing, updateAvailable: false }], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+
+    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+    await wrapper.get('[data-testid="registry-uninstall-example-pay"]').trigger('click')
+    await flushPromises()
+    expect(mock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(mock.mock.calls.some(([url, init]) => String(url) === '/api/admin/plugins/example-pay' && init?.method === 'DELETE')).toBe(true)
+    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Plugin removed.')
   })
 })

@@ -63,7 +63,7 @@ public static class SecretSettingKeys
     {
         ArgumentNullException.ThrowIfNull(key);
 
-        if (StandaloneKeys.Contains(key))
+        if (StandaloneKeys.Contains(key) || key.StartsWith(PluginSettingKeys.RegistryLicencePrefix, StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }

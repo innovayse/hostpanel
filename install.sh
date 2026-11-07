@@ -22,6 +22,8 @@
 #   --yes              do not ask for confirmation (rollback)
 #   --keep <n>         newest backups to keep, older ones are removed, except the oldest backup of
 #                      each version [HOSTPANEL_BACKUP_KEEP, default 5]
+#   --keep-versions <n>  keep the oldest backup of this many of the newest versions only, so disk use
+#                      does not grow with every release [HOSTPANEL_BACKUP_KEEP_VERSIONS, default 10]
 #   --skip-backup      upgrade without a backup: the data is NOT protected, use it only when you are
 #                      sure there is nothing worth keeping
 #   --help             print this text
@@ -66,6 +68,9 @@ DB_WAIT_INTERVAL="${HOSTPANEL_DB_WAIT_INTERVAL:-2}"
 # Backups live in this folder of the install directory; this many are kept unless told otherwise.
 BACKUP_DIR_NAME="backups"
 BACKUP_KEEP_DEFAULT=5
+# The oldest backup of a version is kept for this many of the newest versions; the oldest backups of
+# versions further back are trimmed like any other, so the folder does not grow with every release.
+BACKUP_KEEP_VERSIONS_DEFAULT=10
 
 # ── Output helpers ────────────────────────────────────────────────────────────
 if [ -t 1 ]; then
@@ -83,7 +88,7 @@ fail()    { printf '%s[error]%s %s\n' "$RED" "$NC" "$*" >&2; exit 1; }
 # Prints the leading comment block of this file (the usage text).
 usage() {
   cat <<'USAGE'
-Usage: install.sh [--dir <path>] [--version <x.y.z>] [--no-tls] [--keep <n>] [--skip-backup]
+Usage: install.sh [--dir <path>] [--version <x.y.z>] [--no-tls] [--keep <n>] [--keep-versions <n>] [--skip-backup]
        install.sh --rollback [--yes] [--dir <path>]
   --dir      install directory   (HOSTPANEL_DIR, default /opt/hostpanel)
   --version  release to install  (HOSTPANEL_VERSION, default main / latest)
@@ -91,6 +96,7 @@ Usage: install.sh [--dir <path>] [--version <x.y.z>] [--no-tls] [--keep <n>] [--
   --rollback restore the database and the version recorded with the newest backup of another version (asks first)
   --yes      confirm a rollback in advance, for scripts
   --keep     newest backups to keep, plus the oldest of each version (HOSTPANEL_BACKUP_KEEP, default 5)
+  --keep-versions  versions whose oldest backup is kept, the newest ones (HOSTPANEL_BACKUP_KEEP_VERSIONS, default 10)
   --skip-backup  upgrade without a database backup; the data is not protected, only when there is nothing to keep
 Non-interactive answers: HOSTPANEL_DOMAIN, HOSTPANEL_ADMIN_DOMAIN, HOSTPANEL_ADMIN_EMAIL
 (HOSTPANEL_NONINTERACTIVE=1 forces it even with a terminal).
@@ -417,17 +423,32 @@ backup_tag() {
   printf '%s' "$tag"
 }
 
-# Removes the old backups with prefix $1. What stays: the newest $KEEP, the oldest backup of every
-# version (the one taken right before that version was replaced is the way back to it, and a re-run of
-# the installer on a bad version must not push it out) and the file named in $2, the one just made.
+# Removes the old backups with prefix $1. What stays: the newest $KEEP, the oldest backup of each of the
+# newest $KEEP_VERSIONS versions (the one taken right before that version was replaced is the way back to
+# it, and a re-run of the installer on a bad version must not push it out; versions further back lose
+# theirs, or the folder would grow with every release) and the file named in $2, the one just made.
 # The names are read into an array, so no pipe can be cut short under pipefail. $1 prefix, $2 file name to keep
 prune_backups() {
-  local names=() name tag i total first seen=' '
+  local names=() name tag i total first seen=' ' recent=' ' protected=' ' count=0
   while IFS= read -r name; do
     names+=("$name")
   done < <(list_backups "$1")
   total="${#names[@]}"
   first=$((total - KEEP))
+  # The newest versions: walk from the newest file back and note each version when it first shows up.
+  for ((i = total - 1; i >= 0; i--)); do
+    tag="$(file_tag "${names[$i]}")"
+    tag="${tag:-${names[$i]}}"
+    case "$recent" in
+      *" ${tag} "*) ;;
+      *)
+        recent="${recent}${tag} "
+        if [ "$count" -lt "$KEEP_VERSIONS" ]; then
+          protected="${protected}${tag} "
+        fi
+        count=$((count + 1)) ;;
+    esac
+  done
   for ((i = 0; i < total; i++)); do
     name="${names[$i]}"
     tag="$(file_tag "$name")"
@@ -437,7 +458,9 @@ prune_backups() {
       *)
         # The first file of a version in oldest-first order is the oldest of that version.
         seen="${seen}${tag} "
-        continue ;;
+        case "$protected" in
+          *" ${tag} "*) continue ;;
+        esac ;;
     esac
     if [ "$i" -lt "$first" ] && [ "$name" != "${2:-}" ]; then
       rm -f -- "${INSTALL_DIR}/${BACKUP_DIR_NAME}/${name}"
@@ -560,38 +583,68 @@ backup_before_upgrade() {
 
 # Runs inside the db container, with the dump on its stdin. The dump is restored into a temporary
 # database first; only a restore that went through is renamed into the place of the live database,
-# so a failed restore leaves the live database exactly as it was. Exit status: 0 restored, 1 failed
-# with the live database untouched, 3 the swap broke half way and the live database is missing (the
-# old data is then in <name>_replaced and the restored data in <name>_restore).
+# so a failed restore leaves the live database exactly as it was. A rename is refused while any
+# connection holds the database, and the server keeps background workers (autovacuum above all) that
+# connect to a database on their own, also to the temporary one right after the restore wrote into it.
+# Autovacuum cannot be switched off for one database, so each rename ends the connections that hold
+# the database first and is tried again a few times; a worker that came back in between loses the
+# next try. Exit status: 0 restored, 1 the restore itself failed (live database untouched), 3 the
+# swap broke half way and the live database is missing (the old data is then in <name>_replaced and
+# the restored data in <name>_restore), 4 the rename stayed blocked after every try and the live
+# database was put back as it was (the backup itself loaded fine).
 read -r -d '' RESTORE_SCRIPT <<'SQLSCRIPT' || true
 LIVE="$POSTGRES_DB"
 NEW="${LIVE}_restore"
 OLD="${LIVE}_replaced"
 DBUSER="$POSTGRES_USER"
+RENAME_TRIES=10
 admin() { psql -q -v ON_ERROR_STOP=1 -U "$DBUSER" -d postgres "$@"; }
-dropdb -U "$DBUSER" --if-exists "$NEW" || exit 1
-dropdb -U "$DBUSER" --if-exists "$OLD" || exit 1
+drop_temp() { dropdb -U "$DBUSER" --force --if-exists "$1"; }
+rename_db() {
+  try=0
+  while [ "$try" -lt "$RENAME_TRIES" ]; do
+    try=$((try + 1))
+    admin -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$1' AND pid <> pg_backend_pid()" > /dev/null 2>&1
+    if admin -c "ALTER DATABASE \"$1\" RENAME TO \"$2\"" 2>/dev/null; then
+      return 0
+    fi
+    echo "database $1 is busy, trying the rename again ($try of $RENAME_TRIES)" >&2
+    sleep 1
+  done
+  return 1
+}
+drop_temp "$NEW" || exit 1
+drop_temp "$OLD" || exit 1
 createdb -U "$DBUSER" "$NEW" || exit 1
 if ! psql -q -v ON_ERROR_STOP=1 --single-transaction -U "$DBUSER" -d "$NEW"; then
-  dropdb -U "$DBUSER" --if-exists "$NEW"
+  drop_temp "$NEW"
   exit 1
 fi
-if ! admin -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$LIVE' AND pid <> pg_backend_pid()" > /dev/null; then
-  dropdb -U "$DBUSER" --if-exists "$NEW"
-  exit 1
+if ! rename_db "$LIVE" "$OLD"; then
+  drop_temp "$NEW"
+  exit 4
 fi
-if ! admin -c "ALTER DATABASE \"$LIVE\" RENAME TO \"$OLD\""; then
-  dropdb -U "$DBUSER" --if-exists "$NEW"
-  exit 1
-fi
-if ! admin -c "ALTER DATABASE \"$NEW\" RENAME TO \"$LIVE\""; then
-  if admin -c "ALTER DATABASE \"$OLD\" RENAME TO \"$LIVE\""; then
-    dropdb -U "$DBUSER" --if-exists "$NEW"
-    exit 1
+if ! rename_db "$NEW" "$LIVE"; then
+  if rename_db "$OLD" "$LIVE"; then
+    drop_temp "$NEW"
+    exit 4
   fi
   exit 3
 fi
-dropdb -U "$DBUSER" --if-exists "$OLD" || true
+drop_temp "$OLD" || true
+exit 0
+SQLSCRIPT
+
+# Runs inside the db container and prints which of the live database, <name>_replaced and <name>_restore
+# exist, one word per line (live, replaced, restore). Exit status 2 when the list cannot be read.
+read -r -d '' STATE_SCRIPT <<'SQLSCRIPT' || true
+present() {
+  found="$(psql -q -U "$POSTGRES_USER" -d postgres -tA -c "SELECT 1 FROM pg_database WHERE datname = '$1'")" || exit 2
+  [ "$found" = "1" ]
+}
+if present "$POSTGRES_DB"; then echo live; fi
+if present "${POSTGRES_DB}_replaced"; then echo replaced; fi
+if present "${POSTGRES_DB}_restore"; then echo restore; fi
 exit 0
 SQLSCRIPT
 
@@ -605,13 +658,26 @@ restore_dump() {
 manual_restore_command() {
   printf "      cd %q && docker compose -f %s exec -T %s sh -c '%s' < %q\n" \
     "$INSTALL_DIR" "$COMPOSE_FILE" "$DB_SERVICE" \
-    'dropdb -U "$POSTGRES_USER" --if-exists "$POSTGRES_DB" && createdb -U "$POSTGRES_USER" "$POSTGRES_DB" && psql -q -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" "$POSTGRES_DB"' \
+    'dropdb -U "$POSTGRES_USER" --force --if-exists "$POSTGRES_DB" && createdb -U "$POSTGRES_USER" "$POSTGRES_DB" && psql -q -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" "$POSTGRES_DB"' \
     "$1"
+}
+
+# Prints the command that renames the database <name>$1 (the suffix, _replaced or _restore) into the
+# place of the missing live database. $1 suffix
+rename_into_place_command() {
+  printf "      cd %q && docker compose -f %s exec -T %s sh -c '%s'\n" \
+    "$INSTALL_DIR" "$COMPOSE_FILE" "$DB_SERVICE" \
+    'psql -q -U "$POSTGRES_USER" -d postgres -c "ALTER DATABASE \"${POSTGRES_DB}'"$1"'\" RENAME TO \"${POSTGRES_DB}\""'
 }
 
 # Prints the command that starts the whole stack again.
 start_command() {
   printf '      cd %q && docker compose -f %s up -d\n' "$INSTALL_DIR" "$COMPOSE_FILE"
+}
+
+# Prints the command that runs the rollback again.
+rerun_command() {
+  printf '      curl -fsSL https://raw.githubusercontent.com/%s/main/install.sh | bash -s -- --rollback --dir %q\n' "$REPO" "$INSTALL_DIR"
 }
 
 # Stops the run after something went wrong during a rollback, and says in what state the install is
@@ -623,18 +689,86 @@ fail_with_state() {
   exit 1
 }
 
-# Reports a restore that failed, by the exit status of RESTORE_SCRIPT. $1 status, $2 backup file, $3 safety copy (may be empty)
-restore_failed() {
-  local status="$1" file="$2" safety="$3" copy
-  copy="${safety:-$file}"
-  if [ "$status" = "3" ]; then
-    fail_with_state "The restore failed half way." \
-      "the application services are STOPPED and the live database is MISSING or empty. The data before the rollback is saved in ${copy}." \
-      "$(printf '%s\n' '      First put the saved data back:'; manual_restore_command "$copy"; printf '%s\n' '      then start the stack:'; start_command)"
+# Stops the run, before anything was changed, when an earlier rollback broke half way: the live database
+# is then missing, the data from before that rollback is in <name>_replaced and the restored backup in
+# <name>_restore. Another rollback would only fail to save the missing database, and its first step
+# drops both of them. Expects the database to be running.
+check_no_half_swap() {
+  local states status=0 name
+  name="$(get_env "${INSTALL_DIR}/.env" POSTGRES_DB)"
+  states="$(compose exec -T "$DB_SERVICE" sh -c "$STATE_SCRIPT")" || status=$?
+  if [ "$status" -ne 0 ]; then
+    fail "Could not read the list of databases, so the rollback was not started. Nothing was changed."
   fi
-  fail_with_state "The restore failed (the backup ${file} may be damaged)." \
-    "the application services are STOPPED. The live database was not changed: the restore ran in a temporary database that was removed again. The data before the rollback is saved in ${copy}." \
-    "$(printf '%s\n' '      Start the stack again:'; start_command; printf '%s\n' '      Only if the database looks wrong, put the saved data back first:'; manual_restore_command "$copy")"
+  case "$states" in
+    *live*) return 0 ;;
+  esac
+  fail_with_state "An earlier rollback stopped half way: the live database ${name} is missing, so this one was not started." \
+    "nothing was changed by this run. The data from before that earlier rollback is in the database ${name}_replaced and the backup it restored is in ${name}_restore, both inside the database container. The application services are probably still STOPPED. This run would drop both, so it refuses until ${name} exists again." \
+    "$(printf '%s\n' '      Put the data from before the earlier rollback back:'; rename_into_place_command _replaced; printf '%s\n' '      or keep the restored backup instead:'; rename_into_place_command _restore; printf '%s\n' '      then start the stack, or run the rollback again:'; start_command)"
+}
+
+# Reports a restore that failed, by the exit status of RESTORE_SCRIPT, and stops the run. Every message says
+# which data is where. $1 status, $2 backup file, $3 safety copy (empty when the database had no tables)
+restore_failed() {
+  local status="$1" file="$2" safety="$3" name saved
+  name="$(get_env "${INSTALL_DIR}/.env" POSTGRES_DB)"
+  if [ -n "$safety" ]; then
+    saved="The database as it was before the rollback is saved in ${safety}."
+  else
+    saved="The database had no tables, so no copy was made and there is nothing to save."
+  fi
+  if [ "$status" = "3" ]; then
+    fail_with_state "The restore failed half way: the databases were being swapped and the swap broke." \
+      "the application services are STOPPED and the live database ${name} is MISSING. The data from before the rollback is still in the database ${name}_replaced, and the backup ${file} is loaded in the database ${name}_restore (both inside the database container). ${saved} Running the rollback again is refused until ${name} exists." \
+      "$(printf '%s\n' '      Put the data from before the rollback back:'; rename_into_place_command _replaced; printf '%s\n' '      or use the restored backup:'; rename_into_place_command _restore; printf '%s\n' '      then start the stack:'; start_command)"
+  fi
+  if [ "$status" = "4" ]; then
+    fail_with_state "The backup was restored into a temporary database, but it could not be put in place: the database stayed busy (a background database worker kept connecting) through every try. The backup ${file} is most likely fine." \
+      "the application services are STOPPED. The live database ${name} was put back and was not changed. ${saved}" \
+      "$(printf '%s\n' '      Run the rollback again (it is safe to repeat):'; rerun_command; printf '%s\n' '      or start the stack as it is:'; start_command)"
+  fi
+  if [ -n "$safety" ]; then
+    fail_with_state "The restore failed: the backup ${file} could not be loaded, so it may be damaged." \
+      "the application services are STOPPED. The live database ${name} was not changed: the restore ran in a temporary database that was removed again. ${saved}" \
+      "$(printf '%s\n' '      Start the stack again:'; start_command; printf '%s\n' '      Only if the database looks wrong, put the saved data back first:'; manual_restore_command "$safety")"
+  fi
+  fail_with_state "The restore failed: the backup ${file} could not be loaded, so it may be damaged." \
+    "the application services are STOPPED. The live database ${name} was not changed: the restore ran in a temporary database that was removed again. ${saved}" \
+    "$(printf '%s\n' '      Start the stack again:'; start_command)"
+}
+
+# True when version $1 is newer than version $2. Both read as a number list with an optional suffix
+# (0.4.0, 1.2.3-rc.1); a version with a suffix is older than the same numbers without one. False when
+# either does not read like that, so a tag nobody can order is never called newer. $1 version, $2 version
+version_is_newer() {
+  local a=() b=() i n x y sa sb
+  [[ "$1" =~ ^([0-9]+(\.[0-9]+)*)([-+].*)?$ ]] || return 1
+  IFS=. read -r -a a <<< "${BASH_REMATCH[1]}"
+  sa="${BASH_REMATCH[3]:-}"
+  [[ "$2" =~ ^([0-9]+(\.[0-9]+)*)([-+].*)?$ ]] || return 1
+  IFS=. read -r -a b <<< "${BASH_REMATCH[1]}"
+  sb="${BASH_REMATCH[3]:-}"
+  n="${#a[@]}"
+  if [ "${#b[@]}" -gt "$n" ]; then
+    n="${#b[@]}"
+  fi
+  for ((i = 0; i < n; i++)); do
+    x=$((10#${a[$i]:-0}))
+    y=$((10#${b[$i]:-0}))
+    if [ "$x" -ne "$y" ]; then
+      [ "$x" -gt "$y" ]
+      return
+    fi
+  done
+  if [ -z "$sa" ] && [ -n "$sb" ]; then
+    return 0
+  fi
+  if [ -n "$sa" ] && [ -n "$sb" ]; then
+    [[ "$sa" > "$sb" ]]
+    return
+  fi
+  return 1
 }
 
 # --rollback: puts the images and the database back to the state of the newest backup that belongs to
@@ -644,12 +778,17 @@ restore_failed() {
 # early on leaves the current files in place. Old pre-rollback files are trimmed only after a restore went through.
 rollback() {
   local env="${INSTALL_DIR}/.env" name='' tag current stamp file safety='' status=0 i candidate svc
-  local names=() services=()
+  local forward=0 question names=() services=()
   [ -f "$env" ] || fail "No ${env}: there is no install here to roll back."
   [ -f "${INSTALL_DIR}/${COMPOSE_FILE}" ] || fail "${INSTALL_DIR}/${COMPOSE_FILE} is missing; cannot roll back."
   current="$(get_env "$env" IMAGE_TAG)"
   current="${current:-unknown}"
   check_image_tag "$current" "IMAGE_TAG in ${env}"
+  # The restore swaps databases by renaming them from the maintenance database, which is named postgres,
+  # so it cannot replace a live database of that name. Said before anything is touched.
+  if [ "$(get_env "$env" POSTGRES_DB)" = "postgres" ]; then
+    fail "POSTGRES_DB in ${env} is 'postgres', the server's own maintenance database. The rollback swaps databases by renaming them from that one, so it cannot replace it. Nothing was changed. Restore the backup by hand: see the rollback guide."
+  fi
 
   while IFS= read -r candidate; do
     names+=("$candidate")
@@ -673,9 +812,21 @@ rollback() {
   printf '\n%sRollback%s\n' "$BOLD" "$NC"
   printf '  Backup   : %s\n' "$file"
   printf '  Version  : %s (now %s)\n' "$tag" "$current"
+  if version_is_newer "$tag" "$current"; then
+    forward=1
+    printf '\n  %sThis moves FORWARD, not back:%s the backup was taken on %s, which is newer than the\n' "$BOLD" "$NC" "$tag"
+    printf '  installed %s. That happens when a rollback is repeated: the backups of the version you\n' "$current"
+    printf '  left are the newest ones now. If you meant to go further back, answer no and move the\n'
+    printf '  newer files out of %s/%s first.\n\n' "$INSTALL_DIR" "$BACKUP_DIR_NAME"
+  fi
   printf '  This replaces the database with the backup. Everything written since it was taken\n'
   printf '  (orders, payments, tickets) is lost, after a copy of the current database is saved.\n\n'
-  if ! confirm "Roll back to ${tag}?"; then
+  if [ "$forward" = "1" ]; then
+    question="Move FORWARD to ${tag}?"
+  else
+    question="Roll back to ${tag}?"
+  fi
+  if ! confirm "$question"; then
     info "Rollback cancelled. Nothing was changed."
     return 0
   fi
@@ -689,6 +840,7 @@ rollback() {
   [ "${#services[@]}" -gt 0 ] || fail "Could not read the services of ${COMPOSE_FILE} ('docker compose config --services' failed). Nothing was changed."
   start_database \
     || fail "The database (${DB_SERVICE}) could not be started or did not become ready. Nothing was changed. Look at it with:  cd ${INSTALL_DIR} && docker compose -f ${COMPOSE_FILE} logs ${DB_SERVICE}"
+  check_no_half_swap
 
   info "Stopping every service except the database: ${services[*]}"
   compose stop "${services[@]}" \
@@ -817,6 +969,7 @@ main() {
   HOSTPANEL_VERSION="${HOSTPANEL_VERSION:-}"
   TLS_ASKED="${HOSTPANEL_TLS:-}"
   KEEP="${HOSTPANEL_BACKUP_KEEP:-$BACKUP_KEEP_DEFAULT}"
+  KEEP_VERSIONS="${HOSTPANEL_BACKUP_KEEP_VERSIONS:-$BACKUP_KEEP_VERSIONS_DEFAULT}"
   ROLLBACK=0
   ASSUME_YES=0
   SKIP_BACKUP=0
@@ -831,6 +984,7 @@ main() {
       --rollback) ROLLBACK=1; shift ;;
       --yes|-y)   ASSUME_YES=1; shift ;;
       --keep)     [ "$#" -ge 2 ] || fail "--keep needs a number"; KEEP="$2"; shift 2 ;;
+      --keep-versions) [ "$#" -ge 2 ] || fail "--keep-versions needs a number"; KEEP_VERSIONS="$2"; shift 2 ;;
       --skip-backup) SKIP_BACKUP=1; shift ;;
       -h|--help)  usage; exit 0 ;;
       *)          fail "Unknown option: $1 (see --help)" ;;
@@ -845,6 +999,9 @@ main() {
 
   case "$KEEP" in
     ''|*[!0-9]*|0) fail "--keep / HOSTPANEL_BACKUP_KEEP must be a whole number of at least 1 (got '$KEEP')." ;;
+  esac
+  case "$KEEP_VERSIONS" in
+    ''|*[!0-9]*|0) fail "--keep-versions / HOSTPANEL_BACKUP_KEEP_VERSIONS must be a whole number of at least 1 (got '$KEEP_VERSIONS')." ;;
   esac
 
   if [ "$ROLLBACK" = "1" ]; then

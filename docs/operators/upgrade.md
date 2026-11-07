@@ -112,10 +112,12 @@ The file and the folder are readable by their owner only.
   leaves the data unprotected; do not use it on a stack that holds data.
 - A database without any table is not kept as a backup, so it never replaces one that
   holds data.
-- The newest 5 backups are kept, and so is the oldest backup of every version, because
-  the one taken right before an upgrade is the way back to the old version even after
-  you run the installer again. Older ones are removed. Change the number with
-  `--keep <n>` or `HOSTPANEL_BACKUP_KEEP`. Backup names use UTC.
+- The newest 5 backups are kept, and so is the oldest backup of each of the newest 10
+  versions, because the one taken right before an upgrade is the way back to the old
+  version even after you run the installer again. Older ones are removed, so the folder
+  does not grow with every release. Change the numbers with `--keep <n>` or
+  `HOSTPANEL_BACKUP_KEEP`, and `--keep-versions <n>` or
+  `HOSTPANEL_BACKUP_KEEP_VERSIONS`. Backup names use UTC.
 - Keep a copy of `.env` as well, since the dump cannot be read without its
   `ENCRYPTION_KEY`: `cp .env .env.bak`.
 - Install with `--version <x.y.z>`. A backup taken while `IMAGE_TAG` is the moving

@@ -13,10 +13,14 @@
  * lists the widgets plugins add to pages, each with a product multi select the operator saves after install.
  * A second tab, Browse, lists the plugin registry (search, category, pages) with the registry trust card
  * and installs or updates from it; the tab is not offered when the server answers that the registry is
- * switched off. A plugin with a newer registry version shows an update badge in the installed list.
+ * switched off. A plugin with a newer registry version shows an update badge and an Update button in the
+ * installed list, and a plugin the registry lists has a Details button. Registry cards open the details page,
+ * and install, update and uninstall (the same confirmed removal as the installed list) per card.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+import { pluginPath } from '@/lib/routes'
 import { usePluginsStore } from '@/stores/plugins'
 import { useSettingsStore } from '@/stores/settings'
 import PluginCard from '@/components/plugins/PluginCard.vue'
@@ -45,6 +49,9 @@ import type { UiTabItem } from '@/utils/ui/tabs'
 
 /** Translation function. */
 const { t } = useI18n()
+
+/** Router: opens a plugin's details page. */
+const router = useRouter()
 
 /** Plugins store: the installed list, the restart flag and the refusal sentence. */
 const store = usePluginsStore()
@@ -222,6 +229,41 @@ const tabs = computed<UiTabItem[]>(() => [
     : [{ value: PluginsTab.Browse, label: t('plugins.plugins.tabBrowse'), testid: 'plugins-tab-browse' }]),
 ])
 
+/** Ids of the plugins with a registry action in flight (the store tracks each plugin on its own); each card shows only its own busy state. */
+const installingIds = computed<string[]>(() =>
+  [...new Set([...store.registryItems.map(item => item.id), ...store.installed.map(plugin => plugin.id)])].filter(id => store.isBusy(id)),
+)
+
+/** Ids of the plugins the server holds a licence key for, as far as their details have been loaded. */
+const licensedIds = computed<string[]>(() =>
+  Object.entries(store.registryDetails)
+    .filter(([, state]) => state.details?.hasLicenceKey === true)
+    .map(([id]) => id),
+)
+
+/** Ids of the plugins the registry lists, on the current page or through an update; these have a details page. */
+const registryListedIds = computed<string[]>(() =>
+  store.registryDisabled
+    ? []
+    : [...new Set([...store.registryItems.map(item => item.id), ...Object.keys(store.updateVersions)])],
+)
+
+/** Staged version per installed plugin id, for the registry cards' staged state. */
+const stagedVersions = computed<Record<string, string>>(() =>
+  Object.fromEntries(
+    store.installed.flatMap(plugin => (plugin.stagedVersion === null ? [] : [[plugin.id, plugin.stagedVersion]])),
+  ),
+)
+
+/**
+ * Opens the details page of a plugin.
+ *
+ * @param id - Plugin id.
+ */
+const openDetails = (id: string): void => {
+  void router.push(pluginPath(id))
+}
+
 /**
  * Installs or updates a plugin from the registry and shows the outcome.
  *
@@ -317,11 +359,16 @@ onMounted(() => Promise.all([
         :category="store.registryQuery.category"
         :loading="store.registryLoading"
         :error="store.registryError"
-        :installing-id="store.registryInstallingId"
+        :installing-ids="installingIds"
+        :removing-id="removingId"
+        :staged-versions="stagedVersions"
+        :licensed-ids="licensedIds"
         @update:query="handleRegistryQuery"
         @update:category="handleRegistryCategory"
         @update:page="handleRegistryPage"
         @install="handleRegistryInstall"
+        @remove="askRemove"
+        @details="openDetails"
         @retry="store.fetchRegistry()"
       />
     </template>
@@ -400,7 +447,11 @@ onMounted(() => Promise.all([
           :plugin="plugin"
           :removing="removingId === plugin.id"
           :update-version="store.updateVersions[plugin.id] ?? null"
+          :updating="installingIds.includes(plugin.id)"
+          :has-details="registryListedIds.includes(plugin.id)"
           @remove="askRemove"
+          @update="handleRegistryInstall"
+          @details="openDetails"
         />
       </UiStack>
     </template>

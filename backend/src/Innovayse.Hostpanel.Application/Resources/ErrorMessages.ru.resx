@@ -1153,6 +1153,21 @@
   <data name="PLUGIN_REGISTRY_NOT_TRUSTED" xml:space="preserve">
     <value>Настройка доверия к реестру плагинов не разрешает установить этот плагин.</value>
   </data>
+  <data name="PLUGIN_REGISTRY_LICENCE_REQUIRED" xml:space="preserve">
+    <value>Для этого плагина из реестра плагинов нужен лицензионный ключ.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_LICENCE_INVALID" xml:space="preserve">
+    <value>Реестр плагинов не принял лицензионный ключ.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_HOST_INCOMPATIBLE" xml:space="preserve">
+    <value>Эта версия плагина не работает с установленной версией Hostpanel.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_VERSION_YANKED" xml:space="preserve">
+    <value>Реестр плагинов отозвал эту версию, поэтому её нельзя установить. Выберите другую версию.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_VERSION_COMPROMISED" xml:space="preserve">
+    <value>Реестр плагинов отклонил эту версию как небезопасную, поэтому её нельзя установить. Выберите другую версию.</value>
+  </data>
   <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
     <value>Плагин запрашивает неизвестный этому серверу вид доступа к хостингу клиента, указывает его дважды или объявляет его в манифесте версии 1.</value>
   </data>

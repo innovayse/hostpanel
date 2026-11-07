@@ -1153,6 +1153,21 @@
   <data name="PLUGIN_REGISTRY_NOT_TRUSTED" xml:space="preserve">
     <value>Հավելագրիչների ռեեստրի վստահության կարգավորումը չի թույլատրում տեղադրել այս հավելագրիչը։</value>
   </data>
+  <data name="PLUGIN_REGISTRY_LICENCE_REQUIRED" xml:space="preserve">
+    <value>Ռեեստրի այս հավելագրիչի համար պահանջվում է արտոնագրի բանալի։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_LICENCE_INVALID" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը չընդունեց արտոնագրի բանալին։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_HOST_INCOMPATIBLE" xml:space="preserve">
+    <value>Հավելագրիչի այս տարբերակը չի աշխատում Hostpanel-ի տեղադրված տարբերակի հետ։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_VERSION_YANKED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը հետ է կանչել այս տարբերակը, ուստի այն հնարավոր չէ տեղադրել։ Ընտրեք այլ տարբերակ։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_VERSION_COMPROMISED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը մերժել է այս տարբերակը որպես անապահով, ուստի այն հնարավոր չէ տեղադրել։ Ընտրեք այլ տարբերակ։</value>
+  </data>
   <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
     <value>Հավելագրիչը պահանջում է հաճախորդի հոսթինգի մուտքի տեսակ, որը այս սերվերը չգիտի, նշում է այն երկու անգամ կամ հայտարարում է 1-ին տարբերակի մանիֆեստում։</value>
   </data>

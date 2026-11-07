@@ -1402,6 +1402,12 @@
   <data name="PluginVersionRequired" xml:space="preserve">
     <value>Версия плагина обязательна.</value>
   </data>
+  <data name="PluginLicenceKeyRequired" xml:space="preserve">
+    <value>Лицензионный ключ обязателен.</value>
+  </data>
+  <data name="PluginLicenceKeyTooLong" xml:space="preserve">
+    <value>Лицензионный ключ слишком длинный.</value>
+  </data>
   <data name="PluginVersionInvalid" xml:space="preserve">
     <value>Версия плагина должна быть семантической, например 1.2.3.</value>
   </data>

@@ -66,6 +66,13 @@ public static class StatusMapping
                 or "PLUGIN_REGISTRY_CHECKSUM_MISMATCH" => new(502, "Bad Gateway"),
             "PLUGIN_REGISTRY_TIMED_OUT" => new(504, "Gateway Timeout"),
             "PLUGIN_REGISTRY_NOT_TRUSTED" => new(403, "Forbidden"),
+            // Exact rows: the registry wants a licence key, or refused the one sent. The caller can fix it by entering a
+            // key, so 422; never 401 or 403, which the admin panel reads as its own sign-in or permission failing.
+            "PLUGIN_REGISTRY_LICENCE_REQUIRED" or "PLUGIN_REGISTRY_LICENCE_INVALID" => new(422, "Unprocessable Content"),
+            // Exact rows: the version asked for does not run on this host, or the registry withdrew or flagged it. The request
+            // is well formed and the version's state refuses it, a conflict (409); none of the names carries a CONFLICT token.
+            "PLUGIN_REGISTRY_HOST_INCOMPATIBLE" or "PLUGIN_REGISTRY_VERSION_YANKED" or "PLUGIN_REGISTRY_VERSION_COMPROMISED"
+                => new(409, "Conflict"),
             // Exact row: a plugin's own code failed the call (a gateway between us and code we do not own, 502); the name
             // carries no token.
             "PLUGIN_FAILED" => new(502, "Bad Gateway"),

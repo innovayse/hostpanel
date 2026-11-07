@@ -1402,6 +1402,12 @@
   <data name="PluginVersionRequired" xml:space="preserve">
     <value>Հավելագրիչի տարբերակը պարտադիր է։</value>
   </data>
+  <data name="PluginLicenceKeyRequired" xml:space="preserve">
+    <value>Արտոնագրի բանալին պարտադիր է։</value>
+  </data>
+  <data name="PluginLicenceKeyTooLong" xml:space="preserve">
+    <value>Արտոնագրի բանալին չափազանց երկար է։</value>
+  </data>
   <data name="PluginVersionInvalid" xml:space="preserve">
     <value>Հավելագրիչի տարբերակը պետք է լինի սեմանտիկ, օրինակ՝ 1.2.3։</value>
   </data>

@@ -13,6 +13,8 @@ import type {
   PluginRegistryPageDto,
   PluginRegistryQuery,
   PluginSlotWidgetBindingDto,
+  RegistryPluginDetailsDto,
+  SaveLicenceKeyBody,
   SavePluginSlotWidgetProductsBody,
 } from '@/types/plugin'
 import { ApiPath } from '@/lib/apiPaths'
@@ -131,8 +133,39 @@ export const usePluginsApi = () => {
       body: JSON.stringify(body),
     })
 
+  /**
+   * Reads the details of one registry plugin.
+   *
+   * @param id - Plugin id as listed by the registry.
+   * @returns The details with every version.
+   */
+  const getRegistryDetails = (id: string): Promise<RegistryPluginDetailsDto> =>
+    request<RegistryPluginDetailsDto>(`${ApiPath.AdminPlugins}/registry/${id}`)
+
+  /**
+   * Stores the licence key of a registry plugin.
+   *
+   * @param id - Plugin id as listed by the registry.
+   * @param body - The key.
+   * @returns Resolves when stored.
+   */
+  const saveLicenceKey = (id: string, body: SaveLicenceKeyBody): Promise<void> =>
+    request<void>(`${ApiPath.AdminPlugins}/registry/${id}/licence`, {
+      method: HttpMethod.Put,
+      body: JSON.stringify(body),
+    })
+
+  /**
+   * Removes the stored licence key of a registry plugin.
+   *
+   * @param id - Plugin id as listed by the registry.
+   * @returns Resolves when removed.
+   */
+  const removeLicenceKey = (id: string): Promise<void> =>
+    request<void>(`${ApiPath.AdminPlugins}/registry/${id}/licence`, { method: HttpMethod.Delete })
+
   return {
     listPlugins, installPlugin, removePlugin, purgePluginData, restartServer, listSlotWidgets, saveSlotWidgetProducts,
-    browseRegistry, listRegistryUpdates, installFromRegistry,
+    browseRegistry, listRegistryUpdates, installFromRegistry, getRegistryDetails, saveLicenceKey, removeLicenceKey,
   }
 }

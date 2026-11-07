@@ -32,7 +32,7 @@
 import { computed } from 'vue'
 import { Monitor, Server } from 'lucide-vue-next'
 import type { ClientService } from '~/types/clientservice'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'
 import { canSignInToControlPanel } from '~/utils/controlPanel'
 

@@ -43,7 +43,7 @@
  * sign in to the control panel, reload the related invoices, start a cancellation.
  */
 import { ChevronRight } from 'lucide-vue-next'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'
 import type { ClientService } from '~/types/clientservice'
 import { canSignInToControlPanel } from '~/utils/controlPanel'

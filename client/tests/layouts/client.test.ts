@@ -33,7 +33,7 @@ const PLUGIN_INDEX_URL = '/api/portal/client/plugins/ui'
 
 const { default: ClientLayout } = await import('~/layouts/client.vue')
 const { default: LayoutDemoBanner } = await import('~/components/layout/DemoBanner.vue')
-const { Permission } = await import('~/composables/usePermissions')
+const { Permission } = await import('~/types/permission')
 const { useAuthStore } = await import('~/stores/auth')
 const { useClientStore } = await import('~/stores/client')
 const { usePluginsStore } = await import('~/stores/plugins')
@@ -202,6 +202,27 @@ describe('client layout', () => {
     }
     expect(wrapper.find('[data-testid="nav-announcements"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="nav-knowledgebase"]').exists()).toBe(true)
+  })
+
+  it('shows every link while the identity has not loaded yet, then narrows them to the permissions', async () => {
+    bff.respondWith((request) => {
+      if (request.method === 'GET' && request.url === ME_URL) {
+        return { hold: true }
+      }
+      return { body: { menus: [], pages: [] } }
+    })
+    const wrapper = await mountLayout()
+
+    expect(useClientStore().user).toBeNull()
+    for (const id of ['dashboard', 'services', 'domains', 'invoices', 'credit-notes', 'tickets', 'account']) {
+      expect(wrapper.find(`[data-testid="nav-client-${id}"]`).exists()).toBe(true)
+    }
+
+    useClientStore().user = { ...ME, permissions: Permission.ViewDomains } as never
+    await nextTick()
+
+    expect(wrapper.find('[data-testid="nav-client-services"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="nav-client-domains"]').exists()).toBe(true)
   })
 
   it('hides the sections a person has no permission for', async () => {

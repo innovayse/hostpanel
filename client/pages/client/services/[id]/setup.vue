@@ -1,7 +1,7 @@
 <template>
   <UiStack gap="lg" class="max-w-xl w-full mx-auto py-10 min-h-[60dvh] justify-center">
     <ClientServicesSetupStatePanel
-      v-if="pending"
+      v-if="pending || isDigital"
       loading
       :title="$t('client.setup.loading')"
       :description="$t('client.setup.pleaseWait')"
@@ -36,6 +36,10 @@
  * Hosting setup page: loads the service and shows the setup wizard, or says why there is nothing
  * to set up (the service could not be read, or it is already configured). The service is read
  * through the service management store.
+ *
+ * A digital service is delivered by its plugin and has no wizard: once it is loaded the page
+ * redirects to the service's own page (replacing this history entry), and until the redirect has
+ * happened the loading panel stays, so the wizard never shows for it.
  *
  * The form keeps a short column (a width cap, an allowed exception: form fields are intrinsically
  * narrow, so this is not page layout; the page width itself comes from the shared container).
@@ -73,12 +77,14 @@ const error = computed(() => mgmt.serviceError)
 /** Whether the service is active and already has a control-panel account and a domain. */
 const isAlreadySetUp = computed(() => service.value?.status === ServiceStatus.Active && Boolean(service.value.username) && Boolean(service.value.domain))
 
-// A digital service is delivered by its plugin and has no wizard: send it to its own page.
-watch(service, (current) => {
-  if (!pending.value && current?.isDigital) {
-    navigateTo(clientServicePath(serviceId), { replace: true })
-  }
-}, { immediate: true })
+/** Whether the loaded service is a digital one, which has nothing to set up. */
+const isDigital = computed(() => service.value?.isDigital === true)
+
+// A digital service is delivered by its plugin and has no wizard: send it to its own page. The
+// redirect is awaited so that it completes before the page renders (also on the server).
+if (isDigital.value) {
+  await navigateTo(clientServicePath(serviceId), { replace: true })
+}
 
 useHead({ title: computed(() => `${t('client.setup.pageTitle')} — ${siteName.value}`) })
 </script>

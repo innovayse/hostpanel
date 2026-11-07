@@ -61,7 +61,7 @@
 import { AlertCircle, Pencil } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { APP_LOCALES } from '~/constants/appLocales'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useAccountStore } from '~/stores/account'
 import { useClientStore } from '~/stores/client'
 import { AppLocale } from '~/types/applocale'

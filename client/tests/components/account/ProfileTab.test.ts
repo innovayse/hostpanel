@@ -4,7 +4,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { mountAccount } from '~/tests/helpers/mountAccount'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import ProfileTab from '~/components/account/ProfileTab.vue'
 import { useAccountStore } from '~/stores/account'
 import { useClientStore } from '~/stores/client'

@@ -13,6 +13,7 @@ import type { ClientDomain } from '~/types/clientdomain'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { ClientService } from '~/types/clientservice'
 import { InvoiceStatus } from '~/types/invoicestatus'
+import { ServiceStatus } from '~/types/servicestatus'
 
 /** One day in milliseconds. */
 const DAY_MS = 86_400_000
@@ -36,7 +37,7 @@ describe('ClientDashboardAlerts', () => {
 
   it('flags one service that needs setup with the singular title', async () => {
     const wrapper = mountClient(Alerts)
-    useClientStore().services = [{ id: 1, username: '' }] as unknown as ClientService[]
+    useClientStore().services = [{ id: 1, status: ServiceStatus.Pending }] as unknown as ClientService[]
     await nextTick()
 
     const alert = wrapper.find('[data-testid="dashboard-alert-setup"]')
@@ -46,7 +47,7 @@ describe('ClientDashboardAlerts', () => {
 
   it('uses the plural title for several services', async () => {
     const wrapper = mountClient(Alerts)
-    useClientStore().services = [{ id: 1, username: '' }, { id: 2, username: '' }] as unknown as ClientService[]
+    useClientStore().services = [{ id: 1, status: ServiceStatus.Pending }, { id: 2, status: ServiceStatus.Pending }] as unknown as ClientService[]
     await nextTick()
 
     expect(wrapper.find('[data-testid="dashboard-alert-setup"]').text()).toContain('client.dashboard.setupAlertMultiple')

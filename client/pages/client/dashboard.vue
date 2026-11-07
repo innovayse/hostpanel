@@ -62,7 +62,7 @@
  * slice from the store, and the derived lists live in {@link useDashboardSummary}.
  */
 import { RefreshCw } from 'lucide-vue-next'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'
 import { useContentStore } from '~/stores/content'
 import { PluginSlotId } from '~/types/pluginslotid'

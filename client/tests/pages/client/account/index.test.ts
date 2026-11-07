@@ -8,7 +8,7 @@
 import { defineComponent, h } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountPage } from '~/tests/helpers/mountClient'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 
 /** Loaders the page triggers, re-created per test. */
 const loaders = {

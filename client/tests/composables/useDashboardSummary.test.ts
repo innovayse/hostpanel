@@ -13,6 +13,7 @@ import { useClientStore } from '~/stores/client'
 import type { ClientDomain } from '~/types/clientdomain'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { ClientService } from '~/types/clientservice'
+import { ServiceStatus } from '~/types/servicestatus'
 import { InvoiceStatus } from '~/types/invoicestatus'
 
 /** One day in milliseconds. */
@@ -55,20 +56,20 @@ describe('useDashboardSummary.expiringDomains', () => {
 })
 
 describe('useDashboardSummary.servicesNeedingSetup', () => {
-  it('lists the services that have no control-panel username', () => {
+  it('lists the pending services', () => {
     const store = useClientStore()
-    store.services = [{ id: 1, username: '' }, { id: 2, username: 'ada' }] as unknown as ClientService[]
+    store.services = [{ id: 1, status: ServiceStatus.Pending }, { id: 2, status: ServiceStatus.Active }] as unknown as ClientService[]
 
     const { servicesNeedingSetup } = useDashboardSummary()
 
     expect(servicesNeedingSetup.value.map((service) => service.id)).toEqual([1])
   })
 
-  it('leaves out a digital service, which has no username and nothing to set up', () => {
+  it('leaves out a pending digital service, which has nothing to set up', () => {
     const store = useClientStore()
     store.services = [
-      { id: 1, username: '', isDigital: false },
-      { id: 2, username: null, isDigital: true }
+      { id: 1, status: ServiceStatus.Pending, isDigital: false },
+      { id: 2, status: ServiceStatus.Pending, isDigital: true }
     ] as unknown as ClientService[]
 
     const { servicesNeedingSetup } = useDashboardSummary()

@@ -2,9 +2,11 @@
  * Permission flags matching the C# backend `ClientPermission` enum.
  *
  * Each value is a power-of-two bit flag. Combine with bitwise OR to represent
- * multiple permissions (e.g. `ViewDomains | ViewPayInvoices`).
+ * multiple permissions (e.g. `ViewDomains | ViewPayInvoices`). Whether the signed-in person holds a
+ * flag is decided by `useClientStore().mayDo(flag)` (built on `mayPerform`), the one rule every
+ * section, the checkout and the navigation share.
  *
- * @module composables/usePermissions
+ * @module types/permission
  */
 
 /** Permission bit flags of a client account. */
@@ -40,14 +42,3 @@ export enum Permission {
   /** All permissions: owner default. */
   All = 8191,
 }
-
-/**
- * Gives access to the {@link Permission} constants.
- *
- * Deciding whether the signed-in person holds a flag is not done here: that is
- * `useClientStore().mayDo(flag)` (built on `mayPerform`), the one rule every section, the checkout
- * and the navigation share, so a link and the action behind it cannot disagree.
- *
- * @returns The {@link Permission} constants.
- */
-export const usePermissions = () => ({ Permission })

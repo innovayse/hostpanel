@@ -16,7 +16,38 @@ If the new version added a database migration, restore the dump you took before 
 Check whether the release you are rolling back from added any database migrations.
 If it did, you must restore your pre-upgrade dump as part of the rollback.
 
-## Roll back
+## Roll back with the installer
+
+Every upgrade with the installer leaves a database backup named with the version it
+belongs to (see [Upgrade](/operators/upgrade)). `--rollback` uses the newest one:
+
+```bash
+curl -fsSL   https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh   | bash -s -- --rollback
+```
+
+Add `--dir <path>` for an install that is not in `/opt/hostpanel`. It then:
+
+1. Shows the backup it will use and the version it returns to, and asks for confirmation.
+   Add `--yes` to confirm in advance in a script. Without a terminal and without `--yes` it
+   stops and changes nothing.
+2. Downloads the compose file and Caddyfile of that version and stops the application
+   services, leaving the database running.
+3. Saves the current database to `backups/pre-rollback-<date>-<time>-<version>.sql`, so
+   the rollback itself can be undone. If that copy cannot be made, it stops before
+   replacing anything.
+4. Replaces the database with the backup, sets `IMAGE_TAG` to the recorded version, pulls
+   those images and starts the stack.
+
+<Callout type="danger">
+A rollback permanently removes everything written after the backup was taken: orders, payments, tickets and any other data. The copy saved in step 3 is the only way back to it.
+</Callout>
+
+`--rollback` cannot be combined with `--version`, because the version is the one recorded
+with the backup. A backup taken while `IMAGE_TAG` was `latest` is refused; restore it by
+hand as described below. To use an older backup than the newest, remove the newer files
+from `backups/` first, or follow the manual steps.
+
+## Roll back by hand
 
 **1. Stop the application containers** (leave the database running):
 

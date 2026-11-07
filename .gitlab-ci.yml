@@ -302,6 +302,19 @@ edge:test:csp:
         - docker/nginx/templates/default.conf.template
         - scripts/check-edge-csp.sh
 
+# Runs install.sh against a fake docker: the upgrade backup, its retention and --rollback.
+installer:test:backup:
+  stage: test
+  tags: [builder]
+  image: $DOTNET_SDK_IMAGE
+  script:
+    - bash scripts/test-install-backup.sh
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
+      changes:
+        - install.sh
+        - scripts/test-install-backup.sh
+
 # Fails when a top-level folder of the Integration test project is in no shard below (its tests would
 # run nowhere), is in two, or when a shard names a folder that is gone. The same script checks the
 # GitHub workflow, so the shard lists of the two pipelines cannot drift apart.

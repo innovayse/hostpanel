@@ -11,7 +11,7 @@ docker compose.
 ## Before you upgrade
 
 <Callout type="warning">
-Take a database dump before every upgrade. Database migrations run forward automatically on every API start and do not run backwards. If you need to go back, you will need the dump. See <a href="./backup">Back up and restore</a>.
+Take a database dump before every upgrade. Database migrations run forward automatically on every API start and do not run backwards. If you need to go back, you will need the dump. The installer takes one for you (see <a href="#upgrade-with-the-installer">Upgrade with the installer</a>); an upgrade by hand needs your own. See <a href="./backup">Back up and restore</a>.
 </Callout>
 
 Read the changelog entry for the new release before upgrading. Take a database
@@ -94,7 +94,27 @@ The API log names each skipped plugin. Development servers are not affected.
 
 ## Upgrade with the installer
 
-**1. Take a database dump and back up `.env`. Note the current `IMAGE_TAG`:**
+**1. Let the installer take the database backup, and back up `.env`.**
+
+When `.env` already exists, the installer dumps the database through the running
+`hostpanel-db` container before it downloads or changes anything. The dump goes to
+`backups/` in the install directory, in a file named with the date, the time and the
+version it belongs to, for example `backups/hostpanel-20261107-101500-0.3.1.sql`.
+The file and the folder are readable by their owner only.
+
+- If the dump fails, or the file comes out empty, the installer stops with an error
+  before it touches the compose file, `.env` or the running stack.
+- If the database container is not running, the installer stops with a message. Start
+  the stack and run it again. For a stack that never held data, `--skip-backup` skips
+  the dump.
+- The newest 5 backups are kept and older ones are removed. Change the number with
+  `--keep <n>` or `HOSTPANEL_BACKUP_KEEP`.
+- Keep a copy of `.env` as well, since the dump cannot be read without its
+  `ENCRYPTION_KEY`: `cp .env .env.bak`.
+- Install with `--version <x.y.z>`. A backup taken while `IMAGE_TAG` is the moving
+  `latest` has no version to go back to, so `--rollback` refuses it.
+
+If you prefer to take the dump yourself, or to keep an extra copy elsewhere:
 
 ```bash
 umask 077
@@ -128,6 +148,10 @@ run with the new stack files.
 **3. Check the output** for any warnings about new settings added to `.env` and review them.
 
 **4. Verify the upgrade.** See [What to check after an upgrade](#what-to-check-after-an-upgrade).
+
+At the end of an upgrade the installer prints the backup file it took and the command
+that goes back. To go back, run the installer with `--rollback`, see
+[Roll back with the installer](/operators/rollback#roll-back-with-the-installer).
 
 When `.env` already exists the installer:
 

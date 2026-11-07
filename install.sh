@@ -8,13 +8,19 @@
 # build), writes a .env with freshly generated secrets, pulls the images and starts the stack. The
 # bundled caddy edge obtains Let's Encrypt certificates for both hosts, so DNS for them must point
 # at this server and ports 80 and 443 must be reachable.
-# Run it again to upgrade: an existing .env is never overwritten, the images are pulled
-# and the stack is brought up again.
+# Run it again to upgrade: an existing .env is never overwritten, the database is dumped into
+# <dir>/backups (named with the version it belonged to), the images are pulled and the stack is
+# brought up again. If that dump fails or is empty the upgrade stops before anything is changed.
+# Run it with --rollback to put the images and the database back as the latest backup left them.
 #
 # Options (flag, or the environment variable in brackets):
 #   --dir <path>       install directory                  [HOSTPANEL_DIR, default /opt/hostpanel]
 #   --version <x.y.z>  release to install, e.g. 0.4.0     [HOSTPANEL_VERSION, default: main / latest]
 #   --no-tls           serve plain HTTP on 8080 behind your own TLS proxy [HOSTPANEL_TLS=off]
+#   --rollback         restore the database and the version recorded with the latest backup
+#   --yes              do not ask for confirmation (rollback)
+#   --keep <n>         backups to keep, older ones are removed [HOSTPANEL_BACKUP_KEEP, default 5]
+#   --skip-backup      upgrade without a backup (only when the database cannot be dumped)
 #   --help             print this text
 #
 # Answers for a non-interactive run (no terminal, or HOSTPANEL_NONINTERACTIVE=1):
@@ -46,6 +52,12 @@ SMTP_RELAY_PORT=587
 SMTP_RELAY_ENCRYPTION="tls"
 # Compose service (and container) name of the API.
 API_SERVICE="hostpanel-api"
+# Compose service of the database, and the services that write to it (stopped for a restore).
+DB_SERVICE="hostpanel-db"
+APP_SERVICES="hostpanel-api hostpanel-client hostpanel-admin hostpanel-caddy"
+# Backups live in this folder of the install directory; this many are kept unless told otherwise.
+BACKUP_DIR_NAME="backups"
+BACKUP_KEEP_DEFAULT=5
 
 # ── Output helpers ────────────────────────────────────────────────────────────
 if [ -t 1 ]; then
@@ -63,10 +75,15 @@ fail()    { printf '%s[error]%s %s\n' "$RED" "$NC" "$*" >&2; exit 1; }
 # Prints the leading comment block of this file (the usage text).
 usage() {
   cat <<'USAGE'
-Usage: install.sh [--dir <path>] [--version <x.y.z>] [--no-tls]
+Usage: install.sh [--dir <path>] [--version <x.y.z>] [--no-tls] [--keep <n>] [--skip-backup]
+       install.sh --rollback [--yes] [--dir <path>]
   --dir      install directory   (HOSTPANEL_DIR, default /opt/hostpanel)
   --version  release to install  (HOSTPANEL_VERSION, default main / latest)
   --no-tls   plain HTTP on 8080 for an install behind your own TLS proxy (HOSTPANEL_TLS=off)
+  --rollback restore the database and the version recorded with the latest backup (asks first)
+  --yes      confirm a rollback in advance, for scripts
+  --keep     backups to keep (HOSTPANEL_BACKUP_KEEP, default 5)
+  --skip-backup  upgrade without a database backup; only for a stack whose database is not running
 Non-interactive answers: HOSTPANEL_DOMAIN, HOSTPANEL_ADMIN_DOMAIN, HOSTPANEL_ADMIN_EMAIL
 (HOSTPANEL_NONINTERACTIVE=1 forces it even with a terminal).
 USAGE
@@ -314,6 +331,203 @@ wait_for_api() {
   return 1
 }
 
+# ── Backup and rollback ───────────────────────────────────────────────────────
+
+# Asks a yes or no question on the terminal; true only for an explicit yes. --yes answers it in advance.
+# Without --yes and without a terminal it stops, so a script never rolls back by accident. $1 question
+confirm() {
+  local answer=''
+  if [ "$ASSUME_YES" = "1" ]; then
+    return 0
+  fi
+  have_tty || fail "$1 needs a confirmation and there is no terminal to ask on. Add --yes to confirm in advance."
+  printf '  %s [y/N]: ' "$1" > /dev/tty
+  IFS= read -r answer < /dev/tty || true
+  case "$answer" in
+    y|Y|yes|YES|Yes) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# Fails unless $1 is usable inside a backup file name: it comes from .env, which an operator edits. $2 label
+check_image_tag() {
+  if ! printf '%s' "$1" | grep -Eq '^[A-Za-z0-9][A-Za-z0-9._-]*$'; then
+    fail "$2 '$1' is not a usable image tag (letters, digits, dots, dashes and underscores only)."
+  fi
+}
+
+# Creates the backups folder readable by its owner only (dumps hold every record and the stored secrets).
+ensure_backup_dir() {
+  local dir="${INSTALL_DIR}/${BACKUP_DIR_NAME}"
+  ( umask 077; mkdir -p "$dir" ) || fail "Cannot create ${dir}."
+  chmod 700 "$dir"
+}
+
+# Prints the file names of the backups with prefix $1, oldest first. The time sits right after the
+# prefix in the name, so the shell's sorted glob is also the chronological order.
+list_backups() {
+  local f
+  for f in "${INSTALL_DIR}/${BACKUP_DIR_NAME}/$1"-*.sql; do
+    if [ -f "$f" ]; then
+      printf '%s\n' "${f##*/}"
+    fi
+  done
+}
+
+# Prints the image tag recorded in the name of a backup file (hostpanel-<date>-<time>-<tag>.sql). $1 file name
+backup_tag() {
+  local tag
+  tag="$(printf '%s' "$1" | sed -E 's/^hostpanel-[0-9]{8}-[0-9]{6}-(.+)\.sql$/\1/')"
+  if [ "$tag" = "$1" ]; then
+    fail "Backup file name '$1' does not carry a version; cannot roll back to it."
+  fi
+  printf '%s' "$tag"
+}
+
+# Removes the oldest backups with prefix $1 so that at most $KEEP remain.
+prune_backups() {
+  local total remove name
+  total="$(list_backups "$1" | wc -l | tr -d '[:space:]')"
+  remove=$((total - KEEP))
+  if [ "$remove" -gt 0 ]; then
+    list_backups "$1" | head -n "$remove" | while IFS= read -r name; do
+      rm -f -- "${INSTALL_DIR}/${BACKUP_DIR_NAME}/${name}"
+    done
+  fi
+}
+
+# Dumps the database through the running db container into $1, mode 600. The dump is written beside
+# the target and only moved into place once pg_dump succeeded and the file holds something, so a failed
+# or empty dump never looks like a backup. The credentials stay inside the container: nothing secret is
+# on this command line or in the output. $1 target file
+dump_database() {
+  local target="$1" part="$1.part"
+  if ! ( umask 077; compose exec -T "$DB_SERVICE" sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$part" ); then
+    rm -f "$part"
+    return 1
+  fi
+  if [ ! -s "$part" ]; then
+    rm -f "$part"
+    return 1
+  fi
+  chmod 600 "$part"
+  mv "$part" "$target"
+}
+
+# True when the database container is running.
+db_is_running() {
+  [ -n "$(compose ps -q "$DB_SERVICE" 2>/dev/null || true)" ]
+}
+
+# Dumps the database before an upgrade into backups/hostpanel-<date>-<time>-<IMAGE_TAG>.sql, so the
+# file names the version whose images it belongs to, then trims old backups. Stops the whole run when
+# the dump cannot be taken: the caller has not changed anything yet. Sets BACKUP_FILE and BACKUP_TAG.
+backup_before_upgrade() {
+  local env="${INSTALL_DIR}/.env" stamp
+  BACKUP_FILE=''
+  BACKUP_TAG=''
+  if [ "$SKIP_BACKUP" = "1" ]; then
+    warn "--skip-backup: the database is NOT backed up before this upgrade."
+    return 0
+  fi
+  [ -f "${INSTALL_DIR}/${COMPOSE_FILE}" ] \
+    || fail "${INSTALL_DIR}/${COMPOSE_FILE} is missing, so the database cannot be backed up. Nothing was changed. Use --skip-backup only if there is no data to keep."
+  BACKUP_TAG="$(get_env "$env" IMAGE_TAG)"
+  BACKUP_TAG="${BACKUP_TAG:-latest}"
+  check_image_tag "$BACKUP_TAG" "IMAGE_TAG in ${env}"
+  db_is_running \
+    || fail "The database container (${DB_SERVICE}) is not running, so it cannot be backed up. Nothing was changed. Start the stack and run the installer again, or add --skip-backup if this install never held data."
+
+  ensure_backup_dir
+  stamp="$(date +%Y%m%d-%H%M%S)"
+  BACKUP_FILE="${INSTALL_DIR}/${BACKUP_DIR_NAME}/hostpanel-${stamp}-${BACKUP_TAG}.sql"
+  info "Backing up the database (version ${BACKUP_TAG}) to ${BACKUP_FILE}"
+  dump_database "$BACKUP_FILE" \
+    || fail "The database backup failed or came out empty. The upgrade was stopped before anything was changed."
+  success "Database backed up ($(wc -c < "$BACKUP_FILE" | tr -d '[:space:]') bytes, mode 600)"
+  prune_backups hostpanel
+  if [ "$BACKUP_TAG" = "latest" ]; then
+    warn "This install runs the moving tag 'latest', so a rollback cannot tell which version to return to. Pass --version <x.y.z> on upgrades to make the backups restorable."
+  fi
+}
+
+# Restores the database from $1 into a freshly created database of the same name. The dump is read
+# from stdin of the container on purpose: this is the one place a file is fed to a command.
+restore_dump() {
+  ( cd "$INSTALL_DIR" && docker compose -f "$COMPOSE_FILE" exec -T "$DB_SERVICE" sh -c \
+    'dropdb -U "$POSTGRES_USER" --if-exists "$POSTGRES_DB" && createdb -U "$POSTGRES_USER" "$POSTGRES_DB" && psql -q -v ON_ERROR_STOP=1 --single-transaction -U "$POSTGRES_USER" "$POSTGRES_DB"' \
+    < "$1" )
+}
+
+# --rollback: puts the images and the database back to the state of the latest backup, after asking.
+# The current database is dumped first (pre-rollback-*), so even a rollback can be undone.
+rollback() {
+  local env="${INSTALL_DIR}/.env" name tag current stamp file safety
+  [ -f "$env" ] || fail "No ${env}: there is no install here to roll back."
+  [ -f "${INSTALL_DIR}/${COMPOSE_FILE}" ] || fail "${INSTALL_DIR}/${COMPOSE_FILE} is missing; cannot roll back."
+
+  name="$(list_backups hostpanel | tail -n 1)"
+  [ -n "$name" ] || fail "No backup found in ${INSTALL_DIR}/${BACKUP_DIR_NAME}; there is nothing to roll back to."
+  file="${INSTALL_DIR}/${BACKUP_DIR_NAME}/${name}"
+  tag="$(backup_tag "$name")"
+  if [ "$tag" = "latest" ]; then
+    fail "The latest backup (${name}) was taken on the moving tag 'latest', so it does not say which version to return to. Restore it by hand: see the rollback guide."
+  fi
+  check_image_tag "$tag" "Version recorded in ${name}"
+  [ -s "$file" ] || fail "The backup ${file} is empty; refusing to roll back to it."
+  current="$(get_env "$env" IMAGE_TAG)"
+
+  printf '\n%sRollback%s\n' "$BOLD" "$NC"
+  printf '  Backup   : %s\n' "$file"
+  printf '  Version  : %s (now %s)\n' "$tag" "${current:-unknown}"
+  printf '  This replaces the database with the backup. Everything written since it was taken\n'
+  printf '  (orders, payments, tickets) is lost, after a copy of the current database is saved.\n\n'
+  if ! confirm "Roll back to ${tag}?"; then
+    info "Rollback cancelled. Nothing was changed."
+    return 0
+  fi
+
+  db_is_running || fail "The database container (${DB_SERVICE}) is not running. Start it (docker compose -f ${COMPOSE_FILE} up -d ${DB_SERVICE} in ${INSTALL_DIR}) and run the rollback again."
+
+  REF="v${tag}"
+  info "Downloading the ${tag} compose file and Caddyfile"
+  download "docker/${COMPOSE_FILE}" "$COMPOSE_FILE"
+  download "docker/caddy/Caddyfile" "Caddyfile"
+
+  info "Stopping the application services (the database keeps running)"
+  # shellcheck disable=SC2086  # the list is words on purpose
+  compose stop $APP_SERVICES
+
+  ensure_backup_dir
+  stamp="$(date +%Y%m%d-%H%M%S)"
+  safety="${INSTALL_DIR}/${BACKUP_DIR_NAME}/pre-rollback-${stamp}-${current:-unknown}.sql"
+  info "Saving the current database to ${safety}"
+  dump_database "$safety" \
+    || fail "Could not save the current database, so the rollback was stopped before replacing it. The application services are stopped: start them with  cd ${INSTALL_DIR} && docker compose -f ${COMPOSE_FILE} up -d"
+  prune_backups pre-rollback
+
+  info "Restoring the database from ${name}"
+  restore_dump "$file" \
+    || fail "The restore failed. The database may be incomplete. Your data is in ${file} (backup) and ${safety} (before the rollback); restore one of them by hand, see the rollback guide."
+  success "Database restored"
+
+  set_env "$env" IMAGE_TAG "$tag"
+  IMAGE_TAG="$tag"
+  info "IMAGE_TAG set to ${tag}"
+  info "Pulling the images"
+  compose pull
+  fix_volume_ownership
+  info "Starting the stack"
+  compose up -d
+
+  if wait_for_api; then
+    printf '\n%sRolled back to %s.%s\n' "$BOLD" "$tag" "$NC"
+    printf '  The database before the rollback is saved in %s\n' "$safety"
+  else
+    exit 1
+  fi
+}
+
 # Prints the one-time first-admin setup token the API logs while nobody holds the Admin role.
 read_setup_token() {
   compose logs --no-color "$API_SERVICE" 2>/dev/null \
@@ -359,7 +573,15 @@ print_summary() {
 
   printf '%sNext%s: set a real SMTP relay in %s/.env (SMTP_HOST, SMTP_USERNAME, SMTP_PASSWORD), then\n' "$BOLD" "$NC" "$INSTALL_DIR"
   printf '  cd %s && docker compose -f %s up -d\n' "$INSTALL_DIR" "$COMPOSE_FILE"
-  printf 'Upgrade any time by running the install command again.\n'
+  if [ -n "$BACKUP_FILE" ]; then
+    printf '\n%sBackup%s\n' "$BOLD" "$NC"
+    printf '  The database was backed up before this upgrade (it belongs to version %s):\n' "$BACKUP_TAG"
+    printf '       %s\n' "$BACKUP_FILE"
+    printf '  If the new version misbehaves, go back to that version and database with:\n'
+    printf '       curl -fsSL https://raw.githubusercontent.com/%s/main/install.sh | bash -s -- --rollback --dir %s\n' "$REPO" "$INSTALL_DIR"
+    printf '  It asks before it replaces anything.\n'
+  fi
+  printf '\nUpgrade any time by running the install command again.\n'
 }
 
 # ── Main ──────────────────────────────────────────────────────────────────────
@@ -370,12 +592,22 @@ main() {
   INSTALL_DIR="${HOSTPANEL_DIR:-$INSTALL_DIR_DEFAULT}"
   HOSTPANEL_VERSION="${HOSTPANEL_VERSION:-}"
   TLS_ASKED="${HOSTPANEL_TLS:-}"
+  KEEP="${HOSTPANEL_BACKUP_KEEP:-$BACKUP_KEEP_DEFAULT}"
+  ROLLBACK=0
+  ASSUME_YES=0
+  SKIP_BACKUP=0
+  BACKUP_FILE=''
+  BACKUP_TAG=''
 
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --dir)      [ "$#" -ge 2 ] || fail "--dir needs a path"; INSTALL_DIR="$2"; shift 2 ;;
       --version)  [ "$#" -ge 2 ] || fail "--version needs a value"; HOSTPANEL_VERSION="$2"; shift 2 ;;
       --no-tls)   TLS_ASKED="off"; shift ;;
+      --rollback) ROLLBACK=1; shift ;;
+      --yes|-y)   ASSUME_YES=1; shift ;;
+      --keep)     [ "$#" -ge 2 ] || fail "--keep needs a number"; KEEP="$2"; shift 2 ;;
+      --skip-backup) SKIP_BACKUP=1; shift ;;
       -h|--help)  usage; exit 0 ;;
       *)          fail "Unknown option: $1 (see --help)" ;;
     esac
@@ -386,6 +618,20 @@ main() {
     on|off) ;;
     *) fail "HOSTPANEL_TLS must be 'on' or 'off' (got '$TLS')." ;;
   esac
+
+  case "$KEEP" in
+    ''|*[!0-9]*|0) fail "--keep / HOSTPANEL_BACKUP_KEEP must be a whole number of at least 1 (got '$KEEP')." ;;
+  esac
+
+  if [ "$ROLLBACK" = "1" ]; then
+    # The version to return to is the one recorded with the backup, never one typed here.
+    [ -z "$HOSTPANEL_VERSION" ] || fail "--rollback returns to the version recorded with the latest backup; do not combine it with --version."
+    printf '%sHostpanel rollback%s\n' "$BOLD" "$NC"
+    check_prerequisites
+    INSTALL_DIR="$(cd "$INSTALL_DIR" 2>/dev/null && pwd)" || fail "${INSTALL_DIR} does not exist: there is no install here to roll back."
+    rollback
+    return 0
+  fi
 
   # A release is the git tag vX.Y.Z; the images are innovayse/hostpanel:{api,client,admin}-X.Y.Z, so
   # IMAGE_TAG is X.Y.Z (or latest) and the compose file adds the component prefix. Accept either spelling.
@@ -404,6 +650,12 @@ main() {
     || fail "Cannot create ${INSTALL_DIR}. Re-run with sudo, or choose another place with --dir / HOSTPANEL_DIR."
   [ -w "$INSTALL_DIR" ] || fail "${INSTALL_DIR} is not writable. Re-run with sudo, or use --dir / HOSTPANEL_DIR."
   INSTALL_DIR="$(cd "$INSTALL_DIR" && pwd)"
+
+  # An existing install is backed up before anything below changes it (the downloads replace the
+  # compose file and Caddyfile). A failed backup ends the run here.
+  if [ -f "${INSTALL_DIR}/.env" ]; then
+    backup_before_upgrade
+  fi
 
   info "Downloading ${COMPOSE_FILE}, Caddyfile and .env.example from ${REF} into ${INSTALL_DIR}"
   download "docker/${COMPOSE_FILE}" "$COMPOSE_FILE"

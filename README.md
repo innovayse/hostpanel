@@ -188,7 +188,7 @@ the root path, so serve it on its own host. Use `EDGE_SCHEME=http://` for plain 
 
 | Task | How |
 |---|---|
-| Upgrade | Re-run the install script (an existing `.env` is kept; with `--version` it moves `IMAGE_TAG`), or `docker compose -f docker-compose.hub.yml pull && docker compose -f docker-compose.hub.yml up -d` |
+| Upgrade | Re-run the install script (an existing `.env` is kept; with `--version` it moves `IMAGE_TAG`; the database is backed up to `backups/` first, and `install.sh --rollback` goes back to the backed up version and data), or `docker compose -f docker-compose.hub.yml pull && docker compose -f docker-compose.hub.yml up -d` |
 | Pin a version | Set `IMAGE_TAG=1.4.0` in `.env` instead of `latest` |
 | Logs | `docker compose -f docker-compose.hub.yml logs -f hostpanel-api` (or `hostpanel-client`, `hostpanel-admin`) |
 | Back up the database | `docker compose -f docker-compose.hub.yml exec -T hostpanel-db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql`, or snapshot the `hostpanel_pgdata` volume |

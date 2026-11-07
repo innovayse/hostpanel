@@ -1611,6 +1611,13 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   (`AppDbContext` translates the violation), which the settlement handlers already answer as a replay.
 - `scripts/pack-cwp-plugin.sh` — publishes `Innovayse.Providers.CWP` (Release, net8.0) on the host, strips
   PDB/XML and framework DLLs, adds `plugin.json` and writes `dist/innovayse-cwp.zip`.
+- `scripts/test-install-backup.sh [install.sh]` — runs `install.sh` against a fake `docker` and `curl` (no Docker, no
+  network) and checks the upgrade backup (a failed, empty, truncated or table-less dump, a stopped database, mode 600
+  and 700, retention that keeps the oldest backup of each version, UTC names) and `--rollback` (confirmation, the
+  newest backup of another version, the safety copy, restore before the compose files change, a failed restore, the
+  state printed after a failed stop, download, pull or start). Needs bash and GNU `stat`. With
+  `HOSTPANEL_TEST_POSTGRES=1` it also dumps, restores and restores a corrupt dump against a real postgres container
+  (the GitHub `install-backup` job sets it; the GitLab `installer:test:backup` job runs the fake-docker part only).
 - `scripts/check-empty-plugins.sh <test project> ...` — fails when `plugins/` or `plugins-installed/` in a
   built test project's output holds anything. Every backend test job of both pipelines runs it between the
   build and the tests, so the whole suite is proven green with no plugin loaded in the jobs that already

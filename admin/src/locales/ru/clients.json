@@ -47,7 +47,8 @@
     "closed": "Закрыто",
     "emailIsRequired": "Требуется адрес электронной почты",
     "firstNameIsRequired": "Требуется имя",
-    "lastNameIsRequired": "Требуется фамилия"
+    "lastNameIsRequired": "Требуется фамилия",
+    "spanish": "Испанский"
   },
   "contactForm": {
     "editContact": "Редактировать контакт",

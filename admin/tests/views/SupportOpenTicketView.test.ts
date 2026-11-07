@@ -33,7 +33,8 @@ describe('SupportOpenTicketView', () => {
     const wrapper = await mountView(SupportOpenTicketView)
 
     expect(wrapper.find('[data-testid="support-open-ticket-send-email"]').exists()).toBe(false)
-    expect(wrapper.find('input[type="checkbox"]').exists()).toBe(false)
+    // UiCheckbox renders a button with the checkbox role, not a native input.
+    expect(wrapper.find('[role="checkbox"]').exists()).toBe(false)
   })
 
   it('shows the departments sentence with a Retry in place of the selector, then the selector again', async () => {

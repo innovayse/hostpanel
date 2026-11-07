@@ -20,6 +20,14 @@ internal sealed class DocumentScan
     /// <summary>Gets the <c>id</c> of every block (an object with a string <c>kind</c>) in the document.</summary>
     public HashSet<string> BlockIds { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Gets the faults of rules that were added after plugins were installed (a block id given twice, a mistyped
+    /// display member), each with its detail without the document's place. They are kept apart from
+    /// <see cref="Malformed"/> and <see cref="StateViolation"/>, which refuse a plugin at load: an advisory refuses it
+    /// only at install.
+    /// </summary>
+    public List<PluginManifestViolation> Advisories { get; } = [];
+
     /// <summary>Gets the block ids every <c>followUp</c> asks to refresh, in document order.</summary>
     public List<string> FollowUpRefresh { get; } = [];
 

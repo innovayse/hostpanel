@@ -1168,6 +1168,9 @@
   <data name="PLUGIN_VIEW_PREVIEW_INVALID" xml:space="preserve">
     <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը պարունակում է նախադիտում սխալ աղբյուրներով կամ չափով, կամ այն ցույց է տալիս հաճախորդի էջից դուրս։</value>
   </data>
+  <data name="PLUGIN_VIEW_BLOCK_ID_REPEATED" xml:space="preserve">
+    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը նույն նույնացուցիչը տալիս է մեկից ավելի բլոկների։</value>
+  </data>
   <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
     <value>Այս տողի երկարացման արգելափակումը հնարավոր չէ հանել, քանի որ այն արգելափակված չէ։</value>
   </data>

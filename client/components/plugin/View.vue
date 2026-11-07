@@ -134,9 +134,13 @@ providePluginView({
   },
 })
 
-/** The blocks with a key each: the block's id, else its kind and place, which a view document never reorders. */
+/**
+ * The blocks with a key each: the block's id, else its kind, and always its place, which a view document never
+ * reorders. The place keeps the keys of a list apart when a plugin that was installed before the host refused repeated
+ * ids still gives one id to two blocks; a repeated key would let Vue patch one block over the other.
+ */
 const entries = computed(() => props.view.blocks.map((block: PluginBlockData, position: number) => ({
-  key: block.id ?? `${block.kind}-${position}`,
+  key: `${block.id ?? block.kind}-${position}`,
   block,
 })))
 </script>

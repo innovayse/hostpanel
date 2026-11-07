@@ -314,7 +314,8 @@ export const usePluginFollowUp = (
   ): Promise<void> => {
     timer = undefined
     const result = await store.callRoute(context.pluginId, followUp.until.route, context.values)
-    // An answer for an older follow-up, or one after the view was left, is not this run's: leave the view's keeping alone.
+    // An answer for an older follow-up, or one after the view was left, is not this run's: leave the view's keeping
+    // alone.
     if (current !== run) {
       return
     }

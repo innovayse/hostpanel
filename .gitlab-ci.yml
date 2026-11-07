@@ -302,6 +302,23 @@ edge:test:csp:
         - docker/nginx/templates/default.conf.template
         - scripts/check-edge-csp.sh
 
+# Runs the shipped Caddy and nginx edges and the admin image's nginx in front of a stub upstream and fails when
+# the Content-Security-Policy headers a browser would receive differ from what the edges promise. The script
+# copies files into its containers instead of mounting them, so it works against the runner's shared Docker socket.
+edge:test:headers:
+  stage: test
+  tags: [builder]
+  image: $DOCKER_IMAGE
+  script:
+    - sh scripts/check-edge-headers.sh
+  rules:
+    - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
+      changes:
+        - docker/caddy/Caddyfile
+        - docker/nginx/**/*
+        - scripts/check-edge-headers.sh
+        - scripts/edge-headers-assert.sh
+
 # Runs install.sh against a fake docker: the upgrade backup, its retention and --rollback.
 installer:test:backup:
   stage: test

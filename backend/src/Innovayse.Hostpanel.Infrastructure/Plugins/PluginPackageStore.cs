@@ -416,7 +416,9 @@ public sealed class PluginPackageStore : IPluginPackageStore
             return RuleBroken(id, sha256, violation);
         }
 
-        violation = PluginViewDocumentReader.Read(contentDir, manifest, _options.MaxViewBytes).Violation;
+        // Every view rule applies to an upload, the ones added after plugins were installed included; the loader warns
+        // about those instead (PluginViewRead.Advisories), so an installed plugin is not lost to a host upgrade.
+        violation = PluginViewDocumentReader.Read(contentDir, manifest, _options.MaxViewBytes).RefusedAtInstall;
         if (violation is not null)
         {
             return RuleBroken(id, sha256, violation);

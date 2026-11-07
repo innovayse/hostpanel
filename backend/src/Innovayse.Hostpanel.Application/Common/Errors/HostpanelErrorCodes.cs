@@ -867,6 +867,12 @@ public static class HostpanelErrorCodes
     public const string PLUGIN_VIEW_PREVIEW_INVALID = "PLUGIN_VIEW_PREVIEW_INVALID";
 
     /// <summary>
+    /// A view document gives one block id to more than one block (400, the default arm: it is answered only by a plugin
+    /// install).
+    /// </summary>
+    public const string PLUGIN_VIEW_BLOCK_ID_REPEATED = "PLUGIN_VIEW_BLOCK_ID_REPEATED";
+
+    /// <summary>
     /// One of the archive's entries would write outside the plugin's own directory (400). The
     /// zip-slip guard's refusal, named for what a caller can act on rather than the attack it
     /// blocks.

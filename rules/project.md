@@ -463,10 +463,21 @@ docker/                              compose set (shared·dev·prod·platform), 
       page is left (late answers dropped); the watch belongs to the view (`PluginViewContext.adopt`), so the block that
       started it hiding itself, as a publish button does once its version is live, does not end it, and when the condition
       holds the sentence the action showed is taken down. A failed read counts as an attempt. `refresh` is 1 to 20 ids, each the `id`
-      of a block in the same document. The host does not yet refuse two blocks with one `id`; the client treats them as one
-      block (refresh and watch key), which the plugin docs tell authors to avoid. **The bounds are the host's, never the plugin's**:
+      of a block in the same document. Two blocks with one `id`, at any depth, are refused **at install only**
+      (`ViewBlockIdRepeated`, `PLUGIN_VIEW_BLOCK_ID_REPEATED`), because the client keys a block's refresh and its watch on the id;
+      the `id` of a tab or of a preview source is not a block id. The reader also checks the display members the panel would otherwise ignore when mistyped (`PLUGIN_VIEW_INVALID`): a header's `compact` (boolean), `titleSource` and `subtitleSource`, an action's `labelSource` and a preview's `note` (each a GET route and, when given, a dotted `field`), and a table's `display` (`table` or `cards`); also at install only.
+      **Decision (owner, #976): a rule added after plugins were installed refuses at install and only warns at load.** A host
+      upgrade must not take a working plugin, one that may take payments, out of production because the host learned to
+      check one more thing. The reader keeps the two apart in its result, not with a flag: `PluginViewRead.Violation` holds
+      the rules enforced from the start (refused at install and at load), `PluginViewRead.Advisories` holds the faults of
+      rules added later (the repeated id and the display members), and `PluginViewRead.RefusedAtInstall` is the violation, else
+      the first advisory. `PluginPackageStore` asks `RefusedAtInstall`; `PluginLoader` asks `Violation` and logs each advisory
+      at Warning with the plugin id and the rule. A later tightening goes to `DocumentScan.Advisories`, never to `Malformed`
+      or `StateViolation`, which refuse at load. The panel stays safe with a repeated id: every block renders (a block's key
+      carries its place), and the limit is that a refresh of that id reaches all its blocks and one follow-up watch per id
+      is kept (`View.test.ts`, `PluginLoaderTests`, `InstallPluginTests`). **The bounds are the host's, never the plugin's**:
       `PLUGIN_FOLLOW_UP_MAX_ATTEMPTS` 20 and `PLUGIN_FOLLOW_UP_INTERVAL_MS` 3000 (about a minute) in the client.
-    - Refused at install and load: `ViewConditionInvalid` (`PLUGIN_VIEW_CONDITION_INVALID`: a bad condition, a non-`GET`
+    - Refused at install and load (rules from the start of view state): `ViewConditionInvalid` (`PLUGIN_VIEW_CONDITION_INVALID`: a bad condition, a non-`GET`
       condition route, `visibleWhen` outside a block) and `ViewFollowUpInvalid` (`PLUGIN_VIEW_FOLLOW_UP_INVALID`: a bad
       `followUp` shape or place, a `refresh` id no block carries, `resetOnSuccess` not a boolean or outside a `submit`),
       each with its en/ru/hy sentence, 400.
@@ -494,7 +505,7 @@ docker/                              compose set (shared·dev·prod·platform), 
       that is not a plain DNS name is dropped, because a domain is what a client typed and the text reaches a response
       header. The list is cut at 2048 characters for the proxies' header limits; what falls off shows nothing.
     - **Browser enforcement.** The panel frames an address only when its origin is exactly on that list and is not the
-      panel's own. The edges this repository ships (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`, held to one policy by `scripts/check-edge-csp.sh`) keep `frame-src 'self' https:` (operator content on public pages, and domains cannot be
+      panel's own. The edges this repository ships (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`, held to one policy by `scripts/check-edge-csp.sh`, which compares the text, and run as they are in front of a stub upstream by `scripts/check-edge-headers.sh` with `edge-headers-assert.sh`, which asserts the response headers: one policy on `/`, the edge policy plus the plugin page's narrow `frame-src` as two headers on `/client/apps/*` (also under a language prefix), the upload policy on `/uploads/`, the admin upstream's policy passed through alone, and every location of the admin image's own configuration (`docker/nginx/admin.conf` with `snippets/admin-csp.conf`) sending exactly one; the plugin page's narrow policy there comes from the stub upstream, not from the portal middleware, so the script proves that the edges pass it and not that the portal sends it; the same script runs in the GitHub `edge-csp` job and the GitLab `edge:test:headers` job) keep `frame-src 'self' https:` (operator content on public pages, and domains cannot be
       listed statically). An operator's own edge may send that same policy as `Content-Security-Policy-Report-Only` while it is reviewed (#938), and a report-only policy does not intersect with an enforcing one, so on such a deployment, and on a deployment whose edge sends no policy, the header below is the only one enforced. `client/server/middleware/plugin-frame-csp.ts` adds a second header to the document of
       `/client/apps/<plugin>/**` (a language prefix names the same page), `Content-Security-Policy: frame-src <origins>` or
       `'none'` on any failure. Policies intersect. A document that got the API's origins also carries `Server-Timing:

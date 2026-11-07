@@ -38,5 +38,5 @@ const tabs = computed(() => props.block.tabs.map(tab => ({ value: tab.id, label:
 
 /** The open tab's blocks, keyed by the tab as well, so switching tabs mounts fresh blocks. */
 const blocks = computed(() => (props.block.tabs.find(tab => tab.id === active.value)?.blocks ?? [])
-  .map((block, position) => ({ key: `${active.value}:${block.id ?? `${block.kind}-${position}`}`, block })))
+  .map((block, position) => ({ key: `${active.value}:${block.id ?? block.kind}-${position}`, block })))
 </script>

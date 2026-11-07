@@ -261,6 +261,7 @@ export default defineConfig({
           items: [
             { text: 'Overview', link: '/servers/' },
             { text: 'Servers', link: '/servers/servers' },
+            { text: 'cPanel servers', link: '/servers/cpanel' },
             { text: 'SSH key agent', link: '/servers/ssh-key-agent' },
             { text: 'Provisioning', link: '/servers/provisioning' },
           ],

@@ -99,44 +99,6 @@ public sealed class HttpResilienceOptions
     };
 
     /// <summary>
-    /// WHM on the configured cPanel server. Registered with no retry stage at all.
-    /// </summary>
-    /// <remarks>
-    /// <para>
-    /// <b>No retries, and the HTTP method is no guide here.</b> WHM's JSON API v1 is addressed
-    /// entirely over GET, so a method-based predicate would happily repeat <c>createacct</c>,
-    /// <c>removeacct</c> and <c>passwd</c>: every one of the seven functions this client calls
-    /// is a write dressed as a GET. <c>create_user_session</c> is the only one that reads like a
-    /// lookup and it is not: it mints a login session. There is no read on this client for a
-    /// predicate to let through, so there is no retry stage.
-    /// </para>
-    /// <para>
-    /// <b>45 seconds an attempt, 55 in total.</b> Account creation on a loaded WHM box is
-    /// genuinely slow, it builds a home directory, a mail store and a DNS zone, and the
-    /// registration's existing 60-second <see cref="HttpClient.Timeout"/> stays the outer
-    /// backstop. What changes is that a hung connection is now abandoned at 45 seconds rather
-    /// than at WHM's leisure.
-    /// </para>
-    /// <para>
-    /// The breaker is on because this client is bound to one server by
-    /// <c>CPanelOptions.ApiUrl</c>, so opening it sheds calls to exactly the box that is failing.
-    /// A long 30-second break: a WHM that is refusing work does not recover in five.
-    /// </para>
-    /// </remarks>
-    public ResilienceProfileOptions CPanel { get; set; } = new()
-    {
-        AttemptTimeout = TimeSpan.FromSeconds(45),
-        TotalTimeout = TimeSpan.FromSeconds(55),
-        MaxRetryAttempts = 0,
-        RetryDelay = TimeSpan.Zero,
-        CircuitBreakerEnabled = true,
-        FailureRatio = 0.5,
-        MinimumThroughput = 5,
-        SamplingDuration = TimeSpan.FromSeconds(60),
-        BreakDuration = TimeSpan.FromSeconds(30),
-    };
-
-    /// <summary>
     /// The Telegram Bot API, for contact-form enquiries. Registered with no retry stage.
     /// </summary>
     /// <remarks>
@@ -238,6 +200,25 @@ public sealed class HttpResilienceOptions
     /// busy node, hence the same long budget.
     /// </remarks>
     public ResilienceProfileOptions Plesk { get; set; } = new()
+    {
+        AttemptTimeout = TimeSpan.FromSeconds(100),
+        TotalTimeout = TimeSpan.FromSeconds(115),
+        MaxRetryAttempts = 0,
+        RetryDelay = TimeSpan.Zero,
+        CircuitBreakerEnabled = false,
+    };
+
+    /// <summary>
+    /// cPanel servers, the "CPanelWhm" named client the provisioning factory and the connection
+    /// tester resolve per server. Registered with no retry stage and no breaker.
+    /// </summary>
+    /// <remarks>
+    /// The same reasons as <see cref="Plesk"/>: a retried <c>createacct</c> could race the first
+    /// attempt, and the server is a per-call argument, so a breaker would be shared across every
+    /// WHM node. Account creation builds a home directory, a mail store and a DNS zone and can be
+    /// slow on a busy node, hence the same long budget.
+    /// </remarks>
+    public ResilienceProfileOptions CPanelWhm { get; set; } = new()
     {
         AttemptTimeout = TimeSpan.FromSeconds(100),
         TotalTimeout = TimeSpan.FromSeconds(115),
@@ -435,11 +416,11 @@ public sealed class HttpResilienceOptions
     {
         yield return new NamedResilienceProfile(nameof(SsoRead), SsoRead);
         yield return new NamedResilienceProfile(nameof(SsoTwoFactor), SsoTwoFactor);
-        yield return new NamedResilienceProfile(nameof(CPanel), CPanel);
         yield return new NamedResilienceProfile(nameof(Telegram), Telegram);
         yield return new NamedResilienceProfile(nameof(Cwp), Cwp);
         yield return new NamedResilienceProfile(nameof(Cwp7), Cwp7);
         yield return new NamedResilienceProfile(nameof(Plesk), Plesk);
+        yield return new NamedResilienceProfile(nameof(CPanelWhm), CPanelWhm);
         yield return new NamedResilienceProfile(nameof(Migration), Migration);
         yield return new NamedResilienceProfile(nameof(NameAm), NameAm);
         yield return new NamedResilienceProfile(nameof(Namecheap), Namecheap);

@@ -82,7 +82,7 @@ Taken from the local development stack with its seeded sample data.
 | Languages | English, Russian and Armenian in both the portal and the admin panel |
 | Plugin marketplace | [plugins-hostpanel.innovayse.com](https://plugins-hostpanel.innovayse.com) lists installable plugins, among them the payment gateways Stripe, PayPal, Inecobank, Idram and Ameriabank. See [Payment gateways](https://hostpanel.innovayse.com/docs/payments/gateways) |
 | Plugin SDK | `Hostpanel.Sdk` (MIT, a NuGet package, developed in [hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk)) for your own payment, registrar, provisioning, identity, fulfilment and hosted plugins |
-| Integrations | Payments: bank transfer built in; card and bank gateways install as plugins. Registrars: Namecheap, Name.am. Control panels: CWP7, Plesk. Notifications: Telegram |
+| Integrations | Payments: bank transfer built in; card and bank gateways install as plugins. Registrars: Namecheap, Name.am. Control panels: CWP7, Plesk, cPanel. Notifications: Telegram |
 | Data import from WHMCS | A PHP addon you install in WHMCS. HostPanel pulls clients, contacts, products, orders, services, domains, invoices, transactions, quotes, tickets, announcements, knowledge base, downloads and network issues from it, page by page. See [Moving from another billing system](docs/migration/from-another-system.md) |
 
 See the [open feature requests](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)

@@ -15,7 +15,7 @@ public static class ServerMapper
     /// <param name="s">The server entity.</param>
     /// <returns>The connection details.</returns>
     public static ServerConnectionDto ToConnection(this Server s) =>
-        new(s.Id, s.Name, s.Module, s.Hostname, s.IpAddress, s.AccessHash);
+        new(s.Id, s.Name, s.Module, s.Hostname, s.IpAddress, s.AccessHash, s.Username, s.ApiToken);
 
     /// <summary>
     /// Maps a <see cref="Server"/> to a <see cref="ServerDto"/>.

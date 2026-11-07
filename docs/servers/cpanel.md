@@ -52,7 +52,9 @@ The **Password** and **Access Hash** fields are not used for cPanel. The API tok
 encrypted with `ENCRYPTION_KEY`, like the other server secrets, and is never written to a log.
 
 Then click **Test Connection**. A working token shows the WHM version and the account count.
-`SERVER_CONNECTION_NO_API_KEY` means the username or the API token is missing.
+`SERVER_CONNECTION_NO_API_KEY` means the username or the API token is missing. A server that shows
+as unreachable even though the token is right usually presents a self signed certificate, see
+[Security notes](#security-notes).
 
 ## Ports
 
@@ -77,9 +79,14 @@ WHM's own error text is never shown or logged, because it can name the account.
 
 ## Security notes
 
-- WHM API 1 functions take their arguments in the query string. `createacct` and `passwd` send the
-  account password there, over HTTPS. Hostpanel never logs these URLs, and the HTTP client for WHM
-  has request logging turned off.
+- Every WHM call is a POST and its arguments, including the account password of `createacct` and
+  `passwd`, travel in the request body, not in the URL, so WHM's access log and any proxy in front of
+  it do not record the password. Hostpanel never logs these URLs, and the HTTP client for WHM has
+  request logging turned off.
+- WHM must present a certificate that Hostpanel trusts, issued by a public authority or by one your
+  Hostpanel host trusts. WHM ships with a self signed certificate, and Hostpanel does not bypass
+  certificate checks, so a server that still uses it shows as unreachable when you test the
+  connection. Install a trusted certificate on WHM first.
 - Single sign-on links from `create_user_session` are single-use and expire. WHM does not bind them
   to the browser's address.
 - WHM calls go through the outbound address guard, like the other panels. A server on a private

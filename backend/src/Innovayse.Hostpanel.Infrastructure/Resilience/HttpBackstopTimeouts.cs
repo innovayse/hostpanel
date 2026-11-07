@@ -8,9 +8,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Resilience;
 /// </summary>
 public static class HttpBackstopTimeouts
 {
-    /// <summary>cPanel/WHM provisioning client.</summary>
-    public static readonly TimeSpan CPanel = TimeSpan.FromSeconds(60);
-
     /// <summary>The named client of every loaded plugin, keyed by its plugin id.</summary>
     public static readonly TimeSpan Plugin = TimeSpan.FromSeconds(60);
 

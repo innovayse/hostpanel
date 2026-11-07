@@ -49,8 +49,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
         result.Outcome.Should().Be(ProvisioningOutcome.Created);
         result.ProvisioningRef.Should().Be("testuser");
         var call = whm.Requests.Should().ContainSingle().Subject;
-        call.Method.Should().Be("GET");
-        call.PathAndQuery.Should().Be("/json-api/createacct?api.version=1&username=testuser&domain=example.com&password=p%26ss%3D1%202&plan=Basic");
+        AssertCall(call, "createacct", "username=testuser&domain=example.com&password=p%26ss%3D1+2&plan=Basic");
         call.Authorization.Should().Be($"whm root:{Token}");
     }
 
@@ -66,7 +65,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
         result.Outcome.Should().Be(ProvisioningOutcome.AlreadyExists);
         result.ExistingAccountDomain.Should().Be("example.com");
         whm.Requests.Should().HaveCount(2);
-        whm.Requests[1].PathAndQuery.Should().Be("/json-api/listaccts?api.version=1&search=testuser&searchtype=user&searchmethod=exact");
+        AssertCall(whm.Requests[1], "listaccts", "search=testuser&searchtype=user&searchmethod=exact");
     }
 
     /// <summary>A refused create with no such account is refused, without WHM's own text.</summary>
@@ -117,8 +116,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
 
         await provider.SuspendAsync(new SuspendAccountOrder(7, "testuser", "Overdue invoice"), CancellationToken.None);
 
-        whm.Requests.Should().ContainSingle().Which.PathAndQuery
-            .Should().Be("/json-api/suspendacct?api.version=1&user=testuser&reason=Overdue%20invoice");
+        AssertCall(whm.Requests.Should().ContainSingle().Subject, "suspendacct", "user=testuser&reason=Overdue+invoice");
     }
 
     /// <summary>A refused suspend of an account already suspended succeeds.</summary>
@@ -154,7 +152,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
 
         await provider.UnsuspendAsync("testuser", CancellationToken.None);
 
-        whm.Requests[0].PathAndQuery.Should().Be("/json-api/unsuspendacct?api.version=1&user=testuser");
+        AssertCall(whm.Requests[0], "unsuspendacct", "user=testuser");
     }
 
     /// <summary>A refused unsuspend whose lookup is lost throws, never assumes success.</summary>
@@ -178,7 +176,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
 
         await provider.TerminateAsync(new TerminateAccountOrder(7, "testuser", "Cancelled"), CancellationToken.None);
 
-        whm.Requests.Should().ContainSingle().Which.PathAndQuery.Should().Be("/json-api/removeacct?api.version=1&username=testuser");
+        AssertCall(whm.Requests.Should().ContainSingle().Subject, "removeacct", "username=testuser");
     }
 
     /// <summary>A refused terminate of an account that is already gone succeeds.</summary>
@@ -214,7 +212,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
 
         await provider.ChangePackageAsync("testuser", "Pro Plan", CancellationToken.None);
 
-        whm.Requests.Should().ContainSingle().Which.PathAndQuery.Should().Be("/json-api/changepackage?api.version=1&user=testuser&pkg=Pro%20Plan");
+        AssertCall(whm.Requests.Should().ContainSingle().Subject, "changepackage", "user=testuser&pkg=Pro+Plan");
     }
 
     /// <summary>A refused change succeeds when the account is already on the package, and throws when it is not.</summary>
@@ -250,7 +248,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
         var act = () => provider.ChangePasswordAsync("testuser", "N3w", CancellationToken.None);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        whm.Requests.Should().ContainSingle().Which.PathAndQuery.Should().Be("/json-api/passwd?api.version=1&user=testuser&password=N3w");
+        AssertCall(whm.Requests.Should().ContainSingle().Subject, "passwd", "user=testuser&password=N3w");
     }
 
     /// <summary>Single sign-on returns the URL create_user_session gives for the cpaneld service.</summary>
@@ -263,7 +261,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
         var url = await provider.GetCPanelSsoUrlAsync("testuser", null, CancellationToken.None);
 
         url.Should().Be("https://whm.example.test:2083/cpsess123/login/?session=testuser:abc");
-        whm.Requests.Should().ContainSingle().Which.PathAndQuery.Should().Be("/json-api/create_user_session?api.version=1&user=testuser&service=cpaneld");
+        AssertCall(whm.Requests.Should().ContainSingle().Subject, "create_user_session", "user=testuser&service=cpaneld");
     }
 
     /// <summary>A refused session throws.</summary>
@@ -343,4 +341,15 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     /// <summary>The connection to the stub WHM server.</summary>
     /// <returns>The connection.</returns>
     private WhmConnection Connection() => new(whm.BaseAddress.ToString().TrimEnd('/'), "root", Token);
+
+    /// <summary>Asserts a call was a POST to the function with its arguments in the body and none in the URL.</summary>
+    /// <param name="call">The recorded call.</param>
+    /// <param name="function">The WHM API 1 function name.</param>
+    /// <param name="body">The expected form encoded body.</param>
+    private static void AssertCall(RecordedCall call, string function, string body)
+    {
+        call.Method.Should().Be("POST");
+        call.PathAndQuery.Should().Be($"/json-api/{function}?api.version=1");
+        call.Body.Should().Be(body);
+    }
 }

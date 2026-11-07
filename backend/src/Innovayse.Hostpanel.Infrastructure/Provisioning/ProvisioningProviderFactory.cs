@@ -97,7 +97,10 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
         }
 
         var options = _options.Value;
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
         var connection = new WhmConnection(HostingPanelAddress.BaseUrl(server.Hostname, options.CPanelWhmPort), server.Username, server.ApiToken);
+        var panelUrl = HostingPanelAddress.BaseUrl(server.Hostname, options.CPanelUserPort);
+#pragma warning restore CS0618
         var client = new WhmApiClient(
             _httpClientFactory.CreateClient(HttpClientNames.CPanelWhm),
             _loggerFactory.CreateLogger<WhmApiClient>());
@@ -105,7 +108,7 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
         return new WhmProvisioningProvider(
             connection,
             server.IpAddress ?? server.Hostname,
-            HostingPanelAddress.BaseUrl(server.Hostname, options.CPanelUserPort),
+            panelUrl,
             client,
             _loggerFactory.CreateLogger<WhmProvisioningProvider>());
     }

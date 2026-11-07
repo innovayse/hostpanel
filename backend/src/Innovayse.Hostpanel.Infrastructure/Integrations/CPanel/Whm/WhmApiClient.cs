@@ -11,10 +11,13 @@ namespace Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Every call is a GET with its arguments in the query string, as the WHM API 1 reference defines
-/// each function used here, and authenticates with <c>Authorization: whm user:token</c>. The query
-/// string of <c>createacct</c> and <c>passwd</c> carries a password, so no URL is ever logged, and
-/// the named HTTP client is registered without the factory's request logging.
+/// Every call is a POST to <c>/json-api/&lt;function&gt;?api.version=1</c> whose arguments travel in a
+/// form encoded body, which WHM API 1 accepts like a query string, and authenticates with
+/// <c>Authorization: whm user:token</c>. The body keeps a password (<c>createacct</c>, <c>passwd</c>)
+/// out of the URL, which WHM's access log, a proxy and the HTTP stack's own diagnostics record, so the
+/// URL holds the function name and nothing else. No URL is logged either, and the named HTTP client is
+/// registered without the factory's request logging; the resilience pipeline's telemetry names its
+/// strategies and outcomes, never the request.
 /// </para>
 /// <para>
 /// WHM reports a refusal inside an HTTP 200 body, with <c>metadata.result</c> 0. Every operation
@@ -215,19 +218,24 @@ public sealed class WhmApiClient
     /// <summary>Calls one WHM API 1 function and reads its reply.</summary>
     /// <param name="connection">The server to call.</param>
     /// <param name="function">The function name, e.g. <c>createacct</c>; the only thing ever logged.</param>
-    /// <param name="arguments">The function's arguments, sent in the query string.</param>
+    /// <param name="arguments">The function's arguments, sent in the form encoded request body.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The reply; <see cref="WhmReply.Unreadable"/> on a transport failure or a body that is not a reply.</returns>
     private async Task<WhmReply> CallAsync(WhmConnection connection, string function, KeyValuePair<string, string>[] arguments, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(connection);
-        var query = string.Concat(arguments.Select(a => $"&{Uri.EscapeDataString(a.Key)}={Uri.EscapeDataString(a.Value)}"));
-        using var request = new HttpRequestMessage(HttpMethod.Get, $"{connection.BaseUrl.TrimEnd('/')}{ApiPath}{function}?api.version=1{query}");
-        request.Headers.TryAddWithoutValidation("Authorization", $"{AuthScheme} {connection.Username}:{connection.ApiToken}");
 
         string body;
         try
         {
+            // Built inside the try: a host name that is not a valid URI throws here, and it must
+            // end as an unreadable reply like any other failure to reach the server.
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"{connection.BaseUrl.TrimEnd('/')}{ApiPath}{function}?api.version=1")
+            {
+                Content = new FormUrlEncodedContent(arguments),
+            };
+            request.Headers.TryAddWithoutValidation("Authorization", $"{AuthScheme} {connection.Username}:{connection.ApiToken}");
+
             using var response = await _http.SendAsync(request, ct);
             if (!response.IsSuccessStatusCode)
             {
@@ -237,7 +245,7 @@ public sealed class WhmApiClient
 
             body = await response.Content.ReadAsStringAsync(ct);
         }
-        catch (Exception ex) when ((ex is HttpRequestException or TaskCanceledException or TimeoutRejectedException) && !ct.IsCancellationRequested)
+        catch (Exception ex) when ((ex is HttpRequestException or TaskCanceledException or TimeoutRejectedException or UriFormatException) && !ct.IsCancellationRequested)
         {
             // The exception type only: an exception's text could name the request.
             _logger.LogWarning("WHM {Function} could not be sent ({ErrorType}).", function, ex.GetType().Name);

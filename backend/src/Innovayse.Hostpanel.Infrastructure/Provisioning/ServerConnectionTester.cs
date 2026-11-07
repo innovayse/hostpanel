@@ -125,17 +125,21 @@ public sealed class ServerConnectionTester : IServerConnectionTester
         var client = new WhmApiClient(
             _httpClientFactory.CreateClient(HttpClientNames.CPanelWhm),
             _loggerFactory.CreateLogger<WhmApiClient>());
-        var connection = new WhmConnection(HostingPanelAddress.BaseUrl(server.Hostname, _options.Value.CPanelWhmPort), server.Username, server.ApiToken);
         try
         {
+            // Inside the try: an address that cannot be turned into a URL is an unreachable server.
+#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+            var connection = new WhmConnection(HostingPanelAddress.BaseUrl(server.Hostname, _options.Value.CPanelWhmPort), server.Username, server.ApiToken);
+#pragma warning restore CS0618
             var info = await client.GetVersionAsync(connection, ct);
             var accounts = await client.CountAccountsAsync(connection, ct);
             return ServerConnectionTestResult.Succeeded(accounts, info.Version);
         }
         catch (Exception ex)
         {
-            // WHM's own text never reaches the caller; the exception carries no URL or token.
-            _logger.LogWarning(ex, "cPanel connection test failed for server {ServerId} ({Hostname})", server.Id, server.Hostname);
+            // The exception type only, as WhmApiClient logs: an exception's text could name the
+            // request, and WHM's own text never reaches the caller either.
+            _logger.LogWarning("cPanel connection test failed for server {ServerId} ({Hostname}) ({ErrorType}).", server.Id, server.Hostname, ex.GetType().Name);
             return ServerConnectionTestResult.Failed(HostpanelErrorCodes.SERVER_CONNECTION_UNREACHABLE);
         }
     }

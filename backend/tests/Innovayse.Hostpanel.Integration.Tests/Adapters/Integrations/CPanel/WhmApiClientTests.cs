@@ -2,6 +2,8 @@ using System.Net;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm.Models;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm.Models.Enums;
+using Innovayse.Hostpanel.Integration.Tests.Shared;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.CPanel;
@@ -162,6 +164,54 @@ public sealed class WhmApiClientTests : IAsyncLifetime
         var reply = await Client().UnsuspendAccountAsync(new WhmConnection(address, "root", "t"), "testuser", CancellationToken.None);
 
         reply.Should().Be(WhmReply.Unreadable);
+    }
+
+    /// <summary>Creating an account sends the password in the form encoded body and never in the URL.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task CreateAccount_SendsThePasswordInTheBodyNotTheUrlAsync()
+    {
+        whm.Enqueue(WhmReplies.Created);
+
+        var reply = await Client().CreateAccountAsync(Connection(), "testuser", "example.com", "S3cret&pass word", "Basic", CancellationToken.None);
+
+        reply.IsSuccess.Should().BeTrue();
+        var call = whm.Requests.Should().ContainSingle().Subject;
+        call.Method.Should().Be("POST");
+        call.PathAndQuery.Should().Be("/json-api/createacct?api.version=1");
+        call.Body.Should().Be("username=testuser&domain=example.com&password=S3cret%26pass+word&plan=Basic");
+    }
+
+    /// <summary>Changing a password sends it in the form encoded body and never in the URL.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ChangePassword_SendsThePasswordInTheBodyNotTheUrlAsync()
+    {
+        whm.Enqueue(WhmReplies.Ok);
+
+        var reply = await Client().ChangePasswordAsync(Connection(), "testuser", "N3w-p@ss", CancellationToken.None);
+
+        reply.IsSuccess.Should().BeTrue();
+        var call = whm.Requests.Should().ContainSingle().Subject;
+        call.PathAndQuery.Should().Be("/json-api/passwd?api.version=1");
+        call.Body.Should().Be("user=testuser&password=N3w-p%40ss");
+    }
+
+    /// <summary>A host name that is not a valid URI is an unreadable reply, logged by exception type only.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Call_InvalidHostName_IsUnreadableAndLogsOnlyTheTypeAsync()
+    {
+        var logs = new RecordingLoggerProvider();
+        using var loggerFactory = LoggerFactory.Create(b => b.AddProvider(logs));
+        var client = new WhmApiClient(new HttpClient(), loggerFactory.CreateLogger<WhmApiClient>());
+
+        var reply = await client.CreateAccountAsync(new WhmConnection("https://bad host:2087", "root", "secret-token-value"), "testuser", "example.com", "S3cret-pass", "Basic", CancellationToken.None);
+
+        reply.Should().Be(WhmReply.Unreadable);
+        var line = logs.Entries.Should().ContainSingle().Subject;
+        line.Exception.Should().BeNull();
+        line.Message.Should().Contain("UriFormatException").And.NotContain("bad host").And.NotContain("secret-token-value").And.NotContain("S3cret-pass");
     }
 
     /// <summary>The connection prints without its API token.</summary>

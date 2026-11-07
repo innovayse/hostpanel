@@ -14,7 +14,6 @@ using Innovayse.Hostpanel.Infrastructure.Email;
 using Innovayse.Hostpanel.Infrastructure.Email.Settings;
 using Innovayse.Hostpanel.Infrastructure.ImageProcessing;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
-using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Settings;
 using Innovayse.Hostpanel.Infrastructure.Integrations.GitHub;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration.Settings;
@@ -441,44 +440,6 @@ public static class DependencyInjection
         services.AddScoped<IClientAccess, ClientAccess>();
         services.AddScoped<ICallerClientResolver, CallerClientResolver>();
 
-        // Service provisioning settings, bound and checked at startup: either the whole section
-        // is unset, a deployment that provisions through per-server credentials held in the
-        // database instead, or it is complete. A half-filled section would bind silently and fail on the first call.
-        services.AddOptions<CPanelOptions>()
-            .Bind(configuration.GetSection(CPanelOptions.SectionName))
-            .Validate(
-                o => o.IsUsable,
-                $"{CPanelOptions.SectionName} is partly configured: ApiUrl, Username and ApiToken "
-                    + "must either all be set or the whole section left unset.")
-            .ValidateOnStart();
-        services.AddHttpClient<CPanelClient>((sp, httpClient) =>
-        {
-            var settings = sp.GetRequiredService<IOptions<CPanelOptions>>().Value;
-
-            // Resolving this client at all means something is about to call WHM, so an unset
-            // section is an error here even though it is allowed at startup: said plainly and
-            // naming the setting, rather than as the UriFormatException an empty URL produces.
-            if (!settings.IsConfigured)
-            {
-                throw new InvalidOperationException(
-                    $"cPanel provisioning was requested but the \"{CPanelOptions.SectionName}\" "
-                    + "configuration section is not set.");
-            }
-
-            httpClient.BaseAddress = new Uri(settings.ApiUrl);
-
-            // Kept as the outer backstop only. The resilience pipeline below decides in 45s and
-            // 55s; this catches a pipeline that was configured wrong, nothing else.
-            httpClient.Timeout = HttpBackstopTimeouts.CPanel;
-            httpClient.DefaultRequestHeaders.Add(
-                HeaderNames.Authorization,
-                $"WHM {settings.Username}:{settings.ApiToken}");
-        })
-            // No retry stage, and the HTTP method is no guide: every function this client calls
-            // goes out as one POST whose function name is in the path, and createacct, removeacct
-            // and passwd are writes among the reads (accountsummary). A method-based predicate
-            // would repeat all of them.
-            .AddNoRetryResilience(o => o.CPanel);
         // Use NullCPanelProvisioningProvider as fallback for unmigrated code
         services.AddScoped<IProvisioningProvider, NullCPanelProvisioningProvider>();
 

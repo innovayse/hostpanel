@@ -203,7 +203,7 @@ public sealed class ProvisioningProviderFactoryTests : IAsyncLifetime
 
         provider.Should().BeOfType<WhmProvisioningProvider>();
         http.RequestedUris.Should().ContainSingle().Which.ToString()
-            .Should().Be($"https://panel.example.test:{ProvisioningOptions.DefaultCPanelWhmPort}/json-api/unsuspendacct?api.version=1&user=testuser");
+            .Should().Be($"https://panel.example.test:{ProvisioningOptions.DefaultCPanelWhmPort}/json-api/unsuspendacct?api.version=1");
         cwp7.Requests.Should().ContainSingle().Which.Authorization.Should().Be("whm root:whm-token");
     }
 

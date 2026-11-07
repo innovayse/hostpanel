@@ -102,13 +102,20 @@ When `.env` already exists, the installer dumps the database through the running
 version it belongs to, for example `backups/hostpanel-20261107-101500-0.3.1.sql`.
 The file and the folder are readable by their owner only.
 
-- If the dump fails, or the file comes out empty, the installer stops with an error
+- If the dump fails, comes out empty or is cut short (a finished dump ends with the
+  `-- PostgreSQL database dump complete` line), the installer stops with an error
   before it touches the compose file, `.env` or the running stack.
-- If the database container is not running, the installer stops with a message. Start
-  the stack and run it again. For a stack that never held data, `--skip-backup` skips
-  the dump.
-- The newest 5 backups are kept and older ones are removed. Change the number with
-  `--keep <n>` or `HOSTPANEL_BACKUP_KEEP`.
+- If the database container is stopped but its data volume exists, the installer starts
+  the database alone, waits until it accepts connections and then takes the dump. If
+  there is no database yet (a first install that stopped before it started), there is
+  nothing to back up and the installer goes on. `--skip-backup` skips the dump and
+  leaves the data unprotected; do not use it on a stack that holds data.
+- A database without any table is not kept as a backup, so it never replaces one that
+  holds data.
+- The newest 5 backups are kept, and so is the oldest backup of every version, because
+  the one taken right before an upgrade is the way back to the old version even after
+  you run the installer again. Older ones are removed. Change the number with
+  `--keep <n>` or `HOSTPANEL_BACKUP_KEEP`. Backup names use UTC.
 - Keep a copy of `.env` as well, since the dump cannot be read without its
   `ENCRYPTION_KEY`: `cp .env .env.bak`.
 - Install with `--version <x.y.z>`. A backup taken while `IMAGE_TAG` is the moving

@@ -31,7 +31,7 @@
  */
 
 import type { FetchResponse } from 'ofetch'
-import { defineReadOnlyEventHandler, isHeadRequest } from '~/server/utils/readOnlyEventHandler'
+import { answeredContentLength, defineReadOnlyEventHandler, isHeadRequest } from '~/server/utils/readOnlyEventHandler'
 import { requireUploadPath } from '~/server/utils/uploadPath'
 import { HttpMethod } from '~/types/httpmethod'
 
@@ -40,9 +40,6 @@ const ALLOWED_TYPES: Record<string, string> = {
   '.png': 'image/png',
   '.ico': 'image/x-icon',
 }
-
-/** The upstream response header that gives the size of the file. */
-const CONTENT_LENGTH = 'content-length'
 
 export default defineReadOnlyEventHandler(async (event) => {
   // The upstream is a file server, so a `..` that survived this far would be resolved by it, not
@@ -80,8 +77,9 @@ export default defineReadOnlyEventHandler(async (event) => {
   }
 
   if (isHead) {
-    // The size is the file server's own answer to the HEAD; a bodyless answer has nothing to measure.
-    const length = upstream.headers.get(CONTENT_LENGTH)
+    // The size is the file server's own answer to the HEAD; a bodyless answer has nothing to measure,
+    // and a content-coded answer's size is not one the GET delivers, so it is left out.
+    const length = answeredContentLength(upstream.headers)
     if (length) {
       headers['Content-Length'] = length
     }

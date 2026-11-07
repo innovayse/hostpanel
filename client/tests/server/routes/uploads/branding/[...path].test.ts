@@ -6,6 +6,7 @@
  * @module tests/server/routes/uploads/branding/[...path].test
  */
 
+import { gzipSync } from 'node:zlib'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { makeEvent, refusal, startBackend } from '../../../../helpers/bffHarness'
 import type { RouteModule } from '../../../../helpers/bffHarness'
@@ -52,6 +53,37 @@ describe('GET and HEAD /uploads/branding/**', () => {
     expect(head.responseHeaders).toEqual({ ...get.responseHeaders, 'Content-Length': '9' })
     expect(head.responseHeaders['Content-Type']).toBe('image/png')
     expect(head.responseHeaders['Cache-Control']).toBe('public, max-age=31536000, immutable')
+  })
+
+  it('sends no length for a HEAD the file server answered content-coded, because the body would not match it', async () => {
+    backend.respondWith(() => ({ headers: { 'content-length': '29', 'content-encoding': 'gzip' } }))
+    const event = makeEvent({ params: { path: 'abc/v1/icon-192.png' }, method: HttpMethod.Head })
+
+    await route.default(event)
+
+    expect(event.responseHeaders['Content-Length']).toBeUndefined()
+    expect(event.responseHeaders['Content-Type']).toBe('image/png')
+    expect(event.noContentStatus).toBe(200)
+  })
+
+  it('serves the decoded bytes of a content-coded GET without promising the coded length', async () => {
+    const coded = gzipSync('png-bytes')
+    backend.respondWith(() => ({ body: coded, headers: { 'content-length': String(coded.length), 'content-encoding': 'gzip' } }))
+    const event = makeEvent({ params: { path: 'abc/v1/icon-192.png' } })
+
+    const body = await route.default(event) as Buffer
+
+    expect(body.toString()).toBe('png-bytes')
+    expect(event.responseHeaders['Content-Length']).toBeUndefined()
+  })
+
+  it('sends no length for a plain GET either, leaving the size to the body it sends', async () => {
+    backend.respondWith(() => ({ body: 'png-bytes', headers: { 'content-length': '9' } }))
+    const event = makeEvent({ params: { path: 'abc/v1/icon-192.png' } })
+
+    await route.default(event)
+
+    expect(event.responseHeaders['Content-Length']).toBeUndefined()
   })
 
   it('answers a HEAD of an unknown file with the 404 of the GET', async () => {

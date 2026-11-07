@@ -8,7 +8,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { makeEvent, refusal } from '../../helpers/bffHarness'
 import { PortalErrorCode } from '~/constants/portalErrorCode'
-import { defineReadOnlyEventHandler, isHeadRequest } from '~/server/utils/readOnlyEventHandler'
+import { answeredContentLength, defineReadOnlyEventHandler, isHeadRequest } from '~/server/utils/readOnlyEventHandler'
 import { HttpMethod } from '~/types/httpmethod'
 
 /** The two methods the wrapper lets through. */
@@ -59,5 +59,19 @@ describe('isHeadRequest', () => {
     for (const method of [HttpMethod.Get, ...REFUSED_METHODS]) {
       expect(isHeadRequest(makeEvent({ method }))).toBe(false)
     }
+  })
+})
+
+describe('answeredContentLength', () => {
+  it('returns the length the file server gave for a plain answer', () => {
+    expect(answeredContentLength(new Headers({ 'content-length': '9' }))).toBe('9')
+  })
+
+  it('returns null when the file server gave no length', () => {
+    expect(answeredContentLength(new Headers())).toBeNull()
+  })
+
+  it('returns null for a content-coded answer, because the decoded body would not match the length', () => {
+    expect(answeredContentLength(new Headers({ 'content-length': '9', 'content-encoding': 'gzip' }))).toBeNull()
   })
 })

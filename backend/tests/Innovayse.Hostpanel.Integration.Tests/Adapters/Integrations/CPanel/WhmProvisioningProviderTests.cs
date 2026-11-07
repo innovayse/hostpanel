@@ -37,7 +37,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
         await whm.DisposeAsync();
     }
 
-    /// <summary>A fresh order calls createacct with every argument escaped, by GET, with the WHM token header.</summary>
+    /// <summary>A fresh order calls createacct with every argument escaped, by POST, with the WHM token header.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
     public async Task Provision_CallsCreateacctAsync()

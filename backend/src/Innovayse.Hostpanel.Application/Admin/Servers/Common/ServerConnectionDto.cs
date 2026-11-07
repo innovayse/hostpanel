@@ -6,7 +6,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Servers.Common;
 
 /// <summary>
 /// What a provisioning provider needs to reach one server's control panel. Server-side only; it
-/// carries the panel's access hash and is never sent to a browser.
+/// carries the panel's access hash and API token and is never sent to a browser.
 /// </summary>
 /// <param name="Id">The server.</param>
 /// <param name="Name">Its display name, for log lines.</param>

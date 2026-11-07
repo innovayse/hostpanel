@@ -18,7 +18,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Provisioning;
 /// <summary>Tests server connectivity using the appropriate API client based on server module.</summary>
 public sealed class ServerConnectionTester : IServerConnectionTester
 {
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP clients and HostingPanelAddress, which the Plesk and cPanel paths also use), obsolete since SDK 3.1.0; stays until the panel providers become IProvisioningPanelPlugin plugins.
     /// <summary>The CWP API client, for servers on the CWP module.</summary>
     private readonly IHostingPanelApiClient _cwpClient;
 
@@ -46,7 +46,7 @@ public sealed class ServerConnectionTester : IServerConnectionTester
     /// <param name="options">The port Plesk servers answer on.</param>
     /// <param name="logger">Records why a connection test failed, detail the caller never sees.</param>
     public ServerConnectionTester(
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP clients and HostingPanelAddress, which the Plesk and cPanel paths also use), obsolete since SDK 3.1.0; stays until the panel providers become IProvisioningPanelPlugin plugins.
         IHostingPanelApiClient cwpClient,
         IHostingPanelV7ApiClient cwp7Client,
 #pragma warning restore CS0618
@@ -128,7 +128,7 @@ public sealed class ServerConnectionTester : IServerConnectionTester
         try
         {
             // Inside the try: an address that cannot be turned into a URL is an unreachable server.
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP clients and HostingPanelAddress, which the Plesk and cPanel paths also use), obsolete since SDK 3.1.0; stays until the panel providers become IProvisioningPanelPlugin plugins.
             var connection = new WhmConnection(HostingPanelAddress.BaseUrl(server.Hostname, _options.Value.CPanelWhmPort), server.Username, server.ApiToken);
 #pragma warning restore CS0618
             var info = await client.GetVersionAsync(connection, ct);
@@ -159,7 +159,7 @@ public sealed class ServerConnectionTester : IServerConnectionTester
         var client = new PleskApiClient(
             _httpClientFactory.CreateClient(HttpClientNames.Plesk),
             _loggerFactory.CreateLogger<PleskApiClient>());
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP clients and HostingPanelAddress, which the Plesk and cPanel paths also use), obsolete since SDK 3.1.0; stays until the panel providers become IProvisioningPanelPlugin plugins.
         var connection = new PleskConnection(HostingPanelAddress.BaseUrl(server.Hostname, _options.Value.PleskPort), apiKey);
 #pragma warning restore CS0618
         try
@@ -204,7 +204,7 @@ public sealed class ServerConnectionTester : IServerConnectionTester
         }
     }
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP clients and HostingPanelAddress, which the Plesk and cPanel paths also use), obsolete since SDK 3.1.0; stays until the panel providers become IProvisioningPanelPlugin plugins.
     /// <summary>Builds the panel connection for a server on the panel's default API port.</summary>
     /// <param name="server">The server to reach.</param>
     /// <param name="apiKey">The credential the server stores for its panel API.</param>

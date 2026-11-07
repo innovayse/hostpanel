@@ -664,14 +664,16 @@ public static class DependencyInjection
             .AddNoRetryResilience(o => o.Plesk);
 
         // WHM API client for cPanel servers, named only, like Plesk. The factory's request logging
-        // is removed: WHM API 1 takes its arguments in the query string, and createacct and passwd
-        // carry a password there, so the URL must never reach a log line.
+        // is removed: createacct and passwd carry a password, which travels in the POST body and never
+        // the URL, and no request detail should reach a log line. The request also holds the token and
+        // the password, so a redirect is never followed: a 307 or 308 would resend both to another
+        // host. A redirect reads as an unreadable reply.
         services.AddHttpClient(HttpClientNames.CPanelWhm, client =>
         {
             client.Timeout = HttpBackstopTimeouts.CPanelWhm;
         })
             .RemoveAllLoggers()
-            .AddOutboundAddressGuard()
+            .AddOutboundAddressGuard(followRedirects: false)
             .AddNoRetryResilience(o => o.CPanelWhm);
 
         // Migration

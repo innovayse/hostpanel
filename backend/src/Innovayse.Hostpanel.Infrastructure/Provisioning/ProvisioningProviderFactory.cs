@@ -97,7 +97,7 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
         }
 
         var options = _options.Value;
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP clients and HostingPanelAddress, which the Plesk and cPanel paths also use), obsolete since SDK 3.1.0; stays until the panel providers become IProvisioningPanelPlugin plugins.
         var connection = new WhmConnection(HostingPanelAddress.BaseUrl(server.Hostname, options.CPanelWhmPort), server.Username, server.ApiToken);
         var panelUrl = HostingPanelAddress.BaseUrl(server.Hostname, options.CPanelUserPort);
 #pragma warning restore CS0618
@@ -127,7 +127,7 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
             throw new InvalidOperationException($"Server '{server.Name}' (id={server.Id}) has no access hash configured.");
         }
 
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP clients and HostingPanelAddress, which the Plesk and cPanel paths also use), obsolete since SDK 3.1.0; stays until the panel providers become IProvisioningPanelPlugin plugins.
         var connection = new PleskConnection(HostingPanelAddress.BaseUrl(server.Hostname, _options.Value.PleskPort), apiKey);
 #pragma warning restore CS0618
         var client = new PleskApiClient(
@@ -159,7 +159,7 @@ public sealed class ProvisioningProviderFactory : IProvisioningProviderFactory
         }
 
         var options = _options.Value;
-#pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
+#pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP clients and HostingPanelAddress, which the Plesk and cPanel paths also use), obsolete since SDK 3.1.0; stays until the panel providers become IProvisioningPanelPlugin plugins.
         var connection = new Cwp7Connection(
             HostingPanelAddress.BaseUrl(server.Hostname, options.Cwp7ApiPort),
             apiKey,

@@ -452,6 +452,8 @@ public static class DependencyInjection
 
         // Provisioning provider factory: creates per-server providers (CWP7, cPanel, etc.)
         services.AddScoped<IProvisioningProviderFactory, ProvisioningProviderFactory>();
+        // The username rules staff-facing handlers ask, so a name a panel would refuse fails when it is saved.
+        services.AddSingleton<IPanelAccountRules, PanelAccountRules>();
 
         // SSH key management: per-server providers resolved from Server.Module plus the server's
         // own ServerSshSettings row. Nothing here names a server; every value is per row.

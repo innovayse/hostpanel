@@ -107,7 +107,8 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
 
         var act = () => provider.ProvisionAsync(Order, CancellationToken.None);
 
-        var thrown = await act.Should().ThrowAsync<WhmUnavailableException>();
+        var thrown = await act.Should().ThrowAsync<DomainRuleException>();
+        thrown.Which.Code.Should().Be(HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN);
         thrown.Which.Message.Should().NotContain("example.com").And.NotContain("testuser");
         whm.Requests.Should().HaveCount(2);
         logger.Messages.Should().NotContain(m => m.Contains("example.com") || m.Contains("testuser"));
@@ -123,7 +124,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
 
         var act = () => provider.ProvisionAsync(Order, CancellationToken.None);
 
-        await act.Should().ThrowAsync<WhmUnavailableException>();
+        (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN);
         whm = await StubHttpServer.StartAsync();
     }
 
@@ -435,7 +436,7 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
         AssertCall(whm.Requests.Should().ContainSingle().Subject, "create_user_session", "user=testuser&service=cpaneld");
     }
 
-    /// <summary>An https address on the host the server was configured by is accepted too, in any case.</summary>
+    /// <summary>An https address on the host the server was configured by is accepted too, and the parsed address that was checked is what is returned.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
     public async Task Sso_AddressOnTheConfiguredHost_IsAcceptedAsync()
@@ -446,10 +447,11 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
 
         var url = await provider.GetCPanelSsoUrlAsync("testuser", null, CancellationToken.None);
 
-        url.Should().Be(address.ToUpperInvariant());
+        // The scheme and host come back in their parsed, lower case form; the path keeps its case.
+        url.Should().Be($"https://{host}:2083/CPSESS123/LOGIN/");
     }
 
-    /// <summary>An address that is not an https address on the server is never returned: it is a coded failure that names nothing of the address.</summary>
+    /// <summary>An address that is not an https address on the server and its cPanel port is never returned: it is a coded failure that names nothing of the address.</summary>
     /// <param name="url">The address WHM is made to return.</param>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Theory]
@@ -460,6 +462,11 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
     [InlineData("//192.0.2.10/cpsess123/login/")]
     [InlineData("https://192.0.2.10@evil.example/cpsess123/login/")]
     [InlineData("https://user:secret@192.0.2.10:2083/cpsess123/login/")]
+    [InlineData("https://192.0.2.10:2087/cpsess123/login/")]
+    [InlineData("https://192.0.2.10:8443/cpsess123/login/")]
+    [InlineData("https://192.0.2.10/cpsess123/login/")]
+    [InlineData("https://192.0.2.10.:2083/cpsess123/login/")]
+    [InlineData("https://192.0.2.1%30:2083/cpsess123/login/")]
     public async Task Sso_AddressNotOnTheServer_IsACodedFailureAsync(string url)
     {
         var logger = new CapturingLogger<WhmProvisioningProvider>();

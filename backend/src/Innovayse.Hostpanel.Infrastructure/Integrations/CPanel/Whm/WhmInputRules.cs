@@ -98,36 +98,55 @@ public static class WhmInputRules
     }
 
     /// <summary>
-    /// Whether a single sign-on URL is one this server may hand out: absolute, <c>https</c>, no
-    /// user information, and a host that is one of the server's own names. Hosts compare
-    /// case insensitively and in their punycode form, so a lookalike written in another script or
-    /// case never matches.
+    /// Reads a single sign-on URL WHM returned and answers it only when this server may hand it
+    /// out: absolute, <c>https</c>, no user information, a host that is one of the server's own
+    /// names, and the port the account owner's cPanel is served on. Hosts compare case
+    /// insensitively and in their punycode form, so a lookalike written in another script or case
+    /// never matches; a host with a trailing dot is a different name and is refused.
     /// </summary>
     /// <param name="url">The URL WHM returned.</param>
+    /// <param name="panelUrl">
+    /// The cPanel address an account owner signs in at, e.g. <c>https://host:2083</c>. Its port is
+    /// the only port a session URL may carry (an absent port means 443). A blank or unreadable
+    /// value accepts nothing, so a server with no known cPanel port never passes a URL on.
+    /// </param>
     /// <param name="ownHosts">
     /// The server's own names: the WHM address, and its IP address or host name. A value may be a
     /// bare host or a URL; blank entries are ignored.
     /// </param>
-    /// <returns><see langword="true"/> when the URL may be given to a client.</returns>
-    public static bool IsSessionUrlOf(string? url, params string?[] ownHosts)
+    /// <returns>
+    /// The parsed absolute URI that was checked, so a caller hands on exactly what was verified and
+    /// not the original text; <see langword="null"/> when the URL may not be given to a client.
+    /// </returns>
+    public static Uri? ParseSessionUrl(string? url, string? panelUrl, params string?[] ownHosts)
     {
         ArgumentNullException.ThrowIfNull(ownHosts);
 
         if (string.IsNullOrWhiteSpace(url) || url.Any(c => char.IsControl(c) || char.IsWhiteSpace(c)))
         {
-            return false;
+            return null;
         }
 
         if (!Uri.TryCreate(url, UriKind.Absolute, out var session)
             || session.Scheme != Uri.UriSchemeHttps
-            || session.UserInfo.Length > 0)
+            || session.UserInfo.Length > 0
+            || PortOf(panelUrl) != session.Port)
         {
-            return false;
+            return null;
         }
 
-        return ownHosts
+        var onServer = ownHosts
             .Select(HostOf)
             .Any(host => host is not null && string.Equals(host, session.IdnHost, StringComparison.OrdinalIgnoreCase));
+        return onServer ? session : null;
+    }
+
+    /// <summary>Reads the port out of the cPanel address, with the scheme's default when it names none.</summary>
+    /// <param name="panelUrl">The cPanel address, e.g. <c>https://host:2083</c>.</param>
+    /// <returns>The port, or -1 when the value is not an absolute https address, which equals no port a URL carries.</returns>
+    private static int PortOf(string? panelUrl)
+    {
+        return Uri.TryCreate(panelUrl, UriKind.Absolute, out var parsed) && parsed.Scheme == Uri.UriSchemeHttps ? parsed.Port : -1;
     }
 
     /// <summary>Reads the host out of a server address given as a URL or as a bare host or IP address.</summary>

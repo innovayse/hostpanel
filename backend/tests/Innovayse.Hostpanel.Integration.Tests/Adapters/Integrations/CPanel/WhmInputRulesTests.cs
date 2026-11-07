@@ -11,6 +11,9 @@ public sealed class WhmInputRulesTests
     /// <summary>The server's own WHM address, as the provider holds it.</summary>
     private const string WhmAddress = "https://whm.example.test:2087";
 
+    /// <summary>The cPanel address account owners sign in at, as the provider holds it.</summary>
+    private const string PanelUrl = "https://whm.example.test:2083";
+
     /// <summary>The server's IP address, as the provider holds it.</summary>
     private const string ServerIp = "192.0.2.10";
 
@@ -122,16 +125,15 @@ public sealed class WhmInputRulesTests
         WhmInputRules.IsDomain($"{label}.{label}.{label}.{new string('a', 62)}").Should().BeFalse("254 characters is past it");
     }
 
-    /// <summary>An https address on the server's host or IP address is accepted, whatever its case or port.</summary>
+    /// <summary>An https address on the server's host or IP address and the cPanel port is accepted, whatever its case.</summary>
     /// <param name="url">The URL WHM returned.</param>
     [Theory]
     [InlineData("https://whm.example.test:2083/cpsess1/login/?session=u:abc")]
     [InlineData("https://WHM.Example.TEST:2083/cpsess1/login/")]
-    [InlineData("https://whm.example.test/cpsess1/login/")]
     [InlineData("https://192.0.2.10:2083/cpsess1/login/")]
-    public void IsSessionUrlOf_OwnHttpsAddress_IsAccepted(string url)
+    public void ParseSessionUrl_OwnHttpsAddress_IsAccepted(string url)
     {
-        WhmInputRules.IsSessionUrlOf(url, WhmAddress, ServerIp).Should().BeTrue();
+        WhmInputRules.ParseSessionUrl(url, PanelUrl, WhmAddress, ServerIp).Should().NotBeNull();
     }
 
     /// <summary>An address on another host, a lookalike host or a parent domain is refused.</summary>
@@ -143,9 +145,94 @@ public sealed class WhmInputRulesTests
     [InlineData("https://example.test/cpsess1/login/")]
     [InlineData("https://sub.whm.example.test/cpsess1/login/")]
     [InlineData("https://192.0.2.11:2083/cpsess1/login/")]
-    public void IsSessionUrlOf_WrongHost_IsRefused(string url)
+    public void ParseSessionUrl_WrongHost_IsRefused(string url)
     {
-        WhmInputRules.IsSessionUrlOf(url, WhmAddress, ServerIp).Should().BeFalse();
+        WhmInputRules.ParseSessionUrl(url, PanelUrl, WhmAddress, ServerIp).Should().BeNull();
+    }
+
+    /// <summary>
+    /// A host written with a trailing dot, or with a percent encoded character, is not the server's
+    /// own name: whatever the parser makes of it, a result is never a host other than the server's.
+    /// </summary>
+    /// <param name="url">The URL WHM returned.</param>
+    /// <param name="expectedHost">The server host the address resolves to, or <see langword="null"/> when it must be refused.</param>
+    [Theory]
+    [InlineData("https://whm.example.test.:2083/cpsess1/login/", null)]
+    [InlineData("https://192.0.2.10.:2083/cpsess1/login/", null)]
+    [InlineData("https://%77hm.example.test:2083/cpsess1/login/", null)]
+    [InlineData("https://whm%2eexample.test:2083/cpsess1/login/", null)]
+    [InlineData("https://whm.example.test%2f.evil.example:2083/cpsess1/login/", null)]
+    [InlineData("https://whm.example.test%00.evil.example:2083/cpsess1/login/", null)]
+    public void ParseSessionUrl_TrailingDotOrPercentEncodedHost_IsNeverTakenForAnotherHost(string url, string? expectedHost)
+    {
+        var parsed = WhmInputRules.ParseSessionUrl(url, PanelUrl, WhmAddress, ServerIp);
+
+        if (expectedHost is null)
+        {
+            parsed.Should().BeNull();
+        }
+        else
+        {
+            parsed.Should().NotBeNull();
+            parsed!.IdnHost.Should().Be(expectedHost);
+        }
+    }
+
+    /// <summary>A host with a trailing dot is a different name and is refused.</summary>
+    /// <param name="url">The URL WHM returned.</param>
+    [Theory]
+    [InlineData("https://whm.example.test.:2083/cpsess1/login/")]
+    [InlineData("https://192.0.2.10.:2083/cpsess1/login/")]
+    public void ParseSessionUrl_TrailingDot_IsRefused(string url)
+    {
+        WhmInputRules.ParseSessionUrl(url, PanelUrl, WhmAddress, ServerIp).Should().BeNull();
+    }
+
+    /// <summary>Only the cPanel port passes: another port on the server's own host, the WHM port and an absent port included, is refused.</summary>
+    /// <param name="url">The URL WHM returned.</param>
+    [Theory]
+    [InlineData("https://whm.example.test:2087/cpsess1/login/")]
+    [InlineData("https://whm.example.test:8443/cpsess1/login/")]
+    [InlineData("https://whm.example.test:2084/cpsess1/login/")]
+    [InlineData("https://whm.example.test/cpsess1/login/")]
+    [InlineData("https://whm.example.test:443/cpsess1/login/")]
+    [InlineData("https://192.0.2.10:2087/cpsess1/login/")]
+    [InlineData("https://192.0.2.10/cpsess1/login/")]
+    public void ParseSessionUrl_PortOtherThanTheCPanelPort_IsRefused(string url)
+    {
+        WhmInputRules.ParseSessionUrl(url, PanelUrl, WhmAddress, ServerIp).Should().BeNull();
+    }
+
+    /// <summary>An address with no port is on the cPanel port only when the server is configured with the https default.</summary>
+    [Fact]
+    public void ParseSessionUrl_PanelOnThePortHttpsDefaults_AcceptsAnAddressWithoutAPort()
+    {
+        WhmInputRules.ParseSessionUrl("https://whm.example.test/cpsess1/", "https://whm.example.test", WhmAddress).Should().NotBeNull();
+        WhmInputRules.ParseSessionUrl("https://whm.example.test:443/cpsess1/", "https://whm.example.test:443", WhmAddress).Should().NotBeNull();
+        WhmInputRules.ParseSessionUrl("https://whm.example.test:2083/cpsess1/", "https://whm.example.test", WhmAddress).Should().BeNull();
+    }
+
+    /// <summary>With no usable cPanel address nothing passes, so an unknown port never lets a URL through.</summary>
+    /// <param name="panelUrl">The cPanel address the provider holds.</param>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("whm.example.test:2083")]
+    [InlineData("http://whm.example.test:2083")]
+    public void ParseSessionUrl_NoUsablePanelUrl_IsRefused(string? panelUrl)
+    {
+        WhmInputRules.ParseSessionUrl("https://whm.example.test:2083/cpsess1/", panelUrl, WhmAddress, ServerIp).Should().BeNull();
+    }
+
+    /// <summary>The result is the parsed absolute address that was checked, normalised, not the original text.</summary>
+    [Fact]
+    public void ParseSessionUrl_ReturnsTheParsedAddress()
+    {
+        var parsed = WhmInputRules.ParseSessionUrl("HTTPS://WHM.Example.TEST:2083/cpsess1/login/?session=u:abc", PanelUrl, WhmAddress, ServerIp);
+
+        parsed.Should().NotBeNull();
+        parsed!.IsAbsoluteUri.Should().BeTrue();
+        parsed.AbsoluteUri.Should().Be("https://whm.example.test:2083/cpsess1/login/?session=u:abc");
     }
 
     /// <summary>A plain http address on the right host is refused: the session token must not travel in clear text.</summary>
@@ -154,9 +241,9 @@ public sealed class WhmInputRulesTests
     [InlineData("http://whm.example.test:2083/cpsess1/login/")]
     [InlineData("ftp://whm.example.test/cpsess1/login/")]
     [InlineData("javascript:alert(1)")]
-    public void IsSessionUrlOf_NotHttps_IsRefused(string url)
+    public void ParseSessionUrl_NotHttps_IsRefused(string url)
     {
-        WhmInputRules.IsSessionUrlOf(url, WhmAddress, ServerIp).Should().BeFalse();
+        WhmInputRules.ParseSessionUrl(url, PanelUrl, WhmAddress, ServerIp).Should().BeNull();
     }
 
     /// <summary>A relative, scheme relative, blank or malformed value is not an address on the server.</summary>
@@ -170,9 +257,9 @@ public sealed class WhmInputRulesTests
     [InlineData("//whm.example.test/cpsess1/login/")]
     [InlineData("https:///cpsess1/login/")]
     [InlineData("https://")]
-    public void IsSessionUrlOf_RelativeOrMalformed_IsRefused(string? url)
+    public void ParseSessionUrl_RelativeOrMalformed_IsRefused(string? url)
     {
-        WhmInputRules.IsSessionUrlOf(url, WhmAddress, ServerIp).Should().BeFalse();
+        WhmInputRules.ParseSessionUrl(url, PanelUrl, WhmAddress, ServerIp).Should().BeNull();
     }
 
     /// <summary>User information in front of the host, with either host in it, never passes.</summary>
@@ -185,9 +272,9 @@ public sealed class WhmInputRulesTests
     [InlineData("https://evil.example\\@whm.example.test/cpsess1/login/")]
     [InlineData("https://evil.example#@whm.example.test/cpsess1/login/")]
     [InlineData("https://evil.example?@whm.example.test/cpsess1/login/")]
-    public void IsSessionUrlOf_UserInfoTricks_AreRefused(string url)
+    public void ParseSessionUrl_UserInfoTricks_AreRefused(string url)
     {
-        WhmInputRules.IsSessionUrlOf(url, WhmAddress, ServerIp).Should().BeFalse();
+        WhmInputRules.ParseSessionUrl(url, PanelUrl, WhmAddress, ServerIp).Should().BeNull();
     }
 
     /// <summary>Whitespace or a control character anywhere in the value is refused, so nothing is smuggled into a header or a redirect.</summary>
@@ -196,32 +283,32 @@ public sealed class WhmInputRulesTests
     [InlineData("https://whm.example.test/cpsess1/\r\nSet-Cookie: x=1")]
     [InlineData("https://whm.example.test/cpsess1/ login")]
     [InlineData("https://whm.example.test/\u0000")]
-    public void IsSessionUrlOf_WhitespaceOrControlCharacter_IsRefused(string url)
+    public void ParseSessionUrl_WhitespaceOrControlCharacter_IsRefused(string url)
     {
-        WhmInputRules.IsSessionUrlOf(url, WhmAddress, ServerIp).Should().BeFalse();
+        WhmInputRules.ParseSessionUrl(url, PanelUrl, WhmAddress, ServerIp).Should().BeNull();
     }
 
     /// <summary>A server configured by an internationalised name matches its punycode address, in any case.</summary>
     [Fact]
-    public void IsSessionUrlOf_InternationalisedHost_ComparesInPunycode()
+    public void ParseSessionUrl_InternationalisedHost_ComparesInPunycode()
     {
-        WhmInputRules.IsSessionUrlOf("https://XN--80AK6AA92E.com:2083/cpsess1/", "https://буква.com:2087").Should().BeFalse("a different name");
-        WhmInputRules.IsSessionUrlOf("https://xn--80ak6aa92e.com:2083/cpsess1/", "https://xn--80ak6aa92e.com:2087").Should().BeTrue();
-        WhmInputRules.IsSessionUrlOf("https://XN--80AK6AA92E.com:2083/cpsess1/", "https://xn--80ak6aa92e.com:2087").Should().BeTrue();
+        WhmInputRules.ParseSessionUrl("https://XN--80AK6AA92E.com:2083/cpsess1/", PanelUrl, "https://буква.com:2087").Should().BeNull("a different name");
+        WhmInputRules.ParseSessionUrl("https://xn--80ak6aa92e.com:2083/cpsess1/", PanelUrl, "https://xn--80ak6aa92e.com:2087").Should().NotBeNull();
+        WhmInputRules.ParseSessionUrl("https://XN--80AK6AA92E.com:2083/cpsess1/", PanelUrl, "https://xn--80ak6aa92e.com:2087").Should().NotBeNull();
     }
 
     /// <summary>Blank own hosts match nothing, so an unset address never lets a URL through.</summary>
     [Fact]
-    public void IsSessionUrlOf_NoOwnHost_IsRefused()
+    public void ParseSessionUrl_NoOwnHost_IsRefused()
     {
-        WhmInputRules.IsSessionUrlOf("https://whm.example.test/cpsess1/", null, " ", string.Empty).Should().BeFalse();
+        WhmInputRules.ParseSessionUrl("https://whm.example.test:2083/cpsess1/", PanelUrl, null, " ", string.Empty).Should().BeNull();
     }
 
     /// <summary>An IPv6 address of the server matches its bracketed URL form.</summary>
     [Fact]
-    public void IsSessionUrlOf_Ipv6Address_Matches()
+    public void ParseSessionUrl_Ipv6Address_Matches()
     {
-        WhmInputRules.IsSessionUrlOf("https://[2001:db8::10]:2083/cpsess1/", "2001:db8::10").Should().BeTrue();
-        WhmInputRules.IsSessionUrlOf("https://[2001:db8::11]:2083/cpsess1/", "2001:db8::10").Should().BeFalse();
+        WhmInputRules.ParseSessionUrl("https://[2001:db8::10]:2083/cpsess1/", PanelUrl, "2001:db8::10").Should().NotBeNull();
+        WhmInputRules.ParseSessionUrl("https://[2001:db8::11]:2083/cpsess1/", PanelUrl, "2001:db8::10").Should().BeNull();
     }
 }

@@ -372,6 +372,9 @@
 <data name="PROVISIONING_UPSTREAM_FAILED" xml:space="preserve">
     <value>Ծառայության տեղակայումը ձախողվեց։ Խնդրում ենք փորձել կրկին կամ դիմել աջակցությանը։</value>
   </data>
+<data name="PROVISIONING_OUTCOME_UNKNOWN" xml:space="preserve">
+    <value>Չհաջողվեց հաստատել՝ արդյոք հոսթինգի հաշիվը ստեղծվել է։ Խնդրում ենք կրկին փորձել մի քանի րոպեից։</value>
+  </data>
 <data name="SERVICE_FIRST_INVOICE_UNPAID" xml:space="preserve">
     <value>Այս ծառայությունը կարելի է կարգավորել առաջին հաշիվն ամբողջությամբ վճարելուց հետո։</value>
   </data>

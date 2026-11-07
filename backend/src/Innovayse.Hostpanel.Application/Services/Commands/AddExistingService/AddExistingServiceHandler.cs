@@ -29,15 +29,20 @@ public sealed class AddExistingServiceHandler
     /// <summary>Clock.</summary>
     private readonly IClock _clock;
 
+    /// <summary>What the server's control panel accepts as an account username.</summary>
+    private readonly IPanelAccountRules _panelRules;
+
     /// <summary>Initializes a new instance of the <see cref="AddExistingServiceHandler"/> class.</summary>
     /// <param name="context">Database context.</param>
     /// <param name="bus">Message bus.</param>
     /// <param name="clock">Clock.</param>
-    public AddExistingServiceHandler(IHostpanelDbContext context, IMessageBus bus, IClock clock)
+    /// <param name="panelRules">What the server's control panel accepts as an account username.</param>
+    public AddExistingServiceHandler(IHostpanelDbContext context, IMessageBus bus, IClock clock, IPanelAccountRules panelRules)
     {
         _context = context;
         _bus = bus;
         _clock = clock;
+        _panelRules = panelRules;
     }
 
     /// <summary>Adds the service.</summary>
@@ -45,6 +50,7 @@ public sealed class AddExistingServiceHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The new service's id; <c>CLIENT_NOT_FOUND</c>, <c>PRODUCT_NOT_FOUND</c> or <c>SERVER_NOT_FOUND</c>;
+    /// <c>CPANEL_USERNAME_INVALID</c> when the server's panel cannot be addressed by that username;
     /// <c>SERVICE_HOSTING_ACCOUNT_EXISTS</c> when a service that is not terminated already holds that
     /// username on that server.
     /// </returns>
@@ -68,8 +74,14 @@ public sealed class AddExistingServiceHandler
             return Result<int>.FailureCode(HostpanelErrorCodes.SERVER_NOT_FOUND);
         }
 
-        // One account, one live service: a second would suspend, bill and terminate the same account twice.
+        // The account already exists, so the looser rule applies: the name only has to be one the panel can be asked about.
         var username = cmd.Username.Trim();
+        if (!_panelRules.AcceptsAccountUsername(server.Value!.Module, username))
+        {
+            return Result<int>.FailureCode(HostpanelErrorCodes.CPANEL_USERNAME_INVALID);
+        }
+
+        // One account, one live service: a second would suspend, bill and terminate the same account twice.
         var usernameLower = username.ToLower();
         var taken = await _context.ClientServices.AnyAsync(
             s => s.ServerId == cmd.ServerId

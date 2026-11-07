@@ -193,7 +193,8 @@ public sealed class MyServicesController : BaseApiController
     /// <c>PROVISIONING_ACCOUNT_CONFLICT</c> when the panel holds another account under the username, or
     /// <c>CPANEL_USERNAME_INVALID</c> or <c>CPANEL_DOMAIN_INVALID</c> when the panel would never accept the stored username or domain;
     /// 502 with <c>PROVISIONING_UPSTREAM_FAILED</c> when the provider rejects the request; 503 with
-    /// <c>NO_ELIGIBLE_SERVER</c> when no server has room;
+    /// <c>NO_ELIGIBLE_SERVER</c> when no server has room, or <c>PROVISIONING_OUTCOME_UNKNOWN</c> when the provider could not tell
+    /// whether the account was created and the call is to be retried;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{id:int}/setup")]

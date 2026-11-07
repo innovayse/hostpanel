@@ -244,7 +244,7 @@ public sealed class WhmApiClient
             return WhmReply.Unreadable;
         }
 
-        byte[] body;
+        WhmReply reply;
         try
         {
             // Built inside the try: a host name that is not a valid URI throws here, and it must
@@ -266,7 +266,11 @@ public sealed class WhmApiClient
             // Throws HttpRequestException past the cap, from the declared length or while reading,
             // which the handler below reports as an unreadable reply.
             await response.Content.LoadIntoBufferAsync(MaxResponseBytes, ct);
-            body = await response.Content.ReadAsByteArrayAsync(ct);
+
+            // Parsed from the buffered stream, inside the response's lifetime, so the body is not
+            // copied a second time into an array of its own.
+            await using var body = await response.Content.ReadAsStreamAsync(ct);
+            reply = await ParseAsync(body, ct);
         }
         catch (Exception ex) when ((ex is HttpRequestException or TaskCanceledException or TimeoutRejectedException or UriFormatException) && !ct.IsCancellationRequested)
         {
@@ -275,7 +279,6 @@ public sealed class WhmApiClient
             return WhmReply.Unreadable;
         }
 
-        var reply = Parse(body);
         if (reply.IsRefusal)
         {
             _logger.LogWarning("WHM {Function} was refused.", function);
@@ -290,12 +293,13 @@ public sealed class WhmApiClient
 
     /// <summary>Reads a WHM API 1 body.</summary>
     /// <param name="body">The response body, UTF-8 JSON.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>Success with its data, a refusal, or unreadable.</returns>
-    private static WhmReply Parse(byte[] body)
+    private static async Task<WhmReply> ParseAsync(Stream body, CancellationToken ct)
     {
         try
         {
-            using var document = JsonDocument.Parse(body);
+            using var document = await JsonDocument.ParseAsync(body, cancellationToken: ct);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
                 || !root.TryGetProperty("metadata", out var metadata)

@@ -13,10 +13,12 @@ import type { ComputedRef, InjectionKey, Ref } from 'vue'
 import { PLUGIN_FOLLOW_UP_INTERVAL_MS, PLUGIN_FOLLOW_UP_MAX_ATTEMPTS } from '~/constants/pluginFollowUp'
 import { usePluginsStore } from '~/stores/plugins'
 import type { PluginSource } from '~/types/pluginblock'
+import type { PluginCallResult } from '~/types/plugincallresult'
 import type { PluginFollowUp } from '~/types/pluginfollowup'
 import { HttpMethod } from '~/types/httpmethod'
 import type { PluginViewCondition } from '~/types/pluginviewcondition'
 import type { PluginViewContext } from '~/types/pluginviewcontext'
+import type { PluginViewRoute } from '~/types/pluginviewroute'
 import { pluginConditionHolds, pluginRouteMethod, readPluginField } from '~/utils/plugins'
 
 /** The injection key of the view context. */
@@ -179,6 +181,47 @@ export const usePluginSource = (
   return { value, loading, error, unavailable, reload }
 }
 
+/** The condition reads in flight in each view, by the view's context and then by what the read is for. */
+const CONDITION_READS = new WeakMap<PluginViewContext, Map<string, Promise<PluginCallResult>>>()
+
+/**
+ * Reads the route of a condition, sharing the read with every other condition of the view that asks for the same route
+ * at the same refresh state.
+ *
+ * Every block or card action with a `visibleWhen` reads its condition's route again whenever a block it watches is
+ * refreshed. A long conversation holds many result cards, often naming the same state route, and a follow-up that polls
+ * refreshes those blocks every few seconds, so without sharing each refresh would read the route once per card. The
+ * read in flight is shared by route and by the view's refresh counters: conditions asking at the same moment get one
+ * request, while a refresh that happens after an action changed something changes the counters and so starts a new read,
+ * and never reuses an answer that began before the change. The share ends when the read does; nothing is cached.
+ *
+ * @param context - The view's context, which owns the reads and the refresh counters.
+ * @param store - The plugin store the read goes through.
+ * @param route - The condition's route, a GET the page can fill.
+ * @returns The outcome of the read; never rejects.
+ */
+const readConditionRoute = (
+  context: PluginViewContext,
+  store: ReturnType<typeof usePluginsStore>,
+  route: PluginViewRoute,
+): Promise<PluginCallResult> => {
+  let reads = CONDITION_READS.get(context)
+  if (!reads) {
+    reads = new Map()
+    CONDITION_READS.set(context, reads)
+  }
+  const key = `${JSON.stringify(context.refreshes.value)} ${route.method} ${route.path}`
+  const shared = reads.get(key)
+  if (shared) {
+    return shared
+  }
+  const read = store.callRoute(context.pluginId, route, context.values).finally(() => {
+    reads.delete(key)
+  })
+  reads.set(key, read)
+  return read
+}
+
 /**
  * Whether a block, or a part of one, shows by its `visibleWhen` condition: read when it mounts and again whenever an
  * action asks any of the named block ids to refresh, so a follow-up can reveal or hide it. A block names its own id; a
@@ -188,6 +231,11 @@ export const usePluginSource = (
  * A block with no condition always shows and reads nothing. A block with one is hidden while the condition is being
  * read, when the read fails or is unavailable, and when the field is absent or matches none of the values: it shows
  * only once the condition is known to hold, so a create form never flashes up for a site that already exists.
+ *
+ * Cost: every condition reads its state route when it mounts and again on each refresh of a watched block, so a long
+ * conversation with a polling follow-up reads often. Conditions that name the same route in the same refresh share one
+ * request ({@link readConditionRoute}), so the cost is one read per distinct condition route per refresh, not one per
+ * card. A route that is expensive to answer is the plugin's to keep cheap.
  *
  * @param condition - The condition; undefined for none.
  * @param refreshIds - The block ids whose refresh reads the condition again; none means it is read once, on mounting.
@@ -221,7 +269,7 @@ export const usePluginCondition = (
       holds.value = false
       return
     }
-    const result = await store.callRoute(context.pluginId, current.route, context.values)
+    const result = await readConditionRoute(context, store, current.route)
     if (request !== latest) {
       return
     }

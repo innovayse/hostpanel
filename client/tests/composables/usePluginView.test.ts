@@ -207,6 +207,9 @@ const refreshed: string[][] = []
 /** The block ids whose refresh reads the test block's condition again. */
 const watched = ref<string[]>(['status'])
 
+/** How many watching blocks the test view holds. */
+const watchers = ref(1)
+
 /** Starts the test block's follow-up; set when the block mounts. */
 let follow: (followUp: PluginFollowUp | undefined, settled?: () => void) => void = () => undefined
 
@@ -235,7 +238,7 @@ const WatchHost = defineComponent({
       adopt: recordAdoption,
       track: () => undefined,
     })
-    return () => h(Watcher)
+    return () => h('div', Array.from({ length: watchers.value }, () => h(Watcher)))
   },
 })
 
@@ -261,6 +264,57 @@ describe('usePluginCondition', () => {
     condition.value = undefined
     refreshed.length = 0
     watched.value = ['status']
+    watchers.value = 1
+  })
+
+  it('shares one read among blocks that watch the same route, on mounting and on each refresh', async () => {
+    stub.respondWith(() => ({ body: { status: 'live' } }))
+    condition.value = LIVE
+    watchers.value = 4
+
+    const wrapper = mountWithKit(WatchHost)
+    await settle()
+    expect(calls()).toHaveLength(1)
+    expect(wrapper.findAll('[data-testid="visible"]').map(node => node.text())).toEqual(['shown', 'shown', 'shown', 'shown'])
+
+    refreshes.value = { status: 1 }
+    await nextTick()
+    await settle()
+    expect(calls()).toHaveLength(2)
+
+    refreshes.value = { status: 2 }
+    await nextTick()
+    await settle()
+    expect(calls()).toHaveLength(3)
+  })
+
+  it('never lets a refresh reuse a read that began before it', async () => {
+    let release: () => void = () => undefined
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    let reads = 0
+    stub.respondWith(async () => {
+      reads += 1
+      if (reads === 1) {
+        await gate
+        return { body: { status: 'building' } }
+      }
+      return { body: { status: 'live' } }
+    })
+    condition.value = LIVE
+
+    const wrapper = mountWithKit(WatchHost)
+    await settle()
+    // The first read is still out when an action changes the site and refreshes the block.
+    refreshes.value = { status: 1 }
+    await nextTick()
+    await settle()
+    release()
+    await settle()
+
+    expect(calls()).toHaveLength(2)
+    expect(wrapper.get('[data-testid="visible"]').text()).toBe('shown')
   })
 
   it('shows a block with no condition and reads nothing', async () => {

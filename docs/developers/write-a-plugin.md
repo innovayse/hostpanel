@@ -567,6 +567,9 @@ use a small Markdown subset: paragraphs, `#` headings, `-` and `1.` lists, fence
   when the condition does not hold. It applies to a route, an `href` and a `resend` action alike. Without it an action
   always shows. A condition the panel cannot read drops the action, since a button meant to hide must never show.
   Your route still decides whether a call is current: the condition is a courtesy to the reader, not the check.
+  A row left with no visible action is hidden too. **Cost:** the condition's route is read when the card is drawn and
+  again on each refresh, and a `followUp` refreshes every few seconds, so keep that route cheap. The panel reads a route
+  once per refresh however many cards name it, so a long conversation does not multiply the reads by its cards.
 - `issue` is your own failure, in the danger tone. The stream goes on; end it when you are done.
 
 A panel ignores an event it cannot read. **Stop** cancels the stream: your enumerator's token fires (`EnumeratorCancellation`)

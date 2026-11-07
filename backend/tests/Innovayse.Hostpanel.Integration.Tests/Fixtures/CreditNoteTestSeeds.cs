@@ -48,13 +48,14 @@ public static class CreditNoteTestSeeds
     /// <param name="host">The host whose database is seeded.</param>
     /// <param name="clientId">The invoiced client.</param>
     /// <param name="price">The line price before tax.</param>
+    /// <param name="taxRate">The tax percentage.</param>
     /// <returns>The paid invoice id.</returns>
-    public static async Task<int> GatewayPaidInvoiceAsync(WebApplicationFactory<Program> host, int clientId, decimal price = 100m)
+    public static async Task<int> GatewayPaidInvoiceAsync(WebApplicationFactory<Program> host, int clientId, decimal price = 100m, decimal taxRate = 0m)
     {
         using var scope = host.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var now = DateTimeOffset.UtcNow;
-        var invoice = NewInvoice(clientId, price, 0m, now);
+        var invoice = NewInvoice(clientId, price, taxRate, now);
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
 

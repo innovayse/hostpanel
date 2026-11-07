@@ -1,0 +1,13 @@
+{
+  "domains": "Domaines",
+  "myDomains": "Mes domaines",
+  "domain": "Domaine",
+  "createDomain": "Créer un domaine",
+  "domainName": "Nom de domaine",
+  "tld": "TLD",
+  "manage": "Gérer",
+  "nameservers": "Nameservers",
+  "dnsSettings": "Paramètres DNS",
+  "transferDomain": "Transférer un domaine",
+  "noDomains": "Aucun domaine"
+}

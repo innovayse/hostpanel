@@ -1,0 +1,10 @@
+{
+  "contact": "Contact",
+  "name": "Nom",
+  "email": "Email",
+  "message": "Message",
+  "send": "Envoyer",
+  "subject": "Objet",
+  "success": "Message envoyé avec succès",
+  "failed": "Échec de l'envoi"
+}

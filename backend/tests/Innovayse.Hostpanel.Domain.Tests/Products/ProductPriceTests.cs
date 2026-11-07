@@ -187,6 +187,39 @@ public sealed class ProductPriceTests
         Assert.Equal(new ProductCurrencyPrices("USD", 1m, 2m, 3m, 4m, 5m), prices);
     }
 
+    /// <summary>The from price divides each cycle price by the months the cycle covers and takes the lowest.</summary>
+    [Fact]
+    public void LowestMonthlyPrice_TakesTheLowestMonthlyEquivalentAcrossEveryCycle()
+    {
+        var p = NewProduct();
+        p.SetPrice("USD", BillingCycle.Monthly, 10m);
+        p.SetPrice("USD", BillingCycle.Quarterly, 27m);
+        p.SetPrice("USD", BillingCycle.Biennial, 192m);
+
+        Assert.Equal(8m, p.LowestMonthlyPrice("usd"));
+    }
+
+    /// <summary>A product priced only on a long cycle still has a from price.</summary>
+    [Fact]
+    public void LowestMonthlyPrice_OnlyQuarterly_IsThePriceOverThreeMonths()
+    {
+        var p = NewProduct();
+        p.SetPrice("EUR", BillingCycle.Quarterly, 10m);
+
+        Assert.Equal(3.33m, p.LowestMonthlyPrice("EUR"));
+    }
+
+    /// <summary>Only the asked currency counts, and a currency with no price has no from price.</summary>
+    [Fact]
+    public void LowestMonthlyPrice_IgnoresOtherCurrenciesAndIsNullWithoutPrice()
+    {
+        var p = NewProduct();
+        p.SetPrice("AMD", BillingCycle.Monthly, 1000m);
+
+        Assert.Null(p.LowestMonthlyPrice("EUR"));
+        Assert.Equal(1000m, p.LowestMonthlyPrice("AMD"));
+    }
+
     /// <summary>A negative amount is refused for a new cycle as for the old ones.</summary>
     [Fact]
     public void SetPrice_NegativeAmountForNewCycle_Throws()

@@ -326,7 +326,7 @@
     <value>Առաջնահերթությունը պետք է լինի հետևյալներից մեկը՝ Low, Medium, High։</value>
   </data>
 <data name="TicketStatusInvalid" xml:space="preserve">
-    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Open, AwaitingReply, Answered, Closed։</value>
+    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Open, AwaitingReply, Closed։</value>
   </data>
 <data name="TicketTagRequired" xml:space="preserve">
     <value>Պիտակը պարտադիր է և պետք է չգերազանցի 64 նիշը։</value>

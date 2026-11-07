@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Slides;
 using Innovayse.Hostpanel.Domain.Slides.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -155,6 +156,59 @@ public sealed class ListActiveSlidesTests(IntegrationTestFactory factory) : ICla
         var list = await response.Content.ReadFromJsonAsync<JsonElement[]>();
 
         list!.Should().NotContain(s => s.GetProperty("id").GetInt32() == id);
+    }
+
+    /// <summary>A slide linked to a product priced only quarterly, semi-annually and biennially carries a from price and no monthly or annual price.</summary>
+    [Fact]
+    public async Task ListActive_LinkedProductPricedOnLongCycles_CarriesTheLowestMonthlyEquivalentAsFromPrice()
+    {
+        var productId = await ProductsTestSeeds.SeedProductWithUsdPricesAsync(
+            factory, (BillingCycle.Quarterly, 30m), (BillingCycle.SemiAnnual, 48m), (BillingCycle.Biennial, 120m));
+        var admin = await SlidesTestSeeds.AdminClientAsync(factory);
+        var created = await admin.PostAsJsonAsync("/api/admin/slides", SlidesTestSeeds.CreateBody(productId: productId));
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        var response = await factory.CreateClient().GetAsync("/api/slides");
+        var list = await response.Content.ReadFromJsonAsync<JsonElement[]>();
+
+        var pricing = list!.Single(x => x.GetProperty("id").GetInt32() == id).GetProperty("pricing");
+        pricing.GetProperty("fromPrice").GetDecimal().Should().Be(5m);
+        pricing.GetProperty("monthlyPrice").ValueKind.Should().Be(JsonValueKind.Null);
+        pricing.GetProperty("annualPrice").ValueKind.Should().Be(JsonValueKind.Null);
+    }
+
+    /// <summary>A slide linked to a product with monthly and annual prices keeps both and gets the cheaper monthly equivalent as its from price.</summary>
+    [Fact]
+    public async Task ListActive_LinkedProductPricedMonthlyAndAnnual_KeepsBothAndAddsFromPrice()
+    {
+        var productId = await ProductsTestSeeds.SeedProductWithUsdPricesAsync(
+            factory, (BillingCycle.Monthly, 5m), (BillingCycle.Annual, 48m));
+        var admin = await SlidesTestSeeds.AdminClientAsync(factory);
+        var created = await admin.PostAsJsonAsync("/api/admin/slides", SlidesTestSeeds.CreateBody(productId: productId));
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        var response = await factory.CreateClient().GetAsync("/api/slides");
+        var list = await response.Content.ReadFromJsonAsync<JsonElement[]>();
+
+        var pricing = list!.Single(x => x.GetProperty("id").GetInt32() == id).GetProperty("pricing");
+        pricing.GetProperty("monthlyPrice").GetDecimal().Should().Be(5m);
+        pricing.GetProperty("annualPrice").GetDecimal().Should().Be(48m);
+        pricing.GetProperty("fromPrice").GetDecimal().Should().Be(4m);
+    }
+
+    /// <summary>A slide with no linked product has a null from price.</summary>
+    [Fact]
+    public async Task ListActive_SlideWithoutProduct_HasNullFromPrice()
+    {
+        var admin = await SlidesTestSeeds.AdminClientAsync(factory);
+        var created = await admin.PostAsJsonAsync("/api/admin/slides", SlidesTestSeeds.CreateBody());
+        var id = await created.Content.ReadFromJsonAsync<int>();
+
+        var response = await factory.CreateClient().GetAsync("/api/slides");
+        var list = await response.Content.ReadFromJsonAsync<JsonElement[]>();
+
+        list!.Single(x => x.GetProperty("id").GetInt32() == id)
+            .GetProperty("pricing").GetProperty("fromPrice").ValueKind.Should().Be(JsonValueKind.Null);
     }
 
     /// <summary>A successful public list is marked cacheable for a short time.</summary>

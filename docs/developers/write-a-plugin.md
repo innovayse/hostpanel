@@ -385,6 +385,14 @@ when the block's own `id` is refreshed. Hide a create form once a site exists:
 }
 ```
 
+**How often a route is read.** A page is one picture of your data. Every block, condition and card that names the same
+`GET` route on a page is answered by one request, and the panel sends a new one only when the page is refreshed (an
+action, a form, a conversation turn or a follow-up asked for it) after any call that is not a read ended, or when a
+conversation turn begins or ends. A block that appears later takes the answer the page already holds, so a page naming
+one state route in ten places costs one request per refresh, not ten. The panel keeps no read past that moment, none
+older than ten seconds and none from another page. A route read by
+several blocks is still read once for each refresh, so keep it cheap to answer.
+
 **`resetOnSuccess`** is `true` or `false`, only inside a form's `submit`. After a successful submit every field goes
 back to empty.
 
@@ -567,6 +575,7 @@ use a small Markdown subset: paragraphs, `#` headings, `-` and `1.` lists, fence
   when the condition does not hold. It applies to a route, an `href` and a `resend` action alike. Without it an action
   always shows. A condition the panel cannot read drops the action, since a button meant to hide must never show.
   Your route still decides whether a call is current: the condition is a courtesy to the reader, not the check.
+  A row left with no visible action is hidden too.
 - `issue` is your own failure, in the danger tone. The stream goes on; end it when you are done.
 
 A panel ignores an event it cannot read. **Stop** cancels the stream: your enumerator's token fires (`EnumeratorCancellation`)

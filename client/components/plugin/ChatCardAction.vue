@@ -15,6 +15,9 @@
  * does not hold, and it is read again whenever one of the blocks the chat reads again is refreshed, so a card that
  * offered "Publish version 5" stops offering it once version 5 is live or a newer version has replaced it. An action
  * with no condition always shows and reads nothing. The card is old text in a log; this is what keeps its buttons honest.
+ *
+ * It reports whether it shows (`visibility`), so the row that holds the card's actions can hide itself when every action
+ * is hidden. A hidden action stays mounted: it is what reads the condition again at the next refresh.
  */
 import { usePluginCondition } from '~/composables/usePluginView'
 import type { PluginChatResultAction } from '~/types/pluginchatresult'
@@ -36,8 +39,12 @@ const props = withDefaults(defineProps<Props>(), { refresh: () => [], disabled: 
 const emit = defineEmits<{
   /** The reader asked to send the conversation's last message again. */
   resend: []
+  /** Whether the action shows, told when it mounts and whenever that changes. */
+  visibility: [shown: boolean]
 }>()
 
 /** Whether the action shows: always without a condition, otherwise only while the condition holds. */
 const visible = usePluginCondition(() => props.action.visibleWhen, () => props.refresh)
+
+watch(visible, shown => emit('visibility', shown), { immediate: true })
 </script>

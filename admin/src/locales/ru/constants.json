@@ -21,8 +21,7 @@
   "ticketFilterOptions": {
     "allActiveTickets": "Все активные тикеты",
     "flagged": "Помеченные",
-    "answered": "Отвечено",
-    "customerReply": "Ответ клиента"
+    "awaitingReply": "Ожидает ответа"
   },
   "recurringPeriodOptions": {
     "weekly": "Еженедельно",

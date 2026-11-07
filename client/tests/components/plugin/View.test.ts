@@ -34,6 +34,20 @@ describe('PluginView', () => {
     expect(wrapper.findAll('[data-testid="plugin-text"]').map(t => t.text())).toEqual(['one', 'two'])
   })
 
+  it('renders every block of a view that gives one id to two blocks, with no duplicate key', async () => {
+    // A plugin installed before the host refused repeated ids is still loaded with such a view (the host only warns).
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const wrapper = mountBlocks([
+      { kind: PluginBlockKind.Text, id: 'a', text: 'one' },
+      { kind: PluginBlockKind.Text, id: 'a', text: 'two' },
+    ])
+    await settle()
+
+    expect(wrapper.findAll('[data-testid="plugin-text"]').map(t => t.text())).toEqual(['one', 'two'])
+    expect(warn.mock.calls.flat().join(' ')).not.toContain('Duplicate keys')
+    warn.mockRestore()
+  })
+
   it('fills route parameters from its values, percent-encoded', async () => {
     api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/a%2F..`]: { body: { status: 'ok' } } })
     const wrapper = mountBlocks([{ kind: PluginBlockKind.Badge, source: { route: TEST_ROUTES.site, field: 'status' } }], { values: { siteId: 'a/..' } })

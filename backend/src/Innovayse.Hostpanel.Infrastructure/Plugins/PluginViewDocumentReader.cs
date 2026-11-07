@@ -116,7 +116,9 @@ internal static partial class PluginViewDocumentReader
     /// <summary>The member of a preview that reads the sentence written over its frame.</summary>
     private const string NoteMember = "note";
 
-    /// <summary>The ways a table may draw its rows; the panel reads anything else as the default, which would hide a typo.</summary>
+    /// <summary>
+    /// The ways a table may draw its rows; the panel reads anything else as the default, which would hide a typo.
+    /// </summary>
     private static readonly string[] TableDisplays = ["table", "cards"];
 
     /// <summary>The member of an action block naming the route it calls.</summary>
@@ -236,18 +238,22 @@ internal static partial class PluginViewDocumentReader
     /// <param name="pluginDirectory">The plugin folder: the folder holding <c>plugin.json</c>.</param>
     /// <param name="manifest">The manifest, already accepted by <see cref="PluginManifestValidator.Validate"/>.</param>
     /// <param name="maxViewBytes">The largest view document accepted, in bytes (<c>Plugins:MaxViewBytes</c>).</param>
-    /// <returns>The documents, or the first view rule the plugin breaks.</returns>
+    /// <returns>
+    /// The documents, the first view rule the plugin breaks, and the faults of the rules added after plugins were
+    /// installed (<see cref="PluginViewRead.Advisories"/>): the caller decides whether those refuse the plugin.
+    /// </returns>
     internal static PluginViewRead Read(string pluginDirectory, PluginManifest manifest, long maxViewBytes)
     {
         var uses = CollectUses(manifest);
         if (uses.Count == 0)
         {
-            return new PluginViewRead(PluginViewDocuments.None, null);
+            return new PluginViewRead(PluginViewDocuments.None, null, []);
         }
 
         var root = Path.GetFullPath(pluginDirectory);
         var english = PluginManifestValidator.EnglishTexts(manifest);
         var documents = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
+        var advisories = new List<PluginManifestViolation>();
 
         foreach (var group in uses.GroupBy(use => use.Path, StringComparer.Ordinal))
         {
@@ -255,22 +261,25 @@ internal static partial class PluginViewDocumentReader
             var violation = ReadDocument(root, group.Key, first.Where, english, maxViewBytes, out var document, out var scan);
             if (violation is not null)
             {
-                return new PluginViewRead(PluginViewDocuments.None, violation);
+                return new PluginViewRead(PluginViewDocuments.None, violation, []);
             }
+
+            advisories.AddRange(
+                scan.Advisories.Select(a => new PluginManifestViolation(a.Rule, $"{first.Where} {a.Detail}")));
 
             foreach (var use in group)
             {
                 violation = CheckPreviewPlace(use, scan) ?? CheckSelectionPlace(use, scan) ?? CheckActionBodyPlace(use, scan) ?? CheckRoutes(manifest, use, scan);
                 if (violation is not null)
                 {
-                    return new PluginViewRead(PluginViewDocuments.None, violation);
+                    return new PluginViewRead(PluginViewDocuments.None, violation, []);
                 }
             }
 
             documents[group.Key] = document;
         }
 
-        return new PluginViewRead(new PluginViewDocuments(documents), null);
+        return new PluginViewRead(new PluginViewDocuments(documents), null, advisories);
     }
 
     /// <summary>Lists every place a manifest shows a view: client pages, admin pages, then slots.</summary>
@@ -700,10 +709,14 @@ internal static partial class PluginViewDocumentReader
                     && id.ValueKind == JsonValueKind.String
                     && id.GetString() is { } blockId)
                 {
-                    // Containers are walked like the root, so a repeat is found at any depth: in a tab, a pane or a header.
+                    // Containers are walked like the root, so a repeat is found at any depth: in a tab, a pane or a
+                    // header. The id is named: it is the plugin author's own text from a file they ship, and the
+                    // detail goes to the installing admin or the log.
                     if (!scan.BlockIds.Add(blockId))
                     {
-                        scan.RepeatedBlockId ??= blockId;
+                        scan.Advisories.Add(new PluginManifestViolation(
+                            PluginManifestRule.ViewBlockIdRepeated,
+                            $"gives the id '{blockId}' to more than one block"));
                     }
                 }
 
@@ -768,22 +781,39 @@ internal static partial class PluginViewDocumentReader
     }
 
     /// <summary>
-    /// Checks the members that shape how a block reads and draws itself, which the panel would otherwise ignore when they
-    /// are of the wrong type: a header's <c>compact</c> (a boolean), <c>titleSource</c> and <c>subtitleSource</c>, an
-    /// action's <c>labelSource</c>, a preview's <c>note</c> (each a GET route and, when given, a dotted <c>field</c>) and a
-    /// table's <c>display</c> (<c>table</c> or <c>cards</c>). Each member is checked on the one kind that reads it, so a
-    /// view that carries it elsewhere is left as it was. A route is declared in the area by the ordinary walk.
+    /// Records a fault of a rule that was added after plugins were installed. Such a fault refuses the plugin at
+    /// install (<see cref="PluginViewRead.RefusedAtInstall"/>) and is only warned about at load
+    /// (<see cref="PluginViewRead.Advisories"/>): a plugin the operator already runs, and that may take payments,
+    /// must not vanish from production on a host upgrade because the host learned to check one more thing.
+    /// </summary>
+    /// <param name="scan">Receives the advisory.</param>
+    /// <param name="text">What is malformed, without the document's place.</param>
+    private static void AddAdvisory(DocumentScan scan, string text)
+    {
+        scan.Advisories.Add(
+            new PluginManifestViolation(PluginManifestRule.ViewInvalid, $"is not a valid view document: {text}"));
+    }
+
+    /// <summary>
+    /// Checks the members that shape how a block reads and draws itself, which the panel would otherwise ignore when
+    /// they are of the wrong type: a header's <c>compact</c> (a boolean), <c>titleSource</c> and <c>subtitleSource</c>,
+    /// an action's <c>labelSource</c>, a preview's <c>note</c> (each a GET route and, when given, a dotted
+    /// <c>field</c>) and a table's <c>display</c> (<c>table</c> or <c>cards</c>). Each member is checked on the one
+    /// kind that reads it, so a view that carries it elsewhere is left as it was. A route is declared in the area by
+    /// the ordinary walk. A fault here is an advisory (see <see cref="AddAdvisory"/>), not a refusal of the view at
+    /// load.
     /// </summary>
     /// <param name="block">The block.</param>
     /// <param name="kind">The block's kind, or <see langword="null"/>.</param>
-    /// <param name="scan">Receives the first malformed member.</param>
+    /// <param name="scan">Receives each malformed member as an advisory.</param>
     private static void CheckDisplayMembers(JsonElement block, string? kind, DocumentScan scan)
     {
         if (string.Equals(kind, HeaderKind, StringComparison.Ordinal))
         {
-            if (block.TryGetProperty(CompactMember, out var compact) && compact.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+            if (block.TryGetProperty(CompactMember, out var compact)
+                && compact.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
             {
-                scan.Malformed ??= $"'{CompactMember}' is not a boolean";
+                AddAdvisory(scan, $"'{CompactMember}' is not a boolean");
             }
 
             CheckSourceMember(block, TitleSourceMember, scan);
@@ -799,9 +829,10 @@ internal static partial class PluginViewDocumentReader
         }
         else if (string.Equals(kind, TableKind, StringComparison.Ordinal)
             && block.TryGetProperty(DisplayMember, out var display)
-            && !(display.ValueKind == JsonValueKind.String && TableDisplays.Contains(display.GetString(), StringComparer.Ordinal)))
+            && !(display.ValueKind == JsonValueKind.String
+                && TableDisplays.Contains(display.GetString(), StringComparer.Ordinal)))
         {
-            scan.Malformed ??= $"'{DisplayMember}' is not one of {string.Join(", ", TableDisplays)}";
+            AddAdvisory(scan, $"'{DisplayMember}' is not one of {string.Join(", ", TableDisplays)}");
         }
     }
 
@@ -811,7 +842,7 @@ internal static partial class PluginViewDocumentReader
     /// </summary>
     /// <param name="block">The block holding the member.</param>
     /// <param name="member">The member's name.</param>
-    /// <param name="scan">Receives the first malformed member.</param>
+    /// <param name="scan">Receives each malformed member as an advisory.</param>
     private static void CheckSourceMember(JsonElement block, string member, DocumentScan scan)
     {
         if (!block.TryGetProperty(member, out var source))
@@ -821,7 +852,7 @@ internal static partial class PluginViewDocumentReader
 
         if (source.ValueKind != JsonValueKind.Object)
         {
-            scan.Malformed ??= $"'{member}' is not an object";
+            AddAdvisory(scan, $"'{member}' is not an object");
             return;
         }
 
@@ -832,7 +863,9 @@ internal static partial class PluginViewDocumentReader
                 && ConditionFieldPattern().IsMatch(path));
         if (route is null || route.Method != PluginRouteMethod.Get || !fieldIsValid)
         {
-            scan.Malformed ??= $"'{member}' is not {{ {ConditionRouteMember}: a GET route, {ConditionFieldMember}: a dotted path }}";
+            AddAdvisory(
+                scan,
+                $"'{member}' is not {{ {ConditionRouteMember}: a GET route, {ConditionFieldMember}: a dotted path }}");
         }
     }
 
@@ -1254,8 +1287,8 @@ internal static partial class PluginViewDocumentReader
 
     /// <summary>
     /// Applies the view state rules once the whole document is walked: the first state member broken during the walk,
-    /// then a block id given to two blocks, then a follow-up refresh naming a block id the document does not hold (a refresh of nothing would leave the
-    /// reader waiting on a block that never changes).
+    /// then a follow-up refresh naming a block id the document does not hold (a refresh of nothing would leave the
+    /// reader waiting on a block that never changes). A repeated block id is not checked here: it is an advisory.
     /// </summary>
     /// <param name="scan">What the walk found.</param>
     /// <returns>The violation, its detail without the document's place, or <see langword="null"/>.</returns>
@@ -1264,13 +1297,6 @@ internal static partial class PluginViewDocumentReader
         if (scan.StateViolation is not null)
         {
             return scan.StateViolation;
-        }
-
-        if (scan.RepeatedBlockId is not null)
-        {
-            // The id is named: it is the plugin author's own text from a file they ship, and the detail goes to the installing admin.
-            return new PluginManifestViolation(
-                PluginManifestRule.ViewBlockIdRepeated, $"gives the id '{scan.RepeatedBlockId}' to more than one block");
         }
 
         var unknown = scan.FollowUpRefresh.FirstOrDefault(id => !scan.BlockIds.Contains(id));

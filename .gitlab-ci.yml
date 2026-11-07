@@ -317,7 +317,7 @@ edge:test:headers:
         - docker/caddy/Caddyfile
         - docker/nginx/**/*
         - scripts/check-edge-headers.sh
-        - scripts/edge_headers_*.py
+        - scripts/edge-headers-assert.sh
 
 # Fails when a top-level folder of the Integration test project is in no shard below (its tests would
 # run nowhere), is in two, or when a shard names a folder that is gone. The same script checks the

@@ -6,9 +6,21 @@
  * refused by the plugin's route with its own sentence, nothing is published, and the button then shows the new version.
  * A click on the current button publishes exactly the version on its label.
  */
+import type { APIRequestContext } from '@playwright/test'
 import { expect, test } from './support/test'
 import { PLUGIN_ID, STUB_URL } from './support/fixtures.mjs'
 import { resetStub, signIn, stubRequests, waitForHydration } from './support/helpers'
+
+/**
+ * The version every publish request recorded by the stub asked for, oldest first.
+ *
+ * @param request - Playwright's API request context.
+ * @returns The `expectedVersion` of each request to the stage publish route.
+ */
+const publishedVersions = async (request: APIRequestContext): Promise<number[]> => {
+  const published = (await stubRequests(request)).filter(entry => entry.path.endsWith('/stage/publish'))
+  return published.map(entry => (entry.body as { expectedVersion: number }).expectedVersion)
+}
 
 test.beforeEach(async ({ context, request, baseURL }) => {
   await resetStub(request)
@@ -28,13 +40,14 @@ test('a stale button is refused and the next one publishes the version it shows'
 
   await button.click()
   await expect(page.getByTestId('plugin-action-message')).toContainText('The staged version changed')
-  // Nothing was published, and the page now shows what it can publish.
-  await expect(page.getByTestId('plugin-stat')).toContainText('Version 13')
+  // Nothing was published: the one publish the page sent carried the version it had shown (14), which the stub no longer
+  // stages (15) and so refuses, and no publish for any other version was sent. The page now shows what it can publish.
+  // (The "Version 13" text is not evidence of this: it is on the page before the click as well.)
   await expect(button).toHaveText('Publish version 15')
+  expect(await publishedVersions(request)).toEqual([14])
 
   await button.click()
   await expect(page.getByTestId('plugin-stat')).toContainText('Version 15')
 
-  const published = (await stubRequests(request)).filter(entry => entry.path.endsWith('/stage/publish'))
-  expect(published.map(entry => (entry.body as { expectedVersion: number }).expectedVersion)).toEqual([14, 15])
+  expect(await publishedVersions(request)).toEqual([14, 15])
 })

@@ -2,6 +2,7 @@
  * Flow: selecting elements on a preview (#933), in a real browser with a real sandboxed frame, whose stub page plays the
  * site's picker. The frame's messages cross a real opaque-origin boundary, so `event.source` is what the browser says.
  */
+import type { Locator } from '@playwright/test'
 import { expect, test } from './support/test'
 import { PLUGIN_ID } from './support/fixtures.mjs'
 import { resetStub, signInThroughForm, waitForHydration } from './support/helpers'
@@ -12,6 +13,20 @@ const LANGUAGES = [
   { language: 'ru', prefix: '/ru', select: 'Выбрать' },
   { language: 'hy', prefix: '/hy', select: 'Ընտրել' },
 ] as const
+
+/**
+ * The rendered box of an element that must be on the page.
+ *
+ * @param locator - The element.
+ * @returns Its box; a missing or hidden element fails the test here, with the element named, instead of a null later.
+ */
+const boxOf = async (locator: Locator): Promise<{ x: number, y: number, width: number, height: number }> => {
+  const box = await locator.boundingBox()
+  if (box === null) {
+    throw new Error(`The element ${locator.toString()} has no box: it is not rendered`)
+  }
+  return box
+}
 
 for (const { language, prefix, select } of LANGUAGES) {
   test(`an element is selected in the frame, labelled by the server and sent in ${language}`, async ({ page, request }) => {
@@ -55,12 +70,10 @@ test('@phone an element is selected by a tap with the panes stacked', async ({ p
   await signInThroughForm(page)
 
   // Stacked: the conversation's pane on top, the preview's below it, both as wide as the screen allows.
-  const conversation = await page.getByTestId('plugin-split-pane-0').boundingBox()
-  const preview = await page.getByTestId('plugin-split-pane-1').boundingBox()
-  expect(conversation).not.toBeNull()
-  expect(preview).not.toBeNull()
-  expect(preview!.y).toBeGreaterThanOrEqual(conversation!.y + conversation!.height - 1)
-  expect(Math.abs(preview!.x - conversation!.x)).toBeLessThan(2)
+  const conversation = await boxOf(page.getByTestId('plugin-split-pane-0'))
+  const preview = await boxOf(page.getByTestId('plugin-split-pane-1'))
+  expect(preview.y).toBeGreaterThanOrEqual(conversation.y + conversation.height - 1)
+  expect(Math.abs(preview.x - conversation.x)).toBeLessThan(2)
 
   await page.getByTestId('plugin-preview-select').tap()
   await expect(page.getByTestId('plugin-preview-select-hint')).toBeVisible()

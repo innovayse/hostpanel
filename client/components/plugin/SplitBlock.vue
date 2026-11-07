@@ -45,5 +45,5 @@ providePluginPane()
  * @returns The keyed blocks.
  */
 const blocksOf = (pane: PluginSplitPane, position: number): { key: string, block: PluginBlockData }[] =>
-  pane.blocks.map((block, index) => ({ key: `${position}:${block.id ?? `${block.kind}-${index}`}`, block }))
+  pane.blocks.map((block, index) => ({ key: `${position}:${block.id ?? block.kind}-${index}`, block }))
 </script>

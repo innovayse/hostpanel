@@ -14,7 +14,7 @@ export enum BadgeStatus {
   Paid = 'Paid',
   /** A ticket waiting for staff. */
   Open = 'Open',
-  /** A ticket the client replied to, waiting for staff. */
+  /** A ticket staff replied to, waiting for the client. */
   AwaitingReply = 'AwaitingReply',
   /** Ordered, not finished yet. */
   Pending = 'Pending',

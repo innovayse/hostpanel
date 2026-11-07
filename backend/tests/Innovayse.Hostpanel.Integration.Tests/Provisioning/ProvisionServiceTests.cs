@@ -283,7 +283,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     /// <summary>
     /// A provider that cannot tell whether the account was created answers 503 with its own
     /// <c>PROVISIONING_OUTCOME_UNKNOWN</c>, distinct from a refusal, and the service stays Pending so
-    /// the caller can retry.
+    /// the caller can retry; a retry that finds the account there adopts it and activates the service.
     /// </summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
@@ -304,6 +304,18 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
         (await response.Content.ReadAsStringAsync()).Should().NotContain("the answer was lost");
         provider.ProvisionCalls.Should().Be(1);
         (await ReloadAsync(serviceId)).Status.Should().Be(ServiceStatus.Pending);
+
+        // The retry: the account the lost answer hid is now found, so it is adopted and the service activates.
+        provider.FailWith = null;
+        provider.ProvisionAnswer = ProvisioningResult.AlreadyExists($"prov{serviceId}", $"prov{serviceId}.example.com");
+
+        var retry = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
+
+        retry.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        provider.ProvisionCalls.Should().Be(2);
+        var stored = await ReloadAsync(serviceId);
+        stored.Status.Should().Be(ServiceStatus.Active);
+        stored.ProvisioningRef.Should().Be($"prov{serviceId}");
     }
 
     /// <summary>

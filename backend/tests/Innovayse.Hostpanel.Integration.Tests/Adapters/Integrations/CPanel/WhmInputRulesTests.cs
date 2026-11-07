@@ -155,20 +155,26 @@ public sealed class WhmInputRulesTests
     /// own name: whatever the parser makes of it, a result is never a host other than the server's.
     /// </summary>
     /// <param name="url">The URL WHM returned.</param>
+    /// <param name="expectedHost">The server host the address resolves to, or <see langword="null"/> when it must be refused.</param>
     [Theory]
-    [InlineData("https://whm.example.test.:2083/cpsess1/login/")]
-    [InlineData("https://192.0.2.10.:2083/cpsess1/login/")]
-    [InlineData("https://%77hm.example.test:2083/cpsess1/login/")]
-    [InlineData("https://whm%2eexample.test:2083/cpsess1/login/")]
-    [InlineData("https://whm.example.test%2f.evil.example:2083/cpsess1/login/")]
-    [InlineData("https://whm.example.test%00.evil.example:2083/cpsess1/login/")]
-    public void ParseSessionUrl_TrailingDotOrPercentEncodedHost_IsNeverTakenForAnotherHost(string url)
+    [InlineData("https://whm.example.test.:2083/cpsess1/login/", null)]
+    [InlineData("https://192.0.2.10.:2083/cpsess1/login/", null)]
+    [InlineData("https://%77hm.example.test:2083/cpsess1/login/", null)]
+    [InlineData("https://whm%2eexample.test:2083/cpsess1/login/", null)]
+    [InlineData("https://whm.example.test%2f.evil.example:2083/cpsess1/login/", null)]
+    [InlineData("https://whm.example.test%00.evil.example:2083/cpsess1/login/", null)]
+    public void ParseSessionUrl_TrailingDotOrPercentEncodedHost_IsNeverTakenForAnotherHost(string url, string? expectedHost)
     {
         var parsed = WhmInputRules.ParseSessionUrl(url, PanelUrl, WhmAddress, ServerIp);
 
-        if (parsed is not null)
+        if (expectedHost is null)
         {
-            parsed.IdnHost.Should().BeOneOf("whm.example.test", ServerIp);
+            parsed.Should().BeNull();
+        }
+        else
+        {
+            parsed.Should().NotBeNull();
+            parsed!.IdnHost.Should().Be(expectedHost);
         }
     }
 

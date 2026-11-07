@@ -41,7 +41,7 @@ afterEach(async () => {
 
 describe('GET and HEAD /uploads/**', () => {
   it('asks the file server for a HEAD, answers its status and headers and sends no body', async () => {
-    backend.respondWith(() => ({ body: 'file-bytes', headers: { 'content-type': 'application/pdf', etag: '"v1"' } }))
+    backend.respondWith(() => ({ body: 'file-bytes', headers: { 'content-type': 'application/pdf', 'content-length': '10', etag: '"v1"' } }))
     const event = makeEvent({ params: { path: 'docs/a.pdf' }, method: HttpMethod.Head })
 
     const body = await route.default(event)
@@ -53,7 +53,29 @@ describe('GET and HEAD /uploads/**', () => {
     expect(event.status).toBe(200)
     expect(event.responseHeaders['content-type']).toBe('application/pdf')
     expect(event.responseHeaders['etag']).toBe('"v1"')
+    expect(event.responseHeaders['content-length']).toBe('10')
     expect(event.responseHeaders['X-Content-Type-Options']).toBe('nosniff')
+  })
+
+  it('answers a HEAD with the same headers as the GET of the same file, the length included', async () => {
+    backend.respondWith(() => ({ body: 'file-bytes', headers: { 'content-type': 'application/pdf', 'content-length': '10', etag: '"v1"' } }))
+    const get = makeEvent({ params: { path: 'docs/a.pdf' } })
+    const head = makeEvent({ params: { path: 'docs/a.pdf' }, method: HttpMethod.Head })
+
+    await bodyOf(get)
+    await route.default(head)
+
+    expect(get.responseHeaders['content-length']).toBe('10')
+    expect(head.responseHeaders).toEqual(get.responseHeaders)
+  })
+
+  it('sends no length for an answer the fetch layer decoded, because the body would not match it', async () => {
+    backend.respondWith(() => ({ headers: { 'content-type': 'application/pdf', 'content-length': '10', 'content-encoding': 'gzip' } }))
+    const event = makeEvent({ params: { path: 'docs/a.pdf' }, method: HttpMethod.Head })
+
+    await route.default(event)
+
+    expect(event.responseHeaders['content-length']).toBeUndefined()
   })
 
   it('answers a HEAD of a missing file with the 404 of the GET', async () => {

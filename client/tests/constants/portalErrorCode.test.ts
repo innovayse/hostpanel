@@ -13,6 +13,8 @@ describe('PortalErrorCode', () => {
     expect(PortalErrorCode.InviteSignInRequired).toBe('INVITE_SIGN_IN_REQUIRED')
     expect(PortalErrorCode.PluginPageNotFound).toBe('PLUGIN_PAGE_NOT_FOUND')
     expect(PortalErrorCode.BadRouteParam).toBe('BAD_ROUTE_PARAM')
+    expect(PortalErrorCode.MethodNotAllowed).toBe('METHOD_NOT_ALLOWED')
+    expect(PortalErrorCode.WidgetFileNotFound).toBe('WIDGET_FILE_NOT_FOUND')
   })
 
   it('writes every code in upper case', () => {

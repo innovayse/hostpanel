@@ -28,15 +28,28 @@ afterEach(async () => {
 })
 
 describe('GET and HEAD /uploads/branding/**', () => {
-  it('answers a HEAD of a known file with the status and headers of the GET', async () => {
-    backend.respondWith(() => ({ body: 'png-bytes' }))
+  it('asks the file server for a HEAD, so answering one never pulls the file', async () => {
+    backend.respondWith(() => ({ body: 'png-bytes', headers: { 'content-length': '9' } }))
+    const event = makeEvent({ params: { path: 'abc/v1/icon-192.png' }, method: HttpMethod.Head })
+
+    const body = await route.default(event)
+
+    expect(backend.requests).toHaveLength(1)
+    expect(backend.requests[0]?.method).toBe('HEAD')
+    expect(backend.requests[0]?.url).toBe('/uploads/branding/abc/v1/icon-192.png')
+    expect(body).toBeUndefined()
+    expect(event.noContentStatus).toBe(200)
+  })
+
+  it('answers a HEAD of a known file with the headers of the GET and the length the file server gave', async () => {
+    backend.respondWith(() => ({ body: 'png-bytes', headers: { 'content-length': '9' } }))
     const get = makeEvent({ params: { path: 'abc/v1/icon-192.png' } })
     const head = makeEvent({ params: { path: 'abc/v1/icon-192.png' }, method: HttpMethod.Head })
 
     await route.default(get)
     await route.default(head)
 
-    expect(head.responseHeaders).toEqual(get.responseHeaders)
+    expect(head.responseHeaders).toEqual({ ...get.responseHeaders, 'Content-Length': '9' })
     expect(head.responseHeaders['Content-Type']).toBe('image/png')
     expect(head.responseHeaders['Cache-Control']).toBe('public, max-age=31536000, immutable')
   })
@@ -47,6 +60,7 @@ describe('GET and HEAD /uploads/branding/**', () => {
     const error = await refusal(() => route.default(makeEvent({ params: { path: 'abc/gone.png' }, method: HttpMethod.Head })))
 
     expect(error).toMatchObject({ statusCode: 404 })
+    expect(backend.requests[0]?.method).toBe('HEAD')
   })
 
   it('refuses a POST with 405, without calling the backend', async () => {

@@ -12,16 +12,14 @@
  * @module server/routes/widget/[file]
  */
 
+import { PortalErrorCode } from '~/constants/portalErrorCode'
 import { readWidgetScript, WIDGET_FILES } from '~/server/utils/platformShell'
 import { defineReadOnlyEventHandler } from '~/server/utils/readOnlyEventHandler'
-
-/** The `data.code` of the 404 answered for any other file name. */
-const WIDGET_FILE_NOT_FOUND = 'WIDGET_FILE_NOT_FOUND'
 
 export default defineReadOnlyEventHandler(async (event) => {
   const name = getRouterParam(event, 'file') ?? ''
   if (!WIDGET_FILES.has(name)) {
-    throw createError({ statusCode: 404, data: { code: WIDGET_FILE_NOT_FOUND } })
+    throw createError({ statusCode: 404, data: { code: PortalErrorCode.WidgetFileNotFound } })
   }
 
   const script = await readWidgetScript(name)

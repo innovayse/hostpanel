@@ -30,14 +30,19 @@
  *   upstream URL.
  */
 
-import { defineReadOnlyEventHandler } from '~/server/utils/readOnlyEventHandler'
+import type { FetchResponse } from 'ofetch'
+import { defineReadOnlyEventHandler, isHeadRequest } from '~/server/utils/readOnlyEventHandler'
 import { requireUploadPath } from '~/server/utils/uploadPath'
+import { HttpMethod } from '~/types/httpmethod'
 
 /** Extensions this route will serve, and the type each is served as. */
 const ALLOWED_TYPES: Record<string, string> = {
   '.png': 'image/png',
   '.ico': 'image/x-icon',
 }
+
+/** The upstream response header that gives the size of the file. */
+const CONTENT_LENGTH = 'content-length'
 
 export default defineReadOnlyEventHandler(async (event) => {
   // The upstream is a file server, so a `..` that survived this far would be resolved by it, not
@@ -50,33 +55,47 @@ export default defineReadOnlyEventHandler(async (event) => {
     throw createError({ statusCode: 404 })
   }
 
-  let body: Buffer
+  const isHead = isHeadRequest(event)
+  let upstream: FetchResponse<ArrayBuffer>
   try {
-    const raw = await $fetch<ArrayBuffer>(`/uploads/branding/${path}`, {
+    // A HEAD is asked of the file server as a HEAD, so answering it never pulls the file itself.
+    upstream = await $fetch.raw<ArrayBuffer>(`/uploads/branding/${path}`, {
       baseURL: getApiUrl(),
+      method: isHead ? HttpMethod.Head : HttpMethod.Get,
       responseType: 'arrayBuffer',
     })
-
-    // Wrapped, not returned bare. h3 recognises a Buffer (it has `.buffer`) and sends the
-    // bytes; a plain ArrayBuffer matches none of its response branches and falls through to
-    // JSON.stringify, which yields the string "{}" served under Content-Type: image/png.
-    // With the immutable cache below, that broken body would then stick in every browser
-    // that fetched it once.
-    body = Buffer.from(raw)
   } catch {
     // A missing file is a 404 here too. Nothing upstream is worth quoting: the caller is a
     // browser fetching an icon, and the only useful answer is "there is no such icon".
     throw createError({ statusCode: 404 })
   }
 
-  setResponseHeaders(event, {
+  const headers: Record<string, string> = {
     'Content-Type': contentType,
     'X-Content-Type-Options': 'nosniff',
     // Immutable is safe and worth a year: each upload is written into its own directory
     // named by a fresh identifier, so a replaced logo arrives at a URL no browser has
     // seen rather than under the old one.
     'Cache-Control': 'public, max-age=31536000, immutable',
-  })
+  }
 
-  return body
+  if (isHead) {
+    // The size is the file server's own answer to the HEAD; a bodyless answer has nothing to measure.
+    const length = upstream.headers.get(CONTENT_LENGTH)
+    if (length) {
+      headers['Content-Length'] = length
+    }
+    setResponseHeaders(event, headers)
+    // The status is explicit: a bare `null` return would turn the 200 into a 204.
+    return sendNoContent(event, upstream.status)
+  }
+
+  setResponseHeaders(event, headers)
+
+  // Wrapped, not returned bare. h3 recognises a Buffer (it has `.buffer`) and sends the
+  // bytes; a plain ArrayBuffer matches none of its response branches and falls through to
+  // JSON.stringify, which yields the string "{}" served under Content-Type: image/png.
+  // With the immutable cache above, that broken body would then stick in every browser
+  // that fetched it once.
+  return Buffer.from(upstream._data as ArrayBuffer)
 })

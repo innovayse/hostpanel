@@ -9,7 +9,9 @@
  * and appended to a fixed `/uploads/` prefix. Nothing of the visitor's request is forwarded but a
  * short allow list of cache and range headers, so a session cookie or an `Authorization` header
  * never reaches the file server, and only a short allow list of the answer's headers comes back,
- * so a `Set-Cookie` of the file server never reaches the visitor.
+ * so a `Set-Cookie` of the file server never reaches the visitor. The file server's own
+ * `Content-Length` comes back with it, for a `GET` and a `HEAD` alike, so a probe that sends a `HEAD`
+ * learns the size the `GET` would deliver.
  *
  * @module server/routes/uploads/[...path]
  */
@@ -22,7 +24,10 @@ import { HttpMethod } from '~/types/httpmethod'
 const FORWARDED_REQUEST_HEADERS = ['accept', 'if-none-match', 'if-modified-since', 'range']
 
 /** Response headers worth returning: what a browser needs to render and cache a static file. */
-const RETURNED_RESPONSE_HEADERS = ['content-type', 'cache-control', 'etag', 'last-modified', 'content-range', 'accept-ranges']
+const RETURNED_RESPONSE_HEADERS = ['content-type', 'content-length', 'cache-control', 'etag', 'last-modified', 'content-range', 'accept-ranges']
+
+/** The response header that gives the size of the file; a `HEAD` answer is the only place it tells a probe how big the file is. */
+const CONTENT_LENGTH = 'content-length'
 
 /** How long the file server may take to start answering, in milliseconds. */
 const UPSTREAM_TIMEOUT_MS = 15000
@@ -53,9 +58,12 @@ export default defineReadOnlyEventHandler(async (event) => {
   })
 
   const returned: Record<string, string> = { 'X-Content-Type-Options': 'nosniff' }
+  // The fetch layer undoes a content coding on its own, so for a coded answer the upstream length is
+  // the size of bytes this route never sends; passing it on would promise a size the body does not have.
+  const isCoded = Boolean(upstream.headers.get('content-encoding'))
   for (const name of RETURNED_RESPONSE_HEADERS) {
     const value = upstream.headers.get(name)
-    if (value) {
+    if (value && !(name === CONTENT_LENGTH && isCoded)) {
       returned[name] = value
     }
   }

@@ -9,12 +9,13 @@
  */
 
 /**
- * Codes the API (or the BFF) sends, that something actually branches on.
+ * Codes the API (or the BFF) sends, that something branches on, and the codes the BFF's own refusals carry in `data.code`.
  *
  * SCREAMING_SNAKE, matching the backend. These strings cross the wire and are part of the
  * contract: renaming one here without renaming it at its source silently turns the branch off,
- * with no error and no failing type-check. A code that merely needs displaying needs no entry,
- * because displaying it means rendering `detail` and nothing else.
+ * with no error and no failing type-check. A code the API sends that merely needs displaying needs no
+ * entry, because displaying it means rendering `detail` and nothing else; a code the BFF writes itself
+ * has one entry, here, so that no route keeps a private copy of it.
  */
 export const PortalErrorCode = {
   /**
@@ -57,6 +58,15 @@ export const PortalErrorCode = {
 
   /** The panel's own server refused a malformed address or id before asking the API (`requireRouteParam`). */
   BadRouteParam: 'BAD_ROUTE_PARAM',
+
+  /**
+   * A storefront file route was asked for a method it does not answer (`defineReadOnlyEventHandler` answers 405 with an
+   * `Allow` header for anything but `GET` and `HEAD`). Written by the panel's own server, with no sentence.
+   */
+  MethodNotAllowed: 'METHOD_NOT_ALLOWED',
+
+  /** The widget relay route was asked for a file name it does not serve (`server/routes/widget/[file].ts`). */
+  WidgetFileNotFound: 'WIDGET_FILE_NOT_FOUND',
 } as const
 
 /** Any of the codes in {@link PortalErrorCode}. */

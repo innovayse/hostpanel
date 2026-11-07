@@ -14,10 +14,8 @@
  */
 
 import type { H3Event } from 'h3'
+import { PortalErrorCode } from '~/constants/portalErrorCode'
 import { HttpMethod } from '~/types/httpmethod'
-
-/** The `data.code` of the 405 answered for any method but `GET` and `HEAD`. */
-export const METHOD_NOT_ALLOWED = 'METHOD_NOT_ALLOWED'
 
 /** The status a method that a read-only route does not answer is refused with. */
 const METHOD_NOT_ALLOWED_STATUS = 405
@@ -43,14 +41,14 @@ export const isHeadRequest = (event: H3Event): boolean => {
  *
  * @param handler - The route's handler, written once for `GET`; it also runs for `HEAD`.
  * @returns The event handler to export as the route's default.
- * @throws H3Error 405 carrying `data.code = METHOD_NOT_ALLOWED` and an `Allow` header, for a method
+ * @throws H3Error 405 carrying `data.code = PortalErrorCode.MethodNotAllowed` and an `Allow` header, for a method
  *   other than `GET` and `HEAD`; the handler is not called.
  */
 export const defineReadOnlyEventHandler = <Reply>(handler: (event: H3Event) => Reply) => {
   return defineEventHandler((event) => {
     if (!READ_METHODS.has(event.method)) {
       setResponseHeader(event, 'Allow', ALLOWED_METHODS)
-      throw createError({ statusCode: METHOD_NOT_ALLOWED_STATUS, data: { code: METHOD_NOT_ALLOWED } })
+      throw createError({ statusCode: METHOD_NOT_ALLOWED_STATUS, data: { code: PortalErrorCode.MethodNotAllowed } })
     }
     return handler(event)
   })

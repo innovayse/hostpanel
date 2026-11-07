@@ -7,7 +7,8 @@
 
 import { describe, expect, it, vi } from 'vitest'
 import { makeEvent, refusal } from '../../helpers/bffHarness'
-import { defineReadOnlyEventHandler, isHeadRequest, METHOD_NOT_ALLOWED } from '~/server/utils/readOnlyEventHandler'
+import { PortalErrorCode } from '~/constants/portalErrorCode'
+import { defineReadOnlyEventHandler, isHeadRequest } from '~/server/utils/readOnlyEventHandler'
 import { HttpMethod } from '~/types/httpmethod'
 
 /** The two methods the wrapper lets through. */
@@ -34,7 +35,7 @@ describe('defineReadOnlyEventHandler', () => {
 
     const error = await refusal(() => route(event))
 
-    expect(error).toMatchObject({ statusCode: 405, data: { code: METHOD_NOT_ALLOWED } })
+    expect(error).toMatchObject({ statusCode: 405, data: { code: PortalErrorCode.MethodNotAllowed } })
     expect(event.responseHeaders['Allow']).toBe('GET, HEAD')
     expect(handler).not.toHaveBeenCalled()
   })

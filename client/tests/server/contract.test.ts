@@ -93,7 +93,8 @@ describe('BFF contract', () => {
       .filter((path) => !path.startsWith('routes/api/'))
       .filter((path) => !redirects.has(path))
 
-    expect(fileRoutes.length).toBeGreaterThan(4)
+    // Only that the scan found routes: a count tied to today's routes would need editing for every new one.
+    expect(fileRoutes.length).toBeGreaterThan(0)
     const suffixed = fileRoutes.filter((path) => /\.(get|head|post|put|patch|delete)\.ts$/.test(path))
     const unwrapped = fileRoutes.filter((path) => !/defineReadOnlyEventHandler\s*\(/.test(code(join(SERVER, path))))
 

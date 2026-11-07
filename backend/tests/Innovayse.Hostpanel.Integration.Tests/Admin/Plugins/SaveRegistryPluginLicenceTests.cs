@@ -167,10 +167,58 @@ public sealed class SaveRegistryPluginLicenceTests(IntegrationTestFactory factor
         var pluginId = $"test-lic-{Guid.NewGuid():N}";
         var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
 
-        var response = await client.PutAsJsonAsync(Route(pluginId), new { key = new string('k', 513) });
+        var response = await client.PutAsJsonAsync(Route(pluginId), new { key = new string('k', 257) });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await StoredAsync(pluginId)).Should().BeNull();
+    }
+
+    /// <summary>A key with a space inside, a non-ASCII character or 257 characters is refused; 256 is accepted and a padded key is trimmed first.</summary>
+    /// <param name="key">The key sent.</param>
+    /// <param name="accepted">Whether it is stored.</param>
+    [Theory]
+    [InlineData("has space", false)]
+    [InlineData("kéy-ա", false)]
+    [InlineData("tab	here", false)]
+    [InlineData("  padded-key  ", true)]
+    public async Task AKeyThatBreaksTheClientRule_IsRefusedAsync(string key, bool accepted)
+    {
+        var registry = new FakePluginRegistryClient();
+        var pluginId = $"test-lic-{Guid.NewGuid():N}";
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
+
+        try
+        {
+            var response = await client.PutAsJsonAsync(Route(pluginId), new { key });
+
+            response.StatusCode.Should().Be(accepted ? HttpStatusCode.NoContent : HttpStatusCode.BadRequest);
+            (await StoredAsync(pluginId) is not null).Should().Be(accepted);
+        }
+        finally
+        {
+            await client.DeleteAsync(Route(pluginId));
+        }
+    }
+
+    /// <summary>Exactly 256 characters are accepted and 257 are refused, counted after trimming.</summary>
+    [Fact]
+    public async Task TheLengthLimit_Is256AfterTrimmingAsync()
+    {
+        var registry = new FakePluginRegistryClient();
+        var okId = $"test-lic-{Guid.NewGuid():N}";
+        var badId = $"test-lic-{Guid.NewGuid():N}";
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
+
+        try
+        {
+            (await client.PutAsJsonAsync(Route(okId), new { key = " " + new string('k', 256) + " " })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+            (await client.PutAsJsonAsync(Route(badId), new { key = new string('k', 257) })).StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await StoredAsync(badId)).Should().BeNull();
+        }
+        finally
+        {
+            await client.DeleteAsync(Route(okId));
+        }
     }
 
     /// <summary>An id of the wrong shape is refused and nothing is stored.</summary>

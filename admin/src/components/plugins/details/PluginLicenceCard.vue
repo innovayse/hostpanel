@@ -2,8 +2,9 @@
 /**
  * The licence key of a paid plugin. The key is write only: the field is never filled from the
  * server, the card only says whether a key is saved. The operator types a key and saves it, or
- * removes the saved one. The field is cleared after a key is saved, so a key never lingers on
- * screen. The component owns no data: it reports the key and the removal.
+ * removes the saved one. The field empties when the saved state changes; a key that replaces an
+ * already saved one leaves that state as it was, so the screen re-creates the card (a new `key`)
+ * after every successful save or removal. The component owns no data: it reports the key and the removal.
  */
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'

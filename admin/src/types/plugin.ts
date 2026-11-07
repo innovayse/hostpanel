@@ -238,6 +238,8 @@ export interface PluginRegistryItemDto {
   installedVersion: string | null
   /** Whether the registry offers a newer version than the installed one. */
   updateAvailable: boolean
+  /** Whether installing it needs a licence key; absent on older registries, where a paid or private price implies it. */
+  requiresLicence?: boolean
 }
 
 /** One page of registry listings. */
@@ -280,6 +282,46 @@ export const PluginVersionStatus = {
 
 /** One of the {@link PluginVersionStatus} values. */
 export type PluginVersionStatus = (typeof PluginVersionStatus)[keyof typeof PluginVersionStatus]
+
+/** Closed set of the outside links a plugin's details page offers; the strings are the parts of the test ids and locale keys. */
+export const LinkKind = {
+  /** The documentation. */
+  Documentation: 'documentation',
+  /** The support page. */
+  Support: 'support',
+  /** The source repository. */
+  Repository: 'repository',
+  /** Where to buy a licence. */
+  Buy: 'buy',
+} as const
+
+/** One of the {@link LinkKind} values. */
+export type LinkKind = (typeof LinkKind)[keyof typeof LinkKind]
+
+/** How a listed plugin version stands against the installed one. */
+export const VersionRelation = {
+  /** No version is installed, so any version is a fresh install. */
+  Fresh: 'fresh',
+  /** The same version as the installed one. */
+  Current: 'current',
+  /** Newer than the installed version. */
+  Newer: 'newer',
+  /** Older than the installed version; installing it is a downgrade. */
+  Older: 'older',
+} as const
+
+/** One of the {@link VersionRelation} values. */
+export type VersionRelation = (typeof VersionRelation)[keyof typeof VersionRelation]
+
+/** Result of one registry or removal action, kept per call so parallel actions never read each other's outcome. */
+export interface PluginActionOutcome {
+  /** Whether the API accepted the change. */
+  ok: boolean
+  /** Version the action staged for the next restart, null when it staged nothing. */
+  stagedVersion: string | null
+  /** The API's own sentence for a refusal, null on success. */
+  error: string | null
+}
 
 /** One screenshot of a registry version. */
 export interface RegistryScreenshotDto {

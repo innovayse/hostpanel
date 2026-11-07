@@ -53,7 +53,7 @@ export const usePluginsApi = () => {
    * @returns Whether a restart is needed.
    */
   const removePlugin = (id: string): Promise<PluginActionResultDto> =>
-    request<PluginActionResultDto>(`${ApiPath.AdminPlugins}/${id}`, { method: HttpMethod.Delete })
+    request<PluginActionResultDto>(`${ApiPath.AdminPlugins}/${encodeURIComponent(id)}`, { method: HttpMethod.Delete })
 
   /**
    * Deletes the data a removed plugin kept.
@@ -62,7 +62,7 @@ export const usePluginsApi = () => {
    * @returns Whether a restart is needed.
    */
   const purgePluginData = (id: string): Promise<PluginActionResultDto> =>
-    request<PluginActionResultDto>(`${ApiPath.AdminPlugins}/${id}/data`, { method: HttpMethod.Delete })
+    request<PluginActionResultDto>(`${ApiPath.AdminPlugins}/${encodeURIComponent(id)}/data`, { method: HttpMethod.Delete })
 
   /**
    * Asks the server for a graceful restart.
@@ -79,7 +79,7 @@ export const usePluginsApi = () => {
    * @returns One entry per widget.
    */
   const listSlotWidgets = (pluginId: string): Promise<PluginSlotWidgetBindingDto[]> =>
-    request<PluginSlotWidgetBindingDto[]>(`${ApiPath.AdminPlugins}/${pluginId}/slot-widgets`)
+    request<PluginSlotWidgetBindingDto[]>(`${ApiPath.AdminPlugins}/${encodeURIComponent(pluginId)}/slot-widgets`)
 
   /**
    * Saves the products one slot widget is bound to.
@@ -96,7 +96,7 @@ export const usePluginsApi = () => {
     widgetId: string,
     body: SavePluginSlotWidgetProductsBody,
   ): Promise<PluginSlotWidgetBindingDto> =>
-    request<PluginSlotWidgetBindingDto>(`${ApiPath.AdminPlugins}/${pluginId}/slot-widgets/${slotId}/${widgetId}`, {
+    request<PluginSlotWidgetBindingDto>(`${ApiPath.AdminPlugins}/${encodeURIComponent(pluginId)}/slot-widgets/${encodeURIComponent(slotId)}/${encodeURIComponent(widgetId)}`, {
       method: HttpMethod.Put,
       body: JSON.stringify(body),
     })
@@ -128,7 +128,7 @@ export const usePluginsApi = () => {
    * @returns Whether a restart is needed, and the staged version for an upgrade.
    */
   const installFromRegistry = (id: string, body: InstallRegistryPluginBody): Promise<PluginActionResultDto> =>
-    request<PluginActionResultDto>(`${ApiPath.AdminPlugins}/registry/${id}/install`, {
+    request<PluginActionResultDto>(`${ApiPath.AdminPlugins}/registry/${encodeURIComponent(id)}/install`, {
       method: HttpMethod.Post,
       body: JSON.stringify(body),
     })
@@ -140,7 +140,7 @@ export const usePluginsApi = () => {
    * @returns The details with every version.
    */
   const getRegistryDetails = (id: string): Promise<RegistryPluginDetailsDto> =>
-    request<RegistryPluginDetailsDto>(`${ApiPath.AdminPlugins}/registry/${id}`)
+    request<RegistryPluginDetailsDto>(`${ApiPath.AdminPlugins}/registry/${encodeURIComponent(id)}`)
 
   /**
    * Stores the licence key of a registry plugin.
@@ -150,7 +150,7 @@ export const usePluginsApi = () => {
    * @returns Resolves when stored.
    */
   const saveLicenceKey = (id: string, body: SaveLicenceKeyBody): Promise<void> =>
-    request<void>(`${ApiPath.AdminPlugins}/registry/${id}/licence`, {
+    request<void>(`${ApiPath.AdminPlugins}/registry/${encodeURIComponent(id)}/licence`, {
       method: HttpMethod.Put,
       body: JSON.stringify(body),
     })
@@ -162,7 +162,7 @@ export const usePluginsApi = () => {
    * @returns Resolves when removed.
    */
   const removeLicenceKey = (id: string): Promise<void> =>
-    request<void>(`${ApiPath.AdminPlugins}/registry/${id}/licence`, { method: HttpMethod.Delete })
+    request<void>(`${ApiPath.AdminPlugins}/registry/${encodeURIComponent(id)}/licence`, { method: HttpMethod.Delete })
 
   return {
     listPlugins, installPlugin, removePlugin, purgePluginData, restartServer, listSlotWidgets, saveSlotWidgetProducts,

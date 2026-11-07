@@ -682,6 +682,74 @@ public sealed class PluginRegistryClientTests : IDisposable
         handler.Requests.Should().BeEmpty();
     }
 
+    /// <summary>A redirect to another origin is refused while the licence key is set, and the other host receives no request.</summary>
+    [Fact]
+    public async Task ACrossOriginRedirect_WithAKey_IsRefusedBeforeReachingTheOtherHostAsync()
+    {
+        var hosts = new List<string>();
+        var handler = new ScriptedHttpMessageHandler((request, _) =>
+        {
+            hosts.Add(request.RequestUri!.Host);
+            return Task.FromResult(request.RequestUri.Host == "registry.example.com"
+                ? Redirect("https://evil.example.net/a.zip")
+                : new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent([1]) });
+        });
+        var release = new RegistryPluginRelease("acme-pay", "1.2.3", new Uri("https://registry.example.com/files/a.zip"), Sha, true);
+
+        var result = await Client(handler).DownloadAsync(release, CancellationToken.None, "key-123");
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.PLUGIN_REGISTRY_PACKAGE_REFUSED);
+        hosts.Should().Equal("registry.example.com");
+    }
+
+    /// <summary>A null <c>verified</c> or <c>requiresLicence</c> in the newest-version reply and in a release reads as false.</summary>
+    [Fact]
+    public async Task NullFlags_ReadAsFalseAsync()
+    {
+        var latest = ScriptedHttpMessageHandler.Json("""
+            [{"pluginId":"acme-pay","version":"1.2.3","downloadUrl":"/x.zip","sha256":"abc","verified":null,"requiresLicence":null}]
+            """);
+        var release = ScriptedHttpMessageHandler.Json($$"""{"downloadUrl":"/a.zip","sha256":"{{Sha}}","verified":null}""");
+
+        var plugins = await Client(latest).GetLatestAsync(["acme-pay"], CancellationToken.None);
+        var found = await Client(release).GetReleaseAsync(new RegistryPluginVersionRef("acme-pay", "1.2.3"), CancellationToken.None);
+
+        plugins.Value!.Single().Verified.Should().BeFalse();
+        plugins.Value!.Single().Pricing.Should().Be(PluginRegistryPricing.Free);
+        found.Value!.Verified.Should().BeFalse();
+    }
+
+    /// <summary>A version listed twice with different statuses keeps one row with the strictest status.</summary>
+    [Fact]
+    public async Task ListVersions_ADuplicateVersion_KeepsTheStrictestStatusAsync()
+    {
+        var handler = ScriptedHttpMessageHandler.Json($$"""
+            [{{VersionJson("1.0.0")}},
+             {{VersionJson("1.0.0").Replace("Published", "Yanked")}},
+             {{VersionJson("1.0.0").Replace("Published", "Deprecated")}}]
+            """);
+
+        var result = await Client(handler).ListVersionsAsync("acme-pay", null, CancellationToken.None);
+
+        result.Value!.Select(v => (v.Version, v.Status)).Should().Equal(("1.0.0", PluginRegistryVersionStatus.Yanked));
+    }
+
+    /// <summary>A key with a space, a non-ASCII character or over 256 characters is refused without a request; 256 is sent.</summary>
+    [Fact]
+    public async Task AKeyBreakingTheRule_IsRefusedWithoutARequestAsync()
+    {
+        var handler = ScriptedHttpMessageHandler.Json("{}");
+        var release = new RegistryPluginVersionRef("acme-pay", "1.2.3");
+
+        foreach (var key in new[] { "has space", "kéy", new string('k', 257) })
+        {
+            (await Client(handler).GetReleaseAsync(release, CancellationToken.None, key)).ErrorCode
+                .Should().Be(HostpanelErrorCodes.PLUGIN_REGISTRY_LICENCE_INVALID);
+        }
+
+        handler.Requests.Should().BeEmpty();
+    }
+
     /// <summary>Builds a redirect response.</summary>
     /// <param name="location">Where it points.</param>
     /// <returns>The response.</returns>

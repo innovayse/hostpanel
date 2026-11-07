@@ -341,4 +341,46 @@ describe('PluginDetailsView', () => {
 
     expect(wrapper.get('[data-testid="plugin-details-feedback"]').text()).toContain('The key is not valid.')
   })
+
+  it('empties the key field after a key replaces one that is already saved', async () => {
+    stubRoutes({
+      [DETAILS_URL]: () => json(makeDetails({ pricing: PluginPricing.Paid, requiresLicence: true, hasLicenceKey: true })),
+      'PUT /api/admin/plugins/registry/example-pay/licence': () => new Response(null, { status: 204 }),
+    })
+    const wrapper = await mountPage()
+
+    await wrapper.get('[data-testid="plugin-licence-input"]').setValue('KEY-NEW')
+    await wrapper.get('[data-testid="plugin-licence-save"]').trigger('click')
+    await flushPromises()
+
+    expect((wrapper.get('[data-testid="plugin-licence-input"]').element as HTMLInputElement).value).toBe('')
+  })
+
+  it('keeps the typed key when the save is refused', async () => {
+    stubRoutes({
+      [DETAILS_URL]: () => json(makeDetails({ pricing: PluginPricing.Paid, requiresLicence: true, hasLicenceKey: true })),
+      'PUT /api/admin/plugins/registry/example-pay/licence': () => problem('The key is not valid.', 400),
+    })
+    const wrapper = await mountPage()
+
+    await wrapper.get('[data-testid="plugin-licence-input"]').setValue('BAD')
+    await wrapper.get('[data-testid="plugin-licence-save"]').trigger('click')
+    await flushPromises()
+
+    expect((wrapper.get('[data-testid="plugin-licence-input"]').element as HTMLInputElement).value).toBe('BAD')
+  })
+
+  it('empties the key field after the saved key is removed', async () => {
+    stubRoutes({
+      [DETAILS_URL]: () => json(makeDetails({ pricing: PluginPricing.Paid, requiresLicence: true, hasLicenceKey: true })),
+      'DELETE /api/admin/plugins/registry/example-pay/licence': () => new Response(null, { status: 204 }),
+    })
+    const wrapper = await mountPage()
+
+    await wrapper.get('[data-testid="plugin-licence-input"]').setValue('TYPED')
+    await wrapper.get('[data-testid="plugin-licence-remove"]').trigger('click')
+    await flushPromises()
+
+    expect((wrapper.get('[data-testid="plugin-licence-input"]').element as HTMLInputElement).value).toBe('')
+  })
 })

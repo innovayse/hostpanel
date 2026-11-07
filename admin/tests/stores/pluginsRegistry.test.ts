@@ -159,7 +159,7 @@ describe('pluginsStore.installFromRegistry', () => {
     })
     const store = usePluginsStore()
 
-    const ok = await store.installFromRegistry('example-pay', '2.0.0')
+    const ok = (await store.installFromRegistry('example-pay', '2.0.0')).ok
 
     expect(ok).toBe(true)
     expect(store.requiresRestart).toBe(true)
@@ -183,7 +183,7 @@ describe('pluginsStore.installFromRegistry', () => {
     })
     const store = usePluginsStore()
 
-    expect(await store.installFromRegistry('example-pay', '2.0.0')).toBe(true)
+    expect((await store.installFromRegistry('example-pay', '2.0.0')).ok).toBe(true)
     expect(store.requiresRestart).toBe(false)
     expect(store.stagedVersion).toBeNull()
   })
@@ -192,7 +192,7 @@ describe('pluginsStore.installFromRegistry', () => {
     stubFetch(problem('That publisher is not trusted.', 403))
     const store = usePluginsStore()
 
-    const ok = await store.installFromRegistry('example-pay', '2.0.0')
+    const ok = (await store.installFromRegistry('example-pay', '2.0.0')).ok
 
     expect(ok).toBe(false)
     expect(store.registryInstallError).toBe('That publisher is not trusted.')
@@ -283,7 +283,7 @@ describe('pluginsStore licence key', () => {
     })
     const store = usePluginsStore()
 
-    expect(await store.saveLicenceKey('example-pay', 'abc')).toBe(true)
+    expect((await store.saveLicenceKey('example-pay', 'abc')).ok).toBe(true)
 
     const put = mock.mock.calls.find(([, init]) => init?.method === 'PUT')
     expect(JSON.parse(String(put?.[1]?.body))).toEqual({ key: 'abc' })
@@ -298,7 +298,7 @@ describe('pluginsStore licence key', () => {
     })
     const store = usePluginsStore()
 
-    expect(await store.removeLicenceKey('example-pay')).toBe(true)
+    expect((await store.removeLicenceKey('example-pay')).ok).toBe(true)
     expect(requestsOf(mock)).toEqual(expect.arrayContaining(['DELETE /admin/plugins/registry/example-pay/licence']))
   })
 
@@ -306,7 +306,7 @@ describe('pluginsStore licence key', () => {
     stubFetch(problem('That key is not valid.', 400))
     const store = usePluginsStore()
 
-    expect(await store.saveLicenceKey('example-pay', 'bad')).toBe(false)
+    expect((await store.saveLicenceKey('example-pay', 'bad')).ok).toBe(false)
     expect(store.licenceError).toBe('That key is not valid.')
     expect(store.isBusy('example-pay')).toBe(false)
   })
@@ -350,5 +350,34 @@ describe('pluginsStore busy state', () => {
 
     const reads = requestsOf(mock).filter(line => line === 'GET /admin/plugins/registry/example-pay')
     expect(reads).toHaveLength(2)
+  })
+})
+
+describe('pluginsStore per call outcomes', () => {
+  it('gives two parallel installs each its own result', async () => {
+    stubRoutes({
+      'POST /api/admin/plugins/registry/slow-one/install': () => json({ requiresRestart: true, stagedVersion: '3.0.0' }),
+      'POST /api/admin/plugins/registry/bad-one/install': () => problem('That publisher is not trusted.', 403),
+      'GET /api/admin/plugins/registry/updates': () => json([]),
+      'GET /api/admin/plugins/registry': () => json({ items: [], total: 0, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([]),
+    })
+    const store = usePluginsStore()
+
+    const [first, second] = await Promise.all([
+      store.installFromRegistry('slow-one', '3.0.0'),
+      store.installFromRegistry('bad-one', '1.0.0'),
+    ])
+
+    expect(first).toEqual({ ok: true, stagedVersion: '3.0.0', error: null })
+    expect(second).toEqual({ ok: false, stagedVersion: null, error: 'That publisher is not trusted.' })
+  })
+
+  it('returns the sentence of a refused licence save and removal', async () => {
+    stubFetch(problem('That key is not valid.', 400))
+    const store = usePluginsStore()
+
+    expect((await store.saveLicenceKey('example-pay', 'bad')).error).toBe('That key is not valid.')
+    expect((await store.removeLicenceKey('example-pay')).error).toBe('That key is not valid.')
   })
 })

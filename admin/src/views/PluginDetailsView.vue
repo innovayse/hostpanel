@@ -18,7 +18,7 @@ import PluginDetailsHeader from '@/components/plugins/details/PluginDetailsHeade
 import PluginDetailsLinks from '@/components/plugins/details/PluginDetailsLinks.vue'
 import PluginLicenceCard from '@/components/plugins/details/PluginLicenceCard.vue'
 import PluginVersionList from '@/components/plugins/details/PluginVersionList.vue'
-import { relationTo, VersionRelation } from '@/components/plugins/details/versionOrder'
+import { relationTo } from '@/components/plugins/details/versionOrder'
 import RestartBanner from '@/components/plugins/RestartBanner.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -32,7 +32,7 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { Icon } from '@/lib/icons'
 import { AppRoute } from '@/lib/routes'
-import { PluginErrorCode } from '@/types/plugin'
+import { PluginErrorCode, VersionRelation } from '@/types/plugin'
 import type { RegistryDetailsState, RegistryPluginDetailsDto } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
@@ -93,6 +93,9 @@ const busy = computed<boolean>(() => store.isBusy(pluginId.value))
 
 /** True while the server restart request is in flight. */
 const restarting = ref(false)
+
+/** Bumped after a licence key is saved or removed; keys the licence card so its field starts empty again. */
+const licenceFieldEpoch = ref(0)
 
 /** The install waiting for the operator's confirmation, null when no prompt is open. */
 const pendingInstall = ref<PendingInstall | null>(null)
@@ -163,12 +166,12 @@ const handleInstall = async (): Promise<void> => {
     return
   }
   feedback.clear()
-  const ok = await store.installFromRegistry(pluginId.value, pending.version, pending.downgrade)
+  const outcome = await store.installFromRegistry(pluginId.value, pending.version, pending.downgrade)
   pendingInstall.value = null
-  if (ok && store.stagedVersion !== null) {
-    showOutcome(true, t('pluginDetails.feedback.staged', { version: store.stagedVersion }), null)
+  if (outcome.ok && outcome.stagedVersion !== null) {
+    showOutcome(true, t('pluginDetails.feedback.staged', { version: outcome.stagedVersion }), null)
   } else {
-    showOutcome(ok, t('pluginDetails.feedback.installed', { version: pending.version }), store.registryInstallError)
+    showOutcome(outcome.ok, t('pluginDetails.feedback.installed', { version: pending.version }), outcome.error)
   }
 }
 
@@ -187,12 +190,20 @@ const dismissUninstall = (): void => {
 /** Uninstalls the plugin the operator confirmed and shows the outcome. */
 const handleUninstall = async (): Promise<void> => {
   feedback.clear()
-  const ok = await store.remove(pluginId.value)
+  const outcome = await store.remove(pluginId.value)
   confirmingUninstall.value = false
-  showOutcome(ok, t('pluginDetails.feedback.uninstalled'), store.actionError)
-  if (ok) {
+  showOutcome(outcome.ok, t('pluginDetails.feedback.uninstalled'), outcome.error)
+  if (outcome.ok) {
     await load()
   }
+}
+
+/**
+ * Empties the licence key field by giving the card a new identity: `hasKey` does not change when a key
+ * replaces one already saved, so the card cannot tell a successful save from the field alone.
+ */
+const clearLicenceField = (): void => {
+  licenceFieldEpoch.value += 1
 }
 
 /**
@@ -203,15 +214,21 @@ const handleUninstall = async (): Promise<void> => {
 const handleSaveKey = async (key: string): Promise<void> => {
   feedback.clear()
   // The store reloads the details itself, so `hasLicenceKey` is current when this returns.
-  const ok = await store.saveLicenceKey(pluginId.value, key)
-  showOutcome(ok, t('pluginDetails.feedback.licenceSaved'), store.licenceError)
+  const outcome = await store.saveLicenceKey(pluginId.value, key)
+  if (outcome.ok) {
+    clearLicenceField()
+  }
+  showOutcome(outcome.ok, t('pluginDetails.feedback.licenceSaved'), outcome.error)
 }
 
 /** Removes the stored licence key and shows the outcome. */
 const handleRemoveKey = async (): Promise<void> => {
   feedback.clear()
-  const ok = await store.removeLicenceKey(pluginId.value)
-  showOutcome(ok, t('pluginDetails.feedback.licenceRemoved'), store.licenceError)
+  const outcome = await store.removeLicenceKey(pluginId.value)
+  if (outcome.ok) {
+    clearLicenceField()
+  }
+  showOutcome(outcome.ok, t('pluginDetails.feedback.licenceRemoved'), outcome.error)
 }
 
 /** Restarts the server so installed or removed plugins take effect. */
@@ -254,6 +271,7 @@ onMounted(load)
       <!-- A licence-gated page has no details to read the key state from, so the card is offered as soon as the gate is named. -->
       <PluginLicenceCard
         v-if="licenceGated"
+        :key="licenceFieldEpoch"
         :has-key="false"
         :busy="busy"
         @save="handleSaveKey"
@@ -276,6 +294,7 @@ onMounted(load)
           {{ t('pluginDetails.licence.needed') }}
         </UiAlert>
         <PluginLicenceCard
+          :key="licenceFieldEpoch"
           :has-key="details.hasLicenceKey"
           :busy="busy"
           @save="handleSaveKey"

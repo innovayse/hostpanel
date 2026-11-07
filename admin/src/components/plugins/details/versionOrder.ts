@@ -4,20 +4,7 @@
  * (`1.2.3`, optionally with a `-pre` part), so the comparison is numeric per segment, never textual.
  */
 
-/** How a listed version stands against the installed one. */
-export const VersionRelation = {
-  /** No version is installed, so any version is a fresh install. */
-  Fresh: 'fresh',
-  /** The same version as the installed one. */
-  Current: 'current',
-  /** Newer than the installed version. */
-  Newer: 'newer',
-  /** Older than the installed version; installing it is a downgrade. */
-  Older: 'older',
-} as const
-
-/** One of the {@link VersionRelation} values. */
-export type VersionRelation = (typeof VersionRelation)[keyof typeof VersionRelation]
+import { VersionRelation } from '@/types/plugin'
 
 /**
  * Splits a version into its numeric core and its pre-release part.

@@ -90,19 +90,29 @@ if [ "$1" = "compose" ] && [ "$2" = "-f" ]; then
           exit $? ;;
         *pg_database*)
           printf 'state\n' >> "$FAKE_LOG"
-          case "${FAKE_STATE:-live}" in
+          # After a restore ran, FAKE_STATE_AFTER (when set) is the state the databases are in.
+          st="${FAKE_STATE:-live}"
+          if [ -f "$FAKE_LOG.restoreran" ] && [ -n "${FAKE_STATE_AFTER:-}" ]; then st="$FAKE_STATE_AFTER"; fi
+          case "$st" in
             live) printf 'live\n' ;;
             halfswap) printf 'replaced\nrestore\n' ;;
+            swapped) printf 'live\nreplaced\n' ;;
+            notswapped) printf 'live\nrestore\n' ;;
+            none) ;;
             fail) exit 2 ;;
           esac
           exit 0 ;;
         *createdb*)
           printf 'restore\n' >> "$FAKE_LOG"
+          : > "$FAKE_LOG.restoreran"
           cat > "$FAKE_RESTORED"
           case "${FAKE_RESTORE:-ok}" in
             fail) exit 1 ;;
             swap) exit 3 ;;
             busy) exit 4 ;;
+            other) printf 'renaming database hostpanel to hostpanel_replaced failed: ERROR:  42501: must be owner of database hostpanel
+' >&2; exit 5 ;;
+            killed) exit 137 ;;
           esac
           exit 0 ;;
         *wget*) printf 'health\n' >> "$FAKE_LOG"; exit 0 ;;
@@ -159,7 +169,7 @@ new_install() {
   : > "$LOG"
   : > "$CURL_LOG"
   unset FAKE_DUMP FAKE_DB_RUNNING FAKE_RESTORE FAKE_DB_STATE FAKE_VOLUME FAKE_DB_READY FAKE_STOP \
-    FAKE_PULL FAKE_UP FAKE_CURL FAKE_SERVICES FAKE_CONFIG FAKE_STATE
+    FAKE_PULL FAKE_UP FAKE_CURL FAKE_SERVICES FAKE_CONFIG FAKE_STATE FAKE_STATE_AFTER
 }
 
 # Runs install.sh against $DIR with the fakes. Output goes to $DIR.out, the exit code is returned.
@@ -250,6 +260,32 @@ check "0.4.0 is newer than its own release candidate" is_newer 0.4.0 0.4.0-rc.1
 check "a release candidate is not newer than the release" not_newer 0.4.0-rc.1 0.4.0
 check "a tag that is not a number list is never newer" not_newer stable 0.4.0
 check "nothing is newer than a tag that is not a number list" not_newer 0.4.0 stable
+check "numeric pre-release parts are compared as numbers: rc.10 is after rc.2" is_newer 1.0.0-rc.10 1.0.0-rc.2
+check "rc.2 is not after rc.10" not_newer 1.0.0-rc.2 1.0.0-rc.10
+check "a number part of 25 digits is compared by value, not by the shell's integers" is_newer 1.0.0-rc.99999999999999999999999 1.0.0-rc.99999999999999999999998
+check "a leading zero in a number part does not change its value" not_newer 1.0.0-rc.01 1.0.0-rc.1
+check "rc.1.1 is after rc.1, the longer list wins when the start is equal" is_newer 1.0.0-rc.1.1 1.0.0-rc.1
+check "rc.1 is not after rc.1.1" not_newer 1.0.0-rc.1 1.0.0-rc.1.1
+check "a number part is before a word part: rc.beta is after rc.9" is_newer 1.0.0-rc.beta 1.0.0-rc.9
+check "rc.9 is not after rc.beta" not_newer 1.0.0-rc.9 1.0.0-rc.beta
+check "beta is after alpha" is_newer 1.0.0-beta 1.0.0-alpha
+check "alpha.beta is after alpha.1" is_newer 1.0.0-alpha.beta 1.0.0-alpha.1
+check "beta.11 is after beta.2" is_newer 1.0.0-beta.11 1.0.0-beta.2
+check "rc.1 is after beta.11" is_newer 1.0.0-rc.1 1.0.0-beta.11
+check "the release is after rc.1" is_newer 1.0.0 1.0.0-rc.1
+check "a higher number beats any pre-release of a lower one" is_newer 1.0.1-alpha 1.0.0
+check "build metadata is ignored: the same version with other metadata is not newer" not_newer 1.0.0+build.2 1.0.0+build.1
+check "build metadata is ignored in the other direction too" not_newer 1.0.0+build.1 1.0.0+build.2
+check "build metadata on a pre-release is ignored" not_newer 1.0.0-rc.1+b.9 1.0.0-rc.1
+check "a release with metadata is after its own pre-release" is_newer 1.0.0+build.1 1.0.0-rc.1
+check "a pre-release with metadata is not after its release" not_newer 1.0.0-rc.1+build.1 1.0.0
+check "an empty pre-release part is not a version" not_newer 1.0.0- 0.9.0
+check "an empty identifier in a pre-release is not a version" not_newer 1.0.0-rc..1 0.9.0
+check "uppercase is before lowercase by byte value: rc.a is after rc.B" is_newer 1.0.0-rc.a 1.0.0-rc.B
+# The order must not depend on the locale: in many locales a sorts before B.
+check "rc.a is after rc.B in the en_US locale" env LC_ALL=en_US.UTF-8 HOSTPANEL_SOURCE_ONLY=1 bash -c 'source "$0"; set +e +o pipefail; version_is_newer 1.0.0-rc.a 1.0.0-rc.B' "$INSTALL_SH"
+check "rc.a is after rc.B in the tr_TR locale" env LC_ALL=tr_TR.UTF-8 HOSTPANEL_SOURCE_ONLY=1 bash -c 'source "$0"; set +e +o pipefail; version_is_newer 1.0.0-rc.a 1.0.0-rc.B' "$INSTALL_SH"
+check "rc.10 is after rc.2 in the C locale" env LC_ALL=C HOSTPANEL_SOURCE_ONLY=1 bash -c 'source "$0"; set +e +o pipefail; version_is_newer 1.0.0-rc.10 1.0.0-rc.2' "$INSTALL_SH"
 
 # ── Upgrade ───────────────────────────────────────────────────────────────────
 
@@ -712,6 +748,75 @@ check "a blocked rename says the services are stopped" out_has 'STOPPED'
 check "a blocked rename keeps IMAGE_TAG" env_is IMAGE_TAG 0.4.0
 check "a blocked rename downloads nothing" no_curl
 
+# A database command refused for another reason than a busy database: the real reason is shown, nothing is
+# called busy and nothing is called safe to repeat before the cause is fixed.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=other run_installer --rollback --yes
+check "a refused rename fails the rollback" test "$?" -ne 0
+check "a refused rename shows the server's own message" out_has 'must be owner of database'
+check "a refused rename is not called busy" out_lacks 'stayed busy'
+check "a refused rename does not call the backup damaged" out_lacks 'damaged'
+check "a refused rename says the live database was not changed" out_has 'was not changed (or was put back)'
+check "a refused rename says to fix the cause first" out_has 'Fix the cause named above'
+check "a refused rename says the services are stopped" out_has 'STOPPED'
+check "a refused rename names the safety copy" out_has 'saved in .*pre-rollback-.*-0.4.0.sql'
+check "a refused rename keeps IMAGE_TAG" env_is IMAGE_TAG 0.4.0
+check "a refused rename downloads nothing" no_curl
+
+# A restore that was cut off (killed, docker exec failed): the real state of the databases is read and reported.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=killed FAKE_STATE_AFTER=none run_installer --rollback --yes
+check "a cut off restore fails the rollback" test "$?" -ne 0
+check "a cut off restore reads the databases afterwards" test "$(grep -c '^state$' "$LOG")" -eq 2
+check "a cut off restore with no live database says it is missing" out_has 'MISSING'
+check "a cut off restore names the exit status" out_has 'exit status 137'
+check "a cut off restore with no live database prints the rename command" out_has 'ALTER DATABASE'
+check "a cut off restore never claims the live database was not changed" out_lacks 'was not changed'
+check "a cut off restore never calls the backup damaged" out_lacks 'damaged'
+check "a cut off restore downloads nothing" no_curl
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=killed FAKE_STATE_AFTER=halfswap run_installer --rollback --yes
+check "a cut off restore in a half swap says the live database is missing" out_has 'MISSING'
+check "a cut off restore in a half swap lists both temporary databases" out_has 'replaced, restore'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=killed FAKE_STATE_AFTER=swapped run_installer --rollback --yes
+check "a cut off restore after the swap says the live database holds the backup" out_has 'most likely holds the restored backup'
+check "a cut off restore after the swap says where the old data is" out_has 'hostpanel_replaced'
+check "a cut off restore after the swap does not say the database is missing" out_lacks 'MISSING'
+check "a cut off restore after the swap never claims the live database was not changed" out_lacks 'was not changed'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=killed FAKE_STATE_AFTER=notswapped run_installer --rollback --yes
+check "a cut off restore before the swap says the swap did not happen" out_has 'was not swapped'
+check "a cut off restore before the swap names the leftover" out_has 'hostpanel_restore is a leftover'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=killed FAKE_STATE_AFTER=live run_installer --rollback --yes
+check "a cut off restore with only the live database says it cannot tell which data it holds" out_has 'cannot be told from here'
+check "a cut off restore with only the live database never claims it was not changed" out_lacks 'was not changed'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=killed FAKE_STATE_AFTER=fail run_installer --rollback --yes
+check "a cut off restore whose state cannot be read says the state is unknown" out_has 'UNKNOWN'
+check "a cut off restore whose state cannot be read prints the command that lists the databases" out_has 'SELECT datname FROM pg_database'
+check "a cut off restore whose state cannot be read never claims the live database was not changed" out_lacks 'was not changed'
+
 # Messages after a failed restore name the right data.
 new_install 0.4.0
 mkdir -p "$DIR/backups"
@@ -797,6 +902,7 @@ services:
       POSTGRES_USER: hostpanel
       POSTGRES_PASSWORD: test
       POSTGRES_DB: hostpanel
+    command: ["postgres", "-c", "max_prepared_transactions=5"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U hostpanel -d hostpanel"]
       interval: 2s
@@ -848,6 +954,39 @@ COMPOSE
   check "the half swap check names the database that holds the old data" grep -q 'hostpanel_replaced' "$PGDIR/call.out"
   check "the live database is renamed back" pg_rename hostpanel_replaced hostpanel
   check "the live database is back after the half swap check" pg_call check_no_half_swap
+
+  # A rename the server refuses for a reason other than a busy database must not be retried as if it were busy:
+  # it stops at once with the server's message. The functions of the restore script are run on their own, with
+  # two tries, inside the database container.
+  check "a rename of a database that does not exist stops at once, not busy" test "$(pg_rename_db hostpanel_nothing_here hostpanel_other; sed -n 1p "$PGDIR/rename.rc")" = "2"
+  check "that refusal prints the server's own reason" grep -q 'does not exist' "$PGDIR/rename.out"
+  check "that refusal does not say the database is busy" test -z "$(grep 'is busy' "$PGDIR/rename.out" || true)"
+  check "that refusal is not tried again" test "$(grep -c 'renaming database' "$PGDIR/rename.out")" -eq 1
+  # A prepared transaction holds its database and cannot be ended by pg_terminate_backend, so the server answers
+  # 'in use' (55006) to a rename for as long as it exists: a database that really stays busy.
+  pg_sql_admin "CREATE DATABASE hostpanel_busy" >/dev/null
+  ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml exec -T hostpanel-db       psql -U hostpanel -d hostpanel_busy -c "BEGIN; SELECT 1; PREPARE TRANSACTION 'hp_busy'" >/dev/null 2>&1 )
+  check "a rename the server answers as in use is busy and returns 1 after the last try" test "$(pg_rename_db hostpanel_busy hostpanel_other; sed -n 1p "$PGDIR/rename.rc")" = "1"
+  check "that busy answer is retried and reported as busy" grep -q 'is busy, trying the rename again (2 of 2)' "$PGDIR/rename.out"
+  check "that busy answer is not printed as a failure reason" test -z "$(grep 'renaming database' "$PGDIR/rename.out" || true)"
+  ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml exec -T hostpanel-db       psql -U hostpanel -d hostpanel_busy -c "COMMIT PREPARED 'hp_busy'" >/dev/null 2>&1 )
+  pg_sql_admin "DROP DATABASE hostpanel_busy" >/dev/null
+}
+
+# Runs rename_db of the restore script, on its own and with two tries, in the test server. Its messages go to
+# $PGDIR/rename.out and its return status to $PGDIR/rename.rc. $1 database, $2 new name
+pg_rename_db() {
+  local defs
+  defs="$(HOSTPANEL_SOURCE_ONLY=1 bash -c 'source "$0"; printf "%s" "$RESTORE_SCRIPT"' "$INSTALL_SH")"
+  # Everything before the first step of the restore is the set of helper functions.
+  defs="${defs%%drop_temp \"\$NEW\" || exit 5*}"
+  ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+      sh -c "${defs}
+RENAME_TRIES=2
+rename_db '$1' '$2'
+echo \$? > /tmp/rename.rc" > "$PGDIR/rename.out" 2>&1 )
+  ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+      cat /tmp/rename.rc > "$PGDIR/rename.rc" 2>/dev/null )
 }
 
 # Renames database $1 to $2 on the test server, ending the sessions that hold $1 and trying a few times.

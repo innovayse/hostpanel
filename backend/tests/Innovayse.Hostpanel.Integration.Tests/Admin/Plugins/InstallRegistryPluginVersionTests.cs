@@ -108,6 +108,24 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
         (await RefusalAuditedAsync(pluginId, "Yanked")).Should().BeTrue();
     }
 
+    /// <summary>A version listed twice, published and then yanked, is judged by the yanked row and is never downloaded.</summary>
+    [Fact]
+    public async Task ADuplicateVersion_IsJudgedByItsStrictestStatusAsync()
+    {
+        var registry = new FakePluginRegistryClient();
+        var pluginId = $"test-reg-{Guid.NewGuid():N}";
+        registry.Publish(pluginId, "1.0.0", PluginSigningTestSeeds.SignedZip(pluginId));
+        var published = registry.Versions[pluginId].Single();
+        registry.Versions[pluginId] = [published, published with { Status = PluginRegistryVersionStatus.Yanked }];
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
+
+        var response = await client.PostAsJsonAsync(Route(pluginId), PluginRegistryTestSeeds.InstallBody("1.0.0"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_REGISTRY_VERSION_YANKED);
+        registry.DownloadCount.Should().Be(0);
+    }
+
     /// <summary>A version the registry rejected is refused with 409 before it is downloaded, and the refusal is audited.</summary>
     [Fact]
     public async Task ARejectedVersion_IsRefusedAsCompromisedAsync()

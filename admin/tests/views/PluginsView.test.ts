@@ -468,7 +468,7 @@ describe('PluginsView', () => {
 
     await router.push('/plugins')
     await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
-    await wrapper.get('[data-testid="registry-card-example-pay"]').trigger('click')
+    await wrapper.get('[data-testid="registry-open-example-pay"]').trigger('click')
     await flushPromises()
     expect(router.currentRoute.value.path).toBe('/plugins/example-pay')
   })

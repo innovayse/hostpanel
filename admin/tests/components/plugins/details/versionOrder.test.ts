@@ -3,7 +3,8 @@
  * version to the installed one.
  */
 import { describe, expect, it } from 'vitest'
-import { compareVersions, relationTo, VersionRelation } from '@/components/plugins/details/versionOrder'
+import { compareVersions, relationTo } from '@/components/plugins/details/versionOrder'
+import { VersionRelation } from '@/types/plugin'
 
 describe('compareVersions', () => {
   it('compares segments as numbers, not text', () => {

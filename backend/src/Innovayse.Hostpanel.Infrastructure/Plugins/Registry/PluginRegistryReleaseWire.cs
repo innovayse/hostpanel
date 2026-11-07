@@ -8,14 +8,14 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 /// <param name="Version">The version.</param>
 /// <param name="DownloadUrl">Where the package is served, absolute or relative to the registry address.</param>
 /// <param name="Sha256">The published SHA-256 of the package, in hex.</param>
-/// <param name="Verified">Whether the registry vouches for the publisher.</param>
+/// <param name="Verified">Whether the registry vouches for the publisher; a JSON null reads as false.</param>
 /// <param name="SdkVersion">The SDK version the version targets.</param>
-/// <param name="RequiresLicence">Whether the package needs a licence key.</param>
+/// <param name="RequiresLicence">Whether the package needs a licence key; a JSON null reads as false.</param>
 internal sealed record PluginRegistryReleaseWire(
     string? PluginId,
     string? Version,
     string? DownloadUrl,
     string? Sha256,
-    bool Verified,
+    bool? Verified,
     string? SdkVersion = null,
-    bool RequiresLicence = false);
+    bool? RequiresLicence = null);

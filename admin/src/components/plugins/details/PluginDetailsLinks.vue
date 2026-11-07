@@ -12,6 +12,7 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { LinkKind } from '@/types/plugin'
 import type { RegistryPluginDetailsDto } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
 
@@ -23,21 +24,6 @@ const props = defineProps<{
   /** The plugin's registry details. */
   details: RegistryPluginDetailsDto
 }>()
-
-/** Closed set of the links the page offers; the strings are the parts of the test ids and locale keys. */
-const LinkKind = {
-  /** The documentation. */
-  Documentation: 'documentation',
-  /** The support page. */
-  Support: 'support',
-  /** The source repository. */
-  Repository: 'repository',
-  /** Where to buy a licence. */
-  Buy: 'buy',
-} as const
-
-/** One of the {@link LinkKind} values. */
-type LinkKind = (typeof LinkKind)[keyof typeof LinkKind]
 
 /** One link ready to render. */
 interface LinkItem {

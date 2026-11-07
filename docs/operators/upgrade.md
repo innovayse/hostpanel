@@ -113,7 +113,8 @@ The file and the folder are readable by their owner only.
 - A database without any table is not kept as a backup, so it never replaces one that
   holds data.
 - The newest 5 backups are kept, and so is the oldest backup of each of the newest 10
-  versions, because the one taken right before an upgrade is the way back to the old
+  versions (the versions whose newest backup is the most recent, not the highest version
+  numbers), because the one taken right before an upgrade is the way back to the old
   version even after you run the installer again. Older ones are removed, so the folder
   does not grow with every release. Change the numbers with `--keep <n>` or
   `HOSTPANEL_BACKUP_KEEP`, and `--keep-versions <n>` or

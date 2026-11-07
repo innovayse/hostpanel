@@ -2,7 +2,7 @@
 /**
  * The Browse tab's list: a search box, a category select and a page of registry cards.
  *
- * Each card is clickable and opens the plugin's details page. It shows the picture, name, publisher,
+ * The card is not interactive itself: its name is a button that opens the plugin's details page. It shows the picture, name, publisher,
  * category, versions, a Verified badge, the price, the installed version and a staged or update state.
  * The action is Install for a plugin that is not installed, Update for one with a newer version and
  * Uninstall for an installed one; a paid plugin without a saved key shows Details instead of Install.
@@ -148,14 +148,24 @@ const pricingTone: Record<PluginPricing, UiTone> = {
 const actionable = (item: PluginRegistryItemDto): boolean => !item.installed || item.updateAvailable
 
 /**
- * Whether a listing sends the admin to its details page instead of installing: a paid plugin that
- * is not installed and has no saved licence key cannot be installed from the card.
+ * Whether a listing needs a licence key: what the listing says when it carries `requiresLicence`,
+ * otherwise a paid or private price.
+ *
+ * @param item - The listing.
+ * @returns True when installing it needs a saved key.
+ */
+const requiresKey = (item: PluginRegistryItemDto): boolean =>
+  item.requiresLicence ?? (item.pricing === PluginPricing.Paid || item.pricing === PluginPricing.Private)
+
+/**
+ * Whether a listing sends the admin to its details page instead of installing: a plugin that needs a key
+ * and is not installed with no saved licence key cannot be installed from the card.
  *
  * @param item - The listing.
  * @returns True when the card shows Details in place of Install.
  */
 const needsDetails = (item: PluginRegistryItemDto): boolean =>
-  item.pricing === PluginPricing.Paid && !item.installed && !props.licensedIds.includes(item.id)
+  !item.installed && requiresKey(item) && !props.licensedIds.includes(item.id)
 
 /**
  * Whether the card's own install, update or removal is running; only that card is disabled.
@@ -213,18 +223,22 @@ const busy = (id: string): boolean => props.installingIds.includes(id) || props.
           v-for="item in items"
           :key="item.id"
           padding="sm"
-          class="cursor-pointer transition-colors hover:border-accent"
-          role="link"
-          tabindex="0"
+          class="transition-colors hover:border-accent"
           :data-testid="`registry-card-${item.id}`"
-          @click="emit('details', item.id)"
-          @keydown.enter.self="emit('details', item.id)"
         >
           <UiStack direction="row" align="start" gap="md">
             <UiPluginAvatar :name="item.name" :icon-url="item.iconUrl" />
             <UiStack gap="xs" class="min-w-0 flex-1">
               <UiStack direction="row" align="center" gap="sm" wrap>
-                <UiText tone="primary" size="lg" class="font-semibold">{{ item.name }}</UiText>
+                <UiButton
+                  type="button"
+                  :variant="UiButtonVariant.Link"
+                  class="text-lg font-semibold"
+                  :data-testid="`registry-open-${item.id}`"
+                  @click="emit('details', item.id)"
+                >
+                  {{ item.name }}
+                </UiButton>
                 <UiBadge
                   v-if="item.verified"
                   :tone="UiTone.Success"
@@ -269,7 +283,7 @@ const busy = (id: string): boolean => props.installingIds.includes(id) || props.
                   :variant="UiButtonVariant.Primary"
                   size="sm"
                   :data-testid="`registry-details-${item.id}`"
-                  @click.stop="emit('details', item.id)"
+                  @click="emit('details', item.id)"
                 >
                   {{ t('plugins.pluginRegistry.details') }}
                 </UiButton>
@@ -280,7 +294,7 @@ const busy = (id: string): boolean => props.installingIds.includes(id) || props.
                   size="sm"
                   :disabled="busy(item.id)"
                   :data-testid="`registry-install-${item.id}`"
-                  @click.stop="emit('install', item.id, item.latestVersion)"
+                  @click="emit('install', item.id, item.latestVersion)"
                 >
                   <template v-if="installingIds.includes(item.id)">{{ t('plugins.pluginRegistry.installing') }}</template>
                   <template v-else-if="item.installed">
@@ -303,7 +317,7 @@ const busy = (id: string): boolean => props.installingIds.includes(id) || props.
                   size="sm"
                   :disabled="busy(item.id)"
                   :data-testid="`registry-uninstall-${item.id}`"
-                  @click.stop="emit('remove', item.id)"
+                  @click="emit('remove', item.id)"
                 >
                   {{ removingId === item.id ? t('plugins.pluginCard.removing') : t('plugins.pluginRegistry.uninstall') }}
                 </UiButton>

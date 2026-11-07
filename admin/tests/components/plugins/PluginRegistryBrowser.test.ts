@@ -1,7 +1,7 @@
 /**
  * Tests for PluginRegistryBrowser: a card per listing with its Verified badge and price, Install for a
  * plugin that is absent, Update for one with a newer version, a plain badge for one that is current,
- * the clickable card, the Details action for a paid plugin without a key, Uninstall, per card busy state, the
+ * the name button that opens details, the Details action for a paid plugin without a key, Uninstall, per card busy state, the
  * staged and update states, the debounced search, the empty, loading and error states, and the page event.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -136,12 +136,23 @@ describe('PluginRegistryBrowser', () => {
     expect(wrapper.get('[data-testid="registry-install-example-registrar"]').attributes('disabled')).toBeUndefined()
   })
 
-  it('opens the details page when the card is clicked', async () => {
+  it('opens the details page from the name button', async () => {
     const wrapper = await mountBrowser()
 
-    await wrapper.get('[data-testid="registry-card-example-pay"]').trigger('click')
+    await wrapper.get('[data-testid="registry-open-example-pay"]').trigger('click')
 
     expect(wrapper.emitted('details')).toEqual([['example-pay']])
+  })
+
+  it('keeps the card itself non interactive, with the name as a real button', async () => {
+    const wrapper = await mountBrowser()
+    const card = wrapper.get('[data-testid="registry-card-example-pay"]')
+
+    expect(card.attributes('role')).toBeUndefined()
+    expect(card.attributes('tabindex')).toBeUndefined()
+    await card.trigger('click')
+    expect(wrapper.emitted('details')).toBeUndefined()
+    expect(wrapper.get('[data-testid="registry-open-example-pay"]').element.tagName).toBe('BUTTON')
   })
 
   it('does not open the details page when Install is clicked', async () => {
@@ -168,6 +179,23 @@ describe('PluginRegistryBrowser', () => {
 
     expect(wrapper.emitted('details')).toEqual([['example-paid']])
     expect(wrapper.emitted('install')).toBeUndefined()
+  })
+
+  it('offers Details for a private plugin without a saved key', async () => {
+    const priv = { ...fresh, id: 'example-private', pricing: PluginPricing.Private }
+    const wrapper = await mountBrowser({ items: [priv] })
+
+    expect(wrapper.find('[data-testid="registry-install-example-private"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="registry-details-example-private"]').exists()).toBe(true)
+  })
+
+  it('follows requiresLicence when the listing carries it', async () => {
+    const keyed = { ...fresh, id: 'example-keyed', pricing: PluginPricing.Free, requiresLicence: true }
+    const open = { ...fresh, id: 'example-open', pricing: PluginPricing.Paid, requiresLicence: false }
+    const wrapper = await mountBrowser({ items: [keyed, open] })
+
+    expect(wrapper.find('[data-testid="registry-details-example-keyed"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="registry-install-example-open"]').exists()).toBe(true)
   })
 
   it('offers Install for a paid plugin whose key is saved', async () => {

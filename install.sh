@@ -588,46 +588,67 @@ backup_before_upgrade() {
 # connect to a database on their own, also to the temporary one right after the restore wrote into it.
 # Autovacuum cannot be switched off for one database, so each rename ends the connections that hold
 # the database first and is tried again a few times; a worker that came back in between loses the
-# next try. Exit status: 0 restored, 1 the restore itself failed (live database untouched), 3 the
-# swap broke half way and the live database is missing (the old data is then in <name>_replaced and
-# the restored data in <name>_restore), 4 the rename stayed blocked after every try and the live
-# database was put back as it was (the backup itself loaded fine).
+# next try. Only a rename the server refuses as "in use" (SQLSTATE 55006) counts as busy and is tried
+# again; any other refusal (a missing database, a permission, a full disk) stops at once and the
+# server's own message is printed, so it is not mistaken for a busy database. Exit status: 0 restored,
+# 1 the backup itself could not be loaded (live database untouched), 3 the swap broke half way and the
+# live database is missing (the old data is then in <name>_replaced and the restored data in
+# <name>_restore), 4 the rename stayed busy after every try and the live database was put back as it
+# was (the backup itself loaded fine), 5 a database command was refused for another reason before the
+# swap or during it (the message is printed) and the live database was not changed or was put back.
+# Any other status means the script was cut off (killed, docker failed): the caller reads the state.
 read -r -d '' RESTORE_SCRIPT <<'SQLSCRIPT' || true
 LIVE="$POSTGRES_DB"
 NEW="${LIVE}_restore"
 OLD="${LIVE}_replaced"
 DBUSER="$POSTGRES_USER"
 RENAME_TRIES=10
-admin() { psql -q -v ON_ERROR_STOP=1 -U "$DBUSER" -d postgres "$@"; }
+admin() { psql -q -v ON_ERROR_STOP=1 -v VERBOSITY=verbose -U "$DBUSER" -d postgres "$@"; }
 drop_temp() { dropdb -U "$DBUSER" --force --if-exists "$1"; }
 rename_db() {
   try=0
   while [ "$try" -lt "$RENAME_TRIES" ]; do
     try=$((try + 1))
     admin -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$1' AND pid <> pg_backend_pid()" > /dev/null 2>&1
-    if admin -c "ALTER DATABASE \"$1\" RENAME TO \"$2\"" 2>/dev/null; then
+    if err="$(admin -c "ALTER DATABASE \"$1\" RENAME TO \"$2\"" 2>&1)"; then
       return 0
     fi
+    case "$err" in
+      *"ERROR:  55006"*|*"is being accessed by other users"*) ;;
+      *)
+        echo "renaming database $1 to $2 failed: $(printf '%s\n' "$err" | head -n 1)" >&2
+        return 2 ;;
+    esac
     echo "database $1 is busy, trying the rename again ($try of $RENAME_TRIES)" >&2
     sleep 1
   done
   return 1
 }
-drop_temp "$NEW" || exit 1
-drop_temp "$OLD" || exit 1
-createdb -U "$DBUSER" "$NEW" || exit 1
+drop_temp "$NEW" || exit 5
+drop_temp "$OLD" || exit 5
+createdb -U "$DBUSER" "$NEW" || exit 5
 if ! psql -q -v ON_ERROR_STOP=1 --single-transaction -U "$DBUSER" -d "$NEW"; then
   drop_temp "$NEW"
   exit 1
 fi
-if ! rename_db "$LIVE" "$OLD"; then
+rename_db "$LIVE" "$OLD"
+rc=$?
+if [ "$rc" -ne 0 ]; then
   drop_temp "$NEW"
-  exit 4
+  if [ "$rc" -eq 1 ]; then
+    exit 4
+  fi
+  exit 5
 fi
-if ! rename_db "$NEW" "$LIVE"; then
+rename_db "$NEW" "$LIVE"
+rc=$?
+if [ "$rc" -ne 0 ]; then
   if rename_db "$OLD" "$LIVE"; then
     drop_temp "$NEW"
-    exit 4
+    if [ "$rc" -eq 1 ]; then
+      exit 4
+    fi
+    exit 5
   fi
   exit 3
 fi
@@ -708,6 +729,51 @@ check_no_half_swap() {
     "$(printf '%s\n' '      Put the data from before the earlier rollback back:'; rename_into_place_command _replaced; printf '%s\n' '      or keep the restored backup instead:'; rename_into_place_command _restore; printf '%s\n' '      then start the stack, or run the rollback again:'; start_command)"
 }
 
+# Prints the command that lists the databases of the server, to see by hand what a cut off restore left.
+list_databases_command() {
+  printf "      cd %q && docker compose -f %s exec -T %s sh -c '%s'\n" \
+    "$INSTALL_DIR" "$COMPOSE_FILE" "$DB_SERVICE" \
+    'psql -q -U "$POSTGRES_USER" -d postgres -c "SELECT datname FROM pg_database ORDER BY datname"'
+}
+
+# Reports a restore that ended with a status RESTORE_SCRIPT never returns (it was killed, or docker itself
+# failed), and stops the run. Nothing is assumed: the databases that exist now are read and the message says
+# what that means. $1 status, $2 backup file, $3 safety copy text, $4 database name
+report_cut_off_restore() {
+  local status="$1" file="$2" saved="$3" name="$4" states list='' has_live=0 has_replaced=0 has_restore=0 word
+  if ! states="$(compose exec -T "$DB_SERVICE" sh -c "$STATE_SCRIPT" 2>/dev/null)"; then
+    fail_with_state "The restore was cut off (exit status ${status}) and the list of databases could not be read afterwards." \
+      "UNKNOWN. The application services are STOPPED. It is not known whether the live database ${name} is intact, missing or already replaced by the backup ${file}. ${saved} Look at what exists first." \
+      "$(printf '%s\n' '      List the databases (the database container may need to be started first):'; list_databases_command; printf '%s\n' '      If the live database is missing, rename the old data (or the restored backup) into place:'; rename_into_place_command _replaced; rename_into_place_command _restore; printf '%s\n' '      then start the stack:'; start_command)"
+  fi
+  for word in $states; do
+    list="${list:+${list}, }${word}"
+    case "$word" in
+      live) has_live=1 ;;
+      replaced) has_replaced=1 ;;
+      restore) has_restore=1 ;;
+    esac
+  done
+  if [ "$has_live" = "0" ]; then
+    fail_with_state "The restore was cut off (exit status ${status}) while the databases were being swapped." \
+      "the application services are STOPPED and the live database ${name} is MISSING. Of the databases ${name}_replaced (the data from before the rollback) and ${name}_restore (the backup ${file}) inside the database container, these exist: ${list:-neither}. ${saved} Running the rollback again is refused until ${name} exists." \
+      "$(printf '%s\n' '      Put the data from before the rollback back (if it is listed above):'; rename_into_place_command _replaced; printf '%s\n' '      or use the restored backup (if it is listed above):'; rename_into_place_command _restore; printf '%s\n' '      then start the stack:'; start_command)"
+  fi
+  if [ "$has_replaced" = "1" ]; then
+    fail_with_state "The restore was cut off (exit status ${status}) right after the swap." \
+      "the application services are STOPPED. The live database ${name} exists and, because ${name}_replaced still exists, it most likely holds the restored backup ${file}; the data from before the rollback is in ${name}_replaced. Check the data before you start the stack. ${saved}" \
+      "$(printf '%s\n' '      If the data is the restored backup, start the stack:'; start_command; printf '%s\n' '      To see all databases:'; list_databases_command)"
+  fi
+  if [ "$has_restore" = "1" ]; then
+    fail_with_state "The restore was cut off (exit status ${status}) before the swap." \
+      "the application services are STOPPED. The live database ${name} exists and was not swapped; ${name}_restore is a leftover of the cut off restore (the next rollback removes it). ${saved}" \
+      "$(printf '%s\n' '      Start the stack again, or run the rollback again:'; start_command; rerun_command)"
+  fi
+  fail_with_state "The restore was cut off (exit status ${status}) and left no temporary database." \
+    "the application services are STOPPED. The live database ${name} exists, but it cannot be told from here whether it holds the data from before the rollback or the restored backup ${file}. Look at the data before you start the stack. ${saved}" \
+    "$(printf '%s\n' '      If the data is right, start the stack:'; start_command; printf '%s\n' '      If it is not, run the rollback again:'; rerun_command)"
+}
+
 # Reports a restore that failed, by the exit status of RESTORE_SCRIPT, and stops the run. Every message says
 # which data is where. $1 status, $2 backup file, $3 safety copy (empty when the database had no tables)
 restore_failed() {
@@ -728,6 +794,14 @@ restore_failed() {
       "the application services are STOPPED. The live database ${name} was put back and was not changed. ${saved}" \
       "$(printf '%s\n' '      Run the rollback again (it is safe to repeat):'; rerun_command; printf '%s\n' '      or start the stack as it is:'; start_command)"
   fi
+  if [ "$status" = "5" ]; then
+    fail_with_state "A database command was refused for a reason other than the backup: the server's message is printed above this error. This is not a busy database, and it says nothing against the backup ${file}." \
+      "the application services are STOPPED. The live database ${name} was not changed (or was put back). ${saved}" \
+      "$(printf '%s\n' '      Fix the cause named above, then run the rollback again (it is safe to repeat):'; rerun_command; printf '%s\n' '      or start the stack as it is:'; start_command)"
+  fi
+  if [ "$status" != "1" ]; then
+    report_cut_off_restore "$status" "$file" "$saved" "$name"
+  fi
   if [ -n "$safety" ]; then
     fail_with_state "The restore failed: the backup ${file} could not be loaded, so it may be damaged." \
       "the application services are STOPPED. The live database ${name} was not changed: the restore ran in a temporary database that was removed again. ${saved}" \
@@ -738,37 +812,110 @@ restore_failed() {
     "$(printf '%s\n' '      Start the stack again:'; start_command)"
 }
 
-# True when version $1 is newer than version $2. Both read as a number list with an optional suffix
-# (0.4.0, 1.2.3-rc.1); a version with a suffix is older than the same numbers without one. False when
-# either does not read like that, so a tag nobody can order is never called newer. $1 version, $2 version
+# Orders two whole numbers written in decimal, of any length, without turning them into numbers (a part
+# of a version may be longer than the shell's integer). Sets ORDER to -1, 0 or 1. $1 number, $2 number
+compare_numbers() {
+  local x="${1#"${1%%[!0]*}"}" y="${2#"${2%%[!0]*}"}"
+  if [ "${#x}" -ne "${#y}" ]; then
+    if [ "${#x}" -gt "${#y}" ]; then
+      ORDER=1
+    else
+      ORDER=-1
+    fi
+    return 0
+  fi
+  compare_text "$x" "$y"
+}
+
+# Orders two words by the byte value of their characters, so the result does not depend on the locale
+# (a locale may sort rc.a before rc.B, semver does not). Sets ORDER to -1, 0 or 1. $1 word, $2 word
+compare_text() {
+  local x="$1" y="$2" i n a b
+  n="${#x}"
+  if [ "${#y}" -lt "$n" ]; then
+    n="${#y}"
+  fi
+  for ((i = 0; i < n; i++)); do
+    printf -v a '%d' "'${x:i:1}"
+    printf -v b '%d' "'${y:i:1}"
+    if [ "$a" -ne "$b" ]; then
+      if [ "$a" -gt "$b" ]; then
+        ORDER=1
+      else
+        ORDER=-1
+      fi
+      return 0
+    fi
+  done
+  if [ "${#x}" -gt "${#y}" ]; then
+    ORDER=1
+  elif [ "${#x}" -lt "${#y}" ]; then
+    ORDER=-1
+  else
+    ORDER=0
+  fi
+}
+
+# True when version $1 is newer than version $2, by the precedence rules of semver.org: a number list
+# (0.4.0; a missing part counts as 0, so 0.4 is 0.4.0), then an optional pre-release after a dash. A
+# version with a pre-release is older than the same numbers without one; two pre-releases are compared
+# identifier by identifier at the dots, numbers as numbers (rc.10 is after rc.2), a number before any word,
+# words by byte value, and the one with more identifiers after the one it starts with. Build metadata after
+# a plus is ignored. False when either does not read like that, so a tag nobody can order is never called
+# newer. $1 version, $2 version
 version_is_newer() {
-  local a=() b=() i n x y sa sb
-  [[ "$1" =~ ^([0-9]+(\.[0-9]+)*)([-+].*)?$ ]] || return 1
+  local re='^([0-9]+(\.[0-9]+)*)(-([0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*))?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
+  local a=() b=() pa pb i n x y ORDER=0
+  [[ "$1" =~ $re ]] || return 1
   IFS=. read -r -a a <<< "${BASH_REMATCH[1]}"
-  sa="${BASH_REMATCH[3]:-}"
-  [[ "$2" =~ ^([0-9]+(\.[0-9]+)*)([-+].*)?$ ]] || return 1
+  pa="${BASH_REMATCH[4]:-}"
+  [[ "$2" =~ $re ]] || return 1
   IFS=. read -r -a b <<< "${BASH_REMATCH[1]}"
-  sb="${BASH_REMATCH[3]:-}"
+  pb="${BASH_REMATCH[4]:-}"
   n="${#a[@]}"
   if [ "${#b[@]}" -gt "$n" ]; then
     n="${#b[@]}"
   fi
   for ((i = 0; i < n; i++)); do
-    x=$((10#${a[$i]:-0}))
-    y=$((10#${b[$i]:-0}))
-    if [ "$x" -ne "$y" ]; then
-      [ "$x" -gt "$y" ]
+    compare_numbers "${a[$i]:-0}" "${b[$i]:-0}"
+    if [ "$ORDER" -ne 0 ]; then
+      [ "$ORDER" -gt 0 ]
       return
     fi
   done
-  if [ -z "$sa" ] && [ -n "$sb" ]; then
+  if [ -z "$pa" ] && [ -z "$pb" ]; then
+    return 1
+  fi
+  if [ -z "$pa" ]; then
     return 0
   fi
-  if [ -n "$sa" ] && [ -n "$sb" ]; then
-    [[ "$sa" > "$sb" ]]
-    return
+  if [ -z "$pb" ]; then
+    return 1
   fi
-  return 1
+  IFS=. read -r -a a <<< "$pa"
+  IFS=. read -r -a b <<< "$pb"
+  n="${#a[@]}"
+  if [ "${#b[@]}" -lt "$n" ]; then
+    n="${#b[@]}"
+  fi
+  for ((i = 0; i < n; i++)); do
+    x="${a[$i]}"
+    y="${b[$i]}"
+    if [[ "$x" =~ ^[0-9]+$ ]] && [[ "$y" =~ ^[0-9]+$ ]]; then
+      compare_numbers "$x" "$y"
+    elif [[ "$x" =~ ^[0-9]+$ ]]; then
+      ORDER=-1
+    elif [[ "$y" =~ ^[0-9]+$ ]]; then
+      ORDER=1
+    else
+      compare_text "$x" "$y"
+    fi
+    if [ "$ORDER" -ne 0 ]; then
+      [ "$ORDER" -gt 0 ]
+      return
+    fi
+  done
+  [ "${#a[@]}" -gt "${#b[@]}" ]
 }
 
 # --rollback: puts the images and the database back to the state of the newest backup that belongs to
@@ -787,7 +934,7 @@ rollback() {
   # The restore swaps databases by renaming them from the maintenance database, which is named postgres,
   # so it cannot replace a live database of that name. Said before anything is touched.
   if [ "$(get_env "$env" POSTGRES_DB)" = "postgres" ]; then
-    fail "POSTGRES_DB in ${env} is 'postgres', the server's own maintenance database. The rollback swaps databases by renaming them from that one, so it cannot replace it. Nothing was changed. Restore the backup by hand: see the rollback guide."
+    fail "POSTGRES_DB in ${env} is 'postgres', the server's own maintenance database. The rollback swaps databases by renaming them from that one, so it cannot replace it. Nothing was changed. Restore the backup by hand, connected to the template1 database to drop and create it (dropping the database you are connected to fails): see 'A database named postgres' in the rollback guide, docs/operators/rollback.md."
   fi
 
   while IFS= read -r candidate; do

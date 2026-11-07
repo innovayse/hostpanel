@@ -10,12 +10,14 @@
 
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
+import type { Ref } from 'vue'
 import { usePluginsApi } from '@/composables/apis/usePluginsApi'
 import { useSettingsApi } from '@/composables/apis/useSettingsApi'
 import { errorCode, errorStatus } from '@/lib/errorHandler'
 import { runAction } from '@/lib/runAction'
 import { PluginErrorCode, PluginStatus } from '@/types/plugin'
 import type {
+  PluginActionOutcome,
   PluginListItemDto,
   PluginRegistryItemDto,
   PluginRegistryQuery,
@@ -35,6 +37,25 @@ const NOT_FOUND_STATUS = 404
  */
 const isNotFound = (cause: unknown): boolean =>
   errorStatus(cause) === NOT_FOUND_STATUS || errorCode(cause) === PluginErrorCode.RegistryPluginNotFound
+
+/**
+ * Runs one action against its own error sink, so the outcome belongs to this call alone; the shared
+ * sentence is then set to the same value for callers that only show the latest one.
+ *
+ * @param shared - The store's shared sentence ref, set to this call's sentence when it ends.
+ * @param task - The request to run.
+ * @returns The runner's result plus the sentence of this call.
+ */
+const runOwn = async <T>(
+  shared: Ref<string | null>,
+  task: () => Promise<T>,
+): Promise<{ ok: true; value: T; error: null } | { ok: false; error: string | null }> => {
+  /** This call's own sentence. */
+  const own = ref<string | null>(null)
+  const result = await runAction(own, task)
+  shared.value = own.value
+  return result.ok ? { ok: true, value: result.value, error: null } : { ok: false, error: own.value }
+}
 
 /** Holds the installed plugin list and whether a restart is pending. */
 export const usePluginsStore = defineStore('plugins', () => {
@@ -213,13 +234,11 @@ export const usePluginsStore = defineStore('plugins', () => {
    * Removes an installed plugin by its identifier; the plugin counts as busy (see {@link isBusy}) until the list is reloaded.
    *
    * @param id - Plugin identifier as declared in plugin.json.
-   * @returns True when removed; false when refused (see `actionError`).
+   * @returns This call's outcome: `ok`, or the API's sentence in `error` (also left in `actionError`).
    */
-  const remove = async (id: string): Promise<boolean> => {
-    loading.value = true
+  const remove = async (id: string): Promise<PluginActionOutcome> => {
     setBusy(id, true)
-    const result = await runAction(actionError, () => api.removePlugin(id))
-    loading.value = false
+    const result = await runOwn(actionError, () => api.removePlugin(id))
     if (result.ok) {
       // Only ever raised here: a removal that needs no restart (the files were already gone) must not hide the banner
       // an earlier install or removal still needs.
@@ -235,7 +254,7 @@ export const usePluginsStore = defineStore('plugins', () => {
       ])
     }
     setBusy(id, false)
-    return result.ok
+    return { ok: result.ok, stagedVersion: null, error: result.error }
   }
 
   /**
@@ -446,32 +465,32 @@ export const usePluginsStore = defineStore('plugins', () => {
    *
    * @param id - Plugin id as listed by the registry.
    * @param key - The licence key.
-   * @returns True when stored; false when refused (see `licenceError`).
+   * @returns This call's outcome: `ok`, or the API's sentence in `error` (also left in `licenceError`).
    */
-  const saveLicenceKey = async (id: string, key: string): Promise<boolean> => {
+  const saveLicenceKey = async (id: string, key: string): Promise<PluginActionOutcome> => {
     setBusy(id, true)
-    const result = await runAction(licenceError, () => api.saveLicenceKey(id, { key }))
+    const result = await runOwn(licenceError, () => api.saveLicenceKey(id, { key }))
     if (result.ok) {
       await fetchRegistryDetails(id)
     }
     setBusy(id, false)
-    return result.ok
+    return { ok: result.ok, stagedVersion: null, error: result.error }
   }
 
   /**
    * Removes the stored licence key of a registry plugin, then reloads its details.
    *
    * @param id - Plugin id as listed by the registry.
-   * @returns True when removed; false when refused (see `licenceError`).
+   * @returns This call's outcome: `ok`, or the API's sentence in `error` (also left in `licenceError`).
    */
-  const removeLicenceKey = async (id: string): Promise<boolean> => {
+  const removeLicenceKey = async (id: string): Promise<PluginActionOutcome> => {
     setBusy(id, true)
-    const result = await runAction(licenceError, () => api.removeLicenceKey(id))
+    const result = await runOwn(licenceError, () => api.removeLicenceKey(id))
     if (result.ok) {
       await fetchRegistryDetails(id)
     }
     setBusy(id, false)
-    return result.ok
+    return { ok: result.ok, stagedVersion: null, error: result.error }
   }
 
   /**
@@ -480,17 +499,20 @@ export const usePluginsStore = defineStore('plugins', () => {
    * @param id - Plugin id as listed by the registry.
    * @param version - Version to install.
    * @param allowDowngrade - True to allow a version older than the installed one.
-   * @returns True when installed or staged; false when refused (see `registryInstallError`).
+   * @returns This call's outcome: `ok`, the version it staged, or the API's sentence in `error`
+   *   (the shared `stagedVersion` and `registryInstallError` follow the latest call).
    */
-  const installFromRegistry = async (id: string, version: string, allowDowngrade = false): Promise<boolean> => {
+  const installFromRegistry = async (id: string, version: string, allowDowngrade = false): Promise<PluginActionOutcome> => {
     setBusy(id, true)
     stagedVersion.value = null
-    const result = await runAction(registryInstallError, () => api.installFromRegistry(id, { version, allowDowngrade }))
+    const result = await runOwn(registryInstallError, () => api.installFromRegistry(id, { version, allowDowngrade }))
+    let staged: string | null = null
     if (result.ok) {
       if (result.value.requiresRestart) {
         requiresRestart.value = true
       }
-      stagedVersion.value = result.value.stagedVersion ?? null
+      staged = result.value.stagedVersion ?? null
+      stagedVersion.value = staged
       await Promise.all([
         fetchAll(),
         fetchRegistry(),
@@ -500,7 +522,7 @@ export const usePluginsStore = defineStore('plugins', () => {
       ])
     }
     setBusy(id, false)
-    return result.ok
+    return { ok: result.ok, stagedVersion: staged, error: result.error }
   }
 
   return {

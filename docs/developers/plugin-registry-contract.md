@@ -14,7 +14,7 @@ The registry client is `PluginRegistryClient` in `backend/src/Innovayse.Hostpane
 
 - **Address.** All paths below are relative to the operator's `PluginRegistry__BaseUrl`. Hostpanel adds a trailing slash if there is none, so `https://registry.example.com/v1` and `https://registry.example.com/v1/` are the same.
 - **Anonymous reads.** Hostpanel sends no `Authorization` header, no cookie and no account credential. Every endpoint on this page must answer without one for a free plugin. A registry that needs a login for reads cannot be used.
-- **Licence key.** The one credential Hostpanel may send is `X-Licence-Key`, only when the operator entered a key for a paid or private plugin, and only on the release lookup, the plugin page, the version list and the package download (not on the listing or the update check). It goes to the registry's own origin only, on every redirect hop inside it, and is never logged. Answer `401` when a key is needed and none was sent, and `403` when the key is not valid; Hostpanel shows them as `PLUGIN_REGISTRY_LICENCE_REQUIRED` and `PLUGIN_REGISTRY_LICENCE_INVALID`.
+- **Licence key.** The one credential Hostpanel may send is `X-Licence-Key`, only when the operator entered a key for a paid or private plugin, and only on the release lookup, the plugin page, the version list and the package download. It is not sent on the listing or on the bulk newest version lookup (`POST /v1/plugins/latest`), but the update check asks again about each installed plugin that has a stored key, on the plugin page with that key, so a licensee sees the newest version of a paid or private plugin. A key is at most 256 printable ASCII characters (`!` to `~`, no spaces) after trimming; Hostpanel refuses anything else when it is saved and never sends it. It goes to the registry's own origin only, on every redirect hop inside it, and is never logged. Answer `401` when a key is needed and none was sent, and `403` when the key is not valid; Hostpanel shows them as `PLUGIN_REGISTRY_LICENCE_REQUIRED` and `PLUGIN_REGISTRY_LICENCE_INVALID`.
 - **HTTPS only.** The address is an absolute `https` URL. The certificate must be valid for the name.
 - **Same origin.** Every request, every redirect hop and every package address must have the registry's scheme, host and port. A response that points elsewhere is refused, and nothing is fetched from it.
 - **JSON.** Names are camelCase and read case-insensitively. Members Hostpanel does not know are ignored, so a registry may add members. A JSON reply is limited to 1 MiB.
@@ -99,7 +99,7 @@ The ids are those of the plugins the operator installed or uploaded. Answer with
 ]
 ```
 
-The reply is not paged: it must fit in 1 MiB. An item for an id that was not asked about is ignored, and an item whose `version` is not a strict `major.minor.patch` is left out. `pluginId` must be a well formed plugin id or the whole reply is invalid. This is how the Installed tab learns that an update exists, from `version` alone. The item has no name, so Hostpanel shows the id; `requiresLicence` set to `true` reads as a paid plugin.
+The reply is not paged: it must fit in 1 MiB. An item for an id that was not asked about is ignored, and an item whose `version` is not a strict `major.minor.patch` is left out. `verified` and `requiresLicence` may be `null`, which reads as `false`. `pluginId` must be a well formed plugin id or the whole reply is invalid. This is how the Installed tab learns that an update exists, from `version` alone. The item has no name, so Hostpanel shows the id; `requiresLicence` set to `true` reads as a paid plugin.
 
 ### One release
 
@@ -187,6 +187,8 @@ Reply: a JSON array of versions, newest first.
 | `icon`, `screenshots` | Optional. `url` is absolute or relative to `BaseUrl`; an image that is not on the registry's own origin is dropped. At most 20 screenshots are kept. |
 | `changelog` | Optional, plain text, line breaks kept, at most 20000 characters. |
 | other text members | Cleaned of control characters and capped. |
+
+If the same `version` is listed twice with different statuses, Hostpanel keeps the strictest one: `Yanked`, then `Rejected`, `InReview`, `Deprecated` and `Published`.
 
 Answer 404 when the plugin is not listed.
 

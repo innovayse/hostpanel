@@ -70,4 +70,23 @@ describe('usePluginsApi', () => {
     expect(callOf(mock)).toMatchObject({ url: '/api/admin/plugins/registry/p/install', method: 'POST' })
     expect(JSON.parse(String(callOf(mock).init.body))).toEqual({ version: '1.0.0', allowDowngrade: true })
   })
+
+  it('encodes every id placed in a path', async () => {
+    const mock = stubFetch(json({ requiresRestart: false }))
+    const api = usePluginsApi()
+
+    await api.removePlugin('a/b c')
+    await api.getRegistryDetails('x?y')
+    await api.installFromRegistry('a#b', { version: '1.0.0', allowDowngrade: false })
+    await api.saveLicenceKey('a b', { key: 'k' })
+    await api.listSlotWidgets('p/q')
+    await api.saveSlotWidgetProducts('p/q', 's/1', 'w 2', { productIds: [] })
+
+    expect(callOf(mock, 0).url).toBe('/api/admin/plugins/a%2Fb%20c')
+    expect(callOf(mock, 1).url).toBe('/api/admin/plugins/registry/x%3Fy')
+    expect(callOf(mock, 2).url).toBe('/api/admin/plugins/registry/a%23b/install')
+    expect(callOf(mock, 3).url).toBe('/api/admin/plugins/registry/a%20b/licence')
+    expect(callOf(mock, 4).url).toBe('/api/admin/plugins/p%2Fq/slot-widgets')
+    expect(callOf(mock, 5).url).toBe('/api/admin/plugins/p%2Fq/slot-widgets/s%2F1/w%202')
+  })
 })

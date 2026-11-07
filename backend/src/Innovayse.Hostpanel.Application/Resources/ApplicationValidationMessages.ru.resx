@@ -1408,6 +1408,9 @@
   <data name="PluginLicenceKeyTooLong" xml:space="preserve">
     <value>Лицензионный ключ слишком длинный.</value>
   </data>
+  <data name="PluginLicenceKeyInvalid" xml:space="preserve">
+    <value>Лицензионный ключ может содержать только печатные символы ASCII без пробелов.</value>
+  </data>
   <data name="PluginVersionInvalid" xml:space="preserve">
     <value>Версия плагина должна быть семантической, например 1.2.3.</value>
   </data>

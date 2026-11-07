@@ -33,6 +33,9 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     /// <summary>The licence key of the last release lookup, download, plugin page or version list call; <see langword="null"/> when none was given.</summary>
     public string? LastLicenceKey { get; private set; }
 
+    /// <summary>The licence key each plugin page call carried, by plugin id; <see langword="null"/> when none was given.</summary>
+    public Dictionary<string, string?> PluginPageKeys { get; } = [];
+
     /// <summary>The plugin pages by plugin id; an id that is not here reads as not listed.</summary>
     public Dictionary<string, RegistryPluginDetails> Details { get; } = [];
 
@@ -141,6 +144,7 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     public Task<Result<RegistryPluginDetails?>> GetPluginAsync(string pluginId, string? licenceKey, CancellationToken ct)
     {
         LastLicenceKey = licenceKey;
+        PluginPageKeys[pluginId] = licenceKey;
         return Task.FromResult(FailureCode is not null
             ? Result<RegistryPluginDetails?>.FailureCode(FailureCode)
             : Result<RegistryPluginDetails?>.Success(Details.GetValueOrDefault(pluginId)));

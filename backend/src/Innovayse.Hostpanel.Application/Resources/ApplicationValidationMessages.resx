@@ -1408,6 +1408,9 @@
   <data name="PluginLicenceKeyTooLong" xml:space="preserve">
     <value>The licence key is too long.</value>
   </data>
+  <data name="PluginLicenceKeyInvalid" xml:space="preserve">
+    <value>The licence key may only have printable characters without spaces.</value>
+  </data>
   <data name="PluginVersionInvalid" xml:space="preserve">
     <value>The plugin version must be a semantic version such as 1.2.3.</value>
   </data>

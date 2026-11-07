@@ -119,7 +119,11 @@ public sealed class InstallRegistryPluginHandler
         }
 
         // A release the registry serves but does not describe cannot be checked, so it is not installed.
-        var described = listed.Value!.FirstOrDefault(v => string.Equals(v.Version, command.Version, StringComparison.Ordinal));
+        // A version listed more than once is judged by its strictest row.
+        var described = listed.Value!
+            .Where(v => string.Equals(v.Version, command.Version, StringComparison.Ordinal))
+            .OrderByDescending(v => v.Status.Strictness())
+            .FirstOrDefault();
         if (described is null)
         {
             return Result<PluginActionResultDto>.FailureCode(HostpanelErrorCodes.PLUGIN_REGISTRY_PLUGIN_NOT_FOUND);

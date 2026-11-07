@@ -195,4 +195,45 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
             await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
         }
     }
+
+    /// <summary>With two plugins that have keys, each plugin page call carries only that plugin's own key; a plugin without a key is asked without one.</summary>
+    [Fact]
+    public async Task TwoPlugins_EachSendOnlyTheirOwnKeyAsync()
+    {
+        var registry = new FakePluginRegistryClient();
+        var first = $"test-lic-a{Guid.NewGuid():N}";
+        var second = $"test-lic-b{Guid.NewGuid():N}";
+        var third = $"test-lic-c{Guid.NewGuid():N}";
+        foreach (var id in new[] { first, second, third })
+        {
+            registry.Publish(id, "1.5.0", [1]);
+        }
+
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
+
+        try
+        {
+            foreach (var id in new[] { first, second, third })
+            {
+                await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(id));
+            }
+
+            await client.PutAsJsonAsync($"/api/admin/plugins/registry/{first}/licence", new { key = "KEY-FIRST" });
+            await client.PutAsJsonAsync($"/api/admin/plugins/registry/{second}/licence", new { key = "KEY-SECOND" });
+
+            (await client.GetAsync("/api/admin/plugins/registry/updates")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+            registry.PluginPageKeys[first].Should().Be("KEY-FIRST");
+            registry.PluginPageKeys[second].Should().Be("KEY-SECOND");
+            registry.PluginPageKeys.ContainsKey(third).Should().BeFalse("a plugin without a key is not asked again");
+        }
+        finally
+        {
+            foreach (var id in new[] { first, second, third })
+            {
+                await client.DeleteAsync($"/api/admin/plugins/registry/{id}/licence");
+                await client.DeleteAsync($"/api/admin/plugins/{id}");
+            }
+        }
+    }
 }

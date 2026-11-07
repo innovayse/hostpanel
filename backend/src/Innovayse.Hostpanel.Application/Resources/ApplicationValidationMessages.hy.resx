@@ -1408,6 +1408,9 @@
   <data name="PluginLicenceKeyTooLong" xml:space="preserve">
     <value>Արտոնագրի բանալին չափազանց երկար է։</value>
   </data>
+  <data name="PluginLicenceKeyInvalid" xml:space="preserve">
+    <value>Լիցենզիայի բանալին կարող է պարունակել միայն տպվող ASCII նիշեր՝ առանց բացատների։</value>
+  </data>
   <data name="PluginVersionInvalid" xml:space="preserve">
     <value>Հավելագրիչի տարբերակը պետք է լինի սեմանտիկ, օրինակ՝ 1.2.3։</value>
   </data>

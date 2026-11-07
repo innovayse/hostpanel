@@ -85,12 +85,13 @@ const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Dan
  *
  * @param ok - Whether the API accepted the change.
  * @param successKey - Locale key of the success sentence.
+ * @param failure - The API's sentence for this call's refusal, null when it gave none.
  */
-const showOutcome = (ok: boolean, successKey: string): void => {
+const showOutcome = (ok: boolean, successKey: string, failure: string | null): void => {
   if (ok) {
     feedback.show(t(successKey), false)
   } else {
-    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
+    feedback.show(failure ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -118,10 +119,10 @@ const handleRemove = async (): Promise<void> => {
   }
   feedback.clear()
   removingId.value = id
-  const ok = await store.remove(id)
+  const outcome = await store.remove(id)
   removingId.value = null
   confirmingId.value = null
-  showOutcome(ok, 'plugins.plugins.pluginRemoved')
+  showOutcome(outcome.ok, 'plugins.plugins.pluginRemoved', outcome.error)
 }
 
 /**
@@ -151,14 +152,14 @@ const handlePurge = async (): Promise<void> => {
   const ok = await store.purge(id)
   purgingId.value = null
   purgeConfirmId.value = null
-  showOutcome(ok, 'plugins.plugins.dataPurged')
+  showOutcome(ok, 'plugins.plugins.dataPurged', store.actionError)
 }
 
 /** Installs the older version the operator confirmed and shows the outcome. */
 const handleForceDowngrade = async (): Promise<void> => {
   feedback.clear()
   const ok = await store.forceDowngrade()
-  showOutcome(ok, 'plugins.plugins.pluginInstalled')
+  showOutcome(ok, 'plugins.plugins.pluginInstalled', store.actionError)
 }
 
 /** Restarts the server so installed or removed plugins take effect. */
@@ -180,7 +181,7 @@ const handleUpload = async (file: File): Promise<void> => {
     feedback.show(t('plugins.plugins.pluginStaged', { version: store.stagedVersion }), false)
     return
   }
-  showOutcome(ok, 'plugins.plugins.pluginInstalled')
+  showOutcome(ok, 'plugins.plugins.pluginInstalled', store.actionError)
 }
 
 /**
@@ -272,11 +273,11 @@ const openDetails = (id: string): void => {
  */
 const handleRegistryInstall = async (id: string, version: string): Promise<void> => {
   feedback.clear()
-  const ok = await store.installFromRegistry(id, version)
-  if (!ok) {
-    feedback.show(store.registryInstallError ?? t('errors.noAnswer'), true)
-  } else if (store.stagedVersion !== null) {
-    feedback.show(t('plugins.plugins.pluginStaged', { version: store.stagedVersion }), false)
+  const outcome = await store.installFromRegistry(id, version)
+  if (!outcome.ok) {
+    feedback.show(outcome.error ?? t('errors.noAnswer'), true)
+  } else if (outcome.stagedVersion !== null) {
+    feedback.show(t('plugins.plugins.pluginStaged', { version: outcome.stagedVersion }), false)
   } else {
     feedback.show(t('plugins.plugins.registryInstalled'), false)
   }

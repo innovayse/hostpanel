@@ -51,9 +51,6 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
     /// <summary>The most screenshots kept for one version.</summary>
     private const int MaxScreenshots = 20;
 
-    /// <summary>The longest licence key accepted; a longer one is refused before it is sent.</summary>
-    private const int MaxLicenceKeyLength = 256;
-
     /// <summary>The header that carries the licence key of a paid or private plugin.</summary>
     private const string LicenceHeader = "X-Licence-Key";
 
@@ -170,7 +167,7 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
             }
 
             return new RegistryPluginRelease(
-                wire.PluginId ?? pluginId, wire.Version ?? version, download, wire.Sha256.ToLowerInvariant(), wire.Verified);
+                wire.PluginId ?? pluginId, wire.Version ?? version, download, wire.Sha256.ToLowerInvariant(), wire.Verified ?? false);
         }, ct);
     }
 
@@ -257,9 +254,21 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
             foreach (var item in wire)
             {
                 var version = item is null ? null : ToVersion(item, baseUri);
-                if (version is not null)
+                if (version is null)
+                {
+                    continue;
+                }
+
+                // A version listed twice keeps its first place and the strictest status, so a yanked row cannot be
+                // hidden behind a published one.
+                var at = versions.FindIndex(v => string.Equals(v.Version, version.Version, StringComparison.Ordinal));
+                if (at < 0)
                 {
                     versions.Add(version);
+                }
+                else if (version.Status.Strictness() > versions[at].Status.Strictness())
+                {
+                    versions[at] = version;
                 }
             }
 
@@ -570,8 +579,8 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
                 PluginRegistryCategory.Other,
                 item.Version!,
                 UntrustedText.Clean(item.SdkVersion, MaxSdkVersionLength),
-                item.Verified,
-                item.RequiresLicence ? PluginRegistryPricing.Paid : PluginRegistryPricing.Free));
+                item.Verified ?? false,
+                item.RequiresLicence ?? false ? PluginRegistryPricing.Paid : PluginRegistryPricing.Free));
         }
 
         return plugins;
@@ -713,7 +722,7 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
         }
 
         var key = licenceKey.Trim();
-        if (key.Length > MaxLicenceKeyLength || key.Any(c => c < '!' || c > '~'))
+        if (!RegistryLicenceKeyRule.IsValid(key))
         {
             throw new PluginRegistryException(HostpanelErrorCodes.PLUGIN_REGISTRY_LICENCE_INVALID);
         }

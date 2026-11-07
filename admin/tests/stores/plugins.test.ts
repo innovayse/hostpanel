@@ -180,7 +180,7 @@ describe('pluginsStore.remove', () => {
     const store = usePluginsStore()
     store.plugins.push({ id: 'a' } as never)
 
-    expect(await store.remove('a')).toBe(false)
+    expect((await store.remove('a')).ok).toBe(false)
     expect(store.plugins).toHaveLength(1)
     expect(store.actionError).toBe('Plugin is in use.')
   })
@@ -384,5 +384,23 @@ describe('pluginsStore.purge', () => {
     expect(await store.purge('a')).toBe(false)
     expect(store.actionError).toBe('Plugin is still installed.')
     expect(store.keptDataIds).toEqual(['a'])
+  })
+})
+
+describe('pluginsStore.remove outcome', () => {
+  it('returns the sentence of its own call and leaves the shared loading flag alone', async () => {
+    let loadingDuringCall: boolean | null = null
+    const store = usePluginsStore()
+    stubRoutes({
+      'DELETE /api/admin/plugins/a': () => {
+        loadingDuringCall = store.loading
+        return problem('Plugin is in use.', 409)
+      },
+    })
+
+    const outcome = await store.remove('a')
+
+    expect(outcome).toEqual({ ok: false, stagedVersion: null, error: 'Plugin is in use.' })
+    expect(loadingDuringCall).toBe(false)
   })
 })

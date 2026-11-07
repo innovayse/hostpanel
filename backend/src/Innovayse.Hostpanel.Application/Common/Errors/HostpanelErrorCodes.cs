@@ -688,6 +688,18 @@ public static class HostpanelErrorCodes
     /// <summary>The provisioning provider could not issue a control-panel single-sign-on URL (502).</summary>
     public const string SERVICE_CPANEL_SSO_UPSTREAM_FAILED = "SERVICE_CPANEL_SSO_UPSTREAM_FAILED";
 
+    /// <summary>
+    /// The control panel answered a single-sign-on address that is not an https address on its own
+    /// server, so it was not passed on (502).
+    /// </summary>
+    public const string SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED = "SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED";
+
+    /// <summary>The service's username is not one cPanel accepts, so the panel was not called (409).</summary>
+    public const string CPANEL_USERNAME_INVALID = "CPANEL_USERNAME_INVALID";
+
+    /// <summary>The service's domain is not a domain name cPanel accepts, so the panel was not called (409).</summary>
+    public const string CPANEL_DOMAIN_INVALID = "CPANEL_DOMAIN_INVALID";
+
     /// <summary>The provisioning provider could not return the account's credentials (502).</summary>
     public const string SERVICE_CREDENTIALS_UPSTREAM_FAILED = "SERVICE_CREDENTIALS_UPSTREAM_FAILED";
 

@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Commands.ProvisionService;
+using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Provisioning;
@@ -254,6 +255,29 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
         var stored = await ReloadAsync(serviceId);
         stored.Status.Should().Be(ServiceStatus.Pending);
         stored.Password.Should().NotBeNullOrEmpty();
+    }
+
+    /// <summary>
+    /// A provider that stops the call because the stored username or domain is one the panel can never
+    /// accept answers 409 with that code, and the service stays Pending.
+    /// </summary>
+    /// <param name="code">The provider's coded refusal.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData(HostpanelErrorCodes.CPANEL_USERNAME_INVALID)]
+    [InlineData(HostpanelErrorCodes.CPANEL_DOMAIN_INVALID)]
+    public async Task Provision_ProviderRejectsTheStoredDetails_Returns409WithItsCodeAsync(string code)
+    {
+        var setupHttp = factory.CreateClient();
+        var serviceId = await ProvisioningTestSeeds.SeedServiceAsync(factory, setupHttp, await factory.GetAdminTokenAsync());
+        var provider = new FakeProvisioningProvider { FailWith = new DomainRuleException(code, "stored details are not valid") };
+        var http = await ProvisioningTestSeeds.AdminClientWithFakeProviderAsync(factory, provider);
+
+        var response = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(code);
+        (await ReloadAsync(serviceId)).Status.Should().Be(ServiceStatus.Pending);
     }
 
     /// <summary>

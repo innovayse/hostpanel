@@ -1018,6 +1018,15 @@
   <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
     <value>Дату прекращения можно исправить только у прекращённой услуги.</value>
   </data>
+  <data name="SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Не удалось начать сеанс панели управления. Панель вернула адрес, который не принадлежит её серверу.</value>
+  </data>
+  <data name="CPANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>Имя пользователя хостинг-аккаунта недопустимо для cPanel. Используйте строчные латинские буквы и цифры, начните с буквы, не более 16 символов.</value>
+  </data>
+  <data name="CPANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>Домен не является допустимым доменным именем. Проверьте его и повторите попытку.</value>
+  </data>
   <data name="SERVICE_HOSTING_DETAILS_MISSING" xml:space="preserve">
     <value>У услуги ещё нет домена или имени пользователя. Сначала настройте хостинг-аккаунт.</value>
   </data>

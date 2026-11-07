@@ -1,0 +1,11 @@
+{
+  "ticketStatus": "Estado del Ticket",
+  "status": "Estado",
+  "open": "Abierto",
+  "inProgress": "En progreso",
+  "closed": "Cerrado",
+  "resolved": "Resuelto",
+  "pending": "Pendiente",
+  "onHold": "En espera",
+  "noTicketStatus": "No hay estado de ticket"
+}

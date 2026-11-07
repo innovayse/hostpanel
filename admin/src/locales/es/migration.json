@@ -1,0 +1,19 @@
+{
+  "migration": "Migración",
+  "migrations": "Migraciones",
+  "createMigration": "Crear Migración",
+  "migrationDetails": "Detalles de la Migración",
+  "name": "Nombre",
+  "description": "Descripción",
+  "source": "Origen",
+  "target": "Objetivo",
+  "status": "Estado",
+  "started": "Iniciado",
+  "completed": "Completado",
+  "progress": "Progreso",
+  "error": "Error",
+  "migrationFailed": "Falló la Migración",
+  "migrationSuccess": "Éxito en la Migración",
+  "noMigrations": "No hay migraciones",
+  "createFirstMigration": "Crear primera migración"
+}

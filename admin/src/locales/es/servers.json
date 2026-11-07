@@ -1,0 +1,23 @@
+{
+  "server": "Servidor",
+  "servers": "Servidores",
+  "createServer": "Crear Servidor",
+  "serverDetails": "Detalles del Servidor",
+  "name": "Nombre",
+  "address": "Dirección",
+  "port": "Puerto",
+  "module": "Módulo",
+  "status": "Estado",
+  "online": "En línea",
+  "offline": "Fuera de línea",
+  "connection": "Conexión",
+  "connectionTest": "Probar Conexión",
+  "connectionSuccess": "Conexión Exitosa",
+  "connectionFailed": "Falló la Conexión",
+  "credentials": "Credenciales",
+  "apiKey": "API Key",
+  "secretKey": "Clave Secreta",
+  "testCredenciales": "Probar Credenciales",
+  "noServers": "No hay servidores",
+  "createFirstServer": "Crear primer servidor"
+}

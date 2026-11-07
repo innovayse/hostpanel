@@ -1,0 +1,16 @@
+{
+  "duration": "Duración",
+  "durations": "Duraciones",
+  "name": "Nombre",
+  "value": "Valor",
+  "unit": "Unidad",
+  "units": "Unidades",
+  "daily": "Diario",
+  "weekly": "Semanal",
+  "monthly": "Mensual",
+  "quarterly": "Trimestral",
+  "annual": "Anual",
+  "biAnnual": "Bienal",
+  "custom": "Personalizado",
+  "noDurations": "No hay duraciones"
+}

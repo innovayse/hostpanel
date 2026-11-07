@@ -1,0 +1,18 @@
+{
+  "permissions": "Permisos",
+  "permission": "Permiso",
+  "permissionsList": "Lista de Permisos",
+  "createPermission": "Crear Permiso",
+  "permissionName": "Nombre del Permiso",
+  "permissionKey": "Clave del Permiso",
+  "description": "Descripción",
+  "admin": "Administrador",
+  "staff": "Personal",
+  "client": "Cliente",
+  "view": "Ver",
+  "edit": "Editar",
+  "assign": "Asignar",
+  "revoke": "Revocar",
+  "noPermissions": "No hay permisos",
+  "firstPermission": "Primer permiso"
+}

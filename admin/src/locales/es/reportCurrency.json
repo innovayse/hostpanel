@@ -1,0 +1,16 @@
+{
+  "reportCurrency": "Divisa del Informe",
+  "reportCurrencies": "Divisas de Informe",
+  "changeCurrency": "Cambiar Divisa",
+  "baseCurrency": "Divisa Base",
+  "selectedCurrency": "Divisa Seleccionada",
+  "exchangeRate": "Tipo de Cambio",
+  "reportPeriod": "Periodo del Informe",
+  "dateRange": "Rango de Fechas",
+  "fromDate": "Desde",
+  "toDate": "Hasta",
+  "generate": "Generar",
+  "download": "Descargar",
+  "noReports": "No hay informes",
+  "selectReport": "Seleccionar Informe"
+}

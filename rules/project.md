@@ -477,6 +477,17 @@ docker/                              compose set (shared·dev·prod·platform), 
       carries its place), and the limit is that a refresh of that id reaches all its blocks and one follow-up watch per id
       is kept (`View.test.ts`, `PluginLoaderTests`, `InstallPluginTests`). **The bounds are the host's, never the plugin's**:
       `PLUGIN_FOLLOW_UP_MAX_ATTEMPTS` 20 and `PLUGIN_FOLLOW_UP_INTERVAL_MS` 3000 (about a minute) in the client.
+    - **Reads are shared inside a view (`readPluginRoute` in `usePluginView`).** A page is one picture of the plugin's
+      data: every source, condition and card action of a view that names the same `GET` request (the filled address and
+      its query, from `pluginRouteRequest`) takes one answer, and a new request is sent only when the picture is out of
+      date, which is when the sum of the view's refresh counts moved or the store's `writes` did (a call that is not a
+      read, a stream, however it ended). A block that mounts later is answered from the picture as well, and a read that
+      failed is not kept, so the next reader tries again. The picture belongs to the view's context and ends with it.
+      The follow-up hands the answer it read to the picture it then refreshes (`shareReadResult`), so a poll costs one
+      request and the blocks show exactly what the condition saw. This replaced one request per reader per refresh,
+      which on a route the plugin answers one call at a time made the last readers' answers arrive after the next
+      refresh began, so `latest` dropped them and a header stayed on the old live version for several polls while a block
+      answered earlier already showed the new one (#986).
     - Refused at install and load (rules from the start of view state): `ViewConditionInvalid` (`PLUGIN_VIEW_CONDITION_INVALID`: a bad condition, a non-`GET`
       condition route, `visibleWhen` outside a block) and `ViewFollowUpInvalid` (`PLUGIN_VIEW_FOLLOW_UP_INVALID`: a bad
       `followUp` shape or place, a `refresh` id no block carries, `resetOnSuccess` not a boolean or outside a `submit`),

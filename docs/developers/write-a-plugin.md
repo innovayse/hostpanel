@@ -385,6 +385,13 @@ when the block's own `id` is refreshed. Hide a create form once a site exists:
 }
 ```
 
+**How often a route is read.** A page is one picture of your data. Every block, condition and card that names the same
+`GET` route on a page is answered by one request, and the panel sends a new one only when the page is refreshed (an
+action, a form, a conversation turn or a follow-up asked for it) or after any call that is not a read ended. A block
+that appears later takes the answer the page already holds, so a page naming one state route in ten places costs one
+request per refresh, not ten. The panel keeps no read past that moment and none from another page. A route read by
+several blocks is still read once for each refresh, so keep it cheap to answer.
+
 **`resetOnSuccess`** is `true` or `false`, only inside a form's `submit`. After a successful submit every field goes
 back to empty.
 

@@ -467,7 +467,7 @@ const handleSubmit = (): void => {
         />
       </UiField>
 
-      <UiField :label="t('settings.productForm.sku')" :hint="t('settings.productForm.skuHint')" :error="props.fieldErrors.sku">
+      <UiField :label="t('settings.productForm.sku')" :hint="t('settings.productForm.skuHint')" :error="props.fieldErrors[ProductField.Sku]">
         <template #default="{ id, invalid, describedby }">
           <UiInput
             :id="id"
@@ -481,7 +481,7 @@ const handleSubmit = (): void => {
         </template>
       </UiField>
 
-      <UiField :label="t('settings.productForm.metadata')" :hint="t('settings.productForm.metadataHint')" :error="props.fieldErrors.metadata">
+      <UiField :label="t('settings.productForm.metadata')" :hint="t('settings.productForm.metadataHint')" :error="props.fieldErrors[ProductField.Metadata]">
         <template #default="{ id, invalid, describedby }">
           <UiTextarea
             :id="id"
@@ -496,7 +496,7 @@ const handleSubmit = (): void => {
         </template>
       </UiField>
 
-      <UiField :label="t('settings.productForm.gracePeriod')" :hint="t('settings.productForm.gracePeriodHint')" :error="props.fieldErrors.gracePeriodDays">
+      <UiField :label="t('settings.productForm.gracePeriod')" :hint="t('settings.productForm.gracePeriodHint')" :error="props.fieldErrors[ProductField.GracePeriodDays]">
         <UiNumberInput
           v-model="gracePeriodDays"
           :step="1"

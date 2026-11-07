@@ -17,7 +17,7 @@ import { useClientStore } from '~/stores/client'
 import type { BillingCurrency } from '~/types/currency'
 import type { CartItem } from '~/types/cartitem'
 import { makeClientUser } from '~/tests/helpers/clientUser'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { PaymentModule } from '~/types/paymentmodule'
 import { PricingCycle } from '~/types/pricingcycle'
 

@@ -90,7 +90,7 @@ import { AlertCircle } from 'lucide-vue-next'
 import { storeToRefs } from 'pinia'
 import { CLIENT_SERVICES_PATH, clientServiceSetupPath } from '~/constants/clientRoutes'
 import { serviceAwaitsSetup } from '~/utils/serviceSetup'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'
 import { useServiceManagementStore } from '~/stores/servicemanagement'
 import { usePluginSlot } from '~/composables/usePluginSlot'
@@ -202,9 +202,9 @@ const loadInvoices = (): Promise<void> => mgmt.loadInvoices(serviceId)
  */
 const loginToCpanel = (): Promise<void> => mgmt.openControlPanel(serviceId, service.value?.server?.hostname)
 
-// A hosting service without a control-panel account is not manageable yet: send it to the setup wizard (a digital one has none to set up).
+// A service that still waits for setup (Pending, as the backend requires; never a digital one) is not manageable yet: send it to the setup wizard.
 watch(service, (current) => {
-  if (!pending.value && current && current.status !== ServiceStatus.Terminated && serviceAwaitsSetup(current)) {
+  if (!pending.value && current && serviceAwaitsSetup(current)) {
     navigateTo(clientServiceSetupPath(serviceId))
   }
 }, { immediate: true })

@@ -12,7 +12,7 @@ import AuroraCheckout from '~/templates/aurora/pages/AuroraCheckout.vue'
 import GatewayOption from '~/components/checkout/GatewayOption.vue'
 import SaveOption from '~/components/checkout/SaveOption.vue'
 import SubmitHint from '~/components/checkout/SubmitHint.vue'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
 import { stubAuroraGlobals } from '../auroraGlobals'
 

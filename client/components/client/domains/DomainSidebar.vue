@@ -33,7 +33,7 @@
  */
 import { computed } from 'vue'
 import { LayoutGrid, Lock, Network, PlusCircle, RefreshCw, Settings, UserCog, Zap } from 'lucide-vue-next'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'
 import { DomainTab } from '~/types/domaintab'
 

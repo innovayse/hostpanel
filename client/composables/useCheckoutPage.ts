@@ -15,7 +15,7 @@
  */
 
 import { storeToRefs } from 'pinia'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
 import { useCheckoutStore } from '~/stores/checkout'

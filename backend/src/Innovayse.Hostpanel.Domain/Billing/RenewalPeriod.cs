@@ -46,7 +46,7 @@ public static class RenewalPeriod
     /// <summary>The length of a cycle in months.</summary>
     /// <param name="cycle">A parsed cycle.</param>
     /// <returns>The number of months the cycle covers.</returns>
-    private static int MonthsIn(BillingCycle cycle) => cycle switch
+    public static int MonthsIn(BillingCycle cycle) => cycle switch
     {
         BillingCycle.Monthly => 1,
         BillingCycle.Annual => 12,

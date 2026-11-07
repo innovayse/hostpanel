@@ -412,6 +412,28 @@ public sealed class Product : BaseEntity, IAggregateRoot
         return _prices.FirstOrDefault(p => p.CurrencyCode == code && p.Cycle == cycle)?.Amount;
     }
 
+    /// <summary>
+    /// The lowest price per month the product is sold at in a currency, taken across every cycle it
+    /// has a stored price for: each price is divided by the months its cycle covers
+    /// (<see cref="Billing.RenewalPeriod.MonthsIn"/>), so a product priced only quarterly,
+    /// semi-annually or biennially still has a "from" price.
+    /// </summary>
+    /// <param name="currencyCode">ISO 4217 alpha code, any case.</param>
+    /// <returns>
+    /// The smallest monthly equivalent, rounded to two decimals, or <see langword="null"/> when the
+    /// product has no price in that currency.
+    /// </returns>
+    public decimal? LowestMonthlyPrice(string currencyCode)
+    {
+        var code = currencyCode.ToUpperInvariant();
+        var perMonth = _prices
+            .Where(p => p.CurrencyCode == code)
+            .Select(p => p.Amount / Billing.RenewalPeriod.MonthsIn(p.Cycle))
+            .ToList();
+
+        return perMonth.Count == 0 ? null : Math.Round(perMonth.Min(), 2, MidpointRounding.AwayFromZero);
+    }
+
     /// <summary>Whether the product has at least one price in a currency.</summary>
     /// <param name="currencyCode">ISO 4217 alpha code, any case.</param>
     /// <returns><see langword="true"/> when a client billed in that currency can buy it.</returns>

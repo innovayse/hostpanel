@@ -61,7 +61,7 @@ const slide = (id: number, overrides: Partial<SlidePublic> = {}): SlidePublic =>
   content: { title: `Slide ${id}`, tagline: 'Tagline', description: 'Description', features: ['Feature one'] },
   links: { demoUrl: null, learnMoreUrl: `/products/slide-${id}` },
   callToAction: { text: null, url: null },
-  pricing: { monthlyPrice: null, annualPrice: null },
+  pricing: { monthlyPrice: null, annualPrice: null, fromPrice: null },
   ...overrides,
 })
 

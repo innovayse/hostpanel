@@ -4,9 +4,11 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
@@ -53,6 +55,29 @@ public static class ProductsTestSeeds
             annualPrice = 10m,
         });
         return await product.Content.ReadFromJsonAsync<int>();
+    }
+
+    /// <summary>Stores a product in a fresh group with exactly the given USD prices, one per cycle, and no others.</summary>
+    /// <param name="factory">The shared API + PostgreSQL host.</param>
+    /// <param name="prices">The cycles to price and their USD amounts.</param>
+    /// <returns>The new product id.</returns>
+    public static async Task<int> SeedProductWithUsdPricesAsync(IntegrationTestFactory factory, params (BillingCycle Cycle, decimal Amount)[] prices)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var group = ProductGroup.Create($"priced-{Guid.NewGuid():N}", null);
+        context.ProductGroups.Add(group);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var product = Product.Create(group.Id, "Priced", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+        foreach (var (cycle, amount) in prices)
+        {
+            product.SetPrice("USD", cycle, amount);
+        }
+
+        context.Products.Add(product);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return product.Id;
     }
 
     /// <summary>Reads back a created product's admin-grid view, including unsellable rows.</summary>

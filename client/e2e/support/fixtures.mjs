@@ -876,7 +876,7 @@ export const SLIDES = [
     content: { title: 'Example slide with a photograph', tagline: 'Fast hosting', description: 'A slide whose background is an image under a dark scrim.', features: ['Free SSL', 'Daily backups'] },
     links: { demoUrl: null, learnMoreUrl: '/products' },
     callToAction: { text: null, url: null },
-    pricing: { monthlyPrice: null, annualPrice: null },
+    pricing: { monthlyPrice: null, annualPrice: null, fromPrice: null },
   },
   {
     id: 2,
@@ -887,7 +887,7 @@ export const SLIDES = [
     content: { title: 'Example slide without an image', tagline: 'Plain background', description: 'A slide with no image follows the active colour mode.', features: [] },
     links: { demoUrl: null, learnMoreUrl: '/vps' },
     callToAction: { text: null, url: null },
-    pricing: { monthlyPrice: null, annualPrice: null },
+    pricing: { monthlyPrice: null, annualPrice: null, fromPrice: null },
   },
 ]
 

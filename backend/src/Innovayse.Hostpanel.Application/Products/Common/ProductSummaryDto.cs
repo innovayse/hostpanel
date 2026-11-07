@@ -5,6 +5,7 @@ namespace Innovayse.Hostpanel.Application.Products.Common;
 /// <param name="Name">The product's display name.</param>
 /// <param name="MonthlyPrice">The monthly price in the caller's currency; null when the product is not sold monthly in it.</param>
 /// <param name="AnnualPrice">The annual price in the caller's currency; null when the product is not sold annually in it.</param>
+/// <param name="FromPrice">The lowest monthly equivalent across every cycle priced in the caller's currency; null when the product has no price in it.</param>
 /// <param name="Sku">The product's SKU; null when it has none.</param>
 /// <param name="Fulfilment">What an invoice line charging for the product keeps a copy of.</param>
-public sealed record ProductSummaryDto(int Id, string Name, decimal? MonthlyPrice, decimal? AnnualPrice, string? Sku, ProductFulfilmentDto Fulfilment);
+public sealed record ProductSummaryDto(int Id, string Name, decimal? MonthlyPrice, decimal? AnnualPrice, decimal? FromPrice, string? Sku, ProductFulfilmentDto Fulfilment);

@@ -120,10 +120,10 @@ public static class ProvisioningTestSeeds
     /// <paramref name="provider"/> instead of the always-succeeding host-wide stub.
     /// </summary>
     /// <remarks>
-    /// Overrides both <see cref="IProvisioningProviderFactory"/>, which every handler but
-    /// <c>GetServiceCredentialsHandler</c> resolves a provider through, and the bare
-    /// <see cref="IProvisioningProvider"/> that one handler injects directly: missing either
-    /// leaves that handler still talking to the always-succeeding host-wide stub.
+    /// Overrides <see cref="IProvisioningProviderFactory"/> only, the one place every handler
+    /// resolves a provider through. The bare <see cref="IProvisioningProvider"/> registration is left
+    /// alone on purpose, so a handler that bypassed the factory would still talk to the host-wide
+    /// stub and its test would fail.
     /// </remarks>
     /// <param name="factory">The shared API + PostgreSQL host.</param>
     /// <param name="provider">The fake provider the host should provision through.</param>
@@ -148,7 +148,6 @@ public static class ProvisioningTestSeeds
             builder.ConfigureTestServices(services =>
             {
                 services.AddSingleton<IProvisioningProviderFactory>(new FakeProvisioningProviderFactory(provider));
-                services.AddSingleton<IProvisioningProvider>(provider);
             }));
     }
 

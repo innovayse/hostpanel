@@ -94,6 +94,17 @@ jobs:
       - name: Run both edges and the admin image and check their response headers
         run: sh scripts/check-edge-headers.sh
 
+  install-backup:
+    name: Installer upgrade backup and rollback
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Run the installer backup and rollback tests, with dump and restore on a real postgres container
+        env:
+          HOSTPANEL_TEST_POSTGRES: "1"
+        run: bash scripts/test-install-backup.sh
+
   # The Integration suite starts a full API host for every test class (about 690 of them), each on
   # a database of its own on one shared PostgreSQL container. The test project's
   # integration.runsettings (picked up by dotnet test) bounds its native memory, and the suite is

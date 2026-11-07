@@ -19,7 +19,7 @@ import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
 import BrandLogo from '@/components/layout/BrandLogo.vue'
 import ReleaseUpdateNotice from '@/components/layout/ReleaseUpdateNotice.vue'
-import ThemeSelect from '@/components/layout/ThemeSelect.vue'
+import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -393,7 +393,7 @@ const isExpanded = (item: NavItem): boolean => {
 
     <!-- The top bar hides its theme picker on a phone, so the drawer is where a phone changes the theme. -->
     <UiStack v-if="embedded" gap="none" class="border-t border-border px-3 py-3">
-      <ThemeSelect data-testid="sidebar-theme" />
+      <ThemeSwitch testid="sidebar-theme" />
     </UiStack>
 
     <!-- Release update notice: shown only when an upgrade is available -->

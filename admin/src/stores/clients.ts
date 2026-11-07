@@ -11,7 +11,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useClientsApi } from '@/composables/apis/useClientsApi'
 import { toUpdateClientPayload } from '@/lib/clientPayload'
-import { runAction } from '@/lib/runAction'
+import { dropFieldError, runAction } from '@/lib/runAction'
 import type { AdminCreateClientPayload } from '@/types/admincreateclientpayload'
 import type { ClientDetail, ClientFilters, ClientListItem } from '@/types/client'
 import type { SetClientExternalAccountPayload } from '@/types/clientexternalaccount'
@@ -179,9 +179,7 @@ export const useClientsStore = defineStore('clients', () => {
    * @returns Nothing; the field's message is removed from `externalAccountFieldErrors`.
    */
   const clearExternalAccountFieldError = (field: string): void => {
-    const rest = { ...externalAccountFieldErrors.value }
-    delete rest[field]
-    externalAccountFieldErrors.value = rest
+    dropFieldError(externalAccountFieldErrors, field)
   }
 
   /**

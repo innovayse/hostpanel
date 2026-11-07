@@ -39,3 +39,18 @@ export const runAction = async <T>(
     return { ok: false }
   }
 }
+
+/**
+ * Removes one field's message from a store's field errors, leaving the other fields' messages.
+ *
+ * The map is replaced rather than mutated so watchers of the ref see the change.
+ *
+ * @param fieldErrors - The store's field errors ref.
+ * @param field - The wire name of the field whose message goes.
+ * @returns Nothing.
+ */
+export const dropFieldError = (fieldErrors: Ref<Record<string, string>>, field: string): void => {
+  const rest = { ...fieldErrors.value }
+  delete rest[field]
+  fieldErrors.value = rest
+}

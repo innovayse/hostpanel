@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,7 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 
 /// <summary>
 /// <c>GET /api/reports/vat-moss</c> against Postgres: VAT collected per member state, rate and
-/// invoice currency for the quarter, net of the refunds made in it.
+/// invoice currency for the quarter, net of the refunds made and the account credit notes issued in it.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -123,5 +124,201 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
         var response = await client.GetAsync("/api/reports/vat-moss");
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    /// <summary>
+    /// A partial account credit note issued in the same quarter as its invoice takes its net and VAT off the row: a 40 note on a
+    /// 100 invoice at 20% leaves 60 net and 12 VAT, and the invoice still counts once.
+    /// </summary>
+    [Fact]
+    public async Task NetsACreditNoteIssuedInTheSameQuarterAsItsInvoice()
+    {
+        var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"VatCy{Guid.NewGuid():N}", country: "CY");
+        var invoiceId = await SeedPaidInvoiceAsync(clientId, "USD", 20m, 100m, At(2031, 2, 10));
+        await SeedCreditNoteAsync(invoiceId, 40m, At(2031, 3, 1));
+
+        var row = await RowAsync(2031, 1, "CY", 20m, "USD");
+
+        row.GetProperty("numberOfInvoices").GetInt32().Should().Be(1);
+        row.GetProperty("totalExclVat").GetDecimal().Should().Be(60m);
+        row.GetProperty("totalVatCollected").GetDecimal().Should().Be(12m);
+    }
+
+    /// <summary>
+    /// A credit note is a correction made on the day it is issued: issued in the next quarter it leaves the quarter of the sale
+    /// as it was and reduces the next quarter, whose row then shows no invoices and a negative net and VAT.
+    /// </summary>
+    [Fact]
+    public async Task BooksACreditNoteInTheQuarterItWasIssuedNotTheQuarterOfItsInvoice()
+    {
+        var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"VatMt{Guid.NewGuid():N}", country: "MT");
+        var invoiceId = await SeedPaidInvoiceAsync(clientId, "USD", 18m, 100m, At(2032, 3, 20));
+        await SeedCreditNoteAsync(invoiceId, 50m, At(2032, 4, 5));
+
+        var sold = await RowAsync(2032, 1, "MT", 18m, "USD");
+        sold.GetProperty("numberOfInvoices").GetInt32().Should().Be(1);
+        sold.GetProperty("totalExclVat").GetDecimal().Should().Be(100m);
+        sold.GetProperty("totalVatCollected").GetDecimal().Should().Be(18m);
+
+        var corrected = await RowAsync(2032, 2, "MT", 18m, "USD");
+        corrected.GetProperty("numberOfInvoices").GetInt32().Should().Be(0);
+        corrected.GetProperty("totalExclVat").GetDecimal().Should().Be(-50m);
+        corrected.GetProperty("totalVatCollected").GetDecimal().Should().Be(-9m);
+    }
+
+    /// <summary>Several partial notes on one invoice each take their own share; together they are less than the whole invoice.</summary>
+    [Fact]
+    public async Task NetsSeveralPartialCreditNotesOfOneInvoice()
+    {
+        var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"VatSk{Guid.NewGuid():N}", country: "SK");
+        var invoiceId = await SeedPaidInvoiceAsync(clientId, "USD", 20m, 200m, At(2033, 5, 3));
+        await SeedCreditNoteAsync(invoiceId, 30m, At(2033, 5, 10));
+        await SeedCreditNoteAsync(invoiceId, 20m, At(2033, 6, 20));
+
+        var row = await RowAsync(2033, 2, "SK", 20m, "USD");
+
+        row.GetProperty("numberOfInvoices").GetInt32().Should().Be(1);
+        row.GetProperty("totalExclVat").GetDecimal().Should().Be(150m);
+        row.GetProperty("totalVatCollected").GetDecimal().Should().Be(30m);
+    }
+
+    /// <summary>Each note reduces only the row of its own country and rate, also when one country sold at two rates.</summary>
+    [Fact]
+    public async Task NetsCreditNotesPerCountryAndRate()
+    {
+        var latvia = await ReportsTestSeeds.CreateClientAsync(factory, $"VatLv{Guid.NewGuid():N}", country: "LV");
+        var estonia = await ReportsTestSeeds.CreateClientAsync(factory, $"VatEe{Guid.NewGuid():N}", country: "EE");
+        var latvian = await SeedPaidInvoiceAsync(latvia, "USD", 21m, 100m, At(2034, 7, 2));
+        var estonianStandard = await SeedPaidInvoiceAsync(estonia, "USD", 22m, 100m, At(2034, 7, 3));
+        var estonianReduced = await SeedPaidInvoiceAsync(estonia, "USD", 9m, 100m, At(2034, 8, 4));
+        await SeedCreditNoteAsync(latvian, 10m, At(2034, 9, 1));
+        await SeedCreditNoteAsync(estonianStandard, 30m, At(2034, 9, 2));
+        await SeedCreditNoteAsync(estonianReduced, 100m, At(2034, 9, 3));
+
+        var lv = await RowAsync(2034, 3, "LV", 21m, "USD");
+        lv.GetProperty("totalExclVat").GetDecimal().Should().Be(90m);
+        lv.GetProperty("totalVatCollected").GetDecimal().Should().Be(18.9m);
+
+        var eeStandard = await RowAsync(2034, 3, "EE", 22m, "USD");
+        eeStandard.GetProperty("totalExclVat").GetDecimal().Should().Be(70m);
+        eeStandard.GetProperty("totalVatCollected").GetDecimal().Should().Be(15.4m);
+
+        var eeReduced = await RowAsync(2034, 3, "EE", 9m, "USD");
+        eeReduced.GetProperty("numberOfInvoices").GetInt32().Should().Be(1);
+        eeReduced.GetProperty("totalExclVat").GetDecimal().Should().Be(0m);
+        eeReduced.GetProperty("totalVatCollected").GetDecimal().Should().Be(0m);
+    }
+
+    /// <summary>A note in one currency reduces the row of that currency only; the same country and rate in another currency is untouched.</summary>
+    [Fact]
+    public async Task NetsACreditNoteInItsOwnCurrencyOnly()
+    {
+        var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"VatSi{Guid.NewGuid():N}", country: "SI");
+        var euros = await SeedPaidInvoiceAsync(clientId, "EUR", 22m, 100m, At(2035, 10, 6));
+        await SeedPaidInvoiceAsync(clientId, "USD", 22m, 100m, At(2035, 10, 7));
+        await SeedCreditNoteAsync(euros, 25m, At(2035, 11, 8));
+
+        var eur = await RowAsync(2035, 4, "SI", 22m, "EUR");
+        eur.GetProperty("totalExclVat").GetDecimal().Should().Be(75m);
+        eur.GetProperty("totalVatCollected").GetDecimal().Should().Be(16.5m);
+
+        var usd = await RowAsync(2035, 4, "SI", 22m, "USD");
+        usd.GetProperty("totalExclVat").GetDecimal().Should().Be(100m);
+        usd.GetProperty("totalVatCollected").GetDecimal().Should().Be(22m);
+    }
+
+    /// <summary>A voided note and a draft reverse nothing.</summary>
+    [Fact]
+    public async Task IgnoresAVoidedCreditNoteAndADraft()
+    {
+        var clientId = await ReportsTestSeeds.CreateClientAsync(factory, $"VatLt{Guid.NewGuid():N}", country: "LT");
+        var invoiceId = await SeedPaidInvoiceAsync(clientId, "USD", 21m, 100m, At(2036, 1, 9));
+        await SeedCreditNoteAsync(invoiceId, 40m, At(2036, 1, 15), CreditNoteStatus.Voided);
+        await SeedCreditNoteAsync(invoiceId, 10m, At(2036, 1, 16), CreditNoteStatus.Draft);
+
+        var row = await RowAsync(2036, 1, "LT", 21m, "USD");
+
+        row.GetProperty("totalExclVat").GetDecimal().Should().Be(100m);
+        row.GetProperty("totalVatCollected").GetDecimal().Should().Be(21m);
+    }
+
+    /// <summary>Builds a UTC moment at noon of a day.</summary>
+    /// <param name="year">The year.</param>
+    /// <param name="month">The month.</param>
+    /// <param name="day">The day of the month.</param>
+    /// <returns>The moment.</returns>
+    private static DateTimeOffset At(int year, int month, int day) => new(year, month, day, 12, 0, 0, TimeSpan.Zero);
+
+    /// <summary>Seeds an invoice with one line, taxed at the given rate and paid in full at the given moment.</summary>
+    /// <param name="clientId">The invoiced client.</param>
+    /// <param name="currency">The ISO 4217 code of the invoice.</param>
+    /// <param name="taxRate">The tax percentage.</param>
+    /// <param name="price">The line price before tax.</param>
+    /// <param name="paidAt">When the payment was made (UTC).</param>
+    /// <returns>The paid invoice's id.</returns>
+    private async Task<int> SeedPaidInvoiceAsync(int clientId, string currency, decimal taxRate, decimal price, DateTimeOffset paidAt)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var invoice = Invoice.Create(clientId, paidAt.AddDays(7), currency, paidAt);
+        invoice.AddItem("Hosting", price, 1);
+        invoice.UpdateOptions(paidAt, paidAt.AddDays(7), null, taxRate);
+        db.Invoices.Add(invoice);
+        await db.SaveChangesAsync();
+
+        db.Transactions.Add(invoice.AddPayment(paidAt, PaymentMethodNames.Manual, $"pay-{Guid.NewGuid():N}", invoice.Total, 0m, null, TransactionSource.Manual));
+        await db.SaveChangesAsync();
+        return invoice.Id;
+    }
+
+    /// <summary>Seeds an account credit note of one line on a paid invoice, in the given state.</summary>
+    /// <param name="invoiceId">The paid invoice to credit.</param>
+    /// <param name="price">The unit price of the one line, before tax.</param>
+    /// <param name="issuedAt">When the note is issued (UTC).</param>
+    /// <param name="status">Draft, Issued or Voided; Issued by default.</param>
+    private async Task SeedCreditNoteAsync(int invoiceId, decimal price, DateTimeOffset issuedAt, CreditNoteStatus status = CreditNoteStatus.Issued)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var invoice = await db.Invoices.Include(i => i.Transactions).SingleAsync(i => i.Id == invoiceId);
+        var note = CreditNote.Create(
+            invoice,
+            [CreditNoteItem.Create("Credit for hosting", price, 1, invoice.Currency)],
+            CreditNoteMethod.AccountCredit,
+            "Service was down",
+            issuedAt);
+        if (status != CreditNoteStatus.Draft)
+        {
+            note.Issue($"CN-T{Guid.NewGuid():N}"[..20], issuedAt);
+        }
+
+        if (status == CreditNoteStatus.Voided)
+        {
+            note.Void("Mistake", issuedAt);
+        }
+        else if (status == CreditNoteStatus.Issued)
+        {
+            invoice.AddCreditNoted(note.Total, issuedAt);
+        }
+
+        db.CreditNotes.Add(note);
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>Reads the one row of the report for a quarter, country, rate and currency.</summary>
+    /// <param name="year">The year asked for.</param>
+    /// <param name="quarter">The quarter asked for.</param>
+    /// <param name="country">The member state's code.</param>
+    /// <param name="rate">The VAT rate in percent.</param>
+    /// <param name="currency">The ISO 4217 code of the row.</param>
+    /// <returns>The row.</returns>
+    private async Task<JsonElement> RowAsync(int year, int quarter, string country, decimal rate, string currency)
+    {
+        var admin = await ReportsTestSeeds.AdminClientAsync(factory);
+        var body = await admin.GetFromJsonAsync<JsonElement>($"/api/reports/vat-moss?year={year}&quarter={quarter}");
+        return body.GetProperty("rows").EnumerateArray().Single(r =>
+            r.GetProperty("countryCode").GetString() == country
+            && r.GetProperty("vatRate").GetDecimal() == rate
+            && r.GetProperty("currency").GetString() == currency);
     }
 }

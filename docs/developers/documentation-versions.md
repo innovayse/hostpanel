@@ -15,6 +15,13 @@ The documentation exists once per minor release, so a reader on an older release
 
 A version switcher in the header lists them. The list is read at run time from `versions.json`, which is published next to the latest docs, so an older build shows releases made after it without being rebuilt.
 
+## How the switcher opens a page
+
+`versions.json` is a list of entries, each with a `label` (`v0.3`, `next`), a `link` (the path of that version's home page, with a trailing slash) and a `kind` (`latest`, `release` or `next`). The file is read in the browser and is not trusted:
+
+- An entry whose `link` is not a path of the docs site (an address with a host, `//host`, a path with `..`, or a path outside the root of the docs) is ignored, so it never reaches the list.
+- Choosing a version opens the same page there when that page exists, and the home page of that version when it does not. When the list is opened the switcher asks the server for the page in each other version; a missing page, a failed request or no answer within four seconds all mean the home page.
+
 ## What an older version looks like
 
 - A notice at the top says which version it is and links to the same page in the latest docs.

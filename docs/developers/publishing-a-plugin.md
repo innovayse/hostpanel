@@ -10,6 +10,8 @@ This page takes a finished plugin to a signed, versioned package that operators 
 
 A plugin registry is a service that lists signed plugin packages and lets an operator install one from the admin panel. Where this page needs an address, it uses `registry.example.com`; use the address of the registry you publish to.
 
+This page covers publishing. What a registry has to serve so that Hostpanel can browse and install from it is in [Plugin registry read contract](./plugin-registry-contract); the operator side is in [Plugin registry](../operators/plugin-registry).
+
 ## Checklist before you release
 
 Check each item. The host runs the same rules at install and at load, so a miss here becomes a refused package later.
@@ -112,6 +114,8 @@ curl --fail-with-body \
 The registry runs the checks the host runs, which come from the `Hostpanel.Sdk.Packaging` package (3.1.0, versioned with `Hostpanel.Sdk`; the same package you can reference to run them locally): manifest rules, the id and its reservation, the SDK contract and assembly major, no host assemblies, archive limits, icon safety and the signature against a key registered to your publisher. A refusal comes back as an error status with the rule that failed. Treat the API key as a secret: keep it in the CI secret store, never in the repository.
 
 The workflow template below ends with an optional step that makes this request for you.
+
+The upload address is the registry URL plus `/v1/plugins/{id}/versions`. An operator points Hostpanel at the same registry with a base address that ends in `/v1/`, and Hostpanel then reads from the same collection, as described in [Plugin registry read contract](./plugin-registry-contract#how-baseurl-relates-to-the-upload-path).
 
 ### Link GitHub releases
 

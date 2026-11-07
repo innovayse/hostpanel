@@ -1620,4 +1620,19 @@ public static class HostpanelErrorCodes
 
     /// <summary>The operator's registry trust policy does not admit this plugin or the key it is signed with (403).</summary>
     public const string PLUGIN_REGISTRY_NOT_TRUSTED = "PLUGIN_REGISTRY_NOT_TRUSTED";
+
+    /// <summary>The plugin is paid or private and the registry wants a licence key; none was sent (the registry answered 401).</summary>
+    public const string PLUGIN_REGISTRY_LICENCE_REQUIRED = "PLUGIN_REGISTRY_LICENCE_REQUIRED";
+
+    /// <summary>The registry refused the licence key that was sent (the registry answered 403).</summary>
+    public const string PLUGIN_REGISTRY_LICENCE_INVALID = "PLUGIN_REGISTRY_LICENCE_INVALID";
+
+    /// <summary>The version asked for does not run on this Hostpanel version, outside its minimum and maximum host version (409).</summary>
+    public const string PLUGIN_REGISTRY_HOST_INCOMPATIBLE = "PLUGIN_REGISTRY_HOST_INCOMPATIBLE";
+
+    /// <summary>The registry withdrew the version asked for (yanked), so it is not installed (409).</summary>
+    public const string PLUGIN_REGISTRY_VERSION_YANKED = "PLUGIN_REGISTRY_VERSION_YANKED";
+
+    /// <summary>The registry flagged the version asked for as compromised, so it is not installed (409).</summary>
+    public const string PLUGIN_REGISTRY_VERSION_COMPROMISED = "PLUGIN_REGISTRY_VERSION_COMPROMISED";
 }

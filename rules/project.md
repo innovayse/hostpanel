@@ -1667,7 +1667,10 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   network) and checks the upgrade backup (a failed, empty, truncated or table-less dump, a stopped database, mode 600
   and 700, retention that keeps the oldest backup of each version, UTC names) and `--rollback` (confirmation, the
   newest backup of another version, the safety copy, restore before the compose files change, a failed restore, the
-  state printed after a failed stop, download, pull or start). Needs bash and GNU `stat`. With
+  state printed after a failed stop, download, pull or start, a rename blocked by a background worker, the exact
+  messages after a half swap, a repeated rollback that moves forward, the early refusal of a database named
+  postgres, the bounded per version retention, and that the volume name in the installer is the one in the compose
+  file). Needs bash and GNU `stat`. With
   `HOSTPANEL_TEST_POSTGRES=1` it also dumps, restores and restores a corrupt dump against a real postgres container
   (the GitHub `install-backup` job sets it; the GitLab `installer:test:backup` job runs the fake-docker part only).
 - `scripts/check-empty-plugins.sh <test project> ...` — fails when `plugins/` or `plugins-installed/` in a

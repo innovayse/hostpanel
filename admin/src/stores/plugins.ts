@@ -10,13 +10,52 @@
 
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
+import type { Ref } from 'vue'
 import { usePluginsApi } from '@/composables/apis/usePluginsApi'
 import { useSettingsApi } from '@/composables/apis/useSettingsApi'
-import { errorCode } from '@/lib/errorHandler'
+import { errorCode, errorStatus } from '@/lib/errorHandler'
 import { runAction } from '@/lib/runAction'
 import { PluginErrorCode, PluginStatus } from '@/types/plugin'
-import type { PluginListItemDto, PluginRegistryItemDto, PluginRegistryQuery, PluginSlotWidgetBindingDto } from '@/types/plugin'
+import type {
+  PluginActionOutcome,
+  PluginListItemDto,
+  PluginRegistryItemDto,
+  PluginRegistryQuery,
+  PluginSlotWidgetBindingDto,
+  RegistryDetailsState,
+} from '@/types/plugin'
 import type { Product } from '@/types/product'
+
+/** HTTP status of an answer that names a missing resource. */
+const NOT_FOUND_STATUS = 404
+
+/**
+ * Whether a refusal says the registry has no such plugin: the 404 status or the registry's not-found code.
+ *
+ * @param cause - The value caught from a rejected request.
+ * @returns True for a not-found refusal.
+ */
+const isNotFound = (cause: unknown): boolean =>
+  errorStatus(cause) === NOT_FOUND_STATUS || errorCode(cause) === PluginErrorCode.RegistryPluginNotFound
+
+/**
+ * Runs one action against its own error sink, so the outcome belongs to this call alone; the shared
+ * sentence is then set to the same value for callers that only show the latest one.
+ *
+ * @param shared - The store's shared sentence ref, set to this call's sentence when it ends.
+ * @param task - The request to run.
+ * @returns The runner's result plus the sentence of this call.
+ */
+const runOwn = async <T>(
+  shared: Ref<string | null>,
+  task: () => Promise<T>,
+): Promise<{ ok: true; value: T; error: null } | { ok: false; error: string | null }> => {
+  /** This call's own sentence. */
+  const own = ref<string | null>(null)
+  const result = await runAction(own, task)
+  shared.value = own.value
+  return result.ok ? { ok: true, value: result.value, error: null } : { ok: false, error: own.value }
+}
 
 /** Holds the installed plugin list and whether a restart is pending. */
 export const usePluginsStore = defineStore('plugins', () => {
@@ -94,8 +133,17 @@ export const usePluginsStore = defineStore('plugins', () => {
   /** Sentence for the last refused registry install, null when none. */
   const registryInstallError = ref<string | null>(null)
 
-  /** Id of the plugin whose registry install is in flight, null when none. */
-  const registryInstallingId = ref<string | null>(null)
+  /** Plugin ids with a registry action (install or licence key change) in flight; each plugin is busy on its own. */
+  const busyIds = ref<Record<string, boolean>>({})
+
+  /** Sentence for the last refused licence key save or removal, null when none. */
+  const licenceError = ref<string | null>(null)
+
+  /** Registry details with their load state, by plugin id; filled by {@link fetchRegistryDetails}. */
+  const registryDetails = ref<Record<string, RegistryDetailsState>>({})
+
+  /** Id of the first plugin with an action in flight, null when none; kept for callers that show one busy card. */
+  const registryInstallingId = computed<string | null>(() => Object.keys(busyIds.value).find(id => busyIds.value[id]) ?? null)
 
   /** The newer version the registry offers, by installed plugin id; drives the update badge. */
   const updateVersions = computed<Record<string, string>>(() =>
@@ -183,15 +231,14 @@ export const usePluginsStore = defineStore('plugins', () => {
   }
 
   /**
-   * Removes an installed plugin by its identifier.
+   * Removes an installed plugin by its identifier; the plugin counts as busy (see {@link isBusy}) until the list is reloaded.
    *
    * @param id - Plugin identifier as declared in plugin.json.
-   * @returns True when removed; false when refused (see `actionError`).
+   * @returns This call's outcome: `ok`, or the API's sentence in `error` (also left in `actionError`).
    */
-  const remove = async (id: string): Promise<boolean> => {
-    loading.value = true
-    const result = await runAction(actionError, () => api.removePlugin(id))
-    loading.value = false
+  const remove = async (id: string): Promise<PluginActionOutcome> => {
+    setBusy(id, true)
+    const result = await runOwn(actionError, () => api.removePlugin(id))
     if (result.ok) {
       // Only ever raised here: a removal that needs no restart (the files were already gone) must not hide the banner
       // an earlier install or removal still needs.
@@ -199,9 +246,15 @@ export const usePluginsStore = defineStore('plugins', () => {
         requiresRestart.value = true
       }
       // Removal keeps the plugin's data, so the reloaded list answers with a Removed row the operator can purge.
-      await fetchAll()
+      await Promise.all([
+        fetchAll(),
+        // The Browse tab and the update badges must not keep offering Uninstall for what is gone; only a registry
+        // that was already browsed needs the reload.
+        ...(registryPageSize.value > 0 ? [fetchRegistry(), fetchRegistryUpdates()] : []),
+      ])
     }
-    return result.ok
+    setBusy(id, false)
+    return { ok: result.ok, stagedVersion: null, error: result.error }
   }
 
   /**
@@ -346,31 +399,137 @@ export const usePluginsStore = defineStore('plugins', () => {
   }
 
   /**
+   * Whether a registry action is in flight for one plugin; other plugins stay usable meanwhile.
+   *
+   * @param id - Plugin id as listed by the registry.
+   * @returns True while that plugin is busy.
+   */
+  const isBusy = (id: string): boolean => busyIds.value[id] === true
+
+  /**
+   * Marks one plugin busy or idle.
+   *
+   * @param id - Plugin id as listed by the registry.
+   * @param busy - True to mark busy; false to clear.
+   */
+  const setBusy = (id: string, busy: boolean): void => {
+    if (busy) {
+      busyIds.value = { ...busyIds.value, [id]: true }
+      return
+    }
+    const rest = { ...busyIds.value }
+    delete rest[id]
+    busyIds.value = rest
+  }
+
+  /**
+   * Loads the details of one registry plugin into {@link registryDetails}. The previous details stay
+   * on show while a reload runs; a refusal is kept as the sentence of that plugin only, except a not-found answer, which sets `notFound`.
+   *
+   * @param id - Plugin id as listed by the registry.
+   * @returns Resolves when the request is over.
+   */
+  const fetchRegistryDetails = async (id: string): Promise<void> => {
+    const previous = registryDetails.value[id]?.details ?? null
+    registryDetails.value = { ...registryDetails.value, [id]: { details: previous, loading: true, error: null, errorCode: null, notFound: false } }
+    /** Local sink so one plugin's refusal does not touch another's state. */
+    const failure = ref<string | null>(null)
+    let notFound = false
+    let failureCode: string | null = null
+    const result = await runAction(failure, async () => {
+      try {
+        return await api.getRegistryDetails(id)
+      } catch (cause) {
+        notFound = isNotFound(cause)
+        failureCode = errorCode(cause)
+        throw cause
+      }
+    })
+    registryDetails.value = {
+      ...registryDetails.value,
+      // A plugin the registry does not know is not a failure to retry: no sentence, no stale details.
+      [id]: notFound
+        ? { details: null, loading: false, error: null, errorCode: null, notFound: true }
+        : {
+          details: result.ok ? result.value : previous,
+          loading: false,
+          error: failure.value,
+          errorCode: result.ok ? null : failureCode,
+          notFound: false,
+        },
+    }
+  }
+
+  /**
+   * Stores the licence key of a registry plugin, then reloads its details so `hasLicenceKey` is current.
+   *
+   * @param id - Plugin id as listed by the registry.
+   * @param key - The licence key.
+   * @returns This call's outcome: `ok`, or the API's sentence in `error` (also left in `licenceError`).
+   */
+  const saveLicenceKey = async (id: string, key: string): Promise<PluginActionOutcome> => {
+    setBusy(id, true)
+    const result = await runOwn(licenceError, () => api.saveLicenceKey(id, { key }))
+    if (result.ok) {
+      await fetchRegistryDetails(id)
+    }
+    setBusy(id, false)
+    return { ok: result.ok, stagedVersion: null, error: result.error }
+  }
+
+  /**
+   * Removes the stored licence key of a registry plugin, then reloads its details.
+   *
+   * @param id - Plugin id as listed by the registry.
+   * @returns This call's outcome: `ok`, or the API's sentence in `error` (also left in `licenceError`).
+   */
+  const removeLicenceKey = async (id: string): Promise<PluginActionOutcome> => {
+    setBusy(id, true)
+    const result = await runOwn(licenceError, () => api.removeLicenceKey(id))
+    if (result.ok) {
+      await fetchRegistryDetails(id)
+    }
+    setBusy(id, false)
+    return { ok: result.ok, stagedVersion: null, error: result.error }
+  }
+
+  /**
    * Installs a plugin from the registry, or stages its upgrade, then refreshes the lists.
    *
    * @param id - Plugin id as listed by the registry.
    * @param version - Version to install.
-   * @returns True when installed or staged; false when refused (see `registryInstallError`).
+   * @param allowDowngrade - True to allow a version older than the installed one.
+   * @returns This call's outcome: `ok`, the version it staged, or the API's sentence in `error`
+   *   (the shared `stagedVersion` and `registryInstallError` follow the latest call).
    */
-  const installFromRegistry = async (id: string, version: string): Promise<boolean> => {
-    registryInstallingId.value = id
+  const installFromRegistry = async (id: string, version: string, allowDowngrade = false): Promise<PluginActionOutcome> => {
+    setBusy(id, true)
     stagedVersion.value = null
-    const result = await runAction(registryInstallError, () => api.installFromRegistry(id, { version }))
-    registryInstallingId.value = null
+    const result = await runOwn(registryInstallError, () => api.installFromRegistry(id, { version, allowDowngrade }))
+    let staged: string | null = null
     if (result.ok) {
       if (result.value.requiresRestart) {
         requiresRestart.value = true
       }
-      stagedVersion.value = result.value.stagedVersion ?? null
-      await Promise.all([fetchAll(), fetchRegistry(), fetchRegistryUpdates()])
+      staged = result.value.stagedVersion ?? null
+      stagedVersion.value = staged
+      await Promise.all([
+        fetchAll(),
+        fetchRegistry(),
+        fetchRegistryUpdates(),
+        // Only a plugin whose details are on show needs them reloaded.
+        ...(registryDetails.value[id] === undefined ? [] : [fetchRegistryDetails(id)]),
+      ])
     }
-    return result.ok
+    setBusy(id, false)
+    return { ok: result.ok, stagedVersion: staged, error: result.error }
   }
 
   return {
     plugins, loading, error, actionError, requiresRestart, downgradeFile, stagedVersion, installed, keptDataIds, slotWidgets, productOptions, slotWidgetsError, bindingError,
     registryPageSize, registryItems, registryTotal, registryQuery, registryLoading, registryError, registryDisabled, registryUpdates, registryUpdatesError,
-    registryInstallError, registryInstallingId, updateVersions,
+    registryInstallError, registryInstallingId, updateVersions, licenceError, registryDetails,
+    isBusy, fetchRegistryDetails, saveLicenceKey, removeLicenceKey,
     fetchRegistry, setRegistryFilter, fetchRegistryUpdates, installFromRegistry,
     fetchAll, install, forceDowngrade, dismissDowngrade, remove, purge, restart, fetchSlotWidgets, saveSlotWidgetProducts,
   }

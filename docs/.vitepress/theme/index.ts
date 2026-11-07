@@ -21,6 +21,7 @@ import HomeDemoButton from './components/HomeDemoButton.vue'
 import VersionBanner from './components/VersionBanner.vue'
 import VersionSwitcher from './components/VersionSwitcher.vue'
 import HomeLandmark from './components/HomeLandmark'
+import HashScroll from './components/HashScroll'
 import NotFound from './components/NotFound.vue'
 
 /** The theme object exported to VitePress. */
@@ -29,12 +30,12 @@ export default {
   /**
    * Wraps the default layout: the PageFeedback widget after every documentation page (`doc-after`),
    * the version notice above the page (`layout-top`), the version list in the top bar and the main
-   * landmark of the home page (`layout-bottom`). The not-found page is the themed one (`not-found`).
+   * landmark of the home page and the scroll to a `#hash` heading (`layout-bottom`). The not-found page is the themed one (`not-found`).
    */
   Layout() {
     return h(DefaultTheme.Layout, null, {
       'layout-top': () => h(VersionBanner),
-      'layout-bottom': () => h(HomeLandmark),
+      'layout-bottom': () => [h(HomeLandmark), h(HashScroll)],
       'nav-bar-content-after': () => h(VersionSwitcher),
       'doc-after': () => h(PageFeedback),
       'home-hero-actions-after': () => h(HomeDemoButton),

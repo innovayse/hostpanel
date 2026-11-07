@@ -10,6 +10,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createSeo } from './seo'
+import { withNavBarClasses } from './navClasses'
 import { hasSitemap, readLatestPages, resolveVersion } from './versions'
 import { sidebarSectionText } from './sidebarIcon'
 import type { SidebarIcon } from './sidebarIcon'
@@ -159,6 +160,12 @@ export default defineConfig({
         transformItems: seo.sitemapItems,
       }
     : undefined,
+
+  /**
+   * Writes the navigation bar classes the browser sets after hydration into the rendered HTML, so the
+   * static page already has its final layout (see `navClasses.ts`).
+   */
+  transformHtml: (code) => withNavBarClasses(code),
 
   /** Gives every page its own description and records the stubs that must not be indexed. */
   transformPageData: seo.transformPageData,

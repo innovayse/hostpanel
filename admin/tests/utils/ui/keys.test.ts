@@ -6,6 +6,6 @@ import { Key } from '@/utils/ui/keys'
 
 describe('Key', () => {
   it('holds the browser key names', () => {
-    expect(Object.values(Key)).toEqual(['Enter', 'Escape', 'Tab', 'ArrowLeft', 'ArrowRight'])
+    expect(Object.values(Key)).toEqual(['Enter', 'Escape', 'Tab', 'ArrowLeft', 'ArrowRight', 'Home', 'End'])
   })
 })

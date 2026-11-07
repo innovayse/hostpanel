@@ -84,13 +84,15 @@ jobs:
         run: sh scripts/check-integration-shards.sh .github/workflows/ci.yml .gitlab-ci.yml
 
   edge-csp:
-    name: Edge CSP (Caddy and nginx send one policy)
+    name: Edge CSP (Caddy and nginx send one policy, headers checked on running edges)
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Compare the client policy of both edges
         run: sh scripts/check-edge-csp.sh
+      - name: Run both edges and the admin image and check their response headers
+        run: sh scripts/check-edge-headers.sh
 
   # The Integration suite starts a full API host for every test class (about 690 of them), each on
   # a database of its own on one shared PostgreSQL container. The test project's

@@ -428,9 +428,11 @@ the three routes in its `api` block and the label keys in `locales.en`:
 }
 ```
 
-`refresh` lists 1 to 20 block `id`s, each present in the same view. Give every block that has an `id` its own: the panel
-treats blocks that share one as one block, so a refresh reaches all of them and a new follow-up of one ends the running
-follow-up of the other. How often and how long the panel polls is the
+`refresh` lists 1 to 20 block `id`s, each present in the same view. Give every block that has an `id` its own, in any
+container (a tab, a pane, a header): the panel treats blocks that share one as one block, so a refresh would reach all of
+them and a new follow-up of one would end the running follow-up of the other. A view that gives one `id` to two blocks is
+refused (`PLUGIN_VIEW_BLOCK_ID_REPEATED`). The `id` of a tab or of a preview source is a separate name and may match a
+block's. How often and how long the panel polls is the
 host's choice, not yours: every 3 seconds, at most 20 times (about a minute). A long job should report its own state on
 the `until` route rather than expect more time.
 
@@ -463,7 +465,8 @@ A view that breaks these rules is refused at install and skipped at startup: `PL
 `bodySource`, or one in the wrong place), `PLUGIN_VIEW_CONDITION_INVALID` (a bad
 condition, a condition route that is not `GET`, `visibleWhen` outside a block), `PLUGIN_VIEW_FOLLOW_UP_INVALID` (a bad
 `followUp` or one in the wrong place, a `refresh` id no block carries, `resetOnSuccess` that is not a boolean or not in a
-`submit`), and `PLUGIN_VIEW_ROUTE_UNDECLARED` for a condition route the manifest does not declare.
+`submit`), `PLUGIN_VIEW_BLOCK_ID_REPEATED` (one `id` on more than one block), and `PLUGIN_VIEW_ROUTE_UNDECLARED` for a
+condition route the manifest does not declare.
 
 ## Working screens: layout, split and preview
 

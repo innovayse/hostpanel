@@ -730,6 +730,76 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
         PluginViewDocumentReader.Read(_folder, ClientPageManifest(), MaxViewBytes).Violation.Should().BeNull();
     }
 
+    /// <summary>A block id given to a second block, at the root or nested in a tab, a header, a pane or a tab of a pane, breaks ViewBlockIdRepeated.</summary>
+    /// <param name="blocks">The blocks of the document root.</param>
+    [Theory]
+    [InlineData("""{"kind":"text","id":"a","text":"x"},{"kind":"text","id":"a","text":"y"}""")]
+    [InlineData("""{"kind":"text","id":"a","text":"x"},{"kind":"tabs","tabs":[{"id":"t","title":"T","blocks":[{"kind":"text","id":"a","text":"y"}]}]}""")]
+    [InlineData("""{"kind":"header","id":"h","title":"H","actions":[{"kind":"badge","id":"a","text":"b"}]},{"kind":"text","id":"a","text":"y"}""")]
+    [InlineData("""{"kind":"header","id":"a","title":"H"},{"kind":"split","panes":[{"blocks":[{"kind":"text","id":"a","text":"y"}]},{"blocks":[]}]}""")]
+    [InlineData("""{"kind":"split","panes":[{"blocks":[{"kind":"tabs","tabs":[{"id":"t","title":"T","blocks":[{"kind":"text","id":"a","text":"x"}]}]}]},{"blocks":[{"kind":"text","id":"a","text":"y"}]}]}""")]
+    public void Read_BlockIdRepeated_BreaksViewBlockIdRepeated(string blocks)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{blocks}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewBlockIdRepeated);
+    }
+
+    /// <summary>A compact header with title and subtitle sources, an action label source, a cards table and a preview note are accepted.</summary>
+    [Fact]
+    public void Read_DisplayMembersWellFormed_AreAccepted()
+    {
+        Write("views/a.json", """
+            {"schema":1,"blocks":[
+              {"kind":"header","compact":true,
+               "titleSource":{"route":{"method":"get","path":"/site"},"field":"site.name"},
+               "subtitleSource":{"route":{"method":"get","path":"/site"},"field":"site.domain"}},
+              {"kind":"action","label":"P","route":{"method":"post","path":"/publish"},
+               "labelSource":{"route":{"method":"get","path":"/site"},"field":"label"}},
+              {"kind":"table","display":"cards","source":{"route":{"method":"get","path":"/site"}},"columns":[]},
+              {"kind":"preview","size":"phone","note":{"route":{"method":"get","path":"/site"},"field":"notes"},
+               "sources":[{"id":"preview","label":"P","route":{"method":"get","path":"/site"},"field":"urls.preview"}]}
+            ]}
+            """);
+
+        PluginViewDocumentReader.Read(_folder, ClientPageManifest(), MaxViewBytes).Violation.Should().BeNull();
+    }
+
+    /// <summary>A display member of the wrong type, or a source that is not a GET route with a dotted field, breaks ViewInvalid.</summary>
+    /// <param name="block">The block JSON.</param>
+    [Theory]
+    [InlineData("""{"kind":"header","compact":"yes"}""")]
+    [InlineData("""{"kind":"header","titleSource":"name"}""")]
+    [InlineData("""{"kind":"header","titleSource":{"route":{"method":"post","path":"/publish"},"field":"a"}}""")]
+    [InlineData("""{"kind":"header","subtitleSource":{"route":{"method":"get","path":"/site"},"field":5}}""")]
+    [InlineData("""{"kind":"header","subtitleSource":{"route":{"method":"get","path":"/site"},"field":"a..b"}}""")]
+    [InlineData("""{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"labelSource":{"field":"a"}}""")]
+    [InlineData("""{"kind":"table","display":"grid","columns":[]}""")]
+    [InlineData("""{"kind":"table","display":true,"columns":[]}""")]
+    [InlineData("""{"kind":"preview","size":"phone","note":["x"],"sources":[{"id":"preview","label":"P","route":{"method":"get","path":"/site"},"field":"u"}]}""")]
+    public void Read_DisplayMemberMalformed_BreaksViewInvalid(string block)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{block}}]}""");
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewInvalid);
+    }
+
+    /// <summary>A tab id and a preview source id may match a block's id: only blocks share the id space the panel keys on.</summary>
+    [Fact]
+    public void Read_IdsOfTabsAndPreviewSourcesMatchingABlockId_AreAccepted()
+    {
+        Write("views/a.json", """
+            {"schema":1,"blocks":[
+              {"kind":"tabs","tabs":[{"id":"versions","title":"V","blocks":[{"kind":"text","id":"versions","text":"x"}]}]},
+              {"kind":"preview","id":"live","size":"phone","sources":[
+                {"id":"preview","label":"P","route":{"method":"get","path":"/site"},"field":"urls.preview"},
+                {"id":"live","label":"L","route":{"method":"get","path":"/site"},"field":"urls.live"}]}
+            ]}
+            """);
+
+        PluginViewDocumentReader.Read(_folder, ClientPageManifest(), MaxViewBytes).Violation.Should().BeNull();
+    }
+
     /// <summary>A split without exactly two panes of blocks, or inside another split at any depth, breaks ViewSplitInvalid.</summary>
     /// <param name="block">The block under test.</param>
     [Theory]

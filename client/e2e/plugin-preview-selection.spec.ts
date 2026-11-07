@@ -47,3 +47,29 @@ for (const { language, prefix, select } of LANGUAGES) {
     await expect(page.getByTestId('plugin-preview-select-hint')).toBeHidden()
   })
 }
+
+test('@phone an element is selected by a tap with the panes stacked', async ({ page, request }) => {
+  await resetStub(request)
+  await page.goto(`/client/apps/${PLUGIN_ID}/workspace`)
+  await waitForHydration(page)
+  await signInThroughForm(page)
+
+  // Stacked: the conversation's pane on top, the preview's below it, both as wide as the screen allows.
+  const conversation = await page.getByTestId('plugin-split-pane-0').boundingBox()
+  const preview = await page.getByTestId('plugin-split-pane-1').boundingBox()
+  expect(conversation).not.toBeNull()
+  expect(preview).not.toBeNull()
+  expect(preview!.y).toBeGreaterThanOrEqual(conversation!.y + conversation!.height - 1)
+  expect(Math.abs(preview!.x - conversation!.x)).toBeLessThan(2)
+
+  await page.getByTestId('plugin-preview-select').tap()
+  await expect(page.getByTestId('plugin-preview-select-hint')).toBeVisible()
+
+  const site = page.frameLocator('[data-testid="plugin-preview-frame"]')
+  await site.getByTestId('site-title').tap()
+  await expect(page.getByTestId('plugin-chat-selection-chip')).toContainText('Server label')
+
+  // A second tap on the same element takes it out again.
+  await site.getByTestId('site-title').tap()
+  await expect(page.getByTestId('plugin-chat-selection-chip')).toHaveCount(0)
+})

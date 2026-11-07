@@ -20,6 +20,13 @@ internal sealed class DocumentScan
     /// <summary>Gets the <c>id</c> of every block (an object with a string <c>kind</c>) in the document.</summary>
     public HashSet<string> BlockIds { get; } = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Gets or sets the first block id the document gives to a second block, or <see langword="null"/> while every id is
+    /// its own. The client keys a block's refresh, its watch and its render on the id, so two blocks with one id would
+    /// act as one.
+    /// </summary>
+    public string? RepeatedBlockId { get; set; }
+
     /// <summary>Gets the block ids every <c>followUp</c> asks to refresh, in document order.</summary>
     public List<string> FollowUpRefresh { get; } = [];
 

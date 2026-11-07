@@ -1168,6 +1168,9 @@
   <data name="PLUGIN_VIEW_PREVIEW_INVALID" xml:space="preserve">
     <value>Один из документов представления этого плагина содержит предпросмотр с неверными источниками или размером либо показывает его не на клиентской странице.</value>
   </data>
+  <data name="PLUGIN_VIEW_BLOCK_ID_REPEATED" xml:space="preserve">
+    <value>Один из документов представления этого плагина присваивает один и тот же идентификатор нескольким блокам.</value>
+  </data>
   <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
     <value>У этой позиции нет блокировки продления, которую можно снять.</value>
   </data>

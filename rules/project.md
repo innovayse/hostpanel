@@ -463,8 +463,9 @@ docker/                              compose set (shared·dev·prod·platform), 
       page is left (late answers dropped); the watch belongs to the view (`PluginViewContext.adopt`), so the block that
       started it hiding itself, as a publish button does once its version is live, does not end it, and when the condition
       holds the sentence the action showed is taken down. A failed read counts as an attempt. `refresh` is 1 to 20 ids, each the `id`
-      of a block in the same document. The host does not yet refuse two blocks with one `id`; the client treats them as one
-      block (refresh and watch key), which the plugin docs tell authors to avoid. **The bounds are the host's, never the plugin's**:
+      of a block in the same document. Two blocks with one `id`, at any depth, are refused at install and load
+      (`ViewBlockIdRepeated`, `PLUGIN_VIEW_BLOCK_ID_REPEATED`), because the client keys a block's refresh, its watch and its
+      render on the id; the `id` of a tab or of a preview source is not a block id. The reader also checks the display members the panel would otherwise ignore when mistyped (`PLUGIN_VIEW_INVALID`): a header's `compact` (boolean), `titleSource` and `subtitleSource`, an action's `labelSource` and a preview's `note` (each a GET route and, when given, a dotted `field`), and a table's `display` (`table` or `cards`). **The bounds are the host's, never the plugin's**:
       `PLUGIN_FOLLOW_UP_MAX_ATTEMPTS` 20 and `PLUGIN_FOLLOW_UP_INTERVAL_MS` 3000 (about a minute) in the client.
     - Refused at install and load: `ViewConditionInvalid` (`PLUGIN_VIEW_CONDITION_INVALID`: a bad condition, a non-`GET`
       condition route, `visibleWhen` outside a block) and `ViewFollowUpInvalid` (`PLUGIN_VIEW_FOLLOW_UP_INVALID`: a bad
@@ -494,7 +495,7 @@ docker/                              compose set (shared·dev·prod·platform), 
       that is not a plain DNS name is dropped, because a domain is what a client typed and the text reaches a response
       header. The list is cut at 2048 characters for the proxies' header limits; what falls off shows nothing.
     - **Browser enforcement.** The panel frames an address only when its origin is exactly on that list and is not the
-      panel's own. The edges this repository ships (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`, held to one policy by `scripts/check-edge-csp.sh`) keep `frame-src 'self' https:` (operator content on public pages, and domains cannot be
+      panel's own. The edges this repository ships (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`, held to one policy by `scripts/check-edge-csp.sh`, which compares the text, and run as they are in front of a stub upstream by `scripts/check-edge-headers.sh` with `edge_headers_*.py`, which asserts the response headers: one policy on `/`, the edge policy plus the plugin page's narrow `frame-src` as two headers on `/client/apps/*` (also under a language prefix), the upload policy on `/uploads/`, the admin upstream's policy passed through alone, and every location of the admin image's own configuration (`docker/nginx/admin.conf` with `snippets/admin-csp.conf`) sending exactly one; the same script runs in the GitHub `edge-csp` job and the GitLab `edge:test:headers` job) keep `frame-src 'self' https:` (operator content on public pages, and domains cannot be
       listed statically). An operator's own edge may send that same policy as `Content-Security-Policy-Report-Only` while it is reviewed (#938), and a report-only policy does not intersect with an enforcing one, so on such a deployment, and on a deployment whose edge sends no policy, the header below is the only one enforced. `client/server/middleware/plugin-frame-csp.ts` adds a second header to the document of
       `/client/apps/<plugin>/**` (a language prefix names the same page), `Content-Security-Policy: frame-src <origins>` or
       `'none'` on any failure. Policies intersect. A document that got the API's origins also carries `Server-Timing:

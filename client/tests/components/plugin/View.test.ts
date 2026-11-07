@@ -67,15 +67,22 @@ describe('PluginView follow-ups', () => {
   })
 
   /** The badge the follow-ups refresh; every read of it is counted. */
-  const liveBadge: PluginBlock = { kind: PluginBlockKind.Badge, id: 'live', source: { route: TEST_ROUTES.site, field: 'liveText' } }
+  const liveBadge: PluginBlock = {
+    kind: PluginBlockKind.Badge,
+    id: 'live',
+    source: { route: TEST_ROUTES.site, field: 'liveText' },
+  }
 
   /**
    * Starts the stub API that counts the reads of the badge's route and of the watched route.
    *
-   * @param state - What the watched route answers for each of its reads (the read number counted from 1); a promise holds the answer back.
+   * @param state - What the watched route answers for each of its reads (the read number counted from 1); a promise
+   * holds the answer back.
    * @returns The read counts, by route.
    */
-  const startCountingApi = async (state: (read: number) => Promise<string> | string = () => 'running'): Promise<{ live: number, state: number, shown: boolean }> => {
+  const startCountingApi = async (
+    state: (read: number) => Promise<string> | string = () => 'running',
+  ): Promise<{ live: number, state: number, shown: boolean }> => {
     const counts = { live: 0, state: 0, shown: true }
     api = await startPluginApi({
       [`GET ${ROUTES_URL}/sites/7`]: () => {
@@ -129,9 +136,18 @@ describe('PluginView follow-ups', () => {
     const counts = await startCountingApi()
     const wrapper = mountBlocks([
       liveBadge,
-      publishAction('publish', { refresh: ['publish'], visibleWhen: { route: shownRoute, field: 'shown', equals: true } }),
+      publishAction('publish', {
+        refresh: ['publish'],
+        visibleWhen: { route: shownRoute, field: 'shown', equals: true },
+      }),
       // Brings the publish button back: it reads its condition again, as a new instance of the block.
-      { kind: PluginBlockKind.Action, id: 'recheck', label: 'Recheck', route: { method: 'post', path: '/sites/{siteId}/recheck' }, refresh: ['publish'] },
+      {
+        kind: PluginBlockKind.Action,
+        id: 'recheck',
+        label: 'Recheck',
+        route: { method: 'post', path: '/sites/{siteId}/recheck' },
+        refresh: ['publish'],
+      },
     ])
     await settle()
     const buttons = (): string[] => wrapper.findAll('[data-testid="plugin-action-button"]').map(button => button.text())

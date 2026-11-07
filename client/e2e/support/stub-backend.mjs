@@ -11,7 +11,7 @@
  * Playwright starts it as the first `webServer` entry (see `playwright.config.ts`); the Nuxt
  * server is started with `API_URL` pointing here.
  *
- * Besides the backend routes it exposes seven test-only endpoints:
+ * Besides the backend routes it exposes eight test-only endpoints:
  * - `GET  /__e2e/requests`: every request received so far (method, path, body and the
  *   `X-Language` it carried), so a spec can assert that a form submission really reached the
  *   backend with the right body and in the right language;
@@ -23,6 +23,8 @@
  *   the demo banner and the sign-in hint turns it on, until the next reset;
  * - `POST /__e2e/slides`: switches the home-page slides on; the feed is empty by default (the home shows the
  *   text hero), so only the spec that covers the slider turns them on, until the next reset;
+ * - `POST /__e2e/plugin-stage`: moves the fake plugin's staged version on (`{ "version": 15 }`) behind a page that still shows
+ *   the old one, until the next reset;
  * - `POST /__e2e/plugin-slots`: lists fake plugin widgets per slot (`{ "client.dashboard.cards": ["ok"] }`) until
  *   the next reset; every slot is empty by default;
  * - `POST /__e2e/email-verified`: sets whether the signed-in address reads as confirmed (it does by default),
@@ -375,6 +377,9 @@ const sendProblem = (res, status, code, detail, errors) => {
 /** @type {string} The fake plugin site's status; publishing sets it, a reset restores it. */
 let pluginSiteStatus = PLUGIN_SITE.status
 
+/** @type {{ stage: number, live: number }} The fake plugin's staged and live versions; a reset restores them. */
+let pluginVersions = { stage: 14, live: 13 }
+
 /**
  * Streams the fake plugin's chat reply: one `delta` per piece with a pause between them, then `done`, keeping the
  * response open until the last event, so a spec sees the reply grow while the stream runs (only an unbuffered path
@@ -404,9 +409,10 @@ const streamPluginChat = async (res) => {
  * @param {import('node:http').ServerResponse} res The response to write.
  * @param {URLSearchParams} query The request's query string; the page lookup reads `path`.
  * @param {string} language The request's `X-Language`.
+ * @param {Record<string, unknown> | null} body Parsed JSON body, or `null`; the staged publish reads the version it was given.
  * @returns {boolean} True when the route was handled.
  */
-const routePlugin = (method, path, res, query, language) => {
+const routePlugin = (method, path, res, query, language, body) => {
   const own = `/api/client/plugins/${PLUGIN_ID}`
   if (method === 'GET' && path === '/api/client/plugins/ui') {
     send(res, 200, pluginUi(language))
@@ -457,6 +463,20 @@ const routePlugin = (method, path, res, query, language) => {
     send(res, 200, [{ id: PLUGIN_SITE.id, name: PLUGIN_SITE.name, status: pluginSiteStatus }])
     return true
   }
+  if (method === 'GET' && path === `${own}/stage/state`) {
+    send(res, 200, { publishVersion: pluginVersions.stage, publishLabel: `Publish version ${pluginVersions.stage}`, live: `Version ${pluginVersions.live}` })
+    return true
+  }
+  // Publishes only the version the caller saw: a body naming another one is refused and nothing changes.
+  if (method === 'POST' && path === `${own}/stage/publish`) {
+    if (body?.expectedVersion !== pluginVersions.stage) {
+      sendProblem(res, 409, 'PLUGIN_STAGE_CHANGED', 'The staged version changed. Check the new version, then publish again.')
+      return true
+    }
+    pluginVersions.live = pluginVersions.stage
+    send(res, 200, { message: `Version ${pluginVersions.live} is published.` })
+    return true
+  }
   if (method === 'GET' && path === `${own}/workspace/site`) {
     send(res, 200, { previewUrl: `${PLUGIN_FRAME_ORIGIN}/__e2e/frame`, release: 'r4' })
     return true
@@ -497,7 +517,7 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
     send(res, 200, { releaseId: 'r4', items: asked.filter(id => id === 'pages.0.title').map(id => ({ id, label: 'Server label' })) })
     return true
   }
-  if (path.startsWith('/api/client/plugins/') && routePlugin(method, path, res, query, language)) {
+  if (path.startsWith('/api/client/plugins/') && routePlugin(method, path, res, query, language, body)) {
     return true
   }
 
@@ -1215,6 +1235,7 @@ on('forge-unknown', { event: 'toggle', id: 'pages.9.title' })
     team = [{ ...TEAM_OWNER }, { ...TEAM_MEMBER }]
     sshKeys = []
     pluginSiteStatus = PLUGIN_SITE.status
+    pluginVersions = { stage: 14, live: 13 }
     lastSshKey = 0
     lastContactId = Number(SEEDED_CONTACT.id)
     send(res, 204)
@@ -1248,6 +1269,12 @@ on('forge-unknown', { event: 'toggle', id: 'pages.9.title' })
     hostedGatewayEnabled = gateways.hosted === true
     bankTransferEnabled = gateways.bankTransfer !== false
     bankTransferDetailsEmpty = gateways.bankTransferDetailsEmpty === true
+    send(res, 204)
+    return
+  }
+  if (path === '/__e2e/plugin-stage') {
+    // Moves the staged version on, as another tab or a finishing deployment would.
+    pluginVersions.stage = (await readJson(req)).version
     send(res, 204)
     return
   }

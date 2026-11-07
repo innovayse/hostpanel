@@ -31,6 +31,7 @@ import {
   pluginLinkTarget,
   pluginPageValues,
   pluginRouteMethod,
+  pluginRouteRequest,
   pluginUiTone,
   MAX_PLUGIN_EVENT_CHARS,
   PLUGIN_STREAM_EVENT_TOO_LARGE,
@@ -58,6 +59,28 @@ const streamOf = (chunks: string[]): ReadableStream<Uint8Array> => {
     },
   })
 }
+
+describe('pluginRouteRequest', () => {
+  it('names a route reference by its method and its filled, encoded address, with the query after it', () => {
+    expect(pluginRouteRequest({ method: 'get', path: '/sites/{siteId}/state' }, { siteId: 'a/b' }, { page: '2' }))
+      .toEqual({ method: 'GET', url: 'sites/a%2Fb/state?page=2' })
+    expect(pluginRouteRequest({ method: 'post', path: '/sites/{siteId}' }, { siteId: '7' })).toEqual({ method: 'POST', url: 'sites/7' })
+  })
+
+  it('gives two references to the same route the same request, whatever block holds them', () => {
+    const one = pluginRouteRequest({ method: 'GET', path: '/sites/{siteId}' }, { siteId: '7' })
+    const other = pluginRouteRequest({ method: 'get', path: '/sites/{siteId}' }, { siteId: '7' })
+
+    expect(one).toEqual(other)
+  })
+
+  it.each([
+    [{ method: 'get', path: '/sites/{siteId}' }, {}, 'a parameter the page does not carry'],
+    [{ method: 'head', path: '/sites' }, {}, 'a method the host does not call'],
+  ])('is null for %j with %j (%s)', (route, values, _reason: string) => {
+    expect(pluginRouteRequest(route, values)).toBeNull()
+  })
+})
 
 describe('pluginRouteMethod', () => {
   it.each([

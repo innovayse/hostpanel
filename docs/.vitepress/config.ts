@@ -6,11 +6,12 @@
  * example at the root of a custom domain.
  */
 import { defineConfig } from 'vitepress'
+import type { HeadConfig } from 'vitepress'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createSeo } from './seo'
-import { hasSitemap, readLatestPages, resolveVersion } from './versions'
+import { hasSitemap, readLatestPages, resolveVersion, versionBannerStyle } from './versions'
 import { sidebarSectionText } from './sidebarIcon'
 import type { SidebarIcon } from './sidebarIcon'
 
@@ -146,6 +147,8 @@ export default defineConfig({
     ['link', { rel: 'apple-touch-icon', href: `${base}apple-touch-icon.png`, sizes: '180x180' }],
     ['meta', { name: 'theme-color', content: '#323DF3' }],
     ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    // The notice of an older release and of next is fixed above the top bar; this tells the layout how tall it is.
+    ...(version.kind === 'latest' ? [] : ([['style', {}, versionBannerStyle]] as HeadConfig[])),
   ],
 
   /**

@@ -13,7 +13,7 @@
  */
 
 import type { H3Event } from 'h3'
-import { BAD_ROUTE_PARAM } from '~/server/utils/requireRouteParam'
+import { PortalErrorCode } from '~/constants/portalErrorCode'
 
 /** Characters a decoded segment may never hold: backslash, `%` (a second decoding) and ASCII control characters. */
 // eslint-disable-next-line no-control-regex -- the control range is what this refuses
@@ -24,7 +24,7 @@ const FORBIDDEN = /[\\%\u0000-\u001f\u007f]/
  *
  * @returns The H3 error to throw.
  */
-const badPath = () => createError({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
+const badPath = () => createError({ statusCode: 400, data: { code: PortalErrorCode.BadRouteParam } })
 
 /**
  * Decodes, checks and re-encodes one segment.
@@ -62,7 +62,7 @@ const plainSegment = (decoded: string): string => {
  *
  * @param event - H3 event of the incoming request.
  * @returns The path below the plugin's prefix, each segment percent-encoded.
- * @throws H3Error 400 carrying `data.code = BAD_ROUTE_PARAM` and no `statusMessage`.
+ * @throws H3Error 400 carrying `data.code = PortalErrorCode.BadRouteParam` and no `statusMessage`.
  */
 export const requirePluginPath = (event: H3Event): string => {
   const raw = getRouterParam(event, 'path', { decode: false }) ?? ''
@@ -81,7 +81,7 @@ const MAX_PAGE_PATH_LENGTH = 1024
  * @param event - H3 event of the incoming request.
  * @returns The address with a leading `/` (`/` alone for the root page), each decoded segment checked like a route
  *   segment.
- * @throws H3Error 400 carrying `data.code = BAD_ROUTE_PARAM` for a missing, repeated, overlong or malformed value.
+ * @throws H3Error 400 carrying `data.code = PortalErrorCode.BadRouteParam` for a missing, repeated, overlong or malformed value.
  */
 export const requirePluginPagePath = (event: H3Event): string => {
   return checkedPluginPagePath(getQuery(event).path)
@@ -92,7 +92,7 @@ export const requirePluginPagePath = (event: H3Event): string => {
  *
  * @param raw - The address below `/client/apps/<plugin>`.
  * @returns The address with a leading `/` (`/` alone for the root page), each segment checked like a route segment.
- * @throws H3Error 400 carrying `data.code = BAD_ROUTE_PARAM` for a missing, repeated, overlong or malformed value.
+ * @throws H3Error 400 carrying `data.code = PortalErrorCode.BadRouteParam` for a missing, repeated, overlong or malformed value.
  */
 export const checkedPluginPagePath = (raw: unknown): string => {
   // A repeated key arrives as an array; which one would win is not the visitor's to choose, so it is refused.

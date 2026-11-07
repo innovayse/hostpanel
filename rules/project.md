@@ -1757,7 +1757,7 @@ is plain runtime env. `site.url` is read at runtime by nuxt-site-config from `NU
 deployment. Do not add a `process.env` read outside `runtimeConfig` that differs per deployment.
 
 That widget is a host-provided header widget, written elsewhere, but it is **served from this portal's own origin**:
-`server/routes/widget/[file].get.ts` relays `header.js` and `header.v2.js` from `MAIN_APP_URL` (five minutes' cache, the last copy kept when the host is unreachable, only those two names). The script builds every
+`server/routes/widget/[file].ts` relays `header.js` and `header.v2.js` from `MAIN_APP_URL` (five minutes' cache, the last copy kept when the host is unreachable, only those two names). The script builds every
 address for switching account, adding an account, its configuration and its launcher from the origin it was
 served from; loaded from the host's origin it sent the switch through the host's sign-in client and callback, so
 the visitor landed on a page that does not exist here and kept the old account. Served from here, those
@@ -1924,6 +1924,22 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
   (never a cookie either way). The public catalogue reads its filters through `readCatalogQuery`
   (`server/utils/catalogQuery.ts`: integers, a bounded group list, a three-letter currency), so its
   shared-cache key has a fixed shape; the backend does the filtering.
+- **A route that serves a file answers `GET` and `HEAD`, and only those.** A Nitro route file named `*.get.ts`
+  is registered for `GET` alone and h3 does not fall back to it for `HEAD`, so a `HEAD` of `/robots.txt`,
+  `/site.webmanifest`, `/widget/*` or `/uploads/**` never reached the handler and answered a missing file where
+  there was one (link checkers, uptime monitors and proxy revalidation probe with `HEAD`). A file route outside
+  `server/routes/api/` is therefore written without a method suffix and exported through
+  `defineReadOnlyEventHandler` (`server/utils/readOnlyEventHandler.ts`): `GET` and `HEAD` run the one handler (the
+  server drops the body of a `HEAD`), every other method (`OPTIONS` included, which the page used to answer) is a
+  coded 405 (`PortalErrorCode.MethodNotAllowed`) with `Allow: GET, HEAD` before the handler runs. Both file proxies,
+  `/uploads/**` and `/uploads/branding/**`, ask the file server for a `HEAD` as a `HEAD`, so answering one never pulls
+  the file, and both pass the file server's own `Content-Length` on, so a `HEAD` and a `GET` of an upload tell the same size
+  (a length is dropped for an answer the fetch layer decoded, since the body would not match it). A file route's
+  refusals keep the BFF's coded-error convention (`createError` with `data.code`, no sentence): the C# `ErrorResponse`
+  needs a localised `detail`, which the BFF must not author, and every code the BFF writes itself has one entry in
+  `PortalErrorCode`. `tests/server/contract.test.ts` fails on a suffixed or unwrapped file route (`account.get.ts`, a
+  redirect, is the one listed exception), and `tests/server/nitroRouter.test.ts` sends real requests through Nitro's own
+  route scan and an h3 router to prove a `HEAD` reaches each route (and that a `*.get.ts` file would not).
 - **The visitor's address is read from the right.** `server/utils/clientAddress.ts` returns the socket
   address, or, with `runtimeConfig.trustedProxyCount` (`NUXT_TRUSTED_PROXY_COUNT`, `CLIENT_TRUSTED_PROXY_COUNT`
   in the compose files) set to N, the Nth entry from the right of `X-Forwarded-For`, the same reading as

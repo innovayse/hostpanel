@@ -1,14 +1,16 @@
 /**
- * Tests for `GET /uploads/branding/**`: it serves only png and ico branding files from the C# API,
- * refuses path traversal, and sends long-lived, no-sniff headers.
+ * Tests for `GET` and `HEAD /uploads/branding/**`: it serves only png and ico branding files from the
+ * C# API, refuses path traversal, and sends long-lived, no-sniff headers. A `HEAD` is answered as the
+ * `GET` is (a known file 200, an unknown one 404), and no other method is.
  *
- * @module tests/server/routes/uploads/branding/[...path].get.test
+ * @module tests/server/routes/uploads/branding/[...path].test
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { makeEvent, refusal, startBackend } from '../../../../helpers/bffHarness'
 import type { RouteModule } from '../../../../helpers/bffHarness'
 import type { StubServer } from '../../../../helpers/stubServer'
+import { HttpMethod } from '~/types/httpmethod'
 
 /** The stub playing the C# API. */
 let backend: StubServer
@@ -18,14 +20,56 @@ let route: RouteModule
 
 beforeEach(async () => {
   backend = await startBackend()
-  route = await import('~/server/routes/uploads/branding/[...path].get')
+  route = await import('~/server/routes/uploads/branding/[...path]')
 })
 
 afterEach(async () => {
   await backend.close()
 })
 
-describe('GET /uploads/branding/**', () => {
+describe('GET and HEAD /uploads/branding/**', () => {
+  it('asks the file server for a HEAD, so answering one never pulls the file', async () => {
+    backend.respondWith(() => ({ body: 'png-bytes', headers: { 'content-length': '9' } }))
+    const event = makeEvent({ params: { path: 'abc/v1/icon-192.png' }, method: HttpMethod.Head })
+
+    const body = await route.default(event)
+
+    expect(backend.requests).toHaveLength(1)
+    expect(backend.requests[0]?.method).toBe('HEAD')
+    expect(backend.requests[0]?.url).toBe('/uploads/branding/abc/v1/icon-192.png')
+    expect(body).toBeUndefined()
+    expect(event.noContentStatus).toBe(200)
+  })
+
+  it('answers a HEAD of a known file with the headers of the GET and the length the file server gave', async () => {
+    backend.respondWith(() => ({ body: 'png-bytes', headers: { 'content-length': '9' } }))
+    const get = makeEvent({ params: { path: 'abc/v1/icon-192.png' } })
+    const head = makeEvent({ params: { path: 'abc/v1/icon-192.png' }, method: HttpMethod.Head })
+
+    await route.default(get)
+    await route.default(head)
+
+    expect(head.responseHeaders).toEqual({ ...get.responseHeaders, 'Content-Length': '9' })
+    expect(head.responseHeaders['Content-Type']).toBe('image/png')
+    expect(head.responseHeaders['Cache-Control']).toBe('public, max-age=31536000, immutable')
+  })
+
+  it('answers a HEAD of an unknown file with the 404 of the GET', async () => {
+    backend.respondWith(() => ({ status: 404, body: { type: 'NOT_FOUND', detail: 'Missing.' } }))
+
+    const error = await refusal(() => route.default(makeEvent({ params: { path: 'abc/gone.png' }, method: HttpMethod.Head })))
+
+    expect(error).toMatchObject({ statusCode: 404 })
+    expect(backend.requests[0]?.method).toBe('HEAD')
+  })
+
+  it('refuses a POST with 405, without calling the backend', async () => {
+    const error = await refusal(() => route.default(makeEvent({ params: { path: 'abc/v1/icon-192.png' }, method: HttpMethod.Post })))
+
+    expect(error).toMatchObject({ statusCode: 405, data: { code: 'METHOD_NOT_ALLOWED' } })
+    expect(backend.requests).toHaveLength(0)
+  })
+
   it('returns the file bytes with the png content type and immutable cache headers', async () => {
     backend.respondWith(() => ({ body: 'png-bytes' }))
     const event = makeEvent({ params: { path: 'abc/v1/icon-192.png' } })

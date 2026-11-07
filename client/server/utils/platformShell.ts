@@ -7,7 +7,7 @@
  * own host, it therefore sent a person who picked another account through the shell's sign-in client
  * and callback instead of this portal's, and they landed on a page that does not exist here.
  *
- * So the script is relayed from this origin (`server/routes/widget/[file].get.ts`), and the three
+ * So the script is relayed from this origin (`server/routes/widget/[file].ts`), and the three
  * addresses it then asks of its host are answered here: its configuration, its app list and the
  * account page. This module holds what those routes share: whether the widget is enabled for this
  * deployment, and the cached, bounded read of the shell.

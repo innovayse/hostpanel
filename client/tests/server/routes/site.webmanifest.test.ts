@@ -1,15 +1,17 @@
 /**
- * Tests for `GET /site.webmanifest`: it builds the web-app manifest from the public settings,
- * using the generated icon set next to the configured favicon or the default icons.
+ * Tests for `GET` and `HEAD /site.webmanifest`: it builds the web-app manifest from the public settings,
+ * using the generated icon set next to the configured favicon or the default icons. A `HEAD` is
+ * answered as the `GET` is, and no other method is.
  *
- * @module tests/server/routes/site.webmanifest.get.test
+ * @module tests/server/routes/site.webmanifest.test
  */
 
 import { ofetch } from 'ofetch'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { makeEvent, startBackend } from '../../helpers/bffHarness'
+import { makeEvent, refusal, startBackend } from '../../helpers/bffHarness'
 import type { RouteModule } from '../../helpers/bffHarness'
 import type { StubServer } from '../../helpers/stubServer'
+import { HttpMethod } from '~/types/httpmethod'
 
 /** The stub playing the portal's own `/api/portal/public/settings` route. */
 let backend: StubServer
@@ -31,14 +33,33 @@ beforeEach(async () => {
   backend = await startBackend()
   // The route asks the portal's own settings route by a relative address; the stub plays that route.
   vi.stubGlobal('$fetch', (url: string) => ofetch(url, { baseURL: backend.baseUrl }))
-  route = await import('~/server/routes/site.webmanifest.get')
+  route = await import('~/server/routes/site.webmanifest')
 })
 
 afterEach(async () => {
   await backend.close()
 })
 
-describe('GET /site.webmanifest', () => {
+describe('GET and HEAD /site.webmanifest', () => {
+  it('answers a HEAD with the status and headers of the GET', async () => {
+    backend.respondWith(() => ({ body: { 'portal.favicon': '/uploads/branding/abc/v1/favicon.ico' } }))
+    const get = makeEvent()
+    const head = makeEvent({ method: HttpMethod.Head })
+
+    await route.default(get)
+    await route.default(head)
+
+    expect(head.responseHeaders).toEqual(get.responseHeaders)
+    expect(head.responseHeaders['Content-Type']).toBe('application/manifest+json')
+  })
+
+  it('refuses a POST with 405, without asking the portal settings', async () => {
+    const error = await refusal(() => route.default(makeEvent({ method: HttpMethod.Post })))
+
+    expect(error).toMatchObject({ statusCode: 405, data: { code: 'METHOD_NOT_ALLOWED' } })
+    expect(backend.requests).toHaveLength(0)
+  })
+
   it('points the icons at the generated set that sits next to the configured favicon', async () => {
     backend.respondWith(() => ({ body: { 'portal.favicon': '/uploads/branding/abc/v1/favicon.ico' } }))
     const event = makeEvent()

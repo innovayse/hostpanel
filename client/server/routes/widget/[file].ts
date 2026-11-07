@@ -1,5 +1,5 @@
 /**
- * GET /widget/header.js and /widget/header.v2.js
+ * GET and HEAD /widget/header.js and /widget/header.v2.js
  *
  * Relays the platform shell's header widget from this portal's own origin. The script builds every
  * account-switch, add-account and launcher address from the origin it was served from, so serving
@@ -9,18 +9,17 @@
  * Only the two known file names are relayed. The legacy `header.js` loads `header.v2.js` from its
  * own directory, which is this route again.
  *
- * @module server/routes/widget/[file].get
+ * @module server/routes/widget/[file]
  */
 
+import { PortalErrorCode } from '~/constants/portalErrorCode'
 import { readWidgetScript, WIDGET_FILES } from '~/server/utils/platformShell'
+import { defineReadOnlyEventHandler } from '~/server/utils/readOnlyEventHandler'
 
-/** The `data.code` of the 404 answered for any other file name. */
-const WIDGET_FILE_NOT_FOUND = 'WIDGET_FILE_NOT_FOUND'
-
-export default defineEventHandler(async (event) => {
+export default defineReadOnlyEventHandler(async (event) => {
   const name = getRouterParam(event, 'file') ?? ''
   if (!WIDGET_FILES.has(name)) {
-    throw createError({ statusCode: 404, data: { code: WIDGET_FILE_NOT_FOUND } })
+    throw createError({ statusCode: 404, data: { code: PortalErrorCode.WidgetFileNotFound } })
   }
 
   const script = await readWidgetScript(name)

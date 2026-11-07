@@ -7,7 +7,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
 /// <summary>
 /// No-op cPanel provisioning provider used in development and testing.
 /// Returns predictable results without calling any external cPanel/WHM API.
-/// Replace with <see cref="CPanelProvisioningProvider"/> when a real server is configured.
+/// The real provider is <see cref="Whm.WhmProvisioningProvider"/>, built per server by the provisioning factory.
 /// </summary>
 public sealed class NullCPanelProvisioningProvider : IProvisioningProvider
 {

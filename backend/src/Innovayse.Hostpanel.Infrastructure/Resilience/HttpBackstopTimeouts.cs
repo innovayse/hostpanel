@@ -8,9 +8,6 @@ namespace Innovayse.Hostpanel.Infrastructure.Resilience;
 /// </summary>
 public static class HttpBackstopTimeouts
 {
-    /// <summary>cPanel/WHM provisioning client.</summary>
-    public static readonly TimeSpan CPanel = TimeSpan.FromSeconds(60);
-
     /// <summary>The named client of every loaded plugin, keyed by its plugin id.</summary>
     public static readonly TimeSpan Plugin = TimeSpan.FromSeconds(60);
 
@@ -25,6 +22,9 @@ public static class HttpBackstopTimeouts
 
     /// <summary>Plesk XML API client, resolved by name per server.</summary>
     public static readonly TimeSpan Plesk = TimeSpan.FromSeconds(120);
+
+    /// <summary>WHM API client, resolved by name per cPanel server.</summary>
+    public static readonly TimeSpan CPanelWhm = TimeSpan.FromSeconds(120);
 
     /// <summary>The migration pull client.</summary>
     public static readonly TimeSpan Migration = TimeSpan.FromMinutes(5);

@@ -17,6 +17,8 @@ export enum MessageLanguage {
   Ru = 'ru',
   /** Armenian. */
   Hy = 'hy',
+  /** Spanish. */
+  Es = 'es',
 }
 
 /** Message trees of one language, keyed by area name. */
@@ -36,6 +38,7 @@ export const buildMessages = (files: Record<string, MessageTree>): Record<Messag
     [MessageLanguage.En]: {},
     [MessageLanguage.Ru]: {},
     [MessageLanguage.Hy]: {},
+    [MessageLanguage.Es]: {},
   }
   for (const [path, tree] of Object.entries(files)) {
     const match = /^\.\/([^/]+)\/([^/]+)\.json$/.exec(path)

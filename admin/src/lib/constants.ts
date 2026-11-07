@@ -55,6 +55,7 @@ export const LANGUAGE_OPTIONS: SelectOption[] = [
   { value: MessageLanguage.En, get label() { return translate('clients.clientForm.english') } },
   { value: MessageLanguage.Ru, get label() { return translate('clients.clientForm.russian') } },
   { value: MessageLanguage.Hy, get label() { return translate('clients.clientForm.armenian') } },
+  { value: MessageLanguage.Es, get label() { return translate('clients.clientForm.spanish') } },
 ]
 
 /** Domain status options for dropdowns. */

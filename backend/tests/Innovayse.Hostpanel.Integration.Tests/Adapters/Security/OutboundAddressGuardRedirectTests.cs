@@ -1,12 +1,11 @@
 using System.Net;
-using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm.Models;
 using Innovayse.Hostpanel.Infrastructure.Security;
 using Innovayse.Hostpanel.Infrastructure.Security.Extensions;
 using Innovayse.Hostpanel.Infrastructure.Security.Settings;
+using Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.CPanel;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Security;
@@ -14,6 +13,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Security;
 /// <summary>
 /// Tests whether a client registered with <see cref="OutboundHttpClientBuilderExtensions.AddOutboundAddressGuard"/>
 /// follows a redirect: the WHM client must not, because its request carries a password and a token.
+/// The WHM test builds the client through <c>AddCPanelWhmHttpClient</c>, the registration the
+/// application uses, so dropping <c>followRedirects: false</c> there turns it red.
 /// </summary>
 public sealed class OutboundAddressGuardRedirectTests
 {
@@ -32,11 +33,10 @@ public sealed class OutboundAddressGuardRedirectTests
         await using var other = await StubHttpServer.StartAsync();
         whm.Enqueue(RedirectTo(other));
         other.Enqueue(Ok);
-        await using var provider = BuildProvider(followRedirects: false);
-        var client = new WhmApiClient(provider.GetRequiredService<IHttpClientFactory>().CreateClient("whm"), NullLogger<WhmApiClient>.Instance);
+        await using var host = WhmTestHost.Build();
 
-        var reply = await client.CreateAccountAsync(
-            new WhmConnection($"http://{PanelHost}:{whm.BaseAddress.Port}", "root", "token"), "testuser", "example.com", "S3cret-pass", "Basic", CancellationToken.None);
+        var reply = await host.Client().CreateAccountAsync(
+            WhmTestHost.ConnectionTo(whm), "testuser", "example.com", "S3cret-pass", "Basic", CancellationToken.None);
 
         reply.Should().Be(WhmReply.Unreadable);
         whm.Requests.Should().ContainSingle();

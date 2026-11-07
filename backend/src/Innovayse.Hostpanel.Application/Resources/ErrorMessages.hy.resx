@@ -1018,6 +1018,15 @@
   <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
     <value>Դադարեցման ամսաթիվը կարելի է ուղղել միայն դադարեցված ծառայության համար։</value>
   </data>
+  <data name="SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Կառավարման վահանակի նիստը չհաջողվեց սկսել։ Վահանակը վերադարձրել է հասցե, որը նրա սերվերի վրա չէ։</value>
+  </data>
+  <data name="CPANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>Հոսթինգի հաշվի օգտանունը cPanel-ի համար վավեր չէ։ Օգտագործեք փոքրատառ լատինական տառեր և թվեր, սկսեք տառով, առավելագույնը 16 նիշ։</value>
+  </data>
+  <data name="CPANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>Դոմենը վավեր դոմենային անուն չէ։ Ստուգեք այն և կրկին փորձեք։</value>
+  </data>
   <data name="SERVICE_HOSTING_DETAILS_MISSING" xml:space="preserve">
     <value>Ծառայությունը դեռ չունի դոմեն կամ օգտանուն։ Նախ կարգավորեք հոսթինգի հաշիվը։</value>
   </data>

@@ -14,6 +14,7 @@ using Innovayse.Hostpanel.Infrastructure.Email;
 using Innovayse.Hostpanel.Infrastructure.Email.Settings;
 using Innovayse.Hostpanel.Infrastructure.ImageProcessing;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
+using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm.Extensions;
 using Innovayse.Hostpanel.Infrastructure.Integrations.GitHub;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration.Settings;
@@ -446,10 +447,8 @@ public static class DependencyInjection
         // Provisioning behaviour switches. Left unset everywhere but development, where
         // appsettings.Development.json turns UseFakeProvider on so the setup flow can complete
         // without a live CWP7 panel to call.
-        services.AddOptions<ProvisioningOptions>()
-            .Bind(configuration.GetSection(
-                ProvisioningOptions.SectionName))
-            .ValidateOnStart();
+        // The cPanel ports are checked on start, with the rest of the section.
+        services.AddProvisioningOptions(configuration);
 
         // Provisioning provider factory: creates per-server providers (CWP7, cPanel, etc.)
         services.AddScoped<IProvisioningProviderFactory, ProvisioningProviderFactory>();
@@ -663,18 +662,9 @@ public static class DependencyInjection
             .AddOutboundAddressGuard()
             .AddNoRetryResilience(o => o.Plesk);
 
-        // WHM API client for cPanel servers, named only, like Plesk. The factory's request logging
-        // is removed: createacct and passwd carry a password, which travels in the POST body and never
-        // the URL, and no request detail should reach a log line. The request also holds the token and
-        // the password, so a redirect is never followed: a 307 or 308 would resend both to another
-        // host. A redirect reads as an unreadable reply.
-        services.AddHttpClient(HttpClientNames.CPanelWhm, client =>
-        {
-            client.Timeout = HttpBackstopTimeouts.CPanelWhm;
-        })
-            .RemoveAllLoggers()
-            .AddOutboundAddressGuard(followRedirects: false)
-            .AddNoRetryResilience(o => o.CPanelWhm);
+        // WHM API client for cPanel servers, named only, like Plesk. The chain (no request logging, no
+        // redirects, the WHM resilience profile) is one extension, which the tests resolve as well.
+        services.AddCPanelWhmHttpClient();
 
         // Migration
         services.AddScoped<MigrationPullWorker>();
@@ -916,6 +906,24 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(HttpResilienceOptions.SectionName))
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<HttpResilienceOptions>, HttpResilienceOptionsValidator>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Binds the <c>Provisioning</c> section and checks it with <see cref="ProvisioningOptionsValidator"/>
+    /// on start, so a cPanel port outside 1 to 65535 stops the host instead of failing the first
+    /// customer who needs it. The tests build the container through this same call.
+    /// </summary>
+    /// <param name="services">The service collection to add to.</param>
+    /// <param name="configuration">Application configuration holding the section.</param>
+    /// <returns>The same <paramref name="services"/> for chaining.</returns>
+    internal static IServiceCollection AddProvisioningOptions(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddSingleton<IValidateOptions<ProvisioningOptions>, ProvisioningOptionsValidator>();
+        services.AddOptions<ProvisioningOptions>()
+            .Bind(configuration.GetSection(ProvisioningOptions.SectionName))
+            .ValidateOnStart();
 
         return services;
     }

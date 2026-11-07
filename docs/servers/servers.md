@@ -56,7 +56,7 @@ Up to five nameservers (hostname and IP each) shown to clients when an account i
 | Password | API password (stored encrypted) |
 | API Token | API token where the module uses token-based auth (stored encrypted) |
 | Access Hash | Used by CWP7 and Plesk for API authentication (stored encrypted). cPanel uses Username and API Token instead |
-| Use SSL for connections | Enables HTTPS for API requests |
+| Use SSL for connections | Enables HTTPS for API requests. Ignored for cPanel, which is always reached over HTTPS |
 
 When editing, credential fields show **(blank = keep)**. Secrets are stored encrypted with `ENCRYPTION_KEY`. There is no port field; the panel API port is fixed per module.
 

@@ -4,6 +4,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductsByIds;
+using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
 using Innovayse.Hostpanel.Domain.Services.Enums;
@@ -85,7 +86,8 @@ public sealed class ProvisionServiceHandler
     /// when the service is not Pending, <c>SERVICE_HOSTING_DETAILS_MISSING</c> when it has no
     /// domain or username yet, <c>PRODUCT_PACKAGE_MISSING</c> when its product names no hosting
     /// package, <c>PRODUCT_SERVER_GROUP_REQUIRED</c> when the product has no server group and servers
-    /// run more than one supported panel, <c>NO_ELIGIBLE_SERVER</c> when no server has room, <c>PROVISIONING_ACCOUNT_CONFLICT</c>
+    /// run more than one supported panel, <c>NO_ELIGIBLE_SERVER</c> when no server has room, <c>CPANEL_USERNAME_INVALID</c>
+    /// or <c>CPANEL_DOMAIN_INVALID</c> when the panel would never accept the stored username or domain, <c>PROVISIONING_ACCOUNT_CONFLICT</c>
     /// when the panel holds an account under the username that is not this service's, or
     /// <c>PROVISIONING_UPSTREAM_FAILED</c> when the provider rejects the request or answers a
     /// success without an account reference.
@@ -160,6 +162,13 @@ public sealed class ProvisionServiceHandler
         {
             var provider = _providerFactory.CreateFor(server);
             result = await provider.ProvisionAsync(order, ct);
+        }
+        catch (DomainRuleException ex) when (ex.Code is HostpanelErrorCodes.CPANEL_USERNAME_INVALID or HostpanelErrorCodes.CPANEL_DOMAIN_INVALID)
+        {
+            // The provider stopped the call before the panel was asked: the stored username or domain
+            // is one the panel can never accept, which staff can fix, so the caller is told which.
+            _logger.LogWarning("Provisioning service {ServiceId} on server {ServerId} was stopped: {ErrorCode}.", service.Id, server.Id, ex.Code);
+            return Result.FailureCode(ex.Code);
         }
         catch (Exception ex)
         {

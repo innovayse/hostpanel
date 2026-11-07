@@ -171,6 +171,19 @@ docker/                              compose set (shared·dev·prod·platform), 
   `ProvisioningProviderFactory` builds it per server, so it is an Infrastructure adapter in its
   own assembly. The SDK's `IProvisioningPlugin` is only a marker with no operations, so there is
   no SDK contract it could implement instead.
+- **The cPanel provider lives in the host for now.** `WhmProvisioningProvider`, `WhmApiClient` and their
+  models (`Infrastructure/Integrations/CPanel/Whm/`) implement `IProvisioningProvider` and are built per server
+  by `ProvisioningProviderFactory`, like the CWP7 and Plesk providers, and not shipped as a plugin. The reason
+  is the same: the SDK has no provisioning contract a plugin could implement (`IProvisioningPlugin` is a marker, and the
+  hosting panel contract it replaces is obsolete), the server form, the connection test, the disk usage report and
+  the single sign-on and credentials screens all reach a panel through the host's own port, and a plugin cannot
+  yet supply those. Moving the provider out is wanted once the SDK carries that contract, and it is tracked in
+  #997; until then the provider stays in Infrastructure, takes its numbers from `ProvisioningOptions`
+  (`CPanelWhmPort` and `CPanelUserPort`, both checked to be 1 to 65535 at startup by
+  `ProvisioningOptionsValidator`), and its HTTP client is registered only through
+  `AddCPanelWhmHttpClient`, which the tests resolve too. It does not trust what WHM sends back: a
+  single sign-on address is passed on only as an https address on the server's own host (`WhmInputRules`),
+  a username or domain is checked before WHM is called, and a reply is capped at `WhmApiClient.MaxResponseBytes`.
 - **"Test Connection" runs a live probe where a provider has one.** `IIntegrationConnectionProbe`
   (a port in `Application/Common/Interfaces/`, keyed by integration slug) is implemented per
   integration in `Infrastructure/Integrations/<Provider>/` (today `NameAmConnectionProbe`, which

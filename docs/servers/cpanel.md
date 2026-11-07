@@ -51,6 +51,9 @@ Go to **Servers**, click **Add New Server** and fill the **General** tab as for 
 The **Password** and **Access Hash** fields are not used for cPanel. The API token is stored
 encrypted with `ENCRYPTION_KEY`, like the other server secrets, and is never written to a log.
 
+The **Use SSL for connections** field is ignored for cPanel. WHM and the cPanel address shown to
+account owners are always reached over HTTPS, whatever that box says.
+
 Then click **Test Connection**. A working token shows the WHM version and the account count.
 `SERVER_CONNECTION_NO_API_KEY` means the username or the API token is missing. A server that shows
 as unreachable even though the token is right usually presents a self signed certificate, see
@@ -65,6 +68,20 @@ are HTTPS. Change them for every cPanel server at once in the `Provisioning` set
 |---|---|
 | `Provisioning__CPanelWhmPort` | `2087` |
 | `Provisioning__CPanelUserPort` | `2083` |
+
+## What Hostpanel checks before it calls WHM
+
+- The account username of a new account must be 1 to 16 lowercase letters and digits and start with
+  a letter. Accounts that already exist keep working under their stored name. A username that
+  breaks the rule stops the setup with `CPANEL_USERNAME_INVALID`, and WHM is not called.
+- The domain must be a well formed domain name with at least two labels, in ASCII (an
+  internationalised name is entered in its `xn--` form). Otherwise the setup stops with
+  `CPANEL_DOMAIN_INVALID`.
+- An empty value is never sent to WHM.
+- A reply from WHM larger than 16 MB is treated as an unreadable reply.
+- When WHM does not answer the create call and Hostpanel then cannot look the account up either,
+  the setup fails as a temporary error, not as a refusal, because the account may exist. Run the
+  setup again once the server answers.
 
 ## How retries behave
 
@@ -88,6 +105,9 @@ WHM's own error text is never shown or logged, because it can name the account.
   certificate checks, so a server that still uses it shows as unreachable when you test the
   connection. Install a trusted certificate on WHM first.
 - Single sign-on links from `create_user_session` are single-use and expire. WHM does not bind them
-  to the browser's address.
+  to the browser's address. Hostpanel hands a link to the browser only when it is an `https` address
+  with no user name or password in it and its host is the server's own host name or IP address,
+  compared without regard to case. Any other link is dropped, the client sees
+  `SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED`, and nothing of the link is logged.
 - WHM calls go through the outbound address guard, like the other panels. A server on a private
   address needs a [private network route](./servers#private-network-routes).

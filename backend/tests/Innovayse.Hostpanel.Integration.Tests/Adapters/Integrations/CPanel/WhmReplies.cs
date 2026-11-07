@@ -27,8 +27,18 @@ internal static class WhmReplies
     /// <summary>A <c>listaccts</c> answer that matched nothing.</summary>
     public const string NoAccount = """{"metadata":{"command":"listaccts","reason":"OK","result":1,"version":1},"data":{"acct":[]}}""";
 
-    /// <summary>A <c>create_user_session</c> that succeeded.</summary>
-    public const string Session = """{"metadata":{"command":"create_user_session","reason":"OK","result":1,"version":1},"data":{"url":"https://whm.example.test:2083/cpsess123/login/?session=testuser:abc","expires":1700000000}}""";
+    /// <summary>A <c>create_user_session</c> that succeeded, with an address on the server the provider tests name (192.0.2.10).</summary>
+    public const string Session = """{"metadata":{"command":"create_user_session","reason":"OK","result":1,"version":1},"data":{"url":"https://192.0.2.10:2083/cpsess123/login/?session=testuser:abc","expires":1700000000}}""";
+
+    /// <summary>Builds a <c>create_user_session</c> that succeeded with the given address.</summary>
+    /// <param name="url">The single sign-on address WHM is made to return.</param>
+    /// <returns>The reply body.</returns>
+    public static string SessionAt(string url) =>
+        System.Text.Json.JsonSerializer.Serialize(new
+        {
+            metadata = new { command = "create_user_session", reason = "OK", result = 1, version = 1 },
+            data = new { url, expires = 1700000000 },
+        });
 
     /// <summary>A <c>version</c> answer.</summary>
     public const string Version = """{"metadata":{"command":"version","reason":"OK","result":1,"version":1},"data":{"version":"11.126.0.5"}}""";

@@ -515,6 +515,14 @@ docker/                              compose set (shared·dev·prod·platform), 
     - **Reload.** A refresh of the block's `id` draws a new frame once its read answered, because a site's address does
       not change with its content; nothing about the sandbox changes for it. With a `note` only a changed note draws one, because a follow-up reads the block every few seconds. A chat's `refresh` also applies after a result
       card's action, whose `until` (`route`, `field`, `equalsAny`) keeps those blocks reading while work it started runs on.
+      A card action (a call, a link or a resend) may also carry `visibleWhen`, the view condition in the event's spelling
+      (`route`, `field`, `equalsAny`); both conditions go through one reader, `readResultCondition` in `utils/plugins.ts`,
+      which holds an event to the view's own bounds (`constants/pluginCondition.ts`: a GET route the page can fill, a dotted
+      field of at most 200 characters, 1 to 20 scalars). A card is not checked at install, so a `visibleWhen` the reader
+      cannot accept drops the action whole, where a malformed `until` only loses its follow-up. `PluginChatCardAction` draws
+      each action and evaluates the condition with `usePluginCondition`, which takes the block ids whose refresh reads it
+      again: a block names its own id, a card action the chat's `refresh` list. With no `refresh` list the condition is read
+      once, when the card is drawn.
     - **Presentation members, no schema change.** The view schema allows extra members on a block, and these are the
       panel's: a header's `compact`, `titleSource`, `subtitleSource` and any block kind in its `actions`; an action's
       `labelSource`; a table's `display: "cards"`; a tabs block's `actions`; a preview's `note` (an object of sentences by

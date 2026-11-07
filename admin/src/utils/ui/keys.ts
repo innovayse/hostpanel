@@ -15,4 +15,8 @@ export enum Key {
   ArrowLeft = 'ArrowLeft',
   /** Moves to the next item. */
   ArrowRight = 'ArrowRight',
+  /** Moves to the first item. */
+  Home = 'Home',
+  /** Moves to the last item. */
+  End = 'End',
 }

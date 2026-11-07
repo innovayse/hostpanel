@@ -4,10 +4,10 @@
  *
  * The menu drawer on a phone shows it instead of a drop-down list: the list opens downwards from the bottom of
  * the drawer and is cut off by the screen edge, while a row of icons needs no list. It is a radio group, one
- * choice at a time; Left and Right arrows move the choice. The caller's `data-testid` goes on the group and each
+ * choice at a time; Left and Right arrows move the choice and focus with it, Home and End jump to the ends. The caller's `data-testid` goes on the group and each
  * button adds its theme as a suffix (`sidebar-theme-light`).
  */
-import { computed } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useThemeStore } from '@/stores/theme'
 import { AdminTheme } from '@/types/admintheme'
@@ -25,6 +25,9 @@ const { t } = useI18n()
 
 /** Theme store: the operator's light/dark/system choice. */
 const theme = useThemeStore()
+
+/** The group element; the radio that gets focus after a key press is looked up inside it. */
+const group = ref<HTMLElement | null>(null)
 
 /** One button of the switch. */
 interface ThemeChoice {
@@ -48,27 +51,52 @@ const choices = computed<ThemeChoice[]>(() => [
 ])
 
 /**
- * Moves the choice to the neighbouring theme, wrapping around.
+ * Index of the radio a key moves to, or null for a key the group does not handle.
  *
- * @param event - The keydown event; only Left and Right are handled.
+ * @param key - The `KeyboardEvent.key` value.
  * @param index - Index of the button that has focus.
- * @returns Nothing; the theme store is updated.
+ * @returns The target index, wrapping around at the ends.
  */
-const onKeydown = (event: KeyboardEvent, index: number): void => {
-  if (event.key !== Key.ArrowRight && event.key !== Key.ArrowLeft) {
+const targetIndex = (key: string, index: number): number | null => {
+  const count = choices.value.length
+  switch (key) {
+    case Key.ArrowRight:
+      return (index + 1) % count
+    case Key.ArrowLeft:
+      return (index - 1 + count) % count
+    case Key.Home:
+      return 0
+    case Key.End:
+      return count - 1
+    default:
+      return null
+  }
+}
+
+/**
+ * Moves the choice and the focus to the radio the key points at. The focused button keeps `tabindex="-1"` once it
+ * is no longer checked, so focus has to follow the choice or the next key press starts from the old button.
+ *
+ * @param event - The keydown event; Left, Right, Home and End are handled.
+ * @param index - Index of the button that has focus.
+ * @returns Resolves once the focus has moved.
+ */
+const onKeydown = async (event: KeyboardEvent, index: number): Promise<void> => {
+  const next = targetIndex(event.key, index)
+  const target = next === null ? undefined : choices.value[next]
+  if (next === null || target === undefined) {
     return
   }
   event.preventDefault()
-  const step = event.key === Key.ArrowRight ? 1 : -1
-  const target = choices.value[(index + step + choices.value.length) % choices.value.length]
-  if (target !== undefined) {
-    theme.setTheme(target.value)
-  }
+  theme.setTheme(target.value)
+  await nextTick()
+  group.value?.querySelectorAll<HTMLElement>('[role="radio"]')[next]?.focus()
 }
 </script>
 
 <template>
   <div
+    ref="group"
     role="radiogroup"
     :aria-label="t('layout.theme.label')"
     :data-testid="props.testid"

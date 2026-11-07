@@ -460,8 +460,11 @@ docker/                              compose set (shared·dev·prod·platform), 
     - `followUp: { "refresh": [ids], "until": <condition> }` (an action block or a form's `submit`): after a successful
       call and its normal `refresh`, the panel reads `until.route` on an interval, refreshes the listed block ids on
       each attempt, and stops once the condition holds (after one last refresh), after the last attempt, or when the
-      page is left (late answers dropped). A failed read counts as an attempt. `refresh` is 1 to 20 ids, each the `id`
-      of a block in the same document. **The bounds are the host's, never the plugin's**:
+      page is left (late answers dropped); the watch belongs to the view (`PluginViewContext.adopt`), so the block that
+      started it hiding itself, as a publish button does once its version is live, does not end it, and when the condition
+      holds the sentence the action showed is taken down. A failed read counts as an attempt. `refresh` is 1 to 20 ids, each the `id`
+      of a block in the same document. The host does not yet refuse two blocks with one `id`; the client treats them as one
+      block (refresh and watch key), which the plugin docs tell authors to avoid. **The bounds are the host's, never the plugin's**:
       `PLUGIN_FOLLOW_UP_MAX_ATTEMPTS` 20 and `PLUGIN_FOLLOW_UP_INTERVAL_MS` 3000 (about a minute) in the client.
     - Refused at install and load: `ViewConditionInvalid` (`PLUGIN_VIEW_CONDITION_INVALID`: a bad condition, a non-`GET`
       condition route, `visibleWhen` outside a block) and `ViewFollowUpInvalid` (`PLUGIN_VIEW_FOLLOW_UP_INVALID`: a bad
@@ -1608,6 +1611,13 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   (`AppDbContext` translates the violation), which the settlement handlers already answer as a replay.
 - `scripts/pack-cwp-plugin.sh` — publishes `Innovayse.Providers.CWP` (Release, net8.0) on the host, strips
   PDB/XML and framework DLLs, adds `plugin.json` and writes `dist/innovayse-cwp.zip`.
+- `scripts/test-install-backup.sh [install.sh]` — runs `install.sh` against a fake `docker` and `curl` (no Docker, no
+  network) and checks the upgrade backup (a failed, empty, truncated or table-less dump, a stopped database, mode 600
+  and 700, retention that keeps the oldest backup of each version, UTC names) and `--rollback` (confirmation, the
+  newest backup of another version, the safety copy, restore before the compose files change, a failed restore, the
+  state printed after a failed stop, download, pull or start). Needs bash and GNU `stat`. With
+  `HOSTPANEL_TEST_POSTGRES=1` it also dumps, restores and restores a corrupt dump against a real postgres container
+  (the GitHub `install-backup` job sets it; the GitLab `installer:test:backup` job runs the fake-docker part only).
 - `scripts/check-empty-plugins.sh <test project> ...` — fails when `plugins/` or `plugins-installed/` in a
   built test project's output holds anything. Every backend test job of both pipelines runs it between the
   build and the tests, so the whole suite is proven green with no plugin loaded in the jobs that already

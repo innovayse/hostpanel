@@ -391,7 +391,10 @@ back to empty.
 **`followUp`** goes on an action block or inside a form's `submit`, with exactly `refresh` and `until`. After a
 successful call (and its normal `refresh`), the panel reads `until.route` again and again, refreshing the listed blocks
 each time, until the condition holds (then once more), it runs out of attempts, or the reader leaves the page. A failed
-read counts as an attempt. Show a publish result without a reload:
+read counts as an attempt. The watch outlives the button that started it, so a button that hides itself once its work is
+done (a `visibleWhen` on the same data) does not stop it. The sentence the action answered with is taken down when the
+condition holds, so a line like "is being published" does not outlive the publish. Show a publish result without a
+reload:
 
 ```json
 {
@@ -425,7 +428,9 @@ the three routes in its `api` block and the label keys in `locales.en`:
 }
 ```
 
-`refresh` lists 1 to 20 block `id`s, each present in the same view. How often and how long the panel polls is the
+`refresh` lists 1 to 20 block `id`s, each present in the same view. Give every block that has an `id` its own: the panel
+treats blocks that share one as one block, so a refresh reaches all of them and a new follow-up of one ends the running
+follow-up of the other. How often and how long the panel polls is the
 host's choice, not yours: every 3 seconds, at most 20 times (about a minute). A long job should report its own state on
 the `until` route rather than expect more time.
 

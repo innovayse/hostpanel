@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
 using Innovayse.Hostpanel.Application.Reports.Extensions;
@@ -15,7 +16,10 @@ namespace Innovayse.Hostpanel.Application.Reports.Queries.GetVatMoss;
 /// SQL. Refunds are booked in the quarter they were made, not the quarter of the sale: each refund
 /// made in the window is split into its net and VAT parts in the proportion of the invoice's
 /// subtotal and tax, and subtracted from its row, so a partial refund reduces the figures by only
-/// what it gave back. A Refunded invoice with no refund recorded here (imported history) took and
+/// what it gave back. An account credit note reverses its net and VAT the same way, at its own rate and
+/// in its own currency, in the quarter it was issued in (the date of the correction, not of the invoice
+/// it corrects, so voiding a note later takes its reduction back out of the quarter it was issued in); a gateway refund note is not read again, because its refund is already one of the
+/// refund rows. A Refunded invoice with no refund recorded here (imported history) took and
 /// returned its money elsewhere, so it is not counted as a sale.
 /// </remarks>
 public sealed class GetVatMossHandler
@@ -41,7 +45,7 @@ public sealed class GetVatMossHandler
     /// <summary>Handles the query.</summary>
     /// <param name="query">Year and quarter to report on; either may be omitted.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>VAT collected per member state, rate and currency for the quarter, net of the refunds made in it. Never refuses.</returns>
+    /// <returns>VAT collected per member state, rate and currency for the quarter, net of the refunds made and the account credit notes issued in it. Never refuses.</returns>
     public async Task<Result<VatMossDto>> HandleAsync(GetVatMossQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
@@ -89,23 +93,45 @@ public sealed class GetVatMossHandler
             .Where(x => x.Country != null && memberStates.Contains(x.Country))
             .ToListAsync(ct);
 
+        // An account credit note moves no cash and leaves no refund row, so it is read on its own. It reverses net and VAT at
+        // the rate of its invoice, in the invoice's currency, and counts in the quarter it was issued in, like a refund
+        // counts in the quarter it was made in. A gateway refund note is not read: its refund row above already is it.
+        var notes = await _context.CreditNotes.AsNoTracking()
+            .ReversingTax()
+            .IssuedWithin(from, until)
+            .Where(n => n.TaxRate > 0)
+            .Join(_context.Clients.AsNoTracking(), n => n.ClientId, c => c.Id,
+                (n, c) => new { c.Country, n.TaxRate, n.Currency, n.SubTotal, n.Tax })
+            .Where(x => x.Country != null && memberStates.Contains(x.Country))
+            .GroupBy(x => new { x.Country, x.TaxRate, x.Currency })
+            .Select(g => new
+            {
+                Country = g.Key.Country!,
+                g.Key.TaxRate,
+                g.Key.Currency,
+                Net = g.Sum(x => x.SubTotal),
+                Vat = g.Sum(x => x.Tax),
+            })
+            .ToListAsync(ct);
+
         // Each refund gives back VAT in the proportion the invoice charged it.
-        var refundParts = refunds
+        var givenBack = refunds
             .Select(r =>
             {
                 var vat = CurrencyCode.RoundToMinorUnits(r.Amount * r.Tax / (r.SubTotal + r.Tax), r.Currency);
                 return new { Country = r.Country!, r.TaxRate, r.Currency, Net = r.Amount - vat, Vat = vat };
             })
+            .Concat(notes.Select(n => new { n.Country, n.TaxRate, n.Currency, n.Net, n.Vat }))
             .ToList();
 
         var rows = sales
             .Select(s => new { s.Country, s.TaxRate, s.Currency })
-            .Concat(refundParts.Select(r => new { r.Country, r.TaxRate, r.Currency }))
+            .Concat(givenBack.Select(r => new { r.Country, r.TaxRate, r.Currency }))
             .Distinct()
             .Select(key =>
             {
                 var sold = sales.Where(s => s.Country == key.Country && s.TaxRate == key.TaxRate && s.Currency == key.Currency).ToList();
-                var given = refundParts.Where(r => r.Country == key.Country && r.TaxRate == key.TaxRate && r.Currency == key.Currency).ToList();
+                var given = givenBack.Where(r => r.Country == key.Country && r.TaxRate == key.TaxRate && r.Currency == key.Currency).ToList();
                 return new VatMossRowDto(
                     key.Country,
                     key.TaxRate,

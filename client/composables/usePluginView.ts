@@ -242,23 +242,37 @@ export const usePluginCondition = (
 /**
  * Runs an action's or a form's `followUp` after its call succeeded: every {@link PLUGIN_FOLLOW_UP_INTERVAL_MS} it
  * reads the condition's route and asks the named blocks to read again, and it stops once the condition holds (after
- * that last refresh), after {@link PLUGIN_FOLLOW_UP_MAX_ATTEMPTS} reads, or when the calling block unmounts, which is
- * also what leaving the page does. A failed read counts as an attempt and the watch goes on.
+ * that last refresh), after {@link PLUGIN_FOLLOW_UP_MAX_ATTEMPTS} reads, or when the view is left, which is also what
+ * leaving the page does. A failed read counts as an attempt and the watch goes on.
+ *
+ * The watch belongs to the view, not to the block that started it. A block can hide itself in the middle of its own
+ * follow-up (a publish button whose `visibleWhen` stops holding once the version it publishes is live), and the
+ * refresh that hides it is read a moment before the attempt that would have shown the final value in the other blocks;
+ * a watch that ended with its block left the header on the old version for good.
  *
  * The interval and the number of attempts are the host's: a view names what to watch and never how often, so no
  * plugin can make the panel poll faster or longer. Starting again cancels a follow-up still running, so two clicks
  * never run two watches.
  *
- * @returns Starts a follow-up; undefined starts nothing.
+ * @param owner - The id of the calling block, which a later watch of the same block replaces; undefined for a block
+ *   with no id, whose watches are told apart by the block instance.
+ * @returns Starts a follow-up (undefined starts nothing); the second argument is told when the condition held, which
+ *   is the end of the work the call started.
  */
-export const usePluginFollowUp = (): ((followUp: PluginFollowUp | undefined) => void) => {
+export const usePluginFollowUp = (
+  owner: () => string | undefined = () => undefined,
+): ((followUp: PluginFollowUp | undefined, settled?: () => void) => void) => {
   const context = usePluginView()
   const store = usePluginsStore()
+  // One block instance without an id still owns one watch at a time.
+  const instanceKey = `follow-up-${useId()}`
 
   /** The pending wait before the next attempt; undefined while none is pending. */
   let timer: ReturnType<typeof setTimeout> | undefined
-  /** The number of the current follow-up; a read answering for an older one, or after unmount, is ignored. */
+  /** The number of the current follow-up; a read answering for an older one, or after the view is left, is ignored. */
   let run = 0
+  /** Lets the view go of the running watch once it has ended; undefined while none is adopted. */
+  let release: (() => void) | undefined
 
   /**
    * Ends the running follow-up, if any: the pending wait is cleared and a read still out is ignored when it answers.
@@ -274,41 +288,68 @@ export const usePluginFollowUp = (): ((followUp: PluginFollowUp | undefined) => 
   }
 
   /**
+   * Lets the view go of the running watch, which has ended on its own.
+   *
+   * @returns Nothing.
+   */
+  const letGo = (): void => {
+    release?.()
+    release = undefined
+  }
+
+  /**
    * One attempt: reads the condition, refreshes the named blocks and waits for the next attempt unless it is over.
    *
    * @param current - The follow-up this attempt belongs to.
    * @param followUp - What to watch and refresh.
    * @param attempt - The attempt's number, from 1.
+   * @param settled - Told when the condition held.
    * @returns Resolves when the attempt has ended.
    */
-  const attemptOnce = async (current: number, followUp: PluginFollowUp, attempt: number): Promise<void> => {
+  const attemptOnce = async (
+    current: number,
+    followUp: PluginFollowUp,
+    attempt: number,
+    settled: (() => void) | undefined,
+  ): Promise<void> => {
     timer = undefined
     const result = await store.callRoute(context.pluginId, followUp.until.route, context.values)
-    if (current !== run || result.unavailable) {
+    // An answer for an older follow-up, or one after the view was left, is not this run's: leave the view's keeping alone.
+    if (current !== run) {
+      return
+    }
+    // A route the page cannot read ends the watch without a refresh; the view must not keep its stop function.
+    if (result.unavailable) {
+      letGo()
       return
     }
     const done = result.ok && pluginConditionHolds(followUp.until, result.data)
     // Refreshed after the read, so the final value the condition saw is also what the blocks show.
     context.refresh([...followUp.refresh])
     if (done || attempt >= PLUGIN_FOLLOW_UP_MAX_ATTEMPTS) {
+      letGo()
+      if (done) {
+        settled?.()
+      }
       return
     }
     timer = setTimeout(() => {
-      void attemptOnce(current, followUp, attempt + 1)
+      void attemptOnce(current, followUp, attempt + 1, settled)
     }, PLUGIN_FOLLOW_UP_INTERVAL_MS)
   }
 
-  onUnmounted(stop)
-
-  return (followUp: PluginFollowUp | undefined): void => {
+  return (followUp: PluginFollowUp | undefined, settled?: () => void): void => {
     stop()
+    letGo()
     // A condition on a route that is not a GET is refused at install and could never end the watch: not started.
     if (!followUp || pluginRouteMethod(followUp.until.route) !== HttpMethod.Get) {
       return
     }
+    // Adopting ends an earlier watch of the same block, even one a block instance that has since gone started.
+    release = context.adopt(owner() ?? instanceKey, stop)
     const current = run
     timer = setTimeout(() => {
-      void attemptOnce(current, followUp, 1)
+      void attemptOnce(current, followUp, 1, settled)
     }, PLUGIN_FOLLOW_UP_INTERVAL_MS)
   }
 }
@@ -324,9 +365,10 @@ export interface PluginActionMessage {
 /**
  * Where an action reports its sentence when something above it shows the sentences of a row of actions: the header
  * draws one line under its whole action row, because a sentence drawn under one button grows that button's column
- * and pulls the row out of line.
+ * and pulls the row out of line. It answers a function that takes the sentence back, which does nothing once another
+ * sentence has replaced it.
  */
-export type PluginActionMessageOutlet = (message: PluginActionMessage) => void
+export type PluginActionMessageOutlet = (message: PluginActionMessage) => () => void
 
 /** The injection key of the action message outlet. */
 const PLUGIN_ACTION_MESSAGE_KEY: InjectionKey<PluginActionMessageOutlet> = Symbol('plugin-action-message')
@@ -338,9 +380,16 @@ const PLUGIN_ACTION_MESSAGE_KEY: InjectionKey<PluginActionMessageOutlet> = Symbo
  */
 export const providePluginActionMessages = (): Ref<PluginActionMessage | null> => {
   /** The last sentence an action below reported; null until one has. */
-  const message = ref<PluginActionMessage | null>(null)
+  // Shallow: takeBack compares the line by identity, which a deep ref's proxy would never equal.
+  const message = shallowRef<PluginActionMessage | null>(null)
   provide(PLUGIN_ACTION_MESSAGE_KEY, (next: PluginActionMessage) => {
     message.value = next
+    return () => {
+      // Only the line this call put up is taken down: a newer sentence from another action stays.
+      if (message.value === next) {
+        message.value = null
+      }
+    }
   })
   return message
 }

@@ -238,7 +238,7 @@ public static class DependencyInjection
             // Billing scheduled jobs: the daily billing, renewal and suspension crons and the gateway reconcile.
             services.AddHostedService<BillingScheduledJobsStartup>();
 
-            // Admin scheduled jobs: the daily GitHub release-update check.
+            // Admin scheduled jobs: the daily GitHub release-update check and the plugin registry enrolment.
             services.AddHostedService<AdminScheduledJobsStartup>();
 
             // Recurring recovery of migration jobs left queued or in progress with a stale heartbeat. Not in Testing:

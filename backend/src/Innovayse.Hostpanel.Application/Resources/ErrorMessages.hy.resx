@@ -1195,6 +1195,39 @@
   <data name="PLUGIN_REGISTRY_VERSION_COMPROMISED" xml:space="preserve">
     <value>Հավելագրիչների ռեեստրը մերժել է այս տարբերակը որպես անապահով, ուստի այն հնարավոր չէ տեղադրել։ Ընտրեք այլ տարբերակ։</value>
   </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը չի կարող օգտագործել այս Hostpanel-ի հանրային հասցեն։ ClientBaseUrl-ում նշեք տեղադրման հանրային https հասցեն և կրկնեք գրանցումը։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը դեռ չի հաստատել այս Hostpanel-ը, ուստի չի տրամադրում այս փակ հավելագրիչը։ Գրանցումը կատարվում է ինքնաբերաբար, ստուգեք դրա վիճակը «Հավելագրիչներ» էջում և կրկնեք, եթե այնտեղ սխալ է երևում։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REVOKED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը չեղարկել է այս Hostpanel-ի տեղադրումը և այլևս չի տրամադրում նրան փակ հավելագրիչներ։ Դիմեք ռեեստրի սեփականատիրոջը։ Կրկնեք գրանցումը՝ նոր նույնականացում ստանալու համար։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը չընդունեց այս Hostpanel-ի ստորագրությունը։ Կրկնեք գրանցումը «Հավելագրիչներ» էջում։ Եթե սխալը կրկնվի, սերվերում պահված նույնականացումը կարող է վնասված լինել։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը մերժեց հարցումը, քանի որ այս սերվերի ժամացույցը շատ է շեղվում ճշգրիտ ժամանակից։ Ուղղեք սերվերի ժամը (միացրեք ժամանակի համաժամեցումը) և կրկնեք։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REPLAY_REJECTED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը հարցումը համարեց նախորդի կրկնություն և մերժեց այն։ Կրկնեք փորձը։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը չընդունեց մեկանգամյա ներբեռնման տոմսը։ Կրկնեք տեղադրումը՝ նոր տոմս ստանալու համար։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը սահմանափակում է, թե որքան հաճախ կարող է այս Hostpanel-ը գրանցվել կամ պահանջել փակ հավելագրիչներ, և սահմանաչափը լրացել է։ Սպասեք մի փոքր և կրկնեք։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը չկարողացավ կարդալ հաստատման տեքստը այս Hostpanel-ից /.well-known/hostpanel-registry/ ճանապարհով։ Համոզվեք, որ ձեր հանրային հասցեն այդ ճանապարհը ուղարկում է Hostpanel API-ին, և կրկնեք։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_RESTART_NEEDED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրի հետ գրանցման ժամկետը լրացել է կամ այն մոռացվել է, ուստի այն սկսվում է նորից՝ նոր բանալիով։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_FOUND" xml:space="preserve">
+    <value>Այս նույնականացուցչով գրանցում, որը սպասում է հաստատման, չկա։</value>
+  </data>
   <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
     <value>Հավելագրիչը պահանջում է հաճախորդի հոսթինգի մուտքի տեսակ, որը այս սերվերը չգիտի, նշում է այն երկու անգամ կամ հայտարարում է 1-ին տարբերակի մանիֆեստում։</value>
   </data>

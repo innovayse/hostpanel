@@ -1195,6 +1195,39 @@
   <data name="PLUGIN_REGISTRY_VERSION_COMPROMISED" xml:space="preserve">
     <value>Реестр плагинов отклонил эту версию как небезопасную, поэтому её нельзя установить. Выберите другую версию.</value>
   </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID" xml:space="preserve">
+    <value>Реестр плагинов не может использовать публичный адрес этого Hostpanel. Укажите в ClientBaseUrl публичный https-адрес установки и повторите регистрацию.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED" xml:space="preserve">
+    <value>Реестр плагинов ещё не подтвердил этот Hostpanel, поэтому не выдаёт этот закрытый плагин. Регистрация идёт автоматически: проверьте её состояние на странице «Плагины» и повторите, если там ошибка.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REVOKED" xml:space="preserve">
+    <value>Реестр плагинов отозвал эту установку Hostpanel и больше не выдаёт ей закрытые плагины. Свяжитесь с владельцем реестра. Повторите регистрацию, чтобы получить новую идентичность.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED" xml:space="preserve">
+    <value>Реестр плагинов не принял подпись этого Hostpanel. Повторите регистрацию на странице «Плагины». Если ошибка повторяется, сохранённая на сервере идентичность могла быть повреждена.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW" xml:space="preserve">
+    <value>Реестр плагинов отклонил запрос: часы этого сервера слишком сильно расходятся с точным временем. Исправьте время на сервере (включите синхронизацию времени) и повторите.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REPLAY_REJECTED" xml:space="preserve">
+    <value>Реестр плагинов принял запрос за повтор предыдущего и отклонил его. Повторите попытку.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED" xml:space="preserve">
+    <value>Реестр плагинов не принял одноразовый билет на скачивание. Повторите установку, чтобы получить новый билет.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED" xml:space="preserve">
+    <value>Реестр плагинов ограничивает частоту регистрации и запросов закрытых плагинов от этого Hostpanel, и лимит исчерпан. Подождите немного и повторите.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE" xml:space="preserve">
+    <value>Реестр плагинов не смог прочитать подтверждающий текст у этого Hostpanel по пути /.well-known/hostpanel-registry/. Убедитесь, что ваш публичный адрес направляет этот путь в API Hostpanel, и повторите.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_RESTART_NEEDED" xml:space="preserve">
+    <value>Регистрация в реестре плагинов истекла или была забыта, поэтому она начинается заново с новым ключом.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_FOUND" xml:space="preserve">
+    <value>Регистрации с таким идентификатором, ожидающей подтверждения, нет.</value>
+  </data>
   <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
     <value>Плагин запрашивает неизвестный этому серверу вид доступа к хостингу клиента, указывает его дважды или объявляет его в манифесте версии 1.</value>
   </data>

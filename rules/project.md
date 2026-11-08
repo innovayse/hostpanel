@@ -789,6 +789,41 @@ docker/                              compose set (shared·dev·prod·platform), 
     audited as `Refused Plugin From Registry` with a fixed reason; a success as `Installed Plugin From Registry` or `Staged
     Plugin Upgrade From Registry` with the id, version and digest the store reports. An install of an installed plugin is
     an upgrade like any upload: staged, applied at the next restart, downgrades refused.
+- **Registry instance identity for restricted plugins (#1022).** A registry plugin whose `distribution` is `HostOnly` (read from the
+  listing row and the plugin page; missing or unknown reads as `Download`) is asked for with this installation's identity, never with a
+  licence key. The identity is one JSON document, `RegistryInstanceRecord` (`Application/Admin/Plugins/Common`): the Ed25519 key pair, the
+  public address (`ClientBaseUrl`), the instance id and challenge the registry gave, the state (`RegistryInstanceState`: NotRegistered,
+  Pending, Verified, Revoked, Error), the last failure code, the failure count and the next attempt. It lives in the settings row
+  `plugins.registry_instance` (`PluginSettingKeys.RegistryInstance`, in `SecretSettingKeys.StandaloneKeys`), stored through
+  `ISecretSettingCipher` by `RegistryInstanceStore`; the row is outside the settings catalogue, so no list or update reaches it, and no
+  response carries a key (`RegistryInstanceDto` has the id, the address, the state and the sentence only). There is no table and no migration.
+  - **One enrolment.** `RegistryInstanceEnrollment` (scoped, one at a time per process) does register then verify through the ports
+    `IRegistryInstanceApi` (the two unsigned calls, `Infrastructure/Plugins/Registry/RegistryInstanceApi`) and `IRegistryInstanceKeys`
+    (Ed25519 over the BouncyCastle library the package signature check already uses; no new dependency). It is idempotent: a Verified
+    identity answers without a call, a failed attempt waits `RegistryInstanceBackoff` (30 seconds doubling to one hour) unless forced, and a
+    revoked identity is left alone unless forced. The registry refuses one key twice, so when it asks for a fresh start (challenge failed
+    with `INSTANCE_CHALLENGE_VALIDATION_FAILED`, unknown or not pending instance, key already registered) the pair is generated again and the
+    two calls are made once more. Nothing is saved while the registry is off (`PLUGIN_REGISTRY_DISABLED`) or when `ClientBaseUrl` is not a
+    public https address (`RegistryInstanceAddress`, `PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID`). Three callers: the recurring job
+    `EnrollRegistryInstanceCron` (started by `AdminScheduledJobsStartup`, every `ScheduledJobs:EnrollRegistryInstanceIntervalSeconds`, default 60;
+    the back-off kept on the identity decides how often the registry is asked), the handlers that need a restricted plugin
+    (`InstallRegistryPluginHandler`, `GetRegistryPluginHandler`), and `RetryRegistryInstanceCommand` (`POST /api/admin/plugins/registry-instance/retry`,
+    forced, demo restricted). `GET /api/admin/plugins/registry-instance` reports the state (`GetRegistryInstanceQuery`).
+  - **The challenge.** `GET /.well-known/hostpanel-registry/{id}` (`RegistryChallengeController`, anonymous because the registry has no
+    credential for a new installation) answers exactly the stored challenge for that id as `text/plain` with `Cache-Control: no-store`
+    (`BaseApiController.HandlePlainText`), and `PLUGIN_REGISTRY_INSTANCE_NOT_FOUND` (404) for any other id. The edge proxy must route the prefix to
+    the API (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`).
+  - **Signing.** `RegistryCallSigning` is the one definition of the signed text: `HOSTPANEL-REGISTRY-V1`, method, request target as sent
+    (path and query, `?ticket=` included), lower-case hex SHA-256 of the body (the empty string: no signed call has a body), timestamp and
+    nonce, joined with a line feed and no trailing one; `RegistryCallSigningTests` pins it against a vector made by an independent Ed25519
+    implementation. `IRegistryRequestSigner` (`RegistryRequestSigner`) signs only while the identity is Verified and hands out the four
+    header values, never the key. `PluginRegistryClient` signs the version list, the release details, the ticket request and the final fetch of the
+    ticket address, on every hop (a fresh nonce each), and sends no `X-Licence-Key` on them; the ticket address must be on the registry's origin
+    and carry the ticket. `POST plugins/latest` stays unsigned and its empty package address for a restricted plugin is not invalid.
+  - **Refusals.** A 401, 403 or 429 of a signed call is read for the registry's error code in `type` only (bounded read) and becomes
+    `PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED`, `_CLOCK_SKEW`, `_REPLAY_REJECTED`, `_NOT_VERIFIED`, `_REVOKED`,
+    `PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED` or `_INSTANCE_LIMIT_REACHED` (resx en/ru/hy, `StatusMapping`); a revocation or an unverified answer is
+    reported to the identity (`ReportRefusalAsync`) so the admin page tells the truth. No registry text reaches a response or a log line.
 - **Plugin routes: one safe door for every serving plugin (#639, #818).** A serving plugin (`PluginType.App`, or any type
   declaring `endpoints`; `IPluginEndpoints`)
   answers HTTP-shaped calls the host forwards, never a request or a token. Two thin catch-all controllers bind the request

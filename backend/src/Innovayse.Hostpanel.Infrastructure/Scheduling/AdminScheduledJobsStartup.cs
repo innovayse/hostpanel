@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Commands.CheckReleaseUpdatesCron;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.EnrollRegistryInstanceCron;
 using Innovayse.Hostpanel.Application.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -7,8 +8,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Scheduling;
 
 /// <summary>
 /// Hosted service that starts the admin background jobs on application startup. Currently
-/// manages the daily GitHub release-update check. The job hour is taken from
-/// <c>ScheduledJobsOptions</c>, which the job handler reads too, so the schedule is stated once.
+/// manages the daily GitHub release-update check and the enrolment of this installation with the plugin registry. The hour and
+/// the interval are taken from <c>ScheduledJobsOptions</c>, which the job handlers read too, so each schedule is stated once.
 /// </summary>
 /// <remarks>
 /// <see cref="RecurringJobs.StartAsync{TCommand}"/> schedules the job for its next regular run, or
@@ -37,6 +38,7 @@ public sealed class AdminScheduledJobsStartup : IHostedService
         var schedules = jobs.Schedules;
 
         await jobs.StartAsync<CheckReleaseUpdatesCronCommand>(schedules.CheckReleaseUpdates, cancellationToken);
+        await jobs.StartAsync<EnrollRegistryInstanceCronCommand>(schedules.EnrollRegistryInstance, cancellationToken);
     }
 
     /// <summary>

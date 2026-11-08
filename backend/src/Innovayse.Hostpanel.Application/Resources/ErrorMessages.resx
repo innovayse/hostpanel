@@ -1195,6 +1195,39 @@
   <data name="PLUGIN_REGISTRY_VERSION_COMPROMISED" xml:space="preserve">
     <value>The plugin registry rejected this version as unsafe, so it cannot be installed. Choose another version.</value>
   </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID" xml:space="preserve">
+    <value>The plugin registry cannot use the public address of this Hostpanel. Set ClientBaseUrl to the public https address of this installation, then retry the registration.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED" xml:space="preserve">
+    <value>The plugin registry has not verified this Hostpanel yet, so it cannot give out this restricted plugin. Registration runs on its own: check its state on the Plugins page and retry if it shows an error.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REVOKED" xml:space="preserve">
+    <value>The plugin registry revoked this Hostpanel installation, so it no longer gives it restricted plugins. Contact the operator of the registry. Retry the registration to ask for a new identity.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED" xml:space="preserve">
+    <value>The plugin registry did not accept the signature of this Hostpanel. Retry the registration from the Plugins page. If it happens again, the identity stored on this server may be damaged.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW" xml:space="preserve">
+    <value>The plugin registry refused the request because the clock of this server is too far from the correct time. Fix the server clock (turn on time synchronisation) and try again.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REPLAY_REJECTED" xml:space="preserve">
+    <value>The plugin registry took the request for a repeat of an earlier one and refused it. Try again.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED" xml:space="preserve">
+    <value>The plugin registry did not accept the one-time download ticket. Try the install again to get a new ticket.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED" xml:space="preserve">
+    <value>The plugin registry limits how often this Hostpanel may register or ask for restricted plugins, and the limit is reached. Wait a while, then try again.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE" xml:space="preserve">
+    <value>The plugin registry could not read the confirmation text from this Hostpanel at /.well-known/hostpanel-registry/. Make sure your public address sends that path to the Hostpanel API, then retry.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_RESTART_NEEDED" xml:space="preserve">
+    <value>The registration with the plugin registry ran out of time or was forgotten, so it starts again with a new key.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_FOUND" xml:space="preserve">
+    <value>No registration with this id is waiting for confirmation.</value>
+  </data>
   <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
     <value>The plugin asks for a kind of access to client hosting that this host does not know, names one twice, or declares it in a version 1 manifest.</value>
   </data>

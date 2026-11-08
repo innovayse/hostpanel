@@ -21,6 +21,7 @@ import type {
   PluginListItemDto,
   PluginRegistryItemDto,
   PluginRegistryQuery,
+  RegistryInstanceDto,
   PluginSlotWidgetBindingDto,
   RegistryDetailsState,
 } from '@/types/plugin'
@@ -123,6 +124,15 @@ export const usePluginsStore = defineStore('plugins', () => {
 
   /** True when the server answered that the registry is switched off; the Browse tab is then hidden. */
   const registryDisabled = ref(false)
+
+  /** Where this server stands with the registry, populated by {@link fetchRegistryInstance}; null until loaded. */
+  const registryInstance = ref<RegistryInstanceDto | null>(null)
+
+  /** True while the registration state is loading or a retry runs. */
+  const registryInstanceBusy = ref(false)
+
+  /** Sentence for the last failed load or retry of the registration state, null when none. */
+  const registryInstanceError = ref<string | null>(null)
 
   /** Installed plugins the registry has a newer version of, populated by {@link fetchRegistryUpdates}. */
   const registryUpdates = ref<PluginRegistryItemDto[]>([])
@@ -399,6 +409,35 @@ export const usePluginsStore = defineStore('plugins', () => {
   }
 
   /**
+   * Loads where this server stands with the plugin registry. A registry that is switched off leaves it empty.
+   *
+   * @returns Resolves when the request is over; a refusal is left in `registryInstanceError`.
+   */
+  const fetchRegistryInstance = async (): Promise<void> => {
+    registryInstanceBusy.value = true
+    const result = await runAction(registryInstanceError, () => guardRegistry<RegistryInstanceDto | null>(api.getRegistryInstance, null))
+    registryInstanceBusy.value = false
+    if (result.ok) {
+      registryInstance.value = result.value
+    }
+  }
+
+  /**
+   * Registers this server with the registry again at once. A run that fails is still an answer: the state it
+   * returns carries the code and the sentence, and only a refusal of the call itself lands in `registryInstanceError`.
+   *
+   * @returns Resolves when the run is over.
+   */
+  const retryRegistryInstance = async (): Promise<void> => {
+    registryInstanceBusy.value = true
+    const result = await runAction(registryInstanceError, () => guardRegistry<RegistryInstanceDto | null>(api.retryRegistryInstance, null))
+    registryInstanceBusy.value = false
+    if (result.ok) {
+      registryInstance.value = result.value
+    }
+  }
+
+  /**
    * Whether a registry action is in flight for one plugin; other plugins stay usable meanwhile.
    *
    * @param id - Plugin id as listed by the registry.
@@ -529,8 +568,9 @@ export const usePluginsStore = defineStore('plugins', () => {
     plugins, loading, error, actionError, requiresRestart, downgradeFile, stagedVersion, installed, keptDataIds, slotWidgets, productOptions, slotWidgetsError, bindingError,
     registryPageSize, registryItems, registryTotal, registryQuery, registryLoading, registryError, registryDisabled, registryUpdates, registryUpdatesError,
     registryInstallError, registryInstallingId, updateVersions, licenceError, registryDetails,
+    registryInstance, registryInstanceBusy, registryInstanceError,
     isBusy, fetchRegistryDetails, saveLicenceKey, removeLicenceKey,
-    fetchRegistry, setRegistryFilter, fetchRegistryUpdates, installFromRegistry,
+    fetchRegistry, setRegistryFilter, fetchRegistryUpdates, fetchRegistryInstance, retryRegistryInstance, installFromRegistry,
     fetchAll, install, forceDowngrade, dismissDowngrade, remove, purge, restart, fetchSlotWidgets, saveSlotWidgetProducts,
   }
 })

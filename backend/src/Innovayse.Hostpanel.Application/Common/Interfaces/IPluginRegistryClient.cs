@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -22,20 +23,25 @@ public interface IPluginRegistryClient
     /// <returns>The plugins the registry knows (installed state not yet set), or a <c>PLUGIN_REGISTRY_*</c> failure.</returns>
     Task<Result<IReadOnlyList<RegistryPluginDto>>> GetLatestAsync(IReadOnlyCollection<string> pluginIds, CancellationToken ct);
 
-    /// <summary>Resolves one published version of a plugin to its package address and published checksum.</summary>
-    /// <param name="target">The plugin id and version to resolve.</param>
+    /// <summary>
+    /// Resolves one published version of a plugin to its package address and published checksum. For a host only plugin
+    /// (<see cref="RegistryPluginVersionRef.Distribution"/>) the call is signed with this installation's registry identity and
+    /// carries no licence key.
+    /// </summary>
+    /// <param name="target">The plugin id and version to resolve, and how the plugin is distributed.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <param name="licenceKey">The licence key of a paid or private plugin, sent as a header and never logged; <see langword="null"/> or blank sends none.</param>
     /// <returns>
     /// The release, <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c> when the registry does not list it,
     /// <c>PLUGIN_REGISTRY_LICENCE_REQUIRED</c> (the registry answered 401) or <c>PLUGIN_REGISTRY_LICENCE_INVALID</c> (403),
-    /// or another <c>PLUGIN_REGISTRY_*</c> failure.
+    /// for a host only plugin the refusal of the signed call (<c>PLUGIN_REGISTRY_INSTANCE_*</c>), or another <c>PLUGIN_REGISTRY_*</c> failure.
     /// </returns>
     Task<Result<RegistryPluginRelease>> GetReleaseAsync(RegistryPluginVersionRef target, CancellationToken ct, string? licenceKey = null);
 
     /// <summary>
     /// Downloads a release's package from the registry's own host only, within the configured size limit, into a
-    /// temporary file in the plugin staging folder.
+    /// temporary file in the plugin staging folder. A host only package is first asked for with a one time download ticket
+    /// (a signed call), and the ticket address is then fetched with a signed call, neither carrying a licence key.
     /// </summary>
     /// <param name="release">The release to download.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -57,13 +63,19 @@ public interface IPluginRegistryClient
     /// </returns>
     Task<Result<RegistryPluginDetails?>> GetPluginAsync(string pluginId, string? licenceKey, CancellationToken ct);
 
-    /// <summary>Lists every version of a plugin the registry shows.</summary>
+    /// <summary>
+    /// Lists every version of a plugin the registry shows. For a host only plugin the call is signed with this installation's
+    /// registry identity and carries no licence key.
+    /// </summary>
     /// <param name="pluginId">The plugin id.</param>
     /// <param name="licenceKey">The licence key of a paid or private plugin, sent as a header and never logged; <see langword="null"/> or blank sends none.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <param name="distribution">Where the plugin is distributed from; <see cref="PluginRegistryDistribution.HostOnly"/> signs the call.</param>
     /// <returns>
     /// The versions in the registry's order (a version with an unknown status or a bad number is left out), or
-    /// <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c> for a 404, or another <c>PLUGIN_REGISTRY_*</c> failure.
+    /// <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c> for a 404, for a host only plugin the refusal of the signed call
+    /// (<c>PLUGIN_REGISTRY_INSTANCE_*</c>), or another <c>PLUGIN_REGISTRY_*</c> failure.
     /// </returns>
-    Task<Result<IReadOnlyList<RegistryPluginVersion>>> ListVersionsAsync(string pluginId, string? licenceKey, CancellationToken ct);
+    Task<Result<IReadOnlyList<RegistryPluginVersion>>> ListVersionsAsync(
+        string pluginId, string? licenceKey, CancellationToken ct, PluginRegistryDistribution distribution = PluginRegistryDistribution.Download);
 }

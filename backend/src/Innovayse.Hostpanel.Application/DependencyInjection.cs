@@ -1,5 +1,6 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Clients.Commands.AcceptInvitation;
 using Innovayse.Hostpanel.Application.Common;
@@ -65,6 +66,10 @@ public static class DependencyInjection
 
         // The SSH half of the plugin host API: issues and revokes a plugin's identities for the call's client (#758).
         services.AddScoped<PluginSshAccessService>();
+
+        // This installation's identity towards the plugin registry: where it is kept, and the enrolment that registers and verifies it.
+        services.AddScoped<RegistryInstanceStore>();
+        services.AddScoped<RegistryInstanceEnrollment>();
 
         return services;
     }

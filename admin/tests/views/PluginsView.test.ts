@@ -512,3 +512,63 @@ describe('PluginsView', () => {
     expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Plugin removed.')
   })
 })
+
+describe('PluginsView registration card', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  /** A registration that failed, as the server answers it. */
+  const failedInstance = {
+    state: 'Error',
+    instanceId: null,
+    baseUrl: null,
+    errorCode: 'PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID',
+    message: 'The plugin registry cannot use the public address of this Hostpanel.',
+    verifiedAt: null,
+    nextAttemptAt: null,
+  }
+
+  it('shows the registration state on the Browse tab, with the sentence of the last failure', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins/registry-instance': () => json(failedInstance),
+      'GET /api/admin/plugins/registry/updates': () => json([]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+
+    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+
+    expect(wrapper.get('[data-testid="plugin-registry-instance-state"]').text()).toBe('Failed')
+    expect(wrapper.get('[data-testid="plugin-registry-instance-problem"]').text()).toContain('cannot use the public address')
+  })
+
+  it('retries the registration from the card and shows the state the server answers', async () => {
+    const mock = stubRoutes({
+      'POST /api/admin/plugins/registry-instance/retry': () => json({ ...failedInstance, state: 'Verified', errorCode: null, message: null, verifiedAt: '2026-11-08T12:00:00Z' }),
+      'GET /api/admin/plugins/registry-instance': () => json(failedInstance),
+      'GET /api/admin/plugins/registry/updates': () => json([]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+
+    await wrapper.get('[data-testid="plugin-registry-instance-retry"]').trigger('click')
+    await flushPromises()
+
+    expect(mock.mock.calls.some(([url, init]) => String(url) === '/api/admin/plugins/registry-instance/retry' && init?.method === 'POST')).toBe(true)
+    expect(wrapper.get('[data-testid="plugin-registry-instance-state"]').text()).toBe('Verified')
+    expect(wrapper.find('[data-testid="plugin-registry-instance-retry"]').exists()).toBe(false)
+  })
+
+  it('asks for no registration state while the registry is switched off', async () => {
+    const mock = stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]) })
+    await mountPlugins()
+
+    expect(mock.mock.calls.some(([url]) => String(url).includes('registry-instance'))).toBe(false)
+  })
+})

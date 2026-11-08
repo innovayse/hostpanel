@@ -44,10 +44,46 @@ Hostpanel talks only to the address you configured:
 - The details page asks for the plugin's page and its list of versions.
 - An install asks for the release you chose, checks it against the list of versions and then downloads its package.
 - The update check sends the ids of the plugins you installed or uploaded (not the built-in ones) and asks for their newest versions.
+- An install first reads the plugin's page, which says whether the plugin is public or restricted. For a restricted plugin the installation also registers with the registry, as described in [Restricted plugins and the registration of this server](#restricted-plugins-and-the-registration-of-this-server).
 
 For a paid or private plugin it also sends the licence key you saved for it, in an `X-Licence-Key` header, and only to the registry's own address: on the plugin page, the version list, the release lookup, the package download and the update check for that plugin. The listing never carries a key. It sends no cookie, no login token, no host name, no setting and no client or user data. If you do not want those plugin ids to leave your server, leave the registry off.
 
 A request, a redirect and a package address must all have the registry's scheme, host and port, and a package that lives anywhere else is refused. The registry's name must also not resolve to the server itself: loopback, link-local (including the cloud metadata address), unspecified and multicast addresses are refused. Private network ranges are allowed, so a registry inside your own network works, but a registry on `localhost` does not.
+
+## Restricted plugins and the registration of this server
+
+Some plugins in a registry are not offered to the public. The registry gives their version list, their release details and their package only to an installation it has verified, and the site of the registry offers no download of them. Such a plugin is marked **restricted** by the registry (`distribution: HostOnly`). A public plugin works exactly as described above and does not need any of this.
+
+### What the registration does
+
+When the registry is on, Hostpanel gives itself an identity towards the registry. Nobody has to do anything:
+
+1. **Key pair.** Hostpanel generates an Ed25519 key pair once. The private key is stored encrypted in the settings table with the same protection as the other secrets of the server, never shown and never sent. If the registry asks for a fresh start (see below), a new pair is made, because a registry refuses to register one key twice.
+2. **Registration.** Hostpanel sends the registry two things: the public key and the public address of this installation, which is the `ClientBaseUrl` setting of the API (see the [configuration reference](./configuration)). The registry answers with an instance id and a challenge, a random text.
+3. **Proof.** The registry fetches `/.well-known/hostpanel-registry/{id}` from that public address, and Hostpanel answers with exactly the challenge, as plain text that no cache may keep. When the text matches, the registry marks the installation verified. This proves that whoever registered controls the address; it does not tell the registry who you are.
+4. **Signed requests.** From then on, every request for a restricted plugin is signed with the private key: the version list, the release details, the request for a one time download ticket and the final download of the package. The signature covers the method, the exact request target, a timestamp and a random value used once, so a request cannot be changed or replayed. The package itself is fetched against a ticket that works once, for about a minute, for this installation and this version.
+
+The registration runs by itself: a background job runs it at start, and again whenever a restricted plugin is asked for. It is safe to repeat. After a failure it waits 30 seconds, then 1 minute, 2 minutes and so on up to one hour before trying again. The state of the registration is on the **Browse** tab, in the **Registration with the registry** card: not registered yet, waiting for confirmation, verified, revoked, or failed with the reason in your language. **Retry registration** runs it at once and ignores the wait; after a revocation it asks for a new identity.
+
+### What is sent, and what is not
+
+| Call | Sent |
+|---|---|
+| Registration | The public key and the public address of this installation. |
+| Verification | Nothing but the instance id in the address. The registry reads the challenge from your server. |
+| Version list, release details, ticket and package of a restricted plugin | The instance id, the time, a random value and the signature, in the headers `X-Hostpanel-Instance`, `X-Hostpanel-Timestamp`, `X-Hostpanel-Nonce` and `X-Hostpanel-Signature`. No licence key. |
+
+Hostpanel never sends the private key, a password, a cookie, a login token, a setting, a client or user, or the host name of the server beyond the public address you configured. The registry learns the public address you configured and the time of each request for a restricted plugin; that is the whole identity. If you do not want that, leave the registry off, or do not install restricted plugins: the registration is made at start only while the registry is on.
+
+### What you need to set up
+
+- **A public https address.** `ClientBaseUrl` must be the public https address of the installation, not `localhost`, a private network address or a name without a dot. Otherwise the registration fails with `PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID` and the card names the setting.
+- **The well-known path must reach the API.** The registry calls `https://your-address/.well-known/hostpanel-registry/{id}`. The edge proxy in front of Hostpanel has to send that path to the API, the way it sends `/api/`. The Caddyfile of the Docker Hub stack (`docker/caddy/Caddyfile`) does it; with another proxy add a route for the prefix `/.well-known/hostpanel-registry/` to the API service. Without it the registration fails with `PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE`.
+- **A correct clock.** A signed request is accepted within a few minutes of the registry's time. If the clock of the server is off, the registry refuses the request and Hostpanel says to fix the server clock; turn on time synchronisation (NTP) on the host.
+
+### Revocation
+
+If the operator of the registry revokes your installation, signed requests are refused, the card shows **Revoked**, and the automatic job leaves it alone. Contact the operator of the registry. **Retry registration** then asks for a new identity.
 
 ## Registry trust
 
@@ -122,6 +158,8 @@ For scripts. All of these need an administrator and live under `/api/admin/plugi
 |---|---|
 | `GET /registry` | The paged catalogue (the Browse tab). |
 | `GET /registry/updates` | The newest registry version of each plugin you installed. |
+| `GET /registry-instance` | Where this server stands with the registry: `state` (`NotRegistered`, `Pending`, `Verified`, `Revoked`, `Error`), the instance id, the public address, the code and sentence of the last failure, and when the next automatic attempt is due. Nothing secret. |
+| `POST /registry-instance/retry` | Runs the registration at once, ignoring the wait, and answers with the state it left. Not available in a demo installation. |
 | `GET /registry/{id}` | The details page of one plugin, with its versions. The licence key is never returned, only whether one is saved. |
 | `PUT /registry/{id}/licence` | Saves the licence key for the plugin. Body: `{ "key": "YOUR-KEY" }`. |
 | `DELETE /registry/{id}/licence` | Removes the saved key. |
@@ -148,6 +186,15 @@ Installing needs an administrator and is not available in a demo installation. E
 | `PLUGIN_REGISTRY_VERSION_YANKED` | 409 | The publisher withdrew this version, so it cannot be installed. |
 | `PLUGIN_REGISTRY_VERSION_COMPROMISED` | 409 | The registry rejected this version, for example because it was found to be unsafe. It is never installed. |
 | `PLUGIN_DOWNGRADE_REFUSED` | 409 | The version is older than the installed one and the downgrade was not confirmed (`allowDowngrade`). |
+| `PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID` | 422 | `ClientBaseUrl` is not a public https address the registry can use. Set it, then retry the registration. |
+| `PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED` | 409 | The registry has not verified this server yet, so a restricted plugin is not given out. The registration runs by itself; check the card on the Browse tab. |
+| `PLUGIN_REGISTRY_INSTANCE_REVOKED` | 409 | The registry revoked this installation. Contact the operator of the registry, then retry the registration. |
+| `PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE` | 502 | The registry could not read the confirmation text at `/.well-known/hostpanel-registry/{id}` on your public address. Route that path to the API. |
+| `PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED` | 502 | The registry did not accept the signature. Retry the registration; if it keeps happening the stored identity may be damaged. |
+| `PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW` | 502 | The clock of this server is too far from the correct time. Fix the server clock and try again. |
+| `PLUGIN_REGISTRY_INSTANCE_REPLAY_REJECTED` | 502 | The registry took the request for a repeat of an earlier one. Try again. |
+| `PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED` | 502 | The registry did not accept the one time download ticket. Try the install again. |
+| `PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED` | 429 | The registry limits how often this server may register or ask for restricted plugins. Wait, then try again. |
 
 Hostpanel never shows you the registry's own error text, and the log keeps only the kind of failure, so an address or a reply cannot leak into either.
 

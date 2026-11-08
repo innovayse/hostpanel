@@ -76,6 +76,15 @@ public static class StatusMapping
             // is well formed and the version's state refuses it, a conflict (409); none of the names carries a CONFLICT token.
             "PLUGIN_REGISTRY_HOST_INCOMPATIBLE" or "PLUGIN_REGISTRY_VERSION_YANKED" or "PLUGIN_REGISTRY_VERSION_COMPROMISED"
                 => new(409, "Conflict"),
+            // Exact rows: this installation's identity towards the registry. The address and the registration state are
+            // things the operator fixes (422, 409); a refusal of a signed call is the registry declining us (502); the
+            // registry's own limit is a 429. None of the names carries a token for the generic arms.
+            "PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID" => new(422, "Unprocessable Content"),
+            "PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED" or "PLUGIN_REGISTRY_INSTANCE_REVOKED" or "PLUGIN_REGISTRY_INSTANCE_RESTART_NEEDED"
+                => new(409, "Conflict"),
+            "PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED" or "PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW" or "PLUGIN_REGISTRY_INSTANCE_REPLAY_REJECTED"
+                or "PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED" or "PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE" => new(502, "Bad Gateway"),
+            "PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED" => new(429, "Too Many Requests"),
             // Exact row: a plugin's own code failed the call (a gateway between us and code we do not own, 502); the name
             // carries no token.
             "PLUGIN_FAILED" => new(502, "Bad Gateway"),

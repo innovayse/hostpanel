@@ -25,15 +25,21 @@ public sealed class GetClientPluginSlotWidgetHandler
     /// <summary>The available plugins with their view documents.</summary>
     private readonly IPluginUiSource _plugins;
 
+    /// <summary>Works out the origins the widget's absolute links may point at for the caller.</summary>
+    private readonly PluginFrameOriginResolver _origins;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="gate">Checks the slot, the caller and the context.</param>
     /// <param name="index">Lists the widgets the caller may see.</param>
     /// <param name="plugins">The available plugins with their view documents.</param>
-    public GetClientPluginSlotWidgetHandler(ClientPluginSlotGate gate, PluginSlotIndexBuilder index, IPluginUiSource plugins)
+    /// <param name="origins">Works out the origins the widget's absolute links may point at for the caller.</param>
+    public GetClientPluginSlotWidgetHandler(
+        ClientPluginSlotGate gate, PluginSlotIndexBuilder index, IPluginUiSource plugins, PluginFrameOriginResolver origins)
     {
         _gate = gate;
         _index = index;
         _plugins = plugins;
+        _origins = origins;
     }
 
     /// <summary>Reads the widget's view for the caller and the context.</summary>
@@ -87,9 +93,13 @@ public sealed class GetClientPluginSlotWidgetHandler
             return NotFound();
         }
 
+        // Same rule as a plugin page: the manifest's origins plus the https host of the caller's own bound services.
+        var frameOrigins = await _origins.ResolveAsync(package.Manifest, caller.Value!.Held, ct);
+
+        var linkOrigins = PluginFrameOriginResolver.LinkOrigins(package.Manifest, frameOrigins);
+
         return Result<PluginSlotWidgetViewDto>.Success(
-            new PluginSlotWidgetViewDto(
-                widget.PluginId, widget.Id, widget.Title, document, package.Manifest.ExternalOrigins));
+            new PluginSlotWidgetViewDto(widget.PluginId, widget.Id, widget.Title, document, linkOrigins));
     }
 
     /// <summary>Reads the optional service id of the query string.</summary>

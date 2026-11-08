@@ -15,7 +15,7 @@ export interface PluginSlotWidgetView {
   id: string
   /** The title, in the reader's language; null when the widget has none. */
   title: string | null
-  /** The web origins the widget's links may open (the manifest's `externalOrigins`); empty allows host-relative links only. */
+  /** The web origins the widget's links may open (the manifest's `externalOrigins` plus the https origins of the reader's own bound services); empty allows host-relative links only. */
   externalOrigins: string[]
   /** The view document, its labels resolved by the host. */
   view: PluginView

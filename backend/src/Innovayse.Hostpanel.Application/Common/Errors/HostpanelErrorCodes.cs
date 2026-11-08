@@ -789,6 +789,9 @@ public static class HostpanelErrorCodes
     /// <summary>The manifest version is not a strict semantic version such as 1.2.3 (400).</summary>
     public const string PLUGIN_MANIFEST_VERSION_INVALID = "PLUGIN_MANIFEST_VERSION_INVALID";
 
+    /// <summary>The manifest tags list has too many tags, a tag that is not 2 to 30 lowercase letters, digits and hyphens, or a tag listed twice (400).</summary>
+    public const string PLUGIN_MANIFEST_TAGS_INVALID = "PLUGIN_MANIFEST_TAGS_INVALID";
+
     /// <summary>A page or slot names a view document the plugin package does not hold, or a path that is not a package-relative .json file (400).</summary>
     public const string PLUGIN_VIEW_MISSING = "PLUGIN_VIEW_MISSING";
 

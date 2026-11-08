@@ -29,6 +29,14 @@ public sealed class PluginRuleMapTests
         PluginPackageErrors.CodeFor(host).Should().StartWith("PLUGIN_");
     }
 
+    /// <summary>The package's tags rule becomes the host's tags rule, with its own error code.</summary>
+    [Fact]
+    public void TagsInvalid_MapsToTheHostTagsRule()
+    {
+        PluginRuleMap.ToHost(PackageManifestRule.TagsInvalid).Should().Be(PluginManifestRule.TagsInvalid);
+        PluginPackageErrors.CodeFor(PluginManifestRule.TagsInvalid).Should().Be(HostpanelErrorCodes.PLUGIN_MANIFEST_TAGS_INVALID);
+    }
+
     /// <summary>A manifest rule value the package does not define is refused, not passed through.</summary>
     [Fact]
     public void AnUndefinedManifestRule_IsRefused()

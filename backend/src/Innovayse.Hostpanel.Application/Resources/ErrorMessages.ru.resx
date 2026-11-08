@@ -540,6 +540,9 @@
 <data name="PLUGIN_MANIFEST_VERSION_INVALID" xml:space="preserve">
     <value>Версия плагина в манифесте недопустима: укажите её в виде major.minor.patch, например 1.2.3, без ведущих нулей.</value>
   </data>
+<data name="PLUGIN_MANIFEST_TAGS_INVALID" xml:space="preserve">
+    <value>Теги в манифесте недопустимы: укажите не более 10 тегов, каждый от 2 до 30 строчных букв, цифр или дефисов, без символа # в начале и без повторов.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Этот плагин ссылается на документ представления, которого нет в его пакете.</value>
   </data>

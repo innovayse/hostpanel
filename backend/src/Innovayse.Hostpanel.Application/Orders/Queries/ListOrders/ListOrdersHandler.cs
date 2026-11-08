@@ -70,7 +70,7 @@ public sealed class ListOrdersHandler
                 o.Currency,
                 o.InvoiceId,
                 o.Items.Count,
-                o.Items.Count(i => i.FulfilmentState == OrderItemFulfilmentState.Failed),
+                o.Items.Count(i => i.FulfilmentState == OrderItemFulfilmentState.Failed || i.FulfilmentState == OrderItemFulfilmentState.PartiallyRefunded),
                 o.CreatedAt))
             .ToList();
 

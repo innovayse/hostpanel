@@ -1472,6 +1472,24 @@ public static class HostpanelErrorCodes
     public const string ORDER_LINE_ALREADY_FULFILLED = "ORDER_LINE_ALREADY_FULFILLED";
 
     /// <summary>
+    /// The order line changed while an attempt ran (409): another writer saved it first, or it is being or was
+    /// refunded, so the outcome of the attempt could not be recorded. <see cref="Domain.Orders.Order.RecordLineFailed"/>.
+    /// </summary>
+    public const string ORDER_LINE_CHANGED = Domain.Orders.OrdersErrors.OrderLineChanged;
+
+    /// <summary>
+    /// The order line is not in the state a refund needs (409): only a failed line can start being refunded and
+    /// only a line being refunded can be settled. <see cref="Domain.Orders.Order.BeginLineRefund"/>.
+    /// </summary>
+    public const string ORDER_LINE_NOT_REFUNDABLE = Domain.Orders.OrdersErrors.OrderLineNotRefundable;
+
+    /// <summary>
+    /// The code a line is recorded with when its attempt was cut short before it ended (the request was cancelled
+    /// or the host stopped), so the line can be retried at once instead of waiting for the retry claim to run out.
+    /// </summary>
+    public const string ORDER_LINE_INTERRUPTED = "ORDER_LINE_INTERRUPTED";
+
+    /// <summary>
     /// The SKU is not letters and digits joined by single hyphens, underscores or dots, or is too long
     /// (400): <see cref="Domain.Products.Product.SetSku"/>.
     /// </summary>

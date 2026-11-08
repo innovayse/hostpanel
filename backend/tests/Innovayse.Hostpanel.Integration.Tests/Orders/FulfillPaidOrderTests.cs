@@ -1,3 +1,4 @@
+using System.Net;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillPaidOrder;
@@ -50,8 +51,10 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// </summary>
     /// <param name="pluginResolver">The fake plugin resolver the refund resolves hosted gateways through.</param>
     /// <param name="useRealRegistrar">Whether domain registration goes to the real, unconfigured registrar provider.</param>
+    /// <param name="configure">Further changes to the host's services, for a test that needs another fake.</param>
     /// <returns>The test host.</returns>
-    private WebApplicationFactory<Program> BuildHost(FakePaymentPluginResolver pluginResolver, bool useRealRegistrar = false) =>
+    private WebApplicationFactory<Program> BuildHost(
+        FakePaymentPluginResolver pluginResolver, bool useRealRegistrar = false, Action<IServiceCollection>? configure = null) =>
         factory.WithWebHostBuilder(b => b.ConfigureTestServices(s =>
         {
             s.AddSingleton<IPaymentPluginResolver>(pluginResolver);
@@ -59,6 +62,8 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
             {
                 s.AddScoped<IRegistrarProvider, NameAmRegistrarProvider>();
             }
+
+            configure?.Invoke(s);
         }));
 
     /// <summary>Seeds a domain-registration line for a name already registered here, so the registrar refuses it.</summary>
@@ -335,6 +340,137 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
             .Where(t => t.InvoiceId == invoice.Id && t.AmountOut > 0).ToListAsync(CancellationToken.None);
         ledger.Should().ContainSingle(t => t.AmountOut == 10m && t.TransactionId == "re_mixed_card");
         (await StatusOfAsync(context, invoice.Id)).Should().Be(InvoiceStatus.PartiallyRefunded);
+    }
+
+    /// <summary>
+    /// A refund that gave the credit share back but could not return the paid share is not a refunded line: the line is left
+    /// partly refunded, closed to retries, for staff to finish by hand, and the order stays incomplete.
+    /// </summary>
+    [Fact]
+    public async Task RefundThatReturnsOnlyTheCreditShareLeavesTheLineForManualAction()
+    {
+        var plugin = new FakePaymentPlugin();
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var (clientId, _) = await SeedClientAndProductAsync(context);
+        var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
+        await context.InvoiceItems.Where(i => i.InvoiceId == invoice.Id).LoadAsync(CancellationToken.None);
+        invoice.ApplyCredit(10m);
+        invoice.SetGatewaySession("bank-gateway", "gw-order-partial-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+        invoice.Settle("bank-gateway", "ch_partial_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        (await CreditBalanceOfAsync(host, clientId)).Should().Be(10m);
+        var order = await OrdersTestReads.ReadOrderWithItemsAsync(host.Services, orderId);
+        order.Items.Should().ContainSingle().Which.FulfilmentState.Should().Be(OrderItemFulfilmentState.PartiallyRefunded);
+        order.Status.Should().Be(OrderStatus.Incomplete);
+    }
+
+    /// <summary>
+    /// A refund that returned nothing at all (the gateway refused it and no credit was involved) does not close the line: it
+    /// goes back to failed so staff can retry it, and the order stays incomplete.
+    /// </summary>
+    [Fact]
+    public async Task RefundThatReturnsNothingLeavesTheLineFailedAndRetryable()
+    {
+        var plugin = new FakePaymentPlugin();
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var (clientId, _) = await SeedClientAndProductAsync(context);
+        var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
+        invoice.SetGatewaySession("bank-gateway", "gw-order-nothing-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+        invoice.Settle("bank-gateway", "ch_nothing_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        (await CreditBalanceOfAsync(host, clientId)).Should().Be(0m);
+        var order = await OrdersTestReads.ReadOrderWithItemsAsync(host.Services, orderId);
+        var line = order.Items.Should().ContainSingle().Which;
+        line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
+        line.FulfilmentErrorCode.Should().Be(HostpanelErrorCodes.DOMAIN_ALREADY_REGISTERED);
+        order.Status.Should().Be(OrderStatus.Incomplete);
+        order.CanRetryLine(line.Id, DateTimeOffset.UtcNow, TimeSpan.FromMinutes(10)).Should().BeTrue();
+    }
+
+    /// <summary>
+    /// A registrar that times out leaves the registration's outcome unknown, so the line is not refunded: the client could
+    /// otherwise keep the domain and the money. The line stays failed with the code for staff to retry or refund by hand.
+    /// </summary>
+    [Fact]
+    public async Task ADomainLineWhoseOutcomeIsUnknownIsNotRefunded()
+    {
+        var plugin = new FakePaymentPlugin { RefundResult = "re_never_unknown" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver, configure: s => s.AddScoped<IRegistrarProvider, TimingOutRegistrar>());
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var (clientId, _) = await SeedClientAndProductAsync(context);
+        var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
+        invoice.SetGatewaySession("bank-gateway", "gw-order-unknown-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+        invoice.Settle("bank-gateway", "ch_unknown_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        await context.SaveChangesAsync(CancellationToken.None);
+        var domainName = (await OrdersTestReads.ReadOrderWithItemsAsync(host.Services, orderId)).Items.Single().Domain!;
+        await OrdersTestReads.ReleaseDomainAsync(host.Services, domainName);
+
+        var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        plugin.LastRefundGatewayOrderId.Should().BeNull();
+        var order = await OrdersTestReads.ReadOrderWithItemsAsync(host.Services, orderId);
+        var line = order.Items.Should().ContainSingle().Which;
+        line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
+        line.FulfilmentErrorCode.Should().Be(HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);
+    }
+
+    /// <summary>
+    /// While a failed line's refund is under way a retry cannot take the line: it is refused, the domain is not registered,
+    /// and once the refund returns the line is Refunded, so the client is never both refunded and delivered.
+    /// </summary>
+    [Fact]
+    public async Task ARetryCannotTakeALineWhileItsRefundIsUnderWay()
+    {
+        var gateway = new GatedRefundPlugin();
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", gateway);
+        var host = BuildHost(resolver);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var (clientId, _) = await SeedClientAndProductAsync(context);
+        var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
+        invoice.SetGatewaySession("bank-gateway", "gw-order-race-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+        invoice.Settle("bank-gateway", "ch_race_1", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        await context.SaveChangesAsync(CancellationToken.None);
+        var line = (await OrdersTestReads.ReadOrderWithItemsAsync(host.Services, orderId)).Items.Single();
+        var handler = BuildHandler(scope);
+
+        var fulfilment = Task.Run(() => handler.HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None));
+        await gateway.RefundStarted.Task.WaitAsync(TimeSpan.FromSeconds(60));
+        await OrdersTestReads.ReleaseDomainAsync(host.Services, line.Domain!);
+        var admin = await OrdersTestReads.AdminOfAsync(host, factory);
+        var retry = await admin.PostAsync($"/api/orders/{orderId}/items/{line.Id}/retry", content: null);
+
+        retry.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await OrdersTestSeeds.AssertCodeAsync(retry, HostpanelErrorCodes.ORDER_LINE_NOT_RETRYABLE);
+        (await OrdersTestReads.CountDomainsAsync(host.Services, line.Domain!, clientId)).Should().Be(0);
+        (await OrdersTestReads.ReadItemsAsync(host.Services, orderId)).Single().FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunding);
+
+        gateway.Release.SetResult();
+        (await fulfilment).IsSuccess.Should().BeTrue();
+        var order = await OrdersTestReads.ReadOrderWithItemsAsync(host.Services, orderId);
+        order.Items.Single().FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunded);
+        order.Status.Should().Be(OrderStatus.Active);
     }
 
     /// <summary>Reads an invoice's status as the database now holds it, past the scope's tracked copy.</summary>

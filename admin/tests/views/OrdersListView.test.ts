@@ -62,8 +62,18 @@ describe('OrdersListView', () => {
     const wrapper = await mountList()
 
     expect(wrapper.get('[data-testid="orders-row-3"]').text()).toContain('Incomplete')
-    expect(wrapper.get('[data-testid="orders-failed-lines-3"]').text()).toContain('2 failed')
+    expect(wrapper.get('[data-testid="orders-failed-lines-3"]').text()).toContain('2 to retry')
     expect(wrapper.find('[data-testid="orders-failed-lines-2"]').exists()).toBe(false)
+  })
+
+  it('marks an incomplete order with no counted lines as needing attention', async () => {
+    const stale = { ...activeOrder, id: 4, orderNumber: 'ORD-0004', status: OrderStatus.Incomplete, failedLineCount: 0 }
+    stubRoutes({ 'GET /api/orders': () => json({ items: [stale], totalCount: 1 }) })
+    const wrapper = await mountList()
+
+    expect(wrapper.get('[data-testid="orders-row-4"]').text()).toContain('Incomplete')
+    expect(wrapper.get('[data-testid="orders-needs-attention-4"]').text()).toContain('Needs attention')
+    expect(wrapper.find('[data-testid="orders-failed-lines-4"]').exists()).toBe(false)
   })
 
   it('prints each order total in the currency of that order', async () => {
@@ -184,6 +194,17 @@ describe('OrdersListView', () => {
     const urls = mock.mock.calls.map(([url]) => url as string)
     expect(urls).toContain('/api/orders?page=1&pageSize=20&status=Fraud')
     expect(urls.at(-1)).toBe('/api/orders?page=1&pageSize=20')
+  })
+
+  it('sends status=Incomplete when the list is filtered to incomplete orders', async () => {
+    const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 1 }) })
+    const wrapper = await mountList()
+
+    wrapper.findComponent(UiSelect).vm.$emit('update:modelValue', OrderStatus.Incomplete)
+    await flushPromises()
+
+    const urls = mock.mock.calls.map(([url]) => url as string)
+    expect(urls.at(-1)).toBe('/api/orders?page=1&pageSize=20&status=Incomplete')
   })
 
   it('shows the empty state when there are no orders', async () => {

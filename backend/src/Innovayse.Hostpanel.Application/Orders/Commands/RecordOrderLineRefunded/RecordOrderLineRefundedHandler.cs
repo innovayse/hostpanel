@@ -1,13 +1,14 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
+using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Orders.Commands.RecordOrderLineRefunded;
 
 /// <summary>
-/// Handles <see cref="RecordOrderLineRefundedCommand"/>: closes a failed line whose cost was given back and
+/// Handles <see cref="RecordOrderLineRefundedCommand"/>: closes a line whose whole cost was given back and
 /// lets the order's status follow its lines. It loads the order afresh, because the fulfilment that failed the
 /// line ran in its own scope and saved its own copy.
 /// </summary>
@@ -27,8 +28,10 @@ public sealed class RecordOrderLineRefundedHandler
     /// <param name="cmd">The order and the refunded line.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Success once the line is closed (a line that is not failed is left as it is, still Success), or
-    /// <c>ORDER_NOT_FOUND</c> / <c>ORDER_ITEM_NOT_FOUND</c> when an id names nothing.
+    /// Success once the line is Refunded (a line that is Refunded already is left as it is, still Success), or
+    /// <c>ORDER_NOT_FOUND</c> / <c>ORDER_ITEM_NOT_FOUND</c> when an id names nothing, <c>ORDER_LINE_NOT_REFUNDABLE</c>
+    /// when the line is not being refunded, or <c>ORDER_LINE_CHANGED</c> when another writer saved the order first
+    /// (the caller loads it again and records again).
     /// </returns>
     public async Task<Result> HandleAsync(RecordOrderLineRefundedCommand cmd, CancellationToken ct)
     {
@@ -48,11 +51,25 @@ public sealed class RecordOrderLineRefundedHandler
             return Result.FailureCode(HostpanelErrorCodes.ORDER_ITEM_NOT_FOUND);
         }
 
-        // Only a failed line has a cost to give back; a fulfilled one was delivered and stays so.
-        if (item.FulfilmentState is OrderItemFulfilmentState.Failed)
+        if (item.FulfilmentState is OrderItemFulfilmentState.Refunded)
         {
-            order.RecordLineRefunded(item.Id);
+            return Result.Success();
+        }
+
+        // Only a line whose refund was begun can be closed; a failed or fulfilled line has nothing given back to record.
+        if (!order.IsLineBeingRefunded(item.Id))
+        {
+            return Result.FailureCode(HostpanelErrorCodes.ORDER_LINE_NOT_REFUNDABLE);
+        }
+
+        order.RecordLineRefunded(item.Id);
+        try
+        {
             await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            return Result.FailureCode(HostpanelErrorCodes.ORDER_LINE_CHANGED);
         }
 
         return Result.Success();

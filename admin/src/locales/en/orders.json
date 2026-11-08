@@ -24,7 +24,8 @@
     "fulfilment": "Fulfilment",
     "retry": "Retry",
     "lineRetried": "Line retried and fulfilled.",
-    "attempts": "Attempts: {count}, last {at}"
+    "attempts": "Attempts: {count}, last {at}",
+    "finishRefund": "Part of the cost was given back. Finish the refund by hand."
   },
   "ordersList": {
     "orders": "Orders",
@@ -40,10 +41,28 @@
     "confirmCancelTitle": "Cancel this order?",
     "confirmCancelMessage": "The order will be cancelled. This cannot be undone.",
     "cancelOrder": "Cancel order",
-    "failedLines": "{count} failed"
+    "failedLines": "{count} to retry",
+    "needsAttention": "Needs attention"
   },
   "fulfillment": {
     "acceptedWithFailedLines": "Order accepted, but these lines could not be fulfilled: {lines}.",
     "retryStillFailed": "The line was retried, but could not be fulfilled again: {lines}."
+  },
+  "lineErrors": {
+    "domainAlreadyRegistered": "The domain is already registered.",
+    "domainRegistrationUpstreamFailed": "The registrar could not register the domain.",
+    "domainRenewalUpstreamFailed": "The registrar could not renew the domain.",
+    "domainTransferUpstreamFailed": "The registrar could not transfer the domain.",
+    "domainProductNotConfigured": "The domain product is not configured.",
+    "productNotFound": "The ordered product no longer exists.",
+    "productNotAvailable": "The ordered product is not available.",
+    "provisioningUpstreamFailed": "The server could not create the account.",
+    "provisioningOutcomeUnknown": "The server did not confirm whether the account was created.",
+    "provisioningAccountConflict": "An account with this name already exists on the server.",
+    "productPackageMissing": "The product has no server package set.",
+    "productServerGroupRequired": "The product has no server group set.",
+    "serverConnectionUnreachable": "The server could not be reached.",
+    "unexpected": "An unexpected error stopped the line.",
+    "generic": "The line could not be fulfilled."
   }
 }

@@ -7,7 +7,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
 /// <summary>
 /// The test registrars' common shape: behaves like <see cref="StubRegistrarProvider"/> in every
-/// member but <see cref="RenewAsync"/>, which each variant defines, and counts renewal calls per
+/// member but <see cref="RenewAsync"/>, which each variant defines (a variant may also override
+/// <see cref="RegisterAsync"/>), and counts renewal calls per
 /// domain name. Top-level and public, not nested and private: Wolverine's generated handler code
 /// must be able to name the type it resolves for <c>RenewDomainHandler</c>. The counter is static
 /// because the registrar is scoped and a fresh instance serves every handler.
@@ -40,7 +41,7 @@ public abstract class TestRegistrar : IRegistrarProvider
     protected abstract Task<RegistrarResult> Renew(DomainRenewalOrder request, StubRegistrarProvider stub, CancellationToken ct);
 
     /// <inheritdoc/>
-    public Task<RegistrarResult> RegisterAsync(DomainRegistrationOrder request, CancellationToken ct) => _inner.RegisterAsync(request, ct);
+    public virtual Task<RegistrarResult> RegisterAsync(DomainRegistrationOrder request, CancellationToken ct) => _inner.RegisterAsync(request, ct);
 
     /// <inheritdoc/>
     public Task<RegistrarResult> TransferAsync(DomainTransferOrder request, CancellationToken ct) => _inner.TransferAsync(request, ct);

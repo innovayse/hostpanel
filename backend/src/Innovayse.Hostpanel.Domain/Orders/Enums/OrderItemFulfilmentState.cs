@@ -21,4 +21,17 @@ public enum OrderItemFulfilmentState
 
     /// <summary>The line failed and what it cost was given back, so it is closed and must not be fulfilled any more.</summary>
     Refunded = 4,
+
+    /// <summary>
+    /// The line failed and its cost is being given back right now. No retry may claim it, so the line cannot be
+    /// delivered while the money goes back; the refund then settles it as <see cref="Refunded"/>, back to
+    /// <see cref="Failed"/> when nothing was returned, or as <see cref="PartiallyRefunded"/>.
+    /// </summary>
+    Refunding = 5,
+
+    /// <summary>
+    /// The line failed and only part of its cost could be given back. It is closed to retries and staff must
+    /// finish the refund by hand; the order stays incomplete until they do.
+    /// </summary>
+    PartiallyRefunded = 6,
 }

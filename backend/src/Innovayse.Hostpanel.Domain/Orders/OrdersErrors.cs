@@ -29,4 +29,18 @@ public static class OrdersErrors
     /// <see cref="Order.RecordLineFailed"/> and <see cref="Order.RecordLineRefunded"/>.
     /// </summary>
     public const string OrderItemNotFound = "ORDER_ITEM_NOT_FOUND";
+
+    /// <summary>
+    /// The line changed while an attempt ran (409): another writer saved it first, or it is being or was refunded,
+    /// so the attempt's outcome cannot be recorded: <see cref="Order.RecordLineFulfilled"/> and
+    /// <see cref="Order.RecordLineFailed"/>.
+    /// </summary>
+    public const string OrderLineChanged = "ORDER_LINE_CHANGED";
+
+    /// <summary>
+    /// The line is not in the state a refund needs (409): only a failed line can start giving its cost back, and only
+    /// a line being refunded can be settled: <see cref="Order.BeginLineRefund"/>, <see cref="Order.RecordLineRefunded"/>
+    /// and <see cref="Order.RecordLineRefundReleased"/>.
+    /// </summary>
+    public const string OrderLineNotRefundable = "ORDER_LINE_NOT_REFUNDABLE";
 }

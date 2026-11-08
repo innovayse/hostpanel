@@ -135,6 +135,51 @@ public static class OrdersTestSeeds
         return new TakenDomainOrder(order.Id, client.Id, product.Id, domainName);
     }
 
+    /// <summary>
+    /// Seeds a client and a Pending order with two registration lines, each for a domain already registered here (so the
+    /// registrar refuses both).
+    /// </summary>
+    /// <param name="factory">The factory whose database to seed against.</param>
+    /// <returns>The order, the client and the two refused domains.</returns>
+    public static async Task<TwoTakenDomainsOrder> SeedTwoTakenDomainsOrderAsync(IntegrationTestFactory factory)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var holder = Client.Create($"subject-{Guid.NewGuid():N}", "Grace", "Hopper", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        db.Clients.AddRange(client, holder);
+        var group = ProductGroup.Create($"orders-two-taken-{Guid.NewGuid():N}", null);
+        db.ProductGroups.Add(group);
+        await db.SaveChangesAsync();
+
+        var first = $"taken-a-{Guid.NewGuid():N}"[..20] + ".example";
+        var second = $"taken-b-{Guid.NewGuid():N}"[..20] + ".example";
+        foreach (var name in new[] { first, second })
+        {
+            db.Domains.Add(RegisteredDomain.Register(
+                holder.Id, name, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD"));
+        }
+
+        var product = Product.Create(
+            group.Id, "Domain", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+        db.Products.Add(product);
+        await db.SaveChangesAsync();
+
+        var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..12], client.Id, "bank_transfer", ipAddress: null, currency: "USD", now: DateTimeOffset.UtcNow);
+        foreach (var name in new[] { first, second })
+        {
+            order.AddItem(
+                product.Id, name, BillingCycle.Annual, 10m, 10m, domain: name, hostname: null,
+                domainAction: DomainAction.Register, years: 1);
+        }
+
+        db.Orders.Add(order);
+        await db.SaveChangesAsync();
+
+        return new TwoTakenDomainsOrder(order.Id, client.Id, first, second);
+    }
+
     /// <summary>Seeds a client and a Pending order with one line for a digital product and one for a hosting product.</summary>
     /// <param name="factory">The factory whose database to seed against.</param>
     /// <returns>The order, client and the two products.</returns>

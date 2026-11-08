@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,11 +33,19 @@ public sealed class GetOwnedDomainNamesHandler
             return Result<IReadOnlyList<string>>.Success([]);
         }
 
-        IReadOnlyList<string> owned = await _context.Domains
+        var domains = _context.Domains
             .AsNoTracking()
-            .Where(d => d.ClientId == query.ClientId && names.Contains(d.Name.ToLower()))
-            .Select(d => d.Name.ToLower())
-            .ToListAsync(ct);
+            .Where(d => d.ClientId == query.ClientId && names.Contains(d.Name.ToLower()));
+        if (query.LiveOnly)
+        {
+            // A registration that lapsed, was cancelled or moved away is not a domain the client holds in the sense
+            // an order line needs: counting it would mark a line done that never delivered a domain.
+            domains = domains.Where(d => d.Status == DomainStatus.Active
+                || d.Status == DomainStatus.PendingRegistration
+                || d.Status == DomainStatus.PendingTransfer);
+        }
+
+        IReadOnlyList<string> owned = await domains.Select(d => d.Name.ToLower()).ToListAsync(ct);
 
         return Result<IReadOnlyList<string>>.Success(owned);
     }

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
@@ -216,6 +217,38 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
         var after = (await ReadItemsAsync(seeded.OrderId)).Single(i => i.Id == domainLine.Id);
         after.FulfilmentState.Should().Be(OrderItemFulfilmentState.Fulfilled);
         after.FulfilmentAttempts.Should().Be(2);
+    }
+
+    /// <summary>
+    /// How long a retry's claim is respected is the <c>Orders:RetryLeaseMinutes</c> option: a claim two minutes old holds the
+    /// line under the default lease of ten minutes (409), and is taken over once the configured lease is shorter than that.
+    /// </summary>
+    [Fact]
+    public async Task ARetryClaimIsRespectedForTheConfiguredLease()
+    {
+        var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        var admin = await OrdersTestSeeds.AdminClientAsync(factory);
+        (await admin.PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null)).EnsureSuccessStatusCode();
+        var domainLine = (await ReadItemsAsync(seeded.OrderId)).First(i => i.Domain == seeded.Domain);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+            var claimedAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+            await db.OrderItems.Where(i => i.Id == domainLine.Id).ExecuteUpdateAsync(s => s
+                .SetProperty(i => i.FulfilmentState, OrderItemFulfilmentState.InProgress)
+                .SetProperty(i => i.LastFulfilmentAttemptAt, claimedAt));
+        }
+
+        var url = $"/api/orders/{seeded.OrderId}/items/{domainLine.Id}/retry";
+        var held = await admin.PostAsync(url, content: null);
+        using var shortLease = factory.WithWebHostBuilder(b => b.UseSetting(
+            $"{OrderOptions.SectionName}:{nameof(OrderOptions.RetryLeaseMinutes)}", "1"));
+        var taken = await (await OrdersTestReads.AdminOfAsync(shortLease, factory)).PostAsync(url, content: null);
+
+        held.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await OrdersTestSeeds.AssertCodeAsync(held, HostpanelErrorCodes.ORDER_LINE_NOT_RETRYABLE);
+        taken.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ReadItemsAsync(seeded.OrderId)).Single(i => i.Id == domainLine.Id).FulfilmentAttempts.Should().Be(2);
     }
 
     /// <summary>Every retry is written to the client's activity log, naming the order and the line.</summary>

@@ -181,11 +181,12 @@ public sealed class Order : BaseEntity, IAggregateRoot
     /// </summary>
     /// <param name="itemId">The order line.</param>
     /// <param name="now">The current moment (UTC).</param>
+    /// <param name="lease">How long a retry's claim on a line is respected before another retry may take the line over.</param>
     /// <returns><see langword="false"/> for a line this order does not hold, or one that may not be retried.</returns>
-    public bool CanRetryLine(int itemId, DateTimeOffset now)
+    public bool CanRetryLine(int itemId, DateTimeOffset now, TimeSpan lease)
     {
         var item = _items.FirstOrDefault(i => i.Id == itemId);
-        return item is not null && Status is OrderStatus.Incomplete && item.CanBeRetried(now);
+        return item is not null && Status is OrderStatus.Incomplete && item.CanBeRetried(now, lease);
     }
 
     /// <summary>
@@ -194,10 +195,11 @@ public sealed class Order : BaseEntity, IAggregateRoot
     /// </summary>
     /// <param name="itemId">The order line to retry.</param>
     /// <param name="now">The current moment (UTC).</param>
+    /// <param name="lease">How long a retry's claim on a line is respected before another retry may take the line over.</param>
     /// <exception cref="DomainRuleException">Thrown when the order holds no such line or the line may not be retried now.</exception>
-    public void StartLineRetry(int itemId, DateTimeOffset now)
+    public void StartLineRetry(int itemId, DateTimeOffset now, TimeSpan lease)
     {
-        if (!CanRetryLine(itemId, now))
+        if (!CanRetryLine(itemId, now, lease))
         {
             throw new DomainRuleException(
                 OrdersErrors.OrderLineNotRetryable,
@@ -232,15 +234,77 @@ public sealed class Order : BaseEntity, IAggregateRoot
         RefreshStatusFromLines();
     }
 
+    /// <summary>Tells whether an attempt may still record its outcome on the line: the refund has not overtaken it.</summary>
+    /// <param name="itemId">The order line.</param>
+    /// <returns><see langword="false"/> for a line this order does not hold, or one whose cost is being or was given back.</returns>
+    public bool CanRecordLineOutcome(int itemId)
+    {
+        return _items.FirstOrDefault(i => i.Id == itemId)?.CanRecordOutcome == true;
+    }
+
+    /// <summary>Tells whether a refund of the line is under way, which is when its settlement may be recorded.</summary>
+    /// <param name="itemId">The order line.</param>
+    /// <returns><see langword="false"/> for a line this order does not hold, or one that is not being refunded.</returns>
+    public bool IsLineBeingRefunded(int itemId)
+    {
+        return _items.FirstOrDefault(i => i.Id == itemId)?.IsBeingRefunded == true;
+    }
+
     /// <summary>
-    /// Records that a failed line's cost was given back. The line is closed for good, so no retry can
+    /// Tells whether a failed line may start being refunded: it failed, and no retry holds it.
+    /// </summary>
+    /// <param name="itemId">The order line.</param>
+    /// <returns><see langword="false"/> for a line this order does not hold, or one that is not failed.</returns>
+    public bool CanRefundLine(int itemId)
+    {
+        return _items.FirstOrDefault(i => i.Id == itemId)?.IsFailed == true;
+    }
+
+    /// <summary>
+    /// Claims a failed line for its refund before any money moves. A retry cannot take the line while it is being
+    /// refunded, so the line is never both delivered and refunded; the order stays incomplete.
+    /// </summary>
+    /// <param name="itemId">The failed order line whose cost is about to be given back.</param>
+    /// <exception cref="DomainRuleException">Thrown when the order holds no such line or the line is not failed.</exception>
+    public void BeginLineRefund(int itemId)
+    {
+        FindItem(itemId).BeginRefund();
+        RefreshStatusFromLines();
+    }
+
+    /// <summary>
+    /// Records that a line's whole cost was given back. The line is closed for good, so no retry can
     /// deliver what was refunded, and it no longer keeps the order incomplete.
     /// </summary>
     /// <param name="itemId">The order line that was refunded.</param>
-    /// <exception cref="DomainRuleException">Thrown when the order holds no such line.</exception>
+    /// <exception cref="DomainRuleException">Thrown when the order holds no such line or the line is not being refunded.</exception>
     public void RecordLineRefunded(int itemId)
     {
         FindItem(itemId).RecordRefunded();
+        RefreshStatusFromLines();
+    }
+
+    /// <summary>
+    /// Records that a refund ended without giving back the whole cost: a refund that returned nothing puts the
+    /// line back to failed so it can be retried, and one that returned only part leaves the line for staff to
+    /// finish by hand. Either way the order stays incomplete.
+    /// </summary>
+    /// <param name="itemId">The order line whose refund ended.</param>
+    /// <param name="partlyRefunded">Whether some of the cost was already given back.</param>
+    /// <exception cref="DomainRuleException">Thrown when the order holds no such line or the line is not being refunded.</exception>
+    public void RecordLineRefundReleased(int itemId, bool partlyRefunded)
+    {
+        FindItem(itemId).ReleaseRefund(partlyRefunded);
+        RefreshStatusFromLines();
+    }
+
+    /// <summary>
+    /// Brings the status in line with the lines as they are now. Several lines can finish at the same moment, each
+    /// run looking at the others as they were when it began, so the status a run computed from its own copy may
+    /// be out of date; the caller loads the order afresh and asks this, and the last line to finish settles it.
+    /// </summary>
+    public void RefreshStatus()
+    {
         RefreshStatusFromLines();
     }
 
@@ -343,8 +407,9 @@ public sealed class Order : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
-    /// Makes the status say what the lines say: an accepted order with a failed or running-retry line is
-    /// <see cref="OrderStatus.Incomplete"/>, and one with none is <see cref="OrderStatus.Active"/>. Any other
+    /// Makes the status say what the lines say: an accepted order with a failed, running-retry or being-refunded line
+    /// (or one whose refund is only part done) is <see cref="OrderStatus.Incomplete"/>, and one with none is
+    /// <see cref="OrderStatus.Active"/>. Any other
     /// status (pending, cancelled, fraud) is the admin's decision about the order and is left alone.
     /// </summary>
     private void RefreshStatusFromLines()
@@ -354,7 +419,7 @@ public sealed class Order : BaseEntity, IAggregateRoot
             return;
         }
 
-        var open = _items.Any(i => i.FulfilmentState is OrderItemFulfilmentState.Failed or OrderItemFulfilmentState.InProgress);
+        var open = _items.Any(i => i.KeepsOrderIncomplete);
         Status = open ? OrderStatus.Incomplete : OrderStatus.Active;
     }
 

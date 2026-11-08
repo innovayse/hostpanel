@@ -853,6 +853,15 @@
   <data name="ORDER_LINE_ALREADY_FULFILLED" xml:space="preserve">
     <value>This order line is already fulfilled.</value>
   </data>
+  <data name="ORDER_LINE_CHANGED" xml:space="preserve">
+    <value>This order line was changed while it was being processed, so the result could not be recorded. Open the order again to see where the line stands.</value>
+  </data>
+  <data name="ORDER_LINE_NOT_REFUNDABLE" xml:space="preserve">
+    <value>This order line cannot be refunded now. Only a failed line can start being refunded, and only a line being refunded can be settled.</value>
+  </data>
+  <data name="ORDER_LINE_INTERRUPTED" xml:space="preserve">
+    <value>The attempt to fulfil this line was interrupted before it finished. Retry the line.</value>
+  </data>
   <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
     <value>This service is not active.</value>
   </data>

@@ -8,6 +8,7 @@ using Innovayse.Hostpanel.Application.Products.Queries.GetProductsByIds;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Shared.Models;
+using Microsoft.EntityFrameworkCore;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Services.Commands.OrderService;
@@ -54,13 +55,30 @@ public sealed class OrderServiceHandler
     /// <param name="cmd">The client, product, cycle and amounts to order.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The newly created client service id, or <c>PRODUCT_NOT_FOUND</c> when the id names no
+    /// The newly created client service id (or, for an order line that already has one, that service's id), or <c>PRODUCT_NOT_FOUND</c> when the id names no
     /// product, <c>CLIENT_NOT_FOUND</c> when it names no client, or <c>PRODUCT_NOT_AVAILABLE</c> when the product is not active or an amount was
     /// left for this handler to price and the product has no price for that cycle in the
     /// client's currency.
     /// </returns>
     public async Task<Result<int>> HandleAsync(OrderServiceCommand cmd, CancellationToken ct)
     {
+        if (cmd.OrderItemId is { } orderItemId)
+        {
+            // An earlier attempt of this order line already created its service (and may have died before recording
+            // the line, or failed to activate it): that service is the line's, and a second one would be provisioned
+            // and billed twice. Looked up before anything else, so the answer does not depend on the product still
+            // being on sale.
+            var existing = await _context.ClientServices
+                .AsNoTracking()
+                .Where(s => s.OrderItemId == orderItemId)
+                .Select(s => (int?)s.Id)
+                .FirstOrDefaultAsync(ct);
+            if (existing is not null)
+            {
+                return Result<int>.Success(existing.Value);
+            }
+        }
+
         // The product belongs to the Products module, so it is read through its query.
         var products = await _bus.InvokeAsync<Result<IReadOnlyList<ProductDto>>>(
             new GetProductsByIdsQuery([cmd.ProductId]), ct);
@@ -98,7 +116,7 @@ public sealed class OrderServiceHandler
         var recurring = cmd.RecurringAmount ?? cyclePriceOutcome.Value;
 
         var service = ClientService.CreateOrdered(
-            cmd.ClientId, cmd.ProductId, cmd.BillingCycle, cmd.Domain, firstPayment, recurring, cmd.PaymentMethod, cmd.FirstInvoiceId, _clock.UtcNow);
+            cmd.ClientId, cmd.ProductId, cmd.BillingCycle, cmd.Domain, firstPayment, recurring, cmd.PaymentMethod, cmd.FirstInvoiceId, _clock.UtcNow, cmd.OrderItemId);
 
         _context.ClientServices.Add(service);
         await _context.SaveChangesAsync(ct);

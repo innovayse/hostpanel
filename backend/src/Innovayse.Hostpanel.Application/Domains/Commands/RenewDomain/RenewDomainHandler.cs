@@ -88,7 +88,7 @@ public sealed class RenewDomainHandler
 
         var newExpiresAt = result.ExpiresAt ?? domain.ExpiresAt.AddYears(cmd.Years);
 
-        domain.Renew(newExpiresAt, _clock.UtcNow);
+        domain.Renew(newExpiresAt, _clock.UtcNow, cmd.OrderItemId);
         await _context.SaveChangesAsync(ct);
         return Result.Success();
     }

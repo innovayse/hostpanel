@@ -101,6 +101,50 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
         service.RecurringAmount.Should().Be(0m);
     }
 
+    /// <summary>
+    /// A service ordered for an order line is stored with the line, and ordering again for the same line answers with that
+    /// service instead of creating a second one, however many times a retry asks and whatever the amounts it passes.
+    /// </summary>
+    [Fact]
+    public async Task OrderService_ForTheSameOrderLineTwice_ReturnsTheFirstServiceAndCreatesNoSecond()
+    {
+        using var scope = factory.Services.CreateScope();
+        var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 2.99m);
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var line = 515_101;
+
+        var first = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 5m, 5m, "Card", OrderItemId: line), CancellationToken.None);
+        var second = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 7m, 7m, "Card", OrderItemId: line), CancellationToken.None);
+
+        first.IsSuccess.Should().BeTrue();
+        second.Value.Should().Be(first.Value);
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var services = await context.ClientServices.AsNoTracking().Where(s => s.ClientId == clientId).ToListAsync(CancellationToken.None);
+        var stored = services.Should().ContainSingle().Which;
+        stored.OrderItemId.Should().Be(line);
+        stored.FirstPaymentAmount.Should().Be(5m);
+    }
+
+    /// <summary>Two order lines of the same product each get their own service, and an order not bound to a line is never reused.</summary>
+    [Fact]
+    public async Task OrderService_ForDifferentOrderLines_CreatesAServiceForEach()
+    {
+        using var scope = factory.Services.CreateScope();
+        var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 2.99m);
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var a = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 1m, 1m, OrderItemId: 515_102), CancellationToken.None);
+        var b = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 1m, 1m, OrderItemId: 515_103), CancellationToken.None);
+        var c = await bus.InvokeAsync<Result<int>>(new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 1m, 1m), CancellationToken.None);
+        var d = await bus.InvokeAsync<Result<int>>(new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 1m, 1m), CancellationToken.None);
+
+        new[] { a.Value, b.Value, c.Value, d.Value }.Should().OnlyHaveUniqueItems();
+    }
+
     /// <summary>A null amount is priced from the product's own price for that cycle.</summary>
     [Fact]
     public async Task OrderService_NullAmountsReadTheProductsPrice()

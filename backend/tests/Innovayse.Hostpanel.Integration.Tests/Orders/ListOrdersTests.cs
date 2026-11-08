@@ -1,7 +1,13 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Orders.Commands.BeginOrderLineRefund;
+using Innovayse.Hostpanel.Application.Orders.Commands.ReleaseOrderLineRefund;
+using Innovayse.Hostpanel.Application.Orders.Common.Enums;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
+using Innovayse.Hostpanel.Shared.Models;
+using Microsoft.Extensions.DependencyInjection;
+using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 
@@ -78,6 +84,32 @@ public sealed class ListOrdersTests(IntegrationTestFactory factory) : IClassFixt
         items.Should().NotContain(o => o.GetProperty("id").GetInt32() == clean.OrderId);
         items.Single(o => o.GetProperty("id").GetInt32() == failing.OrderId).GetProperty("failedLineCount").GetInt32().Should().Be(1);
         items.Should().OnlyContain(o => o.GetProperty("status").GetString() == nameof(OrderStatus.Incomplete));
+    }
+
+    /// <summary>
+    /// A partly refunded line still needs staff to finish its refund by hand, so it is counted with the failed lines and its
+    /// order is listed as Incomplete.
+    /// </summary>
+    [Fact]
+    public async Task APartlyRefundedLineIsCountedWithTheLinesThatNeedStaff()
+    {
+        var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        var admin = await OrdersTestSeeds.AdminClientAsync(factory);
+        (await admin.PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null)).EnsureSuccessStatusCode();
+        var domainLine = (await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId)).Single(i => i.Domain == seeded.Domain);
+        using (var scope = factory.Services.CreateScope())
+        {
+            var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+            (await bus.InvokeAsync<Result>(new BeginOrderLineRefundCommand(seeded.OrderId, domainLine.Id))).IsSuccess.Should().BeTrue();
+            (await bus.InvokeAsync<Result>(new ReleaseOrderLineRefundCommand(seeded.OrderId, domainLine.Id, OrderLineRefundOutcome.PartlyRefunded)))
+                .IsSuccess.Should().BeTrue();
+        }
+
+        var list = await admin.GetFromJsonAsync<JsonElement>(
+            $"/api/orders?page=1&pageSize=100&status={nameof(OrderStatus.Incomplete)}");
+
+        var item = list.GetProperty("items").EnumerateArray().Single(o => o.GetProperty("id").GetInt32() == seeded.OrderId);
+        item.GetProperty("failedLineCount").GetInt32().Should().Be(1);
     }
 
     /// <summary>An unknown status is refused with 400 rather than silently listing every order.</summary>

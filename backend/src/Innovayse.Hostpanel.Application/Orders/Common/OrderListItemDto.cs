@@ -13,7 +13,7 @@ namespace Innovayse.Hostpanel.Application.Orders.Common;
 /// <param name="Currency">ISO 4217 code the order's amounts are in.</param>
 /// <param name="InvoiceId">FK to the linked invoice, or null if not yet created.</param>
 /// <param name="ItemCount">Number of line items in the order.</param>
-/// <param name="FailedLineCount">Number of lines that failed to be fulfilled and can be retried; above zero exactly when the order is incomplete.</param>
+/// <param name="FailedLineCount">Number of lines that failed to be fulfilled and still need staff: failed lines that can be retried, and partly refunded lines whose refund staff must finish by hand.</param>
 /// <param name="CreatedAt">UTC timestamp when the order was placed.</param>
 public sealed record OrderListItemDto(
     int Id,

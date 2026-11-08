@@ -35,6 +35,8 @@
     "inProgress": "Կատարվում է",
     "fulfilled": "Կատարված",
     "failed": "Սխալ",
-    "refunded": "Վերադարձված"
+    "refunded": "Վերադարձված",
+    "refunding": "Վերադարձը ընթացքի մեջ է",
+    "partiallyRefunded": "Մասնակի վերադարձված"
   }
 }

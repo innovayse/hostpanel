@@ -853,6 +853,15 @@
   <data name="ORDER_LINE_ALREADY_FULFILLED" xml:space="preserve">
     <value>Эта позиция заказа уже выполнена.</value>
   </data>
+  <data name="ORDER_LINE_CHANGED" xml:space="preserve">
+    <value>Эта позиция заказа изменилась во время обработки, поэтому результат не удалось записать. Откройте заказ заново, чтобы увидеть, в каком состоянии позиция.</value>
+  </data>
+  <data name="ORDER_LINE_NOT_REFUNDABLE" xml:space="preserve">
+    <value>Эту позицию заказа сейчас нельзя вернуть. Начать возврат можно только для позиции, которая завершилась ошибкой, а завершить его только для позиции, по которой возврат идёт.</value>
+  </data>
+  <data name="ORDER_LINE_INTERRUPTED" xml:space="preserve">
+    <value>Попытка выполнить эту позицию была прервана до завершения. Повторите позицию.</value>
+  </data>
   <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
     <value>Эта услуга не активна.</value>
   </data>

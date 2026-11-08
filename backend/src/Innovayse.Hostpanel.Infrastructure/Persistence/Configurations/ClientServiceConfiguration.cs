@@ -30,8 +30,15 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
             .IsUnique()
             .HasFilter("\"ExternalId\" IS NOT NULL");
 
+        // The service an order line created. At most one service exists per line, so a retry of the line reuses the
+        // service its first attempt made instead of provisioning and billing a second one; the database enforces it.
+        builder.HasIndex(x => x.OrderItemId)
+            .IsUnique()
+            .HasFilter("\"OrderItemId\" IS NOT NULL");
+
         builder.Property(x => x.ClientId).IsRequired();
         builder.Property(x => x.ProductId).IsRequired();
+        builder.Property(x => x.OrderItemId);
         builder.Property(x => x.BillingCycle).IsRequired().HasConversion(new BillingCycleConverter()).HasMaxLength(20);
         builder.Property(x => x.Status).IsRequired().HasConversion<string>().HasMaxLength(30);
         builder.Property(x => x.FirstPaymentAmount).HasColumnType("numeric(18,4)");

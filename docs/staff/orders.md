@@ -30,15 +30,32 @@ Open the order and click **Accept**. If some lines could not be fulfilled automa
 
 ## Retry a failed line
 
-Open an Incomplete order. The **Fulfilment** column shows the state of every line: Not run yet, Running, Fulfilled, Failed or Refunded. A failed line shows the code the last attempt ended with, how many attempts were made and when the last one was.
+Open an Incomplete order. The **Fulfilment** column shows the state of every line: Not run yet, Running, Fulfilled, Failed, Refunding, Partly refunded or Refunded. A failed line shows the code the last attempt ended with, how many attempts were made and when the last one was.
 
 Click **Retry** on a failed line to run its fulfilment again. If it succeeds the line becomes Fulfilled, and when no failed line is left the order returns to Active. If it fails again the line stays Failed with the new code.
 
 - A line that is already fulfilled is never fulfilled again (`ORDER_LINE_ALREADY_FULFILLED`).
-- A domain registration or transfer that the client already holds under that name is counted as done, so a domain is never registered twice.
-- A line whose cost was refunded after the registrar rejected its domain is Refunded and cannot be retried.
-- Only one retry of a line runs at a time; a second one is refused with `ORDER_LINE_NOT_RETRYABLE`. A retry that died without finishing can be started again after ten minutes.
+- A service line is tied to the service it created. When a first attempt created the service but could not finish (a digital product that could not be activated, or a run that died before it recorded the line), the retry finishes that same service. It never orders a second one, so nothing is provisioned or billed twice.
+- A domain registration or transfer that the client already holds under that name, active or still pending at the registrar, is counted as done, so a domain is never registered twice. An expired, cancelled or transferred out domain does not count.
+- A domain renewal that an earlier attempt of the same line already sent to the registrar is counted as done, so the domain is never renewed twice for one payment.
+- A registrar that times out, or any other unexpected error in one line, fails only that line with the code `HOSTPANEL_UNEXPECTED`. The lines before it stay recorded, the lines after it still run, and the line can be retried at once. Because the registrar may have registered the domain, such a line is not refunded automatically: retry it (a domain that was registered is then found and counted as done) or refund it by hand.
+- A run that is cancelled part way (the request is aborted or the host stops) records the lines it had not finished as Failed with the code `ORDER_LINE_INTERRUPTED`, so they can be retried at once.
+- Lines finishing at the same moment cannot leave the order wrong: the order's status is always worked out from the lines as they are saved, so an order whose lines are all fulfilled is Active.
+- Only one retry of a line runs at a time; a second one is refused with `ORDER_LINE_NOT_RETRYABLE`. A retry that died without finishing can be started again once its claim has run out, ten minutes by default (see below).
 - Every retry is written to the client's activity log.
+
+## Refunded lines
+
+When the registrar rejects a domain in a paid order, the amount of that line is given back automatically, to the client's credit and to the gateway that took the payment.
+
+- While the money goes back the line shows **Refunding** and cannot be retried (`ORDER_LINE_NOT_RETRYABLE`), so a line is never both delivered and refunded.
+- When all of it is back the line is **Refunded**: closed for good, and no longer keeping the order Incomplete.
+- When nothing came back (the gateway refused the refund) the line returns to **Failed**, so you can retry it or refund it by hand.
+- When only part came back (for example the credit share was returned and the gateway refused the rest) the line shows **Partly refunded**. It cannot be retried. Finish the refund by hand from the invoice, and the order stays Incomplete until you do. The log line starting with `REFUND FAILED` says how much is left.
+
+## Lines accepted before this release
+
+Orders that were accepted before lines kept their own state have all their lines at **Not run yet** and stay Active. Those lines cannot be retried: a retry is only offered for a failed line of an Incomplete order, and nothing marks an old line as failed. If one of them was never fulfilled, fix it by hand (create the service or domain from the client's page). Only orders accepted from now on are tracked line by line.
 
 ## Order details
 
@@ -64,5 +81,6 @@ Orders are numbered in the format `ORD-0042`. The prefix and digit count are set
 | `Orders__NumberPrefix` | ORD- | The letters before the order number |
 | `Orders__NumberDigits` | 4 | How many digits to pad the number to |
 | `Orders__InvoicePaymentTermDays` | 7 | Days until the order invoice is due |
+| `Orders__RetryLeaseMinutes` | 10 | Minutes a retry's claim on a failed line is respected before another retry may take the line over (1 to 1440). Set it longer than the slowest registrar or provisioning call. |
 
 See the [Configuration reference](/operators/configuration) for how to change these.

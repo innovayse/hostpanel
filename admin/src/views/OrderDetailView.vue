@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Order detail view: one order with its items, linked invoice and the admin actions
- * (accept, cancel, delete) and a retry for each failed line.
+ * (accept, cancel, delete) and a retry for each failed line or line a dead retry left in progress.
  *
  * Reads `stores/orders`; a refused load shows `store.error` with a retry. The outcome of an accept
  * or cancel (success, or the API's sentence) shows above the order; a delete returns to the list.
@@ -37,6 +37,7 @@ import { BILLING_CYCLE_OPTIONS, INVOICE_STATUS_OPTIONS, ORDER_LINE_FULFILMENT_OP
 import { formatDateTime } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { invoiceStatusTone, orderItemStatusTone, orderLineFulfilmentTone, orderStatusTone, statusLabel } from '@/lib/tones'
+import { canRetryOrderLine, orderLineErrorKey } from '@/lib/orderLines'
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
 import { useOrdersStore } from '@/stores/orders'
 import { AppRoute, clientPath, invoicePath } from '@/lib/routes'
@@ -122,21 +123,27 @@ const runCommand = async (command: () => Promise<boolean>, successKey: string | 
  */
 const handleAccept = async (): Promise<void> => {
   const ok = await runCommand(() => store.acceptOrder(orderId()), 'orders.orderDetail.orderAccepted')
-  if (ok && store.acceptFailures.length > 0) {
-    feedback.show(t('orders.fulfillment.acceptedWithFailedLines', { lines: store.acceptFailureNames }), true)
+  if (ok && store.unfulfilledLines.length > 0) {
+    feedback.show(t('orders.fulfillment.acceptedWithFailedLines', { lines: store.unfulfilledLineNames }), true)
   }
 }
 
 /**
- * Retries one failed order line and shows the outcome above the order.
+ * Retries one order line and shows the outcome above the order. The success sentence is chosen
+ * after the result: a retry that ran but failed again says so instead of claiming success.
  *
- * @param itemId - The failed line.
+ * @param itemId - The failed or stale line.
  * @returns Resolves when the store has finished.
  */
 const handleRetryLine = async (itemId: number): Promise<void> => {
-  const ok = await runCommand(() => store.retryOrderLine(orderId(), itemId), 'orders.orderDetail.lineRetried')
-  if (ok && store.acceptFailures.length > 0) {
-    feedback.show(t('orders.fulfillment.retryStillFailed', { lines: store.acceptFailureNames }), true)
+  const ok = await runCommand(() => store.retryOrderLine(orderId(), itemId), null)
+  if (!ok) {
+    return
+  }
+  if (store.unfulfilledLines.length > 0) {
+    feedback.show(t('orders.fulfillment.retryStillFailed', { lines: store.unfulfilledLineNames }), true)
+  } else {
+    feedback.show(t('orders.orderDetail.lineRetried'), false)
   }
 }
 
@@ -354,10 +361,11 @@ onMounted(async () => {
                       {{ statusLabel(ORDER_LINE_FULFILMENT_OPTIONS, item.fulfilmentState) }}
                     </UiBadge>
                     <UiButton
-                      v-if="item.fulfilmentState === OrderItemFulfilmentState.Failed"
+                      v-if="canRetryOrderLine(store.currentOrder.status, item)"
                       variant="secondary"
                       size="sm"
-                      :loading="processing"
+                      :loading="store.retryingItemId === item.id"
+                      :disabled="store.retryingItemId !== null && store.retryingItemId !== item.id"
                       :data-testid="`order-item-retry-${item.id}`"
                       @click="handleRetryLine(item.id)"
                     >
@@ -365,12 +373,28 @@ onMounted(async () => {
                     </UiButton>
                   </UiStack>
                   <UiText
+                    v-if="item.fulfilmentState === OrderItemFulfilmentState.PartiallyRefunded"
+                    tone="warning"
+                    size="xs"
+                    :data-testid="`order-item-finish-refund-${item.id}`"
+                  >
+                    {{ t('orders.orderDetail.finishRefund') }}
+                  </UiText>
+                  <UiText
                     v-if="item.fulfilmentErrorCode"
                     tone="muted"
                     size="xs"
                     :data-testid="`order-item-error-${item.id}`"
                   >
-                    {{ item.fulfilmentErrorCode }}
+                    {{ t(orderLineErrorKey(item.fulfilmentErrorCode)) }}
+                  </UiText>
+                  <UiText
+                    v-if="store.lineErrors[item.id]"
+                    tone="danger"
+                    size="xs"
+                    :data-testid="`order-item-retry-error-${item.id}`"
+                  >
+                    {{ store.lineErrors[item.id] }}
                   </UiText>
                   <UiText
                     v-if="item.fulfilmentAttempts > 0 && item.lastFulfilmentAttemptAt"

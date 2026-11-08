@@ -14,5 +14,6 @@ public sealed class ActivateDigitalServiceValidator : LocalizedValidator<Activat
         : base(localizer)
     {
         RuleFor(x => x.ServiceId).MustBePositiveId(L["ServiceIdInvalid"]);
+        RuleFor(x => x.OrderItemId).GreaterThan(0).WithMessage(L["OrderItemIdInvalid"]).When(x => x.OrderItemId is not null);
     }
 }

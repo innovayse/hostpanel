@@ -45,6 +45,9 @@ public sealed class DomainConfiguration : IEntityTypeConfiguration<RegisteredDom
         builder.Property(x => x.AdminNotes).HasMaxLength(4000);
         builder.Property(x => x.OrderType).HasMaxLength(20).HasDefaultValue("Register");
 
+        // The order line whose renewal last extended the domain, so a retry of that line does not extend it twice.
+        builder.Property(x => x.LastRenewalOrderItemId);
+
         builder.HasIndex(x => x.Name).IsUnique();
         builder.HasIndex(x => x.ClientId);
         builder.HasIndex(x => new { x.Status, x.ExpiresAt });

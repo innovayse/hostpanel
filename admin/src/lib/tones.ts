@@ -49,7 +49,9 @@ const ORDER_LINE_FULFILMENT_TONES: Record<OrderItemFulfilmentState, UiTone> = {
   [OrderItemFulfilmentState.InProgress]: UiTone.Info,
   [OrderItemFulfilmentState.Fulfilled]: UiTone.Success,
   [OrderItemFulfilmentState.Failed]: UiTone.Danger,
-  [OrderItemFulfilmentState.Refunded]: UiTone.Neutral,
+  [OrderItemFulfilmentState.Refunded]: UiTone.Warning,
+  [OrderItemFulfilmentState.Refunding]: UiTone.Info,
+  [OrderItemFulfilmentState.PartiallyRefunded]: UiTone.Danger,
 }
 
 /** Badge tone of each order item status. */

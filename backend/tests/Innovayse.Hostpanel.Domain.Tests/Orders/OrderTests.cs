@@ -13,6 +13,9 @@ public sealed class OrderTests
     /// <summary>The fixed moment every domain method in these tests is handed as "now".</summary>
     private static readonly DateTimeOffset Now = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
 
+    /// <summary>The retry lease every retry in these tests is claimed under.</summary>
+    private static readonly TimeSpan Lease = TimeSpan.FromMinutes(10);
+
     /// <summary>The currency given at creation is what the order reports, upper-cased.</summary>
     [Fact]
     public void Create_StampsTheCurrency()
@@ -268,7 +271,7 @@ public sealed class OrderTests
         var order = NewIncompleteOrder();
         var later = Now.AddMinutes(1);
 
-        order.StartLineRetry(2, later);
+        order.StartLineRetry(2, later, Lease);
 
         var line = order.Items.Single(i => i.Id == 2);
         line.FulfilmentState.Should().Be(OrderItemFulfilmentState.InProgress);
@@ -282,7 +285,7 @@ public sealed class OrderTests
     public void RecordLineFulfilled_AfterARetry_ClearsTheCodeAndReturnsTheOrderToActive()
     {
         var order = NewIncompleteOrder();
-        order.StartLineRetry(2, Now.AddMinutes(1));
+        order.StartLineRetry(2, Now.AddMinutes(1), Lease);
 
         order.RecordLineFulfilled(2, Now.AddMinutes(2));
 
@@ -298,7 +301,7 @@ public sealed class OrderTests
     public void RecordLineFailed_AfterARetry_KeepsTheOrderIncomplete()
     {
         var order = NewIncompleteOrder();
-        order.StartLineRetry(2, Now.AddMinutes(1));
+        order.StartLineRetry(2, Now.AddMinutes(1), Lease);
 
         order.RecordLineFailed(2, "REGISTRAR_DOMAIN_UNAVAILABLE", Now.AddMinutes(2));
 
@@ -315,10 +318,10 @@ public sealed class OrderTests
     {
         var order = NewIncompleteOrder();
 
-        var act = () => order.StartLineRetry(1, Now);
+        var act = () => order.StartLineRetry(1, Now, Lease);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRetryable);
-        order.CanRetryLine(1, Now).Should().BeFalse();
+        order.CanRetryLine(1, Now, Lease).Should().BeFalse();
     }
 
     /// <summary>A line another retry holds cannot be claimed again until its claim has run out.</summary>
@@ -326,12 +329,12 @@ public sealed class OrderTests
     public void StartLineRetry_OnAClaimedLine_ThrowsUntilTheClaimExpires()
     {
         var order = NewIncompleteOrder();
-        order.StartLineRetry(2, Now);
+        order.StartLineRetry(2, Now, Lease);
 
-        var act = () => order.StartLineRetry(2, Now.AddMinutes(1));
+        var act = () => order.StartLineRetry(2, Now.AddMinutes(1), Lease);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRetryable);
-        order.CanRetryLine(2, Now.AddHours(1)).Should().BeTrue();
+        order.CanRetryLine(2, Now.AddHours(1), Lease).Should().BeTrue();
     }
 
     /// <summary>A pending (not accepted) order's lines cannot be retried.</summary>
@@ -343,7 +346,7 @@ public sealed class OrderTests
         GiveIds(order);
         order.RecordLineFailed(1, null, Now);
 
-        var act = () => order.StartLineRetry(1, Now);
+        var act = () => order.StartLineRetry(1, Now, Lease);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRetryable);
     }
@@ -354,12 +357,53 @@ public sealed class OrderTests
     {
         var order = NewIncompleteOrder();
 
-        order.CanRetryLine(99, Now).Should().BeFalse();
-        var retry = () => order.StartLineRetry(99, Now);
+        order.CanRetryLine(99, Now, Lease).Should().BeFalse();
+        var retry = () => order.StartLineRetry(99, Now, Lease);
         var record = () => order.RecordLineFulfilled(99, Now);
 
         retry.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRetryable);
         record.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderItemNotFound);
+    }
+
+    /// <summary>A claim older than the lease is taken for a dead run and may be taken over, however long or short the lease is.</summary>
+    [Fact]
+    public void CanRetryLine_OnAClaimedLine_FollowsTheLeaseItIsAsked()
+    {
+        var order = NewIncompleteOrder();
+        order.StartLineRetry(2, Now, Lease);
+
+        order.CanRetryLine(2, Now.AddMinutes(5), Lease).Should().BeFalse();
+        order.CanRetryLine(2, Now.AddMinutes(5), TimeSpan.FromMinutes(2)).Should().BeTrue();
+        order.CanRetryLine(2, Now.AddMinutes(10), Lease).Should().BeTrue();
+    }
+
+    /// <summary>A refund is claimed from a failed line: the line is Refunding, no retry can take it, and the order stays Incomplete.</summary>
+    [Fact]
+    public void BeginLineRefund_ClaimsTheFailedLineAgainstARetry()
+    {
+        var order = NewIncompleteOrder();
+
+        order.BeginLineRefund(2);
+
+        order.Items.Single(i => i.Id == 2).FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunding);
+        order.CanRetryLine(2, Now.AddHours(1), Lease).Should().BeFalse();
+        order.Status.Should().Be(OrderStatus.Incomplete);
+    }
+
+    /// <summary>Only a failed line can start being refunded: a fulfilled, claimed or already refunding line is refused.</summary>
+    [Fact]
+    public void BeginLineRefund_OnALineThatIsNotFailed_Throws()
+    {
+        var order = NewIncompleteOrder();
+        order.StartLineRetry(2, Now, Lease);
+
+        order.CanRefundLine(1).Should().BeFalse();
+        order.CanRefundLine(2).Should().BeFalse();
+        var fulfilled = () => order.BeginLineRefund(1);
+        var claimed = () => order.BeginLineRefund(2);
+
+        fulfilled.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRefundable);
+        claimed.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRefundable);
     }
 
     /// <summary>A refunded line is closed for good: it cannot be retried and no longer keeps the order Incomplete.</summary>
@@ -367,12 +411,123 @@ public sealed class OrderTests
     public void RecordLineRefunded_ClosesTheLineAndLetsTheOrderReturnToActive()
     {
         var order = NewIncompleteOrder();
+        order.BeginLineRefund(2);
 
         order.RecordLineRefunded(2);
 
         order.Items.Single(i => i.Id == 2).FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunded);
-        order.CanRetryLine(2, Now.AddHours(1)).Should().BeFalse();
+        order.CanRetryLine(2, Now.AddHours(1), Lease).Should().BeFalse();
         order.Status.Should().Be(OrderStatus.Active);
+    }
+
+    /// <summary>A refund that was never begun cannot be recorded as complete.</summary>
+    [Fact]
+    public void RecordLineRefunded_OnALineNotBeingRefunded_Throws()
+    {
+        var order = NewIncompleteOrder();
+
+        var act = () => order.RecordLineRefunded(2);
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRefundable);
+    }
+
+    /// <summary>A refund that returned nothing puts the line back to failed: it can be retried again and the order stays Incomplete.</summary>
+    [Fact]
+    public void RecordLineRefundReleased_WithNothingRefunded_ReturnsTheLineToFailed()
+    {
+        var order = NewIncompleteOrder();
+        order.BeginLineRefund(2);
+
+        order.RecordLineRefundReleased(2, partlyRefunded: false);
+
+        var line = order.Items.Single(i => i.Id == 2);
+        line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
+        line.FulfilmentErrorCode.Should().Be("DOMAIN_ALREADY_REGISTERED");
+        order.CanRetryLine(2, Now, Lease).Should().BeTrue();
+        order.Status.Should().Be(OrderStatus.Incomplete);
+    }
+
+    /// <summary>
+    /// A refund that returned only part is not a refunded line: it stays closed to retries, keeps the order Incomplete,
+    /// and is the state staff finish by hand.
+    /// </summary>
+    [Fact]
+    public void RecordLineRefundReleased_WithPartRefunded_KeepsTheLineForManualAction()
+    {
+        var order = NewIncompleteOrder();
+        order.BeginLineRefund(2);
+
+        order.RecordLineRefundReleased(2, partlyRefunded: true);
+
+        order.Items.Single(i => i.Id == 2).FulfilmentState.Should().Be(OrderItemFulfilmentState.PartiallyRefunded);
+        order.CanRetryLine(2, Now.AddHours(1), Lease).Should().BeFalse();
+        order.CanRefundLine(2).Should().BeFalse();
+        order.Status.Should().Be(OrderStatus.Incomplete);
+    }
+
+    /// <summary>A refund that is settled twice, or never begun, cannot be released.</summary>
+    [Fact]
+    public void RecordLineRefundReleased_OnALineNotBeingRefunded_Throws()
+    {
+        var order = NewIncompleteOrder();
+
+        var act = () => order.RecordLineRefundReleased(2, partlyRefunded: false);
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRefundable);
+    }
+
+    /// <summary>
+    /// A late outcome of an attempt the refund overtook is refused, so a line that is being or was refunded can never
+    /// become a delivered one.
+    /// </summary>
+    [Fact]
+    public void RecordLineFulfilled_OnALineBeingRefunded_Throws()
+    {
+        var order = NewIncompleteOrder();
+        order.BeginLineRefund(2);
+
+        var fulfilled = () => order.RecordLineFulfilled(2, Now);
+        var failed = () => order.RecordLineFailed(2, null, Now);
+
+        order.CanRecordLineOutcome(2).Should().BeFalse();
+        fulfilled.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineChanged);
+        failed.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineChanged);
+        order.Items.Single(i => i.Id == 2).FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunding);
+    }
+
+    /// <summary>
+    /// Two lines finishing at the same moment each compute the status from a copy that still shows the other open, so
+    /// both leave Incomplete; refreshing the order loaded afresh settles it Active.
+    /// </summary>
+    [Fact]
+    public void RefreshStatus_SettlesAnOrderWhoseEveryLineIsDone()
+    {
+        var order = NewAcceptedOrder();
+        order.RecordLineFailed(1, "A", Now);
+        order.RecordLineFailed(2, "B", Now);
+        order.StartLineRetry(1, Now, Lease);
+        order.StartLineRetry(2, Now, Lease);
+        var line = typeof(OrderItem).GetProperty(nameof(OrderItem.FulfilmentState))!;
+        line.SetValue(order.Items.Single(i => i.Id == 1), OrderItemFulfilmentState.Fulfilled);
+        line.SetValue(order.Items.Single(i => i.Id == 2), OrderItemFulfilmentState.Fulfilled);
+        order.Status.Should().Be(OrderStatus.Incomplete);
+
+        order.RefreshStatus();
+
+        order.Status.Should().Be(OrderStatus.Active);
+    }
+
+    /// <summary>A refresh never changes a status that is the admin's decision: a pending order stays pending.</summary>
+    [Fact]
+    public void RefreshStatus_LeavesAPendingOrderPending()
+    {
+        var order = NewOrder();
+        order.AddItem(3, "Hosting", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
+        GiveIds(order);
+
+        order.RefreshStatus();
+
+        order.Status.Should().Be(OrderStatus.Pending);
     }
 
     /// <summary>Builds an accepted order with two lines, ids 1 and 2.</summary>

@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using Innovayse.Hostpanel.Application.Billing.Commands.RefundInvoicePayment;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
@@ -5,10 +6,13 @@ using Innovayse.Hostpanel.Application.Billing.Queries.GetInvoiceLineShares;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Orders.Commands.BeginOrderLineRefund;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
 using Innovayse.Hostpanel.Application.Orders.Commands.RecordOrderLineRefunded;
+using Innovayse.Hostpanel.Application.Orders.Commands.ReleaseOrderLineRefund;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Common.Enums;
+using Innovayse.Hostpanel.Application.Orders.Extensions;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Domains.Events;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
@@ -109,10 +113,24 @@ public sealed class FulfillPaidOrderHandler
         // domain line is given back the way it was paid.
         foreach (var failure in fulfilled.Value!.FailedLines)
         {
-            if (failure is { Kind: OrderLineKind.Domain, Domain: { } domainName })
+            if (failure is not { Kind: OrderLineKind.Domain, Domain: { } domainName })
             {
-                await HandleDomainRegistrationFailedAsync(order.Id, invoiceId, failure, order.ClientId, domainName, ct);
+                continue;
             }
+
+            if (failure.ErrorCode == HostpanelErrorCodes.HOSTPANEL_UNEXPECTED)
+            {
+                // The action threw, so what the registrar did is unknown: the domain may well have been registered.
+                // Refunding now could give the client the money back and the domain too. The line stays failed for
+                // staff, and a retry finds a domain the client already holds and counts it as done.
+                _logger.LogWarning(
+                    "Domain line {ItemId} of order {OrderId} ('{DomainName}') ended with an unknown outcome and is not refunded; " +
+                    "retry it or refund it by hand.",
+                    failure.ItemId, order.Id, domainName);
+                continue;
+            }
+
+            await HandleDomainRegistrationFailedAsync(order.Id, invoiceId, failure, order.ClientId, domainName, ct);
         }
 
         return Result.Success();
@@ -130,9 +148,13 @@ public sealed class FulfillPaidOrderHandler
     /// credit balance, and its paid share with the invoice's tax goes back through
     /// <see cref="RefundInvoicePaymentCommand"/>, which calls whichever gateway took it and writes the
     /// refund and its ledger row. A line paid wholly with credit is refunded to credit only.
-    /// Publishes <see cref="DomainRegistrationFailedEvent"/> once both are back. Once money has gone back the
-    /// line is closed through <see cref="RecordOrderLineRefundedCommand"/>, so a later retry can never deliver
-    /// what was refunded.
+    /// <para>
+    /// The line is claimed first (<see cref="BeginOrderLineRefundCommand"/>: Refunding), so a retry that runs in the
+    /// meantime is refused and the line is never both delivered and refunded; a line a retry already holds is not
+    /// refunded at all. The claim ends one of three ways: the whole cost is back (Refunded, and
+    /// <see cref="DomainRegistrationFailedEvent"/> is published), nothing came back (the line returns to Failed so it can
+    /// be retried), or only part did (PartiallyRefunded, for staff to finish by hand).
+    /// </para>
     /// </summary>
     /// <param name="orderId">The order the failed line belongs to.</param>
     /// <param name="invoiceId">The invoice that was paid.</param>
@@ -145,18 +167,36 @@ public sealed class FulfillPaidOrderHandler
         int orderId, int invoiceId, OrderLineFailureDto failure, int clientId, string domainName, CancellationToken ct)
     {
         var reason = failure.Reason;
+
+        var claimed = await _bus.InvokeLineChangeAsync(new BeginOrderLineRefundCommand(orderId, failure.ItemId), ct);
+        if (claimed.IsFailure)
+        {
+            // A retry holds the line, or it is settled already: that run owns what happens to the line now.
+            _logger.LogWarning(
+                "Domain line {ItemId} of order {OrderId} ('{DomainName}') was not refunded: {Refusal}.",
+                failure.ItemId, orderId, domainName, DescribeFailure(claimed));
+            return;
+        }
+
         _logger.LogError(
             "Domain registration failed for '{DomainName}' (client {ClientId}): {Reason}. Issuing refund.",
             domainName, clientId, reason);
 
+        // What the refund did so far, so the claim can be settled truthfully however it ended.
+        var mayHaveMoved = false;
+        var returnedSomething = false;
+        var complete = false;
+        Exception? fault = null;
         try
         {
             var shares = await LoadLineSharesAsync(invoiceId, failure.FirstPaymentAmount, ct);
 
+            var creditBack = shares.CreditShare <= 0;
             if (shares.CreditShare > 0)
             {
                 // The credit share is already spent, so it is added and saved at once; a concurrent
                 // balance change is retried once there, a second conflict lands in the catch below.
+                mayHaveMoved = true;
                 var credited = await _clientCredit.AddAndSaveAsync(new ClientCreditChange(clientId, shares.CreditShare, CreditMovementType.InvoiceReturned, invoiceId), ct);
                 if (credited.IsFailure)
                 {
@@ -164,15 +204,17 @@ public sealed class FulfillPaidOrderHandler
                         "CREDIT REFUND FAILED for domain '{DomainName}' (client {ClientId}, invoice {InvoiceId}): {Refusal}. " +
                         "Manual credit of {Amount} required. Original failure: {Reason}",
                         domainName, clientId, invoiceId, DescribeFailure(credited), shares.CreditShare, reason);
-                    return;
                 }
-
-                // The credit is back on the client's balance: the line is closed even if the gateway part fails below.
-                await CloseRefundedLineAsync(orderId, failure.ItemId, ct);
+                else
+                {
+                    creditBack = true;
+                    returnedSomething = true;
+                }
             }
 
-            if (shares.PaidShare > 0)
+            if (creditBack && shares.PaidShare > 0)
             {
+                mayHaveMoved = true;
                 var refund = await _bus.InvokeAsync<Result>(
                     new RefundInvoicePaymentCommand(
                         invoiceId,
@@ -186,42 +228,99 @@ public sealed class FulfillPaidOrderHandler
                     // manual refund is only what is left of this line's paid share.
                     var refundedNow = (await LoadLineSharesAsync(invoiceId, failure.FirstPaymentAmount, ct)).AmountRefunded
                         - shares.AmountRefunded;
+                    returnedSomething |= refundedNow > 0m;
                     _logger.LogCritical(
                         "REFUND FAILED for domain '{DomainName}' (client {ClientId}, invoice {InvoiceId}): {Refusal}. " +
                         "Manual refund of the remaining {Remaining} required. Original failure: {Reason}",
                         domainName, clientId, invoiceId, DescribeFailure(refund), Math.Max(0m, shares.PaidShare - refundedNow), reason);
-                    return;
+                }
+                else
+                {
+                    returnedSomething = true;
+                    complete = true;
                 }
             }
-
-            await CloseRefundedLineAsync(orderId, failure.ItemId, ct);
-            await _bus.PublishAsync(new DomainRegistrationFailedEvent(clientId, domainName, invoiceId, reason) { OccurredAt = _clock.UtcNow });
+            else if (creditBack)
+            {
+                complete = true;
+            }
         }
         catch (Exception refundEx)
         {
             // The domain was never created so no cleanup is needed there, but the client was
             // charged and could not be refunded automatically.
+            fault = refundEx;
             _logger.LogCritical(
                 refundEx,
                 "REFUND FAILED for domain '{DomainName}' (client {ClientId}, invoice {InvoiceId}). " +
                 "Manual refund required. Original failure: {Reason}",
                 domainName, clientId, invoiceId, reason);
         }
+
+        // A fault after money may have moved leaves the outcome unknown, which is treated as part done: staff check it,
+        // and no retry can deliver a line that may have been paid back.
+        var partlyRefunded = returnedSomething || (fault is not null && mayHaveMoved);
+        await SettleRefundAsync(orderId, failure.ItemId, complete && fault is null, partlyRefunded, domainName, clientId, invoiceId, reason);
+
+        if (fault is OperationCanceledException && ct.IsCancellationRequested)
+        {
+            ExceptionDispatchInfo.Capture(fault).Throw();
+        }
     }
 
-    /// <summary>Closes a failed line whose cost went back to the client, so it can never be retried into delivery.</summary>
+    /// <summary>
+    /// Ends the claim on a line whose refund ran: closes it when the whole cost is back, otherwise returns it to failed
+    /// (nothing came back) or leaves it partly refunded (some did). Not cancellable, because the money has moved by now
+    /// and the line must say so.
+    /// </summary>
     /// <param name="orderId">The order the line belongs to.</param>
-    /// <param name="itemId">The refunded line.</param>
-    /// <param name="ct">Cancellation token.</param>
+    /// <param name="itemId">The line that was being refunded.</param>
+    /// <param name="refundedInFull">Whether the whole cost went back.</param>
+    /// <param name="partlyRefunded">Whether some of the cost went back, or may have.</param>
+    /// <param name="domainName">The domain name that failed.</param>
+    /// <param name="clientId">The client who placed the order.</param>
+    /// <param name="invoiceId">The invoice that was paid.</param>
+    /// <param name="reason">Why the line failed.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    private async Task CloseRefundedLineAsync(int orderId, int itemId, CancellationToken ct)
+    private async Task SettleRefundAsync(
+        int orderId, int itemId, bool refundedInFull, bool partlyRefunded, string domainName, int clientId, int invoiceId, string reason)
     {
-        var closed = await _bus.InvokeAsync<Result>(new RecordOrderLineRefundedCommand(orderId, itemId), ct);
+        if (!refundedInFull)
+        {
+            var released = await _bus.InvokeLineChangeAsync(
+                new ReleaseOrderLineRefundCommand(
+                    orderId, itemId, partlyRefunded ? OrderLineRefundOutcome.PartlyRefunded : OrderLineRefundOutcome.NothingRefunded),
+                CancellationToken.None);
+            if (released.IsFailure)
+            {
+                _logger.LogCritical(
+                    "Order {OrderId} line {ItemId} could not be settled after its refund ended: {Reason}. The line stays Refunding, " +
+                    "which no retry can take, until staff settle it by hand.",
+                    orderId, itemId, DescribeFailure(released));
+            }
+
+            return;
+        }
+
+        var closed = await _bus.InvokeLineChangeAsync(new RecordOrderLineRefundedCommand(orderId, itemId), CancellationToken.None);
         if (closed.IsFailure)
         {
             _logger.LogCritical(
-                "Order {OrderId} line {ItemId} was refunded but could not be closed: {Reason}. A retry of it must be refused by hand.",
+                "Order {OrderId} line {ItemId} was refunded but could not be closed: {Reason}. The line stays Refunding, " +
+                "which no retry can take, until staff settle it by hand.",
                 orderId, itemId, DescribeFailure(closed));
+            return;
+        }
+
+        try
+        {
+            await _bus.PublishAsync(new DomainRegistrationFailedEvent(clientId, domainName, invoiceId, reason) { OccurredAt = _clock.UtcNow });
+        }
+        catch (Exception publishEx)
+        {
+            // The money is back and the line is closed; only the notification of it is lost.
+            _logger.LogError(
+                publishEx, "The registration-failed event of domain '{DomainName}' (client {ClientId}) could not be published.", domainName, clientId);
         }
     }
 

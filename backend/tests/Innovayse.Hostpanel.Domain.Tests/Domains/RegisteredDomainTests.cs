@@ -334,6 +334,23 @@ public sealed class RegisteredDomainTests
         domain.DomainEvents.OfType<DomainRenewedEvent>().Should().ContainSingle().Which.OccurredAt.Should().Be(Now);
     }
 
+    /// <summary>
+    /// A renewal bought on an order line stores that line, so a retry of it can tell its own renewal; a renewal that is not a
+    /// line's clears it, because the stored line is only ever the last renewal's.
+    /// </summary>
+    [Fact]
+    public void Renew_StoresTheOrderLineOfTheLastRenewal()
+    {
+        var domain = CreateActiveDomain();
+
+        domain.Renew(Now.AddYears(2), Now, orderItemId: 7);
+        var afterLine = domain.LastRenewalOrderItemId;
+        domain.Renew(Now.AddYears(3), Now);
+
+        afterLine.Should().Be(7);
+        domain.LastRenewalOrderItemId.Should().BeNull();
+    }
+
     /// <summary>Renew, when cancelled, throws with domain renew not allowed.</summary>
     [Fact]
     public void Renew_WhenCancelled_ThrowsWithDomainRenewNotAllowed()

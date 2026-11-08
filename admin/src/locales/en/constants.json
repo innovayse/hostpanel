@@ -35,6 +35,8 @@
     "inProgress": "Running",
     "fulfilled": "Fulfilled",
     "failed": "Failed",
-    "refunded": "Refunded"
+    "refunded": "Refunded",
+    "refunding": "Refund in progress",
+    "partiallyRefunded": "Partly refunded"
   }
 }

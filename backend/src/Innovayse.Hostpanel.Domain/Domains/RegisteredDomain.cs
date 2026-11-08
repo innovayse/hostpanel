@@ -115,6 +115,13 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// <summary>Gets the FK to the order that created this domain.</summary>
     public int? OrderId { get; private set; }
 
+    /// <summary>
+    /// Gets the id of the order line whose renewal last extended this domain, or <see langword="null"/> when no
+    /// order line renewed it. A retry of that line finds its own renewal here and does not extend the
+    /// domain a second time. Index only, no FK: the order line belongs to Orders.
+    /// </summary>
+    public int? LastRenewalOrderItemId { get; private set; }
+
     /// <summary>Gets the order type: "Register" or "Transfer".</summary>
     public string OrderType { get; private set; } = DomainOrderTypes.Register;
 
@@ -427,10 +434,11 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// </summary>
     /// <param name="newExpiresAt">The new expiry date after renewal.</param>
     /// <param name="occurredAt">The moment the renewal was made, UTC.</param>
+    /// <param name="orderItemId">The order line the renewal was bought on, or <see langword="null"/> for a renewal that is not an order line's.</param>
     /// <exception cref="DomainRuleException">
     /// Thrown when the domain is Cancelled or Transferred.
     /// </exception>
-    public void Renew(DateTimeOffset newExpiresAt, DateTimeOffset occurredAt)
+    public void Renew(DateTimeOffset newExpiresAt, DateTimeOffset occurredAt, int? orderItemId = null)
     {
         if (!CanRenew)
         {
@@ -438,6 +446,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
                 DomainsErrors.DomainRenewNotAllowed, $"Cannot renew a domain in status {Status}.");
         }
 
+        LastRenewalOrderItemId = orderItemId;
         ExpiresAt = newExpiresAt;
         NextDueDate = newExpiresAt;
         if ((Status is DomainStatus.Expired or DomainStatus.Redemption) && newExpiresAt > occurredAt)

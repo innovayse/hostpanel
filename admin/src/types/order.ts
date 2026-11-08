@@ -27,7 +27,7 @@ export interface OrderListItem {
   invoiceId: number | null
   /** Number of items in the order. */
   itemCount: number
-  /** Number of lines that failed to be fulfilled and can be retried. */
+  /** Number of lines staff can retry now: failed lines, plus lines a dead retry left in progress past the lease. */
   failedLineCount: number
   /** ISO 8601 creation timestamp. */
   createdAt: string
@@ -145,4 +145,8 @@ export enum OrderItemFulfilmentState {
   Failed = 'Failed',
   /** The line failed and its cost was given back; it is closed. */
   Refunded = 'Refunded',
+  /** The line failed and its cost is being given back right now; no retry may claim it. */
+  Refunding = 'Refunding',
+  /** Only part of the cost was given back; the line is closed to retries and staff finish the refund by hand. */
+  PartiallyRefunded = 'PartiallyRefunded',
 }

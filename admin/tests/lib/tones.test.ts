@@ -20,6 +20,7 @@ import {
   networkIssuePriorityTone,
   networkIssueStatusTone,
   orderItemStatusTone,
+  orderLineFulfilmentTone,
   paymentClaimStatusTone,
   orderStatusTone,
   quoteStageTone,
@@ -93,6 +94,13 @@ describe('lifecycle status tones', () => {
     expect(invoiceStatusTone(InvoiceStatus.PartiallyRefunded)).toBe(UiTone.Info)
     expect(invoiceStatusTone(InvoiceStatus.Draft)).toBe(UiTone.Primary)
     expect(invoiceStatusTone(InvoiceStatus.Cancelled)).toBe(UiTone.Neutral)
+  })
+
+  it('gives a refunded order line its own tone, apart from a line not run yet', () => {
+    expect(orderLineFulfilmentTone(OrderItemFulfilmentState.Refunded)).not.toBe(orderLineFulfilmentTone(OrderItemFulfilmentState.Pending))
+    expect(orderLineFulfilmentTone(OrderItemFulfilmentState.Refunded)).toBe(UiTone.Warning)
+    expect(orderLineFulfilmentTone(OrderItemFulfilmentState.Refunding)).toBe(UiTone.Info)
+    expect(orderLineFulfilmentTone(OrderItemFulfilmentState.PartiallyRefunded)).toBe(UiTone.Danger)
   })
 
   it('keeps the enum values equal to the wire strings', () => {

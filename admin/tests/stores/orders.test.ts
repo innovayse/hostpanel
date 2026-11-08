@@ -60,7 +60,7 @@ describe('ordersStore', () => {
     const mock = stubFetch(json({ failedLines: [] }), json({ id: 8, status: 'Active' }))
 
     expect(await store.acceptOrder(8)).toBe(true)
-    expect(store.acceptFailures).toEqual([])
+    expect(store.unfulfilledLines).toEqual([])
     expect(callOf(mock, 0)).toMatchObject({ url: '/api/orders/8/accept', method: 'POST' })
     expect(callOf(mock, 1).url).toBe('/api/orders/8')
     expect(store.currentOrder).toEqual({ id: 8, status: 'Active' })
@@ -80,8 +80,8 @@ describe('ordersStore', () => {
     stubFetch(json({ failedLines }), json({ id: 8, status: 'Active' }))
 
     expect(await store.acceptOrder(8)).toBe(true)
-    expect(store.acceptFailures).toEqual(failedLines)
-    expect(store.acceptFailureNames).toBe('taken.example, Starter Hosting')
+    expect(store.unfulfilledLines).toEqual(failedLines)
+    expect(store.unfulfilledLineNames).toBe('taken.example, Starter Hosting')
   })
 
   it('retryOrderLine keeps the lines still failed and refreshes the detail', async () => {
@@ -93,7 +93,7 @@ describe('ordersStore', () => {
 
     expect(await store.retryOrderLine(8, 2)).toBe(true)
     expect(callOf(mock, 0)).toMatchObject({ url: '/api/orders/8/items/2/retry', method: 'POST' })
-    expect(store.acceptFailures).toEqual(failedLines)
+    expect(store.unfulfilledLines).toEqual(failedLines)
     expect(store.currentOrder).toEqual({ id: 8, status: 'Incomplete' })
   })
 
@@ -105,6 +105,35 @@ describe('ordersStore', () => {
     expect(store.actionError).toBe('This order line cannot be retried now.')
     expect(mock).toHaveBeenCalledTimes(2)
     expect(store.currentOrder).toEqual({ id: 8, status: 'Active' })
+  })
+
+  it('retryOrderLine marks only the running line and clears it afterwards', async () => {
+    const store = useOrdersStore()
+    let release: (response: Response) => void = () => undefined
+    const gate = new Promise<Response>((resolve) => {
+      release = resolve
+    })
+    vi.stubGlobal('fetch', vi.fn((url: string) => (url.endsWith('/retry') ? gate : Promise.resolve(json({ id: 8 })))))
+
+    const pending = store.retryOrderLine(8, 2)
+    expect(store.retryingItemId).toBe(2)
+    release(json({ failedLines: [] }))
+    await pending
+
+    expect(store.retryingItemId).toBeNull()
+  })
+
+  it('a refused retry keeps the sentence on its own line and clears it on the next try', async () => {
+    const store = useOrdersStore()
+    stubFetch(problem('This order line cannot be retried now.', 409), json({ id: 8 }))
+
+    expect(await store.retryOrderLine(8, 2)).toBe(false)
+    expect(store.lineErrors).toEqual({ 2: 'This order line cannot be retried now.' })
+    expect(store.retryingItemId).toBeNull()
+
+    stubFetch(json({ failedLines: [] }), json({ id: 8 }))
+    expect(await store.retryOrderLine(8, 2)).toBe(true)
+    expect(store.lineErrors).toEqual({})
   })
 
   it('a refused command returns false, sets actionError and does not refresh', async () => {

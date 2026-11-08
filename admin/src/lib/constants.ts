@@ -169,6 +169,8 @@ export const ORDER_LINE_FULFILMENT_OPTIONS: SelectOption[] = [
   { value: OrderItemFulfilmentState.Fulfilled, get label() { return translate('constants.orderLineFulfilmentOptions.fulfilled') } },
   { value: OrderItemFulfilmentState.Failed, get label() { return translate('constants.orderLineFulfilmentOptions.failed') } },
   { value: OrderItemFulfilmentState.Refunded, get label() { return translate('constants.orderLineFulfilmentOptions.refunded') } },
+  { value: OrderItemFulfilmentState.Refunding, get label() { return translate('constants.orderLineFulfilmentOptions.refunding') } },
+  { value: OrderItemFulfilmentState.PartiallyRefunded, get label() { return translate('constants.orderLineFulfilmentOptions.partiallyRefunded') } },
 ]
 
 /** Available ticket priority options for dropdowns. */

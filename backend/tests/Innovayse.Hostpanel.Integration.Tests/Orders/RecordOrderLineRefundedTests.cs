@@ -1,5 +1,6 @@
 using System.Net;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Orders.Commands.BeginOrderLineRefund;
 using Innovayse.Hostpanel.Application.Orders.Commands.RecordOrderLineRefunded;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
@@ -40,16 +41,17 @@ public sealed class RecordOrderLineRefundedTests(IntegrationTestFactory factory)
     }
 
     /// <summary>
-    /// A failed line becomes Refunded, the order that only the failed line kept Incomplete returns to Active, and
+    /// A line whose refund was begun becomes Refunded, the order that only that line kept Incomplete returns to Active, and
     /// the closed line is refused by a retry with <c>ORDER_LINE_NOT_RETRYABLE</c>.
     /// </summary>
     [Fact]
-    public async Task ClosesTheFailedLineAndTheOrderReturnsToActive()
+    public async Task ClosesTheLineBeingRefundedAndTheOrderReturnsToActive()
     {
         var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
         var admin = await OrdersTestSeeds.AdminClientAsync(factory);
         (await admin.PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null)).EnsureSuccessStatusCode();
         var domainLine = (await ReadOrderAsync(seeded.OrderId)).Items.Single(i => i.Domain == seeded.Domain);
+        (await InvokeAsync(new BeginOrderLineRefundCommand(seeded.OrderId, domainLine.Id))).IsSuccess.Should().BeTrue();
 
         var result = await InvokeAsync(new RecordOrderLineRefundedCommand(seeded.OrderId, domainLine.Id));
 
@@ -62,9 +64,9 @@ public sealed class RecordOrderLineRefundedTests(IntegrationTestFactory factory)
         await OrdersTestSeeds.AssertCodeAsync(retry, HostpanelErrorCodes.ORDER_LINE_NOT_RETRYABLE);
     }
 
-    /// <summary>A line that was fulfilled has nothing to give back: the command succeeds and leaves it Fulfilled.</summary>
+    /// <summary>A line that was fulfilled has nothing to give back: it is refused as <c>ORDER_LINE_NOT_REFUNDABLE</c> and left Fulfilled.</summary>
     [Fact]
-    public async Task LeavesAFulfilledLineAlone()
+    public async Task RefusesAFulfilledLineAndLeavesItAlone()
     {
         var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
         var admin = await OrdersTestSeeds.AdminClientAsync(factory);
@@ -73,10 +75,42 @@ public sealed class RecordOrderLineRefundedTests(IntegrationTestFactory factory)
 
         var result = await InvokeAsync(new RecordOrderLineRefundedCommand(seeded.OrderId, hostingLine.Id));
 
-        result.IsSuccess.Should().BeTrue();
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.ORDER_LINE_NOT_REFUNDABLE);
         var order = await ReadOrderAsync(seeded.OrderId);
         order.Items.Single(i => i.Id == hostingLine.Id).FulfilmentState.Should().Be(OrderItemFulfilmentState.Fulfilled);
         order.Status.Should().Be(OrderStatus.Incomplete);
+    }
+
+    /// <summary>A failed line whose refund was never begun is refused: money cannot be recorded as returned before it was claimed.</summary>
+    [Fact]
+    public async Task RefusesAFailedLineWhoseRefundWasNeverBegun()
+    {
+        var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        var admin = await OrdersTestSeeds.AdminClientAsync(factory);
+        (await admin.PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null)).EnsureSuccessStatusCode();
+        var domainLine = (await ReadOrderAsync(seeded.OrderId)).Items.Single(i => i.Domain == seeded.Domain);
+
+        var result = await InvokeAsync(new RecordOrderLineRefundedCommand(seeded.OrderId, domainLine.Id));
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.ORDER_LINE_NOT_REFUNDABLE);
+        (await ReadOrderAsync(seeded.OrderId)).Items.Single(i => i.Id == domainLine.Id).FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
+    }
+
+    /// <summary>A line that is Refunded already is left as it is and the command still succeeds, so a repeated message is harmless.</summary>
+    [Fact]
+    public async Task ARefundedLineIsLeftAsItIs()
+    {
+        var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        var admin = await OrdersTestSeeds.AdminClientAsync(factory);
+        (await admin.PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null)).EnsureSuccessStatusCode();
+        var domainLine = (await ReadOrderAsync(seeded.OrderId)).Items.Single(i => i.Domain == seeded.Domain);
+        (await InvokeAsync(new BeginOrderLineRefundCommand(seeded.OrderId, domainLine.Id))).IsSuccess.Should().BeTrue();
+        (await InvokeAsync(new RecordOrderLineRefundedCommand(seeded.OrderId, domainLine.Id))).IsSuccess.Should().BeTrue();
+
+        var again = await InvokeAsync(new RecordOrderLineRefundedCommand(seeded.OrderId, domainLine.Id));
+
+        again.IsSuccess.Should().BeTrue();
+        (await ReadOrderAsync(seeded.OrderId)).Items.Single(i => i.Id == domainLine.Id).FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunded);
     }
 
     /// <summary>Reads an order with its lines from the database.</summary>
@@ -90,9 +124,9 @@ public sealed class RecordOrderLineRefundedTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Dispatches the command on a fresh scope's bus.</summary>
-    /// <param name="command">The command to send.</param>
+    /// <param name="command">The command to send: the refund claim or its settlement.</param>
     /// <returns>The handler's result.</returns>
-    private async Task<Result> InvokeAsync(RecordOrderLineRefundedCommand command)
+    private async Task<Result> InvokeAsync(object command)
     {
         using var scope = factory.Services.CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();

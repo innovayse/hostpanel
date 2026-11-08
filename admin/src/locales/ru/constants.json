@@ -35,6 +35,8 @@
     "inProgress": "Выполняется",
     "fulfilled": "Выполнена",
     "failed": "Ошибка",
-    "refunded": "Возвращена"
+    "refunded": "Возвращена",
+    "refunding": "Возврат выполняется",
+    "partiallyRefunded": "Возвращена частично"
   }
 }

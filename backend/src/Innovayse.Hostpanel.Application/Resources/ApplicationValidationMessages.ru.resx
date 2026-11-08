@@ -541,6 +541,12 @@
   <data name="OrderItemIdInvalid" xml:space="preserve">
     <value>Идентификатор позиции заказа должен быть больше нуля.</value>
   </data>
+  <data name="OrderLineOutcomeInvalid" xml:space="preserve">
+    <value>Результат позиции заказа должен быть Fulfilled или Failed.</value>
+  </data>
+  <data name="OrderLineRefundOutcomeInvalid" xml:space="preserve">
+    <value>Результат возврата по позиции заказа должен быть NothingRefunded или PartlyRefunded.</value>
+  </data>
   <data name="PlaceOrderPaymentMethodRequired" xml:space="preserve">
     <value>Выберите способ оплаты.</value>
   </data>

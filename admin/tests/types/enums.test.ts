@@ -25,7 +25,7 @@ describe('status enums', () => {
   it('are spelled as the API spells them', () => {
     expect(Object.values(DemoAccountRole)).toEqual(['Admin', 'Client'])
     expect(Object.values(OrderStatus)).toEqual(['Pending', 'Active', 'Cancelled', 'Fraud', 'Incomplete'])
-    expect(Object.values(OrderItemFulfilmentState)).toEqual(['Pending', 'InProgress', 'Fulfilled', 'Failed', 'Refunded'])
+    expect(Object.values(OrderItemFulfilmentState)).toEqual(['Pending', 'InProgress', 'Fulfilled', 'Failed', 'Refunded', 'Refunding', 'PartiallyRefunded'])
     expect(Object.values(OrderItemStatus)).toEqual(['Pending', 'Active', 'Cancelled'])
     expect(Object.values(ServiceStatus)).toEqual(['Active', 'Pending', 'Suspended', 'Terminated'])
     expect(Object.values(ClientStatus)).toEqual(['Active', 'Inactive', 'Suspended', 'Closed'])

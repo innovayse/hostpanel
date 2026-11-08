@@ -24,7 +24,8 @@
     "fulfilment": "Կատարում",
     "retry": "Կրկնել",
     "lineRetried": "Տողը կրկնվեց և կատարվեց։",
-    "attempts": "Փորձեր՝ {count}, վերջինը {at}"
+    "attempts": "Փորձեր՝ {count}, վերջինը {at}",
+    "finishRefund": "Գումարի մի մասը վերադարձվել է։ Ավարտեք վերադարձը ձեռքով։"
   },
   "ordersList": {
     "orders": "Պատվերներ",
@@ -40,10 +41,28 @@
     "confirmCancelTitle": "Չեղարկե՞լ այս պատվերը",
     "confirmCancelMessage": "Պատվերը կչեղարկվի։ Այս գործողությունը հնարավոր չէ հետարկել։",
     "cancelOrder": "Չեղարկել պատվերը",
-    "failedLines": "Ձախողված՝ {count}"
+    "failedLines": "Կրկնելու՝ {count}",
+    "needsAttention": "Պահանջում է ուշադրություն"
   },
   "fulfillment": {
     "acceptedWithFailedLines": "Պատվերն ընդունվեց, բայց այս տողերը չհաջողվեց կատարել. {lines}։",
     "retryStillFailed": "Տողը կրկնվեց, բայց կրկին չհաջողվեց կատարել՝ {lines}։"
+  },
+  "lineErrors": {
+    "domainAlreadyRegistered": "Դոմենն արդեն գրանցված է։",
+    "domainRegistrationUpstreamFailed": "Գրանցողը չկարողացավ գրանցել դոմենը։",
+    "domainRenewalUpstreamFailed": "Գրանցողը չկարողացավ երկարաձգել դոմենը։",
+    "domainTransferUpstreamFailed": "Գրանցողը չկարողացավ փոխանցել դոմենը։",
+    "domainProductNotConfigured": "Դոմենի ապրանքը կարգավորված չէ։",
+    "productNotFound": "Պատվիրված ապրանքն այլևս գոյություն չունի։",
+    "productNotAvailable": "Պատվիրված ապրանքը հասանելի չէ։",
+    "provisioningUpstreamFailed": "Սերվերը չկարողացավ ստեղծել հաշիվը։",
+    "provisioningOutcomeUnknown": "Սերվերը չհաստատեց՝ հաշիվը ստեղծվել է, թե ոչ։",
+    "provisioningAccountConflict": "Այս անունով հաշիվ արդեն կա սերվերում։",
+    "productPackageMissing": "Ապրանքի համար սերվերի փաթեթ նշված չէ։",
+    "productServerGroupRequired": "Ապրանքի համար սերվերների խումբ նշված չէ։",
+    "serverConnectionUnreachable": "Սերվերը հասանելի չէ։",
+    "unexpected": "Անսպասելի սխալը կանգնեցրեց տողը։",
+    "generic": "Տողը չհաջողվեց կատարել։"
   }
 }

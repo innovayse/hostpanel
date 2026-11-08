@@ -1,6 +1,8 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.ActivateDigitalService;
+using Innovayse.Hostpanel.Application.Services.Commands.OrderService;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -44,6 +46,33 @@ public sealed class ActivateDigitalServiceTests(IntegrationTestFactory factory) 
         var result = await InvokeAsync(new ActivateDigitalServiceCommand(serviceId));
 
         result.ErrorCode.Should().Be(HostpanelErrorCodes.SERVICE_NOT_PENDING);
+    }
+
+    /// <summary>
+    /// A service that the same order line already activated counts as activated when the line asks again (a retry after a run
+    /// that died before recording the line), but a service another line bought, or one bound to no line, is still refused.
+    /// </summary>
+    [Fact]
+    public async Task HandleAsync_ActiveServiceOfTheSameOrderLine_CountsAsActivatedAsync()
+    {
+        int serviceId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 1m);
+            var ordered = await scope.ServiceProvider.GetRequiredService<IMessageBus>().InvokeAsync<Result<int>>(
+                new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 1m, 1m, OrderItemId: 616_101));
+            serviceId = ordered.Value;
+        }
+
+        var first = await InvokeAsync(new ActivateDigitalServiceCommand(serviceId, 616_101));
+        var again = await InvokeAsync(new ActivateDigitalServiceCommand(serviceId, 616_101));
+        var otherLine = await InvokeAsync(new ActivateDigitalServiceCommand(serviceId, 616_102));
+        var noLine = await InvokeAsync(new ActivateDigitalServiceCommand(serviceId));
+
+        first.IsSuccess.Should().BeTrue();
+        again.IsSuccess.Should().BeTrue();
+        otherLine.ErrorCode.Should().Be(HostpanelErrorCodes.SERVICE_NOT_PENDING);
+        noLine.ErrorCode.Should().Be(HostpanelErrorCodes.SERVICE_NOT_PENDING);
     }
 
     /// <summary>An id nothing names is refused as <c>SERVICE_NOT_FOUND</c>.</summary>

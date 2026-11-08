@@ -87,6 +87,8 @@ public sealed class StatusMappingTests
     [InlineData(HostpanelErrorCodes.FULFILMENT_RECORD_NOT_FOUND, 404)]
     [InlineData(HostpanelErrorCodes.FULFILMENT_RECORD_NOT_RETRYABLE, 409)]
     [InlineData(HostpanelErrorCodes.ORDER_LINE_NOT_RETRYABLE, 409)]
+    [InlineData(HostpanelErrorCodes.ORDER_LINE_CHANGED, 409)]
+    [InlineData(HostpanelErrorCodes.ORDER_LINE_NOT_REFUNDABLE, 409)]
     [InlineData(HostpanelErrorCodes.ORDER_LINE_ALREADY_FULFILLED, 409)]
     [InlineData(HostpanelErrorCodes.ORDER_ITEM_NOT_FOUND, 404)]
     [InlineData(HostpanelErrorCodes.FULFILMENT_ADVICE_UNAVAILABLE, 503)]

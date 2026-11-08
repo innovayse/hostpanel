@@ -1,12 +1,14 @@
 using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Orders.Commands.RetryOrderLine;
@@ -30,17 +32,23 @@ public sealed class RetryOrderLineHandler
     /// <summary>Writes the audit line of the retry.</summary>
     private readonly IActivityLogger _activityLogger;
 
+    /// <summary>How long a retry's claim on a line is respected; the <c>Orders:RetryLeaseMinutes</c> option.</summary>
+    private readonly IOptions<OrderOptions> _options;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="bus">Wolverine message bus, used to fulfil the claimed line.</param>
     /// <param name="clock">The clock that dates the claim.</param>
     /// <param name="activityLogger">Writes the audit line of the retry.</param>
-    public RetryOrderLineHandler(IHostpanelDbContext context, IMessageBus bus, IClock clock, IActivityLogger activityLogger)
+    /// <param name="options">The order options, which hold how long a retry's claim on a line is respected.</param>
+    public RetryOrderLineHandler(
+        IHostpanelDbContext context, IMessageBus bus, IClock clock, IActivityLogger activityLogger, IOptions<OrderOptions> options)
     {
         _context = context;
         _bus = bus;
         _clock = clock;
         _activityLogger = activityLogger;
+        _options = options;
     }
 
     /// <summary>Handles the command.</summary>
@@ -49,8 +57,9 @@ public sealed class RetryOrderLineHandler
     /// <returns>
     /// The lines that are still failed after the retry (empty when the line was fulfilled); <c>ORDER_NOT_FOUND</c> or
     /// <c>ORDER_ITEM_NOT_FOUND</c> when an id names nothing; <c>ORDER_LINE_ALREADY_FULFILLED</c> when the line is done
-    /// already; <c>ORDER_LINE_NOT_RETRYABLE</c> when the order was not accepted, the line did not fail or was refunded,
-    /// or another retry holds it.
+    /// already; <c>ORDER_LINE_NOT_RETRYABLE</c> when the order was not accepted, the line did not fail, is being or was
+    /// refunded, or another retry holds it; <c>ORDER_LINE_CHANGED</c> when the line changed while the retry ran and its
+    /// outcome could not be recorded.
     /// </returns>
     public async Task<Result<OrderFulfillmentDto>> HandleAsync(RetryOrderLineCommand cmd, CancellationToken ct)
     {
@@ -76,12 +85,13 @@ public sealed class RetryOrderLineHandler
         }
 
         var now = _clock.UtcNow;
-        if (!order.CanRetryLine(item.Id, now))
+        var lease = _options.Value.RetryLease;
+        if (!order.CanRetryLine(item.Id, now, lease))
         {
             return Result<OrderFulfillmentDto>.FailureCode(HostpanelErrorCodes.ORDER_LINE_NOT_RETRYABLE);
         }
 
-        order.StartLineRetry(item.Id, now);
+        order.StartLineRetry(item.Id, now, lease);
         await _activityLogger.RecordAsync(
             new ActivityLogEntry(
                 order.ClientId,

@@ -84,4 +84,19 @@ describe('ThemeSwitch', () => {
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.System)
     wrapper.unmount()
   })
+
+  it('moves the choice and focus with Down and Up, wrapping around', async () => {
+    const wrapper = mountSwitch()
+    const system = wrapper.get('[data-testid="probe-theme-system"]')
+    ;(system.element as HTMLElement).focus()
+
+    await system.trigger('keydown', { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(wrapper.get('[data-testid="probe-theme-light"]').element)
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
+
+    await wrapper.get('[data-testid="probe-theme-light"]').trigger('keydown', { key: 'ArrowUp' })
+    expect(document.activeElement).toBe(wrapper.get('[data-testid="probe-theme-system"]').element)
+    expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.System)
+    wrapper.unmount()
+  })
 })

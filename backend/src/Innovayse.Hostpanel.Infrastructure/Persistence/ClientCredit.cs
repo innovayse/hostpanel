@@ -161,8 +161,6 @@ public sealed class ClientCredit : IClientCredit
                 CreditMovementType.TransactionReversed => "Ledger entry deleted, credit movement undone",
                 CreditMovementType.CreditNoteIssued => $"Credit note issued against {invoice}",
                 CreditMovementType.CreditNoteVoided => $"Credit note against {invoice} voided",
-                CreditMovementType.CreditNoteIssued => $"Credit note issued against {invoice}",
-                CreditMovementType.CreditNoteVoided => $"Credit note against {invoice} voided",
                 _ => change.Movement.ToString(),
             };
         return text.Length <= MaxDescriptionLength ? text : text[..MaxDescriptionLength];

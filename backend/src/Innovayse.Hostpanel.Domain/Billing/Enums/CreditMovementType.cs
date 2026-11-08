@@ -42,10 +42,4 @@ public enum CreditMovementType
 
     /// <summary>A credit note issued as account credit was voided, and its value came off the balance again.</summary>
     CreditNoteVoided = 11,
-
-    /// <summary>A credit note issued as account credit put its value on the balance.</summary>
-    CreditNoteIssued = 10,
-
-    /// <summary>A credit note issued as account credit was voided, and its value came off the balance again.</summary>
-    CreditNoteVoided = 11,
 }

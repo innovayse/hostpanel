@@ -10,7 +10,7 @@ import { ref } from 'vue'
 import { useSettingsApi } from '@/composables/apis/useSettingsApi'
 import { useUploadApi } from '@/composables/apis/useUploadApi'
 import { errorCode } from '@/lib/errorHandler'
-import { runAction } from '@/lib/runAction'
+import { dropFieldError, runAction } from '@/lib/runAction'
 import type { ActionResult } from '@/lib/runAction'
 import type { EmailTemplate, EmailTemplateContent } from '@/types/emailtemplate'
 import type { MessageLanguage } from '@/locales/messages'
@@ -197,9 +197,7 @@ export const useSettingsStore = defineStore('settings', () => {
    * @returns Nothing; the field's message is removed from the shared field errors.
    */
   const clearFieldError = (field: string): void => {
-    const rest = { ...fieldErrors.value }
-    delete rest[field]
-    fieldErrors.value = rest
+    dropFieldError(fieldErrors, field)
   }
 
   /**

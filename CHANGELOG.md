@@ -39,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Admin panel: the Send Email checkbox on the Open Ticket page is gone. It was never sent to the API, so it changed nothing: the department is always notified of a new ticket when it has an email address.
 
+### Changed
+
+- Admin: the product form and the client external account card share one helper that drops the API message of a field when that field is edited (#698), and the two stores share one helper that removes a field from their field errors. Behaviour is unchanged.
+
 ### Fixed
 
 - Client area: one rule now decides whether a service needs setup (#717). Only a Pending hosting service shows "needs setup" and is sent to the setup wizard, in the lists, the dashboard, the detail page, its notices and its sidebar, as the backend setup accepts only a Pending service; an active service without a control-panel username is no longer sent to a wizard the backend would refuse. The setup page of a digital service shows the loading panel until it has redirected, so the wizard no longer flashes. `usePermissions` is removed; `Permission` now lives in `types/permission`. A layout test covers the navigation before the identity has loaded.

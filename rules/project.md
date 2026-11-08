@@ -18,22 +18,20 @@ is the same build with `Demo__Enabled=true` (`deploy:demo`); its sign-in page sh
 served by `GET /api/public/demo` — they are not written in `README.md`.
 
 **This is a public, separately licensed repository.** AGPL-3.0-or-later, except the plugin SDK (`backend/src/Hostpanel.Sdk`), which is MIT (its own `LICENSE`, packed into the package) so a plugin may be free or paid, open or closed; `SdkPackageTests` pins the package metadata. The SDK lives in its own public repository, **github.com/innovayse/hostpanel-sdk**, and is a git submodule at that same path (`.gitmodules`): clone with `--recurse-submodules` (or run `git submodule update --init` after a plain clone), and an SDK change lands as a pull request there first, then as a submodule bump here. `origin` is **github.com/innovayse/hostpanel**. Anything written here
-is read by people who have never seen the rest of the workspace, and the repo must build from
+is read by people who only have a clone of this repository, and the repo must build from
 a clone of itself alone (with its submodule) — that is why `Innovayse.Auth` is consumed as an optional package (only in an
 `InnovayseSso=true` build, see `backend/Directory.Build.props`) rather than a project reference, and why `backend/nuget.config` restricts `auditSources` to nuget.org.
 
 **Read first:** the six rules files beside this one — [clean-architecture.md](clean-architecture.md),
 [csharp-style.md](csharp-style.md), [dotnet-format.md](dotnet-format.md),
 [xml-docs.md](xml-docs.md), [jsdoc.md](jsdoc.md), [vuejs-style.md](vuejs-style.md) — then this
-file. This repository is a submodule and keeps its **own** copies; the workspace's `rules/`
-folder is not vendored here, and editing anything under it means committing in another
-repository.
+file. They are part of this repository: change them here.
 
-## Where this project's rules differ from the workspace — read this before your first review
+## This project's own rules — read this before your first review
 
-This backend is on the workspace shape: no primary constructors on handlers or controllers, no
+This backend follows one shape: no primary constructors on handlers or controllers, no
 `*Request` records, no exception-only refusals, no feature-local `Interfaces/` folders, no
-repositories. The departures are short:
+repositories. What is specific to this project is short:
 
 - **`LocalAuthController` follows the shape like every other controller.** It sits in
   `API/Controllers/`, derives from `BaseApiController` and each action binds a command and
@@ -57,8 +55,7 @@ repositories. The departures are short:
   `/api/public/demo` before them) are `[AllowAnonymous]` read-only queries: the storefront renders them before anyone has
   signed in, so they cannot carry the usual `[Authorize]` on every action. They stay on `BaseApiController`, dispatch one
   query, return only active, already-localised records and never expose an admin field; writes remain behind `Policies.Admin`.
-- **Handler and validator naming is `<UseCase>Handler` / `<UseCase>Validator`; the product rule wins over
-  workspace `cqrs.md`.** Use-case names are unique across modules (`ProvisionService` in Provisioning,
+- **Handler and validator naming is `<UseCase>Handler` / `<UseCase>Validator`.** Use-case names are unique across modules (`ProvisionService` in Provisioning,
   `SetupService` in Services), one use case per state transition (`SuspendService`, `UnsuspendService`,
   `TerminateService`: every route, cron and status change dispatches them, and each checks the state
   before it asks the panel), and a DTO two use cases share lives once in `<Module>/Common/` (one
@@ -146,10 +143,9 @@ client/  admin/                    Nuxt 4 portal, Vite admin SPA — each owns i
 docker/                              compose set (shared·dev·prod·platform), nginx/, scripts/, .env.example — docker/README.md
 ```
 
-- **SharedKernel deliberately differs from the `file-layout.md` tree.** It adds
-  `Domain/SecretMembers.cs` and `Domain/SecretMemberAttribute.cs`, and has no `TenantEntity`
-  (the tree lists one; the file does not exist in this product). The reason for the two
-  additions: one masking rule shared by every layer. A record that carries a secret prints it
+- **SharedKernel holds `Domain/SecretMembers.cs` and `Domain/SecretMemberAttribute.cs`, and has no
+  `TenantEntity`** (this product has no tenant entity). The reason for the two files:
+  one masking rule shared by every layer. A record that carries a secret prints it
   through the generated `ToString` into logs and exception messages, so Domain, Application
   and Infrastructure all need the same answer to "which members are secret"
   and the same printer. Only the kernel is visible to all of them, and
@@ -252,7 +248,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Plugins/<Area>/` and its namespace equals the folder: `Payment`, `Provisioning`, `Registrar`, `HostingPanel`, `Hosting`,
   `Fulfilment`, `Identity`, `StoredCredentials`, `Manifest`, `Api`, `Endpoints`, `Host`, `Store`,
   `Lifecycle`, `Slots`, `Ui`, `Enums`. Each interface sits next to the records it uses; there is no
-  `Interfaces/` folder (file-layout allows one only in Domain, `Application/Common/Interfaces/` and
+  `Interfaces/` folder (one exists only in Domain, `Application/Common/Interfaces/` and
   Shared) and nothing at the `Plugins/` root. Enums are in `Plugins/Enums/` with explicit values:
   `PluginType` keeps its released values starting at 0, every other enum starts at 1. The abstract base
   classes a plugin derives from live in the `Hostpanel.Sdk.Base` namespace (`Base/`), not in an area. Inputs are `*Instruction` or `*Context`, outputs `*Result`, `*Status`,
@@ -1773,7 +1769,7 @@ Its own nginx exists for a standalone install.
   `EncryptionKey` is required in every environment, and `AppDbContext` cannot be built without an
   `IEncryptionService`; the encrypted columns (server credentials, SSH agent keys, client-service
   passwords, two-factor secrets) are listed once in `ProtectedColumns`, which also sizes them.
-  Every deployed tier (staging, prod, demo) sets `Production`, per `rules/environments.md`; the tier
+  Every deployed tier (staging, prod, demo) sets `Production`; the tier
   is named by the job's `environment:`, never by `ASPNETCORE_ENVIRONMENT`.
 - **Demo mode (`Demo__Enabled`).** Set through `DEMO_*` env in `docker/docker-compose.demo.yml`, an overlay
   placed last in the chain (`shared` + `prod` + `platform` + `demo`, project `hostpanel-demo`). It swaps the
@@ -1806,14 +1802,14 @@ templates — `aurora`, `nova`, `classic` — and the active one is decided by, 
 operator's `portal.template` admin setting, then `NUXT_PUBLIC_PORTAL_TEMPLATE`, then the
 built-in default **`classic`** (`DEFAULT_TEMPLATE`, mirrored by `PortalSettingKeys.DefaultTemplate`); anything unrecognised falls back to `classic` rather than
 rendering nothing. `components/layout/Header.vue` is reached only through
-`templates/classic/layout/Header.vue`, a two-line wrapper — so on an aurora or nova deployment it is
+`templates/classic/layout/ClassicHeader.vue`, a two-line wrapper — so on an aurora or nova deployment it is
 live code that nothing renders. Editing it and reloading changes nothing, and that has cost
-real time. Start from `templates/<active>/layout/Header.vue`.
+real time. Start from `templates/<active>/layout/<Active>Header.vue` (`AuroraHeader.vue`, `NovaHeader.vue`,
+`ClassicHeader.vue`).
 
-`nova` deliberately reuses `aurora`'s `Domains.vue` and `Checkout.vue` — the checkout is the
-ordering path and a second copy is a second place for a payment bug to live. If a shared aurora
-page grows a new section import, add it to `AURORA_SHARED_COMMERCE` in `nuxt.config.ts` or nova
-starts downloading the whole `template-aurora` chunk.
+`nova` deliberately reuses `aurora`'s `pages/AuroraDomains.vue` and `pages/AuroraCheckout.vue` (see
+`templates/registry.ts`) — the checkout is the ordering path and a second copy is a second place for a
+payment bug to live.
 
 **Runtime config in a production image.** A production Nitro build freezes `runtimeConfig`
 defaults — `nuxt.config.ts` is not re-evaluated at container start as it is in dev. Nitro's own
@@ -1915,11 +1911,11 @@ twin** of that list; it cannot import the class, so a new key is added in both p
 `nuxt.config.ts`'s `runtimeConfig.public` **and** both compose files' `NUXT_PUBLIC_*` lines.
 `PortalSettingKeysTests` fails if `Defaults` and `Public` drift; nothing tests the BFF twin.
 
-### The client's shape (Nuxt exception, conformance C complete)
+### The client's shape (Nuxt)
 
-`client/` is the Nuxt exception the workspace `frontend.md` allows: it has public, crawlable pages
-(SEO, SSR) beside the session-gated `/client/**` area, so it builds on Nuxt where the other
-products are Vite SPAs. Everything else in `rules/frontend.md` holds in full; the Nuxt specifics
+`client/` is a Nuxt app, where `admin/` is a Vite SPA: it has public, crawlable pages
+(SEO, SSR) beside the session-gated `/client/**` area. The frontend rules in this folder
+([vuejs-style.md](vuejs-style.md), [jsdoc.md](jsdoc.md)) hold in full; the Nuxt specifics
 are these, and **no part of the client is exempt any more — the ratchet that once scoped the
 rules is deleted and the ESLint conformance block applies to every `.vue` and `.ts` file.**
 
@@ -2111,10 +2107,10 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
   `yarn test --maxWorkers=2`, `yarn build`, then `yarn e2e`. On this laptop vitest needs
   `--maxWorkers=2`.
 
-### The admin's shape (Vite SPA, conformance B complete)
+### The admin's shape (Vite SPA)
 
-`admin/` is the workspace's standard Vite SPA (`rules/frontend.md`) with no exception: the operator
-back office is session-gated, so it has no crawlable pages. **No part of it is exempt — the ratchet
+`admin/` is a standard Vite SPA with no exception to the frontend rules ([vuejs-style.md](vuejs-style.md),
+[jsdoc.md](jsdoc.md)): the operator back office is session-gated, so it has no crawlable pages. **No part of it is exempt — the ratchet
 that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` applies to every `.vue` and
 `.ts` file under `src/`** (the one carve-out is `lib/brandPalette.ts`, a generated byte-for-byte copy).
 
@@ -2210,7 +2206,7 @@ the letters of a split folder do not cover A to Z exactly once.
 ## Packages worth knowing
 
 - **Branding images are rendered with SkiaSharp (MIT)**, in
-  `Infrastructure/ImageProcessing/SkiaBrandingImageProcessor.cs`, behind the
+  `Infrastructure/ImageProcessing/BrandingImageProcessor.cs`, behind the
   `IBrandingImageProcessor` port. Do not use `SixLabors.ImageSharp`: its Apache-2.0 2.1.x line
   receives no fixes and carries high-severity advisories, and 3.x is a split licence this public
   AGPL repository cannot hand to downstream users; `.github/dependabot.yml` ignores that package.
@@ -2334,7 +2330,6 @@ Never spread one of these, and never restructure as a side effect of a feature.
 | Admin screen | `admin/src/views/<Page>View.vue` (+ `admin/src/components/<area>/`) |
 | Admin store / API call | `admin/src/stores/<area>.ts` / `admin/src/composables/apis/use<Area>Api.ts` |
 | Admin e2e flow | `admin/e2e/<flow>.spec.ts` (fixtures in `admin/e2e/fixtures/`) |
-| Plan / spec | `docs/superpowers/plans/`, `docs/superpowers/specs/` |
 
 ## Gotchas
 

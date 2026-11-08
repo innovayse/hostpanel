@@ -19,6 +19,7 @@ import HostingDetailsCard from '@/components/settings/HostingDetailsCard.vue'
 import PortalAppearanceCard from '@/components/settings/PortalAppearanceCard.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
 import SettingsLoading from '@/components/settings/SettingsLoading.vue'
+import VersionLabel from '@/components/layout/VersionLabel.vue'
 import SiteIdentityCard from '@/components/settings/SiteIdentityCard.vue'
 import StorefrontContentCard from '@/components/settings/StorefrontContentCard.vue'
 import TrackingChatCard from '@/components/settings/TrackingChatCard.vue'
@@ -140,6 +141,8 @@ const saveRow = async (setting: Setting): Promise<void> => {
 <template>
   <UiStack gap="none" data-testid="system-settings-view">
     <UiPageHeader :title="t('settings.systemSettings')" />
+    <!-- The installed version, quietly under the title; absent when it could not be loaded. -->
+    <VersionLabel testid="settings-version" class="-mt-4 mb-4" />
 
     <SettingsLoading v-if="store.loading && store.settings.length === 0" :message="t('common.loading')" />
     <UiErrorState

@@ -1,6 +1,7 @@
 /**
  * Tests for the release status store: fetch fills `status`, a refusal puts the API's sentence
- * into `error`, and an unreachable API puts the shared no-answer sentence.
+ * into `error`, and an unreachable API puts the shared no-answer sentence. `ensureLoaded` shares
+ * one request between every place that shows the status.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -68,5 +69,48 @@ describe('releaseStatusStore', () => {
 
     expect(store.status).toBeNull()
     expect(store.error).toBe(translate('errors.noAnswer'))
+  })
+})
+
+describe('releaseStatusStore.ensureLoaded', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('loads the status on the first call', async () => {
+    stubFetch(json(dto))
+    const store = useReleaseStatusStore()
+
+    await store.ensureLoaded()
+
+    expect(store.status).toEqual(dto)
+    expect(store.requested).toBe(true)
+  })
+
+  it('does not request again on later calls', async () => {
+    const mock = stubFetch(json(dto))
+    const store = useReleaseStatusStore()
+
+    await store.ensureLoaded()
+    await store.ensureLoaded()
+    await Promise.all([store.ensureLoaded(), store.ensureLoaded()])
+
+    expect(mock).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not retry after a refusal and leaves the status empty', async () => {
+    const mock = stubFetch(problem('No access.', 403))
+    const store = useReleaseStatusStore()
+
+    await store.ensureLoaded()
+    await store.ensureLoaded()
+
+    expect(mock).toHaveBeenCalledTimes(1)
+    expect(store.status).toBeNull()
+    expect(store.error).toBe('No access.')
   })
 })

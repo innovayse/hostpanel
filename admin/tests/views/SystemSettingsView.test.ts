@@ -31,6 +31,24 @@ describe('SystemSettingsView', () => {
     expect(wrapper.get('[data-testid="setting-row-21"]').text()).toContain('Contact address')
   })
 
+  it('shows the installed version under the title', async () => {
+    stubRouteTable({
+      'GET /admin/settings': () => json(stored),
+      'GET /admin/release-status': () => json({ installedVersion: '1.4.0', isUpgradeAvailable: false }),
+    })
+    const { wrapper } = await mountScreen(SystemSettingsView)
+
+    expect(wrapper.get('[data-testid="settings-version"]').text()).toBe('Hostpanel 1.4.0')
+  })
+
+  it('shows no version line when the version cannot be loaded', async () => {
+    stubRouteTable({ 'GET /admin/settings': () => json(stored) })
+    const { wrapper } = await mountScreen(SystemSettingsView)
+
+    expect(wrapper.find('[data-testid="settings-version"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="system-settings-error"]').exists()).toBe(false)
+  })
+
   it('draws the storefront card with the stored figure', async () => {
     stubRouteTable({ 'GET /admin/settings': () => json([...stored, { id: 30, key: 'portal.stats.clients', value: '5,000+' }]) })
     const { wrapper } = await mountScreen(SystemSettingsView)

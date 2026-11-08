@@ -43,5 +43,22 @@ export const useReleaseStatusStore = defineStore('releaseStatus', () => {
     }
   }
 
-  return { status, loading, error, fetch }
+  /** True once a load has been started, so every place that shows the status shares one request. */
+  const requested = ref(false)
+
+  /**
+   * Loads the release status the first time any caller asks for it; later calls do nothing, whether
+   * the first one succeeded or not (a failed load leaves {@link status} null, which shows nothing).
+   *
+   * @returns Resolves when the shared request is over, or at once when it was already started.
+   */
+  const ensureLoaded = async (): Promise<void> => {
+    if (requested.value) {
+      return
+    }
+    requested.value = true
+    await fetch()
+  }
+
+  return { status, loading, error, requested, fetch, ensureLoaded }
 })

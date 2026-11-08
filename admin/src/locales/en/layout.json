@@ -21,6 +21,9 @@
     "dark": "Dark",
     "system": "System"
   },
+  "version": {
+    "label": "Hostpanel {version}"
+  },
   "releaseUpdate": {
     "title": "Hostpanel {version} available",
     "releaseNotes": "Release notes",

@@ -21,6 +21,9 @@
     "dark": "Тёмная",
     "system": "Системная"
   },
+  "version": {
+    "label": "Hostpanel {version}"
+  },
   "releaseUpdate": {
     "title": "Доступна Hostpanel {version}",
     "releaseNotes": "Примечания к выпуску",

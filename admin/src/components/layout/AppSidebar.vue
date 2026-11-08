@@ -20,6 +20,7 @@ import UiIconButton from '@/components/ui/UiIconButton.vue'
 import BrandLogo from '@/components/layout/BrandLogo.vue'
 import ReleaseUpdateNotice from '@/components/layout/ReleaseUpdateNotice.vue'
 import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
+import VersionLabel from '@/components/layout/VersionLabel.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -66,12 +67,12 @@ const { t } = useI18n()
 /** Auth store: the sign-out action. */
 const authStore = useAuthStore()
 
-/** Release status store: fetched once on mount to show the upgrade notice when available. */
+/** Release status store: loaded once (shared with the version label) to show the upgrade notice when available. */
 const releaseStatusStore = useReleaseStatusStore()
 
-/** Fetches the release status once the sidebar is mounted. */
+/** Loads the release status once the sidebar is mounted; a second sidebar (the drawer) reuses the same request. */
 onMounted(() => {
-  void releaseStatusStore.fetch()
+  void releaseStatusStore.ensureLoaded()
 })
 
 /** Router, for the redirect after sign-out. */
@@ -400,17 +401,22 @@ const isExpanded = (item: NavItem): boolean => {
     <ReleaseUpdateNotice />
 
     <!-- Footer -->
-    <UiStack direction="row" align="center" justify="between" class="border-t border-border px-3 py-3">
-      <UiStack direction="row" align="center" gap="sm">
-        <UiText tone="plain" class="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] gradient-brand font-display text-[0.7rem] font-bold text-white">
-          {{ adminInitial }}
-        </UiText>
-        <UiText tone="secondary" size="md" class="font-medium">{{ t('common.admin') }}</UiText>
+    <UiStack gap="xs" class="border-t border-border px-3 py-3">
+      <UiStack direction="row" align="center" justify="between">
+        <UiStack direction="row" align="center" gap="sm">
+          <UiText tone="plain" class="flex h-7 w-7 shrink-0 items-center justify-center rounded-[7px] gradient-brand font-display text-[0.7rem] font-bold text-white">
+            {{ adminInitial }}
+          </UiText>
+          <UiText tone="secondary" size="md" class="font-medium">{{ t('common.admin') }}</UiText>
+        </UiStack>
+
+        <UiIconButton :label="t('common.signOut')" size="sm" data-testid="sidebar-sign-out" @click="handleLogout">
+          <UiIcon :markup="SIGN_OUT_MARKUP" size="sm" />
+        </UiIconButton>
       </UiStack>
 
-      <UiIconButton :label="t('common.signOut')" size="sm" data-testid="sidebar-sign-out" @click="handleLogout">
-        <UiIcon :markup="SIGN_OUT_MARKUP" size="sm" />
-      </UiIconButton>
+      <!-- Quiet version line; nothing is drawn until the version is known. -->
+      <VersionLabel testid="sidebar-version" />
     </UiStack>
   </aside>
 </template>

@@ -21,6 +21,9 @@
     "dark": "Մուգ",
     "system": "Համակարգային"
   },
+  "version": {
+    "label": "Hostpanel {version}"
+  },
   "releaseUpdate": {
     "title": "Հասանելի է Hostpanel {version}",
     "releaseNotes": "Թողարկման նշումներ",

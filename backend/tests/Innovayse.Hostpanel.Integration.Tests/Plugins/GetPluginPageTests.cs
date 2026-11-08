@@ -531,6 +531,32 @@ public sealed class GetPluginPageTests : IClassFixture<PluginUiFixture>
         page.GetProperty("layout").GetString().Should().Be("standard");
         OriginsOf(page).Should().Equal(PluginUiFixture.ExternalOrigin, $"https://{domain}", $"https://www.{domain}");
         OriginsOf(limited).Should().Equal(PluginUiFixture.ExternalOrigin);
+        LinkOriginsOf(page).Should().Equal(PluginUiFixture.ExternalOrigin, $"https://{domain}", $"https://www.{domain}");
+        LinkOriginsOf(limited).Should().Equal(PluginUiFixture.ExternalOrigin);
+    }
+
+    /// <summary>
+    /// A plugin published once for every installation links to the live site of the reader's own service without naming
+    /// its domain: the link origins hold the manifest's origin and the https origin of the service bound to the plugin,
+    /// and not the domain of a service on a product that is not bound, nor the panel's own origin.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Client_Page_LinkOrigins_HoldTheBoundServiceDomainsAndNotTheUnboundOnes()
+    {
+        var (owner, http) = await _fixture.OwnerAsync("link-owner");
+        var bound = $"live-{Guid.NewGuid():N}.example";
+        var unbound = $"unbound-{Guid.NewGuid():N}.example";
+        var portal = _fixture.Factory.Services.GetRequiredService<IOptions<ClientPortalOptions>>().Value.BaseUrl;
+        var boundProduct = await SeedActiveServiceAsync(owner.ClientId, bound);
+        await SeedActiveServiceAsync(owner.ClientId, unbound);
+        var ownProduct = await SeedActiveServiceAsync(owner.ClientId, new Uri(portal).Host);
+        await BindAsync(_fixture.PluginId, boundProduct);
+        await BindAsync(_fixture.PluginId, ownProduct);
+
+        var page = await JsonOfAsync(await http.GetAsync(ClientUrl(_fixture.PluginId, PluginUiFixture.HomePage)));
+
+        LinkOriginsOf(page).Should().Equal(PluginUiFixture.ExternalOrigin, $"https://{bound}", $"https://www.{bound}");
     }
 
     /// <summary>
@@ -578,6 +604,14 @@ public sealed class GetPluginPageTests : IClassFixture<PluginUiFixture>
         var page = await JsonOfAsync(await admin.GetAsync($"/api/admin/plugins/ui/{_fixture.PluginId}/pages/{PluginUiFixture.AdminPage}"));
 
         OriginsOf(page).Should().BeEmpty();
+    }
+
+    /// <summary>Reads the link origins (<c>externalOrigins</c>) of a page body.</summary>
+    /// <param name="page">The page body.</param>
+    /// <returns>The origins.</returns>
+    private static List<string?> LinkOriginsOf(JsonElement page)
+    {
+        return page.GetProperty("externalOrigins").EnumerateArray().Select(origin => origin.GetString()).ToList();
     }
 
     /// <summary>Reads the frame origins of a page body.</summary>

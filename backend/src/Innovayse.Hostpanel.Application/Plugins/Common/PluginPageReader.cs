@@ -123,7 +123,7 @@ public sealed class PluginPageReader
             page.Path,
             texts.Resolve(page.Title),
             view,
-            manifest.ExternalOrigins,
+            PluginFrameOriginResolver.LinkOrigins(manifest, frameOrigins),
             page.Layout ?? PluginPageLayouts.Standard,
             frameOrigins));
     }

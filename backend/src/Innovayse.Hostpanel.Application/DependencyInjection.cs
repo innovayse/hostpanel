@@ -56,6 +56,9 @@ public static class DependencyInjection
         // Lists the widgets enabled plugins put into a page slot, for the client and the admin slot index.
         services.AddScoped<PluginSlotIndexBuilder>();
 
+        // The origins a plugin view may frame or link to for the caller, shared by the page reader and the slot widget view.
+        services.AddScoped<PluginFrameOriginResolver>();
+
         // The slot, caller and context checks the client slot index and the slot widget view share.
         services.AddScoped<ClientPluginSlotGate>();
 

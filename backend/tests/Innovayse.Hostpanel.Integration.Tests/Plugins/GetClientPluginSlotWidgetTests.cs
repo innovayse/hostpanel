@@ -299,4 +299,48 @@ public sealed class GetClientPluginSlotWidgetTests : IClassFixture<AppPluginFixt
         ignored.StatusCode.Should().Be(HttpStatusCode.OK);
         _fixture.Probe.Constructed.Should().Be(0);
     }
+
+    /// <summary>
+    /// A widget's link origins hold the manifest's origins and the https host of the caller's own active service on a
+    /// product the operator bound to the plugin, so a plugin published once links to the live site without naming its
+    /// domain; a plugin with no binding gets the manifest's origins alone.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task TheWidgetsLinkOrigins_HoldTheBoundServiceDomain_AndOnlyThen()
+    {
+        var owner = await ClientsTestSeeds.RegisterClientAsync(_fixture.Factory, "widget-links");
+        var domain = $"live-{Guid.NewGuid():N}.example";
+        var service = await ServicesTestSeeds.SeedPendingServiceAsync(_fixture.Factory, owner.ClientId, domain);
+        int product;
+        using (var scope = _fixture.Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<Infrastructure.Persistence.AppDbContext>();
+            var row = await db.ClientServices.SingleAsync(s => s.Id == service);
+            var now = DateTimeOffset.UtcNow;
+            row.Activate("ref", now, now);
+            product = row.ProductId;
+            await db.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var pluginId = PluginActivationTestSeeds.NewId("widget-links");
+        var tabs = PluginSlots.ClientServiceTabs;
+        using var host = await PluginSlotSeeds.HostAsync(
+            _fixture, [pluginId], WithViews(pluginId, PluginSlotSeeds.Widget("tab", tabs)));
+        using var http = AppPluginFixture.WithBearerOf(host, owner.Client);
+
+        var before = await http.GetFromJsonAsync<JsonElement>(Url(tabs, pluginId, "tab", service));
+        using (var scope = _fixture.Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<Infrastructure.Persistence.AppDbContext>();
+            db.PluginSlotProductBindings.Add(Domain.Plugins.PluginSlotProductBinding.Create(pluginId, tabs, "tab", product));
+            await db.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var after = await http.GetFromJsonAsync<JsonElement>(Url(tabs, pluginId, "tab", service));
+
+        before.GetProperty("externalOrigins").GetArrayLength().Should().Be(0);
+        after.GetProperty("externalOrigins").EnumerateArray().Select(o => o.GetString())
+            .Should().Equal($"https://{domain}", $"https://www.{domain}");
+    }
 }

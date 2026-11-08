@@ -53,10 +53,11 @@ public sealed class DailyPerformanceHandler
                 .Select(i => i.PaidAt!.Value),
             ct);
 
-        // Only an accepted order is completed; a pending, cancelled or fraud order is not.
+        // Only an accepted order is completed; a pending, cancelled or fraud order is not. An accepted order
+        // with a failed line is still accepted (its client was charged and its other lines delivered).
         var completedOrders = await CountByDayAsync(
             _context.Orders.AsNoTracking()
-                .Where(o => o.Status == OrderStatus.Active && o.CreatedAt >= fromUtc && o.CreatedAt < toUtc)
+                .Where(o => (o.Status == OrderStatus.Active || o.Status == OrderStatus.Incomplete) && o.CreatedAt >= fromUtc && o.CreatedAt < toUtc)
                 .Select(o => o.CreatedAt),
             ct);
 

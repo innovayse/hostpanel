@@ -128,7 +128,7 @@ onMounted(() => fetchServices())
         {{ saveError }}
       </UiAlert>
 
-      <UiTable density="compact" data-testid="clients-time-billing-table">
+      <UiTable density="compact" :scrollable="false" data-testid="clients-time-billing-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('clients.addTimeBilling.item') }}</UiTableHeader>

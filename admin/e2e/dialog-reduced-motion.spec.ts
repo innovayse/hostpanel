@@ -14,6 +14,8 @@ test('a dialog shows and goes away without a transition or a transform when redu
   await page.goto('/storefront/faqs')
   await expect(page.getByTestId(`faq-row-${sampleFaq.id}`)).toBeVisible()
 
+  await page.getByTestId(`faq-row-${sampleFaq.id}`).getByTestId('row-actions-trigger').click()
+
   await page.getByTestId(`faq-delete-${sampleFaq.id}`).click()
 
   const panel = page.getByTestId('dialog-panel')
@@ -37,6 +39,7 @@ test.describe('without the preference', () => {
   test('the same panel does carry a transition, so the reduced run above proves something', async ({ page }) => {
     await stubCrud(page, { root: ApiPath.AdminFaqs, stored: [{ ...sampleFaq }], newId: 72 })
     await page.goto('/storefront/faqs')
+    await page.getByTestId(`faq-row-${sampleFaq.id}`).getByTestId('row-actions-trigger').click()
     await page.getByTestId(`faq-delete-${sampleFaq.id}`).click()
 
     const panel = page.getByTestId('dialog-panel')

@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Domain.Orders;
+using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -69,6 +70,7 @@ public sealed class ListOrdersHandler
                 o.Currency,
                 o.InvoiceId,
                 o.Items.Count,
+                o.Items.Count(i => i.FulfilmentState == OrderItemFulfilmentState.Failed || i.FulfilmentState == OrderItemFulfilmentState.PartiallyRefunded),
                 o.CreatedAt))
             .ToList();
 

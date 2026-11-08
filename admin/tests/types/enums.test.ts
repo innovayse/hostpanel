@@ -15,7 +15,7 @@ import { PaymentGateway } from '@/types/gateway'
 import { IntegrationFieldType } from '@/types/integration'
 import { InvoiceOpenAction, InvoiceStatus } from '@/types/invoice'
 import { MigrationEntityType } from '@/types/migration'
-import { OrderItemStatus, OrderStatus } from '@/types/order'
+import { OrderItemFulfilmentState, OrderItemStatus, OrderStatus } from '@/types/order'
 import { BillingCycle, ServiceStatus } from '@/types/service'
 import { ServerRefresh } from '@/types/server'
 import { PaymentMethod } from '@/types/transaction'
@@ -24,7 +24,8 @@ import { BrandingImageKind } from '@/types/upload'
 describe('status enums', () => {
   it('are spelled as the API spells them', () => {
     expect(Object.values(DemoAccountRole)).toEqual(['Admin', 'Client'])
-    expect(Object.values(OrderStatus)).toEqual(['Pending', 'Active', 'Cancelled', 'Fraud'])
+    expect(Object.values(OrderStatus)).toEqual(['Pending', 'Active', 'Cancelled', 'Fraud', 'Incomplete'])
+    expect(Object.values(OrderItemFulfilmentState)).toEqual(['Pending', 'InProgress', 'Fulfilled', 'Failed', 'Refunded', 'Refunding', 'PartiallyRefunded'])
     expect(Object.values(OrderItemStatus)).toEqual(['Pending', 'Active', 'Cancelled'])
     expect(Object.values(ServiceStatus)).toEqual(['Active', 'Pending', 'Suspended', 'Terminated'])
     expect(Object.values(ClientStatus)).toEqual(['Active', 'Inactive', 'Suspended', 'Closed'])

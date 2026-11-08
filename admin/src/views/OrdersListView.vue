@@ -107,8 +107,8 @@ const onStatusChange = (status: string): void => {
  */
 const accept = async (id: number): Promise<void> => {
   const ok = await runCommand(() => store.acceptOrder(id), 'orders.ordersList.orderAccepted')
-  if (ok && store.acceptFailures.length > 0) {
-    feedback.show(t('orders.fulfillment.acceptedWithFailedLines', { lines: store.acceptFailureNames }), true)
+  if (ok && store.unfulfilledLines.length > 0) {
+    feedback.show(t('orders.fulfillment.acceptedWithFailedLines', { lines: store.unfulfilledLineNames }), true)
   }
 }
 
@@ -194,9 +194,22 @@ onMounted(() => store.fetchAll())
               </UiLink>
             </UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="orderStatusTone(order.status)" small>
-                {{ statusLabel(ORDER_STATUS_OPTIONS, order.status) }}
-              </UiBadge>
+              <UiStack direction="row" gap="xs" align="center" wrap>
+                <UiBadge :tone="orderStatusTone(order.status)" small>
+                  {{ statusLabel(ORDER_STATUS_OPTIONS, order.status) }}
+                </UiBadge>
+                <UiText v-if="order.failedLineCount > 0" tone="muted" size="xs" :data-testid="`orders-failed-lines-${order.id}`">
+                  {{ t('orders.ordersList.failedLines', { count: order.failedLineCount }) }}
+                </UiText>
+                <UiText
+                  v-else-if="order.status === OrderStatus.Incomplete"
+                  tone="muted"
+                  size="xs"
+                  :data-testid="`orders-needs-attention-${order.id}`"
+                >
+                  {{ t('orders.ordersList.needsAttention') }}
+                </UiText>
+              </UiStack>
             </UiTableCell>
             <UiTableCell>{{ order.paymentMethod }}</UiTableCell>
             <UiTableCell>{{ formatPlainAmount(order.total, order.currency) }}</UiTableCell>

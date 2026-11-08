@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, ref } from 'vue'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { PricingCycle } from '~/types/pricingcycle'
 
 /** The fake stores, hoisted so the mocked modules can reach them. */
 const stores = vi.hoisted(() => ({
@@ -70,9 +71,9 @@ const HomeStub = defineComponent({
     priceHints: { type: Array, default: () => [] },
     plans: { type: Array, default: () => [] },
     comparisonRows: { type: Array, default: () => [] },
-    yearly: { type: Boolean, default: false },
+    cycle: { type: String, default: 'monthly' },
   },
-  emits: ['search', 'update:yearly'],
+  emits: ['search', 'update:cycle'],
   setup: () => () => h('div', { 'data-testid': 'home-stub' }),
 })
 
@@ -155,13 +156,13 @@ describe('pages/index', () => {
     expect(stores.domains.searchOfferedTlds).toHaveBeenCalledWith('example')
   })
 
-  it('switches the billing period when the template changes it', async () => {
+  it('switches the billing cycle when the template changes it', async () => {
     const wrapper = await mountPage(Page)
-    expect(wrapper.findComponent(HomeStub).props('yearly')).toBe(false)
+    expect(wrapper.findComponent(HomeStub).props('cycle')).toBe(PricingCycle.Monthly)
 
-    wrapper.findComponent(HomeStub).vm.$emit('update:yearly', true)
+    wrapper.findComponent(HomeStub).vm.$emit('update:cycle', PricingCycle.Quarterly)
     await wrapper.vm.$nextTick()
 
-    expect(wrapper.findComponent(HomeStub).props('yearly')).toBe(true)
+    expect(wrapper.findComponent(HomeStub).props('cycle')).toBe(PricingCycle.Quarterly)
   })
 })

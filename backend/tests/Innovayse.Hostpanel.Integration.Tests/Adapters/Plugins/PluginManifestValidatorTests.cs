@@ -569,4 +569,34 @@ public sealed class PluginManifestValidatorTests : IDisposable
             Manifest(""","ui":{"admin":{"pages":[{"id":"p","path":"/p","title":"P","view":"views/p.json","layout":"workspace"}]}}"""),
             PluginManifestRule.PageLayoutUnknown);
     }
+
+    /// <summary>A manifest without tags, and one with well-formed tags, passes: tags are optional keywords.</summary>
+    [Fact]
+    public void Validate_NoTagsOrGoodTags_Passes()
+    {
+        PluginManifestValidator.Validate(Manifest(string.Empty)).Should().BeNull();
+        PluginManifestValidator.Validate(Manifest(""","tags":["billing","pay-2","ab"]""")).Should().BeNull();
+    }
+
+    /// <summary>A tag that is too short, too long, upper case, led by a hash, outside the allowed characters or listed twice, or a list over ten tags, breaks the tags rule.</summary>
+    /// <param name="tags">The tags list as written in the manifest JSON.</param>
+    [Theory]
+    [InlineData("""["a"]""")]
+    [InlineData("""["abcdefghijklmnopqrstuvwxyz01234"]""")]
+    [InlineData("""["Billing"]""")]
+    [InlineData("""["#billing"]""")]
+    [InlineData("""["pay ment"]""")]
+    [InlineData("""["billing","billing"]""")]
+    [InlineData("""["t01","t02","t03","t04","t05","t06","t07","t08","t09","t10","t11"]""")]
+    public void Validate_BadTags_BreaksTagsInvalid(string tags)
+    {
+        AssertBreaks(Manifest($$$""","tags":{{{tags}}}"""), PluginManifestRule.TagsInvalid);
+    }
+
+    /// <summary>The tags rule maps to its own error code.</summary>
+    [Fact]
+    public void CodeFor_TagsInvalid_IsPluginManifestTagsInvalid()
+    {
+        PluginPackageErrors.CodeFor(PluginManifestRule.TagsInvalid).Should().Be(HostpanelErrorCodes.PLUGIN_MANIFEST_TAGS_INVALID);
+    }
 }

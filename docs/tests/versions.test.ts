@@ -15,7 +15,6 @@ import {
   latestLinkOf,
   readLatestPages,
   resolveVersion,
-  versionBannerStyle,
 } from '../.vitepress/versions'
 
 /** Pages the latest docs has. */
@@ -27,17 +26,6 @@ const old = resolveVersion({ version: 'v0.3', latestVersion: 'v0.4', latestUrl: 
 const next = resolveVersion({ version: 'next', latestVersion: 'v0.4', latestUrl: 'https://docs.test/docs' }, PAGES)
 /** The latest release build. */
 const latest = resolveVersion({ version: 'v0.4', latestVersion: 'v0.4' }, null)
-
-describe('versionBannerStyle', () => {
-  it('sets the height of the notice for the layout, and a taller one for a narrow screen', () => {
-    expect(versionBannerStyle).toContain(':root{--vp-layout-top-height:40px}')
-    expect(versionBannerStyle).toContain('@media (max-width:720px){:root{--vp-layout-top-height:64px}}')
-  })
-
-  it('holds nothing but the height rules', () => {
-    expect(versionBannerStyle.replace(/--vp-layout-top-height:\d+px/g, '').replace(/[:root{}@media()\- a-z0-9]/g, '')).toBe('')
-  })
-})
 
 describe('kindOf', () => {
   it('treats an empty version as the latest', () => {

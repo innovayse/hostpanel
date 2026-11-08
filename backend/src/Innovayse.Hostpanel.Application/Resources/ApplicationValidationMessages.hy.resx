@@ -326,7 +326,7 @@
     <value>Առաջնահերթությունը պետք է լինի հետևյալներից մեկը՝ Low, Medium, High։</value>
   </data>
 <data name="TicketStatusInvalid" xml:space="preserve">
-    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Open, AwaitingReply, Answered, Closed։</value>
+    <value>Կարգավիճակը պետք է լինի հետևյալներից մեկը՝ Open, AwaitingReply, Closed։</value>
   </data>
 <data name="TicketTagRequired" xml:space="preserve">
     <value>Պիտակը պարտադիր է և պետք է չգերազանցի 64 նիշը։</value>
@@ -1222,6 +1222,18 @@
   <data name="OrderIdInvalid" xml:space="preserve">
     <value>Պատվերի նույնացուցիչը պետք է մեծ լինի զրոյից։</value>
   </data>
+  <data name="OrderItemIdInvalid" xml:space="preserve">
+    <value>Պատվերի տողի նույնացուցիչը պետք է մեծ լինի զրոյից։</value>
+  </data>
+  <data name="OrderLineOutcomeInvalid" xml:space="preserve">
+    <value>Պատվերի տողի արդյունքը պետք է լինի Fulfilled կամ Failed։</value>
+  </data>
+  <data name="OrderLineAttemptInvalid" xml:space="preserve">
+    <value>Պատվերի տողի կատարման փորձի համարը պետք է մեծ լինի զրոյից։</value>
+  </data>
+  <data name="OrderLineRefundOutcomeInvalid" xml:space="preserve">
+    <value>Պատվերի տողի վերադարձի արդյունքը պետք է լինի NothingRefunded կամ PartlyRefunded։</value>
+  </data>
   <data name="PlaceOrderPaymentMethodRequired" xml:space="preserve">
     <value>Ընտրեք վճարման եղանակը։</value>
   </data>
@@ -1401,6 +1413,15 @@
   </data>
   <data name="PluginVersionRequired" xml:space="preserve">
     <value>Հավելագրիչի տարբերակը պարտադիր է։</value>
+  </data>
+  <data name="PluginLicenceKeyRequired" xml:space="preserve">
+    <value>Արտոնագրի բանալին պարտադիր է։</value>
+  </data>
+  <data name="PluginLicenceKeyTooLong" xml:space="preserve">
+    <value>Արտոնագրի բանալին չափազանց երկար է։</value>
+  </data>
+  <data name="PluginLicenceKeyInvalid" xml:space="preserve">
+    <value>Լիցենզիայի բանալին կարող է պարունակել միայն տպվող ASCII նիշեր՝ առանց բացատների։</value>
   </data>
   <data name="PluginVersionInvalid" xml:space="preserve">
     <value>Հավելագրիչի տարբերակը պետք է լինի սեմանտիկ, օրինակ՝ 1.2.3։</value>

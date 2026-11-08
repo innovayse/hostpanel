@@ -1,24 +1,34 @@
 namespace Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 
-/// <summary>The registry's JSON for one plugin in a listing. Every member is checked before it becomes an application type.</summary>
-/// <param name="Id">The plugin id.</param>
+/// <summary>
+/// The registry's JSON for one plugin in a listing, or the summary of a plugin page. Every member is checked before it
+/// becomes an application type. The registry names the id <c>pluginId</c> and the author <c>publisherName</c>; the
+/// shorter <c>id</c> and <c>author</c> are read too, for a registry that uses them.
+/// </summary>
+/// <param name="PluginId">The plugin id.</param>
+/// <param name="Id">The plugin id, in the short form.</param>
 /// <param name="Name">The display name.</param>
 /// <param name="Description">A short description.</param>
-/// <param name="Author">The publisher's name.</param>
+/// <param name="PublisherName">The publisher's name.</param>
+/// <param name="Author">The publisher's name, in the short form.</param>
 /// <param name="IconUrl">The icon address.</param>
 /// <param name="Category">The category name.</param>
-/// <param name="LatestVersion">The newest version.</param>
-/// <param name="SdkVersion">The SDK version the newest version targets.</param>
+/// <param name="LatestVersion">The newest version; <see langword="null"/> when nothing is published.</param>
+/// <param name="SdkVersion">The SDK version the newest version targets, when the registry states it.</param>
 /// <param name="Verified">Whether the registry vouches for the publisher.</param>
 /// <param name="Pricing">The pricing name.</param>
+/// <param name="Distribution">The distribution name (<c>Download</c> or <c>HostOnly</c>); absent from a registry that has no restricted plugins.</param>
 internal sealed record PluginRegistryEntryWire(
+    string? PluginId,
     string? Id,
     string? Name,
     string? Description,
+    string? PublisherName,
     string? Author,
     string? IconUrl,
     string? Category,
     string? LatestVersion,
     string? SdkVersion,
     bool Verified,
-    string? Pricing);
+    string? Pricing,
+    string? Distribution = null);

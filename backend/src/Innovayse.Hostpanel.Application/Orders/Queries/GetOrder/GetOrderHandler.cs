@@ -67,7 +67,11 @@ public sealed class GetOrderHandler
                         item.Hostname,
                         item.FirstPaymentAmount,
                         item.RecurringAmount,
-                        item.Status))
+                        item.Status,
+                        item.FulfilmentState,
+                        item.FulfilmentErrorCode,
+                        item.FulfilmentAttempts,
+                        item.LastFulfilmentAttemptAt))
                     .ToList(),
                 o.CreatedAt))
             .FirstOrDefaultAsync(ct);

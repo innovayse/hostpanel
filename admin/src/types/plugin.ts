@@ -73,6 +73,12 @@ export const PluginErrorCode = {
   DowngradeRefused: 'PLUGIN_DOWNGRADE_REFUSED',
   /** The plugin registry is switched off on this server; the Browse tab is hidden. */
   RegistryDisabled: 'PLUGIN_REGISTRY_DISABLED',
+  /** The registry lists no such plugin (or version); on the details page it is a not-found state, not a failure. */
+  RegistryPluginNotFound: 'PLUGIN_REGISTRY_PLUGIN_NOT_FOUND',
+  /** The registry wants a licence key for this plugin and the server has none; the details page then offers the key card. */
+  RegistryLicenceRequired: 'PLUGIN_REGISTRY_LICENCE_REQUIRED',
+  /** The registry refused the licence key the server holds; the details page then offers the key card. */
+  RegistryLicenceInvalid: 'PLUGIN_REGISTRY_LICENCE_INVALID',
 } as const
 
 /** One of the {@link PluginErrorCode} values. */
@@ -204,6 +210,52 @@ export const PluginRegistryTrust = {
 /** One of the {@link PluginRegistryTrust} values. */
 export type PluginRegistryTrust = (typeof PluginRegistryTrust)[keyof typeof PluginRegistryTrust]
 
+/** Closed set of where a registry plugin's package can be obtained from; the strings are the server's names. */
+export const PluginRegistryDistribution = {
+  /** Offered to everyone. */
+  Download: 'Download',
+  /** Offered only to an installation the registry has verified; asked for with signed requests. */
+  HostOnly: 'HostOnly',
+} as const
+
+/** One of the {@link PluginRegistryDistribution} values. */
+export type PluginRegistryDistribution = (typeof PluginRegistryDistribution)[keyof typeof PluginRegistryDistribution]
+
+/** Closed set of where this server stands with the plugin registry; the strings are the server's names. */
+export const RegistryInstanceState = {
+  /** Nothing was registered yet. */
+  NotRegistered: 'NotRegistered',
+  /** Registered; the registry has not confirmed it yet. */
+  Pending: 'Pending',
+  /** The registry confirmed this server; restricted plugins can be asked for. */
+  Verified: 'Verified',
+  /** The registry revoked this server. */
+  Revoked: 'Revoked',
+  /** The last attempt failed. */
+  Error: 'Error',
+} as const
+
+/** One of the {@link RegistryInstanceState} values. */
+export type RegistryInstanceState = (typeof RegistryInstanceState)[keyof typeof RegistryInstanceState]
+
+/** Where this server stands with the plugin registry (GET /api/admin/plugins/registry-instance). Carries nothing secret. */
+export interface RegistryInstanceDto {
+  /** The registration state. */
+  state: RegistryInstanceState
+  /** The id the registry gave this server; null before the first registration. */
+  instanceId: string | null
+  /** The public address told to the registry; null before the first attempt. */
+  baseUrl: string | null
+  /** Code of the last failure; null when there is none. */
+  errorCode: string | null
+  /** The finished sentence for the code in the admin's language; null when there is none. */
+  message: string | null
+  /** When the registry confirmed this server; null until it did. */
+  verifiedAt: string | null
+  /** When the next automatic attempt is due; null when none waits. */
+  nextAttemptAt: string | null
+}
+
 /** One plugin listed by the registry (GET /api/admin/plugins/registry). */
 export interface PluginRegistryItemDto {
   /** Unique plugin identifier, the `id` field of plugin.json. */
@@ -232,6 +284,10 @@ export interface PluginRegistryItemDto {
   installedVersion: string | null
   /** Whether the registry offers a newer version than the installed one. */
   updateAvailable: boolean
+  /** Whether installing it needs a licence key; absent on older registries, where a paid or private price implies it. */
+  requiresLicence?: boolean
+  /** Where the package can be obtained from; absent on an older server, which reads as `Download`. */
+  distribution?: PluginRegistryDistribution
 }
 
 /** One page of registry listings. */
@@ -258,4 +314,163 @@ export interface PluginRegistryQuery {
 export interface InstallRegistryPluginBody {
   /** Version to install. */
   version: string
+  /** True to allow a version older than the installed one. */
+  allowDowngrade: boolean
+}
+
+/** Closed set of statuses a registry version has; the strings are the API's enum names. */
+export const PluginVersionStatus = {
+  /** The version is current and may be installed. */
+  Published: 'Published',
+  /** The publisher advises against it; a replacement may be named. */
+  Deprecated: 'Deprecated',
+  /** The publisher withdrew it; it must not be installed. */
+  Yanked: 'Yanked',
+} as const
+
+/** One of the {@link PluginVersionStatus} values. */
+export type PluginVersionStatus = (typeof PluginVersionStatus)[keyof typeof PluginVersionStatus]
+
+/** Closed set of the outside links a plugin's details page offers; the strings are the parts of the test ids and locale keys. */
+export const LinkKind = {
+  /** The documentation. */
+  Documentation: 'documentation',
+  /** The support page. */
+  Support: 'support',
+  /** The source repository. */
+  Repository: 'repository',
+  /** Where to buy a licence. */
+  Buy: 'buy',
+} as const
+
+/** One of the {@link LinkKind} values. */
+export type LinkKind = (typeof LinkKind)[keyof typeof LinkKind]
+
+/** How a listed plugin version stands against the installed one. */
+export const VersionRelation = {
+  /** No version is installed, so any version is a fresh install. */
+  Fresh: 'fresh',
+  /** The same version as the installed one. */
+  Current: 'current',
+  /** Newer than the installed version. */
+  Newer: 'newer',
+  /** Older than the installed version; installing it is a downgrade. */
+  Older: 'older',
+} as const
+
+/** One of the {@link VersionRelation} values. */
+export type VersionRelation = (typeof VersionRelation)[keyof typeof VersionRelation]
+
+/** Result of one registry or removal action, kept per call so parallel actions never read each other's outcome. */
+export interface PluginActionOutcome {
+  /** Whether the API accepted the change. */
+  ok: boolean
+  /** Version the action staged for the next restart, null when it staged nothing. */
+  stagedVersion: string | null
+  /** The API's own sentence for a refusal, null on success. */
+  error: string | null
+}
+
+/** One screenshot of a registry version. */
+export interface RegistryScreenshotDto {
+  /** Address of the image. */
+  url: string
+  /** Media type of the image. */
+  contentType: string
+  /** Width in pixels. */
+  width: number
+  /** Height in pixels. */
+  height: number
+}
+
+/** One version of a plugin in its registry details. */
+export interface RegistryPluginVersionDto {
+  /** Version number. */
+  version: string
+  /** When the publisher released it, an ISO 8601 timestamp. */
+  publishedAt: string
+  /** Whether it is published, deprecated or yanked. */
+  status: PluginVersionStatus
+  /** The publisher's reason for a deprecated or yanked version, null otherwise. */
+  statusReason: string | null
+  /** Version the publisher points to instead, null when none. */
+  replacementVersion: string | null
+  /** Release notes, null when none. */
+  changelog: string | null
+  /** Oldest host version it runs on, null when unbounded. */
+  minHostVersion: string | null
+  /** Newest host version it runs on, null when unbounded. */
+  maxHostVersion: string | null
+  /** Whether it runs on this host. */
+  compatible: boolean
+  /** Permissions the version asks for. */
+  permissions: string[]
+  /** Screenshots of the version. */
+  screenshots: RegistryScreenshotDto[]
+}
+
+/** Details of one registry plugin (GET /api/admin/plugins/registry/{id}). */
+export interface RegistryPluginDetailsDto {
+  /** Unique plugin identifier. */
+  id: string
+  /** Human-readable display name. */
+  name: string
+  /** Publisher name. */
+  author: string
+  /** Description. */
+  description: string
+  /** Address of the plugin's icon, null when it has none. */
+  iconUrl: string | null
+  /** Registry category. */
+  category: PluginCategory
+  /** Whether the plugin is free, paid or private. */
+  pricing: PluginPricing
+  /** Whether the registry has verified the publisher. */
+  verified: boolean
+  /** Newest version the registry offers. */
+  latestVersion: string
+  /** Whether this server has the plugin installed. */
+  installed: boolean
+  /** Installed version, null when not installed. */
+  installedVersion: string | null
+  /** Version staged for the next restart, null when none. */
+  stagedVersion: string | null
+  /** Whether the registry offers a newer version than the installed one. */
+  updateAvailable: boolean
+  /** Whether the plugin needs a licence key to install. */
+  requiresLicence: boolean
+  /** Whether this server holds a licence key for it. */
+  hasLicenceKey: boolean
+  /** Where to buy a licence, null when none. */
+  buyUrl: string | null
+  /** Documentation address, null when none. */
+  documentationUrl: string | null
+  /** Support address, null when none. */
+  supportUrl: string | null
+  /** Source repository address, null when none. */
+  repositoryUrl: string | null
+  /** Licence name of the plugin, null when none. */
+  licence: string | null
+  /** Every version the registry lists, newest first. */
+  versions: RegistryPluginVersionDto[]
+}
+
+/** Body of PUT /api/admin/plugins/registry/{id}/licence. */
+export interface SaveLicenceKeyBody {
+  /** The licence key to store. */
+  key: string
+}
+
+/** Load state of the details of one registry plugin, kept by plugin id in the store. */
+export interface RegistryDetailsState {
+  /** The details, null until loaded. */
+  details: RegistryPluginDetailsDto | null
+  /** True while the details are loading. */
+  loading: boolean
+  /** Sentence for the last failed load, null when none. */
+  error: string | null
+  /** Machine-readable code of the last failed load (see {@link PluginErrorCode}), null when it succeeded or gave none. */
+  errorCode: string | null
+  /** True when the registry answered that it has no such plugin (404 or its not-found code); not a retryable failure. */
+  notFound: boolean
 }

@@ -326,7 +326,7 @@
     <value>Приоритет должен быть одним из: Low, Medium, High.</value>
   </data>
 <data name="TicketStatusInvalid" xml:space="preserve">
-    <value>Статус должен быть одним из: Open, AwaitingReply, Answered, Closed.</value>
+    <value>Статус должен быть одним из: Open, AwaitingReply, Closed.</value>
   </data>
 <data name="TicketTagRequired" xml:space="preserve">
     <value>Тег обязателен и не должен превышать 64 символа.</value>
@@ -537,6 +537,18 @@
   </data>
   <data name="OrderIdInvalid" xml:space="preserve">
     <value>Идентификатор заказа должен быть больше нуля.</value>
+  </data>
+  <data name="OrderItemIdInvalid" xml:space="preserve">
+    <value>Идентификатор позиции заказа должен быть больше нуля.</value>
+  </data>
+  <data name="OrderLineOutcomeInvalid" xml:space="preserve">
+    <value>Результат позиции заказа должен быть Fulfilled или Failed.</value>
+  </data>
+  <data name="OrderLineAttemptInvalid" xml:space="preserve">
+    <value>Номер попытки выполнения позиции заказа должен быть больше нуля.</value>
+  </data>
+  <data name="OrderLineRefundOutcomeInvalid" xml:space="preserve">
+    <value>Результат возврата по позиции заказа должен быть NothingRefunded или PartlyRefunded.</value>
   </data>
   <data name="PlaceOrderPaymentMethodRequired" xml:space="preserve">
     <value>Выберите способ оплаты.</value>
@@ -1401,6 +1413,15 @@
   </data>
   <data name="PluginVersionRequired" xml:space="preserve">
     <value>Версия плагина обязательна.</value>
+  </data>
+  <data name="PluginLicenceKeyRequired" xml:space="preserve">
+    <value>Лицензионный ключ обязателен.</value>
+  </data>
+  <data name="PluginLicenceKeyTooLong" xml:space="preserve">
+    <value>Лицензионный ключ слишком длинный.</value>
+  </data>
+  <data name="PluginLicenceKeyInvalid" xml:space="preserve">
+    <value>Лицензионный ключ может содержать только печатные символы ASCII без пробелов.</value>
   </data>
   <data name="PluginVersionInvalid" xml:space="preserve">
     <value>Версия плагина должна быть семантической, например 1.2.3.</value>

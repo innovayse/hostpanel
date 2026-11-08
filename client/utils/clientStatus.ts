@@ -16,7 +16,6 @@ const STATUS_TONES: Record<BadgeStatus, UiTone> = {
   [BadgeStatus.Paid]: UiTone.Success,
   [BadgeStatus.Open]: UiTone.Info,
   [BadgeStatus.AwaitingReply]: UiTone.Info,
-  [BadgeStatus.Answered]: UiTone.Info,
   [BadgeStatus.Pending]: UiTone.Warning,
   [BadgeStatus.PendingRegistration]: UiTone.Warning,
   [BadgeStatus.PendingTransfer]: UiTone.Warning,

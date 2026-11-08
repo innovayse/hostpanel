@@ -101,6 +101,113 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
         service.RecurringAmount.Should().Be(0m);
     }
 
+    /// <summary>
+    /// A service ordered for an order line is stored with the line, and ordering again for the same line answers with that
+    /// service instead of creating a second one, however many times a retry asks and whatever the amounts it passes.
+    /// </summary>
+    [Fact]
+    public async Task OrderService_ForTheSameOrderLineTwice_ReturnsTheFirstServiceAndCreatesNoSecond()
+    {
+        using var scope = factory.Services.CreateScope();
+        var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 2.99m);
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var line = 515_101;
+
+        var first = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 5m, 5m, "Card", OrderItemId: line), CancellationToken.None);
+        var second = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 7m, 7m, "Card", OrderItemId: line), CancellationToken.None);
+
+        first.IsSuccess.Should().BeTrue();
+        second.Value.Should().Be(first.Value);
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var services = await context.ClientServices.AsNoTracking().Where(s => s.ClientId == clientId).ToListAsync(CancellationToken.None);
+        var stored = services.Should().ContainSingle().Which;
+        stored.OrderItemId.Should().Be(line);
+        stored.FirstPaymentAmount.Should().Be(5m);
+    }
+
+    /// <summary>
+    /// Several attempts of one order line ordering its service at the same moment all answer with one service: the unique index
+    /// lets a single row through, and the attempts that lose it read the winner's service instead of failing with a raw
+    /// database error.
+    /// </summary>
+    [Fact]
+    public async Task OrderService_ForTheSameOrderLineConcurrently_AnswersEveryAttemptWithOneService()
+    {
+        int clientId;
+        int productId;
+        using (var seedScope = factory.Services.CreateScope())
+        {
+            (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(seedScope, monthlyPrice: 2.99m);
+        }
+
+        var line = 515_104;
+        var attempts = Enumerable.Range(0, 8).Select(async _ =>
+        {
+            using var attemptScope = factory.Services.CreateScope();
+            var bus = attemptScope.ServiceProvider.GetRequiredService<IMessageBus>();
+            return await bus.InvokeAsync<Result<int>>(
+                new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 5m, 5m, "Card", OrderItemId: line), CancellationToken.None);
+        });
+
+        var results = await Task.WhenAll(attempts);
+
+        results.Should().OnlyContain(r => r.IsSuccess);
+        results.Select(r => r.Value).Distinct().Should().ContainSingle();
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.ClientServices.AsNoTracking().CountAsync(s => s.OrderItemId == line, CancellationToken.None)).Should().Be(1);
+    }
+
+    /// <summary>
+    /// A service already stored for the order line that belongs to another client or another product is not handed to the
+    /// line: the order answers <c>ORDER_LINE_SERVICE_CONFLICT</c> and creates nothing.
+    /// </summary>
+    [Fact]
+    public async Task OrderService_ForALineWhoseServiceBelongsToAnotherClientOrProduct_RefusesAConflict()
+    {
+        using var scope = factory.Services.CreateScope();
+        var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 2.99m);
+        var (otherClientId, otherProductId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 2.99m);
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var line = 515_105;
+        var first = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 5m, 5m, "Card", OrderItemId: line), CancellationToken.None);
+        first.IsSuccess.Should().BeTrue();
+
+        var otherClient = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(otherClientId, productId, BillingCycle.Monthly, 5m, 5m, "Card", OrderItemId: line), CancellationToken.None);
+        var otherProduct = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(clientId, otherProductId, BillingCycle.Monthly, 5m, 5m, "Card", OrderItemId: line), CancellationToken.None);
+        var same = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 5m, 5m, "Card", OrderItemId: line), CancellationToken.None);
+
+        otherClient.ErrorCode.Should().Be(HostpanelErrorCodes.ORDER_LINE_SERVICE_CONFLICT);
+        otherProduct.ErrorCode.Should().Be(HostpanelErrorCodes.ORDER_LINE_SERVICE_CONFLICT);
+        same.Value.Should().Be(first.Value);
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.ClientServices.AsNoTracking().CountAsync(s => s.OrderItemId == line, CancellationToken.None)).Should().Be(1);
+    }
+
+    /// <summary>Two order lines of the same product each get their own service, and an order not bound to a line is never reused.</summary>
+    [Fact]
+    public async Task OrderService_ForDifferentOrderLines_CreatesAServiceForEach()
+    {
+        using var scope = factory.Services.CreateScope();
+        var (clientId, productId) = await ServicesTestSeeds.SeedClientAndProductAsync(scope, monthlyPrice: 2.99m);
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var a = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 1m, 1m, OrderItemId: 515_102), CancellationToken.None);
+        var b = await bus.InvokeAsync<Result<int>>(
+            new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 1m, 1m, OrderItemId: 515_103), CancellationToken.None);
+        var c = await bus.InvokeAsync<Result<int>>(new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 1m, 1m), CancellationToken.None);
+        var d = await bus.InvokeAsync<Result<int>>(new OrderServiceCommand(clientId, productId, BillingCycle.Monthly, 1m, 1m), CancellationToken.None);
+
+        new[] { a.Value, b.Value, c.Value, d.Value }.Should().OnlyHaveUniqueItems();
+    }
+
     /// <summary>A null amount is priced from the product's own price for that cycle.</summary>
     [Fact]
     public async Task OrderService_NullAmountsReadTheProductsPrice()

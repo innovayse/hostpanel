@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="Installed">Whether a plugin with this id is installed on this server.</param>
 /// <param name="InstalledVersion">The installed version; <see langword="null"/> when not installed.</param>
 /// <param name="UpdateAvailable">Whether <paramref name="LatestVersion"/> is newer than the installed one and not already staged.</param>
+/// <param name="Distribution">Where the package can be obtained from; a host only plugin is asked for with a signed request.</param>
 public sealed record RegistryPluginDto(
     string Id,
     string Name,
@@ -33,4 +34,5 @@ public sealed record RegistryPluginDto(
     PluginRegistryPricing Pricing,
     bool Installed = false,
     string? InstalledVersion = null,
-    bool UpdateAvailable = false);
+    bool UpdateAvailable = false,
+    PluginRegistryDistribution Distribution = PluginRegistryDistribution.Download);

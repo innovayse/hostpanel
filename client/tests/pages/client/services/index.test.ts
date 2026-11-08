@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
 import ServicesPage from '~/pages/client/services/index.vue'
 import { makeClientService } from '~/tests/helpers/clientServiceFixture'
+import { ServiceStatus } from '~/types/servicestatus'
 import type { ClientService } from '~/types/clientservice'
 
 /** The mocked client endpoints the store reaches. */
@@ -16,11 +17,11 @@ vi.mock('~/composables/apis/useClientApi', () => ({ useClientApi: () => clientAp
  * Builds a service with the fields the card reads.
  *
  * @param id - Service id.
- * @param username - Control-panel account; null for a service that still needs setup.
+ * @param status - Lifecycle status; Pending for a service that still needs setup.
  * @returns A service.
  */
-const service = (id: number, username: string | null = 'webmstr'): ClientService =>
-  makeClientService({ id, productName: `Plan ${id}`, domain: `site${id}.com`, username })
+const service = (id: number, status: ServiceStatus = ServiceStatus.Active): ClientService =>
+  makeClientService({ id, productName: `Plan ${id}`, domain: `site${id}.com`, status })
 
 describe('service list page', () => {
   beforeEach(() => {
@@ -38,7 +39,7 @@ describe('service list page', () => {
   })
 
   it('announces how many services still need setup', async () => {
-    clientApi.fetchServices.mockResolvedValue([service(1), service(2, null), service(3, null)])
+    clientApi.fetchServices.mockResolvedValue([service(1), service(2, ServiceStatus.Pending), service(3, ServiceStatus.Pending)])
 
     const wrapper = await mountPage(ServicesPage)
 
@@ -47,7 +48,7 @@ describe('service list page', () => {
   })
 
   it('does not count a digital service among those that need setup', async () => {
-    clientApi.fetchServices.mockResolvedValue([service(1), makeClientService({ id: 2, username: null, isDigital: true })])
+    clientApi.fetchServices.mockResolvedValue([service(1), makeClientService({ id: 2, status: ServiceStatus.Pending, isDigital: true })])
 
     const wrapper = await mountPage(ServicesPage)
 

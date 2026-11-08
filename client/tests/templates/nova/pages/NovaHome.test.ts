@@ -9,6 +9,8 @@ import { partnerFixture } from '~/tests/helpers/storefrontFixtures'
 import NovaHome from '~/templates/nova/pages/NovaHome.vue'
 import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import { HomeSection } from '~/constants/homeSection'
+import { PLANS } from '~/tests/templates/aurora/auroraGlobals'
+import { PricingCycle } from '~/types/pricingcycle'
 import { InstallerAppCategory } from '~/constants/installerAppCategory'
 import { SupportChannel } from '~/constants/supportChannel'
 import { GuaranteeKey } from '~/constants/guaranteeKey'
@@ -91,11 +93,11 @@ describe('NovaHome', () => {
 
   it('passes the billing choice up unchanged', async () => {
     stubTemplateGlobals()
-    const wrapper = mountWithKit(NovaHome)
+    const wrapper = mountWithKit(NovaHome, { props: { plans: PLANS } })
 
-    await wrapper.find('[data-testid="nova-billing-yearly"]').trigger('click')
+    await wrapper.find('[data-testid="nova-billing-annual"]').trigger('click')
 
-    expect(wrapper.emitted('update:yearly')).toEqual([[true]])
+    expect(wrapper.emitted('update:cycle')).toEqual([[PricingCycle.Annual]])
   })
 
   it('does not leak the declared domain-search props onto the root as attributes', () => {

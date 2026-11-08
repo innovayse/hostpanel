@@ -96,6 +96,9 @@ services:
       # /.well-known/openid-configuration, trailing slash included). Back-channel logout checks every logout
       # token's issuer against it, so without it a provider sign-out never reaches this API.
       Auth__BearerIssuer: ${SSO_ISSUER:-}
+      # Set false only when SSO_URL is a plain http address on a private network: the key fetch that checks back-channel
+      # logout tokens then accepts it. Keep true for an https provider address.
+      Auth__BearerRequireHttpsMetadata: ${SSO_REQUIRE_HTTPS_METADATA:-true}
       Auth__ClientId: ${SSO_CLIENT_ID:-}
       Auth__ClientSecret: ${CLIENT_HOSTPANEL_SECRET:-}
       BackchannelLogout__Key: ${HOSTPANEL_BACKCHANNEL_LOGOUT_KEY:-}

@@ -94,8 +94,7 @@ public sealed class IntegrationsController : BaseApiController
     /// <param name="slug">URL-safe integration identifier, e.g. panel.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the test outcome, whether or not the probe itself succeeded; 404 with <c>INTEGRATION_NOT_FOUND</c> when the slug is not recognised; 401 without a session; 403 for a caller who is not an admin; 400 when the request is refused;
-    /// 429 when the rate limit is hit.
+    /// 200 with the test outcome, whether or not the probe itself succeeded; 404 with <c>INTEGRATION_NOT_FOUND</c> when the slug is not recognised; 401 without a session; 403 for a caller who is not an admin; 400 with <c>INTEGRATION_NOT_TESTABLE</c> when the integration has no way to be tested; 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{slug}/test")]
     [ProducesResponseType(typeof(IntegrationTestResultDto), StatusCodes.Status200OK)]

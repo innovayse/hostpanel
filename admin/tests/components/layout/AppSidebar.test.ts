@@ -10,7 +10,6 @@ import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useNavigationStore } from '@/stores/navigation'
 import { stubRoutes } from '../../helpers/routes'
 import { mountScreen, mountView } from '../../helpers/mount'
-import { pickOption, selectText } from '../../helpers/select'
 import { resetThemeDocument, stubSchemeQuery } from '../../helpers/theme'
 import { THEME_STORAGE_KEY } from '@/lib/themeBoot'
 import { AdminTheme } from '@/types/admintheme'
@@ -155,7 +154,7 @@ describe('AppSidebar', () => {
     expect(link.attributes('rel')).toContain('noopener')
   })
 
-  it('offers the theme select inside the menu drawer only, and applies the choice', async () => {
+  it('offers the theme switch inside the menu drawer only, and applies the choice', async () => {
     resetThemeDocument()
     stubSchemeQuery(false)
     vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
@@ -164,10 +163,10 @@ describe('AppSidebar', () => {
     expect(desktop.find('[data-testid="sidebar-theme"]').exists()).toBe(false)
 
     const { wrapper: drawer } = await mountScreen(AppSidebar, { embedded: true }, '/dashboard')
-    expect(selectText(drawer, 'sidebar-theme')).toBe('System')
-    await pickOption(drawer, 'sidebar-theme', 'Light')
+    expect(drawer.get('[data-testid="sidebar-theme-system"]').attributes('aria-checked')).toBe('true')
+    await drawer.get('[data-testid="sidebar-theme-light"]').trigger('click')
 
-    expect(selectText(drawer, 'sidebar-theme')).toBe('Light')
+    expect(drawer.get('[data-testid="sidebar-theme-light"]').attributes('aria-checked')).toBe('true')
     expect(document.documentElement.classList.contains('light')).toBe(true)
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
   })

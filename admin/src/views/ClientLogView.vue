@@ -11,6 +11,7 @@ import { useClientLogStore } from '@/stores/clientLog'
 import { formatDateTimeCompact } from '@/lib/format'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiCollapse from '@/components/ui/UiCollapse.vue'
 import UiDatePicker from '@/components/ui/UiDatePicker.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
@@ -137,66 +138,68 @@ onMounted(load)
       </UiButton>
     </UiStack>
 
-    <UiCard v-if="showFilters" padding="md" data-testid="client-log-filters">
-      <UiStack>
-        <UiGrid :columns="2">
-          <UiField :label="t('shared.date')">
-            <UiDatePicker v-model="filterDate" :placeholder="t('clients.clientLog.selectDate')" />
-          </UiField>
-          <UiField :label="t('shared.username')">
-            <template #default="{ id }">
-              <UiInput
-                :id="id"
-                v-model="filterAdmin"
-                type="text"
-                :placeholder="t('shared.any')"
-                data-testid="client-log-filter-admin"
-              />
-            </template>
-          </UiField>
-          <UiField :label="t('shared.description')">
-            <template #default="{ id }">
-              <UiInput
-                :id="id"
-                v-model="filterDescription"
-                type="text"
-                :placeholder="t('shared.description')"
-                data-testid="client-log-filter-description"
-              />
-            </template>
-          </UiField>
-          <UiField :label="t('shared.ipAddress')">
-            <template #default="{ id }">
-              <UiInput
-                :id="id"
-                v-model="filterIp"
-                type="text"
-                :placeholder="t('shared.ipAddress')"
-                data-testid="client-log-filter-ip"
-              />
-            </template>
-          </UiField>
-        </UiGrid>
-        <UiStack direction="row" :justify="UiJustify.End" gap="sm">
-          <UiButton
-            type="button"
-            :variant="UiButtonVariant.Secondary"
-            data-testid="client-log-clear"
-            @click="clearFilters"
-          >
-            {{ t('shared.clear') }}
-          </UiButton>
-          <UiButton
-            type="button"
-            :variant="UiButtonVariant.Primary"
-            data-testid="client-log-apply"
-            @click="applyFilters"
-          >
-            {{ t('shared.apply') }}
-          </UiButton>
+    <UiCollapse :open="showFilters">
+      <UiCard padding="md" data-testid="client-log-filters">
+        <UiStack>
+          <UiGrid :columns="2">
+            <UiField :label="t('shared.date')">
+              <UiDatePicker v-model="filterDate" :placeholder="t('clients.clientLog.selectDate')" />
+            </UiField>
+            <UiField :label="t('shared.username')">
+              <template #default="{ id }">
+                <UiInput
+                  :id="id"
+                  v-model="filterAdmin"
+                  type="text"
+                  :placeholder="t('shared.any')"
+                  data-testid="client-log-filter-admin"
+                />
+              </template>
+            </UiField>
+            <UiField :label="t('shared.description')">
+              <template #default="{ id }">
+                <UiInput
+                  :id="id"
+                  v-model="filterDescription"
+                  type="text"
+                  :placeholder="t('shared.description')"
+                  data-testid="client-log-filter-description"
+                />
+              </template>
+            </UiField>
+            <UiField :label="t('shared.ipAddress')">
+              <template #default="{ id }">
+                <UiInput
+                  :id="id"
+                  v-model="filterIp"
+                  type="text"
+                  :placeholder="t('shared.ipAddress')"
+                  data-testid="client-log-filter-ip"
+                />
+              </template>
+            </UiField>
+          </UiGrid>
+          <UiStack direction="row" :justify="UiJustify.End" gap="sm">
+            <UiButton
+              type="button"
+              :variant="UiButtonVariant.Secondary"
+              data-testid="client-log-clear"
+              @click="clearFilters"
+            >
+              {{ t('shared.clear') }}
+            </UiButton>
+            <UiButton
+              type="button"
+              :variant="UiButtonVariant.Primary"
+              data-testid="client-log-apply"
+              @click="applyFilters"
+            >
+              {{ t('shared.apply') }}
+            </UiButton>
+          </UiStack>
         </UiStack>
-      </UiStack>
-    </UiCard>
+      </UiCard>
+    </UiCollapse>
 
     <UiErrorState
       v-if="store.error"

@@ -5,14 +5,14 @@
  * the path is the whole attack surface. This module decodes it exactly once, refuses everything
  * that could address anything but a plain file below the uploads folder, and hands back the path
  * re-encoded segment by segment, which is the only form a route may append to the upstream
- * address. Both `uploads/[...path].get.ts` and `uploads/branding/[...path].get.ts` use it, so the
+ * address. Both `uploads/[...path].ts` and `uploads/branding/[...path].ts` use it, so the
  * two cannot drift apart.
  *
  * @module server/utils/uploadPath
  */
 
 import type { H3Event } from 'h3'
-import { BAD_ROUTE_PARAM } from '~/server/utils/requireRouteParam'
+import { PortalErrorCode } from '~/constants/portalErrorCode'
 
 /** The highest code point of an ASCII control character that a path may never carry. */
 const LAST_CONTROL_CODE = 0x1f
@@ -25,7 +25,7 @@ const DELETE_CODE = 0x7f
  *
  * @returns The H3 error to throw.
  */
-const badPath = () => createError({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
+const badPath = () => createError({ statusCode: 400, data: { code: PortalErrorCode.BadRouteParam } })
 
 /**
  * Whether a character is an ASCII control character.
@@ -49,7 +49,7 @@ const isControl = (character: string): boolean => {
  *
  * @param event - H3 event of the incoming request.
  * @returns The relative path, safe to append after the uploads folder of the backend.
- * @throws H3Error 400 carrying `data.code = BAD_ROUTE_PARAM` and no `statusMessage`.
+ * @throws H3Error 400 carrying `data.code = PortalErrorCode.BadRouteParam` and no `statusMessage`.
  */
 export const requireUploadPath = (event: H3Event): string => {
   const raw = getRouterParam(event, 'path') ?? ''

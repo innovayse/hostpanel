@@ -43,17 +43,6 @@ export interface DocsVersionEnv {
   latestPagesFile?: string
 }
 
-/**
- * CSS that tells the layout how tall the notice of an older release and of next is. The notice (`VersionBanner.vue`)
- * is fixed at the top and the default theme moves the top bar, the sidebar and the content down by this height. It
- * is written into the head of every page of those builds, so the first paint is right without a script. The text
- * is one line of 20px on a wide screen and wraps to two lines (40px) on a phone, so the height is 40px, and 64px
- * up to 720px wide.
- */
-export const versionBannerStyle =
-  ':root{--vp-layout-top-height:40px}' +
-  '@media (max-width:720px){:root{--vp-layout-top-height:64px}}'
-
 /** Accepts `vMAJOR.MINOR` and nothing else. */
 const RELEASE_LABEL = /^v\d+\.\d+$/
 

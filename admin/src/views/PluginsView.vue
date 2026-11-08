@@ -13,14 +13,19 @@
  * lists the widgets plugins add to pages, each with a product multi select the operator saves after install.
  * A second tab, Browse, lists the plugin registry (search, category, pages) with the registry trust card
  * and installs or updates from it; the tab is not offered when the server answers that the registry is
- * switched off. A plugin with a newer registry version shows an update badge in the installed list.
+ * switched off. A plugin with a newer registry version shows an update badge and an Update button in the
+ * installed list, and a plugin the registry lists has a Details button. Registry cards open the details page,
+ * and install, update and uninstall (the same confirmed removal as the installed list) per card.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
+import { pluginPath } from '@/lib/routes'
 import { usePluginsStore } from '@/stores/plugins'
 import { useSettingsStore } from '@/stores/settings'
 import PluginCard from '@/components/plugins/PluginCard.vue'
 import PluginRegistryBrowser from '@/components/plugins/PluginRegistryBrowser.vue'
+import PluginRegistryInstanceCard from '@/components/plugins/PluginRegistryInstanceCard.vue'
 import PluginRegistryTrustCard from '@/components/plugins/PluginRegistryTrustCard.vue'
 import PluginKeptData from '@/components/plugins/PluginKeptData.vue'
 import PluginSigningCard from '@/components/plugins/PluginSigningCard.vue'
@@ -45,6 +50,9 @@ import type { UiTabItem } from '@/utils/ui/tabs'
 
 /** Translation function. */
 const { t } = useI18n()
+
+/** Router: opens a plugin's details page. */
+const router = useRouter()
 
 /** Plugins store: the installed list, the restart flag and the refusal sentence. */
 const store = usePluginsStore()
@@ -78,12 +86,13 @@ const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Dan
  *
  * @param ok - Whether the API accepted the change.
  * @param successKey - Locale key of the success sentence.
+ * @param failure - The API's sentence for this call's refusal, null when it gave none.
  */
-const showOutcome = (ok: boolean, successKey: string): void => {
+const showOutcome = (ok: boolean, successKey: string, failure: string | null): void => {
   if (ok) {
     feedback.show(t(successKey), false)
   } else {
-    feedback.show(store.actionError ?? t('errors.noAnswer'), true)
+    feedback.show(failure ?? t('errors.noAnswer'), true)
   }
 }
 
@@ -111,10 +120,10 @@ const handleRemove = async (): Promise<void> => {
   }
   feedback.clear()
   removingId.value = id
-  const ok = await store.remove(id)
+  const outcome = await store.remove(id)
   removingId.value = null
   confirmingId.value = null
-  showOutcome(ok, 'plugins.plugins.pluginRemoved')
+  showOutcome(outcome.ok, 'plugins.plugins.pluginRemoved', outcome.error)
 }
 
 /**
@@ -144,14 +153,14 @@ const handlePurge = async (): Promise<void> => {
   const ok = await store.purge(id)
   purgingId.value = null
   purgeConfirmId.value = null
-  showOutcome(ok, 'plugins.plugins.dataPurged')
+  showOutcome(ok, 'plugins.plugins.dataPurged', store.actionError)
 }
 
 /** Installs the older version the operator confirmed and shows the outcome. */
 const handleForceDowngrade = async (): Promise<void> => {
   feedback.clear()
   const ok = await store.forceDowngrade()
-  showOutcome(ok, 'plugins.plugins.pluginInstalled')
+  showOutcome(ok, 'plugins.plugins.pluginInstalled', store.actionError)
 }
 
 /** Restarts the server so installed or removed plugins take effect. */
@@ -173,7 +182,7 @@ const handleUpload = async (file: File): Promise<void> => {
     feedback.show(t('plugins.plugins.pluginStaged', { version: store.stagedVersion }), false)
     return
   }
-  showOutcome(ok, 'plugins.plugins.pluginInstalled')
+  showOutcome(ok, 'plugins.plugins.pluginInstalled', store.actionError)
 }
 
 /**
@@ -222,6 +231,41 @@ const tabs = computed<UiTabItem[]>(() => [
     : [{ value: PluginsTab.Browse, label: t('plugins.plugins.tabBrowse'), testid: 'plugins-tab-browse' }]),
 ])
 
+/** Ids of the plugins with a registry action in flight (the store tracks each plugin on its own); each card shows only its own busy state. */
+const installingIds = computed<string[]>(() =>
+  [...new Set([...store.registryItems.map(item => item.id), ...store.installed.map(plugin => plugin.id)])].filter(id => store.isBusy(id)),
+)
+
+/** Ids of the plugins the server holds a licence key for, as far as their details have been loaded. */
+const licensedIds = computed<string[]>(() =>
+  Object.entries(store.registryDetails)
+    .filter(([, state]) => state.details?.hasLicenceKey === true)
+    .map(([id]) => id),
+)
+
+/** Ids of the plugins the registry lists, on the current page or through an update; these have a details page. */
+const registryListedIds = computed<string[]>(() =>
+  store.registryDisabled
+    ? []
+    : [...new Set([...store.registryItems.map(item => item.id), ...Object.keys(store.updateVersions)])],
+)
+
+/** Staged version per installed plugin id, for the registry cards' staged state. */
+const stagedVersions = computed<Record<string, string>>(() =>
+  Object.fromEntries(
+    store.installed.flatMap(plugin => (plugin.stagedVersion === null ? [] : [[plugin.id, plugin.stagedVersion]])),
+  ),
+)
+
+/**
+ * Opens the details page of a plugin.
+ *
+ * @param id - Plugin id.
+ */
+const openDetails = (id: string): void => {
+  void router.push(pluginPath(id))
+}
+
 /**
  * Installs or updates a plugin from the registry and shows the outcome.
  *
@@ -230,11 +274,11 @@ const tabs = computed<UiTabItem[]>(() => [
  */
 const handleRegistryInstall = async (id: string, version: string): Promise<void> => {
   feedback.clear()
-  const ok = await store.installFromRegistry(id, version)
-  if (!ok) {
-    feedback.show(store.registryInstallError ?? t('errors.noAnswer'), true)
-  } else if (store.stagedVersion !== null) {
-    feedback.show(t('plugins.plugins.pluginStaged', { version: store.stagedVersion }), false)
+  const outcome = await store.installFromRegistry(id, version)
+  if (!outcome.ok) {
+    feedback.show(outcome.error ?? t('errors.noAnswer'), true)
+  } else if (outcome.stagedVersion !== null) {
+    feedback.show(t('plugins.plugins.pluginStaged', { version: outcome.stagedVersion }), false)
   } else {
     feedback.show(t('plugins.plugins.registryInstalled'), false)
   }
@@ -275,7 +319,8 @@ const pluginsWithWidgets = computed(() => store.plugins.filter(plugin => (store.
  * and the registry (its first page decides whether the Browse tab exists; its updates feed the badges).
  */
 onMounted(() => Promise.all([
-  store.fetchRegistry(),
+  // The registration card exists only while the registry is on, which the first page decides.
+  store.fetchRegistry().then(() => (store.registryDisabled ? undefined : store.fetchRegistryInstance())),
   store.fetchRegistryUpdates(),
   // The widgets are listed per installed plugin, so they wait for the plugin list.
   store.fetchAll().then(() => store.fetchSlotWidgets()),
@@ -308,6 +353,12 @@ onMounted(() => Promise.all([
     <!-- Browse -->
     <template v-if="tab === PluginsTab.Browse && !store.registryDisabled">
       <PluginRegistryTrustCard :settings="settingsStore.settings" :save="saveSetting" />
+      <PluginRegistryInstanceCard
+        :instance="store.registryInstance"
+        :busy="store.registryInstanceBusy"
+        :error="store.registryInstanceError"
+        @retry="store.retryRegistryInstance()"
+      />
       <PluginRegistryBrowser
         :items="store.registryItems"
         :total="store.registryTotal"
@@ -317,11 +368,16 @@ onMounted(() => Promise.all([
         :category="store.registryQuery.category"
         :loading="store.registryLoading"
         :error="store.registryError"
-        :installing-id="store.registryInstallingId"
+        :installing-ids="installingIds"
+        :removing-id="removingId"
+        :staged-versions="stagedVersions"
+        :licensed-ids="licensedIds"
         @update:query="handleRegistryQuery"
         @update:category="handleRegistryCategory"
         @update:page="handleRegistryPage"
         @install="handleRegistryInstall"
+        @remove="askRemove"
+        @details="openDetails"
         @retry="store.fetchRegistry()"
       />
     </template>
@@ -400,7 +456,11 @@ onMounted(() => Promise.all([
           :plugin="plugin"
           :removing="removingId === plugin.id"
           :update-version="store.updateVersions[plugin.id] ?? null"
+          :updating="installingIds.includes(plugin.id)"
+          :has-details="registryListedIds.includes(plugin.id)"
           @remove="askRemove"
+          @update="handleRegistryInstall"
+          @details="openDetails"
         />
       </UiStack>
     </template>

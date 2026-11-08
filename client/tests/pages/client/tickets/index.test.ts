@@ -52,7 +52,7 @@ describe('tickets list page', () => {
   })
 
   it('filters to the open tickets and to the closed ones', async () => {
-    clientApi.fetchTickets.mockResolvedValue([ticket(1, TicketStatus.Open), ticket(2, TicketStatus.Closed), ticket(3, TicketStatus.Answered)])
+    clientApi.fetchTickets.mockResolvedValue([ticket(1, TicketStatus.Open), ticket(2, TicketStatus.Closed), ticket(3, TicketStatus.AwaitingReply)])
     const wrapper = await mountPage(TicketsPage)
 
     await wrapper.find('[data-testid="ui-tab-current"]').trigger('click')

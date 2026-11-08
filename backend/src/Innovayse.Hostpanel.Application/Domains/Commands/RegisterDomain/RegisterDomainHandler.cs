@@ -114,7 +114,8 @@ public sealed class RegisterDomainHandler
             priceCurrency: currency,
             registrationPeriod: cmd.Years,
             paymentMethod: cmd.PaymentMethod,
-            registrarModule: registrar.Module);
+            registrarModule: registrar.Module,
+            orderId: cmd.OrderId);
 
         // When the registrar requires polling (it processes the order asynchronously),
         // leave the domain in PendingRegistration: the SyncPendingDomainStatuses job will

@@ -293,7 +293,7 @@ const dismissDelete = (): void => {
 
       <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="clients-dns-feedback" />
 
-      <UiTable density="compact" :empty="isEmpty" :colspan="6" data-testid="clients-dns-table">
+      <UiTable density="compact" :scrollable="false" :empty="isEmpty" :colspan="6" data-testid="clients-dns-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>

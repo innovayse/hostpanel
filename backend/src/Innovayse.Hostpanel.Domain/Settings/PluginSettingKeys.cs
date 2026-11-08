@@ -30,6 +30,20 @@ public static class PluginSettingKeys
     /// </summary>
     public const string RegistryTrust = "plugins.registry_trust";
 
+    /// <summary>
+    /// The prefix of the per-plugin licence key a paid or private registry plugin asks for. The full key is
+    /// <see cref="RegistryLicenceKey"/>. The value is a secret (<c>SecretSettingKeys</c>): stored encrypted, never returned.
+    /// </summary>
+    public const string RegistryLicencePrefix = "plugins.registry_licence:";
+
+    /// <summary>
+    /// The identity this installation uses towards the plugin registry: its Ed25519 key pair, the instance id and the
+    /// challenge the registry gave it, and where the registration stands, kept as one JSON document. The value is a secret
+    /// (<c>SecretSettingKeys</c>): it holds the private key, so the whole document is stored encrypted and never returned.
+    /// The row is outside the general settings catalogue, so neither the settings list nor a settings update reaches it.
+    /// </summary>
+    public const string RegistryInstance = "plugins.registry_instance";
+
     /// <summary>The stored value of a switch that is on.</summary>
     public const string On = "true";
 
@@ -84,6 +98,14 @@ public static class PluginSettingKeys
     /// <param name="key">The setting key.</param>
     /// <returns><see langword="true"/> for a plugin key that weakens a security control.</returns>
     public static bool IsAudited(string key) => Audited.Contains(key);
+
+    /// <summary>The setting key a plugin's registry licence key is stored under.</summary>
+    /// <param name="pluginId">The plugin id.</param>
+    /// <returns>The key, <see cref="RegistryLicencePrefix"/> followed by the id.</returns>
+    public static string RegistryLicenceKey(string pluginId)
+    {
+        return RegistryLicencePrefix + pluginId;
+    }
 
     /// <summary>Whether <paramref name="key"/> is a plugin key that may be saved empty.</summary>
     /// <param name="key">The setting key.</param>

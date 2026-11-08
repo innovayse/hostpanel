@@ -7,7 +7,8 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Queries.CheckPluginUpdat
 /// <summary>
 /// Handles <see cref="CheckPluginUpdatesQuery"/>: asks the registry for the newest version of every uploaded plugin
 /// and keeps the ones that are newer than what is installed. Plugins shipped with the build are not asked about,
-/// because an upload cannot replace them.
+/// because an upload cannot replace them. A plugin with a licence key stored is asked about again with that key, because
+/// the registry may show a paid or private plugin only to its licensee.
 /// </summary>
 public sealed class CheckPluginUpdatesHandler
 {
@@ -17,13 +18,24 @@ public sealed class CheckPluginUpdatesHandler
     /// <summary>Reads the plugins installed on disk.</summary>
     private readonly IPluginPackageStore _store;
 
+    /// <summary>Reads the stored licence keys.</summary>
+    private readonly IHostpanelDbContext _db;
+
+    /// <summary>Decrypts the stored licence keys.</summary>
+    private readonly ISecretSettingCipher _cipher;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="registry">The plugin registry.</param>
     /// <param name="store">Reads the plugins installed on disk.</param>
-    public CheckPluginUpdatesHandler(IPluginRegistryClient registry, IPluginPackageStore store)
+    /// <param name="db">Reads the stored licence keys.</param>
+    /// <param name="cipher">Decrypts the stored licence keys.</param>
+    public CheckPluginUpdatesHandler(
+        IPluginRegistryClient registry, IPluginPackageStore store, IHostpanelDbContext db, ISecretSettingCipher cipher)
     {
         _registry = registry;
         _store = store;
+        _db = db;
+        _cipher = cipher;
     }
 
     /// <summary>Returns the installed plugins that have a newer version in the registry.</summary>
@@ -50,8 +62,26 @@ public sealed class CheckPluginUpdatesHandler
             return Result<IReadOnlyList<RegistryPluginDto>>.FailureCode(latest.ErrorCode!);
         }
 
+        // A plugin with a stored key is read again with it; the licensee's view wins over the anonymous one, and a refusal
+        // of one plugin's key does not fail the whole check (that plugin keeps the answer it had, or none).
+        var entries = latest.Value!.ToDictionary(e => e.Id, StringComparer.Ordinal);
+        foreach (var id in uploaded.Keys)
+        {
+            var licence = await _db.GetRegistryLicenceAsync(_cipher, id, ct);
+            if (licence is null)
+            {
+                continue;
+            }
+
+            var detail = await _registry.GetPluginAsync(id, licence, ct);
+            if (!detail.IsFailure && detail.Value is not null && string.Equals(detail.Value.Summary.Id, id, StringComparison.Ordinal) && !string.IsNullOrEmpty(detail.Value.Summary.LatestVersion))
+            {
+                entries[detail.Value.Summary.Id] = detail.Value.Summary;
+            }
+        }
+
         var updates = new List<RegistryPluginDto>();
-        foreach (var entry in latest.Value!.OrderBy(e => e.Id, StringComparer.Ordinal))
+        foreach (var entry in entries.Values.OrderBy(e => e.Id, StringComparer.Ordinal))
         {
             // The registry may answer for an id that was not asked about; only installed plugins are reported.
             if (!uploaded.TryGetValue(entry.Id, out var package))

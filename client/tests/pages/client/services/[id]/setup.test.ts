@@ -65,4 +65,14 @@ describe('hosting setup page', () => {
 
     expect(navigateTo).toHaveBeenCalledWith('/client/services/4', { replace: true })
   })
+
+  it('keeps the loading panel and never the wizard for a digital service while it is redirected', async () => {
+    clientApi.fetchService.mockResolvedValue(service({ isDigital: true, username: null }))
+    stubClientRuntime({ params: { id: '4' } })
+
+    const wrapper = await mountPage(SetupPage)
+
+    expect(wrapper.find('[data-testid="setup-wizard"]').exists()).toBe(false)
+    expect(wrapper.text()).toContain('client.setup.loading')
+  })
 })

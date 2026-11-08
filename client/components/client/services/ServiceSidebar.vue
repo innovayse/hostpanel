@@ -50,13 +50,13 @@
 import { computed } from 'vue'
 import { KeyRound, LayoutGrid, Link2, Mail, MessageSquare, Monitor, Puzzle, Settings, Terminal, XCircle, Zap } from 'lucide-vue-next'
 import { CLIENT_TICKET_NEW_PATH, clientServiceSetupPath } from '~/constants/clientRoutes'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'
 import type { ClientService } from '~/types/clientservice'
 import type { PluginServiceTab } from '~/types/pluginservicetab'
 import { ServiceTab } from '~/types/servicetab'
 import { canSignInToControlPanel, hasLiveHostingAccount, webmailUrl as buildWebmailUrl } from '~/utils/controlPanel'
-import { serviceSetupPending } from '~/utils/serviceSetup'
+import { serviceAwaitsSetup } from '~/utils/serviceSetup'
 
 /** Translates a key into the active locale. */
 const { t } = useI18n()
@@ -100,7 +100,7 @@ const canTicket = computed(() => store.mayDo(Permission.ViewOpenSupportTickets))
 const canOrder = computed(() => store.mayDo(Permission.PlaceNewOrders))
 
 /** Whether the setup action is offered: a pending hosting service (a digital one has none) the person may order for. */
-const canSetUp = computed(() => serviceSetupPending(props.service) && canOrder.value)
+const canSetUp = computed(() => serviceAwaitsSetup(props.service) && canOrder.value)
 
 /** Whether the person may sign in to the control panel from here. */
 const canSignIn = computed(() => canSignInToControlPanel(props.service, store.mayDo(Permission.AllowSingleSignOn)))

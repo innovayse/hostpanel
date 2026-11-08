@@ -70,10 +70,10 @@ export const transitionSet: Record<UiTransitionKind, UiTransitionClasses> = {
     leaveToClass: 'ui-from opacity-0 motion-reduce:opacity-100',
   },
   [UiTransitionKind.Collapse]: {
-    enterActiveClass: 'transition-[grid-template-rows,opacity] duration-(--duration-base) ease-out motion-reduce:transition-none',
+    enterActiveClass: 'ui-collapsing transition-[grid-template-rows,opacity] duration-(--duration-base) ease-out motion-reduce:transition-none',
     enterFromClass: 'grid-rows-[0fr] opacity-0 motion-reduce:grid-rows-[1fr] motion-reduce:opacity-100',
     enterToClass: 'grid-rows-[1fr] opacity-100',
-    leaveActiveClass: 'transition-[grid-template-rows,opacity] duration-(--duration-base) ease-in motion-reduce:transition-none',
+    leaveActiveClass: 'ui-collapsing transition-[grid-template-rows,opacity] duration-(--duration-base) ease-in motion-reduce:transition-none',
     leaveFromClass: 'grid-rows-[1fr] opacity-100',
     leaveToClass: 'grid-rows-[0fr] opacity-0 motion-reduce:grid-rows-[1fr] motion-reduce:opacity-100',
   },

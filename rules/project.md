@@ -171,6 +171,19 @@ docker/                              compose set (shared·dev·prod·platform), 
   `ProvisioningProviderFactory` builds it per server, so it is an Infrastructure adapter in its
   own assembly. The SDK's `IProvisioningPlugin` is only a marker with no operations, so there is
   no SDK contract it could implement instead.
+- **The cPanel provider lives in the host for now.** `WhmProvisioningProvider`, `WhmApiClient` and their
+  models (`Infrastructure/Integrations/CPanel/Whm/`) implement `IProvisioningProvider` and are built per server
+  by `ProvisioningProviderFactory`, like the CWP7 and Plesk providers, and not shipped as a plugin. The reason
+  is the same: the SDK has no provisioning contract a plugin could implement (`IProvisioningPlugin` is a marker, and the
+  hosting panel contract it replaces is obsolete), the server form, the connection test, the disk usage report and
+  the single sign-on and credentials screens all reach a panel through the host's own port, and a plugin cannot
+  yet supply those. Moving the provider out is wanted once the SDK carries that contract, and it is tracked in
+  #997; until then the provider stays in Infrastructure, takes its numbers from `ProvisioningOptions`
+  (`CPanelWhmPort` and `CPanelUserPort`, both checked to be 1 to 65535 at startup by
+  `ProvisioningOptionsValidator`), and its HTTP client is registered only through
+  `AddCPanelWhmHttpClient`, which the tests resolve too. It does not trust what WHM sends back: a
+  single sign-on address is passed on only as an https address on the server's own host (`WhmInputRules`),
+  a username or domain is checked before WHM is called, and a reply is capped at `WhmApiClient.MaxResponseBytes`.
 - **"Test Connection" runs a live probe where a provider has one.** `IIntegrationConnectionProbe`
   (a port in `Application/Common/Interfaces/`, keyed by integration slug) is implemented per
   integration in `Infrastructure/Integrations/<Provider>/` (today `NameAmConnectionProbe`, which
@@ -455,6 +468,9 @@ docker/                              compose set (shared·dev·prod·platform), 
     - `visibleWhen` (any block, header actions and tab blocks included): the panel hides the block while the condition
       is read, on a failed read, an absent field or no match, and shows it only when it holds; it is read again when the
       block's own `id` is refreshed. Use it to hide a create form once the thing exists.
+    - **Chat result card actions.** An action on a chat result card takes the same condition as `visibleWhen`, spelled as the
+      event spells it (`equalsAny`), and is held to the same bounds; the card is not checked at install, so the panel
+      checks it when it reads the event. See "Reload" under the preview rules below for how it is read.
     - `resetOnSuccess: true` (a form's `submit` only, boolean): after a successful submit every field returns to its
       empty value.
     - `followUp: { "refresh": [ids], "until": <condition> }` (an action block or a form's `submit`): after a successful
@@ -477,6 +493,21 @@ docker/                              compose set (shared·dev·prod·platform), 
       carries its place), and the limit is that a refresh of that id reaches all its blocks and one follow-up watch per id
       is kept (`View.test.ts`, `PluginLoaderTests`, `InstallPluginTests`). **The bounds are the host's, never the plugin's**:
       `PLUGIN_FOLLOW_UP_MAX_ATTEMPTS` 20 and `PLUGIN_FOLLOW_UP_INTERVAL_MS` 3000 (about a minute) in the client.
+    - **Reads are shared inside a view (`readPluginRoute` in `usePluginView`).** A page is one picture of the plugin's
+      data: every source, condition and card action of a view that names the same `GET` request (the filled address and
+      its query, from `pluginRouteRequest`) takes one answer, and a new request is sent only when the picture is out of
+      date, which is when the sum of the view's refresh counts moved, the store's `writes` did (a call that is not a read
+      when it ended, a stream when it opened and again when it ended, however it ended) or the picture is older than
+      `PLUGIN_VIEW_READ_MAX_AGE_MS` (`constants/pluginViewReads.ts`, 10 seconds, the host's and never the plugin's). A
+      stream counts when it opens because a result card is drawn while it is still open: its condition must be read after
+      the turn began, or a chat with no `refresh` list would keep a card's action hidden for good on the picture from
+      before it. A block that mounts later is answered from the picture as well, and a read that
+      failed is not kept, so the next reader tries again. The picture belongs to the view's context and ends with it.
+      The follow-up hands the answer it read to the picture it then refreshes (`shareReadResult`), so a poll costs one
+      request and the blocks show exactly what the condition saw. This replaced one request per reader per refresh,
+      which on a route the plugin answers one call at a time made the last readers' answers arrive after the next
+      refresh began, so `latest` dropped them and a header stayed on the old live version for several polls while a block
+      answered earlier already showed the new one (#986).
     - Refused at install and load (rules from the start of view state): `ViewConditionInvalid` (`PLUGIN_VIEW_CONDITION_INVALID`: a bad condition, a non-`GET`
       condition route, `visibleWhen` outside a block) and `ViewFollowUpInvalid` (`PLUGIN_VIEW_FOLLOW_UP_INVALID`: a bad
       `followUp` shape or place, a `refresh` id no block carries, `resetOnSuccess` not a boolean or outside a `submit`),
@@ -522,7 +553,9 @@ docker/                              compose set (shared·dev·prod·platform), 
       cannot accept drops the action whole, where a malformed `until` only loses its follow-up. `PluginChatCardAction` draws
       each action and evaluates the condition with `usePluginCondition`, which takes the block ids whose refresh reads it
       again: a block names its own id, a card action the chat's `refresh` list. With no `refresh` list the condition is read
-      once, when the card is drawn.
+      once, when the card is drawn. `PluginChatCardActions` is the row under a card: it hides itself while every action is
+      hidden and the card has no details switch, and never removes it, because a hidden action stays mounted to read its
+      condition again and bring the row back.
     - **Presentation members, no schema change.** The view schema allows extra members on a block, and these are the
       panel's: a header's `compact`, `titleSource`, `subtitleSource` and any block kind in its `actions`; an action's
       `labelSource`; a table's `display: "cards"`; a tabs block's `actions`; a preview's `note` (an object of sentences by
@@ -756,6 +789,41 @@ docker/                              compose set (shared·dev·prod·platform), 
     audited as `Refused Plugin From Registry` with a fixed reason; a success as `Installed Plugin From Registry` or `Staged
     Plugin Upgrade From Registry` with the id, version and digest the store reports. An install of an installed plugin is
     an upgrade like any upload: staged, applied at the next restart, downgrades refused.
+- **Registry instance identity for restricted plugins (#1022).** A registry plugin whose `distribution` is `HostOnly` (read from the
+  listing row and the plugin page; missing or unknown reads as `Download`) is asked for with this installation's identity, never with a
+  licence key. The identity is one JSON document, `RegistryInstanceRecord` (`Application/Admin/Plugins/Common`): the Ed25519 key pair, the
+  public address (`ClientBaseUrl`), the instance id and challenge the registry gave, the state (`RegistryInstanceState`: NotRegistered,
+  Pending, Verified, Revoked, Error), the last failure code, the failure count and the next attempt. It lives in the settings row
+  `plugins.registry_instance` (`PluginSettingKeys.RegistryInstance`, in `SecretSettingKeys.StandaloneKeys`), stored through
+  `ISecretSettingCipher` by `RegistryInstanceStore`; the row is outside the settings catalogue, so no list or update reaches it, and no
+  response carries a key (`RegistryInstanceDto` has the id, the address, the state and the sentence only). There is no table and no migration.
+  - **One enrolment.** `RegistryInstanceEnrollment` (scoped, one at a time per process) does register then verify through the ports
+    `IRegistryInstanceApi` (the two unsigned calls, `Infrastructure/Plugins/Registry/RegistryInstanceApi`) and `IRegistryInstanceKeys`
+    (Ed25519 over the BouncyCastle library the package signature check already uses; no new dependency). It is idempotent: a Verified
+    identity answers without a call, a failed attempt waits `RegistryInstanceBackoff` (30 seconds doubling to one hour) unless forced, and a
+    revoked identity is left alone unless forced. The registry refuses one key twice, so when it asks for a fresh start (challenge failed
+    with `INSTANCE_CHALLENGE_VALIDATION_FAILED`, unknown or not pending instance, key already registered) the pair is generated again and the
+    two calls are made once more. Nothing is saved while the registry is off (`PLUGIN_REGISTRY_DISABLED`) or when `ClientBaseUrl` is not a
+    public https address (`RegistryInstanceAddress`, `PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID`). Three callers: the recurring job
+    `EnrollRegistryInstanceCron` (started by `AdminScheduledJobsStartup`, every `ScheduledJobs:EnrollRegistryInstanceIntervalSeconds`, default 60;
+    the back-off kept on the identity decides how often the registry is asked), the handlers that need a restricted plugin
+    (`InstallRegistryPluginHandler`, `GetRegistryPluginHandler`), and `RetryRegistryInstanceCommand` (`POST /api/admin/plugins/registry-instance/retry`,
+    forced, demo restricted). `GET /api/admin/plugins/registry-instance` reports the state (`GetRegistryInstanceQuery`).
+  - **The challenge.** `GET /.well-known/hostpanel-registry/{id}` (`RegistryChallengeController`, anonymous because the registry has no
+    credential for a new installation) answers exactly the stored challenge for that id as `text/plain` with `Cache-Control: no-store`
+    (`BaseApiController.HandlePlainText`), and `PLUGIN_REGISTRY_INSTANCE_NOT_FOUND` (404) for any other id. The edge proxy must route the prefix to
+    the API (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`).
+  - **Signing.** `RegistryCallSigning` is the one definition of the signed text: `HOSTPANEL-REGISTRY-V1`, method, request target as sent
+    (path and query, `?ticket=` included), lower-case hex SHA-256 of the body (the empty string: no signed call has a body), timestamp and
+    nonce, joined with a line feed and no trailing one; `RegistryCallSigningTests` pins it against a vector made by an independent Ed25519
+    implementation. `IRegistryRequestSigner` (`RegistryRequestSigner`) signs only while the identity is Verified and hands out the four
+    header values, never the key. `PluginRegistryClient` signs the version list, the release details, the ticket request and the final fetch of the
+    ticket address, on every hop (a fresh nonce each), and sends no `X-Licence-Key` on them; the ticket address must be on the registry's origin
+    and carry the ticket. `POST plugins/latest` stays unsigned and its empty package address for a restricted plugin is not invalid.
+  - **Refusals.** A 401, 403 or 429 of a signed call is read for the registry's error code in `type` only (bounded read) and becomes
+    `PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED`, `_CLOCK_SKEW`, `_REPLAY_REJECTED`, `_NOT_VERIFIED`, `_REVOKED`,
+    `PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED` or `_INSTANCE_LIMIT_REACHED` (resx en/ru/hy, `StatusMapping`); a revocation or an unverified answer is
+    reported to the identity (`ReportRefusalAsync`) so the admin page tells the truth. No registry text reaches a response or a log line.
 - **Plugin routes: one safe door for every serving plugin (#639, #818).** A serving plugin (`PluginType.App`, or any type
   declaring `endpoints`; `IPluginEndpoints`)
   answers HTTP-shaped calls the host forwards, never a request or a token. Two thin catch-all controllers bind the request
@@ -1634,7 +1702,10 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   network) and checks the upgrade backup (a failed, empty, truncated or table-less dump, a stopped database, mode 600
   and 700, retention that keeps the oldest backup of each version, UTC names) and `--rollback` (confirmation, the
   newest backup of another version, the safety copy, restore before the compose files change, a failed restore, the
-  state printed after a failed stop, download, pull or start). Needs bash and GNU `stat`. With
+  state printed after a failed stop, download, pull or start, a rename blocked by a background worker, the exact
+  messages after a half swap, a repeated rollback that moves forward, the early refusal of a database named
+  postgres, the bounded per version retention, and that the volume name in the installer is the one in the compose
+  file). Needs bash and GNU `stat`. With
   `HOSTPANEL_TEST_POSTGRES=1` it also dumps, restores and restores a corrupt dump against a real postgres container
   (the GitHub `install-backup` job sets it; the GitLab `installer:test:backup` job runs the fake-docker part only).
 - `scripts/check-empty-plugins.sh <test project> ...` — fails when `plugins/` or `plugins-installed/` in a
@@ -1710,7 +1781,7 @@ Its own nginx exists for a standalone install.
   the demo passwords are `:?`-required like any secret. Deployed by the manual `deploy:demo` job; it needs
   `AUTH_MODE=local`. Fake adapters live behind the existing ports, never in a code path guarded by a literal.
 - **Settings bind into a sealed `*Options` class naming its own `SectionName`** —
-  `BillingOptions`, `CPanelOptions`, `NamecheapOptions`, `NameAmOptions`, each
+  `BillingOptions`, `NamecheapOptions`, `NameAmOptions`, each
   in an `Options/` folder inside the feature or integration that owns it.
 
 ## Storefront content — in the database, not in the code
@@ -1757,7 +1828,7 @@ is plain runtime env. `site.url` is read at runtime by nuxt-site-config from `NU
 deployment. Do not add a `process.env` read outside `runtimeConfig` that differs per deployment.
 
 That widget is a host-provided header widget, written elsewhere, but it is **served from this portal's own origin**:
-`server/routes/widget/[file].get.ts` relays `header.js` and `header.v2.js` from `MAIN_APP_URL` (five minutes' cache, the last copy kept when the host is unreachable, only those two names). The script builds every
+`server/routes/widget/[file].ts` relays `header.js` and `header.v2.js` from `MAIN_APP_URL` (five minutes' cache, the last copy kept when the host is unreachable, only those two names). The script builds every
 address for switching account, adding an account, its configuration and its launcher from the origin it was
 served from; loaded from the host's origin it sent the switch through the host's sign-in client and callback, so
 the visitor landed on a page that does not exist here and kept the old account. Served from here, those
@@ -1924,6 +1995,22 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
   (never a cookie either way). The public catalogue reads its filters through `readCatalogQuery`
   (`server/utils/catalogQuery.ts`: integers, a bounded group list, a three-letter currency), so its
   shared-cache key has a fixed shape; the backend does the filtering.
+- **A route that serves a file answers `GET` and `HEAD`, and only those.** A Nitro route file named `*.get.ts`
+  is registered for `GET` alone and h3 does not fall back to it for `HEAD`, so a `HEAD` of `/robots.txt`,
+  `/site.webmanifest`, `/widget/*` or `/uploads/**` never reached the handler and answered a missing file where
+  there was one (link checkers, uptime monitors and proxy revalidation probe with `HEAD`). A file route outside
+  `server/routes/api/` is therefore written without a method suffix and exported through
+  `defineReadOnlyEventHandler` (`server/utils/readOnlyEventHandler.ts`): `GET` and `HEAD` run the one handler (the
+  server drops the body of a `HEAD`), every other method (`OPTIONS` included, which the page used to answer) is a
+  coded 405 (`PortalErrorCode.MethodNotAllowed`) with `Allow: GET, HEAD` before the handler runs. Both file proxies,
+  `/uploads/**` and `/uploads/branding/**`, ask the file server for a `HEAD` as a `HEAD`, so answering one never pulls
+  the file, and both pass the file server's own `Content-Length` on, so a `HEAD` and a `GET` of an upload tell the same size
+  (a length is dropped for an answer the fetch layer decoded, since the body would not match it). A file route's
+  refusals keep the BFF's coded-error convention (`createError` with `data.code`, no sentence): the C# `ErrorResponse`
+  needs a localised `detail`, which the BFF must not author, and every code the BFF writes itself has one entry in
+  `PortalErrorCode`. `tests/server/contract.test.ts` fails on a suffixed or unwrapped file route (`account.get.ts`, a
+  redirect, is the one listed exception), and `tests/server/nitroRouter.test.ts` sends real requests through Nitro's own
+  route scan and an h3 router to prove a `HEAD` reaches each route (and that a `*.get.ts` file would not).
 - **The visitor's address is read from the right.** `server/utils/clientAddress.ts` returns the socket
   address, or, with `runtimeConfig.trustedProxyCount` (`NUXT_TRUSTED_PROXY_COUNT`, `CLIENT_TRUSTED_PROXY_COUNT`
   in the compose files) set to N, the Nth entry from the right of `X-Forwarded-For`, the same reading as

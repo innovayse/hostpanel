@@ -84,6 +84,7 @@ describe('ProjectsView', () => {
       expect(router.currentRoute.value.path).toBe('/storefront/projects/create')
     })
 
+    await wrapper.get('[data-testid="project-row-2"] [data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="project-edit-2"]').trigger('click')
     await vi.waitFor(() => {
       expect(router.currentRoute.value.path).toBe('/storefront/projects/2/edit')
@@ -97,6 +98,7 @@ describe('ProjectsView', () => {
     })
     const { wrapper } = await mountScreen(ProjectsView)
 
+    await wrapper.get('[data-testid="project-row-1"] [data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="project-delete-1"]').trigger('click')
     expect(wrapper.get('[role="dialog"]').text()).toContain('Delete the project "Site"?')
     expect(requestsOf(mock)).not.toContain('DELETE /admin/projects/1')
@@ -118,6 +120,7 @@ describe('ProjectsView', () => {
     })
     const { wrapper } = await mountScreen(ProjectsView)
 
+    await wrapper.get('[data-testid="project-row-1"] [data-testid="row-actions-trigger"]').trigger('click')
     await wrapper.get('[data-testid="project-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
 

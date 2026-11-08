@@ -14,7 +14,7 @@ using Innovayse.Hostpanel.Infrastructure.Email;
 using Innovayse.Hostpanel.Infrastructure.Email.Settings;
 using Innovayse.Hostpanel.Infrastructure.ImageProcessing;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
-using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Settings;
+using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm.Extensions;
 using Innovayse.Hostpanel.Infrastructure.Integrations.GitHub;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration.Settings;
@@ -441,57 +441,19 @@ public static class DependencyInjection
         services.AddScoped<IClientAccess, ClientAccess>();
         services.AddScoped<ICallerClientResolver, CallerClientResolver>();
 
-        // Service provisioning settings, bound and checked at startup: either the whole section
-        // is unset, a deployment that provisions through per-server credentials held in the
-        // database instead, or it is complete. A half-filled section would bind silently and fail on the first call.
-        services.AddOptions<CPanelOptions>()
-            .Bind(configuration.GetSection(CPanelOptions.SectionName))
-            .Validate(
-                o => o.IsUsable,
-                $"{CPanelOptions.SectionName} is partly configured: ApiUrl, Username and ApiToken "
-                    + "must either all be set or the whole section left unset.")
-            .ValidateOnStart();
-        services.AddHttpClient<CPanelClient>((sp, httpClient) =>
-        {
-            var settings = sp.GetRequiredService<IOptions<CPanelOptions>>().Value;
-
-            // Resolving this client at all means something is about to call WHM, so an unset
-            // section is an error here even though it is allowed at startup: said plainly and
-            // naming the setting, rather than as the UriFormatException an empty URL produces.
-            if (!settings.IsConfigured)
-            {
-                throw new InvalidOperationException(
-                    $"cPanel provisioning was requested but the \"{CPanelOptions.SectionName}\" "
-                    + "configuration section is not set.");
-            }
-
-            httpClient.BaseAddress = new Uri(settings.ApiUrl);
-
-            // Kept as the outer backstop only. The resilience pipeline below decides in 45s and
-            // 55s; this catches a pipeline that was configured wrong, nothing else.
-            httpClient.Timeout = HttpBackstopTimeouts.CPanel;
-            httpClient.DefaultRequestHeaders.Add(
-                HeaderNames.Authorization,
-                $"WHM {settings.Username}:{settings.ApiToken}");
-        })
-            // No retry stage, and the HTTP method is no guide: every function this client calls
-            // goes out as one POST whose function name is in the path, and createacct, removeacct
-            // and passwd are writes among the reads (accountsummary). A method-based predicate
-            // would repeat all of them.
-            .AddNoRetryResilience(o => o.CPanel);
         // Use NullCPanelProvisioningProvider as fallback for unmigrated code
         services.AddScoped<IProvisioningProvider, NullCPanelProvisioningProvider>();
 
         // Provisioning behaviour switches. Left unset everywhere but development, where
         // appsettings.Development.json turns UseFakeProvider on so the setup flow can complete
         // without a live CWP7 panel to call.
-        services.AddOptions<ProvisioningOptions>()
-            .Bind(configuration.GetSection(
-                ProvisioningOptions.SectionName))
-            .ValidateOnStart();
+        // The cPanel ports are checked on start, with the rest of the section.
+        services.AddProvisioningOptions(configuration);
 
         // Provisioning provider factory: creates per-server providers (CWP7, cPanel, etc.)
         services.AddScoped<IProvisioningProviderFactory, ProvisioningProviderFactory>();
+        // The username rules staff-facing handlers ask, so a name a panel would refuse fails when it is saved.
+        services.AddSingleton<IPanelAccountRules, PanelAccountRules>();
 
         // SSH key management: per-server providers resolved from Server.Module plus the server's
         // own ServerSshSettings row. Nothing here names a server; every value is per row.
@@ -702,6 +664,10 @@ public static class DependencyInjection
             .AddOutboundAddressGuard()
             .AddNoRetryResilience(o => o.Plesk);
 
+        // WHM API client for cPanel servers, named only, like Plesk. The chain (no request logging, no
+        // redirects, the WHM resilience profile) is one extension, which the tests resolve as well.
+        services.AddCPanelWhmHttpClient();
+
         // Migration
         services.AddScoped<MigrationPullWorker>();
         services.AddScoped<MigrationPullQueue>();
@@ -864,6 +830,20 @@ public static class DependencyInjection
                 AllowAutoRedirect = false,
                 ConnectCallback = PluginRegistryConnector.ConnectAsync,
             });
+
+        // This installation's identity towards the registry: the two unsigned registration calls (same network rules as the
+        // client above), the Ed25519 keys, and the signer that adds the signature headers to a restricted plugin's calls.
+        services.AddHttpClient<IRegistryInstanceApi, RegistryInstanceApi>(client =>
+        {
+            client.Timeout = Timeout.InfiniteTimeSpan;
+        })
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+            {
+                AllowAutoRedirect = false,
+                ConnectCallback = PluginRegistryConnector.ConnectAsync,
+            });
+        services.AddSingleton<IRegistryInstanceKeys, Ed25519RegistryInstanceKeys>();
+        services.AddScoped<IRegistryRequestSigner, RegistryRequestSigner>();
         services.AddScoped<IPluginPackageInspector, PluginPackageInspector>();
         var signatureVerifier = PluginSignatureVerifier.Create(signingOptions, environment);
         services.AddSingleton(signatureVerifier);
@@ -942,6 +922,24 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(HttpResilienceOptions.SectionName))
             .ValidateOnStart();
         services.AddSingleton<IValidateOptions<HttpResilienceOptions>, HttpResilienceOptionsValidator>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Binds the <c>Provisioning</c> section and checks it with <see cref="ProvisioningOptionsValidator"/>
+    /// on start, so a cPanel port outside 1 to 65535 stops the host instead of failing the first
+    /// customer who needs it. The tests build the container through this same call.
+    /// </summary>
+    /// <param name="services">The service collection to add to.</param>
+    /// <param name="configuration">Application configuration holding the section.</param>
+    /// <returns>The same <paramref name="services"/> for chaining.</returns>
+    internal static IServiceCollection AddProvisioningOptions(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddSingleton<IValidateOptions<ProvisioningOptions>, ProvisioningOptionsValidator>();
+        services.AddOptions<ProvisioningOptions>()
+            .Bind(configuration.GetSection(ProvisioningOptions.SectionName))
+            .ValidateOnStart();
 
         return services;
     }

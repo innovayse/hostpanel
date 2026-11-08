@@ -372,6 +372,9 @@
 <data name="PROVISIONING_UPSTREAM_FAILED" xml:space="preserve">
     <value>Не удалось развернуть услугу. Пожалуйста, повторите попытку или обратитесь в поддержку.</value>
   </data>
+<data name="PROVISIONING_OUTCOME_UNKNOWN" xml:space="preserve">
+    <value>Не удалось подтвердить, был ли создан хостинг-аккаунт. Пожалуйста, повторите попытку через несколько минут.</value>
+  </data>
 <data name="SERVICE_FIRST_INVOICE_UNPAID" xml:space="preserve">
     <value>Эту услугу можно будет настроить после полной оплаты первого счёта.</value>
   </data>
@@ -536,6 +539,9 @@
   </data>
 <data name="PLUGIN_MANIFEST_VERSION_INVALID" xml:space="preserve">
     <value>Версия плагина в манифесте недопустима: укажите её в виде major.minor.patch, например 1.2.3, без ведущих нулей.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_TAGS_INVALID" xml:space="preserve">
+    <value>Теги в манифесте недопустимы: укажите не более 10 тегов, каждый от 2 до 30 строчных букв, цифр или дефисов, без символа # в начале и без повторов.</value>
   </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Этот плагин ссылается на документ представления, которого нет в его пакете.</value>
@@ -841,6 +847,27 @@
   <data name="ORDER_NOT_PENDING" xml:space="preserve">
     <value>Это действие требует, чтобы заказ был в ожидании.</value>
   </data>
+  <data name="ORDER_LINE_NOT_RETRYABLE" xml:space="preserve">
+    <value>Эту позицию заказа сейчас нельзя повторить. Повторить можно только позицию принятого заказа, которая завершилась ошибкой, и не пока её уже повторяет другой запрос.</value>
+  </data>
+  <data name="ORDER_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>В этом заказе нет такой позиции.</value>
+  </data>
+  <data name="ORDER_LINE_ALREADY_FULFILLED" xml:space="preserve">
+    <value>Эта позиция заказа уже выполнена.</value>
+  </data>
+  <data name="ORDER_LINE_CHANGED" xml:space="preserve">
+    <value>Эта позиция заказа изменилась во время обработки, поэтому результат не удалось записать. Откройте заказ заново, чтобы увидеть, в каком состоянии позиция.</value>
+  </data>
+  <data name="ORDER_LINE_NOT_REFUNDABLE" xml:space="preserve">
+    <value>Эту позицию заказа сейчас нельзя вернуть. Начать возврат можно только для позиции, которая завершилась ошибкой, завершить его только для позиции, по которой возврат идёт, а закрыть как возвращённую только позицию с частичным возвратом.</value>
+  </data>
+  <data name="ORDER_LINE_INTERRUPTED" xml:space="preserve">
+    <value>Попытка выполнить эту позицию была прервана до завершения. Повторите позицию.</value>
+  </data>
+  <data name="ORDER_LINE_SERVICE_CONFLICT" xml:space="preserve">
+    <value>Услуга, уже сохранённая для этой позиции заказа, принадлежит другому клиенту или относится к другому продукту, поэтому позиция не может её использовать. Проверьте позицию и её услугу.</value>
+  </data>
   <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
     <value>Эта услуга не активна.</value>
   </data>
@@ -1018,6 +1045,15 @@
   <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
     <value>Дату прекращения можно исправить только у прекращённой услуги.</value>
   </data>
+  <data name="SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Не удалось начать сеанс панели управления. Панель вернула адрес, который не принадлежит её серверу.</value>
+  </data>
+  <data name="CPANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>Имя пользователя хостинг-аккаунта недопустимо для cPanel. Используйте строчные латинские буквы и цифры, начните с буквы, не более 16 символов.</value>
+  </data>
+  <data name="CPANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>Домен не является допустимым доменным именем. Проверьте его и повторите попытку.</value>
+  </data>
   <data name="SERVICE_HOSTING_DETAILS_MISSING" xml:space="preserve">
     <value>У услуги ещё нет домена или имени пользователя. Сначала настройте хостинг-аккаунт.</value>
   </data>
@@ -1143,6 +1179,54 @@
   </data>
   <data name="PLUGIN_REGISTRY_NOT_TRUSTED" xml:space="preserve">
     <value>Настройка доверия к реестру плагинов не разрешает установить этот плагин.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_LICENCE_REQUIRED" xml:space="preserve">
+    <value>Для этого плагина из реестра плагинов нужен лицензионный ключ.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_LICENCE_INVALID" xml:space="preserve">
+    <value>Реестр плагинов не принял лицензионный ключ.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_HOST_INCOMPATIBLE" xml:space="preserve">
+    <value>Эта версия плагина не работает с установленной версией Hostpanel.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_VERSION_YANKED" xml:space="preserve">
+    <value>Реестр плагинов отозвал эту версию, поэтому её нельзя установить. Выберите другую версию.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_VERSION_COMPROMISED" xml:space="preserve">
+    <value>Реестр плагинов отклонил эту версию как небезопасную, поэтому её нельзя установить. Выберите другую версию.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID" xml:space="preserve">
+    <value>Реестр плагинов не может использовать публичный адрес этого Hostpanel. Укажите в ClientBaseUrl публичный https-адрес установки и повторите регистрацию.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED" xml:space="preserve">
+    <value>Реестр плагинов ещё не подтвердил этот Hostpanel, поэтому не выдаёт этот закрытый плагин. Регистрация идёт автоматически: проверьте её состояние на странице «Плагины» и повторите, если там ошибка.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REVOKED" xml:space="preserve">
+    <value>Реестр плагинов отозвал эту установку Hostpanel и больше не выдаёт ей закрытые плагины. Свяжитесь с владельцем реестра. Повторите регистрацию, чтобы получить новую идентичность.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED" xml:space="preserve">
+    <value>Реестр плагинов не принял подпись этого Hostpanel. Повторите регистрацию на странице «Плагины». Если ошибка повторяется, сохранённая на сервере идентичность могла быть повреждена.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW" xml:space="preserve">
+    <value>Реестр плагинов отклонил запрос: часы этого сервера слишком сильно расходятся с точным временем. Исправьте время на сервере (включите синхронизацию времени) и повторите.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REPLAY_REJECTED" xml:space="preserve">
+    <value>Реестр плагинов принял запрос за повтор предыдущего и отклонил его. Повторите попытку.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED" xml:space="preserve">
+    <value>Реестр плагинов не принял одноразовый билет на скачивание. Повторите установку, чтобы получить новый билет.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED" xml:space="preserve">
+    <value>Реестр плагинов ограничивает частоту регистрации и запросов закрытых плагинов от этого Hostpanel, и лимит исчерпан. Подождите немного и повторите.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE" xml:space="preserve">
+    <value>Реестр плагинов не смог прочитать подтверждающий текст у этого Hostpanel по пути /.well-known/hostpanel-registry/. Убедитесь, что ваш публичный адрес направляет этот путь в API Hostpanel, и повторите.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_RESTART_NEEDED" xml:space="preserve">
+    <value>Регистрация в реестре плагинов истекла или была забыта, поэтому она начинается заново с новым ключом.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_FOUND" xml:space="preserve">
+    <value>Регистрации с таким идентификатором, ожидающей подтверждения, нет.</value>
   </data>
   <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
     <value>Плагин запрашивает неизвестный этому серверу вид доступа к хостингу клиента, указывает его дважды или объявляет его в манифесте версии 1.</value>

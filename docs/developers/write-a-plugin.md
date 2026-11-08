@@ -221,8 +221,17 @@ The fields above cover manifest version 1. A manifest without `manifestVersion` 
   { name: 'locales', type: 'object', default: '{}', description: 'Texts by language code, then by key, for example the language en with the key menu.chat and the text Chat. A text key has at least two dot-separated parts, such as menu.chat. The en texts must define every key the manifest uses.' },
   { name: 'api', type: 'object', default: '{}', description: 'Routes the host forwards to the plugin: api.client and api.admin, each a list of routes.' },
   { name: 'ui', type: 'object', default: '{}', description: 'What the plugin adds to the panels: ui.client and ui.admin (menus and pages) and ui.slots (widgets in host slots).' },
+  { name: 'tags', type: 'string[]', default: '[]', description: 'Optional keywords a plugin registry uses to let people find the plugin. Needs SDK 3.3.0 or later. At most 10 tags, each 2 to 30 lowercase letters, digits and hyphens with no leading #, and no tag twice. A bad list is refused with PLUGIN_MANIFEST_TAGS_INVALID.' },
   { name: 'externalOrigins', type: 'string[]', default: '[]', description: 'Web origins (scheme, host and port, such as https://example.com) that a link block of a plugin view may point at with an absolute https address, and that a preview block may frame (a pure https origin only).' }
 ]" />
+
+Tags are plain keywords, written in the manifest like this:
+
+```json
+"tags": ["billing", "card-payments", "invoices"]
+```
+
+The host checks the list when the plugin is installed and when it is loaded, with the same rule the `Hostpanel.Sdk.Packaging` package runs on your build: a tag shorter than 2 or longer than 30 characters, one with an upper case letter, a space, a leading `#` or any character outside letters, digits and hyphens, a tag listed twice, or more than 10 tags is refused with `PLUGIN_MANIFEST_TAGS_INVALID`. A manifest with no `tags` is fine.
 
 Wherever a label, title or description may be a text, write either a key of `locales` or plain text. A value shaped like a key (letters, digits, dashes and underscores in two or more parts separated by dots) is looked up in the `en` texts and refused when it is not defined (`PLUGIN_LABEL_KEY_MISSING`).
 
@@ -384,6 +393,14 @@ when the block's own `id` is refreshed. Hide a create form once a site exists:
   }
 }
 ```
+
+**How often a route is read.** A page is one picture of your data. Every block, condition and card that names the same
+`GET` route on a page is answered by one request, and the panel sends a new one only when the page is refreshed (an
+action, a form, a conversation turn or a follow-up asked for it) after any call that is not a read ended, or when a
+conversation turn begins or ends. A block that appears later takes the answer the page already holds, so a page naming
+one state route in ten places costs one request per refresh, not ten. The panel keeps no read past that moment, none
+older than ten seconds and none from another page. A route read by
+several blocks is still read once for each refresh, so keep it cheap to answer.
 
 **`resetOnSuccess`** is `true` or `false`, only inside a form's `submit`. After a successful submit every field goes
 back to empty.
@@ -567,6 +584,7 @@ use a small Markdown subset: paragraphs, `#` headings, `-` and `1.` lists, fence
   when the condition does not hold. It applies to a route, an `href` and a `resend` action alike. Without it an action
   always shows. A condition the panel cannot read drops the action, since a button meant to hide must never show.
   Your route still decides whether a call is current: the condition is a courtesy to the reader, not the check.
+  A row left with no visible action is hidden too.
 - `issue` is your own failure, in the danger tone. The stream goes on; end it when you are done.
 
 A panel ignores an event it cannot read. **Stop** cancels the stream: your enumerator's token fires (`EnumeratorCancellation`)

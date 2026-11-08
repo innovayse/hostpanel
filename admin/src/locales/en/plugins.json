@@ -9,6 +9,7 @@
     "categoryByAuthor": "{category} · by {author}",
     "removing": "Removing…",
     "remove": "Remove",
+    "details": "Details",
     "refused": "Refused",
     "staged": "Version {version} staged, applies after restart",
     "brokenRule": "{id} · broken rule: {rule}",
@@ -88,6 +89,8 @@
     "verified": "Verified",
     "install": "Install",
     "update": "Update to {version}",
+    "details": "Details",
+    "uninstall": "Uninstall",
     "installing": "Installing…",
     "installed": "Installed {version}",
     "emptyTitle": "No plugins found",
@@ -119,6 +122,22 @@
       "AnyRegistryPublisher": "Any registry publisher",
       "OwnKeysOnly": "Packages signed with my own keys only"
     }
+  },
+  "registryInstance": {
+    "title": "Registration with the registry",
+    "description": "Some plugins are given only to an installation the registry knows. This server registers itself and proves it controls its public address, without anyone doing anything. Only a public key and that address are sent.",
+    "stateLabel": "State",
+    "states": {
+      "NotRegistered": "Not registered yet",
+      "Pending": "Waiting for confirmation",
+      "Verified": "Verified",
+      "Revoked": "Revoked",
+      "Error": "Failed"
+    },
+    "verifiedAt": "Confirmed on {date}",
+    "nextAttempt": "Next automatic attempt: {date}",
+    "address": "Public address: {address}",
+    "retry": "Retry registration"
   },
   "rules": {
     "ManifestVersionUnknown": "The manifest version is not one this server reads.",

@@ -23,42 +23,22 @@ const visible = computed<boolean>(() => settings.value?.kind === 'release' || se
 
 <template>
   <div v-if="visible" class="version-banner" role="note">
-    <span>
-      <template v-if="settings?.kind === 'next'">
-        This is the documentation of the next, unreleased version.
-      </template>
-      <template v-else>
-        This is the documentation of {{ settings?.label }}, not the latest release.
-      </template>
-      <a :href="latestHref">Read the latest version</a>
-    </span>
+    <template v-if="settings?.kind === 'next'">
+      This is the documentation of the next, unreleased version.
+    </template>
+    <template v-else>
+      This is the documentation of {{ settings?.label }}, not the latest release.
+    </template>
+    <a :href="latestHref">Read the latest version</a>
   </div>
 </template>
 
 <style scoped>
-/*
- * The banner is fixed above the top bar and its height is the `--vp-layout-top-height` the config writes into
- * the page head for an older release and for next (see `versionBannerStyle` in config.ts). The default theme
- * reads that variable to move the top bar, the sidebar and the content below the banner; without it the
- * fixed top bar lies over the banner. The tint is laid over the page background because the content
- * scrolls under the banner and the tint alone is see-through.
- */
 .version-banner {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: var(--vp-z-index-layout-top);
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: var(--vp-layout-top-height);
-  padding: 0 16px;
+  padding: 8px 16px;
   text-align: center;
   font-size: 14px;
-  line-height: 20px;
-  background: linear-gradient(var(--vp-c-warning-soft), var(--vp-c-warning-soft)), var(--vp-c-bg);
+  background: var(--vp-c-warning-soft);
   color: var(--vp-c-text-1);
 }
 .version-banner a {

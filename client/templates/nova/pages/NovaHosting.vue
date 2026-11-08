@@ -16,9 +16,9 @@
     <NovaTrustBar />
     <NovaPricingSection
       :plans="plans"
-      :yearly="yearly"
+      :cycle="cycle"
       :show-header="false"
-      @update:yearly="value => emit('update:yearly', value)"
+      @update:cycle="value => emit('update:cycle', value)"
     />
     <NovaComparisonTable :plans="plans" :rows="comparisonRows" />
     <NovaSecurity />
@@ -44,22 +44,23 @@ import NovaMigration from '~/templates/nova/sections/NovaMigration.vue'
 import NovaFaq from '~/templates/nova/sections/NovaFaq.vue'
 import NovaFinalCta from '~/templates/nova/sections/FinalCta.vue'
 import type { PlanCard } from '~/types/plancard'
+import { PricingCycle } from '~/types/pricingcycle'
 import type { ComparisonRow } from '~/types/comparisonrow'
 
 /** Props of NovaHosting. */
 withDefaults(defineProps<{
   /** Plans as the catalogue store formats them. */
   plans?: PlanCard[]
-  /** Whether the yearly price is selected. */
-  yearly?: boolean
+  /** The billing cycle the prices are shown for. */
+  cycle?: PricingCycle
   /** Specification lines, already aligned to the plan columns. */
   comparisonRows?: ComparisonRow[]
-}>(), { plans: () => [], yearly: false, comparisonRows: () => [] })
+}>(), { plans: () => [], cycle: PricingCycle.Monthly, comparisonRows: () => [] })
 
 /** Emits the page raises. */
 const emit = defineEmits<{
-  /** The reader chose the monthly or the yearly price. */
-  'update:yearly': [value: boolean]
+  /** The reader chose another billing cycle. */
+  'update:cycle': [value: PricingCycle]
 }>()
 
 /** Translator for the copy. */

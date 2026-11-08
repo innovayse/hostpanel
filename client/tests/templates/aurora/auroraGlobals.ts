@@ -55,6 +55,7 @@ export interface AuroraGlobalsHandle {
  */
 export const stubAuroraGlobals = (options: AuroraGlobalsOptions = {}): AuroraGlobalsHandle => {
   stubTemplateGlobals({ logoAlt: DEFAULT_SITE_NAME, ...options })
+  /** The signed in user the stubbed session reports, or null when signed out. */
   const user = ref<AuroraTestUser | null>(options.user ?? null)
   const signOut = vi.fn(async () => undefined)
   const fetchUser = vi.fn(async () => undefined)
@@ -89,6 +90,7 @@ export const PLANS: PlanCard[] = [
     isFree: false,
     priceMonthly: '$4.99',
     priceAnnual: '$3.99',
+    cyclePrices: { monthly: '$4.99', annual: '$3.99' },
     href: '/configure/1',
   },
   {
@@ -99,6 +101,7 @@ export const PLANS: PlanCard[] = [
     isFree: false,
     priceMonthly: '$9.99',
     priceAnnual: '$7.99',
+    cyclePrices: { monthly: '$9.99', quarterly: '$8.99', annual: '$7.99' },
     href: '/configure/2',
   },
   {
@@ -109,6 +112,7 @@ export const PLANS: PlanCard[] = [
     isFree: true,
     priceMonthly: '$0',
     priceAnnual: '$0',
+    cyclePrices: { monthly: '$0', annual: '$0' },
     href: '/configure/3',
   },
 ]

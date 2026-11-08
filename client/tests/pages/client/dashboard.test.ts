@@ -11,7 +11,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { PLUGIN_COMPONENTS } from '~/tests/helpers/mountPlugin'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { makeClientService } from '~/tests/helpers/clientServiceFixture'
 import { slotIndex, slotPath, slotWidgetPath, throwingView, workingView } from '~/tests/helpers/pluginSlotFixture'

@@ -13,7 +13,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 
 /** The mocked `/api/portal/client/me` call, re-created for every test. */

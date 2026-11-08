@@ -12,10 +12,8 @@
  */
 
 import type { H3Event } from 'h3'
+import { PortalErrorCode } from '~/constants/portalErrorCode'
 import { RouteParamKind } from '~/types/routeparamkind'
-
-/** The `data.code` of the 400 a missing or malformed route parameter answers with. */
-export const BAD_ROUTE_PARAM = 'BAD_ROUTE_PARAM'
 
 /** The largest value of a 32-bit signed integer key. */
 const MAX_INT_KEY = 2147483647
@@ -73,12 +71,12 @@ export const hasShape = (value: string, kind: RouteParamKind): boolean => {
  * @param kind - The shape the route accepts; a positive integer when omitted.
  * @returns The validated parameter, percent-encoded (a no-op for every accepted shape, kept so
  *   no later change to a shape can reintroduce raw interpolation).
- * @throws H3Error 400 carrying `data.code = BAD_ROUTE_PARAM` and no `statusMessage`.
+ * @throws H3Error 400 carrying `data.code = PortalErrorCode.BadRouteParam` and no `statusMessage`.
  */
 export const requireRouteParam = (event: H3Event, name: string, kind: RouteParamKind = RouteParamKind.Int): string => {
   const value = getRouterParam(event, name)
   if (!value || !hasShape(value, kind)) {
-    throw createError({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
+    throw createError({ statusCode: 400, data: { code: PortalErrorCode.BadRouteParam } })
   }
   return encodeURIComponent(value)
 }

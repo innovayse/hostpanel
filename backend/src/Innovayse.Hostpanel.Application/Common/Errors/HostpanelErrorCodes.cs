@@ -633,6 +633,13 @@ public static class HostpanelErrorCodes
     public const string PROVISIONING_UPSTREAM_FAILED = "PROVISIONING_UPSTREAM_FAILED";
 
     /// <summary>
+    /// The provisioning provider could not be reached, or its answer was lost, so nobody knows
+    /// whether the account was created (503). Unlike a refusal this is a retry signal: the service
+    /// stays Pending and a later attempt adopts the account when it exists.
+    /// </summary>
+    public const string PROVISIONING_OUTCOME_UNKNOWN = "PROVISIONING_OUTCOME_UNKNOWN";
+
+    /// <summary>
     /// The service's first invoice is not paid in full, so the client may not set it up yet (402).
     /// Staff provisioning is not bound by it.
     /// </summary>
@@ -687,6 +694,18 @@ public static class HostpanelErrorCodes
 
     /// <summary>The provisioning provider could not issue a control-panel single-sign-on URL (502).</summary>
     public const string SERVICE_CPANEL_SSO_UPSTREAM_FAILED = "SERVICE_CPANEL_SSO_UPSTREAM_FAILED";
+
+    /// <summary>
+    /// The control panel answered a single-sign-on address that is not an https address on its own
+    /// server, so it was not passed on (502).
+    /// </summary>
+    public const string SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED = "SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED";
+
+    /// <summary>The service's username is not one cPanel accepts, so the panel was not called (409).</summary>
+    public const string CPANEL_USERNAME_INVALID = "CPANEL_USERNAME_INVALID";
+
+    /// <summary>The service's domain is not a domain name cPanel accepts, so the panel was not called (409).</summary>
+    public const string CPANEL_DOMAIN_INVALID = "CPANEL_DOMAIN_INVALID";
 
     /// <summary>The provisioning provider could not return the account's credentials (502).</summary>
     public const string SERVICE_CREDENTIALS_UPSTREAM_FAILED = "SERVICE_CREDENTIALS_UPSTREAM_FAILED";
@@ -769,6 +788,9 @@ public static class HostpanelErrorCodes
 
     /// <summary>The manifest version is not a strict semantic version such as 1.2.3 (400).</summary>
     public const string PLUGIN_MANIFEST_VERSION_INVALID = "PLUGIN_MANIFEST_VERSION_INVALID";
+
+    /// <summary>The manifest tags list has too many tags, a tag that is not 2 to 30 lowercase letters, digits and hyphens, or a tag listed twice (400).</summary>
+    public const string PLUGIN_MANIFEST_TAGS_INVALID = "PLUGIN_MANIFEST_TAGS_INVALID";
 
     /// <summary>A page or slot names a view document the plugin package does not hold, or a path that is not a package-relative .json file (400).</summary>
     public const string PLUGIN_VIEW_MISSING = "PLUGIN_VIEW_MISSING";
@@ -1436,6 +1458,49 @@ public static class HostpanelErrorCodes
     public const string ORDER_NOT_PENDING = Domain.Orders.OrdersErrors.OrderNotPending;
 
     /// <summary>
+    /// The order line may not be retried (409): the order was not accepted, the line did not fail, its cost
+    /// was given back, or another retry is running it. <see cref="Domain.Orders.Order.StartLineRetry"/>.
+    /// </summary>
+    public const string ORDER_LINE_NOT_RETRYABLE = Domain.Orders.OrdersErrors.OrderLineNotRetryable;
+
+    /// <summary>
+    /// The id names no line of that order (404): the retry of an order line, and
+    /// <see cref="Domain.Orders.Order.RecordLineFulfilled"/>.
+    /// </summary>
+    public const string ORDER_ITEM_NOT_FOUND = Domain.Orders.OrdersErrors.OrderItemNotFound;
+
+    /// <summary>
+    /// The order line is already fulfilled, so a retry would fulfil it twice (409). The line is left as it is.
+    /// </summary>
+    public const string ORDER_LINE_ALREADY_FULFILLED = "ORDER_LINE_ALREADY_FULFILLED";
+
+    /// <summary>
+    /// The order line changed while an attempt ran (409): another writer saved it first, it is being or was refunded, or a
+    /// newer attempt took the line over after this one's claim ran out, so the outcome of the attempt could not be
+    /// recorded. <see cref="Domain.Orders.Order.RecordLineFailed"/>.
+    /// </summary>
+    public const string ORDER_LINE_CHANGED = Domain.Orders.OrdersErrors.OrderLineChanged;
+
+    /// <summary>
+    /// The order line is not in the state a refund needs (409): only a failed line can start being refunded, only a line
+    /// being refunded can be settled, and only a partly refunded line can be closed as refunded by hand.
+    /// <see cref="Domain.Orders.Order.BeginLineRefund"/>, <see cref="Domain.Orders.Order.CloseLineRefund"/>.
+    /// </summary>
+    public const string ORDER_LINE_NOT_REFUNDABLE = Domain.Orders.OrdersErrors.OrderLineNotRefundable;
+
+    /// <summary>
+    /// The code a line is recorded with when its attempt was cut short before it ended (the request was cancelled
+    /// or the host stopped), so the line can be retried at once instead of waiting for the retry claim to run out.
+    /// </summary>
+    public const string ORDER_LINE_INTERRUPTED = "ORDER_LINE_INTERRUPTED";
+
+    /// <summary>
+    /// The service already stored for the order line belongs to another client or another product (409), so the line cannot
+    /// reuse it: the data of the line and of its service disagree, and a person has to look at them.
+    /// </summary>
+    public const string ORDER_LINE_SERVICE_CONFLICT = "ORDER_LINE_SERVICE_CONFLICT";
+
+    /// <summary>
     /// The SKU is not letters and digits joined by single hyphens, underscores or dots, or is too long
     /// (400): <see cref="Domain.Products.Product.SetSku"/>.
     /// </summary>
@@ -1601,4 +1666,52 @@ public static class HostpanelErrorCodes
 
     /// <summary>The operator's registry trust policy does not admit this plugin or the key it is signed with (403).</summary>
     public const string PLUGIN_REGISTRY_NOT_TRUSTED = "PLUGIN_REGISTRY_NOT_TRUSTED";
+
+    /// <summary>The plugin is paid or private and the registry wants a licence key; none was sent (the registry answered 401).</summary>
+    public const string PLUGIN_REGISTRY_LICENCE_REQUIRED = "PLUGIN_REGISTRY_LICENCE_REQUIRED";
+
+    /// <summary>The registry refused the licence key that was sent (the registry answered 403).</summary>
+    public const string PLUGIN_REGISTRY_LICENCE_INVALID = "PLUGIN_REGISTRY_LICENCE_INVALID";
+
+    /// <summary>The version asked for does not run on this Hostpanel version, outside its minimum and maximum host version (409).</summary>
+    public const string PLUGIN_REGISTRY_HOST_INCOMPATIBLE = "PLUGIN_REGISTRY_HOST_INCOMPATIBLE";
+
+    /// <summary>The registry withdrew the version asked for (yanked), so it is not installed (409).</summary>
+    public const string PLUGIN_REGISTRY_VERSION_YANKED = "PLUGIN_REGISTRY_VERSION_YANKED";
+
+    /// <summary>The registry flagged the version asked for as compromised, so it is not installed (409).</summary>
+    public const string PLUGIN_REGISTRY_VERSION_COMPROMISED = "PLUGIN_REGISTRY_VERSION_COMPROMISED";
+
+    /// <summary>The registry cannot use the public address of this installation, so it cannot be registered. (422).</summary>
+    public const string PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID = "PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID";
+
+    /// <summary>This installation is not verified by the registry yet, so a restricted plugin is not given out. (409).</summary>
+    public const string PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED = "PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED";
+
+    /// <summary>The registry revoked this installation; it no longer receives restricted plugins. (409).</summary>
+    public const string PLUGIN_REGISTRY_INSTANCE_REVOKED = "PLUGIN_REGISTRY_INSTANCE_REVOKED";
+
+    /// <summary>The registry did not accept the signature of a signed call (it answered 401 INSTANCE_SIGNATURE_INVALID_UNAUTHORIZED). (502).</summary>
+    public const string PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED = "PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED";
+
+    /// <summary>The registry refused the timestamp of a signed call: the clock of this server is off (401 INSTANCE_TIMESTAMP_UNAUTHORIZED). (502).</summary>
+    public const string PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW = "PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW";
+
+    /// <summary>The registry took a signed call for a repeat of an earlier one (401 INSTANCE_REPLAY_UNAUTHORIZED). (502).</summary>
+    public const string PLUGIN_REGISTRY_INSTANCE_REPLAY_REJECTED = "PLUGIN_REGISTRY_INSTANCE_REPLAY_REJECTED";
+
+    /// <summary>The registry did not accept the one-time download ticket (403 DOWNLOAD_TICKET_INVALID_FORBIDDEN). (502).</summary>
+    public const string PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED = "PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED";
+
+    /// <summary>The registry limits how often this installation may register or ask for restricted plugins, and the limit is reached (429 INSTANCE_RATE_LIMIT_EXCEEDED). (429).</summary>
+    public const string PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED = "PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED";
+
+    /// <summary>The registry could not read the challenge from the well-known address of this installation (422 INSTANCE_PROOF_VALIDATION_FAILED). (502).</summary>
+    public const string PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE = "PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE";
+
+    /// <summary>The registration ran out of time or the registry forgot it, or it already knows the key: registration starts again with a new key. Handled inside the registration; seen on the admin page only as the last error. (409).</summary>
+    public const string PLUGIN_REGISTRY_INSTANCE_RESTART_NEEDED = "PLUGIN_REGISTRY_INSTANCE_RESTART_NEEDED";
+
+    /// <summary>No registration with that id is waiting for confirmation, the answer of the well-known address. (404).</summary>
+    public const string PLUGIN_REGISTRY_INSTANCE_NOT_FOUND = "PLUGIN_REGISTRY_INSTANCE_NOT_FOUND";
 }

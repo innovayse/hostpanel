@@ -19,8 +19,9 @@ A version switcher in the header lists them. The list is read at run time from `
 
 `versions.json` is a list of entries, each with a `label` (`v0.3`, `next`), a `link` (the path of that version's home page, with a trailing slash) and a `kind` (`latest`, `release` or `next`). The file is read in the browser and is not trusted:
 
-- An entry whose `link` is not a path of the docs site (an address with a host, `//host`, a path with `..`, or a path outside the root of the docs) is ignored, so it never reaches the list.
-- Choosing a version opens the same page there when that page exists, and the home page of that version when it does not. When the list is opened the switcher asks the server for the page in each other version; a missing page, a failed request or no answer within four seconds all mean the home page.
+- An entry whose `link` is not a path of the docs site (an address with a host, `//host`, a path with `..`, a path outside the root of the docs, or a path with a backslash, a null, or an encoded slash, backslash or null such as `%2f`, `%5c` or `%00` in any letter case) is ignored, so it never reaches the list. An entry that repeats the label of an earlier one is ignored too.
+- Choosing a version opens the same page there when that page exists, and the home page of that version when it does not. When the list is opened the switcher asks the server for the page in each other version, with `HEAD`, and asks again with `GET` only when the server answers 405 or 501. Any other answer that is not a success counts as a missing page, so a server that answers `HEAD` with 403 or 400 gets the home page link. So do a failed request and no answer within four seconds.
+- The lookup is bounded. At most 20 versions are asked, 4 requests at a time, and a version past the limit links to its home page. Answers are kept per page for the visit, so opening the list again does not ask again. Closing the list, opening another page or leaving the page stops the requests that are still running.
 
 ## What an older version looks like
 

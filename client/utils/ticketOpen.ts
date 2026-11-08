@@ -14,6 +14,6 @@ import { TicketStatus } from '~/types/ticketstatus'
  * Whether the ticket is anything but closed.
  *
  * @param ticket - The ticket to check.
- * @returns True for Open, AwaitingReply and Answered; false for Closed.
+ * @returns True for Open and AwaitingReply; false for Closed.
  */
 export const isTicketOpen = (ticket: Pick<ClientTicket, 'status'>): boolean => ticket.status !== TicketStatus.Closed

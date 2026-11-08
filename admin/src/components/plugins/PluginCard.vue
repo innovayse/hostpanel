@@ -6,7 +6,7 @@
  * A refused plugin (one that broke a manifest rule) shows a Refused badge instead of a loaded
  * status, with its id, the broken rule and the localised reason; it is never shown as enabled and
  * can only be removed. A newer upload waiting for the restart shows its staged version, a newer version in the
- * registry shows an update badge, and each capability the manifest declares (such as serving pages from a
+ * registry shows an update badge with an Update button, a plugin the registry lists has a Details button, and each capability the manifest declares (such as serving pages from a
  * fulfilment plugin) is shown as a badge.
  */
 import { computed } from 'vue'
@@ -19,20 +19,29 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
 const { t } = useI18n()
 
 /** Props for PluginCard. */
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   /** The installed plugin to show. */
   plugin: PluginListItemDto
   /** True while this plugin's removal is in flight. */
   removing: boolean
   /** The newer version the registry offers for this plugin; null or omitted when it is up to date. */
   updateVersion?: string | null
-}>()
+  /** True while this plugin's update from the registry is in flight. */
+  updating?: boolean
+  /** True when the registry lists this plugin, so it has a details page to open. */
+  hasDetails?: boolean
+}>(), {
+  updateVersion: null,
+  updating: false,
+  hasDetails: false,
+})
 
 /** True when the host skipped this plugin because it broke a manifest rule. */
 const refused = computed<boolean>(() => props.plugin.status === PluginStatus.Refused)
@@ -46,6 +55,10 @@ const reason = computed<string>(() =>
 const emit = defineEmits<{
   /** Emitted with the plugin id when the admin asks to remove it. */
   remove: [id: string]
+  /** Emitted with the plugin id and the newer version when the admin asks to update it from the registry. */
+  update: [id: string, version: string]
+  /** Emitted with the plugin id when the admin opens its details page. */
+  details: [id: string]
 }>()
 </script>
 
@@ -108,11 +121,34 @@ const emit = defineEmits<{
       </UiStack>
 
       <UiButton
+        v-if="hasDetails"
+        type="button"
+        :variant="UiButtonVariant.Secondary"
+        size="sm"
+        :data-testid="`plugin-details-${plugin.id}`"
+        @click="emit('details', plugin.id)"
+      >
+        {{ t('plugins.pluginCard.details') }}
+      </UiButton>
+
+      <UiButton
+        v-if="updateVersion"
+        type="button"
+        :variant="UiButtonVariant.Primary"
+        size="sm"
+        :disabled="updating || removing"
+        :data-testid="`plugin-update-button-${plugin.id}`"
+        @click="emit('update', plugin.id, updateVersion)"
+      >
+        {{ updating ? t('plugins.pluginRegistry.installing') : t('plugins.pluginRegistry.update', { version: updateVersion }) }}
+      </UiButton>
+
+      <UiButton
         v-if="!plugin.isBuiltIn"
         type="button"
-        variant="danger"
+        :variant="UiButtonVariant.Danger"
         size="sm"
-        :disabled="removing"
+        :disabled="removing || updating"
         :data-testid="`plugin-remove-${plugin.id}`"
         @click="emit('remove', plugin.id)"
       >

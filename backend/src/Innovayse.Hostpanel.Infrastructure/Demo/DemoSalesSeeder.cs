@@ -263,6 +263,9 @@ internal sealed class DemoSalesSeeder
             {
                 case OrderStatus.Active:
                     order.Accept(_today);
+
+                    // Demo history: these orders were fulfilled long ago, so their lines are not forgotten ones.
+                    order.MarkLinesFulfilledFromHistory(_today);
                     break;
                 case OrderStatus.Cancelled:
                     order.Cancel();

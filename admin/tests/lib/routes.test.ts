@@ -17,6 +17,7 @@ import {
   invoicePath,
   invoiceViewPath,
   orderPath,
+  pluginPath,
   quoteAddPath,
   quotePath,
   reportPagePath,
@@ -64,6 +65,7 @@ describe('route builders', () => {
     expect(invoiceViewPath(4)).toBe('/billing/invoices/4/view')
     expect(invoiceEditPath(4)).toBe('/billing/invoices/4/edit')
     expect(quotePath(2)).toBe('/billing/quotes/2')
+    expect(pluginPath('example-pay')).toBe('/plugins/example-pay')
     expect(quoteAddPath()).toBe('/billing/quotes/add')
     expect(quoteAddPath(8)).toBe('/billing/quotes/add?clientId=8')
     expect(transactionEditPath(6)).toBe('/billing/transactions/6/edit')

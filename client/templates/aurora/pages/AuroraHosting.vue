@@ -15,9 +15,9 @@
 
       <AuroraPlanCards
         :plans="plans"
-        :yearly="yearly"
+        :cycle="cycle"
         :show-header="false"
-        @update:yearly="value => emit('update:yearly', value)"
+        @update:cycle="value => emit('update:cycle', value)"
       />
 
       <AuroraComparisonTable :plans="plans" :rows="comparisonRows" />
@@ -39,21 +39,22 @@ import AuroraComparisonTable from '~/templates/aurora/sections/AuroraComparisonT
 import AuroraCta from '~/templates/aurora/sections/AuroraCta.vue'
 import { EYEBROW_CLASS, PAGE_TITLE_CLASS } from '~/templates/aurora/typography'
 import type { PlanCard } from '~/types/plancard'
+import { PricingCycle } from '~/types/pricingcycle'
 import type { ComparisonRow } from '~/types/comparisonrow'
 
 withDefaults(defineProps<{
   /** Hosting plans for the cards and the comparison columns. */
   plans?: PlanCard[]
-  /** Whether prices are shown per month billed annually. */
-  yearly?: boolean
+  /** The billing cycle the prices are shown for. */
+  cycle?: PricingCycle
   /** Comparison rows, already aligned to the plan columns. */
   comparisonRows?: ComparisonRow[]
-}>(), { plans: () => [], yearly: false, comparisonRows: () => [] })
+}>(), { plans: () => [], cycle: PricingCycle.Monthly, comparisonRows: () => [] })
 
 /** Events this component raises. */
 const emit = defineEmits<{
-  /** The visitor switched the billing period. */
-  'update:yearly': [value: boolean]
+  /** The visitor switched the billing cycle. */
+  'update:cycle': [value: PricingCycle]
 }>()
 
 /** Translator for the active locale. */

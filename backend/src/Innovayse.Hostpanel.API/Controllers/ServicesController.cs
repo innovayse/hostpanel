@@ -62,7 +62,8 @@ public sealed class ServicesController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the detail; 400 when a value is refused; 404 when the id names no service;
-    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed;
+    /// 409 with <c>CPANEL_USERNAME_INVALID</c> when the username breaks the cPanel account rules for the
+    /// service's state; 401 when the caller is not signed in; 403 when the caller's role is not allowed;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpGet("{id:int}")]
@@ -109,7 +110,8 @@ public sealed class ServicesController : BaseApiController
     /// <returns>
     /// 201 with the new service's id; 400 when a field is refused; 404 with <c>CLIENT_NOT_FOUND</c>,
     /// <c>PRODUCT_NOT_FOUND</c> or <c>SERVER_NOT_FOUND</c>; 409 with <c>SERVICE_HOSTING_ACCOUNT_EXISTS</c>
-    /// when a live service already holds that username on that server; 401 when the caller is not
+    /// when a live service already holds that username on that server, or <c>CPANEL_USERNAME_INVALID</c>
+    /// when the username breaks the cPanel account rules; 401 when the caller is not
     /// signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("existing")]
@@ -142,6 +144,7 @@ public sealed class ServicesController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> UpdateHostingAccountAsync(int id, [FromBody] UpdateServiceHostingAccountCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(command with { ServiceId = id }, ct);

@@ -16,18 +16,27 @@
     "allStages": "Все этапы"
   },
   "orderStatusOptions": {
-    "fraud": "Мошенничество"
+    "fraud": "Мошенничество",
+    "incomplete": "Не завершён"
   },
   "ticketFilterOptions": {
     "allActiveTickets": "Все активные тикеты",
     "flagged": "Помеченные",
-    "answered": "Отвечено",
-    "customerReply": "Ответ клиента"
+    "awaitingReply": "Ожидает ответа"
   },
   "recurringPeriodOptions": {
     "weekly": "Еженедельно",
     "monthly": "Ежемесячно",
     "quarterly": "Ежеквартально",
     "annually": "Ежегодно"
+  },
+  "orderLineFulfilmentOptions": {
+    "pending": "Ещё не запускалась",
+    "inProgress": "Выполняется",
+    "fulfilled": "Выполнена",
+    "failed": "Ошибка",
+    "refunded": "Возвращена",
+    "refunding": "Возврат выполняется",
+    "partiallyRefunded": "Возвращена частично"
   }
 }

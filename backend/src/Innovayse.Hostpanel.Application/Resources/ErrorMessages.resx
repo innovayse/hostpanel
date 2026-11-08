@@ -540,6 +540,9 @@
 <data name="PLUGIN_MANIFEST_VERSION_INVALID" xml:space="preserve">
     <value>The plugin version in the manifest is not valid: write it as major.minor.patch, for example 1.2.3, with no leading zeros.</value>
   </data>
+<data name="PLUGIN_MANIFEST_TAGS_INVALID" xml:space="preserve">
+    <value>The tags in the manifest are not valid: list at most 10 tags, each 2 to 30 lowercase letters, digits or hyphens with no leading #, and no tag twice.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>This plugin names a view document that its package does not contain.</value>
   </data>

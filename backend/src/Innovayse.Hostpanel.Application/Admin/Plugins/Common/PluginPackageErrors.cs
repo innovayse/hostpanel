@@ -82,6 +82,7 @@ public static class PluginPackageErrors
             PluginManifestRule.IconMissing => HostpanelErrorCodes.PLUGIN_ICON_MISSING,
             PluginManifestRule.IconInvalid => HostpanelErrorCodes.PLUGIN_ICON_INVALID,
             PluginManifestRule.EndpointsNotImplemented => HostpanelErrorCodes.PLUGIN_ENDPOINTS_NOT_IMPLEMENTED,
+            PluginManifestRule.TagsInvalid => HostpanelErrorCodes.PLUGIN_MANIFEST_TAGS_INVALID,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a manifest rule."),
         };
     }

@@ -42,6 +42,7 @@ internal static class PluginRuleMap
             PackageManifestRule.LabelKeyMissing => PluginManifestRule.LabelKeyMissing,
             PackageManifestRule.SdkAssemblyOutdated => PluginManifestRule.SdkAssemblyOutdated,
             PackageManifestRule.AssemblyUnreadable => PluginManifestRule.AssemblyUnreadable,
+            PackageManifestRule.TagsInvalid => PluginManifestRule.TagsInvalid,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "The host has no manifest rule for this package rule."),
         };
     }

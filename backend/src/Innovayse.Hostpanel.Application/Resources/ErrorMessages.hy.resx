@@ -540,6 +540,9 @@
 <data name="PLUGIN_MANIFEST_VERSION_INVALID" xml:space="preserve">
     <value>Մանիֆեստում հավելագրիչի տարբերակը անվավեր է․ գրեք այն major.minor.patch ձևով, օրինակ՝ 1.2.3, առանց սկզբի զրոների։</value>
   </data>
+<data name="PLUGIN_MANIFEST_TAGS_INVALID" xml:space="preserve">
+    <value>Մանիֆեստի թեգերը անվավեր են․ նշեք առավելագույնը 10 թեգ, յուրաքանչյուրը՝ 2-ից 30 փոքրատառ, թվանշան կամ գծիկ, առանց սկզբի # նշանի և առանց կրկնության։</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Այս հավելագրիչը հղում է անում ներկայացման փաստաթղթի, որը իր փաթեթում չկա։</value>
   </data>

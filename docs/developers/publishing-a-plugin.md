@@ -23,6 +23,7 @@ Check each item. The host runs the same rules at install and at load, so a miss 
 - Every key-shaped label, title and description (such as `menu.reports`) is defined in the `en` texts under `locales`.
 - Every route, page and slot follows the path, permission and slot rules in [Write a plugin](./write-a-plugin#manifest-v2-members).
 - The optional `icon` is a package-relative `.svg` or `.png` file of at most 256 KiB.
+- The optional `tags` list has at most 10 entries, each 2 to 30 lowercase letters, digits and hyphens with no leading `#`, none repeated (`PLUGIN_MANIFEST_TAGS_INVALID`). It needs SDK 3.3.0 or later.
 - The assembly name is your own prefix, such as `MyCompany.MyGateway`. Only official plugins use `Innovayse.Hostpanel.Plugins.<Name>`.
 - The package carries no copy of `Hostpanel.Sdk.dll` and no assembly the host already provides.
 - The plugin builds against the SDK major the target host supports. A package built against an older SDK major is refused with `PLUGIN_SDK_ASSEMBLY_OUTDATED`.

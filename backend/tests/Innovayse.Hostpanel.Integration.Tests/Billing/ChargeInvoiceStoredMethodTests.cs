@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.Hostpanel.Shared.Models;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
@@ -70,6 +71,25 @@ public sealed class ChargeInvoiceStoredMethodTests(IntegrationTestFactory factor
 
         result.ErrorCode.Should().Be(HostpanelErrorCodes.CARD_CONSENT_REQUIRED);
         scenario.State.ChargeCount.Should().Be(0);
+    }
+
+    /// <summary>A client whose card processing is switched off is refused before any claim is written or the plugin is called.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Charge_ClientWithCardProcessingDisabled_IsRefusedAndWritesNothing()
+    {
+        using var scenario = new StoredCredentialScenario(factory);
+        var clientId = await scenario.SeedClientAsync();
+        await scenario.SeedConsentAsync(clientId);
+        var invoiceId = await scenario.SeedInvoiceAsync(clientId, 10.00m);
+        await ClientSettingsSeeds.SetAsync(factory, clientId, disableCcProcessing: true);
+
+        var result = await scenario.InvokeAsync<Result<InvoiceChargeDto>>(new ChargeInvoiceStoredMethodCommand(invoiceId));
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.CLIENT_CARD_PAYMENT_DISABLED);
+        (await scenario.ClaimsOfAsync(invoiceId)).Should().BeEmpty();
+        scenario.State.ChargeCount.Should().Be(0);
+        (await scenario.InvoiceAsync(invoiceId)).IsPaid.Should().BeFalse();
     }
 
     /// <summary>A module that is switched off has no capability, so nothing is charged and the invoice stays unpaid.</summary>

@@ -40,15 +40,32 @@ const cases: Case[] = [
   { name: 'UiRowActions', mountIt: () => mount(UiRowActions, { props: { actions: [{ label: 'Edit', onSelect: () => undefined }] }, global }), opener: '[data-testid="row-actions-trigger"]' },
 ]
 
+/**
+ * Lists every element under the wrapper's root, the root included.
+ *
+ * @param wrapper - The mounted component.
+ * @returns The elements as they are now.
+ */
+const elementsOf = (wrapper: VueWrapper): Element[] => [wrapper.element as Element, ...wrapper.element.querySelectorAll('*')]
+
 describe('floating panels use the shared dropdown transition', () => {
   it.each(cases)('$name', async ({ mountIt, opener }) => {
     const wrapper = mountIt()
     const transition = wrapper.findComponent(UiTransition)
 
+    // Closed: the transition is already there, so the `v-if` that hides the panel is inside it.
     expect(transition.exists()).toBe(true)
     expect(transition.props('kind')).toBe(UiTransitionKind.Dropdown)
+
+    const before = new Set(elementsOf(wrapper))
     await wrapper.get(opener).trigger('click')
-    expect(wrapper.findComponent(UiTransition).exists()).toBe(true)
+
+    // Open: the one element that appeared at the top of the new markup sits directly in the transition (the
+    // test utils render it as a stub element), so the panel is what the transition animates.
+    const appeared = elementsOf(wrapper).filter((element) => !before.has(element))
+    const panels = appeared.filter((element) => element.parentElement === null || before.has(element.parentElement))
+    expect(panels).toHaveLength(1)
+    expect(panels[0]?.parentElement).toBe(wrapper.findComponent(UiTransition).element)
     wrapper.unmount()
   })
 })

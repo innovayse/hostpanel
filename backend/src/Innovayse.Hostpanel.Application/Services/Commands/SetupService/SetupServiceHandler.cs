@@ -38,7 +38,7 @@ public sealed class SetupServiceHandler
     /// <returns>
     /// Success, or <c>SERVICE_NOT_FOUND</c> when the id names no service, <c>SERVICE_NOT_PENDING</c>
     /// when the service is not Pending, or any refusal of <see cref="ProvisionServiceCommand"/>
-    /// (<c>PRODUCT_PACKAGE_MISSING</c>, <c>NO_ELIGIBLE_SERVER</c>, <c>PROVISIONING_UPSTREAM_FAILED</c>).
+    /// (<c>PRODUCT_PACKAGE_MISSING</c>, <c>NO_ELIGIBLE_SERVER</c>, <c>PROVISIONING_UPSTREAM_FAILED</c>, <c>PROVISIONING_OUTCOME_UNKNOWN</c>).
     /// </returns>
     public async Task<Result> HandleAsync(SetupServiceCommand cmd, CancellationToken ct)
     {

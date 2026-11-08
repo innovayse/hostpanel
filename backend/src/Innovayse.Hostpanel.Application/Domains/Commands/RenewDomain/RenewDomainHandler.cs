@@ -55,6 +55,7 @@ public sealed class RenewDomainHandler
     {
         var domain = await _context.Domains
             .IncludeChildren()
+            .Include(x => x.LineRenewals)
             .FirstOrDefaultAsync(x => x.Id == cmd.DomainId!.Value, ct);
         if (domain is null)
         {
@@ -88,7 +89,7 @@ public sealed class RenewDomainHandler
 
         var newExpiresAt = result.ExpiresAt ?? domain.ExpiresAt.AddYears(cmd.Years);
 
-        domain.Renew(newExpiresAt, _clock.UtcNow);
+        domain.Renew(newExpiresAt, _clock.UtcNow, cmd.OrderItemId);
         await _context.SaveChangesAsync(ct);
         return Result.Success();
     }

@@ -42,7 +42,6 @@ Ticket statuses:
 |--------|--------------|
 | Open | Waiting for a response from support |
 | Awaiting reply | Support has replied and is waiting for your response |
-| Answered | Support has provided an answer |
 | Closed | The ticket is closed |
 
 To add a reply, open the ticket, type in the **Add Reply** box and click **Send Reply**.

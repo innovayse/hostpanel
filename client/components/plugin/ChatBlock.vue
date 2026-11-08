@@ -79,21 +79,14 @@
               <UiStack gap="xs">
                 <UiText v-if="result.title" as="p" weight="semibold" data-testid="plugin-chat-result-title">{{ result.title }}</UiText>
                 <UiText v-if="result.text" as="p" size="sm" tone="muted" data-testid="plugin-chat-result-text">{{ result.text }}</UiText>
-                <UiStack v-if="result.actions.length || result.details.length" direction="row" gap="sm" align="center" wrap>
-                  <template v-for="action in result.actions" :key="action.key">
-                    <PluginActionBlock v-if="action.block" :block="action.block" />
-                    <UiButton v-else-if="action.resend" size="sm" :disabled="streaming" data-testid="plugin-chat-result-resend" @click="resend">{{ action.label }}</UiButton>
-                    <UiLink v-else-if="action.link?.external" :href="action.link.href" external testid="plugin-chat-result-link">{{ action.label }}</UiLink>
-                    <UiLink v-else-if="action.link" :to="action.link.href" testid="plugin-chat-result-link">{{ action.label }}</UiLink>
-                  </template>
-                  <UiButton
-                    v-if="result.details.length"
-                    variant="outline"
-                    size="sm"
-                    data-testid="plugin-chat-result-details-toggle"
-                    @click="toggleDetails(result.key)"
-                  >{{ $t('plugins.chatResultDetails') }}</UiButton>
-                </UiStack>
+                <PluginChatCardActions
+                  v-if="result.actions.length || result.details.length"
+                  :result="result"
+                  :refresh="block.refresh ?? []"
+                  :disabled="streaming"
+                  @resend="resend"
+                  @toggle-details="toggleDetails(result.key)"
+                />
                 <UiStack v-if="openDetails.has(result.key)" as="ul" gap="xs" data-testid="plugin-chat-result-details">
                   <UiText v-for="line in result.details" :key="line" as="li" size="xs" tone="muted">{{ line }}</UiText>
                 </UiStack>
@@ -163,7 +156,10 @@
  * The log scrolls on its own and follows the reply, unless the reader scrolled up.
  *
  * A card's action reads again the blocks named in `refresh`, as a finished reply does. A card may also keep `details`
- * lines behind a switch, and an action with `resend: true` sends the conversation's last message again.
+ * lines behind a switch, and an action with `resend: true` sends the conversation's last message again. An action with
+ * `visibleWhen` shows only while its condition holds, read again whenever a block named in `refresh` is refreshed
+ * (PluginChatCardAction), so a card stops offering what no longer applies; the row of actions hides itself when every
+ * action is hidden (PluginChatCardActions).
  *
  * An empty chat shows the block's `intro` and its `suggestions`, which only fill the message field; `assistant.label`
  * signs each reply, `maxLength` caps the field, and once a reply has ended the blocks named in `refresh` read again,

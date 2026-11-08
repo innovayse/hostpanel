@@ -67,6 +67,15 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     public int? FirstInvoiceId { get; private set; }
 
     /// <summary>
+    /// Gets the id of the order line this service was created for, or <see langword="null"/> when it was not
+    /// ordered through an order (created by an administrator, ordered before lines were linked, imported).
+    /// It is what lets a retry of the line find the service its first attempt created instead of creating a
+    /// second one that would be provisioned and billed twice; at most one service exists per line. Index only,
+    /// no FK: the order line belongs to Orders.
+    /// </summary>
+    public int? OrderItemId { get; private set; }
+
+    /// <summary>
     /// Gets whether the client must pay the first invoice before the service may be set up: true
     /// when the first payment is not free and the service names the invoice it is charged on.
     /// A service without <see cref="FirstInvoiceId"/> (created by an administrator, or ordered
@@ -130,6 +139,14 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// exact (the count and the insert are otherwise two statements another add could fall between).
     /// </summary>
     public long SshKeyRevision { get; private set; }
+
+    /// <summary>
+    /// Gets whether the service holds a hosting account on its panel: it has a provisioning reference
+    /// and is not terminated. A terminated service keeps the reference for the record, but its account
+    /// is gone and the same reference may later belong to another service, so the reference alone does
+    /// not say an account exists. A suspended service still holds its account.
+    /// </summary>
+    public bool HoldsHostingAccount => ProvisioningRef is not null && Status is not ServiceStatus.Terminated;
 
     /// <summary>Gets whether <see cref="Suspend"/> accepts the service: only an Active one can be suspended.</summary>
     public bool CanSuspend => Status is ServiceStatus.Active;
@@ -201,14 +218,17 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     /// <param name="paymentMethod">Payment method the order was placed with, or <see langword="null"/>.</param>
     /// <param name="firstInvoiceId">The invoice the first payment is charged on, or <see langword="null"/> when there is none yet.</param>
     /// <param name="now">The current moment (UTC), read by the caller; stamped on the domain event.</param>
+    /// <param name="orderItemId">The order line the service is created for, or <see langword="null"/> when it is not ordered through a line.</param>
     /// <returns>A new pending <see cref="ClientService"/>.</returns>
     public static ClientService CreateOrdered(
         int clientId, int productId, BillingCycle billingCycle, string? domain,
-        decimal firstPaymentAmount, decimal recurringAmount, string? paymentMethod, int? firstInvoiceId, DateTimeOffset now)
+        decimal firstPaymentAmount, decimal recurringAmount, string? paymentMethod, int? firstInvoiceId, DateTimeOffset now,
+        int? orderItemId = null)
     {
         var svc = Create(clientId, productId, billingCycle, now);
         svc.Domain = domain;
         svc.FirstInvoiceId = firstInvoiceId;
+        svc.OrderItemId = orderItemId;
         svc.FirstPaymentAmount = firstPaymentAmount;
         svc.RecurringAmount = recurringAmount;
         svc.PaymentMethod = paymentMethod;

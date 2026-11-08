@@ -1,0 +1,1012 @@
+#!/usr/bin/env bash
+# Tests the upgrade backup and the --rollback of install.sh without Docker or a network.
+#
+# install.sh runs as it would for an operator, but with a fake `docker` and a fake `curl` first on PATH.
+# The fake docker answers the few compose calls the script makes, records every call, and takes its
+# behaviour (a dump that fails, is empty or cut short, a stopped database, a restore that fails and so on)
+# from FAKE_* environment variables. Nothing here touches a real stack: every path lives in one
+# temporary directory that is removed at the end.
+#
+# With HOSTPANEL_TEST_POSTGRES=1 the script also runs the dump and the restore of install.sh against a
+# real postgres container (needs a working docker; HOSTPANEL_TEST_POSTGRES_IMAGE picks the image).
+#
+# Usage: bash scripts/test-install-backup.sh [path to install.sh]
+set -u
+
+INSTALL_SH="${1:-$(cd "$(dirname "$0")/.." && pwd)/install.sh}"
+WORK="$(mktemp -d)"
+PGDIR=''
+PG_STARTED=0
+PG_PROJECT="hptest$$"
+
+# Removes everything the run created: the postgres test stack (volumes included), then the work folder.
+cleanup() {
+  if [ "$PG_STARTED" = "1" ]; then
+    ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml down -v >/dev/null 2>&1 )
+  fi
+  rm -rf "$WORK"
+}
+trap cleanup EXIT
+
+FAILURES=0
+CHECKS=0
+
+# Records one check. $1 description, remaining arguments: the command that must succeed.
+check() {
+  local what="$1"
+  shift
+  CHECKS=$((CHECKS + 1))
+  if "$@"; then
+    printf 'ok    %s\n' "$what"
+  else
+    printf 'FAIL  %s\n' "$what"
+    FAILURES=$((FAILURES + 1))
+  fi
+}
+
+# Writes the fake docker and curl into $WORK/bin.
+make_fakes() {
+  mkdir -p "$WORK/bin"
+  cat > "$WORK/bin/docker" <<'FAKE'
+#!/usr/bin/env bash
+# Fake docker: logs the compose subcommand and answers like a healthy stack unless told otherwise.
+if [ "$1" = "info" ]; then exit 0; fi
+if [ "$1" = "volume" ] && [ "$2" = "inspect" ]; then
+  [ "${FAKE_VOLUME:-1}" = "1" ]
+  exit $?
+fi
+if [ "$1" = "compose" ] && [ "$2" = "version" ]; then exit 0; fi
+if [ "$1" = "compose" ] && [ "$2" = "-f" ]; then
+  shift 3
+  sub="$1"
+  shift
+  case "$sub" in
+    ps)
+      printf 'ps %s\n' "$*" >> "$FAKE_LOG"
+      if [ "${FAKE_DB_RUNNING:-1}" = "1" ] || [ -f "$FAKE_LOG.dbup" ]; then printf 'abc123\n'; fi
+      exit 0 ;;
+    config)
+      printf 'config %s\n' "$*" >> "$FAKE_LOG"
+      if [ "${FAKE_CONFIG:-ok}" = "fail" ]; then exit 1; fi
+      for s in ${FAKE_SERVICES:-hostpanel-db hostpanel-rabbitmq hostpanel-redis hostpanel-api hostpanel-client hostpanel-admin hostpanel-caddy}; do
+        printf '%s\n' "$s"
+      done
+      exit 0 ;;
+    exec)
+      script="$*"
+      case "$script" in
+        *pg_dump*)
+          printf 'pg_dump\n' >> "$FAKE_LOG"
+          case "${FAKE_DUMP:-ok}" in
+            ok) printf -- '-- fake dump of %s\nCREATE TABLE t (id int);\n--\n-- PostgreSQL database dump complete\n--\n\\unrestrict abc\n' "${FAKE_DB_STATE:-state}" ; exit 0 ;;
+            notables) printf -- '-- fake empty database\n--\n-- PostgreSQL database dump complete\n--\n' ; exit 0 ;;
+            truncated) printf -- '-- fake dump of %s\nCREATE TABLE t (id int);\nCOPY t (id) FROM stdin;\n1\n' "${FAKE_DB_STATE:-state}" ; exit 0 ;;
+            empty) exit 0 ;;
+            fail) printf 'pg_dump: error: connection failed\n' >&2; exit 1 ;;
+          esac ;;
+        *pg_isready*)
+          printf 'ready\n' >> "$FAKE_LOG"
+          [ "${FAKE_DB_READY:-1}" = "1" ]
+          exit $? ;;
+        *pg_database*)
+          printf 'state\n' >> "$FAKE_LOG"
+          # After a restore ran, FAKE_STATE_AFTER (when set) is the state the databases are in.
+          st="${FAKE_STATE:-live}"
+          if [ -f "$FAKE_LOG.restoreran" ] && [ -n "${FAKE_STATE_AFTER:-}" ]; then st="$FAKE_STATE_AFTER"; fi
+          case "$st" in
+            live) printf 'live\n' ;;
+            halfswap) printf 'replaced\nrestore\n' ;;
+            swapped) printf 'live\nreplaced\n' ;;
+            notswapped) printf 'live\nrestore\n' ;;
+            none) ;;
+            fail) exit 2 ;;
+          esac
+          exit 0 ;;
+        *createdb*)
+          printf 'restore\n' >> "$FAKE_LOG"
+          : > "$FAKE_LOG.restoreran"
+          cat > "$FAKE_RESTORED"
+          case "${FAKE_RESTORE:-ok}" in
+            fail) exit 1 ;;
+            swap) exit 3 ;;
+            busy) exit 4 ;;
+            other) printf 'renaming database hostpanel to hostpanel_replaced failed: ERROR:  42501: must be owner of database hostpanel
+' >&2; exit 5 ;;
+            killed) exit 137 ;;
+          esac
+          exit 0 ;;
+        *wget*) printf 'health\n' >> "$FAKE_LOG"; exit 0 ;;
+      esac
+      exit 1 ;;
+    stop|pull|up|run|logs)
+      printf '%s %s\n' "$sub" "$*" >> "$FAKE_LOG"
+      case "$sub" in
+        up)
+          case "$*" in
+            *--no-deps*) : > "$FAKE_LOG.dbup" ;;
+            *) if [ "${FAKE_UP:-ok}" = "fail" ]; then exit 1; fi ;;
+          esac ;;
+        stop) if [ "${FAKE_STOP:-ok}" = "fail" ]; then exit 1; fi ;;
+        pull) if [ "${FAKE_PULL:-ok}" = "fail" ]; then exit 1; fi ;;
+      esac
+      exit 0 ;;
+  esac
+fi
+printf 'unexpected docker call: %s\n' "$*" >&2
+exit 1
+FAKE
+  cat > "$WORK/bin/curl" <<'FAKE'
+#!/usr/bin/env bash
+# Fake curl: logs the URL and writes a stand-in file to the -o target.
+url=''
+out=''
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -o) out="$2"; shift 2 ;;
+    -*) shift ;;
+    *) url="$1"; shift ;;
+  esac
+done
+printf '%s\n' "$url" >> "$FAKE_CURL_LOG"
+printf 'curl\n' >> "$FAKE_LOG"
+if [ "${FAKE_CURL:-ok}" = "fail" ]; then exit 22; fi
+printf '# stand-in for %s\n' "$url" > "$out"
+FAKE
+  chmod +x "$WORK/bin/docker" "$WORK/bin/curl"
+}
+
+# Starts a fresh scenario: an install directory with an old compose file and a .env on version $1.
+# Sets DIR, LOG, CURL_LOG and RESTORED.
+new_install() {
+  DIR="$WORK/install-$CHECKS-$RANDOM"
+  mkdir -p "$DIR"
+  printf 'old compose\n' > "$DIR/docker-compose.hub.yml"
+  printf 'IMAGE_TAG=%s\nPOSTGRES_USER=u\nAPI_PORT=8080\nEMAIL_TO=a@example.com\nPOSTGRES_DB=hostpanel\n' "$1" > "$DIR/.env"
+  chmod 600 "$DIR/.env"
+  LOG="$DIR.log"
+  CURL_LOG="$DIR.curl"
+  RESTORED="$DIR.restored"
+  : > "$LOG"
+  : > "$CURL_LOG"
+  unset FAKE_DUMP FAKE_DB_RUNNING FAKE_RESTORE FAKE_DB_STATE FAKE_VOLUME FAKE_DB_READY FAKE_STOP \
+    FAKE_PULL FAKE_UP FAKE_CURL FAKE_SERVICES FAKE_CONFIG FAKE_STATE FAKE_STATE_AFTER
+}
+
+# Runs install.sh against $DIR with the fakes. Output goes to $DIR.out, the exit code is returned.
+run_installer() {
+  PATH="$WORK/bin:$PATH" FAKE_LOG="$LOG" FAKE_CURL_LOG="$CURL_LOG" FAKE_RESTORED="$RESTORED" \
+    HOSTPANEL_NONINTERACTIVE=1 HOSTPANEL_DIR="$DIR" HOSTPANEL_DB_WAIT_ATTEMPTS=3 HOSTPANEL_DB_WAIT_INTERVAL=0 \
+    bash "$INSTALL_SH" "$@" < /dev/null > "$DIR.out" 2>&1
+}
+
+# Writes a finished dump of the given state to file $1 (what pg_dump leaves). $2 label
+write_dump() {
+  printf -- '-- dump of %s\nCREATE TABLE t (id int);\n--\n-- PostgreSQL database dump complete\n--\n' "$2" > "$1"
+}
+
+# Predicates used by the checks.
+log_has()      { grep -q -- "$1" "$LOG"; }
+log_lacks()    { ! grep -q -- "$1" "$LOG"; }
+out_has()      { grep -q -- "$1" "$DIR.out"; }
+out_lacks()    { ! grep -q -- "$1" "$DIR.out"; }
+env_is()       { [ "$(grep -E "^$1=" "$DIR/.env" | tail -n 1)" = "$1=$2" ]; }
+no_curl()      { [ ! -s "$CURL_LOG" ]; }
+backups_count() { ls "$DIR/backups" 2>/dev/null | grep -c "^$1-.*\.sql$" || true; }
+# True when line $1 of the call log comes before line $2 (both matched by pattern, first hit).
+before() {
+  local a b
+  a="$(grep -n -- "$1" "$LOG" | head -n 1 | cut -d: -f1)"
+  b="$(grep -n -- "$2" "$LOG" | head -n 1 | cut -d: -f1)"
+  [ -n "$a" ] && [ -n "$b" ] && [ "$a" -lt "$b" ]
+}
+# True when the file mode is $2 (GNU stat; the CI runner is Linux).
+mode_is()      { [ "$(stat -c '%a' "$1" 2>/dev/null)" = "$2" ]; }
+one_backup()   { ls "$DIR/backups"/hostpanel-*-"$1".sql 2>/dev/null | head -n 1; }
+has_file()     { [ -f "$DIR/backups/$1" ]; }
+lacks_file()   { [ ! -f "$DIR/backups/$1" ]; }
+old_compose()  { grep -q 'old compose' "$DIR/docker-compose.hub.yml"; }
+
+# Runs one function of install.sh on its own (no docker, no install directory). $@ function and arguments
+call_fn() {
+  HOSTPANEL_SOURCE_ONLY=1 bash -c 'source "$0"; set +e +o pipefail; "$@"' "$INSTALL_SH" "$@" > /dev/null 2>&1
+}
+is_newer()  { call_fn version_is_newer "$1" "$2"; }
+not_newer() { ! call_fn version_is_newer "$1" "$2"; }
+
+# Prints the name of the volume the compose file gives to the volume key $1, and nothing when it has none.
+compose_volume_name() {
+  awk -v key="$1" '
+    { sub(/[[:cntrl:]]$/, "") }
+    /^volumes:/ { top = 1; next }
+    top && /^[^ #]/ { top = 0 }
+    top && $0 == "  " key ":" { hit = 1; next }
+    top && hit && /^    name:/ { print $2; exit }
+    top && hit && /^  [^ ]/ { hit = 0 }
+  ' "$COMPOSE_HUB"
+}
+
+# True when the compose file mounts the volume key $1 in the service $2 (the line "- key:/path" inside it).
+compose_service_mounts() {
+  awk -v key="$1" -v svc="$2" '
+    { sub(/[[:cntrl:]]$/, "") }
+    $0 == "  " svc ":" { inside = 1; next }
+    inside && /^  [^ ]/ { inside = 0 }
+    inside && $0 ~ "^      - " key ":" { found = 1 }
+    END { exit found ? 0 : 1 }
+  ' "$COMPOSE_HUB"
+}
+
+COMPOSE_HUB="$(cd "$(dirname "$INSTALL_SH")" && pwd)/docker/docker-compose.hub.yml"
+
+make_fakes
+
+# ── Names the installer shares with the compose file ─────────────────────────
+
+INSTALLER_VOLUME="$(HOSTPANEL_SOURCE_ONLY=1 bash -c 'source "$0"; printf %s "$DB_VOLUME"' "$INSTALL_SH")"
+INSTALLER_DB_SERVICE="$(HOSTPANEL_SOURCE_ONLY=1 bash -c 'source "$0"; printf %s "$DB_SERVICE"' "$INSTALL_SH")"
+check "the compose file exists" test -f "$COMPOSE_HUB"
+check "the database volume of the installer is the pgdata volume name in the compose file" test "$(compose_volume_name pgdata)" = "$INSTALLER_VOLUME"
+check "the database service of the installer mounts pgdata in the compose file" compose_service_mounts pgdata "$INSTALLER_DB_SERVICE"
+
+# ── Version order ─────────────────────────────────────────────────────────────
+
+check "0.4.0 is newer than 0.3.1" is_newer 0.4.0 0.3.1
+check "0.10.0 is newer than 0.9.0, not compared as text" is_newer 0.10.0 0.9.0
+check "1.0.0 is newer than 0.99.9" is_newer 1.0.0 0.99.9
+check "0.3.1 is not newer than 0.4.0" not_newer 0.3.1 0.4.0
+check "a version is not newer than itself" not_newer 0.4.0 0.4.0
+check "0.4 and 0.4.0 are the same version" not_newer 0.4 0.4.0
+check "0.4.0 is newer than its own release candidate" is_newer 0.4.0 0.4.0-rc.1
+check "a release candidate is not newer than the release" not_newer 0.4.0-rc.1 0.4.0
+check "a tag that is not a number list is never newer" not_newer stable 0.4.0
+check "nothing is newer than a tag that is not a number list" not_newer 0.4.0 stable
+check "numeric pre-release parts are compared as numbers: rc.10 is after rc.2" is_newer 1.0.0-rc.10 1.0.0-rc.2
+check "rc.2 is not after rc.10" not_newer 1.0.0-rc.2 1.0.0-rc.10
+check "a number part of 25 digits is compared by value, not by the shell's integers" is_newer 1.0.0-rc.99999999999999999999999 1.0.0-rc.99999999999999999999998
+check "a leading zero in a number part does not change its value" not_newer 1.0.0-rc.01 1.0.0-rc.1
+check "rc.1.1 is after rc.1, the longer list wins when the start is equal" is_newer 1.0.0-rc.1.1 1.0.0-rc.1
+check "rc.1 is not after rc.1.1" not_newer 1.0.0-rc.1 1.0.0-rc.1.1
+check "a number part is before a word part: rc.beta is after rc.9" is_newer 1.0.0-rc.beta 1.0.0-rc.9
+check "rc.9 is not after rc.beta" not_newer 1.0.0-rc.9 1.0.0-rc.beta
+check "beta is after alpha" is_newer 1.0.0-beta 1.0.0-alpha
+check "alpha.beta is after alpha.1" is_newer 1.0.0-alpha.beta 1.0.0-alpha.1
+check "beta.11 is after beta.2" is_newer 1.0.0-beta.11 1.0.0-beta.2
+check "rc.1 is after beta.11" is_newer 1.0.0-rc.1 1.0.0-beta.11
+check "the release is after rc.1" is_newer 1.0.0 1.0.0-rc.1
+check "a higher number beats any pre-release of a lower one" is_newer 1.0.1-alpha 1.0.0
+check "build metadata is ignored: the same version with other metadata is not newer" not_newer 1.0.0+build.2 1.0.0+build.1
+check "build metadata is ignored in the other direction too" not_newer 1.0.0+build.1 1.0.0+build.2
+check "build metadata on a pre-release is ignored" not_newer 1.0.0-rc.1+b.9 1.0.0-rc.1
+check "a release with metadata is after its own pre-release" is_newer 1.0.0+build.1 1.0.0-rc.1
+check "a pre-release with metadata is not after its release" not_newer 1.0.0-rc.1+build.1 1.0.0
+check "an empty pre-release part is not a version" not_newer 1.0.0- 0.9.0
+check "an empty identifier in a pre-release is not a version" not_newer 1.0.0-rc..1 0.9.0
+check "uppercase is before lowercase by byte value: rc.a is after rc.B" is_newer 1.0.0-rc.a 1.0.0-rc.B
+# The order must not depend on the locale: in many locales a sorts before B.
+check "rc.a is after rc.B in the en_US locale" env LC_ALL=en_US.UTF-8 HOSTPANEL_SOURCE_ONLY=1 bash -c 'source "$0"; set +e +o pipefail; version_is_newer 1.0.0-rc.a 1.0.0-rc.B' "$INSTALL_SH"
+check "rc.a is after rc.B in the tr_TR locale" env LC_ALL=tr_TR.UTF-8 HOSTPANEL_SOURCE_ONLY=1 bash -c 'source "$0"; set +e +o pipefail; version_is_newer 1.0.0-rc.a 1.0.0-rc.B' "$INSTALL_SH"
+check "rc.10 is after rc.2 in the C locale" env LC_ALL=C HOSTPANEL_SOURCE_ONLY=1 bash -c 'source "$0"; set +e +o pipefail; version_is_newer 1.0.0-rc.10 1.0.0-rc.2' "$INSTALL_SH"
+
+# ── Upgrade ───────────────────────────────────────────────────────────────────
+
+new_install 0.3.1
+mkdir -p "$DIR/backups"
+printf 'half a dump\n' > "$DIR/backups/hostpanel-20260101-100000-0.2.0.sql.part"
+run_installer --version 0.4.0
+check "upgrade succeeds" test "$?" -eq 0
+BACKUP="$(one_backup 0.3.1)"
+check "upgrade writes one backup named with the previous version" test -n "$BACKUP"
+check "the backup holds the dump" grep -q 'CREATE TABLE' "$BACKUP"
+check "the backup file is mode 600" mode_is "$BACKUP" 600
+check "the backups folder is mode 700" mode_is "$DIR/backups" 700
+check "no partial dump is left behind, a stale one is cleaned" test -z "$(ls "$DIR/backups" | grep '\.part$' || true)"
+check "the dump is taken before the images are pulled" before pg_dump '^pull'
+check "IMAGE_TAG moves to the new version" env_is IMAGE_TAG 0.4.0
+check "the summary names the backup and the rollback command" out_has -- '--rollback'
+
+new_install 0.3.1
+FAKE_DUMP=fail run_installer --version 0.4.0
+check "a failing dump stops the upgrade" test "$?" -ne 0
+check "a failing dump: nothing is pulled or started" log_lacks '^pull'
+check "a failing dump: nothing is downloaded" no_curl
+check "a failing dump: IMAGE_TAG is unchanged" env_is IMAGE_TAG 0.3.1
+check "a failing dump: the compose file is unchanged" old_compose
+check "a failing dump leaves no backup file" test "$(ls "$DIR/backups" | wc -l | tr -d ' ')" -eq 0
+
+new_install 0.3.1
+FAKE_DUMP=empty run_installer --version 0.4.0
+check "an empty dump stops the upgrade" test "$?" -ne 0
+check "an empty dump: nothing is pulled" log_lacks '^pull'
+check "an empty dump: IMAGE_TAG is unchanged" env_is IMAGE_TAG 0.3.1
+check "an empty dump leaves no backup file" test "$(ls "$DIR/backups" | wc -l | tr -d ' ')" -eq 0
+
+new_install 0.3.1
+FAKE_DUMP=truncated run_installer --version 0.4.0
+check "a dump without the completion line stops the upgrade" test "$?" -ne 0
+check "a truncated dump: nothing is downloaded" no_curl
+check "a truncated dump leaves no backup file" test "$(ls "$DIR/backups" | wc -l | tr -d ' ')" -eq 0
+
+new_install 0.3.1
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260101-100000-0.3.1.sql" older
+FAKE_DUMP=notables run_installer --version 0.4.0 --keep 1
+check "a database without tables does not stop the upgrade" test "$?" -eq 0
+check "a database without tables is not kept as a backup" test "$(backups_count hostpanel)" -eq 1
+check "a database without tables does not push out the older backup" has_file hostpanel-20260101-100000-0.3.1.sql
+
+new_install 0.3.1
+printf 'IMAGE_TAG="0.3.1"\r\nPOSTGRES_USER=u\r\nAPI_PORT=8080\r\nEMAIL_TO=a@example.com\r\n' > "$DIR/.env"
+run_installer --version 0.4.0
+check "quotes and a CR around IMAGE_TAG are ignored" test "$?" -eq 0
+check "the backup is named with the clean tag" test -n "$(one_backup 0.3.1)"
+
+new_install 0.3.1
+printf 'IMAGE_TAG=0.3.1/../x\n' > "$DIR/.env"
+run_installer --version 0.4.0
+check "an IMAGE_TAG that is not a tag is refused" test "$?" -ne 0
+check "that refusal changes nothing" no_curl
+
+# A database container that is stopped but whose volume exists: only the db is started, awaited, dumped.
+new_install 0.3.1
+FAKE_DB_RUNNING=0 run_installer --version 0.4.0
+check "a stopped database with its volume is backed up" test "$?" -eq 0
+check "the stopped database is started on its own" log_has '^up -d --no-deps hostpanel-db'
+check "the database is awaited before it is dumped" before '^ready' pg_dump
+check "the database is started before it is awaited" before '^up -d --no-deps' '^ready'
+check "that upgrade still leaves a backup" test -n "$(one_backup 0.3.1)"
+check "that upgrade never suggests --skip-backup" out_lacks '--skip-backup'
+
+new_install 0.3.1
+FAKE_DB_RUNNING=0 FAKE_DB_READY=0 run_installer --version 0.4.0
+check "a database that never gets ready stops the upgrade" test "$?" -ne 0
+check "a database that never gets ready: nothing is downloaded" no_curl
+check "a database that never gets ready: no --skip-backup advice" out_lacks '--skip-backup'
+check "a database that never gets ready: the compose file is unchanged" old_compose
+
+# A first install that stopped before the database ever started: no container, no volume, no data.
+new_install 0.3.1
+FAKE_DB_RUNNING=0 FAKE_VOLUME=0 run_installer --version 0.4.0
+check "a rerun after a first install that never started the database succeeds" test "$?" -eq 0
+check "that rerun takes no dump" log_lacks pg_dump
+check "that rerun starts no database on its own" log_lacks '^up -d --no-deps'
+check "that rerun needs no --skip-backup" out_lacks '--skip-backup'
+check "that rerun goes on to pull" log_has '^pull'
+
+new_install 0.3.1
+FAKE_DB_RUNNING=0 run_installer --version 0.4.0 --skip-backup
+check "--skip-backup upgrades without a dump" test "$?" -eq 0
+check "--skip-backup takes no dump" log_lacks pg_dump
+
+# Retention keeps the newest --keep, the oldest of each version and the file just made.
+new_install 0.3.1
+mkdir -p "$DIR/backups"
+for n in 1 2 3 4 5 6; do
+  write_dump "$DIR/backups/hostpanel-2026010${n}-100000-0.2.0.sql" "old $n"
+done
+run_installer --version 0.4.0 --keep 3
+check "retention: the newest --keep and the oldest of the version remain" test "$(backups_count hostpanel)" -eq 4
+check "retention: the oldest of its version is kept" has_file hostpanel-20260101-100000-0.2.0.sql
+check "retention: the newest old backup is kept" has_file hostpanel-20260106-100000-0.2.0.sql
+check "retention: a middle one is removed" lacks_file hostpanel-20260102-100000-0.2.0.sql
+check "retention: the new backup is kept" test -n "$(one_backup 0.3.1)"
+
+# A re-run on the bad version must not push the true pre-upgrade backup out.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260101-100000-0.3.1.sql" "pre-upgrade"
+for n in 1 2 3; do
+  write_dump "$DIR/backups/hostpanel-2026020${n}-100000-0.4.0.sql" "rerun $n"
+done
+run_installer --keep 2
+check "retention: the oldest backup of the older version survives re-runs" has_file hostpanel-20260101-100000-0.3.1.sql
+check "retention: the oldest backup of the current version survives" has_file hostpanel-20260201-100000-0.4.0.sql
+
+# The file just made is never pruned, even when older-looking names sort after it.
+new_install 0.3.1
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20200101-100000-0.3.1.sql" "long ago"
+for n in 1 2; do
+  write_dump "$DIR/backups/hostpanel-2999010${n}-100000-0.3.1.sql" "future $n"
+done
+run_installer --version 0.4.0 --keep 1
+check "the backup just made survives a clock that ran ahead" test -n "$(ls "$DIR/backups"/hostpanel-*-0.3.1.sql | grep -v '2020\|2999' || true)"
+
+# Many backups at once: the prune does not depend on a pipe that can be cut short.
+new_install 0.3.1
+mkdir -p "$DIR/backups"
+for n in $(seq 10 69); do
+  write_dump "$DIR/backups/hostpanel-202601${n}-100000-0.2.0.sql" "bulk $n"
+done
+run_installer --version 0.4.0 --keep 3
+check "pruning 60 backups succeeds" test "$?" -eq 0
+check "pruning 60 backups leaves the newest 3 and the oldest" test "$(backups_count hostpanel)" -eq 4
+
+# The oldest backup of a version is kept only for the newest --keep-versions versions: five versions with
+# two backups each, the current one being 0.5.0, so the run adds a third file to that version.
+new_install 0.5.0
+mkdir -p "$DIR/backups"
+for v in 1 2 3 4 5; do
+  write_dump "$DIR/backups/hostpanel-2026010${v}-100000-0.${v}.0.sql" "first of 0.${v}.0"
+  write_dump "$DIR/backups/hostpanel-2026020${v}-100000-0.${v}.0.sql" "second of 0.${v}.0"
+done
+run_installer --keep 1 --keep-versions 2
+check "version retention: the run succeeds" test "$?" -eq 0
+check "version retention: the oldest backup of the current version stays" has_file hostpanel-20260105-100000-0.5.0.sql
+check "version retention: the oldest backup of the version before stays" has_file hostpanel-20260104-100000-0.4.0.sql
+check "version retention: the oldest backup of the third version is trimmed" lacks_file hostpanel-20260103-100000-0.3.0.sql
+check "version retention: the oldest backup of an older version is trimmed" lacks_file hostpanel-20260101-100000-0.1.0.sql
+check "version retention: a later backup of an older version is trimmed" lacks_file hostpanel-20260202-100000-0.2.0.sql
+check "version retention: only the two oldest backups and the new one remain" test "$(backups_count hostpanel)" -eq 3
+
+# With the default, ten versions are covered: the same folder loses nothing.
+new_install 0.5.0
+mkdir -p "$DIR/backups"
+for v in 1 2 3 4 5; do
+  write_dump "$DIR/backups/hostpanel-2026010${v}-100000-0.${v}.0.sql" "first of 0.${v}.0"
+  write_dump "$DIR/backups/hostpanel-2026020${v}-100000-0.${v}.0.sql" "second of 0.${v}.0"
+done
+run_installer --keep 1
+check "version retention: the default covers the oldest backup of every one of five versions" test "$(backups_count hostpanel)" -eq 6
+
+new_install 0.3.1
+run_installer --keep-versions 0
+check "--keep-versions 0 is refused" test "$?" -ne 0
+
+# Names are in UTC: a clock 14 hours ahead must not show in the file name.
+new_install 0.3.1
+TZ=Pacific/Kiritimati run_installer --version 0.4.0
+check "the backup name carries the UTC time" test -n "$(ls "$DIR/backups"/hostpanel-"$(date -u +%Y%m%d-%H)"*-0.3.1.sql 2>/dev/null | head -n 1)"
+
+new_install latest
+run_installer --version 0.4.0
+check "a backup on the moving tag still succeeds" test "$?" -eq 0
+check "a backup on the moving tag warns about pinning" out_has 'moving tag'
+
+new_install 0.3.1
+run_installer --keep 0
+check "--keep 0 is refused" test "$?" -ne 0
+
+# ── Rollback ──────────────────────────────────────────────────────────────────
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260101-100000-0.2.0.sql" "older dump"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+run_installer --rollback --yes
+check "rollback with --yes succeeds" test "$?" -eq 0
+check "rollback restores the newest backup of another version" grep -q 'dump of 0.3.1' "$RESTORED"
+check "rollback sets IMAGE_TAG to the recorded version" env_is IMAGE_TAG 0.3.1
+check "rollback downloads the files of the recorded release" grep -q '/v0.3.1/' "$CURL_LOG"
+check "rollback saves the current database first" test -n "$(ls "$DIR/backups"/pre-rollback-*-0.4.0.sql 2>/dev/null | head -n 1)"
+check "the safety copy is mode 600" mode_is "$(ls "$DIR/backups"/pre-rollback-*-0.4.0.sql | head -n 1)" 600
+check "rollback stops the application first" before '^stop' pg_dump
+check "rollback saves before it restores" before pg_dump restore
+check "rollback restores before it downloads the old files" before restore '^curl'
+check "rollback downloads before it pulls" before '^curl' '^pull'
+check "rollback restores before it starts" before restore '^up'
+check "rollback replaced the compose file only after the restore" grep -q 'stand-in' "$DIR/docker-compose.hub.yml"
+
+# The services to stop come from the compose file, and the database is not among them.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_SERVICES="hostpanel-db hostpanel-api hostpanel-extra" run_installer --rollback --yes
+check "rollback stops every service the compose file lists" log_has '^stop hostpanel-api hostpanel-extra$'
+check "rollback never stops the database" log_lacks '^stop.*hostpanel-db'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_CONFIG=fail run_installer --rollback --yes
+check "rollback without a service list stops before any change" test "$?" -ne 0
+check "rollback without a service list stops nothing" log_lacks '^stop'
+check "rollback without a service list restores nothing" log_lacks restore
+
+# A re-run of the installer on the bad version made newer backups of that version: skip them.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260101-100000-0.2.0.sql" "dump of 0.2.0"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+write_dump "$DIR/backups/hostpanel-20260301-100000-0.4.0.sql" "rerun on 0.4.0"
+write_dump "$DIR/backups/hostpanel-20260302-100000-0.4.0.sql" "second rerun on 0.4.0"
+run_installer --rollback --yes
+check "rollback skips newer backups of the version in use" grep -q 'dump of 0.3.1' "$RESTORED"
+check "rollback then goes to the version of that backup" env_is IMAGE_TAG 0.3.1
+
+new_install 0.4.0
+printf 'IMAGE_TAG="0.4.0"\r\nAPI_PORT=8080\r\n' > "$DIR/.env"
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+write_dump "$DIR/backups/hostpanel-20260301-100000-0.4.0.sql" "rerun on 0.4.0"
+run_installer --rollback --yes
+check "a quoted IMAGE_TAG with a CR is still recognised as the version in use" grep -q 'dump of 0.3.1' "$RESTORED"
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260301-100000-0.4.0.sql" "rerun on 0.4.0"
+run_installer --rollback --yes
+check "rollback with backups of the current version only fails" test "$?" -ne 0
+check "that rollback changes nothing" log_lacks '^stop'
+check "that rollback says why" out_has 'version now installed'
+
+new_install 0.4.0
+printf 'IMAGE_TAG=0.4.0 bad\n' > "$DIR/.env"
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+run_installer --rollback --yes
+check "rollback with an unusable current IMAGE_TAG is refused" test "$?" -ne 0
+check "that refusal stops nothing" log_lacks '^stop'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+printf '%s\n' '-- a dump' 'CREATE TABLE t (id int);' > "$DIR/backups/hostpanel-20260301-100000-0.2.5.sql"
+printf -- '-- cut\n' > "$DIR/backups/hostpanel-20260401-100000-0.3.0.sql"
+run_installer --rollback --yes
+check "a backup without the completion line is refused" test "$?" -ne 0
+check "that refusal restores nothing" log_lacks restore
+check "that refusal stops nothing" log_lacks '^stop'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+run_installer --rollback
+check "rollback without --yes and without a terminal refuses" test "$?" -ne 0
+check "a refused rollback changes nothing" log_lacks restore
+check "a refused rollback keeps IMAGE_TAG" env_is IMAGE_TAG 0.4.0
+check "a refused rollback stops no service" log_lacks '^stop'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_DUMP=fail run_installer --rollback --yes
+check "a rollback that cannot save the current database stops" test "$?" -ne 0
+check "that rollback restores nothing" log_lacks restore
+check "that rollback keeps IMAGE_TAG" env_is IMAGE_TAG 0.4.0
+check "that rollback downloads nothing, so the current compose file stays" no_curl
+check "that rollback keeps the current compose file" old_compose
+check "that rollback says the services are stopped" out_has 'STOPPED'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_DUMP=truncated run_installer --rollback --yes
+check "a truncated safety copy stops the rollback" test "$?" -ne 0
+check "a truncated safety copy: nothing is restored" log_lacks restore
+check "a truncated safety copy: no file is left" test "$(backups_count pre-rollback)" -eq 0
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_STOP=fail run_installer --rollback --yes
+check "a rollback that cannot stop the services stops" test "$?" -ne 0
+check "that rollback says what to run" out_has 'up -d'
+check "that rollback takes no dump" log_lacks pg_dump
+
+new_install 0.4.0
+run_installer --rollback --yes
+check "rollback with no backup fails" test "$?" -ne 0
+check "rollback with no backup touches nothing" log_lacks '^stop'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-latest.sql" "moving"
+run_installer --rollback --yes
+check "a backup taken on the moving tag is not rolled back automatically" test "$?" -ne 0
+check "that refusal restores nothing" log_lacks restore
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+: > "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql"
+run_installer --rollback --yes
+check "an empty backup is refused" test "$?" -ne 0
+check "an empty backup restores nothing" log_lacks restore
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+run_installer --rollback --yes --version 0.2.0
+check "--rollback with --version is refused" test "$?" -ne 0
+
+# The database container is stopped but its volume exists: the rollback starts it alone.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_DB_RUNNING=0 run_installer --rollback --yes
+check "rollback with a stopped database succeeds" test "$?" -eq 0
+check "rollback starts the database on its own first" before '^up -d --no-deps' '^stop'
+check "rollback awaits the database before the dump" before '^ready' pg_dump
+
+# A failed restore: the services are stopped, the live database stays as it was, nothing is pruned.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+for n in 1 2 3; do
+  write_dump "$DIR/backups/pre-rollback-2026010${n}-100000-0.4.0.sql" "real data $n"
+done
+FAKE_RESTORE=fail run_installer --rollback --yes --keep 1
+check "a failed restore fails the rollback" test "$?" -ne 0
+check "a failed restore: the output says the services are stopped" out_has 'STOPPED'
+check "a failed restore: the output says the live database was not changed" out_has 'not changed'
+check "a failed restore: the output names the safety copy" out_has 'pre-rollback-.*-0.4.0.sql'
+check "a failed restore: the output prints the restore command" out_has 'dropdb -U'
+check "a failed restore: the output prints the start command" out_has 'docker compose -f docker-compose.hub.yml up -d'
+check "a failed restore: IMAGE_TAG is unchanged" env_is IMAGE_TAG 0.4.0
+check "a failed restore: the compose file is unchanged" old_compose
+check "a failed restore: nothing is downloaded" no_curl
+check "a failed restore: nothing is started" log_lacks '^up'
+check "a failed restore: the safety copy exists" test "$(backups_count pre-rollback)" -eq 4
+check "a failed restore prunes no earlier safety copy" has_file pre-rollback-20260102-100000-0.4.0.sql
+
+# The same rollback again, now with a working restore: the earlier safety copies are still there to the end.
+FAKE_RESTORE=ok run_installer --rollback --yes --keep 1
+check "the rollback repeated after a failed restore succeeds" test "$?" -eq 0
+check "after the success the oldest safety copy is still there" has_file pre-rollback-20260101-100000-0.4.0.sql
+check "after the success a middle safety copy is pruned" lacks_file pre-rollback-20260102-100000-0.4.0.sql
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=swap run_installer --rollback --yes
+check "a restore that breaks half way fails the rollback" test "$?" -ne 0
+check "that failure says the database is missing" out_has 'MISSING'
+check "that failure prints the restore command for the safety copy" out_has 'pre-rollback-.*sql'
+
+# A database with no tables is not worth a safety copy and must not push a real one out.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+for n in 1 2; do
+  write_dump "$DIR/backups/pre-rollback-2026010${n}-100000-0.4.0.sql" "real data $n"
+done
+FAKE_DUMP=notables run_installer --rollback --yes --keep 1
+check "a rollback over a database without tables succeeds" test "$?" -eq 0
+check "no safety copy is kept for a database without tables" test "$(backups_count pre-rollback)" -eq 2
+check "the earlier safety copies stay" has_file pre-rollback-20260102-100000-0.4.0.sql
+
+# After the restore: a failure to download, pull or start says in what state things are and what to run.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_CURL=fail run_installer --rollback --yes
+check "a failed download after the restore fails the rollback" test "$?" -ne 0
+check "that failure says the database is restored" out_has 'database is restored'
+check "that failure says what to run" out_has 'docker compose -f docker-compose.hub.yml up -d'
+check "that failure keeps IMAGE_TAG" env_is IMAGE_TAG 0.4.0
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_PULL=fail run_installer --rollback --yes
+check "a failed pull after the restore fails the rollback" test "$?" -ne 0
+check "that failure says the database is restored" out_has 'database is restored'
+check "that failure prints the pull and up commands" out_has 'pull && docker compose -f docker-compose.hub.yml up -d'
+check "that failure starts nothing" log_lacks '^up'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_UP=fail run_installer --rollback --yes
+check "a failed start after the restore fails the rollback" test "$?" -ne 0
+check "that failure says the database is restored" out_has 'database is restored'
+check "that failure prints the start command" out_has 'up -d'
+
+# A rollback that is repeated: the backups of the version just left are the newest, so it moves forward.
+new_install 0.3.1
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260101-100000-0.2.0.sql" "dump of 0.2.0"
+write_dump "$DIR/backups/hostpanel-20260301-100000-0.4.0.sql" "dump of 0.4.0"
+run_installer --rollback --yes
+check "a rollback to a newer version still runs when confirmed" test "$?" -eq 0
+check "a rollback to a newer version restores that backup" grep -q 'dump of 0.4.0' "$RESTORED"
+check "a rollback to a newer version says it moves forward" out_has 'moves FORWARD'
+check "a rollback to a newer version names both versions" out_has 'newer than the'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+run_installer --rollback --yes
+check "a rollback to an older version does not say it moves forward" out_lacks 'FORWARD'
+
+new_install 0.4.0-rc.1
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.4.0.sql" "dump of 0.4.0"
+run_installer --rollback --yes
+check "from a release candidate to its release is forward" out_has 'moves FORWARD'
+
+# A database named postgres cannot be swapped by rename: refused before anything is touched.
+new_install 0.4.0
+printf 'IMAGE_TAG=0.4.0\nPOSTGRES_USER=u\nPOSTGRES_DB=postgres\n' > "$DIR/.env"
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+run_installer --rollback --yes
+check "a database named postgres is refused" test "$?" -ne 0
+check "that refusal says why" out_has 'maintenance database'
+check "that refusal says nothing was changed" out_has 'Nothing was changed'
+check "that refusal stops nothing" log_lacks '^stop'
+check "that refusal starts nothing and dumps nothing" log_lacks 'pg_dump'
+check "that refusal downloads nothing" no_curl
+
+new_install 0.3.1
+printf 'IMAGE_TAG=0.3.1\nPOSTGRES_USER=u\nPOSTGRES_DB=postgres\n' > "$DIR/.env"
+run_installer --version 0.4.0
+check "an upgrade of a database named postgres is not refused, only its rollback is" test "$?" -eq 0
+
+# A rename blocked by a background worker: the live database is back, and the message says so.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=busy run_installer --rollback --yes
+check "a rename that stays blocked fails the rollback" test "$?" -ne 0
+check "a blocked rename does not call the backup damaged" out_lacks 'damaged'
+check "a blocked rename says the database was busy" out_has 'stayed busy'
+check "a blocked rename says the live database was put back" out_has 'put back and was not changed'
+check "a blocked rename says the backup is most likely fine" out_has 'most likely fine'
+check "a blocked rename names the safety copy" out_has 'saved in .*pre-rollback-.*-0.4.0.sql'
+check "a blocked rename prints the command to run the rollback again" out_has -- '--rollback --dir'
+check "a blocked rename says the services are stopped" out_has 'STOPPED'
+check "a blocked rename keeps IMAGE_TAG" env_is IMAGE_TAG 0.4.0
+check "a blocked rename downloads nothing" no_curl
+
+# A database command refused for another reason than a busy database: the real reason is shown, nothing is
+# called busy and nothing is called safe to repeat before the cause is fixed.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=other run_installer --rollback --yes
+check "a refused rename fails the rollback" test "$?" -ne 0
+check "a refused rename shows the server's own message" out_has 'must be owner of database'
+check "a refused rename is not called busy" out_lacks 'stayed busy'
+check "a refused rename does not call the backup damaged" out_lacks 'damaged'
+check "a refused rename says the live database was not changed" out_has 'was not changed (or was put back)'
+check "a refused rename says to fix the cause first" out_has 'Fix the cause named above'
+check "a refused rename says the services are stopped" out_has 'STOPPED'
+check "a refused rename names the safety copy" out_has 'saved in .*pre-rollback-.*-0.4.0.sql'
+check "a refused rename keeps IMAGE_TAG" env_is IMAGE_TAG 0.4.0
+check "a refused rename downloads nothing" no_curl
+
+# A restore that was cut off (killed, docker exec failed): the real state of the databases is read and reported.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=killed FAKE_STATE_AFTER=none run_installer --rollback --yes
+check "a cut off restore fails the rollback" test "$?" -ne 0
+check "a cut off restore reads the databases afterwards" test "$(grep -c '^state$' "$LOG")" -eq 2
+check "a cut off restore with no live database says it is missing" out_has 'MISSING'
+check "a cut off restore names the exit status" out_has 'exit status 137'
+check "a cut off restore with no live database prints the rename command" out_has 'ALTER DATABASE'
+check "a cut off restore never claims the live database was not changed" out_lacks 'was not changed'
+check "a cut off restore never calls the backup damaged" out_lacks 'damaged'
+check "a cut off restore downloads nothing" no_curl
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=killed FAKE_STATE_AFTER=halfswap run_installer --rollback --yes
+check "a cut off restore in a half swap says the live database is missing" out_has 'MISSING'
+check "a cut off restore in a half swap lists both temporary databases" out_has 'replaced, restore'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=killed FAKE_STATE_AFTER=swapped run_installer --rollback --yes
+check "a cut off restore after the swap says the live database holds the backup" out_has 'most likely holds the restored backup'
+check "a cut off restore after the swap says where the old data is" out_has 'hostpanel_replaced'
+check "a cut off restore after the swap does not say the database is missing" out_lacks 'MISSING'
+check "a cut off restore after the swap never claims the live database was not changed" out_lacks 'was not changed'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=killed FAKE_STATE_AFTER=notswapped run_installer --rollback --yes
+check "a cut off restore before the swap says the swap did not happen" out_has 'was not swapped'
+check "a cut off restore before the swap names the leftover" out_has 'hostpanel_restore is a leftover'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=killed FAKE_STATE_AFTER=live run_installer --rollback --yes
+check "a cut off restore with only the live database says it cannot tell which data it holds" out_has 'cannot be told from here'
+check "a cut off restore with only the live database never claims it was not changed" out_lacks 'was not changed'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=killed FAKE_STATE_AFTER=fail run_installer --rollback --yes
+check "a cut off restore whose state cannot be read says the state is unknown" out_has 'UNKNOWN'
+check "a cut off restore whose state cannot be read prints the command that lists the databases" out_has 'SELECT datname FROM pg_database'
+check "a cut off restore whose state cannot be read never claims the live database was not changed" out_lacks 'was not changed'
+
+# Messages after a failed restore name the right data.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_RESTORE=swap run_installer --rollback --yes
+check "a half swap names the database that holds the old data" out_has 'database hostpanel_replaced'
+check "a half swap names the database that holds the restored backup" out_has 'database hostpanel_restore'
+check "a half swap names the safety copy" out_has 'saved in .*pre-rollback-.*-0.4.0.sql'
+check "a half swap prints the command that renames the old data into place" out_has 'ALTER DATABASE'
+check "a half swap says a rerun is refused" out_has 'refused until hostpanel exists'
+check "a half swap does not say the database is unchanged" out_lacks 'was not changed'
+check "a half swap prints the start command" out_has 'docker compose -f docker-compose.hub.yml up -d'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_DUMP=notables FAKE_RESTORE=swap run_installer --rollback --yes
+check "a half swap with no safety copy says there is none" out_has 'no copy was made'
+check "a half swap with no safety copy never names the backup as the saved data" out_lacks 'saved in .*0.3.1.sql'
+check "a half swap with no safety copy still names the old data" out_has 'database hostpanel_replaced'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_DUMP=notables FAKE_RESTORE=fail run_installer --rollback --yes
+check "a failed restore with no safety copy says there is none" out_has 'no copy was made'
+check "a failed restore with no safety copy never names the backup as the saved data" out_lacks 'saved in .*0.3.1.sql'
+check "a failed restore with no safety copy prints no restore command" out_lacks 'dropdb -U'
+check "a failed restore with no safety copy still prints the start command" out_has 'docker compose -f docker-compose.hub.yml up -d'
+
+# A rerun after a half swap: the live database is missing, so nothing is started, stopped or dropped.
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_STATE=halfswap run_installer --rollback --yes
+check "a rollback over a half swapped database is refused" test "$?" -ne 0
+check "that refusal says an earlier rollback stopped half way" out_has 'earlier rollback stopped half way'
+check "that refusal names the database with the old data" out_has 'hostpanel_replaced'
+check "that refusal does not claim the database was not changed by a restore" out_lacks 'restore ran in a temporary'
+check "that refusal stops nothing" log_lacks '^stop'
+check "that refusal takes no dump" log_lacks pg_dump
+check "that refusal restores nothing" log_lacks '^restore'
+check "that refusal prints the command that renames the old data into place" out_has 'ALTER DATABASE'
+
+new_install 0.4.0
+mkdir -p "$DIR/backups"
+write_dump "$DIR/backups/hostpanel-20260201-100000-0.3.1.sql" "dump of 0.3.1"
+FAKE_STATE=fail run_installer --rollback --yes
+check "a rollback that cannot read the database list is refused" test "$?" -ne 0
+check "that refusal stops nothing" log_lacks '^stop'
+
+# ── Real postgres ─────────────────────────────────────────────────────────────
+
+# Runs one function of install.sh against the postgres test stack. $@ function and arguments
+pg_call() {
+  HOSTPANEL_SOURCE_ONLY=1 INSTALL_DIR="$PGDIR" KEEP=5 KEEP_VERSIONS=10 COMPOSE_PROJECT_NAME="$PG_PROJECT" \
+    HOSTPANEL_DB_WAIT_ATTEMPTS=60 HOSTPANEL_DB_WAIT_INTERVAL=1 \
+    bash -c 'source "$0"; set +e +o pipefail; "$@"' "$INSTALL_SH" "$@" > "$PGDIR/call.out" 2>&1
+}
+
+# Runs one SQL statement in the test database and prints the result. $1 statement
+pg_sql() {
+  ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+      psql -U hostpanel -d hostpanel -tA -c "$1" 2>/dev/null )
+}
+
+# Runs one statement in the test server's maintenance database. $1 statement
+pg_sql_admin() {
+  ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+      psql -U hostpanel -d postgres -tA -c "$1" 2>/dev/null )
+}
+
+# Dump, restore and a corrupt dump against a real postgres container.
+run_postgres_tests() {
+  local image="${HOSTPANEL_TEST_POSTGRES_IMAGE:-postgres:16-alpine}"
+  PGDIR="$WORK/pg"
+  mkdir -p "$PGDIR"
+  cat > "$PGDIR/docker-compose.hub.yml" <<COMPOSE
+services:
+  hostpanel-db:
+    image: ${image}
+    environment:
+      POSTGRES_USER: hostpanel
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: hostpanel
+    command: ["postgres", "-c", "max_prepared_transactions=5"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U hostpanel -d hostpanel"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+COMPOSE
+  PG_STARTED=1
+  if ! ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml up -d --wait >/dev/null 2>&1 ); then
+    check "the postgres test stack starts" false
+    return
+  fi
+  check "the postgres test stack starts" true
+  check "pg_isready is awaited on the real database" pg_call wait_for_database
+  pg_sql "CREATE TABLE items (id int); INSERT INTO items VALUES (1), (2), (3);" >/dev/null
+
+  check "a real dump is taken" pg_call dump_database "$PGDIR/good.sql"
+  check "a real dump ends with the completion line" pg_call dump_is_complete "$PGDIR/good.sql"
+  check "a real dump creates the table" pg_call dump_has_tables "$PGDIR/good.sql"
+  check "a real dump is mode 600" mode_is "$PGDIR/good.sql" 600
+  head -n -8 "$PGDIR/good.sql" > "$PGDIR/cut.sql"
+  check "a real dump cut short is not a finished dump" test "$(pg_call dump_is_complete "$PGDIR/cut.sql"; echo $?)" -ne 0
+
+  pg_sql "INSERT INTO items VALUES (4);" >/dev/null
+  check "a real restore succeeds" pg_call restore_dump "$PGDIR/good.sql"
+  check "a real restore brings back the dumped data" test "$(pg_sql 'SELECT count(*) FROM items')" = "3"
+  check "a real restore leaves no temporary database" test "$(pg_sql_admin "SELECT count(*) FROM pg_database WHERE datname IN ('hostpanel_restore', 'hostpanel_replaced')")" = "0"
+
+  pg_sql "INSERT INTO items VALUES (5);" >/dev/null
+  sed '0,/^CREATE TABLE/s//THIS IS NOT SQL;\nCREATE TABLE/' "$PGDIR/good.sql" > "$PGDIR/bad.sql"
+  check "a corrupt dump fails the restore" test "$(pg_call restore_dump "$PGDIR/bad.sql"; echo $?)" = "1"
+  check "a corrupt dump leaves the live data as it was" test "$(pg_sql 'SELECT count(*) FROM items')" = "4"
+  check "a corrupt dump leaves no temporary database" test "$(pg_sql_admin "SELECT count(*) FROM pg_database WHERE datname IN ('hostpanel_restore', 'hostpanel_replaced')")" = "0"
+
+  # A background worker that keeps connecting to the live database must not stop the restore: the renames end
+  # its connections and try again. The worker is a loop inside the container that opens short sessions.
+  pg_sql "INSERT INTO items VALUES (6);" >/dev/null
+  ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml exec -d hostpanel-db sh -c \
+      'n=0; while [ "$n" -lt 400 ] && [ ! -f /tmp/hp-stop ]; do psql -q -U hostpanel -d hostpanel -c "select pg_sleep(0.2)" >/dev/null 2>&1; n=$((n + 1)); done' )
+  check "a restore succeeds while a worker keeps connecting to the live database" pg_call restore_dump "$PGDIR/good.sql"
+  ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml exec -T hostpanel-db touch /tmp/hp-stop >/dev/null 2>&1 )
+  check "that restore brought back the dumped data" test "$(pg_sql 'SELECT count(*) FROM items')" = "3"
+  check "that restore left no temporary database" test "$(pg_sql_admin "SELECT count(*) FROM pg_database WHERE datname IN ('hostpanel_restore', 'hostpanel_replaced')")" = "0"
+
+  # A half swap is found before a rollback starts: the live database is missing, the old data is in the _replaced one.
+  printf 'IMAGE_TAG=0.4.0\nPOSTGRES_DB=hostpanel\n' > "$PGDIR/.env"
+  check "a healthy database passes the half swap check" pg_call check_no_half_swap
+  check "the live database can be renamed away to stand for a half swap" pg_rename hostpanel hostpanel_replaced
+  check "a missing live database is found as a half swap" test "$(pg_call check_no_half_swap; echo $?)" = "1"
+  check "the half swap check names the database that holds the old data" grep -q 'hostpanel_replaced' "$PGDIR/call.out"
+  check "the live database is renamed back" pg_rename hostpanel_replaced hostpanel
+  check "the live database is back after the half swap check" pg_call check_no_half_swap
+
+  # A rename the server refuses for a reason other than a busy database must not be retried as if it were busy:
+  # it stops at once with the server's message. The functions of the restore script are run on their own, with
+  # two tries, inside the database container.
+  check "a rename of a database that does not exist stops at once, not busy" test "$(pg_rename_db hostpanel_nothing_here hostpanel_other; sed -n 1p "$PGDIR/rename.rc")" = "2"
+  check "that refusal prints the server's own reason" grep -q 'does not exist' "$PGDIR/rename.out"
+  check "that refusal does not say the database is busy" test -z "$(grep 'is busy' "$PGDIR/rename.out" || true)"
+  check "that refusal is not tried again" test "$(grep -c 'renaming database' "$PGDIR/rename.out")" -eq 1
+  # A prepared transaction holds its database and cannot be ended by pg_terminate_backend, so the server answers
+  # 'in use' (55006) to a rename for as long as it exists: a database that really stays busy.
+  pg_sql_admin "CREATE DATABASE hostpanel_busy" >/dev/null
+  ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml exec -T hostpanel-db       psql -U hostpanel -d hostpanel_busy -c "BEGIN; SELECT 1; PREPARE TRANSACTION 'hp_busy'" >/dev/null 2>&1 )
+  check "a rename the server answers as in use is busy and returns 1 after the last try" test "$(pg_rename_db hostpanel_busy hostpanel_other; sed -n 1p "$PGDIR/rename.rc")" = "1"
+  check "that busy answer is retried and reported as busy" grep -q 'is busy, trying the rename again (2 of 2)' "$PGDIR/rename.out"
+  check "that busy answer is not printed as a failure reason" test -z "$(grep 'renaming database' "$PGDIR/rename.out" || true)"
+  ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml exec -T hostpanel-db       psql -U hostpanel -d hostpanel_busy -c "COMMIT PREPARED 'hp_busy'" >/dev/null 2>&1 )
+  pg_sql_admin "DROP DATABASE hostpanel_busy" >/dev/null
+}
+
+# Runs rename_db of the restore script, on its own and with two tries, in the test server. Its messages go to
+# $PGDIR/rename.out and its return status to $PGDIR/rename.rc. $1 database, $2 new name
+pg_rename_db() {
+  local defs
+  defs="$(HOSTPANEL_SOURCE_ONLY=1 bash -c 'source "$0"; printf "%s" "$RESTORE_SCRIPT"' "$INSTALL_SH")"
+  # Everything before the first step of the restore is the set of helper functions.
+  defs="${defs%%drop_temp \"\$NEW\" || exit 5*}"
+  ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+      sh -c "${defs}
+RENAME_TRIES=2
+rename_db '$1' '$2'
+echo \$? > /tmp/rename.rc" > "$PGDIR/rename.out" 2>&1 )
+  ( cd "$PGDIR" && COMPOSE_PROJECT_NAME="$PG_PROJECT" docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+      cat /tmp/rename.rc > "$PGDIR/rename.rc" 2>/dev/null )
+}
+
+# Renames database $1 to $2 on the test server, ending the sessions that hold $1 and trying a few times.
+pg_rename() {
+  local try
+  for try in 1 2 3 4 5 6 7 8 9 10; do
+    pg_sql_admin "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$1' AND pid <> pg_backend_pid()" >/dev/null
+    if pg_sql_admin "ALTER DATABASE \"$1\" RENAME TO \"$2\"" >/dev/null; then
+      return 0
+    fi
+    sleep 1
+  done
+  return 1
+}
+
+if [ "${HOSTPANEL_TEST_POSTGRES:-0}" = "1" ]; then
+  run_postgres_tests
+else
+  printf 'skip  real postgres tests (set HOSTPANEL_TEST_POSTGRES=1 to run them)\n'
+fi
+
+printf '\n%s checks, %s failed\n' "$CHECKS" "$FAILURES"
+[ "$FAILURES" -eq 0 ]

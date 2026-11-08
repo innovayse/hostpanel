@@ -10,7 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { Suspense, defineComponent, h, reactive, ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useCheckoutPage } from '~/composables/useCheckoutPage'
 
 /** The fake stores and their spies, shared with the module mocks below. */

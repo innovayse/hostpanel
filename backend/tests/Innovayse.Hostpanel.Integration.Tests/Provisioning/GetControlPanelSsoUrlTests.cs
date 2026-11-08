@@ -5,6 +5,7 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Queries.GetControlPanelSsoUrl;
+using Innovayse.Hostpanel.Domain;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Wolverine;
@@ -82,6 +83,30 @@ public sealed class GetControlPanelSsoUrlTests(IntegrationTestFactory factory) :
 
         response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
         (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_CPANEL_SSO_UPSTREAM_FAILED);
+    }
+
+    /// <summary>
+    /// A provider that names an address not on its own server (its coded refusal) answers 502 with
+    /// <c>SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED</c>, and only that code, whatever the provider's text.
+    /// </summary>
+    [Fact]
+    public async Task GetControlPanelSsoUrl_ProviderRejectsTheAddress_Returns502WithTheUrlCodeAsync()
+    {
+        var setupHttp = factory.CreateClient();
+        var adminToken = await factory.GetAdminTokenAsync();
+        var serviceId = await ProvisioningTestSeeds.SeedServiceAsync(factory, setupHttp, adminToken);
+        (await setupHttp.PostAsync($"/api/provisioning/{serviceId}/provision", null)).EnsureSuccessStatusCode();
+        var rejecting = new FakeProvisioningProvider
+        {
+            FailWith = new DomainRuleException(HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED, "https://evil.example/ is not on the server"),
+        };
+        var http = await ProvisioningTestSeeds.AdminClientWithFakeProviderAsync(factory, rejecting);
+
+        var response = await http.GetAsync($"/api/provisioning/{serviceId}/cpanel-sso");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED);
+        (await response.Content.ReadAsStringAsync()).Should().NotContain("evil.example");
     }
 
     /// <summary>

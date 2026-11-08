@@ -21,6 +21,11 @@ namespace Innovayse.Hostpanel.Application.Services.Commands.OrderService;
 /// The order's invoice the first payment is charged on, or <see langword="null"/> when the service
 /// is ordered without one. A client may set the service up only once this invoice is paid in full.
 /// </param>
+/// <param name="OrderItemId">
+/// The order line the service is bought on, or <see langword="null"/> when it is not ordered through a line. The service
+/// is stored with it, and ordering again for the same line answers with the service that already exists instead of
+/// creating a second one, so a retried line never provisions or bills twice.
+/// </param>
 public sealed record OrderServiceCommand(int ClientId, int ProductId, BillingCycle BillingCycle,
     decimal? FirstPaymentAmount, decimal? RecurringAmount, string? PaymentMethod = null,
-    string? Domain = null, int? FirstInvoiceId = null);
+    string? Domain = null, int? FirstInvoiceId = null, int? OrderItemId = null);

@@ -220,6 +220,51 @@ public sealed class PluginLoaderTests
     }
 
     /// <summary>
+    /// A plugin that is already installed and whose view repeats a block id, or carries a mistyped display member
+    /// (rules added after it was installed), still loads: the loader writes one warning per fault and does not skip it.
+    /// A view that breaks a rule enforced from the start still skips the plugin. The same repeated id is refused at
+    /// install (<c>InstallPluginTests</c>) and by <see cref="PluginViewRead.RefusedAtInstall"/>.
+    /// </summary>
+    [Fact]
+    public void DiscoverAndRegister_InstalledPluginWithRuleAddedLater_LoadsWithAWarning()
+    {
+        var root = PluginSigningTestSeeds.NewFolder("loader-advisory");
+        try
+        {
+            const string repeated = """
+                {"schema":1,"blocks":[{"kind":"text","id":"a","text":"x"},{"kind":"text","id":"a","text":"y"},
+                {"kind":"table","display":"grid","columns":[]}]}
+                """;
+            const string brokenAlways = """{"schema":1,"blocks":[{"kind":"nope"}]}""";
+            WriteViewPlugin(root, "repeats-an-id", repeated);
+            WriteViewPlugin(root, "breaks-an-old-rule", brokenAlways);
+
+            var (registry, logs) = Discover(
+                [new PluginRoot(root, PluginOrigin.Uploaded)],
+                PluginSigningTestSeeds.Verifier(enforced: false),
+                allowUnsigned: false);
+
+            registry.IsLoaded("repeats-an-id").Should().BeTrue("an installed plugin is not lost to a stricter host");
+            registry.IsLoaded("breaks-an-old-rule").Should().BeFalse();
+            logs.Entries.Should().Contain(e => e.Level == LogLevel.Warning
+                && e.Message.Contains("repeats-an-id")
+                && e.Message.Contains(nameof(PluginManifestRule.ViewBlockIdRepeated))
+                && e.Message.Contains("stays loaded"));
+            logs.Entries.Should().Contain(e => e.Level == LogLevel.Warning
+                && e.Message.Contains("repeats-an-id")
+                && e.Message.Contains(nameof(PluginManifestRule.ViewInvalid))
+                && e.Message.Contains("stays loaded"));
+            logs.Entries.Should().ContainSingle(e => e.Message.Contains("breaks-an-old-rule")
+                && e.Message.Contains(nameof(PluginManifestRule.ViewBlockKindUnknown))
+                && e.Message.Contains("Skipping"));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    /// <summary>
     /// A Production host skips an uploaded plugin that is unsigned, tampered with, signed by an unknown key or holds a link: the
     /// warning names the plugin id and the rule, the plugin's assembly is never loaded, and the signed plugin beside
     /// it still loads.
@@ -438,6 +483,26 @@ public sealed class PluginLoaderTests
         var assemblyName = "Fixture.Signed." + id + Guid.NewGuid().ToString("N");
         File.WriteAllBytes(Path.Combine(folder, assemblyName + ".dll"), PluginAssemblyFixtures.AppPlugin(assemblyName, "Fixture.AppPlugin"));
         return (folder, assemblyName);
+    }
+
+    /// <summary>Writes an app plugin with one client page whose view is the given text.</summary>
+    /// <param name="root">The plugin root.</param>
+    /// <param name="id">The plugin id, which is also the folder name.</param>
+    /// <param name="view">The text of <c>views/a.json</c>.</param>
+    private static void WriteViewPlugin(string root, string id, string view)
+    {
+        var (folder, _) = WriteAppPlugin(root, id);
+        File.WriteAllText(
+            Path.Combine(folder, "plugin.json"),
+            PluginsTestSeeds.ManifestJson(
+                    id,
+                    ",\"manifestVersion\":2,\"ui\":{\"client\":{\"pages\":"
+                    + "[{\"id\":\"overview\",\"path\":\"/o\",\"title\":\"O\","
+                    + "\"view\":\"views/a.json\",\"permission\":\"Any\"}]}}",
+                    "App")
+                .Replace("Test.Plugin", "Fixture.AppPlugin", StringComparison.Ordinal));
+        Directory.CreateDirectory(Path.Combine(folder, "views"));
+        File.WriteAllText(Path.Combine(folder, "views", "a.json"), view);
     }
 
     /// <summary>Gives a plugin folder one flaw: nothing, a change after signing, a signature by an unknown key, or a link.</summary>

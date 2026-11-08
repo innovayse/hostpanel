@@ -8,7 +8,7 @@
 
 import { createHash, randomBytes } from 'node:crypto'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { makeEvent, setRuntimeConfig } from '../../helpers/bffHarness'
+import { TEST_SESSION_KEY, makeEvent, setRuntimeConfig } from '../../helpers/bffHarness'
 import {
   createTransaction,
   deleteTransaction,
@@ -50,7 +50,7 @@ const start = (state: string, held: Record<string, string> = {}, kind: SignonTra
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] })
   vi.setSystemTime(START)
-  setRuntimeConfig({ sessionEncryptionKey: '' })
+  setRuntimeConfig({ sessionEncryptionKey: TEST_SESSION_KEY })
 })
 
 afterEach(() => {
@@ -162,6 +162,37 @@ describe('createTransaction and openTransaction', () => {
     expect(openTransaction(makeEvent({ cookies: { [name]: 'state-1' } }), 'state-1').status).toBe(SignonTransactionStatus.Tampered)
   })
 
+  it('refuses to start an attempt outside development when no key is configured', () => {
+    setRuntimeConfig({ sessionEncryptionKey: '' })
+    const event = makeEvent()
+
+    for (const environment of ['production', 'test']) {
+      vi.stubEnv('NODE_ENV', environment)
+
+      expect(() => createTransaction(event, {
+        state: 's', verifier: 'v', nonce: 'n', returnTo: null, kind: SignonTransactionKind.Interactive,
+      })).toThrow(/session encryption key/i)
+    }
+    expect(event.written).toEqual({})
+  })
+
+  it('refuses to open an attempt outside development when no key is configured', () => {
+    const { cookies } = start('state-1')
+    setRuntimeConfig({ sessionEncryptionKey: '   ' })
+    vi.stubEnv('NODE_ENV', 'production')
+
+    expect(() => openTransaction(makeEvent({ cookies }), 'state-1')).toThrow(/session encryption key/i)
+  })
+
+  it('works in development without a key, with a key of this process', () => {
+    vi.stubEnv('NODE_ENV', 'development')
+    setRuntimeConfig({ sessionEncryptionKey: '' })
+
+    const { cookies } = start('state-1')
+
+    expect(openTransaction(makeEvent({ cookies }), 'state-1').status).toBe(SignonTransactionStatus.Found)
+  })
+
   it('opens what another replica sealed under the same configured key', () => {
     setRuntimeConfig({ sessionEncryptionKey: randomBytes(32).toString('base64') })
     const { cookies } = start('state-1')
@@ -197,6 +228,61 @@ describe('deleteTransaction', () => {
     deleteTransaction(event, 'state-1')
 
     expect(event.deleted).toEqual([transactionCookieName('state-1')])
+  })
+})
+
+describe('eviction order', () => {
+  const { Interactive, Silent } = SignonTransactionKind
+
+  /**
+   * Starts attempts one second apart, in the order given.
+   *
+   * @param kinds - The kind of each attempt, oldest first; attempt `i` has the state `state-i`.
+   * @returns The browser's cookies afterwards.
+   */
+  const fill = (kinds: SignonTransactionKind[]): Record<string, string> => {
+    let cookies: Record<string, string> = {}
+    kinds.forEach((kind, index) => {
+      vi.setSystemTime(START.getTime() + index * 1000)
+      cookies = start(`state-${index}`, cookies, kind).cookies
+    })
+    return cookies
+  }
+
+  it('drops a silent attempt before an older interactive one', () => {
+    const cookies = fill([Interactive, Interactive, Silent, Interactive, Interactive])
+
+    vi.setSystemTime(START.getTime() + 10_000)
+    const next = start('state-new', cookies)
+
+    expect(next.event.deleted).toEqual([transactionCookieName('state-2')])
+  })
+
+  it('drops the oldest silent attempt first, and only as many as needed', () => {
+    const cookies = fill([Interactive, Silent, Silent, Interactive, Silent])
+
+    vi.setSystemTime(START.getTime() + 10_000)
+    const next = start('state-new', cookies, Silent)
+
+    expect(next.event.deleted).toEqual([transactionCookieName('state-1')])
+  })
+
+  it('drops the oldest interactive attempt when there is no silent one', () => {
+    const cookies = fill([Interactive, Interactive, Interactive, Interactive, Interactive])
+
+    vi.setSystemTime(START.getTime() + 10_000)
+    const next = start('state-new', cookies)
+
+    expect(next.event.deleted).toEqual([transactionCookieName('state-0')])
+  })
+
+  it('drops the oldest of all-silent attempts', () => {
+    const cookies = fill([Silent, Silent, Silent, Silent, Silent])
+
+    vi.setSystemTime(START.getTime() + 10_000)
+    const next = start('state-new', cookies, Interactive)
+
+    expect(next.event.deleted).toEqual([transactionCookieName('state-0')])
   })
 })
 

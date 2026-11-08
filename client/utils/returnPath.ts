@@ -18,6 +18,7 @@ import {
   CLIENT_PUBLIC_ROUTES,
   CLIENT_REDIRECT_QUERY,
   LOGIN_HINT_QUERY,
+  RETURN_TO_QUERY,
   SIGN_IN_PROMPT_QUERY,
   SIGN_IN_PROMPT_VALUE,
   SSO_AUTHORIZE_PATH
@@ -154,7 +155,7 @@ export const withoutSignInPrompt = (path: string): string => {
 export const signInPath = (returnTo: string, loginHint: string = ''): string => {
   const params = new URLSearchParams()
   if (isInternalPath(returnTo)) {
-    params.set('returnTo', withoutSignInPrompt(returnTo))
+    params.set(RETURN_TO_QUERY, withoutSignInPrompt(returnTo))
   }
   if (loginHint) {
     params.set(LOGIN_HINT_QUERY, loginHint)

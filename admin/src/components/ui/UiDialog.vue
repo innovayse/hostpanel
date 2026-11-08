@@ -11,9 +11,10 @@
  * It fades and scales in and out (`UiTransition`, nothing moves under reduced motion). Focus goes to the panel
  * at once, so Escape and Tab work while it appears, and to the first control when the enter has ended. While it
  * is leaving, Escape, a backdrop click, the close button and Confirm do nothing, so a request cannot fire twice.
- * A parent that removes it with `v-if` skips the leave: the page scroll and the focus are given back at once.
+ * A parent that removes it with `v-if` removes the transition too, so the leave is played on an inert copy of the
+ * backdrop (`playGhostLeave`); the page scroll and the focus are given back at once.
  */
-import { computed, ref, useId } from 'vue'
+import { computed, onBeforeUnmount, ref, useId } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
@@ -23,7 +24,7 @@ import UiTransition from '@/components/ui/UiTransition.vue'
 import { toneSolidClasses } from '@/utils/ui/tone'
 import type { UiTone } from '@/utils/ui/tone'
 import { useModalSurface } from '@/utils/ui/modalSurface'
-import { modalPanelClasses, UiTransitionKind } from '@/utils/ui/transition'
+import { modalPanelClasses, playGhostLeave, UiTransitionKind } from '@/utils/ui/transition'
 import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 
 /**
@@ -78,6 +79,9 @@ const emit = defineEmits<{
 
 /** Id of the title element, referenced by `aria-labelledby`. */
 const titleId = useId()
+
+/** The backdrop element, which a parent's `v-if` removal copies for the leave. */
+const backdrop = ref<HTMLElement | null>(null)
 
 /** The dialog panel, for focus handling. */
 const panel = ref<HTMLElement | null>(null)
@@ -160,6 +164,13 @@ const onLeaveCancelled = (): void => {
   leaving.value = false
 }
 
+onBeforeUnmount(() => {
+  // Still in the page here means no leave has run for it: the parent removed the component while it was open.
+  if (backdrop.value !== null && !leaving.value) {
+    playGhostLeave(backdrop.value, UiTransitionKind.Dialog)
+  }
+})
+
 /** Closes on a backdrop click when allowed. */
 const onBackdrop = (): void => {
   if (props.closeOnBackdrop) {
@@ -180,6 +191,7 @@ const onBackdrop = (): void => {
     >
       <div
         v-if="open"
+        ref="backdrop"
         data-testid="dialog-backdrop"
         class="group/overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
         @click.self="onBackdrop"

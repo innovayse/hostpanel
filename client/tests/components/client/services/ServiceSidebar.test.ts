@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import { grantPermissions } from '~/tests/helpers/grantPermissions'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import ServiceSidebar from '~/components/client/services/ServiceSidebar.vue'
 import { makeClientService as service } from '~/tests/helpers/clientServiceFixture'
 import { ServiceStatus } from '~/types/servicestatus'
@@ -73,6 +73,25 @@ describe('ServiceSidebar', () => {
     const wrapper = mountSidebar({ service: service({ status: ServiceStatus.Terminated }) })
 
     expect(wrapper.find('[data-testid="service-link-cpanel"]').exists()).toBe(false)
+  })
+
+  it('offers neither the webmail link nor the password and SSH panels on a terminated service', async () => {
+    await grantPermissions(Permission.ViewModifyPasswords)
+    const wrapper = mountSidebar({ service: service({ status: ServiceStatus.Terminated }) })
+
+    expect(wrapper.find('[data-testid="service-link-webmail"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="service-tab-password"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="service-tab-ssh"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="service-tab-overview"]').exists()).toBe(true)
+  })
+
+  it('still offers the webmail link and the password and SSH panels on a suspended service', async () => {
+    await grantPermissions(Permission.ViewModifyPasswords)
+    const wrapper = mountSidebar({ service: service({ status: ServiceStatus.Suspended }) })
+
+    expect(wrapper.find('[data-testid="service-link-webmail"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="service-tab-password"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="service-tab-ssh"]').exists()).toBe(true)
   })
 
   it('does not offer the control panel on a service without a server even with single sign-on granted', async () => {

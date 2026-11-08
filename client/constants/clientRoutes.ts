@@ -81,6 +81,12 @@ export const SSO_AUTHORIZE_PATH = '/api/portal/auth/sso/authorize'
 export const CLIENT_REDIRECT_QUERY = 'redirect'
 
 /**
+ * The query parameter of the authorize route (`SSO_AUTHORIZE_PATH`) that names the page to return to
+ * once the sign-in finishes. The links, the silent probe and the route itself all spell it here.
+ */
+export const RETURN_TO_QUERY = 'returnTo'
+
+/**
  * The query parameter that asks a page to show the sign-in prompt. The sign-in callback adds it
  * when the identity provider found no session to sign the visitor in with.
  */

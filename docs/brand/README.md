@@ -39,7 +39,7 @@ Colours: tile `#0B0B14`, share-card background `#0A0A0F`, wordmark `#0F172A` (li
 | `client/public/og-image.jpg` | 1200×630 | `og:image` / `twitter:image` fallback (`utils/shareImage.ts`) |
 
 The client emits its icon links from `client/utils/brandingIcons.ts` (built-in set) and its manifest
-from `client/server/routes/site.webmanifest.get.ts`; the admin's are static in `admin/index.html`
+from `client/server/routes/site.webmanifest.ts`; the admin's are static in `admin/index.html`
 and `admin/public/site.webmanifest`.
 
 ## Regenerating

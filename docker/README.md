@@ -98,9 +98,10 @@ pipeline. A value has one name and one home:
   fresh install and matter only on the first start; after that the departments are edited in the admin
   panel. `.env.example` carries `example.com` placeholders: a real deployment sets its own.
 - **Order numbering**: `Orders__NumberPrefix` (text, default `ORD-`), `Orders__NumberDigits` (zero-padded digits,
-  default 4) and `Orders__InvoicePaymentTermDays` (days, 0 to 365, default 7) are optional API settings that no stack
-  passes; set them on the API service in a compose override to change them. A prefix and digits that do not fit an
-  order number, or a term out of range, refuse startup.
+  default 4) `Orders__InvoicePaymentTermDays` (days, 0 to 365, default 7) and `Orders__RetryLeaseMinutes` (minutes a claim on
+  an order line is respected before a retry may take the line over, 1 to 1440, default 10) are optional API settings
+  that no stack passes; set them on the API service in a compose override to change them. A prefix and digits that do
+  not fit an order number, or a term or lease out of range, refuse startup.
 - **Allowed origins**: `Cors__AllowedOrigins__N` is the one list the API's CORS policy and the payment gateway
   return URL check both read. An empty entry (an optional slot such as the dev stack's `PANEL_DEV_ORIGIN`) is
   skipped; any other entry must be an absolute origin such as `https://host.example.com`, or startup is refused.

@@ -16,7 +16,108 @@ If the new version added a database migration, restore the dump you took before 
 Check whether the release you are rolling back from added any database migrations.
 If it did, you must restore your pre-upgrade dump as part of the rollback.
 
-## Roll back
+## Roll back with the installer
+
+Every upgrade with the installer leaves a database backup named with the version it
+belongs to (see [Upgrade](/operators/upgrade)). `--rollback` uses the newest backup
+whose version differs from the `IMAGE_TAG` in `.env`. Running the installer again on a
+bad version makes newer backups of that same version; they are skipped, so the
+rollback still goes to the version you upgraded from. When the installer trims old
+backups it keeps the oldest backup of each of the newest 10 versions
+(`--keep-versions <n>`), so that one is not lost. "Newest" here means the version
+whose newest backup is the most recent, not the highest version number: after a
+rollback to 0.3.1 the versions are ranked by when each was last backed up. The
+oldest backups of versions further back go like any other old backup, so the folder
+does not grow with every release.
+
+A rollback that is repeated can pick a backup of a **newer** version: after you go
+back from 0.4.0 to 0.3.1, the newest backups of another version are the ones of
+0.4.0. The installer then says in bold that this moves **forward**, names both
+versions and asks with `Move FORWARD to <version>?`. Answer no if you meant to go further
+back, and move the newer files out of `backups/` first.
+
+```bash
+curl -fsSL   https://raw.githubusercontent.com/innovayse/hostpanel/main/install.sh   | bash -s -- --rollback
+```
+
+Add `--dir <path>` for an install that is not in `/opt/hostpanel`. It then:
+
+1. Shows the backup it will use and the version it returns to, and asks for confirmation.
+   Add `--yes` to confirm in advance in a script. Without a terminal and without `--yes` it
+   stops and changes nothing. A backup that is empty or does not end with the
+   `-- PostgreSQL database dump complete` line is refused.
+2. Starts the database on its own if it is stopped, waits until it accepts connections,
+   and stops every other service listed by `docker compose config --services`.
+3. Saves the current database to `backups/pre-rollback-<date>-<time>-<version>.sql`
+   (UTC), so the rollback itself can be undone. If that copy cannot be made, it stops
+   before replacing anything. A database without tables is not worth a copy and none
+   is kept.
+4. Restores the backup into a temporary database and renames it into the place of the
+   live database only when the whole restore went through. A restore that fails, for
+   example because the dump is damaged, leaves the live database exactly as it was.
+   A database cannot be renamed while any session holds it, and the server has
+   background workers (autovacuum above all) that connect on their own. So each
+   rename first ends the sessions that hold the database and is tried up to 10 times,
+   a second apart. If it stays blocked, the live database is put back, the installer
+   says the database stayed busy (and not that the backup may be damaged) and prints
+   the command to run the rollback again, which is safe to repeat. Only a rename the
+   server refuses as "in use" counts as busy. Any other refusal (a permission, a full
+   disk, a missing database) stops at once, prints the server's own message and says
+   that the live database was not changed or was put back; fix that cause before you
+   run the rollback again.
+5. Only now downloads the compose file and Caddyfile of the old version, sets
+   `IMAGE_TAG`, pulls those images and starts the stack. So a failure in steps 1 to 4
+   leaves the current compose file in place.
+6. Removes old `pre-rollback-*` files beyond `--keep`, the oldest one of each version
+   excepted. This happens only after the restore succeeded, and never to the copy just
+   made.
+
+<Callout type="danger">
+A rollback permanently removes everything written after the backup was taken: orders, payments, tickets and any other data. The copy saved in step 3 is the only way back to it.
+</Callout>
+
+If something fails after the services were stopped, the installer prints what state the
+install is in and the exact commands to run. For a failed restore this is the start
+command and, for the case where the database looks wrong, the command that puts the
+`pre-rollback` file back by hand:
+
+```bash
+cd /opt/hostpanel && docker compose -f docker-compose.hub.yml up -d
+```
+
+Every message says exactly where the data is. If the swap itself breaks half way, the
+live database is missing: the data from before the rollback is still in the database
+`<name>_replaced`, the backup that was being restored is in `<name>_restore` (both
+inside the database container, `<name>` being `POSTGRES_DB`), and the `pre-rollback`
+file holds the same data as `<name>_replaced`. The installer prints the command that
+renames one of them back into place, then the start command. Until a database with
+the live name exists, a new `--rollback` is refused before it changes anything,
+because its first step would drop both leftovers. When the database had no tables,
+no `pre-rollback` copy is made and the message says so instead of naming a file.
+
+If the restore is cut off (the installer is killed, or `docker compose exec` fails),
+the installer does not guess: it reads which of `<name>`, `<name>_replaced` and
+`<name>_restore` exist now and says what that means, for example that the live
+database is missing, or that it most likely holds the restored backup while the old
+data is in `<name>_replaced`. When even that list cannot be read, it says the state is
+unknown and prints the command that lists the databases.
+
+A database named `postgres` cannot be rolled back with the installer: the restore
+swaps databases by renaming them from the `postgres` maintenance database, so
+`--rollback` refuses it before changing anything. Restore it by hand as described in
+[A database named postgres](#a-database-named-postgres) below.
+
+The rollback does not undo everything an upgrade may have changed. Uploaded files and
+the plugin volumes are not part of the database dump and stay as they are, and keys
+that a newer release added to `.env` stay in it (unused keys are harmless, but review
+them). Only the database, the compose file, the Caddyfile and `IMAGE_TAG` go back.
+
+`--rollback` cannot be combined with `--version`, because the version is the one recorded
+with the backup. A backup taken while `IMAGE_TAG` was `latest` is refused; restore it by
+hand as described below. To use an older backup than the one chosen, move the newer files
+out of `backups/` first, or follow the manual steps.
+
+## Roll back by hand
 
 **1. Stop the application containers** (leave the database running):
 
@@ -43,9 +144,11 @@ docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
   sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' \
   > pre-rollback-$(date +%Y-%m-%d-%H%M%S).sql
 
-# Verify the pre-upgrade dump file, then drop and restore:
-if ! test -s pre-upgrade-2024-01-15-103000.sql; then
-  echo "Dump file is empty or missing, aborting."
+# Verify the pre-upgrade dump file (a finished dump ends with the pg_dump completion line),
+# then drop and restore. A damaged dump restored this way leaves the database empty,
+# so keep the pre-rollback file above until the stack works:
+if ! test -s pre-upgrade-2024-01-15-103000.sql || ! tail -n 5 pre-upgrade-2024-01-15-103000.sql | grep -q "^-- PostgreSQL database dump complete$"; then
+  echo "Dump file is empty, cut short or missing, aborting."
 else
   docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
     sh -c 'dropdb -U "$POSTGRES_USER" "$POSTGRES_DB" && \
@@ -69,6 +172,37 @@ pulls the old images and starts the stack. Replace `1.3.2` with the version you 
 rolling back to — the value you noted in upgrade step 1.
 
 **4.** Check that `GET /health` returns `200` and that you can sign in.
+
+## A database named postgres
+
+`POSTGRES_DB=postgres` is the server's own maintenance database. You cannot drop the
+database you are connected to, so the by-hand steps above, which run `dropdb` and
+`createdb` against the database named in `POSTGRES_DB`, do not work for it. Connect to
+a different database for the drop and the create, and only then load the dump.
+`template1` exists on every server and is the usual choice. Stop the application
+containers first (step 1 above) and take the safety dump of step 2.
+
+```bash
+cd /opt/hostpanel
+
+# Drop and create from template1, ending any other session that holds postgres.
+# Both commands run in the database container, as POSTGRES_USER.
+docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+  sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d template1 \
+           -c "DROP DATABASE IF EXISTS postgres WITH (FORCE)" \
+           -c "CREATE DATABASE postgres"'
+
+# Load the dump into the new postgres database.
+docker compose -f docker-compose.hub.yml exec -T hostpanel-db \
+  sh -c 'psql -v ON_ERROR_STOP=1 --single-transaction \
+         -U "$POSTGRES_USER" -d postgres' < pre-upgrade-2024-01-15-103000.sql
+```
+
+`WITH (FORCE)` needs PostgreSQL 13 or newer. On an older server, end the sessions
+first with `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'postgres' AND pid <> pg_backend_pid()`
+from `template1`, then drop without `FORCE`. A damaged dump leaves the new database
+empty, so check the dump with the `tail` test of step 2 first and keep the safety dump
+until the stack works. Then continue with step 3.
 
 ## After rolling back
 

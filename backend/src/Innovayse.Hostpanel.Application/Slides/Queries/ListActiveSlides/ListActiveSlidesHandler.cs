@@ -121,11 +121,13 @@ public sealed class ListActiveSlidesHandler
     {
         decimal? monthlyPrice = null;
         decimal? annualPrice = null;
+        decimal? fromPrice = null;
 
         if (slide.ProductId.HasValue && productMap.TryGetValue(slide.ProductId.Value, out var product))
         {
             monthlyPrice = product.MonthlyPrice;
             annualPrice = product.AnnualPrice;
+            fromPrice = product.FromPrice;
         }
 
         return new SlidePublicDto(
@@ -139,6 +141,6 @@ public sealed class ListActiveSlidesHandler
             new SlideContentDto(translation.Title, translation.Tagline, translation.Description, translation.Features),
             new SlideLinksDto(slide.DemoUrl, slide.LearnMoreUrl),
             new SlideCallToActionDto(translation.CtaText, translation.CtaUrl),
-            new SlidePricingDto(monthlyPrice, annualPrice));
+            new SlidePricingDto(monthlyPrice, annualPrice, fromPrice));
     }
 }

@@ -876,7 +876,7 @@ export const SLIDES = [
     content: { title: 'Example slide with a photograph', tagline: 'Fast hosting', description: 'A slide whose background is an image under a dark scrim.', features: ['Free SSL', 'Daily backups'] },
     links: { demoUrl: null, learnMoreUrl: '/products' },
     callToAction: { text: null, url: null },
-    pricing: { monthlyPrice: null, annualPrice: null },
+    pricing: { monthlyPrice: null, annualPrice: null, fromPrice: null },
   },
   {
     id: 2,
@@ -887,7 +887,7 @@ export const SLIDES = [
     content: { title: 'Example slide without an image', tagline: 'Plain background', description: 'A slide with no image follows the active colour mode.', features: [] },
     links: { demoUrl: null, learnMoreUrl: '/vps' },
     callToAction: { text: null, url: null },
-    pricing: { monthlyPrice: null, annualPrice: null },
+    pricing: { monthlyPrice: null, annualPrice: null, fromPrice: null },
   },
 ]
 
@@ -961,6 +961,30 @@ export const pluginPage = (address, language) => {
             { blocks: [{ kind: 'preview', id: 'site-preview', sources: [{ id: 'preview', label: text.preview, route: { method: 'get', path: '/workspace/site' }, field: 'previewUrl' }], selection: { sources: ['preview'], route: { method: 'post', path: '/workspace/selection' }, release: { route: { method: 'get', path: '/workspace/site' }, field: 'release' } } }] },
           ],
         }],
+      },
+    }
+  }
+  if (segments.length === 1 && segments[0] === 'stage') {
+    // A publish button that sends the version on its label (#940): its label and body come from one read of the state.
+    return {
+      ...base,
+      id: 'stage',
+      path: '/stage',
+      title: text.site,
+      view: {
+        schema: 1,
+        blocks: [
+          { id: 'live', kind: 'stat', label: text.status, source: { route: { method: 'get', path: '/stage/state' }, field: 'live' } },
+          {
+            id: 'publish',
+            kind: 'action',
+            label: text.publish,
+            route: { method: 'post', path: '/stage/publish' },
+            refresh: ['live'],
+            labelSource: { route: { method: 'get', path: '/stage/state' }, field: 'publishLabel' },
+            bodySource: { route: { method: 'get', path: '/stage/state' }, fields: { expectedVersion: 'publishVersion' } },
+          },
+        ],
       },
     }
   }

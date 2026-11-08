@@ -101,6 +101,7 @@ RUN SSO=$([ "$AUTH_MODE" = "sso" ] && echo "-p:InnovayseSso=true"); \
     ConnectionStrings__DefaultConnection="Host=codegen.invalid;Database=codegen;Username=codegen;Password=codegen" \
     Sso__Authority=https://sign-on.invalid Sso__ClientId=codegen \
     Auth__AppName=codegen Auth__Authority=https://sign-on.invalid Auth__PublicAuthority=https://sign-on.invalid \
+    Auth__BearerIssuer=https://sign-on.invalid \
     Auth__ClientId=codegen Auth__ClientSecret=codegen Auth__RedisConnection=localhost:6379 \
     dotnet run -c Release --no-restore --no-launch-profile $SSO -- codegen write
 

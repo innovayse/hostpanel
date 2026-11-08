@@ -86,8 +86,8 @@ const props = defineProps<Props>()
 const context = usePluginView()
 /** The plugin store, which makes the call. */
 const store = usePluginsStore()
-/** Starts the follow-up refresh; stopped when the block unmounts. */
-const followUp = usePluginFollowUp()
+/** Starts the follow-up refresh; the view ends it when the page is left, not when this block hides. */
+const followUp = usePluginFollowUp(() => props.block.id)
 
 /**
  * The empty text values: every text field empty.

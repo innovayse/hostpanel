@@ -27,7 +27,7 @@
 import { FileText, Globe, MessageSquare, Server } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import { CLIENT_DOMAINS_PATH, CLIENT_INVOICES_PATH, CLIENT_SERVICES_PATH, CLIENT_TICKETS_PATH } from '~/constants/clientRoutes'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'
 import { DashboardStat } from '~/types/dashboardstat'
 import { UiTone } from '~/utils/ui/enums'

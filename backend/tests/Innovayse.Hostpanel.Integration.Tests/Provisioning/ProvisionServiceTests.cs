@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Commands.ProvisionService;
+using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Provisioning;
@@ -254,6 +255,86 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
         var stored = await ReloadAsync(serviceId);
         stored.Status.Should().Be(ServiceStatus.Pending);
         stored.Password.Should().NotBeNullOrEmpty();
+    }
+
+    /// <summary>
+    /// A provider that stops the call because the stored username or domain is one the panel can never
+    /// accept answers 409 with that code, and the service stays Pending.
+    /// </summary>
+    /// <param name="code">The provider's coded refusal.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData(HostpanelErrorCodes.CPANEL_USERNAME_INVALID)]
+    [InlineData(HostpanelErrorCodes.CPANEL_DOMAIN_INVALID)]
+    public async Task Provision_ProviderRejectsTheStoredDetails_Returns409WithItsCodeAsync(string code)
+    {
+        var setupHttp = factory.CreateClient();
+        var serviceId = await ProvisioningTestSeeds.SeedServiceAsync(factory, setupHttp, await factory.GetAdminTokenAsync());
+        var provider = new FakeProvisioningProvider { FailWith = new DomainRuleException(code, "stored details are not valid") };
+        var http = await ProvisioningTestSeeds.AdminClientWithFakeProviderAsync(factory, provider);
+
+        var response = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(code);
+        (await ReloadAsync(serviceId)).Status.Should().Be(ServiceStatus.Pending);
+    }
+
+    /// <summary>
+    /// A provider that cannot tell whether the account was created answers 503 with its own
+    /// <c>PROVISIONING_OUTCOME_UNKNOWN</c>, distinct from a refusal, and the service stays Pending so
+    /// the caller can retry; a retry that finds the account there adopts it and activates the service.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Provision_ProviderOutcomeUnknown_Returns503WithItsOwnCodeAndStaysPendingAsync()
+    {
+        var setupHttp = factory.CreateClient();
+        var serviceId = await ProvisioningTestSeeds.SeedServiceAsync(factory, setupHttp, await factory.GetAdminTokenAsync());
+        var provider = new FakeProvisioningProvider
+        {
+            FailWith = new DomainRuleException(HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN, "the answer was lost"),
+        };
+        var http = await ProvisioningTestSeeds.AdminClientWithFakeProviderAsync(factory, provider);
+
+        var response = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN);
+        (await response.Content.ReadAsStringAsync()).Should().NotContain("the answer was lost");
+        provider.ProvisionCalls.Should().Be(1);
+        (await ReloadAsync(serviceId)).Status.Should().Be(ServiceStatus.Pending);
+
+        // The retry: the account the lost answer hid is now found, so it is adopted and the service activates.
+        provider.FailWith = null;
+        provider.ProvisionAnswer = ProvisioningResult.AlreadyExists($"prov{serviceId}", $"prov{serviceId}.example.com");
+
+        var retry = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
+
+        retry.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        provider.ProvisionCalls.Should().Be(2);
+        var stored = await ReloadAsync(serviceId);
+        stored.Status.Should().Be(ServiceStatus.Active);
+        stored.ProvisioningRef.Should().Be($"prov{serviceId}");
+    }
+
+    /// <summary>
+    /// An unexpected provider failure is still a 502 <c>PROVISIONING_UPSTREAM_FAILED</c>: only the
+    /// provider's own unknown-outcome signal changes the answer.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Provision_ProviderThrowsAnythingElse_StillReturns502Async()
+    {
+        var setupHttp = factory.CreateClient();
+        var serviceId = await ProvisioningTestSeeds.SeedServiceAsync(factory, setupHttp, await factory.GetAdminTokenAsync());
+        var provider = new FakeProvisioningProvider { FailWith = new InvalidOperationException("boom") };
+        var http = await ProvisioningTestSeeds.AdminClientWithFakeProviderAsync(factory, provider);
+
+        var response = await http.PostAsync($"/api/provisioning/{serviceId}/provision", null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
+        (await ProvisioningTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.PROVISIONING_UPSTREAM_FAILED);
     }
 
     /// <summary>

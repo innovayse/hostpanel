@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AuroraHosting from '~/templates/aurora/pages/AuroraHosting.vue'
+import { PricingCycle } from '~/types/pricingcycle'
 import { stubAuroraGlobals, PLANS } from '../auroraGlobals'
 
 describe('AuroraHosting', () => {
@@ -41,13 +42,13 @@ describe('AuroraHosting', () => {
     expect(mountWithKit(AuroraHosting, { props: { plans: PLANS, comparisonRows: disjoint } }).find('[data-testid="comparison-table"]').exists()).toBe(false)
   })
 
-  it('ends with the call to action and passes the billing period up', async () => {
+  it('ends with the call to action and passes the billing cycle up', async () => {
     stubAuroraGlobals()
     const wrapper = mountWithKit(AuroraHosting, { props: { plans: PLANS } })
 
     expect(wrapper.find('[data-testid="aurora-cta"]').exists()).toBe(true)
 
-    await wrapper.find('[data-testid="billing-yearly"]').trigger('click')
-    expect(wrapper.emitted('update:yearly')).toEqual([[true]])
+    await wrapper.find('[data-testid="billing-annual"]').trigger('click')
+    expect(wrapper.emitted('update:cycle')).toEqual([[PricingCycle.Annual]])
   })
 })

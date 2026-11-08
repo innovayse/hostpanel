@@ -7,8 +7,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
 
 /// <summary>
 /// Lightweight per-server WHM API helper.
-/// Unlike <see cref="CPanelClient"/> (which is DI-configured for a single server),
-/// this class accepts per-call connection details and is used for multi-server operations
+/// It accepts per-call connection details and is used for multi-server operations
 /// such as disk usage reporting.
 /// </summary>
 public sealed class CpanelWhmApi

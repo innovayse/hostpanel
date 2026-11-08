@@ -326,7 +326,7 @@
     <value>Priority must be one of: Low, Medium, High.</value>
   </data>
 <data name="TicketStatusInvalid" xml:space="preserve">
-    <value>Status must be one of: Open, AwaitingReply, Answered, Closed.</value>
+    <value>Status must be one of: Open, AwaitingReply, Closed.</value>
   </data>
 <data name="TicketTagRequired" xml:space="preserve">
     <value>The tag is required and must be at most 64 characters.</value>
@@ -537,6 +537,18 @@
   </data>
   <data name="OrderIdInvalid" xml:space="preserve">
     <value>Order id must be greater than zero.</value>
+  </data>
+  <data name="OrderItemIdInvalid" xml:space="preserve">
+    <value>Order line id must be greater than zero.</value>
+  </data>
+  <data name="OrderLineOutcomeInvalid" xml:space="preserve">
+    <value>Order line outcome must be Fulfilled or Failed.</value>
+  </data>
+  <data name="OrderLineAttemptInvalid" xml:space="preserve">
+    <value>Order line attempt must be greater than zero.</value>
+  </data>
+  <data name="OrderLineRefundOutcomeInvalid" xml:space="preserve">
+    <value>Order line refund outcome must be NothingRefunded or PartlyRefunded.</value>
   </data>
   <data name="PlaceOrderPaymentMethodRequired" xml:space="preserve">
     <value>Select a payment method.</value>
@@ -1401,6 +1413,15 @@
   </data>
   <data name="PluginVersionRequired" xml:space="preserve">
     <value>The plugin version is required.</value>
+  </data>
+  <data name="PluginLicenceKeyRequired" xml:space="preserve">
+    <value>A licence key is required.</value>
+  </data>
+  <data name="PluginLicenceKeyTooLong" xml:space="preserve">
+    <value>The licence key is too long.</value>
+  </data>
+  <data name="PluginLicenceKeyInvalid" xml:space="preserve">
+    <value>The licence key may only have printable characters without spaces.</value>
   </data>
   <data name="PluginVersionInvalid" xml:space="preserve">
     <value>The plugin version must be a semantic version such as 1.2.3.</value>

@@ -10,10 +10,10 @@
  *
  * It owns the view's context for the blocks below it: the plugin id, the values a route's `{param}` segments are
  * filled from (the page's path parameters or the slot's verified context), the origins a link may open, the
- * refresh signals an action or a form sends to other blocks, and how a row or an action opens another page of
- * the plugin. A block names a route by `{ method, path }` exactly as the manifest declares it; the host checked
- * every such reference at install, and the server checks the caller again on every call, so nothing here decides
- * who may call what.
+ * refresh signals an action or a form sends to other blocks, how a row or an action opens another page of
+ * the plugin, and the follow-ups it keeps running until the view is left. A block names a route by
+ * `{ method, path }` exactly as the manifest declares it; the host checked every such reference at install, and the
+ * server checks the caller again on every call, so nothing here decides who may call what.
  */
 import { providePluginSelection } from '~/composables/usePluginSelection'
 import { providePluginView } from '~/composables/usePluginView'
@@ -66,6 +66,36 @@ const refresh = (ids: string[]): void => {
   refreshes.value = next
 }
 
+/** The follow-ups running in this view: the function that ends each, by the id of the block that started it. */
+const watches = new Map<string, () => void>()
+
+/**
+ * Takes a follow-up into the view's keeping. The view, not the block that started the work, decides how long it
+ * runs: a publish button hides itself the moment the publish it started has made it pointless, and the watch that is
+ * still reading the result must not go with it. An earlier watch of the same block ends, so two clicks never run two.
+ *
+ * @param key - The starting block's id.
+ * @param stop - Ends the watch.
+ * @returns Lets go of the watch once it ended on its own.
+ */
+const adopt = (key: string, stop: () => void): (() => void) => {
+  watches.get(key)?.()
+  watches.set(key, stop)
+  return () => {
+    // A later watch under the same key is not this one's to drop.
+    if (watches.get(key) === stop) {
+      watches.delete(key)
+    }
+  }
+}
+
+onUnmounted(() => {
+  for (const stop of watches.values()) {
+    stop()
+  }
+  watches.clear()
+})
+
 /**
  * Opens a page of the plugin, its parameters read from a row or a reply.
  *
@@ -98,14 +128,19 @@ providePluginView({
   refreshes,
   refresh,
   open,
+  adopt,
   track: (read: Promise<void>): void => {
     props.track?.(read)
   },
 })
 
-/** The blocks with a key each: the block's id, else its kind and place, which a view document never reorders. */
+/**
+ * The blocks with a key each: the block's id, else its kind, and always its place, which a view document never
+ * reorders. The place keeps the keys of a list apart when a plugin that was installed before the host refused repeated
+ * ids still gives one id to two blocks; a repeated key would let Vue patch one block over the other.
+ */
 const entries = computed(() => props.view.blocks.map((block: PluginBlockData, position: number) => ({
-  key: block.id ?? `${block.kind}-${position}`,
+  key: `${block.id ?? block.kind}-${position}`,
   block,
 })))
 </script>

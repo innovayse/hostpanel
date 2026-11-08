@@ -7,8 +7,8 @@ namespace Innovayse.Hostpanel.Application.Reports.Common;
 /// <param name="CountryCode">The member state's ISO 3166-1 alpha-2 code.</param>
 /// <param name="VatRate">The VAT rate the invoices carried, in percent.</param>
 /// <param name="NumberOfInvoices">The taxed invoices paid in the quarter.</param>
-/// <param name="TotalExclVat">The value invoiced excluding VAT, less the net part of the refunds made in the quarter.</param>
-/// <param name="TotalVatCollected">The VAT collected, less the VAT part of the refunds made in the quarter.</param>
+/// <param name="TotalExclVat">The value invoiced excluding VAT, less the net part of the refunds made and the account credit notes issued in the quarter.</param>
+/// <param name="TotalVatCollected">The VAT collected, less the VAT part of the refunds made and the account credit notes issued in the quarter.</param>
 /// <param name="Currency">The ISO 4217 code of the invoices, which both totals are in.</param>
 public sealed record VatMossRowDto(
     string CountryCode,

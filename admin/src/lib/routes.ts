@@ -232,6 +232,14 @@ export const invoicePath = (id: RouteId): string => `${AppRoute.Billing}/${id}`
 export const creditNotePath = (id: RouteId): string => `${AppRoute.BillingCreditNotes}/${id}`
 
 /**
+ * Path of one plugin's details page.
+ *
+ * @param id - Plugin ID.
+ * @returns `/plugins/<id>`.
+ */
+export const pluginPath = (id: RouteId): string => `${AppRoute.Plugins}/${id}`
+
+/**
  * Path of an invoice's read-only page.
  *
  * @param id - Invoice ID.

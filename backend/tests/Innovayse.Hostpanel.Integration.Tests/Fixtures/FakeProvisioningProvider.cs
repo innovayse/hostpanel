@@ -17,6 +17,13 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     public bool ShouldFail { get; set; }
 
     /// <summary>
+    /// When set, <see cref="ProvisionAsync"/> and <see cref="GetCPanelSsoUrlAsync"/> throw this
+    /// exception: the shape a real provider's own coded refusal takes, such as a username the panel
+    /// can never accept.
+    /// </summary>
+    public Exception? FailWith { get; set; }
+
+    /// <summary>
     /// The answer <see cref="ProvisionAsync"/> gives when <see cref="ShouldFail"/> is not set; a
     /// created account by default. Set it to stage an existing account or a reference-less success.
     /// </summary>
@@ -28,10 +35,30 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     /// <summary>How many times <see cref="SuspendAsync"/> was called.</summary>
     public int SuspendCalls { get; private set; }
 
+    /// <summary>How many times <see cref="GetCredentialsAsync"/> was called.</summary>
+    public int CredentialsCalls { get; private set; }
+
+    /// <summary>How many times <see cref="GetCPanelSsoUrlAsync"/> was called.</summary>
+    public int SsoCalls { get; private set; }
+
+    /// <summary>How many times <see cref="ChangePasswordAsync"/> was called.</summary>
+    public int ChangePasswordCalls { get; private set; }
+
+    /// <summary>How many times <see cref="ChangePackageAsync"/> was called.</summary>
+    public int ChangePackageCalls { get; private set; }
+
+    /// <summary>How many calls reached the account-level members the client and staff screens use.</summary>
+    public int AccountCalls => CredentialsCalls + SsoCalls + ChangePasswordCalls + ChangePackageCalls;
+
     /// <inheritdoc/>
     public Task<ProvisioningResult> ProvisionAsync(ProvisionAccountOrder req, CancellationToken ct)
     {
         ProvisionCalls++;
+        if (FailWith is not null)
+        {
+            throw FailWith;
+        }
+
         return ShouldFail
             ? Task.FromResult(ProvisioningResult.Refused("fake provider refused to provision"))
             : Task.FromResult(ProvisionAnswer);
@@ -62,6 +89,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     /// <inheritdoc/>
     public Task<ServiceCredentials> GetCredentialsAsync(string provisioningRef, CancellationToken ct)
     {
+        CredentialsCalls++;
         ThrowIfShouldFail();
         return Task.FromResult(new ServiceCredentials("fake-user", "fake-pass", "fake.example.com", "1.2.3.4", "https://panel.fake.example.com"));
     }
@@ -69,6 +97,12 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     /// <inheritdoc/>
     public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
     {
+        SsoCalls++;
+        if (FailWith is not null)
+        {
+            throw FailWith;
+        }
+
         ThrowIfShouldFail();
         return Task.FromResult("https://fake-panel.example.com/sso");
     }
@@ -76,6 +110,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     /// <inheritdoc/>
     public Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct)
     {
+        ChangePasswordCalls++;
         ThrowIfShouldFail();
         return Task.CompletedTask;
     }
@@ -83,6 +118,7 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     /// <inheritdoc/>
     public Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct)
     {
+        ChangePackageCalls++;
         ThrowIfShouldFail();
         return Task.CompletedTask;
     }

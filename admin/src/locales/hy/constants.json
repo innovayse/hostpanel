@@ -16,18 +16,27 @@
     "allStages": "Բոլոր փուլերը"
   },
   "orderStatusOptions": {
-    "fraud": "Խարդախություն"
+    "fraud": "Խարդախություն",
+    "incomplete": "Թերի"
   },
   "ticketFilterOptions": {
     "allActiveTickets": "Բոլոր ակտիվ տոմսերը",
     "flagged": "Դրոշակավորված",
-    "answered": "Պատասխանված",
-    "customerReply": "Հաճախորդի պատասխան"
+    "awaitingReply": "Սպասում է պատասխանի"
   },
   "recurringPeriodOptions": {
     "weekly": "Շաբաթական",
     "monthly": "Ամսական",
     "quarterly": "Եռամսյակային",
     "annually": "Տարեկան"
+  },
+  "orderLineFulfilmentOptions": {
+    "pending": "Դեռ չի գործարկվել",
+    "inProgress": "Կատարվում է",
+    "fulfilled": "Կատարված",
+    "failed": "Սխալ",
+    "refunded": "Վերադարձված",
+    "refunding": "Վերադարձը ընթացքի մեջ է",
+    "partiallyRefunded": "Մասնակի վերադարձված"
   }
 }

@@ -28,11 +28,11 @@
       </UiNavItem>
     </UiNavGroup>
 
-    <UiNavGroup v-if="service.server" :title="$t('client.services.sectionQuickLinks')" :icon="Link2">
+    <UiNavGroup v-if="service.server && liveAccount" :title="$t('client.services.sectionQuickLinks')" :icon="Link2">
       <UiNavItem v-if="canSignIn" :icon="Monitor" :loading="ssoLoading" testid="service-link-cpanel" @click="emit('cpanel')">
         {{ $t('client.services.linkCpanel') }}
       </UiNavItem>
-      <UiNavItem :href="webmailUrl" :icon="Mail" testid="service-link-webmail">
+      <UiNavItem v-if="liveAccount" :href="webmailUrl" :icon="Mail" testid="service-link-webmail">
         {{ $t('client.services.linkWebmail') }}
       </UiNavItem>
       <!-- Automatic sign-in failed; the panel's own login form was opened instead. -->
@@ -50,13 +50,13 @@
 import { computed } from 'vue'
 import { KeyRound, LayoutGrid, Link2, Mail, MessageSquare, Monitor, Puzzle, Settings, Terminal, XCircle, Zap } from 'lucide-vue-next'
 import { CLIENT_TICKET_NEW_PATH, clientServiceSetupPath } from '~/constants/clientRoutes'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'
 import type { ClientService } from '~/types/clientservice'
 import type { PluginServiceTab } from '~/types/pluginservicetab'
 import { ServiceTab } from '~/types/servicetab'
-import { canSignInToControlPanel, webmailUrl as buildWebmailUrl } from '~/utils/controlPanel'
-import { serviceSetupPending } from '~/utils/serviceSetup'
+import { canSignInToControlPanel, hasLiveHostingAccount, webmailUrl as buildWebmailUrl } from '~/utils/controlPanel'
+import { serviceAwaitsSetup } from '~/utils/serviceSetup'
 
 /** Translates a key into the active locale. */
 const { t } = useI18n()
@@ -100,13 +100,16 @@ const canTicket = computed(() => store.mayDo(Permission.ViewOpenSupportTickets))
 const canOrder = computed(() => store.mayDo(Permission.PlaceNewOrders))
 
 /** Whether the setup action is offered: a pending hosting service (a digital one has none) the person may order for. */
-const canSetUp = computed(() => serviceSetupPending(props.service) && canOrder.value)
+const canSetUp = computed(() => serviceAwaitsSetup(props.service) && canOrder.value)
 
 /** Whether the person may sign in to the control panel from here. */
 const canSignIn = computed(() => canSignInToControlPanel(props.service, store.mayDo(Permission.AllowSingleSignOn)))
 
-/** Whether the person may change the service's control-panel password. */
-const canChangePassword = computed(() => store.mayDo(Permission.ViewModifyPasswords))
+/** Whether the service still has a hosting account: a terminated one has none, so nothing that reaches the panel is offered. */
+const liveAccount = computed(() => hasLiveHostingAccount(props.service))
+
+/** Whether the person may change the service's control-panel password, on a service whose account is still there. */
+const canChangePassword = computed(() => liveAccount.value && store.mayDo(Permission.ViewModifyPasswords))
 
 /** Address of the service's webmail, on its own server; undefined while no server is assigned (the links are hidden then). */
 const webmailUrl = computed(() => (props.service.server ? buildWebmailUrl(props.service.server.hostname) : undefined))

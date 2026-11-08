@@ -8,6 +8,7 @@ import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { faqFixture, partnerFixture, testimonialFixture } from '~/tests/helpers/storefrontFixtures'
 import AuroraHome from '~/templates/aurora/pages/AuroraHome.vue'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
+import { PricingCycle } from '~/types/pricingcycle'
 import { stubAuroraGlobals, PLANS } from '../auroraGlobals'
 
 /** The mocked storefront endpoints, so the FAQ and testimonials sections have content to show. */
@@ -125,13 +126,13 @@ describe('AuroraHome', () => {
     expect(wrapper.emitted('search')).toEqual([['acme']])
   })
 
-  it('passes the billing period up to the page', async () => {
+  it('passes the billing cycle up to the page', async () => {
     stubAuroraGlobals()
     const wrapper = mountWithKit(AuroraHome, { props: { plans: PLANS } })
 
-    await wrapper.find('[data-testid="billing-yearly"]').trigger('click')
+    await wrapper.find('[data-testid="billing-annual"]').trigger('click')
 
-    expect(wrapper.emitted('update:yearly')).toEqual([[true]])
+    expect(wrapper.emitted('update:cycle')).toEqual([[PricingCycle.Annual]])
   })
 
   it('spans the full width with the aurora backdrop and keeps the content in the shared page container', () => {

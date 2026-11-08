@@ -131,4 +131,109 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
         using var anonymous = factory.CreateClient();
         (await anonymous.GetAsync("/api/admin/plugins/registry/updates")).StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    /// <summary>
+    /// A plugin with a stored licence key is read again with it: the licensee's view of the newest version wins over the
+    /// anonymous one, and the key is sent. A plugin without a key is asked about without one.
+    /// </summary>
+    [Fact]
+    public async Task AStoredLicenceKey_IsSentAndItsViewWinsAsync()
+    {
+        var registry = new FakePluginRegistryClient();
+        var pluginId = $"test-lic-{Guid.NewGuid():N}";
+        registry.Publish(pluginId, "1.5.0", [1]);
+        registry.Details[pluginId] = new Application.Admin.Plugins.Common.RegistryPluginDetails(
+            registry.Details[pluginId].Summary with { LatestVersion = "3.0.0" }, null, null, null, null, null, null, null);
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
+
+        try
+        {
+            await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(pluginId));
+
+            var anonymous = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/plugins/registry/updates");
+            anonymous!.Single(u => u.GetProperty("id").GetString() == pluginId).GetProperty("latestVersion").GetString().Should().Be("1.5.0");
+            registry.LastLicenceKey.Should().BeNull();
+
+            (await client.PutAsJsonAsync($"/api/admin/plugins/registry/{pluginId}/licence", new { key = "LICENCE-KEY-update" })).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+            var licensed = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/plugins/registry/updates");
+
+            licensed!.Single(u => u.GetProperty("id").GetString() == pluginId).GetProperty("latestVersion").GetString().Should().Be("3.0.0");
+            registry.LastLicenceKey.Should().Be("LICENCE-KEY-update");
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/registry/{pluginId}/licence");
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+        }
+    }
+
+    /// <summary>A plugin the registry does not show to the licensee keeps the answer it had and does not fail the check.</summary>
+    [Fact]
+    public async Task APluginTheRegistryHidesFromTheLicensee_KeepsItsAnswerAsync()
+    {
+        var registry = new FakePluginRegistryClient();
+        var pluginId = $"test-lic-{Guid.NewGuid():N}";
+        registry.Publish(pluginId, "1.5.0", [1]);
+        registry.Details.Remove(pluginId);
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
+
+        try
+        {
+            await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(pluginId));
+            await client.PutAsJsonAsync($"/api/admin/plugins/registry/{pluginId}/licence", new { key = "LICENCE-KEY-hidden" });
+
+            var response = await client.GetAsync("/api/admin/plugins/registry/updates");
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            var rows = await response.Content.ReadFromJsonAsync<List<JsonElement>>();
+            rows!.Single(u => u.GetProperty("id").GetString() == pluginId).GetProperty("latestVersion").GetString().Should().Be("1.5.0");
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/registry/{pluginId}/licence");
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+        }
+    }
+
+    /// <summary>With two plugins that have keys, each plugin page call carries only that plugin's own key; a plugin without a key is asked without one.</summary>
+    [Fact]
+    public async Task TwoPlugins_EachSendOnlyTheirOwnKeyAsync()
+    {
+        var registry = new FakePluginRegistryClient();
+        var first = $"test-lic-a{Guid.NewGuid():N}";
+        var second = $"test-lic-b{Guid.NewGuid():N}";
+        var third = $"test-lic-c{Guid.NewGuid():N}";
+        foreach (var id in new[] { first, second, third })
+        {
+            registry.Publish(id, "1.5.0", [1]);
+        }
+
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
+
+        try
+        {
+            foreach (var id in new[] { first, second, third })
+            {
+                await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(id));
+            }
+
+            await client.PutAsJsonAsync($"/api/admin/plugins/registry/{first}/licence", new { key = "KEY-FIRST" });
+            await client.PutAsJsonAsync($"/api/admin/plugins/registry/{second}/licence", new { key = "KEY-SECOND" });
+
+            (await client.GetAsync("/api/admin/plugins/registry/updates")).StatusCode.Should().Be(HttpStatusCode.OK);
+
+            registry.PluginPageKeys[first].Should().Be("KEY-FIRST");
+            registry.PluginPageKeys[second].Should().Be("KEY-SECOND");
+            registry.PluginPageKeys.ContainsKey(third).Should().BeFalse("a plugin without a key is not asked again");
+        }
+        finally
+        {
+            foreach (var id in new[] { first, second, third })
+            {
+                await client.DeleteAsync($"/api/admin/plugins/registry/{id}/licence");
+                await client.DeleteAsync($"/api/admin/plugins/{id}");
+            }
+        }
+    }
 }

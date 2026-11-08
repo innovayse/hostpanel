@@ -76,7 +76,19 @@ export default defineConfig({
     screenshot: 'only-on-failure',
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } },
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
+      // A flow written for a touch screen runs in the phone project only.
+      grepInvert: /@phone/,
+    },
+    {
+      // A phone: touch input and a narrow screen, so panes stack. Only the flows tagged `@phone` run here; the others
+      // are about the desktop layout and would only repeat the chromium project.
+      name: 'phone',
+      use: { ...devices['Pixel 7'] },
+      grep: /@phone/,
+    },
   ],
   webServer: [
     {

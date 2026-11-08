@@ -8,7 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { makeClientService } from '~/tests/helpers/clientServiceFixture'
 import { grantPermissions } from '~/tests/helpers/grantPermissions'
 import { mountClient } from '~/tests/helpers/mountClient'

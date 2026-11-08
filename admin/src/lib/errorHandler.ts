@@ -58,6 +58,14 @@ export const errorCode = (cause: unknown): string | null =>
   cause instanceof ApiError ? stringMember(cause.body, 'type') : null
 
 /**
+ * The HTTP status of a rejected request, for branching where the status itself is the answer (a 404).
+ *
+ * @param cause - The value caught from a rejected {@link useApi} request.
+ * @returns The status, or null when the request never got an answer.
+ */
+export const errorStatus = (cause: unknown): number | null => (cause instanceof ApiError ? cause.status : null)
+
+/**
  * The per-field messages of a rejected request, keyed by camelCase field name; a field of a nested
  * object is keyed by its dotted path with every segment camelCased (`endpoint.hostname`).
  *

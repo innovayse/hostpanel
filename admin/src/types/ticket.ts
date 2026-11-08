@@ -9,8 +9,6 @@ export enum TicketStatus {
   Open = 'Open',
   /** Staff replied, awaiting the client. */
   AwaitingReply = 'AwaitingReply',
-  /** Answered by staff. */
-  Answered = 'Answered',
   /** Closed. */
   Closed = 'Closed',
 }

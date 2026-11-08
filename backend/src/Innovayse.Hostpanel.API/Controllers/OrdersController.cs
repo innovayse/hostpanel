@@ -1,9 +1,11 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Orders.Commands.AcceptOrder;
 using Innovayse.Hostpanel.Application.Orders.Commands.CancelOrder;
+using Innovayse.Hostpanel.Application.Orders.Commands.CloseOrderLineRefund;
 using Innovayse.Hostpanel.Application.Orders.Commands.CompleteOrderGatewayPayment;
 using Innovayse.Hostpanel.Application.Orders.Commands.DeleteOrder;
 using Innovayse.Hostpanel.Application.Orders.Commands.PlaceOrder;
+using Innovayse.Hostpanel.Application.Orders.Commands.RetryOrderLine;
 using Innovayse.Hostpanel.Application.Orders.Commands.StartOrderGatewayPayment;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Queries.GetOrder;
@@ -135,7 +137,8 @@ public sealed class OrdersController : BaseApiController
     /// <returns>
     /// 200 with the lines that could not be fulfilled (empty when every line was); 400 with <c>VALIDATION_ERROR</c> for a
     /// non-positive id; 401 without a session; 403 for a non-admin; 404 with <c>ORDER_NOT_FOUND</c> when the id names no
-    /// order; 429 when the rate limit is hit.
+    /// order; 409 with <c>ORDER_LINE_CHANGED</c> when the lines could not be claimed because the order kept changing under
+    /// the run (the order is accepted, and the lines stay retryable); 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{id:int}/accept")]
     [Authorize(Policy = Policies.Admin)]
@@ -144,9 +147,67 @@ public sealed class OrdersController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> AcceptAsync(int id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(new AcceptOrderCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Runs the fulfilment of one failed line of an accepted order again. A line that is already fulfilled is
+    /// refused and a domain the client already holds is not registered twice.
+    /// </summary>
+    /// <param name="id">Order primary key.</param>
+    /// <param name="itemId">The failed order line; wins over any line id in a body.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the lines still failed after the retry (empty when the line was fulfilled); 400 with <c>VALIDATION_ERROR</c>
+    /// for a non-positive id; 401 without a session; 403 for a non-admin; 404 with <c>ORDER_NOT_FOUND</c> or
+    /// <c>ORDER_ITEM_NOT_FOUND</c> when an id names nothing; 409 with <c>ORDER_LINE_ALREADY_FULFILLED</c> when the line is
+    /// done already, <c>ORDER_LINE_NOT_RETRYABLE</c> when the order was not accepted, the line did not fail or was
+    /// refunded, or another retry is running it, or <c>ORDER_LINE_CHANGED</c> when the line changed while the retry ran
+    /// (a refund or a newer attempt overtook it) and the outcome of the retry could not be recorded; 429 when the rate
+    /// limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/items/{itemId:int}/retry")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(typeof(OrderFulfillmentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RetryLineAsync(int id, int itemId, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(new RetryOrderLineCommand(id, itemId), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Closes a partly refunded line as refunded, after staff gave back by hand what the automatic refund could not. The
+    /// action is written to the client's activity log and the order's status follows its lines.
+    /// </summary>
+    /// <param name="id">Order primary key.</param>
+    /// <param name="itemId">The partly refunded order line.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when the line is closed as refunded; 400 with <c>VALIDATION_ERROR</c> for a non-positive id; 401 without a
+    /// session; 403 for a non-admin; 404 with <c>ORDER_NOT_FOUND</c> or <c>ORDER_ITEM_NOT_FOUND</c> when an id names
+    /// nothing; 409 with <c>ORDER_LINE_NOT_REFUNDABLE</c> when the line is not partly refunded, or <c>ORDER_LINE_CHANGED</c>
+    /// when another writer saved the order first; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/items/{itemId:int}/close-refund")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CloseLineRefundAsync(int id, int itemId, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new CloseOrderLineRefundCommand(id, itemId), ct);
         return HandleResult(outcome);
     }
 

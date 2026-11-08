@@ -9,7 +9,6 @@ import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
-import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
@@ -60,9 +59,6 @@ const clientName = ref('')
 
 /** Auto-filled client email. */
 const clientEmail = ref('')
-
-/** Whether to send an email notification for the ticket. */
-const sendEmail = ref(true)
 
 /** Ticket subject. */
 const subject = ref('')
@@ -233,19 +229,12 @@ onMounted(() => {
         </UiField>
 
         <UiField :label="t('shared.emailAddress')">
-          <UiStack direction="row" align="center">
-            <UiInput
-              :model-value="clientEmail"
-              readonly
-              :placeholder="t('support.supportOpenTicket.autoFilledFromSelectedClient')"
-              class="flex-1"
-              data-testid="support-open-ticket-email"
-            />
-            <UiStack direction="row" gap="sm" align="center">
-              <UiCheckbox v-model="sendEmail" data-testid="support-open-ticket-send-email" />
-              <UiText tone="secondary" size="md">{{ t('shared.sendEmail') }}</UiText>
-            </UiStack>
-          </UiStack>
+          <UiInput
+            :model-value="clientEmail"
+            readonly
+            :placeholder="t('support.supportOpenTicket.autoFilledFromSelectedClient')"
+            data-testid="support-open-ticket-email"
+          />
         </UiField>
 
         <UiField :label="t('shared.subject')" :error="store.fieldErrors.subject">

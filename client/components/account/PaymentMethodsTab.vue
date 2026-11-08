@@ -20,7 +20,7 @@
  * @module components/account/PaymentMethodsTab
  */
 
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'
 
 /** The client store, which knows what the signed-in person may do. */

@@ -86,7 +86,7 @@ import {
   BookOpen,
   Wallet
 } from 'lucide-vue-next'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useAuthStore } from '~/stores/auth'
 import { useClientStore } from '~/stores/client'
 import { usePluginsStore } from '~/stores/plugins'

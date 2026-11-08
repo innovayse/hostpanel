@@ -82,7 +82,7 @@ Taken from the local development stack with its seeded sample data.
 | Languages | English, Russian and Armenian in both the portal and the admin panel |
 | Plugin marketplace | [plugins-hostpanel.innovayse.com](https://plugins-hostpanel.innovayse.com) lists installable plugins, among them the payment gateways Stripe, PayPal, Inecobank, Idram and Ameriabank. See [Payment gateways](https://hostpanel.innovayse.com/docs/payments/gateways) |
 | Plugin SDK | `Hostpanel.Sdk` (MIT, a NuGet package, developed in [hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk)) for your own payment, registrar, provisioning, identity, fulfilment and hosted plugins |
-| Integrations | Payments: bank transfer built in; card and bank gateways install as plugins. Registrars: Namecheap, Name.am. Control panels: CWP7, Plesk. Notifications: Telegram |
+| Integrations | Payments: bank transfer built in; card and bank gateways install as plugins. Registrars: Namecheap, Name.am. Control panels: CWP7, Plesk, cPanel. Notifications: Telegram |
 | Data import from WHMCS | A PHP addon you install in WHMCS. HostPanel pulls clients, contacts, products, orders, services, domains, invoices, transactions, quotes, tickets, announcements, knowledge base, downloads and network issues from it, page by page. See [Moving from another billing system](docs/migration/from-another-system.md) |
 
 See the [open feature requests](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
@@ -188,7 +188,7 @@ the root path, so serve it on its own host. Use `EDGE_SCHEME=http://` for plain 
 
 | Task | How |
 |---|---|
-| Upgrade | Re-run the install script (an existing `.env` is kept; with `--version` it moves `IMAGE_TAG`), or `docker compose -f docker-compose.hub.yml pull && docker compose -f docker-compose.hub.yml up -d` |
+| Upgrade | Re-run the install script (an existing `.env` is kept; with `--version` it moves `IMAGE_TAG`; the database is backed up to `backups/` first, and `install.sh --rollback` goes back to the backed up version and data), or `docker compose -f docker-compose.hub.yml pull && docker compose -f docker-compose.hub.yml up -d` |
 | Pin a version | Set `IMAGE_TAG=1.4.0` in `.env` instead of `latest` |
 | Logs | `docker compose -f docker-compose.hub.yml logs -f hostpanel-api` (or `hostpanel-client`, `hostpanel-admin`) |
 | Back up the database | `docker compose -f docker-compose.hub.yml exec -T hostpanel-db sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql`, or snapshot the `hostpanel_pgdata` volume |

@@ -148,6 +148,38 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
         }
     }
 
+    /// <summary>
+    /// A package whose view gives one block id to two blocks is refused at install with
+    /// <c>PLUGIN_VIEW_BLOCK_ID_REPEATED</c> and nothing is left behind. The same view in a plugin that is already
+    /// installed only draws a warning at load (<c>PluginLoaderTests</c>), so an upgrade of the host never removes it.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AViewWithARepeatedBlockId_IsRefusedAtInstallAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var manifest = PluginsTestSeeds.ManifestJson(
+            pluginId,
+            ",\"manifestVersion\":2,\"ui\":{\"client\":{\"pages\":"
+            + "[{\"id\":\"overview\",\"path\":\"/o\",\"title\":\"O\","
+            + "\"view\":\"views/a.json\",\"permission\":\"Any\"}]}}",
+            "App");
+        var zip = PluginsTestSeeds.BuildZip(new Dictionary<string, string>
+        {
+            ["plugin.json"] = manifest,
+            ["views/a.json"] = """
+                {"schema":1,"blocks":[{"kind":"text","id":"a","text":"x"},{"kind":"text","id":"a","text":"y"}]}
+                """,
+        });
+
+        var response = await PluginsTestSeeds.InstallAsync(client, zip);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_VIEW_BLOCK_ID_REPEATED);
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+    }
+
     /// <summary>Installs a package holding only the given manifest and asserts the localised refusal and that nothing was left behind.</summary>
     /// <param name="manifestJson">The <c>plugin.json</c> text.</param>
     /// <param name="code">The error code the refusal must carry.</param>

@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import ServiceCard from '~/components/client/services/ServiceCard.vue'
+import { ServiceStatus } from '~/types/servicestatus'
 import { EMPTY_DATE } from '~/utils/formatDate'
 import { makeClientService as service } from '~/tests/helpers/clientServiceFixture'
 
@@ -18,10 +19,17 @@ describe('ServiceCard', () => {
   })
 
   it('links a service without a control-panel account to its setup wizard and flags it', () => {
-    const wrapper = mountClient(ServiceCard, { props: { service: service({ username: null }), currency: {} } })
+    const wrapper = mountClient(ServiceCard, { props: { service: service({ status: ServiceStatus.Pending }), currency: {} } })
 
     expect(wrapper.attributes('href')).toBe('/client/services/4/setup')
     expect(wrapper.find('[data-testid="service-needs-setup"]').exists()).toBe(true)
+  })
+
+  it('does not send an active service without a control-panel account to the wizard, which the backend would refuse', () => {
+    const wrapper = mountClient(ServiceCard, { props: { service: service({ status: ServiceStatus.Active, username: null }), currency: {} } })
+
+    expect(wrapper.attributes('href')).toBe('/client/services/4')
+    expect(wrapper.find('[data-testid="service-needs-setup"]').exists()).toBe(false)
   })
 
   it('links a digital service to its page, with its status and no setup flag', () => {

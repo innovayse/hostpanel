@@ -356,7 +356,7 @@ import { useCatalogStore } from '~/stores/catalog'
 import { HOSTING_GROUP_ID } from '~/constants/catalogGroup'
 import { PRICING_CYCLES, PRICING_CYCLE_I18N_KEY } from '~/constants/pricingCycle'
 import { formatMoney, formatMoneyDigits } from '~/utils/formatMoney'
-import { cycleAmount } from '~/utils/productFamilies'
+import { cycleAmount, pricedCycles } from '~/utils/productFamilies'
 import { parseDescription } from '~/utils/catalogGroups'
 import { isFreePlan } from '~/utils/isFreePlan'
 import { UiHeadingLevel } from '~/utils/ui/enums'
@@ -485,7 +485,7 @@ const planPrice = (plan: HostingPlan, cycle: PricingCycle): number | null => cyc
 
 /** Cycles at least one plan is priced in - the segments of the cycle switch. */
 const cycleOptions = computed<SegmentedOption<PricingCycle>[]>(() =>
-  PRICING_CYCLES.filter(key => catalogPlans.value.some(p => planPrice(p, key) !== null))
+  pricedCycles(catalogPlans.value, (plan, key) => planPrice(plan, key) !== null)
     .map(key => ({ value: key, label: cycleLabel(key), testid: `classic-hosting-cycle-${key}` })))
 
 /**

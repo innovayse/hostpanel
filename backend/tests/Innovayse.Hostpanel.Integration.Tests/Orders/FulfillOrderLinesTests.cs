@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Common.Enums;
+using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Models;
@@ -75,6 +76,38 @@ public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : ICl
         var hosting = services.Should().ContainSingle(s => s.ProductId == seeded.HostingProductId).Which;
         hosting.Status.Should().Be(ServiceStatus.Pending);
         hosting.NextRenewalAt.Should().BeNull();
+    }
+
+    /// <summary>
+    /// Running the fulfilment again over an order whose lines are fulfilled creates nothing a second time
+    /// and counts no new attempt.
+    /// </summary>
+    [Fact]
+    public async Task ALineAlreadyFulfilledIsNeverFulfilledAgain()
+    {
+        var seeded = await OrdersTestSeeds.SeedDigitalAndHostingOrderAsync(factory);
+        (await InvokeAsync(new FulfillOrderLinesCommand(seeded.OrderId))).IsSuccess.Should().BeTrue();
+
+        var again = await InvokeAsync(new FulfillOrderLinesCommand(seeded.OrderId));
+
+        again.IsSuccess.Should().BeTrue();
+        again.Value!.FailedLines.Should().BeEmpty();
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        (await db.ClientServices.AsNoTracking().CountAsync(s => s.ClientId == seeded.ClientId)).Should().Be(2);
+        var items = (await db.Orders.AsNoTracking().Include(o => o.Items).SingleAsync(o => o.Id == seeded.OrderId)).Items;
+        items.Should().OnlyContain(i => i.FulfilmentState == OrderItemFulfilmentState.Fulfilled && i.FulfilmentAttempts == 1);
+    }
+
+    /// <summary>A retry that names a line the order does not hold is refused with <c>ORDER_ITEM_NOT_FOUND</c>.</summary>
+    [Fact]
+    public async Task AnUnknownLineIsRefused()
+    {
+        var seeded = await OrdersTestSeeds.SeedDigitalAndHostingOrderAsync(factory);
+
+        var result = await InvokeAsync(new FulfillOrderLinesCommand(seeded.OrderId, 987_654_321));
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.ORDER_ITEM_NOT_FOUND);
     }
 
     /// <summary>Dispatches the command on a fresh scope's bus.</summary>

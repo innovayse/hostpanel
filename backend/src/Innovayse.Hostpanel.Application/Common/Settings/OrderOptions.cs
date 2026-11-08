@@ -21,19 +21,33 @@ public sealed class OrderOptions
     /// <summary>Days an order's invoice stays open before it falls due.</summary>
     public int InvoicePaymentTermDays { get; set; } = 7;
 
+    /// <summary>The longest retry lease the options accept, in minutes (one day).</summary>
+    public const int MaxRetryLeaseMinutes = 1440;
+
     /// <summary>
-    /// Whether the values can number an order and date its invoice: at least one digit, a prefix
-    /// and padding that together fit <see cref="Order.OrderNumberMaxLength"/>, and a payment term
-    /// of 0 to 365 days.
+    /// Minutes a retry's claim on an order line is respected. A retry runs one registrar or provisioning call, so
+    /// a claim older than this belongs to a run that died, and the line may be claimed again. Set it longer than the
+    /// slowest call a line makes.
+    /// </summary>
+    public int RetryLeaseMinutes { get; set; } = 10;
+
+    /// <summary>
+    /// Whether the values can number an order and date its invoice and lease a retry: at least one digit, a prefix
+    /// and padding that together fit <see cref="Order.OrderNumberMaxLength"/>, a payment term
+    /// of 0 to 365 days, and a retry lease of 1 to <see cref="MaxRetryLeaseMinutes"/> minutes.
     /// </summary>
     public bool IsValid =>
         NumberPrefix is not null
         && NumberDigits >= 1
         && NumberPrefix.Length + NumberDigits <= Order.OrderNumberMaxLength
-        && InvoicePaymentTermDays is >= 0 and <= 365;
+        && InvoicePaymentTermDays is >= 0 and <= 365
+        && RetryLeaseMinutes is >= 1 and <= MaxRetryLeaseMinutes;
 
     /// <summary>How long an order's invoice stays open.</summary>
     public TimeSpan InvoicePaymentTerm => TimeSpan.FromDays(InvoicePaymentTermDays);
+
+    /// <summary>How long a retry's claim on an order line is respected.</summary>
+    public TimeSpan RetryLease => TimeSpan.FromMinutes(RetryLeaseMinutes);
 
     /// <summary>Formats a sequence value as an order number.</summary>
     /// <param name="sequence">The next value of the order number sequence.</param>

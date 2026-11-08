@@ -372,6 +372,9 @@
 <data name="PROVISIONING_UPSTREAM_FAILED" xml:space="preserve">
     <value>Ծառայության տեղակայումը ձախողվեց։ Խնդրում ենք փորձել կրկին կամ դիմել աջակցությանը։</value>
   </data>
+<data name="PROVISIONING_OUTCOME_UNKNOWN" xml:space="preserve">
+    <value>Չհաջողվեց հաստատել՝ արդյոք հոսթինգի հաշիվը ստեղծվել է։ Խնդրում ենք կրկին փորձել մի քանի րոպեից։</value>
+  </data>
 <data name="SERVICE_FIRST_INVOICE_UNPAID" xml:space="preserve">
     <value>Այս ծառայությունը կարելի է կարգավորել առաջին հաշիվն ամբողջությամբ վճարելուց հետո։</value>
   </data>
@@ -841,6 +844,27 @@
   <data name="ORDER_NOT_PENDING" xml:space="preserve">
     <value>Այս գործողությունը պահանջում է, որ պատվերը սպասման մեջ լինի։</value>
   </data>
+  <data name="ORDER_LINE_NOT_RETRYABLE" xml:space="preserve">
+    <value>Պատվերի այս տողը հնարավոր չէ հիմա կրկնել։ Կրկնել կարելի է միայն ընդունված պատվերի ձախողված տողը, և ոչ այն ժամանակ, երբ այն արդեն կրկնում է մեկ այլ հարցում։</value>
+  </data>
+  <data name="ORDER_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>Այս պատվերում այդպիսի տող չկա։</value>
+  </data>
+  <data name="ORDER_LINE_ALREADY_FULFILLED" xml:space="preserve">
+    <value>Պատվերի այս տողն արդեն կատարված է։</value>
+  </data>
+  <data name="ORDER_LINE_CHANGED" xml:space="preserve">
+    <value>Պատվերի այս տողը փոխվել է մշակման ընթացքում, ուստի արդյունքը չհաջողվեց գրանցել։ Բացեք պատվերը նորից՝ տեսնելու, թե ինչ վիճակում է տողը։</value>
+  </data>
+  <data name="ORDER_LINE_NOT_REFUNDABLE" xml:space="preserve">
+    <value>Պատվերի այս տողի գումարը հիմա հնարավոր չէ վերադարձնել։ Վերադարձը սկսել կարելի է միայն ձախողված տողի համար, ավարտել՝ միայն այն տողի, որի վերադարձն ընթացքի մեջ է, իսկ որպես վերադարձված փակել՝ միայն մասնակի վերադարձված տողը։</value>
+  </data>
+  <data name="ORDER_LINE_INTERRUPTED" xml:space="preserve">
+    <value>Այս տողը կատարելու փորձը ընդհատվել է ավարտից առաջ։ Կրկնեք տողը։</value>
+  </data>
+  <data name="ORDER_LINE_SERVICE_CONFLICT" xml:space="preserve">
+    <value>Պատվերի այս տողի համար արդեն պահված ծառայությունը պատկանում է մեկ այլ հաճախորդի կամ վերաբերում է մեկ այլ ապրանքի, ուստի տողը չի կարող այն օգտագործել։ Ստուգեք տողը և նրա ծառայությունը։</value>
+  </data>
   <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
     <value>Այս ծառայությունը ակտիվ չէ։</value>
   </data>
@@ -1018,6 +1042,15 @@
   <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
     <value>Դադարեցման ամսաթիվը կարելի է ուղղել միայն դադարեցված ծառայության համար։</value>
   </data>
+  <data name="SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Կառավարման վահանակի նիստը չհաջողվեց սկսել։ Վահանակը վերադարձրել է հասցե, որը նրա սերվերի վրա չէ։</value>
+  </data>
+  <data name="CPANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>Հոսթինգի հաշվի օգտանունը cPanel-ի համար վավեր չէ։ Օգտագործեք փոքրատառ լատինական տառեր և թվեր, սկսեք տառով, առավելագույնը 16 նիշ։</value>
+  </data>
+  <data name="CPANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>Դոմենը վավեր դոմենային անուն չէ։ Ստուգեք այն և կրկին փորձեք։</value>
+  </data>
   <data name="SERVICE_HOSTING_DETAILS_MISSING" xml:space="preserve">
     <value>Ծառայությունը դեռ չունի դոմեն կամ օգտանուն։ Նախ կարգավորեք հոսթինգի հաշիվը։</value>
   </data>
@@ -1144,6 +1177,21 @@
   <data name="PLUGIN_REGISTRY_NOT_TRUSTED" xml:space="preserve">
     <value>Հավելագրիչների ռեեստրի վստահության կարգավորումը չի թույլատրում տեղադրել այս հավելագրիչը։</value>
   </data>
+  <data name="PLUGIN_REGISTRY_LICENCE_REQUIRED" xml:space="preserve">
+    <value>Ռեեստրի այս հավելագրիչի համար պահանջվում է արտոնագրի բանալի։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_LICENCE_INVALID" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը չընդունեց արտոնագրի բանալին։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_HOST_INCOMPATIBLE" xml:space="preserve">
+    <value>Հավելագրիչի այս տարբերակը չի աշխատում Hostpanel-ի տեղադրված տարբերակի հետ։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_VERSION_YANKED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը հետ է կանչել այս տարբերակը, ուստի այն հնարավոր չէ տեղադրել։ Ընտրեք այլ տարբերակ։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_VERSION_COMPROMISED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը մերժել է այս տարբերակը որպես անապահով, ուստի այն հնարավոր չէ տեղադրել։ Ընտրեք այլ տարբերակ։</value>
+  </data>
   <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
     <value>Հավելագրիչը պահանջում է հաճախորդի հոսթինգի մուտքի տեսակ, որը այս սերվերը չգիտի, նշում է այն երկու անգամ կամ հայտարարում է 1-ին տարբերակի մանիֆեստում։</value>
   </data>
@@ -1167,6 +1215,9 @@
   </data>
   <data name="PLUGIN_VIEW_PREVIEW_INVALID" xml:space="preserve">
     <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը պարունակում է նախադիտում սխալ աղբյուրներով կամ չափով, կամ այն ցույց է տալիս հաճախորդի էջից դուրս։</value>
+  </data>
+  <data name="PLUGIN_VIEW_BLOCK_ID_REPEATED" xml:space="preserve">
+    <value>Այս հավելագրիչի ներկայացման փաստաթղթերից մեկը նույն նույնացուցիչը տալիս է մեկից ավելի բլոկների։</value>
   </data>
   <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
     <value>Այս տողի երկարացման արգելափակումը հնարավոր չէ հանել, քանի որ այն արգելափակված չէ։</value>

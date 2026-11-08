@@ -22,7 +22,7 @@
  * @module pages/client/account/index
  */
 
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useAccountStore } from '~/stores/account'
 import { useCatalogStore } from '~/stores/catalog'
 import { useClientStore } from '~/stores/client'

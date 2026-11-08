@@ -8,12 +8,14 @@
         </UiHeading>
       </UiStack>
 
+      <!-- Only worth showing when there is a choice; many cycles scroll inside the control, not the page. -->
       <UiSegmentedControl
-        :model-value="yearly"
+        v-if="cycles.length > 1"
+        :model-value="activeCycle"
         :options="billingOptions"
         :label="t('aurora.plans.billingLabel')"
         testid="billing-toggle"
-        @update:model-value="emit('update:yearly', $event)"
+        @update:model-value="emit('update:cycle', $event)"
       />
     </UiStack>
 
@@ -121,10 +123,10 @@
         <UiStack gap="none" class="mt-auto pt-[22px]">
           <UiStack direction="row" align="end" gap="xs">
             <UiText as="span" size="inherit" tone="inherit" weight="bold" class="text-[38px] -tracking-[0.02em] text-tx">
-              {{ yearly ? plan.priceAnnual : plan.priceMonthly }}
+              {{ cardCyclePrice(plan, activeCycle) }}
             </UiText>
             <UiText as="span" size="sm" tone="inherit" class="pb-2 text-mut2">
-              {{ yearly ? t('aurora.plans.perMonthAnnual') : t('aurora.plans.perMonth') }}
+              {{ perMonthLabel }}
             </UiText>
           </UiStack>
 
@@ -175,27 +177,30 @@
  * billing-period toggle is reported upward rather than owned here.
  */
 import { PLAN_FEATURE_LIMIT } from '~/constants/planFeatureLimit'
+import { PRICING_CYCLE_I18N_KEY } from '~/constants/pricingCycle'
 import { BRAND_BUTTON, LINE_BUTTON } from '~/templates/aurora/buttons'
 import { EYEBROW_CLASS, SECTION_TITLE_CLASS } from '~/templates/aurora/typography'
 import type { PlanCard } from '~/types/plancard'
+import { PricingCycle } from '~/types/pricingcycle'
 import type { SegmentedOption } from '~/types/segmentedoption'
+import { cardCyclePrice, cycleSegments, effectiveCycle, planCardCycles } from '~/utils/planCycles'
 
 /** Props with their defaults applied. */
 const props = withDefaults(defineProps<{
   /** The plans to show. */
   plans?: PlanCard[]
-  /** Whether prices are shown per month billed annually. */
-  yearly?: boolean
+  /** The billing cycle the prices are shown for; falls back to the shortest one the plans offer. */
+  cycle?: PricingCycle
   /** Off on the hosting page, whose own hero already states the same thing. */
   showHeader?: boolean
   /** Most feature lines one card lists; the rest collapse into a "+N more" link. */
   maxFeatures?: number
-}>(), { plans: () => [], yearly: false, showHeader: true, maxFeatures: PLAN_FEATURE_LIMIT })
+}>(), { plans: () => [], cycle: PricingCycle.Monthly, showHeader: true, maxFeatures: PLAN_FEATURE_LIMIT })
 
 /** Events this component raises. */
 const emit = defineEmits<{
-  /** The visitor switched the billing period. */
-  'update:yearly': [value: boolean]
+  /** The visitor switched the billing cycle. */
+  'update:cycle': [value: PricingCycle]
 }>()
 
 /** Translator for the active locale. */
@@ -229,11 +234,27 @@ const hiddenFeatureCount = (plan: PlanCard): number => Math.max(0, plan.features
 /** Whether the shared "included in every plan" list stands in for per-plan feature lines. */
 const showIncluded = computed(() => props.plans.length > 0 && !props.plans.some(plan => plan.features.length))
 
-/** The two billing periods the toggle offers; `true` is the per-month annual price. */
-const billingOptions = computed<SegmentedOption<boolean>[]>(() => [
-  { value: false, label: t('aurora.plans.monthly'), testid: 'billing-monthly' },
-  { value: true, label: t('aurora.plans.yearly'), testid: 'billing-yearly' },
-])
+/**
+ * The visible name of a billing cycle.
+ *
+ * @param cycle - The cycle.
+ * @returns Its translated label.
+ */
+const cycleLabel = (cycle: PricingCycle): string => t(`hosting.cycles.${PRICING_CYCLE_I18N_KEY[cycle]}`)
+
+/** Every cycle at least one plan is priced on, shortest first. */
+const cycles = computed(() => planCardCycles(props.plans))
+
+/** The cycle in effect: the visitor's pick, or the shortest one on offer when no plan has it. */
+const activeCycle = computed(() => effectiveCycle(cycles.value, props.cycle))
+
+/** The toggle's segments, one per cycle on offer. */
+const billingOptions = computed<SegmentedOption<PricingCycle>[]>(() => cycleSegments(cycles.value, cycleLabel, 'billing'))
+
+/** The unit shown beside a price: per month, plus the cycle it is billed on when that is not monthly. */
+const perMonthLabel = computed(() => activeCycle.value === PricingCycle.Monthly
+  ? t('aurora.plans.perMonth')
+  : t('aurora.plans.perMonthBilled', { cycle: cycleLabel(activeCycle.value) }))
 
 /** What every plan includes. */
 const included = computed(() => [

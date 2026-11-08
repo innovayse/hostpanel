@@ -65,7 +65,8 @@ export const useSeo = (options: MaybeRefOrGetter<SeoOptions>) => {
   const ogLocaleMap: Record<string, string> = {
     [AppLocale.En]: 'en_US',
     [AppLocale.Ru]: 'ru_RU',
-    [AppLocale.Hy]: 'hy_AM'
+    [AppLocale.Hy]: 'hy_AM',
+    [AppLocale.Fr]: 'fr_FR'
   }
 
   // Set meta tags

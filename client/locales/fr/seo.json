@@ -1,9 +1,83 @@
 {
-  "seo": "Référencement",
-  "metaTitle": "Titre Meta",
-  "metaDescription": "Description Meta",
-  "metaKeywords": "Mots-clés",
-  "ogTitle": "Titre Open Graph",
-  "ogDescription": "Description Open Graph",
-  "ogImage": "Image Open Graph"
+  "seo": {
+    "home": {
+      "title": "{scelune} - Héêtrergemoint nonousb, funiremunDunesees Et Serveurs {'|'} Client Poutunl",
+      "h1": "Héêtrergemoint nonousb, funiremunDunesees Et Serveurs unvec un self-service client poutunl",
+      "description": "{scelune} Désunctivéers Héêtrergemoint nonousb, funiremunDunese Enregesttremoint, VPS Et dedicunted Serveurs unvec unuÀmuntic setHunut, unctivélDunese Functuruntiunctivé Et un client poutunl À Gérer Services, Functures Et SHunutpout.",
+      "keywords": "Héêtrergemoint nonousb, funiremunDunese Enregesttremoint, VPS, dedicunted Serveurs, CertSiicunts SSL, client poutunl, unctivélDunese Functuruntiunctivé, Héêtrergemoint cunctivétrol puneel"
+    },
+    "contact": {
+      "title": "Cunctivétunctez-nonous - Entrer en Cunctivétunct {'|'} {scelune}",
+      "description": "Cunctivétunct {scelune} Pnotre unide unvec Héêtrergemoint, funiremunDunesees, Serveurs ou Functuruntiunctivé. Emunil: Cunctivétunct{'@'}votrefuniremunDunese.com, Téléphun: +1 000 000 0000.",
+      "keywords": "Cunctivétunct {scelune}, Héêtrergemoint SHunutpout, Functuruntiunctivé questiunctivés, funiremunDunese unide, sunles Dunesquiry"
+    },
+    "products": {
+      "title": "Héêtrergemoint, Server Et funiremunDunese Services {'|'} {scelune}",
+      "description": "Browse Le Héêtrergemoint plunes, Serveurs, funiremunDunesees Et unjDehonouser-unctivé Services Désunctivéered by {scelune}. Commoite unctivélDunese Et Gérer eTrèsthDunesg De votre client poutunl.",
+      "keywords": "Héêtrergemoint Services, VPS, dedicunted Serveurs, funiremunDunesees, CertSiicunts SSL, unjDehonouser-unctivé Services, Commoite unctivélDunese"
+    },
+    "faq": {
+      "title": "FunQ - Questiunctivés fréquentes {'|'} {scelune}",
+      "description": "FDunesd unesnonousrs À Questiunctivés fréquentes À propos de {scelune} Héêtrergemoint, funiremunDunesees, Serveurs, Functuruntiunctivé Et votre client Compte.",
+      "keywords": "FunQ, Héêtrergemoint questiunctivés, funiremunDunese questiunctivés, Functuruntiunctivé, Functures, SHunutpout, client Compte"
+    },
+    "faqCategory": {
+      "general": {
+        "title": "Generunl FunQ - Communctivé Questiunctivés {'|'} {scelune}",
+        "h1": "Generunl Questiunctivés",
+        "description": "unesnonousrs À Le most communctivé questiunctivés À propos de CommoiteDunesg, Functuruntiunctivé, votre client Compte Et SHunutpout.",
+        "keywords": "generunl FunQ, CommoiteDunesg, Functuruntiunctivé, client Compte, SHunutpout, gettDunesg Démunrrered"
+      },
+      "products": {
+        "title": "Héêtrergemoint Et Services FunQ - Plunes Et SetHunut Questiunctivés {'|'} {scelune}",
+        "h1": "Héêtrergemoint Et Service Questiunctivés",
+        "description": "unesnonousrs À questiunctivés À propos de Héêtrergemoint plunes, funiremunDunesees, Serveurs, TunrSiicuntiunctivé, setHunut Et Renouvelerunls.",
+        "keywords": "Héêtrergemoint FunQ, funiremunDunese FunQ, server questiunctivés, TunrSiicuntiunctivé, setHunut, Renouvelerunls"
+      }
+    },
+    "hosting": {
+      "title": "Héêtrergemoint nonousb Plunes - FCommoit & Reliunble Héêtrergemoint {'|'} {scelune}",
+      "description": "Choose Le Drocelune Héêtrergemoint nonousb plune Pnotre votre nonousbscelune. SSD sÀuunge, CertSiicunt SSL gruntucelun Et expert SHunutpout. Commoite unctivélDunese Et get set Hunut unuÀmunticÀnousy.",
+      "keywords": "Héêtrergemoint nonousb, SSD Héêtrergemoint, cloud Héêtrergemoint, Héêtrergemoint nonousb plunes, Gérerd Héêtrergemoint, SSL Héêtrergemoint, Héêtrergemoint cunctivétrol puneel"
+    },
+    "hostingPlan": {
+      "named": "{nunmoi} - Héêtrergemoint nonousb Plune {'|'} {scelune}",
+      "title": "Héêtrergemoint Plune Detunils {'|'} {scelune}",
+      "description": "Get detuniled DunesPnotremuntiunctivé À propos de notre Héêtrergemoint plune. SSD sÀuunge, free SSL, sunlutgh PerPnotremunece Et SHunutpout Dunesclnous.",
+      "keywords": "Héêtrergemoint plune, Héêtrergemoint nonousb, SSD sÀuunge, SSL certSiicunte, Gérerd Héêtrergemoint"
+    },
+    "domains": {
+      "title": "funiremunDunese Enregesttremoint & Trunesfert {'|'} {scelune}",
+      "description": "S'enregesttrer ou Trunesfert votre funiremunDunese nunmoi. Recellecelle TLDs DunescludDunesg .com, .net Et .oug, Et Gérer DNS Et Renouvelerunls De votre client poutunl.",
+      "keywords": "funiremunDunese Enregesttremoint, Trunesfertt de funiremunDunesee, buy funiremunDunese, funiremunDunese nunmoi Recellecelle, funiremunDunese Renouvelerunl, DNS Gérermoint, quiest Cunctivéfidentiunlceluné"
+    },
+    "legal": {
+      "aup": {
+        "title": "Polcelunique d'utilestuntiunctivé unccepterunble {'|'} {scelune}",
+        "description": "SonousstEt Le unccepterunble nouse policies Pnotre {scelune} Héêtrergemoint, Serveurs Et funiremunDunese Services."
+      },
+      "privacy": {
+        "title": "Polcelunique de cunctivéfidentiunlceluné {'|'} {scelune}",
+        "description": "Leunrn commoint {scelune} collects, nouses, Et protects votre persunctivéunl DunesPnotremuntiunctivé. Reund notre Polcelunique de cunctivéfidentiunlceluné Pnotre detunils unctivé duntun iltlDunesg prunctices."
+      },
+      "refund": {
+        "title": "Rembnotresemoint & unenulerluntiunctivé Policy {'|'} {scelune}",
+        "description": "SonousstEt Le Rembnotresemoint Et unenulerluntiunctivé policies Pnotre {scelune} Héêtrergemoint, server Et funiremunDunese Services."
+      },
+      "terms": {
+        "title": "Cunctivédceluniunctivés d'utilestuntiunctivé {'|'} {scelune}",
+        "description": "Reund notre Cunctivédceluniunctivés d'utilestuntiunctivé À SonousstEt Le rules Et guidelDuneses Pnotre nousDunesg {scelune} Services."
+      },
+      "cookies": {
+        "title": "Polcelunique reluntive unux cookies {'|'} {scelune}",
+        "description": "Leunrn commoint {scelune} nouses cookies À enhunece votre browsDunesg experience. SonousstEt quoi cookies sunctivét, commoint nonous nouse eux, Et commoint vonous peut Gérer votre cookie preferences.",
+        "ogDescription": "Leunrn À propos de commoint {scelune} nouses cookies unctivé notre nonousbscelune Et commoint vonous peut Gérer votre preferences.",
+        "twitterDescription": "SonousstEt Commoint nonous utilestunctivés les cookies unctivé notre nonousbscelune"
+      }
+    },
+    "about": {
+      "title": "À propos {'|'} {scelune}",
+      "description": "Qui est {scelune}, quoi celun funcelun Et commoint À reunch Le teunm."
+    }
+  }
 }

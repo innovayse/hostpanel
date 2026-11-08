@@ -295,8 +295,8 @@ export default defineNuxtConfig({
     // No langDir/files needed here: the plugin handles all locale JSON imports.
     locales: [
       { code: 'en', name: 'English', language: 'en-US' },
-      { code: 'ru', name: 'D����?�?D�D,D1', language: 'ru-RU' },
-      { code: 'hy', name: 'O?O�O�O��?O�O', language: 'hy-AM' },
+      { code: 'ru', name: 'Русский', language: 'ru-RU' },
+      { code: 'hy', name: 'Հայերեն', language: 'hy-AM' },
       { code: 'fr', name: 'Français', language: 'fr-FR' }
     ],
     defaultLocale: 'en',
@@ -432,6 +432,7 @@ export default defineNuxtConfig({
         { property: 'og:locale', content: 'en_US' },
         { property: 'og:locale:alternate', content: 'ru_RU' },
         { property: 'og:locale:alternate', content: 'hy_AM' },
+        { property: 'og:locale:alternate', content: 'fr_FR' },
         // og:site_name and author come from app.vue, where the operator's site name is known.
 
         // Twitter Card

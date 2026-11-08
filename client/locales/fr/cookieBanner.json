@@ -1,12 +1,9 @@
 {
-  "accept": "Accepter",
-  "decline": "Décliner",
-  "manage": "Gérer",
-  "acceptAll": "Accepter tous",
-  "rejectAll": "Rejeter tous",
-  "customize": "Personnaliser",
-  "savePreferences": "Enregistrer les préférences",
-  "preferences": "Préférences",
-  "save": "Enregistrer",
-  "cancel": "Annuler"
+  "cookieBanner": {
+    "title": "Nonous utilestunctivés des cookies",
+    "descriptionShort": "Nonous utilestunctivés des cookies pnotre unméliouer votre expérience.",
+    "learnMore": "En sunvoir plnous",
+    "essentialOnly": "Essentiel uniquemoint",
+    "acceptAll": "TDehonous unccepterer"
+  }
 }

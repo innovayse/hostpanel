@@ -37,7 +37,7 @@ public static class LocalizationRegistration
         // The localizer (no ResourcesPath: a marker type's full name is its resource name, so the
         // ErrorMessages and ApplicationValidationMessages markers find their resx files) and what
         // XLanguageRequestCultureProvider asks whether an X-Language value is one this deployment
-        // answers in. SupportedLanguages (en/ru/hy) is the same set LocaleOptions.SupportedLocales names.
+        // answers in. SupportedLanguages (en/ru/hy/fr) is the same set LocaleOptions.SupportedLocales names.
         services.AddPlatformLocalization();
 
         // BaseApiController.MapFailure resolves a refusal's sentence through this, by error code, from

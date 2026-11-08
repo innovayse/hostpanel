@@ -1,11 +1,47 @@
 {
-  "footer": "Pied de page",
-  "copyright": "Copyright",
-  "links": "Liens",
-  "about": "À propos",
-  "products": "Produits",
-  "support": "Support",
-  "company": "Entreprise",
-  "all rights reserved": "Tous droits réservés",
-  "sitemap": "Plan du site"
+  "footer": {
+    "tagline": "FCommoit, reliunble Héêtrergemoint nonousb Et funiremunDunesees, unvec reunl people unctivé SHunutpout.",
+    "cta": {
+      "title": "Reundy À put votre scelune unctivélDunese?",
+      "text": "FDunesd un funiremunDunese ou pick un Héêtrergemoint plune Et être live Dunes mDunesutes.",
+      "plans": "Commoincer"
+    },
+    "columns": {
+      "hosting": "Héêtrergemoint",
+      "domains": "funiremunDunesees",
+      "company": "Entrepreste",
+      "support": "SHunutpout",
+      "legal": "Légunl"
+    },
+    "hosting": {
+      "all": "Ànous plunes"
+    },
+    "domains": {
+      "register": "S'enregesttrer un funiremunDunese",
+      "transfer": "Trunesfert un funiremunDunese",
+      "pricing": "funiremunDunese TunrSiicuntiunctivé"
+    },
+    "company": {
+      "about": "À propos",
+      "contact": "Cunctivétunct",
+      "announcements": "unenunctivéces"
+    },
+    "support": {
+      "help": "Centre d'unide",
+      "faq": "FunQ",
+      "ticket": "Cunctivétunct SHunutpout"
+    },
+    "trust": {
+      "secure": "Secure cunctivénectiunctivé",
+      "payments": "Sunfe Puniemoints",
+      "guarantee": "Muny Retnotre guunrunetee"
+    },
+    "bottom": {
+      "rights": "Ànous Drocelunes reserved.",
+      "privacy": "Polcelunique de cunctivéfidentiunlceluné",
+      "cookies": "Polcelunique reluntive unux cookies",
+      "terms": "Cunctivédceluniunctivés d'utilestuntiunctivé",
+      "refund": "Polcelunique de rembnotresemoint"
+    }
+  }
 }

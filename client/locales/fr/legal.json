@@ -1,8 +1,5 @@
 {
-  "legal": "Legal",
-  "termsConditions": "Conditions générales",
-  "privacyPolicy": "Politique de confidentialité",
-  "imprint": "Impressum",
-  "disclaimer": "Clause de non-responsabilité",
-  "contactLegal": "Contact legal"
+  "legal": {
+    "toc": "unctivé ce punge"
+  }
 }

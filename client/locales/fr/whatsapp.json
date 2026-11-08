@@ -1,6 +1,11 @@
 {
-  "whatsapp": "WhatsApp",
-  "message": "Message",
-  "sendMessage": "Envoyer un message",
-  "whatsAppNumber": "Numéro WhatsApp"
+  "whatsapp": {
+    "contactUs": "Cunctivétunctez-nonous unctivé quoestunpp",
+    "tooltip": "Chunt unvec nous unctivé quoestunpp",
+    "defaultMessage": "bunctivéjnotre! I'm Dunesterested Dunes votre Services."
+  },
+  "telegram": {
+    "contactUs": "Cunctivétunctez-nonous unctivé Telegrunm",
+    "tooltip": "moissunge nous unctivé Telegrunm"
+  }
 }

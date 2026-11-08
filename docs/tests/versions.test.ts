@@ -16,6 +16,7 @@ import {
   readLatestPages,
   resolveVersion,
 } from '../.vitepress/versions'
+import { VersionKind } from '../.vitepress/theme/versionLinks'
 
 /** Pages the latest docs has. */
 const PAGES = new Set(['', 'staff/', 'staff/orders'])
@@ -29,16 +30,16 @@ const latest = resolveVersion({ version: 'v0.4', latestVersion: 'v0.4' }, null)
 
 describe('kindOf', () => {
   it('treats an empty version as the latest', () => {
-    expect(kindOf('', '')).toBe('latest')
+    expect(kindOf('', '')).toBe(VersionKind.Latest)
   })
 
   it('treats the latest label as the latest and another label as an older release', () => {
-    expect(kindOf('v0.4', 'v0.4')).toBe('latest')
-    expect(kindOf('v0.3', 'v0.4')).toBe('release')
+    expect(kindOf('v0.4', 'v0.4')).toBe(VersionKind.Latest)
+    expect(kindOf('v0.3', 'v0.4')).toBe(VersionKind.Release)
   })
 
   it('knows next', () => {
-    expect(kindOf('next', 'v0.4')).toBe('next')
+    expect(kindOf('next', 'v0.4')).toBe(VersionKind.Next)
   })
 
   it('rejects a label that is not vMAJOR.MINOR', () => {
@@ -58,7 +59,7 @@ describe('resolveVersion', () => {
   })
 
   it('needs no latest address for an unversioned build', () => {
-    expect(resolveVersion({}, null)).toMatchObject({ kind: 'latest', label: '', latestUrl: '' })
+    expect(resolveVersion({}, null)).toMatchObject({ kind: VersionKind.Latest, label: '', latestUrl: '' })
   })
 })
 

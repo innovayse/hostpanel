@@ -32,8 +32,8 @@ const unavailable = ref<boolean>(false)
 /** Whether the list is open. */
 const open = ref<boolean>(false)
 
-/** The link to use for each version label once the open page was looked for there; the home page until then. */
-const checked = ref<Record<string, string>>({})
+/** The link to use for each version label (a Map, so a label such as `constructor` or `__proto__` reads no inherited member) once the open page was looked for there; the home page until then. */
+const checked = ref<Map<string, string>>(new Map())
 
 /** Final answers of earlier lookups by page address, so a page is asked for once however often the list is opened; a failed lookup is never stored. */
 const answers = new Map<string, boolean>()
@@ -67,14 +67,15 @@ const pagePath = computed<string>(() => page.value.relativePath.replace(/(^|\/)i
 /**
  * Address to open for a version: the open page in the version being read, the same page in another
  * version once it was found there, and the home page of that version until then or when it is missing.
- * @param entry The version to open.
+ *
+ * @param entry - The version to open.
  * @returns The path to link to.
  */
 const hrefOf = (entry: VersionEntry): string => {
   if (entry.label === current.value?.label) {
     return pageIn(entry, pagePath.value)
   }
-  return checked.value[entry.label] ?? entry.link
+  return checked.value.get(entry.label) ?? entry.link
 }
 
 /** Request used to look for a page; the browser's `fetch`, narrowed to what the check needs. */
@@ -141,7 +142,7 @@ watch(open, (isOpen) => {
 // A new page starts from the home pages again and stops the lookup of the old one; an open list looks again.
 watch(pagePath, () => {
   cancelLookup()
-  checked.value = {}
+  checked.value = new Map()
   if (open.value) {
     void lookForPage()
   }

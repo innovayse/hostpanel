@@ -414,7 +414,22 @@ describe('findPages', () => {
 
     const links = await findPages([entryOf('v0.1'), entryOf('v0.2')], 'a/b', probe, { signal: new AbortController().signal, cache: new Map() })
 
-    expect(links).toEqual({ 'v0.1': '/docs/v0.1/a/b', 'v0.2': '/docs/v0.2/' })
+    expect(links).toEqual(new Map([['v0.1', '/docs/v0.1/a/b'], ['v0.2', '/docs/v0.2/']]))
+  })
+
+  it('keys the links by own entries, so labels named like members of Object.prototype read as ordinary labels', async () => {
+    const labels = ['constructor', 'toString', '__proto__', 'hasOwnProperty']
+    const probe: Probe = async () => answer(Status.Ok)
+
+    const links = await findPages(labels.map((label) => entryOf(label)), 'a', probe, { signal: new AbortController().signal, cache: new Map() })
+
+    expect(links.size).toBe(labels.length)
+    for (const label of labels) {
+      expect(links.get(label)).toBe(`/docs/${label}/a`)
+    }
+    // A label that was not asked for is absent, not an inherited member.
+    expect(links.get('valueOf')).toBeUndefined()
+    expect(links.has('valueOf')).toBe(false)
   })
 
   it('asks for at most the capped number of entries and leaves the rest without a link', async () => {
@@ -427,8 +442,8 @@ describe('findPages', () => {
     const links = await findPages(entriesOf(MAX_PROBED_ENTRIES + 5), 'a', probe, { signal: new AbortController().signal, cache: new Map() })
 
     expect(asked).toHaveLength(MAX_PROBED_ENTRIES)
-    expect(Object.keys(links)).toHaveLength(MAX_PROBED_ENTRIES)
-    expect(links[`v0.${MAX_PROBED_ENTRIES}`]).toBeUndefined()
+    expect(links.size).toBe(MAX_PROBED_ENTRIES)
+    expect(links.has(`v0.${MAX_PROBED_ENTRIES}`)).toBe(false)
   })
 
   it('never has more requests in flight than the limit', async () => {
@@ -459,7 +474,7 @@ describe('findPages', () => {
     const links = await findPages(entriesOf(3), 'a', probe, options)
 
     expect(calls).toBe(3)
-    expect(links['v0.1']).toBe('/docs/v0.1/a')
+    expect(links.get('v0.1')).toBe('/docs/v0.1/a')
     await findPages(entriesOf(3), 'b', probe, options)
     expect(calls).toBe(6)
   })
@@ -503,8 +518,8 @@ describe('findPages', () => {
       const first = await findPages([entryOf('v0.1')], 'a', probe, options)
       const second = await findPages([entryOf('v0.1')], 'a', probe, options)
 
-      expect(first).toEqual({ 'v0.1': '/docs/v0.1/' })
-      expect(second).toEqual({ 'v0.1': '/docs/v0.1/' })
+      expect(first).toEqual(new Map([['v0.1', '/docs/v0.1/']]))
+      expect(second).toEqual(new Map([['v0.1', '/docs/v0.1/']]))
       expect(options.cache.size).toBe(0)
       expect(calls).toBe(2)
     })
@@ -517,7 +532,7 @@ describe('findPages', () => {
         const pendingLinks = findPages([entryOf('v0.1')], 'a', hangingProbe(), options)
         await vi.advanceTimersByTimeAsync(PROBE_TIMEOUT_MS)
 
-        expect(await pendingLinks).toEqual({ 'v0.1': '/docs/v0.1/' })
+        expect(await pendingLinks).toEqual(new Map([['v0.1', '/docs/v0.1/']]))
         expect(options.cache.size).toBe(0)
       } finally {
         vi.useRealTimers()
@@ -534,10 +549,10 @@ describe('findPages', () => {
       }
       const options = { signal: new AbortController().signal, cache: new Map<string, boolean>() }
 
-      expect(await findPages([entryOf('v0.1')], 'a', probe, options)).toEqual({ 'v0.1': '/docs/v0.1/' })
+      expect(await findPages([entryOf('v0.1')], 'a', probe, options)).toEqual(new Map([['v0.1', '/docs/v0.1/']]))
       healthy = true
 
-      expect(await findPages([entryOf('v0.1')], 'a', probe, options)).toEqual({ 'v0.1': '/docs/v0.1/a' })
+      expect(await findPages([entryOf('v0.1')], 'a', probe, options)).toEqual(new Map([['v0.1', '/docs/v0.1/a']]))
       expect(options.cache.get('/docs/v0.1/a')).toBe(true)
     })
   })
@@ -561,7 +576,7 @@ describe('findPages', () => {
     const result = findPages(entriesOf(10), 'a', hangingProbe(signals), { signal: controller.signal, cache })
     controller.abort()
 
-    expect(await result).toEqual({})
+    expect(await result).toEqual(new Map())
     expect(cache.size).toBe(0)
     expect(signals).toHaveLength(MAX_CONCURRENT_PROBES)
     expect(signals.every((signal) => signal.aborted)).toBe(true)

@@ -8,22 +8,23 @@
  */
 import { useData } from 'vitepress'
 import { computed } from 'vue'
+import { VersionKind } from '../versionLinks'
 
 const { theme, page } = useData()
 
 /** Version settings the config puts in the theme data. */
-const settings = computed(() => theme.value.docsVersion as { kind: string; label: string; latestUrl: string } | undefined)
+const settings = computed(() => theme.value.docsVersion as { kind: VersionKind; label: string; latestUrl: string } | undefined)
 
 /** Address of this page in the latest docs, or the latest home. */
 const latestHref = computed<string>(() => (page.value.frontmatter.docsLatestUrl as string | undefined) || settings.value?.latestUrl || '')
 
 /** Whether the banner is shown. */
-const visible = computed<boolean>(() => settings.value?.kind === 'release' || settings.value?.kind === 'next')
+const visible = computed<boolean>(() => settings.value?.kind === VersionKind.Release || settings.value?.kind === VersionKind.Next)
 </script>
 
 <template>
   <div v-if="visible" class="version-banner" role="note">
-    <template v-if="settings?.kind === 'next'">
+    <template v-if="settings?.kind === VersionKind.Next">
       This is the documentation of the next, unreleased version.
     </template>
     <template v-else>

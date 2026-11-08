@@ -8,6 +8,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
+import { VersionKind } from '../.vitepress/theme/versionLinks'
 import type { ProbeResponse } from '../.vitepress/theme/versionLinks'
 import VersionSwitcher from '../.vitepress/theme/components/VersionSwitcher.vue'
 
@@ -28,6 +29,22 @@ enum Status {
   /** A page that does not exist. */
   NotFound = 404,
 }
+
+/** One entry of the `versions.json` the fake server serves. */
+interface ListedVersion {
+  /** Name shown in the list. */
+  label: string
+  /** Path of the home page of the version. */
+  link: string
+  /** The kind of the version. */
+  kind: VersionKind
+}
+
+/** The entries `versions.json` holds in the running test. */
+let listed: ListedVersion[] = []
+
+/** Labels that are also names of members of `Object.prototype`. */
+const MEMBER_LABELS = ['constructor', 'toString', '__proto__']
 
 /** A request for a page that is waiting for the test to answer it. */
 interface PendingProbe {
@@ -58,12 +75,7 @@ const fakeFetch = async (url: string, init?: RequestInit): Promise<unknown> => {
     return {
       ok: true,
       status: Status.Ok,
-      json: async () => ({
-        versions: [
-          { label: 'v0.4', link: '/docs/', kind: 'latest' },
-          { label: 'v0.3', link: '/docs/v0.3/', kind: 'release' },
-        ],
-      }),
+      json: async () => ({ versions: listed }),
     }
   }
   return new Promise<ProbeResponse>((resolve) => {
@@ -98,7 +110,11 @@ const olderLink = (mounted: VueWrapper): string | undefined => {
 
 beforeEach(() => {
   pending = []
-  data.theme = ref({ docsVersion: { kind: 'latest', label: 'v0.4', versionsUrl: VERSIONS_URL } })
+  listed = [
+    { label: 'v0.4', link: '/docs/', kind: VersionKind.Latest },
+    { label: 'v0.3', link: '/docs/v0.3/', kind: VersionKind.Release },
+  ]
+  data.theme = ref({ docsVersion: { kind: VersionKind.Latest, label: 'v0.4', versionsUrl: VERSIONS_URL } })
   data.page = ref({ relativePath: 'operators/install.md' })
   data.site = ref({ base: '/docs/' })
   vi.stubGlobal('fetch', fakeFetch)
@@ -200,5 +216,37 @@ describe('VersionSwitcher', () => {
     // Opening again asks again; until that answer comes the link is the home page of the version.
     expect(pending).toHaveLength(2)
     expect(olderLink(mounted)).toBe('/docs/v0.3/')
+  })
+
+  it('links labels named like members of Object.prototype to their own pages, before and after the lookup', async () => {
+    listed = [
+      { label: 'v0.4', link: '/docs/', kind: VersionKind.Latest },
+      ...MEMBER_LABELS.map((label) => ({ label, link: `/docs/${label}/`, kind: VersionKind.Release })),
+    ]
+    const mounted = await mountSwitcher()
+    await mounted.find('button').trigger('click')
+
+    /**
+     * The link the list offers for a label.
+     * @param label - The label of the entry.
+     * @returns The `href` of the entry.
+     */
+    const hrefOfLabel = (label: string): string | undefined => mounted.findAll('a').find((link) => link.text().startsWith(label))?.attributes('href')
+
+    // Before any answer: the home page, never a member inherited from Object.prototype turned into text.
+    for (const label of MEMBER_LABELS) {
+      expect(hrefOfLabel(label)).toBe(`/docs/${label}/`)
+    }
+    expect(pending).toHaveLength(MEMBER_LABELS.length)
+
+    // The lookup ends when every label is answered: one page exists, the others do not.
+    for (const probe of pending) {
+      probe.answer(probe.url === '/docs/constructor/operators/install' ? Status.Ok : Status.NotFound)
+    }
+    await flushPromises()
+
+    expect(hrefOfLabel('constructor')).toBe('/docs/constructor/operators/install')
+    expect(hrefOfLabel('toString')).toBe('/docs/toString/')
+    expect(hrefOfLabel('__proto__')).toBe('/docs/__proto__/')
   })
 })

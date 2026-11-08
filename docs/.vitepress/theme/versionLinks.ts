@@ -106,7 +106,11 @@ const KINDS: ReadonlySet<string> = new Set(Object.values(VersionKind))
 /** The most entries of `versions.json` that are read; the rest of a longer file is ignored. */
 export const MAX_LISTED_ENTRIES = 100
 
-/** The most times a link is percent decoded; a link that still changes after this many is refused. */
+/**
+ * The most times a link is percent decoded; a link that still changes after this many is refused. The bound is
+ * deliberate and fails closed: a link that needs more passes is nested deeper than any real path, so it is
+ * treated as hostile and dropped rather than decoded further or let through half checked.
+ */
 export const MAX_DECODE_PASSES = 5
 
 /**
@@ -360,12 +364,13 @@ export const hrefFor = (entry: VersionEntry, pagePath: string, exists: boolean):
  * @param pagePath - Path of the open page below the site base.
  * @param probe - A `fetch`-like request function.
  * @param options - The abort signal and the cache.
- * @returns The link by label, for the entries that were answered.
+ * @returns The link by label, for the entries that were answered; an empty map when the signal aborted.
  */
-export const findPages = async (entries: VersionEntry[], pagePath: string, probe: Probe, options: FindPagesOptions): Promise<Record<string, string>> => {
+export const findPages = async (entries: VersionEntry[], pagePath: string, probe: Probe, options: FindPagesOptions): Promise<Map<string, string>> => {
   const { signal, cache } = options
   const queue = entries.slice(0, MAX_PROBED_ENTRIES)
-  const links: Record<string, string> = {}
+  // A Map, not an object: a label such as `constructor`, `toString` or `__proto__` must not read a member inherited from `Object.prototype`.
+  const links = new Map<string, string>()
   let next = 0
 
   /** Takes entries off the queue one after another until it is empty or the work is aborted. */
@@ -389,10 +394,10 @@ export const findPages = async (entries: VersionEntry[], pagePath: string, probe
           cache.set(url, exists)
         }
       }
-      links[entry.label] = hrefFor(entry, pagePath, exists)
+      links.set(entry.label, hrefFor(entry, pagePath, exists))
     }
   }
 
   await Promise.all(Array.from({ length: Math.min(MAX_CONCURRENT_PROBES, queue.length) }, worker))
-  return signal.aborted ? {} : links
+  return signal.aborted ? new Map<string, string>() : links
 }

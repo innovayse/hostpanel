@@ -96,9 +96,10 @@ public sealed class GetClientPluginSlotWidgetHandler
         // Same rule as a plugin page: the manifest's origins plus the https host of the caller's own bound services.
         var frameOrigins = await _origins.ResolveAsync(package.Manifest, caller.Value!.Held, ct);
 
+        var linkOrigins = PluginFrameOriginResolver.LinkOrigins(package.Manifest, frameOrigins);
+
         return Result<PluginSlotWidgetViewDto>.Success(
-            new PluginSlotWidgetViewDto(
-                widget.PluginId, widget.Id, widget.Title, document, PluginFrameOriginResolver.LinkOrigins(package.Manifest, frameOrigins)));
+            new PluginSlotWidgetViewDto(widget.PluginId, widget.Id, widget.Title, document, linkOrigins));
     }
 
     /// <summary>Reads the optional service id of the query string.</summary>

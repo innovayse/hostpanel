@@ -70,6 +70,26 @@ public static class PluginSlotSeeds
         IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> locales,
         params PluginSlotEntry[] widgets)
     {
+        return Plugin(id, type, locales, [], widgets);
+    }
+
+    /// <summary>
+    /// Builds a plugin of a type whose manifest puts the given widgets into slots, carries locale texts and declares
+    /// <c>externalOrigins</c>, with no view documents.
+    /// </summary>
+    /// <param name="id">The plugin id.</param>
+    /// <param name="type">The type the manifest declares.</param>
+    /// <param name="locales">The manifest's texts by locale, then by key.</param>
+    /// <param name="externalOrigins">The origins the manifest declares for links and previews.</param>
+    /// <param name="widgets">The widgets the manifest declares.</param>
+    /// <returns>The loaded plugin, answered by <see cref="FakeAppPlugin"/>.</returns>
+    public static LoadedPlugin Plugin(
+        string id,
+        PluginType type,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> locales,
+        IReadOnlyList<string> externalOrigins,
+        params PluginSlotEntry[] widgets)
+    {
         var basis = PluginActivationTestSeeds.Plugin(id, type, typeof(FakeAppPlugin)).Manifest;
         var manifest = new PluginManifest
         {
@@ -84,6 +104,7 @@ public static class PluginSlotSeeds
             SdkVersion = basis.SdkVersion,
             Locales = locales,
             Ui = new PluginUi { Slots = widgets },
+            ExternalOrigins = externalOrigins,
         };
 
         return new LoadedPlugin(manifest, typeof(FakeAppPlugin), PluginViewDocuments.None);

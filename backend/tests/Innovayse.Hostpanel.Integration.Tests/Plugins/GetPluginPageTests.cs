@@ -606,6 +606,24 @@ public sealed class GetPluginPageTests : IClassFixture<PluginUiFixture>
         OriginsOf(page).Should().BeEmpty();
     }
 
+    /// <summary>
+    /// An admin page links only to the origins its manifest declares: the panel acts for no client, so no service domain
+    /// is added even when the operator bound a product to the plugin.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Admin_Page_LinkOrigins_AreTheManifestsOnly()
+    {
+        var (owner, _) = await _fixture.OwnerAsync("admin-link-owner");
+        var productId = await SeedActiveServiceAsync(owner.ClientId, $"admin-{Guid.NewGuid():N}.example");
+        await BindAsync(_fixture.PluginId, productId);
+        using var admin = await _fixture.AdminClientAsync();
+
+        var page = await JsonOfAsync(await admin.GetAsync($"/api/admin/plugins/ui/{_fixture.PluginId}/pages/{PluginUiFixture.AdminPage}"));
+
+        LinkOriginsOf(page).Should().Equal(PluginUiFixture.ExternalOrigin);
+    }
+
     /// <summary>Reads the link origins (<c>externalOrigins</c>) of a page body.</summary>
     /// <param name="page">The page body.</param>
     /// <returns>The origins.</returns>

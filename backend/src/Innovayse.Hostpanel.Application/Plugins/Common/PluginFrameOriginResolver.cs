@@ -103,9 +103,9 @@ public sealed class PluginFrameOriginResolver
 
     /// <summary>
     /// Works out the origins the absolute links of a view may point at: what the manifest declares, as written (wildcards
-    /// included), then the <c>https</c> origins of <paramref name="frameOrigins"/>. The latter are the caller's own bound
-    /// service domains under the same rule a preview follows, so a plugin published once for every installation can link
-    /// to the live site of the service being shown without naming its domain. Plain-http development origins are left out.
+    /// included), then the <c>https</c> origins of <paramref name="frameOrigins"/>. The latter are the domains of the
+    /// reader's active services on products bound to the plugin, under the same rule a preview follows, so a plugin
+    /// published once for every installation can link to the reader's own sites without naming their domains. Plain-http development origins are left out.
     /// </summary>
     /// <param name="manifest">The plugin's manifest.</param>
     /// <param name="frameOrigins">The result of <see cref="ResolveAsync"/> for the same caller; empty in the admin panel.</param>

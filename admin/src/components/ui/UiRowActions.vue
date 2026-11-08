@@ -10,6 +10,7 @@
  * - Enter / click on the trigger opens the menu and moves focus to the first enabled item.
  * - ArrowDown / ArrowUp cycle focus through the enabled items.
  * - Escape closes the menu and returns focus to the trigger button.
+ * - Tab moving focus out of the component closes the menu without taking focus back.
  */
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -141,6 +142,20 @@ const onOutsideClick = (e: MouseEvent): void => {
 }
 
 /**
+ * Closes the menu when focus moves to something outside the component (Tab out of the menu), leaving focus where
+ * the user sent it. Focus moving between the trigger and the items stays inside the root and keeps the menu open.
+ *
+ * @param e - The focusout event; `relatedTarget` is the element receiving focus, or null when focus leaves the page.
+ */
+const onFocusOut = (e: FocusEvent): void => {
+  if (!open.value) { return }
+  const next = e.relatedTarget as Node | null
+  if (next && root.value && !root.value.contains(next)) {
+    open.value = false
+  }
+}
+
+/**
  * Handles keyboard navigation inside the open menu.
  * - Escape: close and return focus to trigger.
  * - ArrowDown / ArrowUp: move focus between enabled items.
@@ -200,7 +215,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="root" class="relative inline-block" data-testid="row-actions">
+  <div ref="root" class="relative inline-block" data-testid="row-actions" @focusout="onFocusOut">
     <!-- Trigger -->
     <button
       ref="triggerRef"

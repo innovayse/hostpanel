@@ -183,7 +183,7 @@ describe('StorefrontListTable', () => {
     expect(table.emitted('confirmDelete')).toHaveLength(1)
   })
 
-  it('moves a row with the arrow buttons and reports the new order', async () => {
+  it('moves a row with the move up and move down menu items and reports the new order', async () => {
     const { wrapper } = await mountScreen(hostWith())
     await openMenu(wrapper, 2)
     expect(wrapper.get('[data-testid="widget-move-up-2"]').attributes('disabled')).toBeDefined()

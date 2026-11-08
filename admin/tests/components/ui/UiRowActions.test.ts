@@ -98,11 +98,41 @@ describe('UiRowActions', () => {
   it('closes the menu when something scrolls, because a fixed menu would be left behind', async () => {
     const wrapper = mountIt()
     await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await nextTick()
 
     window.dispatchEvent(new Event('scroll'))
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('closes the menu when focus leaves it with Tab, without taking focus back', async () => {
+    const outside = document.createElement('button')
+    document.body.appendChild(outside)
+    const wrapper = mountIt()
+    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await nextTick()
+
+    outside.focus()
+    await nextTick()
+
+    expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
+    expect(document.activeElement).toBe(outside)
+    wrapper.unmount()
+    outside.remove()
+  })
+
+  it('keeps the menu open while focus moves between its own items', async () => {
+    const wrapper = mountIt()
+    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await nextTick()
+
+    const second = wrapper.get('[data-testid="action-delete"]').element as HTMLElement
+    second.focus()
+    await nextTick()
+
+    expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(true)
     wrapper.unmount()
   })
 

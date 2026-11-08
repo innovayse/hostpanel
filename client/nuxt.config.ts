@@ -447,6 +447,7 @@ export default defineNuxtConfig({
         { property: 'og:locale:alternate', content: 'ru_RU' },
         { property: 'og:locale:alternate', content: 'hy_AM' },
         { property: 'og:locale:alternate', content: 'de_DE' },
+        { property: 'og:locale:alternate', content: 'fr_FR' },
         // og:site_name and author come from app.vue, where the operator's site name is known.
 
         // Twitter Card

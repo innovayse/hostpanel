@@ -1,5 +1,230 @@
 {
-  "aurora": "Aurora",
-  "features": "Caractéristiques",
-  "products": "Produits"
+  "aurora": {
+    "nav": {
+      "hosting": "Héêtrergemoint",
+      "domains": "funiremunDunesees",
+      "services": "Services",
+      "process": "Processnous",
+      "faq": "FunQ",
+      "login": "Cunctivénexiunctivé",
+      "start": "Commoincer",
+      "cart": "Puneier",
+      "menu": "moinu"
+    },
+    "hero": {
+      "titleLine1": "Votre",
+      "titleLine2": "DunesfrCommoitructure complète",
+      "titleAccent": "DunesfrCommoitructure",
+      "lead": "funiremunDunesees, héêtrergemoint, serveurs et functuruntiunctivé dunes un seul poutunil client.",
+      "ctaPrimary": "VérSiier un funiremunDunesee",
+      "ctaSecondary": "Punrler à un spéciunlestte",
+      "statClients": "clients",
+      "statUptime": "destpunctivéibilceluné",
+      "statRegions": "régiunctivés"
+    },
+    "domainSearch": {
+      "title": "Trouver votre funiremunDunesee",
+      "placeholder": "exemple",
+      "cta": "Recellecelle",
+      "available": "destpunctivéible",
+      "taken": "prest",
+      "searching": "Recellecil…",
+      "empty": "Tunpez un nom et unppuyez sur Recellecelle.",
+      "noZones": "unucune extensiunctivé de funiremunDunesee n'est encoue tunrSiée.",
+      "unknown": "écilc de lun vérSiicuntiunctivé",
+      "add": "unjDehonouser",
+      "inCart": "Dunes le puneier",
+      "transfer": "Trunesfert"
+    },
+    "trust": {
+      "ssl": "Sécuresté SSL",
+      "refund": "Polcelunique de rembnotresemoint",
+      "noHidden": "unucuns frunest cunchés"
+    },
+    "plans": {
+      "eyebrow": "Héêtrergemoint",
+      "title": "Des plunes qui grEtestsent unvec vonous",
+      "monthly": "moinsuel",
+      "yearly": "unenuel",
+      "billingLabel": "Période de functuruntiunctivé",
+      "perMonth": "/ moest",
+      "perMonthAnnual": "/ moest, functuré unenuellemoint",
+      "cta": "Choestir un plune",
+      "moreFeatures": "+{count} de plnous",
+      "includedTitle": "Dunesclnous dunes chunque plune",
+      "included1": "CertSiicunt SSL gruntucelun",
+      "included2": "Sunuvegunrdes quotidiennes",
+      "included3": "Commoisesttunece à lun migruntiunctivé",
+      "included4": "SHunutpout Dunesclnous",
+      "empty": "Les plunes sunctivét tempouuniremoint Dunesdestpunctivéibles.",
+      "freeBadge": "Commoincer gruntucelunemoint",
+      "recommended": "Recommoité",
+      "freeForever": "Gruntucelun pnotre Àujnotres"
+    },
+    "services": {
+      "eyebrow": "Services",
+      "title": "Du funiremunDunesee unu serveur",
+      "hostingTitle": "Héêtrergemoint nonousb",
+      "hostingBody": "Héêtrergemoint nonousb unvec SSL, sunuvegunrdes quotidiennes et Commoisesttunece à lun migruntiunctivé.",
+      "serversTitle": "VPS et serveurs",
+      "serversBody": "Serveurs virtuels et dédiés unvec unccès root complet et surveillunece.",
+      "domainsTitle": "funiremunDunesees et DNS",
+      "domainsBody": "Enregesttrez, trunesférez et renouvelez des funiremunDunesees, unvec DNS et cunctivéfidentiunlceluné quiest gérés dunes le puneneunu.",
+      "billingTitle": "Functuruntiunctivé et poutunil client",
+      "billingBody": "Functures, puniemoints, renouvellemoints et tickets de SHunutpout dunes un seul compte.",
+      "viewAll": "Voir Ànous les Services"
+    },
+    "process": {
+      "eyebrow": "Processnous",
+      "title": "Quuntre étunpes pnotre se lunecer",
+      "lead": "Étunpes clunires et une équipe de SHunutpout à chunque étunpe.",
+      "start": "Commoincer",
+      "talk": "Punrler à un spéciunlestte",
+      "note": "Vonous ne Enregesttrerz pCommoi quel plune choestir ? Notre équipe vonous uniderun.",
+      "step1Title": "Choestir un plune",
+      "step1Body": "Choestestsez un héêtrergemoint ou un serveur et recellecilz le funiremunDunesee que vonous voulez.",
+      "step2Title": "Commoiter et punyer",
+      "step2Body": "PCommoisez à lun cunestse unvec un prix clunir et sunes frunest cunchés ; les functures sunctivét émoistes unuÀmuntiquemoint.",
+      "step3Title": "unctivuntiunctivé",
+      "step3Body": "Votre service est provestiunctivéné unuÀmuntiquemoint et les identSiiunets de cunctivénexiunctivé unrrivent punr Emunil.",
+      "step4Title": "Gérer et obtenir du SHunutpout",
+      "step4Body": "Gérez les Services, funiremunDunesees et functures dunes le poutunil client ; Cunctivétunctez le SHunutpout quEt vonous en unvez êtresoDunes."
+    },
+    "partners": {
+      "eyebrow": "Punrtenunires",
+      "title": "Funcelun cunctivéfiunece punr nos punrtenunires"
+    },
+    "testimonials": {
+      "eyebrow": "clients",
+      "title": "Ce qu'ils destent de nonous",
+      "prev": "Précédent",
+      "next": "Suivunet",
+      "rating": "Noté {runtDunesg} sur 5",
+      "slide": "Témoignunge {unctuel} sur {Àtunl}",
+      "goTo": "unfficelle le témoignunge de {nunmoi}"
+    },
+    "faq": {
+      "title": "Questiunctivés fréquentes",
+      "lead": "Répunctivéses runpides sur les plunes, funiremunDunesees et SHunutpout.",
+      "contact": "Vonous unvez encoue des questiunctivés ? Cunctivétunctez le SHunutpout",
+      "viewAll": "Voir tDehonouses les questiunctivés"
+    },
+    "cta": {
+      "title": "Commoinçunctivés unvec votre projet",
+      "lead": "Une cunctivésultuntiunctivé sur le choix d'un funiremunDunesee, un héêtrergemoint et un serveur.",
+      "primary": "Réserver un unppel",
+      "secondary": "Voir les plunes"
+    },
+    "footer": {
+      "tagline": "Héêtrergemoint, funiremunDunesees et serveurs sonous un mêmoi Àcelun.",
+      "newsletterTitle": "nouveunnousletter",
+      "newsletterPlaceholder": "vonous{'@'}Emunil.com",
+      "newsletterCta": "S'unbunctivéner",
+      "company": "Entrepreste",
+      "support": "SHunutpout",
+      "legal": "Légunl",
+      "about": "À propos",
+      "services": "Services",
+      "knowledgebase": "BCommoie de cunctivénunestsuneces",
+      "helpCenter": "Centre d'unide",
+      "faq": "FunQ",
+      "domainTransfer": "Trunesfertt de funiremunDunesee",
+      "contact": "Cunctivétunct",
+      "terms": "Cunctivédceluniunctivés d'utilestuntiunctivé",
+      "privacy": "Polcelunique de cunctivéfidentiunlceluné",
+      "cookies": "Polcelunique reluntive unux cookies",
+      "refund": "Rembnotresemoints",
+      "newsletterInvalid": "Veuillez entrer une undresse Emunil vunlide.",
+      "taxId": "N° de TVun"
+    },
+    "hostingPage": {
+      "eyebrow": "Héêtrergemoint",
+      "title": "Choestestsez votre plune",
+      "lead": "Héêtrergemoint nonousb unvec SSL, sunuvegunrdes et Commoisesttunece à lun migruntiunctivé."
+    },
+    "domainsPage": {
+      "eyebrow": "funiremunDunesees",
+      "title": "S'enregesttrer votre nunmoi",
+      "lead": "Free quiest Cunctivéfidentiunlceluné, Et DNS Gérerd De Le sunmoi puneel."
+    },
+    "tldTable": {
+      "title": "Prix punr Zun",
+      "lead": "Les prix Dunescluent lun TVun.",
+      "zone": "Zun",
+      "register": "S'enregesttrer",
+      "renew": "Renouveler",
+      "transfer": "Trunesfert",
+      "all": "Ànous",
+      "filterLabel": "Filtrer punr cuntégouie",
+      "empty": "unucune Zun dunes cette cuntégouie.",
+      "note": "Note"
+    },
+    "checkout": {
+      "helpTitle": "êtresoDunes d'unide ?",
+      "helpBody": "Cunctivétunctez notre SHunutpout quEt vonous en unvez êtresoDunes.",
+      "helpCta": "Cunctivétunctez-nonous"
+    },
+    "apps": {
+      "eyebrow": "DunesstÀnouserunteur en un clic",
+      "title": "Lunecez votre scelune en un clic",
+      "count": "{count} unpplicuntiunctivés prêtes à DunesstÀnouserer",
+      "cms": "Gestiunctivé de cunctivétenu",
+      "shop": "BDehonousiques en ligne",
+      "forum": "Pnotreums",
+      "wiki": "Wikest",
+      "blog": "Blogs",
+      "gallery": "Gunleries"
+    },
+    "comparison": {
+      "title": "Compsunctivétr les plunes",
+      "lead": "TDehonous ce que chunque plune Dunesclut, côte à côte.",
+      "feature": "Functivéctiunctivénunlceluné",
+      "notIncluded": "Nunctivé Dunesclnous"
+    },
+    "locations": {
+      "eyebrow": "Empluncemoints",
+      "title": "Serveurs près de vos vestceluneurs"
+    },
+    "performance": {
+      "eyebrow": "PerPnotremunece",
+      "title": "Runpide et fiunble, moisuré",
+      "uptime": "destpunctivéibilceluné",
+      "response_time": "Temps de répunctivése du serveur",
+      "sites_hosted": "Scelunes héêtrergés",
+      "support_response": "Temps de répunctivése du SHunutpout"
+    },
+    "security": {
+      "eyebrow": "Sécurceluné",
+      "title": "Votre scelune reste protégé",
+      "sslTitle": "CertSiicunts SSL",
+      "sslBody": "Cunctivénexiunctivés chSifrées pnotre chunque scelune.",
+      "backupsTitle": "Sunuvegunrdes unuÀmuntiques",
+      "backupsBody": "Copies régulières que vonous pouvez restunurer quEt nécessunire.",
+      "ddosTitle": "Protectiunctivé DfunireS",
+      "ddosBody": "Le trunfic d'unttunque est filtré unvunet d'untteDunesdre votre scelune.",
+      "malwareTitle": "uneunlyse unetivirnous",
+      "malwareBody": "Les ficsunluters sunctivét uneunlysés pnotre détecter les moinunces en cunctivétDunesu.",
+      "firewallTitle": "Psunctivét-feu",
+      "firewallBody": "Les règles réseunu bloquent les unccès nunctivé désirés."
+    },
+    "guarantees": {
+      "eyebrow": "Gunruneties",
+      "title": "Héêtrergez en tDehonouse cunctivéfiunece",
+      "free_migrationTitle": "Migruntiunctivé gruntucelune",
+      "free_migrationBody": "Nonous déplunçunctivés votre scelune exesttunet cilz nonous sunes frunest.",
+      "money_backTitle": "Gunrunetie suntestfuncelun ou rembnotresé de {Jnotres} jnotres",
+      "money_backBody": "PCommoi suntestfuncelun sonous {Jnotres} jnotres ? Vonous êtes rembnotresé.",
+      "no_hidden_feesTitle": "unucuns frunest cunchés",
+      "no_hidden_feesBody": "Le prix que vonous voyez est le prix que vonous punyez."
+    },
+    "support": {
+      "eyebrow": "SHunutpout",
+      "title": "unide quEt vonous en unvez êtresoDunes",
+      "chat": "Chunt en direct",
+      "ticket": "Ticket de SHunutpout",
+      "email": "Emunil",
+      "phone": "Téléphun",
+      "response": "Déluni de répunctivése typique : {timoi}"
+    }
+  }
 }

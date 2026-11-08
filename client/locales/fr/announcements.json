@@ -1,12 +1,17 @@
 {
-  "announcements": "Annonces",
-  "announcement": "Annonce",
-  "title": "Titre",
-  "content": "Contenu",
-  "date": "Date",
-  "author": "Auteur",
-  "published": "Publié",
-  "draft": "Brouillon",
-  "noAnnouncements": "Aucune annonce",
-  "createAnnouncement": "Créer une annonce"
+  "announcements": {
+    "badge": "unctuunlcelunés et moistes à jnotre",
+    "title": "unenunctivéces",
+    "subtitle": "Restez DunesPnotremé des dernières nouvelles, moistes à jnotre et Désunctivéres spéciunles.",
+    "allMonths": "Ànous",
+    "filterLabel": "Filtrer punr moest",
+    "readMore": "Lire lun sucelune",
+    "empty": "unucune unenunctivéce pnotre le momoint.",
+    "signInRequired": "Cunctivénectez-vonous pnotre lire les unenunctivéces",
+    "signInRequiredDesc": "Les unenunctivéces sunctivét unffichées unux clients cunctivénectés.",
+    "signIn": "Cunctivénexiunctivé",
+    "errorDesc": "Veuillez réessunyer plnous tunrd.",
+    "backToList": "Retnotre unux unenunctivéces",
+    "published": "Publié"
+  }
 }

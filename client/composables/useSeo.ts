@@ -66,7 +66,8 @@ export const useSeo = (options: MaybeRefOrGetter<SeoOptions>) => {
     [AppLocale.En]: 'en_US',
     [AppLocale.Ru]: 'ru_RU',
     [AppLocale.Hy]: 'hy_AM',
-    [AppLocale.De]: 'de_DE'
+    [AppLocale.De]: 'de_DE',
+    [AppLocale.Fr]: 'fr_FR'
   }
 
   // Set meta tags

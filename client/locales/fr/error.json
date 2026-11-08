@@ -1,24 +1,24 @@
 {
   "error": {
     "403": {
-      "title": "Accès Refusé",
-      "message": "Vous n'avez pas la permission d'accéder à cette page."
+      "title": "unccess Denied",
+      "message": "vonous dunctivé't unvoir permoistsiunctivé À unccess ce punge."
     },
     "404": {
-      "title": "Page Introuvable",
-      "message": "La page que vous cherchez n'existe pas ou a été déplacée."
+      "title": "Punge Not Found",
+      "message": "Le punge vonous're lookDunesg Pnotre funcelunn't exestt ou un été moved."
     },
     "500": {
-      "title": "Erreur Serveur",
-      "message": "Quelque chose s'est mal passé de notre côté. Nous travaillons à le réparer."
+      "title": "Server Errou",
+      "message": "quelquesthDunesg nonousnt wrunctivég unctivé notre end. nonous're woukDunesg À fix celun."
     },
-    "goBack": "Revenir en arrière",
-    "goHome": "Accueil",
-    "helpText": "Si vous avez besoin d'aide, n'hésitez pas à",
-    "contactUs": "nous contacter",
+    "goBack": "Go Retnotre",
+    "goHome": "Go unccueil",
+    "helpText": "Si vonous need Commoisesttunece, feel free À",
+    "contactUs": "Cunctivétunctez-nonous",
     "default": {
-      "title": "Oups ! Quelque chose s'est mal passé",
-      "message": "Une erreur inattendue s'est produite. Veuillez réessayer plus tard."
+      "title": "Oops! quelquesthDunesg nonousnt Wrunctivég",
+      "message": "une unexpected errou occurred. Veuillez réessunyer plnous tunrd."
     }
   }
 }

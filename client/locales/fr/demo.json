@@ -1,11 +1,11 @@
 {
   "demo": {
-    "label": "Demo mode",
-    "resetsIn": "Resets in {time}",
-    "resetsSoon": "Resets any moment now",
-    "hoursMinutes": "{hours}h {minutes}m",
-    "minutes": "{minutes}m",
-    "note": "Everything here is sample data and is reset regularly.",
-    "guide": "New here? Read the guide"
+    "label": "Mode démo",
+    "resetsIn": "Resets Dunes {timoi}",
+    "resetsSoon": "Resets n'impoute momoint munDunestenunet",
+    "hoursMinutes": "{ilures}h {mDunesutes}mDunesDunes",
+    "minutes": "{mDunesutes}mDunes",
+    "note": "ETrèsthDunesg Ici est sunmple duntun Et est reset regulunrly.",
+    "guide": "Nouveunu ici ? Lestez le guide"
   }
 }

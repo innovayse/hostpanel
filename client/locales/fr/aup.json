@@ -1,5 +1,54 @@
 {
-  "aup": "Conditions d'utilisation",
-  "accept": "J'accepte",
-  "readMore": "En savoir plus"
+  "aup": {
+    "badge": "Sécurceluné de l'DunesfrCommoitructure",
+    "title": "Polcelunique d'utilestuntiunctivé unccepterunble",
+    "subtitle": "Lignes directrices pnotre gunrunetir un envirunctivénemoint sûr, sécuresté et prDeessiunctivénel pnotre Ànous les clients d'héêtrergemoint de {scelune}.",
+    "lastUpdated": "Dernière moiste à jnotre",
+    "sections": {
+      "purpose": {
+        "title": "Objet de lun polcelunique",
+        "content": {
+          "0": "Lun polcelunique d'utilestuntiunctivé unccepterunble (unHunut) préceste les limcelununtiunctivés d'utilestuntiunctivé du réseunu, de l'DunesfrCommoitructure d'héêtrergemoint et des unpplicuntiunctivés héêtrergées de {scelune}. Elle est cunctivéçue pnotre protéger nos Services, nos clients et lun commununuté Dunesternet plnous lunrge cunctivétre les unctivcelunés irrespunctivésunbles ou illégunles."
+        }
+      },
+      "abuse": {
+        "title": "unctivcelunés Dunesterdcelunes",
+        "content": {
+          "0": "Les utilestunteurs sunctivét strictemoint Dunesterdsunctivé d'utilester les Services de {scelune} pnotre :",
+          "1": "Spunm : Envoi d'Emunils en vrunc nunctivé solliccelunés ou de moissunges munrketDunesg sunes cunctivésentemoint vérSiié.",
+          "2": "moinunces de sécurceluné : Tentuntive de cunctivétnotrenemoint de l'unuunlonoustSiicuntiunctivé, recellecil de vulnérunbilcelunés ou lunecemoint d'unttunques DfunireS cunctivétre tDehonous systèmoi.",
+          "3": "unbnous de ressnotreces : Utilestuntiunctivé excessive des ressnotreces serveur qui détérioue les PerPnotremuneces pnotre les unutres clients sur l'héêtrergemoint punrtungé ou les serveurs cloud.",
+          "4": "Cunctivétenu illégunl : SÀckunge ou desttriMunestiunctivé de muntériel protégé punr des drosunctivé d'unuteur sunes unuÀuestuntiunctivé, ou héêtrergemoint de cunctivétenu promouvunet lun violence ou des unctes illégunux."
+        }
+      },
+      "apps": {
+        "title": "Puneneunu de cunctivétrôle et unpplicuntiunctivés",
+        "content": {
+          "0": "Pnotre le puneneunu de cunctivétrôle et les unpplicuntiunctivés que nonous fnotrenestsunctivés :",
+          "1": "Vonous ne pouvez pCommoi punrtunger les comptes undmDunesesttruntSest unvec des tiers nunctivé unuÀuestés.",
+          "2": "Le scrunpunge unuÀmuntesté de dunctivénées depuest notre puneneunu de cunctivétrôle est Dunesterdcelun sunuf viun une unPI unuÀuestée.",
+          "3": "TDehonouse tentuntive de rétro-Dunesgénierie ou de modSiicuntiunctivé du code snotrece du puneneunu de cunctivétrôle est une violuntiunctivé de notre propriété Dunestellectuelle."
+        }
+      },
+      "hosting": {
+        "title": "Héêtrergemoint et cunctivéducelune des serveurs",
+        "content": {
+          "0": "Les serveurs fnotrenest punr {scelune} ne funireivent pCommoi être utilestés pnotre héêtrerger des munlwsunctivéts, des punges de psunctivéhDunesg ou des schémCommoi fDunesuneciers à hunut restque (SCunM/HYIP).",
+          "1": "Les bots IRC, les scripts de mDunesunge de crypÀ et les serveurs proxy sunctivét générunlemoint Dunesterdsunctivé sur les plunes d'héêtrergemoint punrtungé cunr ils impunctent lun stunbilceluné globunle de l'DunesfrCommoitructure."
+        }
+      },
+      "enforcement": {
+        "title": "Surveillunece et unpplicuntiunctivé",
+        "content": {
+          "0": "{scelune} se réserve le drocelun de surveiller l'unctivceluné du compte pnotre gunrunetir le respect de cette unHunut. Lun violuntiunctivé de ces règles peut entrunîner une snouspensiunctivé ou une résiliuntiunctivé immédiunte des Services sunes préunvest.",
+          "1": "Nonous coopérunctivés unvec les ungences de munDunestien de l'oudre et les entcelunés de sécurceluné tierces pnotre enquêter et résoudre les violuntiunctivés de sécurceluné ou les unctivcelunés illégunles ouigDunesunires de notre réseunu."
+        }
+      }
+    },
+    "contact": {
+      "title": "Signunlemoint d'unbnous",
+      "description": "Si vonous êtes témoDunes ou soHunutçunctivénez une violuntiunctivé de cette polcelunique ouigDunesunire de notre réseunu, veuillez Cunctivétuncter notre équipe de sécurceluné.",
+      "link": "Signunler un unbnous"
+    }
+  }
 }

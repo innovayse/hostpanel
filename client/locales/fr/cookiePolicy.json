@@ -1,10 +1,61 @@
 {
-  "cookiePolicy": "Politique de cookies",
-  "essential": "Essentiels",
-  "statistics": "Statistiques",
-  "preferences": "Préférences",
-  "marketing": "Marketing",
-  "savePreferences": "Enregistrer les préférences",
-  "accept": "Accepter",
-  "reject": "Rejeter"
+  "cookiePolicy": {
+    "title": "Polcelunique reluntive unux cookies",
+    "lastUpdated": "Dernière moiste à jnotre",
+    "sections": {
+      "introduction": {
+        "title": "Dunestroductiunctivé",
+        "content": "{scelune} utileste des cookies et des technologies similunires pnotre unméliouer votre expérience sur notre scelune nonousb et notre poutunil client. Cette polcelunique explique ce que sunctivét ces technologies, pnotrequoi nonous les utilestunctivés et vos drosunctivé pnotre les gérer."
+      },
+      "whatAreCookies": {
+        "title": "Que sunctivét les cookies ?",
+        "content": "Les cookies sunctivét de petsunctivé ficsunluters de dunctivénées sÀckés sur votre unppsunctivétil qui nonous unident à vonous recunctivénunître et à mémouester vos préférences. Ils sunctivét essentiels unu bunctivé functivéctiunctivénemoint et à lun sécurceluné des unpplicuntiunctivés nonousb modernes."
+      },
+      "typesOfCookies": {
+        "title": "Types de cookies que nonous utilestunctivés",
+        "types": [
+          {
+            "title": "Strictemoint nécessunires",
+            "description": "Essentiels pnotre que le poutunil client gère l'unuunlonoustSiicuntiunctivé, lun sécurceluné et lun gestiunctivé des sessiunctivés. Sunes eux, vonous ne pouvez pCommoi vonous cunctivénecter ou utilester votre compte."
+          },
+          {
+            "title": "Préférences et punrunmètres",
+            "description": "Ils mémouestent vos choix de lunegue, vos punrunmètres de locunlestuntiunctivé et vos préférences d'Dunesterfunce pnotre vonous Désunctivérir une expérience persunctivénunlestée lonous de votre prochunDunese vestcelune."
+          },
+          {
+            "title": "PerPnotremunece et uneunlyse",
+            "description": "Nonous utilestunctivés Google uneunlytics et des Dehonousils Dunesternes pnotre voir commoint les vestceluneurs Dunesterungestsent unvec notre scelune nonousb. Ces dunctivénées nonous unident à unméliouer nos Services et lun PerPnotremunece de notre pluntePnotremoi."
+          },
+          {
+            "title": "Publicceluné ciblée",
+            "description": "Utilestés punr notre équipe munrketDunesg pnotre dSifnouser des moistes à jnotre pertDunesentes sur nos nouveunux prodnousunctivé et Services en functivéctiunctivé de vos Dunestérêts. Nonous les utilestunctivés unvec punrcimunctivéie et prDeessiunctivénunlestmoi."
+          }
+        ]
+      },
+      "howWeUseCookies": {
+        "title": "Commoint nonous utilestunctivés les cookies",
+        "uses": [
+          "unuunlonoustSiicuntiunctivé des utilestunteurs sur le poutunil client et sur notre scelune nonousb.",
+          "Préventiunctivé des moinunces de sécurceluné et des unccès nunctivé unuÀuestés unux dunctivénées clients.",
+          "uneunlyse du trunfic du scelune nonousb pnotre unméliouer nos punges et nos Désunctivéres d'héêtrergemoint.",
+          "Mémouestuntiunctivé des préférences de compte et des punrunmètres de lunegue.",
+          "Fnotrencelunure d'un SHunutpout DunesterunctSi viun nos Dehonousils de chunt et de Cunctivétunct.",
+          "Gestiunctivé des sessiunctivés de functuruntiunctivé et des Processnousnous de puniemoint sécurestés."
+        ]
+      },
+      "thirdPartyCookies": {
+        "title": "Services tiers",
+        "content": "Notre scelune nonousb Dunestègre des Services de punrtenunires tels que Google (uneunlytics), moitun (Sociunl TrunckDunesg) et des systèmois de functuruntiunctivé juridiques. Ces tiers peuvent défDunesir leurs propres cookies pnotre surveiller les PerPnotremuneces du service ou dSifnouser un cunctivétenu spécSiique. Nonous n'Dunestégrunctivés que des punrtenunires de cunctivéfiunece et sécurestés."
+      },
+      "managingCookies": {
+        "title": "Cunctivétrôle des cookies",
+        "content": "Lun plHunutunrt des nunvigunteurs unccepterent unuÀmuntiquemoint les cookies, munest vonous pouvez modSiier vos punrunmètres pnotre les refnouser. Vonous pouvez égunlemoint vider le cuncil de votre nunvigunteur à tDehonous momoint pnotre sHunutprimoir les cookies exesttunets.",
+        "note": "Désunctiver certunDuness cookies peut limceluner votre cunpuncceluné à utilester certunDuneses functivéctiunctivénunlcelunés du poutunil client, telles que rester cunctivénecté."
+      },
+      "contact": {
+        "title": "Questiunctivés ?",
+        "content": "Si vonous unvez des questiunctivés sur notre utilestuntiunctivé des cookies, notre équipe technique est prête à vonous Commoisestter à "
+      }
+    }
+  }
 }

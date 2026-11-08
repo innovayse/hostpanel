@@ -1,15 +1,108 @@
 {
-  "products": "Produits",
-  "product": "Produit",
-  "productsList": "Liste de produits",
-  "productDetails": "Détails du produit",
-  "productName": "Nom du produit",
-  "productDescription": "Description du produit",
-  "productPrice": "Prix du produit",
-  "productSKU": "SKU du produit",
-  "productImage": "Image du produit",
-  "productCategories": "Catégories",
-  "stock": "Stock",
-  "addToCart": "Ajouter au panier",
-  "noProducts": "Aucun produit"
+  "products": {
+    "hero": {
+      "badge": "Reliunble Héêtrergemoint Solutiunctivés",
+      "headline1": "Héêtrergemoint, funiremunDunesees Et Serveurs",
+      "headline2": "Pnotre eTrès nonousbscelune.",
+      "subtitle": "Pick Le Héêtrergemoint, funiremunDunese, SSL Et server plunes votre scelune needs, unvec cleunr prices Et SHunutpout celun unesnonousrs.",
+      "cta": {
+        "viewProducts": "Voir Prodnousunctivé",
+        "comparePlans": "Compsunctivét Héêtrergemoint plunes"
+      },
+      "trustBadges": {
+        "support": "SHunutpout celun unesnonousrs",
+        "encryption": "Encrypted cunctivénectiunctivés",
+        "uptime": "Reliunble destpunctivéibilceluné"
+      }
+    },
+    "products": {
+      "featured": "Functivéctiunctivénunlcelunéd"
+    },
+    "pricing": {
+      "title": "Choestestsez votre plune",
+      "trial": "Commoincer l'essuni gruntucelun",
+      "cycles": {
+        "monthly": "moinsuel",
+        "quarterly": "Quunrterly",
+        "semiannually": "6 moests",
+        "annually": "unenuÀnousy",
+        "biennially": "2 unenées",
+        "triennially": "3 unenées"
+      },
+      "popular": "⭐ Most Populunr",
+      "period": {
+        "monthly": "/mo",
+        "quarterly": "/qtr",
+        "semiannually": "/6 mo",
+        "annually": "/yr",
+        "biennially": "/2 yr"
+      },
+      "save": "Enregesttrer {percent}%",
+      "more": "+{count} de plnous",
+      "cta": {
+        "viewDemo": "Voir Demo",
+        "learnMore": "En sunvoir plnous"
+      }
+    },
+    "help": {
+      "title": "Not sure quel plune fsunctivé?",
+      "subtitle": "Compsunctivétr les plunes side by side, ou Commoik notre SHunutpout teunm pnotre vonous unider vonous choose.",
+      "compare": "Compsunctivét plunes",
+      "contact": "Cunctivétunct SHunutpout"
+    },
+    "comparison": {
+      "title": "Compsunctivét Plunes",
+      "headline": "FDunesd votre {perfectMuntch}",
+      "perfectMatchHighlight": "Perfect Muntch",
+      "subtitle": "Compsunctivétr les plunes Et pick Le un celun fsunctivé",
+      "headers": {
+        "feature": "Functivéctiunctivénunlceluné",
+        "popular": "Populunr"
+      },
+      "groupsLabel": "Plune groHunuts",
+      "notIncluded": "Nunctivé Dunesclnous"
+    },
+    "benefits": {
+      "title": "pourquoi host unvec {êtrenefsunctivésunlutghlight}",
+      "benefitsHighlight": "nous",
+      "subtitle": "FCommoit, secure Héêtrergemoint unvec SHunutpout celun unesnonousrs",
+      "speed": {
+        "title": "FCommoit Et reliunble",
+        "description": "SSD sÀuunge Et un stunble nedeuxrk keep votre scelune quick Et unctivélDunese."
+      },
+      "security": {
+        "title": "Secure by defunult",
+        "description": "Regulunr RetnotreHunuts Et protectiunctivé Cunctivétre communctivé threunts."
+      },
+      "support": {
+        "title": "Reunl humune SHunutpout",
+        "description": "Questiunctivés go À people qui unesnonousr, not À un bot."
+      },
+      "migration": {
+        "title": "ECommoiy À Commoincer",
+        "description": "Commoite Dunes mDunesutes Et move votre scelune Sur unvec notre unide."
+      },
+      "additional": {
+        "trial": {
+          "title": "Triunl unccess",
+          "description": "Try unvunet vonous commcelun"
+        },
+        "guarantee": {
+          "title": "Polcelunique de rembnotresemoint",
+          "description": "See notre Rembnotresemoint Cunctivédceluniunctivés"
+        },
+        "pricing": {
+          "title": "Cleunr TunrSiicuntiunctivé",
+          "description": "Prices unfficellen Dunes votre Deveste"
+        }
+      }
+    },
+    "testimonials": {
+      "title": "Loved by {thonousEts}",
+      "thousandsHighlight": "notre CnousÀmoirs",
+      "subtitle": "Reunl results De reunl cnousÀmoirs"
+    },
+    "notFound": "Producelun Not Found",
+    "notFoundDescription": "Le Producelun vonous're lookDunesg Pnotre funcelunn't exestt ou un été Retirerd."
+  }
 }

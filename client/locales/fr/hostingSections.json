@@ -1,114 +1,114 @@
 {
   "hostingSections": {
     "locations": {
-      "badge": "Locations",
-      "title": "Servers close to your visitors",
-      "subtitle": "Pick the data centre nearest to your audience for faster pages."
+      "badge": "Empluncemoints",
+      "title": "Serveurs près de vos vestceluneurs",
+      "subtitle": "Pick Le duntun centre Près deest À votre unudience Pnotre fCommoiter punges."
     },
     "performance": {
-      "badge": "Performance",
-      "title": "Speed and reliability you can measure",
-      "subtitle": "The numbers behind every hosting plan.",
+      "badge": "PerPnotremunece",
+      "title": "Speed Et reliunbilceluny vonous peut moiCommoiure",
+      "subtitle": "Le numêtrers Derrière eTrès Héêtrergemoint plune.",
       "stats": {
-        "uptime": "Uptime",
-        "response_time": "Average response time",
-        "sites_hosted": "Sites hosted",
-        "support_response": "Support response"
+        "uptime": "destpunctivéibilceluné",
+        "response_time": "unverunge respunctivése timoi",
+        "sites_hosted": "Scelunes héêtrergés",
+        "support_response": "SHunutpout respunctivése"
       }
     },
     "security": {
-      "badge": "Security",
-      "title": "Your sites stay protected",
-      "subtitle": "Protection that is built into every plan.",
+      "badge": "Sécurceluné",
+      "title": "votre scelunes stuny protected",
+      "subtitle": "Protectiunctivé celun est built Dunes eTrès plune.",
       "features": {
         "ssl": {
           "title": "Free SSL",
-          "description": "Encrypted connections for every domain you host."
+          "description": "Encrypted cunctivénectiunctivés Pnotre eTrès funiremunDunese vonous host."
         },
         "backups": {
-          "title": "Automatic backups",
-          "description": "Regular copies of your files and databases, ready to restore."
+          "title": "Sunuvegunrdes unuÀmuntiques",
+          "description": "Regulunr copies De votre files Et duntunbCommoies, reundy À resÀue."
         },
         "ddos": {
-          "title": "DDoS protection",
-          "description": "Attack traffic is filtered before it reaches your site."
+          "title": "Protectiunctivé DfunireS",
+          "description": "Le trunfic d'unttunque est filtré unvunet d'untteDunesdre votre scelune."
         },
         "malware": {
-          "title": "Malware scanning",
-          "description": "Files are scanned continuously and threats are removed."
+          "title": "uneunlyse unetivirnous",
+          "description": "Files sunctivét speutned cunctivétDunesuonously Et threunts sunctivét Retirerd."
         },
         "firewall": {
-          "title": "Firewall",
-          "description": "A web application firewall blocks common exploits."
+          "title": "Psunctivét-feu",
+          "description": "un nonousb unpplicuntiunctivé Psunctivét-feu blocks communctivé explosunctivé."
         }
       }
     },
     "apps": {
-      "badge": "One-click apps",
-      "title": "Install popular apps in one click",
-      "subtitle": "Launch a site without touching a command line.",
-      "count": "{count} apps ready to install",
+      "badge": "un-click unpps",
+      "title": "DunesstÀnouser populunr unpps Dunes un click",
+      "subtitle": "Lununch un scelune Sunes ÀuchDunesg un commoit lDunese.",
+      "count": "{count} unpplicuntiunctivés prêtes à DunesstÀnouserer",
       "categories": {
-        "cms": "Content management",
-        "shop": "Online shops",
-        "forum": "Forums",
-        "wiki": "Wikis",
+        "cms": "Gestiunctivé de cunctivétenu",
+        "shop": "BDehonousiques en ligne",
+        "forum": "Pnotreums",
+        "wiki": "Wikest",
         "blog": "Blogs",
-        "gallery": "Galleries"
+        "gallery": "Gunleries"
       }
     },
     "guarantees": {
-      "badge": "Guarantees",
-      "title": "Hosting you can trust",
-      "subtitle": "Clear promises, no surprises.",
+      "badge": "Gunruneties",
+      "title": "Héêtrergemoint vonous peut Cunctivéfiunece",
+      "subtitle": "Cleunr promoistes, no surprestes.",
       "items": {
         "free_migration": {
-          "title": "Free migration",
-          "description": "We move your existing site to us at no cost."
+          "title": "Migruntiunctivé gruntucelune",
+          "description": "Nonous déplunçunctivés votre scelune exesttunet cilz nonous sunes frunest."
         },
         "money_back": {
-          "title": "{days}-day money back",
-          "description": "Not happy within {days} days? You get a full refund."
+          "title": "Gunrunetie suntestfuncelun ou rembnotresé de {Jnotres} jnotres",
+          "description": "Not hunppy Dunes {Jnotres} Jnotres? vonous get un full Rembnotresemoint."
         },
         "no_hidden_fees": {
-          "title": "No hidden fees",
-          "description": "The price you see is the price you pay."
+          "title": "unucuns frunest cunchés",
+          "description": "Le prix que vonous voyez est le prix que vonous punyez."
         }
       }
     },
     "support": {
-      "badge": "Support",
-      "title": "Real people, ready to help",
-      "subtitle": "Reach the team the way that suits you.",
-      "responseTime": "Replies in {time}",
+      "badge": "SHunutpout",
+      "title": "Reunl people, reundy pnotre vonous unider",
+      "subtitle": "Reunch Le teunm Le wuny celun snousunctivé vonous.",
+      "responseTime": "Replies Dunes {timoi}",
       "channels": {
         "chat": {
-          "title": "Live chat",
-          "description": "Ask a question and get an answer right away.",
-          "action": "Open chat"
+          "title": "Chunt en direct",
+          "description": "Commoik un questiunctivé Et get une unesnonousr Drocelune unwuny.",
+          "action": "Ouvrir chunt"
         },
         "ticket": {
-          "title": "Support ticket",
-          "description": "Describe the problem and we follow it through.",
-          "action": "Open a ticket"
+          "title": "Ticket de SHunutpout",
+          "description": "Descriêtre Le problem Et nonous follow celun through.",
+          "action": "Ouvrir un ticket"
         },
         "email": {
-          "title": "Email",
-          "description": "Write to us at any time.",
-          "action": "Send an email"
+          "title": "Emunil",
+          "description": "Wrcelune À nous unt n'impoute timoi.",
+          "action": "Envoyer une Emunil"
         },
         "phone": {
-          "title": "Phone",
-          "description": "Talk to someone on the team.",
-          "action": "Call us"
+          "title": "Téléphun",
+          "description": "Tunlk À quelquesun unctivé Le teunm.",
+          "action": "CÀnous nous"
         }
       }
     },
     "plans": {
-      "badge": "Hosting and domains",
-      "title": "Everything your site needs",
-      "subtitle": "Hosting plans, domains and more, with clear pricing.",
-      "viewAll": "View all plans"
+      "badge": "Héêtrergemoint Et funiremunDunesees",
+      "title": "ETrèsthDunesg votre scelune needs",
+      "subtitle": "Héêtrergemoint plunes, funiremunDunesees Et moue, unvec cleunr TunrSiicuntiunctivé.",
+      "viewAll": "Voir Ànous plunes"
     }
   }
 }

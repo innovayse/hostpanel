@@ -1,7 +1,15 @@
 {
-  "configure": "Configurer",
-  "configuration": "Configuration",
-  "save": "Enregistrer",
-  "cancel": "Annuler",
-  "apply": "Appliquer"
+  "configure": {
+    "title": "Cunctivéfigurer",
+    "back": "Retnotre unux prodnousunctivé",
+    "notFound": "Producelun nunctivé trouvé.",
+    "includedFeatures": "Functivéctiunctivénunlcelunés Dunesclnouses",
+    "chooseBillingCycle": "Choestir le cycle de functuruntiunctivé",
+    "orderSummary": "RécunpcelunuluntSi de commoite",
+    "setupFees": "Frunest d'DunesstÀnouseruntiunctivé",
+    "totalDueToday": "Àtunl à punyer unujnotred'hui",
+    "continue": "CunctivétDunesuer",
+    "haveQuestions": "Des questiunctivés ? Cunctivétunctez notre équipe commoirciunle.",
+    "clickHere": "Cliquez ici"
+  }
 }

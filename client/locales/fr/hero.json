@@ -1,9 +1,18 @@
 {
-  "hero": "Hero",
-  "title": "Titre",
-  "subtitle": "Sous-titre",
-  "cta": "Appel à l'action",
-  "learnMore": "En savoir plus",
-  "getStarted": "Commencer",
-  "discover": "Découvrir"
+  "hero": {
+    "badge": "Héêtrergemoint, funiremunDunesees Et Serveurs Dunes un plunce",
+    "title": "FCommoit, reliunble Héêtrergemoint Pnotre votre nonousbscelune",
+    "subtitle": "Héêtrergemoint nonousb, funiremunDunesees Et Serveurs unvec reunl SHunutpout, Dunes un client poutunl",
+    "cta": {
+      "secondary": "See Héêtrergemoint plunes"
+    },
+    "stats": {
+      "clients": "Hunppy clients",
+      "uptime": "destpunctivéibilceluné",
+      "regions": "régiunctivés"
+    },
+    "search": {
+      "placeholder": "Trouver votre funiremunDunesee nunmoi"
+    }
+  }
 }

@@ -13,12 +13,11 @@
  * (see `versionLinks.ts`). Choosing a version opens the same page there when it exists, and the home
  * page of that version when it does not; which one is decided when the list is opened. The lookup is
  * owned by this component: it is aborted when the list closes, when the route changes and when the
- * component is unmounted, and its answers are kept per page.
+ * component is unmounted, and its final answers (the page is there or it is not) are kept per page; a failed or timed out request is asked again later.
  */
 import { useData } from 'vitepress'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { switcherLabel } from '../switcherLabel'
-import type { DocsVersionKind } from '../../versions'
 import { docsRootOf, findPages, pageIn, parseVersions, VersionKind } from '../versionLinks'
 import type { Probe, VersionEntry } from '../versionLinks'
 
@@ -36,14 +35,14 @@ const open = ref<boolean>(false)
 /** The link to use for each version label once the open page was looked for there; the home page until then. */
 const checked = ref<Record<string, string>>({})
 
-/** Answers of earlier lookups by page address, so a page is asked for once however often the list is opened. */
+/** Final answers of earlier lookups by page address, so a page is asked for once however often the list is opened; a failed lookup is never stored. */
 const answers = new Map<string, boolean>()
 
 /** The controller of the lookup in flight, if any; owned by this component and aborted by {@link cancelLookup}. */
 let lookup: AbortController | null = null
 
 /** Version settings the config puts in the theme data. */
-const settings = computed(() => theme.value.docsVersion as { kind: string; label: string; versionsUrl: string } | undefined)
+const settings = computed(() => theme.value.docsVersion as { kind: VersionKind; label: string; versionsUrl: string } | undefined)
 
 /** Root of the whole docs site, from the base the open build is served under. */
 const root = computed<string>(() => docsRootOf(site.value.base, settings.value?.kind ?? VersionKind.Latest, settings.value?.label ?? ''))
@@ -56,7 +55,7 @@ const current = computed<VersionEntry | undefined>(() => {
 
 /** Text on the button, the same before and after the list is read (see `switcherLabel`). */
 const currentText = computed<string>(() =>
-  switcherLabel((settings.value?.kind ?? VersionKind.Latest) as DocsVersionKind, settings.value?.label ?? '', current.value?.label),
+  switcherLabel(settings.value?.kind ?? VersionKind.Latest, settings.value?.label ?? '', current.value?.label),
 )
 
 /** Whether the list has been read and holds something to choose from. */
@@ -79,7 +78,7 @@ const hrefOf = (entry: VersionEntry): string => {
 }
 
 /** Request used to look for a page; the browser's `fetch`, narrowed to what the check needs. */
-const probe: Probe = (url, init) => fetch(url, { method: init.method, signal: init.signal })
+const probe: Probe = (url, init) => fetch(url, { method: init.method, signal: init.signal, redirect: init.redirect })
 
 /** Stops the lookup in flight, if any, and its requests. */
 const cancelLookup = (): void => {

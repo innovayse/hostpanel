@@ -3,18 +3,22 @@
  * are accepted, the fall back to the home page of a version when the page is missing there, and the
  * bounds of the lookup (abort, cache, cap and concurrency).
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   MAX_CACHED_ANSWERS,
   MAX_CONCURRENT_PROBES,
+  MAX_DECODE_PASSES,
+  MAX_LISTED_ENTRIES,
   MAX_PROBED_ENTRIES,
+  PROBE_TIMEOUT_MS,
+  PageLookup,
   ProbeMethod,
   ProbeStatus,
   VersionKind,
   docsRootOf,
   findPages,
   hrefFor,
-  pageExists,
+  lookupPage,
   pageIn,
   parseVersions,
   safeVersionLink,
@@ -28,6 +32,8 @@ const release: VersionEntry = { label: 'v0.3', link: '/docs/v0.3/', kind: Versio
 enum Status {
   /** A page that exists. */
   Ok = 200,
+  /** A redirect that was not followed, as a browser reports it: an opaque redirect. */
+  OpaqueRedirect = 0,
   /** A redirect that was not followed. */
   Found = 302,
   /** A refused request. */
@@ -38,6 +44,8 @@ enum Status {
   NotFound = 404,
   /** A server failure. */
   ServerError = 500,
+  /** A gateway that got no answer from the server behind it. */
+  BadGateway = 502,
 }
 
 describe('docsRootOf', () => {
@@ -112,12 +120,45 @@ describe('safeVersionLink', () => {
     expect(safeVersionLink(link, '/docs/')).toBeNull()
   })
 
-  it.each([[undefined], [null], [42], [{}], [['/docs/']]])('refuses a value that is not a string (%j)', (value) => {
-    expect(safeVersionLink(value, '/docs/')).toBeNull()
+  it.each([
+    ['a double encoded slash', '/docs/..%252f..%252fadmin/'],
+    ['a double encoded upper case slash', '/docs/..%252F..%252Fadmin/'],
+    ['a double encoded backslash', '/docs/..%255c..%255cadmin/'],
+    ['a double encoded mixed case backslash', '/docs/..%255C..%255cadmin/'],
+    ['a double encoded null', '/docs/v0.3%2500/'],
+    ['a double encoded dot climb', '/docs/%252e%252e/admin/'],
+    ['a double encoded upper case dot climb', '/docs/%252E%252E/admin/'],
+    ['a triple encoded slash', '/docs/v0.3%25252fx/'],
+    ['a mixed case slash', '/docs/v0.3%2Fx/'],
+    ['an encoded slash after a dot', '/docs/..%2f/'],
+    ['a full width slash', '/docs/v0.3／x/'],
+    ['a full width backslash', '/docs/v0.3＼x/'],
+    ['an encoded full width slash', '/docs/v0.3%EF%BC%8Fx/'],
+    ['an encoded full width backslash', '/docs/v0.3%ef%bc%bcx/'],
+    ['a double encoded full width slash', '/docs/v0.3%25EF%25BC%258Fx/'],
+    ['an overlong slash', '/docs/..%c0%af..%c0%afadmin/'],
+    ['an overlong upper case slash', '/docs/..%C0%AF/'],
+    ['a stray percent', '/docs/v0.3%/'],
+    ['an escape that is not hexadecimal', '/docs/v0.3%zz/'],
+    ['an encoded space', '/docs/v0.3%20x/'],
+  ])('refuses %s', (_name, link) => {
+    expect(safeVersionLink(link, '/docs/')).toBeNull()
+  })
+
+  it('refuses a harmless escape that is nested deeper than the decode bound and keeps one within it', () => {
+    /** A harmless escape (`-`) percent encoded the given number of times. */
+    const nested = (layers: number): string => `/docs/v0.3%${'25'.repeat(layers - 1)}2d/`
+
+    expect(safeVersionLink(nested(MAX_DECODE_PASSES), '/docs/')).toBeNull()
+    expect(safeVersionLink(nested(MAX_DECODE_PASSES - 1), '/docs/')).not.toBeNull()
   })
 
   it('keeps an escape that is not a separator', () => {
     expect(safeVersionLink('/docs/v0.3%2d/', '/docs/')).toBe('/docs/v0.3%2d/')
+  })
+
+  it.each([[undefined], [null], [42], [{}], [['/docs/']]])('refuses a value that is not a string (%j)', (value) => {
+    expect(safeVersionLink(value, '/docs/')).toBeNull()
   })
 
   it('drops the query and the fragment', () => {
@@ -183,6 +224,21 @@ describe('parseVersions', () => {
     expect(parseVersions({ versions: [null, 'x', 3, ['/docs/']] }, '/docs/')).toEqual([])
   })
 
+  it('reads no more entries than the cap', () => {
+    const versions = Array.from({ length: MAX_LISTED_ENTRIES + 10 }, (_value, index) => ({ label: `v0.${index}`, link: `/docs/v0.${index}/`, kind: 'release' }))
+
+    const entries = parseVersions({ versions }, '/docs/')
+
+    expect(entries).toHaveLength(MAX_LISTED_ENTRIES)
+    expect(entries[MAX_LISTED_ENTRIES - 1].label).toBe(`v0.${MAX_LISTED_ENTRIES - 1}`)
+  })
+
+  it('counts unusable entries against the cap', () => {
+    const junk = Array.from({ length: MAX_LISTED_ENTRIES }, () => null)
+
+    expect(parseVersions({ versions: [...junk, { label: 'v0.1', link: '/docs/v0.1/', kind: 'release' }] }, '/docs/')).toEqual([])
+  })
+
   it.each([[undefined], [null], ['text'], [{}], [{ versions: 'x' }], [{ versions: {} }]])('gives no list for a file that is %j', (body) => {
     expect(parseVersions(body, '/docs/')).toEqual([])
   })
@@ -220,36 +276,47 @@ const hangingProbe = (signals: AbortSignal[] = []): Probe => {
     })
 }
 
-describe('pageExists', () => {
-  it('is true for a 2xx answer to HEAD', async () => {
+describe('lookupPage', () => {
+  it('finds a 2xx answer to HEAD', async () => {
     const methods: string[] = []
     const probe: Probe = async (_url, init) => {
       methods.push(init.method)
       return answer(Status.Ok)
     }
 
-    expect(await pageExists('/docs/v0.3/a', probe)).toBe(true)
+    expect(await lookupPage('/docs/v0.3/a', probe)).toBe(PageLookup.Exists)
     expect(methods).toEqual([ProbeMethod.Head])
   })
 
-  it('is false for a 404', async () => {
-    expect(await pageExists('/docs/v0.3/a', async () => answer(Status.NotFound))).toBe(false)
+  it('never follows a redirect', async () => {
+    const redirects: string[] = []
+    const probe: Probe = async (_url, init) => {
+      redirects.push(init.redirect)
+      return answer(Status.Ok)
+    }
+
+    await lookupPage('/docs/v0.3/a', probe)
+
+    expect(redirects).toEqual(['manual'])
   })
 
-  it.each([[Status.BadRequest], [Status.Forbidden]])('is false, without asking again, for a %i answer to HEAD', async (status) => {
+  it.each([[Status.NotFound], [Status.BadRequest], [Status.Forbidden]])('finds the page missing, without asking again, for a final %i answer to HEAD', async (status) => {
     const methods: string[] = []
     const probe: Probe = async (_url, init) => {
       methods.push(init.method)
       return answer(status)
     }
 
-    expect(await pageExists('/docs/v0.3/a', probe)).toBe(false)
+    expect(await lookupPage('/docs/v0.3/a', probe)).toBe(PageLookup.Missing)
     expect(methods).toEqual([ProbeMethod.Head])
   })
 
-  it('is false for a server error and for a redirect that was not followed', async () => {
-    expect(await pageExists('/docs/v0.3/a', async () => answer(Status.ServerError))).toBe(false)
-    expect(await pageExists('/docs/v0.3/a', async () => answer(Status.Found))).toBe(false)
+  it.each([[Status.Found], [Status.OpaqueRedirect]])('finds the page missing for a redirect that was not followed (status %i)', async (status) => {
+    expect(await lookupPage('/docs/v0.3/a', async () => answer(status))).toBe(PageLookup.Missing)
+  })
+
+  it.each([[Status.ServerError], [Status.BadGateway], [ProbeStatus.RequestTimeout], [ProbeStatus.TooManyRequests]])('does not know the page for a passing %i answer', async (status) => {
+    expect(await lookupPage('/docs/v0.3/a', async () => answer(status))).toBe(PageLookup.Unknown)
   })
 
   it.each([[ProbeStatus.MethodNotAllowed], [ProbeStatus.NotImplemented]])('asks again with GET when HEAD answers %i', async (status) => {
@@ -259,8 +326,14 @@ describe('pageExists', () => {
       return init.method === ProbeMethod.Head ? answer(status) : answer(Status.Ok)
     }
 
-    expect(await pageExists('/docs/v0.3/a', probe)).toBe(true)
+    expect(await lookupPage('/docs/v0.3/a', probe)).toBe(PageLookup.Exists)
     expect(methods).toEqual([ProbeMethod.Head, ProbeMethod.Get])
+  })
+
+  it('reads the answer to the GET that follows a refused HEAD the same way', async () => {
+    const probe: Probe = async (_url, init) => (init.method === ProbeMethod.Head ? answer(ProbeStatus.MethodNotAllowed) : answer(Status.ServerError))
+
+    expect(await lookupPage('/docs/v0.3/a', probe)).toBe(PageLookup.Unknown)
   })
 
   it('cancels the body of the GET answer', async () => {
@@ -279,23 +352,23 @@ describe('pageExists', () => {
       }
     }
 
-    expect(await pageExists('/docs/v0.3/a', probe)).toBe(true)
+    expect(await lookupPage('/docs/v0.3/a', probe)).toBe(PageLookup.Exists)
     expect(cancelled).toBe(1)
   })
 
-  it('is false when the request fails', async () => {
+  it('does not know the page when the request fails', async () => {
     const probe: Probe = async () => {
       throw new TypeError('network error')
     }
 
-    expect(await pageExists('/docs/v0.3/a', probe)).toBe(false)
+    expect(await lookupPage('/docs/v0.3/a', probe)).toBe(PageLookup.Unknown)
   })
 
-  it('is false when no answer comes in time', async () => {
-    expect(await pageExists('/docs/v0.3/a', hangingProbe(), 20)).toBe(false)
+  it('does not know the page when no answer comes in time', async () => {
+    expect(await lookupPage('/docs/v0.3/a', hangingProbe(), 20)).toBe(PageLookup.Unknown)
   })
 
-  it('is false, without a request, for a signal that is already aborted', async () => {
+  it('does not know the page, and makes no request, for a signal that is already aborted', async () => {
     const controller = new AbortController()
     controller.abort()
     let calls = 0
@@ -304,7 +377,7 @@ describe('pageExists', () => {
       return answer(Status.Ok)
     }
 
-    expect(await pageExists('/docs/v0.3/a', probe, 20, controller.signal)).toBe(false)
+    expect(await lookupPage('/docs/v0.3/a', probe, 20, controller.signal)).toBe(PageLookup.Unknown)
     expect(calls).toBe(0)
   })
 
@@ -312,10 +385,10 @@ describe('pageExists', () => {
     const controller = new AbortController()
     const signals: AbortSignal[] = []
 
-    const result = pageExists('/docs/v0.3/a', hangingProbe(signals), 60000, controller.signal)
+    const result = lookupPage('/docs/v0.3/a', hangingProbe(signals), 60000, controller.signal)
     controller.abort()
 
-    expect(await result).toBe(false)
+    expect(await result).toBe(PageLookup.Unknown)
     expect(signals).toHaveLength(1)
     expect(signals[0].aborted).toBe(true)
   })
@@ -403,6 +476,70 @@ describe('findPages', () => {
     await findPages([entryOf('v0.1')], 'a', probe, options)
 
     expect(calls).toBe(1)
+  })
+
+  describe('an answer that is not definite', () => {
+    /** The ways a request can end without an answer about the page. */
+    const failures: Array<[string, () => Probe]> = [
+      [
+        'a request that throws',
+        () => async () => {
+          throw new TypeError('network error')
+        },
+      ],
+      ['a server error', () => async () => answer(Status.ServerError)],
+      ['a gateway error', () => async () => answer(Status.BadGateway)],
+    ]
+
+    it.each(failures)('links to the home page, caches nothing and asks again for %s', async (_name, makeProbe) => {
+      let calls = 0
+      const failing = makeProbe()
+      const probe: Probe = (url, init) => {
+        calls += 1
+        return failing(url, init)
+      }
+      const options = { signal: new AbortController().signal, cache: new Map<string, boolean>() }
+
+      const first = await findPages([entryOf('v0.1')], 'a', probe, options)
+      const second = await findPages([entryOf('v0.1')], 'a', probe, options)
+
+      expect(first).toEqual({ 'v0.1': '/docs/v0.1/' })
+      expect(second).toEqual({ 'v0.1': '/docs/v0.1/' })
+      expect(options.cache.size).toBe(0)
+      expect(calls).toBe(2)
+    })
+
+    it('links to the home page, caches nothing and asks again for a request that times out', async () => {
+      vi.useFakeTimers()
+      try {
+        const options = { signal: new AbortController().signal, cache: new Map<string, boolean>() }
+
+        const pendingLinks = findPages([entryOf('v0.1')], 'a', hangingProbe(), options)
+        await vi.advanceTimersByTimeAsync(PROBE_TIMEOUT_MS)
+
+        expect(await pendingLinks).toEqual({ 'v0.1': '/docs/v0.1/' })
+        expect(options.cache.size).toBe(0)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('offers the page once a later lookup finds it', async () => {
+      let healthy = false
+      const probe: Probe = async () => {
+        if (!healthy) {
+          throw new TypeError('network error')
+        }
+        return answer(Status.Ok)
+      }
+      const options = { signal: new AbortController().signal, cache: new Map<string, boolean>() }
+
+      expect(await findPages([entryOf('v0.1')], 'a', probe, options)).toEqual({ 'v0.1': '/docs/v0.1/' })
+      healthy = true
+
+      expect(await findPages([entryOf('v0.1')], 'a', probe, options)).toEqual({ 'v0.1': '/docs/v0.1/a' })
+      expect(options.cache.get('/docs/v0.1/a')).toBe(true)
+    })
   })
 
   it('empties the cache before it grows past its limit', async () => {

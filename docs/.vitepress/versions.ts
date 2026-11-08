@@ -8,9 +8,7 @@
  * `DOCS_VERSION`; see `readVersionEnv`.
  */
 import { existsSync, readFileSync } from 'node:fs'
-
-/** The three kinds of documentation build. */
-export type DocsVersionKind = 'latest' | 'release' | 'next'
+import { VersionKind } from './theme/versionLinks'
 
 /** Label of the development docs build. */
 export const NEXT_VERSION = 'next'
@@ -18,7 +16,7 @@ export const NEXT_VERSION = 'next'
 /** What a build knows about the version it is. */
 export interface DocsVersion {
   /** Latest release, an older release or the development docs. */
-  kind: DocsVersionKind
+  kind: VersionKind
   /** Label such as `v0.3` or `next`; empty for an unversioned build. */
   label: string
   /** Absolute address of the latest docs without a trailing slash; empty when this build is the latest. */
@@ -54,17 +52,17 @@ const RELEASE_LABEL = /^v\d+\.\d+$/
  * @returns The kind.
  * @throws When the label is neither empty, `next` nor `vX.Y`.
  */
-export const kindOf = (version: string, latestVersion: string): DocsVersionKind => {
+export const kindOf = (version: string, latestVersion: string): VersionKind => {
   if (version === '') {
-    return 'latest'
+    return VersionKind.Latest
   }
   if (version === NEXT_VERSION) {
-    return 'next'
+    return VersionKind.Next
   }
   if (!RELEASE_LABEL.test(version)) {
     throw new Error(`DOCS_VERSION must be empty, "${NEXT_VERSION}" or "vMAJOR.MINOR", got "${version}"`)
   }
-  return version === latestVersion ? 'latest' : 'release'
+  return version === latestVersion ? VersionKind.Latest : VersionKind.Release
 }
 
 /**
@@ -91,15 +89,15 @@ export const resolveVersion = (env: DocsVersionEnv, pages: ReadonlySet<string> |
   const label = (env.version ?? '').trim()
   const kind = kindOf(label, (env.latestVersion ?? '').trim())
   const latestUrl = (env.latestUrl ?? '').trim().replace(/\/+$/, '')
-  if (kind !== 'latest' && !latestUrl) {
+  if (kind !== VersionKind.Latest && !latestUrl) {
     throw new Error('DOCS_LATEST_URL is required when DOCS_VERSION is an older release or "next"')
   }
   return {
     kind,
     label,
-    latestUrl: kind === 'latest' ? '' : latestUrl,
+    latestUrl: kind === VersionKind.Latest ? '' : latestUrl,
     versionsUrl: (env.versionsUrl ?? '').trim(),
-    latestPages: kind === 'latest' ? null : pages,
+    latestPages: kind === VersionKind.Latest ? null : pages,
   }
 }
 
@@ -110,7 +108,7 @@ export const resolveVersion = (env: DocsVersionEnv, pages: ReadonlySet<string> |
  * @returns True for the latest build itself, or when the latest list holds the path.
  */
 export const existsInLatest = (version: DocsVersion, urlPath: string): boolean => {
-  return version.kind === 'latest' || (version.latestPages?.has(urlPath) ?? false)
+  return version.kind === VersionKind.Latest || (version.latestPages?.has(urlPath) ?? false)
 }
 
 /**
@@ -123,7 +121,7 @@ export const existsInLatest = (version: DocsVersion, urlPath: string): boolean =
  * @returns The canonical address.
  */
 export const canonicalOf = (version: DocsVersion, siteUrl: string, urlPath: string): string => {
-  if (version.kind !== 'release') {
+  if (version.kind !== VersionKind.Release) {
     return `${siteUrl}/${urlPath}`
   }
   return `${version.latestUrl}/${existsInLatest(version, urlPath) ? urlPath : ''}`
@@ -136,7 +134,7 @@ export const canonicalOf = (version: DocsVersion, siteUrl: string, urlPath: stri
  * @returns The address, or an empty string for the latest build.
  */
 export const latestLinkOf = (version: DocsVersion, urlPath: string): string => {
-  if (version.kind === 'latest') {
+  if (version.kind === VersionKind.Latest) {
     return ''
   }
   return `${version.latestUrl}/${existsInLatest(version, urlPath) ? urlPath : ''}`
@@ -150,7 +148,7 @@ export const latestLinkOf = (version: DocsVersion, urlPath: string): string => {
  * @returns True when the page gets `noindex, follow`.
  */
 export const isNoindexByVersion = (version: DocsVersion, urlPath: string): boolean => {
-  return version.kind === 'next' || (version.kind === 'release' && !existsInLatest(version, urlPath))
+  return version.kind === VersionKind.Next || (version.kind === VersionKind.Release && !existsInLatest(version, urlPath))
 }
 
 /**
@@ -160,5 +158,5 @@ export const isNoindexByVersion = (version: DocsVersion, urlPath: string): boole
  * @returns True for the latest build.
  */
 export const hasSitemap = (version: DocsVersion): boolean => {
-  return version.kind === 'latest'
+  return version.kind === VersionKind.Latest
 }

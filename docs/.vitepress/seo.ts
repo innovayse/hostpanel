@@ -7,6 +7,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { HeadConfig, PageData, SiteConfig, TransformContext } from 'vitepress'
 import { canonicalOf, hasSitemap, isNoindexByVersion, latestLinkOf } from './versions'
+import { VersionKind } from './theme/versionLinks'
 import type { DocsVersion } from './versions'
 
 /** The sitemap entry shape the sitemap option hands to `transformItems`. */
@@ -363,7 +364,7 @@ export const toJsonLd = (data: unknown): string => {
 }
 
 /** The version of a build that is not versioned: it is its own latest, so no version rule applies. */
-const UNVERSIONED: DocsVersion = { kind: 'latest', label: '', latestUrl: '', versionsUrl: '', latestPages: null }
+const UNVERSIONED: DocsVersion = { kind: VersionKind.Latest, label: '', latestUrl: '', versionsUrl: '', latestPages: null }
 
 /**
  * Builds the SEO hooks of the site for one public address.
@@ -383,7 +384,7 @@ export const createSeo = (siteUrl: string, version: DocsVersion = UNVERSIONED) =
       noindexUrls.add(toUrlPath(pageData.relativePath))
     }
     // The banner of an older release or of next links to this page in the latest docs.
-    if (version.kind !== 'latest') {
+    if (version.kind !== VersionKind.Latest) {
       pageData.frontmatter.docsLatestUrl = latestLinkOf(version, toUrlPath(pageData.relativePath))
     }
     if (pageData.description) {

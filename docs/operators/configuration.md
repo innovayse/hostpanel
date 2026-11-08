@@ -290,7 +290,7 @@ The edge layer (Caddy on hub, nginx on prod) terminates TLS and routes to the AP
 ### Order numbering and invoice settings (compose override only)
 
 <Callout type="note">
-Order numbering and invoice settings are not in <code>.env</code>. Set them directly on the API service in a compose override.
+Order numbering, invoice and retry settings are not in <code>.env</code>. Set them directly on the API service in a compose override.
 </Callout>
 
 | Setting | Default | Description |
@@ -298,6 +298,7 @@ Order numbering and invoice settings are not in <code>.env</code>. Set them dire
 | `Orders__NumberPrefix` | `ORD-` | Order number prefix |
 | `Orders__NumberDigits` | `4` | Zero-padded digits (e.g., `0042`) |
 | `Orders__InvoicePaymentTermDays` | `7` | Invoice payment term in days (0–365) |
+| `Orders__RetryLeaseMinutes` | `10` | Minutes a claim on an order line (the accept's, or a retry's) is respected before a retry may take the line over (1 to 1440). Set it longer than the slowest registrar or provisioning call. |
 | `InvoicePdf__MaxLines` | `500` | Maximum line items per PDF |
 | `InvoicePdf__MaxConcurrentRenders` | `4` | Concurrent PDF renders |
 | `InvoicePdf__MaxRenderWaitSeconds` | `10` | Seconds a download waits for a free render slot before answering 503 with Retry-After. |
@@ -457,7 +458,7 @@ The API validates secrets and key settings before it accepts any request. If a c
 | Only one of an optional pair is set | TELEGRAM_BOT_TOKEN set but TELEGRAM_CHAT_ID empty, or vice versa. | Set both or clear both. |
 | CLIENT_HOSTPANEL_SECRET missing | AUTH_MODE=sso but CLIENT_HOSTPANEL_SECRET is empty. | Set the secret or switch to AUTH_MODE=local. |
 | HOSTPANEL_BACKCHANNEL_LOGOUT_KEY too short | Value is shorter than 16 characters on a deployed host. | Generate with openssl rand -hex 24. |
-| Order number setting invalid | Orders__NumberPrefix and Orders__NumberDigits cannot produce a valid order number, or Orders__InvoicePaymentTermDays is out of range (0–365). | Correct the values in the compose override. |
+| Order setting invalid | Orders__NumberPrefix and Orders__NumberDigits cannot produce a valid order number, Orders__InvoicePaymentTermDays is out of range (0–365), or Orders__RetryLeaseMinutes is out of range (1 to 1440). | Correct the values in the compose override. |
 | CORS_* origin invalid | An allowed origin is not a valid absolute URL (e.g. missing scheme). | Fix the origin in .env. |
 
 ## Error codes

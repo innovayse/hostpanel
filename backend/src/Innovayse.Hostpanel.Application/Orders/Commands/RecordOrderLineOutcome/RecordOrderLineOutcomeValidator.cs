@@ -19,6 +19,7 @@ public sealed class RecordOrderLineOutcomeValidator : LocalizedValidator<RecordO
     {
         RuleFor(x => x.OrderId).MustBePositiveId(L["OrderIdInvalid"]);
         RuleFor(x => x.ItemId).MustBePositiveId(L["OrderItemIdInvalid"]);
+        RuleFor(x => x.Attempt).GreaterThan(0).WithMessage(L["OrderLineAttemptInvalid"]);
         RuleFor(x => x.Outcome).IsInEnum().WithMessage(L["OrderLineOutcomeInvalid"]);
         RuleFor(x => x.ErrorCode).MaximumLength(OrderItem.FulfilmentErrorCodeMaxLength);
     }

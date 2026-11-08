@@ -4,8 +4,10 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
+using Innovayse.Hostpanel.Application.Orders.Commands.RetryOrderLine;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
@@ -24,7 +26,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 /// What an order line's fulfilment does when its first attempt only half happened: a service created but not activated is
 /// reused by the retry instead of ordered a second time, a registrar that times out fails only its own line and leaves it
 /// retryable at once, a cancelled run releases the lines it did not finish, two retries of different lines finishing at the
-/// same moment still leave the order Active, and a domain that is no longer live is not counted as the registration.
+/// same moment still leave the order Active, a domain that is no longer live (or that this order did not create) is not counted
+/// as the registration, a run claims its lines before it acts, an outcome that cannot be recorded does not stop the other
+/// lines, and a retry cancelled after its claim leaves its line retryable at once.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -201,6 +205,143 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
         after.FulfilmentErrorCode.Should().Be(HostpanelErrorCodes.DOMAIN_ALREADY_REGISTERED);
     }
 
+    /// <summary>
+    /// Accepting an order claims every line before the first action runs: while the registrar is still working on the first
+    /// line, the database already shows both lines in progress under their first attempt and the order Incomplete, so a crash
+    /// at that moment leaves lines a retry can take over instead of lines that read as never started on an Active order.
+    /// </summary>
+    [Fact]
+    public async Task AcceptingAnOrderClaimsItsLinesBeforeTheFirstActionRuns()
+    {
+        var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        await OrdersTestReads.ReleaseDomainAsync(factory.Services, seeded.Domain);
+        Order? duringAction = null;
+        ProbingRegistrar.Probe = async () => duringAction = await OrdersTestReads.ReadOrderWithItemsAsync(factory.Services, seeded.OrderId);
+        try
+        {
+            using var host = HostWith<ProbingRegistrar>();
+
+            var accept = await (await OrdersTestReads.AdminOfAsync(host, factory)).PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null);
+
+            accept.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
+        finally
+        {
+            ProbingRegistrar.Probe = null;
+        }
+
+        duringAction.Should().NotBeNull();
+        duringAction!.Status.Should().Be(OrderStatus.Incomplete);
+        duringAction.Items.Should().OnlyContain(i => i.FulfilmentState == OrderItemFulfilmentState.InProgress && i.FulfilmentAttempts == 1);
+        var after = await OrdersTestReads.ReadOrderWithItemsAsync(factory.Services, seeded.OrderId);
+        after.Items.Should().OnlyContain(i => i.FulfilmentState == OrderItemFulfilmentState.Fulfilled && i.FulfilmentAttempts == 1);
+        after.Status.Should().Be(OrderStatus.Active);
+    }
+
+    /// <summary>
+    /// An outcome that cannot be saved does not stop the run: the line stays claimed (retryable once its claim runs out), and
+    /// the line after it is still run and recorded, instead of staying Pending on an order nothing will ever pick up.
+    /// </summary>
+    [Fact]
+    public async Task AnOutcomeThatCannotBeRecordedDoesNotStopTheOtherLines()
+    {
+        var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        using var host = FailingSaveHost.Create(
+            factory,
+            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            tracker => tracker.Entries<OrderItem>().Any(
+                e => e.State == EntityState.Modified && e.Entity.FulfilmentState == OrderItemFulfilmentState.Failed && e.Entity.Domain != null));
+
+        var accept = await (await OrdersTestReads.AdminOfAsync(host, factory)).PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null);
+
+        accept.StatusCode.Should().Be(HttpStatusCode.OK);
+        var order = await OrdersTestReads.ReadOrderWithItemsAsync(factory.Services, seeded.OrderId);
+        var domainLine = order.Items.Single(i => i.Domain == seeded.Domain);
+        domainLine.FulfilmentState.Should().Be(OrderItemFulfilmentState.InProgress);
+        domainLine.FulfilmentAttempts.Should().Be(1);
+        order.Items.Single(i => i.Domain is null).FulfilmentState.Should().Be(OrderItemFulfilmentState.Fulfilled);
+        order.Status.Should().Be(OrderStatus.Incomplete);
+        (await OrdersTestReads.CountServicesAsync(factory.Services, seeded.ClientId, seeded.ProductId)).Should().Be(1);
+    }
+
+    /// <summary>
+    /// A retry the caller cancels after the line was claimed but before the run recorded anything does not leave the line in
+    /// progress: it is recorded as interrupted, so the next retry takes it at once instead of waiting out the lease.
+    /// </summary>
+    [Fact]
+    public async Task ARetryCancelledAfterItsClaimLeavesTheLineInterruptedAndRetryableAtOnce()
+    {
+        var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        var admin = await OrdersTestSeeds.AdminClientAsync(factory);
+        (await admin.PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null)).EnsureSuccessStatusCode();
+        var domainLine = (await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId)).Single(i => i.Domain == seeded.Domain);
+        await OrdersTestReads.ReleaseDomainAsync(factory.Services, seeded.Domain);
+        using var source = new CancellationTokenSource();
+        using var host = factory.WithWebHostBuilder(b => b.ConfigureTestServices(s =>
+            s.ConfigureDbContext<AppDbContext>(o => o.AddInterceptors(new CancelAfterClaimInterceptor(source)))));
+        using var scope = host.Services.CreateScope();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var act = async () => await bus.InvokeAsync<Result<OrderFulfillmentDto>>(new RetryOrderLineCommand(seeded.OrderId, domainLine.Id), source.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        var interrupted = (await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId)).Single(i => i.Id == domainLine.Id);
+        interrupted.FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
+        interrupted.FulfilmentErrorCode.Should().Be(HostpanelErrorCodes.ORDER_LINE_INTERRUPTED);
+        interrupted.FulfilmentAttempts.Should().Be(2);
+
+        var again = await admin.PostAsync($"/api/orders/{seeded.OrderId}/items/{domainLine.Id}/retry", content: null);
+
+        again.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await OrdersTestReads.ReadOrderWithItemsAsync(factory.Services, seeded.OrderId)).Status.Should().Be(OrderStatus.Active);
+    }
+
+    /// <summary>
+    /// A domain the client holds under the line's name that no order created (it came from elsewhere) is not the registration
+    /// the line was for: the retry does not count it as done, it asks the registrar again, and the line stays failed.
+    /// </summary>
+    [Fact]
+    public async Task ALiveDomainThatNoOrderCreatedIsNotCountedAsDone()
+    {
+        var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        var admin = await OrdersTestSeeds.AdminClientAsync(factory);
+        (await admin.PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null)).EnsureSuccessStatusCode();
+        var domainLine = (await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId)).Single(i => i.Domain == seeded.Domain);
+        await OrdersTestReads.ReleaseDomainAsync(factory.Services, seeded.Domain);
+        await HoldDomainAsync(seeded.ClientId, seeded.Domain, orderId: null);
+
+        var response = await admin.PostAsync($"/api/orders/{seeded.OrderId}/items/{domainLine.Id}/retry", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("failedLines").GetArrayLength().Should().Be(1);
+        var after = (await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId)).Single(i => i.Id == domainLine.Id);
+        after.FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
+        after.FulfilmentErrorCode.Should().Be(HostpanelErrorCodes.DOMAIN_ALREADY_REGISTERED);
+    }
+
+    /// <summary>
+    /// A domain a first attempt of this very order registered (stored with the order) is counted as done by the retry, so the
+    /// registrar is not asked to register it a second time.
+    /// </summary>
+    [Fact]
+    public async Task ALiveDomainThisOrderCreatedIsCountedAsDone()
+    {
+        var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        var admin = await OrdersTestSeeds.AdminClientAsync(factory);
+        (await admin.PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null)).EnsureSuccessStatusCode();
+        var domainLine = (await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId)).Single(i => i.Domain == seeded.Domain);
+        await OrdersTestReads.ReleaseDomainAsync(factory.Services, seeded.Domain);
+        await HoldDomainAsync(seeded.ClientId, seeded.Domain, seeded.OrderId);
+
+        var response = await admin.PostAsync($"/api/orders/{seeded.OrderId}/items/{domainLine.Id}/retry", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("failedLines").GetArrayLength().Should().Be(0);
+        (await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId)).Single(i => i.Id == domainLine.Id)
+            .FulfilmentState.Should().Be(OrderItemFulfilmentState.Fulfilled);
+        (await OrdersTestReads.CountDomainsAsync(factory.Services, seeded.Domain, seeded.ClientId)).Should().Be(1);
+    }
+
     /// <summary>Builds a host whose registrar is <typeparamref name="TRegistrar"/>, over the shared database.</summary>
     /// <typeparam name="TRegistrar">The registrar the host resolves the registrar port to.</typeparam>
     /// <returns>The derived host; the caller disposes it.</returns>
@@ -211,6 +352,21 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
             s.RemoveAll<IRegistrarProvider>();
             s.AddScoped<IRegistrarProvider, TRegistrar>();
         }));
+
+    /// <summary>Gives the client a live domain under the name.</summary>
+    /// <param name="clientId">The ordering client.</param>
+    /// <param name="domain">The domain name.</param>
+    /// <param name="orderId">The order that created the domain, or <see langword="null"/> for a domain that came from elsewhere.</param>
+    /// <returns>A task that completes once the row is saved.</returns>
+    private async Task HoldDomainAsync(int clientId, string domain, int? orderId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Domains.Add(RegisteredDomain.Register(
+            clientId, domain, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD",
+            orderId: orderId));
+        await db.SaveChangesAsync();
+    }
 
     /// <summary>Gives the client a domain under the name that was cancelled, so it is a row of theirs that is not live.</summary>
     /// <param name="clientId">The ordering client.</param>

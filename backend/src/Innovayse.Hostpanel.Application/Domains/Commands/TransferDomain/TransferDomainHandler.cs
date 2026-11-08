@@ -90,7 +90,8 @@ public sealed class TransferDomainHandler
             recurringAmount: cmd.RecurringAmount,
             paymentMethod: cmd.PaymentMethod,
             registrationPeriod: cmd.Years,
-            registrarModule: registrar.Module);
+            registrarModule: registrar.Module,
+            orderId: cmd.OrderId);
 
         // When the registrar requires polling, leave in PendingTransfer.
         if (!result.RequiresPolling)

@@ -7,6 +7,7 @@ using Innovayse.Hostpanel.Application.Products.Queries.GetProductCyclePrices;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductsByIds;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
+using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Wolverine;
@@ -55,10 +56,12 @@ public sealed class OrderServiceHandler
     /// <param name="cmd">The client, product, cycle and amounts to order.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The newly created client service id (or, for an order line that already has one, that service's id), or <c>PRODUCT_NOT_FOUND</c> when the id names no
+    /// The newly created client service id (or, for an order line that already has one, that service's id, also when a
+    /// concurrent attempt of the line created it first), or <c>PRODUCT_NOT_FOUND</c> when the id names no
     /// product, <c>CLIENT_NOT_FOUND</c> when it names no client, or <c>PRODUCT_NOT_AVAILABLE</c> when the product is not active or an amount was
     /// left for this handler to price and the product has no price for that cycle in the
-    /// client's currency.
+    /// client's currency, or <c>ORDER_LINE_SERVICE_CONFLICT</c> when the service already stored for the order line belongs to another
+    /// client or product.
     /// </returns>
     public async Task<Result<int>> HandleAsync(OrderServiceCommand cmd, CancellationToken ct)
     {
@@ -68,14 +71,10 @@ public sealed class OrderServiceHandler
             // the line, or failed to activate it): that service is the line's, and a second one would be provisioned
             // and billed twice. Looked up before anything else, so the answer does not depend on the product still
             // being on sale.
-            var existing = await _context.ClientServices
-                .AsNoTracking()
-                .Where(s => s.OrderItemId == orderItemId)
-                .Select(s => (int?)s.Id)
-                .FirstOrDefaultAsync(ct);
+            var existing = await FindServiceOfLineAsync(cmd, orderItemId, ct);
             if (existing is not null)
             {
-                return Result<int>.Success(existing.Value);
+                return existing;
             }
         }
 
@@ -119,8 +118,54 @@ public sealed class OrderServiceHandler
             cmd.ClientId, cmd.ProductId, cmd.BillingCycle, cmd.Domain, firstPayment, recurring, cmd.PaymentMethod, cmd.FirstInvoiceId, _clock.UtcNow, cmd.OrderItemId);
 
         _context.ClientServices.Add(service);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException) when (cmd.OrderItemId is not null)
+        {
+            // Two attempts of the same line passed the lookup above and both created a service; the unique index let
+            // one through. The line's service is the winner's, so this attempt drops its own row and answers with that one.
+            _context.DiscardPendingChanges();
+            var winner = await FindServiceOfLineAsync(cmd, cmd.OrderItemId.Value, ct);
+            if (winner is null)
+            {
+                throw;
+            }
+
+            return winner;
+        }
+
         return Result<int>.Success(service.Id);
+    }
+
+    /// <summary>
+    /// Looks for the service an earlier attempt of an order line created, and checks it is the line's own: a service of
+    /// another client or another product under the same line id means the data disagree, and reusing it would hand a
+    /// client someone else's service.
+    /// </summary>
+    /// <param name="cmd">The order command, naming the client and the product the line is for.</param>
+    /// <param name="orderItemId">The order line.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// <see langword="null"/> when the line has no service yet; the service's id when it is the line's client's and product's;
+    /// otherwise <c>ORDER_LINE_SERVICE_CONFLICT</c>.
+    /// </returns>
+    private async Task<Result<int>?> FindServiceOfLineAsync(OrderServiceCommand cmd, int orderItemId, CancellationToken ct)
+    {
+        var existing = await _context.ClientServices
+            .AsNoTracking()
+            .Where(s => s.OrderItemId == orderItemId)
+            .Select(s => new { s.Id, s.ClientId, s.ProductId })
+            .FirstOrDefaultAsync(ct);
+        if (existing is null)
+        {
+            return null;
+        }
+
+        return existing.ClientId == cmd.ClientId && existing.ProductId == cmd.ProductId
+            ? Result<int>.Success(existing.Id)
+            : Result<int>.FailureCode(HostpanelErrorCodes.ORDER_LINE_SERVICE_CONFLICT);
     }
 
     /// <summary>

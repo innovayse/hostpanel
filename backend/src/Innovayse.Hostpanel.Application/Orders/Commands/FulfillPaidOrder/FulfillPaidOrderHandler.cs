@@ -100,7 +100,11 @@ public sealed class FulfillPaidOrderHandler
             return Result.FailureCode(HostpanelErrorCodes.ORDER_NOT_INVOICED);
         }
 
-        order.Accept(_clock.UtcNow);
+        // The lines are claimed in the same save that accepts the order, so a crash after it leaves them claimed and the
+        // order Incomplete (retryable once the claim runs out) instead of Active over lines that never started.
+        var now = _clock.UtcNow;
+        order.Accept(now);
+        order.BeginFulfilment(now);
         await _context.SaveChangesAsync(ct);
 
         var fulfilled = await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(new FulfillOrderLinesCommand(order.Id), ct);

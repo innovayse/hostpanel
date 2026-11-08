@@ -59,7 +59,12 @@ public sealed class RenewOrderedDomainHandler
         var domain = await _context.Domains
             .AsNoTracking()
             .Where(d => d.Name.ToLower() == name)
-            .Select(d => new { d.Id, d.ClientId, d.LastRenewalOrderItemId })
+            .Select(d => new
+            {
+                d.Id,
+                d.ClientId,
+                RenewedForLine = cmd.OrderItemId != null && d.LineRenewals.Any(r => r.OrderItemId == cmd.OrderItemId),
+            })
             .FirstOrDefaultAsync(ct);
         if (domain is null)
         {
@@ -76,10 +81,11 @@ public sealed class RenewOrderedDomainHandler
             return Result.FailureCode(HostpanelErrorCodes.DOMAIN_NOT_FOUND);
         }
 
-        if (cmd.OrderItemId is not null && domain.LastRenewalOrderItemId == cmd.OrderItemId)
+        if (domain.RenewedForLine)
         {
-            // This same order line already extended the domain and died before it recorded the line; extending it
-            // again would charge the registrar for a second period the client paid for once.
+            // This same order line already extended the domain and died before it recorded the line (renewals made any
+            // other way never erase that record); extending it again would charge the registrar for a second period the
+            // client paid for once.
             _logger.LogInformation(
                 "Domain {DomainId} was already renewed for order line {OrderItemId}; the retry counts it as renewed.",
                 domain.Id, cmd.OrderItemId);

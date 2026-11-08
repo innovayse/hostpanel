@@ -10,6 +10,12 @@ namespace Innovayse.Hostpanel.Infrastructure.Persistence.Configurations;
 /// <summary>EF Core table and column configuration for <see cref="ClientService"/>.</summary>
 public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<ClientService>
 {
+    /// <summary>
+    /// The name of the unique index on the order line a service was created for, the default EF already gave it, named
+    /// here so <see cref="AppDbContext"/> can tell its violation from any other.
+    /// </summary>
+    public const string OrderItemIndex = "IX_ClientServices_OrderItemId";
+
     /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<ClientService> builder)
     {
@@ -34,7 +40,8 @@ public sealed class ClientServiceConfiguration : IEntityTypeConfiguration<Client
         // service its first attempt made instead of provisioning and billing a second one; the database enforces it.
         builder.HasIndex(x => x.OrderItemId)
             .IsUnique()
-            .HasFilter("\"OrderItemId\" IS NOT NULL");
+            .HasFilter("\"OrderItemId\" IS NOT NULL")
+            .HasDatabaseName(OrderItemIndex);
 
         builder.Property(x => x.ClientId).IsRequired();
         builder.Property(x => x.ProductId).IsRequired();

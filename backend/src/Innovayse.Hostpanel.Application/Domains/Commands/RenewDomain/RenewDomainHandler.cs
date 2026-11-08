@@ -55,6 +55,7 @@ public sealed class RenewDomainHandler
     {
         var domain = await _context.Domains
             .IncludeChildren()
+            .Include(x => x.LineRenewals)
             .FirstOrDefaultAsync(x => x.Id == cmd.DomainId!.Value, ct);
         if (domain is null)
         {

@@ -11,4 +11,8 @@ namespace Innovayse.Hostpanel.Application.Domains.Queries.GetOwnedDomainNames;
 /// An expired, redemption, cancelled or transferred-out domain is then not held, because it is not a registration an order
 /// line can count as done. The default counts every domain the client has, which is what a renewal needs.
 /// </param>
-public sealed record GetOwnedDomainNamesQuery(int ClientId, IReadOnlyList<string> DomainNames, bool LiveOnly = false);
+/// <param name="OrderId">
+/// The order that must have created the domain, or <see langword="null"/> for any. A retry of an order line asks for its
+/// own order's, so a domain the client holds from elsewhere is never counted as the line's registration.
+/// </param>
+public sealed record GetOwnedDomainNamesQuery(int ClientId, IReadOnlyList<string> DomainNames, bool LiveOnly = false, int? OrderId = null);

@@ -45,9 +45,6 @@ public sealed class DomainConfiguration : IEntityTypeConfiguration<RegisteredDom
         builder.Property(x => x.AdminNotes).HasMaxLength(4000);
         builder.Property(x => x.OrderType).HasMaxLength(20).HasDefaultValue("Register");
 
-        // The order line whose renewal last extended the domain, so a retry of that line does not extend it twice.
-        builder.Property(x => x.LastRenewalOrderItemId);
-
         builder.HasIndex(x => x.Name).IsUnique();
         builder.HasIndex(x => x.ClientId);
         builder.HasIndex(x => new { x.Status, x.ExpiresAt });
@@ -93,6 +90,16 @@ public sealed class DomainConfiguration : IEntityTypeConfiguration<RegisteredDom
 
         builder.Navigation(x => x.Reminders)
             .HasField("_reminders")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
+        // Navigation: Domain owns the set of order lines whose renewal extended it via private backing field _lineRenewals.
+        builder.HasMany(x => x.LineRenewals)
+            .WithOne()
+            .HasForeignKey(x => x.DomainId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(x => x.LineRenewals)
+            .HasField("_lineRenewals")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
         // A client who still has this record cannot be deleted: billing, service and support history

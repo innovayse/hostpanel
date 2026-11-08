@@ -544,6 +544,9 @@
   <data name="OrderLineOutcomeInvalid" xml:space="preserve">
     <value>Результат позиции заказа должен быть Fulfilled или Failed.</value>
   </data>
+  <data name="OrderLineAttemptInvalid" xml:space="preserve">
+    <value>Номер попытки выполнения позиции заказа должен быть больше нуля.</value>
+  </data>
   <data name="OrderLineRefundOutcomeInvalid" xml:space="preserve">
     <value>Результат возврата по позиции заказа должен быть NothingRefunded или PartlyRefunded.</value>
   </data>

@@ -36,6 +36,9 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// <summary>Internal mutable list of expiry reminders sent for this domain.</summary>
     private readonly List<DomainReminder> _reminders = [];
 
+    /// <summary>Internal mutable set of the order lines whose renewal extended this domain.</summary>
+    private readonly List<DomainLineRenewal> _lineRenewals = [];
+
     /// <summary>Gets the FK to the owning client.</summary>
     public int ClientId { get; private set; }
 
@@ -115,13 +118,6 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// <summary>Gets the FK to the order that created this domain.</summary>
     public int? OrderId { get; private set; }
 
-    /// <summary>
-    /// Gets the id of the order line whose renewal last extended this domain, or <see langword="null"/> when no
-    /// order line renewed it. A retry of that line finds its own renewal here and does not extend the
-    /// domain a second time. Index only, no FK: the order line belongs to Orders.
-    /// </summary>
-    public int? LastRenewalOrderItemId { get; private set; }
-
     /// <summary>Gets the order type: "Register" or "Transfer".</summary>
     public string OrderType { get; private set; } = DomainOrderTypes.Register;
 
@@ -142,6 +138,12 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
 
     /// <summary>Gets the read-only view of expiry reminders sent for this domain.</summary>
     public IReadOnlyList<DomainReminder> Reminders => _reminders.AsReadOnly();
+
+    /// <summary>
+    /// Gets the read-only view of the order lines whose renewal extended this domain. A retry of a line finds its own row
+    /// here and does not extend the domain a second time; renewals made any other way add and remove nothing.
+    /// </summary>
+    public IReadOnlyList<DomainLineRenewal> LineRenewals => _lineRenewals.AsReadOnly();
 
     /// <summary>
     /// Gets whether the domain's status allows a renewal: anything but
@@ -177,6 +179,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// <param name="registrationPeriod">Registration period in years.</param>
     /// <param name="paymentMethod">Payment method label (e.g. "Credit/Debit Card"); null if not set.</param>
     /// <param name="registrarModule">The registrar module the registration was placed at.</param>
+    /// <param name="orderId">The order whose line registers the domain, or <see langword="null"/> for a registration that is not an order's.</param>
     /// <returns>A new <see cref="Domain"/> in <see cref="DomainStatus.PendingRegistration"/> state.</returns>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="name"/> or <paramref name="priceCurrency"/> is null or whitespace.
@@ -185,7 +188,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
         int clientId, string name, DateTimeOffset registeredAt, DateTimeOffset expiresAt, bool autoRenew, bool whoisPrivacy,
         string priceCurrency, decimal recurringAmount = 0, decimal firstPaymentAmount = 0,
         string? registrar = null, int registrationPeriod = 1, string? paymentMethod = null,
-        RegistrarModule? registrarModule = null)
+        RegistrarModule? registrarModule = null, int? orderId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(priceCurrency);
@@ -207,6 +210,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
             RegistrarModule = registrarModule,
             RegistrationPeriod = registrationPeriod,
             PaymentMethod = paymentMethod,
+            OrderId = orderId,
             OrderType = DomainOrderTypes.Register,
         };
     }
@@ -268,6 +272,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     /// <param name="paymentMethod">Payment method label (e.g. "Credit/Debit Card"); null if not set.</param>
     /// <param name="registrationPeriod">Registration period bought with the transfer, in years.</param>
     /// <param name="registrarModule">The registrar module the transfer was placed at.</param>
+    /// <param name="orderId">The order whose line transfers the domain in, or <see langword="null"/> for a transfer that is not an order's.</param>
     /// <returns>A new <see cref="Domain"/> in <see cref="DomainStatus.PendingTransfer"/> state.</returns>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="name"/> or <paramref name="priceCurrency"/> is null or whitespace.
@@ -275,7 +280,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     public static RegisteredDomain CreateTransfer(
         int clientId, string name, DateTimeOffset registeredAt, string priceCurrency,
         decimal firstPaymentAmount = 0, decimal recurringAmount = 0, string? paymentMethod = null,
-        int registrationPeriod = 1, RegistrarModule? registrarModule = null)
+        int registrationPeriod = 1, RegistrarModule? registrarModule = null, int? orderId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(priceCurrency);
@@ -293,6 +298,7 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
             PaymentMethod = paymentMethod,
             RegistrationPeriod = registrationPeriod,
             RegistrarModule = registrarModule,
+            OrderId = orderId,
             OrderType = DomainOrderTypes.Transfer,
         };
     }
@@ -446,7 +452,11 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
                 DomainsErrors.DomainRenewNotAllowed, $"Cannot renew a domain in status {Status}.");
         }
 
-        LastRenewalOrderItemId = orderItemId;
+        if (orderItemId is { } lineId && !HasRenewedForLine(lineId))
+        {
+            _lineRenewals.Add(new DomainLineRenewal(Id, lineId, occurredAt));
+        }
+
         ExpiresAt = newExpiresAt;
         NextDueDate = newExpiresAt;
         if ((Status is DomainStatus.Expired or DomainStatus.Redemption) && newExpiresAt > occurredAt)
@@ -455,6 +465,14 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
         }
 
         AddDomainEvent(new DomainRenewedEvent(Id, ClientId, newExpiresAt) { OccurredAt = occurredAt });
+    }
+
+    /// <summary>Tells whether an order line already extended this domain.</summary>
+    /// <param name="orderItemId">The order line.</param>
+    /// <returns><see langword="true"/> when the line's renewal is on record; renewals made any other way never answer for a line.</returns>
+    public bool HasRenewedForLine(int orderItemId)
+    {
+        return _lineRenewals.Any(r => r.OrderItemId == orderItemId);
     }
 
     /// <summary>

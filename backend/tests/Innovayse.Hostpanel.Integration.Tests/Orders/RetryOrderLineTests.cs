@@ -182,7 +182,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
         (await admin.PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null)).EnsureSuccessStatusCode();
         var domainLine = (await ReadItemsAsync(seeded.OrderId)).First(i => i.Domain == seeded.Domain);
         await ReleaseDomainAsync(seeded.Domain);
-        var heldId = await HoldDomainAsync(seeded.ClientId, seeded.Domain);
+        var heldId = await HoldDomainAsync(seeded.ClientId, seeded.Domain, seeded.OrderId);
 
         var response = await admin.PostAsync($"/api/orders/{seeded.OrderId}/items/{domainLine.Id}/retry", content: null);
 
@@ -323,13 +323,15 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     /// <summary>Registers the domain to the ordering client, as a first attempt that died before recording it would have.</summary>
     /// <param name="clientId">The ordering client.</param>
     /// <param name="domain">The domain name.</param>
+    /// <param name="orderId">The order whose first attempt created the domain.</param>
     /// <returns>The held domain's id.</returns>
-    private async Task<int> HoldDomainAsync(int clientId, string domain)
+    private async Task<int> HoldDomainAsync(int clientId, string domain, int orderId)
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var held = RegisteredDomain.Register(
-            clientId, domain, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD");
+            clientId, domain, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddYears(1), autoRenew: false, whoisPrivacy: false, priceCurrency: "USD",
+            orderId: orderId);
         db.Domains.Add(held);
         await db.SaveChangesAsync();
         return held.Id;

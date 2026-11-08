@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Domains.Commands.RegisterDomain;
 using Innovayse.Hostpanel.Application.Domains.Commands.RenewOrderedDomain;
 using Innovayse.Hostpanel.Application.Domains.Commands.TransferDomain;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetOwnedDomainNames;
+using Innovayse.Hostpanel.Application.Orders.Commands.ClaimOrderLines;
 using Innovayse.Hostpanel.Application.Orders.Commands.RecordOrderLineOutcome;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Common.Enums;
@@ -24,16 +25,20 @@ using Wolverine;
 namespace Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
 
 /// <summary>
-/// Handles <see cref="FulfillOrderLinesCommand"/>: runs every line of an accepted order that is not
-/// fulfilled yet through the use case its type needs, never stopping at a failed line, records each
+/// Handles <see cref="FulfillOrderLinesCommand"/>: claims every line of an accepted order that is not
+/// fulfilled yet, runs each through the use case its type needs, never stopping at a failed line, records each
 /// line's outcome on the line the moment it is known, and reports each line it could not fulfil so the caller
 /// can refund it or show it.
 /// </summary>
 /// <remarks>
-/// A line's outcome is recorded by <see cref="RecordOrderLineOutcomeCommand"/> in its own scope, one line at a time, so
-/// the lines that finished are on record even when a later line throws, and the order's status is computed from the
-/// lines as the database holds them rather than from the copy this run loaded. A line whose action throws is recorded as
-/// failed with a code and the run goes on; a cancelled run releases every line it had not finished before it rethrows.
+/// The lines are claimed first (<see cref="ClaimOrderLinesCommand"/>: in progress, the attempt counted), so a run that dies
+/// leaves them claimed and the order Incomplete, and a retry takes them over once the claim runs out. A line's outcome is
+/// recorded by <see cref="RecordOrderLineOutcomeCommand"/> in its own scope, one line at a time, together with the attempt
+/// number the claim gave it, so the lines that finished are on record even when a later line throws, an outcome that
+/// cannot be recorded never stops the other lines, a late outcome of an attempt whose claim was taken over is refused, and
+/// the order's status is computed from the lines as the database holds them rather than from the copy this run loaded. A
+/// line whose action throws is recorded as failed with a code and the run goes on; a cancelled run releases every line it
+/// had not finished before it rethrows.
 /// </remarks>
 public sealed class FulfillOrderLinesHandler
 {
@@ -63,7 +68,10 @@ public sealed class FulfillOrderLinesHandler
     /// <returns>
     /// The lines that could not be fulfilled (empty when all were), <c>ORDER_NOT_FOUND</c> when the
     /// id names no order, <c>ORDER_ITEM_NOT_FOUND</c> when a retry names a line the order does not hold, or
-    /// <c>ORDER_LINE_CHANGED</c> when a line changed under the run and its outcome could not be recorded.
+    /// <c>ORDER_LINE_CHANGED</c> when the lines could not be claimed because the order kept changing, or when the one line
+    /// a retry ran changed under it (a refund or a newer attempt overtook it) and its outcome could not be recorded. In a
+    /// run over the whole order an outcome that cannot be recorded is logged and leaves its line claimed, retryable once
+    /// the claim runs out, and the run still reports the other lines.
     /// A failed line never stops the others, and a line already fulfilled (or refunded) is left as it is.
     /// </returns>
     /// <exception cref="OperationCanceledException">The caller cancelled the run; the lines it had not finished are recorded as interrupted first.</exception>
@@ -71,10 +79,7 @@ public sealed class FulfillOrderLinesHandler
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
-        var order = await _context.Orders
-            .AsNoTracking()
-            .Include(o => o.Items)
-            .FirstOrDefaultAsync(o => o.Id == cmd.OrderId, ct);
+        var order = await LoadOrderAsync(cmd.OrderId, ct);
         if (order is null)
         {
             return Result<OrderFulfillmentDto>.FailureCode(HostpanelErrorCodes.ORDER_NOT_FOUND);
@@ -87,7 +92,16 @@ public sealed class FulfillOrderLinesHandler
 
         try
         {
-            return await RunLinesAsync(order, cmd.ItemId is not null, cmd.ItemId, ct);
+            // Claimed before any work starts, so a crash from here on leaves the lines claimed and the order Incomplete.
+            var claimed = await _bus.InvokeLineChangeAsync(new ClaimOrderLinesCommand(order.Id, cmd.ItemId), ct);
+            if (claimed.IsFailure)
+            {
+                return Result<OrderFulfillmentDto>.FailureCode(claimed.ErrorCode ?? HostpanelErrorCodes.ORDER_LINE_CHANGED);
+            }
+
+            // Loaded again: the claim counted the attempts this run records its outcomes under.
+            var claimedOrder = await LoadOrderAsync(order.Id, ct);
+            return await RunLinesAsync(claimedOrder ?? order, cmd.ItemId, ct);
         }
         finally
         {
@@ -104,13 +118,24 @@ public sealed class FulfillOrderLinesHandler
         }
     }
 
-    /// <summary>Runs the lines in id order and records each outcome.</summary>
-    /// <param name="order">The order as it was loaded; read only, nothing on it is saved.</param>
-    /// <param name="isRetry">Whether one claimed line is being retried.</param>
-    /// <param name="onlyItemId">The one line to run, or <see langword="null"/> for every line that is not fulfilled yet.</param>
+    /// <summary>Loads the order and its lines as the database holds them now; read only, nothing on it is saved.</summary>
+    /// <param name="orderId">The order.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The order, or <see langword="null"/> when the id names none.</returns>
+    private Task<Order?> LoadOrderAsync(int orderId, CancellationToken ct)
+    {
+        return _context.Orders
+            .AsNoTracking()
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == orderId, ct);
+    }
+
+    /// <summary>Runs the claimed lines in id order and records each outcome.</summary>
+    /// <param name="order">The order as it stood after the claim; read only, nothing on it is saved.</param>
+    /// <param name="onlyItemId">The one line to run, or <see langword="null"/> for every claimed line.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The lines that could not be fulfilled, or the refusal that stopped the run.</returns>
-    private async Task<Result<OrderFulfillmentDto>> RunLinesAsync(Order order, bool isRetry, int? onlyItemId, CancellationToken ct)
+    private async Task<Result<OrderFulfillmentDto>> RunLinesAsync(Order order, int? onlyItemId, CancellationToken ct)
     {
         var lines = order.Items.OrderBy(i => i.Id).ToList();
         var toRun = lines.Where(i => ShouldRun(i, onlyItemId)).ToList();
@@ -118,6 +143,7 @@ public sealed class FulfillOrderLinesHandler
         int? createdDomainId = null;
         int? createdServiceId = null;
         string? orderDomainName = null;
+        string? recordRefusal = null;
 
         foreach (var item in lines)
         {
@@ -136,7 +162,7 @@ public sealed class FulfillOrderLinesHandler
             OrderLineRunOutcome outcome;
             try
             {
-                outcome = await RunLineAsync(order, item, orderDomainName, isRetry, ct);
+                outcome = await RunLineAsync(order, item, orderDomainName, ct);
             }
             catch (Exception ex) when (IsCancellation(ex, ct))
             {
@@ -159,19 +185,16 @@ public sealed class FulfillOrderLinesHandler
             }
 
             // Recorded with a token that cannot be cancelled: the action has run, and what it did must reach the line.
-            var recorded = await _bus.InvokeLineChangeAsync(
-                new RecordOrderLineOutcomeCommand(
-                    order.Id,
-                    item.Id,
-                    outcome.Failed ? OrderLineOutcome.Failed : OrderLineOutcome.Fulfilled,
-                    outcome.ErrorCode),
-                CancellationToken.None);
+            var recorded = await RecordOutcomeAsync(order, item, outcome);
             if (recorded.IsFailure)
             {
+                // The other lines still have to run: this one stays claimed (or belongs to the attempt that took it over),
+                // so a retry picks it up once the claim runs out, and what the attempt did is idempotent to repeat.
                 _logger.LogCritical(
-                    "Order {OrderId} item {ItemId}: the outcome of the attempt could not be recorded: {Reason}.",
-                    order.Id, item.Id, DescribeFailure(recorded));
-                return Result<OrderFulfillmentDto>.FailureCode(recorded.ErrorCode ?? HostpanelErrorCodes.ORDER_LINE_CHANGED);
+                    "Order {OrderId} item {ItemId}: the outcome of attempt {Attempt} could not be recorded: {Reason}. " +
+                    "The line stays claimed and can be retried when the claim runs out.",
+                    order.Id, item.Id, item.FulfilmentAttempts, DescribeFailure(recorded));
+                recordRefusal ??= recorded.ErrorCode ?? HostpanelErrorCodes.ORDER_LINE_CHANGED;
             }
 
             if (outcome.Failed)
@@ -202,13 +225,50 @@ public sealed class FulfillOrderLinesHandler
             }
         }
 
-        return Result.Success(new OrderFulfillmentDto(failures));
+        // A retry of one line reports a lost outcome as the refusal it is; a run over the whole order still reports the
+        // lines it did, because the caller refunds the rejected ones from that report.
+        return recordRefusal is not null && onlyItemId is not null
+            ? Result<OrderFulfillmentDto>.FailureCode(recordRefusal)
+            : Result.Success(new OrderFulfillmentDto(failures));
+    }
+
+    /// <summary>
+    /// Records how the attempt ended on the line it claimed, under the attempt number its claim gave it. A fault while
+    /// recording is answered as a failure to record, never thrown: the lines after this one must still run.
+    /// </summary>
+    /// <param name="order">The order the line belongs to.</param>
+    /// <param name="item">The line, as it stood after the claim.</param>
+    /// <param name="outcome">What running the line produced.</param>
+    /// <returns>Success once recorded, or the refusal (<c>ORDER_LINE_CHANGED</c> for a lost race or a stale attempt).</returns>
+    private async Task<Result> RecordOutcomeAsync(Order order, OrderItem item, OrderLineRunOutcome outcome)
+    {
+        try
+        {
+            return await _bus.InvokeLineChangeAsync(
+                new RecordOrderLineOutcomeCommand(
+                    order.Id,
+                    item.Id,
+                    item.FulfilmentAttempts,
+                    outcome.Failed ? OrderLineOutcome.Failed : OrderLineOutcome.Fulfilled,
+                    outcome.ErrorCode),
+                CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogCritical(
+                ex, "Order {OrderId} item {ItemId}: recording the outcome of attempt {Attempt} threw.",
+                order.Id, item.Id, item.FulfilmentAttempts);
+            return Result.FailureCode(HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);
+        }
     }
 
     /// <summary>Tells whether this run has to run a line.</summary>
     /// <param name="item">The line.</param>
     /// <param name="onlyItemId">The one line a retry runs, or <see langword="null"/> for a run over the whole order.</param>
-    /// <returns><see langword="true"/> when the line is the one asked for (or any line) and is not done, given back or being run.</returns>
+    /// <returns>
+    /// <see langword="true"/> when the line is the one asked for (or any line) and the claim that came first holds it: a line
+    /// that is done, given back, or still unclaimed is not this run's to start.
+    /// </returns>
     private static bool ShouldRun(OrderItem item, int? onlyItemId)
     {
         if (onlyItemId is not null && item.Id != onlyItemId)
@@ -216,26 +276,16 @@ public sealed class FulfillOrderLinesHandler
             return false;
         }
 
-        // A line a retry is running belongs to that retry; a run over the whole order must not start it a second time.
-        if (onlyItemId is null && item.FulfilmentState is OrderItemFulfilmentState.InProgress)
-        {
-            return false;
-        }
-
-        return item.FulfilmentState is not (OrderItemFulfilmentState.Fulfilled
-            or OrderItemFulfilmentState.Refunded
-            or OrderItemFulfilmentState.Refunding
-            or OrderItemFulfilmentState.PartiallyRefunded);
+        return item.FulfilmentState is OrderItemFulfilmentState.InProgress;
     }
 
     /// <summary>Runs one line through the use case its type needs.</summary>
     /// <param name="order">The accepted order the line belongs to.</param>
     /// <param name="item">The line.</param>
     /// <param name="orderDomainName">The domain bought beside the line in this order, if any.</param>
-    /// <param name="isRetry">Whether the line is being retried.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>What the line produced, or why it could not be fulfilled.</returns>
-    private async Task<OrderLineRunOutcome> RunLineAsync(Order order, OrderItem item, string? orderDomainName, bool isRetry, CancellationToken ct)
+    private async Task<OrderLineRunOutcome> RunLineAsync(Order order, OrderItem item, string? orderDomainName, CancellationToken ct)
     {
         if (item.DomainAction is not null)
         {
@@ -251,7 +301,7 @@ public sealed class FulfillOrderLinesHandler
                     OrderLineKind.Domain, null, null, null, $"Order {order.Id} item {item.Id} has a domain action but no domain name.");
             }
 
-            var domain = await FulfillDomainActionAsync(order, item, item.Domain, isRetry, ct);
+            var domain = await FulfillDomainActionAsync(order, item, item.Domain, ct);
             return new OrderLineRunOutcome(OrderLineKind.Domain, domain.DomainId, null, domain.ErrorCode, domain.FailureReason);
         }
 
@@ -276,7 +326,7 @@ public sealed class FulfillOrderLinesHandler
             {
                 await _bus.InvokeLineChangeAsync(
                     new RecordOrderLineOutcomeCommand(
-                        order.Id, item.Id, OrderLineOutcome.Failed, HostpanelErrorCodes.ORDER_LINE_INTERRUPTED),
+                        order.Id, item.Id, item.FulfilmentAttempts, OrderLineOutcome.Failed, HostpanelErrorCodes.ORDER_LINE_INTERRUPTED),
                     CancellationToken.None);
             }
             catch (Exception ex)
@@ -380,11 +430,6 @@ public sealed class FulfillOrderLinesHandler
     /// <param name="order">The accepted order the line belongs to.</param>
     /// <param name="item">The line item, already known to carry a domain action.</param>
     /// <param name="domain">The domain name from the order line.</param>
-    /// <param name="isRetry">
-    /// Whether the line is being retried. A retried registration or transfer finds the domain this client
-    /// already holds under that name and counts it as done, so a first attempt that did register it (and
-    /// failed afterwards) is never repeated.
-    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The new domain's id when this action creates one (register, transfer) and it succeeded;
@@ -392,15 +437,18 @@ public sealed class FulfillOrderLinesHandler
     /// human-readable sentence on failure.
     /// </returns>
     private async Task<DomainActionOutcome> FulfillDomainActionAsync(
-        Order order, OrderItem item, string domain, bool isRetry, CancellationToken ct)
+        Order order, OrderItem item, string domain, CancellationToken ct)
     {
-        if (isRetry && item.DomainAction is DomainAction.Register or DomainAction.Transfer)
+        // A line's second attempt or later finds the domain this very order already created under that name and counts
+        // it as done, so a first attempt that did register it (and failed afterwards) is never repeated. A domain the
+        // client holds that this order did not create is not the line's registration.
+        if (item.FulfilmentAttempts > 1 && item.DomainAction is DomainAction.Register or DomainAction.Transfer)
         {
             if (await IsDomainHeldAsync(order, domain, ct))
             {
                 _logger.LogInformation(
-                    "Order {OrderId} item {ItemId}: domain '{Domain}' is already held by client {ClientId}; the retry counts it as done.",
-                    order.Id, item.Id, domain, order.ClientId);
+                    "Order {OrderId} item {ItemId}: domain '{Domain}' was already created for this order; the retry counts it as done.",
+                    order.Id, item.Id, domain);
                 return new DomainActionOutcome(null, null, null);
             }
         }
@@ -419,7 +467,8 @@ public sealed class FulfillOrderLinesHandler
                     FirstPaymentAmount: item.FirstPaymentAmount,
                     RecurringAmount: item.RecurringAmount,
                     PaymentMethod: order.PaymentMethod,
-                    PriceCurrency: order.Currency), ct);
+                    PriceCurrency: order.Currency,
+                    OrderId: order.Id), ct);
 
             return outcome.IsFailure
                 ? new DomainActionOutcome(null, outcome.ErrorCode, DescribeFailure(outcome))
@@ -443,7 +492,8 @@ public sealed class FulfillOrderLinesHandler
                     FirstPaymentAmount: item.FirstPaymentAmount,
                     RecurringAmount: item.RecurringAmount,
                     PaymentMethod: order.PaymentMethod,
-                    Years: item.Years ?? 1), ct);
+                    Years: item.Years ?? 1,
+                    OrderId: order.Id), ct);
 
             return outcome.IsFailure
                 ? new DomainActionOutcome(null, outcome.ErrorCode, DescribeFailure(outcome))
@@ -469,18 +519,19 @@ public sealed class FulfillOrderLinesHandler
     }
 
     /// <summary>
-    /// Asks the Domains module whether the order's client already holds a live domain under the line's name, which is
-    /// what a first attempt that did register it (and died before recording the line) leaves behind. An expired,
-    /// cancelled or transferred-out domain is not a registration the line can count as done.
+    /// Asks the Domains module whether this order already created a live domain for its client under the line's name,
+    /// which is what a first attempt that did register it (and died before recording the line) leaves behind. A domain
+    /// the client holds from elsewhere, and an expired, cancelled or transferred-out one, is not a registration the line
+    /// can count as done.
     /// </summary>
     /// <param name="order">The accepted order the line belongs to.</param>
     /// <param name="domain">The domain name from the order line.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns><see langword="true"/> when the client holds the domain, active or pending.</returns>
+    /// <returns><see langword="true"/> when this order created the domain for the client and it is active or pending.</returns>
     private async Task<bool> IsDomainHeldAsync(Order order, string domain, CancellationToken ct)
     {
         var owned = await _bus.InvokeAsync<Result<IReadOnlyList<string>>>(
-            new GetOwnedDomainNamesQuery(order.ClientId, [domain], LiveOnly: true), ct);
+            new GetOwnedDomainNamesQuery(order.ClientId, [domain], LiveOnly: true, OrderId: order.Id), ct);
         return owned.IsSuccess && owned.Value!.Count > 0;
     }
 

@@ -2,7 +2,7 @@
  * Mount tests for the line retry on OrderDetailView: a stale in-progress line offers a retry and a
  * fresh one does not, only the retried line shows progress, a refusal appears on its own row, an
  * unknown error code reads as the generic sentence, and a retry that failed again never claims
- * success, not even for a moment.
+ * success, not even for a moment, and a partly refunded line is closed through a confirmation.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -119,6 +119,78 @@ describe('OrderDetailView line retry', () => {
     expect(wrapper.get('[data-testid="order-item-fulfilment-1"]').text()).toContain('Partly refunded')
     expect(wrapper.get('[data-testid="order-item-finish-refund-1"]').text()).toContain('Finish the refund by hand')
     expect(wrapper.find('[data-testid="order-item-retry-1"]').exists()).toBe(false)
+  })
+
+  it('closes a partly refunded line only after the operator confirms, then reads the order again', async () => {
+    const partly = orderWith([line(1, OrderItemFulfilmentState.PartiallyRefunded, 90)])
+    let closed = false
+    const closeCalls: string[] = []
+    stubRoutes({
+      'POST /api/orders/8/items/1/close-refund': () => {
+        closed = true
+        closeCalls.push('close')
+        return new Response(null, { status: 204 })
+      },
+      'GET /api/orders/8': () => json(closed ? { ...partly, status: OrderStatus.Active, items: [line(1, OrderItemFulfilmentState.Refunded, 90)] } : partly),
+    })
+    const wrapper = await mountDetail()
+
+    await wrapper.get('[data-testid="order-item-close-refund-1"]').trigger('click')
+    await flushPromises()
+    expect(closeCalls).toEqual([])
+
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(closeCalls).toEqual(['close'])
+    expect(shown).toContain('Line closed as refunded.')
+    expect(wrapper.find('[data-testid="order-item-close-refund-1"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="order-status"]').text()).toContain('Active')
+  })
+
+  it('does not close the refund when the operator dismisses the prompt', async () => {
+    const closeCalls: string[] = []
+    stubRoutes({
+      'POST /api/orders/8/items/1/close-refund': () => {
+        closeCalls.push('close')
+        return new Response(null, { status: 204 })
+      },
+      'GET /api/orders/8': () => json(orderWith([line(1, OrderItemFulfilmentState.PartiallyRefunded, 90)])),
+    })
+    const wrapper = await mountDetail()
+
+    await wrapper.get('[data-testid="order-item-close-refund-1"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
+    await flushPromises()
+
+    expect(closeCalls).toEqual([])
+    expect(wrapper.find('[data-testid="dialog-confirm"]').exists()).toBe(false)
+  })
+
+  it('shows the API refusal when the line cannot be closed', async () => {
+    stubRoutes({
+      'POST /api/orders/8/items/1/close-refund': () => problem('This order line cannot be refunded now.', 409),
+      'GET /api/orders/8': () => json(orderWith([line(1, OrderItemFulfilmentState.PartiallyRefunded, 90)])),
+    })
+    const wrapper = await mountDetail()
+
+    await wrapper.get('[data-testid="order-item-close-refund-1"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(shown.at(-1)).toContain('cannot be refunded now')
+  })
+
+  it('offers no close-refund button on a failed or refunded line', async () => {
+    stubRoutes({
+      'GET /api/orders/8': () => json(orderWith([line(1, OrderItemFulfilmentState.Failed, 5), line(2, OrderItemFulfilmentState.Refunded, 90)])),
+    })
+    const wrapper = await mountDetail()
+
+    expect(wrapper.find('[data-testid="order-item-close-refund-1"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="order-item-close-refund-2"]').exists()).toBe(false)
   })
 
   it('shows no retry on a refunded line', async () => {

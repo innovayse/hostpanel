@@ -1,11 +1,12 @@
 <script setup lang="ts">
 /**
  * Order detail view: one order with its items, linked invoice and the admin actions
- * (accept, cancel, delete) and a retry for each failed line or line a dead retry left in progress.
+ * (accept, cancel, delete), a retry for each failed line or line a dead retry left in progress, and a
+ * button that closes a partly refunded line once staff finished its refund by hand.
  *
  * Reads `stores/orders`; a refused load shows `store.error` with a retry. The outcome of an accept
  * or cancel (success, or the API's sentence) shows above the order; a delete returns to the list.
- * Cancelling and deleting are confirmed first in a danger prompt.
+ * Cancelling, deleting and closing a refund are confirmed first in a danger prompt.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -51,6 +52,8 @@ enum OrderDangerAction {
   Cancel = 'cancel',
   /** Delete the order. */
   Delete = 'delete',
+  /** Close a partly refunded line as refunded. */
+  CloseRefund = 'closeRefund',
 }
 
 const { t } = useI18n()
@@ -62,6 +65,9 @@ const store = useOrdersStore()
 /** The irreversible change waiting for confirmation, null when the prompt is closed. */
 const dangerConfirm = ref<OrderDangerAction | null>(null)
 
+/** The partly refunded line whose refund is waiting to be closed, null when none. */
+const closingRefundItemId = ref<number | null>(null)
+
 /** True while an order command is in flight. */
 const processing = ref(false)
 
@@ -72,19 +78,40 @@ const feedback = useResultBanner()
 const feedbackTone = computed<UiTone>(() => (feedback.isError.value ? UiTone.Danger : UiTone.Success))
 
 /** Title of the danger confirmation. */
-const dangerTitle = computed<string>(() =>
-  dangerConfirm.value === OrderDangerAction.Cancel ? t('orders.orderDetail.confirmCancelTitle') : t('orders.orderDetail.deleteOrder'),
-)
+const dangerTitle = computed<string>(() => {
+  switch (dangerConfirm.value) {
+    case OrderDangerAction.Cancel:
+      return t('orders.orderDetail.confirmCancelTitle')
+    case OrderDangerAction.CloseRefund:
+      return t('orders.orderDetail.confirmCloseRefundTitle')
+    default:
+      return t('orders.orderDetail.deleteOrder')
+  }
+})
 
 /** Prompt of the danger confirmation. */
-const dangerMessage = computed<string>(() =>
-  dangerConfirm.value === OrderDangerAction.Cancel ? t('orders.orderDetail.confirmCancelMessage') : t('orders.orderDetail.areYouSureYouWant'),
-)
+const dangerMessage = computed<string>(() => {
+  switch (dangerConfirm.value) {
+    case OrderDangerAction.Cancel:
+      return t('orders.orderDetail.confirmCancelMessage')
+    case OrderDangerAction.CloseRefund:
+      return t('orders.orderDetail.confirmCloseRefundMessage')
+    default:
+      return t('orders.orderDetail.areYouSureYouWant')
+  }
+})
 
 /** Confirm label of the danger confirmation. */
-const dangerLabel = computed<string>(() =>
-  dangerConfirm.value === OrderDangerAction.Cancel ? t('orders.orderDetail.cancelOrder') : t('shared.delete'),
-)
+const dangerLabel = computed<string>(() => {
+  switch (dangerConfirm.value) {
+    case OrderDangerAction.Cancel:
+      return t('orders.orderDetail.cancelOrder')
+    case OrderDangerAction.CloseRefund:
+      return t('orders.orderDetail.closeRefund')
+    default:
+      return t('shared.delete')
+  }
+})
 
 /** Admin notes text area value. */
 const notesText = ref('')
@@ -148,12 +175,29 @@ const handleRetryLine = async (itemId: number): Promise<void> => {
 }
 
 /**
- * Runs the change the operator confirmed: a cancel stays on the order, a delete returns to the
- * list; a refusal stays on the page with the API's sentence.
+ * Asks the operator to confirm that the refund of a partly refunded line was finished by hand.
+ *
+ * @param itemId - The partly refunded line.
+ */
+const askCloseRefund = (itemId: number): void => {
+  closingRefundItemId.value = itemId
+  dangerConfirm.value = OrderDangerAction.CloseRefund
+}
+
+/**
+ * Runs the change the operator confirmed: a cancel and a closed refund stay on the order, a delete
+ * returns to the list; a refusal stays on the page with the API's sentence.
  *
  * @returns Resolves when the change has settled.
  */
 const confirmDanger = async (): Promise<void> => {
+  if (dangerConfirm.value === OrderDangerAction.CloseRefund && closingRefundItemId.value !== null) {
+    const itemId = closingRefundItemId.value
+    await runCommand(() => store.closeLineRefund(orderId(), itemId), 'orders.orderDetail.refundClosed')
+    dangerConfirm.value = null
+    closingRefundItemId.value = null
+    return
+  }
   if (dangerConfirm.value === OrderDangerAction.Cancel) {
     await runCommand(() => store.cancelOrder(orderId()), 'orders.orderDetail.orderCancelled')
     dangerConfirm.value = null
@@ -170,6 +214,7 @@ const confirmDanger = async (): Promise<void> => {
 const dismissDanger = (): void => {
   if (!processing.value) {
     dangerConfirm.value = null
+    closingRefundItemId.value = null
   }
 }
 
@@ -372,14 +417,25 @@ onMounted(async () => {
                       {{ t('orders.orderDetail.retry') }}
                     </UiButton>
                   </UiStack>
-                  <UiText
+                  <UiStack
                     v-if="item.fulfilmentState === OrderItemFulfilmentState.PartiallyRefunded"
-                    tone="warning"
-                    size="xs"
-                    :data-testid="`order-item-finish-refund-${item.id}`"
+                    direction="row"
+                    gap="sm"
+                    align="center"
+                    wrap
                   >
-                    {{ t('orders.orderDetail.finishRefund') }}
-                  </UiText>
+                    <UiText tone="warning" size="xs" :data-testid="`order-item-finish-refund-${item.id}`">
+                      {{ t('orders.orderDetail.finishRefund') }}
+                    </UiText>
+                    <UiButton
+                      variant="secondary"
+                      size="sm"
+                      :data-testid="`order-item-close-refund-${item.id}`"
+                      @click="askCloseRefund(item.id)"
+                    >
+                      {{ t('orders.orderDetail.closeRefund') }}
+                    </UiButton>
+                  </UiStack>
                   <UiText
                     v-if="item.fulfilmentErrorCode"
                     tone="muted"

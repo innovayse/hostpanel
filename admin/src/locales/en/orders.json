@@ -25,7 +25,11 @@
     "retry": "Retry",
     "lineRetried": "Line retried and fulfilled.",
     "attempts": "Attempts: {count}, last {at}",
-    "finishRefund": "Part of the cost was given back. Finish the refund by hand."
+    "finishRefund": "Part of the cost was given back. Finish the refund by hand.",
+    "closeRefund": "Refund finished",
+    "confirmCloseRefundTitle": "Close this refund?",
+    "confirmCloseRefundMessage": "Confirm that you gave back the rest of this line by hand. The line will be closed as refunded and can no longer be retried.",
+    "refundClosed": "Line closed as refunded."
   },
   "ordersList": {
     "orders": "Orders",

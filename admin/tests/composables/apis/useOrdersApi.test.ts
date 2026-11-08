@@ -37,6 +37,13 @@ describe('useOrdersApi', () => {
     expect(callOf(mock)).toMatchObject({ url: '/api/orders/8/items/2/retry', method: 'POST' })
   })
 
+  it('closeOrderLineRefund POSTs to the line close-refund route', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+
+    await useOrdersApi().closeOrderLineRefund(8, 2)
+    expect(callOf(mock)).toMatchObject({ url: '/api/orders/8/items/2/close-refund', method: 'POST' })
+  })
+
   it('accept and cancel POST, delete DELETEs', async () => {
     const mock = stubFetch(new Response(null, { status: 204 }))
     const api = useOrdersApi()

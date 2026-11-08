@@ -136,6 +136,26 @@ describe('ordersStore', () => {
     expect(store.lineErrors).toEqual({})
   })
 
+  it('closeLineRefund closes the line and reads the order again', async () => {
+    const store = useOrdersStore()
+    const mock = stubFetch(new Response(null, { status: 204 }), json({ id: 8, status: 'Active' }))
+
+    expect(await store.closeLineRefund(8, 2)).toBe(true)
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/orders/8/items/2/close-refund', method: 'POST' })
+    expect(store.currentOrder).toEqual({ id: 8, status: 'Active' })
+    expect(store.actionError).toBeNull()
+  })
+
+  it('a refused closeLineRefund sets actionError and still reads the order again', async () => {
+    const store = useOrdersStore()
+    const mock = stubFetch(problem('This order line cannot be refunded now.', 409), json({ id: 8, status: 'Incomplete' }))
+
+    expect(await store.closeLineRefund(8, 2)).toBe(false)
+    expect(store.actionError).toBe('This order line cannot be refunded now.')
+    expect(mock).toHaveBeenCalledTimes(2)
+    expect(store.currentOrder).toEqual({ id: 8, status: 'Incomplete' })
+  })
+
   it('a refused command returns false, sets actionError and does not refresh', async () => {
     const store = useOrdersStore()
     const mock = stubFetch(problem('Order is already accepted.', 409))

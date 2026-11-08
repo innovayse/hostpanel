@@ -212,8 +212,11 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var result = await handler.HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
 
         result.IsSuccess.Should().BeTrue();
-        var reloaded = await context.Orders.FindAsync(orderId);
-        reloaded!.Status.Should().Be(OrderStatus.Active);
+
+        // Read from the database, not from the tracked copy: the lines are fulfilled and the status settled in the
+        // bus's own scope, so the copy this scope loaded at the accept still says Incomplete.
+        var reloaded = await context.Orders.AsNoTracking().SingleAsync(o => o.Id == orderId);
+        reloaded.Status.Should().Be(OrderStatus.Active);
 
         var created = await context.ClientServices
             .Where(s => s.ClientId == clientId)

@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Domains.Commands.RenewDomain;
 using Innovayse.Hostpanel.Application.Domains.Commands.RenewOrderedDomain;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Integration.Tests.Billing;
@@ -89,8 +90,33 @@ public sealed class RenewOrderedDomainTests(IntegrationTestFactory factory) : IC
         TestRegistrar.RenewCallsFor(name).Should().Be(1);
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        (await context.Domains.AsNoTracking().SingleAsync(d => d.Name == name, CancellationToken.None))
-            .LastRenewalOrderItemId.Should().Be(line);
+        (await context.Domains.AsNoTracking().Include(d => d.LineRenewals).SingleAsync(d => d.Name == name, CancellationToken.None))
+            .LineRenewals.Should().ContainSingle().Which.OrderItemId.Should().Be(line);
+    }
+
+    /// <summary>
+    /// A renewal made some other way (staff, the renewal job, another order line) after the line's own renewal does not make
+    /// the line forget it: the retry of the first line is still counted as renewed, and the registrar is asked once for it.
+    /// </summary>
+    [Fact]
+    public async Task HandleAsync_AnotherRenewalInBetween_DoesNotMakeTheLineRenewAgainAsync()
+    {
+        var (clientId, name) = await SeedActiveDomainAsync();
+        using var host = factory.WithWebHostBuilder(b => b.ConfigureTestServices(s => s.AddScoped<IRegistrarProvider, CountingRegistrar>()));
+        var line = 424_204;
+        (await InvokeAsync(new RenewOrderedDomainCommand(clientId, name, 1, line), host.Services)).IsSuccess.Should().BeTrue();
+        var domainId = await ReadDomainIdAsync(name);
+        (await InvokeAsync(new RenewDomainCommand(domainId, 1), host.Services)).IsSuccess.Should().BeTrue();
+        (await InvokeAsync(new RenewOrderedDomainCommand(clientId, name, 1, 424_205), host.Services)).IsSuccess.Should().BeTrue();
+
+        var retry = await InvokeAsync(new RenewOrderedDomainCommand(clientId, name, 1, line), host.Services);
+
+        retry.IsSuccess.Should().BeTrue();
+        TestRegistrar.RenewCallsFor(name).Should().Be(3);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.Domains.AsNoTracking().Include(d => d.LineRenewals).SingleAsync(d => d.Name == name, CancellationToken.None))
+            .LineRenewals.Select(r => r.OrderItemId).Should().BeEquivalentTo(new[] { line, 424_205 });
     }
 
     /// <summary>A renewal bought on a different order line is a different period and is sent to the registrar.</summary>
@@ -122,11 +148,21 @@ public sealed class RenewOrderedDomainTests(IntegrationTestFactory factory) : IC
         return (clientId, name);
     }
 
+    /// <summary>Reads a domain's id by name.</summary>
+    /// <param name="name">The domain name.</param>
+    /// <returns>The domain's primary key.</returns>
+    private async Task<int> ReadDomainIdAsync(string name)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        return await context.Domains.AsNoTracking().Where(d => d.Name == name).Select(d => d.Id).SingleAsync(CancellationToken.None);
+    }
+
     /// <summary>Dispatches the command on a fresh scope's bus.</summary>
     /// <param name="cmd">The command to send.</param>
     /// <param name="services">The host to dispatch on; the shared host when omitted.</param>
     /// <returns>The handler's result.</returns>
-    private async Task<Result> InvokeAsync(RenewOrderedDomainCommand cmd, IServiceProvider? services = null)
+    private async Task<Result> InvokeAsync(object cmd, IServiceProvider? services = null)
     {
         using var scope = (services ?? factory.Services).CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();

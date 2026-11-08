@@ -79,12 +79,10 @@ public sealed class OrderItem : BaseEntity
         or OrderItemFulfilmentState.PartiallyRefunded;
 
     /// <summary>
-    /// Gets whether an attempt may still record its outcome on the line: not once the line's cost is being, partly or
-    /// wholly given back, because a late outcome of an attempt the refund overtook must not turn it into a delivered line.
+    /// Gets whether the line can be closed as refunded by hand: only a line whose refund stopped part way
+    /// (<see cref="OrderItemFulfilmentState.PartiallyRefunded"/>) waits for staff to finish it.
     /// </summary>
-    public bool CanRecordOutcome => FulfilmentState is not (OrderItemFulfilmentState.Refunding
-        or OrderItemFulfilmentState.PartiallyRefunded
-        or OrderItemFulfilmentState.Refunded);
+    public bool CanCloseRefund => FulfilmentState is OrderItemFulfilmentState.PartiallyRefunded;
 
     /// <summary>Gets whether a refund of the line is under way, so only its settlement may change the line.</summary>
     public bool IsBeingRefunded => FulfilmentState is OrderItemFulfilmentState.Refunding;
@@ -157,35 +155,60 @@ public sealed class OrderItem : BaseEntity
         };
     }
 
-    /// <summary>Claims the line for a retry: it is in progress and the attempt is counted before any work starts.</summary>
+    /// <summary>
+    /// Claims the line for an attempt, a retry's or a run over the whole order: it is in progress and the attempt is
+    /// counted before any work starts, so the attempt's number is the one its outcome must carry.
+    /// </summary>
     /// <param name="now">The current moment (UTC).</param>
-    internal void BeginRetry(DateTimeOffset now)
+    internal void BeginAttempt(DateTimeOffset now)
     {
         FulfilmentState = OrderItemFulfilmentState.InProgress;
         FulfilmentAttempts++;
         LastFulfilmentAttemptAt = now;
     }
 
-    /// <summary>Records that the line was fulfilled; an attempt that no retry had already counted is counted here.</summary>
-    /// <param name="now">The current moment (UTC).</param>
-    /// <exception cref="DomainRuleException">Thrown when the line is already being refunded or was refunded.</exception>
-    internal void RecordFulfilled(DateTimeOffset now)
+    /// <summary>
+    /// Tells whether a run over the whole order claims this line: it never ran, or its last attempt failed. A line a
+    /// claim already holds (in progress), a fulfilled one and one given back are left as they are.
+    /// </summary>
+    /// <returns><see langword="true"/> when the line is pending or failed.</returns>
+    internal bool IsUnclaimed()
     {
-        EnsureOutcomeCanBeRecorded();
-        CountAttemptIfUnclaimed();
+        return FulfilmentState is OrderItemFulfilmentState.Pending or OrderItemFulfilmentState.Failed;
+    }
+
+    /// <summary>
+    /// Tells whether an outcome belongs to the attempt that holds the line now: the line is in progress, and the attempt
+    /// is the one counted when the line was claimed. An attempt whose claim ran out and was taken over by a newer one
+    /// carries a smaller number, so its late outcome does not match.
+    /// </summary>
+    /// <param name="attempt">The attempt number the run was given when its claim was saved.</param>
+    /// <returns><see langword="true"/> when the outcome may be recorded.</returns>
+    internal bool HoldsAttempt(int attempt)
+    {
+        return FulfilmentState is OrderItemFulfilmentState.InProgress && attempt == FulfilmentAttempts;
+    }
+
+    /// <summary>Records that the attempt fulfilled the line.</summary>
+    /// <param name="attempt">The attempt number the run was given when its claim was saved.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <exception cref="DomainRuleException">Thrown when the attempt no longer holds the line: it was refunded, or a newer attempt took it over.</exception>
+    internal void RecordFulfilled(int attempt, DateTimeOffset now)
+    {
+        EnsureOutcomeCanBeRecorded(attempt);
         FulfilmentState = OrderItemFulfilmentState.Fulfilled;
         FulfilmentErrorCode = null;
         LastFulfilmentAttemptAt = now;
     }
 
-    /// <summary>Records that the line failed; an attempt that no retry had already counted is counted here.</summary>
+    /// <summary>Records that the attempt failed the line.</summary>
+    /// <param name="attempt">The attempt number the run was given when its claim was saved.</param>
     /// <param name="errorCode">The refusing use case's code, or <see langword="null"/> when it gave none.</param>
     /// <param name="now">The current moment (UTC).</param>
-    /// <exception cref="DomainRuleException">Thrown when the line is already being refunded or was refunded.</exception>
-    internal void RecordFailed(string? errorCode, DateTimeOffset now)
+    /// <exception cref="DomainRuleException">Thrown when the attempt no longer holds the line: it was refunded, or a newer attempt took it over.</exception>
+    internal void RecordFailed(int attempt, string? errorCode, DateTimeOffset now)
     {
-        EnsureOutcomeCanBeRecorded();
-        CountAttemptIfUnclaimed();
+        EnsureOutcomeCanBeRecorded(attempt);
         FulfilmentState = OrderItemFulfilmentState.Failed;
         FulfilmentErrorCode = errorCode is null ? null : Truncate(errorCode);
         LastFulfilmentAttemptAt = now;
@@ -229,6 +252,35 @@ public sealed class OrderItem : BaseEntity
         FulfilmentState = partlyRefunded ? OrderItemFulfilmentState.PartiallyRefunded : OrderItemFulfilmentState.Failed;
     }
 
+    /// <summary>
+    /// Closes a line whose refund staff finished by hand: the part of the cost the automatic refund could not give back
+    /// is back now, so the line is refunded for good and no longer keeps its order incomplete.
+    /// </summary>
+    /// <exception cref="DomainRuleException">Thrown when the line is not partly refunded.</exception>
+    internal void CloseRefund()
+    {
+        if (!CanCloseRefund)
+        {
+            throw new DomainRuleException(
+                OrdersErrors.OrderLineNotRefundable,
+                $"Order line {Id} is {FulfilmentState}; only a partly refunded line can be closed as refunded.");
+        }
+
+        FulfilmentState = OrderItemFulfilmentState.Refunded;
+    }
+
+    /// <summary>
+    /// Marks a line of an order imported or seeded from history as fulfilled: its source delivered it long ago, so
+    /// it is one finished attempt.
+    /// </summary>
+    /// <param name="now">The moment the history says it was fulfilled (UTC).</param>
+    internal void MarkFulfilledFromHistory(DateTimeOffset now)
+    {
+        FulfilmentState = OrderItemFulfilmentState.Fulfilled;
+        FulfilmentAttempts = 1;
+        LastFulfilmentAttemptAt = now;
+    }
+
     /// <summary>Refuses a settlement of a refund that was never begun.</summary>
     /// <exception cref="DomainRuleException">Thrown when the line is not being refunded.</exception>
     private void EnsureRefunding()
@@ -242,26 +294,18 @@ public sealed class OrderItem : BaseEntity
     }
 
     /// <summary>
-    /// Refuses an attempt's outcome for a line whose cost is being or was given back: a late outcome of an attempt
-    /// the refund overtook must not turn a refunded line into a delivered one.
+    /// Refuses an outcome that is not the holding attempt's: a late outcome of an attempt whose claim ran out and was
+    /// taken over, or one the refund overtook, must not overwrite what the newer attempt or the refund made of the line.
     /// </summary>
-    /// <exception cref="DomainRuleException">Thrown when the line is being refunded, partly refunded or refunded.</exception>
-    private void EnsureOutcomeCanBeRecorded()
+    /// <param name="attempt">The attempt number the outcome belongs to.</param>
+    /// <exception cref="DomainRuleException">Thrown when the line is not in progress under that attempt.</exception>
+    private void EnsureOutcomeCanBeRecorded(int attempt)
     {
-        if (!CanRecordOutcome)
+        if (!HoldsAttempt(attempt))
         {
             throw new DomainRuleException(
                 OrdersErrors.OrderLineChanged,
-                $"Order line {Id} is {FulfilmentState}; the outcome of an attempt cannot be recorded on it.");
-        }
-    }
-
-    /// <summary>Counts an attempt unless a retry already counted it when it claimed the line.</summary>
-    private void CountAttemptIfUnclaimed()
-    {
-        if (FulfilmentState is not OrderItemFulfilmentState.InProgress)
-        {
-            FulfilmentAttempts++;
+                $"Order line {Id} is {FulfilmentState} at attempt {FulfilmentAttempts}; the outcome of attempt {attempt} cannot be recorded on it.");
         }
     }
 

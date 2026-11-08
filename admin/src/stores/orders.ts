@@ -1,6 +1,7 @@
 /**
  * Pinia store for admin order management: the paged list with a status filter, one order's
- * detail and the lifecycle commands (accept, retry of a failed line, cancel, delete).
+ * detail and the lifecycle commands (accept, retry of a failed line, closing a hand-finished
+ * refund, cancel, delete).
  *
  * Owns every request the order pages make and the sentence for a refusal, so the pages hold
  * no `catch`. A load puts its sentence in `error`; a command (accept, retry, cancel, delete) puts its
@@ -136,6 +137,21 @@ export const useOrdersStore = defineStore('orders', () => {
   }
 
   /**
+   * Closes a partly refunded line as refunded, once staff gave back the rest of the cost by hand, then
+   * refreshes the current order detail so the line and the order show their new state.
+   *
+   * @param id - The order primary key.
+   * @param itemId - The partly refunded line.
+   * @returns True when closed; false when refused (see `actionError`).
+   */
+  const closeLineRefund = async (id: number, itemId: number): Promise<boolean> => {
+    const result = await runAction(actionError, () => api.closeOrderLineRefund(id, itemId))
+    // A refusal can mean the line changed under the reader, so the detail is read again either way.
+    await fetchOne(id)
+    return result.ok
+  }
+
+  /**
    * Cancels a pending order, then refreshes the current order detail.
    *
    * @param id - The order primary key.
@@ -181,6 +197,7 @@ export const useOrdersStore = defineStore('orders', () => {
     fetchOne,
     acceptOrder,
     retryOrderLine,
+    closeLineRefund,
     cancelOrder,
     deleteOrder,
   }

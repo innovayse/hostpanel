@@ -34,8 +34,8 @@ public sealed class RecordOrderLineOutcomeHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success once the outcome is saved; <c>ORDER_NOT_FOUND</c> or <c>ORDER_ITEM_NOT_FOUND</c> when an id names nothing;
-    /// <c>ORDER_LINE_CHANGED</c> when the line is being or was refunded, or another writer saved the order first (the
-    /// caller loads it again and records again).
+    /// <c>ORDER_LINE_CHANGED</c> when the attempt no longer holds the line (it is being or was refunded, or a newer attempt
+    /// took it over) or another writer saved the order first (the caller loads it again and records again).
     /// </returns>
     public async Task<Result> HandleAsync(RecordOrderLineOutcomeCommand cmd, CancellationToken ct)
     {
@@ -54,19 +54,21 @@ public sealed class RecordOrderLineOutcomeHandler
             return Result.FailureCode(HostpanelErrorCodes.ORDER_ITEM_NOT_FOUND);
         }
 
-        if (!order.CanRecordLineOutcome(cmd.ItemId))
+        if (!order.CanRecordLineOutcome(cmd.ItemId, cmd.Attempt))
         {
-            // The refund overtook the attempt: the line is being or was given back, and must not become delivered.
+            // The attempt no longer holds the line: a refund overtook it (the line is being or was given back and must not
+            // become delivered), or its claim ran out and a newer attempt took the line over, whose result a late outcome
+            // must not overwrite.
             return Result.FailureCode(HostpanelErrorCodes.ORDER_LINE_CHANGED);
         }
 
         if (cmd.Outcome == OrderLineOutcome.Fulfilled)
         {
-            order.RecordLineFulfilled(cmd.ItemId, _clock.UtcNow);
+            order.RecordLineFulfilled(cmd.ItemId, cmd.Attempt, _clock.UtcNow);
         }
         else
         {
-            order.RecordLineFailed(cmd.ItemId, cmd.ErrorCode, _clock.UtcNow);
+            order.RecordLineFailed(cmd.ItemId, cmd.Attempt, cmd.ErrorCode, _clock.UtcNow);
         }
 
         try

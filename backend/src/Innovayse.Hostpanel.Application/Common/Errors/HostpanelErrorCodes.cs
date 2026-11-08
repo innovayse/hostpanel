@@ -1472,14 +1472,16 @@ public static class HostpanelErrorCodes
     public const string ORDER_LINE_ALREADY_FULFILLED = "ORDER_LINE_ALREADY_FULFILLED";
 
     /// <summary>
-    /// The order line changed while an attempt ran (409): another writer saved it first, or it is being or was
-    /// refunded, so the outcome of the attempt could not be recorded. <see cref="Domain.Orders.Order.RecordLineFailed"/>.
+    /// The order line changed while an attempt ran (409): another writer saved it first, it is being or was refunded, or a
+    /// newer attempt took the line over after this one's claim ran out, so the outcome of the attempt could not be
+    /// recorded. <see cref="Domain.Orders.Order.RecordLineFailed"/>.
     /// </summary>
     public const string ORDER_LINE_CHANGED = Domain.Orders.OrdersErrors.OrderLineChanged;
 
     /// <summary>
-    /// The order line is not in the state a refund needs (409): only a failed line can start being refunded and
-    /// only a line being refunded can be settled. <see cref="Domain.Orders.Order.BeginLineRefund"/>.
+    /// The order line is not in the state a refund needs (409): only a failed line can start being refunded, only a line
+    /// being refunded can be settled, and only a partly refunded line can be closed as refunded by hand.
+    /// <see cref="Domain.Orders.Order.BeginLineRefund"/>, <see cref="Domain.Orders.Order.CloseLineRefund"/>.
     /// </summary>
     public const string ORDER_LINE_NOT_REFUNDABLE = Domain.Orders.OrdersErrors.OrderLineNotRefundable;
 
@@ -1488,6 +1490,12 @@ public static class HostpanelErrorCodes
     /// or the host stopped), so the line can be retried at once instead of waiting for the retry claim to run out.
     /// </summary>
     public const string ORDER_LINE_INTERRUPTED = "ORDER_LINE_INTERRUPTED";
+
+    /// <summary>
+    /// The service already stored for the order line belongs to another client or another product (409), so the line cannot
+    /// reuse it: the data of the line and of its service disagree, and a person has to look at them.
+    /// </summary>
+    public const string ORDER_LINE_SERVICE_CONFLICT = "ORDER_LINE_SERVICE_CONFLICT";
 
     /// <summary>
     /// The SKU is not letters and digits joined by single hyphens, underscores or dots, or is too long

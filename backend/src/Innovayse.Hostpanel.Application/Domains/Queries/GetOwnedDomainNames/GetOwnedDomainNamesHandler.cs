@@ -45,6 +45,12 @@ public sealed class GetOwnedDomainNamesHandler
                 || d.Status == DomainStatus.PendingTransfer);
         }
 
+        if (query.OrderId is { } orderId)
+        {
+            // Created by this order's own line, not merely held: the registration or transfer a retry may count as done.
+            domains = domains.Where(d => d.OrderId == orderId);
+        }
+
         IReadOnlyList<string> owned = await domains.Select(d => d.Name.ToLower()).ToListAsync(ct);
 
         return Result<IReadOnlyList<string>>.Success(owned);

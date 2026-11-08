@@ -207,13 +207,76 @@ public sealed class OrderTests
         order.Items.Should().OnlyContain(i => i.FulfilmentState == OrderItemFulfilmentState.Pending && i.FulfilmentAttempts == 0);
     }
 
-    /// <summary>A recorded success marks the line Fulfilled, counts the attempt, dates it and keeps the order Active.</summary>
+    /// <summary>
+    /// Beginning fulfilment claims every pending line before any work starts: each is in progress with its first attempt
+    /// counted, and the order is Incomplete until the outcomes are recorded.
+    /// </summary>
     [Fact]
-    public void RecordLineFulfilled_MarksTheLineAndKeepsTheOrderActive()
+    public void BeginFulfilment_ClaimsEveryPendingLineAndMakesTheOrderIncomplete()
     {
         var order = NewAcceptedOrder();
 
-        order.RecordLineFulfilled(1, Now);
+        order.BeginFulfilment(Now);
+
+        order.Items.Should().OnlyContain(i => i.FulfilmentState == OrderItemFulfilmentState.InProgress
+            && i.FulfilmentAttempts == 1
+            && i.LastFulfilmentAttemptAt == Now);
+        order.Status.Should().Be(OrderStatus.Incomplete);
+    }
+
+    /// <summary>A claim for one line leaves the other lines alone, and a line a claim already holds is not claimed twice.</summary>
+    [Fact]
+    public void BeginFulfilment_ForOneLine_ClaimsOnlyThatLineAndNeverTwice()
+    {
+        var order = NewAcceptedOrder();
+
+        order.BeginFulfilment(Now, onlyItemId: 2);
+        order.BeginFulfilment(Now.AddMinutes(1), onlyItemId: 2);
+
+        order.Items.Single(i => i.Id == 1).FulfilmentState.Should().Be(OrderItemFulfilmentState.Pending);
+        var claimed = order.Items.Single(i => i.Id == 2);
+        claimed.FulfilmentState.Should().Be(OrderItemFulfilmentState.InProgress);
+        claimed.FulfilmentAttempts.Should().Be(1);
+        claimed.LastFulfilmentAttemptAt.Should().Be(Now);
+    }
+
+    /// <summary>A failed line is claimed again by a run over the whole order, with a new attempt.</summary>
+    [Fact]
+    public void BeginFulfilment_ClaimsAFailedLineAgainWithANewAttempt()
+    {
+        var order = NewIncompleteOrder();
+
+        order.BeginFulfilment(Now.AddMinutes(1));
+
+        order.Items.Single(i => i.Id == 1).FulfilmentState.Should().Be(OrderItemFulfilmentState.Fulfilled);
+        var again = order.Items.Single(i => i.Id == 2);
+        again.FulfilmentState.Should().Be(OrderItemFulfilmentState.InProgress);
+        again.FulfilmentAttempts.Should().Be(2);
+    }
+
+    /// <summary>The status of an order that was not accepted is the admin's decision: claiming its lines never changes it.</summary>
+    [Fact]
+    public void BeginFulfilment_LeavesAPendingOrdersStatusAlone()
+    {
+        var order = NewOrder();
+        order.AddItem(3, "Hosting", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
+        GiveIds(order);
+
+        order.BeginFulfilment(Now);
+
+        order.Status.Should().Be(OrderStatus.Pending);
+        order.Items.Single().FulfilmentState.Should().Be(OrderItemFulfilmentState.InProgress);
+    }
+
+    /// <summary>A recorded success marks the line Fulfilled, dates it and lets the order return to Active once no line is open.</summary>
+    [Fact]
+    public void RecordLineFulfilled_MarksTheLineAndKeepsTheOrderActive()
+    {
+        var order = NewClaimedOrder();
+
+        order.RecordLineFulfilled(1, 1, Now);
+        order.Status.Should().Be(OrderStatus.Incomplete);
+        order.RecordLineFulfilled(2, 1, Now.AddMinutes(1));
 
         var line = order.Items.Single(i => i.Id == 1);
         line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Fulfilled);
@@ -227,10 +290,10 @@ public sealed class OrderTests
     [Fact]
     public void RecordLineFailed_KeepsTheCodeAndMakesTheOrderIncomplete()
     {
-        var order = NewAcceptedOrder();
+        var order = NewClaimedOrder();
 
-        order.RecordLineFulfilled(1, Now);
-        order.RecordLineFailed(2, "DOMAIN_ALREADY_REGISTERED", Now);
+        order.RecordLineFulfilled(1, 1, Now);
+        order.RecordLineFailed(2, 1, "DOMAIN_ALREADY_REGISTERED", Now);
 
         var line = order.Items.Single(i => i.Id == 2);
         line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
@@ -243,25 +306,78 @@ public sealed class OrderTests
     [Fact]
     public void RecordLineFailed_CutsACodeLongerThanTheColumn()
     {
-        var order = NewAcceptedOrder();
+        var order = NewClaimedOrder();
 
-        order.RecordLineFailed(1, new string('X', OrderItem.FulfilmentErrorCodeMaxLength + 20), Now);
+        order.RecordLineFailed(1, 1, new string('X', OrderItem.FulfilmentErrorCodeMaxLength + 20), Now);
 
         order.Items.Single(i => i.Id == 1).FulfilmentErrorCode!.Length.Should().Be(OrderItem.FulfilmentErrorCodeMaxLength);
     }
 
-    /// <summary>A pending order's status is the admin's decision and a recorded outcome never changes it.</summary>
+    /// <summary>
+    /// An outcome is recorded only for a line a claim holds: a line nobody claimed has no attempt to record, so a stray
+    /// outcome cannot invent one.
+    /// </summary>
     [Fact]
-    public void RecordLineFailed_LeavesAPendingOrderPending()
+    public void RecordLineFulfilled_OnAnUnclaimedLine_Throws()
     {
-        var order = NewOrder();
-        order.AddItem(3, "Hosting", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
-        GiveIds(order);
+        var order = NewAcceptedOrder();
 
-        order.RecordLineFailed(1, null, Now);
+        var act = () => order.RecordLineFulfilled(1, 1, Now);
 
-        order.Status.Should().Be(OrderStatus.Pending);
-        order.Items.Single().FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineChanged);
+        order.CanRecordLineOutcome(1, 1).Should().BeFalse();
+        order.Items.Single(i => i.Id == 1).FulfilmentState.Should().Be(OrderItemFulfilmentState.Pending);
+    }
+
+    /// <summary>
+    /// A late outcome of an attempt whose claim ran out and was taken over is refused, so it cannot overwrite the result
+    /// of the newer attempt that holds the line now.
+    /// </summary>
+    [Fact]
+    public void RecordLineFulfilled_FromAStaleAttempt_IsRefusedAndTheNewerAttemptKeepsTheLine()
+    {
+        var order = NewIncompleteOrder();
+        order.StartLineRetry(2, Now.AddMinutes(1), Lease);
+        order.StartLineRetry(2, Now.AddMinutes(12), Lease);
+
+        var late = () => order.RecordLineFulfilled(2, 2, Now.AddMinutes(13));
+        var staleFailure = () => order.RecordLineFailed(2, 1, "OLD_FAILURE", Now.AddMinutes(13));
+
+        order.CanRecordLineOutcome(2, 1).Should().BeFalse();
+        order.CanRecordLineOutcome(2, 2).Should().BeFalse();
+        order.CanRecordLineOutcome(2, 3).Should().BeTrue();
+        late.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineChanged);
+        staleFailure.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineChanged);
+        var line = order.Items.Single(i => i.Id == 2);
+        line.FulfilmentState.Should().Be(OrderItemFulfilmentState.InProgress);
+        line.FulfilmentAttempts.Should().Be(3);
+        order.RecordLineFulfilled(2, 3, Now.AddMinutes(14));
+        order.Items.Single(i => i.Id == 2).FulfilmentState.Should().Be(OrderItemFulfilmentState.Fulfilled);
+    }
+
+    /// <summary>An outcome cannot be recorded twice for one attempt: the second finds the line no longer in progress.</summary>
+    [Fact]
+    public void RecordLineFailed_TwiceForOneAttempt_RefusesTheSecond()
+    {
+        var order = NewClaimedOrder();
+        order.RecordLineFailed(1, 1, "ORDER_LINE_INTERRUPTED", Now);
+
+        var again = () => order.RecordLineFailed(1, 1, "ORDER_LINE_INTERRUPTED", Now.AddMinutes(1));
+
+        again.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineChanged);
+        order.Items.Single(i => i.Id == 1).FulfilmentAttempts.Should().Be(1);
+    }
+
+    /// <summary>Lines seeded from history read as one finished attempt, and the order is complete.</summary>
+    [Fact]
+    public void MarkLinesFulfilledFromHistory_MakesThePendingLinesFulfilled()
+    {
+        var order = NewAcceptedOrder();
+
+        order.MarkLinesFulfilledFromHistory(Now);
+
+        order.Items.Should().OnlyContain(i => i.FulfilmentState == OrderItemFulfilmentState.Fulfilled && i.FulfilmentAttempts == 1);
+        order.Status.Should().Be(OrderStatus.Active);
     }
 
     /// <summary>A retry claims the failed line: it is in progress, the attempt is counted, and the order is still Incomplete.</summary>
@@ -287,7 +403,7 @@ public sealed class OrderTests
         var order = NewIncompleteOrder();
         order.StartLineRetry(2, Now.AddMinutes(1), Lease);
 
-        order.RecordLineFulfilled(2, Now.AddMinutes(2));
+        order.RecordLineFulfilled(2, 2, Now.AddMinutes(2));
 
         var line = order.Items.Single(i => i.Id == 2);
         line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Fulfilled);
@@ -303,7 +419,7 @@ public sealed class OrderTests
         var order = NewIncompleteOrder();
         order.StartLineRetry(2, Now.AddMinutes(1), Lease);
 
-        order.RecordLineFailed(2, "REGISTRAR_DOMAIN_UNAVAILABLE", Now.AddMinutes(2));
+        order.RecordLineFailed(2, 2, "REGISTRAR_DOMAIN_UNAVAILABLE", Now.AddMinutes(2));
 
         var line = order.Items.Single(i => i.Id == 2);
         line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
@@ -344,7 +460,7 @@ public sealed class OrderTests
         var order = NewOrder();
         order.AddItem(3, "Hosting", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
         GiveIds(order);
-        order.RecordLineFailed(1, null, Now);
+        SetLineState(order, 1, OrderItemFulfilmentState.Failed);
 
         var act = () => order.StartLineRetry(1, Now, Lease);
 
@@ -359,7 +475,7 @@ public sealed class OrderTests
 
         order.CanRetryLine(99, Now, Lease).Should().BeFalse();
         var retry = () => order.StartLineRetry(99, Now, Lease);
-        var record = () => order.RecordLineFulfilled(99, Now);
+        var record = () => order.RecordLineFulfilled(99, 1, Now);
 
         retry.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRetryable);
         record.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderItemNotFound);
@@ -486,13 +602,65 @@ public sealed class OrderTests
         var order = NewIncompleteOrder();
         order.BeginLineRefund(2);
 
-        var fulfilled = () => order.RecordLineFulfilled(2, Now);
-        var failed = () => order.RecordLineFailed(2, null, Now);
+        var fulfilled = () => order.RecordLineFulfilled(2, 1, Now);
+        var failed = () => order.RecordLineFailed(2, 1, null, Now);
 
-        order.CanRecordLineOutcome(2).Should().BeFalse();
+        order.CanRecordLineOutcome(2, 1).Should().BeFalse();
         fulfilled.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineChanged);
         failed.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineChanged);
         order.Items.Single(i => i.Id == 2).FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunding);
+    }
+
+    /// <summary>
+    /// Staff finishing a partly done refund by hand close the line: it is Refunded for good, and the order is complete again
+    /// because no other line is open.
+    /// </summary>
+    [Fact]
+    public void CloseLineRefund_OnAPartlyRefundedLine_RefundsItAndLetsTheOrderReturnToActive()
+    {
+        var order = NewIncompleteOrder();
+        order.BeginLineRefund(2);
+        order.RecordLineRefundReleased(2, partlyRefunded: true);
+        order.CanCloseLineRefund(2).Should().BeTrue();
+
+        order.CloseLineRefund(2);
+
+        order.Items.Single(i => i.Id == 2).FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunded);
+        order.CanCloseLineRefund(2).Should().BeFalse();
+        order.CanRetryLine(2, Now.AddHours(1), Lease).Should().BeFalse();
+        order.Status.Should().Be(OrderStatus.Active);
+    }
+
+    /// <summary>The order stays Incomplete when closing a refund leaves another line open.</summary>
+    [Fact]
+    public void CloseLineRefund_WithAnotherLineOpen_KeepsTheOrderIncomplete()
+    {
+        var order = NewClaimedOrder();
+        order.RecordLineFailed(1, 1, "A", Now);
+        order.RecordLineFailed(2, 1, "B", Now);
+        order.BeginLineRefund(2);
+        order.RecordLineRefundReleased(2, partlyRefunded: true);
+
+        order.CloseLineRefund(2);
+
+        order.Status.Should().Be(OrderStatus.Incomplete);
+    }
+
+    /// <summary>Only a partly refunded line can be closed: a failed, refunding, fulfilled or unknown line is refused.</summary>
+    [Fact]
+    public void CloseLineRefund_OnALineThatIsNotPartlyRefunded_Throws()
+    {
+        var order = NewIncompleteOrder();
+
+        var failed = () => order.CloseLineRefund(2);
+        var fulfilled = () => order.CloseLineRefund(1);
+        var unknown = () => order.CloseLineRefund(99);
+
+        order.CanCloseLineRefund(2).Should().BeFalse();
+        order.CanCloseLineRefund(99).Should().BeFalse();
+        failed.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRefundable);
+        fulfilled.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRefundable);
+        unknown.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderItemNotFound);
     }
 
     /// <summary>
@@ -502,9 +670,9 @@ public sealed class OrderTests
     [Fact]
     public void RefreshStatus_SettlesAnOrderWhoseEveryLineIsDone()
     {
-        var order = NewAcceptedOrder();
-        order.RecordLineFailed(1, "A", Now);
-        order.RecordLineFailed(2, "B", Now);
+        var order = NewClaimedOrder();
+        order.RecordLineFailed(1, 1, "A", Now);
+        order.RecordLineFailed(2, 1, "B", Now);
         order.StartLineRetry(1, Now, Lease);
         order.StartLineRetry(2, Now, Lease);
         var line = typeof(OrderItem).GetProperty(nameof(OrderItem.FulfilmentState))!;
@@ -542,14 +710,32 @@ public sealed class OrderTests
         return order;
     }
 
+    /// <summary>Builds an accepted order whose two lines a run has claimed: in progress under their first attempt.</summary>
+    /// <returns>The order, Incomplete.</returns>
+    private static Order NewClaimedOrder()
+    {
+        var order = NewAcceptedOrder();
+        order.BeginFulfilment(Now);
+        return order;
+    }
+
     /// <summary>Builds an accepted order whose first line was fulfilled and whose second failed once.</summary>
     /// <returns>The order, Incomplete.</returns>
     private static Order NewIncompleteOrder()
     {
-        var order = NewAcceptedOrder();
-        order.RecordLineFulfilled(1, Now);
-        order.RecordLineFailed(2, "DOMAIN_ALREADY_REGISTERED", Now);
+        var order = NewClaimedOrder();
+        order.RecordLineFulfilled(1, 1, Now);
+        order.RecordLineFailed(2, 1, "DOMAIN_ALREADY_REGISTERED", Now);
         return order;
+    }
+
+    /// <summary>Puts a line in a fulfilment state directly, for a state the aggregate cannot reach from the order's own status.</summary>
+    /// <param name="order">The order that holds the line.</param>
+    /// <param name="itemId">The line.</param>
+    /// <param name="state">The state to put it in.</param>
+    private static void SetLineState(Order order, int itemId, OrderItemFulfilmentState state)
+    {
+        typeof(OrderItem).GetProperty(nameof(OrderItem.FulfilmentState))!.SetValue(order.Items.Single(i => i.Id == itemId), state);
     }
 
     /// <summary>Gives the order's lines the ids 1, 2 and so on that the database would assign, so a line can be named.</summary>

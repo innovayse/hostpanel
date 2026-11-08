@@ -53,36 +53,68 @@ const menuRef = ref<HTMLElement | null>(null)
 /** Gap between the trigger and the menu, in pixels. */
 const MENU_GAP_PX = 4
 
+/** Free room below the trigger, in pixels, under which the menu opens above it. */
+const MENU_MIN_ROOM_PX = 160
+
 /**
- * Where the menu sits on the screen. The menu is `fixed`, not `absolute`, so a table that scrolls inside its
- * card (`overflow-x-auto`) cannot clip it or grow a scrollbar for it; its place is worked out from the trigger
- * just before it opens, so the first render is already right. It opens above the trigger when there is little
- * room below.
+ * Where the menu sits on the screen, in pixels from the viewport edges. The menu is `fixed`, not `absolute`, so a
+ * table that scrolls inside its card (`overflow-x-auto`) cannot clip it or grow a scrollbar for it; its place is
+ * worked out from the trigger just before it opens. It opens above the trigger when there is little room below.
+ * It reaches the element as CSS variables (see `applyPlace`), never as a style attribute.
  */
-const menuPlace = ref<{ right: string; top?: string; bottom?: string }>({ right: '0px' })
+const menuPlace = ref<{ right: number; top?: number; bottom?: number }>({ right: 0 })
+
+/**
+ * Writes the menu place into CSS variables on the menu element, the way UiDateRangePicker places its popup.
+ * The unused vertical edge is removed so the class fallback (`auto`) applies.
+ */
+const applyPlace = (): void => {
+  const el = menuRef.value
+  if (!el) { return }
+  const place = menuPlace.value
+  el.style.setProperty('--ra-right', `${place.right}px`)
+  if (place.top !== undefined) {
+    el.style.setProperty('--ra-top', `${place.top}px`)
+  } else {
+    el.style.removeProperty('--ra-top')
+  }
+  if (place.bottom !== undefined) {
+    el.style.setProperty('--ra-bottom', `${place.bottom}px`)
+  } else {
+    el.style.removeProperty('--ra-bottom')
+  }
+}
+
+/** Closes the menu when the page or a scrolling table moves under it, because a fixed menu would stay behind. */
+const closeOnMove = (): void => {
+  open.value = false
+}
+
+/** Starts listening for scroll and resize; called when the menu opens. */
+const listenForMove = (): void => {
+  window.addEventListener('scroll', closeOnMove, { capture: true, passive: true })
+  window.addEventListener('resize', closeOnMove)
+}
+
+/** Stops listening for scroll and resize; called when the menu closes and on unmount. */
+const stopListeningForMove = (): void => {
+  window.removeEventListener('scroll', closeOnMove, true)
+  window.removeEventListener('resize', closeOnMove)
+}
 
 /** Toggles the dropdown. */
 const toggle = (): void => {
   if (!open.value && triggerRef.value) {
     const rect = triggerRef.value.getBoundingClientRect()
-    // `clientWidth` is the width without the page scrollbar, which a `fixed` box's `right` is measured from.
-    const right = `${document.documentElement.clientWidth - rect.right}px`
-    menuPlace.value = window.innerHeight - rect.bottom < 160
-      ? { right, bottom: `${window.innerHeight - rect.top + MENU_GAP_PX}px` }
-      : { right, top: `${rect.bottom + MENU_GAP_PX}px` }
+    // `clientWidth` and `clientHeight` are the viewport without the page scrollbars, which a `fixed` box's
+    // `right` and `bottom` are measured from (`innerWidth` and `innerHeight` include them).
+    const doc = document.documentElement
+    const right = doc.clientWidth - rect.right
+    menuPlace.value = doc.clientHeight - rect.bottom < MENU_MIN_ROOM_PX
+      ? { right, bottom: doc.clientHeight - rect.top + MENU_GAP_PX }
+      : { right, top: rect.bottom + MENU_GAP_PX }
   }
   open.value = !open.value
-}
-
-/**
- * Closes the menu when the page or a scrolling table moves under it, because a fixed menu would stay behind.
- *
- * @returns Nothing; the menu is closed.
- */
-const closeOnMove = (): void => {
-  if (open.value) {
-    open.value = false
-  }
 }
 
 /**
@@ -139,10 +171,18 @@ const onKeydown = (e: KeyboardEvent): void => {
   }
 }
 
-// Move focus to the first enabled menu item as soon as the panel is in the DOM.
+// The menu element exists after the render, so its place is written then, and the scroll and resize listeners
+// live only while it is open. Focus moves to the first enabled item.
 watch(open, async (val) => {
-  if (!val) { return }
+  if (!val) {
+    stopListeningForMove()
+    return
+  }
   await nextTick()
+  // Closed again before the render finished: attach nothing.
+  if (!open.value) { return }
+  applyPlace()
+  listenForMove()
   const first = menuRef.value?.querySelector<HTMLButtonElement>('button:not([disabled])')
   first?.focus()
 })
@@ -150,15 +190,12 @@ watch(open, async (val) => {
 onMounted(() => {
   document.addEventListener('mousedown', onOutsideClick)
   document.addEventListener('keydown', onKeydown)
-  window.addEventListener('scroll', closeOnMove, { capture: true, passive: true })
-  window.addEventListener('resize', closeOnMove)
 })
 
 onUnmounted(() => {
   document.removeEventListener('mousedown', onOutsideClick)
   document.removeEventListener('keydown', onKeydown)
-  window.removeEventListener('scroll', closeOnMove, true)
-  window.removeEventListener('resize', closeOnMove)
+  stopListeningForMove()
 })
 </script>
 
@@ -183,8 +220,7 @@ onUnmounted(() => {
       v-if="open"
       ref="menuRef"
       role="menu"
-      class="fixed z-20 min-w-[10rem] rounded-[9px] border border-border bg-surface-base py-1 shadow-lg"
-      :style="menuPlace"
+      class="fixed z-20 min-w-[10rem] rounded-[9px] border border-border bg-surface-base py-1 shadow-lg right-[var(--ra-right)] top-[var(--ra-top,auto)] bottom-[var(--ra-bottom,auto)]"
       data-testid="row-actions-menu"
     >
       <button

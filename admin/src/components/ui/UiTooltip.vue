@@ -34,7 +34,7 @@ const placementClasses: Record<UiTooltipPlacement, string> = {
     <span
       :id="id"
       role="tooltip"
-      class="pointer-events-none absolute left-1/2 -translate-x-1/2 z-40 whitespace-nowrap rounded-md bg-surface-elevated border border-border-strong px-2 py-1 text-[0.72rem] text-text-primary shadow-lg invisible opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+      class="pointer-events-none absolute left-1/2 -translate-x-1/2 z-40 whitespace-nowrap rounded-md bg-surface-elevated border border-border-strong px-2 py-1 text-[0.72rem] text-text-primary shadow-lg hidden group-hover:block group-focus-within:block"
       :class="placementClasses[placement]"
     >
       {{ text }}

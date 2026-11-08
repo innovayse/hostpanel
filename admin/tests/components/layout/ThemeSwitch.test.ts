@@ -6,10 +6,14 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import ThemeSwitch from '@/components/layout/ThemeSwitch.vue'
 import { createPinia, setActivePinia } from 'pinia'
 import { mount } from '@vue/test-utils'
+import type { VueWrapper } from '@vue/test-utils'
 import { createTestI18n } from '../../helpers/i18n'
 import { resetThemeDocument, stubSchemeQuery } from '../../helpers/theme'
 import { THEME_STORAGE_KEY } from '@/lib/themeBoot'
 import { AdminTheme } from '@/types/admintheme'
+
+/** Wrappers mounted by the current test, unmounted after it so attached DOM and focus do not leak. */
+const mounted: VueWrapper[] = []
 
 /**
  * Mounts the switch on the default (system) choice, attached to the page so focus can be read.
@@ -21,11 +25,18 @@ const mountSwitch = () => {
   stubSchemeQuery(false)
   const pinia = createPinia()
   setActivePinia(pinia)
-  return mount(ThemeSwitch, { props: { testid: 'probe-theme' }, attachTo: document.body, global: { plugins: [createTestI18n(), pinia] } })
+  const wrapper = mount(ThemeSwitch, {
+    props: { testid: 'probe-theme' },
+    attachTo: document.body,
+    global: { plugins: [createTestI18n(), pinia] },
+  })
+  mounted.push(wrapper)
+  return wrapper
 }
 
 describe('ThemeSwitch', () => {
   afterEach(() => {
+    mounted.splice(0).forEach(wrapper => wrapper.unmount())
     vi.unstubAllGlobals()
   })
 
@@ -70,7 +81,6 @@ describe('ThemeSwitch', () => {
     await wrapper.get('[data-testid="probe-theme-light"]').trigger('keydown', { key: 'ArrowRight' })
     expect(document.activeElement).toBe(wrapper.get('[data-testid="probe-theme-dark"]').element)
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.Dark)
-    wrapper.unmount()
   })
 
   it('jumps to the first and last choice with Home and End', async () => {
@@ -82,7 +92,6 @@ describe('ThemeSwitch', () => {
     await wrapper.get('[data-testid="probe-theme-light"]').trigger('keydown', { key: 'End' })
     expect(document.activeElement).toBe(wrapper.get('[data-testid="probe-theme-system"]').element)
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.System)
-    wrapper.unmount()
   })
 
   it('moves the choice and focus with Down and Up, wrapping around', async () => {
@@ -97,6 +106,13 @@ describe('ThemeSwitch', () => {
     await wrapper.get('[data-testid="probe-theme-light"]').trigger('keydown', { key: 'ArrowUp' })
     expect(document.activeElement).toBe(wrapper.get('[data-testid="probe-theme-system"]').element)
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.System)
-    wrapper.unmount()
+  })
+
+  it('draws an icon inside every theme button', () => {
+    const wrapper = mountSwitch()
+
+    for (const theme of [AdminTheme.Light, AdminTheme.Dark, AdminTheme.System]) {
+      expect(wrapper.get(`[data-testid="probe-theme-${theme}"] svg path`).attributes('d')).toBeTruthy()
+    }
   })
 })

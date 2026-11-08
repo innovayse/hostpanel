@@ -49,15 +49,25 @@ interface ThemeChoice {
  */
 const iconMarkup = (path: string): string => `<path d="${path}"/>`
 
+/** Path data of the sun icon, shown on the Light button. */
+const LIGHT_ICON_PATH = 'M12 3v2m0 14v2M5.6 5.6l1.4 1.4m10 10 1.4 1.4M3 12h2m14 0h2M5.6 18.4 7 17m10-10 1.4-1.4'
+  + 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z'
+
+/** Path data of the moon icon, shown on the Dark button. */
+const DARK_ICON_PATH = 'M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z'
+
+/** Path data of the screen icon, shown on the System button. */
+const SYSTEM_ICON_PATH = 'M4 5h16v11H4zM9 20h6m-3-4v4'
+
 /**
  * The three choices in display order.
  *
  * @returns One entry per {@link AdminTheme}.
  */
 const choices = computed<ThemeChoice[]>(() => [
-  { value: AdminTheme.Light, label: t('layout.theme.light'), icon: iconMarkup('M12 3v2m0 14v2M5.6 5.6l1.4 1.4m10 10 1.4 1.4M3 12h2m14 0h2M5.6 18.4 7 17m10-10 1.4-1.4M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z') },
-  { value: AdminTheme.Dark, label: t('layout.theme.dark'), icon: iconMarkup('M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5Z') },
-  { value: AdminTheme.System, label: t('layout.theme.system'), icon: iconMarkup('M4 5h16v11H4zM9 20h6m-3-4v4') },
+  { value: AdminTheme.Light, label: t('layout.theme.light'), icon: iconMarkup(LIGHT_ICON_PATH) },
+  { value: AdminTheme.Dark, label: t('layout.theme.dark'), icon: iconMarkup(DARK_ICON_PATH) },
+  { value: AdminTheme.System, label: t('layout.theme.system'), icon: iconMarkup(SYSTEM_ICON_PATH) },
 ])
 
 /**

@@ -15,6 +15,15 @@ The documentation exists once per minor release, so a reader on an older release
 
 A version switcher in the header lists them. The list is read at run time from `versions.json`, which is published next to the latest docs, so an older build shows releases made after it without being rebuilt.
 
+## How the switcher opens a page
+
+`versions.json` is a list of entries, each with a `label` (`v0.3`, `next`), a `link` (the path of that version's home page, with a trailing slash) and a `kind` (`latest`, `release` or `next`). The file is read in the browser and is not trusted:
+
+- An entry whose `link` is not a path of the docs site (an address with a host, `//host`, a path with `..`, a path outside the root of the docs, or a path with a backslash, a full width slash or backslash, a null, or an encoded slash, backslash or null such as `%2f`, `%5c` or `%00` in any letter case, however many times it is encoded, as in `%252f`) is ignored, so it never reaches the list. A link is decoded until it stops changing, and one that cannot be decoded, such as an overlong `%c0%af`, is ignored too. An entry that repeats the label of an earlier one is ignored as well, and only the first 100 entries of the file are read.
+- Choosing a version opens the same page there when that page exists, and the home page of that version when it does not. When the list is opened the switcher asks the server for the page in each other version, with `HEAD`, and asks again with `GET` only when the server answers 405 or 501. Redirects are not followed.
+- Only a final answer decides that a page is missing: any status that is not a success and not a passing failure, such as 404, 403 or 400, or a redirect. A server that answers `HEAD` with 403 or 400 therefore gets the home page link. A failed request, no answer within four seconds, and a 5xx, 408 or 429 status are not an answer about the page. The link goes to the home page of that version for now, and the page is asked for again the next time the list is opened.
+- The lookup is bounded. At most 20 versions are asked, 4 requests at a time, and a version past the limit links to its home page. Final answers (the page is there, or it is not) are kept per page for the visit, so opening the list again does not ask again. Answers that are not final are never kept. Closing the list, opening another page or leaving the page stops the requests that are still running.
+
 ## What an older version looks like
 
 - A notice at the top says which version it is and links to the same page in the latest docs.

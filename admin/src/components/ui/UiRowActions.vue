@@ -10,6 +10,7 @@
  * - Enter / click on the trigger opens the menu and moves focus to the first enabled item.
  * - ArrowDown / ArrowUp cycle focus through the enabled items.
  * - Escape closes the menu and returns focus to the trigger button.
+ * - Tab moving focus out of the component closes the menu without taking focus back.
  */
 import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -50,18 +51,69 @@ const triggerRef = ref<HTMLButtonElement | null>(null)
 /** The dropdown panel — used for focus management. */
 const menuRef = ref<HTMLElement | null>(null)
 
+/** Gap between the trigger and the menu, in pixels. */
+const MENU_GAP_PX = 4
+
+/** Free room below the trigger, in pixels, under which the menu opens above it. */
+const MENU_MIN_ROOM_PX = 160
+
 /**
- * Whether to render the menu above the trigger instead of below it.
- * Set just before the menu opens so the first render is already in the right position.
+ * Where the menu sits on the screen, in pixels from the viewport edges. The menu is `fixed`, not `absolute`, so a
+ * table that scrolls inside its card (`overflow-x-auto`) cannot clip it or grow a scrollbar for it; its place is
+ * worked out from the trigger just before it opens. It opens above the trigger when there is little room below.
+ * It reaches the element as CSS variables (see `applyPlace`), never as a style attribute.
  */
-const flipUp = ref(false)
+const menuPlace = ref<{ right: number; top?: number; bottom?: number }>({ right: 0 })
+
+/**
+ * Writes the menu place into CSS variables on the menu element, the way UiDateRangePicker places its popup.
+ * The unused vertical edge is removed so the class fallback (`auto`) applies.
+ */
+const applyPlace = (): void => {
+  const el = menuRef.value
+  if (!el) { return }
+  const place = menuPlace.value
+  el.style.setProperty('--ra-right', `${place.right}px`)
+  if (place.top !== undefined) {
+    el.style.setProperty('--ra-top', `${place.top}px`)
+  } else {
+    el.style.removeProperty('--ra-top')
+  }
+  if (place.bottom !== undefined) {
+    el.style.setProperty('--ra-bottom', `${place.bottom}px`)
+  } else {
+    el.style.removeProperty('--ra-bottom')
+  }
+}
+
+/** Closes the menu when the page or a scrolling table moves under it, because a fixed menu would stay behind. */
+const closeOnMove = (): void => {
+  open.value = false
+}
+
+/** Starts listening for scroll and resize; called when the menu opens. */
+const listenForMove = (): void => {
+  window.addEventListener('scroll', closeOnMove, { capture: true, passive: true })
+  window.addEventListener('resize', closeOnMove)
+}
+
+/** Stops listening for scroll and resize; called when the menu closes and on unmount. */
+const stopListeningForMove = (): void => {
+  window.removeEventListener('scroll', closeOnMove, true)
+  window.removeEventListener('resize', closeOnMove)
+}
 
 /** Toggles the dropdown. */
 const toggle = (): void => {
   if (!open.value && triggerRef.value) {
-    // Decide placement before the menu is inserted into the DOM.
     const rect = triggerRef.value.getBoundingClientRect()
-    flipUp.value = window.innerHeight - rect.bottom < 160
+    // `clientWidth` and `clientHeight` are the viewport without the page scrollbars, which a `fixed` box's
+    // `right` and `bottom` are measured from (`innerWidth` and `innerHeight` include them).
+    const doc = document.documentElement
+    const right = doc.clientWidth - rect.right
+    menuPlace.value = doc.clientHeight - rect.bottom < MENU_MIN_ROOM_PX
+      ? { right, bottom: doc.clientHeight - rect.top + MENU_GAP_PX }
+      : { right, top: rect.bottom + MENU_GAP_PX }
   }
   open.value = !open.value
 }
@@ -85,6 +137,20 @@ const select = (action: UiRowAction): void => {
  */
 const onOutsideClick = (e: MouseEvent): void => {
   if (root.value && !root.value.contains(e.target as Node)) {
+    open.value = false
+  }
+}
+
+/**
+ * Closes the menu when focus moves to something outside the component (Tab out of the menu), leaving focus where
+ * the user sent it. Focus moving between the trigger and the items stays inside the root and keeps the menu open.
+ *
+ * @param e - The focusout event; `relatedTarget` is the element receiving focus, or null when focus leaves the page.
+ */
+const onFocusOut = (e: FocusEvent): void => {
+  if (!open.value) { return }
+  const next = e.relatedTarget as Node | null
+  if (next && root.value && !root.value.contains(next)) {
     open.value = false
   }
 }
@@ -120,10 +186,18 @@ const onKeydown = (e: KeyboardEvent): void => {
   }
 }
 
-// Move focus to the first enabled menu item as soon as the panel is in the DOM.
+// The menu element exists after the render, so its place is written then, and the scroll and resize listeners
+// live only while it is open. Focus moves to the first enabled item.
 watch(open, async (val) => {
-  if (!val) { return }
+  if (!val) {
+    stopListeningForMove()
+    return
+  }
   await nextTick()
+  // Closed again before the render finished: attach nothing.
+  if (!open.value) { return }
+  applyPlace()
+  listenForMove()
   const first = menuRef.value?.querySelector<HTMLButtonElement>('button:not([disabled])')
   first?.focus()
 })
@@ -136,11 +210,12 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener('mousedown', onOutsideClick)
   document.removeEventListener('keydown', onKeydown)
+  stopListeningForMove()
 })
 </script>
 
 <template>
-  <div ref="root" class="relative inline-block" data-testid="row-actions">
+  <div ref="root" class="relative inline-block" data-testid="row-actions" @focusout="onFocusOut">
     <!-- Trigger -->
     <button
       ref="triggerRef"
@@ -160,10 +235,7 @@ onUnmounted(() => {
       v-if="open"
       ref="menuRef"
       role="menu"
-      :class="[
-        'absolute right-0 z-20 min-w-[10rem] rounded-[9px] border border-border bg-surface-base py-1 shadow-lg',
-        flipUp ? 'bottom-full mb-1' : 'top-full mt-1',
-      ]"
+      class="fixed z-20 min-w-[10rem] rounded-[9px] border border-border bg-surface-base py-1 shadow-lg right-[var(--ra-right)] top-[var(--ra-top,auto)] bottom-[var(--ra-bottom,auto)]"
       data-testid="row-actions-menu"
     >
       <button

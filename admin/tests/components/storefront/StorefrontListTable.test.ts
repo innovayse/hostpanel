@@ -6,6 +6,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import type { PropType } from 'vue'
+import type { VueWrapper } from '@vue/test-utils'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import { StorefrontListOutcome } from '@/types/storefront'
 import { mountScreen } from '../../helpers/mount'
@@ -75,6 +76,16 @@ const baseProps = {
   deleteTarget: null,
   deleting: false,
   deleteMessage: 'Delete First?',
+}
+
+/**
+ * Opens the actions menu of one row.
+ *
+ * @param wrapper - The mounted screen.
+ * @param id - Id of the entry whose row menu to open.
+ */
+const openMenu = async (wrapper: VueWrapper, id: number): Promise<void> => {
+  await wrapper.get(`[data-testid="widget-row-${id}"] [data-testid="row-actions-trigger"]`).trigger('click')
 }
 
 /**
@@ -153,7 +164,9 @@ describe('StorefrontListTable', () => {
     const table = wrapper.findComponent(StorefrontListTable)
 
     await wrapper.get('[data-testid="widgets-add"]').trigger('click')
+    await openMenu(wrapper, 1)
     await wrapper.get('[data-testid="widget-edit-1"]').trigger('click')
+    await openMenu(wrapper, 1)
     await wrapper.get('[data-testid="widget-delete-1"]').trigger('click')
 
     expect(table.emitted('add')).toHaveLength(1)
@@ -170,9 +183,11 @@ describe('StorefrontListTable', () => {
     expect(table.emitted('confirmDelete')).toHaveLength(1)
   })
 
-  it('moves a row with the arrow buttons and reports the new order', async () => {
+  it('moves a row with the move up and move down menu items and reports the new order', async () => {
     const { wrapper } = await mountScreen(hostWith())
+    await openMenu(wrapper, 2)
     expect(wrapper.get('[data-testid="widget-move-up-2"]').attributes('disabled')).toBeDefined()
+    await openMenu(wrapper, 1)
     expect(wrapper.get('[data-testid="widget-move-down-1"]').attributes('disabled')).toBeDefined()
 
     await wrapper.get('[data-testid="widget-move-down-2"]').trigger('click')

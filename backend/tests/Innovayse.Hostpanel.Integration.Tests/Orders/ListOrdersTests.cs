@@ -58,6 +58,28 @@ public sealed class ListOrdersTests(IntegrationTestFactory factory) : IClassFixt
         items.Should().OnlyContain(o => o.GetProperty("status").GetString() == nameof(OrderStatus.Cancelled));
     }
 
+    /// <summary>
+    /// An accepted order with a failed line is listed under the Incomplete filter with the count of its failed
+    /// lines, and an order whose lines all succeeded is not.
+    /// </summary>
+    [Fact]
+    public async Task IncompleteFilterListsTheOrdersWithAFailedLine()
+    {
+        var failing = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        var clean = await OrdersTestSeeds.SeedDigitalAndHostingOrderAsync(factory);
+        var admin = await OrdersTestSeeds.AdminClientAsync(factory);
+        (await admin.PostAsync($"/api/orders/{failing.OrderId}/accept", content: null)).EnsureSuccessStatusCode();
+        (await admin.PostAsync($"/api/orders/{clean.OrderId}/accept", content: null)).EnsureSuccessStatusCode();
+
+        var list = await admin.GetFromJsonAsync<JsonElement>(
+            $"/api/orders?page=1&pageSize=100&status={nameof(OrderStatus.Incomplete)}");
+
+        var items = list.GetProperty("items").EnumerateArray().ToList();
+        items.Should().NotContain(o => o.GetProperty("id").GetInt32() == clean.OrderId);
+        items.Single(o => o.GetProperty("id").GetInt32() == failing.OrderId).GetProperty("failedLineCount").GetInt32().Should().Be(1);
+        items.Should().OnlyContain(o => o.GetProperty("status").GetString() == nameof(OrderStatus.Incomplete));
+    }
+
     /// <summary>An unknown status is refused with 400 rather than silently listing every order.</summary>
     [Fact]
     public async Task UnknownStatusIsRefused()

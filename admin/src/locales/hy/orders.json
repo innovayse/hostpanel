@@ -20,7 +20,11 @@
     "confirmCancelMessage": "Պատվերը կչեղարկվի։ Այս գործողությունը հնարավոր չէ հետարկել։",
     "cancelOrder": "Չեղարկել պատվերը",
     "linesSubtotal": "Պատվերի տողերի գումար (առանց հարկի և կրեդիտի)",
-    "invoiceTotal": "Հաշվի ընդհանուր գումար"
+    "invoiceTotal": "Հաշվի ընդհանուր գումար",
+    "fulfilment": "Կատարում",
+    "retry": "Կրկնել",
+    "lineRetried": "Տողը կրկնվեց և կատարվեց։",
+    "attempts": "Փորձեր՝ {count}, վերջինը {at}"
   },
   "ordersList": {
     "orders": "Պատվերներ",
@@ -35,9 +39,11 @@
     "orderCancelled": "Պատվերը չեղարկված է։",
     "confirmCancelTitle": "Չեղարկե՞լ այս պատվերը",
     "confirmCancelMessage": "Պատվերը կչեղարկվի։ Այս գործողությունը հնարավոր չէ հետարկել։",
-    "cancelOrder": "Չեղարկել պատվերը"
+    "cancelOrder": "Չեղարկել պատվերը",
+    "failedLines": "Ձախողված՝ {count}"
   },
   "fulfillment": {
-    "acceptedWithFailedLines": "Պատվերն ընդունվեց, բայց այս տողերը չհաջողվեց կատարել. {lines}։"
+    "acceptedWithFailedLines": "Պատվերն ընդունվեց, բայց այս տողերը չհաջողվեց կատարել. {lines}։",
+    "retryStillFailed": "Տողը կրկնվեց, բայց կրկին չհաջողվեց կատարել՝ {lines}։"
   }
 }

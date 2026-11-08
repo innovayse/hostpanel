@@ -84,6 +84,29 @@ describe('ordersStore', () => {
     expect(store.acceptFailureNames).toBe('taken.example, Starter Hosting')
   })
 
+  it('retryOrderLine keeps the lines still failed and refreshes the detail', async () => {
+    const store = useOrdersStore()
+    const failedLines = [
+      { itemId: 2, kind: 'Domain', productName: 'Domain', domain: 'taken.example', firstPaymentAmount: 10, errorCode: null, reason: 'Taken.' },
+    ]
+    const mock = stubFetch(json({ failedLines }), json({ id: 8, status: 'Incomplete' }))
+
+    expect(await store.retryOrderLine(8, 2)).toBe(true)
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/orders/8/items/2/retry', method: 'POST' })
+    expect(store.acceptFailures).toEqual(failedLines)
+    expect(store.currentOrder).toEqual({ id: 8, status: 'Incomplete' })
+  })
+
+  it('a refused retry sets actionError and still reads the order again', async () => {
+    const store = useOrdersStore()
+    const mock = stubFetch(problem('This order line cannot be retried now.', 409), json({ id: 8, status: 'Active' }))
+
+    expect(await store.retryOrderLine(8, 2)).toBe(false)
+    expect(store.actionError).toBe('This order line cannot be retried now.')
+    expect(mock).toHaveBeenCalledTimes(2)
+    expect(store.currentOrder).toEqual({ id: 8, status: 'Active' })
+  })
+
   it('a refused command returns false, sets actionError and does not refresh', async () => {
     const store = useOrdersStore()
     const mock = stubFetch(problem('Order is already accepted.', 409))

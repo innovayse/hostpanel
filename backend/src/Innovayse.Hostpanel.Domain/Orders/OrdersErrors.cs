@@ -17,4 +17,16 @@ public static class OrdersErrors
     /// <see cref="Order.MarkFraud"/> all require it.
     /// </summary>
     public const string OrderNotPending = "ORDER_NOT_PENDING";
+
+    /// <summary>
+    /// The line may not be retried (409): the order was not accepted, the line did not fail, was refunded, or
+    /// another retry is running it: <see cref="Order.StartLineRetry"/>.
+    /// </summary>
+    public const string OrderLineNotRetryable = "ORDER_LINE_NOT_RETRYABLE";
+
+    /// <summary>
+    /// The order holds no line with that id (404): <see cref="Order.RecordLineFulfilled"/>,
+    /// <see cref="Order.RecordLineFailed"/> and <see cref="Order.RecordLineRefunded"/>.
+    /// </summary>
+    public const string OrderItemNotFound = "ORDER_ITEM_NOT_FOUND";
 }

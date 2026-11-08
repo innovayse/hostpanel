@@ -16,7 +16,8 @@
     "allStages": "Բոլոր փուլերը"
   },
   "orderStatusOptions": {
-    "fraud": "Խարդախություն"
+    "fraud": "Խարդախություն",
+    "incomplete": "Թերի"
   },
   "ticketFilterOptions": {
     "allActiveTickets": "Բոլոր ակտիվ տոմսերը",
@@ -28,5 +29,12 @@
     "monthly": "Ամսական",
     "quarterly": "Եռամսյակային",
     "annually": "Տարեկան"
+  },
+  "orderLineFulfilmentOptions": {
+    "pending": "Դեռ չի գործարկվել",
+    "inProgress": "Կատարվում է",
+    "fulfilled": "Կատարված",
+    "failed": "Սխալ",
+    "refunded": "Վերադարձված"
   }
 }

@@ -176,6 +176,75 @@ public sealed class Order : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
+    /// Tells whether a retry may claim the line now: the order was accepted, and the line failed (or a
+    /// retry's claim on it has run out).
+    /// </summary>
+    /// <param name="itemId">The order line.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <returns><see langword="false"/> for a line this order does not hold, or one that may not be retried.</returns>
+    public bool CanRetryLine(int itemId, DateTimeOffset now)
+    {
+        var item = _items.FirstOrDefault(i => i.Id == itemId);
+        return item is not null && Status is OrderStatus.Incomplete && item.CanBeRetried(now);
+    }
+
+    /// <summary>
+    /// Claims a failed line for a retry: the line is in progress, its attempt is counted, and the order
+    /// stays <see cref="OrderStatus.Incomplete"/> until the outcome is recorded.
+    /// </summary>
+    /// <param name="itemId">The order line to retry.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <exception cref="DomainRuleException">Thrown when the order holds no such line or the line may not be retried now.</exception>
+    public void StartLineRetry(int itemId, DateTimeOffset now)
+    {
+        if (!CanRetryLine(itemId, now))
+        {
+            throw new DomainRuleException(
+                OrdersErrors.OrderLineNotRetryable,
+                $"Line {itemId} of order {Id} cannot be retried: only a failed line of an accepted order can.");
+        }
+
+        _items.First(i => i.Id == itemId).BeginRetry(now);
+    }
+
+    /// <summary>
+    /// Records that an attempt fulfilled the line, and brings the order's status in line with its lines.
+    /// </summary>
+    /// <param name="itemId">The order line.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <exception cref="DomainRuleException">Thrown when the order holds no such line.</exception>
+    public void RecordLineFulfilled(int itemId, DateTimeOffset now)
+    {
+        FindItem(itemId).RecordFulfilled(now);
+        RefreshStatusFromLines();
+    }
+
+    /// <summary>
+    /// Records that an attempt failed the line, and marks the order <see cref="OrderStatus.Incomplete"/> when it was accepted.
+    /// </summary>
+    /// <param name="itemId">The order line.</param>
+    /// <param name="errorCode">The refusing use case's code, or <see langword="null"/> when it gave none.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <exception cref="DomainRuleException">Thrown when the order holds no such line.</exception>
+    public void RecordLineFailed(int itemId, string? errorCode, DateTimeOffset now)
+    {
+        FindItem(itemId).RecordFailed(errorCode, now);
+        RefreshStatusFromLines();
+    }
+
+    /// <summary>
+    /// Records that a failed line's cost was given back. The line is closed for good, so no retry can
+    /// deliver what was refunded, and it no longer keeps the order incomplete.
+    /// </summary>
+    /// <param name="itemId">The order line that was refunded.</param>
+    /// <exception cref="DomainRuleException">Thrown when the order holds no such line.</exception>
+    public void RecordLineRefunded(int itemId)
+    {
+        FindItem(itemId).RecordRefunded();
+        RefreshStatusFromLines();
+    }
+
+    /// <summary>
     /// Cancels the order, transitioning from Pending to Cancelled.
     /// </summary>
     /// <exception cref="DomainRuleException">Thrown when the order is not in Pending status.</exception>
@@ -259,6 +328,34 @@ public sealed class Order : BaseEntity, IAggregateRoot
 
         return presented.Length == expected.Length
             && CryptographicOperations.FixedTimeEquals(presented, expected);
+    }
+
+    /// <summary>Finds one of this order's lines.</summary>
+    /// <param name="itemId">The order line.</param>
+    /// <returns>The line.</returns>
+    /// <exception cref="DomainRuleException">Thrown when the order holds no such line.</exception>
+    private OrderItem FindItem(int itemId)
+    {
+        return _items.FirstOrDefault(i => i.Id == itemId)
+            ?? throw new DomainRuleException(
+                OrdersErrors.OrderItemNotFound,
+                $"Order {Id} has no line {itemId}.");
+    }
+
+    /// <summary>
+    /// Makes the status say what the lines say: an accepted order with a failed or running-retry line is
+    /// <see cref="OrderStatus.Incomplete"/>, and one with none is <see cref="OrderStatus.Active"/>. Any other
+    /// status (pending, cancelled, fraud) is the admin's decision about the order and is left alone.
+    /// </summary>
+    private void RefreshStatusFromLines()
+    {
+        if (Status is not (OrderStatus.Active or OrderStatus.Incomplete))
+        {
+            return;
+        }
+
+        var open = _items.Any(i => i.FulfilmentState is OrderItemFulfilmentState.Failed or OrderItemFulfilmentState.InProgress);
+        Status = open ? OrderStatus.Incomplete : OrderStatus.Active;
     }
 
     /// <summary>

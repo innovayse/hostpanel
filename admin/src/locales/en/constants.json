@@ -16,7 +16,8 @@
     "allStages": "All Stages"
   },
   "orderStatusOptions": {
-    "fraud": "Fraud"
+    "fraud": "Fraud",
+    "incomplete": "Incomplete"
   },
   "ticketFilterOptions": {
     "allActiveTickets": "All Active Tickets",
@@ -28,5 +29,12 @@
     "monthly": "Monthly",
     "quarterly": "Quarterly",
     "annually": "Annually"
+  },
+  "orderLineFulfilmentOptions": {
+    "pending": "Not run yet",
+    "inProgress": "Running",
+    "fulfilled": "Fulfilled",
+    "failed": "Failed",
+    "refunded": "Refunded"
   }
 }

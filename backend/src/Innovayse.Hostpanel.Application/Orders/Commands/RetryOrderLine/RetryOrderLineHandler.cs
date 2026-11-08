@@ -1,0 +1,102 @@
+using Innovayse.Hostpanel.Application.Audit.Common;
+using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
+using Innovayse.Hostpanel.Application.Orders.Common;
+using Innovayse.Hostpanel.Domain.Orders.Enums;
+using Innovayse.Hostpanel.Shared.Infrastructure;
+using Innovayse.Hostpanel.Shared.Models;
+using Microsoft.EntityFrameworkCore;
+using Wolverine;
+
+namespace Innovayse.Hostpanel.Application.Orders.Commands.RetryOrderLine;
+
+/// <summary>
+/// Handles <see cref="RetryOrderLineCommand"/>: claims one failed line of an accepted order (the claim is saved,
+/// with its audit line, before any work starts, so two retries of the same line cannot both run) and then runs
+/// the line through <see cref="FulfillOrderLinesCommand"/>, the fulfilment the first attempt used.
+/// </summary>
+public sealed class RetryOrderLineHandler
+{
+    /// <summary>The module's data context.</summary>
+    private readonly IHostpanelDbContext _context;
+
+    /// <summary>Wolverine message bus, used to fulfil the claimed line.</summary>
+    private readonly IMessageBus _bus;
+
+    /// <summary>The clock that dates the claim.</summary>
+    private readonly IClock _clock;
+
+    /// <summary>Writes the audit line of the retry.</summary>
+    private readonly IActivityLogger _activityLogger;
+
+    /// <summary>Initializes the handler.</summary>
+    /// <param name="context">The module's data context.</param>
+    /// <param name="bus">Wolverine message bus, used to fulfil the claimed line.</param>
+    /// <param name="clock">The clock that dates the claim.</param>
+    /// <param name="activityLogger">Writes the audit line of the retry.</param>
+    public RetryOrderLineHandler(IHostpanelDbContext context, IMessageBus bus, IClock clock, IActivityLogger activityLogger)
+    {
+        _context = context;
+        _bus = bus;
+        _clock = clock;
+        _activityLogger = activityLogger;
+    }
+
+    /// <summary>Handles the command.</summary>
+    /// <param name="cmd">The order and the line to retry.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The lines that are still failed after the retry (empty when the line was fulfilled); <c>ORDER_NOT_FOUND</c> or
+    /// <c>ORDER_ITEM_NOT_FOUND</c> when an id names nothing; <c>ORDER_LINE_ALREADY_FULFILLED</c> when the line is done
+    /// already; <c>ORDER_LINE_NOT_RETRYABLE</c> when the order was not accepted, the line did not fail or was refunded,
+    /// or another retry holds it.
+    /// </returns>
+    public async Task<Result<OrderFulfillmentDto>> HandleAsync(RetryOrderLineCommand cmd, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(cmd);
+
+        var order = await _context.Orders
+            .Include(o => o.Items)
+            .FirstOrDefaultAsync(o => o.Id == cmd.OrderId, ct);
+        if (order is null)
+        {
+            return Result<OrderFulfillmentDto>.FailureCode(HostpanelErrorCodes.ORDER_NOT_FOUND);
+        }
+
+        var item = order.Items.FirstOrDefault(i => i.Id == cmd.ItemId);
+        if (item is null)
+        {
+            return Result<OrderFulfillmentDto>.FailureCode(HostpanelErrorCodes.ORDER_ITEM_NOT_FOUND);
+        }
+
+        if (item.FulfilmentState is OrderItemFulfilmentState.Fulfilled)
+        {
+            return Result<OrderFulfillmentDto>.FailureCode(HostpanelErrorCodes.ORDER_LINE_ALREADY_FULFILLED);
+        }
+
+        var now = _clock.UtcNow;
+        if (!order.CanRetryLine(item.Id, now))
+        {
+            return Result<OrderFulfillmentDto>.FailureCode(HostpanelErrorCodes.ORDER_LINE_NOT_RETRYABLE);
+        }
+
+        order.StartLineRetry(item.Id, now);
+        await _activityLogger.RecordAsync(
+            new ActivityLogEntry(
+                order.ClientId,
+                $"Retried Order Line - Order ID: {order.Id} - Line ID: {item.Id} - Attempt: {item.FulfilmentAttempts}"),
+            ct);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            // A competing retry claimed the line first; it is the one that runs.
+            return Result<OrderFulfillmentDto>.FailureCode(HostpanelErrorCodes.ORDER_LINE_NOT_RETRYABLE);
+        }
+
+        return await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(new FulfillOrderLinesCommand(order.Id, item.Id), ct);
+    }
+}

@@ -15,7 +15,7 @@ import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
 import { PaymentGateway } from '@/types/gateway'
 import { InvoiceStatus } from '@/types/invoice'
-import { OrderStatus } from '@/types/order'
+import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
 import { QuoteStage } from '@/types/quote'
 import { BillingCycle, ServiceStatus } from '@/types/service'
 import { TicketPriority } from '@/types/ticket'
@@ -159,6 +159,16 @@ export const ORDER_STATUS_OPTIONS: SelectOption[] = [
   { value: OrderStatus.Active, get label() { return translate('shared.active') } },
   { value: OrderStatus.Cancelled, get label() { return translate('clients.clientSummary.cancelled') } },
   { value: OrderStatus.Fraud, get label() { return translate('constants.orderStatusOptions.fraud') } },
+  { value: OrderStatus.Incomplete, get label() { return translate('constants.orderStatusOptions.incomplete') } },
+]
+
+/** Fulfilment state options of one order line, for the labels of its badge. */
+export const ORDER_LINE_FULFILMENT_OPTIONS: SelectOption[] = [
+  { value: OrderItemFulfilmentState.Pending, get label() { return translate('constants.orderLineFulfilmentOptions.pending') } },
+  { value: OrderItemFulfilmentState.InProgress, get label() { return translate('constants.orderLineFulfilmentOptions.inProgress') } },
+  { value: OrderItemFulfilmentState.Fulfilled, get label() { return translate('constants.orderLineFulfilmentOptions.fulfilled') } },
+  { value: OrderItemFulfilmentState.Failed, get label() { return translate('constants.orderLineFulfilmentOptions.failed') } },
+  { value: OrderItemFulfilmentState.Refunded, get label() { return translate('constants.orderLineFulfilmentOptions.refunded') } },
 ]
 
 /** Available ticket priority options for dropdowns. */

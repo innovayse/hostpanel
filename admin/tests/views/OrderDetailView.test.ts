@@ -39,6 +39,29 @@ const pendingOrder = {
       firstPaymentAmount: 30,
       recurringAmount: 10,
       status: 'Pending',
+      fulfilmentState: 'Pending',
+      fulfilmentErrorCode: null,
+      fulfilmentAttempts: 0,
+      lastFulfilmentAttemptAt: null,
+    },
+  ],
+}
+
+/** An accepted order with one fulfilled line and one that failed twice, ready for a retry. */
+const incompleteOrder = {
+  ...pendingOrder,
+  status: 'Incomplete',
+  items: [
+    { ...pendingOrder.items[0], status: 'Active', fulfilmentState: 'Fulfilled', fulfilmentAttempts: 1, lastFulfilmentAttemptAt: '2026-03-04T10:05:00Z' },
+    {
+      ...pendingOrder.items[0],
+      id: 2,
+      productName: 'Domain',
+      status: 'Active',
+      fulfilmentState: 'Failed',
+      fulfilmentErrorCode: 'DOMAIN_ALREADY_REGISTERED',
+      fulfilmentAttempts: 2,
+      lastFulfilmentAttemptAt: '2026-03-04T10:10:00Z',
     },
   ],
 }
@@ -233,6 +256,72 @@ describe('OrderDetailView', () => {
     const { wrapper } = await mountDetail()
 
     expect(wrapper.get('[data-testid="order-error"]').text()).toContain('No such order.')
+  })
+
+  it('shows each line fulfilment state, and a retry only on the failed one', async () => {
+    stubRoutes({ 'GET /api/orders/8': () => json(incompleteOrder) })
+    const { wrapper } = await mountDetail()
+
+    expect(wrapper.get('[data-testid="order-status"]').text()).toContain('Incomplete')
+    expect(wrapper.get('[data-testid="order-item-fulfilment-1"]').text()).toContain('Fulfilled')
+    expect(wrapper.get('[data-testid="order-item-fulfilment-2"]').text()).toContain('Failed')
+    expect(wrapper.get('[data-testid="order-item-error-2"]').text()).toContain('DOMAIN_ALREADY_REGISTERED')
+    expect(wrapper.get('[data-testid="order-item-attempts-2"]').text()).toContain('Attempts: 2')
+    expect(wrapper.find('[data-testid="order-item-retry-1"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="order-item-retry-2"]').exists()).toBe(true)
+  })
+
+  it('retries a failed line and confirms it above the order', async () => {
+    const fulfilled = { ...incompleteOrder, status: 'Active', items: [incompleteOrder.items[0], { ...incompleteOrder.items[1], fulfilmentState: 'Fulfilled', fulfilmentErrorCode: null }] }
+    let reads = 0
+    const mock = stubRoutes({
+      'POST /api/orders/8/items/2/retry': () => json({ failedLines: [] }),
+      'GET /api/orders/8': () => {
+        reads += 1
+        return json(reads === 1 ? incompleteOrder : fulfilled)
+      },
+    })
+    const { wrapper } = await mountDetail()
+
+    await wrapper.get('[data-testid="order-item-retry-2"]').trigger('click')
+    await flushPromises()
+
+    expect(mock.mock.calls.some(([url]) => (url as string).endsWith('/api/orders/8/items/2/retry'))).toBe(true)
+    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('Line retried and fulfilled.')
+    expect(wrapper.get('[data-testid="order-status"]').text()).toContain('Active')
+    expect(wrapper.find('[data-testid="order-item-retry-2"]').exists()).toBe(false)
+  })
+
+  it('names the line that failed again after a retry', async () => {
+    stubRoutes({
+      'POST /api/orders/8/items/2/retry': () =>
+        json({
+          failedLines: [
+            { itemId: 2, kind: 'Domain', productName: 'Domain', domain: 'taken.example', firstPaymentAmount: 10, errorCode: 'DOMAIN_ALREADY_REGISTERED', reason: 'Taken.' },
+          ],
+        }),
+      'GET /api/orders/8': () => json(incompleteOrder),
+    })
+    const { wrapper } = await mountDetail()
+
+    await wrapper.get('[data-testid="order-item-retry-2"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('could not be fulfilled again')
+    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('taken.example')
+  })
+
+  it('shows the API sentence when the retry is refused', async () => {
+    stubRoutes({
+      'POST /api/orders/8/items/2/retry': () => problem('This order line cannot be retried now.', 409),
+      'GET /api/orders/8': () => json(incompleteOrder),
+    })
+    const { wrapper } = await mountDetail()
+
+    await wrapper.get('[data-testid="order-item-retry-2"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="order-action-feedback"]').text()).toContain('cannot be retried now')
   })
 
   it('loads the order again from the retry of a refused load', async () => {

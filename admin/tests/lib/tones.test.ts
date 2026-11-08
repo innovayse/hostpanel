@@ -38,7 +38,7 @@ import { GatewayLogResult } from '@/types/gatewaylog'
 import { FulfilmentStatus, InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
 import { MigrationLogAction, MigrationStatus } from '@/types/migration'
 import { NetworkIssuePriority, NetworkIssueStatus } from '@/types/networkissue'
-import { OrderItemStatus, OrderStatus } from '@/types/order'
+import { OrderItemFulfilmentState, OrderItemStatus, OrderStatus } from '@/types/order'
 import { QuoteStage } from '@/types/quote'
 import { CancellationStatus, CancellationType, ServiceStatus } from '@/types/service'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
@@ -59,6 +59,7 @@ describe('lifecycle status tones', () => {
     expect(orderStatusTone(OrderStatus.Active)).toBe(UiTone.Success)
     expect(orderStatusTone(OrderStatus.Cancelled)).toBe(UiTone.Danger)
     expect(orderStatusTone(OrderStatus.Fraud)).toBe(UiTone.Danger)
+    expect(orderStatusTone(OrderStatus.Incomplete)).toBe(UiTone.Warning)
   })
 
   it('colours each order item status', () => {
@@ -96,6 +97,8 @@ describe('lifecycle status tones', () => {
 
   it('keeps the enum values equal to the wire strings', () => {
     expect(OrderStatus.Fraud).toBe('Fraud')
+    expect(OrderStatus.Incomplete).toBe('Incomplete')
+    expect(OrderItemFulfilmentState.InProgress).toBe('InProgress')
     expect(DomainStatus.PendingRegistration).toBe('PendingRegistration')
   })
 })

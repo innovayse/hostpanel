@@ -844,6 +844,15 @@
   <data name="ORDER_NOT_PENDING" xml:space="preserve">
     <value>Այս գործողությունը պահանջում է, որ պատվերը սպասման մեջ լինի։</value>
   </data>
+  <data name="ORDER_LINE_NOT_RETRYABLE" xml:space="preserve">
+    <value>Պատվերի այս տողը հնարավոր չէ հիմա կրկնել։ Կրկնել կարելի է միայն ընդունված պատվերի ձախողված տողը, և ոչ այն ժամանակ, երբ այն արդեն կրկնում է մեկ այլ հարցում։</value>
+  </data>
+  <data name="ORDER_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>Այս պատվերում այդպիսի տող չկա։</value>
+  </data>
+  <data name="ORDER_LINE_ALREADY_FULFILLED" xml:space="preserve">
+    <value>Պատվերի այս տողն արդեն կատարված է։</value>
+  </data>
   <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
     <value>Այս ծառայությունը ակտիվ չէ։</value>
   </data>

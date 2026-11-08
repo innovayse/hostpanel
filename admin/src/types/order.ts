@@ -27,6 +27,8 @@ export interface OrderListItem {
   invoiceId: number | null
   /** Number of items in the order. */
   itemCount: number
+  /** Number of lines that failed to be fulfilled and can be retried. */
+  failedLineCount: number
   /** ISO 8601 creation timestamp. */
   createdAt: string
 }
@@ -65,6 +67,14 @@ export interface OrderItemDetail {
   recurringAmount: number
   /** Item status. */
   status: OrderItemStatus
+  /** Where fulfilling the line stands. */
+  fulfilmentState: OrderItemFulfilmentState
+  /** The code the last failed attempt ended with, null when the line did not fail or gave none. */
+  fulfilmentErrorCode: string | null
+  /** How many times fulfilling the line has been attempted, the first run included. */
+  fulfilmentAttempts: number
+  /** ISO 8601 moment the last attempt started or ended, null before the first one. */
+  lastFulfilmentAttemptAt: string | null
 }
 
 /** What a line of an order is fulfilled as, exactly as the API sends it. */
@@ -113,6 +123,7 @@ export enum OrderStatus {
   Active = 'Active',
   Cancelled = 'Cancelled',
   Fraud = 'Fraud',
+  Incomplete = 'Incomplete',
 }
 
 /** Status of one line on an order, exactly as the API sends it. */
@@ -120,4 +131,18 @@ export enum OrderItemStatus {
   Pending = 'Pending',
   Active = 'Active',
   Cancelled = 'Cancelled',
+}
+
+/** Where fulfilling one order line stands, exactly as the API sends it. */
+export enum OrderItemFulfilmentState {
+  /** No attempt recorded yet. */
+  Pending = 'Pending',
+  /** A retry is running the line. */
+  InProgress = 'InProgress',
+  /** The line was fulfilled. */
+  Fulfilled = 'Fulfilled',
+  /** The last attempt failed; the line can be retried. */
+  Failed = 'Failed',
+  /** The line failed and its cost was given back; it is closed. */
+  Refunded = 'Refunded',
 }

@@ -844,6 +844,15 @@
   <data name="ORDER_NOT_PENDING" xml:space="preserve">
     <value>Это действие требует, чтобы заказ был в ожидании.</value>
   </data>
+  <data name="ORDER_LINE_NOT_RETRYABLE" xml:space="preserve">
+    <value>Эту позицию заказа сейчас нельзя повторить. Повторить можно только позицию принятого заказа, которая завершилась ошибкой, и не пока её уже повторяет другой запрос.</value>
+  </data>
+  <data name="ORDER_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>В этом заказе нет такой позиции.</value>
+  </data>
+  <data name="ORDER_LINE_ALREADY_FULFILLED" xml:space="preserve">
+    <value>Эта позиция заказа уже выполнена.</value>
+  </data>
   <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
     <value>Эта услуга не активна.</value>
   </data>

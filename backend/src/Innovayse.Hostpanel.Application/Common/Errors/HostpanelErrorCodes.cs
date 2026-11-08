@@ -1455,6 +1455,23 @@ public static class HostpanelErrorCodes
     public const string ORDER_NOT_PENDING = Domain.Orders.OrdersErrors.OrderNotPending;
 
     /// <summary>
+    /// The order line may not be retried (409): the order was not accepted, the line did not fail, its cost
+    /// was given back, or another retry is running it. <see cref="Domain.Orders.Order.StartLineRetry"/>.
+    /// </summary>
+    public const string ORDER_LINE_NOT_RETRYABLE = Domain.Orders.OrdersErrors.OrderLineNotRetryable;
+
+    /// <summary>
+    /// The id names no line of that order (404): the retry of an order line, and
+    /// <see cref="Domain.Orders.Order.RecordLineFulfilled"/>.
+    /// </summary>
+    public const string ORDER_ITEM_NOT_FOUND = Domain.Orders.OrdersErrors.OrderItemNotFound;
+
+    /// <summary>
+    /// The order line is already fulfilled, so a retry would fulfil it twice (409). The line is left as it is.
+    /// </summary>
+    public const string ORDER_LINE_ALREADY_FULFILLED = "ORDER_LINE_ALREADY_FULFILLED";
+
+    /// <summary>
     /// The SKU is not letters and digits joined by single hyphens, underscores or dots, or is too long
     /// (400): <see cref="Domain.Products.Product.SetSku"/>.
     /// </summary>

@@ -194,9 +194,14 @@ onMounted(() => store.fetchAll())
               </UiLink>
             </UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="orderStatusTone(order.status)" small>
-                {{ statusLabel(ORDER_STATUS_OPTIONS, order.status) }}
-              </UiBadge>
+              <UiStack direction="row" gap="xs" align="center" wrap>
+                <UiBadge :tone="orderStatusTone(order.status)" small>
+                  {{ statusLabel(ORDER_STATUS_OPTIONS, order.status) }}
+                </UiBadge>
+                <UiText v-if="order.failedLineCount > 0" tone="muted" size="xs" :data-testid="`orders-failed-lines-${order.id}`">
+                  {{ t('orders.ordersList.failedLines', { count: order.failedLineCount }) }}
+                </UiText>
+              </UiStack>
             </UiTableCell>
             <UiTableCell>{{ order.paymentMethod }}</UiTableCell>
             <UiTableCell>{{ formatPlainAmount(order.total, order.currency) }}</UiTableCell>

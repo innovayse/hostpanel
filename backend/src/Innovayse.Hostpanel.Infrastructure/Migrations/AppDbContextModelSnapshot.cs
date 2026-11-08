@@ -2620,9 +2620,28 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<decimal>("FirstPaymentAmount")
                         .HasColumnType("numeric(18,4)");
 
+                    b.Property<int>("FulfilmentAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("FulfilmentErrorCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("FulfilmentState")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("Pending");
+
                     b.Property<string>("Hostname")
                         .HasMaxLength(253)
                         .HasColumnType("character varying(253)");
+
+                    b.Property<DateTimeOffset?>("LastFulfilmentAttemptAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("OrderId")
                         .HasColumnType("integer");
@@ -2645,6 +2664,12 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<int?>("Years")
                         .HasColumnType("integer");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 

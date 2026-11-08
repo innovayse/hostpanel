@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
+using Innovayse.Hostpanel.Application.Orders.Commands.RecordOrderLineRefunded;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Common.Enums;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
@@ -110,7 +111,7 @@ public sealed class FulfillPaidOrderHandler
         {
             if (failure is { Kind: OrderLineKind.Domain, Domain: { } domainName })
             {
-                await HandleDomainRegistrationFailedAsync(invoiceId, failure, order.ClientId, domainName, ct);
+                await HandleDomainRegistrationFailedAsync(order.Id, invoiceId, failure, order.ClientId, domainName, ct);
             }
         }
 
@@ -129,8 +130,11 @@ public sealed class FulfillPaidOrderHandler
     /// credit balance, and its paid share with the invoice's tax goes back through
     /// <see cref="RefundInvoicePaymentCommand"/>, which calls whichever gateway took it and writes the
     /// refund and its ledger row. A line paid wholly with credit is refunded to credit only.
-    /// Publishes <see cref="DomainRegistrationFailedEvent"/> once both are back.
+    /// Publishes <see cref="DomainRegistrationFailedEvent"/> once both are back. Once money has gone back the
+    /// line is closed through <see cref="RecordOrderLineRefundedCommand"/>, so a later retry can never deliver
+    /// what was refunded.
     /// </summary>
+    /// <param name="orderId">The order the failed line belongs to.</param>
     /// <param name="invoiceId">The invoice that was paid.</param>
     /// <param name="failure">The order line whose domain action failed; its first payment, with the invoice's tax, is what is refunded.</param>
     /// <param name="clientId">The client who placed the order.</param>
@@ -138,7 +142,7 @@ public sealed class FulfillPaidOrderHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
     private async Task HandleDomainRegistrationFailedAsync(
-        int invoiceId, OrderLineFailureDto failure, int clientId, string domainName, CancellationToken ct)
+        int orderId, int invoiceId, OrderLineFailureDto failure, int clientId, string domainName, CancellationToken ct)
     {
         var reason = failure.Reason;
         _logger.LogError(
@@ -162,6 +166,9 @@ public sealed class FulfillPaidOrderHandler
                         domainName, clientId, invoiceId, DescribeFailure(credited), shares.CreditShare, reason);
                     return;
                 }
+
+                // The credit is back on the client's balance: the line is closed even if the gateway part fails below.
+                await CloseRefundedLineAsync(orderId, failure.ItemId, ct);
             }
 
             if (shares.PaidShare > 0)
@@ -187,6 +194,7 @@ public sealed class FulfillPaidOrderHandler
                 }
             }
 
+            await CloseRefundedLineAsync(orderId, failure.ItemId, ct);
             await _bus.PublishAsync(new DomainRegistrationFailedEvent(clientId, domainName, invoiceId, reason) { OccurredAt = _clock.UtcNow });
         }
         catch (Exception refundEx)
@@ -198,6 +206,22 @@ public sealed class FulfillPaidOrderHandler
                 "REFUND FAILED for domain '{DomainName}' (client {ClientId}, invoice {InvoiceId}). " +
                 "Manual refund required. Original failure: {Reason}",
                 domainName, clientId, invoiceId, reason);
+        }
+    }
+
+    /// <summary>Closes a failed line whose cost went back to the client, so it can never be retried into delivery.</summary>
+    /// <param name="orderId">The order the line belongs to.</param>
+    /// <param name="itemId">The refunded line.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task CloseRefundedLineAsync(int orderId, int itemId, CancellationToken ct)
+    {
+        var closed = await _bus.InvokeAsync<Result>(new RecordOrderLineRefundedCommand(orderId, itemId), ct);
+        if (closed.IsFailure)
+        {
+            _logger.LogCritical(
+                "Order {OrderId} line {ItemId} was refunded but could not be closed: {Reason}. A retry of it must be refused by hand.",
+                orderId, itemId, DescribeFailure(closed));
         }
     }
 

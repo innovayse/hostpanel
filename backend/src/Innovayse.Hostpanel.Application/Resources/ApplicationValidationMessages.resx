@@ -538,6 +538,9 @@
   <data name="OrderIdInvalid" xml:space="preserve">
     <value>Order id must be greater than zero.</value>
   </data>
+  <data name="OrderItemIdInvalid" xml:space="preserve">
+    <value>Order line id must be greater than zero.</value>
+  </data>
   <data name="PlaceOrderPaymentMethodRequired" xml:space="preserve">
     <value>Select a payment method.</value>
   </data>

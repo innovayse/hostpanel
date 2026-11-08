@@ -30,6 +30,13 @@ describe('useOrdersApi', () => {
     expect(callOf(mock).url).toBe('/api/orders/8')
   })
 
+  it('retryOrderLine POSTs to the line retry route', async () => {
+    const mock = stubFetch(json({ failedLines: [] }))
+
+    expect(await useOrdersApi().retryOrderLine(8, 2)).toEqual({ failedLines: [] })
+    expect(callOf(mock)).toMatchObject({ url: '/api/orders/8/items/2/retry', method: 'POST' })
+  })
+
   it('accept and cancel POST, delete DELETEs', async () => {
     const mock = stubFetch(new Response(null, { status: 204 }))
     const api = useOrdersApi()

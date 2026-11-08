@@ -13,6 +13,7 @@ import {
   DOMAIN_STATUS_OPTIONS,
   GATEWAY_OPTIONS,
   INVOICE_STATUS_OPTIONS,
+  ORDER_LINE_FULFILMENT_OPTIONS,
   ORDER_STATUS_OPTIONS,
   PAYMENT_METHOD_OPTIONS,
   QUOTE_STAGE_OPTIONS,
@@ -28,7 +29,7 @@ import { ClientStatus } from '@/types/client'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
 import { PaymentGateway } from '@/types/gateway'
 import { InvoiceStatus } from '@/types/invoice'
-import { OrderStatus } from '@/types/order'
+import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
 import { QuoteStage } from '@/types/quote'
 import { BillingCycle, ServiceStatus } from '@/types/service'
 import { TicketPriority } from '@/types/ticket'
@@ -57,6 +58,7 @@ describe('option lists', () => {
     expect(valuesOf(SERVICE_STATUS_OPTIONS)).toEqual(membersOf(ServiceStatus))
     expect(valuesOf(DOMAIN_STATUS_OPTIONS)).toEqual(membersOf(DomainStatus))
     expect(valuesOf(ORDER_STATUS_OPTIONS)).toEqual(membersOf(OrderStatus))
+    expect(valuesOf(ORDER_LINE_FULFILMENT_OPTIONS)).toEqual(membersOf(OrderItemFulfilmentState))
     expect(valuesOf(QUOTE_STAGE_OPTIONS)).toEqual(membersOf(QuoteStage))
     expect(valuesOf(TICKET_PRIORITY_OPTIONS)).toEqual(membersOf(TicketPriority))
     expect(valuesOf(DNS_RECORD_TYPE_OPTIONS)).toEqual(membersOf(DnsRecordType))

@@ -4,6 +4,7 @@ using Innovayse.Hostpanel.Application.Orders.Commands.CancelOrder;
 using Innovayse.Hostpanel.Application.Orders.Commands.CompleteOrderGatewayPayment;
 using Innovayse.Hostpanel.Application.Orders.Commands.DeleteOrder;
 using Innovayse.Hostpanel.Application.Orders.Commands.PlaceOrder;
+using Innovayse.Hostpanel.Application.Orders.Commands.RetryOrderLine;
 using Innovayse.Hostpanel.Application.Orders.Commands.StartOrderGatewayPayment;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Queries.GetOrder;
@@ -147,6 +148,34 @@ public sealed class OrdersController : BaseApiController
     public async Task<IActionResult> AcceptAsync(int id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(new AcceptOrderCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Runs the fulfilment of one failed line of an accepted order again. A line that is already fulfilled is
+    /// refused and a domain the client already holds is not registered twice.
+    /// </summary>
+    /// <param name="id">Order primary key.</param>
+    /// <param name="itemId">The failed order line; wins over any line id in a body.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the lines still failed after the retry (empty when the line was fulfilled); 400 with <c>VALIDATION_ERROR</c>
+    /// for a non-positive id; 401 without a session; 403 for a non-admin; 404 with <c>ORDER_NOT_FOUND</c> or
+    /// <c>ORDER_ITEM_NOT_FOUND</c> when an id names nothing; 409 with <c>ORDER_LINE_ALREADY_FULFILLED</c> when the line is
+    /// done already, or <c>ORDER_LINE_NOT_RETRYABLE</c> when the order was not accepted, the line did not fail or was
+    /// refunded, or another retry is running it; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/items/{itemId:int}/retry")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(typeof(OrderFulfillmentDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RetryLineAsync(int id, int itemId, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(new RetryOrderLineCommand(id, itemId), ct);
         return HandleResult(outcome);
     }
 

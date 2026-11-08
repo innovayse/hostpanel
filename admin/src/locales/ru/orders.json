@@ -20,7 +20,11 @@
     "confirmCancelMessage": "Заказ будет отменён. Это действие нельзя отменить.",
     "cancelOrder": "Отменить заказ",
     "linesSubtotal": "Сумма позиций заказа (без налога и кредита)",
-    "invoiceTotal": "Итого по счёту"
+    "invoiceTotal": "Итого по счёту",
+    "fulfilment": "Выполнение",
+    "retry": "Повторить",
+    "lineRetried": "Позиция повторена и выполнена.",
+    "attempts": "Попыток: {count}, последняя {at}"
   },
   "ordersList": {
     "orders": "Заказы",
@@ -35,9 +39,11 @@
     "orderCancelled": "Заказ отменён.",
     "confirmCancelTitle": "Отменить этот заказ?",
     "confirmCancelMessage": "Заказ будет отменён. Это действие нельзя отменить.",
-    "cancelOrder": "Отменить заказ"
+    "cancelOrder": "Отменить заказ",
+    "failedLines": "С ошибкой: {count}"
   },
   "fulfillment": {
-    "acceptedWithFailedLines": "Заказ принят, но эти позиции не удалось выполнить: {lines}."
+    "acceptedWithFailedLines": "Заказ принят, но эти позиции не удалось выполнить: {lines}.",
+    "retryStillFailed": "Позицию повторили, но выполнить её снова не удалось: {lines}."
   }
 }

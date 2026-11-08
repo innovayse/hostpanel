@@ -20,7 +20,11 @@
     "confirmCancelMessage": "The order will be cancelled. This cannot be undone.",
     "cancelOrder": "Cancel order",
     "linesSubtotal": "Order subtotal (before tax and credit)",
-    "invoiceTotal": "Invoice total"
+    "invoiceTotal": "Invoice total",
+    "fulfilment": "Fulfilment",
+    "retry": "Retry",
+    "lineRetried": "Line retried and fulfilled.",
+    "attempts": "Attempts: {count}, last {at}"
   },
   "ordersList": {
     "orders": "Orders",
@@ -35,9 +39,11 @@
     "orderCancelled": "Order cancelled.",
     "confirmCancelTitle": "Cancel this order?",
     "confirmCancelMessage": "The order will be cancelled. This cannot be undone.",
-    "cancelOrder": "Cancel order"
+    "cancelOrder": "Cancel order",
+    "failedLines": "{count} failed"
   },
   "fulfillment": {
-    "acceptedWithFailedLines": "Order accepted, but these lines could not be fulfilled: {lines}."
+    "acceptedWithFailedLines": "Order accepted, but these lines could not be fulfilled: {lines}.",
+    "retryStillFailed": "The line was retried, but could not be fulfilled again: {lines}."
   }
 }

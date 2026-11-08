@@ -244,6 +244,11 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         var ledger = await context.Transactions.AsNoTracking()
             .Where(t => t.InvoiceId == invoice.Id && t.AmountOut > 0).ToListAsync(CancellationToken.None);
         ledger.Should().ContainSingle(t => t.AmountOut == 25m && t.TransactionId == "plugin-refund-1");
+
+        // The refunded line is closed, so no retry can deliver what was given back, and it no longer keeps the order incomplete.
+        var order = await context.Orders.AsNoTracking().Include(o => o.Items).SingleAsync(o => o.Id == orderId, CancellationToken.None);
+        order.Items.Should().OnlyContain(i => i.FulfilmentState == OrderItemFulfilmentState.Refunded);
+        order.Status.Should().Be(OrderStatus.Active);
     }
 
     /// <summary>

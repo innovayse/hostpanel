@@ -4,6 +4,7 @@ using Innovayse.Hostpanel.Application.Domains.Commands.LinkDomainService;
 using Innovayse.Hostpanel.Application.Domains.Commands.RegisterDomain;
 using Innovayse.Hostpanel.Application.Domains.Commands.RenewOrderedDomain;
 using Innovayse.Hostpanel.Application.Domains.Commands.TransferDomain;
+using Innovayse.Hostpanel.Application.Domains.Queries.GetOwnedDomainNames;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Common.Enums;
 using Innovayse.Hostpanel.Application.Products.Common;
@@ -21,9 +22,10 @@ using Wolverine;
 namespace Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
 
 /// <summary>
-/// Handles <see cref="FulfillOrderLinesCommand"/>: runs every line of an accepted order through the
-/// use case its type needs, never stopping at a failed line, and reports each line it could not
-/// fulfil so the caller can refund it or show it.
+/// Handles <see cref="FulfillOrderLinesCommand"/>: runs every line of an accepted order that is not
+/// fulfilled yet through the use case its type needs, never stopping at a failed line, records each
+/// line's outcome on the line, and reports each line it could not fulfil so the caller can refund it
+/// or show it.
 /// </summary>
 public sealed class FulfillOrderLinesHandler
 {
@@ -36,35 +38,46 @@ public sealed class FulfillOrderLinesHandler
     /// <summary>Structured logger.</summary>
     private readonly ILogger<FulfillOrderLinesHandler> _logger;
 
+    /// <summary>The clock that dates each line's attempt.</summary>
+    private readonly IClock _clock;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="bus">Wolverine message bus, for the Domains and Services use cases each line needs.</param>
     /// <param name="logger">Structured logger.</param>
-    public FulfillOrderLinesHandler(IHostpanelDbContext context, IMessageBus bus, ILogger<FulfillOrderLinesHandler> logger)
+    /// <param name="clock">The clock that dates each line's attempt.</param>
+    public FulfillOrderLinesHandler(
+        IHostpanelDbContext context, IMessageBus bus, ILogger<FulfillOrderLinesHandler> logger, IClock clock)
     {
         _context = context;
         _bus = bus;
         _logger = logger;
+        _clock = clock;
     }
 
     /// <summary>Handles the command.</summary>
     /// <param name="cmd">The order whose lines are fulfilled.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The lines that could not be fulfilled (empty when all were), or <c>ORDER_NOT_FOUND</c> when the
-    /// id names no order. A failed line never stops the others.
+    /// The lines that could not be fulfilled (empty when all were), <c>ORDER_NOT_FOUND</c> when the
+    /// id names no order, or <c>ORDER_ITEM_NOT_FOUND</c> when a retry names a line the order does not hold.
+    /// A failed line never stops the others, and a line already fulfilled (or refunded) is left as it is.
     /// </returns>
     public async Task<Result<OrderFulfillmentDto>> HandleAsync(FulfillOrderLinesCommand cmd, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
         var order = await _context.Orders
-            .AsNoTracking()
             .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.Id == cmd.OrderId, ct);
         if (order is null)
         {
             return Result<OrderFulfillmentDto>.FailureCode(HostpanelErrorCodes.ORDER_NOT_FOUND);
+        }
+
+        if (cmd.ItemId is { } onlyItemId && order.Items.All(i => i.Id != onlyItemId))
+        {
+            return Result<OrderFulfillmentDto>.FailureCode(HostpanelErrorCodes.ORDER_ITEM_NOT_FOUND);
         }
 
         var digitalProductIds = await FindDigitalProductIdsAsync(order, ct);
@@ -75,6 +88,29 @@ public sealed class FulfillOrderLinesHandler
 
         foreach (var item in order.Items.OrderBy(i => i.Id))
         {
+            if (cmd.ItemId is not null && item.Id != cmd.ItemId)
+            {
+                continue;
+            }
+
+            // A line a retry is running belongs to that retry; a run over the whole order must not start it a second time.
+            if (cmd.ItemId is null && item.FulfilmentState is OrderItemFulfilmentState.InProgress)
+            {
+                continue;
+            }
+
+            if (item.FulfilmentState is OrderItemFulfilmentState.Fulfilled or OrderItemFulfilmentState.Refunded)
+            {
+                // Done already (or given back): never fulfilled twice. A fulfilled domain line still
+                // tells a service line of the same order which domain it was bought with.
+                if (item.DomainAction is not null && item.Domain is not null && item.FulfilmentState is OrderItemFulfilmentState.Fulfilled)
+                {
+                    orderDomainName = item.Domain;
+                }
+
+                continue;
+            }
+
             if (item.DomainAction is not null)
             {
                 if (item.Domain is null)
@@ -87,18 +123,21 @@ public sealed class FulfillOrderLinesHandler
                         order.Id, item.Id, item.DomainAction);
                     failures.Add(Failure(
                         item, OrderLineKind.Domain, null, $"Order {order.Id} item {item.Id} has a domain action but no domain name."));
+                    order.RecordLineFailed(item.Id, null, _clock.UtcNow);
                     continue;
                 }
 
-                var domain = await FulfillDomainActionAsync(order, item, item.Domain, ct);
+                var domain = await FulfillDomainActionAsync(order, item, item.Domain, cmd.ItemId is not null, ct);
                 if (domain.FailureReason is not null)
                 {
                     failures.Add(Failure(item, OrderLineKind.Domain, domain.ErrorCode, domain.FailureReason));
+                    order.RecordLineFailed(item.Id, domain.ErrorCode, _clock.UtcNow);
                 }
                 else
                 {
                     createdDomainId ??= domain.DomainId;
                     orderDomainName = item.Domain;
+                    order.RecordLineFulfilled(item.Id, _clock.UtcNow);
                 }
 
                 continue;
@@ -109,12 +148,17 @@ public sealed class FulfillOrderLinesHandler
             if (service.IsFailure)
             {
                 failures.Add(Failure(item, OrderLineKind.Service, service.ErrorCode, DescribeFailure(service)));
+                order.RecordLineFailed(item.Id, service.ErrorCode, _clock.UtcNow);
             }
             else
             {
                 createdServiceId = service.Value;
+                order.RecordLineFulfilled(item.Id, _clock.UtcNow);
             }
         }
+
+        // The outcomes are saved before the link below, so the record of what happened never waits on a convenience.
+        await _context.SaveChangesAsync(ct);
 
         // Auto-link a domain to a hosting service bought in the same order. The link is a
         // convenience: a refusal is logged and never turns a fulfilled order into a failure.
@@ -239,6 +283,11 @@ public sealed class FulfillOrderLinesHandler
     /// <param name="order">The accepted order the line belongs to.</param>
     /// <param name="item">The line item, already known to carry a domain action.</param>
     /// <param name="domain">The domain name from the order line.</param>
+    /// <param name="isRetry">
+    /// Whether the line is being retried. A retried registration or transfer finds the domain this client
+    /// already holds under that name and counts it as done, so a first attempt that did register it (and
+    /// failed afterwards) is never repeated.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The new domain's id when this action creates one (register, transfer) and it succeeded;
@@ -246,8 +295,19 @@ public sealed class FulfillOrderLinesHandler
     /// human-readable sentence on failure.
     /// </returns>
     private async Task<DomainActionOutcome> FulfillDomainActionAsync(
-        Order order, OrderItem item, string domain, CancellationToken ct)
+        Order order, OrderItem item, string domain, bool isRetry, CancellationToken ct)
     {
+        if (isRetry && item.DomainAction is DomainAction.Register or DomainAction.Transfer)
+        {
+            if (await IsDomainHeldAsync(order, domain, ct))
+            {
+                _logger.LogInformation(
+                    "Order {OrderId} item {ItemId}: domain '{Domain}' is already held by client {ClientId}; the retry counts it as done.",
+                    order.Id, item.Id, domain, order.ClientId);
+                return new DomainActionOutcome(null, null, null);
+            }
+        }
+
         if (item.DomainAction == DomainAction.Register)
         {
             var outcome = await _bus.InvokeAsync<Result<int>>(
@@ -308,6 +368,21 @@ public sealed class FulfillOrderLinesHandler
         // No action this handler recognises: the line is accepted as-is, and the domain name is
         // still recorded for the auto-link check.
         return new DomainActionOutcome(null, null, null);
+    }
+
+    /// <summary>
+    /// Asks the Domains module whether the order's client already holds a domain under the line's name, which is
+    /// what a first attempt that did register it (and died before recording the line) leaves behind.
+    /// </summary>
+    /// <param name="order">The accepted order the line belongs to.</param>
+    /// <param name="domain">The domain name from the order line.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when the client holds the domain.</returns>
+    private async Task<bool> IsDomainHeldAsync(Order order, string domain, CancellationToken ct)
+    {
+        var owned = await _bus.InvokeAsync<Result<IReadOnlyList<string>>>(
+            new GetOwnedDomainNamesQuery(order.ClientId, [domain]), ct);
+        return owned.IsSuccess && owned.Value!.Count > 0;
     }
 
     /// <summary>Builds the report of one line that could not be fulfilled.</summary>

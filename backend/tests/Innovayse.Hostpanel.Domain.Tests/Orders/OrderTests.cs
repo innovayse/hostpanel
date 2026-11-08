@@ -1,6 +1,8 @@
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Orders;
+using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Orders.Events;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Domain.Tests.Orders;
@@ -190,6 +192,221 @@ public sealed class OrderTests
         cancelled.CanBeDeleted.Should().BeTrue();
         accepted.CanBeDeleted.Should().BeFalse();
         fraud.CanBeDeleted.Should().BeFalse();
+    }
+
+    /// <summary>A fresh accepted order has lines nobody has tried yet, and stays Active until an outcome says otherwise.</summary>
+    [Fact]
+    public void Accept_LeavesTheLinesPendingAndTheOrderActive()
+    {
+        var order = NewAcceptedOrder();
+
+        order.Status.Should().Be(OrderStatus.Active);
+        order.Items.Should().OnlyContain(i => i.FulfilmentState == OrderItemFulfilmentState.Pending && i.FulfilmentAttempts == 0);
+    }
+
+    /// <summary>A recorded success marks the line Fulfilled, counts the attempt, dates it and keeps the order Active.</summary>
+    [Fact]
+    public void RecordLineFulfilled_MarksTheLineAndKeepsTheOrderActive()
+    {
+        var order = NewAcceptedOrder();
+
+        order.RecordLineFulfilled(1, Now);
+
+        var line = order.Items.Single(i => i.Id == 1);
+        line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Fulfilled);
+        line.FulfilmentErrorCode.Should().BeNull();
+        line.FulfilmentAttempts.Should().Be(1);
+        line.LastFulfilmentAttemptAt.Should().Be(Now);
+        order.Status.Should().Be(OrderStatus.Active);
+    }
+
+    /// <summary>A recorded failure keeps the code and makes the accepted order Incomplete, not Active.</summary>
+    [Fact]
+    public void RecordLineFailed_KeepsTheCodeAndMakesTheOrderIncomplete()
+    {
+        var order = NewAcceptedOrder();
+
+        order.RecordLineFulfilled(1, Now);
+        order.RecordLineFailed(2, "DOMAIN_ALREADY_REGISTERED", Now);
+
+        var line = order.Items.Single(i => i.Id == 2);
+        line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
+        line.FulfilmentErrorCode.Should().Be("DOMAIN_ALREADY_REGISTERED");
+        line.FulfilmentAttempts.Should().Be(1);
+        order.Status.Should().Be(OrderStatus.Incomplete);
+    }
+
+    /// <summary>An error code longer than its column is cut, so recording a failure can never fail the save.</summary>
+    [Fact]
+    public void RecordLineFailed_CutsACodeLongerThanTheColumn()
+    {
+        var order = NewAcceptedOrder();
+
+        order.RecordLineFailed(1, new string('X', OrderItem.FulfilmentErrorCodeMaxLength + 20), Now);
+
+        order.Items.Single(i => i.Id == 1).FulfilmentErrorCode!.Length.Should().Be(OrderItem.FulfilmentErrorCodeMaxLength);
+    }
+
+    /// <summary>A pending order's status is the admin's decision and a recorded outcome never changes it.</summary>
+    [Fact]
+    public void RecordLineFailed_LeavesAPendingOrderPending()
+    {
+        var order = NewOrder();
+        order.AddItem(3, "Hosting", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
+        GiveIds(order);
+
+        order.RecordLineFailed(1, null, Now);
+
+        order.Status.Should().Be(OrderStatus.Pending);
+        order.Items.Single().FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
+    }
+
+    /// <summary>A retry claims the failed line: it is in progress, the attempt is counted, and the order is still Incomplete.</summary>
+    [Fact]
+    public void StartLineRetry_ClaimsTheFailedLineAndCountsTheAttempt()
+    {
+        var order = NewIncompleteOrder();
+        var later = Now.AddMinutes(1);
+
+        order.StartLineRetry(2, later);
+
+        var line = order.Items.Single(i => i.Id == 2);
+        line.FulfilmentState.Should().Be(OrderItemFulfilmentState.InProgress);
+        line.FulfilmentAttempts.Should().Be(2);
+        line.LastFulfilmentAttemptAt.Should().Be(later);
+        order.Status.Should().Be(OrderStatus.Incomplete);
+    }
+
+    /// <summary>A retry that succeeds counts one attempt, not two, clears the code and returns the order to Active.</summary>
+    [Fact]
+    public void RecordLineFulfilled_AfterARetry_ClearsTheCodeAndReturnsTheOrderToActive()
+    {
+        var order = NewIncompleteOrder();
+        order.StartLineRetry(2, Now.AddMinutes(1));
+
+        order.RecordLineFulfilled(2, Now.AddMinutes(2));
+
+        var line = order.Items.Single(i => i.Id == 2);
+        line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Fulfilled);
+        line.FulfilmentErrorCode.Should().BeNull();
+        line.FulfilmentAttempts.Should().Be(2);
+        order.Status.Should().Be(OrderStatus.Active);
+    }
+
+    /// <summary>A retry that fails again keeps the order Incomplete with the new code and counts one more attempt.</summary>
+    [Fact]
+    public void RecordLineFailed_AfterARetry_KeepsTheOrderIncomplete()
+    {
+        var order = NewIncompleteOrder();
+        order.StartLineRetry(2, Now.AddMinutes(1));
+
+        order.RecordLineFailed(2, "REGISTRAR_DOMAIN_UNAVAILABLE", Now.AddMinutes(2));
+
+        var line = order.Items.Single(i => i.Id == 2);
+        line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
+        line.FulfilmentErrorCode.Should().Be("REGISTRAR_DOMAIN_UNAVAILABLE");
+        line.FulfilmentAttempts.Should().Be(2);
+        order.Status.Should().Be(OrderStatus.Incomplete);
+    }
+
+    /// <summary>A fulfilled line cannot be retried, so it cannot be fulfilled twice.</summary>
+    [Fact]
+    public void StartLineRetry_OnAFulfilledLine_Throws()
+    {
+        var order = NewIncompleteOrder();
+
+        var act = () => order.StartLineRetry(1, Now);
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRetryable);
+        order.CanRetryLine(1, Now).Should().BeFalse();
+    }
+
+    /// <summary>A line another retry holds cannot be claimed again until its claim has run out.</summary>
+    [Fact]
+    public void StartLineRetry_OnAClaimedLine_ThrowsUntilTheClaimExpires()
+    {
+        var order = NewIncompleteOrder();
+        order.StartLineRetry(2, Now);
+
+        var act = () => order.StartLineRetry(2, Now.AddMinutes(1));
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRetryable);
+        order.CanRetryLine(2, Now.AddHours(1)).Should().BeTrue();
+    }
+
+    /// <summary>A pending (not accepted) order's lines cannot be retried.</summary>
+    [Fact]
+    public void StartLineRetry_OnAPendingOrder_Throws()
+    {
+        var order = NewOrder();
+        order.AddItem(3, "Hosting", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
+        GiveIds(order);
+        order.RecordLineFailed(1, null, Now);
+
+        var act = () => order.StartLineRetry(1, Now);
+
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRetryable);
+    }
+
+    /// <summary>A line the order does not hold is refused, both for a retry and for a recorded outcome.</summary>
+    [Fact]
+    public void AnUnknownLine_IsRefused()
+    {
+        var order = NewIncompleteOrder();
+
+        order.CanRetryLine(99, Now).Should().BeFalse();
+        var retry = () => order.StartLineRetry(99, Now);
+        var record = () => order.RecordLineFulfilled(99, Now);
+
+        retry.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRetryable);
+        record.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderItemNotFound);
+    }
+
+    /// <summary>A refunded line is closed for good: it cannot be retried and no longer keeps the order Incomplete.</summary>
+    [Fact]
+    public void RecordLineRefunded_ClosesTheLineAndLetsTheOrderReturnToActive()
+    {
+        var order = NewIncompleteOrder();
+
+        order.RecordLineRefunded(2);
+
+        order.Items.Single(i => i.Id == 2).FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunded);
+        order.CanRetryLine(2, Now.AddHours(1)).Should().BeFalse();
+        order.Status.Should().Be(OrderStatus.Active);
+    }
+
+    /// <summary>Builds an accepted order with two lines, ids 1 and 2.</summary>
+    /// <returns>The order, Active, both lines Pending.</returns>
+    private static Order NewAcceptedOrder()
+    {
+        var order = NewOrder();
+        order.AddItem(3, "Hosting", BillingCycle.Monthly, 10m, 10m, domain: null, hostname: null);
+        order.AddItem(4, "Domain", BillingCycle.Annual, 12m, 12m, domain: "example.test", hostname: null);
+        GiveIds(order);
+        order.Accept(Now);
+        return order;
+    }
+
+    /// <summary>Builds an accepted order whose first line was fulfilled and whose second failed once.</summary>
+    /// <returns>The order, Incomplete.</returns>
+    private static Order NewIncompleteOrder()
+    {
+        var order = NewAcceptedOrder();
+        order.RecordLineFulfilled(1, Now);
+        order.RecordLineFailed(2, "DOMAIN_ALREADY_REGISTERED", Now);
+        return order;
+    }
+
+    /// <summary>Gives the order's lines the ids 1, 2 and so on that the database would assign, so a line can be named.</summary>
+    /// <param name="order">The order whose lines get ids.</param>
+    private static void GiveIds(Order order)
+    {
+        var id = typeof(BaseEntity).GetProperty(nameof(BaseEntity.Id))!;
+        var next = 1;
+        foreach (var item in order.Items)
+        {
+            id.SetValue(item, next++);
+        }
     }
 
     /// <summary>Builds a pending order to move through its statuses.</summary>

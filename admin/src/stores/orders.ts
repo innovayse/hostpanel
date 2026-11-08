@@ -1,6 +1,6 @@
 /**
  * Pinia store for admin order management: the paged list with a status filter, one order's
- * detail and the lifecycle commands (accept, cancel, delete).
+ * detail and the lifecycle commands (accept, retry of a failed line, cancel, delete).
  *
  * Owns every request the order pages make and the sentence for a refusal, so the pages hold
  * no `catch`. A load puts its sentence in `error`; a command puts its sentence in `actionError`.
@@ -43,7 +43,7 @@ export const useOrdersStore = defineStore('orders', () => {
   /** Sentence for the last refused accept, cancel or delete, null when none. */
   const actionError = ref<string | null>(null)
 
-  /** Lines the last accept could not fulfil; empty when every line was. */
+  /** Lines the last accept or line retry could not fulfil; empty when every line was. */
   const acceptFailures = ref<OrderLineFailure[]>([])
 
   /** The failed lines of the last accept, named by domain or product, comma-separated. */
@@ -103,6 +103,25 @@ export const useOrdersStore = defineStore('orders', () => {
   }
 
   /**
+   * Retries one failed order line, keeps the lines still failed in `acceptFailures`, then refreshes
+   * the current order detail so the line shows its new state.
+   *
+   * @param id - The order primary key.
+   * @param itemId - The failed line.
+   * @returns True when the retry ran; false when refused (see `actionError`).
+   */
+  const retryOrderLine = async (id: number, itemId: number): Promise<boolean> => {
+    acceptFailures.value = []
+    const result = await runAction(actionError, () => api.retryOrderLine(id, itemId))
+    if (result.ok) {
+      acceptFailures.value = result.value.failedLines
+    }
+    // A refusal can mean the line changed under the reader (another retry won), so the detail is read again either way.
+    await fetchOne(id)
+    return result.ok
+  }
+
+  /**
    * Cancels a pending order, then refreshes the current order detail.
    *
    * @param id - The order primary key.
@@ -145,6 +164,7 @@ export const useOrdersStore = defineStore('orders', () => {
     fetchAll,
     fetchOne,
     acceptOrder,
+    retryOrderLine,
     cancelOrder,
     deleteOrder,
   }

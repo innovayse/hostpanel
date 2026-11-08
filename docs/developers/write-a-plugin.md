@@ -222,7 +222,7 @@ The fields above cover manifest version 1. A manifest without `manifestVersion` 
   { name: 'api', type: 'object', default: '{}', description: 'Routes the host forwards to the plugin: api.client and api.admin, each a list of routes.' },
   { name: 'ui', type: 'object', default: '{}', description: 'What the plugin adds to the panels: ui.client and ui.admin (menus and pages) and ui.slots (widgets in host slots).' },
   { name: 'tags', type: 'string[]', default: '[]', description: 'Optional keywords a plugin registry uses to let people find the plugin. Needs SDK 3.3.0 or later. At most 10 tags, each 2 to 30 lowercase letters, digits and hyphens with no leading #, and no tag twice. A bad list is refused with PLUGIN_MANIFEST_TAGS_INVALID.' },
-  { name: 'externalOrigins', type: 'string[]', default: '[]', description: 'Optional. Web origins (scheme, host and port, such as https://example.com or https://*.example.com) that a link block of a plugin view may point at with an absolute https address, and that a preview block may frame (a pure https origin only). Leave it out when the plugin only links to sites hosted on the installation: see the section on links to the reader's own sites below.' }
+  { name: 'externalOrigins', type: 'string[]', default: '[]', description: 'Optional. Web origins (scheme, host and port, such as https://example.com or https://*.example.com) that a link block of a plugin view may point at with an absolute https address, and that a preview block may frame (a pure https origin only). Leave it out when the plugin only links to sites hosted on the installation: see the section on links to sites the reader owns below.' }
 ]" />
 
 Tags are plain keywords, written in the manifest like this:

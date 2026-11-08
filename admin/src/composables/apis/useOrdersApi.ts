@@ -47,6 +47,26 @@ export const useOrdersApi = () => {
     request<OrderFulfillment>(`${ApiPath.Orders}/${id}/accept`, { method: HttpMethod.Post })
 
   /**
+   * Runs the fulfilment of one failed order line again.
+   *
+   * @param id - Order id.
+   * @param itemId - The failed line.
+   * @returns The lines still failed after the retry; empty when the line was fulfilled.
+   */
+  const retryOrderLine = (id: number, itemId: number): Promise<OrderFulfillment> =>
+    request<OrderFulfillment>(`${ApiPath.Orders}/${id}/items/${itemId}/retry`, { method: HttpMethod.Post })
+
+  /**
+   * Closes a partly refunded line as refunded, after the rest of the refund was given back by hand.
+   *
+   * @param id - Order id.
+   * @param itemId - The partly refunded line.
+   * @returns Nothing.
+   */
+  const closeOrderLineRefund = (id: number, itemId: number): Promise<void> =>
+    request<void>(`${ApiPath.Orders}/${id}/items/${itemId}/close-refund`, { method: HttpMethod.Post })
+
+  /**
    * Cancels a pending order.
    *
    * @param id - Order id.
@@ -62,5 +82,5 @@ export const useOrdersApi = () => {
    */
   const deleteOrder = (id: number): Promise<void> => request<void>(`${ApiPath.Orders}/${id}`, { method: HttpMethod.Delete })
 
-  return { listOrders, getOrder, acceptOrder, cancelOrder, deleteOrder }
+  return { listOrders, getOrder, acceptOrder, retryOrderLine, closeOrderLineRefund, cancelOrder, deleteOrder }
 }

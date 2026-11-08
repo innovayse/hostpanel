@@ -41,7 +41,8 @@ public sealed class AcceptOrderHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The lines that could not be fulfilled (empty when every line was), or <c>ORDER_NOT_FOUND</c>
-    /// when the id names no order. The order's own status invariant (must be Pending) still throws;
+    /// when the id names no order, or <c>ORDER_LINE_CHANGED</c> when the lines could not be claimed because the order kept
+    /// changing under the run. The order's own status invariant (must be Pending) still throws;
     /// see <see cref="Innovayse.Hostpanel.Domain.Orders.Order.Accept"/>.
     /// </returns>
     public async Task<Result<OrderFulfillmentDto>> HandleAsync(AcceptOrderCommand cmd, CancellationToken ct)
@@ -56,7 +57,11 @@ public sealed class AcceptOrderHandler
             return Result<OrderFulfillmentDto>.FailureCode(HostpanelErrorCodes.ORDER_NOT_FOUND);
         }
 
-        order.Accept(_clock.UtcNow);
+        // The lines are claimed in the same save that accepts the order, so a crash after it leaves them claimed and the
+        // order Incomplete (retryable once the claim runs out) instead of Active over lines that never started.
+        var now = _clock.UtcNow;
+        order.Accept(now);
+        order.BeginFulfilment(now);
         await _context.SaveChangesAsync(ct);
 
         return await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(new FulfillOrderLinesCommand(order.Id), ct);

@@ -98,4 +98,26 @@ public sealed class SwaggerDocumentTests(IntegrationTestFactory factory) : IClas
 
         text.Should().Contain("ErrorResponse");
     }
+
+    /// <summary>
+    /// The renewal body shows only the period: the order line a fulfilment stores with a renewal is internal, so a request can
+    /// neither set it nor learn that it exists, and the schemas of the domain commands that carry an order stay free of it.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Document_DoesNotExposeTheInternalOrderLineOfADomainCommandAsync()
+    {
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync(SwaggerRegistration.DocumentPath);
+
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var schemas = document.RootElement.GetProperty("components").GetProperty("schemas");
+        foreach (var name in new[] { "RenewDomainCommand", "RegisterDomainCommand", "TransferDomainCommand" })
+        {
+            var schema = schemas.EnumerateObject().Single(s => s.Name.EndsWith("." + name, StringComparison.Ordinal) || s.Name == name).Value;
+            var properties = schema.GetProperty("properties").EnumerateObject().Select(p => p.Name).ToList();
+            properties.Should().NotContain("orderItemId").And.NotContain("orderId", because: $"{name} is a public body");
+        }
+    }
 }

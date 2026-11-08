@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Domain.Orders;
+using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence.Converters;
@@ -14,6 +15,10 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
     public void Configure(EntityTypeBuilder<OrderItem> builder)
     {
         builder.HasKey(x => x.Id);
+
+        // Two retries of the same failed line cannot both claim it; the second save fails with
+        // ConcurrencyConflictException. The token is the xmin system column, so no column is added.
+        builder.UseXminConcurrencyToken();
         builder.Property(x => x.OrderId).IsRequired();
         builder.Property(x => x.ProductId).IsRequired();
         builder.Property(x => x.ProductName).IsRequired().HasMaxLength(200);
@@ -26,6 +31,13 @@ public sealed class OrderItemConfiguration : IEntityTypeConfiguration<OrderItem>
         builder.Property(x => x.DomainAction).HasConversion(new DomainActionConverter()).HasMaxLength(20);
         builder.Property(x => x.EppCode).HasMaxLength(255);
         builder.Property(x => x.Years);
+
+        // Where fulfilling the line stands. A line that predates the record reads as Pending.
+        builder.Property(x => x.FulfilmentState).IsRequired().HasConversion<string>().HasMaxLength(30)
+            .HasDefaultValue(OrderItemFulfilmentState.Pending);
+        builder.Property(x => x.FulfilmentErrorCode).HasMaxLength(OrderItem.FulfilmentErrorCodeMaxLength);
+        builder.Property(x => x.FulfilmentAttempts).IsRequired().HasDefaultValue(0);
+        builder.Property(x => x.LastFulfilmentAttemptAt);
 
         // A product that an order line was placed for cannot be deleted; the line keeps the product name too.
         builder.HasOne<Product>()

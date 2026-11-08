@@ -1431,6 +1431,33 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("DnsRecords");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Domains.DomainLineRenewal", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DomainId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OrderItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("RenewedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DomainId");
+
+                    b.HasIndex("OrderItemId")
+                        .IsUnique();
+
+                    b.ToTable("DomainLineRenewals");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Domains.DomainReminder", b =>
                 {
                     b.Property<int>("Id")
@@ -2620,9 +2647,28 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<decimal>("FirstPaymentAmount")
                         .HasColumnType("numeric(18,4)");
 
+                    b.Property<int>("FulfilmentAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("FulfilmentErrorCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("FulfilmentState")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("Pending");
+
                     b.Property<string>("Hostname")
                         .HasMaxLength(253)
                         .HasColumnType("character varying(253)");
+
+                    b.Property<DateTimeOffset?>("LastFulfilmentAttemptAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("OrderId")
                         .HasColumnType("integer");
@@ -2645,6 +2691,12 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.Property<int?>("Years")
                         .HasColumnType("integer");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -3458,6 +3510,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("NextRenewalAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("OrderItemId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("OverrideAutoSuspend")
                         .HasColumnType("boolean");
 
@@ -3529,6 +3584,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId");
+
+                    b.HasIndex("OrderItemId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ClientServices_OrderItemId")
+                        .HasFilter("\"OrderItemId\" IS NOT NULL");
 
                     b.HasIndex("ProductId");
 
@@ -4796,6 +4856,15 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Domains.DomainLineRenewal", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Domains.RegisteredDomain", null)
+                        .WithMany("LineRenewals")
+                        .HasForeignKey("DomainId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Domains.DomainReminder", b =>
                 {
                     b.HasOne("Innovayse.Hostpanel.Domain.Domains.RegisteredDomain", null)
@@ -5169,6 +5238,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Navigation("DnsRecords");
 
                     b.Navigation("EmailForwardingRules");
+
+                    b.Navigation("LineRenewals");
 
                     b.Navigation("Nameservers");
 

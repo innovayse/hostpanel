@@ -1,3 +1,5 @@
+using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm;
@@ -95,16 +97,186 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
         result.Outcome.Should().Be(ProvisioningOutcome.AlreadyExists);
     }
 
-    /// <summary>A lost create answer whose lookup is also lost is refused, never reported as created.</summary>
+    /// <summary>A lost create answer whose lookup is also lost throws a transient error: the account may exist, so it is neither created nor refused.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>
     [Fact]
-    public async Task Provision_LostAnswerAndLostLookup_IsRefusedAsync()
+    public async Task Provision_LostAnswerAndLostLookup_ThrowsATransientErrorAsync()
     {
-        var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.ErrorPage, WhmReplies.ErrorPage);
+        var logger = new CapturingLogger<WhmProvisioningProvider>();
+        var provider = BuildProvider(logger, WhmReplies.ErrorPage, WhmReplies.ErrorPage);
+
+        var act = () => provider.ProvisionAsync(Order, CancellationToken.None);
+
+        var thrown = await act.Should().ThrowAsync<DomainRuleException>();
+        thrown.Which.Code.Should().Be(HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN);
+        thrown.Which.Message.Should().NotContain("example.com").And.NotContain("testuser");
+        whm.Requests.Should().HaveCount(2);
+        logger.Messages.Should().NotContain(m => m.Contains("example.com") || m.Contains("testuser"));
+    }
+
+    /// <summary>A server that is down for the create and for the lookup is the same transient error.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Provision_ServerDownForCreateAndLookup_ThrowsATransientErrorAsync()
+    {
+        var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>());
+        await whm.DisposeAsync();
+
+        var act = () => provider.ProvisionAsync(Order, CancellationToken.None);
+
+        (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN);
+        whm = await StubHttpServer.StartAsync();
+    }
+
+    /// <summary>A positive refusal whose lookup is lost is still a refusal: WHM answered, so the account was not made.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Provision_RefusedAndLostLookup_IsRefusedAsync()
+    {
+        var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Refused, WhmReplies.ErrorPage);
 
         var result = await provider.ProvisionAsync(Order, CancellationToken.None);
 
         result.Outcome.Should().Be(ProvisioningOutcome.Refused);
+    }
+
+    /// <summary>A lost create answer whose lookup positively finds no account is refused: nothing was made.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Provision_LostAnswerAndNoAccount_IsRefusedAsync()
+    {
+        var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.ErrorPage, WhmReplies.NoAccount);
+
+        var result = await provider.ProvisionAsync(Order, CancellationToken.None);
+
+        result.Outcome.Should().Be(ProvisioningOutcome.Refused);
+    }
+
+    /// <summary>A username cPanel cannot create stops the order with its code, before WHM is called.</summary>
+    /// <param name="username">The stored username.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("Test_User")]
+    [InlineData("1user")]
+    [InlineData("averyveryverylongusername")]
+    [InlineData("user&plan=root")]
+    public async Task Provision_InvalidUsername_IsStoppedBeforeWhmAsync(string username)
+    {
+        var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Created);
+
+        var act = () => provider.ProvisionAsync(Order with { Username = username }, CancellationToken.None);
+
+        (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.CPANEL_USERNAME_INVALID);
+        whm.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>A domain that is not a domain name stops the order with its code, before WHM is called.</summary>
+    /// <param name="domain">The stored domain.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("localhost")]
+    [InlineData("exa mple.com")]
+    [InlineData("example.com&plan=root")]
+    public async Task Provision_InvalidDomain_IsStoppedBeforeWhmAsync(string domain)
+    {
+        var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Created);
+
+        var act = () => provider.ProvisionAsync(Order with { DomainName = domain }, CancellationToken.None);
+
+        (await act.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.CPANEL_DOMAIN_INVALID);
+        whm.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>A blank password or package is never sent to WHM.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Provision_BlankPasswordOrPackage_IsStoppedBeforeWhmAsync()
+    {
+        var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Created);
+
+        var blankPassword = () => provider.ProvisionAsync(Order with { Password = " " }, CancellationToken.None);
+        var blankPackage = () => provider.ProvisionAsync(Order with { Package = string.Empty }, CancellationToken.None);
+
+        await blankPassword.Should().ThrowAsync<ArgumentException>();
+        await blankPackage.Should().ThrowAsync<ArgumentException>();
+        whm.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>Every operation on an existing account refuses a blank or unsafe reference with its code, and WHM is never called.</summary>
+    /// <param name="reference">The stored reference.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData("")]
+    [InlineData("  ")]
+    [InlineData("user name")]
+    [InlineData("user&x=1")]
+    public async Task EveryOperation_InvalidReference_IsStoppedBeforeWhmAsync(string reference)
+    {
+        var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Ok);
+        var calls = new Func<Task>[]
+        {
+            () => provider.SuspendAsync(new SuspendAccountOrder(7, reference, "Overdue"), CancellationToken.None),
+            () => provider.UnsuspendAsync(reference, CancellationToken.None),
+            () => provider.TerminateAsync(new TerminateAccountOrder(7, reference, "Cancelled"), CancellationToken.None),
+            () => provider.GetCredentialsAsync(reference, CancellationToken.None),
+            () => provider.GetCPanelSsoUrlAsync(reference, null, CancellationToken.None),
+            () => provider.ChangePasswordAsync(reference, "N3w-pass", CancellationToken.None),
+            () => provider.ChangePackageAsync(reference, "Pro", CancellationToken.None),
+        };
+
+        foreach (var call in calls)
+        {
+            (await call.Should().ThrowAsync<DomainRuleException>()).Which.Code.Should().Be(HostpanelErrorCodes.CPANEL_USERNAME_INVALID);
+        }
+
+        whm.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>A blank new password or package is never sent to WHM.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task ChangePasswordOrPackage_Blank_IsStoppedBeforeWhmAsync()
+    {
+        var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Ok);
+
+        var blankPassword = () => provider.ChangePasswordAsync("testuser", " ", CancellationToken.None);
+        var blankPackage = () => provider.ChangePackageAsync("testuser", string.Empty, CancellationToken.None);
+
+        await blankPassword.Should().ThrowAsync<ArgumentException>();
+        await blankPackage.Should().ThrowAsync<ArgumentException>();
+        whm.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>A suspend without a reason leaves the argument out instead of sending it empty.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Suspend_BlankReason_OmitsTheArgumentAsync()
+    {
+        var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.Ok);
+
+        await provider.SuspendAsync(new SuspendAccountOrder(7, "testuser", " "), CancellationToken.None);
+
+        AssertCall(whm.Requests.Should().ContainSingle().Subject, "suspendacct", "user=testuser");
+    }
+
+    /// <summary>A cancellation during the create is not read as a failure to send: it propagates and no lookup follows.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Provision_Cancelled_PropagatesWithoutALookupAsync()
+    {
+        whm.Enqueue(new StubReply(System.Net.HttpStatusCode.OK, WhmReplies.Created, Delay: TimeSpan.FromSeconds(30)));
+        var provider = new WhmProvisioningProvider(
+            Connection(), "192.0.2.10", "https://whm.example.test:2083", new WhmApiClient(new HttpClient(), NullLogger<WhmApiClient>.Instance), new CapturingLogger<WhmProvisioningProvider>());
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
+
+        var act = () => provider.ProvisionAsync(Order, cts.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        whm.Requests.Should().ContainSingle();
     }
 
     /// <summary>Suspend sends the user and the reason to suspendacct.</summary>
@@ -260,8 +432,52 @@ public sealed class WhmProvisioningProviderTests : IAsyncLifetime
 
         var url = await provider.GetCPanelSsoUrlAsync("testuser", null, CancellationToken.None);
 
-        url.Should().Be("https://whm.example.test:2083/cpsess123/login/?session=testuser:abc");
+        url.Should().Be("https://192.0.2.10:2083/cpsess123/login/?session=testuser:abc");
         AssertCall(whm.Requests.Should().ContainSingle().Subject, "create_user_session", "user=testuser&service=cpaneld");
+    }
+
+    /// <summary>An https address on the host the server was configured by is accepted too, and the parsed address that was checked is what is returned.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Sso_AddressOnTheConfiguredHost_IsAcceptedAsync()
+    {
+        var host = whm.BaseAddress.Host;
+        var address = $"https://{host}:2083/cpsess123/login/";
+        var provider = BuildProvider(new CapturingLogger<WhmProvisioningProvider>(), WhmReplies.SessionAt(address.ToUpperInvariant()));
+
+        var url = await provider.GetCPanelSsoUrlAsync("testuser", null, CancellationToken.None);
+
+        // The scheme and host come back in their parsed, lower case form; the path keeps its case.
+        url.Should().Be($"https://{host}:2083/CPSESS123/LOGIN/");
+    }
+
+    /// <summary>An address that is not an https address on the server and its cPanel port is never returned: it is a coded failure that names nothing of the address.</summary>
+    /// <param name="url">The address WHM is made to return.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData("https://evil.example:2083/cpsess123/login/")]
+    [InlineData("https://192.0.2.10.evil.example/cpsess123/login/")]
+    [InlineData("http://192.0.2.10:2083/cpsess123/login/")]
+    [InlineData("/cpsess123/login/")]
+    [InlineData("//192.0.2.10/cpsess123/login/")]
+    [InlineData("https://192.0.2.10@evil.example/cpsess123/login/")]
+    [InlineData("https://user:secret@192.0.2.10:2083/cpsess123/login/")]
+    [InlineData("https://192.0.2.10:2087/cpsess123/login/")]
+    [InlineData("https://192.0.2.10:8443/cpsess123/login/")]
+    [InlineData("https://192.0.2.10/cpsess123/login/")]
+    [InlineData("https://192.0.2.10.:2083/cpsess123/login/")]
+    [InlineData("https://192.0.2.1%30:2083/cpsess123/login/")]
+    public async Task Sso_AddressNotOnTheServer_IsACodedFailureAsync(string url)
+    {
+        var logger = new CapturingLogger<WhmProvisioningProvider>();
+        var provider = BuildProvider(logger, WhmReplies.SessionAt(url));
+
+        var act = () => provider.GetCPanelSsoUrlAsync("testuser", null, CancellationToken.None);
+
+        var thrown = await act.Should().ThrowAsync<DomainRuleException>();
+        thrown.Which.Code.Should().Be(HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED);
+        thrown.Which.Message.Should().NotContain("evil").And.NotContain("secret").And.NotContain("cpsess123");
+        logger.Messages.Should().NotContain(m => m.Contains("evil") || m.Contains("secret") || m.Contains("cpsess123"));
     }
 
     /// <summary>A refused session throws.</summary>

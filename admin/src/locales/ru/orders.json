@@ -20,7 +20,16 @@
     "confirmCancelMessage": "Заказ будет отменён. Это действие нельзя отменить.",
     "cancelOrder": "Отменить заказ",
     "linesSubtotal": "Сумма позиций заказа (без налога и кредита)",
-    "invoiceTotal": "Итого по счёту"
+    "invoiceTotal": "Итого по счёту",
+    "fulfilment": "Выполнение",
+    "retry": "Повторить",
+    "lineRetried": "Позиция повторена и выполнена.",
+    "attempts": "Попыток: {count}, последняя {at}",
+    "finishRefund": "Часть суммы возвращена. Завершите возврат вручную.",
+    "closeRefund": "Возврат завершён",
+    "confirmCloseRefundTitle": "Закрыть этот возврат?",
+    "confirmCloseRefundMessage": "Подтвердите, что остаток по этой позиции возвращён вручную. Позиция будет закрыта как возвращённая, и повторить её будет нельзя.",
+    "refundClosed": "Позиция закрыта как возвращённая."
   },
   "ordersList": {
     "orders": "Заказы",
@@ -35,9 +44,29 @@
     "orderCancelled": "Заказ отменён.",
     "confirmCancelTitle": "Отменить этот заказ?",
     "confirmCancelMessage": "Заказ будет отменён. Это действие нельзя отменить.",
-    "cancelOrder": "Отменить заказ"
+    "cancelOrder": "Отменить заказ",
+    "failedLines": "Повторить: {count}",
+    "needsAttention": "Требует внимания"
   },
   "fulfillment": {
-    "acceptedWithFailedLines": "Заказ принят, но эти позиции не удалось выполнить: {lines}."
+    "acceptedWithFailedLines": "Заказ принят, но эти позиции не удалось выполнить: {lines}.",
+    "retryStillFailed": "Позицию повторили, но выполнить её снова не удалось: {lines}."
+  },
+  "lineErrors": {
+    "domainAlreadyRegistered": "Домен уже зарегистрирован.",
+    "domainRegistrationUpstreamFailed": "Регистратор не смог зарегистрировать домен.",
+    "domainRenewalUpstreamFailed": "Регистратор не смог продлить домен.",
+    "domainTransferUpstreamFailed": "Регистратор не смог перенести домен.",
+    "domainProductNotConfigured": "Доменный продукт не настроен.",
+    "productNotFound": "Заказанный продукт больше не существует.",
+    "productNotAvailable": "Заказанный продукт недоступен.",
+    "provisioningUpstreamFailed": "Сервер не смог создать аккаунт.",
+    "provisioningOutcomeUnknown": "Сервер не подтвердил, создан ли аккаунт.",
+    "provisioningAccountConflict": "Аккаунт с таким именем уже есть на сервере.",
+    "productPackageMissing": "У продукта не задан пакет сервера.",
+    "productServerGroupRequired": "У продукта не задана группа серверов.",
+    "serverConnectionUnreachable": "Сервер недоступен.",
+    "unexpected": "Неожиданная ошибка остановила позицию.",
+    "generic": "Позицию не удалось выполнить."
   }
 }

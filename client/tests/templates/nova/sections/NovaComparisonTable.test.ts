@@ -21,6 +21,7 @@ const plan = (id: number, name: string): PlanCard => ({
   isFree: false,
   priceMonthly: '$1.00',
   priceAnnual: '$1.00',
+  cyclePrices: { monthly: '$1.00', annual: '$1.00' },
   href: `/configure/${id}`,
 })
 

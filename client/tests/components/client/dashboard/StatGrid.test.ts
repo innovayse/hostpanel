@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import { mountClient } from '~/tests/helpers/mountClient'
 import { grantPermissions } from '~/tests/helpers/grantPermissions'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import StatGrid from '~/components/client/dashboard/StatGrid.vue'
 import { useClientStore } from '~/stores/client'
 import type { ClientDomain } from '~/types/clientdomain'
@@ -37,13 +37,13 @@ describe('ClientDashboardStatGrid', () => {
     store.services = [{ status: ServiceStatus.Active }, { status: ServiceStatus.Active }, { status: ServiceStatus.Pending }] as unknown as ClientService[]
     store.domains = [{ id: 1 }] as unknown as ClientDomain[]
     store.invoices = [{ status: InvoiceStatus.Unpaid }, { status: InvoiceStatus.Paid }] as unknown as ClientInvoice[]
-    store.tickets = [{ status: TicketStatus.Open }, { status: TicketStatus.AwaitingReply }, { status: TicketStatus.Answered }, { status: TicketStatus.Closed }] as unknown as ClientTicket[]
+    store.tickets = [{ status: TicketStatus.Open }, { status: TicketStatus.AwaitingReply }, { status: TicketStatus.Closed }] as unknown as ClientTicket[]
     await nextTick()
 
     expect(valueOf(wrapper, DashboardStat.Services)).toBe('2')
     expect(valueOf(wrapper, DashboardStat.Domains)).toBe('1')
     expect(valueOf(wrapper, DashboardStat.Invoices)).toBe('1')
-    expect(valueOf(wrapper, DashboardStat.Tickets)).toBe('3')
+    expect(valueOf(wrapper, DashboardStat.Tickets)).toBe('2')
   })
 
   it('shows dashes while loading', () => {

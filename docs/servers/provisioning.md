@@ -49,7 +49,7 @@ On success the service becomes **Active**, the billing period starts, and the pr
 </li>
 </Steps>
 
-A retry is safe: if the same account already exists on the panel under the same username and domain, Hostpanel adopts it. If the username is taken by a different domain, provisioning fails with `PROVISIONING_ACCOUNT_CONFLICT`. Other panel failures return `PROVISIONING_UPSTREAM_FAILED`.
+A retry is safe: if the same account already exists on the panel under the same username and domain, Hostpanel adopts it. If the username is taken by a different domain, provisioning fails with `PROVISIONING_ACCOUNT_CONFLICT`. When the panel refuses the request the answer is `PROVISIONING_UPSTREAM_FAILED`. When the panel cannot be reached or its answer is lost, nobody knows whether the account was created, and the answer is `PROVISIONING_OUTCOME_UNKNOWN` (503): the service stays Pending and a later retry adopts the account if it exists.
 
 If the service record has no domain or username yet, provisioning fails with `SERVICE_HOSTING_DETAILS_MISSING`. Attempting to run provisioning on a service that is not in Pending status returns `SERVICE_NOT_PENDING`.
 

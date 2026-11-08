@@ -7,8 +7,9 @@
  * per-field messages (the `fieldErrors` prop) show under their inputs, and go away, through
  * `clearFieldError`, as soon as the operator changes that field.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useFieldErrorClear } from '@/composables/useFieldErrorClear'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -108,27 +109,15 @@ const handleConfirmClear = (): void => {
   emit('clear')
 }
 
-/**
- * Drops the API's message for a field as soon as the operator changes that field.
- *
- * @param field - The wire name of the field.
- * @returns Nothing; emits `clearFieldError` only when that field has a message.
- */
-const clearErrorOf = (field: ExternalAccountField): void => {
-  if (props.fieldErrors[field] !== undefined) {
-    emit('clearFieldError', field)
-  }
-}
-
-/** Drops the API's provider message once the provider is edited. */
-watch(provider, () => {
-  clearErrorOf(ExternalAccountField.Provider)
-})
-
-/** Drops the API's account id message once the account id is edited. */
-watch(accountId, () => {
-  clearErrorOf(ExternalAccountField.AccountId)
-})
+/** Drops the API's message of each field as soon as the operator edits that field. */
+useFieldErrorClear(
+  () => props.fieldErrors,
+  (field) => emit('clearFieldError', field),
+  [
+    [ExternalAccountField.Provider, provider],
+    [ExternalAccountField.AccountId, accountId],
+  ],
+)
 </script>
 
 <template>

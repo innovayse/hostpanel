@@ -171,6 +171,19 @@ docker/                              compose set (shared·dev·prod·platform), 
   `ProvisioningProviderFactory` builds it per server, so it is an Infrastructure adapter in its
   own assembly. The SDK's `IProvisioningPlugin` is only a marker with no operations, so there is
   no SDK contract it could implement instead.
+- **The cPanel provider lives in the host for now.** `WhmProvisioningProvider`, `WhmApiClient` and their
+  models (`Infrastructure/Integrations/CPanel/Whm/`) implement `IProvisioningProvider` and are built per server
+  by `ProvisioningProviderFactory`, like the CWP7 and Plesk providers, and not shipped as a plugin. The reason
+  is the same: the SDK has no provisioning contract a plugin could implement (`IProvisioningPlugin` is a marker, and the
+  hosting panel contract it replaces is obsolete), the server form, the connection test, the disk usage report and
+  the single sign-on and credentials screens all reach a panel through the host's own port, and a plugin cannot
+  yet supply those. Moving the provider out is wanted once the SDK carries that contract, and it is tracked in
+  #997; until then the provider stays in Infrastructure, takes its numbers from `ProvisioningOptions`
+  (`CPanelWhmPort` and `CPanelUserPort`, both checked to be 1 to 65535 at startup by
+  `ProvisioningOptionsValidator`), and its HTTP client is registered only through
+  `AddCPanelWhmHttpClient`, which the tests resolve too. It does not trust what WHM sends back: a
+  single sign-on address is passed on only as an https address on the server's own host (`WhmInputRules`),
+  a username or domain is checked before WHM is called, and a reply is capped at `WhmApiClient.MaxResponseBytes`.
 - **"Test Connection" runs a live probe where a provider has one.** `IIntegrationConnectionProbe`
   (a port in `Application/Common/Interfaces/`, keyed by integration slug) is implemented per
   integration in `Infrastructure/Integrations/<Provider>/` (today `NameAmConnectionProbe`, which
@@ -455,6 +468,9 @@ docker/                              compose set (shared·dev·prod·platform), 
     - `visibleWhen` (any block, header actions and tab blocks included): the panel hides the block while the condition
       is read, on a failed read, an absent field or no match, and shows it only when it holds; it is read again when the
       block's own `id` is refreshed. Use it to hide a create form once the thing exists.
+    - **Chat result card actions.** An action on a chat result card takes the same condition as `visibleWhen`, spelled as the
+      event spells it (`equalsAny`), and is held to the same bounds; the card is not checked at install, so the panel
+      checks it when it reads the event. See "Reload" under the preview rules below for how it is read.
     - `resetOnSuccess: true` (a form's `submit` only, boolean): after a successful submit every field returns to its
       empty value.
     - `followUp: { "refresh": [ids], "until": <condition> }` (an action block or a form's `submit`): after a successful
@@ -477,6 +493,21 @@ docker/                              compose set (shared·dev·prod·platform), 
       carries its place), and the limit is that a refresh of that id reaches all its blocks and one follow-up watch per id
       is kept (`View.test.ts`, `PluginLoaderTests`, `InstallPluginTests`). **The bounds are the host's, never the plugin's**:
       `PLUGIN_FOLLOW_UP_MAX_ATTEMPTS` 20 and `PLUGIN_FOLLOW_UP_INTERVAL_MS` 3000 (about a minute) in the client.
+    - **Reads are shared inside a view (`readPluginRoute` in `usePluginView`).** A page is one picture of the plugin's
+      data: every source, condition and card action of a view that names the same `GET` request (the filled address and
+      its query, from `pluginRouteRequest`) takes one answer, and a new request is sent only when the picture is out of
+      date, which is when the sum of the view's refresh counts moved, the store's `writes` did (a call that is not a read
+      when it ended, a stream when it opened and again when it ended, however it ended) or the picture is older than
+      `PLUGIN_VIEW_READ_MAX_AGE_MS` (`constants/pluginViewReads.ts`, 10 seconds, the host's and never the plugin's). A
+      stream counts when it opens because a result card is drawn while it is still open: its condition must be read after
+      the turn began, or a chat with no `refresh` list would keep a card's action hidden for good on the picture from
+      before it. A block that mounts later is answered from the picture as well, and a read that
+      failed is not kept, so the next reader tries again. The picture belongs to the view's context and ends with it.
+      The follow-up hands the answer it read to the picture it then refreshes (`shareReadResult`), so a poll costs one
+      request and the blocks show exactly what the condition saw. This replaced one request per reader per refresh,
+      which on a route the plugin answers one call at a time made the last readers' answers arrive after the next
+      refresh began, so `latest` dropped them and a header stayed on the old live version for several polls while a block
+      answered earlier already showed the new one (#986).
     - Refused at install and load (rules from the start of view state): `ViewConditionInvalid` (`PLUGIN_VIEW_CONDITION_INVALID`: a bad condition, a non-`GET`
       condition route, `visibleWhen` outside a block) and `ViewFollowUpInvalid` (`PLUGIN_VIEW_FOLLOW_UP_INVALID`: a bad
       `followUp` shape or place, a `refresh` id no block carries, `resetOnSuccess` not a boolean or outside a `submit`),
@@ -522,7 +553,9 @@ docker/                              compose set (shared·dev·prod·platform), 
       cannot accept drops the action whole, where a malformed `until` only loses its follow-up. `PluginChatCardAction` draws
       each action and evaluates the condition with `usePluginCondition`, which takes the block ids whose refresh reads it
       again: a block names its own id, a card action the chat's `refresh` list. With no `refresh` list the condition is read
-      once, when the card is drawn.
+      once, when the card is drawn. `PluginChatCardActions` is the row under a card: it hides itself while every action is
+      hidden and the card has no details switch, and never removes it, because a hidden action stays mounted to read its
+      condition again and bring the row back.
     - **Presentation members, no schema change.** The view schema allows extra members on a block, and these are the
       panel's: a header's `compact`, `titleSource`, `subtitleSource` and any block kind in its `actions`; an action's
       `labelSource`; a table's `display: "cards"`; a tabs block's `actions`; a preview's `note` (an object of sentences by
@@ -1634,7 +1667,10 @@ backend on the shared network, and Docker's DNS round-robins between the two.
   network) and checks the upgrade backup (a failed, empty, truncated or table-less dump, a stopped database, mode 600
   and 700, retention that keeps the oldest backup of each version, UTC names) and `--rollback` (confirmation, the
   newest backup of another version, the safety copy, restore before the compose files change, a failed restore, the
-  state printed after a failed stop, download, pull or start). Needs bash and GNU `stat`. With
+  state printed after a failed stop, download, pull or start, a rename blocked by a background worker, the exact
+  messages after a half swap, a repeated rollback that moves forward, the early refusal of a database named
+  postgres, the bounded per version retention, and that the volume name in the installer is the one in the compose
+  file). Needs bash and GNU `stat`. With
   `HOSTPANEL_TEST_POSTGRES=1` it also dumps, restores and restores a corrupt dump against a real postgres container
   (the GitHub `install-backup` job sets it; the GitLab `installer:test:backup` job runs the fake-docker part only).
 - `scripts/check-empty-plugins.sh <test project> ...` — fails when `plugins/` or `plugins-installed/` in a

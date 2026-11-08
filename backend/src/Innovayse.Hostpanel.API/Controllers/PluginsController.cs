@@ -1,10 +1,13 @@
+using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.ClearRegistryPluginLicence;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallPlugin;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallRegistryPlugin;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.PurgePluginData;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.RemovePlugin;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.SaveRegistryPluginLicence;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.CheckPluginUpdates;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.GetPluginIcon;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.GetRegistryPlugin;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListPlugins;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListRegistryPlugins;
 using Innovayse.Hostpanel.Shared.Authorization;
@@ -187,21 +190,96 @@ public sealed class PluginsController : BaseApiController
     }
 
     /// <summary>
+    /// The details page of one registry plugin: the registry's page and versions, set beside what is installed on this
+    /// server. Each version says whether it runs on this Hostpanel version (<c>compatible</c>). The licence key stored for
+    /// the plugin is sent to the registry; the key itself is never returned, only <c>hasLicenceKey</c>.
+    /// </summary>
+    /// <param name="id">Plugin identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the details; 400 with <c>VALIDATION_ERROR</c> for an id that is not a plugin id; 401 without a session; 403
+    /// for a caller who is not an administrator; 404 with <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c> for a plugin the registry
+    /// does not list; 409 with <c>PLUGIN_REGISTRY_DISABLED</c> while the registry is off; 422 with
+    /// <c>PLUGIN_REGISTRY_LICENCE_REQUIRED</c> or <c>PLUGIN_REGISTRY_LICENCE_INVALID</c>; 429 when the rate limit is hit; 502 with
+    /// <c>PLUGIN_REGISTRY_UNAVAILABLE</c> or <c>PLUGIN_REGISTRY_RESPONSE_INVALID</c>; 504 with <c>PLUGIN_REGISTRY_TIMED_OUT</c>.
+    /// </returns>
+    [HttpGet("registry/{id}")]
+    [ProducesResponseType(typeof(RegistryPluginDetailsDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status504GatewayTimeout)]
+    public async Task<IActionResult> GetRegistryAsync(string id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<RegistryPluginDetailsDto>>(new GetRegistryPluginQuery(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Stores the licence key of a paid or private registry plugin, encrypted, replacing any key stored before. The key
+    /// is write only: no endpoint returns it. The change is audited without the key.
+    /// </summary>
+    /// <param name="id">Plugin identifier.</param>
+    /// <param name="command">The body: the licence <c>key</c> (1 to 512 characters).</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 once stored; 400 with <c>VALIDATION_ERROR</c> for an id of the wrong shape or an empty or over long key; 401 without
+    /// a session; 403 for a caller who is not an administrator; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPut("registry/{id}/licence")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> SaveRegistryLicenceAsync(string id, [FromBody] SaveRegistryPluginLicenceCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command with { PluginId = id }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Deletes the licence key stored for a registry plugin. Deleting a key that is not stored answers the same.</summary>
+    /// <param name="id">Plugin identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 once no key is stored; 400 with <c>VALIDATION_ERROR</c> for an id of the wrong shape; 401 without a session; 403 for
+    /// a caller who is not an administrator; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpDelete("registry/{id}/licence")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ClearRegistryLicenceAsync(string id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new ClearRegistryPluginLicenceCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
     /// Installs one version of a plugin from the registry, or stages it as an upgrade when the plugin is installed. The
     /// package is downloaded from the registry's own host, checked against the checksum the registry published, held to
     /// the <c>plugins.registry_trust</c> setting and installed like an upload with its signature always enforced.
     /// </summary>
     /// <param name="id">Plugin identifier.</param>
-    /// <param name="command">The body: the <c>version</c> to install.</param>
+    /// <param name="command">
+    /// The body: the <c>version</c> to install and, optionally, <c>allowDowngrade</c> (default <see langword="false"/>), which
+    /// accepts a version older than the installed one. The licence key stored for the plugin is sent to the registry.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with <c>requiresRestart: true</c> (and <c>stagedVersion</c> for an upgrade); 400 with <c>VALIDATION_ERROR</c> for
-    /// an id or version of the wrong shape, or with a package rule (<c>PLUGIN_MANIFEST_INVALID</c>,
+    /// 200 with <c>requiresRestart: true</c> (and <c>stagedVersion</c> for an upgrade or a downgrade); 400 with
+    /// <c>VALIDATION_ERROR</c> for an id or version of the wrong shape, or with a package rule (<c>PLUGIN_MANIFEST_INVALID</c>,
     /// <c>PLUGIN_UNSIGNED</c>, <c>PLUGIN_SIGNATURE_INVALID</c> and the other install refusals); 401 without a session; 403
     /// for a caller who is not an administrator or with <c>PLUGIN_REGISTRY_NOT_TRUSTED</c> when the trust setting declines
     /// the plugin; 404 with <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c>; 409 with <c>PLUGIN_REGISTRY_DISABLED</c>,
-    /// <c>PLUGIN_BUILT_IN</c> or <c>PLUGIN_DOWNGRADE_REFUSED</c>; 413 with <c>PLUGIN_ARCHIVE_TOO_LARGE</c>; 429 when the
-    /// rate limit is hit; 502 with <c>PLUGIN_REGISTRY_UNAVAILABLE</c>, <c>PLUGIN_REGISTRY_RESPONSE_INVALID</c>,
+    /// <c>PLUGIN_BUILT_IN</c>, <c>PLUGIN_DOWNGRADE_REFUSED</c>, <c>PLUGIN_REGISTRY_HOST_INCOMPATIBLE</c>,
+    /// <c>PLUGIN_REGISTRY_VERSION_YANKED</c> or <c>PLUGIN_REGISTRY_VERSION_COMPROMISED</c>; 413 with
+    /// <c>PLUGIN_ARCHIVE_TOO_LARGE</c>; 422 with <c>PLUGIN_REGISTRY_LICENCE_REQUIRED</c> or <c>PLUGIN_REGISTRY_LICENCE_INVALID</c>;
+    /// 429 when the rate limit is hit; 502 with <c>PLUGIN_REGISTRY_UNAVAILABLE</c>, <c>PLUGIN_REGISTRY_RESPONSE_INVALID</c>,
     /// <c>PLUGIN_REGISTRY_PACKAGE_REFUSED</c> or <c>PLUGIN_REGISTRY_CHECKSUM_MISMATCH</c>; 504 with
     /// <c>PLUGIN_REGISTRY_TIMED_OUT</c>.
     /// </returns>
@@ -213,6 +291,7 @@ public sealed class PluginsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status413PayloadTooLarge)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status422UnprocessableEntity)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status504GatewayTimeout)]
     public async Task<IActionResult> InstallRegistryAsync(string id, [FromBody] InstallRegistryPluginCommand command, CancellationToken ct)

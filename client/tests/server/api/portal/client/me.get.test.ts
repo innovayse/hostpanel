@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { makeEvent, refusal, setRuntimeConfig, startBackend, signedIn } from '../../../../helpers/bffHarness'
 import type { RouteModule } from '../../../../helpers/bffHarness'
 import type { StubReply, StubRequest, StubServer } from '../../../../helpers/stubServer'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { AuthMode } from '~/types/authmode'
 
 /** The stub playing both the SSO profile endpoint and the C# API. */

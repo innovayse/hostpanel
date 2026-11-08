@@ -9,4 +9,8 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallRegistry
 /// </summary>
 /// <param name="PluginId">The plugin id; set from the route.</param>
 /// <param name="Version">The semantic version to install.</param>
-public sealed record InstallRegistryPluginCommand(string PluginId, string Version) : IDemoRestricted;
+/// <param name="AllowDowngrade">
+/// Whether the operator accepts a version older than the installed one. Without it an older version is refused with
+/// <c>PLUGIN_DOWNGRADE_REFUSED</c>.
+/// </param>
+public sealed record InstallRegistryPluginCommand(string PluginId, string Version, bool AllowDowngrade = false) : IDemoRestricted;

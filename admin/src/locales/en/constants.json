@@ -16,18 +16,27 @@
     "allStages": "All Stages"
   },
   "orderStatusOptions": {
-    "fraud": "Fraud"
+    "fraud": "Fraud",
+    "incomplete": "Incomplete"
   },
   "ticketFilterOptions": {
     "allActiveTickets": "All Active Tickets",
     "flagged": "Flagged",
-    "answered": "Answered",
-    "customerReply": "Customer-Reply"
+    "awaitingReply": "Awaiting Reply"
   },
   "recurringPeriodOptions": {
     "weekly": "Weekly",
     "monthly": "Monthly",
     "quarterly": "Quarterly",
     "annually": "Annually"
+  },
+  "orderLineFulfilmentOptions": {
+    "pending": "Not run yet",
+    "inProgress": "Running",
+    "fulfilled": "Fulfilled",
+    "failed": "Failed",
+    "refunded": "Refunded",
+    "refunding": "Refund in progress",
+    "partiallyRefunded": "Partly refunded"
   }
 }

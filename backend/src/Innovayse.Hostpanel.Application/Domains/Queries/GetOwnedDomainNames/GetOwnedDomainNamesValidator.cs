@@ -15,5 +15,6 @@ public sealed class GetOwnedDomainNamesValidator : LocalizedValidator<GetOwnedDo
     {
         RuleFor(x => x.ClientId).MustBePositiveId(L["DomainClientIdRequired"]);
         RuleForEach(x => x.DomainNames).NotEmpty().WithMessage(L["DomainNameRequired"]);
+        RuleFor(x => x.OrderId).GreaterThan(0).WithMessage(L["OrderIdInvalid"]).When(x => x.OrderId is not null);
     }
 }

@@ -47,7 +47,8 @@ public sealed class RenewOrderedDomainHandler
     /// <returns>
     /// Success once the registrar has extended the registration; <c>DOMAIN_NOT_FOUND</c> when no
     /// such domain exists or it belongs to another client (one code, so the answer never tells
-    /// whose it is); or whatever <see cref="RenewDomainCommand"/> refuses with.
+    /// whose it is); or whatever <see cref="RenewDomainCommand"/> refuses with. A domain that the same order line already
+    /// renewed answers Success without calling the registrar again.
     /// </returns>
     public async Task<Result> HandleAsync(RenewOrderedDomainCommand cmd, CancellationToken ct)
     {
@@ -58,7 +59,12 @@ public sealed class RenewOrderedDomainHandler
         var domain = await _context.Domains
             .AsNoTracking()
             .Where(d => d.Name.ToLower() == name)
-            .Select(d => new { d.Id, d.ClientId })
+            .Select(d => new
+            {
+                d.Id,
+                d.ClientId,
+                RenewedForLine = cmd.OrderItemId != null && d.LineRenewals.Any(r => r.OrderItemId == cmd.OrderItemId),
+            })
             .FirstOrDefaultAsync(ct);
         if (domain is null)
         {
@@ -75,6 +81,17 @@ public sealed class RenewOrderedDomainHandler
             return Result.FailureCode(HostpanelErrorCodes.DOMAIN_NOT_FOUND);
         }
 
-        return await _bus.InvokeAsync<Result>(new RenewDomainCommand(domain.Id, cmd.Years), ct);
+        if (domain.RenewedForLine)
+        {
+            // This same order line already extended the domain and died before it recorded the line (renewals made any
+            // other way never erase that record); extending it again would charge the registrar for a second period the
+            // client paid for once.
+            _logger.LogInformation(
+                "Domain {DomainId} was already renewed for order line {OrderItemId}; the retry counts it as renewed.",
+                domain.Id, cmd.OrderItemId);
+            return Result.Success();
+        }
+
+        return await _bus.InvokeAsync<Result>(new RenewDomainCommand(domain.Id, cmd.Years, cmd.OrderItemId), ct);
     }
 }

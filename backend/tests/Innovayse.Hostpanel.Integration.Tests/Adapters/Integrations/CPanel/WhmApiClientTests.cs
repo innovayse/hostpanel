@@ -214,6 +214,149 @@ public sealed class WhmApiClientTests : IAsyncLifetime
         line.Message.Should().Contain("UriFormatException").And.NotContain("bad host").And.NotContain("secret-token-value").And.NotContain("S3cret-pass");
     }
 
+    /// <summary>No operation reaches WHM with an empty argument: a blank search would match every account.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Call_EmptyArgument_IsNeverSentAsync()
+    {
+        var logs = new RecordingLoggerProvider();
+        using var loggerFactory = LoggerFactory.Create(b => b.AddProvider(logs));
+        var client = new WhmApiClient(new HttpClient(), loggerFactory.CreateLogger<WhmApiClient>());
+        var connection = Connection();
+
+        var lookup = await client.FindAccountAsync(connection, " ", CancellationToken.None);
+        var removal = await client.RemoveAccountAsync(connection, string.Empty, CancellationToken.None);
+        var creation = await client.CreateAccountAsync(connection, "testuser", string.Empty, "S3cret-pass", "Basic", CancellationToken.None);
+        var password = await client.ChangePasswordAsync(connection, "testuser", string.Empty, CancellationToken.None);
+        var session = await client.CreateUserSessionAsync(connection, string.Empty, CancellationToken.None);
+
+        lookup.Outcome.Should().Be(WhmLookupOutcome.Unknown);
+        removal.Should().Be(WhmReply.Unreadable);
+        creation.Should().Be(WhmReply.Unreadable);
+        password.Should().Be(WhmReply.Unreadable);
+        session.Should().BeNull();
+        whm.Requests.Should().BeEmpty();
+        logs.Entries.Should().NotBeEmpty().And.OnlyContain(e => !e.Message.Contains("S3cret-pass"));
+    }
+
+    /// <summary>A suspend with a blank reason is sent without the reason, since WHM takes it as optional.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task SuspendAccount_BlankReason_LeavesTheReasonOutAsync()
+    {
+        whm.Enqueue(WhmReplies.Ok);
+
+        var reply = await Client().SuspendAccountAsync(Connection(), "testuser", string.Empty, CancellationToken.None);
+
+        reply.IsSuccess.Should().BeTrue();
+        whm.Requests.Should().ContainSingle().Which.Body.Should().Be("user=testuser");
+    }
+
+    /// <summary>A body larger than the cap is an unreadable reply, never held in memory whole.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Call_ResponseLargerThanTheCap_IsUnreadableAsync()
+    {
+        var filler = new string('a', (int)WhmApiClient.MaxResponseBytes);
+        var logs = new RecordingLoggerProvider();
+        using var loggerFactory = LoggerFactory.Create(b => b.AddProvider(logs));
+        var client = new WhmApiClient(new HttpClient(), loggerFactory.CreateLogger<WhmApiClient>());
+
+        // Each call gets its own oversized reply, queued right before it, so the reply a call
+        // asserts on is the one that call receives.
+        whm.Enqueue(VersionReply(filler));
+        var version = () => client.GetVersionAsync(Connection(), CancellationToken.None);
+        await version.Should().ThrowAsync<InvalidOperationException>("an unreadable reply makes the version call throw");
+        whm.Requests.Should().ContainSingle().Which.PathAndQuery.Should().StartWith("/json-api/version");
+
+        whm.Enqueue(VersionReply(filler));
+        var lookup = await client.FindAccountAsync(Connection(), "testuser", CancellationToken.None);
+
+        lookup.Outcome.Should().Be(WhmLookupOutcome.Unknown, "a body past the cap never reads as a positive answer");
+        whm.Requests.Should().HaveCount(2).And.Subject.Last().PathAndQuery.Should().StartWith("/json-api/listaccts");
+        logs.Entries.Count(e => e.Message.Contains("could not be sent") && e.Message.Contains(nameof(HttpRequestException))).Should().Be(2);
+    }
+
+    /// <summary>A body just under the cap is still read.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Call_ResponseUnderTheCap_IsReadAsync()
+    {
+        var filler = new string('a', (int)WhmApiClient.MaxResponseBytes / 2);
+        whm.Enqueue(VersionReply(filler));
+
+        var info = await Client().GetVersionAsync(Connection(), CancellationToken.None);
+
+        info.Version.Should().HaveLength(filler.Length);
+    }
+
+    /// <summary>A token cancelled before the call throws and sends nothing.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Call_TokenAlreadyCancelled_ThrowsAndSendsNothingAsync()
+    {
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
+
+        var act = () => Client().CreateAccountAsync(Connection(), "testuser", "example.com", "S3cret-pass", "Basic", cts.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        whm.Requests.Should().BeEmpty();
+    }
+
+    /// <summary>A token cancelled while WHM holds the request throws instead of reading as an unreadable reply.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Call_CancelledWhileWaiting_ThrowsRatherThanUnreadableAsync()
+    {
+        whm.Enqueue(new StubReply(HttpStatusCode.OK, WhmReplies.Ok, Delay: TimeSpan.FromSeconds(30)));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(300));
+
+        var act = () => Client().UnsuspendAccountAsync(Connection(), "testuser", cts.Token);
+
+        await act.Should().ThrowAsync<OperationCanceledException>();
+        whm.Requests.Should().ContainSingle();
+    }
+
+    /// <summary>A client that gives up on a held request by its own timeout, not the caller's token, reads as an unreadable reply.</summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Call_ClientTimeout_IsUnreadableAsync()
+    {
+        whm.Enqueue(new StubReply(HttpStatusCode.OK, WhmReplies.Ok, Delay: TimeSpan.FromSeconds(30)));
+        var client = new WhmApiClient(new HttpClient { Timeout = TimeSpan.FromMilliseconds(300) }, NullLogger<WhmApiClient>.Instance);
+
+        var reply = await client.UnsuspendAccountAsync(Connection(), "testuser", CancellationToken.None);
+
+        reply.Should().Be(WhmReply.Unreadable);
+    }
+
+    /// <summary>
+    /// The real registration's per-attempt timeout abandons a held request and reads as an
+    /// unreadable reply, logged by exception type only.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Call_ResilienceTimeout_IsUnreadableAndLogsOnlyTheTypeAsync()
+    {
+        await using var held = await StubHttpServer.StartAsync();
+        held.Enqueue(new StubReply(HttpStatusCode.OK, WhmReplies.Ok, Delay: TimeSpan.FromSeconds(30)));
+        await using var host = WhmTestHost.Build(o =>
+        {
+            o.CPanelWhm.AttemptTimeout = TimeSpan.FromMilliseconds(300);
+            o.CPanelWhm.TotalTimeout = TimeSpan.FromSeconds(2);
+        });
+        var started = DateTimeOffset.UtcNow;
+
+        var reply = await host.Client().ChangePasswordAsync(WhmTestHost.ConnectionTo(held), "testuser", "S3cret-pass", CancellationToken.None);
+
+        reply.Should().Be(WhmReply.Unreadable);
+        (DateTimeOffset.UtcNow - started).Should().BeLessThan(TimeSpan.FromSeconds(10));
+        held.Requests.Should().ContainSingle("a timed out call is not repeated");
+        var line = host.Logs.Entries.Should().Contain(e => e.Message.Contains("could not be sent")).Subject;
+        line.Message.Should().Contain("TimeoutRejectedException").And.NotContain("S3cret-pass").And.NotContain("api-token-value");
+    }
+
     /// <summary>The connection prints without its API token.</summary>
     [Fact]
     public void Connection_ToString_HidesTheToken()
@@ -221,6 +364,12 @@ public sealed class WhmApiClientTests : IAsyncLifetime
         new WhmConnection("https://whm.example.test:2087", "root", "secret-token-value").ToString()
             .Should().NotContain("secret-token-value").And.Contain("root");
     }
+
+    /// <summary>Builds a successful <c>version</c> reply whose version text is the given value.</summary>
+    /// <param name="version">The version text.</param>
+    /// <returns>The reply body.</returns>
+    private static string VersionReply(string version) =>
+        "{\"metadata\":{\"result\":1},\"data\":{\"version\":\"" + version + "\"}}";
 
     /// <summary>Builds the client under test.</summary>
     /// <returns>The client.</returns>

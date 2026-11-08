@@ -28,6 +28,7 @@ import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import { PluginValueFormat } from '~/types/pluginvalueformat'
 import type { PluginUiPage } from '~/types/pluginuipage'
 import type { PluginConditionValue, PluginViewCondition } from '~/types/pluginviewcondition'
+import type { PluginRouteRequest } from '~/types/pluginrouterequest'
 import type { PluginViewRoute } from '~/types/pluginviewroute'
 import { HttpMethod } from '~/types/httpmethod'
 import { UiAlertVariant, UiButtonVariant, UiTone } from '~/utils/ui/enums'
@@ -161,6 +162,30 @@ export const fillPluginPath = (path: string, values: Readonly<Record<string, str
     filled.push(encodeURIComponent(value))
   }
   return filled.join('/')
+}
+
+/**
+ * The request a route reference comes to for a page: the one place a reference is turned into a call, so the store that
+ * sends it and the view that shares reads of it agree on what "the same request" is.
+ *
+ * @param route - The view's reference to the route.
+ * @param values - The values its `{param}` segments are filled from.
+ * @param query - Query parameters, e.g. a table's page.
+ * @returns The request, or null for a reference the page cannot call (a method the host does not call, or a parameter
+ *   the page's address does not carry).
+ */
+export const pluginRouteRequest = (
+  route: PluginViewRoute,
+  values: Readonly<Record<string, string>>,
+  query: Readonly<Record<string, string>> = {},
+): PluginRouteRequest | null => {
+  const method = pluginRouteMethod(route)
+  const path = fillPluginPath(route.path, values)
+  if (method === undefined || path === null) {
+    return null
+  }
+  const search = new URLSearchParams(query).toString()
+  return { method, url: search ? `${path}?${search}` : path }
 }
 
 /**

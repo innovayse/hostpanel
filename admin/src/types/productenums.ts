@@ -37,6 +37,16 @@ export enum ProductStatus {
   Inactive = 'Inactive',
 }
 
+/** Wire names of the product fields the API's per-field messages come under. */
+export enum ProductField {
+  /** The stock keeping unit. */
+  Sku = 'sku',
+  /** The free-form metadata JSON object. */
+  Metadata = 'metadata',
+  /** Days a lapsed digital product stays usable. */
+  GracePeriodDays = 'gracePeriodDays',
+}
+
 /** Machine-readable API error codes (`type` of a problem response) the product screens branch on. */
 export enum ProductErrorCode {
   /** Another product already uses the SKU (409). */

@@ -71,7 +71,39 @@ public sealed class AcceptOrderTests(IntegrationTestFactory factory) : IClassFix
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var services = await db.ClientServices.AsNoTracking().Where(s => s.ClientId == seeded.ClientId).ToListAsync();
         services.Should().ContainSingle(s => s.ProductId == seeded.ProductId);
-        (await db.Orders.AsNoTracking().SingleAsync(o => o.Id == seeded.OrderId)).Status.Should().Be(OrderStatus.Active);
+        var order = await db.Orders.AsNoTracking().Include(o => o.Items).SingleAsync(o => o.Id == seeded.OrderId);
+        order.Status.Should().Be(OrderStatus.Incomplete);
+        var domainLine = order.Items.Single(i => i.Domain == seeded.Domain);
+        domainLine.FulfilmentState.Should().Be(OrderItemFulfilmentState.Failed);
+        domainLine.FulfilmentErrorCode.Should().Be(HostpanelErrorCodes.DOMAIN_ALREADY_REGISTERED);
+        domainLine.FulfilmentAttempts.Should().Be(1);
+        domainLine.LastFulfilmentAttemptAt.Should().NotBeNull();
+        var hostingLine = order.Items.Single(i => i.Domain is null);
+        hostingLine.FulfilmentState.Should().Be(OrderItemFulfilmentState.Fulfilled);
+        hostingLine.FulfilmentErrorCode.Should().BeNull();
+        hostingLine.FulfilmentAttempts.Should().Be(1);
+    }
+
+    /// <summary>
+    /// When every line is fulfilled the order stays Active, each line is Fulfilled after one attempt, and the
+    /// order reads back with the state of its lines and no failed line.
+    /// </summary>
+    [Fact]
+    public async Task AcceptOfAnOrderWhoseLinesAllSucceedLeavesItActiveWithFulfilledLines()
+    {
+        var seeded = await OrdersTestSeeds.SeedDigitalAndHostingOrderAsync(factory);
+        var admin = await OrdersTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var read = await admin.GetFromJsonAsync<JsonElement>($"/api/orders/{seeded.OrderId}");
+        read.GetProperty("status").GetString().Should().Be(nameof(OrderStatus.Active));
+        var items = read.GetProperty("items").EnumerateArray().ToList();
+        items.Should().HaveCount(2);
+        items.Should().OnlyContain(i => i.GetProperty("fulfilmentState").GetString() == nameof(OrderItemFulfilmentState.Fulfilled));
+        items.Should().OnlyContain(i => i.GetProperty("fulfilmentAttempts").GetInt32() == 1);
+        items.Should().OnlyContain(i => i.GetProperty("fulfilmentErrorCode").ValueKind == JsonValueKind.Null);
     }
 
     /// <summary>Accepting is not for anonymous callers.</summary>

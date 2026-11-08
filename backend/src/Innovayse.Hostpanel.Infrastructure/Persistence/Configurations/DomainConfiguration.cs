@@ -92,6 +92,16 @@ public sealed class DomainConfiguration : IEntityTypeConfiguration<RegisteredDom
             .HasField("_reminders")
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
+        // Navigation: Domain owns the set of order lines whose renewal extended it via private backing field _lineRenewals.
+        builder.HasMany(x => x.LineRenewals)
+            .WithOne()
+            .HasForeignKey(x => x.DomainId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Navigation(x => x.LineRenewals)
+            .HasField("_lineRenewals")
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
+
         // A client who still has this record cannot be deleted: billing, service and support history
         // is kept, so the database refuses the delete instead of leaving rows without an owner.
         builder.HasOne<Client>()

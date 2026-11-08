@@ -4,6 +4,8 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import NovaHosting from '~/templates/nova/pages/NovaHosting.vue'
+import { PLANS } from '~/tests/templates/aurora/auroraGlobals'
+import { PricingCycle } from '~/types/pricingcycle'
 import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
 
 describe('NovaHosting', () => {
@@ -24,11 +26,11 @@ describe('NovaHosting', () => {
 
   it('passes the billing choice up unchanged', async () => {
     stubTemplateGlobals()
-    const wrapper = mountWithKit(NovaHosting, { props: { yearly: true } })
+    const wrapper = mountWithKit(NovaHosting, { props: { plans: PLANS, cycle: PricingCycle.Annual } })
 
     await wrapper.find('[data-testid="nova-billing-monthly"]').trigger('click')
 
-    expect(wrapper.emitted('update:yearly')).toEqual([[false]])
+    expect(wrapper.emitted('update:cycle')).toEqual([[PricingCycle.Monthly]])
   })
 
   it('renders the comparison table when rows arrive', () => {

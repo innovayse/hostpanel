@@ -37,7 +37,7 @@
 
       <UiStack direction="row" wrap align="end" gap="none" class="mt-6 gap-x-2">
         <span class="text-[2.4rem] font-extrabold leading-none tracking-tight text-nova-ink">
-          {{ plan.isFree || !yearly ? plan.priceMonthly : plan.priceAnnual }}
+          {{ plan.isFree ? plan.priceMonthly : cardCyclePrice(plan, cycle) }}
         </span>
         <!--
           A free plan costs the same whichever billing period is selected, so
@@ -47,18 +47,18 @@
         <span class="pb-1 text-sm text-nova-muted">
           {{ plan.isFree
             ? t('nova.plans.freeForever')
-            : (yearly ? t('nova.plans.perMonthAnnual') : t('nova.plans.perMonth')) }}
+            : perMonthLabel }}
         </span>
       </UiStack>
 
       <!--
-        Shown on the yearly view only, and only when the two prices actually make
+        Shown on the annual cycle only, and only when the two prices actually make
         the saving true. There is no renewal price anywhere in the API, so none is
         printed: a renewal figure invented here is the one number a hosting page
         must never get wrong.
       -->
       <UiText
-        v-if="yearly && plan.discountPercent"
+        v-if="cycle === PricingCycle.Annual && plan.discountPercent"
         size="inherit"
         tone="inherit"
         weight="semibold"
@@ -100,17 +100,25 @@
  * The call to action repeats the plan name to screen readers, because a column
  * of buttons that all read "Choose plan" is unusable out of visual context.
  */
+import { PRICING_CYCLE_I18N_KEY } from '~/constants/pricingCycle'
 import NovaCta from '~/templates/nova/sections/NovaCta.vue'
 import type { NovaPlan } from '~/templates/nova/types/novaplan'
+import { PricingCycle } from '~/types/pricingcycle'
+import { cardCyclePrice } from '~/utils/planCycles'
 
 /** Props of PricingCard. */
-defineProps<{
+const props = defineProps<{
   /** The plan to show, already carrying its badge and discount. */
   plan: NovaPlan
-  /** Which price the card is showing. */
-  yearly: boolean
+  /** The billing cycle whose per-month price the card is showing. */
+  cycle: PricingCycle
 }>()
 
 /** Translator for the copy. */
 const { t } = useI18n()
+
+/** The unit shown beside a price: per month, plus the cycle it is billed on when that is not monthly. */
+const perMonthLabel = computed(() => props.cycle === PricingCycle.Monthly
+  ? t('nova.plans.perMonth')
+  : t('nova.plans.perMonthBilled', { cycle: t(`hosting.cycles.${PRICING_CYCLE_I18N_KEY[props.cycle]}`) }))
 </script>

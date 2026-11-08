@@ -169,6 +169,7 @@ const router = createRouter({
         { path: 'support/network-issues/new', component: lazy('views/NetworkIssueFormView.vue') },
         { path: 'support/network-issues/:id/edit', component: lazy('views/NetworkIssueFormView.vue') },
         { path: 'plugins', component: lazy('views/PluginsView.vue') },
+        { path: 'plugins/:id', component: lazy('views/PluginDetailsView.vue') },
         { path: 'servers', component: lazy('views/ServersView.vue') },
         { path: 'integrations/:slug/configure', component: lazy('views/IntegrationDetailView.vue') },
         { path: 'migration', component: lazy('views/MigrationView.vue') },

@@ -57,7 +57,7 @@ public sealed class SetupMyServiceHandler
     /// Success, or <c>SERVICE_NOT_FOUND</c> when the service is not the caller's, when no such
     /// service exists, or when the caller has no client record, <c>SERVICE_FIRST_INVOICE_UNPAID</c>
     /// when the service names a first invoice for a non-free first payment and that invoice is not paid in full, or <c>SERVICE_NOT_PENDING</c>,
-    /// <c>NO_ELIGIBLE_SERVER</c> or <c>PROVISIONING_UPSTREAM_FAILED</c> from the shared use case.
+    /// <c>NO_ELIGIBLE_SERVER</c>, <c>PROVISIONING_UPSTREAM_FAILED</c> or <c>PROVISIONING_OUTCOME_UNKNOWN</c> from the shared use case.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
     public async Task<Result> HandleAsync(SetupMyServiceCommand cmd, CancellationToken ct)

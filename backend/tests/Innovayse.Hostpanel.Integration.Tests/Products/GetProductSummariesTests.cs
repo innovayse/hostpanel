@@ -34,6 +34,25 @@ public sealed class GetProductSummariesTests(IntegrationTestFactory factory) : I
         summary.Name.Should().Be("Featured");
         summary.MonthlyPrice.Should().Be(1m);
         summary.AnnualPrice.Should().Be(10m);
+        summary.FromPrice.Should().Be(0.83m);
+    }
+
+    /// <summary>The from price is the lowest monthly equivalent across every priced cycle, quarterly, semi-annual and biennial included.</summary>
+    [Fact]
+    public async Task HandleAsync_ProductPricedOnlyOnLongCycles_FromPriceIsTheLowestMonthlyEquivalentAsync()
+    {
+        var productId = await ProductsTestSeeds.SeedProductWithUsdPricesAsync(
+            factory, (BillingCycle.Quarterly, 30m), (BillingCycle.SemiAnnual, 48m), (BillingCycle.Biennial, 120m));
+
+        using var scope = factory.Services.CreateScope();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var result = await bus.InvokeAsync<Result<IReadOnlyList<ProductSummaryDto>>>(
+            new GetProductSummariesQuery([productId]));
+
+        var summary = result.Value!.Should().ContainSingle().Subject;
+        summary.MonthlyPrice.Should().BeNull();
+        summary.AnnualPrice.Should().BeNull();
+        summary.FromPrice.Should().Be(5m);
     }
 
     /// <summary>An empty id list answers an empty list without touching the database.</summary>
@@ -76,5 +95,6 @@ public sealed class GetProductSummariesTests(IntegrationTestFactory factory) : I
         summary.Name.Should().Be("Unpriced");
         summary.MonthlyPrice.Should().BeNull();
         summary.AnnualPrice.Should().BeNull();
+        summary.FromPrice.Should().BeNull();
     }
 }

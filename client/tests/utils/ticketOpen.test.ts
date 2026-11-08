@@ -12,7 +12,6 @@ describe('isTicketOpen', () => {
   it('is true for every status but Closed', () => {
     expect(isTicketOpen({ status: TicketStatus.Open })).toBe(true)
     expect(isTicketOpen({ status: TicketStatus.AwaitingReply })).toBe(true)
-    expect(isTicketOpen({ status: TicketStatus.Answered })).toBe(true)
   })
 
   it('is false for a closed ticket', () => {

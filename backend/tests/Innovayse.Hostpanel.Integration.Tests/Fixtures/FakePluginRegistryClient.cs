@@ -30,6 +30,18 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     /// <summary>The ids of the last newest-version lookup.</summary>
     public IReadOnlyCollection<string>? LastLatestIds { get; private set; }
 
+    /// <summary>The licence key of the last release lookup, download, plugin page or version list call; <see langword="null"/> when none was given.</summary>
+    public string? LastLicenceKey { get; private set; }
+
+    /// <summary>The licence key each plugin page call carried, by plugin id; <see langword="null"/> when none was given.</summary>
+    public Dictionary<string, string?> PluginPageKeys { get; } = [];
+
+    /// <summary>The plugin pages by plugin id; an id that is not here reads as not listed.</summary>
+    public Dictionary<string, RegistryPluginDetails> Details { get; } = [];
+
+    /// <summary>The version lists by plugin id; an id that is not here has no versions.</summary>
+    public Dictionary<string, IReadOnlyList<RegistryPluginVersion>> Versions { get; } = [];
+
     /// <summary>How many packages were downloaded.</summary>
     public int DownloadCount { get; private set; }
 
@@ -40,17 +52,30 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     /// <param name="verified">Whether the registry vouches for the publisher.</param>
     /// <param name="publishedSha256">The checksum the registry publishes; the real one when <see langword="null"/>.</param>
     /// <param name="category">The registry category.</param>
+    /// <param name="status">Where the version stands in the registry; it is listed in <see cref="Versions"/> with it.</param>
+    /// <param name="minHostVersion">The oldest host version the version runs on; <see langword="null"/> for no bound.</param>
+    /// <param name="maxHostVersion">The newest host version the version runs on; <see langword="null"/> for no bound.</param>
+    /// <param name="pricing">Whether the plugin is free, paid or private.</param>
     public void Publish(
         string pluginId,
         string version,
         byte[] package,
         bool verified = true,
         string? publishedSha256 = null,
-        PluginRegistryCategory category = PluginRegistryCategory.Other)
+        PluginRegistryCategory category = PluginRegistryCategory.Other,
+        PluginRegistryVersionStatus status = PluginRegistryVersionStatus.Published,
+        string? minHostVersion = null,
+        string? maxHostVersion = null,
+        PluginRegistryPricing pricing = PluginRegistryPricing.Free)
     {
         _entries.RemoveAll(e => e.Id == pluginId);
         _entries.Add(new RegistryPluginDto(
-            pluginId, $"Plugin {pluginId}", "Test", "A test plugin.", null, category, version, "1.0", verified, PluginRegistryPricing.Free));
+            pluginId, $"Plugin {pluginId}", "Test", "A test plugin.", null, category, version, "1.0", verified, pricing));
+        var listed = Versions.GetValueOrDefault(pluginId)?.Where(v => v.Version != version).ToList() ?? [];
+        listed.Add(new RegistryPluginVersion(
+            version, "1.0", package.Length, DateTimeOffset.UtcNow, status, null, null, minHostVersion, maxHostVersion, null, [], null, []));
+        Versions[pluginId] = listed;
+        Details[pluginId] = new RegistryPluginDetails(_entries.Single(e => e.Id == pluginId), null, null, null, null, null, null, null);
         _releases[(pluginId, version)] = new RegistryPluginRelease(
             pluginId,
             version,
@@ -92,8 +117,10 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     }
 
     /// <inheritdoc/>
-    public Task<Result<RegistryPluginRelease>> GetReleaseAsync(string pluginId, string version, CancellationToken ct)
+    public Task<Result<RegistryPluginRelease>> GetReleaseAsync(RegistryPluginVersionRef target, CancellationToken ct, string? licenceKey = null)
     {
+        LastLicenceKey = licenceKey;
+        var (pluginId, version) = (target.PluginId, target.Version);
         if (FailureCode is not null)
         {
             return Task.FromResult(Result<RegistryPluginRelease>.FailureCode(FailureCode));
@@ -105,10 +132,30 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     }
 
     /// <inheritdoc/>
-    public Task<Result<Stream>> DownloadAsync(RegistryPluginRelease release, CancellationToken ct)
+    public Task<Result<Stream>> DownloadAsync(RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null)
     {
+        LastLicenceKey = licenceKey;
         DownloadCount++;
         Stream stream = new MemoryStream(_packages[(release.PluginId, release.Version)]);
         return Task.FromResult(Result<Stream>.Success(stream));
+    }
+
+    /// <inheritdoc/>
+    public Task<Result<RegistryPluginDetails?>> GetPluginAsync(string pluginId, string? licenceKey, CancellationToken ct)
+    {
+        LastLicenceKey = licenceKey;
+        PluginPageKeys[pluginId] = licenceKey;
+        return Task.FromResult(FailureCode is not null
+            ? Result<RegistryPluginDetails?>.FailureCode(FailureCode)
+            : Result<RegistryPluginDetails?>.Success(Details.GetValueOrDefault(pluginId)));
+    }
+
+    /// <inheritdoc/>
+    public Task<Result<IReadOnlyList<RegistryPluginVersion>>> ListVersionsAsync(string pluginId, string? licenceKey, CancellationToken ct)
+    {
+        LastLicenceKey = licenceKey;
+        return Task.FromResult(FailureCode is not null
+            ? Result<IReadOnlyList<RegistryPluginVersion>>.FailureCode(FailureCode)
+            : Result<IReadOnlyList<RegistryPluginVersion>>.Success(Versions.GetValueOrDefault(pluginId) ?? []));
     }
 }

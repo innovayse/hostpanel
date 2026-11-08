@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
 import { PLUGIN_COMPONENTS } from '~/tests/helpers/mountPlugin'
 import ServicePage from '~/pages/client/services/[id]/index.vue'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { PortalErrorCode } from '~/constants/portalErrorCode'
 import { makeClientService as service } from '~/tests/helpers/clientServiceFixture'
 import {
@@ -176,6 +176,14 @@ describe('service page', () => {
 
   it('keeps a digital service on its page, which has nothing to set up and no control-panel account', async () => {
     table[`GET ${PATHS.service}`] = { body: service({ username: null, status: ServiceStatus.Pending, isDigital: true }) }
+
+    await mountService()
+
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it('does not send an active service without a control-panel account to setup, which the backend refuses', async () => {
+    table[`GET ${PATHS.service}`] = { body: service({ username: null, status: ServiceStatus.Active }) }
 
     await mountService()
 

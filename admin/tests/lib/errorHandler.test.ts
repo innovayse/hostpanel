@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { ApiError } from '@/composables/useApi'
 import { setLocale } from '@/i18n'
 import { MessageLanguage } from '@/locales/messages'
-import { errorCode, errorSentence, fieldErrors } from '@/lib/errorHandler'
+import { errorCode, errorSentence, errorStatus, fieldErrors } from '@/lib/errorHandler'
 
 /** A representative `ErrorResponse` body. */
 const problem = {
@@ -68,6 +68,16 @@ describe('errorCode', () => {
 
   it('is null when no answer arrived', () => {
     expect(errorCode(new TypeError('offline'))).toBeNull()
+  })
+})
+
+describe('errorStatus', () => {
+  it('reads the HTTP status of an API refusal', () => {
+    expect(errorStatus(new ApiError(404, null))).toBe(404)
+  })
+
+  it('is null when the request never got an answer', () => {
+    expect(errorStatus(new TypeError('offline'))).toBeNull()
   })
 })
 

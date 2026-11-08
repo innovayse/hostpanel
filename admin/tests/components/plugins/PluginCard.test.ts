@@ -78,6 +78,39 @@ describe('PluginCard', () => {
     expect(mountCard({ updateVersion: null }).find('[data-testid="plugin-update-example-pay"]').exists()).toBe(false)
   })
 
+  it('offers Update with the newer version and emits the id and version', async () => {
+    const wrapper = mountCard({ updateVersion: '2.0.0' })
+    const button = wrapper.get('[data-testid="plugin-update-button-example-pay"]')
+
+    expect(button.text()).toBe('Update to 2.0.0')
+    await button.trigger('click')
+
+    expect(wrapper.emitted('update')).toEqual([['example-pay', '2.0.0']])
+  })
+
+  it('offers no Update button without a newer version', () => {
+    expect(mountCard().find('[data-testid="plugin-update-button-example-pay"]').exists()).toBe(false)
+  })
+
+  it('disables Update and Remove while the update runs', () => {
+    const wrapper = mountCard({ updateVersion: '2.0.0', updating: true })
+
+    expect(wrapper.get('[data-testid="plugin-update-button-example-pay"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="plugin-remove-example-pay"]').attributes('disabled')).toBeDefined()
+  })
+
+  it('shows Details for a registry plugin and emits its id', async () => {
+    const wrapper = mountCard({ hasDetails: true })
+
+    await wrapper.get('[data-testid="plugin-details-example-pay"]').trigger('click')
+
+    expect(wrapper.emitted('details')).toEqual([['example-pay']])
+  })
+
+  it('shows no Details button for a plugin the registry does not list', () => {
+    expect(mountCard().find('[data-testid="plugin-details-example-pay"]').exists()).toBe(false)
+  })
+
   it('does not mark an uploaded plugin as built-in', () => {
     const wrapper = mountCard()
 

@@ -22,7 +22,7 @@ import type { PluginSlotWidgetView } from '~/types/pluginslotwidgetview'
 import type { PluginStreamEvent } from '~/types/pluginstreamevent'
 import type { PluginUiPage } from '~/types/pluginuipage'
 import type { PluginViewRoute } from '~/types/pluginviewroute'
-import { fillPluginPath, pluginMenuLinks, pluginPageValues, pluginRouteMethod, readPluginEventStream } from '~/utils/plugins'
+import { fillPluginPath, pluginMenuLinks, pluginPageValues, pluginRouteMethod, pluginRouteRequest, readPluginEventStream } from '~/utils/plugins'
 
 /** The result of a call the page cannot make: nothing sent, nothing to say. */
 const UNAVAILABLE: PluginCallResult = { ok: false, data: null, error: '', fieldErrors: {}, unavailable: true }
@@ -52,6 +52,13 @@ export const usePluginsStore = defineStore('plugins', () => {
   const pageValues = ref<Record<string, string>>({})
   /** The number of the latest page read; an answer to an older one is dropped. */
   let pageRequest = 0
+  /**
+   * How many times a call that may change what a plugin reports has started or ended (every call that is not a read
+   * ends one, and every stream starts one and ends one). A view that shares reads asks for a new one whenever this
+   * moved, so it never answers from before a change: a stream counts when it opens as well, because the cards it draws
+   * read while it is still open and must not be shown the picture from before the turn.
+   */
+  const writes = ref(0)
 
   /**
    * Reads the plugin index once per session, or again when asked to.
@@ -198,18 +205,22 @@ export const usePluginsStore = defineStore('plugins', () => {
     body?: Record<string, unknown>,
     query: Record<string, string> = {},
   ): Promise<PluginCallResult> => {
-    const method = pluginRouteMethod(route)
-    const path = fillPluginPath(route.path, values)
-    if (method === undefined || path === null) {
+    const request = pluginRouteRequest(route, values, query)
+    if (request === null) {
       return UNAVAILABLE
     }
-    const search = new URLSearchParams(query).toString()
-    const sendsBody = method !== HttpMethod.Get && method !== HttpMethod.Delete
+    const reads = request.method === HttpMethod.Get
+    const sendsBody = request.method !== HttpMethod.Get && request.method !== HttpMethod.Delete
     try {
-      const data = await api.callRoute(pluginId, method, search ? `${path}?${search}` : path, sendsBody ? body ?? {} : undefined)
+      const data = await api.callRoute(pluginId, request.method, request.url, sendsBody ? body ?? {} : undefined)
       return { ok: true, data: data ?? null, error: '', fieldErrors: {}, unavailable: false }
     } catch (err: unknown) {
       return { ok: false, data: null, error: apiErrorMessage(err), fieldErrors: apiFieldErrors(err), unavailable: false }
+    } finally {
+      // A refused write may have changed something too, so any end of one counts.
+      if (!reads) {
+        writes.value += 1
+      }
     }
   }
 
@@ -238,6 +249,9 @@ export const usePluginsStore = defineStore('plugins', () => {
     if (pluginRouteMethod(route) !== HttpMethod.Post || path === null) {
       return UNAVAILABLE
     }
+    // Counted before the first event, not only when the stream ends: a result card is drawn while the stream is open and
+    // reads its condition then, which has to be a read made after the turn began.
+    writes.value += 1
     try {
       await readPluginEventStream(await api.openStream(pluginId, path, body, signal), onEvent, signal)
       return { ok: true, data: null, error: '', fieldErrors: {}, unavailable: false }
@@ -246,8 +260,11 @@ export const usePluginsStore = defineStore('plugins', () => {
         return { ok: true, data: null, error: '', fieldErrors: {}, unavailable: false }
       }
       return { ok: false, data: null, error: apiErrorMessage(err), fieldErrors: apiFieldErrors(err), unavailable: false }
+    } finally {
+      // A stream is a turn of work the plugin did, however it ended; the state it left is read after it ended too.
+      writes.value += 1
     }
   }
 
-  return { menu, pages, uiLoaded, page, pageLoading, pageError, pageNotFound, pageValues, loadUi, loadPage, reset, loadSlot, loadSlotWidget, callRoute, streamRoute }
+  return { menu, pages, uiLoaded, page, pageLoading, pageError, pageNotFound, pageValues, writes, loadUi, loadPage, reset, loadSlot, loadSlotWidget, callRoute, streamRoute }
 })

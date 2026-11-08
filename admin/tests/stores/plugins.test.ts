@@ -10,6 +10,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { usePluginsStore } from '@/stores/plugins'
 import type { PluginListItemDto } from '@/types/plugin'
 import { json, problem, stubFetch, stubOffline } from '../helpers/fetch'
+import { stubRoutes } from '../helpers/routes'
 
 /** The sentence shown when nothing answered. */
 const NO_ANSWER = 'Could not reach the server. Check your connection and try again.'
@@ -78,6 +79,32 @@ describe('pluginsStore.install', () => {
 })
 
 describe('pluginsStore.remove', () => {
+  it('marks only that plugin busy while the removal runs and clears it afterwards', async () => {
+    let seen: boolean[] = []
+    const store = usePluginsStore()
+    stubRoutes({
+      'DELETE /api/admin/plugins/a': () => {
+        seen = [store.isBusy('a'), store.isBusy('b')]
+        return json({ requiresRestart: false })
+      },
+      'GET /api/admin/plugins': () => json([]),
+    })
+
+    await store.remove('a')
+
+    expect(seen).toEqual([true, false])
+    expect(store.isBusy('a')).toBe(false)
+  })
+
+  it('clears the busy mark when the removal is refused', async () => {
+    stubFetch(problem('Plugin is in use.', 409))
+    const store = usePluginsStore()
+
+    await store.remove('a')
+
+    expect(store.isBusy('a')).toBe(false)
+  })
+
   it('reloads the list and flags the restart', async () => {
     stubFetch(json({ requiresRestart: true }), json([{ id: 'b', status: 'Loaded' }]))
     const store = usePluginsStore()
@@ -86,6 +113,37 @@ describe('pluginsStore.remove', () => {
     await store.remove('a')
     expect(store.plugins.map(p => p.id)).toEqual(['b'])
     expect(store.requiresRestart).toBe(true)
+  })
+
+  it('reloads the registry listing and the update badges after a removal once the registry was browsed', async () => {
+    const mock = stubRoutes({
+      'DELETE /api/admin/plugins/a': () => json({ requiresRestart: true }),
+      'GET /api/admin/plugins/registry/updates': () => json([]),
+      'GET /api/admin/plugins/registry?': () => json({ items: [], total: 0, pageSize: 20 }),
+      'GET /api/admin/plugins': () => json([]),
+    })
+    const store = usePluginsStore()
+    store.registryPageSize = 20
+    store.registryItems = [{ id: 'a', installed: true } as never]
+
+    await store.remove('a')
+
+    const urls = mock.mock.calls.map(([url]) => String(url))
+    expect(urls.some(url => url.startsWith('/api/admin/plugins/registry?'))).toBe(true)
+    expect(urls.some(url => url === '/api/admin/plugins/registry/updates')).toBe(true)
+    expect(store.registryItems).toEqual([])
+  })
+
+  it('does not touch the registry after a removal when it was never browsed', async () => {
+    const mock = stubRoutes({
+      'DELETE /api/admin/plugins/a': () => json({ requiresRestart: true }),
+      'GET /api/admin/plugins': () => json([]),
+    })
+    const store = usePluginsStore()
+
+    await store.remove('a')
+
+    expect(mock.mock.calls.map(([url]) => String(url)).some(url => url.includes('/registry'))).toBe(false)
   })
 
   it('lists a removed plugin whose data is kept as a purge target, not as installed', async () => {
@@ -122,7 +180,7 @@ describe('pluginsStore.remove', () => {
     const store = usePluginsStore()
     store.plugins.push({ id: 'a' } as never)
 
-    expect(await store.remove('a')).toBe(false)
+    expect((await store.remove('a')).ok).toBe(false)
     expect(store.plugins).toHaveLength(1)
     expect(store.actionError).toBe('Plugin is in use.')
   })
@@ -326,5 +384,23 @@ describe('pluginsStore.purge', () => {
     expect(await store.purge('a')).toBe(false)
     expect(store.actionError).toBe('Plugin is still installed.')
     expect(store.keptDataIds).toEqual(['a'])
+  })
+})
+
+describe('pluginsStore.remove outcome', () => {
+  it('returns the sentence of its own call and leaves the shared loading flag alone', async () => {
+    let loadingDuringCall: boolean | null = null
+    const store = usePluginsStore()
+    stubRoutes({
+      'DELETE /api/admin/plugins/a': () => {
+        loadingDuringCall = store.loading
+        return problem('Plugin is in use.', 409)
+      },
+    })
+
+    const outcome = await store.remove('a')
+
+    expect(outcome).toEqual({ ok: false, stagedVersion: null, error: 'Plugin is in use.' })
+    expect(loadingDuringCall).toBe(false)
   })
 })

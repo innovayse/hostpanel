@@ -1,4 +1,6 @@
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm.Models;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm.Models.Enums;
@@ -62,8 +64,19 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Created with the username as the reference; AlreadyExists when an account with the username
-    /// is already there, with its domain for the caller to judge; Refused otherwise.
+    /// is already there, with its domain for the caller to judge; Refused when WHM answered and the
+    /// account does not exist.
     /// </returns>
+    /// <exception cref="DomainRuleException">
+    /// Thrown with <see cref="HostpanelErrorCodes.CPANEL_USERNAME_INVALID"/> or
+    /// <see cref="HostpanelErrorCodes.CPANEL_DOMAIN_INVALID"/>, before WHM is called, when the
+    /// username or the domain is not one cPanel accepts.
+    /// </exception>
+    /// <exception cref="DomainRuleException">
+    /// Also thrown with <see cref="HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN"/> when the
+    /// create could not be sent or its answer was lost and the follow up lookup could not tell
+    /// whether the account exists, so a later retry can settle it.
+    /// </exception>
     /// <remarks>
     /// An existing account is never built on. WHM cannot say who made it, so it is reported with
     /// its primary domain, and the caller adopts it only when that domain is the service's own.
@@ -72,6 +85,19 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     public async Task<ProvisioningResult> ProvisionAsync(ProvisionAccountOrder req, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(req);
+        if (!WhmInputRules.IsNewUsername(req.Username))
+        {
+            throw new DomainRuleException(HostpanelErrorCodes.CPANEL_USERNAME_INVALID, "The username is not a valid cPanel username.");
+        }
+
+        if (!WhmInputRules.IsDomain(req.DomainName))
+        {
+            throw new DomainRuleException(HostpanelErrorCodes.CPANEL_DOMAIN_INVALID, "The domain is not a valid domain name.");
+        }
+
+        ArgumentException.ThrowIfNullOrWhiteSpace(req.Password);
+        ArgumentException.ThrowIfNullOrWhiteSpace(req.Package);
+
         var created = await _client.CreateAccountAsync(_connection, req.Username, req.DomainName, req.Password, req.Package, ct);
         if (created.IsSuccess)
         {
@@ -86,6 +112,14 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
             return ProvisioningResult.AlreadyExists(req.Username, existing.Domain);
         }
 
+        // A lost answer with a lost lookup says nothing about the account: it may exist. Only an
+        // answer, a refusal or a positive "not found", may end the order as refused.
+        if (!created.IsRefusal && lookup.Outcome is WhmLookupOutcome.Unknown)
+        {
+            _logger.LogWarning("WHM could not be asked to create the account for service {ServiceId}; its state is unknown.", req.ServiceId);
+            throw new DomainRuleException(HostpanelErrorCodes.PROVISIONING_OUTCOME_UNKNOWN, "WHM did not answer the account creation and the account could not be looked up.");
+        }
+
         _logger.LogWarning("WHM refused to create the account for service {ServiceId}.", req.ServiceId);
         return ProvisioningResult.Refused(CreateFailedReason);
     }
@@ -97,6 +131,7 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     public async Task SuspendAsync(SuspendAccountOrder req, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(req);
+        RequireReference(req.ProvisioningRef);
         var reply = await _client.SuspendAccountAsync(_connection, req.ProvisioningRef, req.Reason, ct);
         await EnsureSuspendedAsync(req.ProvisioningRef, reply, true, ct);
     }
@@ -107,6 +142,7 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses and the account is not already active.</exception>
     public async Task UnsuspendAsync(string provisioningRef, CancellationToken ct)
     {
+        RequireReference(provisioningRef);
         var reply = await _client.UnsuspendAccountAsync(_connection, provisioningRef, ct);
         await EnsureSuspendedAsync(provisioningRef, reply, false, ct);
     }
@@ -118,6 +154,7 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     public async Task TerminateAsync(TerminateAccountOrder req, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(req);
+        RequireReference(req.ProvisioningRef);
         if ((await _client.RemoveAccountAsync(_connection, req.ProvisioningRef, ct)).IsSuccess)
         {
             _logger.LogInformation("cPanel account {User} terminated.", req.ProvisioningRef);
@@ -140,6 +177,7 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <exception cref="InvalidOperationException">Thrown when the account cannot be found.</exception>
     public async Task<ServiceCredentials> GetCredentialsAsync(string provisioningRef, CancellationToken ct)
     {
+        RequireReference(provisioningRef);
         var account = (await _client.FindAccountAsync(_connection, provisioningRef, ct)).Value
             ?? throw new InvalidOperationException("The hosting account was not found on the server.");
 
@@ -150,18 +188,30 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <param name="provisioningRef">The account's username.</param>
     /// <param name="callerIp">Not used: WHM's <c>create_user_session</c> does not bind the session to an address.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The URL WHM returned.</returns>
+    /// <returns>The absolute URL WHM returned, in its parsed form, once it is shown to be an https address on this server and on its cPanel port.</returns>
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses the session.</exception>
+    /// <exception cref="DomainRuleException">Thrown with <see cref="HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED"/> when the URL WHM returned is not an https address on this server and its cPanel port.</exception>
     public async Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
     {
+        RequireReference(provisioningRef);
         var url = await _client.CreateUserSessionAsync(_connection, provisioningRef, ct);
         if (string.IsNullOrWhiteSpace(url))
         {
             throw new InvalidOperationException("WHM refused to open a cPanel session.");
         }
 
+        // The URL is handed to a browser, so it is only passed on when it points at this server:
+        // https, no user information, the server's own host and the cPanel port. What is returned
+        // is the parsed address that was checked, never the original text. Nothing of it is logged.
+        var session = WhmInputRules.ParseSessionUrl(url, _panelUrl, _connection.BaseUrl, _serverIp);
+        if (session is null)
+        {
+            _logger.LogWarning("WHM returned a cPanel session URL that is not on the server for {User}.", provisioningRef);
+            throw new DomainRuleException(HostpanelErrorCodes.SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED, "The cPanel session URL is not on the server.");
+        }
+
         _logger.LogInformation("cPanel session opened for {User}.", provisioningRef);
-        return url;
+        return session.AbsoluteUri;
     }
 
     /// <summary>Changes the service's account password.</summary>
@@ -171,6 +221,8 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses the change.</exception>
     public async Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct)
     {
+        RequireReference(provisioningRef);
+        ArgumentException.ThrowIfNullOrWhiteSpace(newPassword);
         if (!(await _client.ChangePasswordAsync(_connection, provisioningRef, newPassword, ct)).IsSuccess)
         {
             throw new InvalidOperationException("WHM password change failed.");
@@ -186,6 +238,8 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses and the account is not already on the package.</exception>
     public async Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct)
     {
+        RequireReference(provisioningRef);
+        ArgumentException.ThrowIfNullOrWhiteSpace(newPackage);
         if ((await _client.ChangePackageAsync(_connection, provisioningRef, newPackage, ct)).IsSuccess)
         {
             _logger.LogInformation("cPanel package changed for {User}.", provisioningRef);
@@ -199,6 +253,17 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
         }
 
         _logger.LogInformation("cPanel account {User} was already on the package.", provisioningRef);
+    }
+
+    /// <summary>Stops a call that names an account WHM could never hold, before WHM is asked.</summary>
+    /// <param name="provisioningRef">The account's username as stored.</param>
+    /// <exception cref="DomainRuleException">Thrown with <see cref="HostpanelErrorCodes.CPANEL_USERNAME_INVALID"/> when the value is blank or not a username.</exception>
+    private static void RequireReference(string? provisioningRef)
+    {
+        if (!WhmInputRules.IsAccountReference(provisioningRef))
+        {
+            throw new DomainRuleException(HostpanelErrorCodes.CPANEL_USERNAME_INVALID, "The account reference is not a valid cPanel username.");
+        }
     }
 
     /// <summary>Accepts a suspend or unsuspend that failed only when the account is already as asked.</summary>

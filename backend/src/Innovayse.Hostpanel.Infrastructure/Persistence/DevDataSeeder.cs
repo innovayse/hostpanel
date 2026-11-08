@@ -582,6 +582,9 @@ public sealed class DevDataSeeder
                     order.AddItem(product.Id, product.Name, BillingCycle.Monthly, monthlyPrice, monthlyPrice, null, null);
                     order.Accept(_now);
 
+                    // Seeded history: the order was fulfilled long ago, so its line is not a forgotten one.
+                    order.MarkLinesFulfilledFromHistory(_now);
+
                     _db.Orders.Add(order);
                     order.Backdate(orderDate);
                 }

@@ -40,6 +40,13 @@ public sealed class WhmApiClient
     /// <summary>The scheme WHM expects before <c>user:token</c> in the <c>Authorization</c> header.</summary>
     private const string AuthScheme = "whm";
 
+    /// <summary>
+    /// The most of a reply body this client buffers. An unfiltered <c>listaccts</c> on a very large
+    /// server is a few megabytes; anything past this is a misbehaving or hostile endpoint, and it is
+    /// refused instead of being held in memory.
+    /// </summary>
+    public const long MaxResponseBytes = 16 * 1024 * 1024;
+
     /// <summary>The HTTP client, resolved by name so the WHM timeout and resilience profile apply.</summary>
     private readonly HttpClient _http;
 
@@ -164,11 +171,15 @@ public sealed class WhmApiClient
     /// <summary>Suspends an account with <c>suspendacct</c>.</summary>
     /// <param name="connection">The server the account is on.</param>
     /// <param name="user">The account's username.</param>
-    /// <param name="reason">The reason WHM records and shows the account owner.</param>
+    /// <param name="reason">The reason WHM records and shows the account owner; left out of the call when blank, since WHM takes it as optional.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The reply.</returns>
     public Task<WhmReply> SuspendAccountAsync(WhmConnection connection, string user, string reason, CancellationToken ct) =>
-        CallAsync(connection, "suspendacct", [new("user", user), new("reason", reason)], ct);
+        CallAsync(
+            connection,
+            "suspendacct",
+            string.IsNullOrWhiteSpace(reason) ? [new("user", user)] : [new("user", user), new("reason", reason)],
+            ct);
 
     /// <summary>Unsuspends an account with <c>unsuspendacct</c>.</summary>
     /// <param name="connection">The server the account is on.</param>
@@ -225,7 +236,15 @@ public sealed class WhmApiClient
     {
         ArgumentNullException.ThrowIfNull(connection);
 
-        string body;
+        // The one place every call passes, so no operation can reach WHM with an empty value: a blank
+        // search would match every account, and a blank user would name none.
+        if (arguments.Any(a => string.IsNullOrWhiteSpace(a.Value)))
+        {
+            _logger.LogWarning("WHM {Function} was not sent: an argument was empty.", function);
+            return WhmReply.Unreadable;
+        }
+
+        WhmReply reply;
         try
         {
             // Built inside the try: a host name that is not a valid URI throws here, and it must
@@ -236,14 +255,22 @@ public sealed class WhmApiClient
             };
             request.Headers.TryAddWithoutValidation("Authorization", $"{AuthScheme} {connection.Username}:{connection.ApiToken}");
 
-            using var response = await _http.SendAsync(request, ct);
+            // Headers first, so the body is not buffered before its size is known.
+            using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, ct);
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogWarning("WHM {Function} answered HTTP {StatusCode}.", function, (int)response.StatusCode);
                 return WhmReply.Unreadable;
             }
 
-            body = await response.Content.ReadAsStringAsync(ct);
+            // Throws HttpRequestException past the cap, from the declared length or while reading,
+            // which the handler below reports as an unreadable reply.
+            await response.Content.LoadIntoBufferAsync(MaxResponseBytes, ct);
+
+            // Parsed from the buffered stream, inside the response's lifetime, so the body is not
+            // copied a second time into an array of its own.
+            await using var body = await response.Content.ReadAsStreamAsync(ct);
+            reply = await ParseAsync(body, ct);
         }
         catch (Exception ex) when ((ex is HttpRequestException or TaskCanceledException or TimeoutRejectedException or UriFormatException) && !ct.IsCancellationRequested)
         {
@@ -252,7 +279,6 @@ public sealed class WhmApiClient
             return WhmReply.Unreadable;
         }
 
-        var reply = Parse(body);
         if (reply.IsRefusal)
         {
             _logger.LogWarning("WHM {Function} was refused.", function);
@@ -266,13 +292,14 @@ public sealed class WhmApiClient
     }
 
     /// <summary>Reads a WHM API 1 body.</summary>
-    /// <param name="body">The response body.</param>
+    /// <param name="body">The response body, UTF-8 JSON.</param>
+    /// <param name="ct">Cancellation token.</param>
     /// <returns>Success with its data, a refusal, or unreadable.</returns>
-    private static WhmReply Parse(string body)
+    private static async Task<WhmReply> ParseAsync(Stream body, CancellationToken ct)
     {
         try
         {
-            using var document = JsonDocument.Parse(body);
+            using var document = await JsonDocument.ParseAsync(body, cancellationToken: ct);
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object
                 || !root.TryGetProperty("metadata", out var metadata)

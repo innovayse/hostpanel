@@ -465,6 +465,10 @@
         "component": "PluginsView.vue"
       },
       {
+        "path": "plugins/:id",
+        "component": "PluginDetailsView.vue"
+      },
+      {
         "path": "servers",
         "component": "ServersView.vue"
       },

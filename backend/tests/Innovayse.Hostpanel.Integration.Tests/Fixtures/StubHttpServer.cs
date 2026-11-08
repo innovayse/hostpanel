@@ -115,6 +115,19 @@ public sealed class StubHttpServer : IAsyncDisposable
             lastReply = next;
         }
 
+        if (lastReply.Delay is { } delay)
+        {
+            try
+            {
+                await Task.Delay(delay, context.RequestAborted);
+            }
+            catch (OperationCanceledException)
+            {
+                // The caller gave up (cancelled or timed out), which is what a held request is for.
+                return;
+            }
+        }
+
         context.Response.StatusCode = (int)lastReply.Status;
         context.Response.ContentType = lastReply.ContentType;
         foreach (var (name, value) in lastReply.Headers ?? new Dictionary<string, string>())

@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { mountAccount } from '~/tests/helpers/mountAccount'
 import PaymentMethodsTab from '~/components/account/PaymentMethodsTab.vue'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { grantPermissions } from '~/tests/helpers/grantPermissions'
 
 vi.mock('~/composables/apis/useClientApi', () => ({ useClientApi: () => ({}) }))

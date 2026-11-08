@@ -242,6 +242,32 @@ describe('useCatalogStore.planCards', () => {
     expect(cards[2]).toMatchObject({ isFree: false, priceMonthly: '—', priceAnnual: '—' })
   })
 
+  it('prices a card per month on every cycle the product is sold on and leaves the others out', async () => {
+    api.fetchProducts.mockResolvedValue([
+      { id: 5, name: 'Pro', description: '', pricing: { monthly: 12, quarterly: 30, semiAnnual: 54, annual: null, biennial: 192 } }
+    ])
+    const store = useCatalogStore()
+    await store.loadHostingPlans()
+
+    const [card] = store.planCards(id => `/${id}`)
+
+    expect(card?.cyclePrices).toEqual({
+      monthly: formatMoney(12, usd),
+      quarterly: formatMoney(10, usd),
+      semiAnnual: formatMoney(9, usd),
+      biennial: formatMoney(8, usd)
+    })
+    expect(card?.cyclePrices.annual).toBeUndefined()
+  })
+
+  it('gives a product with no pricing no cycle prices', async () => {
+    api.fetchProducts.mockResolvedValue([{ id: 7, name: 'Quote', description: '', pricing: null }])
+    const store = useCatalogStore()
+    await store.loadHostingPlans()
+
+    expect(store.planCards(id => `/${id}`)[0]?.cyclePrices).toEqual({})
+  })
+
   it('lists a plan\'s own specification lines when its description carries no feature lines', async () => {
     api.fetchProducts.mockResolvedValue([
       { id: 5, name: 'Pro', description: 'Fast hosting', pricing: { monthly: 12, annual: 120 } },

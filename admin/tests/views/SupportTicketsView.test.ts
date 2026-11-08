@@ -52,6 +52,18 @@ describe('SupportTicketsView', () => {
     expect(callOf(mock, 1).url).toBe('/api/tickets?page=1&pageSize=20&status=Closed')
   })
 
+  it('offers an Awaiting Reply filter and no filter for a status that no longer exists', async () => {
+    const mock = stubPathRoutes([{ path: '/tickets?', body: { items: [ticket], totalCount: 1 } }])
+    const wrapper = await mountView(SupportTicketsView)
+
+    expect(wrapper.find('[data-testid="support-tickets-filter-answered"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="support-tickets-filter-awaiting-reply"]').trigger('click')
+    await flushPromises()
+
+    expect(callOf(mock, 1).url).toBe('/api/tickets?page=1&pageSize=20&status=AwaitingReply')
+  })
+
   it('shows the bulk bar for a selection and sends the chosen action', async () => {
     const mock = stubPathRoutes([
       { path: '/tickets?', body: { items: [ticket], totalCount: 1 } },

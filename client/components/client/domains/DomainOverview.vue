@@ -54,7 +54,7 @@
 import { computed } from 'vue'
 import { ChevronRight } from 'lucide-vue-next'
 import type { DomainDetail } from '~/types/domaindetail'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'
 import { DomainTab } from '~/types/domaintab'
 import { formatCurrency } from '~/utils/formatCurrency'

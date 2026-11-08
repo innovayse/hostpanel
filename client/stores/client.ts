@@ -15,7 +15,7 @@
 
 import { defineStore } from 'pinia'
 import { useClientApi } from '~/composables/apis/useClientApi'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { PortalErrorCode, apiErrorCode, apiErrorMessage } from '~/lib/errorHandler'
 import { mayPerform } from '~/utils/holdsPermission'
 import { isInvoiceOutstanding } from '~/utils/invoice'

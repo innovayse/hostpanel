@@ -12,6 +12,7 @@
  */
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useFieldErrorClear } from '@/composables/useFieldErrorClear'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -38,7 +39,7 @@ import { useCurrenciesStore } from '@/stores/currencies'
 import { useServersStore } from '@/stores/servers'
 import { PRODUCT_PRICE_CYCLES } from '@/types/product'
 import type { CreateProductPayload, Product, ProductGroup, ProductPrice, ProductPriceAmounts, ProductPriceCycle } from '@/types/product'
-import { ProductStatus, ProductType } from '@/types/productenums'
+import { ProductField, ProductStatus, ProductType } from '@/types/productenums'
 import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
@@ -324,32 +325,16 @@ const buildPricesPayload = (): ProductPrice[] =>
       ...(Object.fromEntries(PRODUCT_PRICE_CYCLES.map((cycle) => [cycle, row[cycle] || null])) as ProductPriceAmounts),
     }))
 
-/**
- * Drops the API's message for a field as soon as the operator changes that field.
- *
- * @param field - The wire name of the field (`sku`, `metadata`, `gracePeriodDays`).
- * @returns Nothing; emits `clearFieldError` only when that field has a message.
- */
-const clearErrorOf = (field: string): void => {
-  if (props.fieldErrors[field] !== undefined) {
-    emit('clearFieldError', field)
-  }
-}
-
-/** Drops the API's SKU message once the SKU is edited. */
-watch(sku, () => {
-  clearErrorOf('sku')
-})
-
-/** Drops the API's metadata message once the metadata is edited. */
-watch(metadata, () => {
-  clearErrorOf('metadata')
-})
-
-/** Drops the API's grace period message once the grace period is edited. */
-watch(gracePeriodDays, () => {
-  clearErrorOf('gracePeriodDays')
-})
+/** Drops the API's message of each field as soon as the operator edits that field. */
+useFieldErrorClear(
+  () => props.fieldErrors,
+  (field) => emit('clearFieldError', field),
+  [
+    [ProductField.Sku, sku],
+    [ProductField.Metadata, metadata],
+    [ProductField.GracePeriodDays, gracePeriodDays],
+  ],
+)
 
 /**
  * Submits the form by emitting the save event with the current field values. The SKU and
@@ -482,7 +467,7 @@ const handleSubmit = (): void => {
         />
       </UiField>
 
-      <UiField :label="t('settings.productForm.sku')" :hint="t('settings.productForm.skuHint')" :error="props.fieldErrors.sku">
+      <UiField :label="t('settings.productForm.sku')" :hint="t('settings.productForm.skuHint')" :error="props.fieldErrors[ProductField.Sku]">
         <template #default="{ id, invalid, describedby }">
           <UiInput
             :id="id"
@@ -496,7 +481,7 @@ const handleSubmit = (): void => {
         </template>
       </UiField>
 
-      <UiField :label="t('settings.productForm.metadata')" :hint="t('settings.productForm.metadataHint')" :error="props.fieldErrors.metadata">
+      <UiField :label="t('settings.productForm.metadata')" :hint="t('settings.productForm.metadataHint')" :error="props.fieldErrors[ProductField.Metadata]">
         <template #default="{ id, invalid, describedby }">
           <UiTextarea
             :id="id"
@@ -511,7 +496,7 @@ const handleSubmit = (): void => {
         </template>
       </UiField>
 
-      <UiField :label="t('settings.productForm.gracePeriod')" :hint="t('settings.productForm.gracePeriodHint')" :error="props.fieldErrors.gracePeriodDays">
+      <UiField :label="t('settings.productForm.gracePeriod')" :hint="t('settings.productForm.gracePeriodHint')" :error="props.fieldErrors[ProductField.GracePeriodDays]">
         <UiNumberInput
           v-model="gracePeriodDays"
           :step="1"

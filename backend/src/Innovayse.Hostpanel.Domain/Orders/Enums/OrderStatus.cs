@@ -14,4 +14,10 @@ public enum OrderStatus
 
     /// <summary>Order flagged as fraudulent.</summary>
     Fraud = 3,
+
+    /// <summary>
+    /// Order accepted, but at least one line failed to be fulfilled (or a retry of it is running), so the
+    /// order is not complete yet. It returns to <see cref="Active"/> when no such line is left.
+    /// </summary>
+    Incomplete = 4,
 }

@@ -4,11 +4,16 @@
  *
  * The list is read at run time from the `versions.json` the site serves next to the docs
  * (`docsVersion.versionsUrl` in the theme data), so a build made long ago shows releases published
- * after it. Nothing is rendered when the build is unversioned, the file cannot be read or it holds
- * a single version. Choosing a version opens the same page there.
+ * after it. The button itself is part of the pre-rendered page and carries the label of the build, so
+ * the top bar has its final width before the file arrives and nothing moves when it does. It stays
+ * inert until the list is read, and it is removed when the file cannot be read or holds a single
+ * version. Nothing is rendered when the build has no `versionsUrl`. Choosing a version opens the same
+ * page there.
  */
 import { useData } from 'vitepress'
 import { computed, onMounted, ref } from 'vue'
+import { switcherLabel } from '../switcherLabel'
+import type { DocsVersionKind } from '../../versions'
 
 /** One entry of `versions.json`. */
 interface VersionEntry {
@@ -25,6 +30,9 @@ const { theme, page } = useData()
 /** The versions offered, empty until the file is read. */
 const versions = ref<VersionEntry[]>([])
 
+/** Whether reading the list failed or it holds a single version, so there is nothing to switch to. */
+const unavailable = ref<boolean>(false)
+
 /** Whether the list is open. */
 const open = ref<boolean>(false)
 
@@ -37,8 +45,13 @@ const current = computed<VersionEntry | undefined>(() => {
   return versions.value.find((entry) => (kind === 'latest' ? entry.kind === 'latest' : entry.label === settings.value?.label))
 })
 
-/** Text on the button. */
-const currentText = computed<string>(() => current.value?.label ?? settings.value?.label ?? '')
+/** Text on the button, the same before and after the list is read (see `switcherLabel`). */
+const currentText = computed<string>(() =>
+  switcherLabel((settings.value?.kind ?? 'latest') as DocsVersionKind, settings.value?.label ?? '', current.value?.label),
+)
+
+/** Whether the list has been read and holds something to choose from. */
+const ready = computed<boolean>(() => versions.value.length > 1)
 
 /** Path of the open page below the site base, so the same page can be opened in another version. */
 const pagePath = computed<string>(() => {
@@ -53,7 +66,14 @@ const pagePath = computed<string>(() => {
  */
 const hrefOf = (entry: VersionEntry): string => `${entry.link}${pagePath.value}`
 
-/** Reads `versions.json`; any failure leaves the switcher hidden, as the docs read fine without it. */
+/** Opens or closes the list; there is nothing to open before the list has been read. */
+const toggle = (): void => {
+  if (ready.value) {
+    open.value = !open.value
+  }
+}
+
+/** Reads `versions.json`; any failure removes the switcher, as the docs read fine without it. */
 const load = async (): Promise<void> => {
   const url = settings.value?.versionsUrl
   if (!url) {
@@ -62,12 +82,15 @@ const load = async (): Promise<void> => {
   try {
     const response = await fetch(url)
     if (!response.ok) {
+      unavailable.value = true
       return
     }
     const body = (await response.json()) as { versions?: VersionEntry[] }
     versions.value = Array.isArray(body.versions) ? body.versions : []
+    unavailable.value = versions.value.length < 2
   } catch {
     versions.value = []
+    unavailable.value = true
   }
 }
 
@@ -75,19 +98,20 @@ onMounted(load)
 </script>
 
 <template>
-  <div v-if="versions.length > 1" class="version-switcher" @keydown.esc="open = false">
+  <div v-if="settings?.versionsUrl && !unavailable" class="version-switcher" @keydown.esc="open = false">
     <button
       type="button"
       class="version-switcher-button"
       aria-haspopup="listbox"
       :aria-expanded="open"
+      :aria-disabled="!ready"
       :aria-label="`Documentation version: ${currentText}`"
-      @click="open = !open"
+      @click="toggle"
     >
       {{ currentText }}
       <span class="version-switcher-caret" aria-hidden="true"></span>
     </button>
-    <ul v-if="open" class="version-switcher-list" role="listbox">
+    <ul v-if="open && ready" class="version-switcher-list" role="listbox">
       <li v-for="entry in versions" :key="entry.label" role="option" :aria-selected="entry.label === current?.label">
         <a :href="hrefOf(entry)" :class="{ active: entry.label === current?.label }" @click="open = false">
           {{ entry.label }}<span v-if="entry.kind === 'latest'" class="version-switcher-tag">latest</span>

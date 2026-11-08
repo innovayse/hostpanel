@@ -44,11 +44,9 @@
     "plans": {
       "eyebrow": "Hosting",
       "title": "Plans that grow with you",
-      "monthly": "Monthly",
-      "yearly": "Yearly",
       "billingLabel": "Billing period",
       "perMonth": "/ month",
-      "perMonthAnnual": "/ month, billed yearly",
+      "perMonthBilled": "/ month, billing: {cycle}",
       "cta": "Choose plan",
       "moreFeatures": "+{count} more",
       "includedTitle": "Included in every plan",

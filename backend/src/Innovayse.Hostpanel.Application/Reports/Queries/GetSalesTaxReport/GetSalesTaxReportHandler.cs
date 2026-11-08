@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
 using Innovayse.Hostpanel.Application.Reports.Extensions;
@@ -58,11 +59,7 @@ public sealed class GetSalesTaxReportHandler
         // A credit note given as account credit reverses part of the invoice's tax without any refund row, so the tax it
         // reversed comes off the liability in the period the note was issued. A gateway refund note is left out: it is
         // one ordinary refund of its invoice. Draft and voided notes reverse nothing.
-        var notes = _context.CreditNotes
-            .AsNoTracking()
-            .Where(n => n.Method == CreditNoteMethod.AccountCredit
-                && (n.Status == CreditNoteStatus.Issued || n.Status == CreditNoteStatus.Applied)
-                && n.IssuedAt != null);
+        var notes = _context.CreditNotes.AsNoTracking().ReversingTax();
         if (query.From.HasValue)
         {
             var from = query.From.Value.StartOfDayUtc();

@@ -312,6 +312,59 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
         Directory.Exists(PluginsTestSeeds.InstalledFolder("ui")).Should().BeFalse();
     }
 
+    /// <summary>
+    /// A plugin installed from the registry is removed like an uploaded one: its folder is deleted, an answer asks for a
+    /// restart, the list no longer shows it and the removal is recorded.
+    /// </summary>
+    [Fact]
+    public async Task ARegistryInstall_CanBeRemovedAsync()
+    {
+        var registry = new FakePluginRegistryClient();
+        var pluginId = $"test-reg-{Guid.NewGuid():N}";
+        registry.Publish(pluginId, "1.0.0", PluginSigningTestSeeds.SignedZip(pluginId));
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
+
+        var install = await client.PostAsJsonAsync($"/api/admin/plugins/registry/{pluginId}/install", PluginRegistryTestSeeds.InstallBody("1.0.0"));
+        install.StatusCode.Should().Be(HttpStatusCode.OK);
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeTrue();
+
+        var remove = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+
+        remove.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await remove.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        body.GetProperty("requiresRestart").GetBoolean().Should().BeTrue();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        var list = await client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/admin/plugins");
+        list!.Should().NotContain(p => p.GetProperty("id").GetString() == pluginId);
+        var detail = await client.GetFromJsonAsync<System.Text.Json.JsonElement>($"/api/admin/plugins/registry/{pluginId}");
+        detail.GetProperty("installed").GetBoolean().Should().BeFalse();
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        (await db.ActivityLogs.AsNoTracking().AnyAsync(l => l.Description.StartsWith("Removed Plugin") && l.Description.Contains(pluginId))).Should().BeTrue();
+    }
+
+    /// <summary>Removing a registry install that has an upgrade waiting for the restart deletes the staged upgrade too.</summary>
+    [Fact]
+    public async Task ARegistryInstallWithAStagedUpgrade_IsRemovedWithItAsync()
+    {
+        var registry = new FakePluginRegistryClient();
+        var pluginId = $"test-reg-{Guid.NewGuid():N}";
+        registry.Publish(pluginId, "1.0.0", PluginSigningTestSeeds.SignedZip(pluginId));
+        var client = await PluginRegistryTestSeeds.AdminClientAsync(factory, registry);
+        (await client.PostAsJsonAsync($"/api/admin/plugins/registry/{pluginId}/install", PluginRegistryTestSeeds.InstallBody("1.0.0")))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+        registry.Publish(pluginId, "2.0.0", PluginRegistryTestSeeds.SignedVersionedZip(pluginId, "2.0.0"));
+        (await client.PostAsJsonAsync($"/api/admin/plugins/registry/{pluginId}/install", PluginRegistryTestSeeds.InstallBody("2.0.0")))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+        Directory.Exists(PluginsTestSeeds.StagedFolder(pluginId)).Should().BeTrue();
+
+        var remove = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+
+        remove.StatusCode.Should().Be(HttpStatusCode.OK);
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.StagedFolder(pluginId)).Should().BeFalse();
+    }
+
     /// <summary>A caller with only the Client role is refused with 403.</summary>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()

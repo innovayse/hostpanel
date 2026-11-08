@@ -1,0 +1,90 @@
+{
+  "back": "Back to plugins",
+  "notFoundTitle": "Plugin not found",
+  "notFoundDescription": "The registry has no plugin with this id.",
+  "verified": "Verified",
+  "pricing": {
+    "Free": "Free",
+    "Paid": "Paid",
+    "Private": "Private"
+  },
+  "byAuthor": "by {author}",
+  "installedVersion": "Installed {version}",
+  "notInstalled": "Not installed",
+  "staged": "Version {version} staged, applies after restart",
+  "updateAvailable": "Update available: {version}",
+  "updateTo": "Update to {version}",
+  "uninstall": "Uninstall",
+  "links": {
+    "heading": "Links",
+    "documentation": "Documentation",
+    "support": "Support",
+    "repository": "Source repository",
+    "buy": "Buy a licence",
+    "licence": "Licence: {licence}"
+  },
+  "licence": {
+    "heading": "Licence key",
+    "saved": "Key saved",
+    "missing": "No key saved",
+    "description": "This plugin needs a licence key. The key is write only: it is stored on this server and never shown again.",
+    "label": "Licence key",
+    "placeholder": "Paste the licence key",
+    "save": "Save key",
+    "remove": "Remove key",
+    "needed": "Save a licence key before you install this plugin."
+  },
+  "versions": {
+    "heading": "Versions",
+    "emptyTitle": "No versions listed",
+    "emptyDescription": "The registry lists no version of this plugin.",
+    "status": {
+      "Published": "Published",
+      "Deprecated": "Deprecated",
+      "Yanked": "Yanked"
+    },
+    "installed": "Installed",
+    "staged": "Staged",
+    "latest": "Latest",
+    "compatible": "Runs on this host",
+    "incompatible": "Does not run on this host",
+    "action": {
+      "fresh": "Install",
+      "current": "Installed",
+      "newer": "Update",
+      "older": "Downgrade"
+    },
+    "published": "Published {date}",
+    "hostRange": "Host versions {min} to {max}",
+    "hostMin": "Host version {min} or newer",
+    "hostMax": "Host version {max} or older",
+    "hostAny": "Runs on any host version",
+    "reason": "Reason: {reason}",
+    "noReason": {
+      "Deprecated": "The publisher deprecated this version.",
+      "Yanked": "The publisher withdrew this version, it cannot be installed."
+    },
+    "replacement": "Use version {version} instead.",
+    "changelog": "Release notes",
+    "noChangelog": "No release notes.",
+    "permissions": "Permissions",
+    "noPermissions": "Asks for no permissions."
+  },
+  "confirm": {
+    "installTitle": "Install this version?",
+    "installMessage": "Install version {version} of {name}? The change applies after a server restart.",
+    "install": "Install",
+    "downgradeTitle": "Install an older version?",
+    "downgradeMessage": "Version {version} of {name} is older than the installed {installed}. An older version may lack fixes and may not read data the newer one wrote. The change applies after a server restart. Install it anyway?",
+    "downgrade": "Install older version",
+    "uninstallTitle": "Uninstall this plugin?",
+    "uninstallMessage": "Uninstall {name}? Its stored data is kept until you delete it, and the removal finishes after a server restart."
+  },
+  "feedback": {
+    "staged": "Version {version} is staged and applies after the restart.",
+    "installed": "Version {version} is installed. Restart the server to apply it.",
+    "uninstalled": "The plugin is uninstalled. Restart the server to finish the removal.",
+    "licenceSaved": "The licence key is saved.",
+    "licenceRemoved": "The licence key is removed."
+  }
+}

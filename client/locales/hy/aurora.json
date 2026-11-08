@@ -44,11 +44,9 @@
     "plans": {
       "eyebrow": "Հոսթինգ",
       "title": "Փաթեթներ, որ աճում են ձեզ հետ",
-      "monthly": "Ամսական",
-      "yearly": "Տարեկան",
       "billingLabel": "Վճարման պարբերականություն",
       "perMonth": "/ ամիս",
-      "perMonthAnnual": "/ ամիս, տարեկան վճարմամբ",
+      "perMonthBilled": "/ ամիս, վճարում՝ {cycle}",
       "cta": "Ընտրել փաթեթը",
       "moreFeatures": "+ևս {count}",
       "includedTitle": "Ներառված է բոլոր փաթեթներում",

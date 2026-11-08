@@ -11,6 +11,7 @@
 
 import { describe, expect, it, vi } from 'vitest'
 import type { H3Event } from 'h3'
+import { PortalErrorCode } from '~/constants/portalErrorCode'
 import { RouteParamKind } from '~/types/routeparamkind'
 
 /** Route parameters the fake event exposes. */
@@ -19,7 +20,7 @@ let params: Record<string, string | undefined> = {}
 vi.stubGlobal('getRouterParam', (_event: H3Event, name: string) => params[name])
 vi.stubGlobal('createError', (options: Record<string, unknown>) => Object.assign(new Error('h3'), options))
 
-const { BAD_ROUTE_PARAM, isPositiveIntKey, requireRouteParam } = await import('~/server/utils/requireRouteParam')
+const { isPositiveIntKey, requireRouteParam } = await import('~/server/utils/requireRouteParam')
 
 /** An opaque event; the stubbed helper reads {@link params}. */
 const event = {} as H3Event
@@ -51,14 +52,14 @@ describe('requireRouteParam', () => {
   it.each([undefined, ''])('refuses %j with a coded 400 and no sentence', (value) => {
     const thrown = refusalOf(value)
 
-    expect(thrown).toMatchObject({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
+    expect(thrown).toMatchObject({ statusCode: 400, data: { code: PortalErrorCode.BadRouteParam } })
     expect(thrown?.statusMessage).toBeUndefined()
   })
 
   it.each(['0', '-1', '01', '1.5', '7/../x', '7%2F', '7 ', 'abc', '2147483648', '99999999999', '7?x=1', '..'])(
     'refuses %j as an integer',
     (value) => {
-      expect(refusalOf(value)).toMatchObject({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
+      expect(refusalOf(value)).toMatchObject({ statusCode: 400, data: { code: PortalErrorCode.BadRouteParam } })
     }
   )
 
@@ -77,7 +78,7 @@ describe('requireRouteParam', () => {
   it.each(['abc', '3f2a1c4e8b7d4e6a9c5b1d2e3f4a5b6c', '../y', '3f2a1c4e-8b7d-4e6a-9c5b-1d2e3f4a5b6c/x', '7'])(
     'refuses %j as a GUID',
     (value) => {
-      expect(refusalOf(value, RouteParamKind.Guid)).toMatchObject({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
+      expect(refusalOf(value, RouteParamKind.Guid)).toMatchObject({ statusCode: 400, data: { code: PortalErrorCode.BadRouteParam } })
     }
   )
 
@@ -88,7 +89,7 @@ describe('requireRouteParam', () => {
   })
 
   it.each(['a/b', '../y', 'a b', 'a?b', 'a#b', 'a\\b', 'a%2Fb', 'x'.repeat(129)])('refuses %j as an identifier', (value) => {
-    expect(refusalOf(value, RouteParamKind.Identifier)).toMatchObject({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
+    expect(refusalOf(value, RouteParamKind.Identifier)).toMatchObject({ statusCode: 400, data: { code: PortalErrorCode.BadRouteParam } })
   })
 
   it.each(['client.service.tabs', 'client.dashboard.cards', 'admin.client.tabs'])('returns %j as a dotted name', (value) => {
@@ -100,7 +101,7 @@ describe('requireRouteParam', () => {
   it.each(['client', 'Client.x', 'a..b', 'a.b/c', '.a.b', 'a.b.', 'a.b1', '../admin', `${'a'.repeat(33)}.b`])(
     'refuses %j as a dotted name',
     (value) => {
-      expect(refusalOf(value, RouteParamKind.DottedName)).toMatchObject({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
+      expect(refusalOf(value, RouteParamKind.DottedName)).toMatchObject({ statusCode: 400, data: { code: PortalErrorCode.BadRouteParam } })
     }
   )
 
@@ -111,7 +112,7 @@ describe('requireRouteParam', () => {
   })
 
   it.each(['Acme', 'acme_sites', '-acme', 'acme--sites', 'acme-', 'x'.repeat(65), '..', 'acme/sites', 'ui', 'slots'])('refuses %j as a plugin id', (value) => {
-    expect(refusalOf(value, RouteParamKind.PluginId)).toMatchObject({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
+    expect(refusalOf(value, RouteParamKind.PluginId)).toMatchObject({ statusCode: 400, data: { code: PortalErrorCode.BadRouteParam } })
   })
 
   it.each(['tab', 'site_status', '1-card', 'x'.repeat(64)])('returns %j as a plugin widget id', (value) => {
@@ -121,7 +122,7 @@ describe('requireRouteParam', () => {
   })
 
   it.each(['_tab', 'Tab', 'a.b', '-tab', 'x'.repeat(65), 'a/b'])('refuses %j as a plugin widget id', (value) => {
-    expect(refusalOf(value, RouteParamKind.PluginWidgetId)).toMatchObject({ statusCode: 400, data: { code: BAD_ROUTE_PARAM } })
+    expect(refusalOf(value, RouteParamKind.PluginWidgetId)).toMatchObject({ statusCode: 400, data: { code: PortalErrorCode.BadRouteParam } })
   })
 
   it.each([['1', true], ['2147483647', true], ['0', false], ['04', false], ['2147483648', false], ['-1', false], ['', false], ['1.0', false]])(
@@ -130,8 +131,4 @@ describe('requireRouteParam', () => {
       expect(isPositiveIntKey(value)).toBe(expected)
     }
   )
-
-  it('names the code the way the contract does', () => {
-    expect(BAD_ROUTE_PARAM).toBe('BAD_ROUTE_PARAM')
-  })
 })

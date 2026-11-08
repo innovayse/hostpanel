@@ -84,6 +84,23 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
         read.Views.Paths.Should().BeEmpty();
     }
 
+    /// <summary>
+    /// Asserts that reading finds a fault of a rule added after plugins were installed: the plugin is refused at
+    /// install and not at load, where its documents are kept.
+    /// </summary>
+    /// <param name="manifest">The manifest.</param>
+    /// <param name="rule">The rule the first advisory must break.</param>
+    private void AssertAdvisory(PluginManifest manifest, PluginManifestRule rule)
+    {
+        var read = PluginViewDocumentReader.Read(_folder, manifest, MaxViewBytes);
+        read.Violation.Should().BeNull("a plugin that is already installed must still load");
+        read.Advisories.Should().NotBeEmpty();
+        read.Advisories[0].Rule.Should().Be(rule);
+        read.RefusedAtInstall.Should().NotBeNull();
+        read.RefusedAtInstall!.Rule.Should().Be(rule);
+        read.Views.Paths.Should().NotBeEmpty("the documents are served at load");
+    }
+
     /// <summary>A manifest with no pages or slots reads nothing and passes.</summary>
     [Fact]
     public void Read_NoPagesOrSlots_ReturnsNone()
@@ -725,6 +742,117 @@ public sealed class PluginViewDocumentReaderTests : IDisposable
                 {"id":"preview","label":"Preview","route":{"method":"get","path":"/site"},"field":"urls.preview"},
                 {"id":"live","label":"Live","route":{"method":"get","path":"/site"},"field":"urls.live"}]}]}
             ]}]}
+            """);
+
+        PluginViewDocumentReader.Read(_folder, ClientPageManifest(), MaxViewBytes).Violation.Should().BeNull();
+    }
+
+    /// <summary>
+    /// A block id given to a second block, at the root or nested in a tab, a header, a pane or a tab of a pane, is a
+    /// ViewBlockIdRepeated advisory: refused at install, not at load.
+    /// </summary>
+    /// <param name="blocks">The blocks of the document root.</param>
+    [Theory]
+    [InlineData("""{"kind":"text","id":"a","text":"x"},{"kind":"text","id":"a","text":"y"}""")]
+    [InlineData(
+        """{"kind":"text","id":"a","text":"x"},""" +
+        """{"kind":"tabs","tabs":[{"id":"t","title":"T","blocks":[{"kind":"text","id":"a","text":"y"}]}]}""")]
+    [InlineData(
+        """{"kind":"header","id":"h","title":"H","actions":[{"kind":"badge","id":"a","text":"b"}]},""" +
+        """{"kind":"text","id":"a","text":"y"}""")]
+    [InlineData(
+        """{"kind":"header","id":"a","title":"H"},""" +
+        """{"kind":"split","panes":[{"blocks":[{"kind":"text","id":"a","text":"y"}]},{"blocks":[]}]}""")]
+    [InlineData(
+        """{"kind":"split","panes":[{"blocks":[{"kind":"tabs","tabs":[""" +
+        """{"id":"t","title":"T","blocks":[{"kind":"text","id":"a","text":"x"}]}]}]},""" +
+        """{"blocks":[{"kind":"text","id":"a","text":"y"}]}]}""")]
+    public void Read_BlockIdRepeated_IsAnAdvisoryForViewBlockIdRepeated(string blocks)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{blocks}}]}""");
+
+        AssertAdvisory(ClientPageManifest(), PluginManifestRule.ViewBlockIdRepeated);
+    }
+
+    /// <summary>
+    /// A compact header with title and subtitle sources, an action label source, a cards table and a preview note are
+    /// accepted.
+    /// </summary>
+    [Fact]
+    public void Read_DisplayMembersWellFormed_AreAccepted()
+    {
+        Write("views/a.json", """
+            {"schema":1,"blocks":[
+              {"kind":"header","compact":true,
+               "titleSource":{"route":{"method":"get","path":"/site"},"field":"site.name"},
+               "subtitleSource":{"route":{"method":"get","path":"/site"},"field":"site.domain"}},
+              {"kind":"action","label":"P","route":{"method":"post","path":"/publish"},
+               "labelSource":{"route":{"method":"get","path":"/site"},"field":"label"}},
+              {"kind":"table","display":"cards","source":{"route":{"method":"get","path":"/site"}},"columns":[]},
+              {"kind":"preview","size":"phone","note":{"route":{"method":"get","path":"/site"},"field":"notes"},
+               "sources":[{"id":"preview","label":"P","route":{"method":"get","path":"/site"},"field":"urls.preview"}]}
+            ]}
+            """);
+
+        PluginViewDocumentReader.Read(_folder, ClientPageManifest(), MaxViewBytes).Violation.Should().BeNull();
+    }
+
+    /// <summary>
+    /// A display member of the wrong type, or a source that is not a GET route with a dotted field, is a ViewInvalid
+    /// advisory: refused at install, not at load.
+    /// </summary>
+    /// <param name="block">The block JSON.</param>
+    [Theory]
+    [InlineData("""{"kind":"header","compact":"yes"}""")]
+    [InlineData("""{"kind":"header","titleSource":"name"}""")]
+    [InlineData("""{"kind":"header","titleSource":{"route":{"method":"post","path":"/publish"},"field":"a"}}""")]
+    [InlineData("""{"kind":"header","subtitleSource":{"route":{"method":"get","path":"/site"},"field":5}}""")]
+    [InlineData("""{"kind":"header","subtitleSource":{"route":{"method":"get","path":"/site"},"field":"a..b"}}""")]
+    [InlineData(
+        """{"kind":"action","label":"P","route":{"method":"post","path":"/publish"},"labelSource":{"field":"a"}}""")]
+    [InlineData("""{"kind":"table","display":"grid","columns":[]}""")]
+    [InlineData("""{"kind":"table","display":true,"columns":[]}""")]
+    [InlineData(
+        """{"kind":"preview","size":"phone","note":["x"],"sources":[""" +
+        """{"id":"preview","label":"P","route":{"method":"get","path":"/site"},"field":"u"}]}""")]
+    public void Read_DisplayMemberMalformed_IsAnAdvisoryForViewInvalid(string block)
+    {
+        Write("views/a.json", $$"""{"schema":1,"blocks":[{{block}}]}""");
+
+        AssertAdvisory(ClientPageManifest(), PluginManifestRule.ViewInvalid);
+    }
+
+    /// <summary>
+    /// A document that breaks an old rule and also carries an advisory fault is a hard violation: the advisory never
+    /// softens a rule that was already enforced at load.
+    /// </summary>
+    [Fact]
+    public void Read_OldRuleBrokenBesideAnAdvisory_StillBreaksTheOldRule()
+    {
+        Write(
+            "views/a.json",
+            """
+            {"schema":1,"blocks":[
+              {"kind":"text","id":"a","text":"x"},{"kind":"text","id":"a","text":"y"},{"kind":"nope"}]}
+            """);
+
+        AssertBreaks(ClientPageManifest(), PluginManifestRule.ViewBlockKindUnknown);
+    }
+
+    /// <summary>
+    /// A tab id and a preview source id may match a block's id: only blocks share the id space the panel keys on.
+    /// </summary>
+    [Fact]
+    public void Read_IdsOfTabsAndPreviewSourcesMatchingABlockId_AreAccepted()
+    {
+        Write("views/a.json", """
+            {"schema":1,"blocks":[
+              {"kind":"tabs","tabs":[
+                {"id":"versions","title":"V","blocks":[{"kind":"text","id":"versions","text":"x"}]}]},
+              {"kind":"preview","id":"live","size":"phone","sources":[
+                {"id":"preview","label":"P","route":{"method":"get","path":"/site"},"field":"urls.preview"},
+                {"id":"live","label":"L","route":{"method":"get","path":"/site"},"field":"urls.live"}]}
+            ]}
             """);
 
         PluginViewDocumentReader.Read(_folder, ClientPageManifest(), MaxViewBytes).Violation.Should().BeNull();

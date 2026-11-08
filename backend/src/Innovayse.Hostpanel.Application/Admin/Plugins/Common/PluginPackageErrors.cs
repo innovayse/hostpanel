@@ -77,10 +77,12 @@ public static class PluginPackageErrors
             PluginManifestRule.PageLayoutUnknown => HostpanelErrorCodes.PLUGIN_PAGE_LAYOUT_UNKNOWN,
             PluginManifestRule.ViewSplitInvalid => HostpanelErrorCodes.PLUGIN_VIEW_SPLIT_INVALID,
             PluginManifestRule.ViewPreviewInvalid => HostpanelErrorCodes.PLUGIN_VIEW_PREVIEW_INVALID,
+            PluginManifestRule.ViewBlockIdRepeated => HostpanelErrorCodes.PLUGIN_VIEW_BLOCK_ID_REPEATED,
             PluginManifestRule.CallbackInvalid => HostpanelErrorCodes.PLUGIN_CALLBACK_INVALID,
             PluginManifestRule.IconMissing => HostpanelErrorCodes.PLUGIN_ICON_MISSING,
             PluginManifestRule.IconInvalid => HostpanelErrorCodes.PLUGIN_ICON_INVALID,
             PluginManifestRule.EndpointsNotImplemented => HostpanelErrorCodes.PLUGIN_ENDPOINTS_NOT_IMPLEMENTED,
+            PluginManifestRule.TagsInvalid => HostpanelErrorCodes.PLUGIN_MANIFEST_TAGS_INVALID,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a manifest rule."),
         };
     }

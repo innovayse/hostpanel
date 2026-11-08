@@ -221,8 +221,17 @@ The fields above cover manifest version 1. A manifest without `manifestVersion` 
   { name: 'locales', type: 'object', default: '{}', description: 'Texts by language code, then by key, for example the language en with the key menu.chat and the text Chat. A text key has at least two dot-separated parts, such as menu.chat. The en texts must define every key the manifest uses.' },
   { name: 'api', type: 'object', default: '{}', description: 'Routes the host forwards to the plugin: api.client and api.admin, each a list of routes.' },
   { name: 'ui', type: 'object', default: '{}', description: 'What the plugin adds to the panels: ui.client and ui.admin (menus and pages) and ui.slots (widgets in host slots).' },
+  { name: 'tags', type: 'string[]', default: '[]', description: 'Optional keywords a plugin registry uses to let people find the plugin. Needs SDK 3.3.0 or later. At most 10 tags, each 2 to 30 lowercase letters, digits and hyphens with no leading #, and no tag twice. A bad list is refused with PLUGIN_MANIFEST_TAGS_INVALID.' },
   { name: 'externalOrigins', type: 'string[]', default: '[]', description: 'Web origins (scheme, host and port, such as https://example.com) that a link block of a plugin view may point at with an absolute https address, and that a preview block may frame (a pure https origin only).' }
 ]" />
+
+Tags are plain keywords, written in the manifest like this:
+
+```json
+"tags": ["billing", "card-payments", "invoices"]
+```
+
+The host checks the list when the plugin is installed and when it is loaded, with the same rule the `Hostpanel.Sdk.Packaging` package runs on your build: a tag shorter than 2 or longer than 30 characters, one with an upper case letter, a space, a leading `#` or any character outside letters, digits and hyphens, a tag listed twice, or more than 10 tags is refused with `PLUGIN_MANIFEST_TAGS_INVALID`. A manifest with no `tags` is fine.
 
 Wherever a label, title or description may be a text, write either a key of `locales` or plain text. A value shaped like a key (letters, digits, dashes and underscores in two or more parts separated by dots) is looked up in the `en` texts and refused when it is not defined (`PLUGIN_LABEL_KEY_MISSING`).
 
@@ -385,6 +394,14 @@ when the block's own `id` is refreshed. Hide a create form once a site exists:
 }
 ```
 
+**How often a route is read.** A page is one picture of your data. Every block, condition and card that names the same
+`GET` route on a page is answered by one request, and the panel sends a new one only when the page is refreshed (an
+action, a form, a conversation turn or a follow-up asked for it) after any call that is not a read ended, or when a
+conversation turn begins or ends. A block that appears later takes the answer the page already holds, so a page naming
+one state route in ten places costs one request per refresh, not ten. The panel keeps no read past that moment, none
+older than ten seconds and none from another page. A route read by
+several blocks is still read once for each refresh, so keep it cheap to answer.
+
 **`resetOnSuccess`** is `true` or `false`, only inside a form's `submit`. After a successful submit every field goes
 back to empty.
 
@@ -428,9 +445,12 @@ the three routes in its `api` block and the label keys in `locales.en`:
 }
 ```
 
-`refresh` lists 1 to 20 block `id`s, each present in the same view. Give every block that has an `id` its own: the panel
-treats blocks that share one as one block, so a refresh reaches all of them and a new follow-up of one ends the running
-follow-up of the other. How often and how long the panel polls is the
+`refresh` lists 1 to 20 block `id`s, each present in the same view. Give every block that has an `id` its own, in any
+container (a tab, a pane, a header): the panel treats blocks that share one as one block, so a refresh would reach all of
+them and a new follow-up of one would end the running follow-up of the other. A view that gives one `id` to two blocks is
+refused at install (`PLUGIN_VIEW_BLOCK_ID_REPEATED`); a plugin that is already installed with such a view still loads, the
+host writes a warning in its log, and the panel draws every block but acts on blocks with one `id` as if they were one. The `id` of a tab or of a preview source is a separate name and may match a
+block's. How often and how long the panel polls is the
 host's choice, not yours: every 3 seconds, at most 20 times (about a minute). A long job should report its own state on
 the `until` route rather than expect more time.
 
@@ -464,6 +484,12 @@ A view that breaks these rules is refused at install and skipped at startup: `PL
 condition, a condition route that is not `GET`, `visibleWhen` outside a block), `PLUGIN_VIEW_FOLLOW_UP_INVALID` (a bad
 `followUp` or one in the wrong place, a `refresh` id no block carries, `resetOnSuccess` that is not a boolean or not in a
 `submit`), and `PLUGIN_VIEW_ROUTE_UNDECLARED` for a condition route the manifest does not declare.
+
+Two checks were added after plugins were already installed, so they apply to an **install** only: `PLUGIN_VIEW_BLOCK_ID_REPEATED`
+(one `id` on more than one block) and `PLUGIN_VIEW_INVALID` for a mistyped display member (a header's `compact`,
+`titleSource` or `subtitleSource`, an action's `labelSource`, a preview's `note`, a table's `display`). A plugin that is
+already installed with such a view is not removed by a host upgrade: it loads, and the host writes one warning per fault
+to its log. Fix them in your next version, because uploading it will be refused until you do.
 
 ## Working screens: layout, split and preview
 
@@ -548,6 +574,17 @@ use a small Markdown subset: paragraphs, `#` headings, `-` and `1.` lists, fence
 - `result` is a card. `tone` is `info` (default), `success`, `warning` or `danger`; at least one of `title` and `text`.
   At most 5 `actions`, each with a `label` and exactly one of `route` (one of your own, called through the host, so an
   undeclared route or a missing permission is refused as usual) or `href` (under the rule of a link block).
+  A card stays in the conversation after what it offers has changed, so an action may carry `visibleWhen`: the same
+  condition a view block has, except that the event spells the value list `equalsAny` (a C# record cannot have a member
+  named `equals`): `{ "route": { "method": "get", "path": "/services/{serviceId}/site" }, "field": "publishVersion",
+  "equalsAny": [5] }`. The route is a `GET` route of your own that the page can fill, `field` a dotted path, and
+  `equalsAny` one to 20 strings, numbers, booleans or `null`; the action shows only while the field strictly equals one
+  of them. The panel reads it when the card is drawn and again whenever a block named in the chat's `refresh` is read
+  again (after a turn, and after a card action), and hides the action while it is being read, when the read fails and
+  when the condition does not hold. It applies to a route, an `href` and a `resend` action alike. Without it an action
+  always shows. A condition the panel cannot read drops the action, since a button meant to hide must never show.
+  Your route still decides whether a call is current: the condition is a courtesy to the reader, not the check.
+  A row left with no visible action is hidden too.
 - `issue` is your own failure, in the danger tone. The stream goes on; end it when you are done.
 
 A panel ignores an event it cannot read. **Stop** cancels the stream: your enumerator's token fires (`EnumeratorCancellation`)

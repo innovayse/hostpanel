@@ -14,8 +14,10 @@ import { startHeldServer } from '../helpers/heldServer'
 import { startTransport } from '../helpers/stubTransport'
 import type { StubServer } from '../helpers/stubServer'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { usePluginsStore } from '~/stores/plugins'
 import { providePluginView, usePluginCondition, usePluginFollowUp, usePluginSource, usePluginView } from '~/composables/usePluginView'
 import { PLUGIN_FOLLOW_UP_INTERVAL_MS, PLUGIN_FOLLOW_UP_MAX_ATTEMPTS } from '~/constants/pluginFollowUp'
+import { PLUGIN_VIEW_READ_MAX_AGE_MS } from '~/constants/pluginViewReads'
 import type { PluginSource } from '~/types/pluginblock'
 import type { PluginFollowUp } from '~/types/pluginfollowup'
 import type { PluginViewCondition } from '~/types/pluginviewcondition'
@@ -204,13 +206,16 @@ const condition = ref<PluginViewCondition | undefined>(undefined)
 /** The ids the test view was asked to refresh, one entry per call. */
 const refreshed: string[][] = []
 
+/** The block ids whose refresh reads the test block's condition again. */
+const watched = ref<string[]>(['status'])
+
 /** Starts the test block's follow-up; set when the block mounts. */
 let follow: (followUp: PluginFollowUp | undefined, settled?: () => void) => void = () => undefined
 
 /** A block that shows `shown` while its condition holds and can start a follow-up. */
 const Watcher = defineComponent({
   setup() {
-    const visible = usePluginCondition(() => condition.value, () => 'status')
+    const visible = usePluginCondition(() => condition.value, () => watched.value)
     follow = usePluginFollowUp(() => 'publish')
     return () => h('span', { 'data-testid': 'visible' }, visible.value ? 'shown' : 'hidden')
   },
@@ -257,6 +262,7 @@ describe('usePluginCondition', () => {
   beforeEach(() => {
     condition.value = undefined
     refreshed.length = 0
+    watched.value = ['status']
   })
 
   it('shows a block with no condition and reads nothing', async () => {
@@ -283,6 +289,43 @@ describe('usePluginCondition', () => {
 
     expect(wrapper.get('[data-testid="visible"]').text()).toBe('shown')
     expect(calls()).toHaveLength(2)
+  })
+
+  it('reads again when any of several named blocks is refreshed, and for no other block', async () => {
+    stub.respondWith(() => ({ body: { status: 'building' } }))
+    condition.value = LIVE
+    watched.value = ['top', 'versions']
+
+    const wrapper = mountWithKit(WatchHost)
+    await settle()
+    expect(calls()).toHaveLength(1)
+
+    refreshes.value = { elsewhere: 1 }
+    await nextTick()
+    await settle()
+    expect(calls()).toHaveLength(1)
+
+    stub.respondWith(() => ({ body: { status: 'live' } }))
+    refreshes.value = { elsewhere: 1, versions: 1 }
+    await nextTick()
+    await settle()
+
+    expect(calls()).toHaveLength(2)
+    expect(wrapper.get('[data-testid="visible"]').text()).toBe('shown')
+  })
+
+  it('reads once, on mounting, when it names no block', async () => {
+    stub.respondWith(() => ({ body: { status: 'live' } }))
+    condition.value = LIVE
+    watched.value = []
+
+    mountWithKit(WatchHost)
+    await settle()
+    refreshes.value = { status: 1 }
+    await nextTick()
+    await settle()
+
+    expect(calls()).toHaveLength(1)
   })
 
   it('hides the block when the read is refused or the field is absent', async () => {
@@ -432,5 +475,159 @@ describe('usePluginFollowUp', () => {
     follow({ ...UNTIL_LIVE, until: { ...LIVE, route: { method: 'post', path: '/sites/{siteId}' } } })
     await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS * 3)
     expect(calls()).toHaveLength(1)
+  })
+})
+
+/** Whether the reader that mounts after the others is on screen. */
+const lateReader = ref(false)
+
+/** A view that refreshes as the real one does, holding two sources, one condition and, when asked, a late source. */
+const SharedHost = defineComponent({
+  setup() {
+    providePluginView({
+      pluginId: 'acme-sites',
+      values: { siteId: '7' },
+      externalOrigins: [],
+      frameOrigins: [],
+      refreshes,
+      refresh: (ids: string[]) => {
+        const next = { ...refreshes.value }
+        for (const id of ids) {
+          next[id] = (next[id] ?? 0) + 1
+        }
+        refreshes.value = next
+      },
+      open: () => undefined,
+      adopt: recordAdoption,
+      track: () => undefined,
+    })
+    return () => [h(Reader), h(Reader), h(Watcher), lateReader.value ? h(Reader) : null]
+  },
+})
+
+/**
+ * The reads of the site route the stub received.
+ *
+ * @returns The GET requests, oldest first.
+ */
+const siteReads = (): string[] => stub.requests.filter(request => request.method === 'GET' && request.url.includes('/routes/')).map(request => request.url)
+
+describe('reads shared inside a view', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  beforeEach(() => {
+    condition.value = LIVE
+    watched.value = ['status']
+    lateReader.value = false
+    stub.respondWith(() => ({ body: { status: 'building' } }))
+  })
+
+  it('sends one request for the sources and the condition that name the same route', async () => {
+    mountWithKit(SharedHost)
+    await settle()
+
+    expect(siteReads()).toHaveLength(1)
+  })
+
+  it('sends one new request for all of them when the view is refreshed, and one for each query', async () => {
+    mountWithKit(SharedHost)
+    await settle()
+
+    refreshes.value = { status: 1 }
+    await nextTick()
+    await settle()
+    expect(siteReads()).toHaveLength(2)
+
+    query.value = { page: '2' }
+    await nextTick()
+    await settle()
+    // The two sources that read with the new query share the one request; the condition has no query and reads nothing.
+    expect(siteReads()).toHaveLength(3)
+    expect(siteReads()[2]).toContain('?page=2')
+  })
+
+  it('answers a block that mounts later from the same read until the view is refreshed', async () => {
+    mountWithKit(SharedHost)
+    await settle()
+
+    lateReader.value = true
+    await nextTick()
+    await settle()
+
+    expect(siteReads()).toHaveLength(1)
+  })
+
+  it('asks again after a call that may have changed the plugin\'s data ended', async () => {
+    mountWithKit(SharedHost)
+    await settle()
+    await usePluginsStore().callRoute('acme-sites', { method: 'post', path: '/sites/{siteId}/publish' }, { siteId: '7' })
+
+    lateReader.value = true
+    await nextTick()
+    await settle()
+
+    expect(siteReads()).toHaveLength(2)
+  })
+
+  it('answers a block that mounts within the age limit from the picture, and one that mounts after it with a new read', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    mountWithKit(SharedHost)
+    await settle()
+
+    vi.advanceTimersByTime(PLUGIN_VIEW_READ_MAX_AGE_MS - 1)
+    lateReader.value = true
+    await nextTick()
+    await settle()
+    expect(siteReads()).toHaveLength(1)
+
+    lateReader.value = false
+    await nextTick()
+    vi.advanceTimersByTime(1)
+    lateReader.value = true
+    await nextTick()
+    await settle()
+    expect(siteReads()).toHaveLength(2)
+  })
+
+  it('does not keep a read that failed, so the next block tries again', async () => {
+    let reads = 0
+    stub.respondWith(() => (++reads === 1
+      ? { status: 422, body: { statusMessage: 'Refused.', data: { code: 'PLUGIN_REPORTED_PROBLEM' } } }
+      : { body: { status: 'building' } }))
+    mountWithKit(SharedHost)
+    await settle()
+    expect(siteReads()).toHaveLength(1)
+
+    lateReader.value = true
+    await nextTick()
+    await settle()
+
+    expect(siteReads()).toHaveLength(2)
+  })
+
+  it('shares nothing with another view of the same page', async () => {
+    mountWithKit(SharedHost).unmount()
+    await settle()
+    mountWithKit(SharedHost)
+    await settle()
+
+    expect(siteReads()).toHaveLength(2)
+  })
+
+  it('gives the blocks a follow-up refreshes the answer the follow-up read, so the poll costs one request', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    stub.respondWith(() => ({ body: { status: 'live' } }))
+    mountWithKit(SharedHost)
+    await settle()
+    expect(siteReads()).toHaveLength(1)
+
+    follow(UNTIL_LIVE)
+    await advance(PLUGIN_FOLLOW_UP_INTERVAL_MS)
+
+    // The follow-up's own read, and nothing more: the sources and the condition took its answer.
+    expect(siteReads()).toHaveLength(2)
+    expect(refreshes.value).toEqual({ status: 1 })
   })
 })

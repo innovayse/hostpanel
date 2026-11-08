@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import { holdsPermission, mayPerform } from '~/utils/holdsPermission'
 
 describe('holdsPermission', () => {

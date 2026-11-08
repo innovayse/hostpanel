@@ -372,6 +372,9 @@
 <data name="PROVISIONING_UPSTREAM_FAILED" xml:space="preserve">
     <value>Provisioning the service failed. Please try again or contact support.</value>
   </data>
+<data name="PROVISIONING_OUTCOME_UNKNOWN" xml:space="preserve">
+    <value>We could not confirm whether the hosting account was created. Please try again in a few minutes.</value>
+  </data>
 <data name="SERVICE_FIRST_INVOICE_UNPAID" xml:space="preserve">
     <value>This service can be set up once its first invoice is paid in full.</value>
   </data>
@@ -536,6 +539,9 @@
   </data>
 <data name="PLUGIN_MANIFEST_VERSION_INVALID" xml:space="preserve">
     <value>The plugin version in the manifest is not valid: write it as major.minor.patch, for example 1.2.3, with no leading zeros.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_TAGS_INVALID" xml:space="preserve">
+    <value>The tags in the manifest are not valid: list at most 10 tags, each 2 to 30 lowercase letters, digits or hyphens with no leading #, and no tag twice.</value>
   </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>This plugin names a view document that its package does not contain.</value>
@@ -841,6 +847,27 @@
   <data name="ORDER_NOT_PENDING" xml:space="preserve">
     <value>This action requires the order to be pending.</value>
   </data>
+  <data name="ORDER_LINE_NOT_RETRYABLE" xml:space="preserve">
+    <value>This order line cannot be retried now. Only a failed line of an accepted order can be, and not while another retry is running it.</value>
+  </data>
+  <data name="ORDER_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>This order has no such line.</value>
+  </data>
+  <data name="ORDER_LINE_ALREADY_FULFILLED" xml:space="preserve">
+    <value>This order line is already fulfilled.</value>
+  </data>
+  <data name="ORDER_LINE_CHANGED" xml:space="preserve">
+    <value>This order line was changed while it was being processed, so the result could not be recorded. Open the order again to see where the line stands.</value>
+  </data>
+  <data name="ORDER_LINE_NOT_REFUNDABLE" xml:space="preserve">
+    <value>This order line cannot be refunded now. Only a failed line can start being refunded, only a line being refunded can be settled, and only a partly refunded line can be closed as refunded.</value>
+  </data>
+  <data name="ORDER_LINE_INTERRUPTED" xml:space="preserve">
+    <value>The attempt to fulfil this line was interrupted before it finished. Retry the line.</value>
+  </data>
+  <data name="ORDER_LINE_SERVICE_CONFLICT" xml:space="preserve">
+    <value>The service already stored for this order line belongs to another client or product, so the line cannot reuse it. Check the line and its service.</value>
+  </data>
   <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
     <value>This service is not active.</value>
   </data>
@@ -1018,6 +1045,15 @@
   <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
     <value>Only a terminated service has a termination date to correct.</value>
   </data>
+  <data name="SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED" xml:space="preserve">
+    <value>A control panel session could not be started. The panel returned an address that is not on its server.</value>
+  </data>
+  <data name="CPANEL_USERNAME_INVALID" xml:space="preserve">
+    <value>The hosting account username is not valid for cPanel. Use lowercase letters and digits, start with a letter, at most 16 characters.</value>
+  </data>
+  <data name="CPANEL_DOMAIN_INVALID" xml:space="preserve">
+    <value>The domain is not a valid domain name. Check it and try again.</value>
+  </data>
   <data name="SERVICE_HOSTING_DETAILS_MISSING" xml:space="preserve">
     <value>This service has no domain or username yet. Set up the hosting account first.</value>
   </data>
@@ -1144,6 +1180,21 @@
   <data name="PLUGIN_REGISTRY_NOT_TRUSTED" xml:space="preserve">
     <value>The plugin registry trust setting does not allow installing this plugin.</value>
   </data>
+  <data name="PLUGIN_REGISTRY_LICENCE_REQUIRED" xml:space="preserve">
+    <value>A licence key is required to use this plugin from the plugin registry.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_LICENCE_INVALID" xml:space="preserve">
+    <value>The plugin registry did not accept the licence key.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_HOST_INCOMPATIBLE" xml:space="preserve">
+    <value>This version of the plugin does not run on this Hostpanel version.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_VERSION_YANKED" xml:space="preserve">
+    <value>The plugin registry withdrew this version, so it cannot be installed. Choose another version.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_VERSION_COMPROMISED" xml:space="preserve">
+    <value>The plugin registry rejected this version as unsafe, so it cannot be installed. Choose another version.</value>
+  </data>
   <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
     <value>The plugin asks for a kind of access to client hosting that this host does not know, names one twice, or declares it in a version 1 manifest.</value>
   </data>
@@ -1167,6 +1218,9 @@
   </data>
   <data name="PLUGIN_VIEW_PREVIEW_INVALID" xml:space="preserve">
     <value>One of this plugin's view documents holds a preview with invalid sources or size, or shows a preview anywhere but on a client page.</value>
+  </data>
+  <data name="PLUGIN_VIEW_BLOCK_ID_REPEATED" xml:space="preserve">
+    <value>One of this plugin's view documents gives the same id to more than one block.</value>
   </data>
   <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
     <value>This line has no renewal claim to release.</value>

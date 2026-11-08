@@ -15,5 +15,6 @@ public sealed class RenewDomainValidator : LocalizedValidator<RenewDomainCommand
     {
         RuleFor(x => x.DomainId).GreaterThan(0).WithMessage(L["DomainIdRequired"]);
         RuleFor(x => x.Years).InclusiveBetween(1, 10).WithMessage(L["DomainYearsRange"]);
+        RuleFor(x => x.OrderItemId).GreaterThan(0).WithMessage(L["OrderItemIdInvalid"]).When(x => x.OrderItemId is not null);
     }
 }

@@ -31,8 +31,8 @@
       <AuroraPlanCards
         v-if="isVisible(HomeSection.Plans)"
         :plans="plans"
-        :yearly="yearly"
-        @update:yearly="value => emit('update:yearly', value)"
+        :cycle="cycle"
+        @update:cycle="value => emit('update:cycle', value)"
       />
 
       <AuroraServices v-if="isVisible(HomeSection.Services)" />
@@ -78,6 +78,7 @@ import { isPartnersVisible } from '~/utils/partnersVisible'
 import { useHomeSections } from '~/composables/useHomeSections'
 import type { DomainResult } from '~/templates/aurora/types/domainresult'
 import type { PlanCard } from '~/types/plancard'
+import { PricingCycle } from '~/types/pricingcycle'
 import type { TldPriceRow } from '~/types/tldpricerow'
 
 withDefaults(defineProps<{
@@ -91,8 +92,8 @@ withDefaults(defineProps<{
   priceHints?: TldPriceRow[]
   /** Hosting plans for the plan cards. */
   plans?: PlanCard[]
-  /** Whether prices are shown per month billed annually. */
-  yearly?: boolean
+  /** The billing cycle the prices are shown for. */
+  cycle?: PricingCycle
   /** Whether to show the process section; on by default because it carries indexable content. */
   showProcess?: boolean
   /** Whether to show the FAQ section; on by default because it carries indexable content. */
@@ -103,7 +104,7 @@ withDefaults(defineProps<{
   hasZones: true,
   priceHints: () => [],
   plans: () => [],
-  yearly: false,
+  cycle: PricingCycle.Monthly,
   showProcess: true,
   showFaq: true,
 })
@@ -115,7 +116,7 @@ const { isVisible } = useHomeSections()
 const emit = defineEmits<{
   /** The visitor submitted a domain search term. */
   search: [term: string]
-  /** The visitor switched the billing period. */
-  'update:yearly': [value: boolean]
+  /** The visitor switched the billing cycle. */
+  'update:cycle': [value: PricingCycle]
 }>()
 </script>

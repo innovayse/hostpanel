@@ -42,6 +42,25 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
         reloaded.ExpiresAt.Should().BeAfter(originalExpiry);
     }
 
+    /// <summary>
+    /// A renew body that names an order line is ignored: the renewal succeeds but is not recorded against any line, so a
+    /// request cannot make a line believe it already renewed a domain.
+    /// </summary>
+    [Fact]
+    public async Task RenewDomain_BodyNamingAnOrderLine_IsIgnoredAsync()
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var domainId = await DomainsTestSeeds.SeedActiveDomainAsync(context);
+
+        var client = await DomainsTestSeeds.AdminClientAsync(factory);
+        var response = await client.PostAsJsonAsync($"/api/domains/{domainId}/renew", new { years = 1, orderItemId = 424_299 });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var reloaded = await context.Domains.AsNoTracking().Include(d => d.LineRenewals).FirstAsync(d => d.Id == domainId, CancellationToken.None);
+        reloaded.LineRenewals.Should().BeEmpty();
+    }
+
     /// <summary>An unknown domain id answers 404 with <c>DOMAIN_NOT_FOUND</c>.</summary>
     [Fact]
     public async Task RenewDomain_UnknownDomain_Returns404Async()
@@ -217,12 +236,4 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
         return await scope.ServiceProvider.GetRequiredService<IMessageBus>()
             .InvokeAsync<Result>(new RenewDomainCommand(domainId, 1), CancellationToken.None);
     }
-}
-
-/// <summary>A registrar that renews but, like a purchase response that carries no dates, reports no expiry.</summary>
-public sealed class NoExpiryRegistrar : TestRegistrar
-{
-    /// <inheritdoc/>
-    protected override Task<RegistrarResult> Renew(DomainRenewalOrder request, StubRegistrarProvider stub, CancellationToken ct)
-        => Task.FromResult(new RegistrarResult(true, request.RegistrarRef, null, null));
 }

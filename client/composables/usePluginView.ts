@@ -3,6 +3,8 @@
  * signals) to the blocks below it, and a block reads its source route through the plugin store. A
  * block's `visibleWhen` condition and an action's or form's `followUp` are read the same way.
  *
+ * Reads of one route are shared inside a view: see {@link readPluginRoute}.
+ *
  * The context is rendering wiring, not business data, so it travels by provide/inject; every call
  * still goes through `stores/plugins.ts`.
  *
@@ -11,13 +13,16 @@
 
 import type { ComputedRef, InjectionKey, Ref } from 'vue'
 import { PLUGIN_FOLLOW_UP_INTERVAL_MS, PLUGIN_FOLLOW_UP_MAX_ATTEMPTS } from '~/constants/pluginFollowUp'
+import { PLUGIN_VIEW_READ_MAX_AGE_MS } from '~/constants/pluginViewReads'
 import { usePluginsStore } from '~/stores/plugins'
 import type { PluginSource } from '~/types/pluginblock'
 import type { PluginFollowUp } from '~/types/pluginfollowup'
 import { HttpMethod } from '~/types/httpmethod'
 import type { PluginViewCondition } from '~/types/pluginviewcondition'
 import type { PluginViewContext } from '~/types/pluginviewcontext'
-import { pluginConditionHolds, pluginRouteMethod, readPluginField } from '~/utils/plugins'
+import type { PluginViewRoute } from '~/types/pluginviewroute'
+import type { PluginCallResult } from '~/types/plugincallresult'
+import { pluginConditionHolds, pluginRouteMethod, pluginRouteRequest, readPluginField } from '~/utils/plugins'
 
 /** The injection key of the view context. */
 const PLUGIN_VIEW_KEY: InjectionKey<PluginViewContext> = Symbol('plugin-view')
@@ -93,6 +98,111 @@ export const providePluginBackLink = (link: ComputedRef<PluginBackLink | null>):
  */
 export const usePluginBackLink = (): PluginBackLink | null => inject(PLUGIN_BACK_LINK_KEY, null)?.value ?? null
 
+/**
+ * The reads a view has made since it last changed, by request. A view is one picture of the plugin's data: every block
+ * and every card that asks for the same route in it is shown the same answer, which is also what keeps a header and the
+ * blocks beside it from disagreeing.
+ */
+interface PluginViewReads {
+  /** The sum of the view's refresh counts when these reads were made. */
+  refreshed: number
+  /** The store's count of writes (starts and ends) when these reads were made. */
+  written: number
+  /** The moment the first of these reads was made, in milliseconds since the epoch; the picture is not kept past its age limit. */
+  since: number
+  /** The answer of each request, or the read still out for it, by the request's address. */
+  reads: Map<string, Promise<PluginCallResult>>
+}
+
+/** The reads of each view, held by its context so they go with the view and never reach another one. */
+const VIEW_READS = new WeakMap<PluginViewContext, PluginViewReads>()
+
+/**
+ * The reads a view's blocks share right now. They start empty again whenever the view was refreshed, a call that may
+ * change the plugin's data started or ended, or the picture grew older than {@link PLUGIN_VIEW_READ_MAX_AGE_MS}: those
+ * are the moments the view knows its picture may be out of date.
+ *
+ * @param context - The view's context.
+ * @param store - The plugin store, which counts the writes.
+ * @returns The shared reads of the view in its present state.
+ */
+const sharedReads = (context: PluginViewContext, store: ReturnType<typeof usePluginsStore>): PluginViewReads => {
+  const refreshed = Object.values(context.refreshes.value).reduce((sum, count) => sum + count, 0)
+  const written = store.writes
+  const now = Date.now()
+  let current = VIEW_READS.get(context)
+  if (current === undefined || current.refreshed !== refreshed || current.written !== written || now - current.since >= PLUGIN_VIEW_READ_MAX_AGE_MS) {
+    current = { refreshed, written, since: now, reads: new Map() }
+    VIEW_READS.set(context, current)
+  }
+  return current
+}
+
+/**
+ * Reads a GET route for a block, a condition or a card, sharing the read with every other reader of the same request
+ * in the view's present state.
+ *
+ * A page with a header, badges, a button and a conversation names one state route many times, and each of them reads it
+ * when it mounts and again when it is refreshed. Left alone that is one request per reader per refresh, which on a route
+ * the plugin answers one call at a time makes the last readers' answers arrive after the next refresh began, so they are
+ * dropped as older and the blocks that read first show the new value long before the rest. So the first reader of a
+ * request sends it, the others take its answer, and the next refresh (or the end of a write) starts a new one. A read
+ * that failed is not kept: the next reader tries again.
+ *
+ * @param context - The view's context, which owns the reads.
+ * @param store - The plugin store the read goes through.
+ * @param route - The route, a GET the page can fill; anything else is called as it is, unshared.
+ * @param query - Query parameters, e.g. a table's page; another query is another request.
+ * @returns The outcome of the read; never rejects.
+ */
+const readPluginRoute = (
+  context: PluginViewContext,
+  store: ReturnType<typeof usePluginsStore>,
+  route: PluginViewRoute,
+  query: Record<string, string> = {},
+): Promise<PluginCallResult> => {
+  const request = pluginRouteRequest(route, context.values, query)
+  if (request === null || request.method !== HttpMethod.Get) {
+    return store.callRoute(context.pluginId, route, context.values, undefined, query)
+  }
+  const shared = sharedReads(context, store)
+  const held = shared.reads.get(request.url)
+  if (held !== undefined) {
+    return held
+  }
+  const read = store.callRoute(context.pluginId, route, context.values, undefined, query)
+  shared.reads.set(request.url, read)
+  void read.then((result) => {
+    if (!result.ok && shared.reads.get(request.url) === read) {
+      shared.reads.delete(request.url)
+    }
+  })
+  return read
+}
+
+/**
+ * Hands the view an answer it already holds as the answer of its present state, so the readers that ask next take it
+ * instead of sending the same request again. A follow-up uses it for the read that told it the work had moved: the
+ * blocks it then refreshes show exactly what that read saw.
+ *
+ * @param context - The view's context.
+ * @param store - The plugin store.
+ * @param route - The route that was read.
+ * @param result - What the read answered; a failure is not shared.
+ * @returns Nothing.
+ */
+const shareReadResult = (
+  context: PluginViewContext,
+  store: ReturnType<typeof usePluginsStore>,
+  route: PluginViewRoute,
+  result: PluginCallResult,
+): void => {
+  const request = pluginRouteRequest(route, context.values)
+  if (request !== null && request.method === HttpMethod.Get && result.ok) {
+    sharedReads(context, store).reads.set(request.url, Promise.resolve(result))
+  }
+}
+
 /** What {@link usePluginSource} answers. */
 export interface PluginSourceState {
   /** The value read: the reply, or its `field`; undefined until read or after a failure. */
@@ -156,7 +266,7 @@ export const usePluginSource = (
       return
     }
     loading.value = true
-    const result = await store.callRoute(context.pluginId, current.route, context.values, undefined, query())
+    const result = await readPluginRoute(context, store, current.route, query())
     if (request !== latest) {
       return
     }
@@ -180,20 +290,22 @@ export const usePluginSource = (
 }
 
 /**
- * Whether a block shows, by its `visibleWhen` condition: read when the block mounts and again whenever an action asks
- * the block's own id to refresh, so a follow-up can reveal or hide it.
+ * Whether a block, or a part of one, shows by its `visibleWhen` condition: read when it mounts and again whenever an
+ * action asks any of the named block ids to refresh, so a follow-up can reveal or hide it. A block names its own id; a
+ * result card's action has no id of its own and names the blocks its chat reads again after a turn, since those are the
+ * ones whose data the condition is about.
  *
  * A block with no condition always shows and reads nothing. A block with one is hidden while the condition is being
  * read, when the read fails or is unavailable, and when the field is absent or matches none of the values: it shows
  * only once the condition is known to hold, so a create form never flashes up for a site that already exists.
  *
- * @param condition - The block's condition; undefined for none.
- * @param blockId - The block's id, which actions name to refresh it.
+ * @param condition - The condition; undefined for none.
+ * @param refreshIds - The block ids whose refresh reads the condition again; none means it is read once, on mounting.
  * @returns Whether the block shows.
  */
 export const usePluginCondition = (
   condition: () => PluginViewCondition | undefined,
-  blockId: () => string | undefined,
+  refreshIds: () => readonly string[],
 ): ComputedRef<boolean> => {
   const context = usePluginView()
   const store = usePluginsStore()
@@ -219,7 +331,7 @@ export const usePluginCondition = (
       holds.value = false
       return
     }
-    const result = await store.callRoute(context.pluginId, current.route, context.values)
+    const result = await readPluginRoute(context, store, current.route)
     if (request !== latest) {
       return
     }
@@ -231,10 +343,8 @@ export const usePluginCondition = (
       context.track(reload())
     }
   })
-  watch(() => {
-    const id = blockId()
-    return id ? context.refreshes.value[id] ?? 0 : 0
-  }, reload)
+  // The counters only ever rise, so their sum changes exactly when one of the named blocks was refreshed.
+  watch(() => refreshIds().reduce((sum, id) => sum + (context.refreshes.value[id] ?? 0), 0), reload)
 
   return computed(() => !condition() || holds.value)
 }
@@ -314,7 +424,8 @@ export const usePluginFollowUp = (
   ): Promise<void> => {
     timer = undefined
     const result = await store.callRoute(context.pluginId, followUp.until.route, context.values)
-    // An answer for an older follow-up, or one after the view was left, is not this run's: leave the view's keeping alone.
+    // An answer for an older follow-up, or one after the view was left, is not this run's: leave the view's keeping
+    // alone.
     if (current !== run) {
       return
     }
@@ -324,8 +435,10 @@ export const usePluginFollowUp = (
       return
     }
     const done = result.ok && pluginConditionHolds(followUp.until, result.data)
-    // Refreshed after the read, so the final value the condition saw is also what the blocks show.
+    // Refreshed after the read, so the final value the condition saw is also what the blocks show: the blocks that read
+    // the same route take this very answer instead of asking again.
     context.refresh([...followUp.refresh])
+    shareReadResult(context, store, followUp.until.route, result)
     if (done || attempt >= PLUGIN_FOLLOW_UP_MAX_ATTEMPTS) {
       letGo()
       if (done) {

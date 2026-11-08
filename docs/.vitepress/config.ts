@@ -10,6 +10,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createSeo } from './seo'
+import { withNavBarClasses } from './navClasses'
 import { hasSitemap, readLatestPages, resolveVersion } from './versions'
 import { sidebarSectionText } from './sidebarIcon'
 import type { SidebarIcon } from './sidebarIcon'
@@ -160,6 +161,12 @@ export default defineConfig({
       }
     : undefined,
 
+  /**
+   * Writes the navigation bar classes the browser sets after hydration into the rendered HTML, so the
+   * static page already has its final layout (see `navClasses.ts`).
+   */
+  transformHtml: (code) => withNavBarClasses(code),
+
   /** Gives every page its own description and records the stubs that must not be indexed. */
   transformPageData: seo.transformPageData,
 
@@ -207,6 +214,7 @@ export default defineConfig({
             { text: 'Upgrade', link: '/operators/upgrade' },
             { text: 'Back up and restore', link: '/operators/backup' },
             { text: 'Rollback', link: '/operators/rollback' },
+            { text: 'Plugin registry', link: '/operators/plugin-registry' },
             { text: 'Storefront & branding', link: '/operators/storefront' },
             { text: 'Configuration reference', link: '/operators/configuration' },
           ],
@@ -261,6 +269,7 @@ export default defineConfig({
           items: [
             { text: 'Overview', link: '/servers/' },
             { text: 'Servers', link: '/servers/servers' },
+            { text: 'cPanel servers', link: '/servers/cpanel' },
             { text: 'SSH key agent', link: '/servers/ssh-key-agent' },
             { text: 'Provisioning', link: '/servers/provisioning' },
           ],
@@ -292,6 +301,7 @@ export default defineConfig({
             { text: 'Integrations', link: '/developers/integrations' },
             { text: 'Write a plugin', link: '/developers/write-a-plugin' },
             { text: 'Publishing a plugin', link: '/developers/publishing-a-plugin' },
+            { text: 'Plugin registry contract', link: '/developers/plugin-registry-contract' },
           ],
         },
         {

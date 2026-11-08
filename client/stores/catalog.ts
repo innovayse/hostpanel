@@ -17,9 +17,11 @@
 import { defineStore } from 'pinia'
 import { useCatalogApi } from '~/composables/apis/useCatalogApi'
 import { HOSTING_GROUP_ID } from '~/constants/catalogGroup'
+import { MONTHS_PER_YEAR, PRICING_CYCLES, PRICING_CYCLE_MONTHS } from '~/constants/pricingCycle'
 import { apiErrorMessage } from '~/lib/errorHandler'
 import { useCurrencyStore } from '~/stores/currency'
 import type { PlanCard } from '~/types/plancard'
+import type { PricingCycle } from '~/types/pricingcycle'
 import type { CatalogFilter } from '~/types/catalogfilter'
 import type { CountryOption } from '~/types/countryoption'
 import type { PortalProduct } from '~/types/portalproduct'
@@ -168,7 +170,7 @@ export const useCatalogStore = defineStore('catalog', () => {
        * Formats an amount in the payer's currency, or a dash when the backend reports no price.
        *
        * @param raw - Amount as the API returned it, or null when not offered.
-       * @param divisor - Divide before formatting; 12 turns an annual price into a monthly one.
+       * @param divisor - Divide before formatting; the months of a cycle turn its price into a monthly one.
        * @returns The formatted amount.
        */
       const format = (raw: number | null | undefined, divisor = 1): string => {
@@ -188,6 +190,15 @@ export const useCatalogStore = defineStore('catalog', () => {
       // a "Freelancer Hosting" that costs money and miss a free plan called anything else.
       const monthly = product.pricing?.monthly
 
+      // Every cycle the product is priced on, per month, so a storefront toggle can offer all of them.
+      const cyclePrices: Partial<Record<PricingCycle, string>> = {}
+      for (const cycle of PRICING_CYCLES) {
+        const amount = product.pricing?.[cycle]
+        if (amount !== null && amount !== undefined) {
+          cyclePrices[cycle] = format(amount, PRICING_CYCLE_MONTHS[cycle])
+        }
+      }
+
       return {
         id: product.id,
         name: product.name,
@@ -196,7 +207,8 @@ export const useCatalogStore = defineStore('catalog', () => {
         isFree: monthly === 0,
         isFeatured: product.id === featuredId,
         priceMonthly: format(monthly),
-        priceAnnual: format(product.pricing?.annual, 12),
+        priceAnnual: format(product.pricing?.annual, MONTHS_PER_YEAR),
+        cyclePrices,
         href: hrefFor(product.id)
       }
     })

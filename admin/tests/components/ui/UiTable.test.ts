@@ -19,15 +19,31 @@ describe('UiTable', () => {
   it('renders the native table with its slot', () => {
     const wrapper = mount(UiTable, { slots: { default: '<tbody><tr><td>content</td></tr></tbody>' }, global: global() })
 
-    expect(wrapper.element.tagName).toBe('TABLE')
+    expect(wrapper.find('table').exists()).toBe(true)
     expect(wrapper.text()).toBe('content')
+  })
+
+  it('scrolls sideways inside its own box instead of being cut off by the card around it', () => {
+    const wrapper = mount(UiTable, { global: global() })
+
+    expect(wrapper.element.tagName).toBe('DIV')
+    expect(wrapper.classes()).toContain('overflow-x-auto')
+    expect(wrapper.element.firstElementChild?.tagName).toBe('TABLE')
+  })
+
+  it('can drop its scrolling box, so a dropdown opened from a cell is not clipped', () => {
+    const wrapper = mount(UiTable, { props: { scrollable: false }, global: global() })
+
+    expect(wrapper.classes()).not.toContain('overflow-x-auto')
+    expect(wrapper.find('table').exists()).toBe(true)
   })
 
   it('passes classes and data attributes through', () => {
     const wrapper = mount(UiTable, { attrs: { class: 'x-class', 'data-testid': 'probe' }, global: global() })
 
-    expect(wrapper.classes()).toContain('x-class')
-    expect(wrapper.attributes('data-testid')).toBe('probe')
+    const table = wrapper.get('table')
+    expect(table.classes()).toContain('x-class')
+    expect(table.attributes('data-testid')).toBe('probe')
   })
 
   it('shows the empty message in a full-width row', () => {

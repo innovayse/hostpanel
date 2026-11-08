@@ -32,6 +32,8 @@ export interface SlidePricing {
   monthlyPrice: number | null
   /** Annual price, if applicable. */
   annualPrice: number | null
+  /** Lowest monthly equivalent across every billing cycle the product is priced in, if any. */
+  fromPrice: number | null
 }
 
 /** One marketing slide, as `GET /api/portal/public/slides` returns it. */
@@ -52,6 +54,6 @@ export interface SlidePublic {
   links: SlideLinks
   /** Call-to-action button text and URL. */
   callToAction: SlideCallToAction
-  /** Monthly and annual price of the linked product. */
+  /** Monthly, annual and from price of the linked product. */
   pricing: SlidePricing
 }

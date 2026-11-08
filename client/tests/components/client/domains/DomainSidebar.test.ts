@@ -4,7 +4,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import { grantPermissions } from '~/tests/helpers/grantPermissions'
-import { Permission } from '~/composables/usePermissions'
+import { Permission } from '~/types/permission'
 import DomainSidebar from '~/components/client/domains/DomainSidebar.vue'
 import { DomainTab } from '~/types/domaintab'
 

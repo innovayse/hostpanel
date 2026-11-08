@@ -18,6 +18,7 @@ internal static class PluginRegistryTestSeeds
     /// <param name="factory">The shared API + PostgreSQL host.</param>
     /// <param name="registry">The fake registry.</param>
     /// <param name="operatorKey">A key to add to the operator's trusted keys; <see langword="null"/> for none.</param>
+    /// <param name="hostVersion">The Hostpanel version this host reports; <see langword="null"/> keeps the shared fake's.</param>
     /// <returns>
     /// An authenticated admin client. The host trusts the test signing key and does not enforce signatures, as in
     /// Development and Testing, so a registry install being refused for a missing signature proves it is required anyway.
@@ -25,7 +26,8 @@ internal static class PluginRegistryTestSeeds
     public static async Task<HttpClient> AdminClientAsync(
         IntegrationTestFactory factory,
         FakePluginRegistryClient registry,
-        TrustedPluginKey? operatorKey = null)
+        TrustedPluginKey? operatorKey = null,
+        string? hostVersion = null)
     {
         WebApplicationFactory<Program> host = factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
         {
@@ -34,6 +36,13 @@ internal static class PluginRegistryTestSeeds
             if (operatorKey is not null)
             {
                 services.Configure<PluginSigningOptions>(options => options.OperatorKeys.Add(operatorKey));
+            }
+
+            if (hostVersion is not null)
+            {
+                // Its own provider, so a test never changes the version the other tests of the shared host read.
+                services.RemoveAll<IInstalledVersionProvider>();
+                services.AddSingleton<IInstalledVersionProvider>(new FakeInstalledVersionProvider { Version = hostVersion });
             }
 
             services.RemoveAll<PluginSignatureVerifier>();
@@ -87,9 +96,10 @@ internal static class PluginRegistryTestSeeds
 
     /// <summary>The body of a registry install request.</summary>
     /// <param name="version">The version to install.</param>
+    /// <param name="allowDowngrade">Whether to accept a version older than the installed one; <see langword="null"/> leaves the member out of the body.</param>
     /// <returns>The anonymous body.</returns>
-    public static object InstallBody(string version)
+    public static object InstallBody(string version, bool? allowDowngrade = null)
     {
-        return new { version };
+        return allowDowngrade is null ? new { version } : new { version, allowDowngrade };
     }
 }

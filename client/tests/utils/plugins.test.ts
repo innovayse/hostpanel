@@ -31,6 +31,7 @@ import {
   pluginLinkTarget,
   pluginPageValues,
   pluginRouteMethod,
+  pluginRouteRequest,
   pluginUiTone,
   MAX_PLUGIN_EVENT_CHARS,
   PLUGIN_STREAM_EVENT_TOO_LARGE,
@@ -58,6 +59,28 @@ const streamOf = (chunks: string[]): ReadableStream<Uint8Array> => {
     },
   })
 }
+
+describe('pluginRouteRequest', () => {
+  it('names a route reference by its method and its filled, encoded address, with the query after it', () => {
+    expect(pluginRouteRequest({ method: 'get', path: '/sites/{siteId}/state' }, { siteId: 'a/b' }, { page: '2' }))
+      .toEqual({ method: 'GET', url: 'sites/a%2Fb/state?page=2' })
+    expect(pluginRouteRequest({ method: 'post', path: '/sites/{siteId}' }, { siteId: '7' })).toEqual({ method: 'POST', url: 'sites/7' })
+  })
+
+  it('gives two references to the same route the same request, whatever block holds them', () => {
+    const one = pluginRouteRequest({ method: 'GET', path: '/sites/{siteId}' }, { siteId: '7' })
+    const other = pluginRouteRequest({ method: 'get', path: '/sites/{siteId}' }, { siteId: '7' })
+
+    expect(one).toEqual(other)
+  })
+
+  it.each([
+    [{ method: 'get', path: '/sites/{siteId}' }, {}, 'a parameter the page does not carry'],
+    [{ method: 'head', path: '/sites' }, {}, 'a method the host does not call'],
+  ])('is null for %j with %j (%s)', (route, values, _reason: string) => {
+    expect(pluginRouteRequest(route, values)).toBeNull()
+  })
+})
 
 describe('pluginRouteMethod', () => {
   it.each([
@@ -516,6 +539,63 @@ describe('parsePluginChatResult until', () => {
 
   it('starts no follow-up for a malformed condition', () => {
     expect(parsePluginChatResult(card({ field: 'state' }), {}, [], ['a'])?.actions[0]?.block?.followUp).toBeUndefined()
+  })
+})
+
+describe('parsePluginChatResult visibleWhen', () => {
+  /** A condition as an event spells it: `equalsAny`, since a C# record cannot have a member named `equals`. */
+  const when = { route: { method: 'get', path: '/state/{siteId}' }, field: 'publishVersion', equalsAny: [5] }
+
+  /** A card with one action of each kind, each carrying the given condition. */
+  const card = (visibleWhen: unknown) => ({
+    title: 'T',
+    actions: [
+      { label: 'Publish', route: { method: 'post', path: '/publish' }, visibleWhen },
+      { label: 'Open', href: '/client/x', visibleWhen },
+      { label: 'Try again', resend: true, visibleWhen },
+    ],
+  })
+
+  it('keeps a condition on every kind of action, as the view reads one', () => {
+    const actions = parsePluginChatResult(card(when), { siteId: '7' }, [])?.actions
+
+    const expected = { route: when.route, field: 'publishVersion', equals: [5] }
+    expect(actions?.map(action => action.visibleWhen)).toEqual([expected, expected, expected])
+  })
+
+  it('leaves an action with no condition always shown', () => {
+    const actions = parsePluginChatResult(card(undefined), {}, [])?.actions
+
+    expect(actions).toHaveLength(3)
+    expect(actions?.some(action => 'visibleWhen' in action)).toBe(false)
+  })
+
+  it.each([
+    ['null', null],
+    ['a string', 'x'],
+    ['a route that is not a GET', { ...when, route: { method: 'post', path: '/state' } }],
+    ['a route the page cannot fill', { ...when, route: { method: 'get', path: '/state/{missing}' } }],
+    ['no route', { field: 'publishVersion', equalsAny: [5] }],
+    ['a field with a bad character', { ...when, field: 'a b' }],
+    ['a field over the bound', { ...when, field: 'a'.repeat(201) }],
+    ['no field', { route: when.route, equalsAny: [5] }],
+    ['no values', { ...when, equalsAny: [] }],
+    ['values that are not a list', { ...when, equalsAny: 5 }],
+    ['too many values', { ...when, equalsAny: Array.from({ length: 21 }, (_, index) => index) }],
+    ['a value that is no scalar', { ...when, equalsAny: [{ a: 1 }] }],
+    ['a value that is not finite', { ...when, equalsAny: [Number.POSITIVE_INFINITY] }],
+    ['the C# spelling used for the view document', { route: when.route, field: 'publishVersion', equals: [5] }],
+  ])('drops the action whose condition is %s, never showing what it meant to hide', (_name, visibleWhen) => {
+    const result = parsePluginChatResult(card(visibleWhen), { siteId: '7' }, [])
+
+    expect(result?.actions).toEqual([])
+  })
+
+  it('accepts a single value, a string, a boolean and null among the values', () => {
+    const values = [5, 'live', true, null]
+    const actions = parsePluginChatResult(card({ ...when, equalsAny: values }), { siteId: '7' }, [])?.actions
+
+    expect(actions?.[0]?.visibleWhen?.equals).toEqual(values)
   })
 })
 

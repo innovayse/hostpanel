@@ -17,6 +17,13 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     public bool ShouldFail { get; set; }
 
     /// <summary>
+    /// When set, <see cref="ProvisionAsync"/> and <see cref="GetCPanelSsoUrlAsync"/> throw this
+    /// exception: the shape a real provider's own coded refusal takes, such as a username the panel
+    /// can never accept.
+    /// </summary>
+    public Exception? FailWith { get; set; }
+
+    /// <summary>
     /// The answer <see cref="ProvisionAsync"/> gives when <see cref="ShouldFail"/> is not set; a
     /// created account by default. Set it to stage an existing account or a reference-less success.
     /// </summary>
@@ -47,6 +54,11 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     public Task<ProvisioningResult> ProvisionAsync(ProvisionAccountOrder req, CancellationToken ct)
     {
         ProvisionCalls++;
+        if (FailWith is not null)
+        {
+            throw FailWith;
+        }
+
         return ShouldFail
             ? Task.FromResult(ProvisioningResult.Refused("fake provider refused to provision"))
             : Task.FromResult(ProvisionAnswer);
@@ -86,6 +98,11 @@ public sealed class FakeProvisioningProvider : IProvisioningProvider
     public Task<string> GetCPanelSsoUrlAsync(string provisioningRef, string? callerIp, CancellationToken ct)
     {
         SsoCalls++;
+        if (FailWith is not null)
+        {
+            throw FailWith;
+        }
+
         ThrowIfShouldFail();
         return Task.FromResult("https://fake-panel.example.com/sso");
     }

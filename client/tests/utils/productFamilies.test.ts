@@ -6,11 +6,12 @@ import { describe, expect, it } from 'vitest'
 import { PricingCycle } from '~/types/pricingcycle'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
+import type { PortalProductPricing } from '~/types/portalproductpricing'
 import { familyColor } from '~/utils/catalogGroups'
 import type { ProductFamily } from '~/types/productfamily'
 import type { ProductFeature } from '~/types/productfeature'
 import type { ProductPlan } from '~/types/productplan'
-import { buildPricingRows, buildProductFamilies, comparePlans, cycleAmount, familyBullets, familyCardBullets, familyProductType, findProductDetail, firstOfferedPrice, orderingPrice, recommendedPlanId, representativePlan, specificationBullets } from '~/utils/productFamilies'
+import { buildPricingRows, buildProductFamilies, comparePlans, cycleAmount, familyBullets, familyCardBullets, familyProductType, findProductDetail, firstOfferedPrice, orderingPrice, pricedCycles, recommendedPlanId, representativePlan, specificationBullets } from '~/utils/productFamilies'
 import { ProductType } from '~/types/producttype'
 
 /**
@@ -455,6 +456,17 @@ describe('orderingPrice and comparePlans with the newer cycles', () => {
     ]
 
     expect([...plans].sort(comparePlans).map((plan) => plan.id)).toEqual([2, 3, 1])
+  })
+
+  it('lists every cycle at least one plan is priced for, shortest first, and no other', () => {
+    const pricings: Array<PortalProductPricing | null> = [{ monthly: null, annual: null, biennial: 100, quarterly: null }, { monthly: null, annual: null, quarterly: 30, semiAnnual: 55 }, null]
+
+    expect(pricedCycles(pricings, (pricing, cycle) => cycleAmount(pricing, cycle) !== null)).toEqual([
+      PricingCycle.Quarterly,
+      PricingCycle.SemiAnnual,
+      PricingCycle.Biennial,
+    ])
+    expect(pricedCycles([], () => true)).toEqual([])
   })
 
   it('offers the first of the cycles a plan is sold on', () => {

@@ -71,6 +71,8 @@ export interface FakeEvent extends Required<Omit<FakeEventInit, 'body' | 'method
   redirectedTo: string | undefined
   /** The stream a `sendStream` was given. */
   sentStream: ReadableStream<Uint8Array> | undefined
+  /** The status a `sendNoContent` was given: the route ended the answer with a status and no body. */
+  noContentStatus: number | undefined
   /** The Node objects a route listens on: the response emits `close` when the browser goes away. */
   node: { res: EventEmitter }
 }
@@ -101,6 +103,7 @@ export const makeEvent = (init: FakeEventInit = {}): H3Event & FakeEvent => {
     status: undefined,
     redirectedTo: undefined,
     sentStream: undefined,
+    noContentStatus: undefined,
     node: { res: new EventEmitter() },
   } as unknown as H3Event & FakeEvent
 }
@@ -125,6 +128,9 @@ vi.stubGlobal('setResponseStatus', (event: FakeEvent, status: number) => {
 vi.stubGlobal('sendStream', (event: FakeEvent, stream: ReadableStream<Uint8Array>) => {
   event.sentStream = stream
 })
+vi.stubGlobal('sendNoContent', (event: FakeEvent, status: number) => {
+  event.noContentStatus = status
+})
 vi.stubGlobal('sendRedirect', (event: FakeEvent, location: string) => {
   event.redirectedTo = location
   return location
@@ -134,6 +140,9 @@ vi.stubGlobal('createError', (options: Record<string, unknown>) =>
 // The request's own origin, built from its `host` header (`localhost` when a test sends none).
 vi.stubGlobal('getRequestURL', (event: FakeEvent) => new URL(`http://${event.headers['host'] ?? 'localhost'}${event.path}`))
 vi.stubGlobal('getQuery', (event: FakeEvent) => event.query)
+vi.stubGlobal('setResponseHeader', (event: FakeEvent, name: string, value: string) => {
+  event.responseHeaders[name] = value
+})
 vi.stubGlobal('setResponseHeaders', (event: FakeEvent, headers: Record<string, string>) => {
   Object.assign(event.responseHeaders, headers)
 })

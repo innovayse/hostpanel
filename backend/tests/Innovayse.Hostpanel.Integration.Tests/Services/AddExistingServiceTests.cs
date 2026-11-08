@@ -4,6 +4,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.AddExistingService;
 using Innovayse.Hostpanel.Domain.Products.Enums;
+using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
@@ -80,6 +81,37 @@ public sealed class AddExistingServiceTests(IntegrationTestFactory factory) : IC
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         (await ServicesTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.SERVICE_HOSTING_ACCOUNT_EXISTS);
+    }
+
+    /// <summary>
+    /// An existing account on a cPanel server must carry a name the panel can be asked about; an older
+    /// name with an underscore is accepted, a name with a separator or whitespace is refused with
+    /// 409 <c>CPANEL_USERNAME_INVALID</c> and nothing is stored.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AddExisting_OnCPanel_RefusesAUsernameThePanelCannotBeAskedAboutAsync()
+    {
+        var ids = await SeedClientAndProductAsync();
+        var serverId = await SshTestSeeds.SeedServerAsync(factory, $"{Guid.NewGuid():N}.example.test", 22, ServerModule.CPanel);
+        var client = await ServicesTestSeeds.AdminClientAsync(factory);
+        var body = new
+        {
+            clientId = ids.ClientId,
+            productId = ids.ProductId,
+            billingCycle = nameof(BillingCycle.Monthly),
+            recurringAmount = 5m,
+            serverId,
+            domain = "legacy.example",
+            username = "bad name;x",
+        };
+
+        var refused = await client.PostAsJsonAsync("/api/services/existing", body);
+        var older = await client.PostAsJsonAsync("/api/services/existing", body with { username = "Old_User" });
+
+        refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await ServicesTestSeeds.CodeOfAsync(refused)).Should().Be(HostpanelErrorCodes.CPANEL_USERNAME_INVALID);
+        older.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 
     /// <summary>A server id that names no server is refused with 404 <c>SERVER_NOT_FOUND</c>.</summary>

@@ -111,6 +111,13 @@ describe('UiSegmentedControl', () => {
     wrapper.unmount()
   })
 
+  it('scrolls sideways inside its own track instead of overflowing when there are many segments', () => {
+    const wrapper = mountControl('monthly')
+
+    expect(wrapper.find('[data-testid="seg"]').classes()).toEqual(expect.arrayContaining(['max-w-full', 'overflow-x-auto']))
+    wrapper.unmount()
+  })
+
   it('puts the track on the same pill radius with equal-width segments', () => {
     const wrapper = mountControl('monthly')
 

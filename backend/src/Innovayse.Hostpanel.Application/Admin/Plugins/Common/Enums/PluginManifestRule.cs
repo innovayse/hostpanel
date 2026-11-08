@@ -142,4 +142,16 @@ public enum PluginManifestRule
     /// asks for a selection in a document whose preview offers none.
     /// </summary>
     ViewSelectionInvalid = 35,
+
+    /// <summary>
+    /// A view document gives one <c>id</c> to more than one block, at any depth. The panel keys a block's refresh, its
+    /// follow-up watch and its render on the id, so blocks sharing one would act as a single block.
+    /// </summary>
+    ViewBlockIdRepeated = 36,
+
+    /// <summary>
+    /// The <c>tags</c> list has more tags than allowed, a tag that is not 2 to 30 lowercase letters, digits and hyphens,
+    /// or the same tag twice.
+    /// </summary>
+    TagsInvalid = 37,
 }

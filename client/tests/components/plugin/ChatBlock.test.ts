@@ -513,6 +513,82 @@ describe('PluginChatBlock', () => {
     expect(reads()).toBe(before + 1)
   })
 
+  it('stops offering a card\'s action once the version it names is no longer the publishable one', async () => {
+    let publishVersion: number | null = 5
+    api = await startPluginApi({
+      [`GET ${ROUTES_URL}/sites/7`]: () => ({ body: { publishVersion } }),
+      [`POST ${ROUTES_URL}/sites/7/publish`]: () => {
+        publishVersion = null
+        return { status: 204 }
+      },
+    })
+    const reply = stubStream()
+    const wrapper = mountBlocks([{ kind: PluginBlockKind.Chat, send: TEST_ROUTES.chat, refresh: ['top'] }])
+    await settle()
+    await sendMessage(wrapper, 'Go')
+    const stillFive = { route: TEST_ROUTES.site, field: 'publishVersion', equalsAny: [5] }
+    reply.send('result', {
+      title: 'Version 5 is ready',
+      actions: [
+        { label: 'Publish version 5', route: TEST_ROUTES.publish, visibleWhen: stillFive },
+        { label: 'Open', href: '/client/services/7' },
+      ],
+    })
+    await settle()
+
+    const card = wrapper.get('[data-testid="plugin-chat-result"]')
+    expect(card.findAll('[data-testid="plugin-action-button"]').map(button => button.text())).toEqual(['Publish version 5'])
+
+    // Publishing makes the version live: the card's own refresh reads the condition again and the button goes.
+    await card.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    expect(card.find('[data-testid="plugin-action-button"]').exists()).toBe(false)
+    expect(card.get('[data-testid="plugin-chat-result-link"]').text()).toBe('Open')
+  })
+
+  it('leaves no empty actions row on a card once every action is hidden', async () => {
+    let publishVersion: number | null = 5
+    api = await startPluginApi({
+      [`GET ${ROUTES_URL}/sites/7`]: () => ({ body: { publishVersion } }),
+      [`POST ${ROUTES_URL}/sites/7/publish`]: () => {
+        publishVersion = null
+        return { status: 204 }
+      },
+    })
+    const reply = stubStream()
+    const wrapper = mountBlocks([{ kind: PluginBlockKind.Chat, send: TEST_ROUTES.chat, refresh: ['top'] }])
+    await settle()
+    await sendMessage(wrapper, 'Go')
+    reply.send('result', {
+      title: 'Version 5 is ready',
+      actions: [{ label: 'Publish version 5', route: TEST_ROUTES.publish, visibleWhen: { route: TEST_ROUTES.site, field: 'publishVersion', equalsAny: [5] } }],
+    })
+    await settle()
+
+    expect(wrapper.get('[data-testid="plugin-chat-result-actions"]').attributes('style') ?? '').not.toContain('display: none')
+
+    await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
+    await settle()
+
+    expect(wrapper.find('[data-testid="plugin-action-button"]').exists()).toBe(false)
+    // Hidden, not removed: the hidden action stays mounted to read its condition again.
+    expect(wrapper.get('[data-testid="plugin-chat-result-actions"]').attributes('style')).toContain('display: none')
+  })
+
+  it('never shows a card\'s action whose condition cannot be read', async () => {
+    api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7/history`]: { body: [] } })
+    const reply = stubStream()
+    const wrapper = mountBlocks([chat])
+    await settle()
+    await sendMessage(wrapper, 'Go')
+
+    reply.send('result', { title: 'Ready', actions: [{ label: 'Publish', route: TEST_ROUTES.publish, visibleWhen: { field: 'x' } }] })
+    await settle()
+
+    expect(wrapper.find('[data-testid="plugin-action-button"]').exists()).toBe(false)
+  })
+
   it('counts a reply\'s finished steps', async () => {
     const reply = stubStream()
     const wrapper = await mountChat()

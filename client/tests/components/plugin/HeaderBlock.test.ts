@@ -116,7 +116,10 @@ describe('PluginHeaderBlock publish follow-up', () => {
   /** The route the follow-up watches: the state of the publish. */
   const stateRoute = { method: 'get', path: '/sites/{siteId}/state' } as const
 
-  /** The compact header of the builder: a live badge and a publish button that shows only while there is a version to publish. */
+  /**
+   * The compact header of the builder: a live badge and a publish button that shows only while there is a version to
+   * publish.
+   */
   const builderHeader: PluginHeaderBlock = {
     kind: PluginBlockKind.Header,
     id: 'top',
@@ -139,9 +142,9 @@ describe('PluginHeaderBlock publish follow-up', () => {
   }
 
   /**
-   * When each route starts to answer the ended publish, as the number of its read that is the first to say so. Reads are
-   * counted per route, so the test does not depend on which of the three routes a refresh reads first: a route that is
-   * never to change keeps `Infinity`.
+   * When each route starts to answer the ended publish, as the number of its read that is the first to say so. Reads
+   * are counted per route, so the test does not depend on which of the three routes a refresh reads first: a route
+   * that is never to change keeps `Infinity`.
    */
   interface PublishTimeline {
     /** The read of the state route that finds the publish `done`. */
@@ -169,7 +172,8 @@ describe('PluginHeaderBlock publish follow-up', () => {
     api = await startPluginApi({
       [`GET ${ROUTES_URL}/sites/7`]: () => {
         reads.live! += 1
-        return { body: { liveText: reads.live! >= timeline.newVersionAtLiveRead ? 'Live: version 27' : 'Live: version 26' } }
+        const liveText = reads.live! >= timeline.newVersionAtLiveRead ? 'Live: version 27' : 'Live: version 26'
+        return { body: { liveText } }
       },
       [`GET ${ROUTES_URL}/sites/7/publishable`]: () => {
         reads.publishable! += 1
@@ -220,7 +224,8 @@ describe('PluginHeaderBlock publish follow-up', () => {
     await settle()
     await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')
     await settle()
-    expect(wrapper.get('[data-testid="plugin-header-message"]').text()).toBe('Version 27 is being published to your live site.')
+    expect(wrapper.get('[data-testid="plugin-header-message"]').text())
+      .toBe('Version 27 is being published to your live site.')
 
     vi.advanceTimersByTime(PLUGIN_FOLLOW_UP_INTERVAL_MS)
     await settle()
@@ -237,7 +242,15 @@ describe('PluginHeaderBlock publish follow-up', () => {
     timeline.doneAtStateRead = 2
     const wrapper = mountBlocks([{
       ...builderHeader,
-      actions: [...(builderHeader.actions ?? []), { kind: PluginBlockKind.Action, id: 'other', label: 'Other', route: { method: 'post', path: '/sites/{siteId}/other' } }],
+      actions: [
+        ...(builderHeader.actions ?? []),
+        {
+          kind: PluginBlockKind.Action,
+          id: 'other',
+          label: 'Other',
+          route: { method: 'post', path: '/sites/{siteId}/other' },
+        },
+      ],
     }])
     await settle()
     await wrapper.get('[data-testid="plugin-action-button"]').trigger('click')

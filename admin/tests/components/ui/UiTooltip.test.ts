@@ -23,7 +23,7 @@ describe('UiTooltip', () => {
     const top = mount(UiTooltip, { props: { text: 'a' } }).get('[role="tooltip"]')
     const bottom = mount(UiTooltip, { props: { text: 'a', placement: 'bottom' } }).get('[role="tooltip"]')
 
-    expect(top.classes()).toEqual(expect.arrayContaining(['invisible', 'group-hover:visible', 'group-focus-within:visible', 'bottom-full']))
+    expect(top.classes()).toEqual(expect.arrayContaining(['hidden', 'group-hover:block', 'group-focus-within:block', 'bottom-full']))
     expect(bottom.classes()).toContain('top-full')
   })
 })

@@ -3,8 +3,10 @@ using System.Text;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -15,14 +17,23 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 /// redirect stays on the registry's host, the size and time limits, and that a failure becomes a
 /// <c>PLUGIN_REGISTRY_*</c> code with nothing of the upstream reply in it.
 /// </summary>
-public sealed class PluginRegistryClientTests : IDisposable
+/// <param name="factory">The shared API + PostgreSQL host, which supplies the real request signer the client is built with.</param>
+public sealed class PluginRegistryClientTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>, IDisposable
 {
+    /// <summary>The scopes the signers of the clients built here were resolved in; disposed with the test.</summary>
+    private readonly List<IServiceScope> _scopes = [];
+
     /// <summary>An upload folder of this test's own, so the staging folder the downloads use is isolated and checked.</summary>
     private readonly string _installPath = Path.Combine(Path.GetTempPath(), $"registry-client-{Guid.NewGuid():N}");
 
     /// <summary>Deletes the test's upload folder.</summary>
     public void Dispose()
     {
+        foreach (var scope in _scopes)
+        {
+            scope.Dispose();
+        }
+
         if (Directory.Exists(_installPath))
         {
             Directory.Delete(_installPath, recursive: true);
@@ -58,8 +69,14 @@ public sealed class PluginRegistryClientTests : IDisposable
             MaxDownloadBytes = maxBytes,
             Timeout = timeout ?? TimeSpan.FromSeconds(10),
         });
+        var scope = factory.Services.CreateScope();
+        _scopes.Add(scope);
         return new PluginRegistryClient(
-            new HttpClient(handler), options, Options.Create(new PluginOptions { InstallPath = _installPath }), NullLogger<PluginRegistryClient>.Instance);
+            new HttpClient(handler),
+            options,
+            Options.Create(new PluginOptions { InstallPath = _installPath }),
+            scope.ServiceProvider.GetRequiredService<IRegistryRequestSigner>(),
+            NullLogger<PluginRegistryClient>.Instance);
     }
 
     /// <summary>One valid plugin as the registry sends it: <c>pluginId</c> and <c>publisherName</c>, no SDK version.</summary>

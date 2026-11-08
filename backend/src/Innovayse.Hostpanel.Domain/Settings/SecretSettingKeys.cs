@@ -46,6 +46,7 @@ public static class SecretSettingKeys
     public static readonly IReadOnlySet<string> StandaloneKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         SetupToken,
+        PluginSettingKeys.RegistryInstance,
     };
 
     /// <summary>Tells whether a field input kind marks the field as a secret.</summary>

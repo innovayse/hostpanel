@@ -90,3 +90,15 @@ describe('usePluginsApi', () => {
     expect(callOf(mock, 5).url).toBe('/api/admin/plugins/p%2Fq/slot-widgets/s%2F1/w%202')
   })
 })
+
+describe('usePluginsApi registration', () => {
+  it('getRegistryInstance reads the state and retryRegistryInstance POSTs to retry', async () => {
+    const mock = stubFetch(json({ state: 'Verified' }), json({ state: 'Pending' }))
+    const api = usePluginsApi()
+
+    expect(await api.getRegistryInstance()).toEqual({ state: 'Verified' })
+    expect(await api.retryRegistryInstance()).toEqual({ state: 'Pending' })
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/plugins/registry-instance', method: 'GET' })
+    expect(callOf(mock, 1)).toMatchObject({ url: '/api/admin/plugins/registry-instance/retry', method: 'POST' })
+  })
+})

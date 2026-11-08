@@ -23,6 +23,27 @@ The registry client is `PluginRegistryClient` in `backend/src/Innovayse.Hostpane
 - **Status codes.** Any success status is accepted. A 404 on a release lookup, a plugin page or a version list means "that is not listed". On those calls and on the package download, 401 and 403 are the licence answers above. A 404 on the listing or the update check, and any other error status, makes the call fail as unavailable.
 - **Time.** One call, a download included, must finish within the operator's `PluginRegistry__Timeout` (30 seconds by default).
 
+## Restricted plugins: the instance identity
+
+A registry may keep a plugin back from the public and give it only to installations it has verified. Hostpanel reads the plugin's distribution from the `distribution` member of the listing row and of the plugin page (`summary`): `Download` (the default when the member is missing or unknown) or `HostOnly`. For a `HostOnly` plugin Hostpanel does not send `X-Licence-Key` and signs its calls instead. A registry that has no restricted plugins needs none of this.
+
+**Registration.** Hostpanel generates an Ed25519 key pair and calls `POST {BaseUrl}instances` with `{"publicKey": "<base64 of the 32 byte public key>", "baseUrl": "<public https address of the installation>"}`. The answer is `{"id": "<guid>", "challenge": "<text>"}` (other members are ignored). Answer `409` for a key that is already registered, `422` or `400` for a key or address you will not use, and `429` over your own limit.
+
+**Verification.** Hostpanel then serves exactly the challenge, as `text/plain` with `Cache-Control: no-store`, at `/.well-known/hostpanel-registry/{id}` on its public address, and calls `POST {BaseUrl}instances/{id}/verify` with no body. Fetch that address from the registry, compare, and answer `200` when it matches. Hostpanel starts over with a new key pair and registers again on `422` with the error code `INSTANCE_CHALLENGE_VALIDATION_FAILED` (the challenge ran out of time or attempts), on `404` and on `409`. A `422` with another code (for example `INSTANCE_PROOF_VALIDATION_FAILED`, the address did not serve it) is retried later with a pause.
+
+**Signed calls.** For a `HostOnly` plugin Hostpanel signs `GET plugins/{id}/versions`, `GET plugins/{id}/versions/{version}`, `POST plugins/{id}/versions/{version|latest}/download-tickets` and the final `GET` of the address the ticket reply names. The headers are `X-Hostpanel-Instance` (the id), `X-Hostpanel-Timestamp` (unix seconds), `X-Hostpanel-Nonce` (16 to 64 characters, new on every call) and `X-Hostpanel-Signature` (base64 Ed25519). The signature is over the UTF-8 bytes of these lines joined with a line feed, with no trailing line feed:
+
+```text
+HOSTPANEL-REGISTRY-V1
+<METHOD>
+<request target exactly as sent, path and query, including ?ticket=...>
+<lower-case hex SHA-256 of the body>
+<timestamp>
+<nonce>
+```
+
+None of these calls has a body, so the fourth line is the hash of the empty string, `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`. The ticket reply is `{"ticket": "...", "downloadUrl": "..."}` and `downloadUrl` must be on the registry's own origin and carry the ticket. The registry's refusals are read from the `type` member of its error body: `401` with `INSTANCE_SIGNATURE_INVALID_UNAUTHORIZED`, `INSTANCE_TIMESTAMP_UNAUTHORIZED` or `INSTANCE_REPLAY_UNAUTHORIZED`; `403` with `INSTANCE_NOT_VERIFIED_FORBIDDEN`, `INSTANCE_REVOKED_FORBIDDEN` or `DOWNLOAD_TICKET_INVALID_FORBIDDEN`; and `429` with `INSTANCE_RATE_LIMIT_EXCEEDED`. The bulk lookup `POST plugins/latest` is not signed and may answer an empty `downloadUrl` for a restricted plugin.
+
 ## How BaseUrl relates to the upload path
 
 Hostpanel builds every read address by appending the paths below to `BaseUrl`. The upload shown in [Publishing a plugin](./publishing-a-plugin#upload-with-an-api-key) is `POST /v1/plugins/{id}/versions`, and the release workflow builds it from its own `PLUGIN_REGISTRY_URL` variable, which has no version segment (`https://registry.example.com`). The two side by side:

@@ -134,6 +134,14 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     public int RecoverInterruptedMigrationJobsIntervalMinutes { get; init; } = 5;
 
     /// <summary>
+    /// Seconds between the end of one pass of the plugin registry enrolment and the start of the next. A pass that has nothing
+    /// to do (the identity is verified, the registry is off, a back-off still runs) makes no call, so this only bounds how soon a
+    /// due retry is noticed; how often the registry is asked is the back-off kept on the identity.
+    /// </summary>
+    [Range(10, 3600)]
+    public int EnrollRegistryInstanceIntervalSeconds { get; init; } = 60;
+
+    /// <summary>
     /// Seconds between the heartbeats a running migration pull writes. A pull saves its progress after
     /// every record, so this only bounds how often that save also refreshes the heartbeat.
     /// </summary>
@@ -219,6 +227,10 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     /// <summary>Gets the schedule of the recovery of stalled migration pulls.</summary>
     public JobSchedule RecoverInterruptedMigrationJobs =>
         JobSchedule.Every(TimeSpan.FromMinutes(RecoverInterruptedMigrationJobsIntervalMinutes));
+
+    /// <summary>Gets the schedule of the plugin registry enrolment.</summary>
+    public JobSchedule EnrollRegistryInstance =>
+        JobSchedule.Every(TimeSpan.FromSeconds(EnrollRegistryInstanceIntervalSeconds));
 
     /// <summary>Gets the time between the heartbeats of a running migration pull, as a span.</summary>
     public TimeSpan MigrationHeartbeat => TimeSpan.FromSeconds(MigrationHeartbeatSeconds);

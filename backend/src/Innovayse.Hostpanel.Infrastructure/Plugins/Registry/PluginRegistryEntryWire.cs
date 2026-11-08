@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 /// <param name="SdkVersion">The SDK version the newest version targets, when the registry states it.</param>
 /// <param name="Verified">Whether the registry vouches for the publisher.</param>
 /// <param name="Pricing">The pricing name.</param>
+/// <param name="Distribution">The distribution name (<c>Download</c> or <c>HostOnly</c>); absent from a registry that has no restricted plugins.</param>
 internal sealed record PluginRegistryEntryWire(
     string? PluginId,
     string? Id,
@@ -29,4 +30,5 @@ internal sealed record PluginRegistryEntryWire(
     string? LatestVersion,
     string? SdkVersion,
     bool Verified,
-    string? Pricing);
+    string? Pricing,
+    string? Distribution = null);

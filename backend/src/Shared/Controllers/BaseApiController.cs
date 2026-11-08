@@ -51,6 +51,26 @@ public abstract class BaseApiController : ControllerBase
         return result.IsFailure ? MapFailure(result) : Ok(result.Value);
     }
 
+    /// <summary>A short plain-text answer that no cache may keep, or the mapped refusal.</summary>
+    /// <remarks>
+    /// For a proof a caller fetches once (the registry challenge): <c>text/plain; charset=utf-8</c> and <c>Cache-Control: no-store</c>,
+    /// so a proxy never keeps a value that was true only while it was served. The text is written exactly as the handler gave it.
+    /// </remarks>
+    /// <param name="result">The handler's outcome.</param>
+    /// <returns>The response.</returns>
+    protected IActionResult HandlePlainText(Result<string> result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        if (result.IsFailure)
+        {
+            return MapFailure(result);
+        }
+
+        Response.Headers.CacheControl = "no-store";
+        return Content(result.Value!, "text/plain", System.Text.Encoding.UTF8);
+    }
+
     /// <summary>204, or the mapped refusal.</summary>
     /// <param name="result">The handler's outcome.</param>
     /// <returns>The response.</returns>

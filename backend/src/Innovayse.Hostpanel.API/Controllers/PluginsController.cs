@@ -3,10 +3,12 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallPlugin;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallRegistryPlugin;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.PurgePluginData;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.RemovePlugin;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.RetryRegistryInstance;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.SaveRegistryPluginLicence;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.CheckPluginUpdates;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.GetPluginIcon;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.GetRegistryInstance;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.GetRegistryPlugin;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListPlugins;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListRegistryPlugins;
@@ -186,6 +188,43 @@ public sealed class PluginsController : BaseApiController
     public async Task<IActionResult> CheckRegistryUpdatesAsync(CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<RegistryPluginDto>>>(new CheckPluginUpdatesQuery(), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Where this installation stands with the plugin registry: not registered yet, pending, verified, revoked or failed (with the
+    /// code and the sentence of the last failure). The identity is created and confirmed automatically; this only reports it.
+    /// Nothing secret is returned.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the state; 401 without a session; 403 for a caller who is not an administrator; 429 when the rate limit is hit.</returns>
+    [HttpGet("registry-instance")]
+    [ProducesResponseType(typeof(RegistryInstanceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetRegistryInstanceAsync(CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<RegistryInstanceDto>>(new GetRegistryInstanceQuery(), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Registers this installation with the plugin registry again at once, ignoring the back-off, and registers anew after a
+    /// revocation. A run that fails is still an answer: the returned state says what went wrong.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the state after the run; 401 without a session; 403 for a caller who is not an administrator or in a demo
+    /// installation; 409 with <c>PLUGIN_REGISTRY_DISABLED</c> while the registry is off; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("registry-instance/retry")]
+    [ProducesResponseType(typeof(RegistryInstanceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RetryRegistryInstanceAsync(CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<RegistryInstanceDto>>(new RetryRegistryInstanceCommand(), ct);
         return HandleResult(outcome);
     }
 

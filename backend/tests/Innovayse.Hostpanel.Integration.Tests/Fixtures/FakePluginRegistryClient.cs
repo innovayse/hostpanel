@@ -151,7 +151,8 @@ public sealed class FakePluginRegistryClient : IPluginRegistryClient
     }
 
     /// <inheritdoc/>
-    public Task<Result<IReadOnlyList<RegistryPluginVersion>>> ListVersionsAsync(string pluginId, string? licenceKey, CancellationToken ct)
+    public Task<Result<IReadOnlyList<RegistryPluginVersion>>> ListVersionsAsync(
+        string pluginId, string? licenceKey, CancellationToken ct, PluginRegistryDistribution distribution = PluginRegistryDistribution.Download)
     {
         LastLicenceKey = licenceKey;
         return Task.FromResult(FailureCode is not null

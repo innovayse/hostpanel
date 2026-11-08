@@ -210,6 +210,52 @@ export const PluginRegistryTrust = {
 /** One of the {@link PluginRegistryTrust} values. */
 export type PluginRegistryTrust = (typeof PluginRegistryTrust)[keyof typeof PluginRegistryTrust]
 
+/** Closed set of where a registry plugin's package can be obtained from; the strings are the server's names. */
+export const PluginRegistryDistribution = {
+  /** Offered to everyone. */
+  Download: 'Download',
+  /** Offered only to an installation the registry has verified; asked for with signed requests. */
+  HostOnly: 'HostOnly',
+} as const
+
+/** One of the {@link PluginRegistryDistribution} values. */
+export type PluginRegistryDistribution = (typeof PluginRegistryDistribution)[keyof typeof PluginRegistryDistribution]
+
+/** Closed set of where this server stands with the plugin registry; the strings are the server's names. */
+export const RegistryInstanceState = {
+  /** Nothing was registered yet. */
+  NotRegistered: 'NotRegistered',
+  /** Registered; the registry has not confirmed it yet. */
+  Pending: 'Pending',
+  /** The registry confirmed this server; restricted plugins can be asked for. */
+  Verified: 'Verified',
+  /** The registry revoked this server. */
+  Revoked: 'Revoked',
+  /** The last attempt failed. */
+  Error: 'Error',
+} as const
+
+/** One of the {@link RegistryInstanceState} values. */
+export type RegistryInstanceState = (typeof RegistryInstanceState)[keyof typeof RegistryInstanceState]
+
+/** Where this server stands with the plugin registry (GET /api/admin/plugins/registry-instance). Carries nothing secret. */
+export interface RegistryInstanceDto {
+  /** The registration state. */
+  state: RegistryInstanceState
+  /** The id the registry gave this server; null before the first registration. */
+  instanceId: string | null
+  /** The public address told to the registry; null before the first attempt. */
+  baseUrl: string | null
+  /** Code of the last failure; null when there is none. */
+  errorCode: string | null
+  /** The finished sentence for the code in the admin's language; null when there is none. */
+  message: string | null
+  /** When the registry confirmed this server; null until it did. */
+  verifiedAt: string | null
+  /** When the next automatic attempt is due; null when none waits. */
+  nextAttemptAt: string | null
+}
+
 /** One plugin listed by the registry (GET /api/admin/plugins/registry). */
 export interface PluginRegistryItemDto {
   /** Unique plugin identifier, the `id` field of plugin.json. */
@@ -240,6 +286,8 @@ export interface PluginRegistryItemDto {
   updateAvailable: boolean
   /** Whether installing it needs a licence key; absent on older registries, where a paid or private price implies it. */
   requiresLicence?: boolean
+  /** Where the package can be obtained from; absent on an older server, which reads as `Download`. */
+  distribution?: PluginRegistryDistribution
 }
 
 /** One page of registry listings. */

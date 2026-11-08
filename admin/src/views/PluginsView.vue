@@ -25,6 +25,7 @@ import { usePluginsStore } from '@/stores/plugins'
 import { useSettingsStore } from '@/stores/settings'
 import PluginCard from '@/components/plugins/PluginCard.vue'
 import PluginRegistryBrowser from '@/components/plugins/PluginRegistryBrowser.vue'
+import PluginRegistryInstanceCard from '@/components/plugins/PluginRegistryInstanceCard.vue'
 import PluginRegistryTrustCard from '@/components/plugins/PluginRegistryTrustCard.vue'
 import PluginKeptData from '@/components/plugins/PluginKeptData.vue'
 import PluginSigningCard from '@/components/plugins/PluginSigningCard.vue'
@@ -318,7 +319,8 @@ const pluginsWithWidgets = computed(() => store.plugins.filter(plugin => (store.
  * and the registry (its first page decides whether the Browse tab exists; its updates feed the badges).
  */
 onMounted(() => Promise.all([
-  store.fetchRegistry(),
+  // The registration card exists only while the registry is on, which the first page decides.
+  store.fetchRegistry().then(() => (store.registryDisabled ? undefined : store.fetchRegistryInstance())),
   store.fetchRegistryUpdates(),
   // The widgets are listed per installed plugin, so they wait for the plugin list.
   store.fetchAll().then(() => store.fetchSlotWidgets()),
@@ -351,6 +353,12 @@ onMounted(() => Promise.all([
     <!-- Browse -->
     <template v-if="tab === PluginsTab.Browse && !store.registryDisabled">
       <PluginRegistryTrustCard :settings="settingsStore.settings" :save="saveSetting" />
+      <PluginRegistryInstanceCard
+        :instance="store.registryInstance"
+        :busy="store.registryInstanceBusy"
+        :error="store.registryInstanceError"
+        @retry="store.retryRegistryInstance()"
+      />
       <PluginRegistryBrowser
         :items="store.registryItems"
         :total="store.registryTotal"

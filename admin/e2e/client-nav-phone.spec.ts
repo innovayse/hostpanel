@@ -169,11 +169,8 @@ test('a phone changes the theme from the menu drawer, since the top bar has no r
   await expect(page.getByTestId('topbar-theme')).toBeHidden()
 
   await page.getByTestId('topbar-toggle-sidebar').click()
-  const picker = page.getByTestId('sidebar-theme')
-  await expect(picker).toBeVisible()
-  await picker.getByTestId('ui-select-trigger').click()
-  // The options are Light, Dark and System, in that order.
-  await picker.getByTestId('ui-select-option').nth(0).click()
+  await expect(page.getByTestId('sidebar-theme')).toBeVisible()
+  await page.getByTestId('sidebar-theme-light').click()
 
   await expect(page.locator('html')).toHaveClass(/(^|\s)light(\s|$)/)
   expect(await page.evaluate(key => window.localStorage.getItem(key), THEME_STORAGE_KEY)).toBe(AdminTheme.Light)

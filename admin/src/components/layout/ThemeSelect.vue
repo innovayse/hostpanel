@@ -2,9 +2,9 @@
 /**
  * The operator's light, dark or system theme choice, as one select.
  *
- * The top bar shows it from the small breakpoint up and the menu drawer shows it on a phone, so both
- * places render this one component and a phone is never left without a way to change the theme. The
- * caller's `data-testid` and width classes fall through to the select.
+ * The top bar shows it from the small breakpoint up; on a phone the menu drawer has `ThemeSwitch` instead, so a
+ * phone is never left without a way to change the theme. The caller's `data-testid` and width classes fall
+ * through to the select.
  */
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -14,7 +14,7 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 
 /** Props of the theme select. */
 withDefaults(defineProps<{
-  /** The small toolbar look of the select; forms and the drawer keep the default size. */
+  /** The small toolbar look of the select; forms keep the default size. */
   compact?: boolean
 }>(), {
   compact: false,

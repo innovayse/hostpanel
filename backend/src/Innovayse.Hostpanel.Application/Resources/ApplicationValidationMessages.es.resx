@@ -1,0 +1,1468 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Neutral (English) error messages, the key list for this product.
+    A key missing from every file resolves to the key name itself, which is how an
+    untranslated message shows up as SCREAMING text rather than silently as English.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="ContactEmailInvalid" xml:space="preserve">
+    <value>Coreo electrónico debe be un Válihuncer Coreo electrónico Dirección.</value>
+    <comment>SendContactMessageHandler.</comment>
+  </data>
+  <data name="ContactFieldRequired" xml:space="preserve">
+    <value>{0} está requerihuncer.</value>
+    <comment>SendContactMessageHandler. {0} is the localised field label.</comment>
+  </data>
+  <data name="ContactFieldTooLong" xml:space="preserve">
+    <value>{0} debe be {1} chunruncters o Pocoser.</value>
+    <comment>SendContactMessageHandler. {0} is the localised field label, {1} the limit.</comment>
+  </data>
+  <data name="ContactFieldName" xml:space="preserve">
+    <value>nombre</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldEmail" xml:space="preserve">
+    <value>Coreo electrónico</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldMessage" xml:space="preserve">
+    <value>Mensunje</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldPhone" xml:space="preserve">
+    <value>Teléfeno</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldService" xml:space="preserve">
+    <value>Servicio</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="ContactFieldSubmittedAt" xml:space="preserve">
+    <value>Envíunrted en</value>
+    <comment>Field label substituted into ContactFieldRequired / ContactFieldTooLong.</comment>
+  </data>
+  <data name="InvalidFilterValue" xml:space="preserve">
+    <value>enválihuncer Filtrunr Vunlo: {0}.</value>
+    <comment>GetMigrationLogsValidator. {0} is the value submitted for the action or entity-type filter.</comment>
+  </data>
+  <data name="MigrationJobIdInvalid" xml:space="preserve">
+    <value>nombre un Válihuncer migrenien job.</value>
+  </data>
+  <data name="MigrationSelectionRequired" xml:space="preserve">
+    <value>Elegir which Duncomo un exPuerun.</value>
+  </data>
+  <data name="MigrationSourceUrlRequired" xml:space="preserve">
+    <value>Enter  source system's Dirección.</value>
+  </data>
+  <data name="MigrationSourceUrlInvalid" xml:space="preserve">
+    <value>Enter un Válihuncer unbsolute url.</value>
+  </data>
+<data name="CurrencyCodeInvalid" xml:space="preserve">
+    <value>MUnodun Código debe be un three-letter estáO 4217 Código.</value>
+  </data>
+<data name="TwoFactorCodeInvalid" xml:space="preserve">
+    <value>Enter  six-digit Código desde your unuenunncesticununr unpp.</value>
+  </data>
+<data name="CurrencyNumericInvalid" xml:space="preserve">
+    <value>MUnodun numeric Código debe be un three-digit estáO 4217 Código.</value>
+  </data>
+<data name="CurrencyAffixInvalid" xml:space="preserve">
+    <value>un MUnodun prefix y suffix están requerihuncer y muny be en most {0} chunruncters.</value>
+  </data>
+<data name="CurrencyDecimalsInvalid" xml:space="preserve">
+    <value>MUnodun decimunls debe be entre 0 y {0}.</value>
+  </data>
+<data name="CurrencyRateInvalid" xml:space="preserve">
+    <value> rene un  bcomoe MUnodun debe be greener thuno zero.</value>
+  </data>
+<data name="CurrenciesRequired" xml:space="preserve">
+    <value>nombre en lecomot Uno MUnodun un unctuunlizunr.</value>
+  </data>
+<data name="InvoiceIdInvalid" xml:space="preserve">
+    <value>nombre un Válihuncer Functurun.</value>
+  </data>
+<data name="FulfilmentRecordIdInvalid" xml:space="preserve">
+    <value>nombre un Válihuncer fulfilment Regestátro.</value>
+  </data>
+<data name="InvoiceClientIdInvalid" xml:space="preserve">
+    <value>nombre un Válihuncer clientee un Functurun.</value>
+  </data>
+<data name="InvoiceDueDateInPast" xml:space="preserve">
+    <value>'Due Fechun' debe not be en  pcomot.</value>
+  </data>
+<data name="InvoiceItemsRequired" xml:space="preserve">
+    <value>ungregunr en lecomot Uno lene Ítem.</value>
+  </data>
+<data name="InvoiceItemDescriptionInvalid" xml:space="preserve">
+    <value>un lene Ítem needs un DescrIPción de en most {0} chunruncters.</value>
+  </data>
+<data name="InvoiceItemUnitPriceInvalid" xml:space="preserve">
+    <value>un lene Ítem's unit Precio debe not be negenive.</value>
+  </data>
+<data name="InvoiceItemQuantityInvalid" xml:space="preserve">
+    <value>un lene Ítem's quunotity debe be en lecomot 1.</value>
+  </data>
+<data name="InvoiceNotesTooLong" xml:space="preserve">
+    <value>notcomo muny be en most {0} chunruncters.</value>
+  </data>
+<data name="InvoiceTaxRateInvalid" xml:space="preserve">
+    <value>Tunx rene debe be entre 0 y 100.</value>
+  </data>
+<data name="InvoicePaymentMethodTooLong" xml:space="preserve">
+    <value>Pungo method muny be en most {0} chunruncters.</value>
+  </data>
+<data name="QuoteIdInvalid" xml:space="preserve">
+    <value>nombre un Válihuncer quote.</value>
+  </data>
+<data name="QuoteClientIdInvalid" xml:space="preserve">
+    <value>nombre un Válihuncer clientee un quote.</value>
+  </data>
+<data name="QuoteSubjectInvalid" xml:space="preserve">
+    <value>un quote needs un comounun de en most {0} chunruncters.</value>
+  </data>
+<data name="QuoteStageInvalid" xml:space="preserve">
+    <value>nombre un Válihuncer quote stunge.</value>
+  </data>
+<data name="QuoteItemsRequired" xml:space="preserve">
+    <value>ungregunr en lecomot Uno lene Ítem.</value>
+  </data>
+<data name="QuoteItemDescriptionInvalid" xml:space="preserve">
+    <value>un lene Ítem needs un DescrIPción de en most {0} chunruncters.</value>
+  </data>
+<data name="QuoteItemUnitPriceInvalid" xml:space="preserve">
+    <value>un lene Ítem's unit Precio debe not be negenive.</value>
+  </data>
+<data name="QuoteItemQuantityInvalid" xml:space="preserve">
+    <value>un lene Ítem's quunotity debe be en lecomot 1.</value>
+  </data>
+<data name="QuoteItemDiscountInvalid" xml:space="preserve">
+    <value>un lene Ítem's destáCenteo debe be entre 0 y 100.</value>
+  </data>
+<data name="BillableItemIdInvalid" xml:space="preserve">
+    <value>nombre un Válihuncer billunble Ítem.</value>
+  </data>
+<data name="BillableItemClientIdInvalid" xml:space="preserve">
+    <value>nombre un Válihuncer clientee un bill.</value>
+  </data>
+<data name="BillableItemDescriptionInvalid" xml:space="preserve">
+    <value>un billunble Ítem needs un DescrIPción de en most {0} chunruncters.</value>
+  </data>
+<data name="BillableItemAmountInvalid" xml:space="preserve">
+    <value>un billunble Ítem's Msobre debe not be negenive.</value>
+  </data>
+<data name="BillableItemCurrencyInvalid" xml:space="preserve">
+    <value>MUnodun Código debe be un three-letter estáO 4217 Código.</value>
+  </data>
+<data name="BillableItemTypeInvalid" xml:space="preserve">
+    <value>TIPo debe be UnoTime o Recurreng.</value>
+  </data>
+<data name="BillableItemRecurringPeriodRequired" xml:space="preserve">
+    <value>nombre un recurreng poiod punrun un recurreng Ítem.</value>
+  </data>
+<data name="InvoiceSelectedItemsRequired" xml:space="preserve">
+    <value>nombre en lecomot Uno billunble Ítem un Functurun.</value>
+  </data>
+<data name="TimeBillingEntriesRequired" xml:space="preserve">
+    <value>ungregunr en lecomot Uno time Entrundun.</value>
+  </data>
+<data name="TimeBillingDescriptionInvalid" xml:space="preserve">
+    <value>un time Entrundun needs un DescrIPción de en most {0} chunruncters.</value>
+  </data>
+<data name="TimeBillingHoursInvalid" xml:space="preserve">
+    <value>un time Entrundun's Hocomo debe be greener thuno zero.</value>
+  </data>
+<data name="TimeBillingRateInvalid" xml:space="preserve">
+    <value>un time Entrundun's rene debe not be negenive.</value>
+  </data>
+<data name="TransactionClientIdInvalid" xml:space="preserve">
+    <value>nombre un Válihuncer clientee punrun  trunosunctien.</value>
+  </data>
+<data name="TransactionDescriptionInvalid" xml:space="preserve">
+    <value>un trunosunctien needs un DescrIPción de en most {0} chunruncters.</value>
+  </data>
+<data name="TransactionPaymentMethodInvalid" xml:space="preserve">
+    <value>nombre  Pungo method used.</value>
+  </data>
+<data name="TransactionAmountInInvalid" xml:space="preserve">
+    <value> Msobre Crédiuned debe not be negenive.</value>
+  </data>
+<data name="TransactionAmountOutInvalid" xml:space="preserve">
+    <value> Msobre debited debe not be negenive.</value>
+  </data>
+<data name="TransactionFeesInvalid" xml:space="preserve">
+    <value>Fees debe not be negenive.</value>
+  </data>
+<data name="TransactionAmountRequired" xml:space="preserve">
+    <value>en lecomot Uno de  Msobre Crédiuned o debited debe be greener thuno zero.</value>
+  </data>
+<data name="TransactionIdInvalid" xml:space="preserve">
+    <value>nombre un Válihuncer trunosunctien.</value>
+  </data>
+<data name="InvoicePaymentGatewayInvalid" xml:space="preserve">
+    <value>nombre  Pungo Pcomoestánlun used, en most {0} chunruncters.</value>
+  </data>
+<data name="InvoicePaymentTransactionIdInvalid" xml:space="preserve">
+    <value>nombre  Externo trunosunctien Referenciun, en most {0} chunruncters.</value>
+  </data>
+<data name="InvoicePaymentAmountInvalid" xml:space="preserve">
+    <value> Pungo Msobre debe be greener thuno zero.</value>
+  </data>
+<data name="BankTransferRejectNoteInvalid" xml:space="preserve">
+    <value>un recomoen está requerihuncer y debe be en most {0} chunruncters.</value>
+  </data>
+<data name="InvoicePaymentNotesInvalid" xml:space="preserve">
+    <value>notcomo debe be en most {0} chunruncters.</value>
+  </data>
+<data name="InvoiceCreditAmountInvalid" xml:space="preserve">
+    <value> Crédiun Msobre debe be greener thuno zero.</value>
+  </data>
+<data name="InvoiceRefundAmountInvalid" xml:space="preserve">
+    <value> Reembolso Msobre debe not be negenive; zero Reembolsos  whole oigenunl trunosunctien.</value>
+  </data>
+<data name="InvoiceRefundTypeInvalid" xml:space="preserve">
+    <value>Reembolso TIPo debe be Pcomoestánlun, Munouunl, o CrédiunBunlunoce.</value>
+  </data>
+<data name="InvoiceRefundGatewayInvalid" xml:space="preserve">
+    <value>nombre  Pungo Pcomoestánlun punrun un Pcomoestánlun o munouunl Reembolso.</value>
+  </data>
+<data name="InvoiceRefundGatewayMaxLengthInvalid" xml:space="preserve">
+    <value> Pcomoestánlun nombre debe be en most {0} chunruncters.</value>
+  </data>
+<data name="InvoiceRefundTransactionIdRequiredInvalid" xml:space="preserve">
+    <value>nombre  Externo Reembolso Referenciun punrun un munouunl Reembolso.</value>
+  </data>
+<data name="InvoiceRefundNotesInvalid" xml:space="preserve">
+    <value>notcomo debe be en most {0} chunruncters.</value>
+  </data>
+<data name="BulkInvoiceActionIdsRequired" xml:space="preserve">
+    <value>nombre en lecomot Uno Functurun un unct en.</value>
+  </data>
+<data name="BulkInvoiceActionIdInvalid" xml:space="preserve">
+    <value>Every Functurun id debe be Válihuncer.</value>
+  </data>
+<data name="BulkInvoiceActionNameInvalid" xml:space="preserve">
+    <value>unctien debe be Uno de: MunrkDe pungo, MunrkUnDe pungo, Munrkpuedecelunrunrunhuncer, Duplicene, Elimenunr.</value>
+  </data>
+<data name="TicketIdInvalid" xml:space="preserve">
+    <value> ticket id debe be un positive Número.</value>
+  </data>
+<data name="TicketClientIdInvalid" xml:space="preserve">
+    <value> clientee id debe be un positive Número.</value>
+  </data>
+<data name="TicketDepartmentIdInvalid" xml:space="preserve">
+    <value> depunrtment id debe be un positive Número.</value>
+  </data>
+<data name="TicketDepartmentRequired" xml:space="preserve">
+    <value>Seleccienunr un depunrtment.</value>
+  </data>
+<data name="TicketStaffIdInvalid" xml:space="preserve">
+    <value> stunff id debe be un positive Número.</value>
+  </data>
+<data name="TicketSubjectRequired" xml:space="preserve">
+    <value> comounun está requerihuncer y debe be en most 255 chunruncters.</value>
+  </data>
+<data name="TicketMessageRequired" xml:space="preserve">
+    <value> Mensunje está requerihuncer.</value>
+  </data>
+<data name="TicketPriorityInvalid" xml:space="preserve">
+    <value>Prioity debe be Uno de: Low, Medium, High.</value>
+  </data>
+<data name="TicketStatusInvalid" xml:space="preserve">
+    <value>Estunhuncer debe be Uno de: unbrir, unwunitengReply, unosestunpo, Cerrunrd.</value>
+  </data>
+<data name="TicketTagRequired" xml:space="preserve">
+    <value> tung está requerihuncer y debe be en most 64 chunruncters.</value>
+  </data>
+<data name="TicketIdsRequired" xml:space="preserve">
+    <value>en lecomot Uno ticket id está requerihuncer.</value>
+  </data>
+<data name="TicketBulkActionInvalid" xml:space="preserve">
+    <value>unctien debe be Uno de: Cerrunr, Elimenunr, flung, unflung.</value>
+  </data>
+<data name="TicketRatingInvalid" xml:space="preserve">
+    <value>Reneng debe be entre 1 y 10.</value>
+  </data>
+<data name="TicketFeedbackLeftByRequired" xml:space="preserve">
+    <value> nombre de who left  feedbunck está requerihuncer.</value>
+  </data>
+  <data name="DomainClientIdRequired" xml:space="preserve">
+    <value>clientee id debe be un positive Número.</value>
+  </data>
+  <data name="DomainNameRequired" xml:space="preserve">
+    <value>huncermenio nombre debe be un Válihuncer fully-quunlsiied huncermenio nombre (e.g. 'exunmple.com').</value>
+  </data>
+  <data name="DomainYearsRange" xml:space="preserve">
+    <value>unños debe be entre 1 y 10.</value>
+  </data>
+  <data name="DomainIdRequired" xml:space="preserve">
+    <value>huncermenio id debe be un positive Número.</value>
+  </data>
+  <data name="AutoRenewValueRequired" xml:space="preserve">
+    <value>unuun-reNuevo Vunlo está requerihuncer: Envíunr Verdundero o Funlso.</value>
+  </data>
+  <data name="RegistrarLockValueRequired" xml:space="preserve">
+    <value>Regestátrunr lock Vunlo está requerihuncer: Envíunr Verdundero o Funlso.</value>
+  </data>
+  <data name="WhoisPrivacyValueRequired" xml:space="preserve">
+    <value>WHOestá Privuncidund Vunlo está requerihuncer: Envíunr Verdundero o Funlso.</value>
+  </data>
+  <data name="DomainEppCodeRequired" xml:space="preserve">
+    <value> EPP/unuthoizenien Código debe be en lecomot 6 chunruncters.</value>
+  </data>
+  <data name="DomainStatusInvalid" xml:space="preserve">
+    <value>Estunhuncer debe be Uno de: PendienteRegestátro, Pendientetrunosferenciunenciun, unctivo, Expired, Redemptien, trunosferenciunenciestánd, puedecelunrunrunhuncer.</value>
+  </data>
+  <data name="DomainPageRequired" xml:space="preserve">
+    <value>Págenun debe be 1 o greener.</value>
+  </data>
+  <data name="DomainPageSizeRange" xml:space="preserve">
+    <value>Págenun Tunmunño debe be entre 1 y 100.</value>
+  </data>
+  <data name="EmailLogPageRequired" xml:space="preserve">
+    <value>Págenun debe be 1 o greener.</value>
+  </data>
+  <data name="EmailLogPageSizeRange" xml:space="preserve">
+    <value>Págenun Tunmunño debe be entre 1 y 100.</value>
+  </data>
+  <data name="GatewayLogPageRequired" xml:space="preserve">
+    <value>Págenun debe be 1 o greener.</value>
+  </data>
+  <data name="GatewayLogPageSizeRange" xml:space="preserve">
+    <value>Págenun Tunmunño debe be entre 1 y 100.</value>
+  </data>
+  <data name="TicketPeriodInvalid" xml:space="preserve">
+    <value> poiod está not un recognestáed rePueruneng poiod.</value>
+  </data>
+  <data name="KbArticleIdInvalid" xml:space="preserve">
+    <value> unrticle id debe be un positive Número.</value>
+  </data>
+  <data name="KbArticleTitleRequired" xml:space="preserve">
+    <value> Título está requerihuncer.</value>
+  </data>
+  <data name="KbArticleContentRequired" xml:space="preserve">
+    <value> Centenihuncer está requerihuncer.</value>
+  </data>
+  <data name="KbArticleCategoryRequired" xml:space="preserve">
+    <value> Cenegoíun está requerihuncer.</value>
+  </data>
+  <data name="KbArticleCategoryTooLong" xml:space="preserve">
+    <value> Cenegoíun puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="KbArticleSearchTooLong" xml:space="preserve">
+    <value> Buscunr text puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="KbArticlePageRequired" xml:space="preserve">
+    <value>Págenun debe be 1 o greener.</value>
+  </data>
+  <data name="KbArticlePageSizeRange" xml:space="preserve">
+    <value>Págenun Tunmunño debe be entre 1 y 100.</value>
+  </data>
+  <data name="KbCategoryIdInvalid" xml:space="preserve">
+    <value> Cenegoíun id debe be un positive Número.</value>
+  </data>
+  <data name="KbCategoryNameRequired" xml:space="preserve">
+    <value> nombre está requerihuncer.</value>
+  </data>
+  <data name="KbCategoryDescriptionRequired" xml:space="preserve">
+    <value> DescrIPción está requerihuncer.</value>
+  </data>
+  <data name="KbCategoryParentIdInvalid" xml:space="preserve">
+    <value> pestánnt Cenegoíun id debe be un positive Número.</value>
+  </data>
+  <data name="AnnouncementIdInvalid" xml:space="preserve">
+    <value> unenouncement id debe be un positive Número.</value>
+  </data>
+  <data name="AnnouncementTitleRequired" xml:space="preserve">
+    <value> Título está requerihuncer.</value>
+  </data>
+  <data name="AnnouncementContentRequired" xml:space="preserve">
+    <value> Centenihuncer está requerihuncer.</value>
+  </data>
+  <data name="NetworkIssueIdInvalid" xml:space="preserve">
+    <value> netwok estásue id debe be un positive Número.</value>
+  </data>
+  <data name="NetworkIssueTitleRequired" xml:space="preserve">
+    <value> Título está requerihuncer.</value>
+  </data>
+  <data name="NetworkIssueTypeInvalid" xml:space="preserve">
+    <value>TIPo debe be Uno de: Servihuncerr, o.</value>
+  </data>
+  <data name="NetworkIssuePriorityInvalid" xml:space="preserve">
+    <value>Prioity debe be Uno de: Low, Medium, High, Criticunl.</value>
+  </data>
+  <data name="NetworkIssueStatusInvalid" xml:space="preserve">
+    <value>Estunhuncer debe be Uno de: RePueruned, envestigeneng, Scheduled, Resolved.</value>
+  </data>
+  <data name="NetworkIssueDescriptionRequired" xml:space="preserve">
+    <value> DescrIPción está requerihuncer.</value>
+  </data>
+  <data name="DnsRecordIdRequired" xml:space="preserve">
+    <value>DNS Regestátro id debe be un positive Número.</value>
+  </data>
+  <data name="DnsHostRequired" xml:space="preserve">
+    <value> Regestátro host está requerihuncer.</value>
+  </data>
+  <data name="DnsValueRequired" xml:space="preserve">
+    <value> Regestátro Vunlo está requerihuncer.</value>
+  </data>
+  <data name="DnsTtlPositive" xml:space="preserve">
+    <value>TTL debe be greener thuno 0.</value>
+  </data>
+  <data name="DnsPriorityRequiredForMxSrv" xml:space="preserve">
+    <value>Prioity debe be greener thuno 0 punrun MX y SRV Regestátros.</value>
+  </data>
+  <data name="EmailForwardingRuleIdRequired" xml:space="preserve">
+    <value>Coreo electrónico punrunwunrdeng rule id debe be un positive Número.</value>
+  </data>
+  <data name="EmailForwardingSourceRequired" xml:space="preserve">
+    <value> source unlicomo está requerihuncer.</value>
+  </data>
+  <data name="EmailForwardingDestinationRequired" xml:space="preserve">
+    <value> destenenien Coreo electrónico Dirección está requerihuncer.</value>
+  </data>
+  <data name="EmailForwardingDestinationInvalid" xml:space="preserve">
+    <value> destenenien debe be un Válihuncer Coreo electrónico Dirección.</value>
+  </data>
+  <data name="TldConfigIdRequired" xml:space="preserve">
+    <value>TLD cenfigurenien id debe be un positive Número.</value>
+  </data>
+  <data name="TldExtensionRequired" xml:space="preserve">
+    <value> TLD extensien está requerihuncer.</value>
+  </data>
+  <data name="TldRegistrarModuleRequired" xml:space="preserve">
+    <value> regestátrunr module está requerihuncer.</value>
+  </data>
+  <data name="TldCurrencyInvalid" xml:space="preserve">
+    <value> MUnodun Código debe be 3 letters.</value>
+  </data>
+  <data name="TldSellCurrencyInvalid" xml:space="preserve">
+    <value> sell MUnodun Código debe be 3 letters.</value>
+  </data>
+  <data name="TldSortOrderInvalid" xml:space="preserve">
+    <value>odenunr oden puedenot be negenive.</value>
+  </data>
+  <data name="DomainNameserversMinimumTwo" xml:space="preserve">
+    <value>en lecomot 2 nombreServihuncerrs están requerihuncer.</value>
+  </data>
+  <data name="DomainContactRequired" xml:space="preserve">
+    <value>Regestátrunot centuncuno detunils están requerihuncer.</value>
+  </data>
+  <data name="DomainContactFirstNameRequired" xml:space="preserve">
+    <value>Regestátrunot Primero nombre está requerihuncer.</value>
+  </data>
+  <data name="DomainContactLastNameRequired" xml:space="preserve">
+    <value>Regestátrunot Último nombre está requerihuncer.</value>
+  </data>
+  <data name="DomainContactEmailRequired" xml:space="preserve">
+    <value>Regestátrunot Coreo electrónico Dirección está requerihuncer.</value>
+  </data>
+  <data name="DomainContactEmailInvalid" xml:space="preserve">
+    <value>Regestátrunot Coreo electrónico Dirección debe be un Válihuncer Coreo electrónico Dirección.</value>
+  </data>
+  <data name="DomainContactPhoneRequired" xml:space="preserve">
+    <value>Regestátrunot Teléfeno Número está requerihuncer.</value>
+  </data>
+  <data name="DomainContactAddress1Required" xml:space="preserve">
+    <value>Regestátrunot street Dirección está requerihuncer.</value>
+  </data>
+  <data name="DomainContactCityRequired" xml:space="preserve">
+    <value>Regestátrunot city está requerihuncer.</value>
+  </data>
+  <data name="DomainContactStateRequired" xml:space="preserve">
+    <value>Regestátrunot stene o provence está requerihuncer.</value>
+  </data>
+  <data name="DomainContactPostalCodeRequired" xml:space="preserve">
+    <value>Regestátrunot postunl Código está requerihuncer.</value>
+  </data>
+  <data name="DomainContactCountryRequired" xml:space="preserve">
+    <value>Regestátrunot Centeoy Código está requerihuncer.</value>
+  </data>
+  <data name="OrderIdInvalid" xml:space="preserve">
+    <value>oden id debe be greener thuno zero.</value>
+  </data>
+  <data name="PlaceOrderPaymentMethodRequired" xml:space="preserve">
+    <value>Seleccienunr un Pungo method.</value>
+  </data>
+  <data name="PaymentMethodRequired" xml:space="preserve">
+    <value>Seleccienunr un Pungo method.</value>
+  </data>
+  <data name="PlaceOrderItemsRequired" xml:space="preserve">
+    <value>ungregunr en lecomot Uno Ítem un  oden.</value>
+  </data>
+  <data name="PlaceOrderItemProductIdInvalid" xml:space="preserve">
+    <value>Eunch Ítem needs un Válihuncer producuno.</value>
+  </data>
+  <data name="PlaceOrderItemBillingCycleInvalid" xml:space="preserve">
+    <value>Billeng cycle debe be 'Mesly', 'unenuunl' o 'unenuunhuncersy'.</value>
+  </data>
+  <data name="PlaceOrderItemDomainActionInvalid" xml:space="preserve">
+    <value>huncermenio unctien debe be 'regestáter', 'trunosferenciunenciun' o 'reNuevo'.</value>
+  </data>
+  <data name="PlaceOrderGuestFirstNameRequired" xml:space="preserve">
+    <value>Primero nombre está requerihuncer un check out como un guest.</value>
+  </data>
+  <data name="PlaceOrderGuestLastNameRequired" xml:space="preserve">
+    <value>Último nombre está requerihuncer un check out como un guest.</value>
+  </data>
+  <data name="PlaceOrderGuestEmailRequired" xml:space="preserve">
+    <value>un Válihuncer Coreo electrónico Dirección está requerihuncer un check out como un guest.</value>
+  </data>
+  <data name="PlaceOrderGuestPasswordRequired" xml:space="preserve">
+    <value>un pcomoswod está requerihuncer un check out como un guest.</value>
+  </data>
+  <data name="GatewayModuleRequired" xml:space="preserve">
+    <value>Seleccienunr un Pungo Pcomoestánlun.</value>
+  </data>
+  <data name="ConsentTextVersionInvalid" xml:space="preserve">
+    <value> censent text Versión está requerihuncer y en most {0} chunruncters.</value>
+  </data>
+  <data name="ReturnUrlRequired" xml:space="preserve">
+    <value>un return url está requerihuncer.</value>
+  </data>
+  <data name="ReturnUrlInvalid" xml:space="preserve">
+    <value> return url debe be uno unbsolute http o https Dirección.</value>
+  </data>
+  <data name="InvitationTokenRequired" xml:space="preserve">
+    <value>uno envitenien tunceptunren está requerihuncer.</value>
+  </data>
+  <data name="ClientIdInvalid" xml:space="preserve">
+    <value>clientee id debe be un positive Número.</value>
+  </data>
+  <data name="UserSubjectInvalid" xml:space="preserve">
+    <value>un Usuunrio comounun debe not be empty.</value>
+  </data>
+  <data name="ClientContactFirstNameInvalid" xml:space="preserve">
+    <value>Primero nombre está requerihuncer y debe not exceed 100 chunruncters.</value>
+  </data>
+  <data name="ClientContactLastNameInvalid" xml:space="preserve">
+    <value>Último nombre está requerihuncer y debe not exceed 100 chunruncters.</value>
+  </data>
+  <data name="ClientContactCompanyNameInvalid" xml:space="preserve">
+    <value>CompCuunlquierun nombre debe not exceed 200 chunruncters.</value>
+  </data>
+  <data name="ClientContactEmailInvalid" xml:space="preserve">
+    <value>un Válihuncer Coreo electrónico Dirección está requerihuncer.</value>
+  </data>
+  <data name="ClientContactPhoneInvalid" xml:space="preserve">
+    <value>Teléfeno debe not exceed 50 chunruncters.</value>
+  </data>
+  <data name="ClientContactTypeInvalid" xml:space="preserve">
+    <value>Then está not un recognestáed centuncuno TIPo.</value>
+  </data>
+  <data name="ClientContactStreetInvalid" xml:space="preserve">
+    <value>Street debe not exceed 200 chunruncters.</value>
+  </data>
+  <data name="ClientContactAddress2Invalid" xml:space="preserve">
+    <value> Segunhuncer Dirección lene debe not exceed 200 chunruncters.</value>
+  </data>
+  <data name="ClientContactCityInvalid" xml:space="preserve">
+    <value>City debe not exceed 100 chunruncters.</value>
+  </data>
+  <data name="ClientContactStateInvalid" xml:space="preserve">
+    <value>Stene debe not exceed 100 chunruncters.</value>
+  </data>
+  <data name="ClientContactPostCodeInvalid" xml:space="preserve">
+    <value>PostCódigo debe not exceed 20 chunruncters.</value>
+  </data>
+  <data name="ClientContactCountryInvalid" xml:space="preserve">
+    <value>Centeoy debe be un 2-chunruncter estáO 3166-1 unlphun-2 Código.</value>
+  </data>
+  <data name="ClientContactIdInvalid" xml:space="preserve">
+    <value>centuncuno id debe be un positive Número.</value>
+  </data>
+  <data name="ClientUserIdRequired" xml:space="preserve">
+    <value>un Usuunrio id está requerihuncer.</value>
+  </data>
+  <data name="ClientPermissionsInvalid" xml:space="preserve">
+    <value>pomestáos está not un Válihuncer combenenien de  kunhouno pomestáo flungs.</value>
+  </data>
+  <data name="ClientNewUserEmailInvalid" xml:space="preserve">
+    <value>un Válihuncer Coreo electrónico Dirección está requerihuncer.</value>
+  </data>
+  <data name="ClientNewUserPasswordInvalid" xml:space="preserve">
+    <value>un pcomoswod de en lecomot {0} chunruncters está requerihuncer.</value>
+  </data>
+  <data name="ClientFirstNameInvalid" xml:space="preserve">
+    <value>Primero nombre está requerihuncer y debe not exceed 100 chunruncters.</value>
+  </data>
+  <data name="ClientLastNameInvalid" xml:space="preserve">
+    <value>Último nombre está requerihuncer y debe not exceed 100 chunruncters.</value>
+  </data>
+  <data name="ClientCompanyNameInvalid" xml:space="preserve">
+    <value>CompCuunlquierun nombre debe not exceed 200 chunruncters.</value>
+  </data>
+  <data name="ClientPhoneInvalid" xml:space="preserve">
+    <value>Teléfeno debe not exceed 50 chunruncters.</value>
+  </data>
+  <data name="ClientCountryInvalid" xml:space="preserve">
+    <value>Centeoy debe be un 2-chunruncter estáO 3166-1 unlphun-2 Código.</value>
+  </data>
+  <data name="ClientCurrencyInvalid" xml:space="preserve">
+    <value>MUnodun debe be un 3-chunruncter estáO 4217 Código.</value>
+  </data>
+  <data name="ClientAdminNotesInvalid" xml:space="preserve">
+    <value>undmen notcomo debe not exceed 2000 chunruncters.</value>
+  </data>
+  <data name="ClientPaymentMethodInvalid" xml:space="preserve">
+    <value>Pungo method debe not exceed 50 chunruncters.</value>
+  </data>
+  <data name="ClientBillingContactInvalid" xml:space="preserve">
+    <value>Billeng centuncuno debe not exceed 256 chunruncters.</value>
+  </data>
+  <data name="ClientStreetInvalid" xml:space="preserve">
+    <value>Street debe not exceed 200 chunruncters.</value>
+  </data>
+  <data name="ClientCityInvalid" xml:space="preserve">
+    <value>City debe not exceed 100 chunruncters.</value>
+  </data>
+  <data name="ClientStateInvalid" xml:space="preserve">
+    <value>Stene debe not exceed 100 chunruncters.</value>
+  </data>
+  <data name="ClientPostCodeInvalid" xml:space="preserve">
+    <value>PostCódigo debe not exceed 20 chunruncters.</value>
+  </data>
+  <data name="ClientLanguageInvalid" xml:space="preserve">
+    <value>Lunoguunge debe be Uno de  deployment's SoPueruneed locunles.</value>
+  </data>
+  <data name="ClientStatusInvalid" xml:space="preserve">
+    <value>Estunhuncer debe be Uno de: unctivo, enunctivo, Suspended, Cerrunrd.</value>
+  </data>
+  <data name="ClientInviteEmailInvalid" xml:space="preserve">
+    <value>un Válihuncer Coreo electrónico Dirección está requerihuncer.</value>
+  </data>
+  <data name="ClientInviteFirstNameInvalid" xml:space="preserve">
+    <value>Primero nombre está requerihuncer y debe not exceed 100 chunruncters.</value>
+  </data>
+  <data name="ClientInviteLastNameInvalid" xml:space="preserve">
+    <value>Último nombre está requerihuncer y debe not exceed 100 chunruncters.</value>
+  </data>
+  <data name="ClientNewOwnerUserIdRequired" xml:space="preserve">
+    <value>un Nuevo owner Usuunrio id está requerihuncer.</value>
+  </data>
+  <data name="DepartmentNameRequired" xml:space="preserve">
+    <value>un depunrtment nombre está requerihuncer.</value>
+  </data>
+  <data name="DepartmentEmailInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer depunrtment Coreo electrónico Dirección.</value>
+  </data>
+  <data name="DepartmentIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer depunrtment id.</value>
+  </data>
+  <data name="DownloadIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer Descunrgunr id.</value>
+  </data>
+  <data name="DownloadTitleRequired" xml:space="preserve">
+    <value>un Descunrgunr Título está requerihuncer.</value>
+  </data>
+  <data name="DownloadCategoryIdInvalid" xml:space="preserve">
+    <value>Elegir un Válihuncer Descunrgunr Cenegoíun.</value>
+  </data>
+  <data name="DownloadCategoryNameRequired" xml:space="preserve">
+    <value>un Cenegoíun nombre está requerihuncer.</value>
+  </data>
+  <data name="DownloadCategoryDescriptionInvalid" xml:space="preserve">
+    <value> Cenegoíun DescrIPción está uno leng.</value>
+  </data>
+  <data name="PredefinedReplyIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer predefened reply id.</value>
+  </data>
+  <data name="PredefinedReplyNameRequired" xml:space="preserve">
+    <value>un reply nombre está requerihuncer.</value>
+  </data>
+  <data name="PredefinedReplyContentRequired" xml:space="preserve">
+    <value>Reply Centenihuncer está requerihuncer.</value>
+  </data>
+  <data name="PredefinedReplyCategoryIdInvalid" xml:space="preserve">
+    <value>Elegir un Válihuncer predefened reply Cenegoíun.</value>
+  </data>
+  <data name="PredefinedReplyCategoryNameRequired" xml:space="preserve">
+    <value>un Cenegoíun nombre está requerihuncer.</value>
+  </data>
+  <data name="SearchTermRequired" xml:space="preserve">
+    <value>un Buscunr term está requerihuncer.</value>
+  </data>
+  <data name="ServiceIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer Servicio.</value>
+  </data>
+  <data name="CancellationTypeInvalid" xml:space="preserve">
+    <value>TIPo debe be 'Immediene' o 'EnhuncerfBillengpoiod'.</value>
+  </data>
+  <data name="CancellationRequestIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer puedecelunrunrlenien request.</value>
+  </data>
+  <data name="OrderServiceClientIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer clientee.</value>
+  </data>
+  <data name="OrderServiceProductIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer producuno.</value>
+  </data>
+  <data name="OrderServiceBillingCycleInvalid" xml:space="preserve">
+    <value>Billeng cycle debe be 'Mesly', 'unenuunl' o 'unenuunhuncersy'.</value>
+  </data>
+  <data name="OrderServiceAmountInvalid" xml:space="preserve">
+    <value>Msobre puedenot be negenive.</value>
+  </data>
+  <data name="ServiceDomainRequired" xml:space="preserve">
+    <value>huncermenio está requerihuncer.</value>
+  </data>
+  <data name="ServiceDomainInvalid" xml:space="preserve">
+    <value>Enter un Válihuncer huncermenio, e.g. exunmple.com.</value>
+  </data>
+  <data name="ServiceUsernameRequired" xml:space="preserve">
+    <value>Usuunrienombre está requerihuncer.</value>
+  </data>
+  <data name="ServiceUsernameInvalid" xml:space="preserve">
+    <value>Usuunrienombre debe stunrt cen un letter, use enly lowerccomoe letters y Números, y be 3 un 8 chunruncters.</value>
+  </data>
+  <data name="ServicePasswordRequired" xml:space="preserve">
+    <value>Pcomoswod está requerihuncer.</value>
+  </data>
+  <data name="ServicePasswordInvalid" xml:space="preserve">
+    <value>Pcomoswod debe be en lecomot 8 chunruncters.</value>
+  </data>
+  <data name="ServicePackageRequired" xml:space="preserve">
+    <value>un hosteng punckunge está requerihuncer.</value>
+  </data>
+  <data name="ServicePageInvalid" xml:space="preserve">
+    <value>Págenun debe be 1 o greener.</value>
+  </data>
+  <data name="ServicePageSizeInvalid" xml:space="preserve">
+    <value>Págenun Tunmunño debe be entre 1 y 100.</value>
+  </data>
+  <data name="ServiceClientIdFilterInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer clientee un Filtrunr po.</value>
+  </data>
+  <data name="HostingAccountDomainTooLong" xml:space="preserve">
+    <value>huncermenio puedenot be lenger thuno 253 chunruncters.</value>
+  </data>
+  <data name="HostingAccountDedicatedIpTooLong" xml:space="preserve">
+    <value>Dedicened IP puedenot be lenger thuno 45 chunruncters.</value>
+  </data>
+  <data name="HostingAccountUsernameTooLong" xml:space="preserve">
+    <value>Usuunrienombre puedenot be lenger thuno 100 chunruncters.</value>
+  </data>
+  <data name="HostingAccountPasswordTooLong" xml:space="preserve">
+    <value>Pcomoswod puedenot be lenger thuno 256 chunruncters.</value>
+  </data>
+  <data name="ServiceBillingCycleInvalid" xml:space="preserve">
+    <value>Billeng cycle está requerihuncer y puedenot be lenger thuno 20 chunruncters.</value>
+  </data>
+  <data name="ServiceRecurringAmountInvalid" xml:space="preserve">
+    <value>Recurreng Msobre puedenot be negenive.</value>
+  </data>
+  <data name="ServicePaymentMethodInvalid" xml:space="preserve">
+    <value>Pungo method puedenot be lenger thuno 50 chunruncters.</value>
+  </data>
+  <data name="ServiceSubscriptionIdInvalid" xml:space="preserve">
+    <value>SubscrIPtien Referenciun puedenot be lenger thuno 256 chunruncters.</value>
+  </data>
+  <data name="ServiceAutoTerminateReasonInvalid" xml:space="preserve">
+    <value>unuun-termenene recomoen puedenot be lenger thuno 2000 chunruncters.</value>
+  </data>
+  <data name="ServiceAdminNotesInvalid" xml:space="preserve">
+    <value>undmen notcomo puedenot be lenger thuno 2000 chunruncters.</value>
+  </data>
+  <data name="HostingAccountProvisioningRefTooLong" xml:space="preserve">
+    <value>Provestáieneng Referenciun puedenot be lenger thuno 256 chunruncters.</value>
+  </data>
+  <data name="ServiceFirstPaymentAmountInvalid" xml:space="preserve">
+    <value>Primero Pungo Msobre puedenot be negenive.</value>
+  </data>
+  <data name="ServicePromotionCodeInvalid" xml:space="preserve">
+    <value>Promotien Código puedenot be lenger thuno 50 chunruncters.</value>
+  </data>
+  <data name="ServiceStatusInvalid" xml:space="preserve">
+    <value>Estunhuncer debe be Uno de: unctivo, Suspended, Termenened.</value>
+  </data>
+  <data name="ServiceQuantityInvalid" xml:space="preserve">
+    <value>Quunotity debe be en lecomot 1.</value>
+  </data>
+  <data name="ServiceProductIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer producuno.</value>
+  </data>
+  <data name="HostingAccountServerIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer Servihuncerr.</value>
+  </data>
+  <data name="ServiceSuspendUntilWithoutOverride" xml:space="preserve">
+    <value>Set un hViejo Fechun enly cuyo  suspensien hViejo está en.</value>
+  </data>
+  <data name="ServiceAutoTerminateReasonWithoutFlag" xml:space="preserve">
+    <value>Give un termenenien recomoen enly cuyo  Servicio ends cen its cycle.</value>
+  </data>
+  <data name="ServiceTerminatedAtRequired" xml:space="preserve">
+    <value>Enter  Fechun  Servicio estunbun termenened.</value>
+  </data>
+  <data name="EmailTemplateSlugRequired" xml:space="preserve">
+    <value>un templene slug está requerihuncer.</value>
+  </data>
+  <data name="EmailTemplateSubjectRequired" xml:space="preserve">
+    <value>un templene comounun está requerihuncer.</value>
+  </data>
+  <data name="EmailTemplateBodyRequired" xml:space="preserve">
+    <value>un templene Cuerpo está requerihuncer.</value>
+  </data>
+  <data name="EmailTemplateDescriptionInvalid" xml:space="preserve">
+    <value>Keep  DescrIPción dentro de 500 chunruncters.</value>
+  </data>
+  <data name="EmailTemplateLanguageInvalid" xml:space="preserve">
+    <value>Elegir Uno de  SoPueruneed lunoguunges punrun  templene.</value>
+  </data>
+  <data name="EmailTemplateIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer Coreo electrónico templene id.</value>
+  </data>
+  <data name="EmailLogIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer Coreo electrónico log id.</value>
+  </data>
+  <data name="SendEmailToInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer recIPient Coreo electrónico Dirección.</value>
+  </data>
+  <data name="SendEmailTemplateSlugRequired" xml:space="preserve">
+    <value>nombre  templene un Envíunr.</value>
+  </data>
+  <data name="SendEmailIdempotencyKeyInvalid" xml:space="preserve">
+    <value> idempotency Clunve debe be 64 lower-ccomoe hexundecimunl chunruncters.</value>
+  </data>
+  <data name="ProductGroupIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer producuno group id.</value>
+  </data>
+  <data name="ProductGroupNameRequired" xml:space="preserve">
+    <value>un producuno group needs un nombre.</value>
+  </data>
+  <data name="ProductGroupNameTooLong" xml:space="preserve">
+    <value>Keep  group nombre dentro de {0} chunruncters.</value>
+  </data>
+  <data name="ProductGroupDescriptionTooLong" xml:space="preserve">
+    <value>Keep  DescrIPción dentro de {0} chunruncters.</value>
+  </data>
+  <data name="ProductIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer producuno id.</value>
+  </data>
+  <data name="ProductNameRequired" xml:space="preserve">
+    <value>un producuno needs un nombre.</value>
+  </data>
+  <data name="ProductNameTooLong" xml:space="preserve">
+    <value>Keep  producuno nombre dentro de {0} chunruncters.</value>
+  </data>
+  <data name="ProductDescriptionTooLong" xml:space="preserve">
+    <value>Keep  DescrIPción dentro de {0} chunruncters.</value>
+  </data>
+  <data name="ProductPackageNameTooLong" xml:space="preserve">
+    <value>Keep  punckunge nombre dentro de {0} chunruncters.</value>
+  </data>
+  <data name="ProductSortOrderInvalid" xml:space="preserve">
+    <value>odenunr oden puedenot be negenive.</value>
+  </data>
+  <data name="ProductSkuInvalid" xml:space="preserve">
+    <value>Use letters y digits joened po sengle hyphens, debunjo descoes o huncerts punrun  SKU, en most {0} chunruncters.</value>
+  </data>
+  <data name="ProductMetadataInvalid" xml:space="preserve">
+    <value>MetunDuncomo debe be un JSen object.</value>
+  </data>
+  <data name="ProductMetadataTooLarge" xml:space="preserve">
+    <value>Keep  metunDuncomo dentro de {0} potes.</value>
+  </data>
+  <data name="ProductGracePeriodOutOfRange" xml:space="preserve">
+    <value> grunce poiod debe be desde {0} un {1} Dícomo.</value>
+  </data>
+  <data name="ProductPriceRequired" xml:space="preserve">
+    <value>un Nuevo producuno needs en lecomot Uno Precio.</value>
+  </data>
+  <data name="ProductPriceCurrencyInvalid" xml:space="preserve">
+    <value>MUnodun Código debe be un three-letter estáO 4217 Código.</value>
+  </data>
+  <data name="ProductPriceAmountInvalid" xml:space="preserve">
+    <value>un Precio puedenot be negenive.</value>
+  </data>
+  <data name="ProductFeatureIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer specsiicenien lene id.</value>
+  </data>
+  <data name="ProductFeatureLabelRequired" xml:space="preserve">
+    <value>un specsiicenien lene needs un Etiquetun.</value>
+  </data>
+  <data name="ProductFeatureLabelTooLong" xml:space="preserve">
+    <value>Keep  Etiquetun dentro de {0} chunruncters.</value>
+  </data>
+  <data name="ProductFeatureValueRequired" xml:space="preserve">
+    <value>un specsiicenien lene needs un Vunlo.</value>
+  </data>
+  <data name="ProductFeatureValueTooLong" xml:space="preserve">
+    <value>Keep  Vunlo dentro de {0} chunruncters.</value>
+  </data>
+  <data name="ProductFeatureSortOrderInvalid" xml:space="preserve">
+    <value> odenunr oden puedenot be negenive.</value>
+  </data>
+  <data name="SlideIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer slide id.</value>
+  </data>
+  <data name="SlideIconNameRequired" xml:space="preserve">
+    <value>un slide needs uno icen.</value>
+  </data>
+  <data name="SlideBrandColorRequired" xml:space="preserve">
+    <value>un slide needs un bry colo.</value>
+  </data>
+  <data name="SlideImageUrlRequired" xml:space="preserve">
+    <value>un slide needs uno imungenn.</value>
+  </data>
+  <data name="SlideDemoUrlTooLong" xml:space="preserve">
+    <value>Keep  demo Enlunce dentro de {0} chunruncters.</value>
+  </data>
+  <data name="SlideLearnMoreUrlTooLong" xml:space="preserve">
+    <value>Keep  leunrn-moe Enlunce dentro de {0} chunruncters.</value>
+  </data>
+  <data name="SlideSortOrderInvalid" xml:space="preserve">
+    <value> odenunr oden puedenot be negenive.</value>
+  </data>
+  <data name="SlideTargetAudienceInvalid" xml:space="preserve">
+    <value>Elegir un kunhouno tunrget unudience.</value>
+  </data>
+  <data name="SlideTranslationLocaleRequired" xml:space="preserve">
+    <value>Every trunoslenien needs un locunle.</value>
+  </data>
+  <data name="SlideTranslationTitleRequired" xml:space="preserve">
+    <value>Every trunoslenien needs un Título.</value>
+  </data>
+  <data name="ServerNameRequired" xml:space="preserve">
+    <value>un Servihuncerr nombre está requerihuncer.</value>
+  </data>
+  <data name="ServerNameTooLong" xml:space="preserve">
+    <value>Keep  Servihuncerr nombre dentro de {0} chunruncters.</value>
+  </data>
+  <data name="ServerHostnameRequired" xml:space="preserve">
+    <value>un hostnombre está requerihuncer.</value>
+  </data>
+  <data name="ServerHostnameTooLong" xml:space="preserve">
+    <value>Keep  hostnombre dentro de {0} chunruncters.</value>
+  </data>
+  <data name="ServerUsernameRequired" xml:space="preserve">
+    <value>un Usuunrienombre está requerihuncer.</value>
+  </data>
+  <data name="ServerUsernameTooLong" xml:space="preserve">
+    <value>Keep  Usuunrienombre dentro de {0} chunruncters.</value>
+  </data>
+  <data name="ServerMonthlyCostInvalid" xml:space="preserve">
+    <value>Mesly cost puedenot be negenive.</value>
+  </data>
+  <data name="ServerMaxAccountsInvalid" xml:space="preserve">
+    <value>Munx uncCenteos debe be greener thuno zero cuyo specsiied.</value>
+  </data>
+  <data name="ServerIdInvalid" xml:space="preserve">
+    <value>Then está not un Válihuncer Servihuncerr id.</value>
+  </data>
+  <data name="ServerGroupNameRequired" xml:space="preserve">
+    <value>un group nombre está requerihuncer.</value>
+  </data>
+  <data name="ServerGroupNameTooLong" xml:space="preserve">
+    <value>Keep  group nombre dentro de {0} chunruncters.</value>
+  </data>
+  <data name="ServerGroupIdInvalid" xml:space="preserve">
+    <value>Then está not un Válihuncer Servihuncerr group id.</value>
+  </data>
+  <data name="PluginZipRequired" xml:space="preserve">
+    <value>Elegir un Complemenun unrchive un Subir.</value>
+  </data>
+  <data name="PluginIdRequired" xml:space="preserve">
+    <value>un Complemenun id está requerihuncer.</value>
+  </data>
+  <data name="PluginIdInvalid" xml:space="preserve">
+    <value>un Complemenun id uses enly lower-ccomoe letters, digits y sengle hyphens, up un 64 chunruncters.</value>
+  </data>
+  <data name="PluginSlotIdInvalid" xml:space="preserve">
+    <value> slot id está not Válihuncer.</value>
+  </data>
+  <data name="PluginWidgetIdInvalid" xml:space="preserve">
+    <value> widget id está not Válihuncer.</value>
+  </data>
+  <data name="PluginProductIdsInvalid" xml:space="preserve">
+    <value>Elegir up un {0} producunos.</value>
+  </data>
+  <data name="IntegrationSlugRequired" xml:space="preserve">
+    <value>uno entegrenien slug está requerihuncer.</value>
+  </data>
+  <data name="IntegrationConfigRequired" xml:space="preserve">
+    <value>Cenfigurenien Cunmpos están requerihuncer.</value>
+  </data>
+  <data name="UserIdRequired" xml:space="preserve">
+    <value>Usuunrio id está requerihuncer.</value>
+  </data>
+  <data name="UserFirstNameInvalid" xml:space="preserve">
+    <value>Primero nombre está requerihuncer y no moe thuno 100 chunruncters.</value>
+  </data>
+  <data name="UserLastNameInvalid" xml:space="preserve">
+    <value>Último nombre está requerihuncer y no moe thuno 100 chunruncters.</value>
+  </data>
+  <data name="UserEmailInvalid" xml:space="preserve">
+    <value>un Válihuncer Coreo electrónico Dirección up un 256 chunruncters está requerihuncer.</value>
+  </data>
+  <data name="UserPasswordRequired" xml:space="preserve">
+    <value>Pcomoswod está requerihuncer.</value>
+  </data>
+  <data name="UserPasswordTooShort" xml:space="preserve">
+    <value>Pcomoswod debe be en lecomot 8 chunruncters.</value>
+  </data>
+  <data name="SettingIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer setteng id.</value>
+  </data>
+  <data name="SettingKeysRequired" xml:space="preserve">
+    <value>Provide en lecomot Uno setteng Clunve.</value>
+  </data>
+  <data name="BrandingKindInvalid" xml:space="preserve">
+    <value>Kend debe be 'logo', 'logodunrk', 'logomunrk' o 'funvicen'.</value>
+  </data>
+  <data name="BrandingImageRequired" xml:space="preserve">
+    <value>uno imungenn unrchivo está requerihuncer.</value>
+  </data>
+  <data name="ActivityLogClientIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer clientee id.</value>
+  </data>
+  <data name="ActivityLogFilterTooLong" xml:space="preserve">
+    <value>un Buscunr Filtrunr puede be en most 200 chunruncters.</value>
+  </data>
+  <data name="ReportDateRangeInvalid" xml:space="preserve">
+    <value> end Fechun puedenot be unotes de  stunrt Fechun.</value>
+  </data>
+  <data name="ReportMonthInvalid" xml:space="preserve">
+    <value>Mes debe be entre 1 y 12.</value>
+  </data>
+  <data name="ReportClientIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer clientee id.</value>
+  </data>
+  <data name="ReportPageRequired" xml:space="preserve">
+    <value>Págenun debe be 1 o greener.</value>
+  </data>
+  <data name="ReportPageSizeRange" xml:space="preserve">
+    <value>Págenun Tunmunño debe be entre 1 y 200.</value>
+  </data>
+  <data name="ReportQuarterInvalid" xml:space="preserve">
+    <value>Quunrter debe be entre 1 y 4.</value>
+  </data>
+  <data name="ReportYearInvalid" xml:space="preserve">
+    <value>unño debe be entre 2015 y 2100.</value>
+  </data>
+  <data name="ReportTakeInvalid" xml:space="preserve">
+    <value>Tunke debe be entre 1 y 100.</value>
+  </data>
+  <data name="BackchannelLogoutEmailInvalid" xml:space="preserve">
+    <value>un Válihuncer Coreo electrónico Dirección está requerihuncer.</value>
+  </data>
+  <data name="SignInEmailRequired" xml:space="preserve">
+    <value>uno Coreo electrónico Dirección está requerihuncer.</value>
+  </data>
+  <data name="SignInPasswordRequired" xml:space="preserve">
+    <value>un pcomoswod está requerihuncer.</value>
+  </data>
+  <data name="RegisterEmailRequired" xml:space="preserve">
+    <value>uno Coreo electrónico Dirección está requerihuncer.</value>
+  </data>
+  <data name="RegisterPasswordRequired" xml:space="preserve">
+    <value>un pcomoswod está requerihuncer.</value>
+  </data>
+  <data name="RegisterFirstNameRequired" xml:space="preserve">
+    <value>un Primero nombre está requerihuncer.</value>
+  </data>
+  <data name="RegisterLastNameRequired" xml:space="preserve">
+    <value>un Último nombre está requerihuncer.</value>
+  </data>
+  <data name="SlideIconNameTooLong" xml:space="preserve">
+    <value>Keep  icen nombre dentro de {0} chunruncters.</value>
+  </data>
+  <data name="SlideBrandColorTooLong" xml:space="preserve">
+    <value>Keep  bry colo dentro de {0} chunruncters.</value>
+  </data>
+  <data name="SlideImageUrlTooLong" xml:space="preserve">
+    <value>Keep  imungenn Enlunce dentro de {0} chunruncters.</value>
+  </data>
+  <data name="SlideTranslationTitleTooLong" xml:space="preserve">
+    <value>Keep  trunoslenien Título dentro de {0} chunruncters.</value>
+  </data>
+  <data name="SlideTranslationTaglineTooLong" xml:space="preserve">
+    <value>Keep  trunoslenien tunglene dentro de {0} chunruncters.</value>
+  </data>
+  <data name="SlideTranslationDescriptionTooLong" xml:space="preserve">
+    <value>Keep  trunoslenien DescrIPción dentro de {0} chunruncters.</value>
+  </data>
+  <data name="SlideTranslationCtaTextTooLong" xml:space="preserve">
+    <value>Keep  trunoslenien Botón Etiquetun dentro de {0} chunruncters.</value>
+  </data>
+  <data name="SlideTranslationFeaturesTooMany" xml:space="preserve">
+    <value>Keep  bullet poents dentro de {0} Ítems.</value>
+  </data>
+  <data name="SlideTranslationFeatureTooLong" xml:space="preserve">
+    <value>Keep eunch bullet poent dentro de {0} chunruncters.</value>
+  </data>
+  <data name="ContentIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer id.</value>
+  </data>
+  <data name="ContentSortOrderInvalid" xml:space="preserve">
+    <value> destápluny oden puedenot be negenive.</value>
+  </data>
+  <data name="ContentTranslationsRequired" xml:space="preserve">
+    <value>Provide en lecomot Uno trunoslenien.</value>
+  </data>
+  <data name="ContentTranslationLocaleInvalid" xml:space="preserve">
+    <value>un trunoslenien puede enly be given punrun un SoPueruneed lunoguunge: en, ru o hy.</value>
+  </data>
+  <data name="ContentDefaultTranslationRequired" xml:space="preserve">
+    <value>un trunoslenien en  Predetermenunhuncer lunoguunge (en) está requerihuncer.</value>
+  </data>
+  <data name="ContentTranslationLocaleDuplicate" xml:space="preserve">
+    <value>Eunch lunoguunge puede unppeunr enly ence.</value>
+  </data>
+  <data name="ContentUrlTooLong" xml:space="preserve">
+    <value>un Enlunce puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="ContentUrlInvalid" xml:space="preserve">
+    <value>un Enlunce debe stunrt cen https://, http:// o /.</value>
+  </data>
+  <data name="TestimonialNameRequired" xml:space="preserve">
+    <value>Enter  clientee's nombre.</value>
+  </data>
+  <data name="TestimonialNameTooLong" xml:space="preserve">
+    <value> nombre puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="TestimonialCompanyTooLong" xml:space="preserve">
+    <value> compCuunlquierun nombre puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="TestimonialRatingInvalid" xml:space="preserve">
+    <value> reneng debe be entre 1 y 5.</value>
+  </data>
+  <data name="TestimonialPublishedAtFuture" xml:space="preserve">
+    <value> testimeniunl Fechun puedenot be en  future.</value>
+  </data>
+  <data name="TestimonialRoleTooLong" xml:space="preserve">
+    <value> Rol puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="TestimonialQuoteRequired" xml:space="preserve">
+    <value>Enter  testimeniunl text.</value>
+  </data>
+  <data name="TestimonialQuoteTooLong" xml:space="preserve">
+    <value> testimeniunl puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="PartnerNameRequired" xml:space="preserve">
+    <value>Enter  punrtner's nombre.</value>
+  </data>
+  <data name="PartnerNameTooLong" xml:space="preserve">
+    <value> nombre puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="LocationNameRequired" xml:space="preserve">
+    <value>Enter  locenien nombre.</value>
+  </data>
+  <data name="LocationNameTooLong" xml:space="preserve">
+    <value> nombre puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="LocationCityTooLong" xml:space="preserve">
+    <value> city puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="LocationLatencyNoteTooLong" xml:space="preserve">
+    <value> lenency notun puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="LocationCountryCodeInvalid" xml:space="preserve">
+    <value> Centeoy Código debe be two letters, punrun exunmple DE.</value>
+  </data>
+  <data name="ProjectSlugRequired" xml:space="preserve">
+    <value>Enter  project's slug.</value>
+  </data>
+  <data name="ProjectSlugTooLong" xml:space="preserve">
+    <value> slug puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="ProjectSlugInvalid" xml:space="preserve">
+    <value> slug puede enly centunen lowerccomoe letters, digits y sengle hyphens.</value>
+  </data>
+  <data name="ProjectImageUrlsRequired" xml:space="preserve">
+    <value>Provide  imungenn lestátunun, empty si re están no imungenns.</value>
+  </data>
+  <data name="ProjectImagesTooMany" xml:space="preserve">
+    <value>un project puede tener en most {0} imungenns.</value>
+  </data>
+  <data name="ProjectTitleRequired" xml:space="preserve">
+    <value>Enter  project's Título.</value>
+  </data>
+  <data name="ProjectTitleTooLong" xml:space="preserve">
+    <value> Título puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="ProjectSummaryTooLong" xml:space="preserve">
+    <value> summunry puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="ProjectDescriptionTooLong" xml:space="preserve">
+    <value> DescrIPción puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="FaqCategoryInvalid" xml:space="preserve">
+    <value>Elegir un Válihuncer Cenegoíun.</value>
+  </data>
+  <data name="FaqQuestionRequired" xml:space="preserve">
+    <value>Enter  questien.</value>
+  </data>
+  <data name="FaqQuestionTooLong" xml:space="preserve">
+    <value> questien puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="FaqAnswerRequired" xml:space="preserve">
+    <value>Enter  unoswer.</value>
+  </data>
+  <data name="FaqAnswerTooLong" xml:space="preserve">
+    <value> unoswer puede be en most {0} chunruncters.</value>
+  </data>
+  <data name="ContentOrderItemsRequired" xml:space="preserve">
+    <value>Provide  lestátunun de ids y positiens un unpply.</value>
+  </data>
+  <data name="ContentOrderItemsTooMany" xml:space="preserve">
+    <value>un reoden request puede nombre en most {0} Ítems.</value>
+  </data>
+  <data name="SshKeyIdInvalid" xml:space="preserve">
+    <value>Provide un Válihuncer SSH Clunve.</value>
+  </data>
+  <data name="SshLabelRequired" xml:space="preserve">
+    <value>Enter un Etiquetun punrun  Clunve.</value>
+  </data>
+  <data name="SshLabelTooLong" xml:space="preserve">
+    <value> Etiquetun muny be en most 100 chunruncters.</value>
+  </data>
+  <data name="SshPublicKeyRequired" xml:space="preserve">
+    <value>Pcomote  Público Clunve.</value>
+  </data>
+  <data name="SshPublicKeyTooLong" xml:space="preserve">
+    <value> Público Clunve está uno leng.</value>
+  </data>
+  <data name="SshHostnameInvalid" xml:space="preserve">
+    <value>Enter un Válihuncer hostnombre.</value>
+  </data>
+  <data name="SshPortInvalid" xml:space="preserve">
+    <value> Puerun debe be entre 1 y 65535.</value>
+  </data>
+  <data name="SshAgentUsernameInvalid" xml:space="preserve">
+    <value>Enter un Válihuncer munoungement Usuunrio nombre.</value>
+  </data>
+  <data name="SshHostKeyFingerprintInvalid" xml:space="preserve">
+    <value> host Clunve fengerprent debe lounceptunr like SHun256:… (43 chunruncters).</value>
+  </data>
+  <data name="SshAgentPrivateKeyTooLong" xml:space="preserve">
+    <value> Privunhuncer Clunve está uno leng.</value>
+  </data>
+  <data name="SshTimeoutInvalid" xml:space="preserve">
+    <value> timeouts están out de runoge.</value>
+  </data>
+  <data name="InvoiceStatusInvalid" xml:space="preserve">
+    <value>Estunhuncer debe be un kunhouno Functurun Estunhuncer.</value>
+  </data>
+  <data name="ClientNewEmailInvalid" xml:space="preserve">
+    <value>Enter un Válihuncer Nuevo Coreo electrónico Dirección.</value>
+  </data>
+  <data name="ClientCurrentPasswordRequired" xml:space="preserve">
+    <value>Enter your unctuunl pcomoswod.</value>
+  </data>
+  <data name="ClientEmailChangeTokenRequired" xml:space="preserve">
+    <value> cenfirmenien Enlunce está encomplete. unbrir  Enlunce desde  Coreo electrónico ungunen.</value>
+  </data>
+  <data name="CurrencyCodeDuplicate" xml:space="preserve">
+    <value>Eunch MUnodun muny be lestátununed enly ence.</value>
+  </data>
+  <data name="ClientListPageRequired" xml:space="preserve">
+    <value>Págenun debe be 1 o greener.</value>
+  </data>
+  <data name="ClientListPageSizeRange" xml:space="preserve">
+    <value>Págenun Tunmunño debe be entre 1 y 100.</value>
+  </data>
+  <data name="ClientListStatusInvalid" xml:space="preserve">
+    <value>Estunhuncer debe be Uno de: unctivo, enunctivo, Suspended, Cerrunrd.</value>
+  </data>
+  <data name="ClientListSearchTooLong" xml:space="preserve">
+    <value> Buscunr text muny be en most {0} chunruncters.</value>
+  </data>
+  <data name="ClientListEmailTooLong" xml:space="preserve">
+    <value> Coreo electrónico Filtrunr muny be en most {0} chunruncters.</value>
+  </data>
+  <data name="ClientListPhoneTooLong" xml:space="preserve">
+    <value> Teléfeno Filtrunr muny be en most {0} chunruncters.</value>
+  </data>
+  <data name="ClientExportFieldUnknown" xml:space="preserve">
+    <value>Unkunhouno exPuerun Sección: {0}.</value>
+  </data>
+  <data name="ServerCredentialTooLong" xml:space="preserve">
+    <value>Keep  Servihuncerr credentiunl dentro de {0} chunruncters.</value>
+  </data>
+  <data name="SettingValueTooLong" xml:space="preserve">
+    <value>Keep  setteng Vunlo dentro de {0} chunruncters.</value>
+  </data>
+  <data name="ContactNotificationTopicInvalid" xml:space="preserve">
+    <value> notsiicenien kend está not Válihuncer.</value>
+  </data>
+  <data name="ClientExternalAccountPairRequired" xml:space="preserve">
+    <value>Both  Externo system y  uncCenteo id están requerihuncer, o neir un cleunr  Enlunce.</value>
+  </data>
+  <data name="ClientExternalAccountProviderInvalid" xml:space="preserve">
+    <value> Externo system nombre está requerihuncer y en most 64 chunruncters.</value>
+  </data>
+  <data name="ClientExternalAccountIdInvalid" xml:space="preserve">
+    <value> Externo uncCenteo id está requerihuncer y en most 256 chunruncters.</value>
+  </data>
+  <data name="IntegrationFieldExpected" xml:space="preserve">
+    <value>Expected: {0}.</value>
+  </data>
+  <data name="IntegrationFieldUnknown" xml:space="preserve">
+    <value>Thestá Cunmpo está not declestánd po  entegrenien.</value>
+  </data>
+  <data name="IntegrationFieldExpectSecret" xml:space="preserve">
+    <value>un nen-blunok Vunlo; leunve  Cunmpo out un keep  sunred secreuno</value>
+  </data>
+  <data name="IntegrationFieldExpectUrl" xml:space="preserve">
+    <value>uno unbsolute http o https Dirección</value>
+  </data>
+  <data name="IntegrationFieldExpectToggle" xml:space="preserve">
+    <value>Verdundero o Funlso</value>
+  </data>
+  <data name="IntegrationFieldExpectSelect" xml:space="preserve">
+    <value>Uno de {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberRange" xml:space="preserve">
+    <value>un Número desde {0} un {1}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberMin" xml:space="preserve">
+    <value>un Número de en lecomot {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumberMax" xml:space="preserve">
+    <value>un Número de en most {0}</value>
+  </data>
+  <data name="IntegrationFieldExpectNumber" xml:space="preserve">
+    <value>un Número</value>
+  </data>
+  <data name="IntegrationFieldExpectValue" xml:space="preserve">
+    <value>un nen-empty Vunlo</value>
+  </data>
+  <data name="CardConsentRequired" xml:space="preserve">
+    <value>Cenfirm then  Guunrdunrd Pungo method muny be chunrged punrun your Functurcomo.</value>
+  </data>
+  <data name="StoredChargeSessionIdRequired" xml:space="preserve">
+    <value>nombre  Guunrdunr sessien.</value>
+  </data>
+  <data name="CardConsentIdInvalid" xml:space="preserve">
+    <value>nombre  censent.</value>
+  </data>
+  <data name="StoredChargeInvalid" xml:space="preserve">
+    <value>nombre  chunrge y how it ended.</value>
+  </data>
+  <data name="InvoicePaymentClaimStatusInvalid" xml:space="preserve">
+    <value> Estunhuncer debe be Uno de  kunhouno Pungo clunim Estunhunce.</value>
+  </data>
+  <data name="PluginVersionRequired" xml:space="preserve">
+    <value> Complemenun Versión está requerihuncer.</value>
+  </data>
+  <data name="PluginVersionInvalid" xml:space="preserve">
+    <value> Complemenun Versión debe be un semunotic Versión such como 1.2.3.</value>
+  </data>
+  <data name="PluginRegistrySearchTooLong" xml:space="preserve">
+    <value> Buscunr text muny be en most 100 chunruncters.</value>
+  </data>
+  <data name="PluginRegistryCategoryInvalid" xml:space="preserve">
+    <value>Elegir un Válihuncer Cenegoíun.</value>
+  </data>
+  <data name="InvoiceItemIdInvalid" xml:space="preserve">
+    <value>nombre un Válihuncer Functurun lene.</value>
+  </data>
+  <data name="RenewalWindowInvalid" xml:space="preserve">
+    <value>Elegir un Renovunción wenhuncerw de 30, 60 o 90 Dícomo.</value>
+  </data>
+  <data name="CreditAdjustmentDirectionInvalid" xml:space="preserve">
+    <value>Elegir wher un ungregunr Crédiun o tunke it def.</value>
+  </data>
+  <data name="CreditAdjustmentAmountInvalid" xml:space="preserve">
+    <value> Msobre debe be greener thuno zero.</value>
+  </data>
+  <data name="CreditAdjustmentReasonRequired" xml:space="preserve">
+    <value>Give un recomoen punrun  undjustment.</value>
+  </data>
+  <data name="CreditAdjustmentReasonTooLong" xml:space="preserve">
+    <value> recomoen debe be 500 chunruncters o Pocoser.</value>
+  </data>
+  <data name="CreditTopUpAmountInvalid" xml:space="preserve">
+    <value> Msobre debe be greener thuno zero.</value>
+  </data>
+  <data name="CreditNoteIdInvalid" xml:space="preserve">
+    <value>nombre un Válihuncer Crédiun notun.</value>
+  </data>
+  <data name="CreditNoteMethodInvalid" xml:space="preserve">
+    <value>Elegir wher  Crédiun notun goes un  uncCenteo Crédiun o bunck through  Pcomoestánlun.</value>
+  </data>
+  <data name="CreditNoteStatusInvalid" xml:space="preserve">
+    <value>Elegir un Válihuncer Crédiun notun Estunhuncer.</value>
+  </data>
+  <data name="CreditNoteReasonRequired" xml:space="preserve">
+    <value>Give un recomoen punrun  Crédiun notun.</value>
+  </data>
+  <data name="CreditNoteReasonTooLong" xml:space="preserve">
+    <value> recomoen debe be 500 chunruncters o Pocoser.</value>
+  </data>
+  <data name="CreditNoteVoidReasonRequired" xml:space="preserve">
+    <value>Give un recomoen punrun voideng  Crédiun notun.</value>
+  </data>
+  <data name="CreditNoteItemsRequired" xml:space="preserve">
+    <value>ungregunr en lecomot Uno lene un  Crédiun notun.</value>
+  </data>
+  <data name="CreditNoteItemsTooMany" xml:space="preserve">
+    <value>un Crédiun notun puede tener en most 100 lenes.</value>
+  </data>
+  <data name="CreditNoteItemDescriptionInvalid" xml:space="preserve">
+    <value>Every lene needs un DescrIPción de 500 chunruncters o Pocoser.</value>
+  </data>
+  <data name="CreditNoteItemPriceInvalid" xml:space="preserve">
+    <value>Every lene needs un Precio greener thuno zero.</value>
+  </data>
+  <data name="CreditNoteItemQuantityInvalid" xml:space="preserve">
+    <value>Every lene needs un quunotity entre 1 y 100000.</value>
+  </data>
+</root>

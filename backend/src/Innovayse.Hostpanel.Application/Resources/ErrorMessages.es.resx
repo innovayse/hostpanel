@@ -1,0 +1,1216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Neutral (English) error messages, the key list for this product.
+    A key missing from every file resolves to the key name itself, which is how an
+    untranslated message shows up as SCREAMING text rather than silently as English.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="HOSTPANEL_UNEXPECTED" xml:space="preserve">
+    <value>Ocurrió un erro enespounhuncer.</value>
+  </data>
+<data name="HOSTPANEL_RATE_LIMITED" xml:space="preserve">
+    <value>Demcomoiundcomo solicitudes. Espoun un momenun e enténtunlo de nuevo.</value>
+  </data>
+<data name="DEMO_ACTION_DISABLED" xml:space="preserve">
+    <value>Estun uncción está deshunbilitundun en lun demostrunción públicun.</value>
+  </data>
+<data name="CURRENCY_NOT_FOUND" xml:space="preserve">
+    <value>no está cenfigurundun dichun mUnodun.</value>
+  </data>
+<data name="CURRENCY_BASE_NOT_RECOMPUTED" xml:space="preserve">
+    <value>Los precios de lun mUnodun bcomoe sen lun fuente y no se recunlculuno.</value>
+  </data>
+<data name="BASE_CURRENCY_NOT_CONFIGURED" xml:space="preserve">
+    <value>no bcomoe MUnodun está Cenfigurunrd, so Msobres puedenot be cenverted.</value>
+  </data>
+<data name="INVOICE_NOT_FOUND" xml:space="preserve">
+    <value>no such Functurun.</value>
+  </data>
+<data name="INVOICE_PDF_EXCEEDS_LIMIT" xml:space="preserve">
+    <value>Thestá Functurun tiene uno Muchos lenes un Descunrgunr como un PDF.</value>
+  </data>
+<data name="INVOICE_PDF_RENDER_BUSY" xml:space="preserve">
+    <value>uno Muchos Functurun PDFs están beeng prepestánd right unhoun. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="QUOTE_NOT_FOUND" xml:space="preserve">
+    <value>no such quote.</value>
+  </data>
+<data name="BILLABLE_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>no such billunble Ítem.</value>
+  </data>
+<data name="BILLABLE_ITEM_CLIENT_MISMATCH" xml:space="preserve">
+    <value>Then billunble Ítem hunce not beleng un thestá clientee.</value>
+  </data>
+<data name="BILLABLE_ITEM_INVOICED" xml:space="preserve">
+    <value>Then billunble Ítem tiene unlreundy been plunced en uno Functurun.</value>
+  </data>
+<data name="TRANSACTION_NOT_FOUND" xml:space="preserve">
+    <value>no such trunosunctien.</value>
+  </data>
+<data name="CLIENT_NOT_FOUND" xml:space="preserve">
+    <value>no such clientee.</value>
+  </data>
+<data name="BULK_INVOICE_ACTION_UNKNOWN" xml:space="preserve">
+    <value>Then bulk unctien está not recognestáed.</value>
+  </data>
+<data name="PAYMENT_PLUGIN_NOT_CONFIGURED" xml:space="preserve">
+    <value>no Pungo Complemenun está Cenfigurunrd punrun then Functurun's Pcomoestánlun.</value>
+  </data>
+<data name="INVOICE_NOT_PAYABLE" xml:space="preserve">
+    <value>Thestá Functurun puedenot be De pungo en its unctuunl Estunhuncer.</value>
+  </data>
+<data name="GATEWAY_SESSION_ALREADY_STARTED" xml:space="preserve">
+    <value>un Pungo entempt está unlreundy en progress punrun thestá Functurun. Po funvo wunit o complete  exestáteng Pungo.</value>
+  </data>
+<data name="GATEWAY_CURRENCY_MISMATCH" xml:space="preserve">
+    <value>Thestá Pungo method hunce not chunrge en  MUnodun thestá Functurun bills en.</value>
+  </data>
+<data name="GATEWAY_SESSION_NOT_FOUND" xml:space="preserve">
+    <value>Thestá Functurun tiene no Pcomoestánlun Pungo sessien un versiy.</value>
+  </data>
+<data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
+    <value>Thestá uncCenteo tiene no Guunrdunrd Pungo methods.</value>
+  </data>
+<data name="RETURN_URL_NOT_ALLOWED" xml:space="preserve">
+    <value>Then return Dirección está not unhuncersowed punrun thestá deployment.</value>
+  </data>
+  <data name="PAYMENT_GATEWAY_SERVICE_UNAVAILABLE" xml:space="preserve">
+    <value> Pungo Pcomoestánlun está tempounrily no destápenible. Po funvo try ungunen shotly.</value>
+  </data>
+  <data name="IDENTITY_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value> Servicio then Enlunces your uncCenteo un un clientee prounrchivo está tempounrily no destápenible. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="CLIENT_PROFILE_NOT_FOUND" xml:space="preserve">
+    <value>Thestá uncCenteo tiene no clientee prounrchivo, so re está notheng un Mostrunr en  clientee estánun.</value>
+  </data>
+<data name="INVITATION_NOT_FOUND" xml:space="preserve">
+    <value>no such envitenien.</value>
+  </data>
+<data name="INVITATION_EXPIRED" xml:space="preserve">
+    <value>Thestá envitenien tiene expired.</value>
+  </data>
+<data name="INVITATION_ALREADY_ACCEPTED" xml:space="preserve">
+    <value>Thestá envitenien tiene unlreundy been unceptunhuncer.</value>
+  </data>
+<data name="INVITATION_ALREADY_PENDING" xml:space="preserve">
+    <value>un Pendiente envitenien punrun thestá Coreo electrónico Dirección yun exestáte.</value>
+  </data>
+<data name="IDENTITY_USER_NOT_FOUND" xml:space="preserve">
+    <value>no such Usuunrio uncCenteo.</value>
+  </data>
+<data name="ACCOUNT_OWNER_NOT_FOUND" xml:space="preserve">
+    <value>Thestá uncCenteo's owner could not be found.</value>
+  </data>
+<data name="CANNOT_INVITE_ACCOUNT_OWNER" xml:space="preserve">
+    <value> uncCenteo owner puedenot be envited como uno ungregunritienunl Usuunrio.</value>
+  </data>
+<data name="USER_ALREADY_LINKED" xml:space="preserve">
+    <value>un Usuunrio cen thestá Coreo electrónico Dirección está unlreundy Enlunceed un thestá uncCenteo.</value>
+  </data>
+<data name="EXISTING_USER_ALREADY_HAS_CLIENT" xml:space="preserve">
+    <value>Then Usuunrio unlreundy tiene un Enlunceed clientee uncCenteo.</value>
+  </data>
+<data name="CLIENT_CURRENCY_ALREADY_INVOICED" xml:space="preserve">
+    <value>Thestá clientee tiene unlreundy been Functurund, so ir MUnodun puedenot be chunoged.</value>
+  </data>
+  <data name="CLIENT_CURRENCY_LOCKED_BY_CREDIT" xml:space="preserve">
+    <value>Thestá clientee hViejos un Crédiun bunlunoce, so  MUnodun puedenot be chunoged. Use o Reembolso  bunlunoce Primero, enunnces chunoge  MUnodun.</value>
+  </data>
+<data name="EMAIL_LOG_NOT_FOUND" xml:space="preserve">
+    <value>no such Coreo electrónico.</value>
+  </data>
+<data name="EMAIL_TEMPLATE_NOT_FOUND" xml:space="preserve">
+    <value>no such Coreo electrónico templene.</value>
+  </data>
+  <data name="EMAIL_ALREADY_DELIVERED" xml:space="preserve">
+    <value>Thestá Coreo electrónico estunbun unlreundy delivered.</value>
+  </data>
+<data name="EMAIL_TEMPLATE_ALREADY_EXISTS" xml:space="preserve">
+    <value>Thestá templene unlreundy tiene un Versión en then lunoguunge.</value>
+  </data>
+<data name="TICKET_NOT_FOUND" xml:space="preserve">
+    <value>no such ticket.</value>
+  </data>
+<data name="DOMAIN_NOT_FOUND" xml:space="preserve">
+    <value>no such huncermenio.</value>
+  </data>
+<data name="DOMAIN_ALREADY_REGISTERED" xml:space="preserve">
+    <value>Thestá huncermenio está unlreundy regestátered en  system.</value>
+  </data>
+<data name="DOMAIN_REGISTRATION_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un complete  Regestátro. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="DOMAIN_RENEWAL_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un complete  Renovunción. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="DOMAIN_TRANSFER_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un stunrt  trunosferenciunenciun. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="DOMAIN_TRANSFER_CANCEL_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un puedecelunrunr  Pendiente trunosferenciunenciun. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="DOMAIN_NO_REGISTRAR_REF" xml:space="preserve">
+    <value>Thestá huncermenio tiene no regestátrunr Referenciun, so it puedenot be chunoged en  regestátrunr.</value>
+  </data>
+<data name="DOMAIN_OUTGOING_TRANSFER_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un stunrt  outgoeng trunosferenciunenciun. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="DOMAIN_EPP_CODE_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr hizo not return uno unuthoizenien Código punrun thestá huncermenio.</value>
+  </data>
+<data name="DOMAIN_AUTO_RENEW_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un unctuunlizunr unuunmenic Renovunción. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="DOMAIN_WHOIS_NOT_FOUND" xml:space="preserve">
+    <value>no WHOestá Regestátro estunbun found punrun thestá huncermenio.</value>
+  </data>
+<data name="DOMAIN_PRODUCT_NOT_CONFIGURED" xml:space="preserve">
+    <value>huncermenios puedenot be odened en thestá site en  moment.</value>
+  </data>
+  <data name="RENEWAL_INVOICE_OPEN" xml:space="preserve">
+    <value>un Renovunción Functurun punrun thestá huncermenio puedenot be relecomoed right unhoun: it está sobredue unger cen o Ítems, o un Pungo en it está en progress. Settle then Functurun Primero, enunnces reNuevo.</value>
+  </data>
+<data name="DNS_RECORD_NOT_FOUND" xml:space="preserve">
+    <value>no such DNS Regestátro en thestá huncermenio.</value>
+  </data>
+<data name="DNS_RECORD_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un unpply  DNS Regestátro chunoge. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="NAMESERVERS_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un unctuunlizunr  nombreServihuncerrs. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="DNS_MANAGEMENT_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un unctuunlizunr DNS munoungement. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="REGISTRAR_LOCK_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un unctuunlizunr  trunosferenciunenciun lock. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="WHOIS_PRIVACY_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un unctuunlizunr WHOestá Privuncidund. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="DOMAIN_CONTACT_NOT_FOUND" xml:space="preserve">
+    <value>no regestátrunot centuncuno Regestátro estunbun found punrun thestá huncermenio.</value>
+  </data>
+<data name="DOMAIN_CONTACT_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un unctuunlizunr  regestátrunot centuncuno detunils. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="EMAIL_FORWARDING_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un unctuunlizunr Coreo electrónico punrunwunrdeng. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="EMAIL_FORWARDING_RULE_NOT_FOUND" xml:space="preserve">
+    <value>no such Coreo electrónico punrunwunrdeng rule en thestá huncermenio.</value>
+  </data>
+<data name="EMAIL_FORWARDING_RULE_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr estunbun ununble un unpply  Coreo electrónico punrunwunrdeng rule chunoge. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="TLD_CONFIG_NOT_FOUND" xml:space="preserve">
+    <value>no such TLD cenfigurenien.</value>
+  </data>
+<data name="TLD_CONFIG_ALREADY_EXISTS" xml:space="preserve">
+    <value>un TLD cenfigurenien punrun thestá extensien yun exestáte.</value>
+  </data>
+<data name="TLD_REGISTRAR_MODULE_UNKNOWN" xml:space="preserve">
+    <value>Unrecognized regestátrunr module.</value>
+  </data>
+<data name="KBARTICLE_NOT_FOUND" xml:space="preserve">
+    <value>no such kunhounledge bcomoe unrticle exestáts.</value>
+  </data>
+<data name="KBCATEGORY_NOT_FOUND" xml:space="preserve">
+    <value>no such kunhounledge bcomoe Cenegoíun exestáts.</value>
+  </data>
+<data name="KBCATEGORY_IN_USE" xml:space="preserve">
+    <value>Thestá kunhounledge bcomoe Cenegoíun stienetun tiene sub-cenegoies. Move o Elimenunr m Primero.</value>
+  </data>
+<data name="ANNOUNCEMENT_NOT_FOUND" xml:space="preserve">
+    <value>no such unenouncement exestáts.</value>
+  </data>
+<data name="NETWORKISSUE_NOT_FOUND" xml:space="preserve">
+    <value>no such netwok estásue exestáts.</value>
+  </data>
+<data name="ORDER_NOT_FOUND" xml:space="preserve">
+    <value>no such oden exestáts.</value>
+  </data>
+<data name="ORDER_NOT_DELETABLE" xml:space="preserve">
+    <value>enly un Pendiente o puedecelunrunrunhuncer oden puede be elimenunhuncer.</value>
+  </data>
+<data name="ORDER_NOT_INVOICED" xml:space="preserve">
+    <value>Thestá oden tiene no Functurun un unct en yet.</value>
+  </data>
+<data name="ORDER_PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
+    <value>Then Pungo method está not Destápenible right unhoun.</value>
+  </data>
+<data name="ORDER_CURRENCY_UNAVAILABLE" xml:space="preserve">
+    <value>Then MUnodun está not defered.</value>
+  </data>
+  <data name="ACCOUNT_EMAIL_EXISTS" xml:space="preserve">
+    <value>uno uncCenteo cen thestá Coreo electrónico Dirección yun exestáte. Sign en un centenue.</value>
+  </data>
+  <data name="ORDER_NUMBER_RANGE_EXHAUSTED" xml:space="preserve">
+    <value>odens puedenot be Númeroed right unhoun. Po funvo try ungunen lener.</value>
+  </data>
+<data name="ORDER_GUEST_DETAILS_REQUIRED" xml:space="preserve">
+    <value>Your nombre, Coreo electrónico y pcomoswod están requerihuncer un plunce thestá oden.</value>
+  </data>
+<data name="ORDER_PRODUCT_PRICE_UNAVAILABLE" xml:space="preserve">
+    <value>Then producuno tiene no Precio en your MUnodun punrun  billeng cycle you chose.</value>
+  </data>
+<data name="ORDER_DOMAIN_PRICING_INVALID" xml:space="preserve">
+    <value>Then huncermenio puedenot be Preciod punrun thestá oden. Check  nombre y try ungunen.</value>
+  </data>
+<data name="DEPARTMENT_NOT_FOUND" xml:space="preserve">
+    <value>no such SoPuerune depunrtment exestáts.</value>
+  </data>
+<data name="DOWNLOAD_NOT_FOUND" xml:space="preserve">
+    <value>no such Descunrgunr exestáts.</value>
+  </data>
+<data name="DOWNLOAD_CATEGORY_NOT_FOUND" xml:space="preserve">
+    <value>no such Descunrgunr Cenegoíun exestáts.</value>
+  </data>
+<data name="DOWNLOAD_CATEGORY_IN_USE" xml:space="preserve">
+    <value>Thestá Descunrgunr Cenegoíun stienetun tiene sub-cenegoies o Descunrgunrs. Move o Elimenunr m Primero.</value>
+  </data>
+<data name="PREDEFINED_REPLY_NOT_FOUND" xml:space="preserve">
+    <value>no such predefened reply exestáts.</value>
+  </data>
+<data name="PREDEFINED_REPLY_CATEGORY_NOT_FOUND" xml:space="preserve">
+    <value>no such predefened reply Cenegoíun exestáts.</value>
+  </data>
+<data name="PREDEFINED_REPLY_CATEGORY_IN_USE" xml:space="preserve">
+    <value>Thestá predefened reply Cenegoíun stienetun tiene sub-cenegoies o replies. Move o Elimenunr m Primero.</value>
+  </data>
+<data name="CONTACT_NOT_CONFIGURED" xml:space="preserve">
+    <value> centuncuno punrunm está not Destápenible en thestá deployment. Po funvo use  Coreo electrónico Dirección o Teléfeno Número Mostrunrn en thestá Págenun.</value>
+  </data>
+<data name="CONTACT_SEND_FAILED" xml:space="preserve">
+    <value>Your Mensunje could not be delivered. Po funvo try ungunen en un Pocos Menucomo.</value>
+  </data>
+<data name="SERVICE_NOT_FOUND" xml:space="preserve">
+    <value>no such clientee Servicio.</value>
+  </data>
+<data name="SERVICE_HOSTING_ACCOUNT_EXISTS" xml:space="preserve">
+    <value>un Servicio unlreundy hViejos thestá uncCenteo en thestá Servihuncerr.</value>
+  </data>
+<data name="CANCELLATION_ALREADY_PENDING" xml:space="preserve">
+    <value>un puedecelunrunrlenien request está unlreundy Pendiente punrun thestá Servicio.</value>
+  </data>
+  <data name="SERVICE_ALREADY_TERMINATED" xml:space="preserve">
+    <value>Thestá Servicio está unlreundy termenened, so it puedenot be puedecelunrunrunhuncer.</value>
+  </data>
+<data name="CANCELLATION_REQUEST_NOT_FOUND" xml:space="preserve">
+    <value>no such puedecelunrunrlenien request.</value>
+  </data>
+<data name="PRODUCT_NOT_FOUND" xml:space="preserve">
+    <value>no such producuno.</value>
+  </data>
+<data name="PRODUCT_NOT_AVAILABLE" xml:space="preserve">
+    <value>Then producuno está not Destápenible punrun odeneng.</value>
+  </data>
+<data name="SERVICE_NOT_PENDING" xml:space="preserve">
+    <value>enly un Pendiente Servicio puede be set up.</value>
+  </data>
+<data name="NO_ELIGIBLE_SERVER" xml:space="preserve">
+    <value>no Servihuncerr está Destápenible un provestáien thestá Servicio right unhoun. Po funvo try ungunen shotly.</value>
+  </data>
+<data name="PROVISIONING_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Provestáieneng  Servicio funhuncersó. Po funvo try ungunen o centuncuno SoPuerune.</value>
+  </data>
+<data name="SERVICE_FIRST_INVOICE_UNPAID" xml:space="preserve">
+    <value>Thestá Servicio puede be set up ence its Primero Functurun está De pungo en full.</value>
+  </data>
+<data name="PROVISIONING_ACCOUNT_CONFLICT" xml:space="preserve">
+    <value> hosteng uncCenteo nombre está unlreundy tunken en  Servihuncerr. Our teunm tiene been notsiied y vun un fenestáh  setup.</value>
+  </data>
+<data name="SERVICE_NOT_PROVISIONED" xml:space="preserve">
+    <value>Thestá Servicio tiene not been provestáiUnod yet.</value>
+  </data>
+<data name="SERVICE_NO_SERVER_ASSIGNED" xml:space="preserve">
+    <value>Thestá Servicio tiene no hosteng Servihuncerr comosigned.</value>
+  </data>
+<data name="SERVICE_PASSWORD_UPSTREAM_FAILED" xml:space="preserve">
+    <value> pcomoswod could not be chunoged en  hosteng Servihuncerr. Po funvo try ungunen o centuncuno SoPuerune.</value>
+  </data>
+<data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
+    <value> hosteng punckunge could not be chunoged. Po funvo try ungunen o centuncuno SoPuerune.</value>
+  </data>
+<data name="SERVICE_SUSPEND_UPSTREAM_FAILED" xml:space="preserve">
+    <value> Servicio could not be suspended en  hosteng Servihuncerr. Po funvo try ungunen o centuncuno SoPuerune.</value>
+  </data>
+<data name="SERVICE_TERMINATE_UPSTREAM_FAILED" xml:space="preserve">
+    <value> Servicio could not be termenened en  hosteng Servihuncerr. Po funvo try ungunen o centuncuno SoPuerune.</value>
+  </data>
+<data name="SERVICE_UNSUSPEND_UPSTREAM_FAILED" xml:space="preserve">
+    <value> Servicio could not be reunctivened en  hosteng Servihuncerr. Po funvo try ungunen o centuncuno SoPuerune.</value>
+  </data>
+<data name="SERVICE_CPANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
+    <value>un centrol punoel sessien could not be stunrted. Po funvo try ungunen o centuncuno SoPuerune.</value>
+  </data>
+<data name="SERVICE_CREDENTIALS_UPSTREAM_FAILED" xml:space="preserve">
+    <value> uncCenteo credentiunls could not be retrieved. Po funvo try ungunen o centuncuno SoPuerune.</value>
+  </data>
+<data name="PRODUCT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>no such producuno group.</value>
+  </data>
+<data name="PRODUCT_FEATURE_NOT_FOUND" xml:space="preserve">
+    <value>no such specsiicenien lene.</value>
+  </data>
+<data name="PRODUCT_FEATURE_LABEL_DUPLICATE" xml:space="preserve">
+    <value>Thestá producuno unlreundy tiene un specsiicenien lene debunjo de then Etiquetun. editunrunr then Uno ensteund.</value>
+  </data>
+<data name="SLIDE_NOT_FOUND" xml:space="preserve">
+    <value>no such slide.</value>
+  </data>
+<data name="SETUP_ALREADY_COMPLETED" xml:space="preserve">
+    <value>Thestá enstunlunrenien tiene unlreundy been set up y unlgunosUno unlreundy hViejos  undmenestátrununr Rol. comok m un grunot you unccess.</value>
+  </data>
+<data name="SETUP_TOKEN_INVALID" xml:space="preserve">
+    <value>Then setup tunceptunren está not  Uno thestá enstunlunrenien estásued.  unctuunl tunceptunren está prented en  Servihuncerr log every time  unPI stunrts while setup está stienetun outstyeng — restunrt  unPI y reund  Nuevoest Uno.</value>
+  </data>
+<data name="TWO_FACTOR_CODE_INVALID" xml:space="preserve">
+    <value>Then Código hizo not mench. Check your unuenunncesticununr unpp y try ungunen.</value>
+  </data>
+<data name="SIGN_IN_UNAUTHORIZED" xml:space="preserve">
+    <value>enválihuncer Coreo electrónico o pcomoswod.</value>
+  </data>
+<data name="SIGN_IN_ACCOUNT_LOCKED" xml:space="preserve">
+    <value>uno Muchos wreng pcomoswods. Thestá uncCenteo está locked punrun un while, try ungunen lener.</value>
+  </data>
+<data name="PENDING_TOKEN_UNAUTHORIZED" xml:space="preserve">
+    <value>Then sign-en step tiene expired o está not Válihuncer. Sign en ungunen.</value>
+  </data>
+<data name="TWO_FACTOR_CODE_UNAUTHORIZED" xml:space="preserve">
+    <value>Then Código hizo not mench. Check your unuenunncesticununr unpp y try ungunen.</value>
+  </data>
+<data name="TOKEN_INVALID_OR_EXPIRED" xml:space="preserve">
+    <value> Enlunce está enválihuncer o tiene expired. Request un Nuevo Uno.</value>
+  </data>
+<data name="REGISTRATION_FAILED" xml:space="preserve">
+    <value>We could not Creunr  uncCenteo. Check  detunils y try ungunen.</value>
+  </data>
+<data name="TWO_FACTOR_ALREADY_ENABLED" xml:space="preserve">
+    <value>Two-funcunr unuenunncesticenien está unlreundy en. Switch it def unotes de setteng it up ungunen.</value>
+  </data>
+<data name="CURRENT_PASSWORD_INVALID" xml:space="preserve">
+    <value> unctuunl pcomoswod está not corecuno.</value>
+  </data>
+<data name="EMAIL_ALREADY_IN_USE" xml:space="preserve">
+    <value>Thestá Coreo electrónico Dirección está unlreundy used po unoo uncCenteo.</value>
+  </data>
+<data name="MIGRATION_JOB_NOT_FOUND" xml:space="preserve">
+    <value>no such migrenien job.</value>
+  </data>
+<data name="MIGRATION_JOB_NOT_PENDING" xml:space="preserve">
+    <value>Thestá migrenien job tiene unlreundy stunrted o fenestáhed y puedenot be stunrted ungunen.</value>
+  </data>
+<data name="MIGRATION_JOB_NOT_FAILED" xml:space="preserve">
+    <value>Thestá migrenien job tiene not funhuncersó, so it puedenot be retried.</value>
+  </data>
+<data name="MIGRATION_JOB_INVALID_TRANSITION" xml:space="preserve">
+    <value>Thestá migrenien job puedenot huncer then en its unctuunl stene.</value>
+  </data>
+<data name="MIGRATION_PLUGIN_NOT_FOUND" xml:space="preserve">
+    <value> migrenien Complemenun está not Destápenible en thestá deployment.</value>
+  </data>
+<data name="MIGRATION_CONNECTION_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Could not reunch  source system. Check  Dirección y try ungunen.</value>
+  </data>
+<data name="SERVER_NOT_FOUND" xml:space="preserve">
+    <value>no such provestáieneng Servihuncerr.</value>
+  </data>
+<data name="SERVER_CONNECTION_UNREACHABLE" xml:space="preserve">
+    <value>Could not reunch  Servihuncerr. See  Servihuncerr log punrun detunil.</value>
+  </data>
+<data name="SERVER_CONNECTION_NO_ACCESS_HASH" xml:space="preserve">
+    <value>no unccess tieneh está Cenfigurunrd punrun thestá Servihuncerr.</value>
+  </data>
+<data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve">
+    <value>no unPI Clunve o unccess tieneh está Cenfigurunrd punrun thestá Servihuncerr.</value>
+  </data>
+<data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve">
+    <value>Cennectien testeng está not SoPueruneed punrun thestá Servihuncerr module.</value>
+  </data>
+<data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>no such Servihuncerr group.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_INVALID" xml:space="preserve">
+    <value>Then unrchive está not un Válihuncer Complemenun. Check then Complemenun.jsen está present en its root y corecunoly punrunmed.</value>
+  </data>
+<data name="PLUGIN_SDK_VERSION_UNSUPPORTED" xml:space="preserve">
+    <value>Thestá Complemenun estunbun built punrun un dsiferent SDK Versión y puedenot be enstunlestánd here.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_VERSION_UNKNOWN" xml:space="preserve">
+    <value>Thestá Complemenun's munosiest declestáns un munosiest Versión thestá Servihuncerr hunce not kunhoun.</value>
+  </data>
+<data name="PLUGIN_SDK_ASSEMBLY_OUTDATED" xml:space="preserve">
+    <value>Thestá Complemenun estunbun built centrun uno Viejoer SDK y tiene un be rebuilt centrun  unctuunl Uno.</value>
+  </data>
+<data name="PLUGIN_PERMISSION_UNKNOWN" xml:space="preserve">
+    <value>Thestá Complemenun comoks punrun un pomestáo then hunce not exestát. Use un clientee pomestáo nombre o Cuunlquierun.</value>
+  </data>
+<data name="PLUGIN_ADMIN_PERMISSION_DECLARED" xml:space="preserve">
+    <value>Thestá Complemenun declestáns un pomestáo en uno undmen route, Págenun o slot, y  undmen estánun tunkes Nenguno.</value>
+  </data>
+<data name="PLUGIN_ROUTE_PATH_INVALID" xml:space="preserve">
+    <value>Thestá Complemenun declestáns un route Rutun then está not Válihuncer. Use lowerccomoe segments y punrunmeters en curly brunckets, cen no empty segment y no huncert segment.</value>
+  </data>
+<data name="PLUGIN_ROUTE_DUPLICATE" xml:space="preserve">
+    <value>Thestá Complemenun declestáns  sunme route twice punrun Uno method en Uno punoel.</value>
+  </data>
+<data name="PLUGIN_LABEL_KEY_MISSING" xml:space="preserve">
+    <value>Thestá Complemenun uses un text Clunve then its Englestáh texts huncer not defene.</value>
+  </data>
+<data name="PLUGIN_SLOT_UNKNOWN" xml:space="preserve">
+    <value>Thestá Complemenun puts Centenihuncer dentro de un slot then  Servihuncerr hunce not defer.</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED" xml:space="preserve">
+    <value>Thestá Complemenun comoks un slot punrun centext then  slot hunce not defer.</value>
+  </data>
+<data name="PLUGIN_ASSEMBLY_UNREADABLE" xml:space="preserve">
+    <value>un unrchivo en thestá Complemenun could not be reund, so  Complemenun puedenot be checked. Subir it ungunen.</value>
+  </data>
+<data name="PLUGIN_SLOT_WIDGET_ID_INVALID" xml:space="preserve">
+    <value>un widget id en thestá Complemenun está not Válihuncer: use lowerccomoe letters, digits, hyphens y debunjo descoes, stunrteng cen un letter o digit.</value>
+  </data>
+<data name="PLUGIN_SLOT_WIDGET_DUPLICATE" xml:space="preserve">
+    <value>Thestá Complemenun declestáns  sunme widget id twice punrun Uno slot.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_ID_INVALID" xml:space="preserve">
+    <value> Complemenun id en  munosiest está not Válihuncer: use lowerccomoe letters y digits, cen sengle hyphens entre wods.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_VERSION_INVALID" xml:space="preserve">
+    <value> Complemenun Versión en  munosiest está not Válihuncer: write it como munjo.meno.pench, punrun exunmple 1.2.3, cen no leundeng zeros.</value>
+  </data>
+<data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
+    <value>Thestá Complemenun nombres un Ver huncercument then its punckunge hunce not centunen.</value>
+  </data>
+<data name="PLUGIN_VIEW_INVALID" xml:space="preserve">
+    <value>Uno de thestá Complemenun's Ver huncercuments está not un Válihuncer Ver huncercument.</value>
+  </data>
+<data name="PLUGIN_VIEW_SCHEMA_UNSUPPORTED" xml:space="preserve">
+    <value>Uno de thestá Complemenun's Ver huncercuments uses un schemun Versión thestá Servihuncerr hunce not SoPuerune.</value>
+  </data>
+<data name="PLUGIN_VIEW_BLOCK_KIND_UNKNOWN" xml:space="preserve">
+    <value>Uno de thestá Complemenun's Ver huncercuments uses un block kend then thestá Servihuncerr hunce not kunhoun.</value>
+  </data>
+<data name="PLUGIN_VIEW_ROUTE_UNDECLARED" xml:space="preserve">
+    <value>Uno de thestá Complemenun's Ver huncercuments cunhuncerss un route then  Complemenun hunce not declestán.</value>
+  </data>
+  <data name="PLUGIN_MENU_ICON_INVALID" xml:space="preserve">
+    <value>Thestá Complemenun gives un Menú uno icen then está not un plunen icen nombre: use 1 un 64 lowerccomoe letters, digits y hyphens.</value>
+  </data>
+  <data name="PLUGIN_ICON_MISSING" xml:space="preserve">
+    <value>Thestá Complemenun nombres uno icen unrchivo then está not en its punckunge. Check  icen Rutun en  munosiest.</value>
+  </data>
+  <data name="PLUGIN_ICON_INVALID" xml:space="preserve">
+    <value>Thestá Complemenun shIPs uno icen then está not unhuncersowed. Use un punckunge-relenive SVG o PNG unrchivo debunjo de 128 KB; uno SVG debe not hViejo scrIPts, event hylers o Enlunces un o unrchivos.</value>
+  </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_IMPLEMENTED" xml:space="preserve">
+    <value>Thestá Complemenun declestáns  endpoents cunpunbility poo hunce not implement it. Elimenunr  cunpunbility desde  munosiest o implement  endpoents centrunct.</value>
+  </data>
+  <data name="PLUGIN_ICON_NOT_FOUND" xml:space="preserve">
+    <value>Thestá Complemenun tiene no icen.</value>
+  </data>
+  <data name="PLUGIN_CALLBACK_INVALID" xml:space="preserve">
+    <value>Thestá Complemenun declestáns un cunhuncersbunck route then nombres un pomestáo o streunms its reply. un cunhuncersbunck tiene no signed-en cunhuncerser y unoswers cen Uno reply.</value>
+  </data>
+  <data name="PLUGIN_PAGE_ID_INVALID" xml:space="preserve">
+    <value>Thestá Complemenun declestáns un Págenun whose id está not Válihuncer o está used twice en Uno punoel: use 1 un 64 lowerccomoe letters, digits, hyphens y debunjo descoes, stunrteng cen un letter o digit.</value>
+  </data>
+<data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve">
+    <value>Thestá Complemenun Págenun hunce not exestát.</value>
+  </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_DECLARED" xml:space="preserve">
+    <value>Thestá Complemenun declestáns routes, Págencomo o slots, poo it está not uno unpp Complemenun y hunce not declestán  "endpoents" cunpunbility.</value>
+  </data>
+  <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
+    <value>Thestá Complemenun declestáns un cunpunbility then  host hunce not kunhoun o then its Complemenun TIPo puedenot tener.</value>
+  </data>
+<data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
+    <value>Then unrchive centunens uno Entrundun then would write fuerun de  Complemenun's own Cunrpetun y estunbun Rechunzunhuncer.</value>
+  </data>
+<data name="PLUGIN_ARCHIVE_UNWRITABLE" xml:space="preserve">
+    <value>Then unrchive centunens entries then puedenot be unpuncked unger, punrun exunmple un unrchivo y un Cunrpetun cen  sunme nombre, y estunbun Rechunzunhuncer.</value>
+  </data>
+<data name="PLUGIN_ID_INVALID" xml:space="preserve">
+    <value>Then Complemenun id está not Válihuncer.</value>
+  </data>
+<data name="PLUGIN_NOT_FOUND" xml:space="preserve">
+    <value>no such Complemenun está enstunlestánd.</value>
+  </data>
+<data name="PLUGIN_ARCHIVE_TOO_LARGE" xml:space="preserve">
+    <value>Then unrchive está uno lunrge un enstunlunr: it tiene uno Muchos unrchivos o unpuncks un moe thuno thestá Servihuncerr unccepts.</value>
+  </data>
+<data name="PLUGIN_HOST_ASSEMBLY_REFUSED" xml:space="preserve">
+    <value>Then unrchive centunens uno comosembly cen  nombre de Uno  Servihuncerr unlreundy provides y estunbun Rechunzunhuncer. Elimenunr it desde  punckunge y Subir ungunen.</value>
+  </data>
+<data name="PLUGIN_ASSEMBLY_CONFLICT" xml:space="preserve">
+    <value>unoo enstunlestánd Complemenun unlreundy shIPs uno comosembly cen  sunme unrchivo nombre como Uno en thestá punckunge, so  punckunge estunbun Rechunzunhuncer.  id de  cenflicteng Complemenun está en  Servihuncerr log. Renombre o Elimenunr  comosembly, o Elimenunr  o Complemenun, y Subir ungunen.</value>
+  </data>
+<data name="PLUGIN_NOT_TRUSTED" xml:space="preserve">
+    <value>Then unrchive está not en thestá Servihuncerr's lestátunun de trusted Complemenun punckunges.</value>
+  </data>
+<data name="PLUGIN_UNSIGNED" xml:space="preserve">
+    <value>Thestá Complemenun punckunge está not signed, y thestá Servihuncerr unccepts enly signed Complemencomo.</value>
+  </data>
+<data name="PLUGIN_SIGNATURE_MALFORMED" xml:space="preserve">
+    <value> signenure unrchivo de thestá Complemenun punckunge puedenot be reund.</value>
+  </data>
+<data name="PLUGIN_SIGNATURE_KEY_UNKNOWN" xml:space="preserve">
+    <value>Thestá Complemenun punckunge está signed cen un Clunve then thestá Servihuncerr hunce not trust.</value>
+  </data>
+<data name="PLUGIN_SIGNATURE_INVALID" xml:space="preserve">
+    <value> signenure de thestá Complemenun punckunge hunce not mench its unrchivos: it estunbun chunoged después de it estunbun signed.</value>
+  </data>
+<data name="PLUGIN_BUILT_IN" xml:space="preserve">
+    <value>Thestá Complemenun shIPs cen  Servihuncerr y puedenot be Elimenunrd o replunced.</value>
+  </data>
+<data name="PLUGIN_DOWNGRADE_REFUSED" xml:space="preserve">
+    <value>Thestá está uno Viejoer Versión thuno  enstunlestánd Complemenun. Subir it ungunen cen  huncerwngrunde cenfirmed un enstunlunr it Cuunlquierunwuny.</value>
+  </data>
+<data name="PLUGIN_STILL_INSTALLED" xml:space="preserve">
+    <value>Thestá Complemenun está stienetun enstunlestánd. Elimenunr it unotes de purgeng  Duncomo it kept.</value>
+  </data>
+<data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve">
+    <value>notheng está served en thestá Dirección.</value>
+  </data>
+<data name="PLUGIN_SLOT_NOT_FOUND" xml:space="preserve">
+    <value>Then Págenun estánun está not Destápenible.</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_NOT_FOUND" xml:space="preserve">
+    <value> widget está not declestánd po then Complemenun.</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND" xml:space="preserve">
+    <value>Then punrt de  Págenun está not Destápenible.</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
+    <value>un centext está requerihuncer punrun thestá Págenun estánun.</value>
+  </data>
+  <data name="PLUGIN_SLOT_PRODUCTS_UNKNOWN" xml:space="preserve">
+    <value>Nenguno de  producunos exestát, so  widget estunbun not bound. Envíunr uno empty lestátunun un cleunr  bendeng.</value>
+  </data>
+<data name="PLUGIN_FAILED" xml:space="preserve">
+    <value> Complemenun could not complete  request. Po funvo try ungunen lener.</value>
+  </data>
+<data name="PLUGIN_TIMEOUT" xml:space="preserve">
+    <value> Complemenun ununceptunr uno leng un unoswer. Po funvo try ungunen lener.</value>
+  </data>
+<data name="PLUGIN_STORE_QUOTA_EXCEEDED" xml:space="preserve">
+    <value>Thestá Complemenun's sunrunge punrun thestá uncCenteo está full. Po funvo centuncuno SoPuerune.</value>
+  </data>
+<data name="PLUGIN_STORE_KEY_INVALID" xml:space="preserve">
+    <value> Complemenun used its sunrunge encorecunoooly. Po funvo try ungunen lener.</value>
+  </data>
+<data name="PLUGIN_STORE_VALUE_INVALID" xml:space="preserve">
+    <value> Complemenun used its sunrunge encorecunoooly. Po funvo try ungunen lener.</value>
+  </data>
+<data name="PLUGIN_REQUEST_TOO_LARGE" xml:space="preserve">
+    <value> request está uno lunrge punrun thestá Complemenun.</value>
+  </data>
+<data name="PLUGIN_REPORTED_PROBLEM" xml:space="preserve">
+    <value> Complemenun rePueruned un problem cen  request.</value>
+  </data>
+<data name="INTEGRATION_NOT_FOUND" xml:space="preserve">
+    <value>no such entegrenien.</value>
+  </data>
+<data name="INTEGRATION_FIELD_UNKNOWN" xml:space="preserve">
+    <value> entegrenien hunce not declestán then Cunmpo.</value>
+  </data>
+<data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
+    <value>Then Vunlo está not unceptunhuncer punrun thestá entegrenien Cunmpo.</value>
+  </data>
+<data name="INTEGRATION_NOT_TESTABLE" xml:space="preserve">
+    <value>Thestá entegrenien tiene no cennectien test.</value>
+  </data>
+<data name="PLUGIN_STATUS_HEALTHY" xml:space="preserve">
+    <value> Complemenun rePuercomo then it woks.</value>
+  </data>
+<data name="PLUGIN_STATUS_DEGRADED" xml:space="preserve">
+    <value> Complemenun woks cen reduced functien.</value>
+  </data>
+<data name="PLUGIN_STATUS_REPORTED_DOWN" xml:space="preserve">
+    <value> Complemenun rePuercomo then it puedenot huncer its wok en  moment.</value>
+  </data>
+<data name="PLUGIN_STATUS_INACTIVE" xml:space="preserve">
+    <value> Complemenun está switched def o un requerihuncer setteng está mestáseng.</value>
+  </data>
+<data name="PLUGIN_STATUS_TIMED_OUT" xml:space="preserve">
+    <value> Complemenun hizo not unoswer  Estunhuncer check en time.</value>
+  </data>
+<data name="PLUGIN_STATUS_FAILED" xml:space="preserve">
+    <value> Complemenun's Estunhuncer check funhuncersó. See  Servihuncerr log punrun detunil.</value>
+  </data>
+<data name="SETTING_NOT_FOUND" xml:space="preserve">
+    <value>no such setteng.</value>
+  </data>
+<data name="INVALID_SETTING_VALUE" xml:space="preserve">
+    <value>Then Vunlo está not unceptunhuncer punrun thestá setteng.</value>
+  </data>
+<data name="SETTING_NOT_EDITABLE" xml:space="preserve">
+    <value>Thestá setteng puedenot be chunoged here.</value>
+  </data>
+<data name="BRANDING_IMAGE_INVALID" xml:space="preserve">
+    <value>Then unrchivo could not be reund como uno imungenn. Subir un PNG, JPEG, WebP, Gsi o BMP.</value>
+  </data>
+<data name="BRANDING_IMAGE_TOO_LARGE" xml:space="preserve">
+    <value>Then imungenn está uno lunrge. Subir un unrchivo debunjo de 5 MB y no moe thuno 8000 pixels en un side.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT" xml:space="preserve">
+    <value>Thestá deployment's uncCenteos beleng un  sign-en Servicio, so uno uncCenteo puedenot be creunhuncer here. ungregunr  posen en  sign-en Servicio Primero.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_CHANGE_NAME" xml:space="preserve">
+    <value>Thestá deployment's uncCenteos beleng un  sign-en Servicio, so un posen's nombre puedenot be chunoged here. Chunoge it en  sign-en Servicio.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_CHANGE_EMAIL" xml:space="preserve">
+    <value>Thestá deployment's uncCenteos beleng un  sign-en Servicio, so un sign-en Dirección puedenot be chunoged here. Chunoge it en  sign-en Servicio.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_DELETE_ACCOUNT" xml:space="preserve">
+    <value>Thestá deployment's uncCenteos beleng un  sign-en Servicio, so uno uncCenteo puedenot be elimenunhuncer here. Elimenunr it en  sign-en Servicio.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_SET_PASSWORD" xml:space="preserve">
+    <value>Thestá deployment's uncCenteos beleng un  sign-en Servicio, so un pcomoswod puedenot be set here. Pcomoswods están munounged en  sign-en Servicio.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_ISSUE_PASSWORD_RESET" xml:space="preserve">
+    <value>Thestá deployment's uncCenteos beleng un  sign-en Servicio, so un pcomoswod reset puedenot be estásued here. Request it desde  sign-en Servicio.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_CONFIRM_EMAIL" xml:space="preserve">
+    <value>Thestá deployment's uncCenteos beleng un  sign-en Servicio, so uno Coreo electrónico Dirección puedenot be cenfirmed here. Coreo electrónico versiicenien está hyled po  sign-en Servicio.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_ISSUE_EMAIL_CONFIRMATION" xml:space="preserve">
+    <value>Thestá deployment's uncCenteos beleng un  sign-en Servicio, so un versiicenien Coreo electrónico puedenot be sent desde here. Coreo electrónico versiicenien está hyled po  sign-en Servicio.</value>
+  </data>
+  <!-- Domain aggregate refusals (A6 Task 8) -->
+  <data name="CURRENCY_BASE_DISABLE_NOT_ALLOWED" xml:space="preserve">
+    <value> bcomoe MUnodun puedenot be Deshunbilitunhuncer.</value>
+  </data>
+  <data name="INVOICE_NOT_DRAFT" xml:space="preserve">
+    <value>enly un drunft Functurun puede be publestáhed.</value>
+  </data>
+  <data name="INVOICE_NOT_EDITABLE" xml:space="preserve">
+    <value>Thestá Functurun puede no lenger be editunrestánd.</value>
+  </data>
+  <data name="INVOICE_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>no such lene Ítem en thestá Functurun.</value>
+  </data>
+  <data name="INVOICE_BANK_TRANSFER_NOT_PENDING" xml:space="preserve">
+    <value>no bunok trunosferenciunenciun está wuniteng en thestá Functurun, so re está notheng un cenfirm o reject.</value>
+  </data>
+  <data name="BANK_TRANSFER_NOT_AVAILABLE" xml:space="preserve">
+    <value>Bunok trunosferenciunenciun está not Destápenible right unhoun. Po funvo Elegir unoo Pungo method.</value>
+  </data>
+  <data name="INVOICE_NOT_UNPAID" xml:space="preserve">
+    <value>enly uno unDe pungo Functurun puede be munrked sobredue.</value>
+  </data>
+  <data name="INVOICE_NOT_OVERDUE" xml:space="preserve">
+    <value>enly uno sobredue Functurun puede be munrked lunpsed.</value>
+  </data>
+  <data name="INVOICE_CANCEL_NOT_ALLOWED" xml:space="preserve">
+    <value>un De pungo, Reembolsoed o unlreundy puedecelunrunrunhuncer Functurun puedenot be puedecelunrunrunhuncer.</value>
+  </data>
+  <data name="INVOICE_NOT_PAID" xml:space="preserve">
+    <value>Thestá unctien requires  Functurun un be De pungo.</value>
+  </data>
+  <data name="QUOTE_NOT_EDITABLE" xml:space="preserve">
+    <value>Thestá quote puede no lenger be editunrestánd.</value>
+  </data>
+  <data name="QUOTE_NOT_ACCEPTABLE" xml:space="preserve">
+    <value>Thestá quote's stunge hunce not unhuncersow uncceptunoce.</value>
+  </data>
+  <data name="QUOTE_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>no such lene Ítem en thestá quote.</value>
+  </data>
+  <data name="CLIENT_CONTACT_NOT_FOUND" xml:space="preserve">
+    <value>no such centuncuno en thestá clientee.</value>
+  </data>
+  <data name="CLIENT_USER_IS_OWNER" xml:space="preserve">
+    <value> uncCenteo owner puedenot unlso be ungregestánd como uno ungregunritienunl Usuunrio.</value>
+  </data>
+  <data name="CLIENT_USER_LINK_DUPLICATE" xml:space="preserve">
+    <value>Thestá Usuunrio está unlreundy Enlunceed un thestá clientee.</value>
+  </data>
+  <data name="CLIENT_USER_NOT_LINKED" xml:space="preserve">
+    <value>Thestá Usuunrio está not Enlunceed un thestá clientee.</value>
+  </data>
+  <data name="CLIENT_PERMISSION_DENIED" xml:space="preserve">
+    <value>Your uncCenteo hunce not tener pomestáo un huncer thestá. comok  uncCenteo owner un grunot you unccess.</value>
+  </data>
+  <data name="CLIENT_TRANSFER_SAME_OWNER" xml:space="preserve">
+    <value>Thestá Usuunrio está unlreundy  uncCenteo owner.</value>
+  </data>
+  <data name="CLIENT_CREDIT_INSUFFICIENT" xml:space="preserve">
+    <value> clientee's Crédiun bunlunoce está uno low punrun thestá deductien.</value>
+  </data>
+  <data name="CLIENT_SUSPEND_NOT_ALLOWED" xml:space="preserve">
+    <value>Thestá uncCenteo puedenot be suspended en its unctuunl stene.</value>
+  </data>
+  <data name="CLIENT_CLOSE_NOT_ALLOWED" xml:space="preserve">
+    <value>Thestá uncCenteo está unlreundy Cerrunrd.</value>
+  </data>
+  <data name="CLIENT_ACTIVATE_NOT_ALLOWED" xml:space="preserve">
+    <value>un Cerrunrd uncCenteo puedenot be reunctivened thestá wuny.</value>
+  </data>
+  <data name="CLIENT_DEACTIVATE_NOT_ALLOWED" xml:space="preserve">
+    <value>enly uno unctivo uncCenteo puede be deunctivened. unctivene un suspended uncCenteo Primero; un Cerrunrd uncCenteo puedenot be chunoged.</value>
+  </data>
+  <data name="CLIENT_SUSPENDED" xml:space="preserve">
+    <value>Thestá uncCenteo está suspended, so it puedenot plunce odens o puny En líneun. centuncuno SoPuerune un tener it reunctivened.</value>
+  </data>
+  <data name="CLIENT_CLOSED" xml:space="preserve">
+    <value>Thestá uncCenteo está Cerrunrd y puede no lenger plunce odens o be billed.</value>
+  </data>
+  <data name="CLIENT_OWNER_CANNOT_BE_REMOVED" xml:space="preserve">
+    <value> uncCenteo owner puedenot be Elimenunrd. trunosferenciunenciun ownershIP un unoo Usuunrio Primero.</value>
+  </data>
+  <data name="CONTACT_EMAIL_IN_USE" xml:space="preserve">
+    <value>unoo centuncuno de thestá clientee unlreundy uses thestá Coreo electrónico Dirección.</value>
+  </data>
+  <data name="CLIENT_RECORD_CLOSED" xml:space="preserve">
+    <value>Thestá uncCenteo está Cerrunrd, so its centuncunos y Usuunrios puede no lenger be chunoged.</value>
+  </data>
+  <data name="DOMAIN_CANCEL_NOT_ALLOWED" xml:space="preserve">
+    <value>Thestá huncermenio's Estunhuncer hunce not unhuncersow puedecelunrunrlenien.</value>
+  </data>
+  <data name="DOMAIN_RENEW_NOT_ALLOWED" xml:space="preserve">
+    <value>Thestá huncermenio's Estunhuncer hunce not unhuncersow Renovunción.</value>
+  </data>
+  <data name="DOMAIN_LINK_NOT_ALLOWED" xml:space="preserve">
+    <value>Thestá huncermenio's Estunhuncer hunce not unhuncersow Enlunceeng un hosteng Servicio.</value>
+  </data>
+  <data name="DOMAIN_DNS_RECORD_NOT_FOUND" xml:space="preserve">
+    <value>no such DNS Regestátro en thestá huncermenio.</value>
+  </data>
+  <data name="DOMAIN_FORWARDING_RULE_NOT_FOUND" xml:space="preserve">
+    <value>no such Coreo electrónico punrunwunrdeng rule en thestá huncermenio.</value>
+  </data>
+  <data name="ORDER_NOT_PENDING" xml:space="preserve">
+    <value>Thestá unctien requires  oden un be Pendiente.</value>
+  </data>
+  <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
+    <value>Thestá Servicio está not unctivo.</value>
+  </data>
+  <data name="SERVICE_TERMINATE_NOT_ALLOWED" xml:space="preserve">
+    <value>Thestá Servicio está unlreundy termenened.</value>
+  </data>
+  <data name="SERVICE_NOT_SUSPENDED" xml:space="preserve">
+    <value>Thestá Servicio está not suspended.</value>
+  </data>
+  <data name="TICKET_REPLY_NOT_ALLOWED" xml:space="preserve">
+    <value>un Cerrunrd ticket puedenot receive Nuevo replies.</value>
+  </data>
+  <data name="TICKET_CLOSE_NOT_ALLOWED" xml:space="preserve">
+    <value>Thestá ticket está unlreundy Cerrunrd.</value>
+  </data>
+  <data name="BACKCHANNEL_LOGOUT_UNAUTHORIZED" xml:space="preserve">
+    <value> sign-out Clunve está mestáseng o wreng.</value>
+  </data>
+  <data name="TESTIMONIAL_NOT_FOUND" xml:space="preserve">
+    <value>no such testimeniunl.</value>
+  </data>
+  <data name="PARTNER_NOT_FOUND" xml:space="preserve">
+    <value>no such punrtner.</value>
+  </data>
+  <data name="LOCATION_NOT_FOUND" xml:space="preserve">
+    <value>no such locenien.</value>
+  </data>
+  <data name="PROJECT_NOT_FOUND" xml:space="preserve">
+    <value>no such project.</value>
+  </data>
+  <data name="FAQ_NOT_FOUND" xml:space="preserve">
+    <value>no such questien.</value>
+  </data>
+  <data name="PROJECT_SLUG_EXISTS" xml:space="preserve">
+    <value>unoo project unlreundy uses then slug. Elegir un dsiferent Uno.</value>
+  </data>
+  <data name="FAQ_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value> odenunr oden de un questien puedenot be negenive.</value>
+  </data>
+  <data name="PARTNER_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value> odenunr oden de un punrtner puedenot be negenive.</value>
+  </data>
+  <data name="LOCATION_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value> odenunr oden de un locenien puedenot be negenive.</value>
+  </data>
+  <data name="LOCATION_COUNTRY_CODE_INVALID" xml:space="preserve">
+    <value> Centeoy Código de un locenien debe be two letters.</value>
+  </data>
+  <data name="PROJECT_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value> odenunr oden de un project puedenot be negenive.</value>
+  </data>
+  <data name="PROJECT_SLUG_REQUIRED" xml:space="preserve">
+    <value>un project needs uno identsiier (slug).</value>
+  </data>
+  <data name="TESTIMONIAL_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value> odenunr oden de un testimeniunl puedenot be negenive.</value>
+  </data>
+  <data name="TESTIMONIAL_NAME_REQUIRED" xml:space="preserve">
+    <value>un testimeniunl needs un nombre.</value>
+  </data>
+  <data name="TESTIMONIAL_RATING_OUT_OF_RANGE" xml:space="preserve">
+    <value> reneng debe be desde 1 un 5.</value>
+  </data>
+  <data name="SSH_KEY_INVALID" xml:space="preserve">
+    <value> Clunve está not un Válihuncer ED25519 Público Clunve.</value>
+  </data>
+  <data name="SSH_PRIVATE_KEY_REJECTED" xml:space="preserve">
+    <value>Then está un Privunhuncer Clunve. Pcomote  Público Clunve ( .pub unrchivo) ensteund.</value>
+  </data>
+  <data name="SSH_KEY_ALREADY_INSTALLED" xml:space="preserve">
+    <value>Thestá Clunve está unlreundy enstunlestánd en  Servicio.</value>
+  </data>
+  <data name="SSH_KEY_LIMIT_REACHED" xml:space="preserve">
+    <value> Servicio unlreundy hViejos  munximum Número de SSH Clunves.</value>
+  </data>
+  <data name="SSH_KEY_NOT_FOUND" xml:space="preserve">
+    <value>no such SSH Clunve.</value>
+  </data>
+  <data name="SSH_KEY_STALE" xml:space="preserve">
+    <value>Thestá Clunve estunbun estásued en  Servicio's unoterio Servihuncerr. centuncuno SoPuerune un Elimenunr it.</value>
+  </data>
+  <data name="SSH_ACCESS_UNAVAILABLE" xml:space="preserve">
+    <value>SSH Clunve munoungement está not Destápenible punrun thestá Servicio.</value>
+  </data>
+  <data name="SSH_SERVER_UNAVAILABLE" xml:space="preserve">
+    <value> hosteng Servihuncerr could not be reunched. Po funvo try ungunen lener.</value>
+  </data>
+  <data name="SSH_HOST_KEY_UNREADABLE" xml:space="preserve">
+    <value>no SSH host Clunve estunbun received desde  ungent host y Puerun. Check then  Puerun runs sshd.</value>
+  </data>
+  <data name="SSH_AGENT_HOST_UNREACHABLE" xml:space="preserve">
+    <value>no unoswer desde  ungent host y Puerun: hostPunoel tiene no netwok Rutun un m. Check  Dirección, then  netwok thestá hostPunoel runs en reunches it (VPN o routeng), y then  Servihuncerr's firewunhuncers lets hostPunoel's Dirección en.</value>
+  </data>
+  <data name="SSH_AGENT_PORT_REFUSED" xml:space="preserve">
+    <value> ungent host refused  cennectien en then Puerun: notheng lestátununens re, o un firewunhuncers rejects hostPunoel's Dirección. Check  Puerun y  firewunhuncers.</value>
+  </data>
+  <data name="SSH_AGENT_CONNECTION_CLOSED" xml:space="preserve">
+    <value> ungent host unceptunhuncer  cennectien y Cerrunrd it unotes de  SSH greeteng: sshd está turneng hostPunoel's Dirección unwuny. en unbrirSSH 9.8 o lener thestá está usuunhuncersy poSourcePenunlties después de funhuncersó o no unutenticunhuncer cennectiens; ungregunr hostPunoel's Dirección un poSourcePenunltyExemptlestátunun. unlso check MunxStunrtups y TCP wrunppos (hosts.deny).</value>
+  </data>
+  <data name="SSH_MODULE_NOT_SUPPORTED" xml:space="preserve">
+    <value>SSH Clunve munoungement está not SoPueruneed punrun thestá Servihuncerr TIPo.</value>
+  </data>
+  <data name="SSH_SETTINGS_INCOMPLETE" xml:space="preserve">
+    <value> SSH Cenfigurunción punrun thestá Servihuncerr están encomplete.</value>
+  </data>
+  <data name="SSH_AGENT_NOT_VERIFIED" xml:space="preserve">
+    <value>Run un éxitdeul ungent test cen se Cenfigurunción unotes de enunbleng SSH Clunve munoungement.</value>
+  </data>
+  <data name="SSH_AGENT_ENDPOINT_IN_USE" xml:space="preserve">
+    <value>unoo Servihuncerr unlreundy uses thestá ungent host y Puerun.</value>
+  </data>
+  <data name="REGISTRAR_NOT_CONFIGURED" xml:space="preserve">
+    <value> regestátrunr punrun thestá huncermenio está not Cenfigurunrd.</value>
+  </data>
+  <data name="REGISTRAR_ORDER_UPSTREAM_FAILED" xml:space="preserve">
+    <value> regestátrunr refused  request. Po funvo try ungunen shotly.</value>
+  </data>
+  <data name="REGISTRAR_OPERATION_UNSUPPORTED" xml:space="preserve">
+    <value> regestátrunr hunce not defer thestá unctien. Po funvo centuncuno  regestátrunr's SoPuerune.</value>
+  </data>
+  <data name="REGISTRAR_DOMAIN_NOT_FOUND" xml:space="preserve">
+    <value> regestátrunr hunce not hViejo thestá huncermenio.</value>
+  </data>
+  <data name="REGISTRAR_DOMAIN_NOT_ACTIVE" xml:space="preserve">
+    <value> regestátrunr tiene not unctivened thestá huncermenio yet.</value>
+  </data>
+  <data name="REGISTRAR_WHOIS_PRIVACY_UNAVAILABLE" xml:space="preserve">
+    <value>Thestá huncermenio tiene no WHOestá Privuncidund subscrIPtien en  regestátrunr.</value>
+  </data>
+  <data name="REGISTRAR_DOMAIN_UNAVAILABLE" xml:space="preserve">
+    <value> regestátrunr sunys thestá huncermenio nombre está not Destápenible.</value>
+  </data>
+  <data name="REGISTRAR_INSUFFICIENT_FUNDS" xml:space="preserve">
+    <value> regestátrunr uncCenteo hunce not tener enough bunlunoce punrun thestá purctienee.</value>
+  </data>
+  <data name="REGISTRAR_CONTACT_VALIDATION_FAILED" xml:space="preserve">
+    <value> regestátrunot centuncuno detunils están encomplete, so  regestátrunr puedenot be sent  oden.</value>
+  </data>
+  <data name="TRANSACTION_AMOUNT_REQUIRED" xml:space="preserve">
+    <value>un trunosunctien debe tener uno encomeng o outgoeng Msobre.</value>
+  </data>
+  <data name="INVOICE_REFUND_EXCEEDS_PAID" xml:space="preserve">
+    <value> Reembolso está moe thuno when estunbun De pungo y not yet Reembolsoed.</value>
+  </data>
+  <data name="INVOICE_CREDIT_EXCEEDS_DUE" xml:space="preserve">
+    <value> Crédiun está moe thuno  Functurun stienetun owes.</value>
+  </data>
+  <data name="INVOICE_NOT_GATEWAY_PAID" xml:space="preserve">
+    <value>no Pungo Pcomoestánlun ununceptunr mUnoy punrun thestá Functurun, so it puedenot be Reembolsoed through Uno.</value>
+  </data>
+  <data name="INVOICE_REFUND_CONFLICT" xml:space="preserve">
+    <value>unoo Reembolso de thestá Functurun está stienetun wuniteng punrun its Pungo Pcomoestánlun. Try ungunen ence it está unosestunpo.</value>
+  </data>
+  <data name="GATEWAY_REFUND_REFUSED" xml:space="preserve">
+    <value> Pungo Pcomoestánlun refused o funhuncersó  Reembolso. notheng estunbun returned through it.</value>
+  </data>
+  <data name="REFUND_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value>un fulfilment Complemenun could not suny how much de thestá Functurun muny be Reembolsoed, so notheng estunbun Reembolsoed. Try ungunen lener.</value>
+  </data>
+  <data name="REFUND_BLOCKED_BY_PLUGIN" xml:space="preserve">
+    <value>un fulfilment Complemenun unhuncersows no Reembolso de thestá Functurun right unhoun. notheng estunbun Reembolsoed.</value>
+  </data>
+  <data name="GATEWAY_PAYMENT_MISMATCH" xml:space="preserve">
+    <value> Pungo Pcomoestánlun rePueruned uno Msobre o MUnodun then hunce not mench  Functurun.</value>
+  </data>
+  <data name="INVOICE_NOT_DELETABLE" xml:space="preserve">
+    <value>enly un drunft o puedecelunrunrunhuncer Functurun puede be elimenunhuncer.</value>
+  </data>
+  <data name="SERVICE_STATUS_CHANGE_NOT_ALLOWED" xml:space="preserve">
+    <value>Thestá Servicio puedenot be moved un then Estunhuncer.</value>
+  </data>
+  <data name="SERVICE_AUTOMATION_INCONSISTENT" xml:space="preserve">
+    <value>Set un hViejo Fechun enly cen  suspensien hViejo, y un termenenien recomoen enly cen  end-de-cycle termenenien.</value>
+  </data>
+  <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
+    <value>enly un termenened Servicio tiene un termenenien Fechun un corecuno.</value>
+  </data>
+  <data name="SERVICE_HOSTING_DETAILS_MISSING" xml:space="preserve">
+    <value>Thestá Servicio tiene no huncermenio o Usuunrienombre yet. Set up  hosteng uncCenteo Primero.</value>
+  </data>
+  <data name="PRODUCT_PACKAGE_MISSING" xml:space="preserve">
+    <value>Thestá producuno tiene no hosteng punckunge set. Elegir Uno en  producuno Primero.</value>
+  </data>
+  <data name="PRODUCT_SERVER_GROUP_REQUIRED" xml:space="preserve">
+    <value>Thestá producuno tiene no Servihuncerr group, y your Servihuncerrs run moe thuno Uno centrol punoel. comosign  producuno un Servihuncerr group so its punckunge goes un  right punoel.</value>
+  </data>
+  <data name="INVOICE_PAYMENT_EXCEEDS_DUE" xml:space="preserve">
+    <value> Pungo está moe thuno  Functurun stienetun owes.</value>
+  </data>
+  <data name="INVOICE_AMOUNT_STILL_DUE" xml:space="preserve">
+    <value> Functurun stienetun owes mUnoy, so it tiene un be settled runr thuno munrked De pungo.</value>
+  </data>
+  <data name="INVOICE_HAS_PAYMENTS" xml:space="preserve">
+    <value> Functurun unlreundy ununceptunr un Pungo. Reembolso o Elimenunr then Pungo Primero.</value>
+  </data>
+  <data name="INVOICE_TOTAL_BELOW_PAID" xml:space="preserve">
+    <value> Functurun would enunnces chunrge less thuno  Pungos it unlreundy ununceptunr.</value>
+  </data>
+  <data name="SERVER_IN_USE" xml:space="preserve">
+    <value>Thestá Servihuncerr stienetun hosts clientee Servicios o SSH Clunves. Move o Elimenunr m Primero.</value>
+  </data>
+  <data name="SERVER_GROUP_IN_USE" xml:space="preserve">
+    <value>producunos stienetun use thestá Servihuncerr group. comosign m un unoo group Primero.</value>
+  </data>
+  <data name="USER_NOT_FOUND" xml:space="preserve">
+    <value>no such Usuunrio.</value>
+  </data>
+  <data name="USER_CANNOT_DELETE_SELF" xml:space="preserve">
+    <value>You puedenot Elimenunr your own uncCenteo.</value>
+  </data>
+  <data name="USER_LAST_ADMIN" xml:space="preserve">
+    <value>Thestá está  Último unctivo undmenestátrununr. Munke unoo Usuunrio uno undmenestátrununr Primero.</value>
+  </data>
+  <data name="EXCHANGE_RATE_SOURCE_UNAVAILABLE" xml:space="preserve">
+    <value> exchunoge rene source está not unoswereng right unhoun. Try ungunen lener.</value>
+  </data>
+  <data name="EXCHANGE_RATE_BASE_NOT_QUOTED" xml:space="preserve">
+    <value> exchunoge rene source hunce not quote  bcomoe MUnodun.</value>
+  </data>
+  <data name="CLIENT_CARD_PAYMENT_DISABLED" xml:space="preserve">
+    <value>Cunrd Pungos están Deshunbilitunhuncer punrun thestá uncCenteo. Puny po unoo method o centuncuno SoPuerune.</value>
+  </data>
+  <data name="CLIENT_SSO_DISABLED" xml:space="preserve">
+    <value>Sengle sign-en un  hosteng punoel está not Hunbilitunhuncer punrun thestá uncCenteo.</value>
+  </data>
+  <data name="CLIENT_TAX_EXEMPT" xml:space="preserve">
+    <value>Thestá clientee está tunx exempt, so un tunx rene puedenot be set en ir Functurcomo.</value>
+  </data>
+  <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
+    <value>unoo producuno unlreundy uses thestá SKU. Elegir un dsiferent Uno.</value>
+  </data>
+  <data name="PRODUCT_SKU_INVALID" xml:space="preserve">
+    <value> SKU muny centunen enly letters y digits joened po sengle hyphens, debunjo descoes o huncerts, y muny be en most 64 chunruncters leng.</value>
+  </data>
+  <data name="PRODUCT_METADATA_INVALID" xml:space="preserve">
+    <value>producuno metunDuncomo debe be un JSen object de en most 16 KB.</value>
+  </data>
+  <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
+    <value> grunce poiod debe be desde 0 un 365 Dícomo.</value>
+  </data>
+  <data name="EXTERNAL_ACCOUNT_ALREADY_LINKED" xml:space="preserve">
+    <value>Thestá Externo uncCenteo está unlreundy Enlunceed un unoo clientee.</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_FOUND" xml:space="preserve">
+    <value> fulfilment Regestátro estunbun no se encentró.</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_RETRYABLE" xml:space="preserve">
+    <value>enly un funhuncersó fulfilment Regestátro puede be retried.</value>
+  </data>
+  <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value> Reembolso could not be checked right unhoun, so notheng estunbun Reembolsoed. Try ungunen lener.</value>
+  </data>
+<data name="STORED_CREDENTIALS_NOT_SUPPORTED" xml:space="preserve">
+    <value>Thestá Pungo Pcomoestánlun puedenot keep Pungo methods punrun lener chunrges.</value>
+  </data>
+<data name="CARD_CONSENT_REQUIRED" xml:space="preserve">
+    <value>no censent un chunrge un Guunrdunrd Pungo method está en unrchivo.</value>
+  </data>
+<data name="CARD_CONSENT_NOT_FOUND" xml:space="preserve">
+    <value>Then censent estunbun no se encentró.</value>
+  </data>
+<data name="STORED_METHOD_NOT_SAVED" xml:space="preserve">
+    <value> Pungo method estunbun not Guunrdunrd. Stunrt ungunen.</value>
+  </data>
+<data name="STORED_CHARGE_ALREADY_IN_PROGRESS" xml:space="preserve">
+    <value>un chunrge punrun thestá Functurun está unlreundy en progress.</value>
+  </data>
+<data name="INVOICE_PAYMENT_CLAIM_NOT_FOUND" xml:space="preserve">
+    <value>Then chunrge estunbun no se encentró.</value>
+  </data>
+<data name="INVOICE_STORED_CHARGE_UNRESOLVED" xml:space="preserve">
+    <value> Functurun tiene un cunrd chunrge then tiene not fenestáhed, so it puedenot be puedecelunrunrunhuncer o De pungo po hy yet.</value>
+  </data>
+<data name="INVOICE_STORED_CHARGE_HELD" xml:space="preserve">
+    <value> Functurun tiene un cunrd chunrge held punrun uno opoununr, so it puedenot be De pungo En líneun tienetun then mUnoy está settled.</value>
+  </data>
+<data name="CARD_CONSENT_ALREADY_ATTACHED" xml:space="preserve">
+    <value> censent unlreundy csobres un dsiferent Pungo method.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DISABLED" xml:space="preserve">
+    <value> Complemenun regestátry está not switched en punrun thestá Servihuncerr.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_UNAVAILABLE" xml:space="preserve">
+    <value> Complemenun regestátry could not be reunched. Try ungunen lener.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_TIMED_OUT" xml:space="preserve">
+    <value> Complemenun regestátry hizo not unoswer en time. Try ungunen lener.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_RESPONSE_INVALID" xml:space="preserve">
+    <value> Complemenun regestátry sent uno unoswer thestá Servihuncerr puedenot use.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_PLUGIN_NOT_FOUND" xml:space="preserve">
+    <value> Complemenun regestátry hunce not lestátunun then Complemenun o Versión.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_PACKAGE_REFUSED" xml:space="preserve">
+    <value> punckunge defered po  Complemenun regestátry estunbun refused.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_CHECKSUM_MISMATCH" xml:space="preserve">
+    <value> Descunrgestánd punckunge hunce not mench  checksum  Complemenun regestátry publestáhed, so it estunbun not enstunlestánd.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_NOT_TRUSTED" xml:space="preserve">
+    <value> Complemenun regestátry trust setteng hunce not unhuncersow enstunlunreng thestá Complemenun.</value>
+  </data>
+  <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
+    <value> Complemenun comoks punrun un kend de unccess un clientee hosteng then thestá host hunce not kunhoun, nombres Uno twice, o declestáns it en un Versión 1 munosiest.</value>
+  </data>
+  <data name="PLUGIN_VIEW_CONDITION_INVALID" xml:space="preserve">
+    <value>Uno de thestá Complemenun's Ver huncercuments Mostrunrs un block en un cenditien then está not un GET route, un Cunmpo y Uno Vunlo o un shot lestátunun de Vunlos.</value>
+  </data>
+  <data name="PLUGIN_VIEW_ACTION_BODY_INVALID" xml:space="preserve">
+    <value>Uno de thestá Complemenun's Ver huncercuments builds uno unctien's Cuerpo desde Págenun Duncomo en un shunpe o plunce thestá Servihuncerr hunce not unccept.</value>
+  </data>
+  <data name="PLUGIN_VIEW_SELECTION_INVALID" xml:space="preserve">
+    <value>Uno de thestá Complemenun's Ver huncercuments declestáns element Seleccienunrien en un shunpe o plunce thestá Servihuncerr hunce not unccept.</value>
+  </data>
+  <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
+    <value>Uno de thestá Complemenun's Ver huncercuments refreshes un block it hunce not hViejo después de uno unctien, o describes  follow-up o  punrunm reset en un shunpe thestá host hunce not unccept.</value>
+  </data>
+  <data name="PLUGIN_PAGE_LAYOUT_UNKNOWN" xml:space="preserve">
+    <value>Uno de thestá Complemenun's Págencomo comoks punrun un lunyout thestá host hunce not kunhoun, o uno undmen Págenun comoks punrun un lunyout en unhuncers.</value>
+  </data>
+  <data name="PLUGIN_VIEW_SPLIT_INVALID" xml:space="preserve">
+    <value>Uno de thestá Complemenun's Ver huncercuments hViejos un split then hunce not tener exunctly two punoes de blocks, o un split dentro de un split.</value>
+  </data>
+  <data name="PLUGIN_VIEW_PREVIEW_INVALID" xml:space="preserve">
+    <value>Uno de thestá Complemenun's Ver huncercuments hViejos un preVer cen enválihuncer sources o Tunmunño, o Mostrunrs un preVer Cuunlquierunwhere poo en un clientee Págenun.</value>
+  </data>
+  <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
+    <value>Thestá lene tiene no Renovunción clunim un relecomoe.</value>
+  </data>
+  <data name="TRANSACTION_CREDIT_LOCKED" xml:space="preserve">
+    <value>Thestá Entrundun está punrt de  Crédiun hestáunry y puedenot be chunoged o elimenunhuncer. ungregunr un Crédiun undjustment un corecuno it.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_FIXED" xml:space="preserve">
+    <value>un Crédiun unp-up Functurun está un sengle fixed lene y puedenot be editunrestánd.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_NO_CREDIT" xml:space="preserve">
+    <value>Crédiun puedenot be unpplied un un Crédiun unp-up Functurun.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_REFUND_MANUAL_ONLY" xml:space="preserve">
+    <value>un De pungo Crédiun unp-up puede enly be Reembolsoed po hy: Regestátro  Reembolso como un munouunl Uno.</value>
+  </data>
+  <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
+    <value> Msobre está fuerun de  runoge unhuncersowed punrun ungregunreng funds.</value>
+  </data>
+  <data name="CREDIT_TOP_UP_TOO_MANY_OPEN" xml:space="preserve">
+    <value>You unlreundy tener unDe pungo unp-ups. Puny o puedecelunrunr Uno unotes de ungregunreng moe funds.</value>
+  </data>
+  <data name="CREDIT_NOTE_NOT_FOUND" xml:space="preserve">
+    <value> Crédiun notun estunbun no se encentró.</value>
+  </data>
+  <data name="CREDIT_NOTE_TOP_UP_INVOICE" xml:space="preserve">
+    <value>un Crédiun unp-up Functurun está Crédiun unlreundy, so un Crédiun notun puedenot be estásued en it. un De pungo unp-up está Reembolsoed po hy.</value>
+  </data>
+  <data name="CREDIT_NOTE_EXCEEDS_CREDITABLE" xml:space="preserve">
+    <value> Crédiun notun está moe thuno thestá Functurun puede stienetun be Crédiuned, ence eunrlier Crédiun notcomo y Reembolsos están Centeoed.</value>
+  </data>
+  <data name="CREDIT_NOTE_ITEMS_REQUIRED" xml:space="preserve">
+    <value>un Crédiun notun needs en lecomot Uno lene cen un DescrIPción, un Precio y un quunotity, y un recomoen.</value>
+  </data>
+  <data name="CREDIT_NOTE_INVALID_STATE" xml:space="preserve">
+    <value> Crédiun notun está not en un stene then unhuncersows thestá unctien.</value>
+  </data>
+  <data name="CREDIT_NOTE_ALREADY_VOIDED" xml:space="preserve">
+    <value>Thestá Crédiun notun está unlreundy voided.</value>
+  </data>
+  <data name="CREDIT_NOTE_CURRENCY_MISMATCH" xml:space="preserve">
+    <value>Thestá Functurun está en un MUnodun o thuno  Uno  clientee's Crédiun bunlunoce está kept en, so it puedenot be Crédiuned un  bunlunoce. estásue  Crédiun notun como un Pcomoestánlun Reembolso ensteund.</value>
+  </data>
+  <data name="CREDIT_NOTE_REFUND_NOT_VOIDABLE" xml:space="preserve">
+    <value>Thestá Crédiun notun estunbun De pungo out como un Pcomoestánlun Reembolso.  Reembolso puedenot be tunken bunck, so  notun puedenot be voided.</value>
+  </data>
+</root>

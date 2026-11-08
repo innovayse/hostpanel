@@ -84,6 +84,10 @@
       "label": "Working hours (Armenian)",
       "hint": "Shown to Armenian visitors; empty uses the default hours"
     },
+    "contactHoursEs": {
+      "label": "Working hours (Spanish)",
+      "hint": "Shown to Spanish visitors; empty uses the default hours"
+    },
     "contactTimezone": {
       "label": "Time zone",
       "hint": "UTC+4"
@@ -95,6 +99,10 @@
     "contactAddressHy": {
       "label": "Address (Armenian)",
       "hint": "Shown to Armenian visitors; empty uses the default address"
+    },
+    "contactAddressEs": {
+      "label": "Address (Spanish)",
+      "hint": "Shown to Spanish visitors; empty uses the default address"
     }
   },
   "portalAppearance": {
@@ -336,6 +344,7 @@
       "tokenHint": "From the chat inbox settings",
       "tokenRu": "Token for Russian visitors",
       "tokenHy": "Token for Armenian visitors",
+      "tokenEs": "Token for Spanish visitors",
       "tokenLocaleHint": "Optional; empty uses the default token",
       "hint": "The widget appears only when a provider, the server and a token are all set."
     },
@@ -508,7 +517,8 @@
     "locales": {
       "en": "English",
       "ru": "Russian",
-      "hy": "Armenian"
+      "hy": "Armenian",
+      "es": "Spanish"
     },
     "notFound": "Slide #{id} not found.",
     "ai": "AI"

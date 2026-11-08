@@ -334,6 +334,50 @@ public sealed class RegisteredDomainTests
         domain.DomainEvents.OfType<DomainRenewedEvent>().Should().ContainSingle().Which.OccurredAt.Should().Be(Now);
     }
 
+    /// <summary>
+    /// A renewal bought on an order line records that line, so a retry of it can tell its own renewal; a renewal that is
+    /// not a line's adds no record and erases none, so another renewal can never make the line forget what it bought.
+    /// </summary>
+    [Fact]
+    public void Renew_RecordsTheOrderLineAndOtherRenewalsKeepIt()
+    {
+        var domain = CreateActiveDomain();
+
+        domain.Renew(Now.AddYears(2), Now, orderItemId: 7);
+        domain.Renew(Now.AddYears(3), Now);
+        domain.Renew(Now.AddYears(4), Now, orderItemId: 8);
+
+        domain.HasRenewedForLine(7).Should().BeTrue();
+        domain.HasRenewedForLine(8).Should().BeTrue();
+        domain.HasRenewedForLine(9).Should().BeFalse();
+        domain.LineRenewals.Select(r => r.OrderItemId).Should().BeEquivalentTo(new[] { 7, 8 });
+    }
+
+    /// <summary>The same line renewing the domain again adds no second record.</summary>
+    [Fact]
+    public void Renew_ForTheSameLineTwice_RecordsItOnce()
+    {
+        var domain = CreateActiveDomain();
+
+        domain.Renew(Now.AddYears(2), Now, orderItemId: 7);
+        domain.Renew(Now.AddYears(3), Now, orderItemId: 7);
+
+        domain.LineRenewals.Should().ContainSingle().Which.OrderItemId.Should().Be(7);
+    }
+
+    /// <summary>A domain registered or transferred in by an order line remembers the order, a staff one has none.</summary>
+    [Fact]
+    public void RegisterAndCreateTransfer_RememberTheOrderThatCreatedTheDomain()
+    {
+        var registered = RegisteredDomain.Register(1, "a.example", Now, Now.AddYears(1), false, false, priceCurrency: Currency, orderId: 5);
+        var transferred = RegisteredDomain.CreateTransfer(1, "b.example", Now, Currency, orderId: 6);
+        var byStaff = RegisteredDomain.Register(1, "c.example", Now, Now.AddYears(1), false, false, priceCurrency: Currency);
+
+        registered.OrderId.Should().Be(5);
+        transferred.OrderId.Should().Be(6);
+        byStaff.OrderId.Should().BeNull();
+    }
+
     /// <summary>Renew, when cancelled, throws with domain renew not allowed.</summary>
     [Fact]
     public void Renew_WhenCancelled_ThrowsWithDomainRenewNotAllowed()

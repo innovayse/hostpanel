@@ -121,6 +121,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the domain renewal reminder emails table.</summary>
     public DbSet<DomainReminder> DomainReminders => Set<DomainReminder>();
 
+    /// <summary>Gets the order lines whose renewal extended a domain, named by this property like every other table.</summary>
+    public DbSet<DomainLineRenewal> DomainLineRenewals => Set<DomainLineRenewal>();
+
     /// <summary>
     /// Gets the DNS records table. Records are reached through their domain; the set exists so
     /// the table takes its PascalCase name from this property like every other table here.
@@ -336,7 +339,8 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// Another writer modified one of the saved aggregates concurrently, or another writer recorded the
     /// same gateway payment first (the unique reference of a gateway payment row was violated), another
     /// delivery claimed the same email first (the unique delivery key of an email log row was violated), or another
-    /// call wrote the first value of the same plugin store key, or another call opened the same plugin store scope.
+    /// call wrote the first value of the same plugin store key, or another call opened the same plugin store scope, or
+    /// another call created the service of the same order line first.
     /// </exception>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -441,6 +445,17 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             // key installer counts again from a fresh read and then finds the key already there.
             throw new ConcurrencyConflictException(
                 "Another add recorded the same SSH key on the service concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: ClientServiceConfiguration.OrderItemIndex,
+        })
+        {
+            // Two attempts of one order line created its service at once: the same lost race as a concurrent save.
+            // OrderServiceHandler answers it by reading the service the winner created, so the line gets one service.
+            throw new ConcurrencyConflictException(
+                "Another attempt created the service of the same order line concurrently.", ex);
         }
     }
 

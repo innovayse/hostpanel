@@ -20,6 +20,7 @@ export const pendingOrder: OrderListItem = {
   currency: 'USD',
   invoiceId: null,
   itemCount: 2,
+  failedLineCount: 0,
   createdAt: '2026-10-10T10:00:00Z',
 }
 

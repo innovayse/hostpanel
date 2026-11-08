@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Application.Domains.Commands.TransferDomain;
@@ -13,6 +14,10 @@ namespace Innovayse.Hostpanel.Application.Domains.Commands.TransferDomain;
 /// <param name="PaymentMethod">Payment method label to record on the domain; null if not set.</param>
 /// <param name="Years">Registration period bought with the transfer, in years (1-10).</param>
 /// <param name="PriceCurrency">ISO 4217 code of the currency the amounts are in (the paid order's currency); null bills in the client's billing currency.</param>
+/// <param name="OrderId">
+/// The order whose line transfers the domain in, set only by order fulfilment and stored on the domain so a retry of the
+/// line can tell the transfer it made from a domain the client holds from elsewhere. Never bound from a request body.
+/// </param>
 public sealed record TransferDomainCommand(
     int ClientId,
     string DomainName,
@@ -22,7 +27,8 @@ public sealed record TransferDomainCommand(
     decimal RecurringAmount = 0,
     string? PaymentMethod = null,
     int Years = 1,
-    string? PriceCurrency = null)
+    string? PriceCurrency = null,
+    [property: JsonIgnore] int? OrderId = null)
 {
     /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
     /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>

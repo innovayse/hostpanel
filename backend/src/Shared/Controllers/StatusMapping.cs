@@ -164,6 +164,12 @@ public static class StatusMapping
             // in the way (a conflict); a fulfilment plugin that cannot advise on a refund is a
             // dependency that did not answer (503 with Retry-After). Neither name carries a token.
             "FULFILMENT_RECORD_NOT_RETRYABLE" => new(409, "Conflict"),
+            // Exact row: only a failed line of an accepted order may be retried, so the line's state stands in the
+            // way (a conflict), and the name carries no CONFLICT / ALREADY token for the generic arms.
+            "ORDER_LINE_NOT_RETRYABLE" => new(409, "Conflict"),
+            // Exact rows: the line changed under the attempt, or is not in the state a refund needs, so the line's
+            // state stands in the way (a conflict), and neither name carries a CONFLICT / ALREADY token.
+            "ORDER_LINE_CHANGED" or "ORDER_LINE_NOT_REFUNDABLE" => new(409, "Conflict"),
             // Exact row: the line has no claim to release (not a domain renewal, already applied, or not
             // claimed), a state conflict whose name carries no token for the generic arms.
             "RENEWAL_CLAIM_NOT_HELD" => new(409, "Conflict"),

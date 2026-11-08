@@ -20,7 +20,7 @@ import { InvoicePaymentClaimStatus } from '@/types/invoicepaymentclaim'
 import { MigrationLogAction, MigrationStatus } from '@/types/migration'
 import type { MigrationJob, MigrationLogEntry } from '@/types/migration'
 import { NetworkIssuePriority, NetworkIssueStatus } from '@/types/networkissue'
-import { OrderItemStatus, OrderStatus } from '@/types/order'
+import { OrderItemFulfilmentState, OrderItemStatus, OrderStatus } from '@/types/order'
 import { QuoteStage } from '@/types/quote'
 import { CancellationStatus, CancellationType, ServiceStatus } from '@/types/service'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
@@ -40,6 +40,18 @@ const ORDER_TONES: Record<OrderStatus, UiTone> = {
   [OrderStatus.Active]: UiTone.Success,
   [OrderStatus.Cancelled]: UiTone.Danger,
   [OrderStatus.Fraud]: UiTone.Danger,
+  [OrderStatus.Incomplete]: UiTone.Warning,
+}
+
+/** Badge tone of each order line fulfilment state. */
+const ORDER_LINE_FULFILMENT_TONES: Record<OrderItemFulfilmentState, UiTone> = {
+  [OrderItemFulfilmentState.Pending]: UiTone.Neutral,
+  [OrderItemFulfilmentState.InProgress]: UiTone.Info,
+  [OrderItemFulfilmentState.Fulfilled]: UiTone.Success,
+  [OrderItemFulfilmentState.Failed]: UiTone.Danger,
+  [OrderItemFulfilmentState.Refunded]: UiTone.Warning,
+  [OrderItemFulfilmentState.Refunding]: UiTone.Info,
+  [OrderItemFulfilmentState.PartiallyRefunded]: UiTone.Danger,
 }
 
 /** Badge tone of each order item status. */
@@ -180,6 +192,14 @@ export const orderStatusTone = (status: OrderStatus): UiTone => toneOf(ORDER_TON
  * @returns The kit tone.
  */
 export const orderItemStatusTone = (status: OrderItemStatus): UiTone => toneOf(ORDER_ITEM_TONES, status)
+
+/**
+ * Tone of an order line's fulfilment badge.
+ *
+ * @param state - Fulfilment state as sent by the API.
+ * @returns The tone; danger for a failed line.
+ */
+export const orderLineFulfilmentTone = (state: OrderItemFulfilmentState): UiTone => toneOf(ORDER_LINE_FULFILMENT_TONES, state)
 
 /**
  * Tone of a service status badge.

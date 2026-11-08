@@ -60,6 +60,35 @@ public sealed class OrderOptionsTests
         options.IsValid.Should().BeFalse();
     }
 
+    /// <summary>The retry lease defaults to ten minutes, and the minutes configured become the lease.</summary>
+    [Fact]
+    public void RetryLease_DefaultsToTenMinutesAndFollowsTheConfiguredMinutes()
+    {
+        new OrderOptions().RetryLease.Should().Be(TimeSpan.FromMinutes(10));
+        new OrderOptions { RetryLeaseMinutes = 45 }.RetryLease.Should().Be(TimeSpan.FromMinutes(45));
+    }
+
+    /// <summary>A retry lease that is zero, negative or longer than a day cannot be used and is refused at startup.</summary>
+    /// <param name="minutes">The configured lease in minutes.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-5)]
+    [InlineData(OrderOptions.MaxRetryLeaseMinutes + 1)]
+    public void IsValid_UnusableRetryLease_IsFalse(int minutes)
+    {
+        new OrderOptions { RetryLeaseMinutes = minutes }.IsValid.Should().BeFalse();
+    }
+
+    /// <summary>The shortest and the longest accepted retry lease are valid.</summary>
+    /// <param name="minutes">The configured lease in minutes.</param>
+    [Theory]
+    [InlineData(1)]
+    [InlineData(OrderOptions.MaxRetryLeaseMinutes)]
+    public void IsValid_RetryLeaseAtTheLimits_IsTrue(int minutes)
+    {
+        new OrderOptions { RetryLeaseMinutes = minutes }.IsValid.Should().BeTrue();
+    }
+
     /// <summary>A prefix and padding that exactly fill the order number column are accepted.</summary>
     [Fact]
     public void IsValid_PrefixAndDigitsFillingTheColumn_IsTrue()

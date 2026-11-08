@@ -111,7 +111,8 @@ public static class DependencyInjection
             .Validate(
                 o => o.IsValid,
                 $"{OrderOptions.SectionName} needs at least one number digit, a prefix and digits that fit an order "
-                    + "number, and an invoice payment term of 0 to 365 days.")
+                    + "number, an invoice payment term of 0 to 365 days, and a retry lease of 1 to "
+                    + $"{OrderOptions.MaxRetryLeaseMinutes} minutes.")
             .ValidateOnStart();
 
         // How long the renewal run waits after a declined stored card charge and how many attempts an invoice gets.

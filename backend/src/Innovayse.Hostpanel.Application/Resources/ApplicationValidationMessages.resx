@@ -538,6 +538,18 @@
   <data name="OrderIdInvalid" xml:space="preserve">
     <value>Order id must be greater than zero.</value>
   </data>
+  <data name="OrderItemIdInvalid" xml:space="preserve">
+    <value>Order line id must be greater than zero.</value>
+  </data>
+  <data name="OrderLineOutcomeInvalid" xml:space="preserve">
+    <value>Order line outcome must be Fulfilled or Failed.</value>
+  </data>
+  <data name="OrderLineAttemptInvalid" xml:space="preserve">
+    <value>Order line attempt must be greater than zero.</value>
+  </data>
+  <data name="OrderLineRefundOutcomeInvalid" xml:space="preserve">
+    <value>Order line refund outcome must be NothingRefunded or PartlyRefunded.</value>
+  </data>
   <data name="PlaceOrderPaymentMethodRequired" xml:space="preserve">
     <value>Select a payment method.</value>
   </data>

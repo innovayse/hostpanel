@@ -165,7 +165,7 @@ public sealed class DomainsController : BaseApiController
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> RenewAsync(int id, [FromBody] RenewDomainCommand command, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result>(command with { DomainId = id }, ct);
+        var outcome = await _bus.InvokeAsync<Result>(command with { DomainId = id, OrderItemId = null }, ct);
         return HandleResult(outcome);
     }
 

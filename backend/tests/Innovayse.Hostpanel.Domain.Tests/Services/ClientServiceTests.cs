@@ -195,6 +195,20 @@ public class ClientServiceTests
         Assert.IsType<ClientServiceCreatedEvent>(svc.DomainEvents.Single());
     }
 
+    /// <summary>
+    /// Verifies that <see cref="ClientService.CreateOrdered"/> stores the order line the service is created for, and
+    /// that a service not ordered through a line has none.
+    /// </summary>
+    [Fact]
+    public void CreateOrdered_StoresTheOrderLineItWasCreatedFor()
+    {
+        var forLine = ClientService.CreateOrdered(1, 2, BillingCycle.Monthly, null, 10m, 8m, null, null, Now, orderItemId: 41);
+        var plain = ClientService.CreateOrdered(1, 2, BillingCycle.Monthly, null, 10m, 8m, null, null, Now);
+
+        Assert.Equal(41, forLine.OrderItemId);
+        Assert.Null(plain.OrderItemId);
+    }
+
     /// <summary>Verifies that <see cref="ClientService.AssignHostingAccount"/> stores the three details on a pending service.</summary>
     [Fact]
     public void AssignHostingAccount_OnPending_StoresTheDetails()

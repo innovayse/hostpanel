@@ -1222,6 +1222,18 @@
   <data name="OrderIdInvalid" xml:space="preserve">
     <value>Պատվերի նույնացուցիչը պետք է մեծ լինի զրոյից։</value>
   </data>
+  <data name="OrderItemIdInvalid" xml:space="preserve">
+    <value>Պատվերի տողի նույնացուցիչը պետք է մեծ լինի զրոյից։</value>
+  </data>
+  <data name="OrderLineOutcomeInvalid" xml:space="preserve">
+    <value>Պատվերի տողի արդյունքը պետք է լինի Fulfilled կամ Failed։</value>
+  </data>
+  <data name="OrderLineAttemptInvalid" xml:space="preserve">
+    <value>Պատվերի տողի կատարման փորձի համարը պետք է մեծ լինի զրոյից։</value>
+  </data>
+  <data name="OrderLineRefundOutcomeInvalid" xml:space="preserve">
+    <value>Պատվերի տողի վերադարձի արդյունքը պետք է լինի NothingRefunded կամ PartlyRefunded։</value>
+  </data>
   <data name="PlaceOrderPaymentMethodRequired" xml:space="preserve">
     <value>Ընտրեք վճարման եղանակը։</value>
   </data>

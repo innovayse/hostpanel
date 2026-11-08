@@ -844,6 +844,27 @@
   <data name="ORDER_NOT_PENDING" xml:space="preserve">
     <value>This action requires the order to be pending.</value>
   </data>
+  <data name="ORDER_LINE_NOT_RETRYABLE" xml:space="preserve">
+    <value>This order line cannot be retried now. Only a failed line of an accepted order can be, and not while another retry is running it.</value>
+  </data>
+  <data name="ORDER_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>This order has no such line.</value>
+  </data>
+  <data name="ORDER_LINE_ALREADY_FULFILLED" xml:space="preserve">
+    <value>This order line is already fulfilled.</value>
+  </data>
+  <data name="ORDER_LINE_CHANGED" xml:space="preserve">
+    <value>This order line was changed while it was being processed, so the result could not be recorded. Open the order again to see where the line stands.</value>
+  </data>
+  <data name="ORDER_LINE_NOT_REFUNDABLE" xml:space="preserve">
+    <value>This order line cannot be refunded now. Only a failed line can start being refunded, only a line being refunded can be settled, and only a partly refunded line can be closed as refunded.</value>
+  </data>
+  <data name="ORDER_LINE_INTERRUPTED" xml:space="preserve">
+    <value>The attempt to fulfil this line was interrupted before it finished. Retry the line.</value>
+  </data>
+  <data name="ORDER_LINE_SERVICE_CONFLICT" xml:space="preserve">
+    <value>The service already stored for this order line belongs to another client or product, so the line cannot reuse it. Check the line and its service.</value>
+  </data>
   <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
     <value>This service is not active.</value>
   </data>

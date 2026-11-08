@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Innovayse.Hostpanel.Application.Domains.Commands.RegisterDomain;
 
 /// <summary>Command to register a new domain name for a client.</summary>
@@ -12,6 +14,10 @@ namespace Innovayse.Hostpanel.Application.Domains.Commands.RegisterDomain;
 /// <param name="RecurringAmount">Recurring renewal price to record on the domain.</param>
 /// <param name="PaymentMethod">Payment method label to record on the domain; null if not set.</param>
 /// <param name="PriceCurrency">ISO 4217 code of the currency the amounts are in (the paid order's currency); null bills in the client's billing currency.</param>
+/// <param name="OrderId">
+/// The order whose line registers the domain, set only by order fulfilment and stored on the domain so a retry of the line
+/// can tell the registration it made from a domain the client holds from elsewhere. Never bound from a request body.
+/// </param>
 public sealed record RegisterDomainCommand(
     int ClientId,
     string DomainName,
@@ -23,4 +29,5 @@ public sealed record RegisterDomainCommand(
     decimal FirstPaymentAmount = 0,
     decimal RecurringAmount = 0,
     string? PaymentMethod = null,
-    string? PriceCurrency = null);
+    string? PriceCurrency = null,
+    [property: JsonIgnore] int? OrderId = null);

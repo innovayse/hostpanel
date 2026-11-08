@@ -30,7 +30,10 @@ public sealed class ActivateDigitalServiceHandler
     /// <summary>Handles the command.</summary>
     /// <param name="cmd">The service to activate.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Success, or <c>SERVICE_NOT_FOUND</c> when the id names no service, <c>SERVICE_NOT_PENDING</c> when it is not Pending.</returns>
+    /// <returns>
+    /// Success (also for a service already Active that the same order line activated before), or <c>SERVICE_NOT_FOUND</c>
+    /// when the id names no service, <c>SERVICE_NOT_PENDING</c> when it is not Pending.
+    /// </returns>
     public async Task<Result> HandleAsync(ActivateDigitalServiceCommand cmd, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(cmd);
@@ -39,6 +42,13 @@ public sealed class ActivateDigitalServiceHandler
         if (service is null)
         {
             return Result.FailureCode(HostpanelErrorCodes.SERVICE_NOT_FOUND);
+        }
+
+        if (service.Status is ServiceStatus.Active && cmd.OrderItemId is not null && service.OrderItemId == cmd.OrderItemId)
+        {
+            // An earlier attempt of the same order line activated it and died before recording the line; the retry
+            // finds the service done and must neither refuse it nor activate it a second time.
+            return Result.Success();
         }
 
         if (service.Status is not ServiceStatus.Pending)

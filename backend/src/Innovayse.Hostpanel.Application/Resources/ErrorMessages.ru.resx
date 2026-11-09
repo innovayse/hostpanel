@@ -543,6 +543,15 @@
 <data name="PLUGIN_MANIFEST_TAGS_INVALID" xml:space="preserve">
     <value>Теги в манифесте недопустимы: укажите не более 10 тегов, каждый от 2 до 30 строчных букв, цифр или дефисов, без символа # в начале и без повторов.</value>
   </data>
+<data name="PLUGIN_MANIFEST_HOST_VERSION_INVALID" xml:space="preserve">
+    <value>Минимальная или максимальная версия хоста в манифесте недопустима: укажите её в виде major.minor.patch, например 2.1.0.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED" xml:space="preserve">
+    <value>Минимальная версия хоста в манифесте выше максимальной.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_CHANGELOG_TOO_LONG" xml:space="preserve">
+    <value>Список изменений в манифесте слишком длинный: не более 4000 символов.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Этот плагин ссылается на документ представления, которого нет в его пакете.</value>
   </data>
@@ -1188,6 +1197,9 @@
   </data>
   <data name="PLUGIN_REGISTRY_HOST_INCOMPATIBLE" xml:space="preserve">
     <value>Эта версия плагина не работает с установленной версией Hostpanel.</value>
+  </data>
+  <data name="PLUGIN_HOST_VERSION_OUT_OF_RANGE" xml:space="preserve">
+    <value>Этот плагин не работает с версией Hostpanel на этом сервере: она вне минимальной и максимальной версии хоста, которые поддерживает плагин.</value>
   </data>
   <data name="PLUGIN_REGISTRY_VERSION_YANKED" xml:space="preserve">
     <value>Реестр плагинов отозвал эту версию, поэтому её нельзя установить. Выберите другую версию.</value>

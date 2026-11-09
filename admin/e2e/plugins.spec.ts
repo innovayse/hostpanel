@@ -1,16 +1,33 @@
 /**
- * Plugin manager flow: installed plugins are listed, uploading an archive installs it as
- * multipart data and shows the restart banner, restarting posts the command, and removing a
+ * Plugin manager flow: installed plugins are listed, uploading an archive first shows what it asks for and its
+ * changelog, then installs it as multipart data after the confirmation and shows the restart banner, restarting posts the command, and removing a
  * plugin asks first and then deletes it from the list, and the allow unsigned switch warns and saves its setting.
  */
 import { HttpMethod } from '../src/types/http'
 import { PluginSettingKey } from '../src/types/setting'
+import { PluginHostAccess } from '../src/types/plugin'
 import { expect, test } from '@playwright/test'
 import { cwpPlugin } from './fixtures/integrations'
 import { tinyPng } from './fixtures/settings'
-import type { PluginListItemDto } from '../src/types/plugin'
+import type { PluginListItemDto, PluginPackagePreviewDto } from '../src/types/plugin'
 import type { Setting } from '../src/types/setting'
 import { json, stubApi } from './support/stubApi'
+
+/** What the server reads out of the uploaded archive: SSH access, a changelog and no version limit. */
+const cwpPreview: PluginPackagePreviewDto = {
+  id: cwpPlugin.id,
+  name: cwpPlugin.name,
+  version: cwpPlugin.version,
+  author: cwpPlugin.author,
+  description: cwpPlugin.description,
+  hostAccess: [PluginHostAccess.Ssh],
+  capabilities: [],
+  changelog: 'First release.',
+  minHostVersion: null,
+  maxHostVersion: null,
+  hostVersion: '2.0.0',
+  compatible: true,
+}
 
 test('uploading an archive installs the plugin and offers the restart', async ({ page }) => {
   // The installed plugins as the server holds them; the install appends one.
@@ -20,6 +37,7 @@ test('uploading an archive installs the plugin and offers the restart', async ({
     signedIn: true,
     routes: [
       { method: HttpMethod.Get, path: '/api/admin/plugins', respond: () => ({ body: stored }) },
+      json(HttpMethod.Post, '/api/admin/plugins/inspect', cwpPreview),
       {
         method: HttpMethod.Post,
         path: '/api/admin/plugins/install',
@@ -38,6 +56,11 @@ test('uploading an archive installs the plugin and offers the restart', async ({
   await page.getByTestId('plugin-zip-input').setInputFiles({ name: 'cwp.zip', mimeType: 'application/zip', buffer: tinyPng })
   await expect(page.getByTestId('plugin-selected-name')).toContainText('cwp.zip')
   await page.getByTestId('plugin-install').click()
+
+  await expect(page.getByTestId('plugin-install-access-ssh')).toBeVisible()
+  await expect(page.getByTestId('plugin-install-changelog')).toContainText('First release.')
+  expect(api.callsTo(HttpMethod.Post, '/api/admin/plugins/install')).toHaveLength(0)
+  await page.getByTestId('plugin-install-confirm').click()
 
   await expect(page.getByTestId(`plugin-card-${cwpPlugin.id}`)).toContainText(cwpPlugin.name)
   await expect(page.getByTestId('plugins-restart-banner')).toBeVisible()
@@ -81,7 +104,7 @@ test('a refused install shows the API sentence', async ({ page }) => {
     signedIn: true,
     routes: [
       json(HttpMethod.Get, '/api/admin/plugins', []),
-      json(HttpMethod.Post, '/api/admin/plugins/install', { type: 'INVALID_PLUGIN', title: 'Invalid plugin', status: 400, detail: sentence }, 400),
+      json(HttpMethod.Post, '/api/admin/plugins/inspect', { type: 'PLUGIN_MANIFEST_INVALID', title: 'Invalid plugin', status: 400, detail: sentence }, 400),
     ],
   })
 

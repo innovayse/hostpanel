@@ -222,6 +222,19 @@ internal static class PluginsTestSeeds
         return await client.PostAsync(force ? "/api/admin/plugins/install?force=true" : "/api/admin/plugins/install", content);
     }
 
+    /// <summary>Posts a multipart inspect request carrying the given ZIP bytes.</summary>
+    /// <param name="client">Authenticated admin client.</param>
+    /// <param name="zipBytes">The archive to upload.</param>
+    /// <returns>The inspect response.</returns>
+    public static async Task<HttpResponseMessage> InspectAsync(HttpClient client, byte[] zipBytes)
+    {
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(zipBytes);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
+        content.Add(fileContent, "file", "plugin.zip");
+        return await client.PostAsync("/api/admin/plugins/inspect", content);
+    }
+
     /// <summary>Posts a multipart install request whose form carries no file at all.</summary>
     /// <param name="client">Authenticated admin client.</param>
     /// <returns>The install response.</returns>

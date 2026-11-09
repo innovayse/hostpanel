@@ -61,6 +61,28 @@ public sealed class PluginPackageInspector : IPluginPackageInspector
     }
 
     /// <inheritdoc/>
+    public Task<PluginManifest?> ReadManifestAsync(Stream package, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        try
+        {
+            using var archive = new ZipArchive(package, ZipArchiveMode.Read, leaveOpen: true);
+
+            // The same refusal as the header: which of two case variants the store would see is not defined.
+            if (HasAmbiguousEntry(archive, ManifestEntry))
+            {
+                return Task.FromResult<PluginManifest?>(null);
+            }
+
+            return Task.FromResult(ReadManifest(ReadText(archive, ManifestEntry, MaxManifestBytes)));
+        }
+        catch (Exception ex) when (ex is InvalidDataException or NotSupportedException or IOException or ArgumentException)
+        {
+            return Task.FromResult<PluginManifest?>(null);
+        }
+    }
+
+    /// <inheritdoc/>
     public bool IsOperatorKey(string keyId)
     {
         return _signing.OperatorKeys.Any(key => string.Equals(key.KeyId, keyId, StringComparison.Ordinal));

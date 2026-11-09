@@ -9,6 +9,7 @@ import type {
   InstallRegistryPluginBody,
   PluginActionResultDto,
   PluginListItemDto,
+  PluginPackagePreviewDto,
   PluginRegistryItemDto,
   PluginRegistryPageDto,
   PluginRegistryQuery,
@@ -46,6 +47,15 @@ export const usePluginsApi = () => {
    */
   const installPlugin = (file: File, force = false): Promise<PluginActionResultDto> =>
     upload<PluginActionResultDto>(`${ApiPath.AdminPlugins}/install${force ? '?force=true' : ''}`, file)
+
+  /**
+   * Reads what a plugin ZIP asks for before it is installed; nothing is installed.
+   *
+   * @param file - The ZIP file.
+   * @returns The package's requested access, changelog and supported server versions.
+   */
+  const inspectPlugin = (file: File): Promise<PluginPackagePreviewDto> =>
+    upload<PluginPackagePreviewDto>(`${ApiPath.AdminPlugins}/inspect`, file)
 
   /**
    * Removes an installed plugin.
@@ -182,7 +192,7 @@ export const usePluginsApi = () => {
     request<void>(`${ApiPath.AdminPlugins}/registry/${encodeURIComponent(id)}/licence`, { method: HttpMethod.Delete })
 
   return {
-    listPlugins, installPlugin, removePlugin, purgePluginData, restartServer, listSlotWidgets, saveSlotWidgetProducts,
+    listPlugins, inspectPlugin, installPlugin, removePlugin, purgePluginData, restartServer, listSlotWidgets, saveSlotWidgetProducts,
     browseRegistry, listRegistryUpdates, installFromRegistry, getRegistryInstance, retryRegistryInstance, getRegistryDetails, saveLicenceKey, removeLicenceKey,
   }
 }

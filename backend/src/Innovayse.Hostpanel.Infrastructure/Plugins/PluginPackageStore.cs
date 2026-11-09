@@ -57,6 +57,9 @@ public sealed class PluginPackageStore : IPluginPackageStore
     /// <summary>Tells whether a plugin is loaded, whose folder must then never be overwritten in place.</summary>
     private readonly IPluginRegistry _registry;
 
+    /// <summary>The version of the running Hostpanel build, which the package's host version range must admit.</summary>
+    private readonly IInstalledVersionProvider _hostVersion;
+
     /// <summary>The entry count and uncompressed size limits of an upload, in the form the archive guards of the packaging package take.</summary>
     private PluginArchiveLimits Limits => new(_options.MaxEntryCount, _options.MaxUncompressedBytes);
 
@@ -64,13 +67,19 @@ public sealed class PluginPackageStore : IPluginPackageStore
     /// <param name="options">Upload folder, limits and the trusted-package list.</param>
     /// <param name="signatures">Checks the detached signature of an unpacked upload and applies the host's policy for unsigned packages.</param>
     /// <param name="registry">Tells whether a plugin is loaded, whose folder must then never be overwritten in place.</param>
+    /// <param name="hostVersion">The version of the running Hostpanel build, which the package's host version range must admit.</param>
     /// <param name="logger">Records why an upload was refused; the response carries only a code.</param>
     public PluginPackageStore(
-        IOptions<PluginOptions> options, PluginSignatureVerifier signatures, IPluginRegistry registry, ILogger<PluginPackageStore> logger)
+        IOptions<PluginOptions> options,
+        PluginSignatureVerifier signatures,
+        IPluginRegistry registry,
+        IInstalledVersionProvider hostVersion,
+        ILogger<PluginPackageStore> logger)
     {
         _options = options.Value;
         _signatures = signatures;
         _registry = registry;
+        _hostVersion = hostVersion;
         _logger = logger;
     }
 
@@ -400,6 +409,16 @@ public sealed class PluginPackageStore : IPluginPackageStore
         if (violation is not null)
         {
             return RuleBroken(id, sha256, violation);
+        }
+
+        // Checked after the manifest rules, so the bounds are known to be versions; a bound the manifest leaves out is no
+        // limit. Every install path (upload, registry, upgrade) reaches this store, so none of them can bypass the range.
+        if (!PluginHostCompatibility.IsCompatible(_hostVersion.Version, manifest.MinHostVersion, manifest.MaxHostVersion))
+        {
+            _logger.LogWarning(
+                "Plugin install refused: {PluginId} supports host versions {Min} to {Max}, this host runs {Host}.",
+                id, manifest.MinHostVersion ?? "any", manifest.MaxHostVersion ?? "any", _hostVersion.Version);
+            return new PluginPackageResult(PluginPackageOutcome.HostVersionOutOfRange, id, sha256, Version: manifest.Version);
         }
 
         var contentDir = Path.Combine(work, "content");

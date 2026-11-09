@@ -43,6 +43,9 @@ internal static class PluginRuleMap
             PackageManifestRule.SdkAssemblyOutdated => PluginManifestRule.SdkAssemblyOutdated,
             PackageManifestRule.AssemblyUnreadable => PluginManifestRule.AssemblyUnreadable,
             PackageManifestRule.TagsInvalid => PluginManifestRule.TagsInvalid,
+            PackageManifestRule.HostVersionInvalid => PluginManifestRule.HostVersionInvalid,
+            PackageManifestRule.HostVersionRangeInverted => PluginManifestRule.HostVersionRangeInverted,
+            PackageManifestRule.ChangelogTooLong => PluginManifestRule.ChangelogTooLong,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "The host has no manifest rule for this package rule."),
         };
     }

@@ -23,6 +23,26 @@
     "valueKbReadyToInstall": "{value} KB · Ready to install",
     "installPlugin": "Install Plugin"
   },
+  "pluginInstallDialog": {
+    "title": "Install {name} {version}?",
+    "byAuthor": "by {author}",
+    "requests": "This plugin asks for",
+    "noRequests": "No access to client hosting and no extra capabilities.",
+    "changelog": "What is new in this version",
+    "noChangelog": "The plugin gives no release notes for this version.",
+    "rangeBetween": "Runs on server versions {min} to {max}.",
+    "rangeFrom": "Runs on server version {min} and later.",
+    "rangeUpTo": "Runs on server versions up to {max}.",
+    "incompatible": "This plugin does not run on this server's version {host}. {range}",
+    "install": "Install",
+    "hostAccess": {
+      "ssh": "Run commands on a client's hosting account over SSH"
+    },
+    "capabilities": {
+      "endpoints": "Add its own pages, menus and widgets to the panels",
+      "storedCredentials": "Charge saved cards and payment accounts"
+    }
+  },
   "restartBanner": {
     "restartRequired": "Restart required",
     "pluginChangesWillTakeEffect": "Plugin changes will take effect after a server restart.",

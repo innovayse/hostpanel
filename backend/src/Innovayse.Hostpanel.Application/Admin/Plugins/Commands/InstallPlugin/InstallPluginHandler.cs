@@ -65,7 +65,9 @@ public sealed class InstallPluginHandler
     /// one of <c>PLUGIN_UNSIGNED</c>, <c>PLUGIN_SIGNATURE_MALFORMED</c>, <c>PLUGIN_SIGNATURE_KEY_UNKNOWN</c> or
     /// <c>PLUGIN_SIGNATURE_INVALID</c> when the host enforces signatures, the setting "allow unsigned plugins" is off and
     /// the package fails that check;
-    /// <c>PLUGIN_BUILT_IN</c> when the id belongs to a plugin shipped with the build.
+    /// <c>PLUGIN_BUILT_IN</c> when the id belongs to a plugin shipped with the build;
+    /// <c>PLUGIN_HOST_VERSION_OUT_OF_RANGE</c> when the running Hostpanel version is outside the package's
+    /// <c>minHostVersion</c> and <c>maxHostVersion</c>.
     /// </returns>
     public async Task<Result<PluginActionResultDto>> HandleAsync(InstallPluginCommand command, CancellationToken ct)
     {

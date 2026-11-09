@@ -75,6 +75,48 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
         }
     }
 
+    /// <summary>
+    /// The list shows the host access, changelog and supported host versions a manifest declares, and empty or null
+    /// values for a manifest without them (#937).
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task APluginDeclaringItsRequirements_ListsThemAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var plainId = $"test-plugin-{Guid.NewGuid():N}";
+        var zip = PluginsTestSeeds.BuildZip(new Dictionary<string, string>
+        {
+            ["plugin.json"] = PluginsTestSeeds.ManifestJson(
+                pluginId,
+                ",\"manifestVersion\":2,\"hostAccess\":[\"ssh\"],\"changelog\":\"First release.\",\"minHostVersion\":\"0.1.0\",\"maxHostVersion\":\"99.0.0\""),
+        });
+
+        try
+        {
+            (await PluginsTestSeeds.InstallAsync(client, zip)).StatusCode.Should().Be(HttpStatusCode.OK);
+            (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(plainId))).StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var list = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/plugins");
+
+            var row = list!.Single(p => p.GetProperty("id").GetString() == pluginId);
+            row.GetProperty("hostAccess").EnumerateArray().Select(c => c.GetString()).Should().Equal("ssh");
+            row.GetProperty("changelog").GetString().Should().Be("First release.");
+            row.GetProperty("minHostVersion").GetString().Should().Be("0.1.0");
+            row.GetProperty("maxHostVersion").GetString().Should().Be("99.0.0");
+            var plain = list!.Single(p => p.GetProperty("id").GetString() == plainId);
+            plain.GetProperty("hostAccess").GetArrayLength().Should().Be(0);
+            plain.GetProperty("changelog").ValueKind.Should().Be(JsonValueKind.Null);
+            plain.GetProperty("minHostVersion").ValueKind.Should().Be(JsonValueKind.Null);
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+            await client.DeleteAsync($"/api/admin/plugins/{plainId}");
+        }
+    }
+
     /// <summary>A plugin in the build output's plugin folder is listed as built-in.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

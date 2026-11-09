@@ -35,7 +35,7 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
             var response = await PluginsTestSeeds.InstallAsync(client, PluginSigningTestSeeds.SignedZip(pluginId));
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), PluginSignatureFile.FileName)).Should().BeTrue();
+            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(factory, pluginId), PluginSignatureFile.FileName)).Should().BeTrue();
         }
         finally
         {
@@ -66,7 +66,7 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         body.RootElement.GetProperty("type").GetString().Should().Be(code);
         body.RootElement.GetProperty("detail").GetString().Should().MatchRegex("[А-Яа-яЁё]").And.NotContain("PLUGIN_");
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>
@@ -87,7 +87,7 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_UNSIGNED);
-            Directory.Exists(PluginsTestSeeds.StagedFolder(pluginId)).Should().BeFalse("a refused upgrade is never staged");
+            Directory.Exists(PluginsTestSeeds.StagedFolder(factory, pluginId)).Should().BeFalse("a refused upgrade is never staged");
         }
         finally
         {
@@ -112,7 +112,7 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         body.RootElement.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_SIGNATURE_MALFORMED);
         body.RootElement.GetProperty("detail").GetString().Should().MatchRegex("[Ա-Ֆա-ֆ]");
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>

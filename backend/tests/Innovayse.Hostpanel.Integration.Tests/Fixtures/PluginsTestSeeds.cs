@@ -159,12 +159,13 @@ internal static class PluginsTestSeeds
         });
     }
 
-    /// <summary>The folder an upgrade of an uploaded plugin waits in until the next restart, under the default settings.</summary>
+    /// <summary>The folder an upgrade of an uploaded plugin waits in until the next restart, under the factory's upload folder.</summary>
+    /// <param name="factory">The host whose upload folder is meant.</param>
     /// <param name="pluginId">The plugin id.</param>
     /// <returns>The absolute folder path.</returns>
-    public static string StagedFolder(string pluginId)
+    public static string StagedFolder(IntegrationTestFactory factory, string pluginId)
     {
-        return Path.Combine(new PluginOptions().InstallRoot, ".staged", pluginId);
+        return Path.Combine(factory.PluginInstallRoot, ".staged", pluginId);
     }
 
     /// <summary>Builds a ZIP with no <c>plugin.json</c> at its root.</summary>
@@ -174,12 +175,13 @@ internal static class PluginsTestSeeds
         return BuildZip(new Dictionary<string, string> { ["readme.txt"] = "no manifest here" });
     }
 
-    /// <summary>The folder an uploaded plugin with this id is unpacked into, under the default settings.</summary>
+    /// <summary>The folder an uploaded plugin with this id is unpacked into, under the factory's upload folder.</summary>
+    /// <param name="factory">The host whose upload folder is meant.</param>
     /// <param name="pluginId">The plugin id.</param>
     /// <returns>The absolute folder path.</returns>
-    public static string InstalledFolder(string pluginId)
+    public static string InstalledFolder(IntegrationTestFactory factory, string pluginId)
     {
-        return Path.Combine(new PluginOptions().InstallRoot, pluginId);
+        return Path.Combine(factory.PluginInstallRoot, pluginId);
     }
 
     /// <summary>

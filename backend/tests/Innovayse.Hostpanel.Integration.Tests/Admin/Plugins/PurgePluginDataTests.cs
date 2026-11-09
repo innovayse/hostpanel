@@ -101,7 +101,7 @@ public sealed class PurgePluginDataTests(IntegrationTestFactory factory) : IClas
     {
         var client = await PluginsTestSeeds.AdminClientAsync(factory);
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
-        var folder = PluginsTestSeeds.InstalledFolder(pluginId);
+        var folder = PluginsTestSeeds.InstalledFolder(factory, pluginId);
         Directory.CreateDirectory(folder);
         await File.WriteAllTextAsync(Path.Combine(folder, "plugin.json"), "{ this is not json");
         await SeedStoreRowsAsync(pluginId);

@@ -107,7 +107,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_REGISTRY_VERSION_YANKED);
         registry.DownloadCount.Should().Be(0);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
         (await RefusalAuditedAsync(pluginId, "Yanked")).Should().BeTrue();
     }
 
@@ -226,7 +226,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_REGISTRY_HOST_INCOMPATIBLE);
         registry.DownloadCount.Should().Be(0);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
         (await RefusalAuditedAsync(pluginId, "host version")).Should().BeTrue();
     }
 
@@ -273,7 +273,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
 
             response.StatusCode.Should().Be(HttpStatusCode.Conflict);
             await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_DOWNGRADE_REFUSED);
-            Directory.Exists(PluginsTestSeeds.StagedFolder(pluginId)).Should().BeFalse();
+            Directory.Exists(PluginsTestSeeds.StagedFolder(factory, pluginId)).Should().BeFalse();
             (await RefusalAuditedAsync(pluginId, "older than the installed version")).Should().BeTrue();
         }
         finally

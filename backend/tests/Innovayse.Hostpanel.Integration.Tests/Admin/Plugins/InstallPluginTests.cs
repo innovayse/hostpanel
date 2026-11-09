@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Security.Cryptography;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -36,7 +35,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
             install.StatusCode.Should().Be(HttpStatusCode.OK);
             var body = await install.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
             body.GetProperty("requiresRestart").GetBoolean().Should().BeTrue();
-            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), "readme.txt")).Should().BeTrue();
+            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(factory, pluginId), "readme.txt")).Should().BeTrue();
 
             using var scope = factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -67,7 +66,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
 
             (await PluginsTestSeeds.InstallAsync(client, second)).StatusCode.Should().Be(HttpStatusCode.OK);
 
-            (await File.ReadAllTextAsync(Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), "readme.txt")))
+            (await File.ReadAllTextAsync(Path.Combine(PluginsTestSeeds.InstalledFolder(factory, pluginId), "readme.txt")))
                 .Should().Be("second version");
         }
         finally
@@ -159,7 +158,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
             var response = await PluginsTestSeeds.InstallAsync(client, zip);
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), "plugin.json")).Should().BeTrue();
+            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(factory, pluginId), "plugin.json")).Should().BeTrue();
         }
         finally
         {
@@ -196,7 +195,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_VIEW_BLOCK_ID_REPEATED);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>Installs a package holding only the given manifest and asserts the localised refusal and that nothing was left behind.</summary>
@@ -217,7 +216,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
         using var body = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         body.RootElement.GetProperty("type").GetString().Should().Be(code);
         body.RootElement.GetProperty("detail").GetString().Should().MatchRegex("[А-Яа-яЁё]").And.NotContain("PLUGIN_");
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>
@@ -244,9 +243,9 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
         using var body = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         body.RootElement.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_SDK_ASSEMBLY_OUTDATED);
         body.RootElement.GetProperty("detail").GetString().Should().Contain("rebuilt");
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
 
-        var staging = Path.Combine(new PluginOptions().InstallRoot, ".staging");
+        var staging = Path.Combine(factory.PluginInstallRoot, ".staging");
         (Directory.Exists(staging) ? Directory.EnumerateFiles(staging, oldDll, SearchOption.AllDirectories) : []).Should().BeEmpty();
     }
 
@@ -313,7 +312,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
         await PluginsTestSeeds.AssertCodeAsync(
             response,
             id.Length == 0 ? HostpanelErrorCodes.PLUGIN_MANIFEST_INVALID : HostpanelErrorCodes.PLUGIN_ID_INVALID);
-        Directory.Exists(Path.GetFullPath(Path.Combine(new PluginOptions().InstallRoot, "..", $"escape-{token}")))
+        Directory.Exists(Path.GetFullPath(Path.Combine(factory.PluginInstallRoot, "..", $"escape-{token}")))
             .Should().BeFalse();
         Directory.Exists($"/tmp/absolute-{token}").Should().BeFalse();
     }
@@ -335,8 +334,8 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ARCHIVE_UNSAFE);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
-        File.Exists(Path.Combine(new PluginOptions().InstallRoot, $"outside-{pluginId}.txt")).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
+        File.Exists(Path.Combine(factory.PluginInstallRoot, $"outside-{pluginId}.txt")).Should().BeFalse();
     }
 
     /// <summary>An archive carrying an assembly the host provides is refused with <c>PLUGIN_HOST_ASSEMBLY_REFUSED</c>.</summary>
@@ -361,7 +360,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_HOST_ASSEMBLY_REFUSED);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>
@@ -405,8 +404,8 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
         var client = await PluginsTestSeeds.AdminClientAsync(factory);
         var otherId = $"test-plugin-{Guid.NewGuid():N}";
         var pluginId = $"test-plugin-{Guid.NewGuid():N}";
-        Directory.CreateDirectory(PluginsTestSeeds.InstalledFolder(otherId));
-        await File.WriteAllTextAsync(Path.Combine(PluginsTestSeeds.InstalledFolder(otherId), installedName), "not really an assembly");
+        Directory.CreateDirectory(PluginsTestSeeds.InstalledFolder(factory, otherId));
+        await File.WriteAllTextAsync(Path.Combine(PluginsTestSeeds.InstalledFolder(factory, otherId), installedName), "not really an assembly");
 
         try
         {
@@ -417,11 +416,11 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ASSEMBLY_CONFLICT);
-            Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+            Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
         }
         finally
         {
-            Directory.Delete(PluginsTestSeeds.InstalledFolder(otherId), recursive: true);
+            Directory.Delete(PluginsTestSeeds.InstalledFolder(factory, otherId), recursive: true);
         }
     }
 
@@ -439,8 +438,8 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
         var client = await PluginsTestSeeds.AdminClientAsync(factory);
         var otherId = $"test-plugin-{Guid.NewGuid():N}";
         var pluginId = sameId ? otherId : $"test-plugin-{Guid.NewGuid():N}";
-        Directory.CreateDirectory(PluginsTestSeeds.InstalledFolder(otherId));
-        await File.WriteAllTextAsync(Path.Combine(PluginsTestSeeds.InstalledFolder(otherId), "Conflict.Lib.dll"), "not really an assembly");
+        Directory.CreateDirectory(PluginsTestSeeds.InstalledFolder(factory, otherId));
+        await File.WriteAllTextAsync(Path.Combine(PluginsTestSeeds.InstalledFolder(factory, otherId), "Conflict.Lib.dll"), "not really an assembly");
 
         try
         {
@@ -454,10 +453,10 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
         }
         finally
         {
-            Directory.Delete(PluginsTestSeeds.InstalledFolder(otherId), recursive: true);
-            if (!sameId && Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)))
+            Directory.Delete(PluginsTestSeeds.InstalledFolder(factory, otherId), recursive: true);
+            if (!sameId && Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)))
             {
-                Directory.Delete(PluginsTestSeeds.InstalledFolder(pluginId), recursive: true);
+                Directory.Delete(PluginsTestSeeds.InstalledFolder(factory, pluginId), recursive: true);
             }
         }
     }
@@ -477,7 +476,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
 
         response.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ARCHIVE_TOO_LARGE);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>An archive that unpacks past <c>Plugins:MaxUncompressedBytes</c> is refused with 413.</summary>
@@ -495,7 +494,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
 
         response.StatusCode.Should().Be(HttpStatusCode.RequestEntityTooLarge);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ARCHIVE_TOO_LARGE);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>
@@ -519,7 +518,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
             var response = await PluginsTestSeeds.InstallAsync(client, zip);
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            new FileInfo(Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), "big.txt")).Length.Should().Be(16);
+            new FileInfo(Path.Combine(PluginsTestSeeds.InstalledFolder(factory, pluginId), "big.txt")).Length.Should().Be(16);
         }
         finally
         {
@@ -544,7 +543,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ARCHIVE_UNSAFE);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>
@@ -564,7 +563,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_ARCHIVE_UNWRITABLE);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>Rewrites the uncompressed size one entry declares in the archive's central directory, leaving its data as it was.</summary>
@@ -613,7 +612,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
             var refused = await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(otherId));
             refused.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             await PluginsTestSeeds.AssertCodeAsync(refused, HostpanelErrorCodes.PLUGIN_NOT_TRUSTED);
-            Directory.Exists(PluginsTestSeeds.InstalledFolder(otherId)).Should().BeFalse();
+            Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, otherId)).Should().BeFalse();
 
             var accepted = await PluginsTestSeeds.InstallAsync(client, trusted);
             accepted.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -639,7 +638,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
 
             response.StatusCode.Should().Be(HttpStatusCode.Conflict);
             await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_BUILT_IN);
-            Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+            Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
         }
         finally
         {

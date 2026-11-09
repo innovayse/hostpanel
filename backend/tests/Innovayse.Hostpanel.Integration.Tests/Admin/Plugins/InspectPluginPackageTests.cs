@@ -39,7 +39,7 @@ public sealed class InspectPluginPackageTests(IntegrationTestFactory factory) : 
         body.GetProperty("maxHostVersion").GetString().Should().Be("3.0.0");
         body.GetProperty("hostVersion").GetString().Should().Be(HostVersion);
         body.GetProperty("compatible").GetBoolean().Should().BeTrue();
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>A package whose minimum is above this host is marked incompatible.</summary>

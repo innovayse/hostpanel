@@ -91,6 +91,15 @@ export const useAuthStore = defineStore('auth', () => {
    */
   const isAdmin = computed(() => user.value?.roles.includes('Admin') === true)
 
+  /**
+   * Identifies the signed-in account and its roles as one string, or null when signed out. It
+   * changes on sign-out, on another account and on any role change, so stores whose data depends
+   * on who is asking can watch it.
+   */
+  const accountKey = computed<string | null>(() =>
+    user.value === null ? null : `${user.value.email}|${user.value.roles.join(',')}`,
+  )
+
   /** True when the sign-in is mid-flight and waiting on an authenticator code. */
   const awaitingTwoFactor = computed(() => pendingToken.value !== null)
 
@@ -381,6 +390,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user,
     isAdmin,
+    accountKey,
     emailVerified,
     sessionChecked,
     mode,

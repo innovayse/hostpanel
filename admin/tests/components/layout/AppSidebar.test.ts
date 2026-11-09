@@ -8,6 +8,7 @@ import { flushPromises } from '@vue/test-utils'
 import type { RouteLocationNormalized } from 'vue-router'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useNavigationStore } from '@/stores/navigation'
+import { useVersionStore } from '@/stores/version'
 import { stubRoutes } from '../../helpers/routes'
 import { mountScreen, mountView } from '../../helpers/mount'
 import { resetThemeDocument, stubSchemeQuery } from '../../helpers/theme'
@@ -131,6 +132,22 @@ describe('AppSidebar', () => {
     expect(wrapper.get('[data-testid="brand-logo-dark"]').attributes('src')).toBe('/logo-dark.svg')
     expect(wrapper.get('[data-testid="brand-logo-light"]').attributes('src')).toBe('/logo.svg')
     expect(wrapper.get('[data-testid="brand-logo-dark"]').attributes('alt')).toBe('Hostpanel')
+  })
+
+  it('shows the installed version quietly in the footer', async () => {
+    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    stubRoutes({})
+    const wrapper = await mountView(AppSidebar, { path: '/dashboard' })
+    useVersionStore().version = '1.4.0'
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="sidebar-version"]').text()).toBe('Hostpanel 1.4.0')
+  })
+
+  it('shows no version line when the version cannot be loaded', async () => {
+    const wrapper = await mountSidebar('/dashboard')
+
+    expect(wrapper.find('[data-testid="sidebar-version"]').exists()).toBe(false)
   })
 
   it('offers sign-out', async () => {

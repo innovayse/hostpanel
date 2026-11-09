@@ -8,7 +8,7 @@ import { flushPromises } from '@vue/test-utils'
 import type { RouteLocationNormalized } from 'vue-router'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useNavigationStore } from '@/stores/navigation'
-import { json } from '../../helpers/fetch'
+import { useVersionStore } from '@/stores/version'
 import { stubRoutes } from '../../helpers/routes'
 import { mountScreen, mountView } from '../../helpers/mount'
 import { resetThemeDocument, stubSchemeQuery } from '../../helpers/theme'
@@ -136,8 +136,10 @@ describe('AppSidebar', () => {
 
   it('shows the installed version quietly in the footer', async () => {
     vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
-    stubRoutes({ 'GET /api/admin/release-status': () => json({ installedVersion: '1.4.0', isUpgradeAvailable: false }) })
+    stubRoutes({})
     const wrapper = await mountView(AppSidebar, { path: '/dashboard' })
+    useVersionStore().version = '1.4.0'
+    await flushPromises()
 
     expect(wrapper.get('[data-testid="sidebar-version"]').text()).toBe('Hostpanel 1.4.0')
   })

@@ -2,14 +2,14 @@
 /**
  * Quiet "Hostpanel 1.4.0" line showing the installed version.
  *
- * Shown in the sidebar footer and on the Settings page. Both read the shared release status
- * store, whose single request is started here on mount; the line stays absent until the version
- * is known and stays absent for good when the load fails, so a refusal never becomes an error.
+ * Shown in the sidebar footer and on the Settings page. Both read the version store, which the
+ * layout loads once; the line stays absent until the version is known, and a failed load leaves
+ * it absent, so a refusal never becomes an error.
  */
-import { computed, onMounted } from 'vue'
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiText from '@/components/ui/UiText.vue'
-import { useReleaseStatusStore } from '@/stores/releaseStatus'
+import { useVersionStore } from '@/stores/version'
 
 /** Props of the version label. */
 withDefaults(defineProps<{
@@ -22,16 +22,11 @@ withDefaults(defineProps<{
 /** Translation function. */
 const { t } = useI18n()
 
-/** Release status store: the one request shared by every place that shows the version. */
-const releaseStatus = useReleaseStatusStore()
+/** Version store: the value every place that shows the version reads. */
+const versionStore = useVersionStore()
 
 /** The installed version, or an empty string while it is unknown or its load failed. */
-const version = computed<string>(() => releaseStatus.status?.installedVersion ?? '')
-
-/** Starts the shared load; later mounts of the label reuse it. */
-onMounted(() => {
-  void releaseStatus.ensureLoaded()
-})
+const version = computed<string>(() => versionStore.version)
 </script>
 
 <template>

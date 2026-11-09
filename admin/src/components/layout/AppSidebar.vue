@@ -8,12 +8,11 @@
  * - Emits `navigate` on link click so the mobile drawer can close.
  * - In the drawer (`embedded`) it also carries the theme select, which the top bar has no room for on a phone.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNavigationStore } from '@/stores/navigation'
-import { useReleaseStatusStore } from '@/stores/releaseStatus'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
@@ -66,14 +65,6 @@ const { t } = useI18n()
 
 /** Auth store: the sign-out action. */
 const authStore = useAuthStore()
-
-/** Release status store: loaded once (shared with the version label) to show the upgrade notice when available. */
-const releaseStatusStore = useReleaseStatusStore()
-
-/** Loads the release status once the sidebar is mounted; a second sidebar (the drawer) reuses the same request. */
-onMounted(() => {
-  void releaseStatusStore.ensureLoaded()
-})
 
 /** Router, for the redirect after sign-out. */
 const router = useRouter()

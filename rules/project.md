@@ -1510,8 +1510,9 @@ Three roles exist: `Admin`, `Reseller` and `Client`. The staff API is `Policies.
 linked to no clients (no `ResellerId` on any record), so there is nothing to scope a reseller's view to, and
 every route that once accepted `Reseller` over unscoped data (clients, domains, invoices, orders, services,
 transactions, reports, quotes, dashboard, provisioning, tickets) is now Admin only; `Policies.ResellerOrAdmin`
-no longer exists. Today the Reseller role can sign in and can do what any signed-in user can; it reaches no
-staff route. Introducing reseller-owned clients is a separate design (a `ResellerId` on `Clients` and a scope on
+no longer exists. Today the Reseller role can sign in and can do what any signed-in user can; the only staff
+route it reaches is `GET /api/admin/version` under `Policies.Staff` (Admin or Reseller), which returns the
+running version and names no client data. The admin panel itself still opens only for an Admin. Introducing reseller-owned clients is a separate design (a `ResellerId` on `Clients` and a scope on
 every query), not a policy change.
 
 ### Client account switches and contact copies

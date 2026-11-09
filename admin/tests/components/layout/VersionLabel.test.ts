@@ -1,26 +1,17 @@
 /**
- * Mount tests for VersionLabel: draws "Hostpanel <version>" once the shared release status is
- * known, draws nothing while it loads or when the load fails, and shares one request between
- * several labels.
+ * Mount tests for VersionLabel: draws "Hostpanel <version>" from the version store, draws nothing
+ * while the version is unknown, and every label on the page reads the same value without any
+ * request of its own.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { h } from 'vue'
 import VersionLabel from '@/components/layout/VersionLabel.vue'
-import { json, problem, stubFetch, stubOffline } from '../../helpers/fetch'
+import { useVersionStore } from '@/stores/version'
+import { json, stubFetch } from '../../helpers/fetch'
 import { mountScreen } from '../../helpers/mount'
 
-/** Release status as the API returns it. */
-const dto = {
-  installedVersion: '1.4.0',
-  latestVersion: null,
-  latestPublishedAt: null,
-  releaseNotesUrl: null,
-  upgradeCommand: null,
-  isUpgradeAvailable: false,
-}
-
-/** Two labels in one app, as the sidebar and the Settings page are: they must share one request. */
+/** Two labels in one app, as the sidebar and the Settings page are. */
 const TwoLabels = {
   render: () => [h(VersionLabel, { testid: 'first' }), h(VersionLabel, { testid: 'second' })],
 }
@@ -30,49 +21,36 @@ afterEach(() => {
 })
 
 describe('VersionLabel', () => {
-  it('shows the installed version once it is loaded', async () => {
-    stubFetch(json(dto))
+  it('shows the installed version once the store holds it', async () => {
     const { wrapper } = await mountScreen(VersionLabel)
+    useVersionStore().version = '1.4.0'
+    await flushPromises()
 
     expect(wrapper.get('[data-testid="version-label"]').text()).toBe('Hostpanel 1.4.0')
   })
 
   it('uses the test id it is given', async () => {
-    stubFetch(json(dto))
     const { wrapper } = await mountScreen(VersionLabel, { testid: 'sidebar-version' })
+    useVersionStore().version = '1.4.0'
+    await flushPromises()
 
     expect(wrapper.get('[data-testid="sidebar-version"]').text()).toBe('Hostpanel 1.4.0')
   })
 
-  it('draws nothing when the API refuses', async () => {
-    stubFetch(problem('No access.', 403))
+  it('draws nothing while the version is unknown', async () => {
     const { wrapper } = await mountScreen(VersionLabel)
 
     expect(wrapper.find('[data-testid="version-label"]').exists()).toBe(false)
     expect(wrapper.text()).toBe('')
   })
 
-  it('draws nothing when the API cannot be reached', async () => {
-    stubOffline()
-    const { wrapper } = await mountScreen(VersionLabel)
-
-    expect(wrapper.find('[data-testid="version-label"]').exists()).toBe(false)
-  })
-
-  it('draws nothing while the version is still loading', async () => {
-    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)))
-    const { wrapper } = await mountScreen(VersionLabel)
-    await flushPromises()
-
-    expect(wrapper.find('[data-testid="version-label"]').exists()).toBe(false)
-  })
-
-  it('starts the shared load only once for several labels', async () => {
-    const mock = stubFetch(json(dto))
+  it('shows the same value in several labels and sends no request of its own', async () => {
+    const mock = stubFetch(json({ installedVersion: '9.9.9' }))
     const { wrapper } = await mountScreen(TwoLabels)
+    useVersionStore().version = '1.4.0'
     await flushPromises()
 
-    expect(mock).toHaveBeenCalledTimes(1)
+    expect(mock).not.toHaveBeenCalled()
     expect(wrapper.get('[data-testid="first"]').text()).toBe('Hostpanel 1.4.0')
     expect(wrapper.get('[data-testid="second"]').text()).toBe('Hostpanel 1.4.0')
   })

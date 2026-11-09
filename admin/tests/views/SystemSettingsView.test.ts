@@ -4,7 +4,9 @@
  * API's own sentence.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import SystemSettingsView from '@/views/SystemSettingsView.vue'
+import { useVersionStore } from '@/stores/version'
 import type { Setting } from '@/types/setting'
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
@@ -32,11 +34,10 @@ describe('SystemSettingsView', () => {
   })
 
   it('shows the installed version under the title', async () => {
-    stubRouteTable({
-      'GET /admin/settings': () => json(stored),
-      'GET /admin/release-status': () => json({ installedVersion: '1.4.0', isUpgradeAvailable: false }),
-    })
+    stubRouteTable({ 'GET /admin/settings': () => json(stored) })
     const { wrapper } = await mountScreen(SystemSettingsView)
+    useVersionStore().version = '1.4.0'
+    await flushPromises()
 
     expect(wrapper.get('[data-testid="settings-version"]').text()).toBe('Hostpanel 1.4.0')
   })

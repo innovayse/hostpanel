@@ -41,6 +41,7 @@ import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { API_BASE } from '@/lib/apiPaths'
 import { COPIED_VISIBLE_MS } from '@/lib/limits'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
@@ -310,7 +311,7 @@ onUnmounted(() => {
           >
             <UiButton
               type="button"
-              :variant="store.activeJob?.id === job.id ? 'secondary' : 'ghost'"
+              :variant="store.activeJob?.id === job.id ? UiButtonVariant.Secondary : UiButtonVariant.Ghost"
               size="sm"
               class="min-w-0 flex-1 justify-start"
               :data-testid="`migration-select-${job.id}`"

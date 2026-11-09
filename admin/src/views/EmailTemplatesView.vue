@@ -10,10 +10,10 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import EmailTemplateDialog from '@/components/settings/EmailTemplateDialog.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -26,6 +26,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { MessageLanguage } from '@/locales/messages'
 import { useSettingsStore } from '@/stores/settings'
 import type { EmailTemplate, EmailTemplateContent, EmailTemplateGroup } from '@/types/emailtemplate'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 /** Link to the docs guide for this screen, or null when docsUrl is not configured. */
@@ -95,6 +96,24 @@ const handleSave = async (
 }
 
 onMounted(() => store.fetchEmailTemplates())
+
+/**
+ * The row actions of a template: its one action, Edit, which opens the language versions dialog.
+ *
+ * @param slug - The slug of the template in the row.
+ * @returns The action list passed to UiRowActions.
+ */
+const templateActions = (slug: string): UiRowAction[] => {
+  /**
+   * Opens the versions of this template.
+   *
+   * @returns Nothing.
+   */
+  const onEdit = (): void => {
+    openEditor(slug)
+  }
+  return [{ label: t('shared.edit'), testid: `email-templates-edit-${slug}`, onSelect: onEdit }]
+}
 </script>
 
 <template>
@@ -115,7 +134,7 @@ onMounted(() => store.fetchEmailTemplates())
 
     <UiCard v-else>
       <UiTable
-        density="comfortable"
+        :density="UiTableDensity.Comfortable"
         :loading="store.loading"
         :empty="!store.loading && groups.length === 0"
         :colspan="4"
@@ -125,19 +144,18 @@ onMounted(() => store.fetchEmailTemplates())
           {{ t('settings.emailTemplates.noTemplatesFound') }}
         </template>
         <UiTableHead>
-          <UiTableRow bordered>
+          <UiTableRow>
             <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.subject') }}</UiTableHeader>
             <UiTableHeader>{{ t('settings.emailTemplates.languages') }}</UiTableHeader>
-            <UiTableHeader />
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
-        <UiTableBody>
+        <UiTableBody divided>
           <UiTableRow
             v-for="group in groups"
             :key="group.slug"
             hoverable
-            bordered
             :data-testid="`email-templates-row-${group.slug}`"
           >
             <UiTableCell>{{ group.slug }}</UiTableCell>
@@ -154,10 +172,8 @@ onMounted(() => store.fetchEmailTemplates())
                 </UiBadge>
               </UiStack>
             </UiTableCell>
-            <UiTableCell>
-              <UiButton size="sm" variant="secondary" :data-testid="`email-templates-edit-${group.slug}`" @click="openEditor(group.slug)">
-                {{ t('shared.edit') }}
-              </UiButton>
+            <UiTableCell actions>
+              <UiRowActions :actions="templateActions(group.slug)" :testid="`email-templates-actions-${group.slug}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

@@ -61,7 +61,7 @@ describe('ServersView', () => {
     })
     const wrapper = await mountServers()
 
-    await wrapper.get('[data-testid="server-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="server-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="server-test-1"]').trigger('click')
     await flushPromises()
 
@@ -76,7 +76,7 @@ describe('ServersView', () => {
     })
     const wrapper = await mountServers()
 
-    await wrapper.get('[data-testid="server-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="server-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="server-test-1"]').trigger('click')
     await flushPromises()
 
@@ -91,7 +91,7 @@ describe('ServersView', () => {
     })
     const wrapper = await mountServers()
 
-    await wrapper.get('[data-testid="server-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="server-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="server-delete-1"]').trigger('click')
     expect(mock.mock.calls.some(([, init]) => init?.method === 'DELETE')).toBe(false)
 
@@ -110,7 +110,7 @@ describe('ServersView', () => {
     })
     const wrapper = await mountServers()
 
-    await wrapper.get('[data-testid="server-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="server-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="server-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -126,7 +126,7 @@ describe('ServersView', () => {
     })
     const wrapper = await mountServers()
 
-    await wrapper.get('[data-testid="server-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="server-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="server-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     await flushPromises()
@@ -186,7 +186,7 @@ describe('ServersView', () => {
     })
     const wrapper = await mountServers()
 
-    await wrapper.get('[data-testid="server-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="server-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="server-ssh-1"]').trigger('click')
     await flushPromises()
 
@@ -208,7 +208,7 @@ describe('ServersView', () => {
     })
     const wrapper = await mountServers()
 
-    await wrapper.get('[data-testid="server-row-1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="server-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="server-ssh-1"]').trigger('click')
     await flushPromises()
     await wrapper.get('[data-testid="server-ssh-save"]').trigger('click')

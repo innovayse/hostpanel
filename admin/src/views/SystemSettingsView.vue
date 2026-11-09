@@ -38,6 +38,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useSettingsStore } from '@/stores/settings'
 import type { Setting, SettingSaveResult } from '@/types/setting'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -163,16 +164,16 @@ const saveRow = async (setting: Setting): Promise<void> => {
       <BrandingCard :settings="store.settings" :save="onSave" />
       <TrackingChatCard :settings="store.settings" :save="onSave" />
 
-      <UiCard class="overflow-hidden overflow-x-auto">
-        <UiTable density="comfortable" :empty="store.settings.length === 0" :colspan="3">
+      <UiCard class="overflow-hidden">
+        <UiTable :density="UiTableDensity.Comfortable" :empty="store.settings.length === 0" :colspan="3">
           <template #empty>
             {{ t('settings.table.noSettings') }}
           </template>
           <UiTableHead>
             <UiTableRow>
-              <UiTableHeader align="left">{{ t('settings.table.key') }}</UiTableHeader>
-              <UiTableHeader align="left">{{ t('settings.table.value') }}</UiTableHeader>
-              <UiTableHeader align="left">{{ t('settings.table.description') }}</UiTableHeader>
+              <UiTableHeader>{{ t('settings.table.key') }}</UiTableHeader>
+              <UiTableHeader>{{ t('settings.table.value') }}</UiTableHeader>
+              <UiTableHeader>{{ t('settings.table.description') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>

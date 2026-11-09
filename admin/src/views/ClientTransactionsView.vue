@@ -38,6 +38,7 @@ import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -233,7 +234,7 @@ onMounted(() => fetchTransactions())
 
       <UiCard class="overflow-x-auto">
         <UiTable
-          density="comfortable"
+          :density="UiTableDensity.Comfortable"
           :empty="store.transactions.length === 0"
           :colspan="7"
           data-testid="client-transactions-table"

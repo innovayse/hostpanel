@@ -7,7 +7,6 @@
  */
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
@@ -28,9 +27,6 @@ const { t } = useI18n()
 
 /** Test ids of the page. */
 const testids = storefrontTestIds('partners')
-
-/** Router, used to open the create and edit pages. */
-const router = useRouter()
 
 /** Partners store: the list, the loading flag and the refusal sentences. */
 const store = usePartnersStore()
@@ -65,19 +61,16 @@ onMounted(async () => {
   await store.fetchAll()
 })
 
-/** Opens the create page. */
-const navigateCreate = (): void => {
-  void router.push(createPath(AppRoute.StorefrontPartners))
-}
+/** Route of the create page, opened by the Add link. */
+const createRoute = createPath(AppRoute.StorefrontPartners)
 
 /**
- * Opens the edit page of a partner.
+ * Route of the edit page of a partner, opened by its row action.
  *
  * @param item - The partner to edit.
+ * @returns The path of its edit page.
  */
-const navigateEdit = (item: Partner): void => {
-  void router.push(editPath(AppRoute.StorefrontPartners, item.id))
-}
+const editRoute = (item: Partner): string => editPath(AppRoute.StorefrontPartners, item.id)
 </script>
 
 <template>
@@ -103,8 +96,8 @@ const navigateEdit = (item: Partner): void => {
     :delete-target="list.deleteTarget.value"
     :deleting="list.deleting.value"
     :delete-message="deleteMessage"
-    @add="navigateCreate"
-    @edit="navigateEdit"
+    :add-to="createRoute"
+    :edit-to="editRoute"
     @stage-delete="list.stageDelete"
     @confirm-delete="list.confirmDelete"
     @cancel-delete="list.cancelDelete"

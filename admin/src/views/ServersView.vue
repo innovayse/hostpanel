@@ -34,6 +34,7 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
+import { UiTableDensity } from '@/utils/ui/injection'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
@@ -403,14 +404,14 @@ onMounted(loadAll)
     <UiStack v-else-if="store.servers.length > 0" gap="md" data-testid="servers-list">
       <UiStack v-for="entry in serversByModule" :key="entry.module" gap="xs">
         <UiText tone="muted" size="sm" class="font-semibold">{{ MODULE_LABELS[entry.module] }}</UiText>
-        <UiTable density="comfortable" :data-testid="`servers-table-${entry.module}`">
+        <UiTable :density="UiTableDensity.Comfortable" :data-testid="`servers-table-${entry.module}`">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('servers.servers.serverName') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.ipAddress') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.accounts') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('shared.accounts') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
@@ -422,7 +423,7 @@ onMounted(loadAll)
                 </UiStack>
               </UiTableCell>
               <UiTableCell muted class="font-mono">{{ server.endpoint.ipAddress ?? '—' }}</UiTableCell>
-              <UiTableCell muted>{{ accountsLabel(server) }}</UiTableCell>
+              <UiTableCell numeric muted>{{ accountsLabel(server) }}</UiTableCell>
               <UiTableCell>
                 <UiText v-if="testingIds.includes(server.id)" tone="muted" size="sm">{{ t('shared.testing') }}</UiText>
                 <UiBadge
@@ -441,8 +442,9 @@ onMounted(loadAll)
                   </UiText>
                 </UiStack>
               </UiTableCell>
-              <UiTableCell align="right">
-                <UiRowActions :actions="serverActions(server)" /></UiTableCell>
+              <UiTableCell actions>
+                <UiRowActions :actions="serverActions(server)" :testid="`server-actions-${server.id}`" />
+              </UiTableCell>
             </UiTableRow>
           </UiTableBody>
         </UiTable>
@@ -463,13 +465,13 @@ onMounted(loadAll)
       <UiHeading :level="2" variant="section">{{ t('servers.servers.groups') }}</UiHeading>
       <UiText tone="secondary" size="sm">{{ t('servers.servers.serverGroupsAllowYouTo') }}</UiText>
 
-      <UiTable v-if="store.groups.length > 0" density="comfortable" data-testid="server-groups-table">
+      <UiTable v-if="store.groups.length > 0" :density="UiTableDensity.Comfortable" data-testid="server-groups-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('servers.servers.groupName') }}</UiTableHeader>
             <UiTableHeader>{{ t('servers.servers.fillType') }}</UiTableHeader>
             <UiTableHeader>{{ t('servers.servers.servers') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -479,8 +481,8 @@ onMounted(loadAll)
             <UiTableCell muted>
               {{ group.servers.length > 0 ? group.servers.map(s => s.name).join(', ') : '—' }}
             </UiTableCell>
-            <UiTableCell align="right">
-              <UiRowActions :actions="serverGroupActions(group)" />
+            <UiTableCell actions>
+              <UiRowActions :actions="serverGroupActions(group)" :testid="`server-group-actions-${group.id}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

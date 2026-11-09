@@ -56,6 +56,8 @@ describe('NetworkIssuesView', () => {
     const mock = stubPathRoutes([{ path: '/network-issues', body: { items: [issue], totalCount: 1 } }])
     const wrapper = await mountView(NetworkIssuesView)
 
+    await wrapper.get('[data-testid="network-issues-2-actions"]').trigger('click')
+
     await wrapper.get('[data-testid="network-issues-2-delete"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -71,6 +73,8 @@ describe('NetworkIssuesView', () => {
     })
     const wrapper = await mountView(NetworkIssuesView)
 
+    await wrapper.get('[data-testid="network-issues-2-actions"]').trigger('click')
+
     await wrapper.get('[data-testid="network-issues-2-delete"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -82,6 +86,8 @@ describe('NetworkIssuesView', () => {
   it('does not delete when the confirmation is dismissed', async () => {
     const mock = stubRoutes({ 'GET /api/network-issues': () => json({ items: [issue], totalCount: 1 }) })
     const wrapper = await mountView(NetworkIssuesView)
+
+    await wrapper.get('[data-testid="network-issues-2-actions"]').trigger('click')
 
     await wrapper.get('[data-testid="network-issues-2-delete"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')

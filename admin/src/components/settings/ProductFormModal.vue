@@ -31,6 +31,7 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import { UiTableDensity } from '@/utils/ui/injection'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import UiToggle from '@/components/ui/UiToggle.vue'
@@ -507,12 +508,12 @@ const handleSubmit = (): void => {
 
       <!-- Pricing grid -->
       <UiField :label="t('settings.productForm.pricing')" :hint="t('settings.productForm.aBlankCycleLeavesThe')">
-        <UiTable density="compact" class="rounded-xl border border-border" data-testid="product-form-prices">
+        <UiTable :density="UiTableDensity.Compact" class="rounded-xl border border-border" data-testid="product-form-prices">
           <UiTableHead>
-            <UiTableRow class="border-b border-border">
-              <UiTableHeader align="left">{{ t('shared.enabled') }}</UiTableHeader>
-              <UiTableHeader align="left">{{ t('shared.currency') }}</UiTableHeader>
-              <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" align="left">{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
+            <UiTableRow>
+              <UiTableHeader>{{ t('shared.enabled') }}</UiTableHeader>
+              <UiTableHeader>{{ t('shared.currency') }}</UiTableHeader>
+              <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric>{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
@@ -527,7 +528,7 @@ const handleSubmit = (): void => {
                 <UiText v-else tone="primary" size="xs">{{ t('settings.productForm.base') }}</UiText>
               </UiTableCell>
               <UiTableCell class="font-medium text-text-primary">{{ currency.code }}</UiTableCell>
-              <UiTableCell v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle">
+              <UiTableCell v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric>
                 <UiNumberInput
                   v-model="rowFor(currency.code)[cycle]"
                   :min="0"

@@ -29,6 +29,7 @@ import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail, InvoiceItemUpdate } from '@/types/invoice'
 import { MAX_PERCENT } from '@/lib/limits'
 import { UiTone } from '@/utils/ui/tone'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -276,7 +277,7 @@ watch(
         <!-- Read-only lines -->
         <UiTable
           v-if="readonly"
-          density="compact"
+          :density="UiTableDensity.Compact"
           :empty="(invoice.items ?? []).length === 0"
           :colspan="2"
           data-testid="billing-invoice-items-table"
@@ -301,7 +302,7 @@ watch(
         <!-- Editable lines -->
         <UiTable
           v-else
-          density="compact"
+          :density="UiTableDensity.Compact"
           :empty="lines.length === 0"
           :colspan="6"
           data-testid="billing-invoice-items-editor"

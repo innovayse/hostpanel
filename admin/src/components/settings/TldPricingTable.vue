@@ -19,6 +19,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { TLD_PERIODS, calcMargin, marginTone } from '@/lib/tldPricing'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -48,7 +49,7 @@ const emit = defineEmits<{
 
 <template>
   <SettingsSection :title="title">
-    <UiTable density="compact" :data-testid="testid">
+    <UiTable :density="UiTableDensity.Compact" :data-testid="testid">
       <UiTableHead>
         <UiTableRow>
           <UiTableHeader align="left">{{ t('settings.tldConfigForm.period') }}</UiTableHeader>

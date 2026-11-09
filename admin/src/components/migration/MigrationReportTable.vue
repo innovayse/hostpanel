@@ -28,6 +28,8 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
+import { UiTableDensity } from '@/utils/ui/injection'
+import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function and the active locale (for time formatting). */
 const { t, locale } = useI18n()
@@ -140,7 +142,7 @@ watch(page, () => {
         <UiHeading :level="3" variant="card" class="min-w-0 flex-1">
           {{ t('migration.migrationReportTable.importReport') }}
         </UiHeading>
-        <UiBadge tone="success" small data-testid="migration-report-count">
+        <UiBadge :tone="UiTone.Success" small data-testid="migration-report-count">
           {{ t('migration.migrationReportTable.totalcountEntries', { totalCount }) }}
         </UiBadge>
         <UiSelect
@@ -170,7 +172,7 @@ watch(page, () => {
       <!-- Table -->
       <UiTable
         v-else
-        density="compact"
+        :density="UiTableDensity.Compact"
         :loading="loading && items.length === 0"
         :empty="!loading && items.length === 0"
         :colspan="5"

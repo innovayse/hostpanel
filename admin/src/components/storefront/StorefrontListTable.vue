@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="T extends StorefrontEntity">
 /**
- * The list page shell of a storefront content type: header with the Add button, a draggable table
- * ordered by sort order, edit and delete actions per row, and the delete confirmation.
+ * The list page shell of a storefront content type: header with the Add link, a draggable table
+ * ordered by sort order, edit (a real link) and delete actions per row, and the delete confirmation.
  *
  * The page supplies the column captions and, per row, the cells between the drag handle and the
  * actions (`row` slot). Dragging reports the new order as id + sortOrder pairs; saving it, loading
@@ -11,13 +11,14 @@
 import { computed, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import type { RouteLocationRaw } from 'vue-router'
 import draggable from 'vuedraggable'
 import SettingsLoading from '@/components/settings/SettingsLoading.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import type { UiRowAction } from '@/components/ui/UiRowActions.vue'
@@ -32,7 +33,9 @@ import UiText from '@/components/ui/UiText.vue'
 import { Icon } from '@/lib/icons'
 import { StorefrontListOutcome } from '@/types/storefront'
 import type { StorefrontEntity, StorefrontListTestIds, StorefrontOrderItem } from '@/types/storefront'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
@@ -43,8 +46,12 @@ const props = withDefaults(defineProps<{
   title: string
   /** Line under the title (already translated). */
   subtitle: string
-  /** Label of the Add button (already translated). */
+  /** Label of the Add link (already translated). */
   addLabel: string
+  /** Route of the create page the Add link opens. */
+  addTo: RouteLocationRaw
+  /** Route of the edit page of one entry, opened by the row's edit action. */
+  editTo: (item: T) => RouteLocationRaw
   /** Caption of the loading state (already translated). */
   loadingLabel: string
   /** Text shown when the list is empty (already translated). */
@@ -86,10 +93,6 @@ const props = withDefaults(defineProps<{
 })
 
 const emit = defineEmits<{
-  /** Emitted when the operator presses Add. */
-  add: []
-  /** Emitted with the entry the operator wants to edit. */
-  edit: [item: T]
   /** Emitted with the entry the operator wants to delete (opens the question). */
   stageDelete: [item: T]
   /** Emitted when the operator confirms the delete question. */
@@ -158,7 +161,7 @@ const move = (index: number, step: number): void => {
 }
 
 /**
- * The actions of one row's menu: move up, move down, edit and delete.
+ * The actions of one row's menu: move up, move down, edit (a link to the edit page) and delete.
  *
  * @param item - The entry of the row.
  * @param index - Position of the entry in the list.
@@ -176,11 +179,6 @@ const rowActions = (item: T, index: number): UiRowAction[] => {
    */
   const onMoveDown = (): void => move(index, 1)
   /**
-   * Asks the page to edit the entry.
-   * @returns Nothing.
-   */
-  const onEdit = (): void => emit('edit', item)
-  /**
    * Asks the page to delete the entry.
    * @returns Nothing.
    */
@@ -188,7 +186,7 @@ const rowActions = (item: T, index: number): UiRowAction[] => {
   return [
     { label: props.moveUpLabel, disabled: index === 0, testid: `${props.testids.moveUp}-${item.id}`, onSelect: onMoveUp },
     { label: props.moveDownLabel, disabled: index === local.value.length - 1, testid: `${props.testids.moveDown}-${item.id}`, onSelect: onMoveDown },
-    { label: props.editLabel, testid: `${props.testids.edit}-${item.id}`, onSelect: onEdit },
+    { label: props.editLabel, testid: `${props.testids.edit}-${item.id}`, to: props.editTo(item) },
     { label: props.deleteLabel, danger: true, testid: `${props.testids.delete}-${item.id}`, onSelect: onDelete },
   ]
 }
@@ -208,9 +206,9 @@ const onDragEnd = (): void => {
         <UiText v-if="savingOrder" tone="muted" size="sm" role="status" :data-testid="testids.savingOrder">
           {{ t('storefront.list.savingOrder') }}
         </UiText>
-        <UiButton type="button" variant="primary" :data-testid="testids.add" @click="emit('add')">
+        <UiLink :to="addTo" :variant="UiButtonVariant.Primary" :data-testid="testids.add">
           {{ addLabel }}
-        </UiButton>
+        </UiLink>
       </template>
     </UiPageHeader>
 
@@ -219,15 +217,15 @@ const onDragEnd = (): void => {
     <UiErrorState v-else-if="error" :message="error" :testid="testids.error" @retry="emit('retry')" />
 
     <UiCard v-else class="overflow-hidden">
-      <UiTable density="comfortable" :empty="local.length === 0" :colspan="columns.length + 2">
+      <UiTable :density="UiTableDensity.Comfortable" :empty="local.length === 0" :colspan="columns.length + 2">
         <template #empty>
           {{ emptyLabel }}
         </template>
         <UiTableHead>
-          <UiTableRow class="border-b border-border">
+          <UiTableRow>
             <UiTableHeader class="w-10"><span class="sr-only">{{ t('storefront.list.reorder') }}</span></UiTableHeader>
-            <UiTableHeader v-for="column in columns" :key="column" align="left">{{ column }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader v-for="column in columns" :key="column">{{ column }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <draggable
@@ -250,8 +248,8 @@ const onDragEnd = (): void => {
 
               <slot name="row" :item="element" />
 
-              <UiTableCell align="right">
-                <UiRowActions :actions="rowActions(element, index)" />
+              <UiTableCell actions>
+                <UiRowActions :actions="rowActions(element, index)" :testid="`${testids.actions}-${element.id}`" />
               </UiTableCell>
             </UiTableRow>
           </template>

@@ -45,6 +45,7 @@ import { AppRoute, clientPath, invoicePath } from '@/lib/routes'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 /** The irreversible order changes the danger confirmation guards. */
 enum OrderDangerAction {
@@ -365,7 +366,7 @@ onMounted(async () => {
       </UiGrid>
 
       <UiCard data-testid="order-items">
-        <UiTable density="comfortable">
+        <UiTable :density="UiTableDensity.Comfortable">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('orders.orderDetail.product') }}</UiTableHeader>

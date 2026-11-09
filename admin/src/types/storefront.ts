@@ -34,7 +34,7 @@ export interface StorefrontEntity {
 export interface StorefrontListTestIds {
   /** The page root. */
   view: string
-  /** The Add button. */
+  /** The Add link. */
   add: string
   /** The load-error banner. */
   error: string
@@ -44,7 +44,9 @@ export interface StorefrontListTestIds {
   savingOrder: string
   /** Prefix of a table row. */
   row: string
-  /** Prefix of a row's edit button. */
+  /** Prefix of a row's actions menu trigger. */
+  actions: string
+  /** Prefix of a row's edit link. */
   edit: string
   /** Prefix of a row's delete button. */
   delete: string
@@ -70,6 +72,7 @@ export const storefrontTestIds = (prefix: string): StorefrontListTestIds => {
     actionError: `${prefix}-action-error`,
     savingOrder: `${prefix}-saving-order`,
     row: `${row}-row`,
+    actions: `${row}-actions`,
     edit: `${row}-edit`,
     delete: `${row}-delete`,
     moveUp: `${row}-move-up`,

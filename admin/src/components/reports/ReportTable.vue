@@ -23,7 +23,9 @@ import { formatDate } from '@/lib/format'
 import { formatCurrencyCode, formatReportAmount } from '@/lib/money'
 import { valueAtPath } from '@/lib/valueAtPath'
 import { ReportCellFormat } from '@/types/reportcolumn'
+import { isNumericColumn } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -173,10 +175,10 @@ const totalText = (column: ReportColumn, position: number): string => {
 
 <template>
   <UiCard class="overflow-x-auto" :data-testid="testid">
-    <UiTable density="comfortable" :empty="isEmpty" :colspan="columnCount">
+    <UiTable :density="UiTableDensity.Comfortable" :empty="isEmpty" :colspan="columnCount">
       <UiTableHead>
         <UiTableRow>
-          <UiTableHeader v-for="column in columns" :key="column.key" :align="column.align">
+          <UiTableHeader v-for="column in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)">
             {{ column.label }}
           </UiTableHeader>
         </UiTableRow>
@@ -184,7 +186,7 @@ const totalText = (column: ReportColumn, position: number): string => {
       <UiTableBody divided>
         <slot name="body">
           <UiTableRow v-for="(row, index) in rows" :key="keyOf(row, index)" hoverable :data-testid="`${testid}-row`">
-            <UiTableCell v-for="column in columns" :key="column.key" :align="column.align">
+            <UiTableCell v-for="column in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)">
               <slot :name="`cell-${column.key}`" :row="row" :value="valueOf(row, column.key)">
                 <ReportStatusBadge
                   v-if="column.format === ReportCellFormat.Status && valueOf(row, column.key)"
@@ -200,7 +202,7 @@ const totalText = (column: ReportColumn, position: number): string => {
       </UiTableBody>
       <UiTableFoot v-if="totals && !isEmpty">
         <UiTableRow data-testid="report-totals">
-          <UiTableCell v-for="(column, position) in columns" :key="column.key" :align="column.align" class="font-semibold text-text-primary">
+          <UiTableCell v-for="(column, position) in columns" :key="column.key" :align="column.align" :numeric="isNumericColumn(column)" class="font-semibold text-text-primary">
             {{ totalText(column, position) }}
           </UiTableCell>
         </UiTableRow>

@@ -45,6 +45,7 @@ import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { ClientSection, clientItemPath, clientSectionPath, clientTicketNewPath, quoteAddPath, quotePath } from '@/lib/routes'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -672,7 +673,7 @@ onMounted(() => {
         </UiStack>
         <UiCard class="overflow-x-auto">
           <UiTable
-            density="comfortable"
+            :density="UiTableDensity.Comfortable"
             :empty="summaryStore.services.length === 0"
             :colspan="8"
             data-testid="client-summary-services"
@@ -727,7 +728,7 @@ onMounted(() => {
         </UiStack>
         <UiCard class="overflow-x-auto">
           <UiTable
-            density="comfortable"
+            :density="UiTableDensity.Comfortable"
             :empty="summaryStore.domains.length === 0"
             :colspan="7"
             data-testid="client-summary-domains"
@@ -784,7 +785,7 @@ onMounted(() => {
         </UiStack>
         <UiCard class="overflow-x-auto">
           <UiTable
-            density="comfortable"
+            :density="UiTableDensity.Comfortable"
             :empty="summaryStore.quotes.length === 0"
             :colspan="7"
             data-testid="client-summary-quotes"

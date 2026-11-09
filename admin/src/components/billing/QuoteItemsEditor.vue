@@ -24,6 +24,7 @@ import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { formatPlainAmount } from '@/lib/money'
 import type { QuoteItemUpdate } from '@/types/quote'
 import { MAX_PERCENT } from '@/lib/limits'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -109,7 +110,7 @@ const lineActions = (index: number): UiRowAction[] => {
         {{ t('shared.lineItems') }}
       </UiHeading>
 
-      <UiTable density="compact" :empty="lines.length === 0" :colspan="7">
+      <UiTable :density="UiTableDensity.Compact" :empty="lines.length === 0" :colspan="7">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.qty') }}</UiTableHeader>

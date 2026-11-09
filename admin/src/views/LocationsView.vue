@@ -7,7 +7,6 @@
  */
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import StorefrontListTable from '@/components/storefront/StorefrontListTable.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
@@ -23,9 +22,6 @@ const { t } = useI18n()
 
 /** Test ids of the page. */
 const testids = storefrontTestIds('locations')
-
-/** Router, used to open the create and edit pages. */
-const router = useRouter()
 
 /** Locations store: the list, the loading flag and the refusal sentences. */
 const store = useLocationsStore()
@@ -68,19 +64,16 @@ onMounted(async () => {
   await store.fetchAll()
 })
 
-/** Opens the create page. */
-const navigateCreate = (): void => {
-  void router.push(createPath(AppRoute.StorefrontLocations))
-}
+/** Route of the create page, opened by the Add link. */
+const createRoute = createPath(AppRoute.StorefrontLocations)
 
 /**
- * Opens the edit page of a location.
+ * Route of the edit page of a location, opened by its row action.
  *
  * @param item - The location to edit.
+ * @returns The path of its edit page.
  */
-const navigateEdit = (item: ServerLocation): void => {
-  void router.push(editPath(AppRoute.StorefrontLocations, item.id))
-}
+const editRoute = (item: ServerLocation): string => editPath(AppRoute.StorefrontLocations, item.id)
 </script>
 
 <template>
@@ -106,8 +99,8 @@ const navigateEdit = (item: ServerLocation): void => {
     :delete-target="list.deleteTarget.value"
     :deleting="list.deleting.value"
     :delete-message="deleteMessage"
-    @add="navigateCreate"
-    @edit="navigateEdit"
+    :add-to="createRoute"
+    :edit-to="editRoute"
     @stage-delete="list.stageDelete"
     @confirm-delete="list.confirmDelete"
     @cancel-delete="list.cancelDelete"

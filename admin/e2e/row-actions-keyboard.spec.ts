@@ -18,7 +18,7 @@ test('row actions menu: arrow keys navigate items and Escape returns focus to th
 
   await page.goto('/servers')
 
-  const trigger = page.getByTestId(`server-row-${hostServer.id}`).getByTestId('row-actions-trigger')
+  const trigger = page.getByTestId(`server-actions-${hostServer.id}`)
   await trigger.click()
 
   // Menu is open and first item has focus.

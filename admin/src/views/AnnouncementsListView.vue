@@ -6,7 +6,6 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import SupportRowActions from '@/components/support/SupportRowActions.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -15,6 +14,7 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -32,6 +32,7 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTone } from '@/utils/ui/tone'
 import { AppRoute, editPath } from '@/lib/routes'
+import type { Announcement } from '@/types/announcement'
 
 const { t } = useI18n()
 
@@ -111,6 +112,27 @@ const dismissDelete = (): void => {
 onMounted(() => {
   void load()
 })
+
+/**
+ * The row actions of a announcement: edit as a real link to its page, and delete last (it opens the confirmation).
+ *
+ * @param announcement - The announcement of the row.
+ * @returns The action list passed to UiRowActions.
+ */
+const rowActions = (announcement: Announcement): UiRowAction[] => {
+  /**
+   * Stages this announcement for the delete confirmation.
+   *
+   * @returns Nothing.
+   */
+  const onDelete = (): void => {
+    deleteTarget.value = announcement.id
+  }
+  return [
+    { label: t('shared.edit'), testid: `announcements-${announcement.id}-edit`, to: editPath(AppRoute.SupportAnnouncements, announcement.id) },
+    { label: t('shared.delete'), testid: `announcements-${announcement.id}-delete`, danger: true, onSelect: onDelete },
+  ]
+}
 </script>
 
 <template>
@@ -162,7 +184,7 @@ onMounted(() => {
             <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.title') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.published') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -179,12 +201,8 @@ onMounted(() => {
                 {{ announcement.isPublished ? t('shared.yes') : t('shared.no') }}
               </UiBadge>
             </UiTableCell>
-            <UiTableCell align="right">
-              <SupportRowActions
-                :edit-to="editPath(AppRoute.SupportAnnouncements, announcement.id)"
-                :testid-prefix="`announcements-${announcement.id}`"
-                @delete="deleteTarget = announcement.id"
-              />
+            <UiTableCell actions>
+              <UiRowActions :actions="rowActions(announcement)" :testid="`announcements-${announcement.id}-actions`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

@@ -38,6 +38,7 @@ import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { quoteAddPath, quotePath } from '@/lib/routes'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -228,7 +229,7 @@ onMounted(() => fetchQuotes())
 
     <UiCard v-else class="overflow-x-auto">
       <UiTable
-        density="comfortable"
+        :density="UiTableDensity.Comfortable"
         :empty="store.clientQuotes.length === 0"
         :colspan="7"
         data-testid="client-quotes-table"

@@ -39,6 +39,7 @@ import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -367,7 +368,7 @@ onMounted(() => fetchBillableItems())
         </UiHeading>
 
         <UiCard v-if="uninvoicedItems.length > 0" class="overflow-x-auto">
-          <UiTable density="comfortable" data-testid="client-billable-uninvoiced-table">
+          <UiTable :density="UiTableDensity.Comfortable" data-testid="client-billable-uninvoiced-table">
             <UiTableHead>
               <UiTableRow>
                 <UiTableHeader>
@@ -437,7 +438,7 @@ onMounted(() => fetchBillableItems())
         <UiHeading :level="2" variant="card">{{ t('clients.clientBillableItems.invoicedItems') }}</UiHeading>
 
         <UiCard v-if="invoicedItems.length > 0" class="overflow-x-auto">
-          <UiTable density="comfortable" data-testid="client-billable-invoiced-table">
+          <UiTable :density="UiTableDensity.Comfortable" data-testid="client-billable-invoiced-table">
             <UiTableHead>
               <UiTableRow>
                 <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>

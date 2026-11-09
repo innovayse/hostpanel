@@ -9,17 +9,16 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import draggable from 'vuedraggable'
 import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiImage from '@/components/ui/UiImage.vue'
+import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -36,12 +35,11 @@ import type { Slide } from '@/types/slide'
 import { SlideAudience } from '@/types/slideaudience'
 import { UiTone } from '@/utils/ui/tone'
 import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiTableDensity } from '@/utils/ui/injection'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
 
 const { t } = useI18n()
-
-/** Router, used to open the create and edit pages. */
-const router = useRouter()
 
 /** Slides store: the list, the loading flag and the refusal sentences. */
 const store = useSlidesStore()
@@ -109,7 +107,7 @@ onMounted(loadSlides)
  * @param audience - Audience as the API sent it.
  * @returns The kit tone.
  */
-const audienceTone = (audience: string): UiTone => AUDIENCE_TONES[audience as SlideAudience] ?? 'neutral'
+const audienceTone = (audience: string): UiTone => AUDIENCE_TONES[audience as SlideAudience] ?? UiTone.Neutral
 
 /**
  * Label of a slide's audience; an audience this build does not know is shown as received.
@@ -122,19 +120,8 @@ const audienceLabel = (audience: string): string => {
   return key ? t(key) : audience
 }
 
-/** Navigates to the create slide page. */
-const navigateCreate = (): void => {
-  void router.push(createPath(AppRoute.SettingsSlides))
-}
-
-/**
- * Navigates to the edit page for the given slide.
- *
- * @param slide - The slide to edit.
- */
-const navigateEdit = (slide: Slide): void => {
-  void router.push(editPath(AppRoute.SettingsSlides, slide.id))
-}
+/** Route of the create slide page, opened by the Add link. */
+const createRoute = createPath(AppRoute.SettingsSlides)
 
 /**
  * Resolves the title shown for a slide, falling back to its ID so a slide with no translation row
@@ -224,24 +211,19 @@ const formatDateRange = (from: string | null, until: string | null): string => {
 }
 
 /**
- * Row actions for a slide.
+ * Row actions for a slide: edit as a real link to its page, and delete last (confirmed first).
  *
  * @param slide - The slide whose actions to build.
  * @returns The action list passed to UiRowActions.
  */
 const slideActions = (slide: Slide): UiRowAction[] => {
   /**
-   * Navigates to the edit page for this slide.
-   * @returns Nothing.
-   */
-  const onEdit = (): void => navigateEdit(slide)
-  /**
    * Forwards delete for this slide.
    * @returns Nothing.
    */
   const onDelete = (): void => handleDelete(slide)
   return [
-    { label: t('settings.slides.editSlide'), testid: `slide-edit-${slide.id}`, onSelect: onEdit },
+    { label: t('settings.slides.editSlide'), testid: `slide-edit-${slide.id}`, to: editPath(AppRoute.SettingsSlides, slide.id) },
     { label: t('settings.slides.deleteSlide'), testid: `slide-delete-${slide.id}`, onSelect: onDelete, danger: true },
   ]
 }
@@ -256,9 +238,9 @@ const slideActions = (slide: Slide): UiRowAction[] => {
         <UiText v-if="savingOrder" tone="muted" size="sm" role="status" data-testid="slides-saving-order">
           {{ t('settings.slides.savingOrder') }}
         </UiText>
-        <UiButton type="button" variant="primary" data-testid="slides-add" @click="navigateCreate">
+        <UiLink :to="createRoute" :variant="UiButtonVariant.Primary" data-testid="slides-add">
           {{ t('settings.slides.addSlide') }}
-        </UiButton>
+        </UiLink>
       </template>
     </UiPageHeader>
 
@@ -267,19 +249,19 @@ const slideActions = (slide: Slide): UiRowAction[] => {
     <UiErrorState v-else-if="store.error" :message="store.error" testid="slides-error" @retry="loadSlides" />
 
     <UiCard v-else class="overflow-hidden">
-      <UiTable density="comfortable" :empty="localSlides.length === 0" :colspan="7">
+      <UiTable :density="UiTableDensity.Comfortable" :empty="localSlides.length === 0" :colspan="7">
         <template #empty>
           {{ t('settings.slides.noSlidesFoundAddYour') }}
         </template>
         <UiTableHead>
-          <UiTableRow class="border-b border-border">
+          <UiTableRow>
             <UiTableHeader class="w-10" />
-            <UiTableHeader align="left">{{ t('settings.slides.image') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('shared.title') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('settings.slides.audience') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('settings.slides.visibility') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader>{{ t('settings.slides.image') }}</UiTableHeader>
+            <UiTableHeader>{{ t('shared.title') }}</UiTableHeader>
+            <UiTableHeader>{{ t('settings.slides.audience') }}</UiTableHeader>
+            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader>{{ t('settings.slides.visibility') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <draggable
@@ -333,7 +315,7 @@ const slideActions = (slide: Slide): UiRowAction[] => {
 
               <!-- Active -->
               <UiTableCell>
-                <UiBadge :tone="slide.isActive ? 'success' : 'neutral'" small>
+                <UiBadge :tone="slide.isActive ? UiTone.Success : UiTone.Neutral" small>
                   {{ slide.isActive ? t('shared.active') : t('shared.inactive') }}
                 </UiBadge>
               </UiTableCell>
@@ -344,8 +326,8 @@ const slideActions = (slide: Slide): UiRowAction[] => {
               </UiTableCell>
 
               <!-- Actions -->
-              <UiTableCell align="right">
-                <UiRowActions :actions="slideActions(slide)" />
+              <UiTableCell actions>
+                <UiRowActions :actions="slideActions(slide)" :testid="`slide-actions-${slide.id}`" />
               </UiTableCell>
             </UiTableRow>
           </template>

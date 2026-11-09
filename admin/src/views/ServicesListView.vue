@@ -30,6 +30,7 @@ import { formatPrice } from '@/lib/money'
 import { serviceStatusTone, statusLabel } from '@/lib/tones'
 import { useServicesStore } from '@/stores/services'
 import { clientPath } from '@/lib/routes'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -66,13 +67,13 @@ onMounted(() => store.fetchAll())
 
     <UiCard v-else-if="store.services.length > 0 || store.loading">
       <UiTable
-        density="comfortable"
+        :density="UiTableDensity.Comfortable"
         :loading="store.loading && store.services.length === 0"
         :colspan="8"
         data-testid="services-table"
       >
         <UiTableHead>
-          <UiTableRow bordered>
+          <UiTableRow>
             <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.productService') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.domain') }}</UiTableHeader>

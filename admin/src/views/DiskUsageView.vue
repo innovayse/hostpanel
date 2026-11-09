@@ -18,7 +18,6 @@ import { useReport } from '@/composables/useReport'
 import { useReportsStore } from '@/stores/reports'
 import type { ReportColumn } from '@/types/reportcolumn'
 import type { ReportDiskUsage } from '@/types/reportdiskusage'
-import { UiAlign } from '@/utils/ui/table'
 import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
@@ -36,12 +35,12 @@ const DANGER_PERCENT = 90
 /** Table columns. */
 const columns = computed<ReportColumn[]>(() => [
   { key: 'clientName', label: t('reports.diskUsage.clientNameDomain') },
-  { key: 'diskUsage', label: t('reports.diskUsage.diskUsage'), align: UiAlign.Right },
-  { key: 'diskLimit', label: t('reports.diskUsage.diskLimit'), align: UiAlign.Right },
-  { key: 'diskPercent', label: t('reports.diskUsage.used'), align: UiAlign.Right },
-  { key: 'bwUsage', label: t('reports.diskUsage.bwUsage'), align: UiAlign.Right },
-  { key: 'bwLimit', label: t('reports.diskUsage.bwLimit'), align: UiAlign.Right },
-  { key: 'bwPercent', label: t('reports.diskUsage.used'), align: UiAlign.Right },
+  { key: 'diskUsage', label: t('reports.diskUsage.diskUsage'), numeric: true },
+  { key: 'diskLimit', label: t('reports.diskUsage.diskLimit'), numeric: true },
+  { key: 'diskPercent', label: t('reports.diskUsage.used'), numeric: true },
+  { key: 'bwUsage', label: t('reports.diskUsage.bwUsage'), numeric: true },
+  { key: 'bwLimit', label: t('reports.diskUsage.bwLimit'), numeric: true },
+  { key: 'bwPercent', label: t('reports.diskUsage.used'), numeric: true },
 ])
 
 /** When the figures were last fetched, formatted; null when never. */

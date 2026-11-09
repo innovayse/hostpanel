@@ -41,6 +41,7 @@ import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { Key } from '@/utils/ui/keys'
 import { AppRoute, clientPath } from '@/lib/routes'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -255,7 +256,7 @@ onMounted(() => store.fetchAll())
     />
 
     <UiCard v-else-if="store.clients.length > 0">
-      <UiTable density="comfortable" data-testid="clients-list-table">
+      <UiTable :density="UiTableDensity.Comfortable" data-testid="clients-list-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>

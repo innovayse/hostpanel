@@ -35,6 +35,7 @@ import { cancellationStatusLabel, cancellationStatusTone, cancellationTypeLabel,
 import { useCancellationRequestsStore } from '@/stores/cancellationRequests'
 import { UiTone } from '@/utils/ui/tone'
 import { clientPath } from '@/lib/routes'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -175,9 +176,9 @@ onMounted(() => load())
     />
 
     <UiCard v-if="hasRows || store.loading">
-      <UiTable density="comfortable" :loading="store.loading && !hasRows" :colspan="7" data-testid="cancellations-table">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && !hasRows" :colspan="7" data-testid="cancellations-table">
         <UiTableHead>
-          <UiTableRow bordered>
+          <UiTableRow>
             <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.productService') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>

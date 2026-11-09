@@ -17,7 +17,6 @@ import { reportPath } from '@/lib/reportsQuery'
 import type { ReportColumn } from '@/types/reportcolumn'
 import { ReportRetentionGroupKind } from '@/types/reportretention'
 import type { ReportRetention, ReportRetentionGroup, ReportRetentionRow } from '@/types/reportretention'
-import { UiAlign } from '@/utils/ui/table'
 
 const { t } = useI18n()
 
@@ -35,8 +34,8 @@ watch(includeActive, load)
 const columns = computed<ReportColumn[]>(() => [
   { key: 'productName', label: t('shared.productName') },
   { key: 'billingCycle', label: t('shared.billingCycle') },
-  { key: 'productCount', label: t('reports.customerRetention.productCount'), align: UiAlign.Center },
-  { key: 'avgDaysActive', label: t('reports.customerRetention.averageDaysActive'), align: UiAlign.Center },
+  { key: 'productCount', label: t('reports.customerRetention.productCount'), numeric: true },
+  { key: 'avgDaysActive', label: t('reports.customerRetention.averageDaysActive'), numeric: true },
   { key: 'avgYearsMonthsActive', label: t('reports.customerRetention.averageYearsMonthsActive') },
 ])
 
@@ -95,8 +94,8 @@ const activeLabel = (row: ReportRetentionRow): string => {
             <UiTableRow v-for="row in group.rows" :key="row.productName + cycleLabel(row)" hoverable>
               <UiTableCell>{{ row.productName }}</UiTableCell>
               <UiTableCell>{{ cycleLabel(row) }}</UiTableCell>
-              <UiTableCell :align="UiAlign.Center">{{ row.productCount }}</UiTableCell>
-              <UiTableCell :align="UiAlign.Center">{{ row.avgDaysActive }}</UiTableCell>
+              <UiTableCell numeric>{{ row.productCount }}</UiTableCell>
+              <UiTableCell numeric>{{ row.avgDaysActive }}</UiTableCell>
               <UiTableCell>{{ activeLabel(row) }}</UiTableCell>
             </UiTableRow>
           </template>

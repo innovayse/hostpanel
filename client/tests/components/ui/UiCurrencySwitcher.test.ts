@@ -10,7 +10,7 @@ import { createPinia } from 'pinia'
 import { flushPromises } from '@vue/test-utils'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiCurrencySwitcher from '~/components/ui/UiCurrencySwitcher.vue'
-import { UiPlacement } from '~/utils/ui/enums'
+import { UiMenuAlign, UiPlacement } from '~/utils/ui/enums'
 
 /** The mocked signed-in client, reset before each test. */
 let mockUser: { currency?: string | null } | null = null
@@ -111,6 +111,24 @@ describe('UiCurrencySwitcher', () => {
     const wrapper = await mountSwitcher()
 
     expect(wrapper.find('[data-testid="currency-switcher-current"]').text()).toBe('AMD')
+  })
+
+  it('right-aligns the menu under the trigger by default', async () => {
+    const wrapper = await mountSwitcher()
+
+    await wrapper.find('[data-testid="currency-switcher-trigger"]').trigger('click')
+
+    const menu = wrapper.find('[role="menu"]')
+    expect(menu.classes()).toEqual(expect.arrayContaining(['absolute', 'right-0', 'max-w-[calc(100vw-2rem)]']))
+    expect(menu.classes()).not.toContain('left-0')
+  })
+
+  it('left-aligns the menu when aligned to the start', async () => {
+    const wrapper = await mountSwitcher({ align: UiMenuAlign.Start })
+
+    await wrapper.find('[data-testid="currency-switcher-trigger"]').trigger('click')
+
+    expect(wrapper.find('[role="menu"]').classes()).toContain('left-0')
   })
 
   it('opens upward when placed on top', async () => {

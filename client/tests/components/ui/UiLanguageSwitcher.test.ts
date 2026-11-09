@@ -7,7 +7,7 @@ import { ref } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import LanguageSwitcher from '~/components/ui/UiLanguageSwitcher.vue'
-import { UiLanguageLayout, UiPlacement } from '~/utils/ui/enums'
+import { UiLanguageLayout, UiMenuAlign, UiPlacement } from '~/utils/ui/enums'
 
 /** The location the browser path assigns to; a hard reload cannot run in a unit test. */
 const location = { href: '' }
@@ -56,6 +56,24 @@ describe('LanguageSwitcher', () => {
 
     expect(location.href).toBe('/hy')
     expect(wrapper.find('[role="menu"]').exists()).toBe(false)
+  })
+
+  it('right-aligns the menu under the trigger by default', async () => {
+    const wrapper = mountWithKit(LanguageSwitcher)
+
+    await wrapper.find('[data-testid="language-switcher-trigger"]').trigger('click')
+
+    const menu = wrapper.find('[role="menu"]')
+    expect(menu.classes()).toEqual(expect.arrayContaining(['absolute', 'right-0', 'max-w-[calc(100vw-2rem)]']))
+    expect(menu.classes()).not.toContain('left-0')
+  })
+
+  it('left-aligns the menu when aligned to the start', async () => {
+    const wrapper = mountWithKit(LanguageSwitcher, { props: { align: UiMenuAlign.Start } })
+
+    await wrapper.find('[data-testid="language-switcher-trigger"]').trigger('click')
+
+    expect(wrapper.find('[role="menu"]').classes()).toContain('left-0')
   })
 
   it('opens upward when placed on top', async () => {

@@ -78,8 +78,8 @@
             © {{ currentYear }} {{ BRAND_NAME }}. {{ $t('footer.bottom.rights') }}
           </UiText>
           <UiStack direction="row" wrap align="center" gap="sm">
-            <UiLanguageSwitcher :placement="UiPlacement.Top" />
-            <UiCurrencySwitcher :placement="UiPlacement.Top" />
+            <UiLanguageSwitcher :placement="UiPlacement.Top" :align="UiMenuAlign.Start" />
+            <UiCurrencySwitcher :placement="UiPlacement.Top" :align="UiMenuAlign.Start" />
             <UiThemeToggle />
           </UiStack>
         </UiStack>
@@ -103,7 +103,7 @@ import LayoutFooterColumn from '~/components/layout/FooterColumn.vue'
 import { useCatalogStore } from '~/stores/catalog'
 import type { FooterLink } from '~/types/footerlink'
 import { familyKey } from '~/utils/catalogGroups'
-import { UiButtonVariant, UiFooterLinkVariant, UiHeadingLevel, UiPlacement } from '~/utils/ui/enums'
+import { UiButtonVariant, UiFooterLinkVariant, UiHeadingLevel, UiMenuAlign, UiPlacement } from '~/utils/ui/enums'
 
 /** One trust mark: a generic icon and its label. */
 interface TrustMark {

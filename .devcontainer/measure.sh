@@ -33,6 +33,10 @@ echo "### Largest folders in the workspace"
 du -xh --max-depth=3 . 2>/dev/null | sort -rh | head -n 15
 
 echo
+echo "### Largest folders on the whole disk (the workspace is only a small part of it)"
+sudo du -xh --max-depth=2 / 2>/dev/null | sort -rh | head -n 25
+
+echo
 echo "### Restore leftovers (the editor's package folder in the backend)"
 # NETSDK1064 comes from project.assets.json files that name /home/vscode/.nuget instead of the container's folder.
 leftovers=$(grep -rl --include=project.assets.json '/home/vscode/.nuget' backend 2>/dev/null | head -n 5)

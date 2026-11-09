@@ -1791,6 +1791,35 @@ translations, managed in the admin under **Storefront content**. The public endp
 client hides any section that is empty, so an empty table is a valid state, not an error. Production runs a
 one-time import of the previous static content; the demo does not, because its seed is fixed.
 
+## Knowledge base — category by id, slug, text per language
+
+An article belongs to a category by `CategoryId` (a foreign key, `Restrict`: a category that holds articles, or sub-categories,
+is refused with `KBCATEGORY_IN_USE`). Its title and body are `KbArticleTranslations` rows, one per language, written like the
+FAQ: the default language `SupportedLanguages.Default` (`en`) is required, `en/ru/hy` are the only languages.
+
+- **Which language a reader gets.** The request's language, else the *fallback*, else the first language the article has in
+  ordinal order. The fallback is the configured `DefaultLocale` reduced to its two letters (`en-US` is `en`) when that is one of
+  `en/ru/hy`, otherwise `en` (`KbLanguage.Fallback`). The requirement to write English and the fallback are two different
+  things: the first never depends on `DefaultLocale`. Search looks into every language.
+- **Slugs** (`KbArticles.Slug`, `KbCategories.Slug`). Lower case Latin letters and digits joined by single hyphens, at most 150
+  characters, unique, and never purely numeric (a number in that place is the id). An article slug is also never `articles` or
+  `categories`, the literal segments of the same route. The rules live in `KbSlugRules` and again as check constraints and
+  unique indexes, so no writer can store a slug that breaks them. A slug is built once, from the English title or the category
+  name, and never changes, so a link to a renamed article keeps working. `SlugGenerator` only builds the candidate;
+  `KbSlugAllocator` makes it unique by trying `-2`, `-3`, ... until a value is free, and the create use cases ask again when the
+  unique index refuses the save because another request took the value.
+- **Routes.** `GET /api/knowledgebase/{id:int}` and `GET /api/knowledgebase/{slug}` share one segment. ASP.NET Core matches
+  literals and `regex` constraints without regard to case, so `Articles` is the list and `CATEGORIES` the categories; the slug
+  route's pattern refuses a purely numeric segment (otherwise a number matches both routes and the request fails as
+  ambiguous), and a number too large for an id matches no route. The handler lower cases the slug, so `Foo-Bar` finds
+  `foo-bar`, and the answer carries the canonical slug.
+- **Data migrated from free text.** `AddKbTranslationsAndSlugs` merges category spellings that differ by case or edge spaces,
+  assigns slugs one row at a time in id order (each checked against those already given, so `Foo`, `Foo`, `Foo-2` end as `foo`,
+  `foo-2`, `foo-2-2`), and stores each existing text as one translation in the language its own letters show (Armenian `hy`,
+  else Cyrillic `ru`, else `en`), because SQL cannot read `DefaultLocale`. Its `Down` is not exact: it restores `Category` as the
+  category's name, `Title` and `Content` from the English translation (else the first language), and loses the other languages
+  and the slugs.
+
 ## The frontend: three templates, one live header, and one env-var trap
 
 `client/` is Nuxt 4 with SSR on the public site and `ssr: false` route rules for `/client/**`,

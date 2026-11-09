@@ -30,6 +30,18 @@ describe('KnowledgebaseView', () => {
     expect(card.text()).toContain('Hidden')
   })
 
+  it('opens the in-place edit form from the row actions menu', async () => {
+    stubPathRoutes([{ path: '/admin/knowledgebase/categories', body: [category] }])
+    const wrapper = await mountView(KnowledgebaseView)
+
+    // Edit and delete sit behind the row's own menu trigger.
+    await wrapper.get('[data-testid="knowledgebase-category-1-actions"]').trigger('click')
+    await wrapper.get('[data-testid="knowledgebase-category-1-edit"]').trigger('click')
+
+    expect((wrapper.get('[data-testid="knowledgebase-edit-name"]').element as HTMLInputElement).value).toBe('Billing')
+    expect(wrapper.find('[data-testid="knowledgebase-category-1-actions"]').exists()).toBe(false)
+  })
+
   it('adds a category from the form', async () => {
     const mock = stubPathRoutes([{ path: '/admin/knowledgebase/categories', body: [] }])
     const wrapper = await mountView(KnowledgebaseView)
@@ -58,6 +70,7 @@ describe('KnowledgebaseView', () => {
     const mock = stubPathRoutes([{ path: '/admin/knowledgebase/categories', body: [category] }])
     const wrapper = await mountView(KnowledgebaseView)
 
+    await wrapper.get('[data-testid="knowledgebase-category-1-actions"]').trigger('click')
     await wrapper.get('[data-testid="knowledgebase-category-1-delete"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -89,6 +102,7 @@ describe('KnowledgebaseView', () => {
     stubDelete(() => new Response(null, { status: 204 }))
     const wrapper = await mountView(KnowledgebaseView)
 
+    await wrapper.get('[data-testid="knowledgebase-category-1-actions"]').trigger('click')
     await wrapper.get('[data-testid="knowledgebase-category-1-delete"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -100,6 +114,7 @@ describe('KnowledgebaseView', () => {
     stubDelete(() => problem('The category still has articles.', 409))
     const wrapper = await mountView(KnowledgebaseView)
 
+    await wrapper.get('[data-testid="knowledgebase-category-1-actions"]').trigger('click')
     await wrapper.get('[data-testid="knowledgebase-category-1-delete"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -112,6 +127,7 @@ describe('KnowledgebaseView', () => {
     const mock = stubDelete(() => new Response(null, { status: 204 }))
     const wrapper = await mountView(KnowledgebaseView)
 
+    await wrapper.get('[data-testid="knowledgebase-category-1-actions"]').trigger('click')
     await wrapper.get('[data-testid="knowledgebase-category-1-delete"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     await flushPromises()

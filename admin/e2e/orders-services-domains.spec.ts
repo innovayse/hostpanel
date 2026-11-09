@@ -34,9 +34,12 @@ test('accepting a pending order posts the command and reloads the list', async (
   await expect(page.getByTestId(`orders-client-${pendingOrder.id}`)).toHaveAttribute('href', `/clients/${pendingOrder.clientId}`)
   await expect(page.getByTestId(`orders-client-${pendingOrder.id}`)).toHaveText(pendingOrder.clientName)
 
+  // A pending order has several row actions, so its menu is opened first.
+  await page.getByTestId(`orders-actions-${pendingOrder.id}`).click()
   await page.getByTestId(`orders-accept-${pendingOrder.id}`).click()
 
-  // An active order no longer offers accept or cancel.
+  // An active order no longer offers accept or cancel: only the detail link is left, without a menu.
+  await expect(page.getByTestId(`orders-actions-${pendingOrder.id}`)).toHaveCount(0)
   await expect(page.getByTestId(`orders-accept-${pendingOrder.id}`)).toHaveCount(0)
   expect(api.callsTo(HttpMethod.Post, `/api/orders/${pendingOrder.id}/accept`)).toHaveLength(1)
 })
@@ -52,9 +55,12 @@ test('a refused accept shows the API sentence and keeps the order pending', asyn
   })
 
   await page.goto('/orders')
+  // A pending order has several row actions, so its menu is opened first.
+  await page.getByTestId(`orders-actions-${pendingOrder.id}`).click()
   await page.getByTestId(`orders-accept-${pendingOrder.id}`).click()
 
   await expect(page.getByTestId('orders-action-feedback')).toContainText(sentence)
+  await page.getByTestId(`orders-actions-${pendingOrder.id}`).click()
   await expect(page.getByTestId(`orders-accept-${pendingOrder.id}`)).toBeVisible()
 })
 

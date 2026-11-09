@@ -50,11 +50,11 @@ const emit = defineEmits<{
   <SettingsSection :title="title">
     <UiTable density="compact" :data-testid="testid">
       <UiTableHead>
-        <UiTableRow class="border-b border-border">
+        <UiTableRow>
           <UiTableHeader align="left">{{ t('settings.tldConfigForm.period') }}</UiTableHeader>
           <UiTableHeader align="left">{{ t('settings.tldConfigForm.costCostsymbol', { costSymbol }) }}</UiTableHeader>
           <UiTableHeader align="left">{{ t('settings.tldConfigForm.sellSellsymbol', { sellSymbol }) }}</UiTableHeader>
-          <UiTableHeader align="right">{{ t('settings.tldConfigForm.margin') }}</UiTableHeader>
+          <UiTableHeader numeric>{{ t('settings.tldConfigForm.margin') }}</UiTableHeader>
         </UiTableRow>
       </UiTableHead>
       <UiTableBody divided>
@@ -82,7 +82,7 @@ const emit = defineEmits<{
               @update:model-value="emit('update:sell', period, $event)"
             />
           </UiTableCell>
-          <UiTableCell align="right" class="tabular-nums">
+          <UiTableCell numeric>
             <UiText
               :tone="marginTone(cost[period], sell[period])"
               size="sm"

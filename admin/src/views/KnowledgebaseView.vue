@@ -7,7 +7,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SupportCheckboxField from '@/components/support/SupportCheckboxField.vue'
-import SupportRowActions from '@/components/support/SupportRowActions.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -15,15 +14,21 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
+import UiTable from '@/components/ui/UiTable.vue'
+import UiTableBody from '@/components/ui/UiTableBody.vue'
+import UiTableCell from '@/components/ui/UiTableCell.vue'
+import UiTableHead from '@/components/ui/UiTableHead.vue'
+import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
@@ -34,6 +39,7 @@ import type { KbCategory } from '@/types/kbarticle'
 import { KnowledgebaseTab } from '@/types/supporttab'
 import { Icon } from '@/lib/icons'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiTableDensity } from '@/utils/ui/injection'
 import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
 import type { UiTabItem } from '@/utils/ui/tabs'
@@ -41,6 +47,9 @@ import type { UiTabItem } from '@/utils/ui/tabs'
 const { t } = useI18n()
 
 const store = useKnowledgebaseStore()
+
+/** Number of columns of the category table, spanned by the row of a category under edit. */
+const CATEGORY_COLUMN_COUNT = 4
 
 /** Currently active tab. */
 const activeTab = ref<KnowledgebaseTab>(KnowledgebaseTab.Category)
@@ -192,6 +201,35 @@ const handleDeleteCategory = async (): Promise<void> => {
   report(deleted, 'support.knowledgebase.categoryDeleted')
 }
 
+/**
+ * The row actions of a category: edit in place, and delete last (confirmed first).
+ *
+ * @param category - The category of the row.
+ * @returns The action list passed to UiRowActions.
+ */
+const categoryActions = (category: KbCategory): UiRowAction[] => {
+  /**
+   * Opens this category's in-place edit form.
+   *
+   * @returns Nothing.
+   */
+  const onEdit = (): void => {
+    startEditCategory(category)
+  }
+  /**
+   * Asks for confirmation before this category is deleted.
+   *
+   * @returns Nothing.
+   */
+  const onDelete = (): void => {
+    deleteCategoryTarget.value = category.id
+  }
+  return [
+    { label: t('shared.edit'), testid: `knowledgebase-category-${category.id}-edit`, onSelect: onEdit },
+    { label: t('shared.delete'), testid: `knowledgebase-category-${category.id}-delete`, onSelect: onDelete, danger: true },
+  ]
+}
+
 /** Closes the delete confirmation; ignored while the delete runs. */
 const dismissDeleteCategory = (): void => {
   if (!deletingCategory.value) {
@@ -298,69 +336,82 @@ onMounted(() => {
       <template v-else>
         <UiHeading :level="2" variant="card">{{ t('support.knowledgebase.browseByCategory') }}</UiHeading>
 
-        <UiGrid v-if="store.categories.length > 0" :columns="3" data-testid="knowledgebase-categories">
-          <UiCard
-            v-for="category in store.categories"
-            :key="category.id"
-            padding="md"
-            :data-testid="`knowledgebase-category-${category.id}`"
-          >
-            <UiStack v-if="editingCategoryId === category.id" gap="sm">
-              <UiInput
-                v-model="editingCategory.name"
-                :placeholder="t('shared.categoryName2')"
-                data-testid="knowledgebase-edit-name"
-              />
-              <UiInput
-                v-model="editingCategory.description"
-                :placeholder="t('shared.description')"
-                data-testid="knowledgebase-edit-description"
-              />
-              <SupportCheckboxField
-                v-model="editingCategory.isHidden"
-                :label="t('shared.hidden')"
-                testid="knowledgebase-edit-hidden"
-              />
-              <UiStack direction="row" gap="sm">
-                <UiButton
-                  :variant="UiButtonVariant.Primary"
-                  :size="UiSize.Sm"
-                  data-testid="knowledgebase-edit-save"
-                  @click="saveEditCategory"
-                >
-                  {{ t('shared.save') }}
-                </UiButton>
-                <UiButton
-                  :variant="UiButtonVariant.Secondary"
-                  :size="UiSize.Sm"
-                  data-testid="knowledgebase-edit-cancel"
-                  @click="editingCategoryId = null"
-                >
-                  {{ t('shared.cancel') }}
-                </UiButton>
-              </UiStack>
-            </UiStack>
+        <UiCard v-if="store.categories.length > 0" data-testid="knowledgebase-categories">
+          <UiTable :density="UiTableDensity.Comfortable">
+            <UiTableHead>
+              <UiTableRow>
+                <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
+                <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
+                <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+              </UiTableRow>
+            </UiTableHead>
+            <UiTableBody divided>
+              <UiTableRow
+                v-for="category in store.categories"
+                :key="category.id"
+                hoverable
+                :data-testid="`knowledgebase-category-${category.id}`"
+              >
+                <!-- The category under edit spans the whole row with its in-place form -->
+                <UiTableCell v-if="editingCategoryId === category.id" :colspan="CATEGORY_COLUMN_COUNT">
+                  <UiStack gap="sm">
+                    <UiInput
+                      v-model="editingCategory.name"
+                      :placeholder="t('shared.categoryName2')"
+                      data-testid="knowledgebase-edit-name"
+                    />
+                    <UiInput
+                      v-model="editingCategory.description"
+                      :placeholder="t('shared.description')"
+                      data-testid="knowledgebase-edit-description"
+                    />
+                    <SupportCheckboxField
+                      v-model="editingCategory.isHidden"
+                      :label="t('shared.hidden')"
+                      testid="knowledgebase-edit-hidden"
+                    />
+                    <UiStack direction="row" gap="sm">
+                      <UiButton
+                        :variant="UiButtonVariant.Primary"
+                        :size="UiSize.Sm"
+                        data-testid="knowledgebase-edit-save"
+                        @click="saveEditCategory"
+                      >
+                        {{ t('shared.save') }}
+                      </UiButton>
+                      <UiButton
+                        :variant="UiButtonVariant.Secondary"
+                        :size="UiSize.Sm"
+                        data-testid="knowledgebase-edit-cancel"
+                        @click="editingCategoryId = null"
+                      >
+                        {{ t('shared.cancel') }}
+                      </UiButton>
+                    </UiStack>
+                  </UiStack>
+                </UiTableCell>
 
-            <UiStack v-else gap="sm">
-              <UiStack direction="row" justify="between" align="start">
-                <UiStack direction="row" gap="sm" align="center">
-                  <UiIcon :markup="Icon.Folder" />
-                  <UiText tone="primary" size="lg">{{ category.name }}</UiText>
-                  <UiText tone="muted" size="sm">({{ category.articleCount }})</UiText>
-                </UiStack>
-                <SupportRowActions
-                  :testid-prefix="`knowledgebase-category-${category.id}`"
-                  @edit="startEditCategory(category)"
-                  @delete="deleteCategoryTarget = category.id"
-                />
-              </UiStack>
-              <UiText v-if="category.description" tone="muted" size="sm">{{ category.description }}</UiText>
-              <UiStack direction="row">
-                <UiBadge v-if="category.isHidden" :tone="UiTone.Warning" small>{{ t('shared.hidden') }}</UiBadge>
-              </UiStack>
-            </UiStack>
-          </UiCard>
-        </UiGrid>
+                <template v-else>
+                  <UiTableCell>
+                    <UiStack direction="row" gap="sm" align="center">
+                      <UiIcon :markup="Icon.Folder" />
+                      <UiText tone="primary" size="md">{{ category.name }}</UiText>
+                      <UiText tone="muted" size="sm">({{ category.articleCount }})</UiText>
+                    </UiStack>
+                  </UiTableCell>
+                  <UiTableCell muted>{{ category.description || '—' }}</UiTableCell>
+                  <UiTableCell>
+                    <UiBadge v-if="category.isHidden" :tone="UiTone.Warning" small>{{ t('shared.hidden') }}</UiBadge>
+                  </UiTableCell>
+                  <UiTableCell actions>
+                    <UiRowActions :actions="categoryActions(category)" :testid="`knowledgebase-category-${category.id}-actions`" />
+                  </UiTableCell>
+                </template>
+              </UiTableRow>
+            </UiTableBody>
+          </UiTable>
+        </UiCard>
 
         <UiCard v-else>
           <UiEmptyState

@@ -62,6 +62,21 @@ describe('DownloadsView', () => {
     expect(wrapper.get('[data-testid="downloads-breadcrumbs"]').text()).toContain('Drivers')
   })
 
+  it('opens the category edit dialog from the row actions menu without drilling into the category', async () => {
+    const mock = stubPathRoutes(loadRoutes)
+    const wrapper = await mountView(DownloadsView)
+    const loads = mock.mock.calls.length
+
+    // Edit and delete sit behind the row's own menu trigger.
+    await wrapper.get('[data-testid="downloads-category-1-actions"]').trigger('click')
+    await wrapper.get('[data-testid="downloads-category-1-edit"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[role="dialog"]').exists()).toBe(true)
+    expect(mock.mock.calls.length).toBe(loads)
+    expect(wrapper.get('[data-testid="downloads-breadcrumbs"]').text()).not.toContain('Drivers')
+  })
+
   it('opens the edit dialog for a file', async () => {
     stubPathRoutes(loadRoutes)
     const wrapper = await mountView(DownloadsView)

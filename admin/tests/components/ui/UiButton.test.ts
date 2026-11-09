@@ -4,6 +4,8 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiButton from '@/components/ui/UiButton.vue'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiSize } from '@/utils/ui/size'
 
 describe('UiButton', () => {
   it('renders the native button with its slot', () => {
@@ -44,7 +46,7 @@ describe('UiButton', () => {
   })
 
   it('gives the link look no padding so it aligns with neighbouring text', () => {
-    const link = mount(UiButton, { props: { variant: 'link', size: 'sm' } })
+    const link = mount(UiButton, { props: { variant: UiButtonVariant.Link, size: UiSize.Sm } })
 
     expect(link.classes().some((c) => /^p[xy]?-/.test(c))).toBe(false)
     expect(link.classes()).toContain('text-[0.75rem]')

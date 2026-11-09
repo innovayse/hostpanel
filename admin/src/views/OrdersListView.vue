@@ -41,6 +41,7 @@ import { clientPath, orderPath } from '@/lib/routes'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -199,7 +200,7 @@ onMounted(() => store.fetchAll())
     />
 
     <UiCard v-else-if="store.orders.length > 0 || store.loading">
-      <UiTable density="comfortable" :loading="store.loading && store.orders.length === 0" :colspan="8" data-testid="orders-table">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && store.orders.length === 0" :colspan="8" data-testid="orders-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('orders.ordersList.order') }}</UiTableHeader>

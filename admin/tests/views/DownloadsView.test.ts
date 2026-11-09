@@ -72,7 +72,7 @@ describe('DownloadsView', () => {
     await wrapper.get('[data-testid="downloads-category-1-edit"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.find('[role="dialog"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="downloads-edit-category-name"]').exists()).toBe(true)
     expect(mock.mock.calls.length).toBe(loads)
     expect(wrapper.get('[data-testid="downloads-breadcrumbs"]').text()).not.toContain('Drivers')
   })

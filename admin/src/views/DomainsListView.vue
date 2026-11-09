@@ -34,6 +34,7 @@ import { domainStatusTone, statusLabel } from '@/lib/tones'
 import { useDomainsStore } from '@/stores/domains'
 import type { DomainRegistration } from '@/types/domain'
 import { UiTone } from '@/utils/ui/tone'
+import { UiTableDensity } from '@/utils/ui/injection'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { ClientSection, clientItemPath, clientPath } from '@/lib/routes'
 
@@ -127,7 +128,7 @@ onUnmounted(() => {
     />
 
     <UiCard v-else-if="hasRows || store.loading">
-      <UiTable density="comfortable" :loading="store.loading && !hasRows" :colspan="7" data-testid="domains-table">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && !hasRows" :colspan="7" data-testid="domains-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.domainName') }}</UiTableHeader>

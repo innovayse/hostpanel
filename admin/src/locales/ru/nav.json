@@ -62,5 +62,11 @@
     "locations": "Расположение серверов"
   },
   "servicesTitle": "Услуги",
-  "documentation": "Документация"
+  "documentation": "Документация",
+  "sections": {
+    "daily": "Ежедневная работа",
+    "insights": "Аналитика",
+    "setup": "Настройка",
+    "system": "Система"
+  }
 }

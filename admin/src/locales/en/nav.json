@@ -62,5 +62,11 @@
     "locations": "Server locations"
   },
   "servicesTitle": "Services",
-  "documentation": "Documentation"
+  "documentation": "Documentation",
+  "sections": {
+    "daily": "Daily work",
+    "insights": "Insights",
+    "setup": "Setup",
+    "system": "System"
+  }
 }

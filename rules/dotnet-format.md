@@ -20,11 +20,26 @@ The `.editorconfig` at solution root enforces all formatting. `dotnet format` re
 Key settings enforced:
 - Indentation: 4 spaces (no tabs)
 - `var` usage: prefer explicit types for builtins, `var` for others
-- `using` directives: inside namespace, sorted, system-first
+- `using` directives: outside the namespace, sorted, system-first
 - Trailing whitespace: removed
 - Final newline: required
 - Line endings: LF (Unix)
 - Max line length: 120
+
+## Style rules in the build
+
+The `.editorconfig` rules are enforced by the build itself, not only by `dotnet format`:
+
+- `StyleCop.Analyzers` is referenced for every project from `backend/Directory.Build.props` (version in
+  `Directory.Packages.props`), and its settings live in `backend/stylecop.json`.
+- `EnforceCodeStyleInBuild` is on, so the IDE rules at `error` severity (unused `using`, braces, accessibility
+  modifiers, naming) fail `dotnet build` as well.
+- A new member without its XML documentation (`<summary>`, every `<param>`, `<returns>`, `<typeparam>`) fails the
+  build, in `src` and in `tests` alike. A `Task`-returning member still needs a `<returns>`.
+- Rules switched off on purpose, each with its reason in `.editorconfig`: SA1310 (error codes are UPPER_SNAKE_CASE by
+  contract) and SA1312 (false positive on the `_` discard and on interface parameters).
+- Fix a report in the code; do not add `#pragma warning disable`, `NoWarn` or `SuppressMessage`.
+- The `Hostpanel.Sdk` submodule is not part of this solution and is not checked.
 
 ## CI Integration
 

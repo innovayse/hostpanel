@@ -71,7 +71,7 @@ describe('PendingBankTransfersView', () => {
     const wrapper = await mountRoutedSettled(PendingBankTransfersView, '/billing/bank-transfers')
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="billing-bank-transfer-actions-5"]').trigger('click')
     await wrapper.get('[data-testid="billing-bank-transfer-confirm-5"]').trigger('click')
     expect(wrapper.find('[data-testid="billing-bank-transfers-confirm-dialog"]').exists()).toBe(true)
     expect(lines(mock).some((line) => line.startsWith('POST'))).toBe(false)
@@ -89,7 +89,7 @@ describe('PendingBankTransfersView', () => {
     const wrapper = await mountRoutedSettled(PendingBankTransfersView, '/billing/bank-transfers')
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="billing-bank-transfer-actions-5"]').trigger('click')
     await wrapper.get('[data-testid="billing-bank-transfer-confirm-5"]').trigger('click')
     await wrapper.get('[data-testid="billing-bank-transfers-confirm-dialog"] [data-testid="dialog-cancel"]').trigger('click')
 
@@ -102,7 +102,7 @@ describe('PendingBankTransfersView', () => {
     const wrapper = await mountRoutedSettled(PendingBankTransfersView, '/billing/bank-transfers')
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="billing-bank-transfer-actions-5"]').trigger('click')
     await wrapper.get('[data-testid="billing-bank-transfer-reject-5"]').trigger('click')
     await wrapper.get('[data-testid="billing-bank-transfers-reject-dialog"] [data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -119,7 +119,7 @@ describe('PendingBankTransfersView', () => {
     const wrapper = await mountRoutedSettled(PendingBankTransfersView, '/billing/bank-transfers')
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="billing-bank-transfer-actions-5"]').trigger('click')
     await wrapper.get('[data-testid="billing-bank-transfer-reject-5"]').trigger('click')
     await wrapper.get('[data-testid="billing-bank-transfers-note"]').setValue('  Amount too low  ')
     await wrapper.get('[data-testid="billing-bank-transfers-reject-dialog"] [data-testid="dialog-confirm"]').trigger('click')
@@ -139,7 +139,7 @@ describe('PendingBankTransfersView', () => {
     const wrapper = await mountRoutedSettled(PendingBankTransfersView, '/billing/bank-transfers')
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="billing-bank-transfer-actions-5"]').trigger('click')
     await wrapper.get('[data-testid="billing-bank-transfer-confirm-5"]').trigger('click')
     await wrapper.get('[data-testid="billing-bank-transfers-confirm-dialog"] [data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()

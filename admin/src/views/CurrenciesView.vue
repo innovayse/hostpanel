@@ -319,7 +319,7 @@ onMounted(() => store.fetchAll())
               </UiBadge>
             </UiTableCell>
             <UiTableCell actions>
-              <UiRowActions :actions="currencyActions(c)" />
+              <UiRowActions :actions="currencyActions(c)" :testid="`currency-actions-${c.code}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

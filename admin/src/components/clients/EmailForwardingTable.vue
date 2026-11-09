@@ -360,7 +360,7 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiRowAction[] => 
                 />
               </UiTableCell>
               <UiTableCell actions>
-                <UiRowActions :actions="forwardingRuleActions(row.rule)" />
+                <UiRowActions :actions="forwardingRuleActions(row.rule)" :testid="`clients-forwarding-actions-${row.key}`" />
               </UiTableCell>
             </template>
           </UiTableRow>

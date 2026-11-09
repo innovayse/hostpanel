@@ -216,7 +216,7 @@ onMounted(() => load())
               </UiBadge>
             </UiTableCell>
             <UiTableCell actions>
-              <UiRowActions :actions="cancellationActions(item)" />
+              <UiRowActions :actions="cancellationActions(item)" :testid="`cancellations-actions-${item.id}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

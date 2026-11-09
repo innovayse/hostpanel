@@ -46,7 +46,7 @@ describe('ManageUsersView', () => {
     expect(row.text()).toContain('Ada')
     expect(row.text()).toContain('ada@example.com')
     expect(row.text()).toContain('Never')
-    await wrapper.get('[data-testid="users-row-u1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="users-actions-u1"]').trigger('click')
     expect(wrapper.find('[data-testid="users-manage-u1"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="users-reset-u1"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="users-password-u1"]').exists()).toBe(true)
@@ -70,7 +70,7 @@ describe('ManageUsersView', () => {
     })
     const wrapper = await mountUsers()
 
-    await wrapper.get('[data-testid="users-row-u1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="users-actions-u1"]').trigger('click')
     await wrapper.get('[data-testid="users-reset-u1"]').trigger('click')
     await flushPromises()
 
@@ -114,7 +114,7 @@ describe('ManageUsersView', () => {
    * @returns Resolves when the confirmation prompt is open.
    */
   const askDelete = async (wrapper: Awaited<ReturnType<typeof mountUsers>>): Promise<void> => {
-    await wrapper.get('[data-testid="users-row-u1"]').get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="users-actions-u1"]').trigger('click')
     await wrapper.get('[data-testid="users-manage-u1"]').trigger('click')
     await flushPromises()
     await wrapper.get('[data-testid="clients-userform-delete"]').trigger('click')

@@ -40,6 +40,7 @@ import { BillableItemType } from '@/types/billableitem'
 import type { BillableItem } from '@/types/billableitem'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { AppRoute } from '@/lib/routes'
+import { formatPlainAmount } from '@/lib/money'
 import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
@@ -343,7 +344,7 @@ onMounted(() => {
             <UiTableCell muted>{{ item.id }}</UiTableCell>
             <UiTableCell>{{ item.clientName }}</UiTableCell>
             <UiTableCell>{{ item.description }}</UiTableCell>
-            <UiTableCell numeric>{{ item.currency }} {{ item.amount.toFixed(2) }}</UiTableCell>
+            <UiTableCell numeric>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
             <UiTableCell muted>{{ typeLabel(item.type) }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="item.isInvoiced ? 'success' : 'danger'">

@@ -258,7 +258,7 @@ const contactActions = (contact: Contact): UiRowAction[] => {
               <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
             </UiTableCell>
             <UiTableCell actions>
-              <UiRowActions :actions="contactActions(contact)" />
+              <UiRowActions :actions="contactActions(contact)" :testid="`client-contacts-actions-${contact.id}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

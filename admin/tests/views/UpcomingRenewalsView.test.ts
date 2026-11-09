@@ -1,12 +1,15 @@
 /**
  * Tests for UpcomingRenewalsView: it lists the services, domains and claimed lines the API returns, asks for
  * another window from the tabs, switches auto-renew, raises a client invoice by hand, releases a claim only
- * after the confirmation, and on a refused load shows the error with Retry.
+ * after the confirmation, keeps generate and release disabled while an action runs, and on a refused load shows
+ * the error with Retry.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import { nextTick } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import UpcomingRenewalsView from '@/views/UpcomingRenewalsView.vue'
+import { useRenewalsStore } from '@/stores/renewals'
 import { mountRouted } from '../helpers/mount'
 import { json, problem } from '../helpers/fetch'
 import { stubRoutes } from '../helpers/routes'
@@ -141,6 +144,26 @@ describe('UpcomingRenewalsView', () => {
     await flushPromises()
 
     expect(released()).toBe(true)
+  })
+
+  it('disables generate and release while an action is running, and enables them again after', async () => {
+    stubRoutes(lists)
+    const wrapper = await mountView()
+    const store = useRenewalsStore()
+    /** The single row actions that must wait for the running action. */
+    const ids = ['renewals-service-generate-4', 'renewals-domain-generate-7', 'renewals-claim-release-11']
+
+    store.acting = true
+    await nextTick()
+    for (const id of ids) {
+      expect(wrapper.get(`[data-testid="${id}"]`).attributes('disabled')).toBeDefined()
+    }
+
+    store.acting = false
+    await nextTick()
+    for (const id of ids) {
+      expect(wrapper.get(`[data-testid="${id}"]`).attributes('disabled')).toBeUndefined()
+    }
   })
 
   it('names the client of a claimed line instead of showing their id', async () => {

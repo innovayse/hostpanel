@@ -172,7 +172,7 @@ const lineActions = (index: number): UiRowAction[] => {
               <UiText tone="primary" size="md">{{ formatPlainAmount(lineTotal(line), props.currency) }}</UiText>
             </UiTableCell>
             <UiTableCell actions>
-              <UiRowActions :actions="lineActions(index)" />
+              <UiRowActions :actions="lineActions(index)" :testid="`billing-quote-item-actions-${index}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

@@ -589,7 +589,7 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
               </UiTableCell>
               <UiTableCell muted>{{ formatDate(u.lastLoginAt) }}</UiTableCell>
               <UiTableCell actions>
-                <UiRowActions :actions="clientUserActions(u)" />
+                <UiRowActions :actions="clientUserActions(u)" :testid="`client-users-actions-${u.userId}`" />
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>

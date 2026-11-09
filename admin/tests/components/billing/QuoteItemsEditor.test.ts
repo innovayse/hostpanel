@@ -54,6 +54,8 @@ describe('QuoteItemsEditor', () => {
     const onUpdate = vi.fn()
     const single = mountWithApp(QuoteItemsEditor, { props: { modelValue: [line()] } })
     expect(single.find('[data-testid="billing-quote-item-remove-0"]').exists()).toBe(false)
+    // The only line has no actions control at all, so nothing can leave the quote empty.
+    expect(single.find('[data-testid="row-actions"]').exists()).toBe(false)
 
     const double = mountWithApp(QuoteItemsEditor, {
       props: { modelValue: [line(), line({ description: 'Second' })], 'onUpdate:modelValue': onUpdate },

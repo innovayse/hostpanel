@@ -6,7 +6,8 @@
  * accessible label that opens a dropdown list of named actions. Destructive actions move to the end of the
  * list in the danger tone; each still asks for confirmation in its own `onSelect`. The menu closes on Escape,
  * on a click outside the component, and after any action is activated. Disabled actions are shown faded and
- * cannot be selected. No actions render nothing.
+ * cannot be selected. No actions render nothing. An action with a `to` route is a real link (an anchor via RouterLink), so
+ * middle click, Ctrl/Cmd click and "open in new tab" work and assistive technology announces a link.
  *
  * Keyboard behaviour follows the WAI-ARIA APG "Menu Button" pattern:
  * - Enter / click on the trigger opens the menu and moves focus to the first enabled item.
@@ -18,6 +19,7 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
 import { UiTransitionKind } from '@/utils/ui/transition'
 import { useI18n } from 'vue-i18n'
+import { RouterLink, type RouteLocationRaw } from 'vue-router'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import { Icon } from '@/lib/icons'
 
@@ -25,8 +27,10 @@ import { Icon } from '@/lib/icons'
 export interface UiRowAction {
   /** Visible label and accessible name of the action. */
   label: string
-  /** Called when the user activates the action. */
-  onSelect: () => void
+  /** Called when the user activates the action; optional for a link action, whose navigation is the `to` route. */
+  onSelect?: () => void
+  /** Route the action opens. When set (and the action is enabled) the item renders as a RouterLink anchor. */
+  to?: RouteLocationRaw
   /** Styles the item as a destructive (red) action. */
   danger?: boolean
   /** Prevents the item from being selected; it is shown faded. */
@@ -39,6 +43,8 @@ export interface UiRowAction {
 const props = defineProps<{
   /** The actions to show in the menu. */
   actions: UiRowAction[]
+  /** Per-row unique `data-testid` of the kebab trigger; `row-actions-trigger` when not given. */
+  testid?: string
 }>()
 
 const { t } = useI18n()
@@ -51,6 +57,22 @@ const ordered = computed<UiRowAction[]>(() => [
 
 /** The only action of the row, shown as a plain button instead of a menu; null when there are none or several. */
 const single = computed<UiRowAction | null>(() => (ordered.value.length === 1 ? ordered.value[0] ?? null : null))
+
+/** The `data-testid` of the kebab trigger: the caller's per-row id, or the shared default. */
+const triggerTestid = computed<string>(() => props.testid ?? 'row-actions-trigger')
+
+/** Selector of the focusable, enabled menu items, buttons and link anchors alike. */
+const ITEM_SELECTOR = '[role="menuitem"]:not([disabled])'
+
+/**
+ * Whether an action renders as a link: it has a route and is not disabled (a disabled link cannot be inert).
+ *
+ * @param action - The action to check.
+ * @returns True when the action is an enabled link.
+ */
+const isLink = (action: UiRowAction): action is UiRowAction & { to: RouteLocationRaw } => {
+  return action.to !== undefined && !action.disabled
+}
 
 /** Whether the dropdown is open. */
 const open = ref(false)
@@ -139,8 +161,10 @@ const toggle = (): void => {
 const select = (action: UiRowAction): void => {
   if (action.disabled) { return }
   open.value = false
-  action.onSelect()
-  triggerRef.value?.focus()
+  action.onSelect?.()
+  if (!isLink(action)) {
+    triggerRef.value?.focus()
+  }
 }
 
 /**
@@ -150,7 +174,7 @@ const select = (action: UiRowAction): void => {
  */
 const selectSingle = (action: UiRowAction): void => {
   if (action.disabled) { return }
-  action.onSelect()
+  action.onSelect?.()
 }
 
 /**
@@ -196,11 +220,9 @@ const onKeydown = (e: KeyboardEvent): void => {
 
   if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
     e.preventDefault()
-    const items = Array.from(
-      menuRef.value?.querySelectorAll<HTMLButtonElement>('button:not([disabled])') ?? [],
-    )
+    const items = Array.from(menuRef.value?.querySelectorAll<HTMLElement>(ITEM_SELECTOR) ?? [])
     if (!items.length) { return }
-    const idx = items.indexOf(document.activeElement as HTMLButtonElement)
+    const idx = items.indexOf(document.activeElement as HTMLElement)
     const next =
       e.key === 'ArrowDown'
         ? items[(idx + 1) % items.length]
@@ -221,7 +243,7 @@ watch(open, async (val) => {
   if (!open.value) { return }
   applyPlace()
   listenForMove()
-  const first = menuRef.value?.querySelector<HTMLButtonElement>('button:not([disabled])')
+  const first = menuRef.value?.querySelector<HTMLElement>(ITEM_SELECTOR)
   first?.focus()
 })
 
@@ -239,8 +261,19 @@ onUnmounted(() => {
 
 <template>
   <div v-if="single" class="inline-block" data-testid="row-actions">
-    <!-- One action: the action itself, no menu -->
+    <!-- One action: the action itself, no menu; a link when it has a route -->
+    <RouterLink
+      v-if="isLink(single)"
+      :to="single.to"
+      :data-testid="single.testid ?? 'row-actions-single'"
+      class="inline-flex items-center justify-center rounded-lg px-2 py-1 text-sm font-medium transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-primary-500"
+      :class="single.danger ? 'text-danger-600 dark:text-danger-400' : 'text-text-primary'"
+      @click="selectSingle(single)"
+    >
+      {{ single.label }}
+    </RouterLink>
     <button
+      v-else
       type="button"
       :data-testid="single.testid ?? 'row-actions-single'"
       :disabled="single.disabled"
@@ -260,7 +293,7 @@ onUnmounted(() => {
       aria-haspopup="menu"
       :aria-expanded="open"
       class="inline-flex items-center justify-center rounded-lg p-1 text-text-muted transition-colors hover:bg-surface-raised hover:text-text-primary focus-visible:outline-2 focus-visible:outline-primary-500"
-      data-testid="row-actions-trigger"
+      :data-testid="triggerTestid"
       @click="toggle"
     >
       <UiIcon :markup="Icon.MoreVertical" size="sm" />
@@ -275,19 +308,31 @@ onUnmounted(() => {
         class="fixed z-20 min-w-[10rem] rounded-[9px] border border-border bg-surface-base py-1 shadow-lg right-[var(--ra-right)] top-[var(--ra-top,auto)] bottom-[var(--ra-bottom,auto)]"
         data-testid="row-actions-menu"
       >
-        <button
-          v-for="action in ordered"
-          :key="action.testid ?? action.label"
-          type="button"
-          role="menuitem"
-          :data-testid="action.testid"
-          :disabled="action.disabled"
-          class="flex w-full items-center px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-40"
-          :class="action.danger ? 'text-danger-600 dark:text-danger-400' : 'text-text-primary'"
-          @click="select(action)"
-        >
-          {{ action.label }}
-        </button>
+        <template v-for="action in ordered" :key="action.testid ?? action.label">
+          <RouterLink
+            v-if="isLink(action)"
+            :to="action.to"
+            role="menuitem"
+            :data-testid="action.testid"
+            class="flex w-full items-center px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:bg-surface-raised"
+            :class="action.danger ? 'text-danger-600 dark:text-danger-400' : 'text-text-primary'"
+            @click="select(action)"
+          >
+            {{ action.label }}
+          </RouterLink>
+          <button
+            v-else
+            type="button"
+            role="menuitem"
+            :data-testid="action.testid"
+            :disabled="action.disabled"
+            class="flex w-full items-center px-3 py-1.5 text-left text-sm transition-colors hover:bg-surface-raised focus-visible:outline-none focus-visible:bg-surface-raised disabled:cursor-not-allowed disabled:opacity-40"
+            :class="action.danger ? 'text-danger-600 dark:text-danger-400' : 'text-text-primary'"
+            @click="select(action)"
+          >
+            {{ action.label }}
+          </button>
+        </template>
       </div>
     </UiTransition>
   </div>

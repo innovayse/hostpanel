@@ -204,7 +204,7 @@ onMounted(() => store.fetchAll())
                   />
                 </UiTableCell>
                 <UiTableCell actions>
-                  <UiRowActions :actions="generateActions(service.clientId, `renewals-service-generate-${service.id}`)" />
+                  <UiRowActions :actions="generateActions(service.clientId, `renewals-service-generate-${service.id}`)" :testid="`renewals-service-actions-${service.id}`" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
@@ -260,7 +260,7 @@ onMounted(() => store.fetchAll())
                   />
                 </UiTableCell>
                 <UiTableCell actions>
-                  <UiRowActions :actions="generateActions(domain.clientId, `renewals-domain-generate-${domain.id}`)" />
+                  <UiRowActions :actions="generateActions(domain.clientId, `renewals-domain-generate-${domain.id}`)" :testid="`renewals-domain-actions-${domain.id}`" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
@@ -312,7 +312,7 @@ onMounted(() => store.fetchAll())
                 <UiTableCell>{{ claim.description }}</UiTableCell>
                 <UiTableCell muted>{{ formatDateTime(claim.claimedAt) }}</UiTableCell>
                 <UiTableCell actions>
-                  <UiRowActions :actions="releaseActions(claim)" />
+                  <UiRowActions :actions="releaseActions(claim)" :testid="`renewals-claim-actions-${claim.itemId}`" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>

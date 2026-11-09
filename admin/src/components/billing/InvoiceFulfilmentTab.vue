@@ -262,7 +262,7 @@ watch(
               </UiTableCell>
               <UiTableCell muted>{{ whenOf(record) }}</UiTableCell>
               <UiTableCell actions>
-                <UiRowActions :actions="recordActions(record)" />
+                <UiRowActions :actions="recordActions(record)" :testid="`billing-invoice-fulfilment-actions-${record.id}`" />
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>

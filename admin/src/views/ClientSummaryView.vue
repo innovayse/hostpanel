@@ -707,7 +707,7 @@ onMounted(() => {
                   <UiBadge :tone="serviceStatusTone(service.status)" small>{{ statusLabel(SERVICE_STATUS_OPTIONS, service.status) }}</UiBadge>
                 </UiTableCell>
                 <UiTableCell actions @click.stop>
-                  <UiRowActions :actions="serviceActions(service)" />
+                  <UiRowActions :actions="serviceActions(service)" :testid="`client-summary-service-actions-${service.id}`" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
@@ -764,7 +764,7 @@ onMounted(() => {
                   </UiText>
                 </UiTableCell>
                 <UiTableCell actions @click.stop>
-                  <UiRowActions :actions="domainActions(domain)" />
+                  <UiRowActions :actions="domainActions(domain)" :testid="`client-summary-domain-actions-${domain.id}`" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
@@ -819,7 +819,7 @@ onMounted(() => {
                   </UiBadge>
                 </UiTableCell>
                 <UiTableCell actions @click.stop>
-                  <UiRowActions :actions="quoteActions(quote)" />
+                  <UiRowActions :actions="quoteActions(quote)" :testid="`client-summary-quote-actions-${quote.id}`" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>

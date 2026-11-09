@@ -43,14 +43,19 @@ describe('InvoicesListView', () => {
     await flushPromises()
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
-    await wrapper.get('[data-testid="billing-invoice-view-1"]').trigger('click')
+    await wrapper.get('[data-testid="billing-invoice-actions-1"]').trigger('click')
+    const view = wrapper.get('[data-testid="billing-invoice-view-1"]')
+    // Real links, so a new tab and a middle click open the same pages.
+    expect(view.element.tagName).toBe('A')
+    expect(view.attributes('href')).toBe('/billing/invoices/1/view')
+    expect(wrapper.get('[data-testid="billing-invoice-edit-1"]').attributes('href')).toBe('/billing/invoices/1/edit')
+    await view.trigger('click')
     await flushPromises()
     expect(router.currentRoute.value.fullPath).toBe('/billing/invoices/1/view')
 
     await router.push('/billing/invoices')
     await flushPromises()
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="billing-invoice-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="billing-invoice-edit-1"]').trigger('click')
     await flushPromises()
     expect(router.currentRoute.value.fullPath).toBe('/billing/invoices/1/edit')
@@ -90,7 +95,7 @@ describe('InvoicesListView', () => {
     const wrapper = await mountList()
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="billing-invoice-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="billing-invoice-delete-1"]').trigger('click')
     expect(mock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(false)
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
@@ -133,7 +138,7 @@ describe('InvoicesListView', () => {
     const wrapper = await mountList()
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="billing-invoice-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="billing-invoice-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -146,7 +151,7 @@ describe('InvoicesListView', () => {
     const wrapper = await mountList()
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="billing-invoice-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="billing-invoice-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -160,7 +165,7 @@ describe('InvoicesListView', () => {
     const wrapper = await mountList()
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="billing-invoice-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="billing-invoice-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     await flushPromises()

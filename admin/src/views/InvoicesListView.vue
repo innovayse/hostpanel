@@ -7,7 +7,6 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
@@ -48,9 +47,6 @@ import { invoiceEditPath, invoiceViewPath } from '@/lib/routes'
 import { UiTone } from '@/utils/ui/tone'
 
 const { t } = useI18n()
-
-/** Router used by the view and edit row actions. */
-const router = useRouter()
 
 const store = useBillingStore()
 
@@ -241,7 +237,7 @@ const dismissDelete = (): void => {
 }
 
 /**
- * The row actions of an invoice: view, edit, and delete last (confirmed first).
+ * The row actions of an invoice: view and edit as real links, and delete last (confirmed first).
  *
  * @param id - The invoice id.
  * @returns The action list passed to UiRowActions.
@@ -250,26 +246,12 @@ const invoiceActions = (id: number): UiRowAction[] => [
   {
     label: t('shared.view'),
     testid: `billing-invoice-view-${id}`,
-    /**
-     * Opens the invoice to view it.
-     *
-     * @returns Nothing.
-     */
-    onSelect: (): void => {
-      void router.push(invoiceViewPath(id))
-    },
+    to: invoiceViewPath(id),
   },
   {
     label: t('shared.edit'),
     testid: `billing-invoice-edit-${id}`,
-    /**
-     * Opens the invoice to edit it.
-     *
-     * @returns Nothing.
-     */
-    onSelect: (): void => {
-      void router.push(invoiceEditPath(id))
-    },
+    to: invoiceEditPath(id),
   },
   {
     label: t('shared.delete'),
@@ -409,7 +391,7 @@ onMounted(() => load(1))
               <UiBadge :tone="invoiceStatusTone(invoice.status)">{{ invoice.status }}</UiBadge>
             </UiTableCell>
             <UiTableCell actions>
-              <UiRowActions :actions="invoiceActions(invoice.id)" />
+              <UiRowActions :actions="invoiceActions(invoice.id)" :testid="`billing-invoice-actions-${invoice.id}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

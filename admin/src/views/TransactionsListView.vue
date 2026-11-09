@@ -8,7 +8,6 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import TransactionChart from '@/components/billing/TransactionChart.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -49,9 +48,6 @@ import type { Transaction } from '@/types/transaction'
 import { AppRoute, transactionEditPath } from '@/lib/routes'
 
 const { t } = useI18n()
-
-/** Router used by the edit row action. */
-const router = useRouter()
 
 /** Which side of the ledger the list shows. */
 const Direction = {
@@ -192,7 +188,7 @@ const dismissDelete = (): void => {
 }
 
 /**
- * The row actions of a transaction: edit, and delete last (confirmed first).
+ * The row actions of a transaction: edit as a real link, and delete last (confirmed first).
  *
  * @param id - The transaction id.
  * @returns The action list passed to UiRowActions.
@@ -201,14 +197,7 @@ const transactionActions = (id: number): UiRowAction[] => [
   {
     label: t('shared.edit'),
     testid: `billing-transaction-edit-${id}`,
-    /**
-     * Opens the transaction to edit it.
-     *
-     * @returns Nothing.
-     */
-    onSelect: (): void => {
-      void router.push(transactionEditPath(id))
-    },
+    to: transactionEditPath(id),
   },
   {
     label: t('shared.delete'),
@@ -350,7 +339,7 @@ onMounted(() => load(1))
               <UiText :tone="transaction.amountOut > 0 ? 'danger' : 'muted'">{{ cell(transaction.amountOut, transaction.currency) }}</UiText>
             </UiTableCell>
             <UiTableCell actions>
-              <UiRowActions :actions="transactionActions(transaction.id)" />
+              <UiRowActions :actions="transactionActions(transaction.id)" :testid="`billing-transaction-actions-${transaction.id}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

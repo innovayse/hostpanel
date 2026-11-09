@@ -362,7 +362,7 @@ watch(
                 {{ formatPlainAmount(lineTotal(line), props.invoice.currency) }}
               </UiTableCell>
               <UiTableCell actions>
-                <UiRowActions :actions="lineActions(index)" />
+                <UiRowActions :actions="lineActions(index)" :testid="`billing-invoice-item-actions-${index}`" />
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>

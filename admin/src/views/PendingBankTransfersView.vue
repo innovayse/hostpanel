@@ -278,7 +278,7 @@ onMounted(() => load(1))
             <UiTableCell>{{ transfer.reference }}</UiTableCell>
             <UiTableCell muted>{{ formatDateTime(transfer.requestedAt) }}</UiTableCell>
             <UiTableCell actions>
-              <UiRowActions :actions="transferActions(transfer)" />
+              <UiRowActions :actions="transferActions(transfer)" :testid="`billing-bank-transfer-actions-${transfer.invoiceId}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

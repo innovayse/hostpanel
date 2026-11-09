@@ -262,7 +262,7 @@ onMounted(() => fetchTransactions())
               </UiTableCell>
               <UiTableCell muted numeric>{{ formatPlainAmount(tx.fees, tx.currency) }}</UiTableCell>
               <UiTableCell actions>
-                <UiRowActions :actions="transactionActions(tx)" />
+                <UiRowActions :actions="transactionActions(tx)" :testid="`client-transactions-actions-${tx.id}`" />
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>

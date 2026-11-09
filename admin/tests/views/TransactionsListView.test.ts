@@ -61,8 +61,12 @@ describe('TransactionsListView', () => {
     await flushPromises()
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
-    await wrapper.get('[data-testid="billing-transaction-edit-9"]').trigger('click')
+    await wrapper.get('[data-testid="billing-transaction-actions-9"]').trigger('click')
+    const edit = wrapper.get('[data-testid="billing-transaction-edit-9"]')
+    // A real link, so a new tab and a middle click open the same page.
+    expect(edit.element.tagName).toBe('A')
+    expect(edit.attributes('href')).toBe('/billing/transactions/9/edit')
+    await edit.trigger('click')
     await flushPromises()
 
     expect(router.currentRoute.value.fullPath).toBe('/billing/transactions/9/edit')
@@ -107,7 +111,7 @@ describe('TransactionsListView', () => {
     const wrapper = await mountLedger()
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="billing-transaction-actions-9"]').trigger('click')
     await wrapper.get('[data-testid="billing-transaction-delete-9"]').trigger('click')
     expect(mock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(false)
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
@@ -125,14 +129,14 @@ describe('TransactionsListView', () => {
     const wrapper = await mountLedger()
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="billing-transaction-actions-9"]').trigger('click')
     await wrapper.get('[data-testid="billing-transaction-delete-9"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     await flushPromises()
     expect(mock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(false)
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="billing-transaction-actions-9"]').trigger('click')
     await wrapper.get('[data-testid="billing-transaction-delete-9"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()

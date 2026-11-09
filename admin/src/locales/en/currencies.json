@@ -19,7 +19,6 @@
   "baseBadge": "Base",
   "enabledBadge": "Enabled",
   "disabledBadge": "Disabled",
-  "editTooltip": "Edit currency",
   "empty": "No currencies configured yet. Add your first currency to get started.",
   "makeBaseModal": {
     "title": "Make Base Currency",

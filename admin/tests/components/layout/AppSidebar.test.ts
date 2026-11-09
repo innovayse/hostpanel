@@ -9,6 +9,7 @@ import type { RouteLocationNormalized } from 'vue-router'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useNavigationStore } from '@/stores/navigation'
 import { useVersionStore } from '@/stores/version'
+import { problem } from '../../helpers/fetch'
 import { stubRoutes } from '../../helpers/routes'
 import { mountScreen, mountView } from '../../helpers/mount'
 import { resetThemeDocument, stubSchemeQuery } from '../../helpers/theme'
@@ -145,7 +146,15 @@ describe('AppSidebar', () => {
   })
 
   it('shows no version line when the version cannot be loaded', async () => {
-    const wrapper = await mountSidebar('/dashboard')
+    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    const mock = stubRoutes({ 'GET /api/admin/version': () => problem('No access.', 403) })
+    const wrapper = await mountView(AppSidebar, { path: '/dashboard' })
+    // The layout starts this load in the app; here the test starts it and waits for the refusal.
+    await useVersionStore().ensureLoaded()
+    await flushPromises()
+
+    expect(mock.mock.calls.some(([url]) => String(url).endsWith('/admin/version'))).toBe(true)
+    expect(useVersionStore().error).toBe('No access.')
 
     expect(wrapper.find('[data-testid="sidebar-version"]').exists()).toBe(false)
   })

@@ -69,4 +69,16 @@ describe('releaseStatusStore', () => {
     expect(store.status).toBeNull()
     expect(store.error).toBe(translate('errors.noAnswer'))
   })
+
+  it('reset forgets the status and the error', async () => {
+    stubFetch(json(dto))
+    const store = useReleaseStatusStore()
+    await store.fetch()
+    store.error = 'No access.'
+
+    store.reset()
+
+    expect(store.status).toBeNull()
+    expect(store.error).toBeNull()
+  })
 })

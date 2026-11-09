@@ -43,8 +43,17 @@ describe('SystemSettingsView', () => {
   })
 
   it('shows no version line when the version cannot be loaded', async () => {
-    stubRouteTable({ 'GET /admin/settings': () => json(stored) })
+    const mock = stubRouteTable({
+      'GET /admin/settings': () => json(stored),
+      'GET /admin/version': () => problem('No access.', 403),
+    })
     const { wrapper } = await mountScreen(SystemSettingsView)
+    // The layout starts this load in the app; here the test starts it and waits for the refusal.
+    await useVersionStore().ensureLoaded()
+    await flushPromises()
+
+    expect(requestsOf(mock)).toContain('GET /admin/version')
+    expect(useVersionStore().error).toBe('No access.')
 
     expect(wrapper.find('[data-testid="settings-version"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="system-settings-error"]').exists()).toBe(false)

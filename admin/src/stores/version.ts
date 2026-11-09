@@ -49,12 +49,23 @@ export const useVersionStore = defineStore('version', () => {
       return inFlight
     }
     const started = generation
+    /**
+     * Runs the shared request and keeps its answer only when no reset happened meanwhile.
+     *
+     * The failure sentence is captured in a ref of its own and copied to {@link error} after the
+     * generation check, so a request started before a reset changes neither the version nor the error.
+     *
+     * @returns Resolves when the request is over; never rejects.
+     */
     const request = (async (): Promise<void> => {
-      const result = await runAction(error, api.getInstalledVersion)
+      /** This request's own failure sentence, copied to {@link error} only while it is current. */
+      const failure = ref<string | null>(null)
+      const result = await runAction(failure, api.getInstalledVersion)
       if (started !== generation) {
         return
       }
       inFlight = null
+      error.value = failure.value
       if (result.ok) {
         version.value = result.value.installedVersion
       }

@@ -94,10 +94,11 @@ export const useAuthStore = defineStore('auth', () => {
   /**
    * Identifies the signed-in account and its roles as one string, or null when signed out. It
    * changes on sign-out, on another account and on any role change, so stores whose data depends
-   * on who is asking can watch it.
+   * on who is asking can watch it. The roles are sorted (on a copy), so the same roles in another
+   * order are the same account and trigger no reload.
    */
   const accountKey = computed<string | null>(() =>
-    user.value === null ? null : `${user.value.email}|${user.value.roles.join(',')}`,
+    user.value === null ? null : `${user.value.email}|${[...user.value.roles].sort().join(',')}`,
   )
 
   /** True when the sign-in is mid-flight and waiting on an authenticator code. */

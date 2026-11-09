@@ -117,4 +117,19 @@ describe('versionStore', () => {
 
     expect(store.version).toBe('')
   })
+
+  it('ignores the failure of a request that was started before a reset', async () => {
+    let release: (response: Response) => void = () => undefined
+    vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((resolve) => { release = resolve })))
+    signIn(['Admin'])
+    const store = useVersionStore()
+    const pending = store.ensureLoaded()
+
+    useAuthStore().user = null
+    release(problem('No access.', 403))
+    await pending
+
+    expect(store.version).toBe('')
+    expect(store.error).toBeNull()
+  })
 })

@@ -8,9 +8,14 @@
  */
 import { useData } from 'vitepress'
 import { computed } from 'vue'
+import { format } from '../../i18n/ui'
 import { VersionKind } from '../versionLinks'
+import { useUi } from '../useUi'
 
 const { theme, page } = useData()
+
+/** The texts of the language of the open page. */
+const { ui } = useUi()
 
 /** Version settings the config puts in the theme data. */
 const settings = computed(() => theme.value.docsVersion as { kind: VersionKind; label: string; latestUrl: string } | undefined)
@@ -25,12 +30,12 @@ const visible = computed<boolean>(() => settings.value?.kind === VersionKind.Rel
 <template>
   <div v-if="visible" class="version-banner" role="note">
     <template v-if="settings?.kind === VersionKind.Next">
-      This is the documentation of the next, unreleased version.
+      {{ ui.components.versionBanner.next }}
     </template>
     <template v-else>
-      This is the documentation of {{ settings?.label }}, not the latest release.
+      {{ format(ui.components.versionBanner.release, { version: settings?.label ?? '' }) }}
     </template>
-    <a :href="latestHref">Read the latest version</a>
+    <a :href="latestHref">{{ ui.components.versionBanner.link }}</a>
   </div>
 </template>
 

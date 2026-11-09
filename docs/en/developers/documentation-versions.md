@@ -46,3 +46,7 @@ Read by `docs/.vitepress/config.ts`. All are optional; a plain build without the
 | `DOCS_LATEST_URL` | Public address of the latest docs. Required for an older release and for `next`. |
 | `DOCS_VERSIONS_URL` | Where the browser fetches `versions.json` from. Without it the switcher stays hidden. |
 | `DOCS_LATEST_PAGES` | Path of a JSON array with the page paths of the latest docs. Without it every page of an older release points at the latest home page and is marked `noindex`. |
+
+## Languages
+
+Every version is built in all three languages (English, Russian and Armenian) in one build, so `/vX.Y/ru/` and `/next/hy/` exist next to `/vX.Y/`. A release cut before the languages were added has English only. See [Translating the documentation](./translating-docs).

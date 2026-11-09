@@ -1,0 +1,234 @@
+{
+  "site": {
+    "title": "Hostpanel",
+    "description": "Панель управления веб-хостингом с открытым исходным кодом"
+  },
+  "nav": {
+    "home": "Главная",
+    "getStarted": "Начало работы",
+    "guides": "Руководства",
+    "apiReference": "Справочник API",
+    "changelog": "История изменений",
+    "demo": "Попробовать демо"
+  },
+  "sections": {
+    "get-started": "Начало работы",
+    "operators": "Операторы",
+    "staff": "Сотрудники",
+    "customers": "Клиенты",
+    "payments": "Платежи",
+    "servers": "Серверы и SSH",
+    "migration": "Миграция",
+    "developers": "Разработчики",
+    "contributing": "Участие в проекте",
+    "api-reference": "Справочник API"
+  },
+  "pages": {
+    "/get-started/": "Введение",
+    "/get-started/requirements": "Требования",
+    "/get-started/quick-start": "Быстрый старт",
+    "/operators/": "Обзор",
+    "/operators/install": "Установка Hostpanel",
+    "/operators/upgrade": "Обновление",
+    "/operators/backup": "Резервное копирование и восстановление",
+    "/operators/rollback": "Откат",
+    "/operators/plugin-registry": "Реестр плагинов",
+    "/operators/storefront": "Витрина и брендинг",
+    "/operators/configuration": "Справочник по настройке",
+    "/staff/": "Обзор",
+    "/staff/clients": "Клиенты, пользователи и контакты",
+    "/staff/orders": "Заказы",
+    "/staff/billing": "Счета и платежи",
+    "/staff/transactions": "Транзакции, оплачиваемые позиции и коммерческие предложения",
+    "/staff/currencies": "Валюты, продления и задания",
+    "/staff/products": "Продукты и цены",
+    "/staff/tld-pricing": "Доменные зоны и регистраторы",
+    "/staff/domains": "Домены",
+    "/staff/support-tickets": "Тикеты поддержки",
+    "/staff/announcements": "Объявления, база знаний и загрузки",
+    "/staff/network-issues": "Сетевые проблемы",
+    "/staff/email-templates": "Шаблоны писем",
+    "/customers/": "Обзор",
+    "/customers/portal": "Клиентский портал",
+    "/customers/account": "Ваш аккаунт и вход",
+    "/customers/two-factor": "Двухфакторная аутентификация",
+    "/customers/ordering": "Оформление заказа",
+    "/customers/invoices": "Счета и оплата",
+    "/customers/services": "Услуги и SSH-ключи",
+    "/customers/domains": "Домены",
+    "/customers/tickets": "Тикеты поддержки",
+    "/payments/": "Обзор",
+    "/payments/gateways": "Платёжные шлюзы",
+    "/payments/confirming": "Как подтверждаются онлайн-платежи",
+    "/payments/plugins": "Плагины",
+    "/servers/": "Обзор",
+    "/servers/servers": "Серверы",
+    "/servers/cpanel": "Серверы cPanel",
+    "/servers/ssh-key-agent": "Агент SSH-ключей",
+    "/servers/provisioning": "Провижининг",
+    "/migration/": "Обзор",
+    "/migration/from-another-system": "Переход с WHMCS",
+    "/migration/import-report": "Отчёт об импорте и причины пропуска",
+    "/developers/": "Обзор",
+    "/developers/architecture": "Обзор архитектуры",
+    "/developers/backend": "Бэкенд",
+    "/developers/frontends": "Фронтенды",
+    "/developers/local-dev": "Запуск локально",
+    "/developers/tests": "Тесты и проверки",
+    "/developers/new-feature": "Куда добавлять новую функцию",
+    "/developers/contributing": "Участие в проекте",
+    "/developers/translating": "Перевод Hostpanel",
+    "/developers/translating-docs": "Перевод документации",
+    "/developers/documentation-versions": "Версии документации",
+    "/developers/add-language": "Добавление нового языка",
+    "/developers/integrations": "Интеграции",
+    "/developers/write-a-plugin": "Написание плагина",
+    "/developers/publishing-a-plugin": "Публикация плагина",
+    "/developers/plugin-registry-contract": "Контракт реестра плагинов",
+    "/components": "Компоненты",
+    "/api-reference/": "Обзор",
+    "/api-reference/authentication": "Аутентификация",
+    "/api-reference/errors": "Ошибки",
+    "/api-reference/languages": "Языки",
+    "/api-reference/rate-limits": "Ограничения частоты запросов",
+    "/api-reference/pagination": "Постраничная выдача"
+  },
+  "apiGroups": {
+    "Auth endpoints": "Конечные точки аутентификации",
+    "Public endpoints": "Публичные конечные точки",
+    "Client endpoints": "Конечные точки клиента",
+    "Any signed-in user": "Любой вошедший пользователь",
+    "Admin endpoints": "Конечные точки администратора"
+  },
+  "theme": {
+    "outlineTitle": "На этой странице",
+    "docFooterPrev": "Предыдущая страница",
+    "docFooterNext": "Следующая страница",
+    "lastUpdatedText": "Последнее обновление",
+    "editLinkText": "Изменить эту страницу на GitHub",
+    "darkModeSwitchLabel": "Оформление",
+    "lightModeSwitchTitle": "Переключить на светлую тему",
+    "darkModeSwitchTitle": "Переключить на тёмную тему",
+    "sidebarMenuLabel": "Меню",
+    "returnToTopLabel": "Вернуться наверх",
+    "langMenuLabel": "Изменить язык",
+    "skipToContentLabel": "Перейти к содержимому",
+    "footerMessage": "Распространяется по лицензии AGPL-3.0."
+  },
+  "search": {
+    "buttonText": "Поиск",
+    "buttonAriaLabel": "Поиск",
+    "displayDetails": "Показать подробный список",
+    "resetButtonTitle": "Сбросить поиск",
+    "backButtonTitle": "Закрыть поиск",
+    "noResultsText": "Нет результатов для",
+    "recentTitle": "Недавно просмотренные",
+    "suggestedTitle": "Рекомендуем",
+    "selectText": "выбрать",
+    "selectKeyAriaLabel": "ввод",
+    "navigateText": "перемещаться",
+    "navigateUpKeyAriaLabel": "стрелка вверх",
+    "navigateDownKeyAriaLabel": "стрелка вниз",
+    "closeText": "закрыть",
+    "closeKeyAriaLabel": "escape",
+    "closeKeyLabel": "Esc",
+    "suggestedPages": {
+      "quickStart": "Быстрый старт",
+      "install": "Установка Hostpanel",
+      "configuration": "Справочник по настройке",
+      "apiReference": "Справочник API"
+    }
+  },
+  "components": {
+    "versionSwitcher": {
+      "ariaLabel": "Версия документации: {version}",
+      "latest": "последняя"
+    },
+    "versionBanner": {
+      "next": "Это документация следующей, ещё не выпущенной версии.",
+      "release": "Это документация версии {version}, а не последнего выпуска.",
+      "link": "Читать последнюю версию"
+    },
+    "pageFeedback": {
+      "question": "Эта страница была полезной?",
+      "yes": "Да",
+      "no": "Нет",
+      "thanks": "Спасибо за отзыв!"
+    },
+    "homeSearch": {
+      "ariaLabel": "Открыть поиск по документации",
+      "placeholder": "Поиск по документации…"
+    },
+    "screenshot": {
+      "enlarge": "Увеличить изображение",
+      "preview": "Просмотр изображения",
+      "close": "Закрыть просмотр изображения"
+    },
+    "settingTable": {
+      "name": "Название",
+      "type": "Тип",
+      "default": "По умолчанию",
+      "description": "Описание"
+    },
+    "label": {
+      "admin": "Админ",
+      "new": "Новое",
+      "local": "Локально",
+      "sso": "SSO",
+      "newIn": "Новое в {version}"
+    },
+    "notFound": {
+      "label": "Ошибка 404",
+      "title": "Такой страницы нет",
+      "body": "Возможно, адрес изменился или страницы никогда не было. Начните с главной страницы документации.",
+      "back": "Вернуться к документации",
+      "getStarted": "Начало работы",
+      "apiReference": "Справочник API"
+    }
+  },
+  "seo": {
+    "defaultDescription": "Документация Hostpanel, панели управления веб-хостингом с открытым исходным кодом.",
+    "sectionNames": {
+      "get-started": "Начало работы",
+      "operators": "Операторы",
+      "staff": "Сотрудники",
+      "customers": "Клиенты",
+      "payments": "Платежи",
+      "servers": "Серверы и SSH",
+      "migration": "Миграция",
+      "developers": "Разработчики",
+      "api-reference": "Справочник API",
+      "changelog": "История изменений"
+    },
+    "sectionDescriptions": {
+      "get-started": "Начните работу с Hostpanel, панелью управления веб-хостингом с открытым исходным кодом: требования и быстрый старт.",
+      "operators": "Установка, обновление, резервное копирование и настройка Hostpanel, панели управления веб-хостингом с открытым исходным кодом.",
+      "staff": "Руководство для сотрудников Hostpanel: клиенты, заказы, биллинг, продукты, домены и тикеты поддержки.",
+      "customers": "Руководство для клиентов по порталу Hostpanel: заказы, счета, услуги, домены и тикеты.",
+      "payments": "Настройка платёжных шлюзов и онлайн-платежей в Hostpanel, панели управления веб-хостингом с открытым исходным кодом.",
+      "servers": "Подключение серверов, управление SSH-ключами и создание хостинг-аккаунтов в Hostpanel.",
+      "migration": "Перенесите свой хостинг-бизнес в Hostpanel и разберитесь с отчётом об импорте.",
+      "developers": "Документация для разработчиков Hostpanel: архитектура, локальный запуск, тесты и плагины.",
+      "api-reference": "Справочник REST API Hostpanel: аутентификация, ошибки, языки, ограничения частоты запросов и все конечные точки.",
+      "changelog": "Что изменилось в каждом выпуске Hostpanel."
+    },
+    "sectionKeywords": {
+      "get-started": ["hostpanel", "панель управления хостингом", "открытый исходный код", "быстрый старт"],
+      "operators": ["hostpanel", "установка", "обновление", "резервное копирование", "настройка"],
+      "staff": ["hostpanel", "биллинг хостинга", "руководство администратора", "тикеты поддержки"],
+      "customers": ["hostpanel", "клиентский портал", "хостинг-аккаунт", "счета"],
+      "payments": ["hostpanel", "платёжные шлюзы", "онлайн-платежи", "биллинг"],
+      "servers": ["hostpanel", "управление серверами", "ssh-ключи", "провижининг"],
+      "migration": ["hostpanel", "миграция", "импорт данных", "биллинг хостинга"],
+      "developers": ["hostpanel", "руководство разработчика", "плагины", "открытый исходный код"],
+      "api-reference": ["hostpanel", "rest api", "справочник api", "openapi"],
+      "changelog": ["hostpanel", "история изменений", "заметки о выпуске"]
+    },
+    "defaultKeywords": ["hostpanel", "панель управления хостингом", "биллинг хостинга", "открытый исходный код"]
+  },
+  "fallback": {
+    "title": "Эта страница ещё не переведена",
+    "message": "Эта страница пока не переведена на ваш язык. Ниже показан английский текст.",
+    "original": "Открыть оригинал страницы"
+  }
+}

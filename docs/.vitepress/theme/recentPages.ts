@@ -7,7 +7,14 @@
  *
  * Only the path of a page is stored. Its title and section are read from the sidebar every time,
  * so a renamed page shows its new name and a page that left the sidebar is dropped on the next read.
+ *
+ * The suggested pages are written once, in the English tree, and are put into the open language when the
+ * rows are built: the address gets the language folder and the title comes from the language file.
  */
+
+import { DEFAULT_LOCALE, localizeLink } from '../i18n/locales'
+import type { LocaleKey } from '../i18n/locales'
+import type { UiStrings } from '../i18n/ui'
 
 /** Key of the list of recently viewed page paths in `localStorage`. */
 export const RECENT_PAGES_KEY = 'hostpanel-docs:recent-pages'
@@ -55,12 +62,18 @@ export type SuggestedTone = 'blue' | 'green' | 'amber' | 'violet'
 /** The icons the search box draws, a key of `SEARCH_ICONS` in `searchIcons.ts`. */
 export type SearchIconName = 'file-text' | 'chevron-right' | 'rocket' | 'download' | 'sliders-horizontal' | 'book-open'
 
+/** The titles of the suggested pages in one language: the `search.suggestedPages` object of a language file. */
+export type SuggestedTitles = UiStrings['search']['suggestedPages']
+
+/** Key of a suggested page title in `SuggestedTitles`. */
+export type SuggestedTitleKey = keyof SuggestedTitles
+
 /** One suggested page. */
 export interface SuggestedPage {
-  /** Normalized path of the page; the unit test checks that its file exists. */
+  /** Normalized path of the page in the English tree; the unit test checks that its file exists. */
   path: string
-  /** Single line title shown in the row. */
-  title: string
+  /** Key of the single line title shown in the row, looked up in the open language's `SuggestedTitles`. */
+  titleKey: SuggestedTitleKey
   /** Icon drawn in the row. */
   icon: SearchIconName
   /** Colour of the icon. */
@@ -69,10 +82,10 @@ export interface SuggestedPage {
 
 /** The pages offered to someone who opens the search box and has not typed anything. */
 export const SUGGESTED_PAGES: readonly SuggestedPage[] = [
-  { path: '/get-started/quick-start', title: 'Quick start', icon: 'rocket', tone: 'blue' },
-  { path: '/operators/install', title: 'Install Hostpanel', icon: 'download', tone: 'green' },
-  { path: '/operators/configuration', title: 'Configuration reference', icon: 'sliders-horizontal', tone: 'amber' },
-  { path: '/api-reference/', title: 'API reference', icon: 'book-open', tone: 'violet' },
+  { path: '/get-started/quick-start', titleKey: 'quickStart', icon: 'rocket', tone: 'blue' },
+  { path: '/operators/install', titleKey: 'install', icon: 'download', tone: 'green' },
+  { path: '/operators/configuration', titleKey: 'configuration', icon: 'sliders-horizontal', tone: 'amber' },
+  { path: '/api-reference/', titleKey: 'apiReference', icon: 'book-open', tone: 'violet' },
 ]
 
 /** Which group of the empty-query list a row belongs to. */
@@ -323,13 +336,30 @@ export const getRecentTracker = (): RecentTracker => {
 }
 
 /**
+ * Gives the address of a suggested page in a language.
+ * @param page The suggested page.
+ * @param locale The language; English keeps the address as written, the others get their folder.
+ * @returns The normalized path, for example `/ru/get-started/quick-start`.
+ */
+export const suggestedPagePath = (page: SuggestedPage, locale: LocaleKey = DEFAULT_LOCALE): string => {
+  return localizeLink(locale, page.path)
+}
+
+/**
  * Builds the rows of the empty-query list: recently viewed first, suggested after. The indexes run
  * on across both groups, so arrow keys and Enter treat them as one list.
  * @param recentPaths Valid recently viewed paths, newest first.
  * @param catalog Pages that exist now, for their titles and sections.
+ * @param locale The open language; the suggested addresses get its folder (`/ru/...`).
+ * @param titles The suggested page titles of the open language.
  * @returns One or two groups; the recent group is left out when it has no rows.
  */
-export const buildHomeGroups = (recentPaths: string[], catalog: PageCatalog): HomeGroup[] => {
+export const buildHomeGroups = (
+  recentPaths: string[],
+  catalog: PageCatalog,
+  locale: LocaleKey,
+  titles: SuggestedTitles,
+): HomeGroup[] => {
   let index = 0
   const groups: HomeGroup[] = []
   const recentItems: HomeItem[] = []
@@ -345,8 +375,8 @@ export const buildHomeGroups = (recentPaths: string[], catalog: PageCatalog): Ho
   groups.push({
     id: 'suggested',
     items: SUGGESTED_PAGES.map((page) => ({
-      path: page.path,
-      title: page.title,
+      path: suggestedPagePath(page, locale),
+      title: titles[page.titleKey],
       icon: page.icon,
       tone: page.tone,
       index: index++,

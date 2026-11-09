@@ -48,7 +48,7 @@ describe('SEO of the latest release', () => {
     expect(tags).toContainEqual(['meta', { property: 'og:url', content: `${LATEST}/staff/orders` }])
     expect(hasRobots(tags)).toBe(false)
     expect(jsonLd(tags)[1]).toMatchObject({ '@type': 'TechArticle', version: 'v0.4' })
-    expect(seo.sitemapItems([{ url: 'staff/orders' }])).toEqual([{ url: 'staff/orders' }])
+    expect(seo.sitemapItems([{ url: 'staff/orders' }])).toEqual([{ url: 'staff/orders', links: [] }])
   })
 })
 

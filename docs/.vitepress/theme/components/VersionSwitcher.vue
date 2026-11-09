@@ -18,10 +18,15 @@
 import { useData } from 'vitepress'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { switcherLabel } from '../switcherLabel'
+import { format } from '../../i18n/ui'
+import { useUi } from '../useUi'
 import { docsRootOf, findPages, pageIn, parseVersions, VersionKind } from '../versionLinks'
 import type { Probe, VersionEntry } from '../versionLinks'
 
 const { theme, page, site } = useData()
+
+/** The texts of the language of the open page. */
+const { ui } = useUi()
 
 /** The versions offered, empty until the file is read. */
 const versions = ref<VersionEntry[]>([])
@@ -55,8 +60,11 @@ const current = computed<VersionEntry | undefined>(() => {
 
 /** Text on the button, the same before and after the list is read (see `switcherLabel`). */
 const currentText = computed<string>(() =>
-  switcherLabel(settings.value?.kind ?? VersionKind.Latest, settings.value?.label ?? '', current.value?.label),
+  switcherLabel(settings.value?.kind ?? VersionKind.Latest, settings.value?.label ?? '', current.value?.label, ui.value.components.versionSwitcher.latest),
 )
+
+/** Accessible name of the button, with the version in it. */
+const buttonLabel = computed<string>(() => format(ui.value.components.versionSwitcher.ariaLabel, { version: currentText.value }))
 
 /** Whether the list has been read and holds something to choose from. */
 const ready = computed<boolean>(() => versions.value.length > 1)
@@ -157,7 +165,7 @@ watch(pagePath, () => {
       aria-haspopup="listbox"
       :aria-expanded="open"
       :aria-disabled="!ready"
-      :aria-label="`Documentation version: ${currentText}`"
+      :aria-label="buttonLabel"
       @click="toggle"
     >
       {{ currentText }}
@@ -167,7 +175,7 @@ watch(pagePath, () => {
       <li v-for="entry in versions" :key="entry.label" role="option" :aria-selected="entry.label === current?.label">
         <!-- `target` keeps the router of the theme out: another version is another build with its own base, so its pages are not pages of this one and must load as a new document. -->
         <a :href="hrefOf(entry)" target="_self" :class="{ active: entry.label === current?.label }" @click="open = false">
-          {{ entry.label }}<span v-if="entry.kind === VersionKind.Latest" class="version-switcher-tag">latest</span>
+          {{ entry.label }}<span v-if="entry.kind === VersionKind.Latest" class="version-switcher-tag">{{ ui.components.versionSwitcher.latest }}</span>
         </a>
       </li>
     </ul>

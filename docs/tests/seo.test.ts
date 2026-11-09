@@ -186,6 +186,6 @@ describe('createSeo', () => {
 
   it('keeps the 404 page out of the sitemap', () => {
     const items = [{ url: '' }, { url: 'staff/' }, { url: '404' }, { url: '404.html' }]
-    expect(seo.sitemapItems(items)).toEqual([{ url: '' }, { url: 'staff/' }])
+    expect(seo.sitemapItems(items)).toEqual([{ url: '', links: [] }, { url: 'staff/', links: [] }])
   })
 })

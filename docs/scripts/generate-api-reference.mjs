@@ -3,7 +3,7 @@
  * reference cannot drift from the code. CI exports the document (see the "openapi" job of
  * .github/workflows/docs.yml); nothing it produces is committed.
  *
- * It writes, under docs/api-reference/:
+ * It writes, under docs/en/api-reference/:
  *   - auth/, public/, client/, member/, admin/   one page per operation (the audience groups)
  *   - generated-sidebar.json            the sidebar groups the VitePress config merges in
  *   - _partials/rate-limit-endpoints.md the list of endpoints per rate limit policy, which the
@@ -30,7 +30,7 @@ import { createSchemaTools } from './lib/schema.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const repoRoot = resolve(here, '../..')
-const apiDir = resolve(here, '../api-reference')
+const apiDir = resolve(here, '../en/api-reference')
 const controllersDir = resolve(repoRoot, 'backend/src/Innovayse.Hostpanel.API/Controllers')
 const openapiPath = process.argv[2] ? resolve(process.argv[2]) : resolve(repoRoot, 'openapi.json')
 

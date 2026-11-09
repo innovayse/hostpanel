@@ -16,6 +16,8 @@
     arrow keys, Enter and the footer hints. Their logic lives in `../recentPages.ts`.
   - Selection, key handling and the list ids read the active list (start rows when the query is
     empty, search results otherwise) through `activeCount`.
+  - Every text comes from the language files through `../useUi.ts` (`search.*` in `i18n/*.json`),
+    so the box has no English of its own; the suggested pages get the open language's folder.
   Everything about typed queries (index, search options, excerpts, highlighting, detailed view)
   is unchanged.
 -->
@@ -41,7 +43,6 @@ import { dataSymbol, inBrowser, useData, useRouter, withBase } from 'vitepress'
 import { pathToFile } from 'vitepress/dist/client/app/utils.js'
 import { escapeRegExp } from 'vitepress/dist/client/shared.js'
 import { LRUCache } from 'vitepress/dist/client/theme-default/support/lru.js'
-import { createSearchTranslate } from 'vitepress/dist/client/theme-default/support/translation.js'
 import {
   computed,
   createApp,
@@ -57,6 +58,7 @@ import {
 } from 'vue'
 import { buildHomeGroups, buildPageCatalog, getRecentTracker } from '../recentPages'
 import type { HomeGroup, SidebarConfig } from '../recentPages'
+import { useUi } from '../useUi'
 import HpSearchIcon from './HpSearchIcon.vue'
 
 /** Emits `close` when the box should be dismissed. */
@@ -89,25 +91,6 @@ interface Result {
   text?: string
 }
 
-/** Texts of the modal that the theme options may translate; the two group titles are added here. */
-interface ModalTranslations {
-  displayDetails?: string
-  resetButtonTitle?: string
-  backButtonTitle?: string
-  noResultsText?: string
-  recentTitle?: string
-  suggestedTitle?: string
-  footer?: {
-    selectText?: string
-    selectKeyAriaLabel?: string
-    navigateText?: string
-    navigateUpKeyAriaLabel?: string
-    navigateDownKeyAriaLabel?: string
-    closeText?: string
-    closeKeyAriaLabel?: string
-  }
-}
-
 /** Site and theme data of the current page. */
 const vitePressData = useData()
 /** Keeps keyboard focus inside the box while it is open. */
@@ -117,8 +100,12 @@ const { activate } = useFocusTrap(el, {
   clickOutsideDeactivates: true,
   escapeDeactivates: true
 })
-/** Active locale and theme options. */
+/** Active locale index and theme options. */
 const { localeIndex, theme } = vitePressData
+/** The texts and the language of the open page. */
+const { ui, locale } = useUi()
+/** The search texts of the open language. */
+const searchText = computed(() => ui.value.search)
 /** The search index of the active locale, loaded on demand. */
 const searchIndex = computedAsync(async () =>
   markRaw(
@@ -171,15 +158,7 @@ const disableDetailedView = computed(() => {
 })
 
 /** Text of the search button, also the input placeholder. */
-const buttonText = computed(() => {
-  const options = theme.value.search?.options ?? theme.value.algolia
-
-  return (
-    options?.locales?.[localeIndex.value]?.translations?.button?.buttonText ||
-    options?.translations?.button?.buttonText ||
-    'Search'
-  )
-})
+const buttonText = computed(() => searchText.value.buttonText)
 
 watchEffect(() => {
   if (disableDetailedView.value) {
@@ -383,7 +362,9 @@ const pageCatalog = computed(() =>
 const isHome = computed(() => filterText.value.length === 0)
 
 /** The start view groups; starts with the suggested group and gains the recent one on mount. */
-const homeGroups = shallowRef<HomeGroup[]>(buildHomeGroups([], pageCatalog.value))
+const homeGroups = shallowRef<HomeGroup[]>(
+  buildHomeGroups([], pageCatalog.value, locale.value, searchText.value.suggestedPages)
+)
 
 /** Every start view row in one list, so the keys walk both groups as one. */
 const homeItems = computed(() => homeGroups.value.flatMap((group) => group.items))
@@ -399,11 +380,15 @@ const activeCount = computed(() =>
 const refreshHome = () => {
   homeGroups.value = buildHomeGroups(
     getRecentTracker().read(pageCatalog.value),
-    pageCatalog.value
+    pageCatalog.value,
+    locale.value,
+    searchText.value.suggestedPages
   )
 }
 
 onMounted(refreshHome)
+// A change of language rebuilds the rows, so their titles and addresses follow the open language.
+watch(locale, refreshHome)
 
 watch(results, (r) => {
   if (isHome.value) {
@@ -494,31 +479,6 @@ onKeyStroke('Escape', () => {
   emit('close')
 })
 
-// Translations
-/** English texts, overridden by the theme options. */
-const defaultTranslations: { modal: ModalTranslations } = {
-  modal: {
-    recentTitle: 'Recently viewed',
-    suggestedTitle: 'Suggested',
-    displayDetails: 'Display detailed list',
-    resetButtonTitle: 'Reset search',
-    backButtonTitle: 'Close search',
-    noResultsText: 'No results for',
-    footer: {
-      selectText: 'to select',
-      selectKeyAriaLabel: 'enter',
-      navigateText: 'to navigate',
-      navigateUpKeyAriaLabel: 'up arrow',
-      navigateDownKeyAriaLabel: 'down arrow',
-      closeText: 'to close',
-      closeKeyAriaLabel: 'escape'
-    }
-  }
-}
-
-/** Looks a text up in the theme translations, then in the defaults. */
-const translate = createSearchTranslate(defaultTranslations)
-
 // Back
 
 onMounted(() => {
@@ -605,7 +565,7 @@ const onMouseMove = (e: MouseEvent) => {
           <div class="search-actions before">
             <button
               class="back-button"
-              :title="translate('modal.backButtonTitle')"
+              :title="searchText.backButtonTitle"
               @click="$emit('close')"
             >
               <span class="vpi-arrow-left local-search-icon" />
@@ -635,7 +595,7 @@ const onMouseMove = (e: MouseEvent) => {
               class="toggle-layout-button"
               type="button"
               :class="{ 'detailed-list': showDetailedList }"
-              :title="translate('modal.displayDetails')"
+              :title="searchText.displayDetails"
               @click="
                 selectedIndex > -1 && (showDetailedList = !showDetailedList)
               "
@@ -647,7 +607,7 @@ const onMouseMove = (e: MouseEvent) => {
               class="clear-button"
               type="reset"
               :disabled="disableReset"
-              :title="translate('modal.resetButtonTitle')"
+              :title="searchText.resetButtonTitle"
               @click="resetSearch"
             >
               <span class="vpi-delete local-search-icon" />
@@ -666,7 +626,7 @@ const onMouseMove = (e: MouseEvent) => {
           <template v-if="isHome">
             <template v-for="group in homeGroups" :key="group.id">
               <li class="group-title" role="presentation">
-                {{ translate(group.id === 'recent' ? 'modal.recentTitle' : 'modal.suggestedTitle') }}
+                {{ group.id === 'recent' ? searchText.recentTitle : searchText.suggestedTitle }}
               </li>
               <li
                 v-for="item in group.items"
@@ -763,7 +723,7 @@ const onMouseMove = (e: MouseEvent) => {
             v-if="filterText && !results.length && enableNoResults"
             class="no-results"
           >
-            {{ translate('modal.noResultsText') }} "<strong>{{ filterText }}</strong
+            {{ searchText.noResultsText }} "<strong>{{ filterText }}</strong
             >"
           </li>
           </template>
@@ -771,23 +731,23 @@ const onMouseMove = (e: MouseEvent) => {
 
         <div class="search-keyboard-shortcuts">
           <span>
-            <kbd :aria-label="translate('modal.footer.navigateUpKeyAriaLabel')">
+            <kbd :aria-label="searchText.navigateUpKeyAriaLabel">
               <span class="vpi-arrow-up navigate-icon" />
             </kbd>
-            <kbd :aria-label="translate('modal.footer.navigateDownKeyAriaLabel')">
+            <kbd :aria-label="searchText.navigateDownKeyAriaLabel">
               <span class="vpi-arrow-down navigate-icon" />
             </kbd>
-            {{ translate('modal.footer.navigateText') }}
+            {{ searchText.navigateText }}
           </span>
           <span>
-            <kbd :aria-label="translate('modal.footer.selectKeyAriaLabel')">
+            <kbd :aria-label="searchText.selectKeyAriaLabel">
               <span class="vpi-corner-down-left navigate-icon" />
             </kbd>
-            {{ translate('modal.footer.selectText') }}
+            {{ searchText.selectText }}
           </span>
           <span>
-            <kbd :aria-label="translate('modal.footer.closeKeyAriaLabel')">esc</kbd>
-            {{ translate('modal.footer.closeText') }}
+            <kbd :aria-label="searchText.closeKeyAriaLabel">{{ searchText.closeKeyLabel }}</kbd>
+            {{ searchText.closeText }}
           </span>
         </div>
       </div>
@@ -810,47 +770,62 @@ const onMouseMove = (e: MouseEvent) => {
   transition: opacity 0.5s;
 }
 
+/* The panel is a compact command palette: 640px wide, about 12vh from the top, a hairline border
+   and a soft shadow instead of the default heavy frame. */
 .shell {
   position: relative;
-  padding: 12px;
-  margin: 64px auto;
+  padding: 0;
+  margin: 12vh auto 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0;
+  overflow: hidden;
   background: var(--vp-local-search-bg);
-  width: min(100vw - 60px, 900px);
+  width: min(640px, 100vw - 24px);
   height: min-content;
-  max-height: min(100vh - 128px, 900px);
-  border-radius: 6px;
+  max-height: calc(100vh - 12vh - 24px);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 22px;
+  box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.28);
 }
 
+/* Phones: 10px margins on every side and a list that takes the remaining height. */
 @media (max-width: 767px) {
   .shell {
-    margin: 0;
-    width: 100vw;
-    height: 100vh;
+    margin: 10px;
+    width: calc(100vw - 20px);
+    height: calc(100dvh - 20px);
     max-height: none;
-    border-radius: 0;
+    border-radius: 18px;
+  }
+
+  .results {
+    flex: 1;
+    max-height: none;
   }
 }
 
 .search-bar {
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 4px;
+  height: 58px;
+  flex: none;
+  border: 0;
+  border-bottom: 1px solid var(--vp-c-divider);
+  border-radius: 0;
   display: flex;
   align-items: center;
-  padding: 0 12px;
+  padding: 0 14px 0 18px;
   cursor: text;
 }
 
 @media (max-width: 767px) {
   .search-bar {
-    padding: 0 8px;
+    height: 56px;
+    padding: 0 10px 0 14px;
   }
 }
 
 .search-bar:focus-within {
-  border-color: var(--vp-c-brand-1);
+  border-bottom-color: var(--vp-c-brand-1);
 }
 
 .local-search-icon {
@@ -864,7 +839,8 @@ const onMouseMove = (e: MouseEvent) => {
 }
 
 .search-icon {
-  margin: 8px;
+  margin: 0 4px 0 0;
+  color: var(--vp-c-text-3);
 }
 
 @media (max-width: 767px) {
@@ -874,8 +850,9 @@ const onMouseMove = (e: MouseEvent) => {
 }
 
 .search-input {
-  padding: 6px 12px;
-  font-size: inherit;
+  padding: 6px 10px;
+  font-size: 17px;
+  line-height: 24px;
   width: 100%;
 }
 
@@ -904,6 +881,7 @@ const onMouseMove = (e: MouseEvent) => {
 
 .search-actions button {
   padding: 8px;
+  border-radius: 10px;
 }
 
 .search-actions button:not([disabled]):hover,
@@ -916,18 +894,21 @@ const onMouseMove = (e: MouseEvent) => {
 }
 
 .search-keyboard-shortcuts {
-  font-size: 0.8rem;
-  opacity: 75%;
+  flex: none;
+  font-size: 12px;
+  color: var(--vp-c-text-2);
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
-  line-height: 14px;
+  line-height: 16px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--vp-c-divider);
 }
 
 .search-keyboard-shortcuts span {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 @media (max-width: 767px) {
@@ -937,21 +918,26 @@ const onMouseMove = (e: MouseEvent) => {
 }
 
 .search-keyboard-shortcuts kbd {
-  background: rgba(128, 128, 128, 0.1);
-  border-radius: 4px;
-  padding: 3px 6px;
-  min-width: 24px;
+  background: var(--vp-c-bg-soft);
+  border-radius: 6px;
+  padding: 2px 5px;
+  min-width: 20px;
+  font-family: inherit;
+  font-size: 11px;
+  line-height: 16px;
   display: inline-block;
   text-align: center;
   vertical-align: middle;
-  border: 1px solid rgba(128, 128, 128, 0.15);
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--vp-c-divider);
 }
 
 .results {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
+  padding: 8px;
+  min-height: 0;
+  max-height: min(56vh, 460px);
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -961,10 +947,10 @@ const onMouseMove = (e: MouseEvent) => {
   display: flex;
   align-items: center;
   gap: 8px;
-  border-radius: 4px;
+  border-radius: 12px;
   transition: none;
   line-height: 1rem;
-  border: solid 2px var(--vp-local-search-result-border);
+  border: solid 1px var(--vp-local-search-result-border);
   outline: none;
 }
 
@@ -1073,18 +1059,24 @@ const onMouseMove = (e: MouseEvent) => {
 }
 
 .group-title {
-  font-size: 0.75rem;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--vp-c-text-2);
-  padding: 6px 12px 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--vp-c-text-3);
+  padding: 8px 10px 4px;
+}
+
+.group-title:first-child {
+  padding-top: 2px;
 }
 
 .result.home-result {
   gap: 12px;
-  padding: 8px 12px;
-  border-color: transparent;
-  border-radius: 8px;
+  min-height: 52px;
+  padding: 8px 10px;
+  border-width: 0;
+  border-radius: 12px;
 }
 
 .result.home-result.selected {
@@ -1097,9 +1089,9 @@ const onMouseMove = (e: MouseEvent) => {
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   font-size: 18px;
   color: var(--tone, var(--vp-c-text-2));
   background: color-mix(in srgb, var(--tone, var(--vp-c-text-2)) 14%, transparent);
@@ -1129,19 +1121,22 @@ const onMouseMove = (e: MouseEvent) => {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
 }
 
 .home-title {
-  font-weight: 700;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .home-crumb {
-  font-size: 0.8rem;
+  font-size: 12px;
+  line-height: 16px;
   color: var(--vp-c-text-2);
   white-space: nowrap;
   overflow: hidden;
@@ -1155,7 +1150,6 @@ const onMouseMove = (e: MouseEvent) => {
   color: var(--vp-c-text-3);
 }
 
-.result.home-result.selected .home-title,
 .result.home-result.selected .home-chevron {
   color: var(--vp-c-brand-1);
 }
@@ -1173,5 +1167,12 @@ const onMouseMove = (e: MouseEvent) => {
 
 svg {
   flex: none;
+}
+/* Reduced motion: the panel and the backdrop appear without a transition. */
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .result {
+    transition: none;
+  }
 }
 </style>

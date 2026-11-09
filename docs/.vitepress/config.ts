@@ -12,52 +12,23 @@ import { fileURLToPath } from 'node:url'
 import { createSeo } from './seo'
 import { withNavBarClasses } from './navClasses'
 import { hasSitemap, readLatestPages, resolveVersion } from './versions'
-import { sidebarSectionText } from './sidebarIcon'
-import type { SidebarIcon } from './sidebarIcon'
+import { listEnglishPages, pageKey, readSettings, translatedKeys } from '../scripts/lib/localeFallbacks.mjs'
+import { DEFAULT_LOCALE, FALLBACK_DIR, LOCALES, LocaleKey, TRANSLATED_LOCALES } from './i18n/locales'
+import { buildLocaleThemeConfig, buildSearchTranslations } from './i18n/themeConfig'
+import type { GeneratedGroup } from './i18n/themeConfig'
+import { stringsFor } from './i18n/ui'
+import type { PageLanguages } from './seo'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-/** A group or a page of the generated endpoint sidebar; groups nest (audience, then area). */
-type GeneratedSidebarItem = { text: string; link?: string; collapsed?: boolean; items?: GeneratedSidebarItem[] }
 
 /**
  * The endpoint groups of the API reference. `scripts/generate-api-reference.mjs` writes this file
  * from the OpenAPI document in CI; it is not committed, so a plain checkout has no endpoint pages.
  */
-const generatedSidebarPath = resolve(__dirname, '../api-reference/generated-sidebar.json')
-const generatedApiSidebarItems: GeneratedSidebarItem[] = existsSync(generatedSidebarPath)
+const generatedSidebarPath = resolve(__dirname, '../en/api-reference/generated-sidebar.json')
+const generatedApiSidebarItems: GeneratedGroup[] = existsSync(generatedSidebarPath)
   ? JSON.parse(readFileSync(generatedSidebarPath, 'utf8'))
   : []
-
-/**
- * Icon of each endpoint group, by the group title `scripts/generate-api-reference.mjs` writes, so the
- * API reference sidebar looks like the main one. A group with a new title falls back to the book icon.
- */
-const API_GROUP_ICONS: Record<string, SidebarIcon> = {
-  'Auth endpoints': 'key-round',
-  'Public endpoints': 'globe',
-  'Client endpoints': 'user',
-  'Any signed-in user': 'user-check',
-  'Admin endpoints': 'shield-check',
-}
-
-/** The sidebar of the API reference: the pages every endpoint shares, then the generated endpoint groups. */
-const apiReferenceSidebar: GeneratedSidebarItem[] = [
-  {
-    text: sidebarSectionText('book-open', 'API reference'),
-    items: [
-      { text: 'Overview', link: '/api-reference/' },
-      { text: 'Authentication', link: '/api-reference/authentication' },
-      { text: 'Errors', link: '/api-reference/errors' },
-      { text: 'Languages', link: '/api-reference/languages' },
-      { text: 'Rate limits', link: '/api-reference/rate-limits' },
-      { text: 'Pagination', link: '/api-reference/pagination' },
-    ],
-  },
-  ...generatedApiSidebarItems.map((group) => ({
-    ...group,
-    text: sidebarSectionText(API_GROUP_ICONS[group.text] ?? 'book-open', group.text),
-  })),
-]
 
 /**
  * Public address of the demo admin panel and client portal.
@@ -99,17 +70,105 @@ const version = resolveVersion(
   readLatestPages(process.env.DOCS_LATEST_PAGES ?? ''),
 )
 
-/** Per page description, canonical, social tags, JSON-LD and the sitemap filter, all built from `siteUrl`. */
-const seo = createSeo(siteUrl, version)
+/** Source folder of the documentation. */
+const docsRoot = resolve(__dirname, '..')
+
+/**
+ * The pages each language really has, as address keys: English lists every translatable page, the other
+ * languages only the files translators wrote (the generated placeholders are not in these folders).
+ * The SEO hooks link a page to its other languages with `hreflang` from this.
+ */
+const pageLanguages: PageLanguages = {
+  [DEFAULT_LOCALE]: new Set<string>(listEnglishPages(docsRoot, readSettings()).map(pageKey)),
+  ...translatedKeys(docsRoot),
+}
+
+/** Per page description, canonical, social tags, JSON-LD, hreflang alternates and the sitemap filter, all built from `siteUrl`. */
+const seo = createSeo(siteUrl, version, pageLanguages)
+
+/**
+ * Address of the page on GitHub, the same in every language. `filePath` is the real source (`en/staff/orders.md`,
+ * `ru/staff/orders.md`), not the address the page is served at. A placeholder page has no file in the repository,
+ * so its edit link goes to the path where the translation is to be created.
+ * @param page The page data.
+ * @returns The address.
+ */
+const editLinkOf = (page: { filePath: string }): string => {
+  return `https://github.com/innovayse/hostpanel/edit/main/docs/${page.filePath.replace(/^_fallback\//, '')}`
+}
+
+/** Copyright line of the footer, the same in every language. */
+const COPYRIGHT = 'Copyright © 2024-present Innovayse Digital Agency'
+
+/**
+ * The part of the theme config that depends on the language, per language: navigation, sidebar and the
+ * labels of the default theme. English is the root of the site, the others sit below their folder.
+ */
+const localeTheme = Object.fromEntries(
+  Object.values(LocaleKey).map((locale) => [
+    locale,
+    buildLocaleThemeConfig(locale, stringsFor(locale), {
+      demoUrl: DEMO_ADMIN_URL,
+      generated: generatedApiSidebarItems,
+      editPattern: editLinkOf,
+      copyright: COPYRIGHT,
+    }),
+  ]),
+) as Record<LocaleKey, ReturnType<typeof buildLocaleThemeConfig>>
+
+/**
+ * The language entries of the config. English has the key `root` (served without a folder); each other
+ * language has a title, a description, a menu label, a `lang` for the page and its own theme config.
+ */
+const locales = {
+  root: {
+    label: LOCALES[DEFAULT_LOCALE].label,
+    lang: LOCALES[DEFAULT_LOCALE].lang,
+    title: stringsFor(DEFAULT_LOCALE).site.title,
+    description: stringsFor(DEFAULT_LOCALE).site.description,
+  },
+  ...Object.fromEntries(
+    TRANSLATED_LOCALES.map((locale) => [
+      locale,
+      {
+        label: LOCALES[locale].label,
+        lang: LOCALES[locale].lang,
+        link: `/${LOCALES[locale].prefix}/`,
+        title: stringsFor(locale).site.title,
+        description: stringsFor(locale).site.description,
+        themeConfig: localeTheme[locale],
+      },
+    ]),
+  ),
+}
+
+/** The search box texts of every language, keyed like the locales above (`root` for English). */
+const searchLocales = Object.fromEntries(
+  Object.values(LocaleKey).map((locale) => [locale === DEFAULT_LOCALE ? 'root' : locale, { translations: buildSearchTranslations(stringsFor(locale)) }]),
+)
 
 export default defineConfig({
-  title: 'Hostpanel',
-  description: 'Open source web hosting control panel',
-  lang: 'en-US',
+  title: stringsFor(DEFAULT_LOCALE).site.title,
+  description: stringsFor(DEFAULT_LOCALE).site.description,
+  lang: LOCALES[DEFAULT_LOCALE].lang,
   cleanUrls: true,
 
+  /** English at the root, Russian below /ru/ and Armenian below /hy/. */
+  locales,
+
+  /**
+   * Every language keeps its pages in a folder of its own. English is served without its folder (the addresses
+   * stay `/docs/staff/orders`), Russian and Armenian below `/ru/` and `/hy/`. The placeholder pages of
+   * languages that lack a page (see `scripts/generate-locale-fallbacks.mjs`) are written to a folder of their
+   * own and served at the address of the page they stand in for.
+   */
+  rewrites: {
+    [`${LOCALES[DEFAULT_LOCALE].folder}/:rest*`]: ':rest*',
+    [`${FALLBACK_DIR}/:rest*`]: ':rest*',
+  },
+
   /** Generated fragments that pages include; they are not pages of their own. */
-  srcExclude: ['api-reference/_partials/**'],
+  srcExclude: [`${LOCALES[DEFAULT_LOCALE].folder}/api-reference/_partials/**`],
 
   /**
    * Replaces the default theme's search box with `theme/components/LocalSearchBox.vue`, a copy of
@@ -183,157 +242,18 @@ export default defineConfig({
 
     siteTitle: false,
 
-    nav: [
-      { text: 'Home', link: '/' },
-      { text: 'Get started', link: '/get-started/' },
-      { text: 'Guides', link: '/operators/' },
-      { text: 'API Reference', link: '/api-reference/' },
-      { text: 'Changelog', link: '/changelog/' },
-      ...(DEMO_ADMIN_URL ? [{ text: 'Try the demo', link: DEMO_ADMIN_URL }] : []),
-    ],
-
-    sidebar: {
-      /** The API reference has a sidebar of its own, so its endpoint pages do not weigh down every other page. */
-      '/api-reference/': apiReferenceSidebar,
-      '/': [
-        {
-          text: sidebarSectionText('rocket', 'Get started'),
-          collapsed: true,
-          items: [
-            { text: 'Introduction', link: '/get-started/' },
-            { text: 'Requirements', link: '/get-started/requirements' },
-            { text: 'Quick start', link: '/get-started/quick-start' },
-          ],
-        },
-        {
-          text: sidebarSectionText('wrench', 'Operators'),
-          collapsed: true,
-          items: [
-            { text: 'Overview', link: '/operators/' },
-            { text: 'Install Hostpanel', link: '/operators/install' },
-            { text: 'Upgrade', link: '/operators/upgrade' },
-            { text: 'Back up and restore', link: '/operators/backup' },
-            { text: 'Rollback', link: '/operators/rollback' },
-            { text: 'Plugin registry', link: '/operators/plugin-registry' },
-            { text: 'Storefront & branding', link: '/operators/storefront' },
-            { text: 'Configuration reference', link: '/operators/configuration' },
-          ],
-        },
-        {
-          text: sidebarSectionText('briefcase', 'Staff'),
-          collapsed: true,
-          items: [
-            { text: 'Overview', link: '/staff/' },
-            { text: 'Clients, users and contacts', link: '/staff/clients' },
-            { text: 'Orders', link: '/staff/orders' },
-            { text: 'Invoices and payments', link: '/staff/billing' },
-            { text: 'Transactions, billable items and quotes', link: '/staff/transactions' },
-            { text: 'Currencies, renewals and jobs', link: '/staff/currencies' },
-            { text: 'Products and pricing', link: '/staff/products' },
-            { text: 'Domain extensions and registrars', link: '/staff/tld-pricing' },
-            { text: 'Domains', link: '/staff/domains' },
-            { text: 'Support tickets', link: '/staff/support-tickets' },
-            { text: 'Announcements, knowledge base and downloads', link: '/staff/announcements' },
-            { text: 'Network issues', link: '/staff/network-issues' },
-            { text: 'Email templates', link: '/staff/email-templates' },
-          ],
-        },
-        {
-          text: sidebarSectionText('users', 'Customers'),
-          collapsed: true,
-          items: [
-            { text: 'Overview', link: '/customers/' },
-            { text: 'Client portal', link: '/customers/portal' },
-            { text: 'Your account and signing in', link: '/customers/account' },
-            { text: 'Two-factor authentication', link: '/customers/two-factor' },
-            { text: 'Ordering', link: '/customers/ordering' },
-            { text: 'Invoices and paying', link: '/customers/invoices' },
-            { text: 'Services and SSH keys', link: '/customers/services' },
-            { text: 'Domains', link: '/customers/domains' },
-            { text: 'Support tickets', link: '/customers/tickets' },
-          ],
-        },
-        {
-          text: sidebarSectionText('credit-card', 'Payments'),
-          collapsed: true,
-          items: [
-            { text: 'Overview', link: '/payments/' },
-            { text: 'Gateways', link: '/payments/gateways' },
-            { text: 'How online payments are confirmed', link: '/payments/confirming' },
-            { text: 'Plugins', link: '/payments/plugins' },
-          ],
-        },
-        {
-          text: sidebarSectionText('server', 'Servers & SSH'),
-          collapsed: true,
-          items: [
-            { text: 'Overview', link: '/servers/' },
-            { text: 'Servers', link: '/servers/servers' },
-            { text: 'cPanel servers', link: '/servers/cpanel' },
-            { text: 'SSH key agent', link: '/servers/ssh-key-agent' },
-            { text: 'Provisioning', link: '/servers/provisioning' },
-          ],
-        },
-        {
-          text: sidebarSectionText('arrow-left-right', 'Migration'),
-          collapsed: true,
-          items: [
-            { text: 'Overview', link: '/migration/' },
-            { text: 'Moving from WHMCS', link: '/migration/from-another-system' },
-            { text: 'Import report and skip reasons', link: '/migration/import-report' },
-          ],
-        },
-        {
-          text: sidebarSectionText('code', 'Developers'),
-          collapsed: true,
-          items: [
-            { text: 'Overview', link: '/developers/' },
-            { text: 'Architecture overview', link: '/developers/architecture' },
-            { text: 'Backend', link: '/developers/backend' },
-            { text: 'Frontends', link: '/developers/frontends' },
-            { text: 'Run locally', link: '/developers/local-dev' },
-            { text: 'Tests and checks', link: '/developers/tests' },
-            { text: 'Where a new feature goes', link: '/developers/new-feature' },
-            { text: 'Contributing', link: '/developers/contributing' },
-            { text: 'Translating Hostpanel', link: '/developers/translating' },
-            { text: 'Documentation versions', link: '/developers/documentation-versions' },
-            { text: 'Add a new language', link: '/developers/add-language' },
-            { text: 'Integrations', link: '/developers/integrations' },
-            { text: 'Write a plugin', link: '/developers/write-a-plugin' },
-            { text: 'Publishing a plugin', link: '/developers/publishing-a-plugin' },
-            { text: 'Plugin registry contract', link: '/developers/plugin-registry-contract' },
-          ],
-        },
-        {
-          text: sidebarSectionText('git-pull-request', 'Contributing'),
-          collapsed: true,
-          items: [
-            { text: 'Components', link: '/components' },
-          ],
-        },
-      ],
-    },
-
-    editLink: {
-      pattern: 'https://github.com/innovayse/hostpanel/edit/main/docs/:path',
-      text: 'Edit this page on GitHub',
-    },
-
-    lastUpdated: true,
+    /** Navigation, sidebar and the labels of the default theme in English; the other languages bring their own in `locales`. */
+    ...localeTheme[DEFAULT_LOCALE],
 
     search: {
       provider: 'local',
+      options: { locales: searchLocales },
     },
 
     socialLinks: [
       { icon: 'discord', link: 'https://discord.gg/NfqTkyTgD' },
       { icon: 'github', link: 'https://github.com/innovayse/hostpanel' },
     ],
-
-    footer: {
-      message: 'Released under the AGPL-3.0 License.',
-      copyright: 'Copyright © 2024-present Innovayse Digital Agency',
-    },
 
     /** Read by the version switcher and the notice banner of the theme. */
     docsVersion: {

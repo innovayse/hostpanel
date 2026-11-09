@@ -1,0 +1,118 @@
+{
+  "main": [
+    {
+      "key": "get-started",
+      "icon": "rocket",
+      "links": ["/get-started/", "/get-started/requirements", "/get-started/quick-start"]
+    },
+    {
+      "key": "operators",
+      "icon": "wrench",
+      "links": [
+        "/operators/",
+        "/operators/install",
+        "/operators/upgrade",
+        "/operators/backup",
+        "/operators/rollback",
+        "/operators/plugin-registry",
+        "/operators/storefront",
+        "/operators/configuration"
+      ]
+    },
+    {
+      "key": "staff",
+      "icon": "briefcase",
+      "links": [
+        "/staff/",
+        "/staff/clients",
+        "/staff/orders",
+        "/staff/billing",
+        "/staff/transactions",
+        "/staff/currencies",
+        "/staff/products",
+        "/staff/tld-pricing",
+        "/staff/domains",
+        "/staff/support-tickets",
+        "/staff/announcements",
+        "/staff/network-issues",
+        "/staff/email-templates"
+      ]
+    },
+    {
+      "key": "customers",
+      "icon": "users",
+      "links": [
+        "/customers/",
+        "/customers/portal",
+        "/customers/account",
+        "/customers/two-factor",
+        "/customers/ordering",
+        "/customers/invoices",
+        "/customers/services",
+        "/customers/domains",
+        "/customers/tickets"
+      ]
+    },
+    {
+      "key": "payments",
+      "icon": "credit-card",
+      "links": ["/payments/", "/payments/gateways", "/payments/confirming", "/payments/plugins"]
+    },
+    {
+      "key": "servers",
+      "icon": "server",
+      "links": ["/servers/", "/servers/servers", "/servers/cpanel", "/servers/ssh-key-agent", "/servers/provisioning"]
+    },
+    {
+      "key": "migration",
+      "icon": "arrow-left-right",
+      "links": ["/migration/", "/migration/from-another-system", "/migration/import-report"]
+    },
+    {
+      "key": "developers",
+      "icon": "code",
+      "links": [
+        "/developers/",
+        "/developers/architecture",
+        "/developers/backend",
+        "/developers/frontends",
+        "/developers/local-dev",
+        "/developers/tests",
+        "/developers/new-feature",
+        "/developers/contributing",
+        "/developers/translating",
+        "/developers/translating-docs",
+        "/developers/documentation-versions",
+        "/developers/add-language",
+        "/developers/integrations",
+        "/developers/write-a-plugin",
+        "/developers/publishing-a-plugin",
+        "/developers/plugin-registry-contract"
+      ]
+    },
+    {
+      "key": "contributing",
+      "icon": "git-pull-request",
+      "links": ["/components"]
+    }
+  ],
+  "apiReference": {
+    "key": "api-reference",
+    "icon": "book-open",
+    "links": [
+      "/api-reference/",
+      "/api-reference/authentication",
+      "/api-reference/errors",
+      "/api-reference/languages",
+      "/api-reference/rate-limits",
+      "/api-reference/pagination"
+    ]
+  },
+  "apiGroupIcons": {
+    "Auth endpoints": "key-round",
+    "Public endpoints": "globe",
+    "Client endpoints": "user",
+    "Any signed-in user": "user-check",
+    "Admin endpoints": "shield-check"
+  }
+}

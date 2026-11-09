@@ -6,6 +6,7 @@
  */
 import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { withBase } from 'vitepress'
+import { useUi } from '../useUi'
 
 /** Props accepted by the Screenshot component. */
 const props = withDefaults(
@@ -20,6 +21,9 @@ const props = withDefaults(
 
 /** Address of the image under the base path the site is served from (`DOCS_BASE`). */
 const url = computed<string>(() => withBase(props.src))
+
+/** The texts of the language of the open page. */
+const { ui } = useUi()
 
 /** Whether the full-size lightbox overlay is currently open. */
 const open = ref(false)
@@ -67,7 +71,7 @@ onBeforeUnmount(() => {
       class="screenshot-thumb"
       role="button"
       tabindex="0"
-      :aria-label="`Enlarge image${props.alt ? ': ' + props.alt : ''}`"
+      :aria-label="`${ui.components.screenshot.enlarge}${props.alt ? ': ' + props.alt : ''}`"
       @click="openLightbox"
       @keydown.enter="openLightbox"
       @keydown.space.prevent="openLightbox"
@@ -79,12 +83,12 @@ onBeforeUnmount(() => {
         class="screenshot-overlay"
         role="dialog"
         aria-modal="true"
-        :aria-label="props.alt || 'Image preview'"
+        :aria-label="props.alt || ui.components.screenshot.preview"
         @click="closeLightbox"
       >
         <button
           class="screenshot-close"
-          aria-label="Close image preview"
+          :aria-label="ui.components.screenshot.close"
           @click.stop="closeLightbox"
         >
           &#x2715;

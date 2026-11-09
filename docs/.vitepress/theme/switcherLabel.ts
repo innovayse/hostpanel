@@ -7,13 +7,14 @@ import { VersionKind } from './versionLinks'
 /**
  * Text on the version button. The label of the build comes first because it is known when the page is
  * rendered, so the button has the same width before and after the list of versions has been read; the
- * latest docs of an unversioned build have no label and read "latest".
+ * latest docs of an unversioned build have no label and read "latest" (in the language of the page).
  *
  * @param kind - The kind of the build.
  * @param buildLabel - The label of the build, empty for an unversioned one.
  * @param listedLabel - The label the list of versions has for this build, when it has been read.
+ * @param latestText - The word for "latest" in the language of the page; English when omitted.
  * @returns The text of the button.
  */
-export const switcherLabel = (kind: VersionKind, buildLabel: string, listedLabel?: string): string => {
-  return buildLabel || listedLabel || (kind === VersionKind.Latest ? 'latest' : '')
+export const switcherLabel = (kind: VersionKind, buildLabel: string, listedLabel?: string, latestText = 'latest'): string => {
+  return buildLabel || listedLabel || (kind === VersionKind.Latest ? latestText : '')
 }

@@ -284,7 +284,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   stored cards: it is not activated at all (no shipped manifest declares it). `IdentityPluginResolver` counts such a
   plugin as enabled for its conflict check, as it does one missing a required setting. The manifest validator refuses
   an unknown capability, one declared twice and `storedCredentials` outside a payment plugin
-  (`PLUGIN_CAPABILITY_NOT_ALLOWED`); `docs/developers/write-a-plugin.md` documents both.
+  (`PLUGIN_CAPABILITY_NOT_ALLOWED`); `docs/en/developers/write-a-plugin.md` documents both.
 - **Stored credentials are an optional payment capability.** `IStoredCredentialPlugin` (SDK) is implemented by a payment plugin on top of `IPaymentPlugin`; `IStoredCredentialPluginResolver` resolves it on top of `IPaymentPluginResolver` and answers nothing when the chosen plugin does not implement it. It is not a seventh plugin type and has no manifest type of its own.
 - **What the three newer plugin types promise.** *Fulfilment* (`IFulfilmentPlugin`): the host writes a
   `FulfilmentRecords` row in the payment's own transaction and `DispatchFulfilmentCron` delivers it, so delivery is
@@ -359,7 +359,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     maintainer and operator keys; the admin setting `plugins.allow_unsigned` admits unsigned packages (audited, off by default,
     never enforced in Development and Testing); `Plugins:TrustedPackageSha256` pins archive digests; built-in plugins are part
     of the image and are not signature-checked (see "Signed plugin packages").
-  - **For authors**: `docs/developers/write-a-plugin.md` is the guide. The SDK README and a sample plugin belong in the
+  - **For authors**: `docs/en/developers/write-a-plugin.md` is the guide. The SDK README and a sample plugin belong in the
     `hostpanel-sdk` repository, not in this checkout's submodule.
 - **`PluginActivator` takes `IConfiguration` (documented exception to configuration.md rule 6).**
   The plugin SDK's base classes take an `IConfiguration` in their constructor, so the
@@ -1344,7 +1344,7 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   AccountCredit/GatewayRefund) reverses part of a paid invoice at the invoice's own tax rate and is not invoice credit. It is numbered
   `CN-0001` from its own sequence through `INumberSequence` (`NumberKind.CreditNote`), taken as the last step before the save and reused
   across a retried save; a database sequence cannot promise there are no gaps, and the numbering is a cautious default not checked
-  against any local law (documented in `docs/staff/billing.md`). The cap lives on the invoice (`Invoice.CreditableAmount`,
+  against any local law (documented in `docs/en/staff/billing.md`). The cap lives on the invoice (`Invoice.CreditableAmount`,
   `CreditNotedAmount`, `EnsureCreditable`): the charge before credit less every refund and every account credit note, and every
   account credit note also lowers `RefundableAmount`, so the same money never goes back twice. `CreditNotedAmount` changes the invoice
   row, so two notes racing on one invoice fail the row's concurrency check and the loser is retried on what the winner saved. An
@@ -1449,7 +1449,7 @@ activity log line). The admin Upcoming Renewals page (`/billing/renewals`) lists
 after staff checked the registrar, with an activity log line; the line stays unapplied, so the next sweep renews the
 domain again, which is why the page asks for confirmation. The confirmation dialog is a warning in so many words: a release
 of a renewal the registrar already carried out renews the domain twice and is charged twice, so staff check the registrar
-first (`billing.renewals.releaseMessage`, and `docs/staff/currencies.md`). `ClaimedDomainRenewalDto` carries the client's name.
+first (`billing.renewals.releaseMessage`, and `docs/en/staff/currencies.md`). `ClaimedDomainRenewalDto` carries the client's name.
 
 **Renewal invoice lines are not unique per period, on purpose.** The indexes on `InvoiceItems`
 `(ClientServiceId, RenewalPeriodStart)` and `(RegisteredDomainId, RenewalPeriodStart)` stay non-unique: a

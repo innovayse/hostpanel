@@ -263,4 +263,15 @@ describe('auth store accountKey', () => {
     expect(first).not.toBeNull()
     expect(store.accountKey).not.toBe(first)
   })
+
+  it('does not change when the same roles arrive in another order', () => {
+    const store = useAuthStore()
+    store.user = { email: 'staff@example.com', roles: ['Reseller', 'Admin'] }
+    const first = store.accountKey
+
+    store.user = { email: 'staff@example.com', roles: ['Admin', 'Reseller'] }
+
+    expect(store.accountKey).toBe(first)
+    expect(store.user.roles).toEqual(['Admin', 'Reseller'])
+  })
 })

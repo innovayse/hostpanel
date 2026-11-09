@@ -49,7 +49,7 @@ watch(
     if (authStore.isAdmin) {
       void releaseStatusStore.fetch()
     } else {
-      releaseStatusStore.status = null
+      releaseStatusStore.reset()
     }
   },
   { immediate: true },

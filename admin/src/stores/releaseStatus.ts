@@ -43,5 +43,15 @@ export const useReleaseStatusStore = defineStore('releaseStatus', () => {
     }
   }
 
-  return { status, loading, error, fetch }
+  /**
+   * Forgets the release status and any error, for an account that may not read it.
+   *
+   * @returns Nothing.
+   */
+  const reset = (): void => {
+    status.value = null
+    error.value = null
+  }
+
+  return { status, loading, error, fetch, reset }
 })

@@ -93,6 +93,8 @@ public sealed class GetInstalledVersionTests(IntegrationTestFactory factory)
         {
             var users = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
             var user = await users.FindByIdAsync(subject.UserId);
+            user.Should().NotBeNull();
+            // The assertion above fails the test on a missing user; the compiler cannot see that, hence the !.
             (await users.AddToRoleAsync(user!, Roles.Reseller)).Succeeded.Should().BeTrue();
         }
 

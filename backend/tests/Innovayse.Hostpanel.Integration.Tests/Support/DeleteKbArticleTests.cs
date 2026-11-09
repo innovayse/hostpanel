@@ -17,13 +17,7 @@ public sealed class DeleteKbArticleTests(IntegrationTestFactory factory) : IClas
     public async Task AdminCanDeleteAKbArticleAsync()
     {
         var client = await SupportTestSeeds.AdminClientAsync(factory);
-        var createResponse = await client.PostAsJsonAsync("/api/admin/knowledgebase", new
-        {
-            title = $"Article-{Guid.NewGuid():N}",
-            content = "Body text.",
-            category = "General",
-        });
-        var id = int.Parse((await createResponse.Content.ReadAsStringAsync()).Trim());
+        var id = await KbTestSeeds.CreateArticleAsync(client, await KbTestSeeds.CreateCategoryAsync(client));
 
         var response = await client.DeleteAsync($"/api/admin/knowledgebase/{id}");
 

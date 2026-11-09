@@ -37,14 +37,21 @@ public sealed class KnowledgebaseImporterTests(IntegrationTestFactory factory) :
         var worker = scope.ServiceProvider.GetRequiredService<MigrationPullWorker>();
         await worker.RunAsync(job.Id, CancellationToken.None);
 
-        var article = await context.KbArticles.AsNoTracking().FirstOrDefaultAsync(a => a.Title == title);
+        var article = await context.KbArticles.AsNoTracking().FirstOrDefaultAsync(a => a.Translations.Any(t => t.Title == title));
         Assert.NotNull(article);
+        Assert.True(article.IsPublished);
+        Assert.Equal(title, article.Slug);
+        var translation = Assert.Single(article.Translations);
+        Assert.Equal(("en", "Body"), (translation.Locale, translation.Content));
+        var category = await context.KbCategories.AsNoTracking().FirstAsync(c => c.Id == article.CategoryId);
+        Assert.Equal($"category-{marker}", category.Name);
+        Assert.Equal($"category-{marker}", category.Slug);
 
         // Idempotent re-import: an article matched by title is skipped the second time.
         var job2 = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Knowledgebase);
         await worker.RunAsync(job2.Id, CancellationToken.None);
 
-        var articles = await context.KbArticles.AsNoTracking().Where(a => a.Title == title).ToListAsync();
+        var articles = await context.KbArticles.AsNoTracking().Where(a => a.Translations.Any(t => t.Title == title)).ToListAsync();
         Assert.Single(articles);
     }
 }

@@ -399,7 +399,7 @@ const dnsRecordActions = (record: DnsRecordItem): UiRowAction[] => [
               <UiTableCell muted>{{ row.record.ttl }}</UiTableCell>
               <UiTableCell muted>{{ row.record.priority ?? '—' }}</UiTableCell>
               <UiTableCell actions>
-                <UiRowActions :actions="dnsRecordActions(row.record)" />
+                <UiRowActions :actions="dnsRecordActions(row.record)" :testid="`clients-dns-actions-${row.key}`" />
               </UiTableCell>
             </template>
           </UiTableRow>

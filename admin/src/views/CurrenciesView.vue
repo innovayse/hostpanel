@@ -18,7 +18,7 @@ import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiLabel from '@/components/ui/UiLabel.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiStack from '@/components/ui/UiStack.vue'
@@ -194,6 +194,27 @@ const handleUpdatePrices = async (): Promise<void> => {
   selectedPriceCurrencies.value = []
 }
 
+/**
+ * The one row action of a currency: edit it in the dialog.
+ *
+ * @param currency - The row.
+ * @returns The action list passed to UiRowActions.
+ */
+const currencyActions = (currency: CurrencyDto): UiRowAction[] => [
+  {
+    label: t('shared.edit'),
+    testid: `currency-edit-${currency.code}`,
+    /**
+     * Opens the edit dialog for this currency.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      openEdit(currency)
+    },
+  },
+]
+
 onMounted(() => store.fetchAll())
 </script>
 
@@ -252,15 +273,15 @@ onMounted(() => store.fetchAll())
           {{ t('currencies.empty') }}
         </template>
         <UiTableHead>
-          <UiTableRow class="border-b border-border">
+          <UiTableRow>
             <UiTableHeader align="left">{{ t('currencies.table.code') }}</UiTableHeader>
             <UiTableHeader align="left">{{ t('currencies.table.numeric') }}</UiTableHeader>
             <UiTableHeader align="left">{{ t('currencies.table.format') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('currencies.table.decimals') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('currencies.table.rateToBase') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('currencies.table.decimals') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('currencies.table.rateToBase') }}</UiTableHeader>
             <UiTableHeader align="left">{{ t('currencies.table.base') }}</UiTableHeader>
             <UiTableHeader align="left">{{ t('currencies.table.enabled') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('currencies.table.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('currencies.table.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -273,8 +294,8 @@ onMounted(() => store.fetchAll())
             <UiTableCell class="font-semibold text-text-primary">{{ c.code }}</UiTableCell>
             <UiTableCell muted class="tabular-nums">{{ c.numeric }}</UiTableCell>
             <UiTableCell muted>{{ formatSample(c) }}</UiTableCell>
-            <UiTableCell align="right" muted class="tabular-nums">{{ c.decimals }}</UiTableCell>
-            <UiTableCell align="right" muted class="tabular-nums">
+            <UiTableCell numeric muted>{{ c.decimals }}</UiTableCell>
+            <UiTableCell numeric muted>
               {{ c.isBase ? '—' : c.rateToBase.toFixed(8) }}
             </UiTableCell>
             <UiTableCell>
@@ -297,15 +318,8 @@ onMounted(() => store.fetchAll())
                 {{ c.isEnabled ? t('currencies.enabledBadge') : t('currencies.disabledBadge') }}
               </UiBadge>
             </UiTableCell>
-            <UiTableCell align="right">
-              <UiIconButton
-                :label="t('currencies.editTooltip')"
-                size="sm"
-                :data-testid="`currency-edit-${c.code}`"
-                @click="openEdit(c)"
-              >
-                <UiIcon :markup="Icon.Edit" size="sm" />
-              </UiIconButton>
+            <UiTableCell actions>
+              <UiRowActions :actions="currencyActions(c)" :testid="`currency-actions-${c.code}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

@@ -53,7 +53,7 @@ describe('ClientInvoicesView', () => {
     const wrapper = await mountInvoices()
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="client-invoices-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="client-invoices-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -66,7 +66,7 @@ describe('ClientInvoicesView', () => {
     const wrapper = await mountInvoices()
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="client-invoices-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="client-invoices-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -80,7 +80,7 @@ describe('ClientInvoicesView', () => {
     const wrapper = await mountInvoices()
 
     // Two or more row actions sit behind the kebab menu, so it is opened first.
-    await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="client-invoices-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="client-invoices-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     await flushPromises()

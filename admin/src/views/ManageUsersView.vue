@@ -345,7 +345,7 @@ const manageUserActions = (user: UserListItem): UiRowAction[] => {
           <UiTableCell muted>{{ user.email }}</UiTableCell>
           <UiTableCell muted>{{ formatDate(user.lastLoginAt) }}</UiTableCell>
           <UiTableCell actions>
-            <UiRowActions :actions="manageUserActions(user)" />
+            <UiRowActions :actions="manageUserActions(user)" :testid="`users-actions-${user.id}`" />
           </UiTableCell>
         </UiTableRow>
       </UiTableBody>

@@ -183,17 +183,17 @@ onMounted(load)
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('billing.creditNotes.description') }}</UiTableHeader>
-              <UiTableHeader>{{ t('billing.creditNotes.quantity') }}</UiTableHeader>
-              <UiTableHeader>{{ t('billing.creditNotes.unitPrice') }}</UiTableHeader>
-              <UiTableHeader>{{ t('billing.creditNotes.amount') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('billing.creditNotes.quantity') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('billing.creditNotes.unitPrice') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('billing.creditNotes.amount') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
             <UiTableRow v-for="item in items" :key="item.id">
               <UiTableCell>{{ item.description }}</UiTableCell>
-              <UiTableCell>{{ item.quantity }}</UiTableCell>
-              <UiTableCell>{{ formatPlainAmount(item.unitPrice, note.currency) }}</UiTableCell>
-              <UiTableCell>{{ formatPlainAmount(item.amount, note.currency) }}</UiTableCell>
+              <UiTableCell numeric>{{ item.quantity }}</UiTableCell>
+              <UiTableCell numeric>{{ formatPlainAmount(item.unitPrice, note.currency) }}</UiTableCell>
+              <UiTableCell numeric>{{ formatPlainAmount(item.amount, note.currency) }}</UiTableCell>
             </UiTableRow>
           </UiTableBody>
           <template #empty>

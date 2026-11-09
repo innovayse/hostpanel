@@ -257,7 +257,7 @@ onMounted(() => fetchQuotes())
               </UiBadge>
             </UiTableCell>
             <UiTableCell actions>
-              <UiRowActions :actions="quoteActions(quote)" />
+              <UiRowActions :actions="quoteActions(quote)" :testid="`client-quotes-actions-${quote.id}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

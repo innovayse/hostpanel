@@ -11,7 +11,6 @@
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useResultBanner } from '@/composables/useResultBanner'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -19,6 +18,7 @@ import UiField from '@/components/ui/UiField.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -35,7 +35,6 @@ import { formatCurrencyCode } from '@/lib/money'
 import { clientPath, invoicePath } from '@/lib/routes'
 import { useBankTransfersStore } from '@/stores/bankTransfers'
 import type { PendingBankTransfer } from '@/types/pendingbanktransfer'
-import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 
 /** Longest note the API accepts, mirrored here so the field stops typing at the limit. */
@@ -180,6 +179,40 @@ const handleReject = async (): Promise<void> => {
   await settle(rejected, t('billing.bankTransfers.rejected', { id: target.invoiceId }))
 }
 
+/**
+ * The row actions of a pending transfer: confirm, and reject last (both confirmed in a dialog first).
+ *
+ * @param transfer - The row.
+ * @returns The action list passed to UiRowActions.
+ */
+const transferActions = (transfer: PendingBankTransfer): UiRowAction[] => [
+  {
+    label: t('billing.bankTransfers.confirm'),
+    testid: `billing-bank-transfer-confirm-${transfer.invoiceId}`,
+    /**
+     * Opens the confirmation dialog for this transfer.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      askConfirm(transfer)
+    },
+  },
+  {
+    label: t('billing.bankTransfers.reject'),
+    testid: `billing-bank-transfer-reject-${transfer.invoiceId}`,
+    danger: true,
+    /**
+     * Opens the rejection dialog for this transfer.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      askReject(transfer)
+    },
+  },
+]
+
 onMounted(() => load(1))
 </script>
 
@@ -215,10 +248,10 @@ onMounted(() => load(1))
           <UiTableRow>
             <UiTableHeader>{{ t('shared.invoice') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.amount') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
             <UiTableHeader>{{ t('billing.bankTransfers.reference') }}</UiTableHeader>
             <UiTableHeader>{{ t('billing.bankTransfers.requested') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -241,28 +274,11 @@ onMounted(() => load(1))
                 {{ transfer.clientName }}
               </UiLink>
             </UiTableCell>
-            <UiTableCell>{{ formatCurrencyCode(transfer.amountDue, transfer.currency) }}</UiTableCell>
+            <UiTableCell numeric>{{ formatCurrencyCode(transfer.amountDue, transfer.currency) }}</UiTableCell>
             <UiTableCell>{{ transfer.reference }}</UiTableCell>
             <UiTableCell muted>{{ formatDateTime(transfer.requestedAt) }}</UiTableCell>
-            <UiTableCell align="right">
-              <UiStack direction="row" justify="end" gap="sm">
-                <UiButton
-                  size="sm"
-                  :variant="UiButtonVariant.Primary"
-                  :data-testid="`billing-bank-transfer-confirm-${transfer.invoiceId}`"
-                  @click="askConfirm(transfer)"
-                >
-                  {{ t('billing.bankTransfers.confirm') }}
-                </UiButton>
-                <UiButton
-                  size="sm"
-                  :variant="UiButtonVariant.Danger"
-                  :data-testid="`billing-bank-transfer-reject-${transfer.invoiceId}`"
-                  @click="askReject(transfer)"
-                >
-                  {{ t('billing.bankTransfers.reject') }}
-                </UiButton>
-              </UiStack>
+            <UiTableCell actions>
+              <UiRowActions :actions="transferActions(transfer)" :testid="`billing-bank-transfer-actions-${transfer.invoiceId}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

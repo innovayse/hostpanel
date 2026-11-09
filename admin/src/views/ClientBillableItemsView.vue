@@ -398,7 +398,7 @@ onMounted(() => fetchBillableItems())
                 <UiTableCell>{{ item.description }}</UiTableCell>
                 <UiTableCell muted numeric>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
                 <UiTableCell actions>
-                  <UiRowActions :actions="billableItemActions(item)" />
+                  <UiRowActions :actions="billableItemActions(item)" :testid="`client-billable-actions-${item.id}`" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>

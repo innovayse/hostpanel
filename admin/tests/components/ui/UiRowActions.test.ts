@@ -1,11 +1,13 @@
 /**
  * Mount tests for UiRowActions: trigger opens the menu, items are rendered, an action fires and
  * closes the menu, danger items are styled red, Escape closes without firing, and an outside click
- * closes the menu.
+ * closes the menu. A per-row testid names the trigger, and an action with a route renders as a real link.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
+import { createMemoryHistory, createRouter } from 'vue-router'
+import type { Router } from 'vue-router'
 import UiRowActions from '@/components/ui/UiRowActions.vue'
 import { createTestI18n } from '../../helpers/i18n'
 
@@ -320,6 +322,132 @@ describe('UiRowActions', () => {
       const wrapper = mount(UiRowActions, { props: { actions: [] }, global: { plugins: [createTestI18n()] } })
 
       expect(wrapper.find('[data-testid="row-actions"]').exists()).toBe(false)
+      wrapper.unmount()
+    })
+  })
+
+  describe('per-row trigger testid', () => {
+    it('keeps the shared trigger testid when none is given', () => {
+      const wrapper = mountIt()
+      expect(wrapper.find('[data-testid="row-actions-trigger"]').exists()).toBe(true)
+      wrapper.unmount()
+    })
+
+    it('names the trigger with the testid the row passes', async () => {
+      const wrapper = mount(UiRowActions, {
+        props: { actions, testid: 'invoice-actions-7' },
+        global: { plugins: [createTestI18n()] },
+        attachTo: document.body,
+      })
+
+      expect(wrapper.find('[data-testid="row-actions-trigger"]').exists()).toBe(false)
+      await wrapper.get('[data-testid="invoice-actions-7"]').trigger('click')
+      expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(true)
+      wrapper.unmount()
+    })
+  })
+
+  describe('link actions', () => {
+    /**
+     * Builds a memory router with the pages the link actions point at.
+     *
+     * @returns The router, already on the start page.
+     */
+    const makeRouter = async (): Promise<Router> => {
+      const router = createRouter({
+        history: createMemoryHistory(),
+        routes: [
+          { path: '/', component: { template: '<div />' } },
+          { path: '/items/:id', component: { template: '<div />' } },
+        ],
+      })
+      await router.push('/')
+      await router.isReady()
+      return router
+    }
+
+    /** A link action and a destructive button action, the mix a billing row has. */
+    const linkAndDelete = () => [
+      { label: 'View', testid: 'action-view', to: '/items/4' },
+      { label: 'Delete', testid: 'action-delete', onSelect: vi.fn(), danger: true },
+    ]
+
+    it('renders a menu action with a route as a menuitem anchor with its href', async () => {
+      const router = await makeRouter()
+      const wrapper = mount(UiRowActions, {
+        props: { actions: linkAndDelete() },
+        global: { plugins: [createTestI18n(), router] },
+        attachTo: document.body,
+      })
+
+      await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+      const link = wrapper.get('[data-testid="action-view"]')
+      expect(link.element.tagName).toBe('A')
+      expect(link.attributes('href')).toBe('/items/4')
+      expect(link.attributes('role')).toBe('menuitem')
+      expect(wrapper.get('[data-testid="action-delete"]').element.tagName).toBe('BUTTON')
+      wrapper.unmount()
+    })
+
+    it('navigates and closes the menu when a link item is clicked', async () => {
+      const router = await makeRouter()
+      const wrapper = mount(UiRowActions, {
+        props: { actions: linkAndDelete() },
+        global: { plugins: [createTestI18n(), router] },
+        attachTo: document.body,
+      })
+
+      await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+      await wrapper.get('[data-testid="action-view"]').trigger('click')
+      await flushPromises()
+      expect(router.currentRoute.value.fullPath).toBe('/items/4')
+      expect(wrapper.find('[data-testid="row-actions-menu"]').exists()).toBe(false)
+      wrapper.unmount()
+    })
+
+    it('moves the arrow-key focus onto link items too', async () => {
+      const router = await makeRouter()
+      const wrapper = mount(UiRowActions, {
+        props: {
+          actions: [
+            { label: 'Edit', testid: 'action-edit', onSelect: vi.fn() },
+            { label: 'View', testid: 'action-view', to: '/items/4' },
+          ],
+        },
+        global: { plugins: [createTestI18n(), router] },
+        attachTo: document.body,
+      })
+
+      await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+      await flushPromises()
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }))
+      expect(document.activeElement).toBe(wrapper.get('[data-testid="action-view"]').element)
+      wrapper.unmount()
+    })
+
+    it('renders a single link action as an anchor, not a button', async () => {
+      const router = await makeRouter()
+      const wrapper = mount(UiRowActions, {
+        props: { actions: [{ label: 'Open', testid: 'action-open', to: '/items/2' }] },
+        global: { plugins: [createTestI18n(), router] },
+      })
+
+      const link = wrapper.get('[data-testid="action-open"]')
+      expect(link.element.tagName).toBe('A')
+      expect(link.attributes('href')).toBe('/items/2')
+      wrapper.unmount()
+    })
+
+    it('renders a disabled link action as a disabled button, so it cannot be followed', async () => {
+      const router = await makeRouter()
+      const wrapper = mount(UiRowActions, {
+        props: { actions: [{ label: 'Open', testid: 'action-open', to: '/items/2', disabled: true }] },
+        global: { plugins: [createTestI18n(), router] },
+      })
+
+      const button = wrapper.get('[data-testid="action-open"]')
+      expect(button.element.tagName).toBe('BUTTON')
+      expect(button.attributes('disabled')).toBeDefined()
       wrapper.unmount()
     })
   })

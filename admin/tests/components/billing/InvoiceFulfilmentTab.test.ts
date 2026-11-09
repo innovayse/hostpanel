@@ -110,6 +110,9 @@ describe('InvoiceFulfilmentTab', () => {
 
     expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-31"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-32"]').exists()).toBe(false)
+    // No retry means no actions control at all on that row, not an empty menu.
+    expect(wrapper.find('[data-testid="billing-invoice-fulfilment-actions-32"]').exists()).toBe(false)
+    expect(wrapper.findAll('[data-testid="row-actions"]')).toHaveLength(1)
   })
 
   it('hides Retry while the invoice is read-only', async () => {
@@ -117,6 +120,7 @@ describe('InvoiceFulfilmentTab', () => {
     const wrapper = await mountTab({ readonly: true })
 
     expect(wrapper.find('[data-testid="billing-invoice-fulfilment-retry-31"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="row-actions"]').exists()).toBe(false)
   })
 
   it('says so when the invoice has no records', async () => {

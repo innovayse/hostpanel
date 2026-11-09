@@ -7,7 +7,6 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -15,6 +14,7 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -34,7 +34,6 @@ import { statusLabel } from '@/lib/tones'
 import { RenewalNotice, useRenewalsStore } from '@/stores/renewals'
 import { RenewalWindow } from '@/types/renewal'
 import type { ClaimedDomainRenewal } from '@/types/renewal'
-import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 import type { UiTabItem } from '@/utils/ui/tabs'
 
@@ -93,6 +92,52 @@ const confirmRelease = async (): Promise<void> => {
   releaseTarget.value = null
 }
 
+/**
+ * The one row action of a due service or domain: generate the client's invoices now.
+ *
+ * @param clientId - The client whose due items are invoiced.
+ * @param testid - The `data-testid` of the action button.
+ * @returns The action list passed to UiRowActions.
+ */
+const generateActions = (clientId: number, testid: string): UiRowAction[] => [
+  {
+    label: t('billing.renewals.generateInvoice'),
+    testid,
+    disabled: store.acting,
+    /**
+     * Generates the client's due invoices.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      void store.generateInvoices(clientId)
+    },
+  },
+]
+
+/**
+ * The one row action of a claimed renewal: release the claim, confirmed in a dialog first.
+ *
+ * @param claim - The row.
+ * @returns The action list passed to UiRowActions.
+ */
+const releaseActions = (claim: ClaimedDomainRenewal): UiRowAction[] => [
+  {
+    label: t('billing.renewals.releaseClaim'),
+    testid: `renewals-claim-release-${claim.itemId}`,
+    disabled: store.acting,
+    danger: true,
+    /**
+     * Opens the release confirmation for this claim.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      releaseTarget.value = claim
+    },
+  },
+]
+
 onMounted(() => store.fetchAll())
 </script>
 
@@ -134,9 +179,9 @@ onMounted(() => store.fetchAll())
                 <UiTableHeader>{{ t('billing.renewals.product') }}</UiTableHeader>
                 <UiTableHeader>{{ t('billing.renewals.renewsOn') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.billingCycle') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.amount') }}</UiTableHeader>
+                <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.autoRenew') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
               </UiTableRow>
             </UiTableHead>
             <UiTableBody divided>
@@ -149,7 +194,7 @@ onMounted(() => store.fetchAll())
                 <UiTableCell>{{ service.productName }}</UiTableCell>
                 <UiTableCell muted>{{ formatDate(service.nextRenewalAt) }}</UiTableCell>
                 <UiTableCell>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
-                <UiTableCell>{{ formatPrice(service.amount, service.priceCurrency) }}</UiTableCell>
+                <UiTableCell numeric>{{ formatPrice(service.amount, service.priceCurrency) }}</UiTableCell>
                 <UiTableCell>
                   <UiToggle
                     :model-value="service.autoRenew"
@@ -158,16 +203,8 @@ onMounted(() => store.fetchAll())
                     @update:model-value="store.setServiceAutoRenew(service.id, $event)"
                   />
                 </UiTableCell>
-                <UiTableCell>
-                  <UiButton
-                    :variant="UiButtonVariant.Secondary"
-                    size="sm"
-                    :disabled="store.acting"
-                    :data-testid="`renewals-service-generate-${service.id}`"
-                    @click="store.generateInvoices(service.clientId)"
-                  >
-                    {{ t('billing.renewals.generateInvoice') }}
-                  </UiButton>
+                <UiTableCell actions>
+                  <UiRowActions :actions="generateActions(service.clientId, `renewals-service-generate-${service.id}`)" :testid="`renewals-service-actions-${service.id}`" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
@@ -199,9 +236,9 @@ onMounted(() => store.fetchAll())
                 <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.domain') }}</UiTableHeader>
                 <UiTableHeader>{{ t('billing.renewals.expires') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.amount') }}</UiTableHeader>
+                <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.autoRenew') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
               </UiTableRow>
             </UiTableHead>
             <UiTableBody divided>
@@ -213,7 +250,7 @@ onMounted(() => store.fetchAll())
                 </UiTableCell>
                 <UiTableCell>{{ domain.name }}</UiTableCell>
                 <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>
-                <UiTableCell>{{ formatPrice(domain.recurringAmount, domain.priceCurrency) }}</UiTableCell>
+                <UiTableCell numeric>{{ formatPrice(domain.recurringAmount, domain.priceCurrency) }}</UiTableCell>
                 <UiTableCell>
                   <UiToggle
                     :model-value="domain.autoRenew"
@@ -222,16 +259,8 @@ onMounted(() => store.fetchAll())
                     @update:model-value="store.setDomainAutoRenew(domain.id, $event)"
                   />
                 </UiTableCell>
-                <UiTableCell>
-                  <UiButton
-                    :variant="UiButtonVariant.Secondary"
-                    size="sm"
-                    :disabled="store.acting"
-                    :data-testid="`renewals-domain-generate-${domain.id}`"
-                    @click="store.generateInvoices(domain.clientId)"
-                  >
-                    {{ t('billing.renewals.generateInvoice') }}
-                  </UiButton>
+                <UiTableCell actions>
+                  <UiRowActions :actions="generateActions(domain.clientId, `renewals-domain-generate-${domain.id}`)" :testid="`renewals-domain-actions-${domain.id}`" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
@@ -265,7 +294,7 @@ onMounted(() => store.fetchAll())
                 <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
                 <UiTableHeader>{{ t('billing.renewals.line') }}</UiTableHeader>
                 <UiTableHeader>{{ t('billing.renewals.claimedAt') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
               </UiTableRow>
             </UiTableHead>
             <UiTableBody divided>
@@ -282,16 +311,8 @@ onMounted(() => store.fetchAll())
                 </UiTableCell>
                 <UiTableCell>{{ claim.description }}</UiTableCell>
                 <UiTableCell muted>{{ formatDateTime(claim.claimedAt) }}</UiTableCell>
-                <UiTableCell>
-                  <UiButton
-                    :variant="UiButtonVariant.Danger"
-                    size="sm"
-                    :disabled="store.acting"
-                    :data-testid="`renewals-claim-release-${claim.itemId}`"
-                    @click="releaseTarget = claim"
-                  >
-                    {{ t('billing.renewals.releaseClaim') }}
-                  </UiButton>
+                <UiTableCell actions>
+                  <UiRowActions :actions="releaseActions(claim)" :testid="`renewals-claim-actions-${claim.itemId}`" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>

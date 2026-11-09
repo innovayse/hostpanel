@@ -643,7 +643,7 @@ onMounted(() => fetchInvoices())
                 <UiBadge :tone="invoiceStatusTone(invoice.status)" small>{{ invoice.status }}</UiBadge>
               </UiTableCell>
               <UiTableCell actions>
-                <UiRowActions :actions="invoiceActions(invoice)" />
+                <UiRowActions :actions="invoiceActions(invoice)" :testid="`client-invoices-actions-${invoice.id}`" />
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>

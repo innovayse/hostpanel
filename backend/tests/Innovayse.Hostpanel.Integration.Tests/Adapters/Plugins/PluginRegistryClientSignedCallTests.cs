@@ -44,7 +44,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task TheVersionList_OfARestrictedPlugin_IsSigned_AndCarriesNoLicenceKeyAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1, 2, 3], hostOnly: true);
         await EnrolAsync(scope);
@@ -69,7 +69,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task EveryCall_CarriesAFreshNonceAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         await EnrolAsync(scope);
@@ -90,7 +90,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task TheRelease_OfARestrictedPlugin_IsSigned_AndKeepsItsDistributionAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         var package = Encoding.UTF8.GetBytes("package");
         registry.Offer("acme-pay", "1.2.0", package, hostOnly: true);
@@ -114,7 +114,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task ARestrictedPackage_IsFetchedThroughATicket_BothCallsSignedAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         var package = Encoding.UTF8.GetBytes("the package bytes");
         registry.Offer("acme-pay", "1.2.0", package, hostOnly: true);
@@ -144,7 +144,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task EveryDownload_AsksForATicketOfItsOwnAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1, 2], hostOnly: true);
         await EnrolAsync(scope);
@@ -169,7 +169,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task APublicPlugin_IsAskedForAsBefore_WithTheLicenceKeyAndNoSignatureAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("free-plugin", "1.0.0", [9], hostOnly: false);
         var client = scope.ServiceProvider.GetRequiredService<IPluginRegistryClient>();
@@ -190,7 +190,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task WithoutAVerifiedIdentity_NoSignedCallIsMade_AndTheCodeSaysSoAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         var client = scope.ServiceProvider.GetRequiredService<IPluginRegistryClient>();
@@ -221,7 +221,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task ARefusedSignedCall_BecomesAnAdminCodeAsync(int status, string registryCode, string expected)
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         await EnrolAsync(scope);
@@ -245,7 +245,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task AClockOutsideTheWindow_IsRefusedWithTheClockCodeAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         await EnrolAsync(scope);
@@ -263,7 +263,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task ARevocation_IsRememberedOnTheIdentityAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         await EnrolAsync(scope);
@@ -287,7 +287,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task ATicketAddressOnAnotherHost_IsRefusedAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         await EnrolAsync(scope);
@@ -313,7 +313,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task TheLatestLookup_IsUnsigned_AndAnEmptyAddressIsNotAnErrorAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         registry.Offer("free-plugin", "2.0.0", [2], hostOnly: false);
@@ -332,7 +332,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task TheListingAndThePluginPage_ReadTheDistributionAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         registry.Offer("free-plugin", "2.0.0", [2], hostOnly: false);

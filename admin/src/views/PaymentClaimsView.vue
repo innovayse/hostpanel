@@ -82,7 +82,7 @@ onMounted(() => load(1))
           <UiTableRow>
             <UiTableHeader>{{ t('shared.invoice') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.amount') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
             <UiTableHeader>{{ t('billing.paymentClaims.gatewayModule') }}</UiTableHeader>
             <UiTableHeader>{{ t('billing.paymentClaims.created') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
@@ -108,7 +108,7 @@ onMounted(() => load(1))
                 {{ claim.clientName }}
               </UiLink>
             </UiTableCell>
-            <UiTableCell>{{ formatCurrencyCode(claim.amount, claim.currency) }}</UiTableCell>
+            <UiTableCell numeric>{{ formatCurrencyCode(claim.amount, claim.currency) }}</UiTableCell>
             <UiTableCell>{{ claim.gatewayModuleId }}</UiTableCell>
             <UiTableCell muted>{{ formatDateTime(claim.createdAt) }}</UiTableCell>
             <UiTableCell>

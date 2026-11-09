@@ -10,9 +10,8 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -22,7 +21,6 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
-import { Icon } from '@/lib/icons'
 import { formatPlainAmount } from '@/lib/money'
 import type { QuoteItemUpdate } from '@/types/quote'
 import { MAX_PERCENT } from '@/lib/limits'
@@ -74,6 +72,34 @@ const addLine = (): void => {
 const removeLine = (index: number): void => {
   lines.value = lines.value.filter((_, position) => position !== index)
 }
+
+/**
+ * The row actions of a quote line: remove it, offered only while more than one line is left so a quote
+ * always keeps at least one line; none otherwise.
+ *
+ * @param index - The line position.
+ * @returns The action list passed to UiRowActions.
+ */
+const lineActions = (index: number): UiRowAction[] => {
+  if (lines.value.length <= 1) {
+    return []
+  }
+  return [
+    {
+      label: t('billing.addQuote.deleteRow'),
+      testid: `billing-quote-item-remove-${index}`,
+      danger: true,
+      /**
+       * Removes this line.
+       *
+       * @returns Nothing.
+       */
+      onSelect: (): void => {
+        removeLine(index)
+      },
+    },
+  ]
+}
 </script>
 
 <template>
@@ -91,8 +117,8 @@ const removeLine = (index: number): void => {
             <UiTableHeader>{{ t('billing.quoteDetail.unitPrice') }}</UiTableHeader>
             <UiTableHeader>{{ t('billing.quoteDetail.discount') }}</UiTableHeader>
             <UiTableHeader align="center">{{ t('shared.taxed') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('shared.total') }}</UiTableHeader>
-            <UiTableHeader />
+            <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -142,18 +168,11 @@ const removeLine = (index: number): void => {
                 @update:model-value="patch(index, { taxed: $event })"
               />
             </UiTableCell>
-            <UiTableCell align="right">
+            <UiTableCell numeric>
               <UiText tone="primary" size="md">{{ formatPlainAmount(lineTotal(line), props.currency) }}</UiText>
             </UiTableCell>
-            <UiTableCell align="right">
-              <UiIconButton
-                v-if="lines.length > 1"
-                :label="t('billing.addQuote.deleteRow')"
-                :data-testid="`billing-quote-item-remove-${index}`"
-                @click="removeLine(index)"
-              >
-                <UiIcon :markup="Icon.Close" size="sm" />
-              </UiIconButton>
+            <UiTableCell actions>
+              <UiRowActions :actions="lineActions(index)" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

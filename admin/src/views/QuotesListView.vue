@@ -199,7 +199,7 @@ onMounted(() => {
             <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.subject') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.total') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.expiryDate') }}</UiTableHeader>
             <UiTableHeader>{{ t('billing.quotesList.created') }}</UiTableHeader>
           </UiTableRow>
@@ -216,7 +216,7 @@ onMounted(() => {
             <UiTableCell>
               <UiBadge :tone="quoteStageTone(quote.stage)">{{ statusLabel(QUOTE_STAGE_OPTIONS, quote.stage) }}</UiBadge>
             </UiTableCell>
-            <UiTableCell>{{ formatPlainAmount(quote.total, quote.currency) }}</UiTableCell>
+            <UiTableCell numeric>{{ formatPlainAmount(quote.total, quote.currency) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(quote.validUntil) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(quote.dateCreated) }}</UiTableCell>
           </UiTableRow>

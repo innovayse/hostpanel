@@ -12,11 +12,11 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -31,7 +31,6 @@ import { fulfilmentStatusTone } from '@/lib/tones'
 import { useBillingStore } from '@/stores/billing'
 import { FulfilmentKind, FulfilmentStatus } from '@/types/invoice'
 import type { FulfilmentRecord, InvoiceDetail } from '@/types/invoice'
-import { UiButtonType, UiButtonVariant } from '@/utils/ui/button'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTableDensity } from '@/utils/ui/injection'
 import { UiTextTone } from '@/utils/ui/text'
@@ -166,6 +165,33 @@ const retry = async (): Promise<void> => {
   feedback.show(t('billing.invoiceFulfilmentTab.retried'), false)
 }
 
+/**
+ * The row actions of a fulfilment record: retry, offered only when the record can be retried and the
+ * invoice is editable; none otherwise.
+ *
+ * @param record - The row.
+ * @returns The action list passed to UiRowActions.
+ */
+const recordActions = (record: FulfilmentRecord): UiRowAction[] => {
+  if (!record.canRetry || props.readonly) {
+    return []
+  }
+  return [
+    {
+      label: t('billing.invoiceFulfilmentTab.retry'),
+      testid: `billing-invoice-fulfilment-retry-${record.id}`,
+      /**
+       * Asks for confirmation before the record is retried.
+       *
+       * @returns Nothing.
+       */
+      onSelect: (): void => {
+        askRetry(record)
+      },
+    },
+  ]
+}
+
 onMounted(load)
 watch(
   () => props.invoice.id,
@@ -214,10 +240,10 @@ watch(
               <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.plugin') }}</UiTableHeader>
               <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.kind') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-              <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.attempts') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('billing.invoiceFulfilmentTab.attempts') }}</UiTableHeader>
               <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.lastError') }}</UiTableHeader>
               <UiTableHeader>{{ t('billing.invoiceFulfilmentTab.when') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
@@ -229,22 +255,14 @@ watch(
                   {{ statusLabels[record.status] ?? record.status }}
                 </UiBadge>
               </UiTableCell>
-              <UiTableCell muted>{{ record.attempts }}</UiTableCell>
+              <UiTableCell numeric muted>{{ record.attempts }}</UiTableCell>
               <UiTableCell muted>
                 <UiText v-if="record.lastError" :tone="UiTextTone.Danger">{{ record.lastError }}</UiText>
                 <template v-else>—</template>
               </UiTableCell>
               <UiTableCell muted>{{ whenOf(record) }}</UiTableCell>
-              <UiTableCell>
-                <UiButton
-                  v-if="record.canRetry && !readonly"
-                  :type="UiButtonType.Button"
-                  :variant="UiButtonVariant.Secondary"
-                  :data-testid="`billing-invoice-fulfilment-retry-${record.id}`"
-                  @click="askRetry(record)"
-                >
-                  {{ t('billing.invoiceFulfilmentTab.retry') }}
-                </UiButton>
+              <UiTableCell actions>
+                <UiRowActions :actions="recordActions(record)" />
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>

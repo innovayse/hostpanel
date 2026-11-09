@@ -67,13 +67,15 @@ test('deleting one invoice asks first and then removes it', async ({ page }) => 
   })
 
   await page.goto('/billing/invoices')
+  // Two or more row actions sit behind the row's kebab menu, so it is opened first.
+  await page.getByRole('row').filter({ has: page.getByTestId(`billing-invoice-select-${unpaidInvoice.id}`) }).getByTestId('row-actions-trigger').click()
   await page.getByTestId(`billing-invoice-delete-${unpaidInvoice.id}`).click()
   // Nothing is sent until the dialog is confirmed.
   expect(api.callsTo(HttpMethod.Delete, `/api/billing/${unpaidInvoice.id}`)).toHaveLength(0)
   await page.getByTestId('dialog-confirm').click()
 
-  await expect(page.getByTestId(`billing-invoice-delete-${unpaidInvoice.id}`)).toHaveCount(0)
-  await expect(page.getByTestId(`billing-invoice-delete-${paidInvoice.id}`)).toBeVisible()
+  await expect(page.getByTestId(`billing-invoice-select-${unpaidInvoice.id}`)).toHaveCount(0)
+  await expect(page.getByTestId(`billing-invoice-select-${paidInvoice.id}`)).toBeVisible()
 })
 
 test('a refused load shows the API sentence', async ({ page }) => {

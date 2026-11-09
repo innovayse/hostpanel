@@ -40,6 +40,8 @@ test('confirming asks first, posts, and the transfer leaves the list', async ({ 
   })
 
   await page.goto('/billing/bank-transfers')
+  // Two or more row actions sit behind the row's kebab menu, so it is opened first.
+  await page.getByRole('row').filter({ has: page.getByTestId('billing-bank-transfer-invoice-5') }).getByTestId('row-actions-trigger').click()
   await page.getByTestId('billing-bank-transfer-confirm-5').click()
   // Nothing is sent until the dialog is confirmed.
   expect(api.callsTo(HttpMethod.Post, '/api/billing/5/bank-transfer/confirm')).toHaveLength(0)
@@ -47,7 +49,7 @@ test('confirming asks first, posts, and the transfer leaves the list', async ({ 
 
   await expect(page.getByTestId('billing-bank-transfers-feedback')).toContainText('Invoice #5 is paid.')
   await expect(page.getByTestId('billing-bank-transfer-confirm-5')).toHaveCount(0)
-  await expect(page.getByTestId('billing-bank-transfer-confirm-6')).toBeVisible()
+  await expect(page.getByTestId('billing-bank-transfer-invoice-6')).toBeVisible()
 })
 
 test('rejecting needs a note and posts it', async ({ page }) => {
@@ -68,6 +70,8 @@ test('rejecting needs a note and posts it', async ({ page }) => {
   })
 
   await page.goto('/billing/bank-transfers')
+  // Two or more row actions sit behind the row's kebab menu, so it is opened first.
+  await page.getByRole('row').filter({ has: page.getByTestId('billing-bank-transfer-invoice-6') }).getByTestId('row-actions-trigger').click()
   await page.getByTestId('billing-bank-transfer-reject-6').click()
   await page.getByTestId('billing-bank-transfers-reject-dialog').getByTestId('dialog-confirm').click()
   await expect(page.getByTestId('billing-bank-transfers-note-error')).toBeVisible()

@@ -57,8 +57,8 @@ const payments = computed<InvoiceTransaction[]>(() =>
               <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.transactionId') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.amount') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.transactionFees') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('shared.transactionFees') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
@@ -66,10 +66,10 @@ const payments = computed<InvoiceTransaction[]>(() =>
               <UiTableCell muted>{{ formatDate(transaction.date) }}</UiTableCell>
               <UiTableCell>{{ transaction.gateway }}</UiTableCell>
               <UiTableCell muted>{{ transaction.transactionId || '—' }}</UiTableCell>
-              <UiTableCell>
+              <UiTableCell numeric>
                 <UiText tone="success">{{ formatPlainAmount(transaction.amount, props.invoice.currency) }}</UiText>
               </UiTableCell>
-              <UiTableCell muted>{{ formatPlainAmount(transaction.fees, props.invoice.currency) }}</UiTableCell>
+              <UiTableCell numeric muted>{{ formatPlainAmount(transaction.fees, props.invoice.currency) }}</UiTableCell>
             </UiTableRow>
           </UiTableBody>
           <template #empty>

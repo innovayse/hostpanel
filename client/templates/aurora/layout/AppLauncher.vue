@@ -2,7 +2,7 @@
   <UiPopover
     v-if="apps.length > 0"
     v-model="open"
-    panel-class="fixed right-[clamp(16px,4vw,48px)] top-[74px] w-[min(520px,calc(100vw-32px))]"
+    panel-class="w-[520px]"
   >
     <template #trigger="{ toggle }">
       <UiButton

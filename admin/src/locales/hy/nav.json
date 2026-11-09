@@ -62,5 +62,11 @@
     "locations": "Սերվերների տեղակայում"
   },
   "servicesTitle": "Ծառայություններ",
-  "documentation": "Փաստաթղթեր"
+  "documentation": "Փաստաթղթեր",
+  "sections": {
+    "daily": "Ամենօրյա աշխատանք",
+    "insights": "Վերլուծություն",
+    "setup": "Կարգավորում",
+    "system": "Համակարգ"
+  }
 }

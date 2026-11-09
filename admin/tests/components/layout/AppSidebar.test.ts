@@ -93,6 +93,56 @@ describe('AppSidebar', () => {
     expect(submenu.classes()).toEqual(expect.arrayContaining(['grid-rows-[1fr]', 'opacity-100']))
   })
 
+  it('groups the top-level entries under labelled sections in the order an operator works', async () => {
+    const wrapper = await mountSidebar('/dashboard')
+
+    const sections = wrapper.findAll('[data-testid^="nav-section-"]:not([data-testid$="-label"])')
+    expect(sections.map((section) => section.attributes('data-testid'))).toEqual([
+      'nav-section-daily',
+      'nav-section-insights',
+      'nav-section-setup',
+      'nav-section-system',
+    ])
+    expect(sections.map((section) => section.get('[data-testid$="-label"]').text())).toEqual([
+      'Daily work',
+      'Insights',
+      'Setup',
+      'System',
+    ])
+
+    /**
+     * Lists the top-level entries of a section in display order: entries outside the sub-menus whose ids have one segment after `nav-`.
+     *
+     * @param index - Position of the section.
+     * @returns The test ids of the section's top-level entries.
+     */
+    const entriesOf = (index: number): string[] => (sections[index]?.findAll('[data-testid^="nav-"]')
+      .filter((entry) => entry.element.closest('[data-testid$="-submenu"]') === null)
+      .map((entry) => entry.attributes('data-testid') ?? '')
+      .filter((id) => /^nav-[a-z]+$/.test(id))) ?? []
+    expect(entriesOf(0)).toEqual(['nav-dashboard', 'nav-clients', 'nav-orders', 'nav-billing', 'nav-domains', 'nav-support'])
+    expect(entriesOf(1)).toEqual(['nav-reports'])
+    expect(entriesOf(2)).toEqual(['nav-servers', 'nav-integrations', 'nav-plugins', 'nav-storefront'])
+    expect(entriesOf(3)).toEqual(['nav-migration', 'nav-settings'])
+  })
+
+  it('draws the phone menu drawer in the same order as the desktop sidebar', async () => {
+    const desktop = await mountSidebar('/dashboard')
+    const { wrapper: embedded } = await mountScreen(AppSidebar, { embedded: true }, '/dashboard')
+
+    /**
+     * Lists every top-level entry of a sidebar (outside the sub-menus) in display order.
+     *
+     * @param root - The mounted sidebar.
+     * @returns The test ids of the top-level entries.
+     */
+    const order = (root: typeof desktop): string[] => root.findAll('nav [data-testid^="nav-"]')
+      .filter((entry) => entry.element.closest('[data-testid$="-submenu"]') === null)
+      .map((entry) => entry.attributes('data-testid') ?? '')
+      .filter((id) => /^nav-[a-z]+$/.test(id))
+    expect(order(embedded)).toEqual(order(desktop))
+  })
+
   it('gives the list a quiet scrollbar that shows on hover', async () => {
     const wrapper = await mountSidebar('/dashboard')
 

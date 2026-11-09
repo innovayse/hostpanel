@@ -75,7 +75,7 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
 
             status.Should().Be(HttpStatusCode.OK);
             body.GetProperty("requiresRestart").GetBoolean().Should().BeTrue();
-            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), "readme.txt")).Should().BeTrue();
+            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(factory, pluginId), "readme.txt")).Should().BeTrue();
             registry.Instances.Single().Verified.Should().BeTrue();
             var signed = registry.Calls.Where(c => c.IsSigned).Select(c => (c.Method, Path: c.Target.Split('?')[0])).ToList();
             signed.Should().Equal(
@@ -136,7 +136,7 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
 
         status.Should().Be(HttpStatusCode.BadGateway);
         body.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_REGISTRY_CHECKSUM_MISMATCH);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>An installation that cannot be confirmed gets the code of the cause, and no signed call is made.</summary>

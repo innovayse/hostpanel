@@ -37,6 +37,15 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
     /// </summary>
     private readonly bool _keepsProductionAdapters;
 
+    /// <summary>
+    /// Path of the upload folder this factory's hosts unpack plugins into (<c>Plugins:InstallPath</c>). Unique per
+    /// factory: every host start-up, the hosts derived with <c>WithWebHostBuilder</c> included, sweeps the work
+    /// folder under its upload folder and swaps staged upgrades in, as a restart of the real application does. With
+    /// one folder for the whole run, a host starting in one test class deleted the work folder of an install that
+    /// was in flight in another class, which then answered 400 or 500 (issue 1047).
+    /// </summary>
+    private readonly string _pluginInstallRoot = Path.Combine(Path.GetTempPath(), $"hostpanel-plugins-{Guid.NewGuid():N}");
+
     /// <summary>Connection string of <see cref="_databaseName"/>; set by <see cref="InitializeAsync"/>.</summary>
     private string? _connectionString;
 
@@ -81,6 +90,9 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
     /// <returns>A factory whose hosts carry only production registrations.</returns>
     public static IntegrationTestFactory WithProductionAdapters() => new(keepsProductionAdapters: true);
 
+    /// <summary>The absolute upload folder of this factory's hosts; nothing outside this factory writes to it.</summary>
+    public string PluginInstallRoot => _pluginInstallRoot;
+
     /// <inheritdoc/>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -97,6 +109,10 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
         builder.UseSetting(
             "ConnectionStrings:DefaultConnection",
             _connectionString ?? throw new InvalidOperationException("InitializeAsync must run before the host is built."));
+
+        // A host setting for the same reason: the composition root reads the plugin options before Build(). A derived
+        // host that sets its own Plugins:InstallPath after this line still wins.
+        builder.UseSetting("Plugins:InstallPath", _pluginInstallRoot);
 
         // Suppress Windows EventLog provider to prevent ObjectDisposedException on teardown
         builder.ConfigureLogging(logging => logging.ClearProviders());
@@ -239,6 +255,12 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
                 NpgsqlConnection.ClearPool(connection);
                 await SharedPostgresServer.DropDatabaseAsync(_databaseName);
                 _connectionString = null;
+            }
+
+            // The hosts are stopped, so nothing writes to the upload folder any more.
+            if (Directory.Exists(_pluginInstallRoot))
+            {
+                Directory.Delete(_pluginInstallRoot, recursive: true);
             }
         }
 

@@ -43,7 +43,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
             var body = await response.Content.ReadFromJsonAsync<JsonElement>();
             body.GetProperty("requiresRestart").GetBoolean().Should().BeTrue();
             body.GetProperty("stagedVersion").ValueKind.Should().Be(JsonValueKind.Null);
-            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), "readme.txt")).Should().BeTrue();
+            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(factory, pluginId), "readme.txt")).Should().BeTrue();
 
             using var scope = factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -98,7 +98,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_REGISTRY_NOT_TRUSTED);
         registry.DownloadCount.Should().Be(0);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         (await db.ActivityLogs.AsNoTracking().AnyAsync(l => l.Description.StartsWith("Refused Plugin From Registry") && l.Description.Contains(pluginId))).Should().BeTrue();
@@ -151,7 +151,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
 
             response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
             await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_REGISTRY_NOT_TRUSTED);
-            Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+            Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
         }
         finally
         {
@@ -196,7 +196,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
 
         response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_REGISTRY_CHECKSUM_MISMATCH);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         (await db.ActivityLogs.AsNoTracking().AnyAsync(l => l.Description.Contains("checksum mismatch") && l.Description.Contains(pluginId))).Should().BeTrue();
@@ -216,7 +216,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
 
         response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_REGISTRY_PACKAGE_REFUSED);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(otherId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, otherId)).Should().BeFalse();
     }
 
     /// <summary>
@@ -239,7 +239,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_UNSIGNED);
-            Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+            Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
         }
         finally
         {
@@ -266,7 +266,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await PluginsTestSeeds.AssertCodeAsync(response, tampered ? HostpanelErrorCodes.PLUGIN_SIGNATURE_INVALID : HostpanelErrorCodes.PLUGIN_SIGNATURE_KEY_UNKNOWN);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>A package whose manifest declares another version than the one asked for is refused before it is unpacked.</summary>
@@ -282,7 +282,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
 
         response.StatusCode.Should().Be(HttpStatusCode.BadGateway);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_REGISTRY_PACKAGE_REFUSED);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>A version the registry does not list answers 404, and a switched-off registry answers 409.</summary>

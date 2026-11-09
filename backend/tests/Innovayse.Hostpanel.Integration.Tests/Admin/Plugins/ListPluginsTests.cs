@@ -178,7 +178,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
         var remove = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
 
         remove.StatusCode.Should().Be(HttpStatusCode.OK);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
         (await NewHandler(registry).HandleAsync(new ListPluginsQuery(), CancellationToken.None))
             .Value!.Should().NotContain(r => r.Id == pluginId, "the refusal belongs to the startup snapshot; with the folder gone there is no row");
     }

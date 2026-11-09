@@ -3,6 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
+  buttonLinkSizeClasses,
   buttonSizeClasses,
   fieldSizeClasses,
   iconButtonSizeClasses,
@@ -18,6 +19,7 @@ describe('control sizes', () => {
   it.each([
     ['field', fieldSizeClasses],
     ['button', buttonSizeClasses],
+    ['link button', buttonLinkSizeClasses],
     ['icon button', iconButtonSizeClasses],
     ['icon', iconSizeClasses],
   ])('the %s map has non-empty classes for every size', (_name, map) => {

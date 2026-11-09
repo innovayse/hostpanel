@@ -221,6 +221,17 @@ export const PluginRegistryDistribution = {
 /** One of the {@link PluginRegistryDistribution} values. */
 export type PluginRegistryDistribution = (typeof PluginRegistryDistribution)[keyof typeof PluginRegistryDistribution]
 
+/** Closed set of who publishes a registry plugin; the strings are the server's names. */
+export const PluginPublisherKind = {
+  /** One person publishes the plugin. */
+  Personal: 'Personal',
+  /** An organization publishes the plugin. */
+  Organization: 'Organization',
+} as const
+
+/** One of the {@link PluginPublisherKind} values. */
+export type PluginPublisherKind = (typeof PluginPublisherKind)[keyof typeof PluginPublisherKind]
+
 /** Closed set of where this server stands with the plugin registry; the strings are the server's names. */
 export const RegistryInstanceState = {
   /** Nothing was registered yet. */
@@ -288,6 +299,12 @@ export interface PluginRegistryItemDto {
   requiresLicence?: boolean
   /** Where the package can be obtained from; absent on an older server, which reads as `Download`. */
   distribution?: PluginRegistryDistribution
+  /** Whether a person or an organization publishes it; null or absent when the registry does not say. */
+  publisherKind?: PluginPublisherKind | null
+  /** The plugin's tags without the hash; null or absent when the registry sends none. */
+  tags?: string[] | null
+  /** Downloads of every version added up; null or absent when the registry does not say. */
+  downloads?: number | null
 }
 
 /** One page of registry listings. */

@@ -29,6 +29,16 @@ export const buttonSizeClasses: Record<UiSize, string> = {
   lg: 'px-6 py-3 text-[0.95rem] rounded-[10px]',
 }
 
+/**
+ * Type size and radius of a text-link look per size: a link sits inline with its text, so it keeps the
+ * button's type scale but carries no padding (padding would push it away from its neighbours).
+ */
+export const buttonLinkSizeClasses: Record<UiSize, string> = {
+  sm: 'text-[0.75rem] rounded-lg',
+  md: 'text-[0.82rem] rounded-[10px]',
+  lg: 'text-[0.95rem] rounded-[10px]',
+}
+
 /** Square footprint of an icon-only button per size. */
 export const iconButtonSizeClasses: Record<UiSize, string> = {
   sm: 'w-7 h-7',

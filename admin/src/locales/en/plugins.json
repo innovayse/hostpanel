@@ -107,7 +107,14 @@
       "Free": "Free",
       "Paid": "Paid",
       "Private": "Private"
-    }
+    },
+    "publisherKind": {
+      "Personal": "Personal",
+      "Organization": "Organization"
+    },
+    "tag": "#{tag}",
+    "moreTags": "+{count}",
+    "downloads": "{count} downloads"
   },
   "registryTrust": {
     "title": "Registry trust",

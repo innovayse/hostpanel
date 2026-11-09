@@ -107,7 +107,14 @@
       "Free": "Անվճար",
       "Paid": "Վճարովի",
       "Private": "Մասնավոր"
-    }
+    },
+    "publisherKind": {
+      "Personal": "Անհատ",
+      "Organization": "Կազմակերպություն"
+    },
+    "tag": "#{tag}",
+    "moreTags": "+{count}",
+    "downloads": "Ներբեռնումներ՝ {count}"
   },
   "registryTrust": {
     "title": "Վստահություն կատալոգի նկատմամբ",

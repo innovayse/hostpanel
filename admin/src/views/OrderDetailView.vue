@@ -367,12 +367,12 @@ onMounted(async () => {
       <UiCard data-testid="order-items">
         <UiTable density="comfortable">
           <UiTableHead>
-            <UiTableRow bordered>
+            <UiTableRow>
               <UiTableHeader>{{ t('orders.orderDetail.product') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.billingCycle') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.domain') }}</UiTableHeader>
-              <UiTableHeader>{{ t('orders.orderDetail.firstPayment') }}</UiTableHeader>
-              <UiTableHeader>{{ t('orders.orderDetail.recurring') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('orders.orderDetail.firstPayment') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('orders.orderDetail.recurring') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
               <UiTableHeader>{{ t('orders.orderDetail.fulfilment') }}</UiTableHeader>
             </UiTableRow>
@@ -388,8 +388,8 @@ onMounted(async () => {
               <UiTableCell>{{ item.productName }}</UiTableCell>
               <UiTableCell>{{ statusLabel(BILLING_CYCLE_OPTIONS, item.billingCycle) }}</UiTableCell>
               <UiTableCell>{{ item.domain ?? item.hostname ?? '—' }}</UiTableCell>
-              <UiTableCell>{{ formatPlainAmount(item.firstPaymentAmount, store.currentOrder.currency) }}</UiTableCell>
-              <UiTableCell>{{ formatPlainAmount(item.recurringAmount, store.currentOrder.currency) }}</UiTableCell>
+              <UiTableCell numeric>{{ formatPlainAmount(item.firstPaymentAmount, store.currentOrder.currency) }}</UiTableCell>
+              <UiTableCell numeric>{{ formatPlainAmount(item.recurringAmount, store.currentOrder.currency) }}</UiTableCell>
               <UiTableCell>
                 <UiBadge :tone="orderItemStatusTone(item.status)" small>
                   {{ statusLabel(ORDER_STATUS_OPTIONS, item.status) }}

@@ -17,6 +17,7 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiTable from '@/components/ui/UiTable.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
@@ -31,7 +32,9 @@ import { formatDate } from '@/lib/format'
 import { formatPrice } from '@/lib/money'
 import { domainStatusTone, statusLabel } from '@/lib/tones'
 import { useDomainsStore } from '@/stores/domains'
+import type { DomainRegistration } from '@/types/domain'
 import { UiTone } from '@/utils/ui/tone'
+import { UiTableDensity } from '@/utils/ui/injection'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { ClientSection, clientItemPath, clientPath } from '@/lib/routes'
 
@@ -69,6 +72,20 @@ const handleSearch = (): void => {
     void store.fetchAll()
   }, SEARCH_DEBOUNCE_MS)
 }
+
+/**
+ * The row actions of a domain: its one action opens the domain under its client as a real link.
+ *
+ * @param domain - The domain of the row.
+ * @returns The action list passed to UiRowActions.
+ */
+const domainActions = (domain: DomainRegistration): UiRowAction[] => [
+  {
+    label: t('shared.view'),
+    testid: `domains-view-${domain.id}`,
+    to: clientItemPath(domain.clientId, ClientSection.Domains, domain.id),
+  },
+]
 
 watch(searchInput, handleSearch)
 
@@ -111,16 +128,16 @@ onUnmounted(() => {
     />
 
     <UiCard v-else-if="hasRows || store.loading">
-      <UiTable density="comfortable" :loading="store.loading && !hasRows" :colspan="7" data-testid="domains-table">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && !hasRows" :colspan="7" data-testid="domains-table">
         <UiTableHead>
-          <UiTableRow bordered>
+          <UiTableRow>
             <UiTableHeader>{{ t('shared.domainName') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader>{{ t('domains.domainsList.expiresAt') }}</UiTableHeader>
-            <UiTableHeader>{{ t('domains.domainsList.renewalPrice') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('domains.domainsList.renewalPrice') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.autoRenew') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody>
@@ -151,23 +168,14 @@ onUnmounted(() => {
               </UiBadge>
             </UiTableCell>
             <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>
-            <UiTableCell>{{ formatPrice(domain.recurringAmount, domain.priceCurrency) }}</UiTableCell>
+            <UiTableCell numeric>{{ formatPrice(domain.recurringAmount, domain.priceCurrency) }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="domain.autoRenew ? UiTone.Success : UiTone.Neutral" small>
                 {{ domain.autoRenew ? t('shared.yes') : t('shared.no') }}
               </UiBadge>
             </UiTableCell>
-            <UiTableCell align="right">
-              <UiLink
-                :to="clientItemPath(domain.clientId, ClientSection.Domains, domain.id)"
-                variant="ghost"
-                size="sm"
-                :title="t('domains.domainsList.viewDomainDetails')"
-                :aria-label="t('domains.domainsList.viewDomainDetails')"
-                :data-testid="`domains-view-${domain.id}`"
-              >
-                <UiIcon :markup="Icon.Eye" size="sm" />
-              </UiLink>
+            <UiTableCell actions>
+              <UiRowActions :actions="domainActions(domain)" :testid="`domains-actions-${domain.id}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

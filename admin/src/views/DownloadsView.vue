@@ -16,10 +16,8 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
-import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
@@ -27,6 +25,12 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
+import UiTable from '@/components/ui/UiTable.vue'
+import UiTableBody from '@/components/ui/UiTableBody.vue'
+import UiTableCell from '@/components/ui/UiTableCell.vue'
+import UiTableHead from '@/components/ui/UiTableHead.vue'
+import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
@@ -40,6 +44,7 @@ import type { DownloadItem, DownloadItemPayload } from '@/types/downloaditem'
 import { DownloadsTab } from '@/types/supporttab'
 import { Icon } from '@/lib/icons'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiTableDensity } from '@/utils/ui/injection'
 import { UiSize } from '@/utils/ui/size'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { UiTone } from '@/utils/ui/tone'
@@ -365,6 +370,24 @@ const categoryActions = (category: DownloadCategory): UiRowAction[] => {
 }
 
 /**
+ * The row actions of a download: its one action, delete, asks for confirmation first. The title opens the edit dialog.
+ *
+ * @param download - The download of the row.
+ * @returns The action list passed to UiRowActions.
+ */
+const downloadActions = (download: DownloadItem): UiRowAction[] => {
+  /**
+   * Asks for confirmation before this download is deleted.
+   *
+   * @returns Nothing.
+   */
+  const onDelete = (): void => {
+    deleteRequest.value = { type: DownloadTarget.Download, id: download.id, name: download.title }
+  }
+  return [{ label: t('shared.delete'), testid: `downloads-download-${download.id}-delete`, onSelect: onDelete, danger: true }]
+}
+
+/**
  * Drills into a category: pushes it onto the breadcrumb trail and loads its downloads.
  *
  * @param category - The category to navigate into.
@@ -574,18 +597,26 @@ onMounted(() => {
     <UiSkeleton v-if="loading" :lines="4" data-testid="downloads-loading" />
 
     <template v-else>
-      <UiCard v-if="visibleCategories.length > 0" padding="md" data-testid="downloads-categories">
-        <UiStack>
-          <UiHeading :level="2" variant="card">{{ t('shared.categories') }}</UiHeading>
-          <UiGrid :columns="3">
-            <UiCard
-              v-for="category in visibleCategories"
-              :key="category.id"
-              padding="md"
-              :data-testid="`downloads-category-${category.id}`"
-            >
-              <UiStack gap="sm">
-                <UiStack direction="row" justify="between" align="start">
+      <UiStack v-if="visibleCategories.length > 0" gap="sm">
+        <UiHeading :level="2" variant="card">{{ t('shared.categories') }}</UiHeading>
+        <UiCard data-testid="downloads-categories">
+          <UiTable :density="UiTableDensity.Comfortable">
+            <UiTableHead>
+              <UiTableRow>
+                <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
+                <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
+                <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+              </UiTableRow>
+            </UiTableHead>
+            <UiTableBody divided>
+              <UiTableRow
+                v-for="category in visibleCategories"
+                :key="category.id"
+                hoverable
+                :data-testid="`downloads-category-${category.id}`"
+              >
+                <UiTableCell>
                   <UiStack direction="row" gap="sm" align="center">
                     <UiIcon :markup="Icon.Folder" />
                     <UiButton
@@ -596,31 +627,41 @@ onMounted(() => {
                       {{ category.name }} ({{ category.downloadCount }})
                     </UiButton>
                   </UiStack>
-                  <UiRowActions :actions="categoryActions(category)" />
-                </UiStack>
-                <UiText v-if="category.description" tone="muted" size="sm">{{ category.description }}</UiText>
-                <UiStack direction="row">
+                </UiTableCell>
+                <UiTableCell muted>{{ category.description || '—' }}</UiTableCell>
+                <UiTableCell>
                   <UiBadge v-if="category.isHidden" :tone="UiTone.Warning" small>{{ t('shared.hidden') }}</UiBadge>
-                </UiStack>
-              </UiStack>
-            </UiCard>
-          </UiGrid>
-        </UiStack>
-      </UiCard>
+                </UiTableCell>
+                <UiTableCell actions>
+                  <UiRowActions :actions="categoryActions(category)" :testid="`downloads-category-${category.id}-actions`" />
+                </UiTableCell>
+              </UiTableRow>
+            </UiTableBody>
+          </UiTable>
+        </UiCard>
+      </UiStack>
 
-      <UiCard padding="md" data-testid="downloads-files">
-        <UiStack>
-          <UiHeading :level="2" variant="card">{{ t('support.downloads.files') }}</UiHeading>
-
-          <UiStack v-if="store.downloads.length > 0" gap="sm">
-            <UiCard
-              v-for="download in store.downloads"
-              :key="download.id"
-              padding="sm"
-              :data-testid="`downloads-download-${download.id}`"
-            >
-              <UiStack gap="sm">
-                <UiStack direction="row" justify="between" align="start">
+      <UiStack gap="sm">
+        <UiHeading :level="2" variant="card">{{ t('support.downloads.files') }}</UiHeading>
+        <UiCard data-testid="downloads-files">
+          <UiTable v-if="store.downloads.length > 0" :density="UiTableDensity.Comfortable">
+            <UiTableHead>
+              <UiTableRow>
+                <UiTableHeader>{{ t('shared.title') }}</UiTableHeader>
+                <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
+                <UiTableHeader numeric>{{ t('support.downloads.downloads') }}</UiTableHeader>
+                <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+              </UiTableRow>
+            </UiTableHead>
+            <UiTableBody divided>
+              <UiTableRow
+                v-for="download in store.downloads"
+                :key="download.id"
+                hoverable
+                :data-testid="`downloads-download-${download.id}`"
+              >
+                <UiTableCell>
                   <UiStack direction="row" gap="sm" align="center">
                     <UiIcon :markup="Icon.File" />
                     <UiButton
@@ -631,28 +672,23 @@ onMounted(() => {
                       {{ download.title }}
                     </UiButton>
                   </UiStack>
-                  <UiIconButton
-                    :label="t('shared.delete')"
-                    :size="UiSize.Sm"
-                    :data-testid="`downloads-download-${download.id}-delete`"
-                    @click="deleteRequest = { type: DownloadTarget.Download, id: download.id, name: download.title }"
-                  >
-                    <UiIcon :markup="Icon.Trash" :size="UiSize.Sm" />
-                  </UiIconButton>
-                </UiStack>
-                <UiText v-if="download.description" tone="muted" size="sm">{{ download.description }}</UiText>
-                <UiStack direction="row" gap="sm" align="center">
-                  <UiText tone="muted" size="xs">
-                    {{ t('support.downloads.downloadsDownloadcount', { downloadCount: download.downloadCount }) }}
-                  </UiText>
-                  <UiBadge v-if="download.clientsOnly" :tone="UiTone.Primary" small>
-                    {{ t('support.downloads.clientsOnly') }}
-                  </UiBadge>
-                  <UiBadge v-if="download.isHidden" :tone="UiTone.Warning" small>{{ t('shared.hidden') }}</UiBadge>
-                </UiStack>
-              </UiStack>
-            </UiCard>
-          </UiStack>
+                </UiTableCell>
+                <UiTableCell muted>{{ download.description || '—' }}</UiTableCell>
+                <UiTableCell numeric muted>{{ download.downloadCount }}</UiTableCell>
+                <UiTableCell>
+                  <UiStack direction="row" gap="xs" wrap>
+                    <UiBadge v-if="download.clientsOnly" :tone="UiTone.Primary" small>
+                      {{ t('support.downloads.clientsOnly') }}
+                    </UiBadge>
+                    <UiBadge v-if="download.isHidden" :tone="UiTone.Warning" small>{{ t('shared.hidden') }}</UiBadge>
+                  </UiStack>
+                </UiTableCell>
+                <UiTableCell actions>
+                  <UiRowActions :actions="downloadActions(download)" :testid="`downloads-download-${download.id}-actions`" />
+                </UiTableCell>
+              </UiTableRow>
+            </UiTableBody>
+          </UiTable>
 
           <UiEmptyState
             v-else
@@ -660,8 +696,8 @@ onMounted(() => {
             :description="t('support.downloads.addADownloadUsingThe')"
             data-testid="downloads-files-empty"
           />
-        </UiStack>
-      </UiCard>
+        </UiCard>
+      </UiStack>
     </template>
 
     <DownloadCategoryEditDialog

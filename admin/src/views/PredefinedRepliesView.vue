@@ -6,7 +6,6 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import SupportRowActions from '@/components/support/SupportRowActions.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -15,10 +14,17 @@ import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiField from '@/components/ui/UiField.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
+import UiTable from '@/components/ui/UiTable.vue'
+import UiTableBody from '@/components/ui/UiTableBody.vue'
+import UiTableCell from '@/components/ui/UiTableCell.vue'
+import UiTableHead from '@/components/ui/UiTableHead.vue'
+import UiTableHeader from '@/components/ui/UiTableHeader.vue'
+import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
@@ -27,6 +33,7 @@ import { usePredefinedRepliesStore } from '@/stores/predefinedReplies'
 import type { PredefinedReply, PredefinedReplyCategory } from '@/types/predefinedreply'
 import { PredefinedRepliesTab } from '@/types/supporttab'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiTableDensity } from '@/utils/ui/injection'
 import { UiSize } from '@/utils/ui/size'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
@@ -37,6 +44,12 @@ import { UiTone } from '@/utils/ui/tone'
 const { t } = useI18n()
 
 const store = usePredefinedRepliesStore()
+
+/** Number of columns of the category table, spanned by the row of a category under edit. */
+const CATEGORY_COLUMN_COUNT = 2
+
+/** Number of columns of the reply table, spanned by the row of a reply under edit. */
+const REPLY_COLUMN_COUNT = 3
 
 /** The outcome line of the last add, rename, delete or search. */
 const feedback = useResultBanner()
@@ -322,6 +335,64 @@ onBeforeUnmount(() => {
 })
 
 onMounted(loadAll)
+
+/**
+ * The row actions of a category: edit in place, and delete last (confirmed first).
+ *
+ * @param category - The category of the row.
+ * @returns The action list passed to UiRowActions.
+ */
+const categoryActions = (category: PredefinedReplyCategory): UiRowAction[] => {
+  /**
+   * Opens this category's in-place edit field.
+   *
+   * @returns Nothing.
+   */
+  const onEdit = (): void => {
+    startEditCategory(category)
+  }
+  /**
+   * Asks for confirmation before this category is deleted.
+   *
+   * @returns Nothing.
+   */
+  const onDelete = (): void => {
+    deleteCategoryTarget.value = category.id
+  }
+  return [
+    { label: t('shared.edit'), testid: `predefined-replies-category-${category.id}-edit`, onSelect: onEdit },
+    { label: t('shared.delete'), testid: `predefined-replies-category-${category.id}-delete`, onSelect: onDelete, danger: true },
+  ]
+}
+
+/**
+ * The row actions of a reply: edit in place, and delete last (confirmed first).
+ *
+ * @param reply - The reply of the row.
+ * @returns The action list passed to UiRowActions.
+ */
+const replyActions = (reply: PredefinedReply): UiRowAction[] => {
+  /**
+   * Opens this reply's in-place edit form.
+   *
+   * @returns Nothing.
+   */
+  const onEdit = (): void => {
+    startEditReply(reply)
+  }
+  /**
+   * Asks for confirmation before this reply is deleted.
+   *
+   * @returns Nothing.
+   */
+  const onDelete = (): void => {
+    deleteReplyTarget.value = reply.id
+  }
+  return [
+    { label: t('shared.edit'), testid: `predefined-replies-reply-${reply.id}-edit`, onSelect: onEdit },
+    { label: t('shared.delete'), testid: `predefined-replies-reply-${reply.id}-delete`, onSelect: onDelete, danger: true },
+  ]
+}
 </script>
 
 <template>
@@ -373,53 +444,61 @@ onMounted(loadAll)
 
       <UiSkeleton v-if="store.loading" :lines="3" data-testid="predefined-replies-loading" />
 
-      <UiStack v-else-if="store.categories.length > 0" gap="sm" data-testid="predefined-replies-categories">
-        <UiCard
-          v-for="category in store.categories"
-          :key="category.id"
-          padding="sm"
-          :data-testid="`predefined-replies-category-${category.id}`"
-        >
-          <UiStack direction="row" justify="between" align="center" gap="sm">
-            <template v-if="editingCategoryId === category.id">
-              <UiInput
-                v-model="editingCategoryName"
-                :placeholder="t('shared.categoryName2')"
-                class="flex-1"
-                data-testid="predefined-replies-category-edit-name"
-                @keyup.enter="saveEditCategory"
-                @keyup.escape="cancelEditCategory"
-              />
-              <UiStack direction="row" gap="sm">
-                <UiButton
-                  :variant="UiButtonVariant.Primary"
-                  :size="UiSize.Sm"
-                  data-testid="predefined-replies-category-edit-save"
-                  @click="saveEditCategory"
-                >
-                  {{ t('shared.save') }}
-                </UiButton>
-                <UiButton
-                  :variant="UiButtonVariant.Secondary"
-                  :size="UiSize.Sm"
-                  data-testid="predefined-replies-category-edit-cancel"
-                  @click="cancelEditCategory"
-                >
-                  {{ t('shared.cancel') }}
-                </UiButton>
-              </UiStack>
-            </template>
-            <template v-else>
-              <UiText tone="secondary" size="md">{{ category.name }}</UiText>
-              <SupportRowActions
-                :testid-prefix="`predefined-replies-category-${category.id}`"
-                @edit="startEditCategory(category)"
-                @delete="deleteCategoryTarget = category.id"
-              />
-            </template>
-          </UiStack>
-        </UiCard>
-      </UiStack>
+      <UiCard v-else-if="store.categories.length > 0" data-testid="predefined-replies-categories">
+        <UiTable :density="UiTableDensity.Comfortable">
+          <UiTableHead>
+            <UiTableRow>
+              <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
+              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+            </UiTableRow>
+          </UiTableHead>
+          <UiTableBody divided>
+            <UiTableRow
+              v-for="category in store.categories"
+              :key="category.id"
+              hoverable
+              :data-testid="`predefined-replies-category-${category.id}`"
+            >
+              <!-- The category under edit spans the whole row with its in-place field -->
+              <UiTableCell v-if="editingCategoryId === category.id" :colspan="CATEGORY_COLUMN_COUNT">
+                <UiStack direction="row" align="center" gap="sm">
+                  <UiInput
+                    v-model="editingCategoryName"
+                    :placeholder="t('shared.categoryName2')"
+                    class="flex-1"
+                    data-testid="predefined-replies-category-edit-name"
+                    @keyup.enter="saveEditCategory"
+                    @keyup.escape="cancelEditCategory"
+                  />
+                  <UiButton
+                    :variant="UiButtonVariant.Primary"
+                    :size="UiSize.Sm"
+                    data-testid="predefined-replies-category-edit-save"
+                    @click="saveEditCategory"
+                  >
+                    {{ t('shared.save') }}
+                  </UiButton>
+                  <UiButton
+                    :variant="UiButtonVariant.Secondary"
+                    :size="UiSize.Sm"
+                    data-testid="predefined-replies-category-edit-cancel"
+                    @click="cancelEditCategory"
+                  >
+                    {{ t('shared.cancel') }}
+                  </UiButton>
+                </UiStack>
+              </UiTableCell>
+
+              <template v-else>
+                <UiTableCell>{{ category.name }}</UiTableCell>
+                <UiTableCell actions>
+                  <UiRowActions :actions="categoryActions(category)" :testid="`predefined-replies-category-${category.id}-actions`" />
+                </UiTableCell>
+              </template>
+            </UiTableRow>
+          </UiTableBody>
+        </UiTable>
+      </UiCard>
 
       <UiCard v-else>
         <UiEmptyState
@@ -472,64 +551,74 @@ onMounted(loadAll)
 
       <UiSkeleton v-if="store.loading" :lines="3" data-testid="predefined-replies-replies-loading" />
 
-      <UiStack v-else-if="store.replies.length > 0" gap="sm" data-testid="predefined-replies-replies">
-        <UiCard
-          v-for="reply in store.replies"
-          :key="reply.id"
-          padding="sm"
-          :data-testid="`predefined-replies-reply-${reply.id}`"
-        >
-          <UiStack v-if="editingReplyId === reply.id" gap="sm">
-            <UiInput
-              v-model="editingReply.name"
-              :placeholder="t('support.predefinedReplies.replyName')"
-              data-testid="predefined-replies-reply-edit-name"
-            />
-            <UiSelect
-              v-model="editingReply.categoryId"
-              :options="categoryOptions"
-              :placeholder="t('shared.selectCategory')"
-              data-testid="predefined-replies-reply-edit-category"
-            />
-            <UiTextarea
-              v-model="editingReply.content"
-              rows="5"
-              :placeholder="t('support.predefinedReplies.replyContent2')"
-              data-testid="predefined-replies-reply-edit-content"
-            />
-            <UiStack direction="row" gap="sm">
-              <UiButton
-                :variant="UiButtonVariant.Primary"
-                :size="UiSize.Sm"
-                data-testid="predefined-replies-reply-edit-save"
-                @click="saveEditReply"
-              >
-                {{ t('shared.save') }}
-              </UiButton>
-              <UiButton
-                :variant="UiButtonVariant.Secondary"
-                :size="UiSize.Sm"
-                data-testid="predefined-replies-reply-edit-cancel"
-                @click="editingReplyId = null"
-              >
-                {{ t('shared.cancel') }}
-              </UiButton>
-            </UiStack>
-          </UiStack>
+      <UiCard v-else-if="store.replies.length > 0" data-testid="predefined-replies-replies">
+        <UiTable :density="UiTableDensity.Comfortable">
+          <UiTableHead>
+            <UiTableRow>
+              <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
+              <UiTableHeader>{{ t('shared.category') }}</UiTableHeader>
+              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+            </UiTableRow>
+          </UiTableHead>
+          <UiTableBody divided>
+            <UiTableRow
+              v-for="reply in store.replies"
+              :key="reply.id"
+              hoverable
+              :data-testid="`predefined-replies-reply-${reply.id}`"
+            >
+              <!-- The reply under edit spans the whole row with its in-place form -->
+              <UiTableCell v-if="editingReplyId === reply.id" :colspan="REPLY_COLUMN_COUNT">
+                <UiStack gap="sm">
+                  <UiInput
+                    v-model="editingReply.name"
+                    :placeholder="t('support.predefinedReplies.replyName')"
+                    data-testid="predefined-replies-reply-edit-name"
+                  />
+                  <UiSelect
+                    v-model="editingReply.categoryId"
+                    :options="categoryOptions"
+                    :placeholder="t('shared.selectCategory')"
+                    data-testid="predefined-replies-reply-edit-category"
+                  />
+                  <UiTextarea
+                    v-model="editingReply.content"
+                    rows="5"
+                    :placeholder="t('support.predefinedReplies.replyContent2')"
+                    data-testid="predefined-replies-reply-edit-content"
+                  />
+                  <UiStack direction="row" gap="sm">
+                    <UiButton
+                      :variant="UiButtonVariant.Primary"
+                      :size="UiSize.Sm"
+                      data-testid="predefined-replies-reply-edit-save"
+                      @click="saveEditReply"
+                    >
+                      {{ t('shared.save') }}
+                    </UiButton>
+                    <UiButton
+                      :variant="UiButtonVariant.Secondary"
+                      :size="UiSize.Sm"
+                      data-testid="predefined-replies-reply-edit-cancel"
+                      @click="editingReplyId = null"
+                    >
+                      {{ t('shared.cancel') }}
+                    </UiButton>
+                  </UiStack>
+                </UiStack>
+              </UiTableCell>
 
-          <UiStack v-else direction="row" justify="between" align="center" gap="sm">
-            <UiStack gap="xs">
-              <UiText tone="secondary" size="md">{{ reply.name }}</UiText>
-              <UiText tone="muted" size="sm">{{ reply.categoryName }}</UiText>
-            </UiStack>
-            <SupportRowActions
-              :testid-prefix="`predefined-replies-reply-${reply.id}`"
-              @edit="startEditReply(reply)"
-              @delete="deleteReplyTarget = reply.id"
-            />
-          </UiStack>
-        </UiCard>
-      </UiStack>
+              <template v-else>
+                <UiTableCell>{{ reply.name }}</UiTableCell>
+                <UiTableCell muted>{{ reply.categoryName }}</UiTableCell>
+                <UiTableCell actions>
+                  <UiRowActions :actions="replyActions(reply)" :testid="`predefined-replies-reply-${reply.id}-actions`" />
+                </UiTableCell>
+              </template>
+            </UiTableRow>
+          </UiTableBody>
+        </UiTable>
+      </UiCard>
 
       <UiCard v-else>
         <UiEmptyState
@@ -549,20 +638,29 @@ onMounted(loadAll)
 
       <UiSkeleton v-if="searching" :lines="2" data-testid="predefined-replies-searching" />
 
-      <UiStack v-else-if="searchResults.length > 0" gap="sm" data-testid="predefined-replies-results">
-        <UiCard
-          v-for="result in searchResults"
-          :key="result.id"
-          padding="sm"
-          :data-testid="`predefined-replies-result-${result.id}`"
-        >
-          <UiStack gap="xs">
-            <UiText tone="primary" size="md">{{ result.name }}</UiText>
-            <UiText tone="muted" size="sm">{{ result.categoryName }}</UiText>
-            <UiText tone="secondary" size="md">{{ result.content }}</UiText>
-          </UiStack>
-        </UiCard>
-      </UiStack>
+      <UiCard v-else-if="searchResults.length > 0" data-testid="predefined-replies-results">
+        <UiTable :density="UiTableDensity.Comfortable">
+          <UiTableHead>
+            <UiTableRow>
+              <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
+              <UiTableHeader>{{ t('shared.category') }}</UiTableHeader>
+              <UiTableHeader>{{ t('support.predefinedReplies.content') }}</UiTableHeader>
+            </UiTableRow>
+          </UiTableHead>
+          <UiTableBody divided>
+            <UiTableRow
+              v-for="result in searchResults"
+              :key="result.id"
+              hoverable
+              :data-testid="`predefined-replies-result-${result.id}`"
+            >
+              <UiTableCell>{{ result.name }}</UiTableCell>
+              <UiTableCell muted>{{ result.categoryName }}</UiTableCell>
+              <UiTableCell muted>{{ result.content }}</UiTableCell>
+            </UiTableRow>
+          </UiTableBody>
+        </UiTable>
+      </UiCard>
 
       <UiCard v-else-if="searchQuery.trim()">
         <UiEmptyState

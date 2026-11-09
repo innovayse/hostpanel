@@ -70,11 +70,17 @@
     "articleContent": "Article content...",
     "saveArticle": "Save Article",
     "deleteCategory": "Delete Category",
-    "areYouSureYouWant": "Are you sure you want to delete this category? All articles in this category may be affected.",
+    "areYouSureYouWant": "Are you sure you want to delete this category? A category that still holds articles cannot be deleted.",
     "addArticle": "Add Article",
     "categorySaved": "Category saved.",
     "categoryDeleted": "Category deleted.",
-    "articleSaved": "Article saved."
+    "articleSaved": "Article saved.",
+    "editArticle": "Edit article",
+    "articles": "Articles",
+    "noArticlesFound": "No Articles Found",
+    "createYourFirstArticleAbove": "Create your first article above.",
+    "englishRequired": "English is required; the other languages are optional.",
+    "draft": "Draft"
   },
   "networkIssueForm": {
     "updateTheNetworkIssueDetails": "Update the network issue details below",

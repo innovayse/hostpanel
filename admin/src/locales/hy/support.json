@@ -70,11 +70,17 @@
     "articleContent": "Հոդվածի տեքստ...",
     "saveArticle": "Պահպանել հոդվածը",
     "deleteCategory": "Ջնջել կատեգորիան",
-    "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք ջնջել այս կատեգորիան։ Դա կարող է ազդել դրա բոլոր հոդվածների վրա։",
+    "areYouSureYouWant": "Վստա՞հ եք, որ ցանկանում եք ջնջել այս կատեգորիան։ Կատեգորիան, որում դեռ կան հոդվածներ, հնարավոր չէ ջնջել։",
     "addArticle": "Ավելացնել հոդված",
     "categorySaved": "Կատեգորիան պահպանվեց։",
     "categoryDeleted": "Կատեգորիան ջնջվեց։",
-    "articleSaved": "Հոդվածը պահպանվեց։"
+    "articleSaved": "Հոդվածը պահպանվեց։",
+    "editArticle": "Հոդվածի խմբագրում",
+    "articles": "Հոդվածներ",
+    "noArticlesFound": "Հոդվածներ չեն գտնվել",
+    "createYourFirstArticleAbove": "Ստեղծեք առաջին հոդվածը վերևում։",
+    "englishRequired": "Անգլերենը պարտադիր է, մյուս լեզուները՝ ըստ ցանկության։",
+    "draft": "Սևագիր"
   },
   "networkIssueForm": {
     "updateTheNetworkIssueDetails": "Թարմացրեք ցանցային խնդրի տվյալները ստորև",

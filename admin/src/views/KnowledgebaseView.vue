@@ -4,7 +4,7 @@
  * Every change reports its outcome (success, or the API's sentence) under the header, deleting a
  * category is confirmed first, and a refused load shows the sentence with a Retry.
  */
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import SupportCheckboxField from '@/components/support/SupportCheckboxField.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -33,9 +33,12 @@ import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
+import { useStorefrontLocaleTabs } from '@/composables/useStorefrontLocaleTabs'
 import { enumValueOf } from '@/lib/enumValue'
+import { MessageLanguage } from '@/locales/messages'
+import { blankTranslations, collectTranslations, displayTranslation, formsFromTranslations } from '@/lib/storefrontTranslations'
 import { useKnowledgebaseStore } from '@/stores/knowledgebase'
-import type { KbCategory } from '@/types/kbarticle'
+import type { KbArticle, KbArticleTranslation, KbCategory } from '@/types/kbarticle'
 import { KnowledgebaseTab } from '@/types/supporttab'
 import { Icon } from '@/lib/icons'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -44,12 +47,15 @@ import { UiSize } from '@/utils/ui/size'
 import { UiTone } from '@/utils/ui/tone'
 import type { UiTabItem } from '@/utils/ui/tabs'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const store = useKnowledgebaseStore()
 
 /** Number of columns of the category table, spanned by the row of a category under edit. */
 const CATEGORY_COLUMN_COUNT = 4
+
+/** Rows of the article body field. */
+const ARTICLE_CONTENT_ROWS = 12
 
 /** Currently active tab. */
 const activeTab = ref<KnowledgebaseTab>(KnowledgebaseTab.Category)
@@ -78,8 +84,21 @@ const editingCategoryId = ref<number | null>(null)
 /** Edit form data of the category being edited. */
 const editingCategory = ref({ name: '', description: '', isHidden: false })
 
-/** New article form fields. */
-const newArticle = ref({ title: '', categoryId: 0, content: '', published: false })
+/**
+ * Creates a blank title and body.
+ *
+ * @returns An empty translation.
+ */
+const blankText = (): KbArticleTranslation => ({ title: '', content: '' })
+
+/** The article form: the category, the published flag (new articles only) and the text per language. */
+const articleForm = reactive({ categoryId: 0, isPublished: false, translations: blankTranslations(blankText) })
+
+/** The language tabs of the article form. */
+const { activeLocale, tabs: localeTabs, select: selectLocale } = useStorefrontLocaleTabs('knowledgebase-article-locale')
+
+/** ID of the article being edited; null while the form creates a new one. */
+const editingArticleId = ref<number | null>(null)
 
 /** Whether an article is being saved. */
 const articleSaving = ref(false)
@@ -119,10 +138,11 @@ const load = async (): Promise<void> => {
 /** Category options for select dropdowns. */
 const categoryOptions = computed(() => store.categories.map((category) => ({ value: category.id, label: category.name })))
 
-/** Whether the article form is complete. */
-const canSaveArticle = computed<boolean>(
-  () => newArticle.value.title.trim() !== '' && newArticle.value.categoryId !== 0 && newArticle.value.content.trim() !== '',
-)
+/** Whether the article form is complete: a category and the English title and body (English is required). */
+const canSaveArticle = computed<boolean>(() => {
+  const english = articleForm.translations[MessageLanguage.En]
+  return articleForm.categoryId !== 0 && english.title.trim() !== '' && english.content.trim() !== ''
+})
 
 /**
  * Switches tab.
@@ -238,36 +258,97 @@ const dismissDeleteCategory = (): void => {
 }
 
 /**
- * Creates an article from the add form, clears the form and refreshes the category counts.
+ * Collects the translations worth sending: the trimmed texts of the languages that have any.
+ *
+ * @returns The `translations` object of the payload.
  */
-const addArticle = async (): Promise<void> => {
+const collectArticleTranslations = () =>
+  collectTranslations(
+    articleForm.translations,
+    (text) => text.title.trim() !== '' || text.content.trim() !== '',
+    (text) => ({ title: text.title.trim(), content: text.content.trim() }),
+  )
+
+/** Empties the article form and leaves edit mode. */
+const resetArticleForm = (): void => {
+  articleForm.categoryId = 0
+  articleForm.isPublished = false
+  articleForm.translations = blankTranslations(blankText)
+  editingArticleId.value = null
+  activeLocale.value = MessageLanguage.En
+}
+
+/**
+ * Saves the article form: creates a new article, or replaces the translations of the one being edited.
+ * The form is cleared and the list and the category counts are refreshed on success.
+ */
+const saveArticle = async (): Promise<void> => {
   if (!canSaveArticle.value) {
-    return
-  }
-  // The API files an article under a category by its name, not its id.
-  const category = store.categories.find((candidate) => candidate.id === newArticle.value.categoryId)
-  if (!category) {
     return
   }
   feedback.clear()
   articleSaving.value = true
-  const id = await store.createArticle({
-    title: newArticle.value.title.trim(),
-    content: newArticle.value.content.trim(),
-    category: category.name,
-    isPublished: newArticle.value.published,
-  })
+  const translations = collectArticleTranslations()
+  const editingId = editingArticleId.value
+  const saved =
+    editingId === null
+      ? (await store.createArticle({ categoryId: articleForm.categoryId, translations, isPublished: articleForm.isPublished })) !== null
+      : await store.updateArticle(editingId, { categoryId: articleForm.categoryId, translations })
   articleSaving.value = false
-  report(id !== null, 'support.knowledgebase.articleSaved')
-  if (id !== null) {
-    newArticle.value = { title: '', categoryId: 0, content: '', published: false }
+  report(saved, 'support.knowledgebase.articleSaved')
+  if (saved) {
+    resetArticleForm()
     await load()
   }
 }
 
-/** Loads the categories. */
+/**
+ * Loads an article into the form to edit its category and translations.
+ *
+ * @param article - The article to edit.
+ */
+const startEditArticle = (article: KbArticle): void => {
+  feedback.clear()
+  editingArticleId.value = article.id
+  articleForm.categoryId = article.categoryId
+  articleForm.isPublished = article.isPublished
+  articleForm.translations = formsFromTranslations(article.translations, blankText)
+  activeLocale.value = MessageLanguage.En
+}
+
+/**
+ * The title of an article in the language of the admin panel, else in the first language it has.
+ *
+ * @param article - The article of the row.
+ * @returns The title, or the slug when the article somehow has no text.
+ */
+const titleOf = (article: KbArticle): string => {
+  const own = enumValueOf(MessageLanguage, locale.value)
+  return (own !== null ? article.translations[own]?.title : undefined) ?? displayTranslation(article.translations)?.title ?? article.slug
+}
+
+/**
+ * The row actions of an article: edit.
+ *
+ * @param article - The article of the row.
+ * @returns The action list passed to UiRowActions.
+ */
+const articleActions = (article: KbArticle): UiRowAction[] => {
+  /**
+   * Loads this article into the form.
+   *
+   * @returns Nothing.
+   */
+  const onEdit = (): void => {
+    startEditArticle(article)
+  }
+  return [{ label: t('shared.edit'), testid: `knowledgebase-article-${article.id}-edit`, onSelect: onEdit }]
+}
+
+/** Loads the categories and the articles. */
 onMounted(() => {
   void load()
+  void store.fetchArticles()
 })
 </script>
 
@@ -431,49 +512,112 @@ onMounted(() => {
       </template>
     </template>
 
-    <UiCard v-if="activeTab === KnowledgebaseTab.Article" padding="md">
-      <UiStack>
-        <UiField :label="t('shared.title')" :error="store.fieldErrors.title">
-          <UiInput
-            v-model="newArticle.title"
-            :placeholder="t('support.knowledgebase.articleTitle')"
-            data-testid="knowledgebase-article-title"
+    <template v-if="activeTab === KnowledgebaseTab.Article">
+      <UiCard padding="md" data-testid="knowledgebase-article-form">
+        <UiStack>
+          <UiHeading v-if="editingArticleId !== null" :level="2" variant="card">{{ t('support.knowledgebase.editArticle') }}</UiHeading>
+          <UiField :label="t('shared.category')" :error="store.fieldErrors.categoryId">
+            <UiSelect
+              v-model="articleForm.categoryId"
+              :options="categoryOptions"
+              :placeholder="t('shared.selectCategory')"
+              data-testid="knowledgebase-article-category"
+            />
+          </UiField>
+          <UiTabs :items="localeTabs" :model-value="activeLocale" @update:model-value="selectLocale" />
+          <UiText tone="muted" size="sm">{{ t('support.knowledgebase.englishRequired') }}</UiText>
+          <UiField :label="t('shared.title')" :error="store.fieldErrors.translations">
+            <UiInput
+              v-model="articleForm.translations[activeLocale].title"
+              :placeholder="t('support.knowledgebase.articleTitle')"
+              data-testid="knowledgebase-article-title"
+            />
+          </UiField>
+          <UiField :label="t('support.knowledgebase.content')">
+            <UiTextarea
+              v-model="articleForm.translations[activeLocale].content"
+              :rows="ARTICLE_CONTENT_ROWS"
+              :placeholder="t('support.knowledgebase.articleContent')"
+              data-testid="knowledgebase-article-content"
+            />
+          </UiField>
+          <SupportCheckboxField
+            v-if="editingArticleId === null"
+            v-model="articleForm.isPublished"
+            :label="t('shared.published')"
+            testid="knowledgebase-article-published"
           />
-        </UiField>
-        <UiField :label="t('shared.category')" :error="store.fieldErrors.category">
-          <UiSelect
-            v-model="newArticle.categoryId"
-            :options="categoryOptions"
-            :placeholder="t('shared.selectCategory')"
-            data-testid="knowledgebase-article-category"
-          />
-        </UiField>
-        <UiField :label="t('support.knowledgebase.content')" :error="store.fieldErrors.content">
-          <UiTextarea
-            v-model="newArticle.content"
-            rows="12"
-            :placeholder="t('support.knowledgebase.articleContent')"
-            data-testid="knowledgebase-article-content"
-          />
-        </UiField>
-        <SupportCheckboxField
-          v-model="newArticle.published"
-          :label="t('shared.published')"
-          testid="knowledgebase-article-published"
-        />
-        <UiStack direction="row">
-          <UiButton
-            :variant="UiButtonVariant.Primary"
-            :loading="articleSaving"
-            :disabled="!canSaveArticle"
-            data-testid="knowledgebase-article-save"
-            @click="addArticle"
-          >
-            {{ articleSaving ? t('shared.saving') : t('support.knowledgebase.saveArticle') }}
-          </UiButton>
+          <UiStack direction="row" gap="sm">
+            <UiButton
+              :variant="UiButtonVariant.Primary"
+              :loading="articleSaving"
+              :disabled="!canSaveArticle"
+              data-testid="knowledgebase-article-save"
+              @click="saveArticle"
+            >
+              {{ articleSaving ? t('shared.saving') : editingArticleId === null ? t('support.knowledgebase.saveArticle') : t('shared.saveChanges') }}
+            </UiButton>
+            <UiButton
+              v-if="editingArticleId !== null"
+              :variant="UiButtonVariant.Secondary"
+              data-testid="knowledgebase-article-cancel"
+              @click="resetArticleForm"
+            >
+              {{ t('shared.cancel') }}
+            </UiButton>
+          </UiStack>
         </UiStack>
-      </UiStack>
-    </UiCard>
+      </UiCard>
+
+      <UiHeading :level="2" variant="card">{{ t('support.knowledgebase.articles') }}</UiHeading>
+
+      <UiSkeleton v-if="store.loading" :lines="3" data-testid="knowledgebase-articles-loading" />
+
+      <UiCard v-else-if="store.articles.length > 0" data-testid="knowledgebase-articles">
+        <UiTable :density="UiTableDensity.Comfortable">
+          <UiTableHead>
+            <UiTableRow>
+              <UiTableHeader>{{ t('shared.title') }}</UiTableHeader>
+              <UiTableHeader>{{ t('shared.category') }}</UiTableHeader>
+              <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
+            </UiTableRow>
+          </UiTableHead>
+          <UiTableBody divided>
+            <UiTableRow
+              v-for="article in store.articles"
+              :key="article.id"
+              hoverable
+              :data-testid="`knowledgebase-article-${article.id}`"
+            >
+              <UiTableCell>
+                <UiStack gap="xs">
+                  <UiText tone="primary" size="md">{{ titleOf(article) }}</UiText>
+                  <UiText tone="muted" size="sm">{{ article.slug }}</UiText>
+                </UiStack>
+              </UiTableCell>
+              <UiTableCell muted>{{ article.categoryName }}</UiTableCell>
+              <UiTableCell>
+                <UiBadge :tone="article.isPublished ? UiTone.Success : UiTone.Warning" small>
+                  {{ article.isPublished ? t('shared.published') : t('support.knowledgebase.draft') }}
+                </UiBadge>
+              </UiTableCell>
+              <UiTableCell actions>
+                <UiRowActions :actions="articleActions(article)" :testid="`knowledgebase-article-${article.id}-actions`" />
+              </UiTableCell>
+            </UiTableRow>
+          </UiTableBody>
+        </UiTable>
+      </UiCard>
+
+      <UiCard v-else>
+        <UiEmptyState
+          :title="t('support.knowledgebase.noArticlesFound')"
+          :description="t('support.knowledgebase.createYourFirstArticleAbove')"
+          data-testid="knowledgebase-articles-empty"
+        />
+      </UiCard>
+    </template>
 
     <UiDialog
       variant="confirm"

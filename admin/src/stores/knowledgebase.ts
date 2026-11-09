@@ -8,7 +8,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useKnowledgebaseApi } from '@/composables/apis/useKnowledgebaseApi'
 import { runAction } from '@/lib/runAction'
-import type { KbArticle, KbArticlePayload, KbCategory, KbCategoryPayload } from '@/types/kbarticle'
+import type { KbArticle, KbArticlePayload, KbArticleUpdatePayload, KbCategory, KbCategoryPayload } from '@/types/kbarticle'
 
 /** Loads and changes knowledge base categories and articles. */
 export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
@@ -106,7 +106,7 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
   }
 
   /**
-   * Creates an article.
+   * Creates an article, then reloads the list.
    *
    * @param payload - Article data.
    * @returns The new article's id, or null when refused (see `error` and `fieldErrors`).
@@ -115,7 +115,26 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
     loading.value = true
     const result = await runAction(error, () => api.createArticle(payload), fieldErrors)
     loading.value = false
-    return result.ok ? result.value : null
+    if (!result.ok) {
+      return null
+    }
+    await fetchArticles()
+    return result.value
+  }
+
+  /**
+   * Replaces the category and translations of an article, then reloads the list.
+   *
+   * @param id - The article identifier.
+   * @param payload - Updated category and translations.
+   * @returns True when saved; false when refused (see `error` and `fieldErrors`).
+   */
+  const updateArticle = async (id: number, payload: KbArticleUpdatePayload): Promise<boolean> => {
+    const result = await runAction(error, () => api.updateArticle(id, payload), fieldErrors)
+    if (result.ok) {
+      await fetchArticles()
+    }
+    return result.ok
   }
 
   /**
@@ -139,6 +158,7 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
     deleteCategory,
     fetchArticles,
     createArticle,
+    updateArticle,
     deleteArticle,
   }
 })

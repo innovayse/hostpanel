@@ -21,9 +21,8 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiLink from '@/components/ui/UiLink.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -33,6 +32,9 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import type { QuoteListItem } from '@/types/quote'
+import type { DomainRegistration } from '@/types/domain'
+import type { ServiceListItem } from '@/types/service'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import type { SetClientExternalAccountPayload } from '@/types/clientexternalaccount'
@@ -40,7 +42,6 @@ import type { CurrencyAmount } from '@/types/currency'
 import { PluginSlotId } from '@/types/pluginslot'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { ClientSection, clientItemPath, clientSectionPath, clientTicketNewPath, quoteAddPath, quotePath } from '@/lib/routes'
@@ -49,9 +50,6 @@ const { t } = useI18n()
 
 /** Empty-value dash. */
 const DASH = '—'
-
-/** Icon markup (shape tags) of the edit button. */
-const EDIT_ICON = '<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />'
 
 /** Current route, source of the client id. */
 const route = useRoute()
@@ -377,6 +375,69 @@ const openQuote = (id: number): void => {
 }
 
 /**
+ * The row actions of a service: one, open it.
+ *
+ * @param service - The service row.
+ * @returns The action list passed to UiRowActions.
+ */
+const serviceActions = (service: ServiceListItem): UiRowAction[] => [
+  {
+    label: t('shared.edit'),
+    testid: `client-summary-service-open-${service.id}`,
+    /**
+     * Opens this row.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      openService(service.id)
+    },
+  },
+]
+
+/**
+ * The row actions of a domain: one, open it.
+ *
+ * @param domain - The domain row.
+ * @returns The action list passed to UiRowActions.
+ */
+const domainActions = (domain: DomainRegistration): UiRowAction[] => [
+  {
+    label: t('shared.edit'),
+    testid: `client-summary-domain-open-${domain.id}`,
+    /**
+     * Opens this row.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      openDomain(domain.id)
+    },
+  },
+]
+
+/**
+ * The row actions of a quote: one, open it.
+ *
+ * @param quote - The quote row.
+ * @returns The action list passed to UiRowActions.
+ */
+const quoteActions = (quote: QuoteListItem): UiRowAction[] => [
+  {
+    label: t('shared.edit'),
+    testid: `client-summary-quote-open-${quote.id}`,
+    /**
+     * Opens this row.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      openQuote(quote.id)
+    },
+  },
+]
+
+/**
  * Fills the external account inputs when the held link changes. It watches the two values, not the
  * object: a notes save replaces the client with a new object holding the same link, and that must
  * not wipe what the operator is typing in the card.
@@ -621,11 +682,11 @@ onMounted(() => {
                 <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.productService') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.domain') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.price') }}</UiTableHeader>
+                <UiTableHeader numeric>{{ t('shared.price') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.billingCycle') }}</UiTableHeader>
                 <UiTableHeader>{{ t('clients.clientSummary.nextDue') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
               </UiTableRow>
             </UiTableHead>
             <UiTableBody divided>
@@ -639,21 +700,14 @@ onMounted(() => {
                 <UiTableCell muted>{{ service.id }}</UiTableCell>
                 <UiTableCell>{{ service.productName }}</UiTableCell>
                 <UiTableCell muted>{{ service.domain ?? DASH }}</UiTableCell>
-                <UiTableCell muted>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
+                <UiTableCell muted numeric>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
                 <UiTableCell muted>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
                 <UiTableCell muted>{{ formatDate(service.nextDueDate) }}</UiTableCell>
                 <UiTableCell>
                   <UiBadge :tone="serviceStatusTone(service.status)" small>{{ statusLabel(SERVICE_STATUS_OPTIONS, service.status) }}</UiBadge>
                 </UiTableCell>
-                <UiTableCell>
-                  <UiIconButton
-                    :label="t('shared.edit')"
-                    :size="UiSize.Sm"
-                    :data-testid="`client-summary-service-open-${service.id}`"
-                    @click.stop="openService(service.id)"
-                  >
-                    <UiIcon :markup="EDIT_ICON" />
-                  </UiIconButton>
+                <UiTableCell actions @click.stop>
+                  <UiRowActions :actions="serviceActions(service)" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
@@ -686,7 +740,7 @@ onMounted(() => {
                 <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.expiryDate') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.autoRenew') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
               </UiTableRow>
             </UiTableHead>
             <UiTableBody divided>
@@ -709,15 +763,8 @@ onMounted(() => {
                     {{ domain.autoRenew ? t('shared.yes') : t('shared.no') }}
                   </UiText>
                 </UiTableCell>
-                <UiTableCell>
-                  <UiIconButton
-                    :label="t('shared.edit')"
-                    :size="UiSize.Sm"
-                    :data-testid="`client-summary-domain-open-${domain.id}`"
-                    @click.stop="openDomain(domain.id)"
-                  >
-                    <UiIcon :markup="EDIT_ICON" />
-                  </UiIconButton>
+                <UiTableCell actions @click.stop>
+                  <UiRowActions :actions="domainActions(domain)" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
@@ -748,9 +795,9 @@ onMounted(() => {
                 <UiTableHeader>{{ t('shared.subject') }}</UiTableHeader>
                 <UiTableHeader>{{ t('clients.clientSummary.createDate') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.validUntil') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.total') }}</UiTableHeader>
+                <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.stage') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
               </UiTableRow>
             </UiTableHead>
             <UiTableBody divided>
@@ -765,21 +812,14 @@ onMounted(() => {
                 <UiTableCell>{{ quote.subject }}</UiTableCell>
                 <UiTableCell muted>{{ formatDate(quote.dateCreated) }}</UiTableCell>
                 <UiTableCell muted>{{ formatDate(quote.validUntil) }}</UiTableCell>
-                <UiTableCell>{{ formatPlainAmount(quote.total, quote.currency) }}</UiTableCell>
+                <UiTableCell numeric>{{ formatPlainAmount(quote.total, quote.currency) }}</UiTableCell>
                 <UiTableCell>
                   <UiBadge :tone="quoteStageTone(quote.stage)" small>
                     {{ statusLabel(QUOTE_STAGE_OPTIONS, quote.stage) }}
                   </UiBadge>
                 </UiTableCell>
-                <UiTableCell>
-                  <UiIconButton
-                    :label="t('shared.edit')"
-                    :size="UiSize.Sm"
-                    :data-testid="`client-summary-quote-open-${quote.id}`"
-                    @click.stop="openQuote(quote.id)"
-                  >
-                    <UiIcon :markup="EDIT_ICON" />
-                  </UiIconButton>
+                <UiTableCell actions @click.stop>
+                  <UiRowActions :actions="quoteActions(quote)" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>

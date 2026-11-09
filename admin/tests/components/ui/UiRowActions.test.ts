@@ -258,4 +258,69 @@ describe('UiRowActions', () => {
       wrapper.unmount()
     })
   })
+
+  describe('one action against many', () => {
+    it('shows one action as its own labelled button with no menu trigger', async () => {
+      const onSelect = vi.fn()
+      const wrapper = mount(UiRowActions, {
+        props: { actions: [{ label: 'Open', testid: 'action-open', onSelect }] },
+        global: { plugins: [createTestI18n()] },
+      })
+
+      expect(wrapper.find('[data-testid="row-actions-trigger"]').exists()).toBe(false)
+      const button = wrapper.get('[data-testid="action-open"]')
+      expect(button.text()).toBe('Open')
+      await button.trigger('click')
+      expect(onSelect).toHaveBeenCalledOnce()
+      wrapper.unmount()
+    })
+
+    it('does not fire a disabled single action', async () => {
+      const onSelect = vi.fn()
+      const wrapper = mount(UiRowActions, {
+        props: { actions: [{ label: 'Open', testid: 'action-open', onSelect, disabled: true }] },
+        global: { plugins: [createTestI18n()] },
+      })
+
+      await wrapper.get('[data-testid="action-open"]').trigger('click')
+      expect(onSelect).not.toHaveBeenCalled()
+      wrapper.unmount()
+    })
+
+    it('puts two or more actions behind one labelled kebab trigger', () => {
+      const wrapper = mountIt()
+
+      const trigger = wrapper.get('[data-testid="row-actions-trigger"]')
+      expect(trigger.attributes('aria-label')).toBeTruthy()
+      expect(trigger.attributes('aria-haspopup')).toBe('menu')
+      expect(wrapper.find('[data-testid="action-edit"]').exists()).toBe(false)
+      wrapper.unmount()
+    })
+
+    it('moves destructive actions to the end of the menu', async () => {
+      const wrapper = mount(UiRowActions, {
+        props: {
+          actions: [
+            { label: 'Delete', testid: 'first-delete', onSelect: vi.fn(), danger: true },
+            { label: 'Edit', testid: 'then-edit', onSelect: vi.fn() },
+            { label: 'View', testid: 'then-view', onSelect: vi.fn() },
+          ],
+        },
+        global: { plugins: [createTestI18n()] },
+        attachTo: document.body,
+      })
+
+      await wrapper.get('[data-testid="row-actions-trigger"]').trigger('click')
+      const ids = wrapper.findAll('[role="menuitem"]').map((item) => item.attributes('data-testid'))
+      expect(ids).toEqual(['then-edit', 'then-view', 'first-delete'])
+      wrapper.unmount()
+    })
+
+    it('renders nothing without actions', () => {
+      const wrapper = mount(UiRowActions, { props: { actions: [] }, global: { plugins: [createTestI18n()] } })
+
+      expect(wrapper.find('[data-testid="row-actions"]').exists()).toBe(false)
+      wrapper.unmount()
+    })
+  })
 })

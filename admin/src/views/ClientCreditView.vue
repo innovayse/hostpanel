@@ -215,8 +215,8 @@ onMounted(() => load(1))
               <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.invoice') }}</UiTableHeader>
-              <UiTableHeader>{{ t('clients.clientCredit.change') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.balance') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('clients.clientCredit.change') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('shared.balance') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
@@ -228,12 +228,12 @@ onMounted(() => load(1))
                 <UiLink v-if="entry.invoiceId !== null" :to="invoicePath(entry.invoiceId)">#{{ entry.invoiceId }}</UiLink>
                 <UiText v-else :tone="UiTextTone.Muted">-</UiText>
               </UiTableCell>
-              <UiTableCell>
+              <UiTableCell numeric>
                 <UiText :tone="entry.change >= 0 ? UiTextTone.Success : UiTextTone.Danger" :data-testid="`client-credit-change-${entry.id}`">
                   {{ (entry.change > 0 ? '+' : '') + money(entry.change) }}
                 </UiText>
               </UiTableCell>
-              <UiTableCell muted>{{ money(entry.balanceAfter) }}</UiTableCell>
+              <UiTableCell muted numeric>{{ money(entry.balanceAfter) }}</UiTableCell>
             </UiTableRow>
           </UiTableBody>
         </UiTable>

@@ -15,18 +15,19 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import type { CancellationRequestItem } from '@/types/service'
 import UiText from '@/components/ui/UiText.vue'
 import { formatDate } from '@/lib/format'
 import { Icon } from '@/lib/icons'
@@ -129,6 +130,28 @@ const dismissDelete = (): void => {
   }
 }
 
+/**
+ * The row actions of a cancellation request: one, delete it (confirmed first).
+ *
+ * @param item - The row.
+ * @returns The action list passed to UiRowActions.
+ */
+const cancellationActions = (item: CancellationRequestItem): UiRowAction[] => [
+  {
+    label: t('clients.cancellationRequests.deleteRequest'),
+    testid: `cancellations-delete-${item.id}`,
+    /**
+     * Asks for confirmation, then deletes this row.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      confirmDelete(item.id)
+    },
+    danger: true,
+  },
+]
+
 /** Loads the first page. */
 onMounted(() => load())
 </script>
@@ -161,7 +184,7 @@ onMounted(() => load())
             <UiTableHeader>{{ t('shared.reason') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody>
@@ -192,15 +215,8 @@ onMounted(() => load())
                 {{ cancellationStatusLabel(item.status) }}
               </UiBadge>
             </UiTableCell>
-            <UiTableCell align="right">
-              <UiIconButton
-                :label="t('clients.cancellationRequests.deleteRequest')"
-                size="sm"
-                :data-testid="`cancellations-delete-${item.id}`"
-                @click="confirmDelete(item.id)"
-              >
-                <UiIcon :markup="Icon.Trash" size="sm" />
-              </UiIconButton>
+            <UiTableCell actions>
+              <UiRowActions :actions="cancellationActions(item)" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

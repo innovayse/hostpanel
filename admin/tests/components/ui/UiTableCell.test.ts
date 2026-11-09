@@ -26,6 +26,17 @@ describe('UiTableCell', () => {
     expect(wrapper.classes()).toEqual(expect.arrayContaining(['text-end', 'text-text-muted']))
   })
 
+  it('right aligns a numeric cell with tabular figures', () => {
+    expect(mount(UiTableCell, { props: { numeric: true } }).classes()).toEqual(expect.arrayContaining(['text-end', 'tabular-nums']))
+  })
+
+  it('gives the actions cell the shared fixed width, right aligned, over any align', () => {
+    const classes = mount(UiTableCell, { props: { actions: true, align: 'left' } }).classes()
+
+    expect(classes).toEqual(expect.arrayContaining(['w-28', 'text-end', 'whitespace-nowrap']))
+    expect(classes).not.toContain('text-start')
+  })
+
   it('adds no padding outside a table and aligns left like the header', () => {
     expect(mount(UiTableCell).classes()).toEqual(['text-start'])
   })

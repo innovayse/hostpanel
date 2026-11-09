@@ -44,3 +44,12 @@ export const headerDensityClasses: Record<UiTableDensity, string> = {
   compact: 'px-3 py-2.5',
   comfortable: 'px-4 py-3',
 }
+
+/**
+ * Classes of the actions column, header and cells alike: right aligned, one fixed width on every table
+ * (wide enough for the kebab trigger or one labelled button) and never wrapped onto a second line.
+ */
+export const actionsColumnClasses = 'w-28 text-end whitespace-nowrap'
+
+/** Classes of a numeric or money cell: right aligned, figures of one width, kept on one line. */
+export const numericCellClasses = 'text-end tabular-nums whitespace-nowrap'

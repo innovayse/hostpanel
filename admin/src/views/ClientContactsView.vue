@@ -24,7 +24,6 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiAlign } from '@/utils/ui/table'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
@@ -247,7 +246,7 @@ const contactActions = (contact: Contact): UiRowAction[] => {
             <UiTableHeader>{{ t('shared.email') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.phone') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
-            <UiTableHeader :align="UiAlign.Right">{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -258,7 +257,7 @@ const contactActions = (contact: Contact): UiRowAction[] => {
             <UiTableCell>
               <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
             </UiTableCell>
-            <UiTableCell :align="UiAlign.Right">
+            <UiTableCell actions>
               <UiRowActions :actions="contactActions(contact)" />
             </UiTableCell>
           </UiTableRow>

@@ -24,15 +24,16 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import type { QuoteListItem } from '@/types/quote'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
@@ -158,6 +159,40 @@ const editQuote = (id: number): void => {
   router.push(quotePath(id))
 }
 
+/**
+ * The row actions of a quote: edit, and delete last (confirmed first).
+ *
+ * @param quote - The row.
+ * @returns The action list passed to UiRowActions.
+ */
+const quoteActions = (quote: QuoteListItem): UiRowAction[] => [
+  {
+    label: t('shared.edit'),
+    testid: `client-quotes-edit-${quote.id}`,
+    /**
+     * Starts editing this row.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      editQuote(quote.id)
+    },
+  },
+  {
+    label: t('shared.delete'),
+    testid: `client-quotes-delete-${quote.id}`,
+    /**
+     * Asks for confirmation, then deletes this row.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      confirmDelete(quote.id)
+    },
+    danger: true,
+  },
+]
+
 /** Loads the first page. */
 onMounted(() => fetchQuotes())
 </script>
@@ -204,9 +239,9 @@ onMounted(() => fetchQuotes())
             <UiTableHeader>{{ t('shared.subject') }}</UiTableHeader>
             <UiTableHeader>{{ t('clients.clientQuotes.createDate') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.validUntil') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.total') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.stage') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -215,33 +250,14 @@ onMounted(() => fetchQuotes())
             <UiTableCell>{{ quote.subject }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(quote.dateCreated) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(quote.validUntil) }}</UiTableCell>
-            <UiTableCell>{{ formatPlainAmount(quote.total, quote.currency) }}</UiTableCell>
+            <UiTableCell numeric>{{ formatPlainAmount(quote.total, quote.currency) }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="quoteStageTone(quote.stage)" small>
                 {{ statusLabel(QUOTE_STAGE_OPTIONS, quote.stage) }}
               </UiBadge>
             </UiTableCell>
-            <UiTableCell>
-              <UiStack direction="row" gap="sm" :align="UiAlignItems.Center">
-                <UiButton
-                  type="button"
-                  :variant="UiButtonVariant.Secondary"
-                  :size="UiSize.Sm"
-                  :data-testid="`client-quotes-edit-${quote.id}`"
-                  @click="editQuote(quote.id)"
-                >
-                  {{ t('shared.edit') }}
-                </UiButton>
-                <UiButton
-                  type="button"
-                  :variant="UiButtonVariant.Danger"
-                  :size="UiSize.Sm"
-                  :data-testid="`client-quotes-delete-${quote.id}`"
-                  @click="confirmDelete(quote.id)"
-                >
-                  {{ t('shared.delete') }}
-                </UiButton>
-              </UiStack>
+            <UiTableCell actions>
+              <UiRowActions :actions="quoteActions(quote)" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

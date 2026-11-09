@@ -42,7 +42,6 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { UiAlign } from '@/utils/ui/table'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiLabelVariant, UiTextTone } from '@/utils/ui/text'
@@ -572,7 +571,7 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
               <UiTableHeader>{{ t('shared.email') }}</UiTableHeader>
               <UiTableHeader>{{ t('clients.clientUsers.role') }}</UiTableHeader>
               <UiTableHeader>{{ t('clients.clientUsers.lastLogin') }}</UiTableHeader>
-              <UiTableHeader :align="UiAlign.Right">{{ t('shared.actions') }}</UiTableHeader>
+              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
@@ -589,7 +588,7 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
                 <UiText v-else :tone="UiTextTone.Secondary">{{ t('clients.clientUsers.user') }}</UiText>
               </UiTableCell>
               <UiTableCell muted>{{ formatDate(u.lastLoginAt) }}</UiTableCell>
-              <UiTableCell :align="UiAlign.Right">
+              <UiTableCell actions>
                 <UiRowActions :actions="clientUserActions(u)" />
               </UiTableCell>
             </UiTableRow>

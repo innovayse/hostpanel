@@ -5,11 +5,12 @@
  * Typography is the kit default (small uppercase muted caption) at zero specificity, so a screen
  * can still override a single property. `sortable` turns the caption into a button that emits
  * `sort`; the parent owns the order and passes the current `direction`, which is mirrored into
- * `aria-sort` and an arrow.
+ * `aria-sort` and an arrow. `numeric` and `actions` match the cells below them (right aligned, the
+ * actions column at its one fixed width).
  */
 import { computed, inject } from 'vue'
 import { UI_TABLE_CONTEXT, UiTableDensity } from '@/utils/ui/injection'
-import { UiAlign, alignClasses, headerDensityClasses, UiSortDirection } from '@/utils/ui/table'
+import { UiAlign, actionsColumnClasses, alignClasses, headerDensityClasses, numericCellClasses, UiSortDirection } from '@/utils/ui/table'
 
 /** Props for UiTableHeader. */
 const props = withDefaults(defineProps<{
@@ -21,7 +22,13 @@ const props = withDefaults(defineProps<{
   direction?: UiSortDirection
   /** `data-testid` of the sort button (the `<th>` keeps the inherited one). */
   sortTestid?: string
+  /** Heads a number or money column: right aligned like its cells. */
+  numeric?: boolean
+  /** Heads the row actions column: right aligned at the shared actions column width. */
+  actions?: boolean
 }>(), {
+  numeric: false,
+  actions: false,
   align: undefined,
   sortable: false,
   direction: UiSortDirection.None,
@@ -36,10 +43,21 @@ const emit = defineEmits<{
 /** Density shared by the parent table (plain when used outside one). */
 const context = inject(UI_TABLE_CONTEXT, { density: UiTableDensity.Plain })
 
+/** Alignment classes: the actions and numeric shapes win over `align`. */
+const shapeClasses = computed<string>(() => {
+  if (props.actions) {
+    return actionsColumnClasses
+  }
+  if (props.numeric) {
+    return numericCellClasses
+  }
+  return alignClasses[props.align ?? UiAlign.Left]
+})
+
 /** Padding and alignment classes. */
 const classes = computed<string[]>(() => [
   headerDensityClasses[context.density],
-  alignClasses[props.align ?? UiAlign.Left],
+  shapeClasses.value,
 ])
 
 /** Arrow glyph of the current order. */

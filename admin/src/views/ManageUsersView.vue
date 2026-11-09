@@ -334,7 +334,7 @@ const manageUserActions = (user: UserListItem): UiRowAction[] => {
           <UiTableHeader>{{ t('shared.lastName') }}</UiTableHeader>
           <UiTableHeader>{{ t('shared.email') }}</UiTableHeader>
           <UiTableHeader>{{ t('clients.manageUsers.lastLogin') }}</UiTableHeader>
-          <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
+          <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
         </UiTableRow>
       </UiTableHead>
       <UiTableBody divided>
@@ -344,7 +344,7 @@ const manageUserActions = (user: UserListItem): UiRowAction[] => {
           <UiTableCell>{{ user.lastName }}</UiTableCell>
           <UiTableCell muted>{{ user.email }}</UiTableCell>
           <UiTableCell muted>{{ formatDate(user.lastLoginAt) }}</UiTableCell>
-          <UiTableCell align="right">
+          <UiTableCell actions>
             <UiRowActions :actions="manageUserActions(user)" />
           </UiTableCell>
         </UiTableRow>

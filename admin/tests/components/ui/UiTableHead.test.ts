@@ -13,6 +13,10 @@ describe('UiTableHead', () => {
     expect(wrapper.text()).toBe('content')
   })
 
+  it('draws the shared header hairline', () => {
+    expect(mount(UiTableHead).classes()).toEqual(expect.arrayContaining(['border-b', 'border-border']))
+  })
+
   it('passes classes and data attributes through', () => {
     const wrapper = mount(UiTableHead, { attrs: { class: 'x-class', 'data-testid': 'probe' } })
 

@@ -1,10 +1,12 @@
 <script setup lang="ts">
 /**
- * Kebab-menu (⋮) for table rows with two or more actions.
+ * The one actions control of a table row.
  *
- * A single icon button opens a dropdown list of named actions. The menu closes on Escape, on a
- * click outside the component, and after any action is activated. Destructive actions are styled
- * in red. Disabled actions are shown faded and cannot be selected.
+ * One action is shown as that single labelled button. Two or more sit behind one kebab (⋮) trigger with an
+ * accessible label that opens a dropdown list of named actions. Destructive actions move to the end of the
+ * list in the danger tone; each still asks for confirmation in its own `onSelect`. The menu closes on Escape,
+ * on a click outside the component, and after any action is activated. Disabled actions are shown faded and
+ * cannot be selected. No actions render nothing.
  *
  * Keyboard behaviour follows the WAI-ARIA APG "Menu Button" pattern:
  * - Enter / click on the trigger opens the menu and moves focus to the first enabled item.
@@ -12,7 +14,7 @@
  * - Escape closes the menu and returns focus to the trigger button.
  * - Tab moving focus out of the component closes the menu without taking focus back.
  */
-import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import UiTransition from '@/components/ui/UiTransition.vue'
 import { UiTransitionKind } from '@/utils/ui/transition'
 import { useI18n } from 'vue-i18n'
@@ -40,6 +42,15 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+
+/** The actions in display order: the destructive ones last, each group keeping the order it was given in. */
+const ordered = computed<UiRowAction[]>(() => [
+  ...props.actions.filter((action) => !action.danger),
+  ...props.actions.filter((action) => action.danger),
+])
+
+/** The only action of the row, shown as a plain button instead of a menu; null when there are none or several. */
+const single = computed<UiRowAction | null>(() => (ordered.value.length === 1 ? ordered.value[0] ?? null : null))
 
 /** Whether the dropdown is open. */
 const open = ref(false)
@@ -133,6 +144,16 @@ const select = (action: UiRowAction): void => {
 }
 
 /**
+ * Activates the single action of a row; there is no menu to close.
+ *
+ * @param action - The row's only action.
+ */
+const selectSingle = (action: UiRowAction): void => {
+  if (action.disabled) { return }
+  action.onSelect()
+}
+
+/**
  * Closes the menu when the pointer goes down outside the component.
  *
  * @param e - The mouse event.
@@ -217,7 +238,20 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div ref="root" class="relative inline-block" data-testid="row-actions" @focusout="onFocusOut">
+  <div v-if="single" class="inline-block" data-testid="row-actions">
+    <!-- One action: the action itself, no menu -->
+    <button
+      type="button"
+      :data-testid="single.testid ?? 'row-actions-single'"
+      :disabled="single.disabled"
+      class="inline-flex items-center justify-center rounded-lg px-2 py-1 text-sm font-medium transition-colors hover:bg-surface-raised focus-visible:outline-2 focus-visible:outline-primary-500 disabled:cursor-not-allowed disabled:opacity-40"
+      :class="single.danger ? 'text-danger-600 dark:text-danger-400' : 'text-text-primary'"
+      @click="selectSingle(single)"
+    >
+      {{ single.label }}
+    </button>
+  </div>
+  <div v-else-if="ordered.length > 1" ref="root" class="relative inline-block" data-testid="row-actions" @focusout="onFocusOut">
     <!-- Trigger -->
     <button
       ref="triggerRef"
@@ -242,7 +276,7 @@ onUnmounted(() => {
         data-testid="row-actions-menu"
       >
         <button
-          v-for="action in props.actions"
+          v-for="action in ordered"
           :key="action.testid ?? action.label"
           type="button"
           role="menuitem"

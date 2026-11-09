@@ -77,7 +77,7 @@ onMounted(() => store.fetchAll())
             <UiTableHeader>{{ t('shared.productService') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.domain') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.price') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('shared.price') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.billingCycle') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.nextDueDate') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
@@ -99,7 +99,7 @@ onMounted(() => store.fetchAll())
                 {{ service.clientName }}
               </UiLink>
             </UiTableCell>
-            <UiTableCell>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
+            <UiTableCell numeric>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
             <UiTableCell>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(service.nextDueDate) }}</UiTableCell>
             <UiTableCell>

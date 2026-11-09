@@ -24,6 +24,10 @@ describe('UiStatTile', () => {
     expect(wrapper.get('p.font-display').classes()).toContain('text-status-red')
   })
 
+  it('sets the value in tabular figures so digits line up across tiles', () => {
+    expect(mount(UiStatTile, { props: { label: 'Revenue', value: 1200 } }).get('p.font-display').classes()).toContain('tabular-nums')
+  })
+
   it('renders the icon and trend slots', () => {
     const wrapper = mount(UiStatTile, {
       props: { label: 'a', value: 1 },

@@ -63,7 +63,7 @@ const lastTestedLabel = computed<string>(() =>
           <UiText tone="muted" size="xs" class="font-semibold uppercase tracking-[0.08em]">{{ metric.label }}</UiText>
           <UiText
             tone="primary"
-            :class="[metric.large ? 'font-display text-3xl font-bold' : 'text-[0.85rem] font-medium', metric.mono ? 'font-mono' : '']"
+            :class="[metric.large ? 'font-display text-3xl font-bold tabular-nums' : 'text-[0.85rem] font-medium', metric.mono ? 'font-mono' : '']"
           >
             {{ metric.value ?? '—' }}
           </UiText>

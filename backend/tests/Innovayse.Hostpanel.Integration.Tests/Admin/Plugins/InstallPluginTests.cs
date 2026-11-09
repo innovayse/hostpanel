@@ -105,9 +105,24 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     [InlineData(",\"manifestVersion\":2,\"settings\":[{\"key\":\"k\",\"label\":\"setting.k\",\"type\":\"text\"}]", "PLUGIN_LABEL_KEY_MISSING")]
     [InlineData(",\"manifestVersion\":2,\"ui\":{\"slots\":[{\"id\":\"s\",\"slot\":\"client.nowhere\",\"view\":\"v.json\"}]}", "PLUGIN_SLOT_UNKNOWN")]
     [InlineData(",\"manifestVersion\":2,\"ui\":{\"slots\":[{\"id\":\"s\",\"slot\":\"client.dashboard.cards\",\"view\":\"v.json\",\"contextKeys\":[\"serviceId\"]}]}", "PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED")]
+    [InlineData(",\"minHostVersion\":\"two\"", "PLUGIN_MANIFEST_HOST_VERSION_INVALID")]
+    [InlineData(",\"maxHostVersion\":\"1.0\"", "PLUGIN_MANIFEST_HOST_VERSION_INVALID")]
+    [InlineData(",\"minHostVersion\":\"2.0.0\",\"maxHostVersion\":\"1.0.0\"", "PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED")]
     public async Task AManifestBreakingARule_RefusesWithTheLocalisedMessageAsync(string extraMembers, string code)
     {
         await AssertRefusedAsync(PluginsTestSeeds.ManifestJson($"test-plugin-{Guid.NewGuid():N}", extraMembers, "App"), code);
+    }
+
+    /// <summary>A changelog longer than the SDK allows is refused with <c>PLUGIN_MANIFEST_CHANGELOG_TOO_LONG</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task AChangelogOverTheLimit_RefusesAsync()
+    {
+        var changelog = new string('a', global::Hostpanel.Sdk.Plugins.Manifest.PluginManifest.MaxChangelogLength + 1);
+
+        await AssertRefusedAsync(
+            PluginsTestSeeds.ManifestJson($"test-plugin-{Guid.NewGuid():N}", $",\"changelog\":\"{changelog}\""),
+            HostpanelErrorCodes.PLUGIN_MANIFEST_CHANGELOG_TOO_LONG);
     }
 
     /// <summary>

@@ -24,6 +24,7 @@ import { pluginPath } from '@/lib/routes'
 import { usePluginsStore } from '@/stores/plugins'
 import { useSettingsStore } from '@/stores/settings'
 import PluginCard from '@/components/plugins/PluginCard.vue'
+import PluginInstallDialog from '@/components/plugins/PluginInstallDialog.vue'
 import PluginRegistryBrowser from '@/components/plugins/PluginRegistryBrowser.vue'
 import PluginRegistryInstanceCard from '@/components/plugins/PluginRegistryInstanceCard.vue'
 import PluginRegistryTrustCard from '@/components/plugins/PluginRegistryTrustCard.vue'
@@ -171,13 +172,22 @@ const handleRestart = async (): Promise<void> => {
 }
 
 /**
- * Installs an uploaded plugin archive.
+ * Reads what a chosen plugin archive asks for and opens the confirmation; a refusal is shown at once.
  *
  * @param file - The chosen `.zip` archive.
  */
 const handleUpload = async (file: File): Promise<void> => {
   feedback.clear()
-  const ok = await store.install(file)
+  const ok = await store.inspect(file)
+  if (!ok) {
+    showOutcome(false, 'plugins.plugins.pluginInstalled', store.actionError)
+  }
+}
+
+/** Installs the archive the admin confirmed after reading what it asks for, and shows the outcome. */
+const handleConfirmInstall = async (): Promise<void> => {
+  feedback.clear()
+  const ok = await store.confirmInstall()
   if (ok && store.stagedVersion !== null) {
     feedback.show(t('plugins.plugins.pluginStaged', { version: store.stagedVersion }), false)
     return
@@ -500,6 +510,14 @@ onMounted(() => Promise.all([
       data-testid="plugins-downgrade-dialog"
       @confirm="handleForceDowngrade"
       @close="store.dismissDowngrade()"
+    />
+
+    <PluginInstallDialog
+      v-if="store.preview !== null"
+      :preview="store.preview"
+      :loading="store.loading"
+      @confirm="handleConfirmInstall"
+      @close="store.dismissPreview()"
     />
   </UiStack>
 </template>

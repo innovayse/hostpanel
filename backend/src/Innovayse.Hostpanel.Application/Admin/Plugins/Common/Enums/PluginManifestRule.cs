@@ -155,4 +155,13 @@ public enum PluginManifestRule
     /// or the same tag twice.
     /// </summary>
     TagsInvalid = 37,
+
+    /// <summary>The <c>minHostVersion</c> or <c>maxHostVersion</c> is not a valid semantic version.</summary>
+    HostVersionInvalid = 38,
+
+    /// <summary>The <c>minHostVersion</c> is above the <c>maxHostVersion</c>.</summary>
+    HostVersionRangeInverted = 39,
+
+    /// <summary>The <c>changelog</c> is longer than the SDK allows.</summary>
+    ChangelogTooLong = 40,
 }

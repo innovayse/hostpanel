@@ -44,6 +44,22 @@ const plugin = {
 const registryDisabled = (): Response =>
   json({ type: PluginErrorCode.RegistryDisabled, title: 'Disabled', status: 404, detail: 'The registry is off.' }, 404)
 
+/** What the server reads out of an uploaded package, inside this server's version range. */
+const preview = {
+  id: 'example-pay',
+  name: 'Example Pay',
+  version: '1.3.0',
+  author: 'Hostpanel',
+  description: 'Card payments',
+  hostAccess: [],
+  capabilities: ['storedCredentials'],
+  changelog: 'Faster checkout.',
+  minHostVersion: null,
+  maxHostVersion: null,
+  hostVersion: '2.0.0',
+  compatible: true,
+}
+
 /** One registry listing: the installed plugin with a newer version on offer. */
 const listing = {
   id: 'example-pay',
@@ -229,15 +245,54 @@ describe('PluginsView', () => {
   it('says a newer upload is staged and shows the restart banner', async () => {
     stubRoutes({
       'GET /api/admin/plugins': () => json([plugin]),
+      'POST /api/admin/plugins/inspect': () => json(preview),
       'POST /api/admin/plugins/install': () => json({ requiresRestart: true, stagedVersion: '1.3.0' }),
     })
     const wrapper = await mountPlugins()
 
     wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'new.zip'))
     await flushPromises()
+    await wrapper.get('[data-testid="plugin-install-confirm"]').trigger('click')
+    await flushPromises()
 
     expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Version 1.3.0 uploaded and staged.')
     expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(true)
+  })
+
+  it('shows what an upload asks for and installs nothing until the admin confirms', async () => {
+    const mock = stubRoutes({
+      'GET /api/admin/plugins': () => json([plugin]),
+      'POST /api/admin/plugins/inspect': () => json(preview),
+      'POST /api/admin/plugins/install': () => json({ requiresRestart: true }),
+    })
+    const wrapper = await mountPlugins()
+
+    wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'new.zip'))
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="plugin-install-capability-storedCredentials"]').text()).toContain('saved cards')
+    expect(wrapper.get('[data-testid="plugin-install-changelog"]').text()).toBe('Faster checkout.')
+    expect(mock.mock.calls.some(([url]) => String(url) === '/api/admin/plugins/install')).toBe(false)
+
+    await wrapper.get('[data-testid="plugin-install-cancel"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="plugin-install-dialog"]').exists()).toBe(false)
+    expect(mock.mock.calls.some(([url]) => String(url) === '/api/admin/plugins/install')).toBe(false)
+  })
+
+  it('shows the API sentence when the upload cannot be read', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins': () => json([plugin]),
+      'POST /api/admin/plugins/inspect': () => problem('Not a plugin archive.', 400),
+    })
+    const wrapper = await mountPlugins()
+
+    wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'bad.zip'))
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Not a plugin archive.')
+    expect(wrapper.find('[data-testid="plugin-install-dialog"]').exists()).toBe(false)
   })
 
   it('shows the downgrade refusal and forces the older version after a confirmation', async () => {
@@ -248,10 +303,13 @@ describe('PluginsView', () => {
         { type: 'PLUGIN_DOWNGRADE_REFUSED', title: 'Refused', status: 409, detail: 'Version 1.0.0 is older than 1.2.0.' },
         409,
       ),
+      'POST /api/admin/plugins/inspect': () => json({ ...preview, version: '1.0.0' }),
     })
     const wrapper = await mountPlugins()
 
     wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'old.zip'))
+    await flushPromises()
+    await wrapper.get('[data-testid="plugin-install-confirm"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Version 1.0.0 is older than 1.2.0.')

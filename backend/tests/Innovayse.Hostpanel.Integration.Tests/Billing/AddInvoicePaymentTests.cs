@@ -22,6 +22,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
     /// A manual payment is refused while a stored card charge of the invoice has not finished, so the money is not
     /// recorded by hand and taken by the charge as well: a 409 with <c>INVOICE_STORED_CHARGE_UNRESOLVED</c>, no payment.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddPaymentWhileAStoredChargeIsUnfinishedRefusesConflict()
     {
@@ -50,6 +51,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
     /// <summary>
     /// A claim held for an operator does not stop a manual payment: recording it is how the operator settles the held money.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddPaymentOnAHeldClaimIsAllowed()
     {
@@ -71,6 +73,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Recording a manual payment against an invoice marks it paid.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddPaymentMarksTheInvoicePaid()
     {
@@ -104,6 +107,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
     /// <summary>
     /// Recording a manual payment writes an activity log entry against the invoice's client.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddPayment_RecordsAnActivityLogEntryForTheInvoicesClientAsync()
     {
@@ -132,6 +136,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Recording a payment against an id that names no invoice answers 404 with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddPaymentRefusesAnUnknownInvoice()
     {
@@ -151,6 +156,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Recording a payment is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddPaymentRefusesAnonymous()
     {
@@ -167,6 +173,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A payment above what the invoice still owes is refused with <c>INVOICE_PAYMENT_EXCEEDS_DUE</c> and nothing is recorded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddPaymentAboveAmountDueRefusesWithPaymentExceedsDue()
     {
@@ -219,6 +226,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
     /// A payment short of the total leaves the invoice Unpaid with the rest still due, and the
     /// payment that covers the rest marks it Paid with nothing due.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PartialPayments_CompleteTheInvoiceOnlyWhenTheyCoverIt()
     {
@@ -234,6 +242,7 @@ public sealed class AddInvoicePaymentTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A Paid invoice refuses a further payment with <c>INVOICE_NOT_PAYABLE</c> instead of recording money against it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaymentOnAPaidInvoice_RefusesWithInvoiceNotPayable()
     {

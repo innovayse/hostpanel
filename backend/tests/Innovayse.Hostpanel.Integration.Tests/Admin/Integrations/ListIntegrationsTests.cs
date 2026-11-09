@@ -2,10 +2,10 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,6 +21,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Integrations;
 public sealed class ListIntegrationsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The list carries every built-in integration, the mail server among them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ShowsTheBuiltInIntegrationsAsync()
     {
@@ -35,6 +36,7 @@ public sealed class ListIntegrationsTests(IntegrationTestFactory factory) : ICla
     /// Once an integration's required fields are stored, its row reports it as configured;
     /// the list carries no description and no last test moment, which nothing stores.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReportsAnIntegrationWithItsRequiredFieldsAsConfiguredAsync()
     {
@@ -85,6 +87,7 @@ public sealed class ListIntegrationsTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A plugin entry carries its icon endpoint as <c>iconUrl</c>; a plugin without one and a built-in integration carry null.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NamesTheIconUrlOfAPluginRowAsync()
     {
@@ -108,6 +111,7 @@ public sealed class ListIntegrationsTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -119,6 +123,7 @@ public sealed class ListIntegrationsTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

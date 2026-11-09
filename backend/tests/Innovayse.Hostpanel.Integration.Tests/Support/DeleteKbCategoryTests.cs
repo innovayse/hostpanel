@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class DeleteKbCategoryTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can create and delete a knowledge base category.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanDeleteAKbCategoryAsync()
     {
@@ -25,6 +26,7 @@ public sealed class DeleteKbCategoryTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Deleting a knowledge base category that does not exist answers 404 with <c>KBCATEGORY_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteUnknownKbCategoryAnswersNotFoundAsync()
     {
@@ -40,6 +42,7 @@ public sealed class DeleteKbCategoryTests(IntegrationTestFactory factory) : ICla
     /// A knowledge base category with a sub-category is refused with 409 <c>KBCATEGORY_IN_USE</c> and
     /// kept; once the sub-category is gone it can be deleted.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesACategoryWithSubCategoriesAsync()
     {
@@ -64,6 +67,7 @@ public sealed class DeleteKbCategoryTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A caller with no credential cannot delete a knowledge base category.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

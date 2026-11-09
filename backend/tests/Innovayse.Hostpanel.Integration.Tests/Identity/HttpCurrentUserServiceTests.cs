@@ -1,7 +1,6 @@
 using System.Security.Claims;
 using Innovayse.Hostpanel.API.Identity;
 using Innovayse.Hostpanel.Application.Common;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Microsoft.AspNetCore.Http;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Identity;
@@ -87,6 +86,7 @@ public sealed class HttpCurrentUserServiceTests
     /// The token carries no display name in either mode, which is why this is a lookup at all; going
     /// through the provider is what lets it work where the people live in the sign-on provider.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetUserNameAsync_ComesFromTheIdentityProvider_NotTheToken()
     {
@@ -99,6 +99,7 @@ public sealed class HttpCurrentUserServiceTests
     /// Every admin action records the name more than once; where the sign-on provider owns the people each lookup is
     /// an HTTP call, so the answer is held for the life of the scope.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetUserNameAsync_IsLookedUpOncePerRequest()
     {
@@ -113,6 +114,7 @@ public sealed class HttpCurrentUserServiceTests
     }
 
     /// <summary>An anonymous request has no name and asks the provider nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetUserNameAsync_ForAnAnonymousRequest_IsNullAndAsksNobody()
     {
@@ -126,6 +128,7 @@ public sealed class HttpCurrentUserServiceTests
     }
 
     /// <summary>A subject the provider does not know has no name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetUserNameAsync_WhenTheSubjectResolvesToNobody_IsNull()
     {

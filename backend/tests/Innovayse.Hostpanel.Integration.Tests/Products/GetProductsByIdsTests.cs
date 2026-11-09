@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class GetProductsByIdsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A known product comes back with its stored prices; an unknown id is left out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_KnownAndUnknownIds_ReturnsOnlyTheKnownProductAsync()
     {
@@ -32,6 +33,7 @@ public sealed class GetProductsByIdsTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An empty id list answers an empty list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NoIds_ReturnsEmptyAsync()
     {

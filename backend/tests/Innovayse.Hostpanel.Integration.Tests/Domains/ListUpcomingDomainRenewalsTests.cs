@@ -46,6 +46,7 @@ public sealed class ListUpcomingDomainRenewalsTests(IntegrationTestFactory facto
     }
 
     /// <summary>A wider window brings in later expiries, and a domain with auto-renew off is listed with its switch off.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Windows_BringInLaterExpiries_AndKeepAutoRenewOffVisible()
     {
@@ -65,6 +66,7 @@ public sealed class ListUpcomingDomainRenewalsTests(IntegrationTestFactory facto
     }
 
     /// <summary>A window that is not one of the three is refused with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnUnknownWindow_Returns400()
     {
@@ -77,6 +79,7 @@ public sealed class ListUpcomingDomainRenewalsTests(IntegrationTestFactory facto
     }
 
     /// <summary>Without authentication the call is refused with 401, and a client who is not staff gets 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OnlyStaffMayList()
     {

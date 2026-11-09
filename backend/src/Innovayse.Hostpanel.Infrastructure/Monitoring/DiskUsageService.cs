@@ -1,6 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
-using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
 using Innovayse.Hostpanel.Infrastructure.Persistence;

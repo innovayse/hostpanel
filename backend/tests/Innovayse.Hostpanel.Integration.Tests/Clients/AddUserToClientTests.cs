@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class AddUserToClientTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Linking a real, unlinked subject to a client succeeds.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddLinksTheUser()
     {
@@ -28,6 +29,7 @@ public sealed class AddUserToClientTests(IntegrationTestFactory factory) : IClas
     /// A linked account that does not hold the Client role, as one staff created elsewhere does not,
     /// is granted it, so the portal serves it the client it was linked to.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddGrantsTheClientRole()
     {
@@ -49,6 +51,7 @@ public sealed class AddUserToClientTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Linking a user to an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddRefusesUnknownClient()
     {
@@ -62,6 +65,7 @@ public sealed class AddUserToClientTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Linking an unknown Identity subject to a client answers <c>IDENTITY_USER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddRefusesAnUnknownIdentity()
     {
@@ -76,6 +80,7 @@ public sealed class AddUserToClientTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Linking a user to a client is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddRefusesAnonymous()
     {
@@ -86,6 +91,7 @@ public sealed class AddUserToClientTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A client, who is not staff, is refused with 403 on the admin route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddRefusesAClient()
     {
@@ -98,6 +104,7 @@ public sealed class AddUserToClientTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A staff account is never linked to a client: it is refused as unknown and no link is written.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddRefusesAStaffAccount()
     {
@@ -113,6 +120,7 @@ public sealed class AddUserToClientTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A closed account's users are frozen: linking one answers 409 <c>CLIENT_RECORD_CLOSED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddRefusesAClosedClient()
     {
@@ -128,6 +136,7 @@ public sealed class AddUserToClientTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Linking a user leaves one activity line naming the client and the acting admin.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddIsAuditedWithTheActingAdmin()
     {

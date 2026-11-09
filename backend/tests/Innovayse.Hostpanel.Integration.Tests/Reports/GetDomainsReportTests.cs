@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetDomainsReportTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A freshly registered domain appears in the paginated domains report with its client's name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ShowsTheClientNameFromTheClientRowItself()
     {
@@ -44,6 +45,7 @@ public sealed class GetDomainsReportTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -53,6 +55,7 @@ public sealed class GetDomainsReportTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {
@@ -64,6 +67,7 @@ public sealed class GetDomainsReportTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A page number below one is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetDomainsReport_PageBelowOne_Returns400ValidationError()
     {

@@ -21,6 +21,7 @@ public sealed class ServerSentEventTests
     }
 
     /// <summary>Every line break form inside the data starts a new data line, so the data cannot end the event early.</summary>
+    /// <param name="data">The event data.</param>
     [Theory]
     [InlineData("a\nb")]
     [InlineData("a\r\nb")]

@@ -21,6 +21,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class RecordOrderLineRefundedTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An order that does not exist is refused as <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderIsRefused()
     {
@@ -30,6 +31,7 @@ public sealed class RecordOrderLineRefundedTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A line the order does not hold is refused as <c>ORDER_ITEM_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingLineIsRefused()
     {
@@ -44,6 +46,7 @@ public sealed class RecordOrderLineRefundedTests(IntegrationTestFactory factory)
     /// A line whose refund was begun becomes Refunded, the order that only that line kept Incomplete returns to Active, and
     /// the closed line is refused by a retry with <c>ORDER_LINE_NOT_RETRYABLE</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClosesTheLineBeingRefundedAndTheOrderReturnsToActive()
     {
@@ -65,6 +68,7 @@ public sealed class RecordOrderLineRefundedTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A line that was fulfilled has nothing to give back: it is refused as <c>ORDER_LINE_NOT_REFUNDABLE</c> and left Fulfilled.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAFulfilledLineAndLeavesItAlone()
     {
@@ -82,6 +86,7 @@ public sealed class RecordOrderLineRefundedTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A failed line whose refund was never begun is refused: money cannot be recorded as returned before it was claimed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAFailedLineWhoseRefundWasNeverBegun()
     {
@@ -97,6 +102,7 @@ public sealed class RecordOrderLineRefundedTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A line that is Refunded already is left as it is and the command still succeeds, so a repeated message is harmless.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARefundedLineIsLeftAsItIs()
     {

@@ -21,6 +21,7 @@ public sealed class TransferDomainTests(IntegrationTestFactory factory) : IClass
     /// A valid transfer request succeeds with 201 and a Location header pointing to the new
     /// domain: <see cref="StubRegistrarProvider.TransferAsync"/> always answers success.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Transfer_ValidRequest_Returns201Async()
     {
@@ -43,6 +44,7 @@ public sealed class TransferDomainTests(IntegrationTestFactory factory) : IClass
     /// A confirmed transfer records the period bought with it and a due date that follows the
     /// expiry, instead of the minimum date.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Transfer_Confirmed_RecordsPeriodAndDueDateAsync()
     {
@@ -64,6 +66,7 @@ public sealed class TransferDomainTests(IntegrationTestFactory factory) : IClass
     /// A transfer fulfilled from a paid order keeps the order's currency, so its recorded prices
     /// are not read as base-currency amounts.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Transfer_WithPriceCurrency_StoresThatCurrencyAsync()
     {
@@ -84,6 +87,7 @@ public sealed class TransferDomainTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A staff transfer that names no currency bills in the client's billing currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Transfer_WithoutPriceCurrency_StoresClientBillingCurrencyAsync()
     {
@@ -103,6 +107,7 @@ public sealed class TransferDomainTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An EPP code shorter than the validator's minimum length refuses with 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Transfer_WithShortEppCode_Returns400Async()
     {
@@ -121,6 +126,7 @@ public sealed class TransferDomainTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Transfer_WithoutToken_Returns401Async()
     {

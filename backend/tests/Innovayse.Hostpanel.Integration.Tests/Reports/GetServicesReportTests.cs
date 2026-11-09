@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetServicesReportTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A freshly created service appears in the paginated services report with its client and product names.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ShowsAService()
     {
@@ -48,6 +49,7 @@ public sealed class GetServicesReportTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A page size outside the allowed range is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnOversizedPage()
     {
@@ -59,6 +61,7 @@ public sealed class GetServicesReportTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -68,6 +71,7 @@ public sealed class GetServicesReportTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

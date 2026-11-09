@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Infrastructure.Auth.Settings;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.API.Authorization;

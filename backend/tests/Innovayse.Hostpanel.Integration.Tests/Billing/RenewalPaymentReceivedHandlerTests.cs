@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class RenewalPaymentReceivedHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Paying a renewal invoice in full extends the renewed service without the daily sweep.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FullPayment_ExtendsTheServiceThroughTheEvent()
     {

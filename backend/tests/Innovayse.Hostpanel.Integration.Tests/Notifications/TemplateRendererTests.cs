@@ -41,6 +41,7 @@ public sealed class TemplateRendererTests
     }
 
     /// <summary>A model member is read under its lower snake case name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenderHtmlAsync_ModelMember_RendersUnderItsSnakeCaseName()
     {
@@ -51,6 +52,7 @@ public sealed class TemplateRendererTests
     }
 
     /// <summary>The members of a nested record render too, which a registration-based strategy would leave blank.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenderTextAsync_NestedRecord_RendersItsMembers()
     {
@@ -66,6 +68,7 @@ public sealed class TemplateRendererTests
     }
 
     /// <summary>Every field of the brand and the site name are available beside the model.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenderTextAsync_ExposesBrandAndSiteBesideTheModel()
     {
@@ -78,6 +81,7 @@ public sealed class TemplateRendererTests
     }
 
     /// <summary>A logo-or-site-name branch in a seeded layout template follows whichever brand is injected.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenderHtmlAsync_LogoBranchInTheSeededLayout_FollowsTheBrand()
     {
@@ -92,6 +96,7 @@ public sealed class TemplateRendererTests
     }
 
     /// <summary>A body encodes a hostile ticket subject, so no link or script reaches the mail as markup.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenderHtmlAsync_HostileTicketSubject_IsEncoded()
     {
@@ -105,6 +110,7 @@ public sealed class TemplateRendererTests
     }
 
     /// <summary>A body keeps Russian and Armenian text readable while still encoding the markup characters.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenderHtmlAsync_CyrillicAndArmenianText_StaysReadableWhileMarkupIsEncoded()
     {
@@ -116,6 +122,7 @@ public sealed class TemplateRendererTests
     }
 
     /// <summary>A subject is a plain-text header, so the same value prints as it is, not as entities.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenderTextAsync_HostileTicketSubject_PrintsAsTyped()
     {
@@ -145,6 +152,7 @@ public sealed class TemplateRendererTests
     }
 
     /// <summary>A template the parser cannot read throws rather than rendering partial output.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenderHtmlAsync_ParseError_Throws()
     {

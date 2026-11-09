@@ -43,7 +43,7 @@ public interface IServiceOwnership
     /// telling them apart would let the route be used to enumerate service ids.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
-    Task<Result> RequireOwnedByCallerAsync(int serviceId, CancellationToken ct);
+    public Task<Result> RequireOwnedByCallerAsync(int serviceId, CancellationToken ct);
 
     /// <summary>
     /// Verifies the same ownership as <see cref="RequireOwnedByCallerAsync"/> and reads the service's product in one query.
@@ -55,5 +55,5 @@ public interface IServiceOwnership
     /// for a foreign service, a missing one or a caller with no account, which answer alike on purpose.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
-    Task<Result<int>> GetOwnedProductIdAsync(int serviceId, CancellationToken ct);
+    public Task<Result<int>> GetOwnedProductIdAsync(int serviceId, CancellationToken ct);
 }

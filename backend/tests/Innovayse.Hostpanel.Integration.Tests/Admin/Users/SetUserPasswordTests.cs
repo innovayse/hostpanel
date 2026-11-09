@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Users;
 public sealed class SetUserPasswordTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Setting a new password lets the account sign in with it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LetsTheAccountSignInWithTheNewOneAsync()
     {
@@ -31,6 +32,7 @@ public sealed class SetUserPasswordTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A password under the minimum length is refused by the validator.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesATooShortOneAsync()
     {
@@ -44,6 +46,7 @@ public sealed class SetUserPasswordTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Setting a password for an unknown subject answers 404 with <c>IDENTITY_USER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownSubject_RefusesNotFoundAsync()
     {
@@ -73,6 +76,7 @@ public sealed class SetUserPasswordTests(IntegrationTestFactory factory) : IClas
 #endif
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -85,6 +89,7 @@ public sealed class SetUserPasswordTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.Providers.CWP;
 using Innovayse.Providers.CWP.Models;
 using Microsoft.Extensions.Logging.Abstractions;
-using Hostpanel.Sdk.Plugins.HostingPanel;
 
 namespace Innovayse.CWP.Tests;
 
@@ -50,6 +49,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
     }
 
     /// <summary>CreateAccountAsync should return IsSuccess=true when CWP responds with status "OK".</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateAccount_ReturnsTrue_WhenCwpRespondsOkAsync()
     {
@@ -63,6 +63,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
     }
 
     /// <summary>CreateAccountAsync should return IsSuccess=false when CWP responds with status "Error".</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateAccount_ReturnsFalse_WhenCwpRespondsErrorAsync()
     {
@@ -76,6 +77,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
     }
 
     /// <summary>SuspendAccountAsync should return IsSuccess=true when CWP responds OK.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SuspendAccount_ReturnsTrue_WhenCwpRespondsOkAsync()
     {
@@ -87,6 +89,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
     }
 
     /// <summary>UnsuspendAccountAsync should return IsSuccess=true when CWP responds OK.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnsuspendAccount_ReturnsTrue_WhenCwpRespondsOkAsync()
     {
@@ -98,6 +101,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
     }
 
     /// <summary>TerminateAccountAsync should return IsSuccess=true when CWP responds OK.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TerminateAccount_ReturnsTrue_WhenCwpRespondsOkAsync()
     {
@@ -109,6 +113,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
     }
 
     /// <summary>An HTML page behind HTTP 200 is a failed call, not a JSON crash.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateAccount_Fails_WhenCwpAnswersWithAnHtmlPageAsync()
     {
@@ -122,6 +127,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
     }
 
     /// <summary>The account list is read for server info even when CWP answers with a page, as a failure to report.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetServerInfo_Throws_WhenCwpAnswersWithAnHtmlPageAsync()
     {
@@ -136,6 +142,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
     }
 
     /// <summary>Server info counts the accounts and reads the version from two calls.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetServerInfo_ReturnsTheCountAndVersionAsync()
     {
@@ -152,6 +159,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
     }
 
     /// <summary>FindAccount returns the listed account with its domain and suspension flag.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindAccount_ReturnsTheListedAccountAsync()
     {
@@ -165,6 +173,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
     }
 
     /// <summary>FindAccount returns null when the listing succeeds without the account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindAccount_ReturnsNull_WhenTheAccountIsNotListedAsync()
     {
@@ -176,6 +185,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
     }
 
     /// <summary>A failed listing is an error, never "no such account".</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindAccount_Throws_WhenTheListingFailsAsync()
     {
@@ -187,6 +197,7 @@ public sealed class CwpApiClientTests : IAsyncLifetime
     }
 
     /// <summary>SendAsync should throw HttpRequestException when the server returns 500.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateAccount_Throws_WhenServerReturns500Async()
     {

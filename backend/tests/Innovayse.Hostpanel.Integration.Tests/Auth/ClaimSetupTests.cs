@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 public sealed class ClaimSetupTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The claim is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClaimSetupRefusesAnonymous()
     {
@@ -25,6 +26,7 @@ public sealed class ClaimSetupTests(IntegrationTestFactory factory) : IClassFixt
     /// <c>SETUP_TOKEN_INVALID</c> while setup is open or <c>SETUP_ALREADY_COMPLETED</c> once
     /// somebody holds Admin: an empty body reaches the handler rather than failing model binding.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClaimSetupWithAWrongTokenIsRefused()
     {

@@ -97,6 +97,7 @@ public sealed class RetireTerminatedServiceTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A service still running is refused and its request and key are left alone.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RetireTerminatedService_RunningServiceIsRefused()
     {
@@ -116,6 +117,7 @@ public sealed class RetireTerminatedServiceTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An unknown service is refused with <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RetireTerminatedService_UnknownServiceRefusesNotFound()
     {

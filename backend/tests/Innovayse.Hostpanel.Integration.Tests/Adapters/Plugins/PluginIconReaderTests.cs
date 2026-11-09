@@ -1,7 +1,6 @@
 using System.Text;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 

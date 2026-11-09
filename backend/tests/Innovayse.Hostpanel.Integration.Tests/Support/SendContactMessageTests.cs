@@ -66,6 +66,7 @@ public sealed class SendContactMessageTests(IntegrationTestFactory factory) : IC
     /// <c>CONTACT_NOT_CONFIGURED</c>, never a silent 204: the test host configures no
     /// <c>Notifications:ContactEmail</c>, so this is the refusal every submission over HTTP reaches.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesWithNotConfiguredWhenNoEnquiryInboxIsSetAsync()
     {
@@ -86,6 +87,7 @@ public sealed class SendContactMessageTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A submission missing a required field is refused before the handler ever runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAMissingRequiredFieldAsync()
     {
@@ -105,6 +107,7 @@ public sealed class SendContactMessageTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A malformed email address is refused before the handler ever runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAMalformedEmailAddressAsync()
     {
@@ -124,6 +127,7 @@ public sealed class SendContactMessageTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A message the relay accepts is delivered, and the chat is notified afterwards.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AcceptedMessage_SucceedsAndNotifiesTheChatAsync()
     {
@@ -143,6 +147,7 @@ public sealed class SendContactMessageTests(IntegrationTestFactory factory) : IC
     /// A relay that refuses the message answers <c>CONTACT_SEND_FAILED</c>, and the chat is never
     /// notified about a message that was not actually delivered.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RelayRefusal_AnswersContactSendFailedAndSkipsTheChatAsync()
     {
@@ -161,6 +166,7 @@ public sealed class SendContactMessageTests(IntegrationTestFactory factory) : IC
     /// The chat channel failing does not turn a delivered mail into a refusal: the mail is the
     /// record the operator's process is built on, and a chat channel outage must not report it lost.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChatOutage_DoesNotFailTheOverallSubmissionAsync()
     {

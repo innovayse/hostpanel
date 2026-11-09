@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class GetProductGroupsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>GET lists groups the operator switched off, so an anonymous caller gets 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_ReturnsUnauthorized_WithoutAuth()
     {
@@ -28,6 +29,7 @@ public sealed class GetProductGroupsTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An admin reads the staff list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_ReturnsOk_ForAdmin()
     {
@@ -43,6 +45,7 @@ public sealed class GetProductGroupsTests(IntegrationTestFactory factory) : ICla
     /// query's own default has to be <c>true</c> for a bound record, since a genuinely absent
     /// value binds to the type's default.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_OmittedActiveOnly_HidesAnInactiveGroup()
     {

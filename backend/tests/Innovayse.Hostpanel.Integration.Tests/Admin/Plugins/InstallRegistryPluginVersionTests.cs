@@ -43,6 +43,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
 
     /// <summary>The stored licence key is sent to the registry on the install, and none is sent when none is stored.</summary>
     /// <param name="stored">Whether a key is stored for the plugin.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -75,6 +76,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
 
     /// <summary>A registry that wants a licence key, or refuses the one sent, answers 422 and nothing is downloaded or installed.</summary>
     /// <param name="code">The registry's failure.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("PLUGIN_REGISTRY_LICENCE_REQUIRED")]
     [InlineData("PLUGIN_REGISTRY_LICENCE_INVALID")]
@@ -91,6 +93,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
     }
 
     /// <summary>A yanked version is refused with 409 before it is downloaded, and the refusal is audited.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AYankedVersion_IsRefusedAsync()
     {
@@ -109,6 +112,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
     }
 
     /// <summary>A version listed twice, published and then yanked, is judged by the yanked row and is never downloaded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ADuplicateVersion_IsJudgedByItsStrictestStatusAsync()
     {
@@ -127,6 +131,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
     }
 
     /// <summary>A version the registry rejected is refused with 409 before it is downloaded, and the refusal is audited.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARejectedVersion_IsRefusedAsCompromisedAsync()
     {
@@ -144,6 +149,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
     }
 
     /// <summary>A version still in review is not published yet, so it answers 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AVersionInReview_AnswersNotFoundAsync()
     {
@@ -160,6 +166,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
     }
 
     /// <summary>A deprecated version still installs: the publisher only advises against it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ADeprecatedVersion_StillInstallsAsync()
     {
@@ -181,6 +188,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
     }
 
     /// <summary>A version the registry serves but does not describe is not installed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AVersionTheRegistryDoesNotDescribe_IsNotInstalledAsync()
     {
@@ -201,6 +209,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
     /// <param name="hostVersion">The version the host reports.</param>
     /// <param name="min">The version's lower bound.</param>
     /// <param name="max">The version's upper bound.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("1.4.0", "2.0.0", null)]
     [InlineData("1.4.0", null, "1.3.0")]
@@ -222,6 +231,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
     }
 
     /// <summary>A version whose host range holds the running host installs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ACompatibleHost_InstallsAsync()
     {
@@ -244,6 +254,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
 
     /// <summary>A version older than the installed one is refused with 409 unless the body allows it, and an omitted flag means no.</summary>
     /// <param name="flag">The <c>allowDowngrade</c> member of the body; <see langword="null"/> leaves it out.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(null)]
     [InlineData(false)]
@@ -272,6 +283,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
     }
 
     /// <summary>With <c>allowDowngrade</c> the older version is staged for the restart and the audit line says so.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ADowngrade_IsStagedWhenAllowedAsync()
     {
@@ -302,6 +314,7 @@ public sealed class InstallRegistryPluginVersionTests(IntegrationTestFactory fac
     }
 
     /// <summary>The flag does not turn a newer version into anything else: it is still an upgrade.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AllowDowngrade_DoesNotChangeAnUpgradeAsync()
     {

@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class ListClientTicketsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Staff can list a specific client's tickets, each named after that client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StaffCanListAClientsTicketsAsync()
     {
@@ -40,6 +41,7 @@ public sealed class ListClientTicketsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The route id wins over a client id sent in the query, and paging binds from the query.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheRouteClientIdWinsOverTheQueryAsync()
     {
@@ -51,6 +53,7 @@ public sealed class ListClientTicketsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A caller with no credential cannot list a client's tickets.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

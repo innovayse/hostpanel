@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class TerminateServiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Terminating a service that does not exist answers 404 <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Terminate_OnAnUnknownService_Returns404()
     {
@@ -28,6 +29,7 @@ public sealed class TerminateServiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An admin can terminate an existing service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Terminate_OnAnExistingService_Returns204()
     {
@@ -41,6 +43,7 @@ public sealed class TerminateServiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Terminating without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Terminate_Returns401_WithoutAuthAsync()
     {
@@ -52,6 +55,7 @@ public sealed class TerminateServiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A plain client calling the admin terminate route is refused: the policy is admin only.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Terminate_Returns403_AsPlainClientAsync()
     {
@@ -66,6 +70,7 @@ public sealed class TerminateServiceTests(IntegrationTestFactory factory) : ICla
     /// A terminated service is refused with 400 <c>SERVICE_TERMINATE_NOT_ALLOWED</c> before the panel is
     /// asked: a refusing panel would otherwise have answered 502.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Terminate_AlreadyTerminated_Returns400BeforeThePanelIsAskedAsync()
     {
@@ -84,6 +89,7 @@ public sealed class TerminateServiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Terminating a provisioned service with no server assigned still succeeds: there is nowhere upstream to tell.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ProvisioningTerminate_ProvisionedServiceWithNoServer_Returns204Async()
     {
@@ -102,6 +108,7 @@ public sealed class TerminateServiceTests(IntegrationTestFactory factory) : ICla
     /// A provider that refuses to terminate answers 502 with <c>SERVICE_TERMINATE_UPSTREAM_FAILED</c>, and
     /// the service is not marked terminated on the platform.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Terminate_ProviderRefuses_Returns502AndLeavesTheServiceAsync()
     {

@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class SetServiceAutoRenewTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Switching off then on answers 204, stores the flag, leaves the other automation settings and logs both changes.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_SwitchesTheFlagAndLogsIt()
     {
@@ -43,6 +44,7 @@ public sealed class SetServiceAutoRenewTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The route id wins over a different id in the body.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_RouteIdWinsOverBodyId()
     {
@@ -58,6 +60,7 @@ public sealed class SetServiceAutoRenewTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A service that does not exist answers 404 <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_OnAnUnknownService_Returns404()
     {
@@ -70,6 +73,7 @@ public sealed class SetServiceAutoRenewTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Without authentication the call is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_WithoutAuth_Returns401()
     {
@@ -79,6 +83,7 @@ public sealed class SetServiceAutoRenewTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A client who is not staff is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_AsAStranger_Returns403()
     {
@@ -90,6 +95,7 @@ public sealed class SetServiceAutoRenewTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A zero id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_WithAZeroId_Returns400()
     {

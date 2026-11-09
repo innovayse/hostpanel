@@ -12,8 +12,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 public sealed class TwoFactorCodeGuardTests
 {
     /// <summary>Builds a guard with the given cap.</summary>
-    /// <param name="maxFailures">Attempts an account may take inside the window.</param>
     /// <param name="clock">The clock the failure window is judged by.</param>
+    /// <param name="maxFailures">Attempts an account may take inside the window.</param>
     /// <returns>The guard under test.</returns>
     private static TwoFactorCodeGuard Create(ManualTimeProvider clock, int maxFailures = 3)
     {

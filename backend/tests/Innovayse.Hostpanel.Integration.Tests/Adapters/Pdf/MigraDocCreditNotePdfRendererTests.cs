@@ -68,6 +68,7 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
     /// <param name="language">The language under test.</param>
     /// <param name="title">The title expected.</param>
     /// <param name="totalLabel">The total label expected.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("en", "Creditnote", "Totalcredited")]
     [InlineData("ru", "Кредит-нота", "Итогокзачёту")]
@@ -83,6 +84,7 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
 
     /// <summary>An unknown or missing language falls back to English so no label is ever blank.</summary>
     /// <param name="language">A language the panel has no set for, or none.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -98,6 +100,7 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
     /// Armenian text prints as real glyphs: the reason, the client address and the dram sign after the amounts come back from the
     /// PDF as the same characters, and no missing-glyph box (read back as U+0000) is drawn.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_DrawsArmenianLettersAndTheDramSign()
     {
@@ -110,6 +113,7 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
     /// <summary>A voided note is stamped VOIDED in its language, and a standing note carries no stamp.</summary>
     /// <param name="language">The language under test.</param>
     /// <param name="stamp">The stamp expected on a voided note.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("en", "VOIDED")]
     [InlineData("ru", "АННУЛИРОВАНА")]
@@ -124,6 +128,7 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
     }
 
     /// <summary>A draft is stamped so nobody mistakes it for an issued note.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_StampsADraft()
     {
@@ -133,6 +138,7 @@ public sealed class MigraDocCreditNotePdfRendererTests : IDisposable
     }
 
     /// <summary>A credit note takes a slot of the same gate as an invoice: with the only slot held, it is refused as busy.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_SharesTheRenderLimitWithInvoices()
     {

@@ -63,6 +63,7 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
     }
 
     /// <summary>Several callers racing for one client raise exactly one invoice between them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConcurrentCallers_RaiseOneInvoice()
     {
@@ -90,6 +91,7 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
     /// A caller waits while another transaction holds the client lock, and raises only after it is released:
     /// this is the lock itself, not luck in the timing of two callers.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ACaller_WaitsWhileTheClientLockIsHeld()
     {
@@ -127,6 +129,7 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
     /// The balance is read after the lock is taken: credit spent by the run that held the lock first is not applied a second time.
     /// While the caller waits for the lock the client's balance is spent elsewhere; the invoice it raises then carries no credit.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheBalance_IsReadAfterTheLock_NotBeforeTheWait()
     {
@@ -172,6 +175,7 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
     }
 
     /// <summary>The staff endpoint raises the due invoice once, answers the count, logs the run, and a second click raises nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StaffEndpoint_RaisesOnce_AndLogsTheRun()
     {
@@ -202,6 +206,7 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
     }
 
     /// <summary>An unknown client answers 404 <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StaffEndpoint_OnAnUnknownClient_Returns404()
     {
@@ -214,6 +219,7 @@ public sealed class RaiseClientRenewalInvoicesLockTests(IntegrationTestFactory f
     }
 
     /// <summary>Anonymous callers get 401 and a client who is not staff gets 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StaffEndpoint_RefusesNonStaff()
     {

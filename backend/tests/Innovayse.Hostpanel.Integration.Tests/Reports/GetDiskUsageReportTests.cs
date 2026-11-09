@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetDiskUsageReportTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The cached disk usage report answers even with no servers configured.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnswersWithTheCache()
     {
@@ -24,6 +25,7 @@ public sealed class GetDiskUsageReportTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -33,6 +35,7 @@ public sealed class GetDiskUsageReportTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

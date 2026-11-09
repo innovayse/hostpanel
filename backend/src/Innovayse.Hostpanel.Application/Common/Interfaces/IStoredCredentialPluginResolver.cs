@@ -16,5 +16,5 @@ public interface IStoredCredentialPluginResolver
     /// The capability, or <see langword="null"/> when the module does not resolve to a payment plugin (not installed,
     /// disabled or misconfigured) or its plugin does not implement <see cref="IStoredCredentialPlugin"/>.
     /// </returns>
-    Task<IStoredCredentialPlugin?> ResolveAsync(string module, CancellationToken ct);
+    public Task<IStoredCredentialPlugin?> ResolveAsync(string module, CancellationToken ct);
 }

@@ -19,5 +19,5 @@ public interface IFulfilmentPluginResolver
     /// order; empty when none is. A plugin that is disabled, misconfigured or does not implement the
     /// fulfilment contract is left out.
     /// </returns>
-    Task<IReadOnlyList<ActiveFulfilmentPlugin>> ResolveAllAsync(CancellationToken ct);
+    public Task<IReadOnlyList<ActiveFulfilmentPlugin>> ResolveAllAsync(CancellationToken ct);
 }

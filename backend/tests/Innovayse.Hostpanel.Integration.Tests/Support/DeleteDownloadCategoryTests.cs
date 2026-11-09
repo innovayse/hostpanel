@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class DeleteDownloadCategoryTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can create and delete a download category.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanDeleteADownloadCategoryAsync()
     {
@@ -28,6 +29,7 @@ public sealed class DeleteDownloadCategoryTests(IntegrationTestFactory factory) 
     /// Deleting a download category that does not exist answers 404 with
     /// <c>DOWNLOAD_CATEGORY_NOT_FOUND</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteUnknownDownloadCategoryAnswersNotFoundAsync()
     {
@@ -43,6 +45,7 @@ public sealed class DeleteDownloadCategoryTests(IntegrationTestFactory factory) 
     /// A download category with a sub-category is refused with 409 <c>DOWNLOAD_CATEGORY_IN_USE</c> and
     /// kept; once the sub-category is gone it can be deleted.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesACategoryWithSubCategoriesAsync()
     {
@@ -70,6 +73,7 @@ public sealed class DeleteDownloadCategoryTests(IntegrationTestFactory factory) 
     /// A download category that still holds a download is refused with 409
     /// <c>DOWNLOAD_CATEGORY_IN_USE</c>; once the download is gone it can be deleted.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesACategoryWithDownloadsAsync()
     {
@@ -98,6 +102,7 @@ public sealed class DeleteDownloadCategoryTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A caller with no credential cannot delete a download category.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

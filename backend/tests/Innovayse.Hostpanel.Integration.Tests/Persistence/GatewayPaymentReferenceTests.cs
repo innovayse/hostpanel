@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Persistence;
 public sealed class GatewayPaymentReferenceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A second gateway payment row under the same method and reference is refused, as the lost race it is.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SecondGatewayPaymentWithTheSameReference_IsRefusedAsAConflict()
     {
@@ -31,6 +32,7 @@ public sealed class GatewayPaymentReferenceTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Manual rows with one reference are all kept: the reference is typed by a person, not promised by a gateway.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ManualRowsWithTheSameReference_AreAllowed()
     {
@@ -44,6 +46,7 @@ public sealed class GatewayPaymentReferenceTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Imported rows with one reference are all kept: the source system owns its references.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ImportedRowsWithTheSameReference_AreAllowed()
     {
@@ -57,6 +60,7 @@ public sealed class GatewayPaymentReferenceTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A manual row and a gateway payment may share a reference, so recording by hand never blocks a gateway.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ManualRowAndGatewayPaymentWithTheSameReference_AreAllowed()
     {
@@ -70,6 +74,7 @@ public sealed class GatewayPaymentReferenceTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A gateway refund may carry the reference of the payment it returns, and a refund is not a second payment.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayRefundWithThePaymentsReference_IsAllowed()
     {
@@ -83,6 +88,7 @@ public sealed class GatewayPaymentReferenceTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Two gateways may report the same reference: the unique key is the method and the reference together.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayPaymentsOfDifferentMethodsWithTheSameReference_AreAllowed()
     {
@@ -99,6 +105,7 @@ public sealed class GatewayPaymentReferenceTests(IntegrationTestFactory factory)
     /// Another unique violation is not a lost race on the ledger: the translation covers only the gateway
     /// payment index, so a duplicate department name stays the database error it is.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnotherUniqueViolation_IsNotTranslatedIntoAConflict()
     {

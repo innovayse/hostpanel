@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class RemoveTicketTagTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Staff can remove a tag that was previously added to a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanRemoveATagAsync()
     {
@@ -26,6 +27,7 @@ public sealed class RemoveTicketTagTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Removing a tag from a ticket that does not exist answers 404 with <c>TICKET_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveTagFromUnknownTicketAnswersNotFoundAsync()
     {
@@ -38,6 +40,7 @@ public sealed class RemoveTicketTagTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A caller with no credential cannot remove a tag from a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class InviteMyUserTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Inviting a fresh address with a chosen permission list succeeds.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteSendsTheInvitation()
     {
@@ -32,6 +33,7 @@ public sealed class InviteMyUserTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An invitation sent from the portal leaves an activity line on the caller's own client, free of the invited address.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteWritesAnAuditLine()
     {
@@ -55,6 +57,7 @@ public sealed class InviteMyUserTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Inviting with every permission sends the mode and an empty list, and succeeds.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteWithAllPermissionsSendsTheInvitation()
     {
@@ -73,6 +76,7 @@ public sealed class InviteMyUserTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Choosing permissions but listing none is a validation error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesAnEmptyChosenList()
     {
@@ -92,6 +96,7 @@ public sealed class InviteMyUserTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A list entry that combines permissions is a validation error, not a wider grant.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesACombinedListEntry()
     {
@@ -111,6 +116,7 @@ public sealed class InviteMyUserTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Granting every permission while also listing some is a validation error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesAListWithAllMode()
     {
@@ -130,6 +136,7 @@ public sealed class InviteMyUserTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Inviting the caller's own address answers <c>CANNOT_INVITE_ACCOUNT_OWNER</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesTheCallersOwnAddress()
     {
@@ -151,6 +158,7 @@ public sealed class InviteMyUserTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Inviting the same address twice answers <c>INVITATION_ALREADY_PENDING</c> the second time.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesADuplicatePendingInvitation()
     {
@@ -180,6 +188,7 @@ public sealed class InviteMyUserTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Inviting someone to the caller's own account is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesAnonymous()
     {
@@ -196,6 +205,7 @@ public sealed class InviteMyUserTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An admin, who is not a client, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesAnAdmin()
     {

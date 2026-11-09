@@ -151,7 +151,7 @@ public static class CreditNoteTestSeeds
     /// <summary>Reads one credit note from the database with its lines.</summary>
     /// <param name="host">The host whose database is read.</param>
     /// <param name="noteId">The note.</param>
-    /// <returns>The note.</returns>
+    /// <returns>The credit note as stored.</returns>
     public static async Task<CreditNote> NoteAsync(WebApplicationFactory<Program> host, int noteId)
     {
         using var scope = host.Services.CreateScope();
@@ -162,7 +162,7 @@ public static class CreditNoteTestSeeds
     /// <summary>Reads an invoice from the database with its payments and refunds.</summary>
     /// <param name="host">The host whose database is read.</param>
     /// <param name="invoiceId">The invoice.</param>
-    /// <returns>The invoice.</returns>
+    /// <returns>The invoice as stored.</returns>
     public static async Task<Invoice> InvoiceAsync(WebApplicationFactory<Program> host, int invoiceId)
     {
         using var scope = host.Services.CreateScope();

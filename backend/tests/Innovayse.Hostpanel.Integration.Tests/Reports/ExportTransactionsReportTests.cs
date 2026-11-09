@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class ExportTransactionsReportTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The Transactions CSV export answers with the expected headers, content type and filename.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsTheExpectedCsvShape()
     {
@@ -45,6 +46,7 @@ public sealed class ExportTransactionsReportTests(IntegrationTestFactory factory
     /// A row is written with the transaction's own currency and invoice id, and a description that
     /// would run as a spreadsheet formula is defused.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WritesTheCurrencyAndDefusesAFormula()
     {
@@ -72,6 +74,7 @@ public sealed class ExportTransactionsReportTests(IntegrationTestFactory factory
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -81,6 +84,7 @@ public sealed class ExportTransactionsReportTests(IntegrationTestFactory factory
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

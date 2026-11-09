@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 
@@ -16,6 +15,7 @@ public sealed class GetRegistryInstanceTests(IntegrationTestFactory factory) : I
     private const string Route = "/api/admin/plugins/registry-instance";
 
     /// <summary>Before any registration the state is NotRegistered and nothing is reported as wrong.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BeforeAnyRegistration_TheStateIsNotRegisteredAsync()
     {
@@ -34,6 +34,7 @@ public sealed class GetRegistryInstanceTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>After a registration the state is Verified with the id, the address and the moment, and no key of any kind.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AfterARegistration_TheStateIsVerified_AndCarriesNoKeyAsync()
     {
@@ -54,6 +55,7 @@ public sealed class GetRegistryInstanceTests(IntegrationTestFactory factory) : I
     /// <summary>The last failure is worded in the caller's language: English, Russian and Armenian.</summary>
     /// <param name="language">The <c>X-Language</c> value.</param>
     /// <param name="fragment">A fragment of the sentence in that language.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("en", "ClientBaseUrl")]
     [InlineData("ru", "публичный https-адрес")]
@@ -75,6 +77,7 @@ public sealed class GetRegistryInstanceTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>An anonymous caller and a caller who is not an administrator are refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ACallerWhoIsNotAnAdministrator_IsRefusedAsync()
     {

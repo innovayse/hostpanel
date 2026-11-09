@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetDailyTransactionsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Every day of the month is present, zero-filled where nothing happened.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsEveryDayOfTheMonth()
     {
@@ -25,6 +26,7 @@ public sealed class GetDailyTransactionsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An out-of-range month is refused before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnInvalidMonth()
     {
@@ -39,6 +41,7 @@ public sealed class GetDailyTransactionsTests(IntegrationTestFactory factory) : 
     /// Ledger rows in different currencies are converted to the base before they are added: the
     /// foreign 40,000 on 10 February counts 100, and the month's money in is 200 + 100 + the 1,000 top-up.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConvertsEveryCurrencyToTheBase()
     {
@@ -57,6 +60,7 @@ public sealed class GetDailyTransactionsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -66,6 +70,7 @@ public sealed class GetDailyTransactionsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

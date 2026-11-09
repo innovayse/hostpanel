@@ -26,7 +26,7 @@ public interface IClientCredit
     /// <param name="change">The client and the positive amount to add.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The balance once saved, or <c>CLIENT_NOT_FOUND</c> when the id names no client.</returns>
-    Task<Result<ClientCreditBalance>> AddAsync(ClientCreditChange change, CancellationToken ct);
+    public Task<Result<ClientCreditBalance>> AddAsync(ClientCreditChange change, CancellationToken ct);
 
     /// <summary>Stages taking the amount off the client's balance; never more than the balance holds.</summary>
     /// <param name="change">The client and the positive amount to take.</param>
@@ -35,7 +35,7 @@ public interface IClientCredit
     /// The balance once saved, <c>CLIENT_NOT_FOUND</c> when the id names no client, or
     /// <c>CLIENT_CREDIT_INSUFFICIENT</c> when the balance is short; a refusal stages nothing.
     /// </returns>
-    Task<Result<ClientCreditBalance>> DeductAsync(ClientCreditChange change, CancellationToken ct);
+    public Task<Result<ClientCreditBalance>> DeductAsync(ClientCreditChange change, CancellationToken ct);
 
     /// <summary>
     /// Adds the amount to the client's balance and saves the caller's whole unit of work at once,
@@ -52,5 +52,5 @@ public interface IClientCredit
     /// <param name="change">The client and the positive amount to add.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The saved balance, or <c>CLIENT_NOT_FOUND</c> when the id names no client (nothing is saved then).</returns>
-    Task<Result<ClientCreditBalance>> AddAndSaveAsync(ClientCreditChange change, CancellationToken ct);
+    public Task<Result<ClientCreditBalance>> AddAndSaveAsync(ClientCreditChange change, CancellationToken ct);
 }

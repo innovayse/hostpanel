@@ -12,11 +12,11 @@ public interface IPluginStatusProbe
     /// <summary>Tells, without running plugin code, whether the plugin is loaded and implements <c>IPluginStatus</c>.</summary>
     /// <param name="pluginId">The plugin id from its manifest.</param>
     /// <returns><see langword="true"/> when the plugin can be asked.</returns>
-    bool Supports(string pluginId);
+    public bool Supports(string pluginId);
 
     /// <summary>Asks the plugin once, bounded by the host's status time limit.</summary>
     /// <param name="pluginId">The plugin id from its manifest.</param>
     /// <param name="ct">The caller's cancellation; only it propagates, as an <see cref="OperationCanceledException"/>.</param>
     /// <returns>What the check found.</returns>
-    Task<PluginStatusProbeResult> ProbeAsync(string pluginId, CancellationToken ct);
+    public Task<PluginStatusProbeResult> ProbeAsync(string pluginId, CancellationToken ct);
 }

@@ -1,13 +1,13 @@
+using Hostpanel.Sdk.Packaging.Naming;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Hostpanel.Sdk.Packaging.Naming;
-using PluginVersionChange = Hostpanel.Sdk.Packaging.Enums.PluginVersionChange;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
+using PluginVersionChange = Hostpanel.Sdk.Packaging.Enums.PluginVersionChange;
 
 namespace Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallPlugin;
 

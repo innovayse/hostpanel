@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class LinkedUserTicketListAccessTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The account owner lists the account's ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OwnerListsTheTicketAsync()
     {
@@ -27,6 +28,7 @@ public sealed class LinkedUserTicketListAccessTests(IntegrationTestFactory facto
     }
 
     /// <summary>A user linked with the tickets permission lists the account's ticket and opens a new one on the account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedLinkedUserListsAndOpensTicketsAsync()
     {
@@ -45,6 +47,7 @@ public sealed class LinkedUserTicketListAccessTests(IntegrationTestFactory facto
     }
 
     /// <summary>A user linked without the tickets permission is refused both routes.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LinkedUserWithoutThePermissionIsRefusedAsync()
     {
@@ -62,6 +65,7 @@ public sealed class LinkedUserTicketListAccessTests(IntegrationTestFactory facto
     }
 
     /// <summary>A user permitted on another account lists their own account's tickets only.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedUserOfAnotherAccountDoesNotSeeTheTicketAsync()
     {

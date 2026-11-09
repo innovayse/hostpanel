@@ -21,6 +21,7 @@ public sealed class ModifyDomainContactTests(IntegrationTestFactory factory) : I
     /// emits, with no nested <c>contact</c> wrapper, succeeds. <see cref="ModifyDomainContactCommand"/> is flattened to
     /// these top-level fields for exactly this wire.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ModifyContact_WithFlatBody_Returns204Async()
     {
@@ -48,6 +49,7 @@ public sealed class ModifyDomainContactTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A missing required contact field (email) refuses with 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ModifyContact_MissingEmail_Returns400Async()
     {
@@ -75,6 +77,7 @@ public sealed class ModifyDomainContactTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ModifyContact_WithoutToken_Returns401Async()
     {
@@ -102,6 +105,7 @@ public sealed class ModifyDomainContactTests(IntegrationTestFactory factory) : I
     /// Contacts live only at the registrar, so a domain never placed at one is refused with
     /// <c>DOMAIN_NO_REGISTRAR_REF</c> instead of reporting a change nobody made.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ModifyContact_WithoutRegistrarRef_Returns400Async()
     {

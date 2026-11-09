@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -33,6 +32,7 @@ public sealed class UpdateProductPricesTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>"Update product prices" for AMD writes an AMD row beside a product's USD one and reports the count.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProductPricesWritesTheConvertedRow()
     {
@@ -72,6 +72,7 @@ public sealed class UpdateProductPricesTests(IntegrationTestFactory factory) : I
     /// A cycle the base does not price is dropped from the target too, since a figure kept there would
     /// keep it on sale in that currency alone.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProductPricesDropsACycleTheBaseDoesNotPrice()
     {
@@ -111,6 +112,7 @@ public sealed class UpdateProductPricesTests(IntegrationTestFactory factory) : I
     /// converted amount under its own cycle even when a cycle in between is not priced: the
     /// monthly and biennial amounts must not swap places or be left behind.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProductPricesConvertsEveryPricedCycleUnderItsOwnCycle()
     {
@@ -151,6 +153,7 @@ public sealed class UpdateProductPricesTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Recomputing the base's own prices is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProductPricesRefusesTheBase()
     {
@@ -164,6 +167,7 @@ public sealed class UpdateProductPricesTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A code that names no configured currency is refused as missing, not as a bad field.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProductPricesRefusesAnUnconfiguredCurrency()
     {
@@ -177,6 +181,7 @@ public sealed class UpdateProductPricesTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A currency listed twice, in any case, is refused by the validator before anything is written.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProductPricesRefusesADuplicateCurrency()
     {
@@ -189,6 +194,7 @@ public sealed class UpdateProductPricesTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Recomputing prices is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProductPricesRefusesAnonymous()
     {

@@ -11,9 +11,9 @@ using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Innovayse.Hostpanel.Integration.Tests.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Innovayse.Hostpanel.Integration.Tests.Shared;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 
@@ -25,6 +25,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Updating a client's profile writes the change back.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateWritesTheProfile()
     {
@@ -42,6 +43,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     /// An admin can still move a client's sign-in to a new address at once, and doing so ends every
     /// session the client held: the client's earlier token is refused and the new address signs in.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateEmailMovesTheSignInAndEndsTheClientSessions()
     {
@@ -60,6 +62,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Updating an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateUnknownClientRefusesNotFound()
     {
@@ -76,6 +79,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     /// <c>CLIENT_CURRENCY_ALREADY_INVOICED</c>, but the same save with the currency left alone
     /// still writes the other fields.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesACurrencyChangeOnceInvoiced()
     {
@@ -101,6 +105,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     /// Invoices that were all cancelled do not lock the currency: a client whose only invoice was
     /// cancelled can still be moved to another currency.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateAllowsACurrencyChangeWhenEveryInvoiceIsCancelled()
     {
@@ -125,6 +130,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>With a zero credit balance and no invoices the currency changes.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateChangesTheCurrencyWhenTheCreditBalanceIsZero()
     {
@@ -144,6 +150,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     /// with its localized sentence as the detail, the currency and the balance unchanged, and a save
     /// that leaves the currency alone still goes through.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesACurrencyChangeWhileTheClientHoldsCredit()
     {
@@ -182,6 +189,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A currency this panel has not configured and enabled is refused as missing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAnUnconfiguredCurrency()
     {
@@ -199,6 +207,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     /// The status is bound as the enum, so a word outside it fails binding and never reaches the
     /// handler; a number outside it is refused by the validator (see <see cref="UndefinedStatus_ShouldFail"/>).
     /// </remarks>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAnInvalidStatus()
     {
@@ -211,6 +220,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Updating a client is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAnonymous()
     {
@@ -221,6 +231,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A client, who is not staff, is refused with 403 on the admin route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAClient()
     {
@@ -236,6 +247,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     /// <c>EMAIL_ALREADY_IN_USE</c> instead of a 500, and nothing is saved: the profile and the
     /// sign-in address stay as they were.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAnEmailAnotherAccountHolds()
     {
@@ -257,6 +269,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     /// A save that repeats the address the account already signs in with changes nothing about the
     /// account: the client's session stays valid.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateWithTheSameEmailKeepsTheClientSessions()
     {
@@ -272,6 +285,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A malformed address is refused as a validation error before anything is read or written.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAMalformedEmail()
     {
@@ -288,6 +302,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     /// A save leaves one activity line naming the client and the acting admin, one more when the notes
     /// changed and one when the status changed, and none of them carries what was written.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateIsAuditedWithoutPersonalData()
     {

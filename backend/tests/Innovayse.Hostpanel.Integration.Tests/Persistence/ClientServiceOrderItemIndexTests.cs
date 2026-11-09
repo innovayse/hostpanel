@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Persistence;
 public sealed class ClientServiceOrderItemIndexTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A second service for one order line is refused with the persistence-agnostic conflict, and only the first is kept.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SecondServiceForTheSameOrderLine_IsRefusedAsAConflict()
     {
@@ -31,6 +32,7 @@ public sealed class ClientServiceOrderItemIndexTests(IntegrationTestFactory fact
     }
 
     /// <summary>Services that were not ordered through a line carry no line id and may repeat freely.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServicesWithoutAnOrderLine_MayRepeat()
     {

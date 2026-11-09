@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class ListDownloadCategoriesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can list download categories.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanListDownloadCategoriesAsync()
     {
@@ -22,6 +23,7 @@ public sealed class ListDownloadCategoriesTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The download category list is closed to a caller with no credential.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIsClosedToAnonymousCallersAsync()
     {

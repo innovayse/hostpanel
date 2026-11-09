@@ -23,6 +23,7 @@ public sealed class MigrationJobFailureTests(IntegrationTestFactory factory) : I
     /// <summary>Each kind of source failure is stored as its reason, and the exception text is not.</summary>
     /// <param name="status">The status the source answered with; null when it could not be reached.</param>
     /// <param name="expected">The reason the job must record.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(HttpStatusCode.Unauthorized, MigrationJobFailure.SourceRefused)]
     [InlineData(null, MigrationJobFailure.SourceUnreachable)]
@@ -64,6 +65,7 @@ public sealed class MigrationJobFailureTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A pull stopped through its token is recorded as cancelled.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Cancelled_RecordsCancelledAsync()
     {
@@ -82,6 +84,7 @@ public sealed class MigrationJobFailureTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A row written before the reason was a closed value, holding free text, reads back as unknown.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OldFreeTextRow_ReadsBackAsUnknownAsync()
     {

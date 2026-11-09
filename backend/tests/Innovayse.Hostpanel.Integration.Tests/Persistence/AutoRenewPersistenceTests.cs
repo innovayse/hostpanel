@@ -16,6 +16,7 @@ public sealed class AutoRenewPersistenceTests(IntegrationTestFactory factory)
     : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A service switched to manual renewal is stored and reloaded as false, not replaced by the default.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExplicitFalse_IsStoredAsFalseAsync()
     {
@@ -25,6 +26,7 @@ public sealed class AutoRenewPersistenceTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A service created without touching the flag is renewed automatically.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Default_ReloadsAsTrueAsync()
     {

@@ -32,5 +32,5 @@ public interface IDomainOwnership
     /// telling them apart would let the route be used to enumerate domain ids.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
-    Task<Result> RequireOwnedByCallerAsync(int domainId, CancellationToken ct);
+    public Task<Result> RequireOwnedByCallerAsync(int domainId, CancellationToken ct);
 }

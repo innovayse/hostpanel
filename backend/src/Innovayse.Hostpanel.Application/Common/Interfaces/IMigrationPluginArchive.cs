@@ -13,5 +13,5 @@ public interface IMigrationPluginArchive
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The archive, or null when this deployment does not carry the plugin's files.</returns>
-    Task<FileDownloadDto?> CreateAsync(CancellationToken ct);
+    public Task<FileDownloadDto?> CreateAsync(CancellationToken ct);
 }

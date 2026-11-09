@@ -17,6 +17,7 @@ public sealed class SlideTranslationStorageTests(IntegrationTestFactory factory)
     /// A JSON array stored with non-ASCII letters escaped, as the default serializer writes it,
     /// reads back as the same bullet points.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LegacyEscapedJson_ReadsBackAsTheBulletPointsAsync()
     {
@@ -36,6 +37,7 @@ public sealed class SlideTranslationStorageTests(IntegrationTestFactory factory)
     /// the converter did, instead of failing the query.
     /// </summary>
     /// <param name="stored">The column text as it sits in the table.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Free SSL, Daily backups")]
     [InlineData("")]

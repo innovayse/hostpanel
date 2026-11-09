@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class UpdateEmailTemplateTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Updating a template's content changes what is read back.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_RoundTrips()
     {
@@ -30,6 +31,7 @@ public sealed class UpdateEmailTemplateTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>An id that names no template answers 404 with <c>EMAIL_TEMPLATE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_UnknownId_RefusesNotFound()
     {
@@ -44,6 +46,7 @@ public sealed class UpdateEmailTemplateTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_RefusesAnonymous()
     {

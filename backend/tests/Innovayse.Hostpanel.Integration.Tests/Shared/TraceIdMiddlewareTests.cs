@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 public sealed class TraceIdMiddlewareTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Every response, success or refusal, carries a trace id distinct from any the caller sent.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EveryResponse_CarriesItsOwnRequestIdAsync()
     {
@@ -25,6 +26,7 @@ public sealed class TraceIdMiddlewareTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Two requests get two different trace ids.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoRequests_GetTwoDifferentRequestIdsAsync()
     {

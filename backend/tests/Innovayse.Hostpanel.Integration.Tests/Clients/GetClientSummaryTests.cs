@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The summary groups its figures: invoices per status, transaction totals, record counts and the credit balance.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryGroupsItsFigures()
     {
@@ -34,6 +35,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     /// A partially refunded invoice is counted under its own status, with its total, and no longer
     /// under Paid or Refunded.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryCountsAPartiallyRefundedInvoiceUnderItsOwnStatus()
     {
@@ -69,6 +71,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     /// A client with paid invoices in USD and in AMD gets a separate total per currency, never one
     /// mixed sum, and the transaction figures split the same way, including money going out and fees.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryKeepsTheTotalsOfEachCurrencySeparate()
     {
@@ -111,6 +114,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The credit balance is answered in the client's billing currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryReportsTheCreditBalanceInTheBillingCurrency()
     {
@@ -136,6 +140,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     /// A client with no billing currency and no credit answers the base currency: there is no invoice and
     /// no balance that could name another.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryForAClientWithoutACurrencyReportsTheBaseCurrency()
     {
@@ -161,6 +166,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     /// invoice, the same stand-in the rest of billing uses, not in the base currency and not in an older
     /// invoice's currency. The two invoices are saved apart, so the later one has the higher id.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryForAClientWithoutACurrencyButWithCreditUsesTheLatestInvoiceCurrency()
     {
@@ -203,6 +209,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     /// A client with no billing currency and an invoice but no credit has nothing to place, so the base
     /// currency is answered, not the invoice's.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryForAClientWithoutACurrencyWithAnInvoiceButNoCreditReportsTheBaseCurrency()
     {
@@ -236,6 +243,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
         list.EnumerateArray().ToDictionary(e => e.GetProperty("currency").GetString()!, e => e.GetProperty("amount").GetDecimal());
 
     /// <summary>The summary for a real client answers 200.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryReturnsOkForARealClient()
     {
@@ -251,6 +259,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     /// The handler documents no refusal: an unknown client id answers a zero-valued summary
     /// rather than <c>CLIENT_NOT_FOUND</c>, the dashboard having never distinguished the two.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryForAnUnknownClientStillAnswersOk()
     {
@@ -262,6 +271,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Reading a client's summary is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryRefusesAnonymous()
     {
@@ -271,6 +281,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A client, who is not staff, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryRefusesAClient()
     {

@@ -1,13 +1,11 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
-using System.Net.Http.Headers;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -23,6 +21,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Integrations;
 public sealed class GetIntegrationTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Saving the mail server's password, then reading it back, shows only that it is set.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SaveThenGet_WithholdsTheSecretAsync()
     {
@@ -46,6 +45,7 @@ public sealed class GetIntegrationTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A loaded plugin with an icon reads <c>isPlugin: true</c> and the icon endpoint; a built-in reads false and null.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Detail_NamesThePluginAndItsIconUrlAsync()
     {
@@ -68,6 +68,7 @@ public sealed class GetIntegrationTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An unrecognised slug answers 404 with <c>INTEGRATION_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownSlug_RefusesNotFoundAsync()
     {
@@ -80,6 +81,7 @@ public sealed class GetIntegrationTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -91,6 +93,7 @@ public sealed class GetIntegrationTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

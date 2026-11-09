@@ -146,6 +146,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An id nothing names is refused as <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderIsRefused()
     {
@@ -162,6 +163,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// An order with no linked invoice is refused as <c>ORDER_NOT_INVOICED</c> before it is
     /// accepted, so it stays Pending for a later, real payment.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UninvoicedOrderIsRefusedAndStaysPending()
     {
@@ -178,6 +180,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An order that already ran fulfilment (no longer Pending) is a no-op, and still succeeds.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AlreadyAcceptedOrderIsANoOp()
     {
@@ -198,6 +201,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A Pending order with a plain hosting line is accepted and provisions a client service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PendingOrderWithAServiceItemAcceptsAndCreatesTheService()
     {
@@ -229,6 +233,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// gate before any network call, and the line's amount is refunded through the invoice's
     /// hosted gateway plugin, with the refund and its ledger row recorded.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainAlreadyRegisteredRefundsThePluginPayment()
     {
@@ -263,6 +268,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// In an order that also bought hosting, only the rejected domain line's amount is refunded,
     /// never the invoice total, rounded half away from zero to minor units.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RejectedDomainInAMixedOrderRefundsOnlyItsLine()
     {
@@ -289,6 +295,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// invoice currency, and the refund is on the ledger. The line was
     /// the whole invoice, so the invoice ends Refunded.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RejectedDomainOnAGatewayPaymentRefundsTheLineAtTheHostedGateway()
     {
@@ -320,6 +327,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// use case as the admin action: the hosted gateway gets the line's amount only, the refund's ledger row is written, and the invoice is left
     /// PartiallyRefunded because the hosting line stays paid.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RejectedDomainInAMixedGatewayOrderLeavesTheInvoicePartiallyRefunded()
     {
@@ -349,6 +357,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// A refund that gave the credit share back but could not return the paid share is not a refunded line: the line is left
     /// partly refunded, closed to retries, for staff to finish by hand, and the order stays incomplete.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefundThatReturnsOnlyTheCreditShareLeavesTheLineForManualAction()
     {
@@ -379,6 +388,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// A refund that returned nothing at all (the gateway refused it and no credit was involved) does not close the line: it
     /// goes back to failed so staff can retry it, and the order stays incomplete.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefundThatReturnsNothingLeavesTheLineFailedAndRetryable()
     {
@@ -410,6 +420,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// A registrar that times out leaves the registration's outcome unknown, so the line is not refunded: the client could
     /// otherwise keep the domain and the money. The line stays failed with the code for staff to retry or refund by hand.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ADomainLineWhoseOutcomeIsUnknownIsNotRefunded()
     {
@@ -441,6 +452,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// While a failed line's refund is under way a retry cannot take the line: it is refused, the domain is not registered,
     /// and once the refund returns the line is Refunded, so the client is never both refunded and delivered.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARetryCannotTakeALineWhileItsRefundIsUnderWay()
     {
@@ -490,6 +502,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// On a taxed invoice the rejected line is refunded with its tax: the refund is the line's share
     /// of the invoice total, not its pre-tax price.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RejectedDomainOnATaxedInvoiceRefundsTheLineWithItsTax()
     {
@@ -518,6 +531,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// With the real default registrar provider and no registrar credentials, a paid registration is refused,
     /// not faked: no domain is recorded and the payment is refunded automatically.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnconfiguredRegistrarRefundsAndRecordsNoDomain()
     {
@@ -554,6 +568,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// A rejected line on an invoice paid partly with credit gives the credit share back to the
     /// client's credit balance and only the paid share back through the hosted gateway.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RejectedDomainPaidPartlyWithCreditRefundsEachShareItsOwnWay()
     {
@@ -582,6 +597,7 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
     /// A rejected line on an invoice paid wholly with credit goes back to the credit balance only:
     /// no gateway is asked for a refund of money it never took.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RejectedDomainPaidWhollyWithCreditRefundsToCreditOnly()
     {

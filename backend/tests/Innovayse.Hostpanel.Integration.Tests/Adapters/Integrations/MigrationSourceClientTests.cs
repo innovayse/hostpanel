@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Infrastructure.Integrations.Migration;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration.Settings;
 using Innovayse.Hostpanel.Infrastructure.Security;
 using Innovayse.Hostpanel.Infrastructure.Security.Settings;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 

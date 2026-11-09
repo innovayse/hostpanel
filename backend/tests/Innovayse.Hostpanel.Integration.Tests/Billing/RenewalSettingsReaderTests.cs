@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class RenewalSettingsReaderTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The seeded defaults read back typed; a garbage row falls back to its default.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Reads_Defaults_And_FallsBack()
     {

@@ -1,8 +1,8 @@
-using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Hostpanel.Sdk.Plugins.Endpoints;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Manifest;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;

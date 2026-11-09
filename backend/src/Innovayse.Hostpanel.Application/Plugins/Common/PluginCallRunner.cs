@@ -1,6 +1,9 @@
 using System.Globalization;
 using System.Net.Http.Headers;
 using System.Text.RegularExpressions;
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -9,9 +12,6 @@ using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
-using Hostpanel.Sdk.Plugins.Endpoints;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Manifest;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

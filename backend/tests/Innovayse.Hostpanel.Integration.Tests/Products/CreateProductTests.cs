@@ -24,6 +24,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Admin can create a product inside an existing group and receives 201 Created.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProductAsync_ReturnsCreated_AsAdminAsync()
     {
@@ -39,6 +40,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>POST /api/products without auth returns 401 Unauthorized.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProductAsync_Returns401_WithoutAuthAsync()
     {
@@ -51,6 +53,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The legacy monthly/annual pair, with no per-currency list, prices the base currency alone.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProduct_LegacyPairOnly_YieldsOneBaseCurrencyRow()
     {
@@ -78,6 +81,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A per-currency price list wins over the legacy pair sent alongside it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProduct_PriceListWinsOverTheLegacyPair()
     {
@@ -105,6 +109,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Creating a product in an unknown group answers 404 with <c>PRODUCT_GROUP_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProduct_UnknownGroup_RefusesNotFound()
     {
@@ -124,6 +129,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The featured flag and sort order sent on create are stored and returned.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProduct_FeaturedAndSortOrder_AreStoredAndReturned()
     {
@@ -148,6 +154,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Featuring a new product clears the flag on the group's previously featured product.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProduct_Featured_ClearsTheGroupsPreviousFeaturedProduct()
     {
@@ -170,6 +177,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A negative sort order is refused with 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProduct_NegativeSortOrder_IsRefused()
     {
@@ -188,6 +196,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     /// A Digital product's SKU, metadata and grace period are stored and returned: the SKU normalised,
     /// the metadata the same JSON object, the type named.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProduct_DigitalWithFulfilmentFields_StoresAndReturnsThem()
     {
@@ -216,6 +225,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A product created without the fulfilment fields has no SKU or metadata and the default grace period.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProduct_WithoutFulfilmentFields_HasNoSkuOrMetadataAndTheDefaultGrace()
     {
@@ -232,6 +242,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     /// A SKU another product holds is refused with 409 <c>PRODUCT_SKU_ALREADY_IN_USE</c>, even when typed
     /// in another case, because SKUs are compared in their normalised form.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProduct_SkuOfAnotherProduct_RefusesWithConflict()
     {
@@ -252,6 +263,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     /// index, and the handler answers 409 <c>PRODUCT_SKU_ALREADY_IN_USE</c> rather than a server error,
     /// leaving only the winner's product under the SKU.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProduct_SkuTakenDuringTheSave_RefusesWithConflict()
     {
@@ -274,6 +286,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A malformed SKU is refused with 400 naming the field.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProduct_MalformedSku_IsRefused()
     {
@@ -286,6 +299,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Metadata that is not a JSON object is refused with 400 naming the field.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProduct_MetadataThatIsNotAnObject_IsRefused()
     {
@@ -298,6 +312,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Metadata over the 16 KB cap is refused with 400 naming the field.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProduct_MetadataOverTheSizeCap_IsRefused()
     {
@@ -312,6 +327,7 @@ public sealed class CreateProductTests(IntegrationTestFactory factory) : IClassF
 
     /// <summary>A grace period outside 0 to 365 days is refused with 400 naming the field.</summary>
     /// <param name="days">A grace period just outside either bound.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(Product.MinGracePeriodDays - 1)]
     [InlineData(Product.MaxGracePeriodDays + 1)]

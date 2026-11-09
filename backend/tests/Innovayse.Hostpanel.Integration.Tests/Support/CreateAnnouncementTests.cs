@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class CreateAnnouncementTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can create an announcement.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanCreateAnAnnouncementAsync()
     {
@@ -32,6 +33,7 @@ public sealed class CreateAnnouncementTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A caller with no credential cannot create an announcement.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

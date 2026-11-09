@@ -17,7 +17,6 @@ using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.API.Controllers;

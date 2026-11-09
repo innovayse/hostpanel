@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.API.Authorization;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Application.Plugins.Queries.GetPluginPage;
@@ -6,7 +7,6 @@ using Innovayse.Hostpanel.Application.Plugins.Queries.GetPluginUi;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
-using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Wolverine;

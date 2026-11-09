@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Testimonials;
 public sealed class UpdateTestimonialTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Updating replaces the fields and the whole translation set: a locale left out is removed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_ReplacesFieldsAndTranslations()
     {
@@ -32,6 +33,7 @@ public sealed class UpdateTestimonialTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An id that names no testimonial answers 404 with the not-found code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_UnknownId_RefusesWithNotFoundCode()
     {
@@ -44,6 +46,7 @@ public sealed class UpdateTestimonialTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_RefusesAnonymous()
     {
@@ -53,6 +56,7 @@ public sealed class UpdateTestimonialTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A negative sort order is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_NegativeSortOrder_RefusesWithValidationError()
     {

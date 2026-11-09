@@ -16,6 +16,7 @@ public sealed class GetWhoisTests(IntegrationTestFactory factory) : IClassFixtur
     /// <see cref="StubRegistrarProvider.GetWhoisAsync"/> always answers <see langword="null"/>,
     /// so a lookup through this admin route answers 404 with <c>DOMAIN_WHOIS_NOT_FOUND</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetWhois_NoRecordAtRegistrar_Returns404WithDomainWhoisNotFoundAsync()
     {
@@ -28,6 +29,7 @@ public sealed class GetWhoisTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetWhois_WithoutToken_Returns401Async()
     {
@@ -39,6 +41,7 @@ public sealed class GetWhoisTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>An empty domain name is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetWhois_EmptyName_Returns400ValidationErrorAsync()
     {

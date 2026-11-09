@@ -1,6 +1,6 @@
-using Innovayse.Hostpanel.Application.Common.Errors;
 using System.Net;
 using System.Net.Http.Json;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Infrastructure.Auth;
@@ -38,6 +38,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
 
     /// <summary>Seeds the published accounts on a demo host.</summary>
     /// <param name="host">The demo host.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private static async Task SeedDemoAsync(WebApplicationFactory<Program> host)
     {
         using var scope = host.Services.CreateScope();
@@ -46,6 +47,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
 
     /// <summary>Makes sure a local account with the demo client's email exists, for the demo-off host.</summary>
     /// <param name="host">The host to create the account on.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private static async Task EnsureAccountAsync(WebApplicationFactory<Program> host)
     {
         using var scope = host.Services.CreateScope();
@@ -104,6 +106,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
             new { email = DemoTestHost.ClientEmail, token, newPassword = ChangedPassword });
 
     /// <summary>Demo on: resetting a demo account's password is refused and the old password still works.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenEnabled_ResetPasswordOfADemoAccountIsRefusedAsync()
     {
@@ -120,6 +123,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Demo on: resetting an ordinary account's password still works.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenEnabled_ResetPasswordOfAnOrdinaryAccountStillWorksAsync()
     {
@@ -142,6 +146,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Demo on: a client edit that changes the demo client's email is refused; the email is untouched.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenEnabled_ChangingTheDemoClientEmailIsRefusedAsync()
     {
@@ -161,6 +166,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Demo on: the same edit with the email unchanged still saves the other profile fields.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenEnabled_OtherProfileFieldsStayEditableAsync()
     {
@@ -176,6 +182,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Demo off: the reset sets the password for an account whose email matches the unused demo options.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenDisabled_ResetPasswordWorksAsync()
     {
@@ -191,6 +198,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Demo off: a bad token is still the ordinary 400 <c>TOKEN_INVALID_OR_EXPIRED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenDisabled_ResetPasswordWithABadTokenIsRefusedAsBeforeAsync()
     {
@@ -204,6 +212,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Demo off: the client email change is allowed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenDisabled_ChangingTheClientEmailIsAllowedAsync()
     {

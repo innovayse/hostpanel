@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 public sealed class ChangePackageTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Admin can change the hosting package of a provisioned service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangePackage_AdminCanChangeAsync()
     {
@@ -27,6 +28,7 @@ public sealed class ChangePackageTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Changing the package of a service with no assigned server answers 400 with <c>SERVICE_NO_SERVER_ASSIGNED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangePackage_ServiceHasNoServer_Returns400WithServiceNoServerAssigned()
     {
@@ -44,6 +46,7 @@ public sealed class ChangePackageTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Changing the package for an id no service takes answers 404 with <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangePackage_UnknownService_Returns404WithServiceNotFound()
     {
@@ -62,6 +65,7 @@ public sealed class ChangePackageTests(IntegrationTestFactory factory) : IClassF
     /// A provider that refuses to change the package answers 502 with
     /// <c>SERVICE_PACKAGE_UPSTREAM_FAILED</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangePackage_ProviderRefuses_Returns502WithServicePackageUpstreamFailed()
     {
@@ -81,6 +85,7 @@ public sealed class ChangePackageTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Changing the package without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangePackage_Returns401_WithoutAuthAsync()
     {

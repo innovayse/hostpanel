@@ -35,6 +35,7 @@ public sealed class FulfillInvoicedOrderTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An invoice that no order links to succeeds without touching any order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvoiceWithoutAnOrderIsANoOp()
     {
@@ -49,6 +50,7 @@ public sealed class FulfillInvoicedOrderTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>The Pending order an invoice was raised for is accepted.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PendingOrderLinkedToTheInvoiceIsFulfilled()
     {

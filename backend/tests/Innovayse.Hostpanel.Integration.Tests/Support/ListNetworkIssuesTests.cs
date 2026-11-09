@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class ListNetworkIssuesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can list network issues.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanListNetworkIssuesAsync()
     {
@@ -22,6 +23,7 @@ public sealed class ListNetworkIssuesTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The network issue list is closed to a caller with no credential.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIsClosedToAnonymousCallersAsync()
     {
@@ -31,6 +33,7 @@ public sealed class ListNetworkIssuesTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A status filter given by name, repeated to cover several statuses, is accepted.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task KnownStatusFiltersAreAcceptedAsync()
     {
@@ -42,6 +45,7 @@ public sealed class ListNetworkIssuesTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A status filter that names no network issue status is refused with 400, not silently ignored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownStatusFilterIsRejectedAsync()
     {

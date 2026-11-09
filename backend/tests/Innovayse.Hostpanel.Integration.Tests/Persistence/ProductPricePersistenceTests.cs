@@ -29,6 +29,7 @@ public sealed class ProductPricePersistenceTests(IntegrationTestFactory factory)
         await db.Products.Include(p => p.Prices).FirstOrDefaultAsync(p => p.Id == productId);
 
     /// <summary>A price set on a new product is saved with that product's id and read back from the database.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetPriceThenSavePersistsTheProductId()
     {
@@ -62,6 +63,7 @@ public sealed class ProductPricePersistenceTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Replacing a price updates the row rather than adding a second one for the same currency and cycle.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetPriceTwiceUpdatesTheRow()
     {

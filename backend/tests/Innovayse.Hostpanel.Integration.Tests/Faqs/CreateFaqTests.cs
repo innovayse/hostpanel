@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Faqs.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Faqs;
@@ -13,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Faqs;
 public sealed class CreateFaqTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Creating a question and reading it back round-trips its fields and its translations.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenGet_RoundTrips()
     {
@@ -33,6 +33,7 @@ public sealed class CreateFaqTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A field the validator refuses answers 400 with the validation code, and nothing is stored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_InvalidField_RefusesWithValidationFailure()
     {
@@ -44,6 +45,7 @@ public sealed class CreateFaqTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A body with no translation at all is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_WithoutTranslations_Refuses()
     {
@@ -55,6 +57,7 @@ public sealed class CreateFaqTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A translation keyed by a language the panel does not support is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_UnsupportedLocale_Refuses()
     {
@@ -66,6 +69,7 @@ public sealed class CreateFaqTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A question without the default-locale translation is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_WithoutDefaultLocale_Refuses()
     {
@@ -77,6 +81,7 @@ public sealed class CreateFaqTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_RefusesAnonymous()
     {

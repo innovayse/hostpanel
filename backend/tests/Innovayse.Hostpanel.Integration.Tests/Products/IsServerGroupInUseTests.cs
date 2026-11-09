@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class IsServerGroupInUseTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A group a product provisions into is reported in use.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_GroupUsedByAProduct_IsInUseAsync()
     {
@@ -36,6 +37,7 @@ public sealed class IsServerGroupInUseTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A group no product names is not in use.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnreferencedGroup_IsNotInUseAsync()
     {

@@ -41,6 +41,7 @@ public sealed class ScanServerSshHostKeyTests(IntegrationTestFactory factory) : 
     /// <summary>Each way the endpoint can fail names what to check, as an admin-facing 503.</summary>
     /// <param name="failure">How the endpoint failed.</param>
     /// <param name="code">The error code the admin sees.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(SshEndpointFailure.NoAnswer, HostpanelErrorCodes.SSH_AGENT_HOST_UNREACHABLE)]
     [InlineData(SshEndpointFailure.Refused, HostpanelErrorCodes.SSH_AGENT_PORT_REFUSED)]

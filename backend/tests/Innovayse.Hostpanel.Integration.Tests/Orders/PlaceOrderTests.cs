@@ -10,7 +10,6 @@ using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
-using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
@@ -159,6 +158,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// </summary>
     /// <param name="cycle">The billing cycle ordered.</param>
     /// <param name="amount">The price of that cycle.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(BillingCycle.Quarterly, 55.5)]
     [InlineData(BillingCycle.SemiAnnual, 105.25)]
@@ -191,6 +191,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// <param name="sent">The cycle text the portal sends.</param>
     /// <param name="cycle">The cycle it must be read as.</param>
     /// <param name="amount">The price of that cycle.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("monthly", BillingCycle.Monthly, 9.5)]
     [InlineData("annual", BillingCycle.Annual, 95.0)]
@@ -223,6 +224,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// at another cycle's price and not a server error: a product sold monthly cannot be ordered quarterly.
     /// </summary>
     /// <param name="cycle">A cycle the seeded product is not priced for.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(BillingCycle.Quarterly)]
     [InlineData(BillingCycle.SemiAnnual)]
@@ -243,6 +245,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// A guest checkout with valid registration fields places an order, gets a payment token, and
     /// keeps the phone number the guest gave on the client record it creates.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GuestCheckoutPlacesAnOrderAndReturnsAPaymentToken()
     {
@@ -281,6 +284,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// A priced order is left for the payer to pay: it bills its full total, its invoice stays
     /// Unpaid and the order stays Pending. Only an order that owes nothing is settled at checkout.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PricedOrderIsNotSettledAtCheckout()
     {
@@ -305,6 +309,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// the stored maximum plus one would collide under concurrency, and the unique index would
     /// refuse all but one with a server error.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConcurrentOrdersAreNumberedDistinctlyAndNoneFails()
     {
@@ -349,6 +354,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A guest checkout naming a currency this panel does not offer is refused before an account exists.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GuestCheckoutRefusesAnUnconfiguredCurrency()
     {
@@ -372,6 +378,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A checkout naming a payment method nobody switched on is refused, and no order is created.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckoutRefusesAPaymentMethodNotOnOffer()
     {
@@ -398,6 +405,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// A signed-in caller placing their first order gets a client record rather than a refusal:
     /// this flow has no "no client account" refusal.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SignedInCallersFirstOrderCreatesTheirClientRecordAndSucceeds()
     {
@@ -445,6 +453,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// through the external sign-on, whose row the registration handler wrote first) is granted
     /// the role by their order. Without it every portal call answered 403 after they had ordered.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SignedInCallerWithAClientRowButNoRoleIsGrantedTheClientRoleByTheirOrder()
     {
@@ -481,6 +490,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// name sends the address instead) is not stored as the first and last name. The new client row
     /// is named after the email's local part, and the caller is granted the Client role.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SignedInCallerWhoseDisplayNameIsAnEmailIsNotNamedAfterTheWholeAddress()
     {
@@ -516,6 +526,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A checkout naming a product id nothing in the catalogue carries is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckoutRefusesAProductThatDoesNotExist()
     {
@@ -538,6 +549,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A checkout for a product that carries no price at all is refused rather than billed for free.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckoutRefusesAProductWithNoPriceForTheRequestedCurrency()
     {
@@ -564,6 +576,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// runs, including the legacy "annually" spelling the wire no longer accepts.
     /// </summary>
     /// <param name="cycle">The cycle text sent in the order line.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("weekly")]
     [InlineData("annually")]
@@ -590,6 +603,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// A payer billed in AMD can order a domain whose TLD is sold in USD: the line is priced with
     /// the stored exchange rates and the invoice is raised in AMD for the converted amount.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GuestCheckoutOrdersADomainOfAUsdTldInTheChosenCurrency()
     {
@@ -642,6 +656,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// A fractional domain price is read the same under every request language: a checkout sent
     /// in Russian, whose culture writes a decimal comma, still orders the domain at 9.99.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainPriceIsReadTheSameUnderEveryRequestLanguage()
     {
@@ -686,6 +701,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// The response carries the order's real number, the one stored on the order, so a client
     /// never has to build it from the id.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PlacedOrderAnswersWithItsStoredOrderNumber()
     {
@@ -711,6 +727,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// The failure is a real database refusal: a trigger on the invoice lines table refuses the one
     /// line carrying this test's product name, and is dropped again afterwards.
     /// </remarks>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvoiceCreationFailureLeavesNoOrder()
     {
@@ -752,6 +769,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// A free plan's order owes nothing, so it is settled and fulfilled at placement instead of
     /// waiting for a payment no gateway would take.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ZeroTotalOrderIsSettledAndFulfilledAtPlacement()
     {
@@ -778,6 +796,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// The invoice line of an order keeps a copy of the product as it was sold: its id, cycle, digital flag, SKU
     /// and metadata, so what a paid line delivers does not follow later catalogue edits.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderLineKeepsTheProductSnapshotOnItsInvoiceLine()
     {
@@ -807,6 +826,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// A free digital order is settled and fulfilled at placement: its service is Active at once and was never
     /// provisioned, where a free hosting order leaves its service Pending for the client's setup.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FreeDigitalOrderActivatesItsServiceWithoutProvisioning()
     {
@@ -833,6 +853,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// A renewal of a domain the caller does not hold is refused at checkout, before any account,
     /// number or invoice is created, rather than after the money was taken.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewalOfADomainNotHeldIsRefusedAtCheckout()
     {
@@ -878,6 +899,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     /// <param name="domain">The line's domain name.</param>
     /// <param name="years">The line's period.</param>
     /// <param name="eppCode">The line's authorization code.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("steal", "example.com", 1, null)]
     [InlineData(nameof(DomainAction.Register), null, 1, null)]
@@ -906,6 +928,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A guest checking out with an address that already has an account is answered 409.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GuestCheckoutWithATakenEmailIsAConflict()
     {
@@ -922,6 +945,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A signed-in caller's first order keeps the phone number they gave, as a guest's does.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SignedInCallersFirstOrderStoresTheirPhoneNumber()
     {

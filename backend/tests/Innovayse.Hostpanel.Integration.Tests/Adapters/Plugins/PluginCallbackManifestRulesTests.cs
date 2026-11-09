@@ -1,9 +1,8 @@
+using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
-using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 

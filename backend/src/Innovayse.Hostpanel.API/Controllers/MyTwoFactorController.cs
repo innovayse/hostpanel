@@ -1,9 +1,9 @@
-using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Application.Auth.Commands.DisableTwoFactor;
 using Innovayse.Hostpanel.Application.Auth.Commands.EnableTwoFactor;
 using Innovayse.Hostpanel.Application.Auth.Commands.StartTwoFactorSetup;
 using Innovayse.Hostpanel.Application.Auth.Common;
 using Innovayse.Hostpanel.Shared.Authorization;
+using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Authorization;

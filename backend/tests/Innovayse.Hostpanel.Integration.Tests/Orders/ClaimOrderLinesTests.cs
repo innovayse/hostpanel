@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class ClaimOrderLinesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An order that does not exist is refused as <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderIsRefused()
     {
@@ -29,6 +30,7 @@ public sealed class ClaimOrderLinesTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A line the order does not hold is refused as <c>ORDER_ITEM_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingLineIsRefused()
     {
@@ -43,6 +45,7 @@ public sealed class ClaimOrderLinesTests(IntegrationTestFactory factory) : IClas
     /// Every pending line of an accepted order is claimed in one save: in progress, the first attempt counted and dated, and
     /// the order Incomplete instead of Active over lines that have not started.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClaimsEveryPendingLineAndMakesTheOrderIncomplete()
     {
@@ -60,6 +63,7 @@ public sealed class ClaimOrderLinesTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A claim for one line leaves the others pending, and claiming a line twice counts one attempt.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClaimsOnlyTheNamedLineAndNeverTwice()
     {
@@ -77,6 +81,7 @@ public sealed class ClaimOrderLinesTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A failed line is claimed again with a new attempt, and a fulfilled line is left as it is.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClaimsAFailedLineAgainAndLeavesAFulfilledLineAlone()
     {
@@ -100,6 +105,7 @@ public sealed class ClaimOrderLinesTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A non-positive id is refused by the validator.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvalidIdsAreRefusedByTheValidator()
     {

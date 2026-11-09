@@ -18,6 +18,7 @@ public sealed class SecretSettingsLeakTests(IntegrationTestFactory factory) : IC
     private const string GatewaySecretKey = "integration:smtp:password";
 
     /// <summary>The admin list omits every row outside the catalogue, so a secret is not listed at all.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminList_OmitsSecretRowsAsync()
     {
@@ -40,6 +41,7 @@ public sealed class SecretSettingsLeakTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The admin read by id answers a row outside the catalogue as not found, without its value.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminReadById_AnswersNotFoundForASecretRowAsync()
     {
@@ -55,6 +57,7 @@ public sealed class SecretSettingsLeakTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The integration detail answers a secret field with isSecret and hasValue, not a value or a mask.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IntegrationDetail_NeverReturnsASecretValueAsync()
     {
@@ -78,6 +81,7 @@ public sealed class SecretSettingsLeakTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The anonymous public settings carry no secret and no integration row at all.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicSettings_NeverIncludeASecretAsync()
     {

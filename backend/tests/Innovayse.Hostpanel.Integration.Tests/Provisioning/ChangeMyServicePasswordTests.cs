@@ -1,6 +1,6 @@
-using Innovayse.Hostpanel.Application.Common.Errors;
 using System.Net;
 using System.Net.Http.Json;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Shared.Constants;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 public sealed class ChangeMyServicePasswordTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Changing a stranger's service password is refused, not told which part is wrong.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangePassword_AStrangersService_Returns404WithServiceNotFound()
     {
@@ -36,6 +37,7 @@ public sealed class ChangeMyServicePasswordTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Changing the password without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangePassword_Returns401_WithoutAuthAsync()
     {
@@ -49,6 +51,7 @@ public sealed class ChangeMyServicePasswordTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangePassword_WithNonPositiveId_Returns400ValidationErrorAsync()
     {

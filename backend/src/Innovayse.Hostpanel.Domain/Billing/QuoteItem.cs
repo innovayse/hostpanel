@@ -28,7 +28,7 @@ public sealed class QuoteItem
     public bool Taxed { get; private set; }
 
     /// <summary>Gets the calculated total for this line item after discount, unrounded: use <see cref="AmountIn"/> for an amount a payer can be charged.</summary>
-    public decimal Amount => UnitPrice * Quantity * (1 - DiscountPercent / 100);
+    public decimal Amount => UnitPrice * Quantity * (1 - (DiscountPercent / 100));
 
     /// <summary>Returns the line total after discount rounded to the minor unit of <paramref name="currency"/>, the same way an invoice rounds its amounts.</summary>
     /// <param name="currency">ISO 4217 alpha code the quote's amounts are in.</param>

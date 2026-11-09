@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetCreditNoteTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The note comes back with its amounts, its method, its status and its lines.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_ReturnsTheNoteWithItsLines()
     {
@@ -40,6 +41,7 @@ public sealed class GetCreditNoteTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An id that names no note answers 404 with <c>CREDIT_NOTE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_UnknownId_Returns404()
     {
@@ -52,6 +54,7 @@ public sealed class GetCreditNoteTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Reading a note is not for anonymous callers or clients.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_IsStaffOnly()
     {

@@ -52,6 +52,7 @@ public sealed class ClientClosedInvoicesHandlerTests(IntegrationTestFactory fact
         context.Invoices.AsNoTracking().Where(i => i.Id == invoiceId).Select(i => i.Status).FirstAsync(CancellationToken.None);
 
     /// <summary>The closing cancels the client's unpaid renewal invoice and nothing else.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientClosed_CancelsTheUnpaidRenewalInvoicesOnlyAsync()
     {
@@ -74,6 +75,7 @@ public sealed class ClientClosedInvoicesHandlerTests(IntegrationTestFactory fact
     }
 
     /// <summary>A client with no invoices closes without error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientClosed_WithNoInvoices_DoesNotThrowAsync()
     {

@@ -37,6 +37,7 @@ public sealed class TicketRepliedHandler
     /// </summary>
     /// <param name="evt">The ticket replied domain event.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the message has been handled.</returns>
     public async Task HandleAsync(TicketRepliedEvent evt, CancellationToken ct)
     {
         var ticket = await _context.Tickets

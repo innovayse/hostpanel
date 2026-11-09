@@ -20,7 +20,7 @@ public interface IRegistryInstanceApi
     /// the key; <c>PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID</c> when the registry will not use the key or the address;
     /// <c>PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED</c> over the registry limit; or another <c>PLUGIN_REGISTRY_*</c> failure when the registry cannot be used.
     /// </returns>
-    Task<Result<RegistryInstanceRegistration>> RegisterAsync(string publicKey, string baseUrl, CancellationToken ct);
+    public Task<Result<RegistryInstanceRegistration>> RegisterAsync(string publicKey, string baseUrl, CancellationToken ct);
 
     /// <summary>Asks the registry to fetch the challenge from this installation and confirm it.</summary>
     /// <param name="instanceId">The id the registry gave at registration.</param>
@@ -30,5 +30,5 @@ public interface IRegistryInstanceApi
     /// registry no longer knows the instance; <c>PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE</c> when the registry could not read the challenge;
     /// <c>PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED</c> over the registry limit; or another <c>PLUGIN_REGISTRY_*</c> failure.
     /// </returns>
-    Task<Result> VerifyAsync(Guid instanceId, CancellationToken ct);
+    public Task<Result> VerifyAsync(Guid instanceId, CancellationToken ct);
 }

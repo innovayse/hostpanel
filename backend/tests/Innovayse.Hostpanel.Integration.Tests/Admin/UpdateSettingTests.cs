@@ -29,6 +29,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     /// </summary>
     /// <param name="key">The full setting key of the row outside the catalogue.</param>
     /// <param name="stored">The value planted under the key before the write.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("integration:plesk:password", "stored-panel-password")]
     [InlineData("integration:gateway:publishable_key", "pk_test_stored")]
@@ -53,6 +54,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A plugin-system key (<c>plugins.allow_unsigned</c>) is in the catalogue and still updates.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginKey_AllowUnsigned_StillUpdatesAsync()
     {
@@ -73,6 +75,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A billing key in the catalogue still updates.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BillingKey_InvoiceDaysBefore_StillUpdatesAsync()
     {
@@ -94,6 +97,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A value from the key's own vocabulary is stored, in its canonical spelling.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TemplateKey_StoresTheCanonicalSpellingAsync()
     {
@@ -114,6 +118,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     /// A value outside the key's fixed vocabulary answers 400 with the fixed
     /// <c>INVALID_SETTING_VALUE</c> code and the per-key wording under <c>errors[key]</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TemplateKey_UnknownValue_RefusesWithDetailAndErrorsAsync()
     {
@@ -131,6 +136,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A shaped free-text key refuses a value with the wrong shape.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BrandPrimary_WrongShape_RefusesWithDetailAndErrorsAsync()
     {
@@ -147,6 +153,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The contact email refuses a value that is not an address.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ContactEmail_NotAnAddress_RefusesWithDetailAndErrorsAsync()
     {
@@ -163,6 +170,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The map address refuses a plain http address.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ContactMapUrl_Http_RefusesAsync()
     {
@@ -175,6 +183,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A per-language address is free text, stored trimmed like the default one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ContactAddressRu_StoresTrimmedFreeTextAsync()
     {
@@ -189,6 +198,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Free text with no vocabulary or shape is stored trimmed, unchanged otherwise.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SiteName_StoresTrimmedFreeTextAsync()
     {
@@ -206,6 +216,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A billing key refuses a value outside its pattern with INVALID_SETTING_VALUE.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BillingKey_BadValue_IsRefusedAsync()
     {
@@ -222,6 +233,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A zero lead time is refused: invoice_days_before starts at 1, unlike the overdue grace.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvoiceDaysBefore_Zero_IsRefusedAsync()
     {
@@ -238,6 +250,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Clearing the reminder list is allowed (switches reminders off).</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReminderDays_CanBeClearedAsync()
     {
@@ -255,6 +268,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Updating an unknown id answers 404 with <c>SETTING_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownId_RefusesNotFoundAsync()
     {
@@ -267,6 +281,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A social link refuses anything but an https address.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SocialLink_NotHttps_RefusesAsync()
     {
@@ -282,6 +297,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     /// <summary>
     /// Replacing a branding image removes the upload the old value pointed at, and keeps the new one.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LogoReplaced_RemovesTheOldUploadAsync()
     {
@@ -300,6 +316,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -311,6 +328,7 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A caller with no credential is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

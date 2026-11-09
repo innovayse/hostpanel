@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
@@ -14,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class CreateInvoiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Creating an invoice as the admin, then reading it back, round-trips the line item and totals.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenGetRoundTripsTheInvoice()
     {
@@ -41,6 +41,7 @@ public sealed class CreateInvoiceTests(IntegrationTestFactory factory) : IClassF
     /// Registering a client, then creating an invoice for them as the admin, answers 201 with the
     /// new invoice's id, which proves the round-trip through the client-creation Wolverine handler.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateInvoiceAsync_Returns201_AsAdminAsync()
     {
@@ -61,6 +62,7 @@ public sealed class CreateInvoiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Creating an invoice is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateRefusesAnonymous()
     {
@@ -75,6 +77,7 @@ public sealed class CreateInvoiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An invoice for a client that does not exist answers 404 with <c>CLIENT_NOT_FOUND</c> and writes nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateRefusesAnUnknownClient()
     {

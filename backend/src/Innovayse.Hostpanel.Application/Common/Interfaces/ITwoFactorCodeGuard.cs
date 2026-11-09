@@ -17,15 +17,15 @@ public interface ITwoFactorCodeGuard
     /// </summary>
     /// <param name="userId">The account the code is for.</param>
     /// <returns><c>true</c> when the account is under its cap; <c>false</c> when it is locked.</returns>
-    bool TryBeginAttempt(string userId);
+    public bool TryBeginAttempt(string userId);
 
     /// <summary>Gives back the attempt taken by <see cref="TryBeginAttempt"/> after a correct code.</summary>
     /// <param name="userId">The account the code was for.</param>
-    void Forgive(string userId);
+    public void Forgive(string userId);
 
     /// <summary>Records the time step of an accepted code, once.</summary>
     /// <param name="userId">The account the code is for.</param>
     /// <param name="timeStep">The time step the code matched.</param>
     /// <returns><c>true</c> when the step is newer than every step accepted for the account; <c>false</c> for a replay.</returns>
-    bool TryAcceptTimeStep(string userId, long timeStep);
+    public bool TryAcceptTimeStep(string userId, long timeStep);
 }

@@ -1,6 +1,5 @@
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Integration.Tests.Billing;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 

@@ -23,6 +23,7 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
     private const string AdminEmail = "ops@example.test";
 
     /// <summary>The alert sends one staff mail naming the invoice, the module and the amount, and the template row exists.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaymentWithoutReference_MailsStaffOnceAndSeedsTheTemplate()
     {
@@ -44,6 +45,7 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
     }
 
     /// <summary>An alert for a gateway that reported no amount still mails staff, without printing an empty amount.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaymentWithoutReferenceAndAmount_MailsStaffWithoutAnAmount()
     {
@@ -61,6 +63,7 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
     }
 
     /// <summary>With neither address configured nothing is sent (the handler logs an error naming the setting instead).</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaymentWithoutReference_WithNoAddress_SendsNothing()
     {
@@ -79,6 +82,7 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
     /// (no placeholder is left unfilled), and leaves the amount out when the gateway reported none.
     /// </summary>
     /// <param name="language">The language under test.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("en")]
     [InlineData("ru")]

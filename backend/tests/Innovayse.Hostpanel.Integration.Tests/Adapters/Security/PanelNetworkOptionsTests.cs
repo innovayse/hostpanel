@@ -1,11 +1,9 @@
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using FluentAssertions;
 using Innovayse.Hostpanel.Infrastructure.Security;
 using Innovayse.Hostpanel.Infrastructure.Security.Settings;
 using Microsoft.Extensions.Options;
-using Xunit;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Security;
 

@@ -53,6 +53,7 @@ public sealed class CbaExchangeRateSourceTests : IAsyncLifetime
         Source().QuoteAsync(new ExchangeRateLookup(baseCode, codes), CancellationToken.None);
 
     /// <summary>With base USD, one AMD is 1/363.28 USD and one EUR is 421.11/363.28 USD.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task QuoteAsync_ConvertsQuotesToTheBase()
     {
@@ -67,6 +68,7 @@ public sealed class CbaExchangeRateSourceTests : IAsyncLifetime
     }
 
     /// <summary>With base AMD, the quotes are the answer as published.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task QuoteAsync_WithAmdBaseReadsQuotesDirectly()
     {
@@ -82,6 +84,7 @@ public sealed class CbaExchangeRateSourceTests : IAsyncLifetime
     /// A quote given per 100 units is divided down to one unit: "100 JPY = 243 AMD" is 2.43 AMD per
     /// yen, never 243.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task QuoteAsync_HonoursTheQuotedUnitAmount()
     {
@@ -95,6 +98,7 @@ public sealed class CbaExchangeRateSourceTests : IAsyncLifetime
     }
 
     /// <summary>A code the bank does not quote, or quotes as null, is simply absent from the answer.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task QuoteAsync_OmitsUnquotedCodes()
     {
@@ -106,6 +110,7 @@ public sealed class CbaExchangeRateSourceTests : IAsyncLifetime
     }
 
     /// <summary>A base the bank does not quote cannot anchor a conversion; the whole call refuses.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task QuoteAsync_RefusesAnUnquotedBase()
     {
@@ -118,6 +123,7 @@ public sealed class CbaExchangeRateSourceTests : IAsyncLifetime
     }
 
     /// <summary>A non-success answer is the source being unavailable, not an empty rate table.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task QuoteAsync_FailedResponseIsUnavailable()
     {
@@ -130,6 +136,7 @@ public sealed class CbaExchangeRateSourceTests : IAsyncLifetime
     }
 
     /// <summary>A body that is not the published object is the source being unavailable too.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task QuoteAsync_UnreadableBodyIsUnavailable()
     {

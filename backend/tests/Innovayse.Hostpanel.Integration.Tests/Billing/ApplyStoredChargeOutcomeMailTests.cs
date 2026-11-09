@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Application.Billing.Commands.ApplyStoredChargeOutcome;
 using Innovayse.Hostpanel.Application.Billing.Commands.ChargeInvoiceStoredMethod;
 using Innovayse.Hostpanel.Application.Billing.Common;
@@ -7,7 +8,6 @@ using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Notifications;
 using Innovayse.Hostpanel.Shared.Models;
-using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 

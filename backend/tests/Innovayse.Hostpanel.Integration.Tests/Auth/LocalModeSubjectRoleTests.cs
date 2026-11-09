@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Auth.Seeding;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
@@ -46,6 +45,7 @@ public sealed class LocalModeSubjectRoleTests(IntegrationTestFactory factory)
     /// sign-in reads the store; the grants that matter happen while the person already holds a
     /// credential.
     /// </remarks>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AGrantInSubjectRolesAuthorizesTheTokenAlreadyIssued()
     {
@@ -92,6 +92,7 @@ public sealed class LocalModeSubjectRoleTests(IntegrationTestFactory factory)
     /// <c>setup</c> writes its row. An attempt that never gets as far as writing must therefore
     /// leave the answer untouched, or a failed attempt would lock the install out for good.
     /// </remarks>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetupIsRetriableUntilItCompletes_AndTheRoleItGrantsWorksAtOnce()
     {
@@ -175,6 +176,7 @@ public sealed class LocalModeSubjectRoleTests(IntegrationTestFactory factory)
     /// <summary>Grants a role through the store every write path in the product uses.</summary>
     /// <param name="subject">Subject to grant to.</param>
     /// <param name="role">Role to grant.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private async Task GrantAsync(string subject, Role role)
     {
         using var scope = factory.Services.CreateScope();
@@ -186,6 +188,7 @@ public sealed class LocalModeSubjectRoleTests(IntegrationTestFactory factory)
     /// Removes every Admin grant, so the bootstrap test starts from a fresh install regardless of
     /// which order xUnit ran the tests in this class.
     /// </summary>
+    /// <returns>A task that completes when the work is done.</returns>
     private async Task ClearAdminHoldersAsync()
     {
         using var scope = factory.Services.CreateScope();

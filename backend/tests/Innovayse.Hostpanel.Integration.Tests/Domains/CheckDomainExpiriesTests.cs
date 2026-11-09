@@ -22,6 +22,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     /// <c>CheckDomainExpiriesHandler</c> uses to find domains to hand to
     /// <c>MarkDomainExpiredCommand</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckDomainExpiries_MarksAnOverdueDomainExpiredAsync()
     {
@@ -45,6 +46,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     /// An active domain expiring within the warning window gets only the nearest warning due: one
     /// expiring in under a day is recorded against the one day warning, not the larger ones.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckDomainExpiries_RecordsAWarningReminderForASoonExpiringDomainAsync()
     {
@@ -71,6 +73,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     /// A reminder sent for the previous expiry cycle does not silence the warning of the current
     /// one: after a renewal the warnings go out again.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckDomainExpiries_RemindsAgainInTheNextExpiryCycleAsync()
     {
@@ -96,6 +99,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     /// row: the invoice's own reminders already tell the client, and a second "expiring" mail would
     /// contradict them. Fails if the open-invoice skip is removed from the warning loop.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckDomainExpiries_SendsNoWarningWhileARenewalInvoiceIsOpenAsync()
     {
@@ -115,6 +119,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     /// An auto-renewing domain with no renewal invoice (the renewal run could not price it, say)
     /// still gets the expiry warning: nothing else tells the client it is about to expire.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckDomainExpiries_WarnsAnAutoRenewDomainWithNoRenewalInvoiceAsync()
     {
@@ -130,6 +135,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>An auto-renewing domain whose renewal invoice was cancelled is warned: a cancelled invoice reminds nobody.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckDomainExpiries_WarnsAnAutoRenewDomainWhoseRenewalInvoiceWasCancelledAsync()
     {
@@ -149,6 +155,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     /// With renewal reminders switched off (reminder days cleared) an open renewal invoice reminds
     /// nobody, so the expiry warning is sent.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckDomainExpiries_WarnsDespiteAnOpenInvoiceWhenRemindersAreClearedAsync()
     {
@@ -226,6 +233,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     /// expired and a domain still ahead of its date is still warned, so the warnings phase does not
     /// depend on the marking phase.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckDomainExpiries_OneDomainThatCannotBeMarked_StopsNeitherTheOthersNorTheWarningsAsync()
     {
@@ -254,6 +262,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
     /// One warning whose save fails leaves nothing tracked behind: the next domain's warning is still
     /// recorded, and the failing domain is left unwarned for the next run.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckDomainExpiries_OneWarningThatCannotBeSaved_DoesNotStopTheNextAsync()
     {

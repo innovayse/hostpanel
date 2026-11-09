@@ -18,5 +18,5 @@ public interface IEmailBrandingProvider
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The brand for this render.</returns>
-    Task<EmailBranding> GetAsync(CancellationToken ct = default);
+    public Task<EmailBranding> GetAsync(CancellationToken ct = default);
 }

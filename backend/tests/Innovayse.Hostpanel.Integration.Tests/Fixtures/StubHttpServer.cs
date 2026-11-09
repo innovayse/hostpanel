@@ -4,7 +4,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -99,7 +98,7 @@ public sealed class StubHttpServer : IAsyncDisposable
     /// <summary>Records the request and answers with the next scripted reply.</summary>
     /// <param name="context">The request.</param>
     /// <returns>A task that completes when the reply is written.</returns>
-    private async Task ServeAsync(HttpContext context)
+    private async Task ServeAsync(Microsoft.AspNetCore.Http.HttpContext context)
     {
         using var reader = new StreamReader(context.Request.Body);
         var body = await reader.ReadToEndAsync();
@@ -135,6 +134,6 @@ public sealed class StubHttpServer : IAsyncDisposable
             context.Response.Headers[name] = value;
         }
 
-        await context.Response.WriteAsync(lastReply.Body);
+        await context.Response.Body.WriteAsync(System.Text.Encoding.UTF8.GetBytes(lastReply.Body));
     }
 }

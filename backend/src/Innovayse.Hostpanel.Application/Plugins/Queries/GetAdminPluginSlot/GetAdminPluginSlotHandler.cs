@@ -1,10 +1,10 @@
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Slots;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Models;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Slots;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Queries.GetAdminPluginSlot;
 

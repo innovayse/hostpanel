@@ -2,7 +2,6 @@ using System.Security.Cryptography;
 using System.Text;
 using Hostpanel.Sdk.Packaging.Enums;
 using Hostpanel.Sdk.Packaging.Signing;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 

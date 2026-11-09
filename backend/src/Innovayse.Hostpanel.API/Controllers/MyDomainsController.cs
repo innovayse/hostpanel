@@ -1,6 +1,4 @@
 using Innovayse.Hostpanel.API.Authorization;
-using Innovayse.Hostpanel.Domain.Clients.Enums;
-using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Application.Domains.Commands.AddMyDomainDnsRecord;
 using Innovayse.Hostpanel.Application.Domains.Commands.AddMyDomainEmailForwardingRule;
 using Innovayse.Hostpanel.Application.Domains.Commands.DeleteMyDomainDnsRecord;
@@ -24,7 +22,9 @@ using Innovayse.Hostpanel.Application.Domains.Queries.GetMyDomainNameservers;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetMyDomains;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetMyDomainWhois;
 using Innovayse.Hostpanel.Application.Orders.Common;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Authorization;
+using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Authorization;

@@ -76,7 +76,6 @@ public sealed class GetMySshAccessTests(IntegrationTestFactory factory) : IClass
         var (http, _, serverId, serviceId) = await SshTestSeeds.OwnerWithServiceAsync(factory, "ssh-access-down");
         SshTestSeeds.Agents(factory).AgentFor(serverId).FailWith = SshProviderFailure.Unreachable;
 
-
         (await AccessAsync(http, serviceId)).GetProperty("state").GetString().Should().Be("Unreachable");
     }
 

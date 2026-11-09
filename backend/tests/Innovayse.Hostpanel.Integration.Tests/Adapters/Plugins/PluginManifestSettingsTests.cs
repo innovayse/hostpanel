@@ -1,6 +1,6 @@
 using System.Text.Json;
-using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Hostpanel.Sdk.Plugins.Enums;
+using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;

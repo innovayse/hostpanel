@@ -1,15 +1,7 @@
-using Innovayse.Hostpanel.Application.Support.Commands.CreateKbArticle;
-using Innovayse.Hostpanel.Application.Support.Commands.CreateKbCategory;
-using Innovayse.Hostpanel.Application.Support.Commands.DeleteKbArticle;
-using Innovayse.Hostpanel.Application.Support.Commands.DeleteKbCategory;
-using Innovayse.Hostpanel.Application.Support.Commands.PublishKbArticle;
-using Innovayse.Hostpanel.Application.Support.Commands.UpdateKbArticle;
-using Innovayse.Hostpanel.Application.Support.Commands.UpdateKbCategory;
 using Innovayse.Hostpanel.Application.Support.Common;
 using Innovayse.Hostpanel.Application.Support.Queries.GetPublishedKbArticle;
 using Innovayse.Hostpanel.Application.Support.Queries.ListPublishedKbArticles;
 using Innovayse.Hostpanel.Application.Support.Queries.ListPublishedKbCategories;
-using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Authorization;

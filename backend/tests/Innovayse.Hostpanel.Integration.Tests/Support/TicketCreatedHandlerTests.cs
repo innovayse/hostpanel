@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class TicketCreatedHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A created ticket with a department that has an email notifies that department.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TicketCreated_WhenDepartmentHasEmail_SendsTicketCreatedEmailAsync()
     {
@@ -42,6 +43,7 @@ public sealed class TicketCreatedHandlerTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A created ticket whose department does not exist sends no email.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TicketCreated_WhenDepartmentNotFound_DoesNotSendAsync()
     {
@@ -58,6 +60,7 @@ public sealed class TicketCreatedHandlerTests(IntegrationTestFactory factory) : 
     /// A late copy of the event naming a ticket that now belongs to another client (the demo reset reused the
     /// id) does not mail the department about it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TicketCreated_ForATicketOfAnotherClient_DoesNotSendAsync()
     {

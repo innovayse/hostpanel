@@ -1,6 +1,5 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
-using Innovayse.Hostpanel.Application.Partners.Common;
 using Innovayse.Hostpanel.Application.Resources;
 using Innovayse.Hostpanel.Domain.Partners;
 using Innovayse.Hostpanel.Shared.Constants;

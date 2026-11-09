@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class GetProductSummariesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A known product comes back with its name and both cycle prices; an unknown id is left out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_KnownAndUnknownIds_ReturnsOnlyTheKnownProductAsync()
     {
@@ -38,6 +39,7 @@ public sealed class GetProductSummariesTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The from price is the lowest monthly equivalent across every priced cycle, quarterly, semi-annual and biennial included.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ProductPricedOnlyOnLongCycles_FromPriceIsTheLowestMonthlyEquivalentAsync()
     {
@@ -56,6 +58,7 @@ public sealed class GetProductSummariesTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>An empty id list answers an empty list without touching the database.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NoIds_ReturnsEmptyAsync()
     {
@@ -70,6 +73,7 @@ public sealed class GetProductSummariesTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A product with no price in the caller's currency is still answered, by name, with no prices.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ProductWithNoPriceInTheCurrency_IsStillNamedAsync()
     {

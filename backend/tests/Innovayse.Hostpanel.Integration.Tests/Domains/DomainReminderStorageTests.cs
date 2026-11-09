@@ -18,6 +18,7 @@ public sealed class DomainReminderStorageTests(IntegrationTestFactory factory) :
     /// <summary>A row inserted with the stored text reads back as the matching enum value.</summary>
     /// <param name="storedText">The text as it sits in the column.</param>
     /// <param name="expected">The reminder type it must read back as.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("30 Days Before Expiry", DomainReminderType.ThirtyDaysBeforeExpiry)]
     [InlineData("14 Days Before Expiry", DomainReminderType.FourteenDaysBeforeExpiry)]
@@ -43,6 +44,7 @@ public sealed class DomainReminderStorageTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A reminder saved through the aggregate is written as its stored text, not the enum name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SavedReminder_IsWrittenAsTheStoredTextAsync()
     {

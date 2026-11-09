@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class ListKbArticlesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can list every knowledge base article, published or not.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanListAllKbArticlesAsync()
     {
@@ -22,6 +23,7 @@ public sealed class ListKbArticlesTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>The admin listing route is closed to a caller with no credential.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminRouteIsClosedToAnonymousCallersAsync()
     {

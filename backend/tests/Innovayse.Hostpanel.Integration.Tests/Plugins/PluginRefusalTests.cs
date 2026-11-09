@@ -6,7 +6,6 @@ using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 

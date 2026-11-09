@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Installing then listing shows the plugin, not loaded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InstallThenList_ShowsThePluginAsync()
     {
@@ -44,6 +45,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The list shows the capabilities a manifest declares, as the SDK spells them, and an empty list for none (#818).</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APluginDeclaringCapabilities_ListsThemAsync()
     {
@@ -74,6 +76,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A plugin in the build output's plugin folder is listed as built-in.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ABuiltInPlugin_IsMarkedBuiltInAsync()
     {
@@ -98,6 +101,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
     /// A plugin the loader refused for a broken manifest rule is listed as refused, with its rule and detail, and never
     /// as loaded; a plugin that loaded stays a loaded row with no rule.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusedPlugin_IsListedAsRefusedAndALoadedOneStaysUnchangedAsync()
     {
@@ -135,6 +139,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A loaded plugin that ships an icon carries the icon endpoint as <c>iconUrl</c>; one without, and a refused row, carry null.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IconUrl_IsSetOnlyForALoadedPluginWithAnIconAsync()
     {
@@ -164,6 +169,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A refused upload is removed like any other: the folder goes and the row with it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusedUpload_CanBeRemovedAsync()
     {
@@ -196,6 +202,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -207,6 +214,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Services.Enums;
@@ -17,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class UnsuspendServiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Unsuspending a service that does not exist answers 404 <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Unsuspend_OnAnUnknownService_Returns404()
     {
@@ -29,6 +29,7 @@ public sealed class UnsuspendServiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An admin can unsuspend a suspended service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Unsuspend_OnASuspendedService_Returns204()
     {
@@ -52,6 +53,7 @@ public sealed class UnsuspendServiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Unsuspending without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Unsuspend_Returns401_WithoutAuthAsync()
     {
@@ -66,6 +68,7 @@ public sealed class UnsuspendServiceTests(IntegrationTestFactory factory) : ICla
     /// An Active service is refused with 400 <c>SERVICE_NOT_SUSPENDED</c> before the panel is asked: a
     /// refusing panel would otherwise have answered 502.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Unsuspend_NotSuspended_Returns400BeforeThePanelIsAskedAsync()
     {
@@ -82,6 +85,7 @@ public sealed class UnsuspendServiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Staff can unsuspend a suspended, provisioned service through the provisioning route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ProvisioningUnsuspend_SuspendedService_Returns204Async()
     {
@@ -101,6 +105,7 @@ public sealed class UnsuspendServiceTests(IntegrationTestFactory factory) : ICla
     /// A provider that refuses to unsuspend answers 502 with <c>SERVICE_UNSUSPEND_UPSTREAM_FAILED</c>, and
     /// the service stays Suspended on the platform.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Unsuspend_ProviderRefuses_Returns502AndLeavesTheServiceSuspendedAsync()
     {

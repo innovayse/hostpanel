@@ -7,9 +7,9 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 public interface IDemoResetSchedule
 {
     /// <summary>When the next reset runs; <see langword="null"/> before the first one is scheduled.</summary>
-    DateTimeOffset? NextResetAt { get; }
+    public DateTimeOffset? NextResetAt { get; }
 
     /// <summary>Records when the next reset runs.</summary>
     /// <param name="at">The scheduled time.</param>
-    void Set(DateTimeOffset at);
+    public void Set(DateTimeOffset at);
 }

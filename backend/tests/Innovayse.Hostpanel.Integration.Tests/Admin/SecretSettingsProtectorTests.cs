@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 public sealed class SecretSettingsProtectorTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A plain secret row is encrypted in place and still reads back as the original value.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureProtected_EncryptsAPlainSecretAsync()
     {
@@ -29,6 +30,7 @@ public sealed class SecretSettingsProtectorTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A second run finds nothing left to encrypt and leaves the stored value as it was.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureProtected_IsIdempotentAsync()
     {

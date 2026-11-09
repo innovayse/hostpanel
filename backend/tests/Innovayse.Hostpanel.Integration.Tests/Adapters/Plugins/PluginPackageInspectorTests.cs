@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Hostpanel.Sdk.Packaging.Signing;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
@@ -35,6 +34,7 @@ public sealed class PluginPackageInspectorTests
     }
 
     /// <summary>A signed package yields its plugin id, version and key id, and the stream stays open.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ASignedPackage_YieldsAllThreeAsync()
     {
@@ -47,6 +47,7 @@ public sealed class PluginPackageInspectorTests
     }
 
     /// <summary>An unsigned package has an id and a version and no key.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnUnsignedPackage_HasNoKeyAsync()
     {
@@ -58,6 +59,7 @@ public sealed class PluginPackageInspectorTests
     }
 
     /// <summary>Bytes that are not an archive, and files that are not JSON, read as unknown.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Garbage_ReadsAsUnknownAsync()
     {
@@ -68,6 +70,7 @@ public sealed class PluginPackageInspectorTests
     }
 
     /// <summary>A file longer than its cap reads as missing, however the archive declares its length: the read itself is bounded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnOversizedFile_ReadsAsMissingAsync()
     {
@@ -85,6 +88,7 @@ public sealed class PluginPackageInspectorTests
     /// same reader.
     /// </summary>
     /// <param name="manifest">The manifest text.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("""{"id":"first-one","id":"second-one","name":"n","version":"1.0.0","author":"a","description":"d","type":"Provisioning","category":"c","entryPoint":"E","sdkVersion":"1.0"}""")]
     [InlineData("""{"ID":"upper-id","name":"n","version":"1.0.0","author":"a","description":"d","type":"Provisioning","category":"c","entryPoint":"E","sdkVersion":"1.0"}""")]
@@ -101,6 +105,7 @@ public sealed class PluginPackageInspectorTests
     /// <summary>The key id is the one the shared signature-file parser gives; a differently-cased member name is not a key id.</summary>
     /// <param name="signature">The signature file text.</param>
     /// <param name="expectKey">Whether a key id is expected.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("""{"keyId":"test-key","signature":"SIG"}""", true)]
     [InlineData("""{"keyId":"other-key","keyId":"test-key","signature":"SIG"}""", true)]
@@ -128,6 +133,7 @@ public sealed class PluginPackageInspectorTests
 
     /// <summary>Two entries whose names differ only in case make the archive ambiguous, and it reads as unknown.</summary>
     /// <param name="extraName">The second, differently-cased entry name.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("PLUGIN.JSON")]
     [InlineData("Plugin.Sig")]
@@ -144,6 +150,7 @@ public sealed class PluginPackageInspectorTests
     }
 
     /// <summary>A file whose name differs in case from the one the store reads is not read at all.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AWrongCaseFileName_IsNotReadAsync()
     {

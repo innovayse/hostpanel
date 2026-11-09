@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 public sealed class CreateServerGroupTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Creating a group with a server assigns it, and the list shows the membership.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithServers_AssignsThemAsync()
     {
@@ -30,6 +31,7 @@ public sealed class CreateServerGroupTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A group with an empty name is refused by the validator before it reaches the handler.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnEmptyNameAsync()
     {
@@ -47,6 +49,7 @@ public sealed class CreateServerGroupTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -58,6 +61,7 @@ public sealed class CreateServerGroupTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

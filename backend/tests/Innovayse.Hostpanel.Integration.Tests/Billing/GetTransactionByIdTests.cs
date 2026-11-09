@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetTransactionByIdTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin reads back the transaction they just created.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetByIdReturnsTheCreatedTransaction()
     {
@@ -28,6 +29,7 @@ public sealed class GetTransactionByIdTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Reading an id that names no transaction answers 404 with <c>TRANSACTION_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetUnknownTransactionRefusesNotFound()
     {
@@ -40,6 +42,7 @@ public sealed class GetTransactionByIdTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Reading a transaction is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRefusesAnonymous()
     {

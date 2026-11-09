@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration;
 public sealed class ListMigrationJobsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAnonymous()
     {

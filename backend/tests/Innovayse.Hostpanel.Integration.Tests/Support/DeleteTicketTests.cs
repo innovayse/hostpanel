@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class DeleteTicketTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can delete a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanDeleteATicketAsync()
     {
@@ -23,6 +24,7 @@ public sealed class DeleteTicketTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Deleting a ticket that does not exist answers 404 with <c>TICKET_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteUnknownTicketAnswersNotFoundAsync()
     {
@@ -35,6 +37,7 @@ public sealed class DeleteTicketTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A caller with no credential cannot delete a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class GetClientTicketStatsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Staff can read a client's ticket statistics.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanReadClientTicketStatsAsync()
     {
@@ -21,6 +22,7 @@ public sealed class GetClientTicketStatsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A caller with no credential cannot read a client's ticket statistics.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

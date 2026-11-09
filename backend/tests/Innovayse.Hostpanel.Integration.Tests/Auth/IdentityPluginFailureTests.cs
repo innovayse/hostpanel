@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Hostpanel.Sdk.Plugins.Identity;
 using Innovayse.Hostpanel.API.Authorization;
 using Innovayse.Hostpanel.API.Identity;
 using Innovayse.Hostpanel.Application.Clients.Common;
@@ -8,7 +9,6 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
-using Hostpanel.Sdk.Plugins.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.AspNetCore.TestHost;
@@ -39,6 +39,7 @@ public sealed class IdentityPluginFailureTests(IntegrationTestFactory factory) :
 
     /// <summary>A roleless member is answered 503 with the code and Retry-After by the portal policy when the plugin cannot answer.</summary>
     /// <param name="kind">The failure mode.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("fault")]
     [InlineData("timeout")]
@@ -58,6 +59,7 @@ public sealed class IdentityPluginFailureTests(IntegrationTestFactory factory) :
 
     /// <summary>A client role holder, whom the policy lets through, gets the 503 from the permission filter.</summary>
     /// <param name="kind">The failure mode.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("fault")]
     [InlineData("timeout")]
@@ -76,6 +78,7 @@ public sealed class IdentityPluginFailureTests(IntegrationTestFactory factory) :
 
     /// <summary>The order route answers 503 with the code and creates no client when the plugin cannot answer.</summary>
     /// <param name="kind">The failure mode.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("fault")]
     [InlineData("timeout")]
@@ -103,6 +106,7 @@ public sealed class IdentityPluginFailureTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A roleless member's request asks a working plugin exactly once: policy, filter and use case share the answer.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RolelessMember_PortalReadAsksThePluginExactlyOnceAsync()
     {
@@ -124,6 +128,7 @@ public sealed class IdentityPluginFailureTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A plain refusal stays a 403: a roleless user the working plugin refuses is not told the plugin is down.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RolelessUserThePluginRefuses_StaysForbiddenNotUnavailableAsync()
     {
@@ -135,6 +140,7 @@ public sealed class IdentityPluginFailureTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>An anonymous call to a portal route stays 401 with no Retry-After while the plugin is down.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnonymousPortalRead_StaysUnauthorizedWithoutRetryAfterAsync()
     {
@@ -150,6 +156,7 @@ public sealed class IdentityPluginFailureTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A staff-only route refused to a client stays 403 while the plugin is down: only the portal policy turns into 503.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StaffOnlyRoute_CalledByClientWhilePluginIsDown_StaysForbiddenAsync()
     {
@@ -163,6 +170,7 @@ public sealed class IdentityPluginFailureTests(IntegrationTestFactory factory) :
 
     /// <summary>The account read degrades instead of failing: 200 with no client while the plugin cannot answer.</summary>
     /// <param name="kind">The failure mode.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("fault")]
     [InlineData("conflict")]
@@ -180,6 +188,7 @@ public sealed class IdentityPluginFailureTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Sequential requests with different grants never share an answer: each gets what its own plugin call said.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SequentialRequestsWithDifferentGrants_NeverShareAnAnswerAsync()
     {
@@ -236,6 +245,7 @@ public sealed class IdentityPluginFailureTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Outside a request the resolver still works, asks the plugin on every ask and caches nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Resolver_WithoutAnHttpContext_WorksAndCachesNothingAsync()
     {

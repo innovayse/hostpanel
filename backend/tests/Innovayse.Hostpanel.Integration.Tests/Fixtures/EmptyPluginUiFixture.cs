@@ -1,6 +1,5 @@
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
-using Innovayse.Hostpanel.Integration.Tests.Shared;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;

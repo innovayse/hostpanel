@@ -26,6 +26,7 @@ public sealed class VoidCreditNoteTests(IntegrationTestFactory factory) : IClass
     /// Voiding takes the value off the balance with a history line of its own type, frees the invoice's credit, keeps the row with
     /// its number and the reason, and lets the invoice be credited in full again.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Void_TakesTheValueBackAndKeepsTheNote()
     {
@@ -53,6 +54,7 @@ public sealed class VoidCreditNoteTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A note is voided once; the second void is a 409 and moves nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Void_Twice_IsRefusedTheSecondTime()
     {
@@ -70,6 +72,7 @@ public sealed class VoidCreditNoteTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Two voids racing on one note take the value off once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Void_Race_TakesTheValueOffOnce()
     {
@@ -88,6 +91,7 @@ public sealed class VoidCreditNoteTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A client who has spent the credit the note gave leaves the balance short; the void is refused whole.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Void_AfterTheClientSpentTheCredit_IsRefusedAndChangesNothing()
     {
@@ -113,6 +117,7 @@ public sealed class VoidCreditNoteTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A note paid out as a gateway refund is never voided: the refund cannot be taken back.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Void_OfAGatewayRefundNote_IsRefused()
     {
@@ -131,6 +136,7 @@ public sealed class VoidCreditNoteTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An id that names no note answers 404, and a blank reason is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Void_UnknownNoteAndBlankReason_AreRefused()
     {
@@ -149,6 +155,7 @@ public sealed class VoidCreditNoteTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>The API offers no way to delete a note: the route answers 404 or 405, and the row stays.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ANote_CannotBeDeleted()
     {

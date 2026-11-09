@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class UpdateInvoiceNotesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Writing notes stores them; writing <see langword="null"/> afterwards clears them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateNotesWritesThenClears()
     {
@@ -34,6 +35,7 @@ public sealed class UpdateInvoiceNotesTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Updating notes on an id that names no invoice answers 404, not 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateNotesOnUnknownInvoiceRefusesNotFound()
     {
@@ -46,6 +48,7 @@ public sealed class UpdateInvoiceNotesTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Updating notes is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateNotesRefusesAnonymous()
     {

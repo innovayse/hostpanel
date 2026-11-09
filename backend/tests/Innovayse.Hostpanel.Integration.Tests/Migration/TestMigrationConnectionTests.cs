@@ -18,11 +18,11 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class TestMigrationConnectionTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-
     /// <summary>
     /// A connection test against a reachable source succeeds and records the ping, run on an
     /// isolated host sharing the same seeded Postgres so the admin token stays valid there.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TestConnectionAgainstAReachableSourceSucceeds()
     {
@@ -38,6 +38,7 @@ public sealed class TestMigrationConnectionTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Testing the connection against a source nothing answers is a 502, with no source detail.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TestConnectionAgainstAnUnreachableSourceAnswersUpstreamFailed()
     {
@@ -53,6 +54,7 @@ public sealed class TestMigrationConnectionTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An id naming no job is refused as missing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TestConnectionRefusesAnUnknownId()
     {
@@ -66,6 +68,7 @@ public sealed class TestMigrationConnectionTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TestConnectionRefusesAnonymous()
     {
@@ -75,6 +78,7 @@ public sealed class TestMigrationConnectionTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A non-positive job id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TestConnectionRefusesANonPositiveId()
     {

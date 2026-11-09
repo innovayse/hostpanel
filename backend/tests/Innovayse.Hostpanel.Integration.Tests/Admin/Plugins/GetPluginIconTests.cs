@@ -5,9 +5,6 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -54,6 +51,7 @@ public sealed class GetPluginIconTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An SVG icon is served with its type, nosniff, the restrictive policy, a cache window and its tag.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Svg_IsServedWithSafeHeadersAsync()
     {
@@ -75,6 +73,7 @@ public sealed class GetPluginIconTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A PNG icon is served with the PNG type and the same safe headers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Png_IsServedWithItsTypeAsync()
     {
@@ -91,6 +90,7 @@ public sealed class GetPluginIconTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A repeat request holding the current tag is answered 304 with no body.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RepeatWithTheCurrentTag_IsNotModifiedAsync()
     {
@@ -106,6 +106,7 @@ public sealed class GetPluginIconTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A loaded plugin without an icon and an unknown plugin answer the same 404 and the same code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NoIconAndUnknownPlugin_AnswerTheSame404Async()
     {
@@ -124,6 +125,7 @@ public sealed class GetPluginIconTests(IntegrationTestFactory factory) : IClassF
 
     /// <summary>An id that is not a plugin id (traversal, upper case) is refused before any lookup.</summary>
     /// <param name="id">The route value.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Bad_Id")]
     [InlineData("..%2f..%2fetc")]
@@ -137,6 +139,7 @@ public sealed class GetPluginIconTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -148,6 +151,7 @@ public sealed class GetPluginIconTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

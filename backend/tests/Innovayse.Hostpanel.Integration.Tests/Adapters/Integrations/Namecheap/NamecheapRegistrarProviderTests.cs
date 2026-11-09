@@ -6,7 +6,6 @@ using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Namecheap;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Namecheap.Settings;
 using Innovayse.Hostpanel.Infrastructure.Time;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -102,6 +101,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
         "123 Main St", null, "Springfield", "IL", "62701", "US");
 
     /// <summary>Modifying contact details sends the set-contacts command for all four contact roles.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ModifyContactDetailsAsync_SendsSetContactsCommand_ForAllFourRolesAsync()
     {
@@ -123,6 +123,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>Reading contact details maps the registrant block of the get-contacts response.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetContactDetailsAsync_MapsTheRegistrantBlockAsync()
     {
@@ -138,6 +139,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>Reading contact details answers null when the response has no registrant.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetContactDetailsAsync_WithoutRegistrantBlock_ReturnsNullAsync()
     {
@@ -150,6 +152,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>Disabling email forwarding clears all forwards.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetEmailForwardingAsync_WhenDisabling_ClearsAllForwardsAsync()
     {
@@ -164,6 +167,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>Adding an email forwarding rule merges it with the existing forwards.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddEmailForwardingRuleAsync_MergesWithExistingForwardsAsync()
     {
@@ -196,6 +200,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>Enabling DNS management calls set-default.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetDnsManagementAsync_WhenEnabling_CallsSetDefaultAsync()
     {
@@ -209,6 +214,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>Disabling DNS management makes no API call.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetDnsManagementAsync_WhenDisabling_MakesNoApiCallAsync()
     {
@@ -221,6 +227,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>An unconfigured integration refuses a renewal and calls nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewAsync_WhenNotConfigured_FailsWithoutCallingNamecheapAsync()
     {
@@ -239,6 +246,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>A renewal answer with an expiry reports that expiry.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewAsync_WithExpireDate_ReportsItAsync()
     {
@@ -256,6 +264,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     /// A renewal answer without an expiry reports none, so the caller extends the current one;
     /// now + years would cost an early renewal its remaining days.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewAsync_WithoutExpireDate_ReportsNoExpiryAsync()
     {
@@ -270,6 +279,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
 
     /// <summary>An OK envelope whose renew result is not <c>Renew="true"</c> renewed nothing.</summary>
     /// <param name="response">The Namecheap answer.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("""<?xml version="1.0"?><ApiResponse Status="OK"><CommandResponse><DomainRenewResult DomainName="example.com" Renew="false" /></CommandResponse></ApiResponse>""")]
     [InlineData("""<?xml version="1.0"?><ApiResponse Status="OK"><CommandResponse /></ApiResponse>""")]
@@ -299,6 +309,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>A registration on an unconfigured integration is refused, so a paid order is refunded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WhenNotConfigured_FailsAsync()
     {
@@ -311,6 +322,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>An ERROR answer is a clean refusal with the registrar's refusal code, not an exception.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WhenNamecheapAnswersError_FailsCleanlyAsync()
     {
@@ -324,6 +336,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>An OK envelope without <c>Registered="true"</c> registered nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WithoutRegisteredConfirmation_FailsAsync()
     {
@@ -340,6 +353,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     /// A confirmed registration without a <c>DomainID</c> is referenced by its name, which every
     /// later Namecheap call addresses it by, so activation never receives an empty reference.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WithoutDomainId_FallsBackToTheDomainNameAsync()
     {
@@ -353,6 +367,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>A transfer on an unconfigured integration is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferAsync_WhenNotConfigured_FailsAsync()
     {
@@ -364,6 +379,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>A transfer Namecheap refuses with ERROR is a clean refusal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferAsync_WhenNamecheapAnswersError_FailsCleanlyAsync()
     {
@@ -378,6 +394,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     /// A renewal Namecheap refuses with ERROR is a clean refusal, so the paid-renewal engine
     /// releases the claim and retries instead of parking it as an unknown outcome.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewAsync_WhenNamecheapAnswersError_FailsCleanlyAsync()
     {
@@ -389,6 +406,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>A change to a registrar-held domain on an unconfigured integration is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetNameserversAsync_WhenNotConfigured_FailsAsync()
     {
@@ -403,6 +421,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     /// A DNS record added on an unconfigured integration is refused, so the handler does not save
     /// a record Namecheap never got.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddDnsRecordAsync_WhenNotConfigured_FailsAsync()
     {
@@ -417,6 +436,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>The client refuses to answer an unconfigured call with a fake OK envelope.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Client_WhenNotConfigured_ThrowsInsteadOfFakingSuccessAsync()
     {
@@ -449,6 +469,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     /// The API key and the account name travel in the POST form body and never in the URL; only
     /// the command name is in the query string.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExecuteAsync_SendsCredentialsInTheBodyNotTheUrlAsync()
     {
@@ -467,6 +488,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>The caller's command is only read: the credentials are added to the request, not to its parameters.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExecuteAsync_DoesNotChangeTheCallersParametersAsync()
     {
@@ -481,6 +503,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>An answer that is not XML is an unknown outcome for the client: an HTTP failure, not a parse error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExecuteAsync_WhenAnswerIsNotXml_ThrowsHttpRequestExceptionAsync()
     {
@@ -494,6 +517,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>A registration sends the client's contact for every role.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_SendsTheOrderContactForEveryRoleAsync()
     {
@@ -510,6 +534,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>A contact missing a required detail is refused before anything is sent.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WithIncompleteContact_FailsWithoutCallingNamecheapAsync()
     {
@@ -527,6 +552,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     /// <summary>An expiry with no offset is read as UTC, and an unreadable one falls back to now plus the term.</summary>
     /// <param name="expireDate">The <c>ExpireDate</c> Namecheap answers with.</param>
     /// <param name="expectedYear">The year the reported expiry falls in.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("2031-03-15T00:00:00", 2031)]
     [InlineData("not a date", 0)]
@@ -565,6 +591,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     /// A retry answered "domain unavailable" for a name the account already holds is the earlier
     /// attempt having gone through, so it is success and nothing is refunded.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WhenUnavailableButHeldByTheAccount_SucceedsAsync()
     {
@@ -582,6 +609,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>"Domain unavailable" for a name the account does not hold is a refusal with its own code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WhenUnavailableAndNotHeld_FailsWithTheUnavailableCodeAsync()
     {
@@ -596,6 +624,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>Too little registrar balance is its own code, and the account is not consulted for it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WhenFundsAreShort_FailsWithTheFundsCodeAsync()
     {
@@ -613,6 +642,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     /// When the account cannot be read to settle a refusal, the outcome is unknown and the
     /// exception escapes instead of a refusal that could refund a domain we own.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WhenTheAccountCannotBeReadAfterARefusal_ThrowsAsync()
     {
@@ -626,6 +656,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>A transfer that is refused as unavailable but is already in progress counts as placed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferAsync_WhenUnavailableButInProgress_SucceedsAsync()
     {
@@ -646,6 +677,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     /// A refused renewal stays a refusal even when the account holds the domain, because holding
     /// it says nothing about whether it was renewed; no lookup is made.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewAsync_WhenUnavailable_FailsWithoutLookingAtTheAccountAsync()
     {
@@ -659,6 +691,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>A lock change Namecheap fails with a server error is a failed result, not an exception, and no upstream text is returned.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRegistrarLockAsync_WhenNamecheapFails_ReturnsAFailedResultAsync()
     {
@@ -676,6 +709,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>A change answered with something that is not XML is a failed result.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetNameserversAsync_WhenAnswerIsNotXml_ReturnsAFailedResultAsync()
     {
@@ -693,6 +727,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
     }
 
     /// <summary>A refusal inside a DNS change is a failed result with a code, and the log names the operation that failed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddDnsRecordAsync_WhenNamecheapRefuses_ReturnsTheCodeAndLogsTheOperationAsync()
     {

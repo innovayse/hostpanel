@@ -26,6 +26,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     private static string Route(string pluginId) => $"/api/admin/plugins/registry/{pluginId}/install";
 
     /// <summary>A verified package installs under the default policy and the install is written to the activity log with its digest.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AVerifiedPackage_InstallsAndIsAuditedAsync()
     {
@@ -60,6 +61,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A newer registry version of an installed plugin is staged for the restart.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ANewerVersion_IsStagedAsync()
     {
@@ -85,6 +87,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Under the default policy an unverified entry is refused before anything is downloaded, and the refusal is audited.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task VerifiedOnly_RefusesAnUnverifiedEntryAsync()
     {
@@ -105,6 +108,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Under "any registry publisher" an unverified entry installs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnyRegistryPublisher_AdmitsAnUnverifiedEntryAsync()
     {
@@ -133,6 +137,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     /// registry verified it, and an unsigned one is refused too.
     /// </summary>
     /// <param name="signed">Whether the package carries a signature by a key outside the operator's list.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -160,6 +165,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Under "own keys only" a package signed with a key the operator added installs, verified by the registry or not.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OwnKeysOnly_AdmitsAnOperatorKeyAsync()
     {
@@ -184,6 +190,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A package that does not hash to the published checksum is refused before it is unpacked, and the refusal is audited.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AChecksumMismatch_IsRefusedAsync()
     {
@@ -203,6 +210,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A package whose manifest is another plugin than the one asked for is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APackageOfAnotherPlugin_IsRefusedAsync()
     {
@@ -223,6 +231,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     /// A host that does not enforce signatures (Development, Testing) still refuses an unsigned registry package, even
     /// when the operator allows unsigned uploads: that setting is for uploads, never for the registry.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnUnsignedRegistryPackage_IsRefusedEvenWhereSignaturesAreNotEnforcedAsync()
     {
@@ -249,6 +258,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
 
     /// <summary>A package that is signed by a key the host does not trust, or tampered with after signing, is refused.</summary>
     /// <param name="tampered">Whether the package is tampered with (otherwise it is signed by an unknown key).</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -270,6 +280,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A package whose manifest declares another version than the one asked for is refused before it is unpacked.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APackageOfAnotherVersion_IsRefusedAsync()
     {
@@ -288,6 +299,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     /// <summary>A version the registry does not list answers 404, and a switched-off registry answers 409.</summary>
     /// <param name="failureCode">The registry's failure, or <see langword="null"/> for an unlisted version.</param>
     /// <param name="status">The status the code maps to.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(null, HttpStatusCode.NotFound)]
     [InlineData("PLUGIN_REGISTRY_DISABLED", HttpStatusCode.Conflict)]
@@ -305,6 +317,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The real client with the default configuration answers <c>PLUGIN_REGISTRY_DISABLED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheDefaultConfiguration_AnswersDisabledAsync()
     {
@@ -319,6 +332,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     /// <summary>An id or version of the wrong shape is refused before the registry is asked.</summary>
     /// <param name="pluginId">The route id.</param>
     /// <param name="version">The body version.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Bad_Id", "1.0.0")]
     [InlineData("good-id", "")]
@@ -336,6 +350,7 @@ public sealed class InstallRegistryPluginTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A Client-role caller is refused and a caller with no credential is unauthorised.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OnlyAnAdministrator_MayInstallAsync()
     {

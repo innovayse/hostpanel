@@ -26,6 +26,7 @@ public sealed class DevDataSeederTests(IntegrationTestFactory factory) : IClassF
     /// The account behind a seeded client already exists, as after a run that stopped half way: the seed
     /// creates the client record for it, does not reset its password, and the client is not skipped.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SeedAsync_WhenTheAccountAlreadyExists_StillCreatesItsClientAndKeepsThePasswordAsync()
     {

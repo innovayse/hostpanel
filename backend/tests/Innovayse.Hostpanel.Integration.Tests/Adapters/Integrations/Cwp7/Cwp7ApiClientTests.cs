@@ -1,9 +1,9 @@
 using System.Net;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
 using Innovayse.Providers.CWP7;
 using Innovayse.Providers.CWP7.Models;
-using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.Cwp7;
@@ -67,6 +67,7 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
     }
 
     /// <summary>Create account, fails, when cwp7 answers with an html error page.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateAccount_Fails_WhenCwp7AnswersWithAnHtmlErrorPageAsync()
     {
@@ -79,6 +80,7 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
     }
 
     /// <summary>Creating an account keeps the page out of the result when the panel answers with HTML.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateAccount_KeepsThePageOutOfTheResult_WhenCwp7AnswersWithHtmlAsync()
     {
@@ -92,6 +94,7 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
     }
 
     /// <summary>Suspending an account fails when the panel answers with an HTML error page.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SuspendAccount_Fails_WhenCwp7AnswersWithAnHtmlErrorPageAsync()
     {
@@ -104,6 +107,7 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
     }
 
     /// <summary>Creating an account succeeds when the panel answers with the JSON envelope.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateAccount_Succeeds_WhenCwp7AnswersWithTheJsonEnvelopeAsync()
     {
@@ -128,6 +132,7 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
         """;
 
     /// <summary>Auto login returns the session URL when the panel issues one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AutoLogin_ReturnsTheSessionUrl_WhenCwp7IssuesOneAsync()
     {
@@ -142,6 +147,7 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
     }
 
     /// <summary>Auto login fails when the session is for a different user.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AutoLogin_Fails_WhenTheSessionIsForADifferentUserAsync()
     {
@@ -157,6 +163,7 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
     }
 
     /// <summary>Auto login fails when the panel refuses with a string message.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AutoLogin_Fails_WhenCwp7RefusesWithAStringMessageAsync()
     {
@@ -174,6 +181,7 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
     }
 
     /// <summary>Auto login fails when the endpoint is not served.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AutoLogin_Fails_WhenTheEndpointIsNotServedAsync()
     {
@@ -189,6 +197,7 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
     }
 
     /// <summary>Auto login calls the user session route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AutoLogin_CallsTheUserSessionRouteAsync()
     {
@@ -202,6 +211,7 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
     }
 
     /// <summary>Creating an account sends the limits as culture-invariant numbers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateAccount_SendsTheLimits_AsInvariantNumbersAsync()
     {
@@ -214,6 +224,7 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
     }
 
     /// <summary>Provisioning hides the panel's own text when the panel refuses.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_HidesThePanelText_WhenCwp7RefusesAsync()
     {
@@ -229,6 +240,7 @@ public sealed class Cwp7ApiClientTests : IAsyncLifetime
     }
 
     /// <summary>Suspending hides the panel's own text when the panel refuses.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Suspend_HidesThePanelText_WhenCwp7RefusesAsync()
     {

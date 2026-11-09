@@ -9,7 +9,6 @@ using JasperFx.CodeGeneration;
 using JasperFx.CodeGeneration.Model;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Options;
 using Wolverine;

@@ -43,7 +43,7 @@ public interface IUserProvisioning
     /// The new subject, or a failed <see cref="Result{T}"/> carrying
     /// <c>USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT</c> where an external sign-on provider owns the accounts.
     /// </returns>
-    Task<Result<string>> CreateAsync(CreateUserInput account, CancellationToken ct);
+    public Task<Result<string>> CreateAsync(CreateUserInput account, CancellationToken ct);
 
     /// <summary>
     /// Updates a person's name and preferred UI language.
@@ -54,7 +54,7 @@ public interface IUserProvisioning
     /// Success, or a failed <see cref="Result"/> carrying
     /// <c>USER_PROVISIONING_NOT_ALLOWED_CHANGE_NAME</c> where an external sign-on provider owns the accounts.
     /// </returns>
-    Task<Result> UpdateProfileAsync(UserProfileUpdate profile, CancellationToken ct);
+    public Task<Result> UpdateProfileAsync(UserProfileUpdate profile, CancellationToken ct);
 
     /// <summary>
     /// Changes the address a person signs in with, at once, on an operator's word. Every session
@@ -78,7 +78,7 @@ public interface IUserProvisioning
     /// anything is written); or <c>USER_PROVISIONING_NOT_ALLOWED_CHANGE_EMAIL</c> where an external
     /// sign-on provider owns the accounts.
     /// </returns>
-    Task<Result> ChangeEmailAsync(string subject, string email, CancellationToken ct);
+    public Task<Result> ChangeEmailAsync(string subject, string email, CancellationToken ct);
 
     /// <summary>
     /// Applies an operator's edit of an account (name, language and sign-in address) as one
@@ -93,7 +93,7 @@ public interface IUserProvisioning
     /// anything is written), or <c>USER_PROVISIONING_NOT_ALLOWED_CHANGE_NAME</c> where an external
     /// sign-on provider owns the accounts.
     /// </returns>
-    Task<Result> UpdateAccountAsync(UserAccountUpdate account, CancellationToken ct);
+    public Task<Result> UpdateAccountAsync(UserAccountUpdate account, CancellationToken ct);
 
     /// <summary>
     /// Checks the current password and issues a token that moves the sign-in to a new address once
@@ -106,7 +106,7 @@ public interface IUserProvisioning
     /// <c>IDENTITY_USER_NOT_FOUND</c>, <c>CURRENT_PASSWORD_INVALID</c>, <c>EMAIL_ALREADY_IN_USE</c>, or
     /// <c>USER_PROVISIONING_NOT_ALLOWED_CHANGE_EMAIL</c> where an external sign-on provider owns the accounts.
     /// </returns>
-    Task<Result<string>> IssueEmailChangeTokenAsync(EmailChangeStart start, CancellationToken ct);
+    public Task<Result<string>> IssueEmailChangeTokenAsync(EmailChangeStart start, CancellationToken ct);
 
     /// <summary>
     /// Moves the sign-in to the new address when the token issued by
@@ -121,7 +121,7 @@ public interface IUserProvisioning
     /// failure carrying <c>EMAIL_ALREADY_IN_USE</c> when another account took the address meanwhile,
     /// or <c>USER_PROVISIONING_NOT_ALLOWED_CHANGE_EMAIL</c> where an external sign-on provider owns the accounts.
     /// </returns>
-    Task<Result<bool>> ConfirmEmailChangeAsync(EmailChangeConfirmation confirmation, CancellationToken ct);
+    public Task<Result<bool>> ConfirmEmailChangeAsync(EmailChangeConfirmation confirmation, CancellationToken ct);
 
     /// <summary>
     /// Deletes an account. Records that reference the subject are left alone.
@@ -132,7 +132,7 @@ public interface IUserProvisioning
     /// Success, or a failed <see cref="Result"/> carrying
     /// <c>USER_PROVISIONING_NOT_ALLOWED_DELETE_ACCOUNT</c> where an external sign-on provider owns the accounts.
     /// </returns>
-    Task<Result> DeleteAsync(string subject, CancellationToken ct);
+    public Task<Result> DeleteAsync(string subject, CancellationToken ct);
 
     /// <summary>
     /// Removes an account for real, so its address is free to register again. Only for compensation:
@@ -151,7 +151,7 @@ public interface IUserProvisioning
     /// Success (also when no such subject exists here), or a failed <see cref="Result"/> carrying
     /// <c>USER_PROVISIONING_NOT_ALLOWED_DELETE_ACCOUNT</c> where an external sign-on provider owns the accounts.
     /// </returns>
-    Task<Result> PurgeUnusedAsync(string subject, CancellationToken ct);
+    public Task<Result> PurgeUnusedAsync(string subject, CancellationToken ct);
 
     /// <summary>
     /// Sets a password directly, without the holder's involvement.
@@ -167,7 +167,7 @@ public interface IUserProvisioning
     /// <see cref="Result{T}"/> carries <c>USER_PROVISIONING_NOT_ALLOWED_SET_PASSWORD</c> where an
     /// the sign-on provider owns the accounts.
     /// </returns>
-    Task<Result<bool>> SetPasswordAsync(string subject, string password, CancellationToken ct);
+    public Task<Result<bool>> SetPasswordAsync(string subject, string password, CancellationToken ct);
 
     /// <summary>
     /// Issues a token the holder can use to choose a new password.
@@ -181,7 +181,7 @@ public interface IUserProvisioning
     /// <see cref="Result{T}"/> carries <c>USER_PROVISIONING_NOT_ALLOWED_ISSUE_PASSWORD_RESET</c>
     /// where an external sign-on provider owns the accounts.
     /// </returns>
-    Task<Result<string?>> IssuePasswordResetTokenAsync(string subject, CancellationToken ct);
+    public Task<Result<string?>> IssuePasswordResetTokenAsync(string subject, CancellationToken ct);
 
     /// <summary>
     /// Sets a new password using a token issued by <see cref="IssuePasswordResetTokenAsync"/>.
@@ -194,7 +194,7 @@ public interface IUserProvisioning
     /// expired. A failed <see cref="Result{T}"/> carries <c>USER_PROVISIONING_NOT_ALLOWED_SET_PASSWORD</c>
     /// where an external sign-on provider owns the accounts.
     /// </returns>
-    Task<Result<bool>> ResetPasswordWithTokenAsync(PasswordResetWithToken reset, CancellationToken ct);
+    public Task<Result<bool>> ResetPasswordWithTokenAsync(PasswordResetWithToken reset, CancellationToken ct);
 
     /// <summary>
     /// Marks an address confirmed using a token issued by <see cref="IssueEmailConfirmationTokenAsync"/>.
@@ -207,7 +207,7 @@ public interface IUserProvisioning
     /// expired. A failed <see cref="Result{T}"/> carries <c>USER_PROVISIONING_NOT_ALLOWED_CONFIRM_EMAIL</c>
     /// where an external sign-on provider owns the accounts.
     /// </returns>
-    Task<Result<bool>> ConfirmEmailWithTokenAsync(EmailConfirmationWithToken confirmation, CancellationToken ct);
+    public Task<Result<bool>> ConfirmEmailWithTokenAsync(EmailConfirmationWithToken confirmation, CancellationToken ct);
 
     /// <summary>
     /// Marks a person's email address as confirmed without a mailed token.
@@ -223,7 +223,7 @@ public interface IUserProvisioning
     /// <see cref="Result"/> carrying <c>USER_PROVISIONING_NOT_ALLOWED_CONFIRM_EMAIL</c> where an
     /// the sign-on provider owns the accounts.
     /// </returns>
-    Task<Result> ConfirmEmailAsync(string subject, CancellationToken ct);
+    public Task<Result> ConfirmEmailAsync(string subject, CancellationToken ct);
 
     /// <summary>
     /// Issues a token that confirms a person's email address when it comes back through
@@ -238,5 +238,5 @@ public interface IUserProvisioning
     /// <see cref="Result{T}"/> carries <c>USER_PROVISIONING_NOT_ALLOWED_ISSUE_EMAIL_CONFIRMATION</c>
     /// where an external sign-on provider owns the accounts.
     /// </returns>
-    Task<Result<string?>> IssueEmailConfirmationTokenAsync(string subject, CancellationToken ct);
+    public Task<Result<string?>> IssueEmailConfirmationTokenAsync(string subject, CancellationToken ct);
 }

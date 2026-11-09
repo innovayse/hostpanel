@@ -1,4 +1,3 @@
-using System.Net.Http;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Infrastructure.Security.Extensions;

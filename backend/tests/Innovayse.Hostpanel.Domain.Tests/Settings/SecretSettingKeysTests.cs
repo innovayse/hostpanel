@@ -1,5 +1,5 @@
-using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
+using Innovayse.Hostpanel.Domain.Settings.Enums;
 
 namespace Innovayse.Hostpanel.Domain.Tests.Settings;
 

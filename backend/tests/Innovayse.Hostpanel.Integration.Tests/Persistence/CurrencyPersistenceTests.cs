@@ -22,6 +22,7 @@ public sealed class CurrencyPersistenceTests(IntegrationTestFactory factory)
     : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The migration seeded USD as the base and AMD beside it; the list is base first.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MigrationSeedsUsdAsBaseAndAmdRated()
     {
@@ -43,6 +44,7 @@ public sealed class CurrencyPersistenceTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A lookup by code is case-insensitive, as <see cref="CurrencyExtensions.FindCurrencyAsync"/> promises.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindAsyncIgnoresCase()
     {
@@ -56,6 +58,7 @@ public sealed class CurrencyPersistenceTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A currency added through the context is read back by a fresh scope.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddPersistsARatedCurrency()
     {
@@ -76,6 +79,7 @@ public sealed class CurrencyPersistenceTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The partial unique index refuses a second base row at the database, not only in code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ASecondBaseIsRefusedByTheDatabase()
     {

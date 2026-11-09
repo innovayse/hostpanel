@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Migration.Commands.RunMigrationPull;
 using Innovayse.Hostpanel.Application.Migration.Common;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;

@@ -19,5 +19,5 @@ public interface IActivityLogger
     /// <param name="entry">The client and the description of what happened.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the line is staged; nothing is saved yet.</returns>
-    Task RecordAsync(ActivityLogEntry entry, CancellationToken ct);
+    public Task RecordAsync(ActivityLogEntry entry, CancellationToken ct);
 }

@@ -1,6 +1,6 @@
 using Innovayse.Hostpanel.Application.Admin.Common;
-using Innovayse.Hostpanel.Shared.Models;
 using Innovayse.Hostpanel.Application.Admin.Common.Enums;
+using Innovayse.Hostpanel.Shared.Models;
 
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 
@@ -40,7 +40,7 @@ public interface IBrandingImageProcessor
     /// pixels it decodes to are over a ceiling this deployment enforces. The precise cause behind
     /// either code is logged by the implementation, never carried on the <see cref="Result{T}"/>.
     /// </returns>
-    Task<Result<IReadOnlyList<BrandingRendition>>> RenderAsync(
+    public Task<Result<IReadOnlyList<BrandingRendition>>> RenderAsync(
         BrandingSource source,
         BrandingKind kind,
         CancellationToken ct);

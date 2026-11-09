@@ -76,6 +76,7 @@ public sealed class CwpProvisioningProviderTests : IAsyncLifetime
     }
 
     /// <summary>A created account is reported as succeeded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateAccount_Succeeds_WhenCwpAcceptsAsync()
     {
@@ -87,6 +88,7 @@ public sealed class CwpProvisioningProviderTests : IAsyncLifetime
     }
 
     /// <summary>A retry after a lost answer meets the account it already made.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateAccount_ReportsAlreadyExistsWithTheDomain_WhenCwpRefusesAndTheAccountIsListedAsync()
     {
@@ -98,6 +100,7 @@ public sealed class CwpProvisioningProviderTests : IAsyncLifetime
     }
 
     /// <summary>A refusal with no account behind it stays refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateAccount_IsRefused_WhenCwpRefusesAndListsNoAccountAsync()
     {
@@ -109,6 +112,7 @@ public sealed class CwpProvisioningProviderTests : IAsyncLifetime
     }
 
     /// <summary>Suspending an already suspended account is already in state.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SuspendAccount_ReportsAlreadyInState_WhenTheAccountIsAlreadySuspendedAsync()
     {
@@ -120,6 +124,7 @@ public sealed class CwpProvisioningProviderTests : IAsyncLifetime
     }
 
     /// <summary>A refused suspend on an active account stays refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SuspendAccount_IsRefused_WhenTheAccountIsActiveAsync()
     {
@@ -131,6 +136,7 @@ public sealed class CwpProvisioningProviderTests : IAsyncLifetime
     }
 
     /// <summary>Unsuspending an already active account is already in state.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnsuspendAccount_ReportsAlreadyInState_WhenTheAccountIsAlreadyActiveAsync()
     {
@@ -142,6 +148,7 @@ public sealed class CwpProvisioningProviderTests : IAsyncLifetime
     }
 
     /// <summary>A refused unsuspend on a suspended account stays refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnsuspendAccount_IsRefused_WhenTheAccountIsStillSuspendedAsync()
     {
@@ -153,6 +160,7 @@ public sealed class CwpProvisioningProviderTests : IAsyncLifetime
     }
 
     /// <summary>Terminating an account CWP no longer lists is already in state.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TerminateAccount_ReportsAlreadyInState_WhenTheAccountIsNotListedAsync()
     {
@@ -164,6 +172,7 @@ public sealed class CwpProvisioningProviderTests : IAsyncLifetime
     }
 
     /// <summary>A failed listing is never read as "already gone".</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TerminateAccount_IsRefused_WhenTheListingFailsAsync()
     {
@@ -175,6 +184,7 @@ public sealed class CwpProvisioningProviderTests : IAsyncLifetime
     }
 
     /// <summary>A removal CWP accepts is reported as succeeded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TerminateAccount_Succeeds_WhenCwpAcceptsAsync()
     {

@@ -30,6 +30,7 @@ public sealed class ResetDemoDataTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A reset removes the visitor's rows, restores the sample data and arms the next run.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OnADemo_WipesVisitorDataAndRestoresTheSampleAsync()
     {
@@ -52,6 +53,7 @@ public sealed class ResetDemoDataTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Outside a demo the command is a no-op, so a stray dispatch cannot wipe a real database.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenDisabled_TouchesNothingAsync()
     {

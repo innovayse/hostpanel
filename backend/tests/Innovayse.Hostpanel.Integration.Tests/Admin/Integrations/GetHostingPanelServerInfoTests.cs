@@ -2,9 +2,9 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
-using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +27,7 @@ public sealed class GetHostingPanelServerInfoTests(IntegrationTestFactory factor
     /// <c>integration:innovayse-cwp:*</c> prefix, which the config-save route (writing under the requested slug, here "cwp") does
     /// not reach.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenProbeSucceeds_ReportsConnectedAsync()
     {
@@ -64,6 +65,7 @@ public sealed class GetHostingPanelServerInfoTests(IntegrationTestFactory factor
     /// A stored port that is not a number falls back to <see cref="IHostingPanelApiClient.DefaultApiPort"/>
     /// rather than reaching the panel on a port nobody configured.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenPortIsNotANumber_ProbesTheDefaultApiPortAsync()
     {
@@ -97,6 +99,7 @@ public sealed class GetHostingPanelServerInfoTests(IntegrationTestFactory factor
     /// A failed probe still answers 200 with <c>connected = false</c> and puts neither the panel's
     /// host nor the provider's own exception text on the wire.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenProbeFails_NeverLeaksProviderDetailAsync()
     {
@@ -131,6 +134,7 @@ public sealed class GetHostingPanelServerInfoTests(IntegrationTestFactory factor
 #pragma warning restore CS0618
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -142,6 +146,7 @@ public sealed class GetHostingPanelServerInfoTests(IntegrationTestFactory factor
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

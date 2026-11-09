@@ -39,11 +39,12 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>A signed call carries the four headers, a timestamp near now and a nonce in the accepted shape, and never a licence key.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheVersionList_OfARestrictedPlugin_IsSigned_AndCarriesNoLicenceKeyAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1, 2, 3], hostOnly: true);
         await EnrolAsync(scope);
@@ -63,11 +64,12 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>Two calls never share a nonce, so the registry's replay check never refuses an honest host.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EveryCall_CarriesAFreshNonceAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         await EnrolAsync(scope);
@@ -83,11 +85,12 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>The version details come from a signed call, name the checksum and carry the distribution to the download.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheRelease_OfARestrictedPlugin_IsSigned_AndKeepsItsDistributionAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         var package = Encoding.UTF8.GetBytes("package");
         registry.Offer("acme-pay", "1.2.0", package, hostOnly: true);
@@ -106,11 +109,12 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>The package is fetched through a signed ticket request and a signed fetch of the ticket address, in that order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARestrictedPackage_IsFetchedThroughATicket_BothCallsSignedAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         var package = Encoding.UTF8.GetBytes("the package bytes");
         registry.Offer("acme-pay", "1.2.0", package, hostOnly: true);
@@ -135,11 +139,12 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>A ticket is good for one fetch, so every download asks for a ticket of its own, with a different token each time.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EveryDownload_AsksForATicketOfItsOwnAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1, 2], hostOnly: true);
         await EnrolAsync(scope);
@@ -159,11 +164,12 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>A public plugin is asked for as before: no signature, and the licence key when one is given.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APublicPlugin_IsAskedForAsBefore_WithTheLicenceKeyAndNoSignatureAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("free-plugin", "1.0.0", [9], hostOnly: false);
         var client = scope.ServiceProvider.GetRequiredService<IPluginRegistryClient>();
@@ -179,11 +185,12 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>An installation the registry has not verified signs nothing: the call is not made and the code says so.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithoutAVerifiedIdentity_NoSignedCallIsMade_AndTheCodeSaysSoAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         var client = scope.ServiceProvider.GetRequiredService<IPluginRegistryClient>();
@@ -198,6 +205,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     /// <param name="status">The status the registry answers with.</param>
     /// <param name="registryCode">The registry error code in the body, or an empty string for a body with none.</param>
     /// <param name="expected">The host code.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(401, "INSTANCE_SIGNATURE_INVALID_UNAUTHORIZED", "PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED")]
     [InlineData(401, "INSTANCE_TIMESTAMP_UNAUTHORIZED", "PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW")]
@@ -213,7 +221,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     public async Task ARefusedSignedCall_BecomesAnAdminCodeAsync(int status, string registryCode, string expected)
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         await EnrolAsync(scope);
@@ -232,11 +240,12 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>A registry that finds the clock of this server too far off is answered with the clock code, and the real window decides it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AClockOutsideTheWindow_IsRefusedWithTheClockCodeAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         await EnrolAsync(scope);
@@ -249,11 +258,12 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>A revocation is remembered: the status turns Revoked and the next signed call is not made at all.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARevocation_IsRememberedOnTheIdentityAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         await EnrolAsync(scope);
@@ -272,11 +282,12 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>A ticket address on another host is refused before anything is fetched from it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ATicketAddressOnAnotherHost_IsRefusedAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         await EnrolAsync(scope);
@@ -297,11 +308,12 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>The newest-version lookup is unsigned and an empty package address for a restricted plugin is not invalid there.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheLatestLookup_IsUnsigned_AndAnEmptyAddressIsNotAnErrorAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         registry.Offer("free-plugin", "2.0.0", [2], hostOnly: false);
@@ -315,11 +327,12 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>The listing and the plugin page carry the distribution, and a registry that sends none reads as a public plugin.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheListingAndThePluginPage_ReadTheDistributionAsync()
     {
         var (registry, host) = NewHost();
-        using var _ = host;
+        using var hostToDispose = host;
         using var scope = host.Services.CreateScope();
         registry.Offer("acme-pay", "1.2.0", [1], hostOnly: true);
         registry.Offer("free-plugin", "2.0.0", [2], hostOnly: false);

@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class ReplyToMyTicketTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A client can reply to their own ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientCanReplyToTheirOwnTicketAsync()
     {
@@ -36,6 +37,7 @@ public sealed class ReplyToMyTicketTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A stranger cannot reply to another client's ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReplyToSomeoneElsesTicketAnswersNotFoundAsync()
     {
@@ -62,6 +64,7 @@ public sealed class ReplyToMyTicketTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A caller with no credential cannot reply to a client ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetMyInvoiceSkuTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A product line carries the SKU of its snapshot.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_ProductLine_CarriesTheSnapshotSku()
     {
@@ -28,6 +29,7 @@ public sealed class GetMyInvoiceSkuTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A service renewal line carries the SKU of the renewed product.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_RenewalLine_CarriesTheSnapshotSku()
     {
@@ -43,6 +45,7 @@ public sealed class GetMyInvoiceSkuTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A manual line and a domain renewal have no snapshot, so their SKU is null; the list says the same.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_LinesWithoutSnapshot_CarryNullSku()
     {

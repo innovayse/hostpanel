@@ -51,6 +51,7 @@ public sealed class ResultTests
         result.Errors.Should().ContainKey("Price");
         result.Errors!["Price"].Should().ContainSingle().Which.Should().Be("Price must be greater than 0.");
     }
+
     /// <summary>
     /// <c>FailureCode</c> puts the code in the code slot and leaves the message empty: the sentence
     /// comes from the resources at the boundary.

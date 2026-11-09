@@ -14,11 +14,11 @@ public interface IPluginUiSource
     /// <summary>Lists the available plugins.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The plugins, ordered by id; empty when none is available.</returns>
-    Task<IReadOnlyList<PluginUiPackage>> ListAvailableAsync(CancellationToken ct);
+    public Task<IReadOnlyList<PluginUiPackage>> ListAvailableAsync(CancellationToken ct);
 
     /// <summary>Finds one available plugin.</summary>
     /// <param name="pluginId">The plugin id from the URL.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The plugin, or <see langword="null"/> when it is unknown, not a serving plugin, switched off or not configured, which are the same answer on purpose.</returns>
-    Task<PluginUiPackage?> FindAvailableAsync(string pluginId, CancellationToken ct);
+    public Task<PluginUiPackage?> FindAvailableAsync(string pluginId, CancellationToken ct);
 }

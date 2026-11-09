@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http;
 using System.Net.Sockets;
 using Innovayse.Hostpanel.Infrastructure.Security.Enums;
 using Innovayse.Hostpanel.Infrastructure.Security.Settings;

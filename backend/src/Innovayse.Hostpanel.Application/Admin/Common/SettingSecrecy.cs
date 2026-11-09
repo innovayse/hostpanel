@@ -1,8 +1,8 @@
+using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
-using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Application.Admin.Common;
 

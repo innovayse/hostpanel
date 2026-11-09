@@ -19,7 +19,7 @@ public sealed class RejectBankTransferTests(IntegrationTestFactory factory) : IC
 {
     /// <summary>Reads an invoice with its payments from the database.</summary>
     /// <param name="invoiceId">The invoice.</param>
-    /// <returns>The invoice.</returns>
+    /// <returns>The invoice as stored.</returns>
     private async Task<Invoice> LoadAsync(int invoiceId)
     {
         using var scope = factory.Services.CreateScope();
@@ -31,6 +31,7 @@ public sealed class RejectBankTransferTests(IntegrationTestFactory factory) : IC
     /// Rejecting with a note returns the invoice to Unpaid, clears the transfer marker, records no payment, mails the client the
     /// reason, and lets the client choose the transfer again.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Reject_ReturnsTheInvoiceToUnpaidTellsTheClientAndLetsThemTryAgain()
     {
@@ -60,6 +61,7 @@ public sealed class RejectBankTransferTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Without a pending transfer there is nothing to reject: 409.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Reject_WhenNoTransferWaits_Returns409()
     {
@@ -74,6 +76,7 @@ public sealed class RejectBankTransferTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A late reject cannot turn back a confirmed payment: 409, the invoice stays Paid.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Reject_AfterConfirm_Returns409AndKeepsTheInvoicePaid()
     {
@@ -91,6 +94,7 @@ public sealed class RejectBankTransferTests(IntegrationTestFactory factory) : IC
 
     /// <summary>The note is required and bounded: a missing or oversize one is a 400 and the transfer keeps waiting.</summary>
     /// <param name="note">The note under test.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -111,6 +115,7 @@ public sealed class RejectBankTransferTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>An id that names no invoice answers 404 with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Reject_AnUnknownInvoice_Returns404()
     {
@@ -123,6 +128,7 @@ public sealed class RejectBankTransferTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Staff only: anonymous callers get 401, and a client account gets 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Reject_IsForStaffOnly()
     {

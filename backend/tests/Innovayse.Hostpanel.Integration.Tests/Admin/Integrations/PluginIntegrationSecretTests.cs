@@ -1,3 +1,5 @@
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Commands.SaveIntegrationConfig;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Queries.GetIntegration;
@@ -10,8 +12,6 @@ using Innovayse.Hostpanel.Domain.Settings.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Manifest;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
@@ -106,6 +106,7 @@ public sealed class PluginIntegrationSecretTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Saving a secret setting stores it encrypted and the plain setting as written.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SaveIntegrationConfig_SecretSetting_IsStoredEncrypted()
     {
@@ -125,6 +126,7 @@ public sealed class PluginIntegrationSecretTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Reading the integration after a save answers the secret as set, with no value, and the plain value in clear.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetIntegration_SecretSetting_ReturnsNoValueAndIsSecret()
     {

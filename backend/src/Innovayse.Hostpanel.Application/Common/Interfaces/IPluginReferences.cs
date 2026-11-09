@@ -10,11 +10,11 @@ public interface IPluginReferences
     /// <param name="pluginId">The plugin the reference is for.</param>
     /// <param name="clientId">The host's client id.</param>
     /// <returns>The same text for the same plugin and client on every call, in every process of one deployment.</returns>
-    string ForClient(string pluginId, int clientId);
+    public string ForClient(string pluginId, int clientId);
 
     /// <summary>The reference of a signed-in user or member for one plugin.</summary>
     /// <param name="pluginId">The plugin the reference is for.</param>
     /// <param name="userId">The host's subject id of the user.</param>
     /// <returns>The same text for the same plugin and user on every call, in every process of one deployment.</returns>
-    string ForUser(string pluginId, string userId);
+    public string ForUser(string pluginId, string userId);
 }

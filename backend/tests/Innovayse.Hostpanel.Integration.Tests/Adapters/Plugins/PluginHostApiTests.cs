@@ -1,3 +1,5 @@
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Host;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Application.Services.Common;
@@ -9,9 +11,6 @@ using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Host;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
@@ -34,6 +33,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     private static readonly DateTimeOffset Origin = new(2031, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
     /// <summary>A caller holding the invoices right reads the invoices; one without it gets none.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Invoices_FollowTheViewPayInvoicesRightAsync()
     {
@@ -49,6 +49,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A caller holding the services right reads the services; one without it gets none.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Services_FollowTheViewProductsServicesRightAsync()
     {
@@ -67,6 +68,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     /// Every client caller gets the name, currency and language, but the sign-in email only with the master profile right,
     /// as a sub-user without it never sees the address in the portal.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ProfileEmail_FollowsTheMasterProfileRight_WhileTheRestIsSharedAsync()
     {
@@ -90,6 +92,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Each client sees exactly its own services and invoices, and its own name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BoundToAClient_ReturnsOnlyThatClientsFactsAsync()
     {
@@ -108,6 +111,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A client with nothing yet has a profile and empty lists.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AClientWithNoRows_HasAProfileAndEmptyListsAsync()
     {
@@ -121,6 +125,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A call without a client gets no profile and empty lists even though other clients have rows.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithoutAClient_ReturnsNothingAsync()
     {
@@ -134,6 +139,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A client id that has no row answers like a call without a client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AClientThatDoesNotExist_ReturnsNothingAsync()
     {
@@ -145,6 +151,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A draft invoice is never shared; unpaid and paid ones are, with the SDK status of the same name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DraftInvoices_AreHidden_AndStatusesMapAsync()
     {
@@ -170,6 +177,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>With 51 rows of each kind exactly the newest 50 come back, newest first, and the oldest is left out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Lists_AreCappedAtFifty_NewestFirstAsync()
     {
@@ -190,6 +198,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Rows with the same creation moment are ordered by id, highest first.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RowsCreatedAtTheSameMoment_AreOrderedByIdDescendingAsync()
     {
@@ -215,6 +224,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The profile name is the company when one is set, else the first and last name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ProfileName_IsTheCompanyWhenSet_ElseFirstAndLastNameAsync()
     {
@@ -226,6 +236,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The profile currency is the one the payer currency resolver gives for the client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ProfileCurrency_IsTheResolvedPayerCurrencyAsync()
     {
@@ -240,6 +251,7 @@ public sealed class PluginHostApiTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A client with an identity account shows its email and language; one whose user has no account shows no email.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ProfileEmailAndLanguage_ComeFromTheIdentityAccountAsync()
     {

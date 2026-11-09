@@ -25,6 +25,7 @@ public sealed class UploadBrandingImageTests(IntegrationTestFactory factory) : I
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
 
     /// <summary>A genuinely decodable image is re-encoded, stored, and answers with its URL.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ValidPng_ReturnsTheStoredUrlAsync()
     {
@@ -43,6 +44,7 @@ public sealed class UploadBrandingImageTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Bytes that do not decode as an image are refused with <c>BRANDING_IMAGE_INVALID</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UndecodableBytes_RefusesInvalidAsync()
     {
@@ -62,6 +64,7 @@ public sealed class UploadBrandingImageTests(IntegrationTestFactory factory) : I
     /// A TIFF (and so BigTIFF) container is refused <c>BRANDING_IMAGE_INVALID</c> on its magic
     /// bytes, before any image decoder sees it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TiffHeader_RefusesInvalidAsync()
     {
@@ -84,6 +87,7 @@ public sealed class UploadBrandingImageTests(IntegrationTestFactory factory) : I
     /// request-size cap) are refused with <c>BRANDING_IMAGE_TOO_LARGE</c> before anything is
     /// decoded.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OverTheConfiguredCeiling_RefusesTooLargeAsync()
     {
@@ -101,6 +105,7 @@ public sealed class UploadBrandingImageTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A kind the route does not recognise is refused as a validation failure.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownKind_RefusesAsValidationFailureAsync()
     {
@@ -119,6 +124,7 @@ public sealed class UploadBrandingImageTests(IntegrationTestFactory factory) : I
     /// A numeric kind binds to the enum but names no member, so the validator refuses it before it can
     /// become a storage directory.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NumericKindOutsideTheEnum_RefusesAsValidationFailureAsync()
     {
@@ -134,6 +140,7 @@ public sealed class UploadBrandingImageTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -146,6 +153,7 @@ public sealed class UploadBrandingImageTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A caller with no credential is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

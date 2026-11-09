@@ -9,5 +9,5 @@ public interface IReleaseFeed
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The release descriptor, or <see langword="null"/>.</returns>
-    Task<ReleaseInfo?> GetLatestAsync(CancellationToken ct);
+    public Task<ReleaseInfo?> GetLatestAsync(CancellationToken ct);
 }

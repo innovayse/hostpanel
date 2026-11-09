@@ -12,5 +12,5 @@ public interface IClientExternalAccounts
     /// <param name="clientId">The client.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The account, or <see langword="null"/> when the client is not linked to one or does not exist.</returns>
-    Task<ExternalAccount?> FindAsync(int clientId, CancellationToken ct);
+    public Task<ExternalAccount?> FindAsync(int clientId, CancellationToken ct);
 }

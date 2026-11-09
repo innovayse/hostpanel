@@ -1,5 +1,5 @@
-using Innovayse.Hostpanel.Application.Admin.Integrations.Common.Enums;
 using Hostpanel.Sdk.Plugins.Enums;
+using Innovayse.Hostpanel.Application.Admin.Integrations.Common.Enums;
 
 namespace Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 

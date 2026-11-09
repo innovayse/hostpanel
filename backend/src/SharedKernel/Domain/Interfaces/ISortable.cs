@@ -7,9 +7,9 @@ namespace Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
 public interface ISortable
 {
     /// <summary>Gets the entity's identifier, the key a reorder request names it by.</summary>
-    int Id { get; }
+    public int Id { get; }
 
     /// <summary>Moves the entity to a new position in the display order.</summary>
     /// <param name="sortOrder">The new position; lower values are shown first.</param>
-    void SetSortOrder(int sortOrder);
+    public void SetSortOrder(int sortOrder);
 }

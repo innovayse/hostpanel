@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 public sealed class ServiceSuspendedHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A suspended service calls the provisioning provider's suspend endpoint exactly once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceSuspended_CallsProviderSuspendExactlyOnceAsync()
     {
@@ -37,6 +38,7 @@ public sealed class ServiceSuspendedHandlerTests(IntegrationTestFactory factory)
     /// A service with no server assigned is left alone: the handler has nothing to call the
     /// provider with, and must not throw trying.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceSuspended_WithNoServerAssigned_CallsNothingAsync()
     {

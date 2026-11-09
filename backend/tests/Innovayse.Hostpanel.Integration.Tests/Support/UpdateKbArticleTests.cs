@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class UpdateKbArticleTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can update an existing knowledge base article.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanUpdateAKbArticleAsync()
     {
@@ -36,6 +37,7 @@ public sealed class UpdateKbArticleTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Updating a knowledge base article that does not exist answers 404 with <c>KBARTICLE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateUnknownKbArticleAnswersNotFoundAsync()
     {
@@ -53,6 +55,7 @@ public sealed class UpdateKbArticleTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A caller with no credential cannot update a knowledge base article.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

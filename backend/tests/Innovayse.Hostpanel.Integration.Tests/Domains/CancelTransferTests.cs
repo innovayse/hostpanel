@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class CancelTransferTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Cancelling a pending transfer succeeds and cancels the domain aggregate.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelTransfer_PendingTransfer_Returns204Async()
     {
@@ -40,6 +41,7 @@ public sealed class CancelTransferTests(IntegrationTestFactory factory) : IClass
     /// result; the use case maps it to 409 <c>REGISTRAR_OPERATION_UNSUPPORTED</c> and leaves the
     /// domain's status alone.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelTransfer_RegistrarWithoutCancellation_Returns409AndKeepsTheTransferAsync()
     {
@@ -68,6 +70,7 @@ public sealed class CancelTransferTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An unknown domain id answers 404 with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelTransfer_UnknownDomain_Returns404Async()
     {
@@ -81,6 +84,7 @@ public sealed class CancelTransferTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelTransfer_WithoutToken_Returns401Async()
     {
@@ -93,6 +97,7 @@ public sealed class CancelTransferTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A non-positive domain id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelTransfer_NonPositiveDomainId_Returns400ValidationErrorAsync()
     {

@@ -185,6 +185,7 @@ public sealed class IntegrationTestFactory : WebApplicationFactory<Program>, IAs
     /// first factory of the run), applies EF Core migrations, and seeds the roles and
     /// storefront settings Program.cs would otherwise seed on a real startup outside Testing.
     /// </summary>
+    /// <returns>A task that completes when the work is done.</returns>
     public async Task InitializeAsync()
     {
         _connectionString = await SharedPostgresServer.CreateDatabaseAsync(_databaseName);

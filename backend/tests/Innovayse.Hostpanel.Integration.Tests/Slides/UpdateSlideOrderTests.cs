@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Slides;
 public sealed class UpdateSlideOrderTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Reordering two slides is reflected in the admin list, ordered by the new sort order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOrder_ReordersSlides()
     {
@@ -41,6 +42,7 @@ public sealed class UpdateSlideOrderTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An id that names no slide refuses the whole request with 404 and moves nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOrder_UnknownId_RefusesNotFoundAndMovesNothing()
     {
@@ -60,6 +62,7 @@ public sealed class UpdateSlideOrderTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A request naming more rows than the bound is refused as a validation failure.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOrder_TooManyItems_RefusesWithValidationError()
     {
@@ -73,6 +76,7 @@ public sealed class UpdateSlideOrderTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An anonymous caller is refused with 401 before the request reaches the handler.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOrder_RefusesAnonymous()
     {
@@ -83,6 +87,7 @@ public sealed class UpdateSlideOrderTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An item with a non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOrder_NonPositiveItemId_RefusesWithValidationError()
     {

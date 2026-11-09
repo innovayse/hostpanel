@@ -12,5 +12,5 @@ public interface IPluginSshIssueLimiter
     /// <param name="clientId">The client the call acts for.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns><see langword="true"/> when the issue may go ahead; <see langword="false"/> when the budget is spent.</returns>
-    Task<bool> TryAcquireAsync(string pluginId, int clientId, CancellationToken ct);
+    public Task<bool> TryAcquireAsync(string pluginId, int clientId, CancellationToken ct);
 }

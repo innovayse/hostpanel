@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Projects;
 public sealed class CreateProjectTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Creating a project and reading it back round-trips its fields and its translations.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenGet_RoundTrips()
     {
@@ -32,6 +33,7 @@ public sealed class CreateProjectTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A field the validator refuses answers 400 with the validation code, and nothing is stored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_InvalidField_RefusesWithValidationFailure()
     {
@@ -43,6 +45,7 @@ public sealed class CreateProjectTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A body with no translation at all is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_WithoutTranslations_Refuses()
     {
@@ -54,6 +57,7 @@ public sealed class CreateProjectTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A translation keyed by a language the panel does not support is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_UnsupportedLocale_Refuses()
     {
@@ -65,6 +69,7 @@ public sealed class CreateProjectTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A second project cannot reuse a slug another project holds.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_DuplicateSlug_RefusesWithSlugExistsCode()
     {
@@ -82,6 +87,7 @@ public sealed class CreateProjectTests(IntegrationTestFactory factory) : IClassF
     /// Two creates racing for one slug end as one success and one slug refusal, never a server error:
     /// when both pass the existence check, the unique index refuses the loser and the handler maps it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_ConcurrentSameSlug_OneWinsTheOtherIsRefusedWithSlugExists()
     {
@@ -99,6 +105,7 @@ public sealed class CreateProjectTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_RefusesAnonymous()
     {

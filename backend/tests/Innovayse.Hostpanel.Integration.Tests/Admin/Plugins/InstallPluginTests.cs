@@ -21,6 +21,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A well-formed plugin is unpacked into its own folder and the install is written to the activity log.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WellFormedArchive_InstallsAndRecordsTheInstallAsync()
     {
@@ -50,6 +51,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Installing the same id again replaces the earlier upload's files.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReinstallingTheSameId_ReplacesTheFilesAsync()
     {
@@ -75,6 +77,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An archive without <c>plugin.json</c> is refused with <c>PLUGIN_MANIFEST_INVALID</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnArchiveWithoutAManifest_RefusesAsync()
     {
@@ -92,6 +95,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// </summary>
     /// <param name="extraMembers">The manifest members that break the rule, each starting with a comma.</param>
     /// <param name="code">The error code the rule answers with.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(",\"manifestVersion\":9", "PLUGIN_MANIFEST_VERSION_UNKNOWN")]
     [InlineData(",\"manifestVersion\":2,\"capabilities\":[\"teleport\"]", "PLUGIN_CAPABILITY_NOT_ALLOWED")]
@@ -206,6 +210,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// the English text asks for a rebuild; nothing is left in the upload folder, and no staging folder keeps the
     /// unpacked assembly (checked by its file name, which is unique to this test, so a parallel install cannot disturb it).
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APluginBuiltAgainstAnOlderSdk_RefusesAndLeavesNothingAsync()
     {
@@ -231,6 +236,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An empty file is not a plugin: refused with <c>PLUGIN_MANIFEST_INVALID</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnEmptyUpload_RefusesAsync()
     {
@@ -243,6 +249,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Bytes that are not a ZIP archive are refused with <c>PLUGIN_MANIFEST_INVALID</c>, not a server error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnUnreadableArchive_RefusesAsync()
     {
@@ -255,6 +262,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A form without a file is refused by the validator with <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AFormWithoutAFile_RefusesAsync()
     {
@@ -271,6 +279,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// nothing is written where such an id would have pointed.
     /// </summary>
     /// <param name="idTemplate">The id, with <c>{0}</c> replaced by a unique token.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("..")]
     [InlineData("../escape-{0}")]
@@ -298,6 +307,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// An entry that would write outside the plugin's folder is refused with
     /// <c>PLUGIN_ARCHIVE_UNSAFE</c>, and the entries unpacked before it are not left behind.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnEntryEscapingThePluginFolder_RefusesAndLeavesNothingAsync()
     {
@@ -316,6 +326,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
 
     /// <summary>An archive carrying an assembly the host provides is refused with <c>PLUGIN_HOST_ASSEMBLY_REFUSED</c>.</summary>
     /// <param name="assemblyFile">The offending entry's file name.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Hostpanel.Sdk.dll")]
     [InlineData("Innovayse.SDK.dll")]
@@ -342,6 +353,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// An assembly under the <c>Innovayse.Hostpanel.Plugins.</c> plugin namespace is not a host assembly: the package
     /// is not refused for it, and its sibling in the host namespace still is.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnArchiveCarryingAPluginNamespaceAssembly_IsNotRefusedAsAHostAssemblyAsync()
     {
@@ -369,6 +381,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// </summary>
     /// <param name="installedName">The file name the other plugin ships.</param>
     /// <param name="uploadedName">The file name the upload carries.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Conflict.Lib.dll", "Conflict.Lib.dll")]
     [InlineData("Conflict.Lib.dll", "CONFLICT.LIB.DLL")]
@@ -402,6 +415,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// distinct assembly name, are not refused as an assembly conflict.
     /// </summary>
     /// <param name="sameId">Whether the installed folder with the same file name belongs to the uploaded plugin's own id.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -434,6 +448,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An archive with more entries than <c>Plugins:MaxEntryCount</c> is refused with 413.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TooManyEntries_RefusesAsync()
     {
@@ -451,6 +466,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An archive that unpacks past <c>Plugins:MaxUncompressedBytes</c> is refused with 413.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TooManyUnpackedBytes_RefusesAsync()
     {
@@ -472,6 +488,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// stops at the declared length, so the entry is written truncated to what it declared and never to the real
     /// (larger) size. The real byte count in <c>PluginArchiveGuard.Extract</c> stays as a second guard.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnEntryLyingAboutItsSize_NeverUnpacksPastTheLimitAsync()
     {
@@ -499,6 +516,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// An entry that resolves to a sibling of the unpack folder whose name differs only in case is refused with
     /// <c>PLUGIN_ARCHIVE_UNSAFE</c>: the containment check is exact, not case-insensitive.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnEntryReachingACaseDifferentSiblingFolder_RefusesAsync()
     {
@@ -518,6 +536,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// An archive holding a file and a folder of one name cannot be unpacked and is refused with
     /// <c>PLUGIN_ARCHIVE_UNWRITABLE</c>, nothing is left behind.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AFileAndAFolderOfOneName_RefusesAsUnwritableAsync()
     {
@@ -563,6 +582,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     /// With a trusted-package list set, a listed archive installs and any other archive is refused
     /// with <c>PLUGIN_NOT_TRUSTED</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheTrustedList_AdmitsOnlyListedArchivesAsync()
     {
@@ -590,6 +610,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An upload with the id of a plugin shipped with the build is refused with 409 <c>PLUGIN_BUILT_IN</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheIdOfABuiltInPlugin_RefusesAsync()
     {
@@ -612,6 +633,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -623,6 +645,7 @@ public sealed class InstallPluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

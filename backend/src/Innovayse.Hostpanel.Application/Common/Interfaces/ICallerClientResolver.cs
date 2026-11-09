@@ -39,12 +39,12 @@ public interface ICallerClientResolver
     /// none of them. A caller who owns no record, is linked to none, or is not identified gets
     /// <see cref="CallerClientAccess.None"/>.
     /// </returns>
-    Task<CallerClientAccess> ResolveAsync(CancellationToken ct);
+    public Task<CallerClientAccess> ResolveAsync(CancellationToken ct);
 
     /// <summary>
     /// Forgets the answer already resolved in this request, so the next <see cref="ResolveAsync"/> reads again.
     /// Only for a use case that has just changed which account the caller acts for; everything else shares
     /// the one answer.
     /// </summary>
-    void Invalidate();
+    public void Invalidate();
 }

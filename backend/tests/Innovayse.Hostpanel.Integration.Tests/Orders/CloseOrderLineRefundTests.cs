@@ -24,6 +24,7 @@ public sealed class CloseOrderLineRefundTests(IntegrationTestFactory factory) : 
     /// A partly refunded line is closed as refunded with 204: it no longer keeps the order incomplete (the order is Active
     /// again), the line cannot be retried, and the client's activity log records who did it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClosesAPartlyRefundedLineAndTheOrderReturnsToActive()
     {
@@ -48,6 +49,7 @@ public sealed class CloseOrderLineRefundTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A failed line, whose refund never ran, cannot be closed as refunded: 409 with <c>ORDER_LINE_NOT_REFUNDABLE</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesALineThatIsNotPartlyRefunded()
     {
@@ -70,6 +72,7 @@ public sealed class CloseOrderLineRefundTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An order that does not exist answers 404 with <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderRefusesNotFound()
     {
@@ -82,6 +85,7 @@ public sealed class CloseOrderLineRefundTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A line the order does not hold answers 404 with <c>ORDER_ITEM_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingLineRefusesNotFound()
     {
@@ -95,6 +99,7 @@ public sealed class CloseOrderLineRefundTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A non-positive id is refused by the validator.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NonPositiveIdIsRefusedByTheValidator()
     {
@@ -106,6 +111,7 @@ public sealed class CloseOrderLineRefundTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A caller without a session is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnAnonymousCaller()
     {
@@ -115,6 +121,7 @@ public sealed class CloseOrderLineRefundTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A plain client caller, who is not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAClientCaller()
     {

@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration;
 public sealed class GetMigrationStatusTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A freshly created job's status is returned with the id requested.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetReturnsTheJobsStatus()
     {
@@ -32,6 +33,7 @@ public sealed class GetMigrationStatusTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>An id naming no job is refused as missing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRefusesAnUnknownId()
     {
@@ -45,6 +47,7 @@ public sealed class GetMigrationStatusTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRefusesAnonymous()
     {
@@ -54,6 +57,7 @@ public sealed class GetMigrationStatusTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A non-positive job id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StatusRefusesANonPositiveId()
     {

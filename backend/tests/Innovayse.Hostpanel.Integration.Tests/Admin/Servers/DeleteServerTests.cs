@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 public sealed class DeleteServerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Creating then deleting a server removes it from the list; deleting again answers 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenDelete_RemovesTheServerAsync()
     {
@@ -39,6 +40,7 @@ public sealed class DeleteServerTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A server a client service still lives on is refused with 409 and stays in the list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServerHostingAService_IsRefusedAsync()
     {
@@ -56,6 +58,7 @@ public sealed class DeleteServerTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -67,6 +70,7 @@ public sealed class DeleteServerTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

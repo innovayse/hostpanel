@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class ReleaseOrderLineRefundTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An order that does not exist is refused as <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderIsRefused()
     {
@@ -29,6 +30,7 @@ public sealed class ReleaseOrderLineRefundTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A line the order does not hold is refused as <c>ORDER_ITEM_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingLineIsRefused()
     {
@@ -40,6 +42,7 @@ public sealed class ReleaseOrderLineRefundTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A line whose refund was never begun is refused as <c>ORDER_LINE_NOT_REFUNDABLE</c> and left failed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesALineThatIsNotBeingRefunded()
     {
@@ -56,6 +59,7 @@ public sealed class ReleaseOrderLineRefundTests(IntegrationTestFactory factory) 
     /// A refund that returned nothing puts the line back to Failed with its code, the order stays Incomplete, and the line can
     /// be retried again (the retry runs and answers 200).
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NothingRefundedReturnsTheLineToFailedAndRetryable()
     {
@@ -78,6 +82,7 @@ public sealed class ReleaseOrderLineRefundTests(IntegrationTestFactory factory) 
     /// A refund that returned only part leaves the line PartiallyRefunded: closed to retries (<c>ORDER_LINE_NOT_RETRYABLE</c>),
     /// not refundable a second time, and the order stays Incomplete until staff finish it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PartlyRefundedLeavesTheLineForManualAction()
     {

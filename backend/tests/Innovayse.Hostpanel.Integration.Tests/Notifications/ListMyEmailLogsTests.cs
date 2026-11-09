@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class ListMyEmailLogsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The list holds the caller's own mail and never somebody else's.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListReturnsOnlyTheCallersMail()
     {
@@ -29,6 +30,7 @@ public sealed class ListMyEmailLogsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A failed send is listed as failed, with no failure reason, which is for staff only.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListOmitsTheDeliveryError()
     {
@@ -49,6 +51,7 @@ public sealed class ListMyEmailLogsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A page below 1 is refused by the validator with 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesPageZero()
     {
@@ -60,6 +63,7 @@ public sealed class ListMyEmailLogsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A page size above 100 is refused by the validator with 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAnOversizedPage()
     {
@@ -71,6 +75,7 @@ public sealed class ListMyEmailLogsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A page size of 0 is refused by the validator with 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAZeroPageSize()
     {
@@ -82,6 +87,7 @@ public sealed class ListMyEmailLogsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The list is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAnonymous()
     {

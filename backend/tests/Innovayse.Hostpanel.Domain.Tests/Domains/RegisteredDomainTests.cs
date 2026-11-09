@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Domains.Events;
-using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Domain.Tests.Domains;
 

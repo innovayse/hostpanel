@@ -19,6 +19,7 @@ public sealed class SyncPendingDomainStatusesTests(IntegrationTestFactory factor
     /// A domain in <see cref="DomainStatus.PendingRegistration"/> is activated once the
     /// (stubbed) registrar reports it live: the query this job's pending-status pass uses.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SyncPendingDomainStatuses_ActivatesAPendingRegistrationAsync()
     {
@@ -43,6 +44,7 @@ public sealed class SyncPendingDomainStatusesTests(IntegrationTestFactory factor
     /// Activating a pending registration takes the expiry the registrar reports and moves the due
     /// date with it, instead of keeping the date the order guessed.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SyncPendingDomainStatuses_TakesTheRegistrarExpiryAsync()
     {
@@ -68,6 +70,7 @@ public sealed class SyncPendingDomainStatusesTests(IntegrationTestFactory factor
     /// A domain already active is left alone by the pending-status sync: it never matches the
     /// pending-status filter.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SyncPendingDomainStatuses_LeavesAnActiveDomainAloneAsync()
     {
@@ -92,6 +95,7 @@ public sealed class SyncPendingDomainStatusesTests(IntegrationTestFactory factor
     /// One pending domain whose activation cannot be saved is left pending for the next run and does
     /// not poison the next domain's save: the following pending domain is still activated.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SyncPendingDomainStatuses_OneDomainThatCannotBeSaved_DoesNotStopTheNextAsync()
     {

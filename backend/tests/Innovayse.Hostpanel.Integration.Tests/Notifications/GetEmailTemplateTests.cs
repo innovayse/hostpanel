@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class GetEmailTemplateTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A known id returns the template with its content.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_KnownId_ReturnsTheTemplate()
     {
@@ -25,6 +26,7 @@ public sealed class GetEmailTemplateTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An id that names no template answers 404 with <c>EMAIL_TEMPLATE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_UnknownId_RefusesNotFound()
     {
@@ -37,6 +39,7 @@ public sealed class GetEmailTemplateTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_RefusesAnonymous()
     {

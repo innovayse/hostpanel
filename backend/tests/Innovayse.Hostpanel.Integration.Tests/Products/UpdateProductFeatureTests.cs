@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class UpdateProductFeatureTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>PUT without auth answers 401 Unauthorized.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -28,6 +29,7 @@ public sealed class UpdateProductFeatureTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Updating an unknown line id answers 404 with <c>PRODUCT_FEATURE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownId_RefusesNotFound()
     {
@@ -41,6 +43,7 @@ public sealed class UpdateProductFeatureTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Renaming a line onto a label another line of the same product already uses is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenameOntoAnotherLinesLabel_RefusesWithDuplicateCode()
     {
@@ -63,6 +66,7 @@ public sealed class UpdateProductFeatureTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Saving a line without renaming it succeeds: the line under edit excludes itself from the check.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithoutRenaming_Succeeds()
     {

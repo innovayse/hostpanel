@@ -36,6 +36,7 @@ public sealed class TicketClosedHandler
     /// </summary>
     /// <param name="evt">The ticket closed domain event.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the message has been handled.</returns>
     public async Task HandleAsync(TicketClosedEvent evt, CancellationToken ct)
     {
         var client = await _bus.FindClientBriefAsync(evt.ClientId, withEmail: true, ct);

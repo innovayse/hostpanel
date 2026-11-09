@@ -27,6 +27,8 @@ public sealed class TranslationExtensionsTests
     }
 
     /// <summary>With neither stored, the answer is the first locale in code order, not in storage order.</summary>
+    /// <param name="first">The first locale code.</param>
+    /// <param name="second">The second locale code.</param>
     [Theory]
     [InlineData("ru", "hy")]
     [InlineData("hy", "ru")]

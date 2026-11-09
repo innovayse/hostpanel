@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 public sealed class AllowUnsignedSettingReaderTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The setting reads as on exactly when its row holds <c>true</c>, and off again afterwards.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheRow_DecidesTheAnswerAsync()
     {
@@ -136,6 +137,7 @@ public sealed class AllowUnsignedSettingReaderTests(IntegrationTestFactory facto
 
     /// <summary>Writes the setting's row directly, as an earlier save would have.</summary>
     /// <param name="value">The value to store.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private async Task SetAsync(string value)
     {
         using var scope = factory.Services.CreateScope();

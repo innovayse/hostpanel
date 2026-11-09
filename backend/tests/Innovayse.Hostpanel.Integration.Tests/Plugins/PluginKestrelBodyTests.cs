@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Settings;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 
@@ -192,7 +191,7 @@ public sealed class PluginKestrelBodyTests : IClassFixture<KestrelBodyHost>
         guarded.Written.Should().BeLessThan(limit + SocketSlack, "the guarded route is bounded by the server body limit");
         guarded.Written.Should().BeGreaterThan(ServerDefaultLimit + SocketSlack, "the sender got past what the server's default would have allowed");
         guarded.Written.Should().BeGreaterThan(limit - SocketSlack, "the bound is the server body limit, not the lower default");
-        guarded.Written.Should().BeGreaterThan(control.Written + (limit - ServerDefaultLimit) / 2);
+        guarded.Written.Should().BeGreaterThan(control.Written + ((limit - ServerDefaultLimit) / 2));
     }
 
     /// <summary>

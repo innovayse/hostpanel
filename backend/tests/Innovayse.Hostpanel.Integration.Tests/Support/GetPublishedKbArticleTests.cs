@@ -18,6 +18,7 @@ public sealed class GetPublishedKbArticleTests(IntegrationTestFactory factory) :
     /// A published article is readable through the public route, with no credential at all, and
     /// carries no editorial flag.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicRoute_ReturnsPublishedArticleAsync()
     {
@@ -45,6 +46,7 @@ public sealed class GetPublishedKbArticleTests(IntegrationTestFactory factory) :
     /// The public route answers the same 404 whether the id names no article at all or names an
     /// unpublished draft.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicRoute_RefusesMissingAndUnpublishedAlikeAsync()
     {

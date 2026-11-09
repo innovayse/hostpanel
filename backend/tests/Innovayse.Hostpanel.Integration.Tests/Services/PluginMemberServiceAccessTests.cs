@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class PluginMemberServiceAccessTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The member lists and reads the linked client's service, and the member's own client's service stays out of reach.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberActsForThePluginAccountNotForTheirOwnClientRecordAsync()
     {
@@ -35,6 +36,7 @@ public sealed class PluginMemberServiceAccessTests(IntegrationTestFactory factor
     }
 
     /// <summary>A member who may purchase cancels the account's service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberWhoMayPurchase_CancelsTheLinkedClientsServiceAsync()
     {
@@ -48,6 +50,7 @@ public sealed class PluginMemberServiceAccessTests(IntegrationTestFactory factor
     }
 
     /// <summary>A view-only member is refused the cancellation with the permission code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberWhoMayOnlyView_IsRefusedTheCancellationAsync()
     {
@@ -62,6 +65,7 @@ public sealed class PluginMemberServiceAccessTests(IntegrationTestFactory factor
     }
 
     /// <summary>A member of an account no client is linked to yet gets no profile rather than another client's services.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberOfAnAccountWithNoClient_GetsNoProfileAsync()
     {

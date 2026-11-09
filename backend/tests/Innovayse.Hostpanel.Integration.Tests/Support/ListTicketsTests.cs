@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Staff can list every support ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanListTicketsAsync()
     {
@@ -27,6 +28,7 @@ public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A registered client, who is not staff, is forbidden.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientIsForbiddenAsync()
     {
@@ -38,6 +40,7 @@ public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A caller with no credential cannot list tickets.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {
@@ -47,6 +50,7 @@ public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The staff list names the client who opened each ticket, so it does not have to fall back to a bare client number.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRowsNameTheClientWhoOpenedTheTicketAsync()
     {
@@ -74,6 +78,7 @@ public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A status filter that names no ticket status is refused with 400, not silently ignored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownStatusFilterIsRejectedAsync()
     {
@@ -85,6 +90,7 @@ public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The status filter binds by name and keeps only tickets in that status.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StatusFilterKeepsOnlyThatStatusAsync()
     {
@@ -104,6 +110,7 @@ public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The flagged filter keeps only tickets staff flagged.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FlaggedFilterKeepsOnlyFlaggedTicketsAsync()
     {

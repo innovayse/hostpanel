@@ -42,5 +42,5 @@ public interface IContactNotifier
     /// knows whether the mail was already delivered, <c>SendContactMessageHandler</c>, not to
     /// the channel, which cannot see that.
     /// </exception>
-    Task NotifyAsync(ContactEnquiry enquiry, CancellationToken ct);
+    public Task NotifyAsync(ContactEnquiry enquiry, CancellationToken ct);
 }

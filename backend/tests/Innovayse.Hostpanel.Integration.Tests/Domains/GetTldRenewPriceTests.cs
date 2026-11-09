@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class GetTldRenewPriceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A configured period answers its price and the TLD's sell currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ConfiguredPeriod_AnswersThePriceAsync()
     {
@@ -29,6 +30,7 @@ public sealed class GetTldRenewPriceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A period the TLD sets no renew price for answers a null price.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnpricedPeriod_AnswersNoPriceAsync()
     {
@@ -41,6 +43,7 @@ public sealed class GetTldRenewPriceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A name whose TLD is not configured is refused with <c>TLD_CONFIG_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnknownTld_RefusesNotFoundAsync()
     {

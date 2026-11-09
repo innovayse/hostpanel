@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
@@ -23,6 +22,7 @@ public sealed class TransferMyDomainTests(IntegrationTestFactory factory) : ICla
     /// as: 503 with <c>DOMAIN_PRODUCT_NOT_CONFIGURED</c>, and the caller is told rather than
     /// handed a 500. Fails if the refusal is removed and the handler is allowed to throw instead.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferMyDomain_WithNoDomainProductConfigured_RefusesServiceUnavailableAsync()
     {
@@ -51,6 +51,7 @@ public sealed class TransferMyDomainTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferMyDomain_WithoutToken_Returns401Async()
     {
@@ -64,6 +65,7 @@ public sealed class TransferMyDomainTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An authorisation code shorter than six characters is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferMyDomain_ShortEppCode_Returns400ValidationErrorAsync()
     {

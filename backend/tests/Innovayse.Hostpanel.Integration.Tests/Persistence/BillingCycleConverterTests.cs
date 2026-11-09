@@ -66,6 +66,7 @@ public sealed class BillingCycleConverterTests(IntegrationTestFactory factory) :
     /// <summary>A service row holding a legacy spelling loads as its cycle.</summary>
     /// <param name="legacy">The legacy column value written straight into the row.</param>
     /// <param name="expected">The cycle the row must load as.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("monthly", BillingCycle.Monthly)]
     [InlineData("annual", BillingCycle.Annual)]
@@ -91,6 +92,7 @@ public sealed class BillingCycleConverterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>An order line is stored with the canonical cycle text and the domain action's exact text.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderItems_WriteTheCanonicalCycleAndTheExactActionTextAsync()
     {

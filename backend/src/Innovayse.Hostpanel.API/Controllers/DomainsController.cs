@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Application.Domains.Commands.CancelTransfer;
 using Innovayse.Hostpanel.Application.Domains.Commands.InitiateOutgoingTransfer;
 using Innovayse.Hostpanel.Application.Domains.Commands.RegisterDomain;
@@ -13,6 +12,7 @@ using Innovayse.Hostpanel.Application.Domains.Queries.GetWhois;
 using Innovayse.Hostpanel.Application.Domains.Queries.ListDomains;
 using Innovayse.Hostpanel.Application.Domains.Queries.ListUpcomingDomainRenewals;
 using Innovayse.Hostpanel.Shared.Authorization;
+using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Authorization;

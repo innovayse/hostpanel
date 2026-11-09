@@ -15,15 +15,15 @@ public interface IDemoAccountGuard
     /// <param name="subject">The account's subject.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Success, or <c>DEMO_ACTION_DISABLED</c> when the account is a published demo account on a demo deployment.</returns>
-    Task<Result> EnsureCredentialsUnchangedAsync(string subject, CancellationToken ct);
+    public Task<Result> EnsureCredentialsUnchangedAsync(string subject, CancellationToken ct);
 
     /// <summary>Checks a credential change for the account with the given sign-in email.</summary>
     /// <param name="email">The account's current sign-in email.</param>
     /// <returns>Success, or <c>DEMO_ACTION_DISABLED</c> when the account is a published demo account on a demo deployment.</returns>
-    Result EnsureCredentialsUnchanged(string email);
+    public Result EnsureCredentialsUnchanged(string email);
 
     /// <summary>Whether an email names one of the published demo accounts while demo mode is on.</summary>
     /// <param name="email">The sign-in email under test.</param>
     /// <returns><see langword="true"/> on a demo deployment for the configured admin or client email; otherwise <see langword="false"/>.</returns>
-    bool IsPublishedDemoAccount(string email);
+    public bool IsPublishedDemoAccount(string email);
 }

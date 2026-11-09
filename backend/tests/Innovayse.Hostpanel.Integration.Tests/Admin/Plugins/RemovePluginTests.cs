@@ -31,6 +31,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     /// Installing then removing a plugin takes it out of the list, answers a restart, records the removal and leaves
     /// the plugin switched off.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InstallThenRemove_TakesItOutOfTheListAndRecordsItAsync()
     {
@@ -63,6 +64,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     /// Removing an uploaded plugin keeps its stored entries and scope rows in every scope (plugin wide and per client),
     /// and every other plugin's rows, so a reinstall finds its state again.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Remove_KeepsThePluginsStoredDataAsync()
     {
@@ -86,6 +88,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     /// A valid id whose package is already gone (a folder removed by hand, or a retry after a removal whose save
     /// failed) is still switched off and recorded, keeps its data, and answers success without a restart.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PackageAlreadyGone_SwitchesOffWithoutARestartAsync()
     {
@@ -113,6 +116,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     /// A valid id whose package is gone and that was never switched on here (no switch row) answers 404
     /// <c>PLUGIN_NOT_FOUND</c> and writes nothing: no settings row and no activity line.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PackageGoneAndNeverSwitchedOn_AnswersNotFoundAndWritesNothingAsync()
     {
@@ -134,6 +138,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     /// The switch and the audit line are written in one transaction: a removal whose transaction rolls back leaves the
     /// switch on and records nothing.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RolledBackRemoval_NeitherSwitchesOffNorRecordsAsync()
     {
@@ -158,6 +163,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A plugin shipped with the build answers 409 with <c>PLUGIN_BUILT_IN</c> and stays on disk.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ABuiltInPlugin_RefusesAndIsKeptAsync()
     {
@@ -180,6 +186,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A built-in plugin the loader refused for a broken manifest is still built-in: its removal answers 409 and the folder stays.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARefusedBuiltInPlugin_CannotBeRemovedAsync()
     {
@@ -203,6 +210,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A removal refused because the plugin ships with the build leaves its switch and stored data untouched.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ABuiltInPlugin_KeepsItsSwitchAndStoredDataAsync()
     {
@@ -229,6 +237,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An id breaking the plugin id rule is refused by the validator with <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnIdBreakingTheRule_RefusesOverHttpAsync()
     {
@@ -246,6 +255,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     /// directly: a literal <c>..</c> path segment is normalised away by <see cref="Uri"/> before a real request
     /// could carry it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APathTraversingId_RefusesAsync()
     {
@@ -266,6 +276,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     /// the operator is never left with a plugin folder the panel cannot reach. Staged on disk directly, because an
     /// install under that id is refused.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APluginUnderAReservedId_IsListedAndRemovableAsync()
     {
@@ -300,6 +311,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     /// An install whose manifest declares a reserved id is refused by the manifest rule with
     /// <c>PLUGIN_MANIFEST_ID_INVALID</c>, and nothing is left in the install folder.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InstallUnderAReservedId_RefusesAsync()
     {
@@ -316,6 +328,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     /// A plugin installed from the registry is removed like an uploaded one: its folder is deleted, an answer asks for a
     /// restart, the list no longer shows it and the removal is recorded.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARegistryInstall_CanBeRemovedAsync()
     {
@@ -344,6 +357,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Removing a registry install that has an upgrade waiting for the restart deletes the staged upgrade too.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARegistryInstallWithAStagedUpgrade_IsRemovedWithItAsync()
     {
@@ -366,6 +380,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -377,6 +392,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

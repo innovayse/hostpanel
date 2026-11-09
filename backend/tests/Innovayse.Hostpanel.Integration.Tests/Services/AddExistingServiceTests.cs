@@ -22,6 +22,7 @@ public sealed class AddExistingServiceTests(IntegrationTestFactory factory) : IC
     /// The service is stored Active on the server, with the account, the amounts and a renewal one
     /// cycle after the start, and no password.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddExisting_StoresAnActiveServiceOnTheServerAsync()
     {
@@ -59,6 +60,7 @@ public sealed class AddExistingServiceTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A second live service for the same username on the same server is refused with 409.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddExisting_ForAnAccountAlreadyHeld_Returns409Async()
     {
@@ -115,6 +117,7 @@ public sealed class AddExistingServiceTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A server id that names no server is refused with 404 <c>SERVER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddExisting_OnAnUnknownServer_Returns404Async()
     {
@@ -137,6 +140,7 @@ public sealed class AddExistingServiceTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A missing username is refused with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddExisting_WithoutAUsername_Returns400Async()
     {
@@ -158,6 +162,7 @@ public sealed class AddExistingServiceTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Adding without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddExisting_WithoutAuth_Returns401Async()
     {

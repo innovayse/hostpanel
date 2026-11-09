@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class DeleteKbArticleTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can delete a knowledge base article.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanDeleteAKbArticleAsync()
     {
@@ -31,6 +32,7 @@ public sealed class DeleteKbArticleTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Deleting a knowledge base article that does not exist answers 404 with <c>KBARTICLE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteUnknownKbArticleAnswersNotFoundAsync()
     {
@@ -43,6 +45,7 @@ public sealed class DeleteKbArticleTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A caller with no credential cannot delete a knowledge base article.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

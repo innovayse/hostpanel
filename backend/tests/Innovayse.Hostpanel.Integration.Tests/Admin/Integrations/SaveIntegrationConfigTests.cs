@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Integrations;
 public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Re-saving with the secret field empty leaves the previously stored secret untouched.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SaveWithEmptySecret_KeepsTheStoredSecretAsync()
     {
@@ -54,6 +55,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A secret field left out of the body keeps the stored value too.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SaveWithoutTheSecretField_KeepsTheStoredSecretAsync()
     {
@@ -71,6 +73,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A new value for a secret field replaces the stored one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SaveWithNewSecret_ReplacesTheStoredSecretAsync()
     {
@@ -88,6 +91,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>An explicit clear removes the stored secret, and the detail then reports it as not set.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SaveWithClear_RemovesTheStoredSecretAsync()
     {
@@ -108,6 +112,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A saved secret is stored encrypted: the raw column differs from the input, the read returns it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SaveSecret_StoresItEncryptedAsync()
     {
@@ -128,6 +133,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A slug that names neither a built-in integration nor a loaded plugin is refused with 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownSlug_IsNotFoundAsync()
     {
@@ -184,6 +190,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A field the integration does not declare is refused INTEGRATION_FIELD_UNKNOWN and nothing is written.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownKey_IsRefusedAsync()
     {
@@ -197,6 +204,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The reserved switch key cannot be written as a field.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsEnabledKey_IsRefusedAsync()
     {
@@ -209,6 +217,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A case variant of a declared key is a different key and is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CaseVariantKey_IsRefusedAsync()
     {
@@ -221,6 +230,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>An undeclared field in ClearFields is refused the same way.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UndeclaredClearField_IsRefusedAsync()
     {
@@ -233,6 +243,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A valid field next to an undeclared one writes nothing at all.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MixedValidAndUnknown_WritesNothingAsync()
     {
@@ -245,6 +256,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A valid field next to an invalid value writes nothing at all.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MixedValidAndInvalid_WritesNothingAsync()
     {
@@ -260,6 +272,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A toggle value that is not true or false is refused INTEGRATION_FIELD_INVALID, naming the field.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvalidToggle_IsRefusedWithTheExpectationAsync()
     {
@@ -273,6 +286,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A select value that is not an option is refused INTEGRATION_FIELD_INVALID.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvalidSelect_IsRefusedAsync()
     {
@@ -287,6 +301,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A select value in another case is stored in the declared spelling.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SelectCaseVariant_IsStoredInTheDeclaredSpellingAsync()
     {
@@ -299,6 +314,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A toggle is stored lowercased.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Toggle_IsStoredLowercaseAsync()
     {
@@ -311,6 +327,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -326,6 +343,7 @@ public sealed class SaveIntegrationConfigTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

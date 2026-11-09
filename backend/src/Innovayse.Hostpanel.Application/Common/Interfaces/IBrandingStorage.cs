@@ -31,7 +31,7 @@ public interface IBrandingStorage
     /// <returns>
     /// One entry per rendition, in the order given, each carrying its root-relative URL.
     /// </returns>
-    Task<IReadOnlyList<BrandingAssetDto>> SaveAsync(
+    public Task<IReadOnlyList<BrandingAssetDto>> SaveAsync(
         BrandingKind kind,
         IReadOnlyList<BrandingRendition> renditions,
         CancellationToken ct);
@@ -46,5 +46,5 @@ public interface IBrandingStorage
     /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the upload is gone.</returns>
-    Task RemoveAsync(string url, CancellationToken ct);
+    public Task RemoveAsync(string url, CancellationToken ct);
 }

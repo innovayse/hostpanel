@@ -58,6 +58,7 @@ public sealed class ErrorBodyTests(IntegrationTestFactory factory) : IClassFixtu
     /// <summary>
     /// A body that does not parse answers 400 VALIDATION_ERROR.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MalformedBody_Answers400ValidationErrorAsync()
     {
@@ -69,6 +70,7 @@ public sealed class ErrorBodyTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A binder failure never puts a CLR type name on the wire.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MalformedBody_LeaksNoInternalTypeNameAsync()
     {
@@ -82,6 +84,7 @@ public sealed class ErrorBodyTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>No session on an admin action answers 401 UNAUTHORIZED with a body, not an empty status line.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NoSession_Answers401WithBodyAsync()
     {
@@ -95,6 +98,7 @@ public sealed class ErrorBodyTests(IntegrationTestFactory factory) : IClassFixtu
     /// <summary>
     /// The detail follows the request's X-Language: Russian asked, Russian answered.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NoSession_WithRussian_AnswersARussianDetailAsync()
     {
@@ -110,6 +114,7 @@ public sealed class ErrorBodyTests(IntegrationTestFactory factory) : IClassFixtu
     /// X-Language is the only culture source: an Accept-Language header alone is ignored and the
     /// detail stays in the default language.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NoSession_WithAcceptLanguageOnly_AnswersTheDefaultLanguageAsync()
     {
@@ -122,6 +127,7 @@ public sealed class ErrorBodyTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>The body is the bare ErrorResponse: no legacy <c>error</c> and no <c>code</c> member.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ErrorBody_CarriesOnlyTheStandardMembersAsync()
     {

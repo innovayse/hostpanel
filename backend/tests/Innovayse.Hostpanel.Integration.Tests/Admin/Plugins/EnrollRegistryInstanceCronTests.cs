@@ -33,6 +33,7 @@ public sealed class EnrollRegistryInstanceCronTests(IntegrationTestFactory facto
     }
 
     /// <summary>One pass registers the installation and the registry confirms it through the well-known address.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APass_RegistersAndVerifiesTheInstallationAsync()
     {
@@ -48,6 +49,7 @@ public sealed class EnrollRegistryInstanceCronTests(IntegrationTestFactory facto
     }
 
     /// <summary>A second pass finds the identity verified and calls nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APassOnAVerifiedIdentity_CallsNothingAsync()
     {
@@ -62,6 +64,7 @@ public sealed class EnrollRegistryInstanceCronTests(IntegrationTestFactory facto
     }
 
     /// <summary>While the registry is switched off a pass calls nothing and stores nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhileTheRegistryIsOff_APassCallsNothingAsync()
     {

@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A created server appears in the list, and its stored secret never appears in the body.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenList_ShowsTheServerWithoutItsSecretAsync()
     {
@@ -35,6 +36,7 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A server with an empty name is refused by the validator before it reaches the handler.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnEmptyNameAsync()
     {
@@ -48,6 +50,7 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A body that leaves out one of the nested groups (endpoint, credentials, limits, hosting, name servers) is refused at binding.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesABodyWithoutItsNestedGroupsAsync()
     {
@@ -64,6 +67,7 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -75,6 +79,7 @@ public sealed class CreateServerTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

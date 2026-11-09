@@ -13,7 +13,7 @@ public interface IPluginHostFactsReader
     /// <param name="clientId">Client primary key.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The client's profile parts, or <see langword="null"/> when no such client exists.</returns>
-    Task<PluginHostClientDto?> FindClientAsync(int clientId, CancellationToken ct);
+    public Task<PluginHostClientDto?> FindClientAsync(int clientId, CancellationToken ct);
 
     /// <summary>
     /// Lists a client's newest services: at most <see cref="PluginHostLimits.MaxListed"/>, newest first (creation moment,
@@ -22,7 +22,7 @@ public interface IPluginHostFactsReader
     /// <param name="clientId">Client primary key.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The services; empty when the client has none or does not exist.</returns>
-    Task<IReadOnlyList<PluginHostServiceDto>> ListNewestServicesAsync(int clientId, CancellationToken ct);
+    public Task<IReadOnlyList<PluginHostServiceDto>> ListNewestServicesAsync(int clientId, CancellationToken ct);
 
     /// <summary>
     /// Lists a client's newest invoices the client may see (no drafts): at most <see cref="PluginHostLimits.MaxListed"/>,
@@ -31,7 +31,7 @@ public interface IPluginHostFactsReader
     /// <param name="clientId">Client primary key.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The invoices; empty when the client has none or does not exist.</returns>
-    Task<IReadOnlyList<PluginHostInvoiceDto>> ListNewestInvoicesAsync(int clientId, CancellationToken ct);
+    public Task<IReadOnlyList<PluginHostInvoiceDto>> ListNewestInvoicesAsync(int clientId, CancellationToken ct);
 
     /// <summary>
     /// Lists the domains of a client's active services on the given products: at most
@@ -42,6 +42,6 @@ public interface IPluginHostFactsReader
     /// <param name="productIds">The products whose services count; none lists nothing.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The domains as stored; empty when the client has none or does not exist.</returns>
-    Task<IReadOnlyList<string>> ListActiveServiceDomainsAsync(
+    public Task<IReadOnlyList<string>> ListActiveServiceDomainsAsync(
         int clientId, IReadOnlyCollection<int> productIds, CancellationToken ct);
 }

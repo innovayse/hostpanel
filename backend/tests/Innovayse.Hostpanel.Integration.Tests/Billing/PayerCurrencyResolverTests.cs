@@ -1,9 +1,7 @@
 using System.Security.Claims;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients;
-using Innovayse.Hostpanel.Integration.Tests;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
@@ -52,6 +50,7 @@ public sealed class PayerCurrencyResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A client with a currency recorded is billed in it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ForClientAsync_UsesTheClientsCurrency()
     {
@@ -66,6 +65,7 @@ public sealed class PayerCurrencyResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A client with no currency recorded is billed in the base.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ForClientAsync_FallsBackToBaseWhenNoneRecorded()
     {
@@ -83,6 +83,7 @@ public sealed class PayerCurrencyResolverTests(IntegrationTestFactory factory)
     /// A client whose recorded currency is not configured is billed in the base rather than in
     /// something the panel cannot format or charge.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ForClientAsync_FallsBackToBaseWhenRecordedCurrencyIsNotConfigured()
     {
@@ -97,6 +98,7 @@ public sealed class PayerCurrencyResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A client id that names no row is billed in the base, the same as an unset currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ForClientAsync_UnknownClientIdFallsBackToBase()
     {
@@ -109,6 +111,7 @@ public sealed class PayerCurrencyResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An anonymous caller (guest checkout) is billed in the base.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ForCallerAsync_GuestIsBase()
     {
@@ -121,6 +124,7 @@ public sealed class PayerCurrencyResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A signed-in caller is billed in their own client record's currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ForCallerAsync_SignedInUsesTheirClient()
     {
@@ -137,6 +141,7 @@ public sealed class PayerCurrencyResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The base currency is served directly, no client involved.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BaseAsync_ReturnsTheConfiguredBase()
     {

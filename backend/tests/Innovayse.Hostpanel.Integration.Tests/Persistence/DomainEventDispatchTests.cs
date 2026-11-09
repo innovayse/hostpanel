@@ -60,6 +60,7 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A saved client's creation event reaches its handler: the welcome email goes out once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SavingANewClient_DeliversTheWelcomeEmailExactlyOnceAsync()
     {
@@ -86,6 +87,7 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
     /// A creation event names the id the database assigned on insert, not the 0 the entity had when it
     /// raised the event: the ticket-created handler finds the ticket by that id and mails its department.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SavingANewTicket_DeliversTheEventWithTheAssignedIdAsync()
     {
@@ -109,6 +111,7 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A scope that asked to suppress events discards them: nothing is published and nothing lingers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SavingInASuppressedScope_DiscardsTheEventsAsync()
     {
@@ -146,6 +149,7 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
     /// outbox rows were written in that transaction and roll back with the data. A later committed save
     /// on its own proves the pipeline was running.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SavingInARolledBackTransaction_PublishesNothingAsync()
     {
@@ -178,6 +182,7 @@ public sealed class DomainEventDispatchTests(IntegrationTestFactory factory) : I
     /// Events raised by a save inside an explicit transaction are held in the outbox until it commits:
     /// nothing is handled between the save and the commit, and the commit delivers them once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SavingInACommittedTransaction_PublishesOnCommitAsync()
     {

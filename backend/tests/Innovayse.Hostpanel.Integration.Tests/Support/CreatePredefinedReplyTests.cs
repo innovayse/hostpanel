@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class CreatePredefinedReplyTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can create a predefined reply.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanCreateAReplyAsync()
     {
@@ -29,6 +30,7 @@ public sealed class CreatePredefinedReplyTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A category that does not exist is refused with 404 <c>PREDEFINED_REPLY_CATEGORY_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateRefusesAnUnknownCategoryAsync()
     {
@@ -46,6 +48,7 @@ public sealed class CreatePredefinedReplyTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A caller with no credential cannot create a predefined reply.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

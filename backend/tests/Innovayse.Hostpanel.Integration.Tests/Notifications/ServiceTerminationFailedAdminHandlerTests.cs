@@ -18,6 +18,7 @@ public sealed class ServiceTerminationFailedAdminHandlerTests(IntegrationTestFac
     private const string AdminEmail = "ops@example.test";
 
     /// <summary>Publishing the event sends one staff mail naming the service and the reason, and the template row exists.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceTerminationFailed_MailsStaffOnceAndSeedsTheTemplate()
     {
@@ -43,6 +44,7 @@ public sealed class ServiceTerminationFailedAdminHandlerTests(IntegrationTestFac
     }
 
     /// <summary>With neither address configured nothing is sent (the handler logs an error naming the setting instead).</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceTerminationFailed_WithNoAddress_SendsNothing()
     {

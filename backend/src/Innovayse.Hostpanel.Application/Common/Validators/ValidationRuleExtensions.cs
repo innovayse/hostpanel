@@ -1,5 +1,4 @@
 using FluentValidation;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Constants;
 
@@ -100,6 +99,7 @@ public static class ValidationRuleExtensions
 
         return rule.Must(IsAbsoluteWebUrl).WithMessage(message);
     }
+
     /// <summary>Requires a reorder request to name no more than <see cref="SortOrderLimits.MaxItems"/> rows.</summary>
     /// <typeparam name="T">The command being validated.</typeparam>
     /// <param name="rule">The rule builder for the items property.</param>
@@ -168,7 +168,6 @@ public static class ValidationRuleExtensions
                     == list.Count(t => t is not null))
             .WithMessage(message);
     }
-
 
     /// <summary>Whether a value is an absolute http(s) address.</summary>
     /// <param name="value">The address to inspect.</param>

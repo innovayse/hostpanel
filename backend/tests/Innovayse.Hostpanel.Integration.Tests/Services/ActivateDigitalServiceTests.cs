@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class ActivateDigitalServiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A pending service turns Active with a renewal date and no provisioning reference or server.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_PendingService_ActivatesWithoutProvisioningAsync()
     {
@@ -38,6 +39,7 @@ public sealed class ActivateDigitalServiceTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A service that is already Active is refused as <c>SERVICE_NOT_PENDING</c> and left as it was.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ActiveService_IsRefusedAsync()
     {
@@ -52,6 +54,7 @@ public sealed class ActivateDigitalServiceTests(IntegrationTestFactory factory) 
     /// A service that the same order line already activated counts as activated when the line asks again (a retry after a run
     /// that died before recording the line), but a service another line bought, or one bound to no line, is still refused.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ActiveServiceOfTheSameOrderLine_CountsAsActivatedAsync()
     {
@@ -76,6 +79,7 @@ public sealed class ActivateDigitalServiceTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>An id nothing names is refused as <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnknownService_IsRefusedAsync()
     {

@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class DeletePredefinedReplyTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can create and then delete a predefined reply.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanDeleteAReplyAsync()
     {
@@ -32,6 +33,7 @@ public sealed class DeletePredefinedReplyTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Deleting a reply that does not exist answers 404 with <c>PREDEFINED_REPLY_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteUnknownReplyAnswersNotFoundAsync()
     {
@@ -44,6 +46,7 @@ public sealed class DeletePredefinedReplyTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A caller with no credential cannot delete a predefined reply.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

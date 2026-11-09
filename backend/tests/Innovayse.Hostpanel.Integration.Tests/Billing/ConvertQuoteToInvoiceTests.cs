@@ -18,6 +18,7 @@ public sealed class ConvertQuoteToInvoiceTests(IntegrationTestFactory factory) :
     /// which still throws rather than becoming a refusal code (a business rule, not a lookup), and
     /// the exception middleware turns that into a 400.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConvertingAnAlreadyAcceptedQuoteRefusesBadRequest()
     {
@@ -33,6 +34,7 @@ public sealed class ConvertQuoteToInvoiceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A quote without discounts converts to an invoice with the same total, rounded once after the sum.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConvertingAQuoteWithoutDiscountsGivesAnInvoiceWithTheSameTotal()
     {
@@ -64,6 +66,7 @@ public sealed class ConvertQuoteToInvoiceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Converting an id that names no quote answers 404 with <c>QUOTE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConvertUnknownQuoteRefusesNotFound()
     {
@@ -76,6 +79,7 @@ public sealed class ConvertQuoteToInvoiceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Converting a quote is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConvertRefusesAnonymous()
     {

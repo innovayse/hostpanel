@@ -4,7 +4,6 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Reports;
@@ -16,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class InvoicesReportTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A freshly paid invoice appears in the paginated invoices report with its client's name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ShowsAPaidInvoice()
     {
@@ -35,6 +35,7 @@ public sealed class InvoicesReportTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>The refund date comes from the invoice's refund ledger row; an invoice never refunded has none.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ShowsTheDayOfTheLatestRefund()
     {
@@ -69,6 +70,7 @@ public sealed class InvoicesReportTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A page size outside the allowed range is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnOversizedPage()
     {
@@ -80,6 +82,7 @@ public sealed class InvoicesReportTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -89,6 +92,7 @@ public sealed class InvoicesReportTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

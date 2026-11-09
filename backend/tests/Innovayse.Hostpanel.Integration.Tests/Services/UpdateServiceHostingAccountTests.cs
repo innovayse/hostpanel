@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class UpdateServiceHostingAccountTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A valid save answers 204 and stores the account details on a service in any status.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateHostingAccount_OnAnActiveService_StoresTheDetailsAsync()
     {
@@ -47,6 +48,7 @@ public sealed class UpdateServiceHostingAccountTests(IntegrationTestFactory fact
     }
 
     /// <summary>A domain longer than a domain can be is refused with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateHostingAccount_WithATooLongDomain_Returns400ValidationErrorAsync()
     {
@@ -61,6 +63,7 @@ public sealed class UpdateServiceHostingAccountTests(IntegrationTestFactory fact
     }
 
     /// <summary>Saving the account of a service that does not exist answers 404 <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateHostingAccount_OnAnUnknownService_Returns404Async()
     {
@@ -74,6 +77,7 @@ public sealed class UpdateServiceHostingAccountTests(IntegrationTestFactory fact
     }
 
     /// <summary>A server id that names no server is refused with 404 <c>SERVER_NOT_FOUND</c> and nothing is stored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateHostingAccount_WithAnUnknownServer_Returns404AndKeepsTheServiceAsync()
     {
@@ -93,6 +97,7 @@ public sealed class UpdateServiceHostingAccountTests(IntegrationTestFactory fact
     }
 
     /// <summary>An existing server is accepted and stored on the service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateHostingAccount_WithAnExistingServer_StoresTheServerAsync()
     {
@@ -193,6 +198,7 @@ public sealed class UpdateServiceHostingAccountTests(IntegrationTestFactory fact
     }
 
     /// <summary>Saving without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateHostingAccount_WithoutAuth_Returns401Async()
     {

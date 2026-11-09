@@ -39,6 +39,7 @@ public sealed class DemoOptionsValidatorTests
     }
 
     /// <summary>An unset or non-positive interval is refused.</summary>
+    /// <param name="hours">The interval in hours.</param>
     [Theory]
     [InlineData(0)]
     [InlineData(-3)]
@@ -59,6 +60,7 @@ public sealed class DemoOptionsValidatorTests
     }
 
     /// <summary>A missing or malformed email is refused by name.</summary>
+    /// <param name="email">The e-mail value.</param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -82,6 +84,7 @@ public sealed class DemoOptionsValidatorTests
     }
 
     /// <summary>A missing or too-short password is refused by name.</summary>
+    /// <param name="password">The password value.</param>
     [Theory]
     [InlineData(null)]
     [InlineData("")]

@@ -2,8 +2,6 @@ using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Resources;
 using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
 using Innovayse.Hostpanel.Shared.Extensions;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.API.Extensions;
 

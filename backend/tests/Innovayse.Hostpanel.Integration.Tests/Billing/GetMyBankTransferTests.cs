@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetMyBankTransferTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The owner reads the details of a waiting transfer, with no client id in them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_TheOwnersWaitingTransfer_AnswersTheDetails()
     {
@@ -33,6 +34,7 @@ public sealed class GetMyBankTransferTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An invoice that never chose a transfer shows no bank details: 409 <c>INVOICE_BANK_TRANSFER_NOT_PENDING</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_WhenNoTransferWaits_Returns409()
     {
@@ -48,6 +50,7 @@ public sealed class GetMyBankTransferTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Another client's invoice answers like one that does not exist.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_AStrangersInvoice_Returns404()
     {
@@ -64,6 +67,7 @@ public sealed class GetMyBankTransferTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The read is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRefusesAnonymous()
     {
@@ -73,6 +77,7 @@ public sealed class GetMyBankTransferTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_WithNonPositiveId_Returns400ValidationError()
     {

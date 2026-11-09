@@ -97,6 +97,7 @@ public sealed class NameAmClient
     /// </summary>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="HttpRequestException">Thrown when Name.am rejects the login or is unreachable.</exception>
+    /// <returns>A task that completes when Name.am has accepted the credentials.</returns>
     public async Task VerifyCredentialsAsync(CancellationToken ct)
     {
         await LoadOverridesAsync(ct);

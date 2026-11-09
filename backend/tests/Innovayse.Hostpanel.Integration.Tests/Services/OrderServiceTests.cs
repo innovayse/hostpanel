@@ -1,12 +1,10 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.OrderService;
 using Innovayse.Hostpanel.Domain.Clients;
-using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -27,6 +25,7 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
     /// A registered client can order a service and receives 201 Created with the new service ID.
     /// Uses a retry loop to handle asynchronous Wolverine client-creation handler latency.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderServiceAsync_ReturnsCreated_AsClientAsync()
     {
@@ -82,6 +81,7 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Order-fulfilment callers pass the snapshotted amount, zero included, and it is honoured.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderService_ZeroAmountsFromFulfilmentAreHonouredNotRefused()
     {
@@ -105,6 +105,7 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
     /// A service ordered for an order line is stored with the line, and ordering again for the same line answers with that
     /// service instead of creating a second one, however many times a retry asks and whatever the amounts it passes.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderService_ForTheSameOrderLineTwice_ReturnsTheFirstServiceAndCreatesNoSecond()
     {
@@ -132,6 +133,7 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
     /// lets a single row through, and the attempts that lose it read the winner's service instead of failing with a raw
     /// database error.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderService_ForTheSameOrderLineConcurrently_AnswersEveryAttemptWithOneService()
     {
@@ -164,6 +166,7 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
     /// A service already stored for the order line that belongs to another client or another product is not handed to the
     /// line: the order answers <c>ORDER_LINE_SERVICE_CONFLICT</c> and creates nothing.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderService_ForALineWhoseServiceBelongsToAnotherClientOrProduct_RefusesAConflict()
     {
@@ -191,6 +194,7 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Two order lines of the same product each get their own service, and an order not bound to a line is never reused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderService_ForDifferentOrderLines_CreatesAServiceForEach()
     {
@@ -209,6 +213,7 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A null amount is priced from the product's own price for that cycle.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderService_NullAmountsReadTheProductsPrice()
     {
@@ -229,6 +234,7 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A null amount is refused, not sold for nothing, when the product has no such price.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderService_NullAmountsAreRefusedWhenTheProductHasNoPrice()
     {
@@ -244,6 +250,7 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An unknown product id refuses <c>PRODUCT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderService_UnknownProductRefusesNotFound()
     {
@@ -262,6 +269,7 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An inactive product refuses <c>PRODUCT_NOT_AVAILABLE</c>, even with amounts supplied.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderService_InactiveProductRefusesNotAvailable()
     {
@@ -281,6 +289,7 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An unauthenticated caller cannot order through <c>/api/me/services</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderServiceAsync_Returns401_WithoutAuthAsync()
     {
@@ -292,6 +301,7 @@ public sealed class OrderServiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An unknown client id refuses <c>CLIENT_NOT_FOUND</c> and creates no service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderService_UnknownClientRefusesNotFound()
     {

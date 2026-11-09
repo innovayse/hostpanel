@@ -21,6 +21,7 @@ import { formatDate } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { InvoiceTransactionType } from '@/types/invoice'
 import type { InvoiceDetail, InvoiceTransaction } from '@/types/invoice'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -47,7 +48,7 @@ const payments = computed<InvoiceTransaction[]>(() =>
           {{ t('shared.transactions') }}
         </UiHeading>
         <UiTable
-          density="compact"
+          :density="UiTableDensity.Compact"
           :empty="payments.length === 0"
           :colspan="5"
           data-testid="billing-invoice-payments-table"
@@ -85,7 +86,7 @@ const payments = computed<InvoiceTransaction[]>(() =>
           {{ t('shared.transactionHistory') }}
         </UiHeading>
         <UiTable
-          density="compact"
+          :density="UiTableDensity.Compact"
           :empty="allTransactions.length === 0"
           :colspan="5"
           data-testid="billing-invoice-history-table"

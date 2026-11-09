@@ -32,6 +32,7 @@ import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { ClientSection, clientItemPath } from '@/lib/routes'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -143,7 +144,7 @@ onMounted(() => fetchServices())
     />
 
     <UiCard v-else-if="services.length > 0" class="overflow-x-auto">
-      <UiTable density="comfortable" data-testid="client-services-table">
+      <UiTable :density="UiTableDensity.Comfortable" data-testid="client-services-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>

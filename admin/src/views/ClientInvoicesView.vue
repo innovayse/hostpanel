@@ -54,6 +54,7 @@ import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
 import { invoicePath } from '@/lib/routes'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -598,7 +599,7 @@ onMounted(() => fetchInvoices())
 
       <UiCard class="overflow-x-auto">
         <UiTable
-          density="comfortable"
+          :density="UiTableDensity.Comfortable"
           :empty="store.clientInvoices.length === 0"
           :colspan="9"
           data-testid="client-invoices-table"

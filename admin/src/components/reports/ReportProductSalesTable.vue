@@ -13,7 +13,6 @@ import { formatReportAmount } from '@/lib/money'
 import { ReportCellFormat } from '@/types/reportcolumn'
 import type { ReportColumn } from '@/types/reportcolumn'
 import type { ReportSalesGroup } from '@/types/reportproductsales'
-import { UiAlign } from '@/utils/ui/table'
 
 const { t } = useI18n()
 
@@ -40,8 +39,8 @@ const props = withDefaults(defineProps<{
 /** Table columns. */
 const columns = computed<ReportColumn[]>(() => [
   { key: 'productName', label: t('shared.productName') },
-  { key: 'unitsSold', label: t('reports.monthlyOrders.unitsSold'), align: UiAlign.Right },
-  { key: 'value', label: t('shared.value'), align: UiAlign.Right, format: ReportCellFormat.Money },
+  { key: 'unitsSold', label: t('reports.monthlyOrders.unitsSold'), numeric: true },
+  { key: 'value', label: t('shared.value'), format: ReportCellFormat.Money },
 ])
 
 /** The grand total row, by column key. */
@@ -61,13 +60,13 @@ const totals = computed<Record<string, number>>(() => ({ unitsSold: props.totalU
         <ReportGroupRow :label="group.groupName" :colspan="columns.length" />
         <UiTableRow v-for="product in group.products" :key="product.productId" hoverable>
           <UiTableCell>{{ product.productName }}</UiTableCell>
-          <UiTableCell :align="UiAlign.Right">{{ product.unitsSold }}</UiTableCell>
-          <UiTableCell :align="UiAlign.Right">{{ formatMoney(product.value) }}</UiTableCell>
+          <UiTableCell numeric>{{ product.unitsSold }}</UiTableCell>
+          <UiTableCell numeric>{{ formatMoney(product.value) }}</UiTableCell>
         </UiTableRow>
         <UiTableRow>
           <UiTableCell muted>{{ t('shared.subTotal2') }}</UiTableCell>
-          <UiTableCell :align="UiAlign.Right" muted>{{ group.groupUnitsSold }}</UiTableCell>
-          <UiTableCell :align="UiAlign.Right" muted>{{ formatMoney(group.groupValue) }}</UiTableCell>
+          <UiTableCell numeric muted>{{ group.groupUnitsSold }}</UiTableCell>
+          <UiTableCell numeric muted>{{ formatMoney(group.groupValue) }}</UiTableCell>
         </UiTableRow>
       </template>
     </template>

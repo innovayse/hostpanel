@@ -47,6 +47,7 @@ import type { TldConfigListItem } from '@/types/tldconfig'
 import { TldStatusFilter } from '@/types/tldstatusfilter'
 import { DEFAULT_PAGE_SIZE, SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t, locale } = useI18n()
 
@@ -344,7 +345,7 @@ const tldActions = (item: TldConfigListItem): UiRowAction[] => {
     <UiErrorState v-else-if="store.error" :message="store.error" testid="tld-configs-error" @retry="store.fetchAll()" />
 
     <UiCard v-else class="overflow-hidden">
-      <UiTable density="comfortable" :empty="paginatedConfigs.length === 0" :colspan="9">
+      <UiTable :density="UiTableDensity.Comfortable" :empty="paginatedConfigs.length === 0" :colspan="9">
         <template #empty>
           {{ t('settings.tldConfigs.noTldConfigurationsFoundAdd') }}
         </template>

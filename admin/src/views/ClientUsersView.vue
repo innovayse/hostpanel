@@ -48,6 +48,7 @@ import { UiLabelVariant, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { MS_PER_SECOND, NOTICE_VISIBLE_MS } from '@/lib/limits'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -564,7 +565,7 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
       </UiCollapse>
 
       <UiCard v-if="users.length > 0" class="overflow-x-auto">
-        <UiTable density="comfortable" data-testid="client-users-table">
+        <UiTable :density="UiTableDensity.Comfortable" data-testid="client-users-table">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>

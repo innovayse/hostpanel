@@ -44,7 +44,8 @@ describe('Cwp7IntegrationView', () => {
     const wrapper = await mountView(Cwp7IntegrationView)
     await flushPromises()
 
-    expect(wrapper.find('[data-testid="cwp7-create-server"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="cwp7-create-product"]').exists()).toBe(true)
+    // Real links, so the pages open in a new tab too.
+    expect(wrapper.get('[data-testid="cwp7-create-server"]').attributes('href')).toBe('/servers?create=Cwp7')
+    expect(wrapper.get('[data-testid="cwp7-create-product"]').attributes('href')).toBe('/settings/products?create=true&module=Cwp7')
   })
 })

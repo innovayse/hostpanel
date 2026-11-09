@@ -10,6 +10,6 @@ describe('ReportGroupRow', () => {
     const wrapper = mount(ReportGroupRow, { props: { label: 'Hosting', colspan: 5 } })
 
     expect(wrapper.text()).toBe('Hosting')
-    expect(wrapper.get('td').attributes('colspan')).toBe('5')
+    expect(wrapper.get('[data-testid="report-group-label"]').attributes('colspan')).toBe('5')
   })
 })

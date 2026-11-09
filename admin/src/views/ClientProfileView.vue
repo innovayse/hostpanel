@@ -42,6 +42,7 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -607,7 +608,7 @@ onBeforeUnmount(() => {
           {{ t('clients.clientProfile.contactsLength', { length: store.current.contacts.length }) }}
         </UiHeading>
         <UiTable
-          density="comfortable"
+          :density="UiTableDensity.Comfortable"
           :empty="store.current.contacts.length === 0"
           :colspan="4"
           data-testid="client-profile-contacts"

@@ -60,7 +60,7 @@ test('editing a testimonial sends a PUT and shows the change', async ({ page }) 
   const api = await stubTestimonials(page, [{ ...annTestimonial }])
 
   await page.goto('/storefront/testimonials')
-  await page.getByTestId(`testimonial-row-${annTestimonial.id}`).getByTestId('row-actions-trigger').click()
+  await page.getByTestId(`testimonial-actions-${annTestimonial.id}`).click()
   await page.getByTestId(`testimonial-edit-${annTestimonial.id}`).click()
   await page.waitForURL(`**/storefront/testimonials/${annTestimonial.id}/edit`)
   await expect(fieldOf(page, 'testimonial-form-name')).toHaveValue('Ann Lee')
@@ -77,7 +77,7 @@ test('deleting a testimonial asks first and then removes the row', async ({ page
   const api = await stubTestimonials(page, [{ ...annTestimonial }])
 
   await page.goto('/storefront/testimonials')
-  await page.getByTestId(`testimonial-row-${annTestimonial.id}`).getByTestId('row-actions-trigger').click()
+  await page.getByTestId(`testimonial-actions-${annTestimonial.id}`).click()
   await page.getByTestId(`testimonial-delete-${annTestimonial.id}`).click()
   expect(api.callsTo(HttpMethod.Delete, `${COLLECTION}/${annTestimonial.id}`)).toHaveLength(0)
   await page.getByTestId('dialog-confirm').click()

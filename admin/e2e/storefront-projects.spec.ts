@@ -55,7 +55,7 @@ test('deleting a project asks first and then removes the row', async ({ page }) 
   const api = await stubProjects(page, [{ ...sampleProject }])
 
   await page.goto('/storefront/projects')
-  await page.getByTestId(`project-row-${sampleProject.id}`).getByTestId('row-actions-trigger').click()
+  await page.getByTestId(`project-actions-${sampleProject.id}`).click()
   await page.getByTestId(`project-delete-${sampleProject.id}`).click()
   expect(api.callsTo(HttpMethod.Delete, `${COLLECTION}/${sampleProject.id}`)).toHaveLength(0)
   await page.getByTestId('dialog-confirm').click()

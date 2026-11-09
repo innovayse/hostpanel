@@ -6,7 +6,6 @@
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import SupportRowActions from '@/components/support/SupportRowActions.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
@@ -16,6 +15,7 @@ import UiHeading from '@/components/ui/UiHeading.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -30,6 +30,7 @@ import { formatDateTimeCompact } from '@/lib/format'
 import { enumValueOf } from '@/lib/enumValue'
 import { useNetworkIssuesStore } from '@/stores/networkIssues'
 import { NetworkIssueTab } from '@/types/networkissue'
+import type { NetworkIssue } from '@/types/networkissue'
 import { networkIssuePriorityTone, networkIssueStatusTone } from '@/lib/tones'
 import { pageCount } from '@/lib/paging'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -151,6 +152,27 @@ onMounted(() => {
   store.page = 1
   store.fetchAll()
 })
+
+/**
+ * The row actions of a network issue: edit as a real link to its page, and delete last (it opens the confirmation).
+ *
+ * @param issue - The network issue of the row.
+ * @returns The action list passed to UiRowActions.
+ */
+const rowActions = (issue: NetworkIssue): UiRowAction[] => {
+  /**
+   * Stages this network issue for the delete confirmation.
+   *
+   * @returns Nothing.
+   */
+  const onDelete = (): void => {
+    deleteTarget.value = issue.id
+  }
+  return [
+    { label: t('shared.edit'), testid: `network-issues-${issue.id}-edit`, to: editPath(AppRoute.SupportNetworkIssues, issue.id) },
+    { label: t('shared.delete'), testid: `network-issues-${issue.id}-delete`, danger: true, onSelect: onDelete },
+  ]
+}
 </script>
 
 <template>
@@ -209,7 +231,7 @@ onMounted(() => {
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader>{{ t('support.networkIssues.startDate') }}</UiTableHeader>
             <UiTableHeader>{{ t('support.networkIssues.endDate') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -229,12 +251,8 @@ onMounted(() => {
             </UiTableCell>
             <UiTableCell muted>{{ formatDateTimeCompact(issue.startDate) }}</UiTableCell>
             <UiTableCell muted>{{ formatDateTimeCompact(issue.endDate) }}</UiTableCell>
-            <UiTableCell align="right">
-              <SupportRowActions
-                :edit-to="editPath(AppRoute.SupportNetworkIssues, issue.id)"
-                :testid-prefix="`network-issues-${issue.id}`"
-                @delete="deleteTarget = issue.id"
-              />
+            <UiTableCell actions>
+              <UiRowActions :actions="rowActions(issue)" :testid="`network-issues-${issue.id}-actions`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

@@ -51,7 +51,7 @@ test('deleting a partner asks first and then removes the row', async ({ page }) 
   const api = await stubPartners(page, [{ ...acmePartner }])
 
   await page.goto('/storefront/partners')
-  await page.getByTestId(`partner-row-${acmePartner.id}`).getByTestId('row-actions-trigger').click()
+  await page.getByTestId(`partner-actions-${acmePartner.id}`).click()
   await page.getByTestId(`partner-delete-${acmePartner.id}`).click()
   expect(api.callsTo(HttpMethod.Delete, `${COLLECTION}/${acmePartner.id}`)).toHaveLength(0)
   await page.getByTestId('dialog-confirm').click()

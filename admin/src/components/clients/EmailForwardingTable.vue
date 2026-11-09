@@ -31,6 +31,7 @@ import { UiSize } from '@/utils/ui/size'
 import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import type { EmailForwardingRuleItem } from '@/types/domain'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -296,7 +297,7 @@ const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiRowAction[] => 
 
       <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="clients-forwarding-feedback" />
 
-      <UiTable density="compact" :empty="isEmpty" :colspan="4" data-testid="clients-forwarding-table">
+      <UiTable :density="UiTableDensity.Compact" :empty="isEmpty" :colspan="4" data-testid="clients-forwarding-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('clients.emailForwardingTable.source') }}</UiTableHeader>

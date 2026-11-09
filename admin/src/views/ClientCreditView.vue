@@ -43,6 +43,7 @@ import { CreditAdjustment } from '@/types/creditmovement'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 /** Translates a key into the active locale. */
 const { t } = useI18n()
@@ -208,7 +209,7 @@ onMounted(() => load(1))
         <UiText v-if="store.credit.entries.items.length === 0" :tone="UiTextTone.Muted" data-testid="client-credit-empty">
           {{ t('clients.clientCredit.historyEmpty') }}
         </UiText>
-        <UiTable v-else density="comfortable" data-testid="client-credit-table">
+        <UiTable v-else :density="UiTableDensity.Comfortable" data-testid="client-credit-table">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>

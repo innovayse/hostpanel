@@ -34,6 +34,7 @@ import { Icon } from '@/lib/icons'
 import { formatAffixed } from '@/lib/money'
 import { useCurrenciesStore } from '@/stores/currencies'
 import type { CurrencyDto, UpsertCurrencyPayload } from '@/types/currency'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -268,7 +269,7 @@ onMounted(() => store.fetchAll())
     />
 
     <UiCard v-else class="overflow-hidden">
-      <UiTable density="comfortable" :empty="store.currencies.length === 0" :colspan="8">
+      <UiTable :density="UiTableDensity.Comfortable" :empty="store.currencies.length === 0" :colspan="8">
         <template #empty>
           {{ t('currencies.empty') }}
         </template>

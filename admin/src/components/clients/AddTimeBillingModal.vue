@@ -20,6 +20,7 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -128,7 +129,7 @@ onMounted(() => fetchServices())
         {{ saveError }}
       </UiAlert>
 
-      <UiTable density="compact" :scrollable="false" data-testid="clients-time-billing-table">
+      <UiTable :density="UiTableDensity.Compact" :scrollable="false" data-testid="clients-time-billing-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('clients.addTimeBilling.item') }}</UiTableHeader>

@@ -81,7 +81,7 @@ describe('LocationsView', () => {
       expect(router.currentRoute.value.path).toBe('/storefront/locations/create')
     })
 
-    await wrapper.get('[data-testid="location-row-2"] [data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="location-actions-2"]').trigger('click')
     await wrapper.get('[data-testid="location-edit-2"]').trigger('click')
     await vi.waitFor(() => {
       expect(router.currentRoute.value.path).toBe('/storefront/locations/2/edit')
@@ -95,7 +95,7 @@ describe('LocationsView', () => {
     })
     const { wrapper } = await mountScreen(LocationsView)
 
-    await wrapper.get('[data-testid="location-row-1"] [data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="location-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="location-delete-1"]').trigger('click')
     expect(wrapper.get('[role="dialog"]').text()).toContain('Delete the location "Acme"?')
     expect(requestsOf(mock)).not.toContain('DELETE /admin/locations/1')
@@ -116,7 +116,7 @@ describe('LocationsView', () => {
     })
     const { wrapper } = await mountScreen(LocationsView)
 
-    await wrapper.get('[data-testid="location-row-1"] [data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="location-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="location-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
 

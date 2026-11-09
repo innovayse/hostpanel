@@ -31,6 +31,7 @@ import { formatPrice } from '@/lib/money'
 import { domainStatusTone, statusLabel } from '@/lib/tones'
 import { useDomainsStore } from '@/stores/domains'
 import { clientPath } from '@/lib/routes'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -76,13 +77,13 @@ onMounted(() => store.fetchAll())
 
     <UiCard v-else-if="hasRows || store.loading">
       <UiTable
-        density="comfortable"
+        :density="UiTableDensity.Comfortable"
         :loading="store.loading && !hasRows"
         :colspan="9"
         data-testid="domain-registrations-table"
       >
         <UiTableHead>
-          <UiTableRow bordered>
+          <UiTableRow>
             <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.domain') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>

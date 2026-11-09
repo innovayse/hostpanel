@@ -1,17 +1,17 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Payment;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Payment;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 
@@ -30,6 +30,7 @@ public sealed class CompleteOrderGatewayPaymentTests(IntegrationTestFactory fact
             builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
 
     /// <summary>A wrong payment token is refused as <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WrongTokenRefusesNotFound()
     {
@@ -45,6 +46,7 @@ public sealed class CompleteOrderGatewayPaymentTests(IntegrationTestFactory fact
     }
 
     /// <summary>An order with no linked invoice is refused as <c>ORDER_NOT_INVOICED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UninvoicedOrderRefusesNotInvoiced()
     {
@@ -63,6 +65,7 @@ public sealed class CompleteOrderGatewayPaymentTests(IntegrationTestFactory fact
     /// Completing a gateway payment the bank reports as paid marks the invoice paid and fulfils
     /// the order: the order moves from Pending to Active.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CompleteWhenTheGatewayReportsPaidFulfilsTheOrder()
     {
@@ -109,6 +112,7 @@ public sealed class CompleteOrderGatewayPaymentTests(IntegrationTestFactory fact
     /// invoice is already settled, and the retry still fulfils the order rather than answering Paid
     /// with the order left pending.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RetryOfASettledInvoiceFulfilsTheOrder()
     {

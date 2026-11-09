@@ -16,6 +16,7 @@ public sealed class TopClientsByIncomeTests(IntegrationTestFactory factory) : IC
     /// 340 taken less 50 refunded comes before the foreign client's 40,000 (100 in the base), and its
     /// 1,000 credit top-up is not income.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RanksClientsByTheirConvertedInvoiceIncome()
     {
@@ -36,6 +37,7 @@ public sealed class TopClientsByIncomeTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A <c>take</c> outside the allowed range is refused rather than reaching the database's <c>LIMIT</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnInvalidTake()
     {
@@ -47,6 +49,7 @@ public sealed class TopClientsByIncomeTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -56,6 +59,7 @@ public sealed class TopClientsByIncomeTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

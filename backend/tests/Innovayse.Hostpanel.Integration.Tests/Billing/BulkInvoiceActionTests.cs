@@ -23,6 +23,7 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
     /// The API route refuses an unrecognised action name at validation, before the handler's own
     /// defensive <c>BULK_INVOICE_ACTION_UNKNOWN</c> arm would ever run.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BulkActionRefusesAnUnknownActionNameAtValidation()
     {
@@ -44,6 +45,7 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
     /// one of the ones it switches on, reachable only by calling the handler directly, since the
     /// command's validator refuses the same input first on the real API path.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandlerAnswersBulkInvoiceActionUnknownForAnUndefinedActionValue()
     {
@@ -67,6 +69,7 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
     /// A bulk duplicate copies the invoices that may be copied and skips a credit top-up, instead of failing the whole selection:
     /// the count is the copies made, and no copy of the top-up exists.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BulkDuplicateSkipsATopUpInsteadOfFailingTheSelection()
     {
@@ -87,6 +90,7 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A <c>MarkPaid</c> bulk action against a Draft invoice affects nothing and answers zero.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BulkActionMarkPaidCountsOnlyEligibleInvoices()
     {
@@ -106,6 +110,7 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A <c>MarkPaid</c> bulk action against an unpaid invoice marks it paid and counts it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BulkActionMarkPaidMarksAnUnpaidInvoicePaid()
     {
@@ -128,6 +133,7 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
     /// A <c>MarkPaid</c> bulk action writes exactly one ledger transaction per settled invoice,
     /// with the invoice total, currency and the manual payment method.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BulkActionMarkPaidWritesOneLedgerTransactionPerInvoice()
     {
@@ -159,6 +165,7 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The bulk action endpoint is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BulkActionRefusesAnonymous()
     {
@@ -172,6 +179,7 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A <c>MarkCancelled</c> bulk action skips an invoice that already took a payment, like a single cancel refuses it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BulkActionCancelSkipsAPartPaidInvoice()
     {
@@ -196,6 +204,7 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A <c>MarkPaid</c> bulk action settles the rest of a part-paid invoice, so it ends paid in full.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BulkActionMarkPaidSettlesTheRestOfAPartPaidInvoice()
     {
@@ -222,6 +231,7 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
     /// A <c>MarkUnpaid</c> bulk action skips a paid invoice whose payment is recorded, like a single
     /// reopen refuses it: that money is undone by deleting or refunding the payment.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BulkActionMarkUnpaidSkipsAnInvoiceWithRecordedPayments()
     {
@@ -249,6 +259,7 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
     /// A bulk delete releases the billable items that sat on the deleted invoices, so the next
     /// invoicing run bills them again.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BulkDeleteReleasesTheBillableItemsPutOnTheInvoices()
     {

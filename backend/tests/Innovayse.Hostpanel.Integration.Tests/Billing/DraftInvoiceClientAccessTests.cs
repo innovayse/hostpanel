@@ -36,6 +36,7 @@ public sealed class DraftInvoiceClientAccessTests(IntegrationTestFactory factory
     }
 
     /// <summary>Reading the detail of the caller's own draft answers 404 like an unknown invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_AnOwnDraft_IsNotFoundLikeAnAbsentInvoice()
     {
@@ -48,6 +49,7 @@ public sealed class DraftInvoiceClientAccessTests(IntegrationTestFactory factory
     }
 
     /// <summary>Starting a gateway payment on the caller's own draft answers 404 like an unknown invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StartGatewayPayment_AnOwnDraft_IsNotFoundLikeAnAbsentInvoice()
     {
@@ -61,6 +63,7 @@ public sealed class DraftInvoiceClientAccessTests(IntegrationTestFactory factory
     }
 
     /// <summary>Completing a gateway payment on the caller's own draft answers 404 like an unknown invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CompleteGatewayPayment_AnOwnDraft_IsNotFoundLikeAnAbsentInvoice()
     {
@@ -73,6 +76,7 @@ public sealed class DraftInvoiceClientAccessTests(IntegrationTestFactory factory
     }
 
     /// <summary>The caller's own draft is left out of the invoice list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_AnOwnDraft_IsLeftOut()
     {
@@ -86,6 +90,7 @@ public sealed class DraftInvoiceClientAccessTests(IntegrationTestFactory factory
     }
 
     /// <summary>Once staff publish the draft, the client reads it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_AfterItIsPublished_IsReadable()
     {

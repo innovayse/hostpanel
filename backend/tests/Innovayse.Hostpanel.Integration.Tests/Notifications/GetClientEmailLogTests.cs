@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class GetClientEmailLogTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A client reading one of their own emails gets the rendered body back.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MyEmails_Get_ReturnsTheEntryWithItsBody()
     {
@@ -27,6 +28,7 @@ public sealed class GetClientEmailLogTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An id addressed to somebody else answers 404 with <c>EMAIL_LOG_NOT_FOUND</c>, not somebody else's mail.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MyEmails_Get_SomebodyElsesEntry_RefusesNotFound()
     {
@@ -41,6 +43,7 @@ public sealed class GetClientEmailLogTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MyEmails_Get_RefusesAnonymous()
     {

@@ -7,11 +7,10 @@ using Innovayse.Hostpanel.Application.Migration.Commands.StartMigrationPull;
 using Innovayse.Hostpanel.Application.Migration.Common;
 using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
+using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Innovayse.Hostpanel.Shared.Models;
 using Wolverine;
 using Wolverine.Tracking;
 
@@ -30,6 +29,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration;
 public sealed class StartMigrationPullTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Starting a pending job launches it and answers with the job's (still pending) state.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StartOnAPendingJobLaunchesThePull()
     {
@@ -44,6 +44,7 @@ public sealed class StartMigrationPullTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A job that is not Pending refuses to be started again.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StartRefusesAJobThatIsNotPending()
     {
@@ -71,6 +72,7 @@ public sealed class StartMigrationPullTests(IntegrationTestFactory factory) : IC
     /// Two starts of the same pending job at once queue it once and run one pull: the job row's
     /// concurrency token lets only the first save win, and only that request publishes the pull.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoConcurrentStartsRunOneWorker()
     {
@@ -111,6 +113,7 @@ public sealed class StartMigrationPullTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>An id naming no job is refused as missing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StartRefusesAnUnknownId()
     {
@@ -131,6 +134,7 @@ public sealed class StartMigrationPullTests(IntegrationTestFactory factory) : IC
         bus.InvokeAsync<Result<MigrationJobDto>>(new StartMigrationPullCommand(id));
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StartRefusesAnonymous()
     {

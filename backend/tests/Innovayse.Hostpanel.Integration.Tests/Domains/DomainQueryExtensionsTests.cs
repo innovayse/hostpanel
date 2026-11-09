@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Extensions;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
@@ -36,6 +35,7 @@ public sealed class DomainQueryExtensionsTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The shared include list brings the nameservers and DNS records along with the domain.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IncludeChildren_LoadsTheChildCollectionsAsync()
     {
@@ -50,6 +50,7 @@ public sealed class DomainQueryExtensionsTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The shared mapping carries the domain fields and every child collection into the DTO.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ToDto_MapsTheDomainAndItsChildrenAsync()
     {

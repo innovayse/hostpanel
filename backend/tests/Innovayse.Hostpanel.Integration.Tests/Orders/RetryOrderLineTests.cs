@@ -22,6 +22,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Retrying a line of an order that does not exist answers 404 with <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderRefusesNotFound()
     {
@@ -34,6 +35,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A line the order does not hold answers 404 with <c>ORDER_ITEM_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingLineRefusesNotFound()
     {
@@ -48,6 +50,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A line of another order is not found through this order, even though the line exists.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ALineOfAnotherOrderRefusesNotFound()
     {
@@ -65,6 +68,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A non-positive id is a validation error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NonPositiveIdsAreRefused()
     {
@@ -76,6 +80,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A line of an order that was never accepted is not retryable: <c>ORDER_LINE_NOT_RETRYABLE</c>, 409.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ALineOfAPendingOrderIsNotRetryable()
     {
@@ -93,6 +98,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     /// While the registrar still refuses the domain, the retry runs the fulfilment, the line fails again with
     /// the code, one more attempt is counted, the order stays Incomplete and the hosting line is not created twice.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RetryFailsAgainWhileTheDomainIsStillTaken()
     {
@@ -118,6 +124,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     /// Once the cause is gone the retry registers the domain, the line is Fulfilled with no code, the order
     /// returns to Active, and the line that was already fulfilled is left alone.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RetryFulfilsTheLineOnceTheDomainIsFree()
     {
@@ -146,6 +153,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     /// A line that was fulfilled by a retry is refused when retried again (<c>ORDER_LINE_ALREADY_FULFILLED</c>, 409),
     /// and neither the domain nor the service is created a second time.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARetryOfAFulfilledLineIsRefusedAndFulfilsNothingTwice()
     {
@@ -174,6 +182,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     /// A first attempt that registered the domain but died before recording it leaves the line Failed with the
     /// domain already held by the client: the retry counts it as done, so the same domain is never registered twice.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ADomainTheClientAlreadyHoldsIsNotRegisteredTwice()
     {
@@ -200,6 +209,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     /// Two retries of the same failed line sent at once run one fulfilment: one answers 200, the other is refused
     /// with a 409, and the domain is registered once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoConcurrentRetriesRunTheFulfilmentOnce()
     {
@@ -223,6 +233,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     /// How long a retry's claim is respected is the <c>Orders:RetryLeaseMinutes</c> option: a claim two minutes old holds the
     /// line under the default lease of ten minutes (409), and is taken over once the configured lease is shorter than that.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARetryClaimIsRespectedForTheConfiguredLease()
     {
@@ -252,6 +263,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Every retry is written to the client's activity log, naming the order and the line.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARetryIsAudited()
     {
@@ -269,6 +281,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Retrying is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -278,6 +291,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A plain client caller, who is not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAClientCaller()
     {
@@ -301,7 +315,7 @@ public sealed class RetryOrderLineTests(IntegrationTestFactory factory) : IClass
 
     /// <summary>Reads an order from the database.</summary>
     /// <param name="orderId">The order.</param>
-    /// <returns>The order.</returns>
+    /// <returns>The order as stored.</returns>
     private async Task<Order> ReadOrderAsync(int orderId)
     {
         using var scope = factory.Services.CreateScope();

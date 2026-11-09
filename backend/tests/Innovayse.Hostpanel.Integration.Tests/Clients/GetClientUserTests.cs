@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class GetClientUserTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A real client answers its linked person.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetReturnsTheLinkedPerson()
     {
@@ -28,6 +29,7 @@ public sealed class GetClientUserTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRefusesUnknownClient()
     {
@@ -40,6 +42,7 @@ public sealed class GetClientUserTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A client whose linked subject resolves to nobody answers 404 with <c>IDENTITY_USER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRefusesAClientWhoseAccountIsMissing()
     {
@@ -53,6 +56,7 @@ public sealed class GetClientUserTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRefusesAnonymous()
     {

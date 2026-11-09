@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
@@ -10,7 +11,6 @@ using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
 using Innovayse.Hostpanel.Infrastructure.Resilience;
 using Innovayse.Providers.CWP7;
 using Innovayse.Providers.CWP7.Models;
-using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 

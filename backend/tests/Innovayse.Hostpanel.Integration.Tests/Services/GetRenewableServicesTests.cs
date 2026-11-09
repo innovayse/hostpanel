@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class GetRenewableServicesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A due service is listed with its billing data and its open cancellation request.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_DueServiceWithOpenCancellation_IsListedFlaggedAsync()
     {
@@ -40,6 +41,7 @@ public sealed class GetRenewableServicesTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A service renewing after the window, or with no renewal date, is left out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ServiceOutsideWindowOrUndated_IsLeftOutAsync()
     {
@@ -53,6 +55,7 @@ public sealed class GetRenewableServicesTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Without a client the query answers every client's due services; with one, only theirs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ClientFilter_NarrowsToThatClientAsync()
     {

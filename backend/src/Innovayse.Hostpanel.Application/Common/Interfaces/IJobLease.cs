@@ -11,17 +11,17 @@ public interface IJobLease
     /// <param name="claim">Which job, who asks, the moment and how long the lease lasts.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Whether the caller now holds the lease, and who holds it when it does not.</returns>
-    Task<JobLeaseDecision> TryAcquireAsync(JobLeaseClaim claim, CancellationToken ct);
+    public Task<JobLeaseDecision> TryAcquireAsync(JobLeaseClaim claim, CancellationToken ct);
 
     /// <summary>Gives a job's lease back after a pass and records how the pass ended.</summary>
     /// <param name="release">Which job, who held it, how the pass ended and the moment.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task.</returns>
-    Task CompleteAsync(JobLeaseRelease release, CancellationToken ct);
+    public Task CompleteAsync(JobLeaseRelease release, CancellationToken ct);
 
     /// <summary>Reads when a job last succeeded.</summary>
     /// <param name="jobName">The job's name.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The moment of the last successful pass, or <see langword="null"/> when the job has never succeeded.</returns>
-    Task<DateTimeOffset?> GetLastSucceededAtAsync(string jobName, CancellationToken ct);
+    public Task<DateTimeOffset?> GetLastSucceededAtAsync(string jobName, CancellationToken ct);
 }

@@ -54,6 +54,7 @@ public sealed class SsoIdentityProvider : IIdentityProvider
     // owns their language too, and hostpanel's service view of an external sign-on provider account does not carry
     // one, so there is nothing here to answer with, and answering "English" would be a
     // guess dressed up as a stored preference.
+
     /// <summary>Projects an external sign-on provider account onto the provider-neutral <see cref="IdentityAccount"/>.</summary>
     /// <param name="account">The account the sign-on provider returned, or null when it knows none.</param>
     /// <returns>The projected account, or null when <paramref name="account"/> is null.</returns>

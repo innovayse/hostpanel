@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Notifications.Common.TemplateModels;
 using Innovayse.Hostpanel.Application.Notifications.Rendering;
 using Innovayse.Hostpanel.Application.Notifications.Seeding;
-using Innovayse.Hostpanel.Domain.Notifications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -32,6 +31,7 @@ public sealed class DomainTemplatesSeederTests(IntegrationTestFactory factory) :
     ];
 
     /// <summary>Seeding twice leaves exactly one version of every slug in every language.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureSeededAsync_RunTwice_StoresEveryLanguageOfEverySlugOnceAsync()
     {
@@ -53,6 +53,7 @@ public sealed class DomainTemplatesSeederTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A version an operator already stored keeps its copy when the seed runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureSeededAsync_StoredVersion_IsNotOverwrittenAsync()
     {
@@ -73,6 +74,7 @@ public sealed class DomainTemplatesSeederTests(IntegrationTestFactory factory) :
 
     /// <summary>Every language of every seeded mail prints the nested values of the model its handler sends.</summary>
     /// <param name="language">The language under test.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("en")]
     [InlineData("ru")]

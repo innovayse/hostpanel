@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetMyInvoicesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Listing invoices is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyInvoicesAsync_Returns401_WithoutAuthAsync()
     {
@@ -23,6 +24,7 @@ public sealed class GetMyInvoicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An admin, who is not a client, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyInvoicesAsync_Returns403_AsAdminAsync()
     {
@@ -36,6 +38,7 @@ public sealed class GetMyInvoicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A registered client lists their own (empty) invoices.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyInvoicesAsync_Returns200_AsClientAsync()
     {
@@ -47,6 +50,7 @@ public sealed class GetMyInvoicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The owner reads their own invoice list and finds the invoice they were charged.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMine_ListsTheOwnersInvoice()
     {
@@ -62,6 +66,7 @@ public sealed class GetMyInvoicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An invoice still in draft is being prepared by staff, so the client's own list leaves it out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMine_HidesAnInvoiceStillInDraft()
     {

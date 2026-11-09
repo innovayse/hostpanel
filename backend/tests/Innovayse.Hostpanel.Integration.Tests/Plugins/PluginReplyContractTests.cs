@@ -1,8 +1,8 @@
 using System.Net;
-using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Application.Common.Settings;
 using Hostpanel.Sdk.Plugins.Endpoints;
 using Hostpanel.Sdk.Plugins.Enums;
+using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 

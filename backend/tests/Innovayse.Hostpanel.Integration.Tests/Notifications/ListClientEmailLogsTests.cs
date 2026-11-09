@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class ListClientEmailLogsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A client id that names nobody answers an empty page, not a refusal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminListByClient_UnknownClient_ReturnsAnEmptyPage()
     {
@@ -28,6 +29,7 @@ public sealed class ListClientEmailLogsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The admin per-client route finds a log seeded straight at the client's own address, and lists nobody else's.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminListByClient_FindsTheClientsOwnLog()
     {
@@ -50,6 +52,7 @@ public sealed class ListClientEmailLogsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The admin per-client route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminListByClient_RefusesAnonymous()
     {
@@ -59,6 +62,7 @@ public sealed class ListClientEmailLogsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A client reading their own mail sees only their own address, never somebody else's.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MyEmails_List_ReturnsOwnLogsOnly()
     {
@@ -76,6 +80,7 @@ public sealed class ListClientEmailLogsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The client portal route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MyEmails_List_RefusesAnonymous()
     {

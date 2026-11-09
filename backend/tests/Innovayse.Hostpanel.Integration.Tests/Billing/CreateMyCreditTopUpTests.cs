@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The invoice is one untaxed line for the amount, Unpaid, flagged as a top-up, owned by the caller and credits nothing yet.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RaisesAOneLineTopUpInvoiceForTheCaller()
     {
@@ -38,6 +39,7 @@ public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The invoice is in the client's billing currency, the one the credit page reports.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BillsInTheClientsBillingCurrency()
     {
@@ -50,6 +52,7 @@ public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The client's own invoice list shows it as a top-up, and no other client can read it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheInvoiceIsTheCallersAndShowsAsATopUp()
     {
@@ -66,6 +69,7 @@ public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : I
 
     /// <summary>An amount below the minimum or above the maximum is refused with its own code, and no invoice is raised.</summary>
     /// <param name="amount">An amount outside the limits 10 and 100.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(9.99)]
     [InlineData(100.01)]
@@ -84,6 +88,7 @@ public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : I
 
     /// <summary>Both ends of the range are allowed.</summary>
     /// <param name="amount">The minimum and the maximum.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(10)]
     [InlineData(100)]
@@ -98,6 +103,7 @@ public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The limits are the admin's to change: a new maximum takes effect on the next request.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FollowsTheLimitsTheAdminSets()
     {
@@ -115,6 +121,7 @@ public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A contradictory pair (minimum above maximum) falls back to the defaults, so a typo never lifts the limit.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AContradictoryPairFallsBackToTheDefaults()
     {
@@ -128,6 +135,7 @@ public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The amount is rounded to the currency's minor unit before it is held to the limits and written on the invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RoundsTheAmountToTheMinorUnit()
     {
@@ -140,6 +148,7 @@ public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : I
 
     /// <summary>An amount of nothing, or less, is a malformed request.</summary>
     /// <param name="amount">Zero or negative.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(0)]
     [InlineData(-5)]
@@ -153,6 +162,7 @@ public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The route needs a signed-in client, and the body names no client: the account comes from the token.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NeedsASignedInClient()
     {
@@ -162,6 +172,7 @@ public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A client id in the body is ignored: the invoice is raised for the caller, never for the id sent.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IgnoresAClientIdInTheBody()
     {
@@ -179,6 +190,7 @@ public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : I
     /// A client holds at most the admin's number of unpaid top-up invoices: the next one is refused with 409
     /// <c>CREDIT_TOP_UP_TOO_MANY_OPEN</c> and raises nothing, and a paid or cancelled one no longer counts.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnotherTopUpWhileTheOpenOnesReachTheLimit()
     {
@@ -203,6 +215,7 @@ public sealed class CreateMyCreditTopUpTests(IntegrationTestFactory factory) : I
     /// An open top-up is an invoice, so moving the client to another currency is refused while it exists: the money it will credit is
     /// in the currency it was raised in, and the balance is kept in the client's.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnOpenTopUp_KeepsTheClientsCurrencyFromChanging()
     {

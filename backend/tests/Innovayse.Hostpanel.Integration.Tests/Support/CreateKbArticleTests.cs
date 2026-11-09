@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class CreateKbArticleTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can create a knowledge base article.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanCreateAKbArticleAsync()
     {
@@ -28,6 +29,7 @@ public sealed class CreateKbArticleTests(IntegrationTestFactory factory) : IClas
 
     /// <summary>An article created with <c>isPublished: true</c> reads back as published; without it, as a draft.</summary>
     /// <param name="isPublished">The flag sent in the body.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -49,6 +51,7 @@ public sealed class CreateKbArticleTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A caller with no credential cannot create a knowledge base article.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

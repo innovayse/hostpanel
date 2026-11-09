@@ -32,6 +32,7 @@ public sealed class UploadStorefrontImageTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A decodable image is stored under the content directory and answers with its URL.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ValidPng_ReturnsAUrlUnderTheContentDirectory()
     {
@@ -46,6 +47,7 @@ public sealed class UploadStorefrontImageTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Bytes that do not decode as an image are refused with <c>BRANDING_IMAGE_INVALID</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UndecodableBytes_RefuseInvalid()
     {
@@ -59,6 +61,7 @@ public sealed class UploadStorefrontImageTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A real PNG uploaded under a hostile name is stored under an extension taken from the detected format.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PngNamedEvilHtml_IsStoredWithThePngExtension()
     {
@@ -73,6 +76,7 @@ public sealed class UploadStorefrontImageTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>An HTML document is refused whatever its declared media type or name says.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HtmlDocument_RefusesInvalid()
     {
@@ -86,6 +90,7 @@ public sealed class UploadStorefrontImageTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>An SVG is refused, because a vector served from the panel's own origin can run script.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Svg_RefusesInvalid()
     {
@@ -100,6 +105,7 @@ public sealed class UploadStorefrontImageTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A request with no file is refused as a validation failure, not a server error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NoFile_RefusesAsValidationFailure()
     {
@@ -112,6 +118,7 @@ public sealed class UploadStorefrontImageTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {

@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetCustomerRetentionTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Retention answers with a shape even when nothing has ever churned.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnswersWithoutRefusing()
     {
@@ -32,6 +33,7 @@ public sealed class GetCustomerRetentionTests(IntegrationTestFactory factory) : 
     /// Ended domains of one TLD are counted and their lifetimes averaged in SQL: lifetimes of 100
     /// and 200 days average to 150.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AveragesTheLifetimesOfOneTld()
     {
@@ -66,6 +68,7 @@ public sealed class GetCustomerRetentionTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -75,6 +78,7 @@ public sealed class GetCustomerRetentionTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

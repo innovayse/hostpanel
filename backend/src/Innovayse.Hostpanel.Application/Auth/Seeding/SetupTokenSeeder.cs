@@ -1,8 +1,7 @@
-using Innovayse.Hostpanel.Domain.Settings;
 using System.Security.Cryptography;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
+using Innovayse.Hostpanel.Domain.Settings;
 
 namespace Innovayse.Hostpanel.Application.Auth.Seeding;
 

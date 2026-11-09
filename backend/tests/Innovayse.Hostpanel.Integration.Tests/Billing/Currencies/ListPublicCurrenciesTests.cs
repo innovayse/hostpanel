@@ -23,6 +23,7 @@ public sealed class ListPublicCurrenciesTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>The storefront list is anonymous, lists only enabled rows, and carries no rate.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicListIsAnonymousEnabledOnlyAndRateless()
     {

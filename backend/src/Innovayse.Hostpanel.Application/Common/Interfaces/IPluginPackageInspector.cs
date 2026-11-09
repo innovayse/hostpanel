@@ -13,10 +13,10 @@ public interface IPluginPackageInspector
     /// <param name="package">A seekable ZIP stream; the caller seeks it back to the start afterwards.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The header; a member that is missing or unreadable is <see langword="null"/>.</returns>
-    Task<PluginPackageHeader> ReadHeaderAsync(Stream package, CancellationToken ct);
+    public Task<PluginPackageHeader> ReadHeaderAsync(Stream package, CancellationToken ct);
 
     /// <summary>Tells whether a key id is one the operator listed under <c>PluginSigning:OperatorKeys</c>.</summary>
     /// <param name="keyId">The key id from a package signature.</param>
     /// <returns><see langword="true"/> for an operator key; the maintainers' shipped keys do not count.</returns>
-    bool IsOperatorKey(string keyId);
+    public bool IsOperatorKey(string keyId);
 }

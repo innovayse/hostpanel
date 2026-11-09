@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration;
 public sealed class CreateMigrationJobTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Creating a job answers 201 with a Location, and the job then shows up in the list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenListShowsTheNewJob()
     {
@@ -41,6 +42,7 @@ public sealed class CreateMigrationJobTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>An empty source address is refused before a job is written.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateRefusesAnEmptySourceUrl()
     {
@@ -52,6 +54,7 @@ public sealed class CreateMigrationJobTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A body that names no entity selection is refused before a job is written.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateRefusesAMissingSelection()
     {
@@ -64,6 +67,7 @@ public sealed class CreateMigrationJobTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateRefusesAnonymous()
     {

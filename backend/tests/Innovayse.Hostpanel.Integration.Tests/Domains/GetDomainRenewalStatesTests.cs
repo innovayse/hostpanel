@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class GetDomainRenewalStatesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A registrar-linked domain answers its name, expiry and status; an unknown id is left out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_KnownAndUnknown_AnswersOnlyTheKnownStateAsync()
     {

@@ -5,7 +5,6 @@ using Innovayse.Hostpanel.Application.Migration.Pull;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Innovayse.Hostpanel.Infrastructure.Auth;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -25,6 +24,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A client record the host does not already know is provisioned and imported.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Clients_ImportsANewClientAsync()
     {
@@ -56,6 +56,7 @@ public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClas
     /// A malformed source currency does not lose the client: it is imported without a currency, and
     /// the dropped value is logged as a warning naming the new client.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_ClientWithMalformedCurrency_IsImportedWithoutACurrencyAndWarnedAsync()
     {
@@ -81,6 +82,7 @@ public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A client with no source currency at all is imported without a warning: nothing was dropped.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_ClientWithoutCurrency_IsImportedWithoutAWarningAsync()
     {
@@ -100,6 +102,7 @@ public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A padded, lower-case source currency is stored trimmed and upper-cased.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_ClientWithPaddedCurrency_IsImportedNormalisedAsync()
     {
@@ -123,6 +126,7 @@ public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClas
     /// An account left without a client row by an earlier pull gets its client row, rather than
     /// being skipped as already existing forever.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_AccountWithoutClient_CreatesTheClientAsync()
     {
@@ -149,6 +153,7 @@ public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClas
     /// A closed, tax exempt source client keeps its status and signup date, and the tax flag
     /// leaves the overdue notice setting at its default.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_ClosedTaxExemptClient_KeepsSourceStatusDateAndSettingsAsync()
     {
@@ -172,6 +177,7 @@ public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A source client with no first name is imported under the local part of its email, not lost.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_ClientWithoutFirstName_UsesTheEmailLocalPartAsync()
     {
@@ -193,6 +199,7 @@ public sealed class ClientsImporterTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A record with no first name and no usable email is skipped as <c>NameMissing</c>, and no account is created for it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_ClientWithNoNameAtAll_IsSkippedAsNameMissingAsync()
     {

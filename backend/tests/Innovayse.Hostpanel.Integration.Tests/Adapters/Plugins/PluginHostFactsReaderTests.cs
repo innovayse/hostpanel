@@ -32,6 +32,7 @@ public sealed class PluginHostFactsReaderTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A client is read with its name parts, company and owner subject; an id with no row reads as null.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindClient_ReadsTheNamePartsAndOwnerSubject_AndNullForAMissingClientAsync()
     {
@@ -49,6 +50,7 @@ public sealed class PluginHostFactsReaderTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>With 51 services only the newest 50 of that client are listed, newest first, and another client's are not.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListNewestServices_IsCappedNewestFirst_AndOnlyTheClientsOwnAsync()
     {
@@ -77,6 +79,7 @@ public sealed class PluginHostFactsReaderTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Drafts are never listed, and with 51 visible invoices only the newest 50 of that client come back, newest first.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListNewestInvoices_HidesDrafts_IsCappedNewestFirst_AndOnlyTheClientsOwnAsync()
     {
@@ -110,6 +113,7 @@ public sealed class PluginHostFactsReaderTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A client with no rows, or an id with no client, lists nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Lists_AreEmptyForAClientWithoutRows_AndForAMissingClientAsync()
     {
@@ -125,6 +129,7 @@ public sealed class PluginHostFactsReaderTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Only the client's own active services with a domain on the given products are listed, newest first.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListActiveServiceDomains_IsOnlyTheClientsOwnActiveOnes_NewestFirstAsync()
     {

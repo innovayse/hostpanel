@@ -21,6 +21,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An id nothing names is refused as <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderIsRefused()
     {
@@ -33,6 +34,7 @@ public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : ICl
     /// A refused domain registration is reported as a domain line, with its amount for a refund,
     /// and the hosting line after it still becomes a client service.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReportsTheRefusedDomainLineAndFulfilsTheRest()
     {
@@ -56,6 +58,7 @@ public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : ICl
     /// A digital line becomes an Active service at once, with no provisioning reference and no server, while a
     /// hosting line in the same order is created exactly as before: Pending, left for the client's setup.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ActivatesTheDigitalLineWithoutProvisioningAndLeavesTheHostingLinePending()
     {
@@ -82,6 +85,7 @@ public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : ICl
     /// Running the fulfilment again over an order whose lines are fulfilled creates nothing a second time
     /// and counts no new attempt.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ALineAlreadyFulfilledIsNeverFulfilledAgain()
     {
@@ -100,6 +104,7 @@ public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A retry that names a line the order does not hold is refused with <c>ORDER_ITEM_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnUnknownLineIsRefused()
     {

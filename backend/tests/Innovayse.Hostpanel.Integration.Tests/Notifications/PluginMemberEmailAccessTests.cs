@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class PluginMemberEmailAccessTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The member sees the email sent to the linked client and not the one sent to their own client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberActsForThePluginAccountNotForTheirOwnClientRecordAsync()
     {
@@ -31,6 +32,7 @@ public sealed class PluginMemberEmailAccessTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A member of an account no client is linked to yet gets no profile rather than another client's emails.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberOfAnAccountWithNoClient_GetsNoProfileAsync()
     {

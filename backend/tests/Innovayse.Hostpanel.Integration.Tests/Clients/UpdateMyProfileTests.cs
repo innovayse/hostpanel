@@ -18,6 +18,7 @@ public sealed class UpdateMyProfileTests(IntegrationTestFactory factory) : IClas
     private const string Route = "/api/clients/me";
 
     /// <summary>Only the members in the body change; every other stored value is kept.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyProfileChangesOnlyTheProvidedMembers()
     {
@@ -45,6 +46,7 @@ public sealed class UpdateMyProfileTests(IntegrationTestFactory factory) : IClas
     /// The sign-in address is not part of the profile update: an email in the body changes nothing,
     /// so the account keeps signing in with the address it has.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyProfileDoesNotChangeTheSignInAddress()
     {
@@ -66,6 +68,7 @@ public sealed class UpdateMyProfileTests(IntegrationTestFactory factory) : IClas
     /// Staff-owned members in the body are not part of the command and change nothing: currency,
     /// admin notes, billing settings and status stay as stored.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyProfileIgnoresStaffOwnedMembers()
     {
@@ -88,6 +91,7 @@ public sealed class UpdateMyProfileTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An address that names only some lines changes those lines and keeps the stored ones.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyProfileKeepsTheAddressLinesTheBodyLeavesOut()
     {
@@ -103,6 +107,7 @@ public sealed class UpdateMyProfileTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An empty body is a valid no-op and answers the profile unchanged.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyProfileWithAnEmptyBodyChangesNothing()
     {
@@ -118,6 +123,7 @@ public sealed class UpdateMyProfileTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A provided first name that is blank is refused by the shared field rules with 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyProfileRefusesABlankFirstName()
     {
@@ -129,6 +135,7 @@ public sealed class UpdateMyProfileTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A caller with the Client role but no client row owns no account and is linked to none, so the permission gate refuses before any write with 403 <c>CLIENT_PERMISSION_DENIED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyProfileWithNoClientRowIsRefusedByThePermissionGate()
     {
@@ -146,6 +153,7 @@ public sealed class UpdateMyProfileTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyProfileRefusesAnonymous()
     {
@@ -155,6 +163,7 @@ public sealed class UpdateMyProfileTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An admin, who is not a client, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyProfileRefusesAnAdmin()
     {

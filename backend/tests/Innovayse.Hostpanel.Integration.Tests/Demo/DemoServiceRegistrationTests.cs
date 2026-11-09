@@ -119,6 +119,7 @@ public sealed class DemoServiceRegistrationTests
     }
 
     /// <summary>Enabled with a value missing: reading the options refuses, naming the key.</summary>
+    /// <param name="missingKey">The configuration key left out.</param>
     [Theory]
     [InlineData("Demo:AdminEmail")]
     [InlineData("Demo:AdminPassword")]

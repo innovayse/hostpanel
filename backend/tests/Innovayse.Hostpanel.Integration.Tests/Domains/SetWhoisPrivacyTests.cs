@@ -21,6 +21,7 @@ public sealed class SetWhoisPrivacyTests(IntegrationTestFactory factory) : IClas
     /// <c>domainsStore.ts</c>'s <c>setWhoisPrivacy</c> sends, succeeds and persists the flag.
     /// <see cref="SetWhoisPrivacyCommand"/> names its boolean <c>Enabled</c> to match this wire shape.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetWhoisPrivacy_WithEnabledField_Returns204AndPersistsAsync()
     {
@@ -37,6 +38,7 @@ public sealed class SetWhoisPrivacyTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An unknown domain id answers 404 rather than binding and silently doing nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetWhoisPrivacy_UnknownDomain_Returns404Async()
     {
@@ -50,6 +52,7 @@ public sealed class SetWhoisPrivacyTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetWhoisPrivacy_WithoutToken_Returns401Async()
     {
@@ -62,6 +65,7 @@ public sealed class SetWhoisPrivacyTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A non-positive domain id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetWhoisPrivacy_NonPositiveDomainId_Returns400ValidationErrorAsync()
     {

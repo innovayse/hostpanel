@@ -25,6 +25,7 @@ public sealed class CheckOverdueInvoicesCronTests(IntegrationTestFactory factory
     /// <param name="admin">The authenticated admin client.</param>
     /// <param name="invoiceId">The invoice to back-date.</param>
     /// <param name="dueDate">The due date to write.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private static async Task BackDateAsync(HttpClient admin, int invoiceId, DateTimeOffset dueDate)
     {
         var response = await admin.PutAsJsonAsync($"/api/billing/{invoiceId}/options", new
@@ -38,6 +39,7 @@ public sealed class CheckOverdueInvoicesCronTests(IntegrationTestFactory factory
     }
 
     /// <summary>An unpaid invoice whose due date has already passed is marked overdue.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnpaidInvoicePastDueDate_IsMarkedOverdue()
     {
@@ -58,6 +60,7 @@ public sealed class CheckOverdueInvoicesCronTests(IntegrationTestFactory factory
     }
 
     /// <summary>An unpaid invoice not yet past its due date is left untouched.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnpaidInvoiceNotYetDue_IsNotMarkedOverdue()
     {
@@ -77,6 +80,7 @@ public sealed class CheckOverdueInvoicesCronTests(IntegrationTestFactory factory
     }
 
     /// <summary>A draft invoice past what would be its due date is never touched: only Unpaid counts.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DraftInvoice_IsNeverMarkedOverdue()
     {
@@ -100,6 +104,7 @@ public sealed class CheckOverdueInvoicesCronTests(IntegrationTestFactory factory
     /// One invoice whose overdue marking cannot be saved does not stop the run: another overdue
     /// invoice is still marked, and the failing one is left Unpaid for the next run.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OneInvoiceThatCannotBeMarked_DoesNotStopTheOthers()
     {

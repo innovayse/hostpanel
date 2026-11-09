@@ -11,6 +11,7 @@ public sealed class Partner : BaseEntity, IAggregateRoot, ISortable
 {
     /// <summary>Longest LogoUrl may be: matches the <c>Partners.LogoUrl</c> column.</summary>
     public const int LogoUrlMaxLength = 500;
+
     /// <summary>Longest Url may be: matches the <c>Partners.Url</c> column.</summary>
     public const int UrlMaxLength = 500;
 

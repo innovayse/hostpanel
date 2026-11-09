@@ -1,9 +1,7 @@
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Application.Services.Queries.GetCancellationStatus;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
@@ -21,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class GetCancellationStatusTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A service with no cancellation request answers "not pending", not a refusal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetCancellationStatus_NoOpenRequest_AnswersNotPending()
     {
@@ -40,6 +39,7 @@ public sealed class GetCancellationStatusTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>An id that names no service at all also answers "not pending", not a refusal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetCancellationStatus_UnknownService_AlsoAnswersNotPending()
     {
@@ -54,6 +54,7 @@ public sealed class GetCancellationStatusTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A closed request stored before an open one does not hide the open one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetCancellationStatus_ClosedAndOpenRequests_AnswersTheOpenType()
     {

@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class LeaveFeedbackTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Staff can record feedback for a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanLeaveFeedbackAsync()
     {
@@ -30,6 +31,7 @@ public sealed class LeaveFeedbackTests(IntegrationTestFactory factory) : IClassF
     /// validator refusal is answered 400 VALIDATION_ERROR on the bus (rules/cqrs.md); 422 is
     /// reserved for a handler's own *_VALIDATION_FAILED code.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LeaveFeedbackRefusesAnOutOfRangeRatingAsync()
     {
@@ -43,6 +45,7 @@ public sealed class LeaveFeedbackTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Leaving feedback on a ticket that does not exist answers 404 with <c>TICKET_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LeaveFeedbackOnUnknownTicketAnswersNotFoundAsync()
     {
@@ -56,6 +59,7 @@ public sealed class LeaveFeedbackTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A caller with no credential cannot leave feedback on a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Support.Extensions;
 using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Shared.Models;
-using Innovayse.Hostpanel.Shared.MultiTenancy;
 
 namespace Innovayse.Hostpanel.Application.Support.Commands.CreateTicket;
 

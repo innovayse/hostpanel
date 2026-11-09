@@ -20,6 +20,7 @@ public sealed class InitiateOutgoingTransferTests(IntegrationTestFactory factory
     /// Initiating an outgoing transfer for an active, registrar-linked domain succeeds and
     /// returns the (stubbed) EPP code.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InitiateOutgoingTransfer_ActiveDomain_Returns200WithEppCodeAsync()
     {
@@ -36,6 +37,7 @@ public sealed class InitiateOutgoingTransferTests(IntegrationTestFactory factory
     }
 
     /// <summary>A domain with no registrar reference answers 400 with <c>DOMAIN_NO_REGISTRAR_REF</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InitiateOutgoingTransfer_NoRegistrarRef_Returns400Async()
     {
@@ -56,6 +58,7 @@ public sealed class InitiateOutgoingTransferTests(IntegrationTestFactory factory
     }
 
     /// <summary>An unknown domain id answers 404 with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InitiateOutgoingTransfer_UnknownDomain_Returns404Async()
     {
@@ -69,6 +72,7 @@ public sealed class InitiateOutgoingTransferTests(IntegrationTestFactory factory
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InitiateOutgoingTransfer_WithoutToken_Returns401Async()
     {

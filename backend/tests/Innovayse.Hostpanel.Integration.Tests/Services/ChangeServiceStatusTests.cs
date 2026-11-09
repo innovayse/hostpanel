@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class ChangeServiceStatusTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Moving a suspended service to Active answers 204 and lifts the suspension.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangeStatus_FromSuspendedToActive_UnsuspendsAsync()
     {
@@ -37,6 +38,7 @@ public sealed class ChangeServiceStatusTests(IntegrationTestFactory factory) : I
     /// Asking to move a service back to Pending is refused with <c>SERVICE_STATUS_CHANGE_NOT_ALLOWED</c>
     /// and leaves the service untouched.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangeStatus_ToPending_Returns400StatusChangeNotAllowedAsync()
     {
@@ -60,6 +62,7 @@ public sealed class ChangeServiceStatusTests(IntegrationTestFactory factory) : I
     /// </summary>
     /// <param name="from">The status the service is in.</param>
     /// <param name="target">The status asked for.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(ServiceStatus.Terminated, "Active")]
     [InlineData(ServiceStatus.Terminated, "Suspended")]
@@ -84,6 +87,7 @@ public sealed class ChangeServiceStatusTests(IntegrationTestFactory factory) : I
     /// Moving a pending service to Terminated runs the termination use case, and asking for the
     /// current status is a no-op that answers 204.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangeStatus_PendingToTerminated_AndToTheSameStatus_Return204Async()
     {
@@ -106,6 +110,7 @@ public sealed class ChangeServiceStatusTests(IntegrationTestFactory factory) : I
     /// A status this deployment does not know never reaches the handler: the body does not bind to
     /// <see cref="ServiceStatus"/>, and the refusal is the plain 400 <c>VALIDATION_ERROR</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangeStatus_WithAnUnknownStatus_Returns400ValidationErrorAsync()
     {
@@ -119,6 +124,7 @@ public sealed class ChangeServiceStatusTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Changing the status of a service that does not exist answers 404 <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangeStatus_OnAnUnknownService_Returns404Async()
     {
@@ -132,6 +138,7 @@ public sealed class ChangeServiceStatusTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Changing the status without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangeStatus_WithoutAuth_Returns401Async()
     {

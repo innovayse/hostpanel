@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class UpdateTransactionTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Editing a transaction's amount and description writes the new values.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateWritesTheNewAmountAndDescription()
     {
@@ -41,6 +42,7 @@ public sealed class UpdateTransactionTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Updating an id that names no transaction answers 404 with <c>TRANSACTION_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateUnknownTransactionRefusesNotFound()
     {
@@ -63,6 +65,7 @@ public sealed class UpdateTransactionTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Updating a transaction is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAnonymous()
     {
@@ -82,6 +85,7 @@ public sealed class UpdateTransactionTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Linking a transaction to an invoice that does not exist answers 404 with <c>INVOICE_NOT_FOUND</c> and changes nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAnUnknownInvoice()
     {

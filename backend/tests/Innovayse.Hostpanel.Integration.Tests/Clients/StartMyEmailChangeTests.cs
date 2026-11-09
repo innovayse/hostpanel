@@ -15,6 +15,7 @@ public sealed class StartMyEmailChangeTests(IntegrationTestFactory factory) : IC
     /// With the right password a link is mailed to the new address only, and the account keeps
     /// signing in with the old one.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RightPassword_MailsTheNewAddressAndChangesNothingYet()
     {
@@ -38,6 +39,7 @@ public sealed class StartMyEmailChangeTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A wrong password is refused and nothing is mailed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WrongPassword_IsRefusedAndMailsNothing()
     {
@@ -53,6 +55,7 @@ public sealed class StartMyEmailChangeTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>An address that already belongs to an account is refused with a conflict.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddressInUse_IsRefused()
     {
@@ -67,6 +70,7 @@ public sealed class StartMyEmailChangeTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A malformed address or a missing password fails validation.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MalformedBody_IsRefusedByValidation()
     {
@@ -79,6 +83,7 @@ public sealed class StartMyEmailChangeTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Anonymous_IsRefused()
     {

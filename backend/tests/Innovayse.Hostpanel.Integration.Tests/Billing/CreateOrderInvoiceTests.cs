@@ -5,7 +5,6 @@ using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Shared.Models;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
@@ -23,6 +22,7 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
     private static readonly ProductSnapshot Snapshot = new(7, BillingCycle.Monthly, IsDigital: false, Sku: "STARTER", Metadata: null);
 
     /// <summary>The invoice is unpaid, in the order's currency, with one line per order line, due in a week.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_OrderLines_CreatesAnUnpaidInvoiceInTheOrdersCurrencyAsync()
     {
@@ -51,6 +51,7 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The payment term comes from the <c>Orders</c> settings, not from the code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ConfiguredPaymentTerm_DatesTheInvoiceByItAsync()
     {

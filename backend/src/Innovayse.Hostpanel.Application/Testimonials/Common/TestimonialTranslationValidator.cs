@@ -1,7 +1,6 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
-using Innovayse.Hostpanel.Application.Testimonials.Common;
 using Innovayse.Hostpanel.Domain.Testimonials;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.Extensions.Localization;

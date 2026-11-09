@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class ListOrdersTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A seeded pending order appears in the admin list, named after its client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListShowsTheSeededOrder()
     {
@@ -34,6 +35,7 @@ public sealed class ListOrdersTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>The list says which currency each order's total is in, so the admin can show a unit.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListCarriesTheOrdersCurrency()
     {
@@ -48,6 +50,7 @@ public sealed class ListOrdersTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>The status filter keeps only orders in that status.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StatusFilterKeepsOnlyThatStatus()
     {
@@ -68,6 +71,7 @@ public sealed class ListOrdersTests(IntegrationTestFactory factory) : IClassFixt
     /// An accepted order with a failed line is listed under the Incomplete filter with the count of its failed
     /// lines, and an order whose lines all succeeded is not.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IncompleteFilterListsTheOrdersWithAFailedLine()
     {
@@ -90,6 +94,7 @@ public sealed class ListOrdersTests(IntegrationTestFactory factory) : IClassFixt
     /// A partly refunded line still needs staff to finish its refund by hand, so it is counted with the failed lines and its
     /// order is listed as Incomplete.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APartlyRefundedLineIsCountedWithTheLinesThatNeedStaff()
     {
@@ -113,6 +118,7 @@ public sealed class ListOrdersTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>An unknown status is refused with 400 rather than silently listing every order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownStatusIsRefused()
     {
@@ -124,6 +130,7 @@ public sealed class ListOrdersTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>Listing orders is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -133,6 +140,7 @@ public sealed class ListOrdersTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A plain client caller, who is not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAClientCaller()
     {

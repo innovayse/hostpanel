@@ -15,6 +15,7 @@ public sealed class ListPublishedKbCategoriesTests(IntegrationTestFactory factor
     /// Published articles are counted per category, a draft is not counted, a category holding only a draft does not
     /// appear, and no entry carries a field beyond the name and the count.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicRoute_CountsPublishedArticlesPerCategoryAsync()
     {
@@ -38,6 +39,7 @@ public sealed class ListPublishedKbCategoriesTests(IntegrationTestFactory factor
     }
 
     /// <summary>Category names that differ only by letter case are one category with the articles of both.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CategoriesDifferingOnlyByCase_AreGroupedTogetherAsync()
     {

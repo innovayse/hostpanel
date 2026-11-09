@@ -22,6 +22,7 @@ public sealed class AddDnsRecordTests(IntegrationTestFactory factory) : IClassFi
     /// with the same shape updates it, and <c>DELETE</c> removes it: the full lifecycle the admin
     /// table drives.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddUpdateDeleteDnsRecord_FullLifecycle_SucceedsAsync()
     {
@@ -56,6 +57,7 @@ public sealed class AddDnsRecordTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An MX record with no priority refuses with 400 by the validator's own rule.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddDnsRecord_MxWithoutPriority_Returns400Async()
     {
@@ -72,6 +74,7 @@ public sealed class AddDnsRecordTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Adding a DNS record to an unknown domain answers 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddDnsRecord_UnknownDomain_Returns404Async()
     {
@@ -86,6 +89,7 @@ public sealed class AddDnsRecordTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddDnsRecord_WithoutToken_Returns401Async()
     {

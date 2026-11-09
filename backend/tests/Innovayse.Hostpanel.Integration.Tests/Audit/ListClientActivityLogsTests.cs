@@ -60,6 +60,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>Results come back newest first, so the latest activity leads.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_OrdersNewestFirstAsync()
     {
@@ -80,6 +81,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The date filter matches only entries created on that UTC calendar day.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_DateFilter_MatchesOnlyThatUtcDayAsync()
     {
@@ -100,6 +102,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The admin search matches a substring of either the admin's name or their email.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_AdminSearch_MatchesNameOrEmailSubstringAsync()
     {
@@ -120,6 +123,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The description filter matches a case-insensitive substring.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_DescriptionFilter_MatchesCaseInsensitiveSubstringAsync()
     {
@@ -139,6 +143,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The IP filter matches a substring of the recorded address.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_IpAddressFilter_MatchesSubstringAsync()
     {
@@ -158,6 +163,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>An entry belonging to a different client is never returned.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NeverReturnsAnotherClientsEntryAsync()
     {
@@ -179,6 +185,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_RefusesAnonymousAsync()
     {
@@ -188,6 +195,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A client with no recorded activity answers 200 with an empty page.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_ClientWithNoActivity_ReturnsAnEmptyPageAsync()
     {
@@ -203,6 +211,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>An id that names no client simply answers an empty page, not a refusal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_UnknownClientId_ReturnsAnEmptyPageAsync()
     {
@@ -216,6 +225,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A search filter past the length limit is refused before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_OverlongFilter_IsRefusedAsync()
     {

@@ -56,6 +56,7 @@ public sealed class PluginWideStoreInjectionTests(IntegrationTestFactory factory
     }
 
     /// <summary>A value written through the injected store is read back by a new activation of the plugin, in another context.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InjectedStore_WrittenByOneActivation_IsReadByTheNext()
     {
@@ -73,6 +74,7 @@ public sealed class PluginWideStoreInjectionTests(IntegrationTestFactory factory
     }
 
     /// <summary>The injected store is plugin wide: a client's row of the same plugin and key is never read, changed or removed by it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InjectedStore_SameKeyAsClientRow_StaysSeparate()
     {
@@ -91,6 +93,7 @@ public sealed class PluginWideStoreInjectionTests(IntegrationTestFactory factory
     }
 
     /// <summary>The injected store shares its rows with the clientless call store of its plugin, and never reaches another plugin's.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InjectedStore_SharesRowsWithClientlessCallStore_NotWithOtherPlugin()
     {
@@ -107,6 +110,7 @@ public sealed class PluginWideStoreInjectionTests(IntegrationTestFactory factory
     }
 
     /// <summary>The injected store refuses a value over the size limit, like the call store.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InjectedStore_ValueOverLimit_IsRefused()
     {
@@ -123,6 +127,7 @@ public sealed class PluginWideStoreInjectionTests(IntegrationTestFactory factory
     /// A store write runs in its own unit of work: a change staged and unsaved in the context the plugin was activated
     /// over is not saved by it, and that context's later save does not touch the store's row.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InjectedStore_Write_DoesNotSaveCallersPendingChanges()
     {
@@ -147,6 +152,7 @@ public sealed class PluginWideStoreInjectionTests(IntegrationTestFactory factory
     }
 
     /// <summary>Purging a removed plugin deletes the rows its injected store wrote and keeps another plugin's.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Purge_RemovesInjectedStoreRows_KeepsOtherPlugin()
     {

@@ -19,6 +19,7 @@ public sealed class SetRegistrarLockTests(IntegrationTestFactory factory) : ICla
     /// <c>PUT /api/domains/{id}/lock</c> with <c>{ enabled: true }</c>, the exact body
     /// <c>domainsStore.ts</c>'s <c>setLock</c> sends, succeeds and persists the flag.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRegistrarLock_WithEnabledField_Returns204AndPersistsAsync()
     {
@@ -35,6 +36,7 @@ public sealed class SetRegistrarLockTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An unknown domain id answers 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRegistrarLock_UnknownDomain_Returns404Async()
     {
@@ -48,6 +50,7 @@ public sealed class SetRegistrarLockTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRegistrarLock_WithoutToken_Returns401Async()
     {
@@ -60,6 +63,7 @@ public sealed class SetRegistrarLockTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A non-positive domain id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRegistrarLock_NonPositiveDomainId_Returns400ValidationErrorAsync()
     {

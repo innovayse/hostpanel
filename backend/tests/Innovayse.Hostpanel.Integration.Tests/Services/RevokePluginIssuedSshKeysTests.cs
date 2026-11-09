@@ -21,6 +21,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class RevokePluginIssuedSshKeysTests(PluginSshFixture fixture) : IClassFixture<PluginSshFixture>
 {
     /// <summary>The removal event revokes the plugin's key, audits it and leaves the client's own key in place.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginRemoved_RevokesOnlyThePluginsKeysAsync()
     {
@@ -44,6 +45,7 @@ public sealed class RevokePluginIssuedSshKeysTests(PluginSshFixture fixture) : I
     }
 
     /// <summary>An unreachable agent leaves the key live as a failed revoke; the next delivery takes it off.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnconfirmedRevoke_IsRecordedAndRetriedAsync()
     {
@@ -67,6 +69,7 @@ public sealed class RevokePluginIssuedSshKeysTests(PluginSshFixture fixture) : I
     }
 
     /// <summary>A key issued to another plugin on the same service is left live and on the account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnotherPluginsKey_IsLeftAloneAsync()
     {
@@ -93,6 +96,7 @@ public sealed class RevokePluginIssuedSshKeysTests(PluginSshFixture fixture) : I
     }
 
     /// <summary>A second delivery after a successful revoke finds nothing live and changes nothing (idempotent).</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SecondDelivery_ChangesNothingAsync()
     {

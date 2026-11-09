@@ -139,6 +139,6 @@ public sealed class GetCustomerRetentionHandler
             count,
             days,
             days / DaysPerYear,
-            days % DaysPerYear / DaysPerMonth);
+            (days % DaysPerYear) / DaysPerMonth);
     }
 }

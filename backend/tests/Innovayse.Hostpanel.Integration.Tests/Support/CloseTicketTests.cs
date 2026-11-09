@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class CloseTicketTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Staff can close a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanCloseATicketAsync()
     {
@@ -23,6 +24,7 @@ public sealed class CloseTicketTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Closing a ticket that does not exist answers 404 with <c>TICKET_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CloseUnknownTicketAnswersNotFoundAsync()
     {
@@ -35,6 +37,7 @@ public sealed class CloseTicketTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A caller with no credential cannot close a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

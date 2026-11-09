@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Billing.Commands.ApplyPaidRenewals;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Notifications;
@@ -15,7 +16,6 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -134,6 +134,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A fully paid service line extends the service to the period end and is marked applied.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaidServiceLine_ExtendsOnce()
     {
@@ -166,6 +167,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     /// the Services module in its own scope) is retried without a second period: the line is marked
     /// and the renewal date stays at the paid period's end.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExtensionSavedButMarkerLost_RetryDoesNotExtendTwice()
     {
@@ -193,6 +195,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     /// runner whose marker save loses to the other runner's marker skips that line and still
     /// applies the invoice's other lines and lifts the overdue suspension.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LostServiceMarkerRace_SkipsLineAndContinues()
     {
@@ -236,6 +239,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A partial manual payment applies nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PartialPayment_AppliesNothing()
     {
@@ -258,6 +262,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A partial payment followed by the rest renews once the payments cover the invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PartialPaymentThenTheRest_Renews()
     {
@@ -282,6 +287,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An unpaid invoice applies nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnpaidInvoice_AppliesNothing()
     {
@@ -302,6 +308,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An id that names no invoice is refused with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownInvoice_IsRefused()
     {
@@ -316,6 +323,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A line written before renewals were tracked (no period) is ignored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LegacyLine_IsIgnored()
     {
@@ -342,6 +350,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An overdue-suspended service is unsuspended once nothing overdue covers it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OverdueSuspension_IsLifted()
     {
@@ -367,6 +376,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A manual suspension survives payment.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ManualSuspension_Survives()
     {
@@ -393,6 +403,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Another overdue invoice covering the service keeps it suspended.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OtherOverdueInvoice_KeepsSuspended()
     {
@@ -424,6 +435,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A legacy (no-period) overdue invoice, once paid, still lifts the overdue suspension.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LegacyOverdueInvoicePaid_LiftsSuspension()
     {
@@ -450,6 +462,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A paid domain line renews at the registrar, syncs the due date and is applied.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaidDomainLine_Renews()
     {
@@ -485,6 +498,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A domain already renewed another way is marked applied and staff are told, not silently skipped.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AlreadyRenewedDomain_MarksAppliedAndAlerts()
     {
@@ -518,6 +532,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     /// An expiry nudged by hours after the invoice was raised (an admin edit, the registrar sync
     /// normalising the time of day) is not "already renewed": the paid line still renews the domain.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExpiryNudgedByHours_StillRenews()
     {
@@ -552,6 +567,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A registrar refusal leaves the line unapplied (the sweep retries) and alerts staff.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegistrarRefusal_LeavesUnapplied()
     {
@@ -587,6 +603,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     /// the registrar is never called, the line is closed, the expiry stays put and staff are alerted
     /// to review a refund.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainWithoutRegistrarRef_IsClosedAndAlerted()
     {
@@ -622,6 +639,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>After a clean refusal the claim is free again, so the next run with a working registrar renews.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusalReleasesClaim_SoTheNextRunRenews()
     {
@@ -655,6 +673,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A line another runner already claimed is left alone: the registrar is not called and the expiry does not move.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClaimedLine_IsNotRenewedAgain()
     {
@@ -684,6 +703,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     /// the registrar is not called, the other runner's claim stays, and the lost claim is not
     /// retried by a later save in the same scope.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LostClaimRace_BacksOffWithoutRenewing()
     {
@@ -718,6 +738,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     /// A registrar call that throws has an unknown outcome: the claim stays, the line stays
     /// unapplied, staff are told, and a second run does not call the registrar again.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegistrarThrow_KeepsClaimAndIsNotRetried()
     {
@@ -747,6 +768,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A transferred-away domain cannot be renewed: the line is closed, staff are told, and the registrar is not called.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferredDomain_IsClosedAndAlerted()
     {
@@ -771,6 +793,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A domain deleted after it was invoiced closes its line and tells staff.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeletedDomain_IsClosedAndAlerted()
     {
@@ -792,6 +815,7 @@ public sealed class ApplyPaidRenewalsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A freshly raised Unpaid next-period invoice for the service does not block lifting the overdue suspension.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FreshUnpaidInvoice_DoesNotBlockUnsuspend()
     {

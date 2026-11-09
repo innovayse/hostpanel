@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;

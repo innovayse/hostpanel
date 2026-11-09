@@ -80,6 +80,7 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A renewal goes to the registrar the domain's TLD is configured for, and only to it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Renew_DomainsOfTwoTlds_EachGoesToItsOwnRegistrarAsync()
     {
@@ -97,6 +98,7 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A flag change on an existing domain goes to the registrar the domain's TLD is configured for, and only to it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_DomainsOfTwoTlds_EachGoesToItsOwnRegistrarAsync()
     {
@@ -117,6 +119,7 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
     /// A domain registered at one registrar keeps going there after its TLD is configured for the
     /// other one: renewals and DNS changes reach the original registrar and never the new one.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Operations_TldRegistrarChangedAfterRegistration_StillGoToTheOriginalRegistrarAsync()
     {
@@ -158,6 +161,7 @@ public sealed class RegistrarRoutingTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A new registration is placed at the registrar the name's TLD is configured for, and only there.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Register_NewDomain_IsPlacedAtTheRegistrarOfItsTldAsync()
     {

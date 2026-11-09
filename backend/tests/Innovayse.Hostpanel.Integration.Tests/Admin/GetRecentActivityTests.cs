@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 public sealed class GetRecentActivityTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin reads the activity feed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanReadTheActivityFeedAsync()
     {
@@ -23,6 +24,7 @@ public sealed class GetRecentActivityTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An out-of-range limit substitutes the default of 10 rather than being refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OutOfRangeLimit_SubstitutesTheDefaultAsync()
     {
@@ -34,6 +36,7 @@ public sealed class GetRecentActivityTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -45,6 +48,7 @@ public sealed class GetRecentActivityTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The activity feed is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class ListPublishedKbArticlesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Only published articles of the requested category are listed, drafts left out, with the unpaged total.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CategoryFilter_ListsPublishedArticlesOfThatCategoryOnlyAsync()
     {
@@ -30,6 +31,7 @@ public sealed class ListPublishedKbArticlesTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The search term matches title or content case-insensitively.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Search_MatchesTitleOrContentAsync()
     {
@@ -46,6 +48,7 @@ public sealed class ListPublishedKbArticlesTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Page and page size slice the ordered result and the envelope reports the paging.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Paging_ReturnsTheRequestedSliceAsync()
     {
@@ -63,6 +66,7 @@ public sealed class ListPublishedKbArticlesTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Each row carries a plain-text excerpt of the body and never the body itself.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Rows_CarryAPlainTextExcerptAndNoBodyAsync()
     {
@@ -82,6 +86,7 @@ public sealed class ListPublishedKbArticlesTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A search term made of wildcard characters matches itself, not every article.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SearchWithWildcardCharacters_MatchesThemLiterallyAsync()
     {
@@ -99,6 +104,7 @@ public sealed class ListPublishedKbArticlesTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An excerpt decodes HTML entities and ends at a word boundary.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Excerpt_DecodesEntitiesAndEndsAtAWordBoundaryAsync()
     {
@@ -115,6 +121,7 @@ public sealed class ListPublishedKbArticlesTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A search text or category longer than the bound is refused as a validation error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OverlongSearchOrCategory_IsRefusedAsync()
     {
@@ -128,6 +135,7 @@ public sealed class ListPublishedKbArticlesTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A page size outside the allowed range is refused as a validation error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PageSizeOutOfRange_IsRefusedAsync()
     {

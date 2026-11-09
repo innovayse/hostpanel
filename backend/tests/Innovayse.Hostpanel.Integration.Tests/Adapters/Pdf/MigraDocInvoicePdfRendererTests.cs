@@ -99,6 +99,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// With the limit at one and its slot taken, a render waits rather than starting, and goes ahead
     /// as soon as the slot is given back.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_WaitsForAFreeSlot()
     {
@@ -115,6 +116,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>A render cancelled while it waits gives up without ever taking the slot.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_CancelledWhileWaiting_NeverTakesTheSlot()
     {
@@ -138,6 +140,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// rendered, says so in the log, and leaves no permit behind: the slot is free again the moment
     /// its holder lets go.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_WhenNoSlotFreesInTime_IsRefusedAsBusy()
     {
@@ -160,6 +163,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>A render that fails gives its slot back, so the next one is not stuck behind it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_ThatFails_ReleasesTheSlot()
     {
@@ -178,6 +182,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// A render still finishing when the gate is disposed at shutdown gives its slot back without
     /// throwing, so the shutdown cannot replace the render's own outcome with an exception.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Gate_DisposedWhileASlotIsHeld_ReleasesQuietly()
     {
@@ -190,6 +195,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>The output is a PDF of one page for a one-line invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_ProducesPdf()
     {
@@ -201,6 +207,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>Cyrillic and Armenian text comes out as written.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_PrintsNonLatinText()
     {
@@ -215,6 +222,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// Client names are not limited to the panel's own languages: Georgian, Greek, Vietnamese and
     /// the Ukrainian apostrophe come out as written rather than as blanks.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_PrintsNamesBeyondThePanelLanguages()
     {
@@ -236,6 +244,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// blanks, so the reader can see a name or a description is there, and the rest of the invoice is
     /// unchanged.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_PrintsUncoveredLettersAsPlaceholders()
     {
@@ -260,6 +269,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// Invisible characters no font has (a byte-order mark, an Arabic letter mark, an ideographic
     /// space) print no missing-glyph box: PdfPig reads such a box back as U+0000.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_PrintsNoBoxForInvisibleCharactersNoFontHas()
     {
@@ -282,6 +292,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// description wraps at it, leaving the first ten placeholders on the line with the Latin words
     /// and the other ten on the next, where without it all twenty would move down together.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_BreaksALineAtAZeroWidthSpaceBetweenUncoveredLetters()
     {
@@ -310,6 +321,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// rather than running the words either side together.
     /// </summary>
     /// <param name="separator">The separator between the two words.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("\u2028")]
     [InlineData("\u2029")]
@@ -335,6 +347,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>The header, the seller, the totals and the dates are all on the page.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_PrintsHeaderTotalsAndDates()
     {
@@ -354,6 +367,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// A long one-line seller address (the admin field is a single input) wraps inside the seller
     /// column instead of printing over the invoice dates on the right.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_WrapsLongSellerAddressClearOfTheDates()
     {
@@ -380,6 +394,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>A long bill-to line wraps inside the right margin instead of running off the page.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_WrapsLongBillToLineInsideThePage()
     {
@@ -395,6 +410,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>A credit line appears only when credit was applied.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_OmitsCreditLineWhenZero()
     {
@@ -409,6 +425,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>A description with no spaces is broken inside its column rather than running into Qty.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_HardBreaksAnUnbrokenWord()
     {
@@ -428,6 +445,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// An unbroken word of letters no font has is broken inside its column as placeholders, one per
     /// letter, and an unbroken Latin word on the next line gains none.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_HardBreaksAnUnbrokenUncoveredWord()
     {
@@ -453,6 +471,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>Amounts follow the currency's prefix, suffix and decimal places, grouped the invariant way.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_WritesAmountsInTheCurrencysFormat()
     {
@@ -471,6 +490,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>An invoice too long for one page carries on, with the table header and page numbers on each.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_BreaksLongInvoiceOntoSecondPage()
     {
@@ -497,6 +517,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>A paid invoice is stamped PAID with the date it was paid.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_StampsPaidWithDate()
     {
@@ -514,6 +535,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>A draft invoice is stamped DRAFT.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_StampsDraft()
     {
@@ -523,6 +545,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>A cancelled invoice is stamped CANCELLED.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_StampsCancelled()
     {
@@ -532,6 +555,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>A refunded invoice is stamped REFUNDED.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_StampsRefunded()
     {
@@ -541,6 +565,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>A partially refunded invoice is stamped PARTIALLY REFUNDED, not PAID.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_StampsPartiallyRefunded()
     {
@@ -556,6 +581,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>An unpaid invoice carries no stamp.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_NoStampForUnpaid()
     {
@@ -569,6 +595,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>A logo uploaded to the branding directory is drawn on the first page.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_DrawsLocalLogo()
     {
@@ -583,6 +610,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// With a logo the seller block is taller than the dates beside it, and the bill-to block
     /// still starts below all of it rather than printing over the seller's last line.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_StartsBillToBelowSellerWithLogo()
     {
@@ -605,6 +633,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// A logo file the process cannot read (say, a restored volume with the wrong owner) prints the
     /// invoice without a logo rather than failing every download.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_SkipsUnreadableLogo()
     {
@@ -643,6 +672,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// names a file that is not an image prints the invoice without a logo instead of failing.
     /// </summary>
     /// <param name="logoPath">The <c>portal.logo</c> value.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("https://cdn.example.com/logo.png")]
     [InlineData("/uploads/branding/../../secret.png")]
@@ -692,6 +722,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// A one-page invoice stays small enough to email: only the glyphs it uses are embedded. The
     /// regular and bold DejaVu files alone would add about 170 KB, so embedding them whole fails.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_StaysSmallEnoughToEmail()
     {
@@ -701,6 +732,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     }
 
     /// <summary>A zero-decimal Armenian amount prints with its dram sign.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_PrintsDramSign()
     {
@@ -716,6 +748,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     /// fallback-font glyphs included: the fonts used to tell which face has a glyph are not shared
     /// between renders.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Render_InParallel_KeepsEveryInvoiceIntact()
     {

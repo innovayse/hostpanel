@@ -30,6 +30,7 @@ public sealed class SmtpEmailSenderTests
             NullLogger<SmtpEmailSender>.Instance);
 
     /// <summary>A relay that refuses the connection answers <see cref="EmailSendFailure.RelayUnreachable"/>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SendAsync_RelayRefusesConnection_AnswersRelayUnreachable()
     {
@@ -41,6 +42,7 @@ public sealed class SmtpEmailSenderTests
     }
 
     /// <summary>A recipient that is not an address answers <see cref="EmailSendFailure.RecipientRejected"/> before any connection.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SendAsync_UnreadableRecipient_AnswersRecipientRejected()
     {

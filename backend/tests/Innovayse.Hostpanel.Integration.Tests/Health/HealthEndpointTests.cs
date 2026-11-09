@@ -12,6 +12,7 @@ public sealed class HealthEndpointTests(IntegrationTestFactory factory)
     /// Health endpoint returns 200 OK with the <see cref="HealthStatus.Ok"/> status, written as the enum
     /// member name like every enum on the wire.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_Health_Returns200WithStatusOkAsync()
     {

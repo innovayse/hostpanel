@@ -18,15 +18,15 @@ public interface IPayerCurrencyResolver
     /// <param name="clientId">The client.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The currency.</returns>
-    Task<Currency> ForClientAsync(int clientId, CancellationToken ct);
+    public Task<Currency> ForClientAsync(int clientId, CancellationToken ct);
 
     /// <summary>The currency the current caller is billed in: their client's, else the base (a guest).</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The currency.</returns>
-    Task<Currency> ForCallerAsync(CancellationToken ct);
+    public Task<Currency> ForCallerAsync(CancellationToken ct);
 
     /// <summary>The base currency.</summary>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The base currency.</returns>
-    Task<Currency> BaseAsync(CancellationToken ct);
+    /// <returns>The currency record of the base currency.</returns>
+    public Task<Currency> BaseAsync(CancellationToken ct);
 }

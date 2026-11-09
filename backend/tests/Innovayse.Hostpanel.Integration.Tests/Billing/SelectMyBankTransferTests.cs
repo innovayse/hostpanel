@@ -34,6 +34,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
     /// Choosing the transfer answers the bank details and the reference, moves the invoice to PaymentPending, marks it as a
     /// transfer and never shows the client id.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Select_TheOwnersInvoice_AnswersTheDetailsAndMovesToPaymentPending()
     {
@@ -58,6 +59,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Choosing it again answers the same details and changes nothing, so a double click is harmless.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Select_TwiceInARow_AnswersTheSameDetailsBothTimes()
     {
@@ -76,6 +78,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Another client's invoice answers like one that does not exist, and is left untouched.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Select_AStrangersInvoice_Returns404AndChangesNothing()
     {
@@ -93,6 +96,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>With the switch off the client cannot choose it: 409 <c>BANK_TRANSFER_NOT_AVAILABLE</c>, invoice untouched.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Select_WhenTheAdminSwitchedItOff_Returns409()
     {
@@ -112,6 +116,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
     /// A transfer switched on with every bank detail empty cannot be chosen: 409 <c>BANK_TRANSFER_NOT_AVAILABLE</c>, invoice
     /// untouched, so the payer is never left with a reference and nowhere to send the money.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Select_WhenTheAdminSetNoBankDetails_Returns409()
     {
@@ -135,6 +140,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A paid invoice is not open for payment: 400 <c>INVOICE_NOT_PAYABLE</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Select_APaidInvoice_Returns400NotPayable()
     {
@@ -151,6 +157,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A stored card charge that has not finished blocks the transfer, as it blocks a hosted payment.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Select_WhileAStoredChargeIsUnfinished_Returns409AndKeepsTheInvoiceOpen()
     {
@@ -168,6 +175,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A charge held for an operator blocks the transfer too, so the payer is never asked to pay again while money is held.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Select_WhileAStoredChargeIsHeld_Returns409Held()
     {
@@ -184,6 +192,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A hosted payment the payer may still be completing blocks the transfer: 409 <c>GATEWAY_SESSION_ALREADY_STARTED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Select_WhileAHostedPaymentIsOpen_Returns409()
     {
@@ -212,6 +221,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
     /// Choosing the transfer mails the client the bank details and staff a notice, once each, and a repeat click mails nothing
     /// more.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Select_MailsTheClientTheDetailsAndStaffANoticeOnce()
     {
@@ -237,6 +247,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>The action is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SelectRefusesAnonymous()
     {
@@ -246,6 +257,7 @@ public sealed class SelectMyBankTransferTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Select_WithNonPositiveId_Returns400ValidationError()
     {

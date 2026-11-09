@@ -1,11 +1,11 @@
+using Hostpanel.Sdk.Plugins.Endpoints;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Hostpanel.Sdk.Plugins.Store;
+using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Endpoints;
-using Hostpanel.Sdk.Plugins.Manifest;
-using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

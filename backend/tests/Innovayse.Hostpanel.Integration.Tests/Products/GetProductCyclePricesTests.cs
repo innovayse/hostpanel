@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class GetProductCyclePricesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Each lookup answers exactly what the entity resolves, priced, unpriced and any case alike; an unknown product is left out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_AnswersEqualTheEntitysOwnResolutionAsync()
     {
@@ -59,6 +60,7 @@ public sealed class GetProductCyclePricesTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>An empty lookup list answers an empty list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NoLookups_ReturnsEmptyAsync()
     {

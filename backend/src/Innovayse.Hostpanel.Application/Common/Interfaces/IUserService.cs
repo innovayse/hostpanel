@@ -18,7 +18,7 @@ public interface IUserService
     /// Throws <see cref="InvalidOperationException"/> on failure.
     /// </returns>
     /// <exception cref="InvalidOperationException">Thrown when user creation fails with Identity errors.</exception>
-    Task<string> CreateAsync(CreateUserInput input, CancellationToken ct);
+    public Task<string> CreateAsync(CreateUserInput input, CancellationToken ct);
 
     /// <summary>
     /// Assigns a role to an existing user.
@@ -27,7 +27,7 @@ public interface IUserService
     /// <param name="role">The role name to assign.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the role is assigned.</returns>
-    Task AddToRoleAsync(string userId, string role, CancellationToken ct);
+    public Task AddToRoleAsync(string userId, string role, CancellationToken ct);
 
     /// <summary>
     /// Checks a password sign-in. A wrong password counts toward the account lockout, a right one
@@ -37,7 +37,7 @@ public interface IUserService
     /// <param name="input">The email and the plain-text password.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The outcome, with the account when it succeeded.</returns>
-    Task<PasswordSignInResult> SignInWithPasswordAsync(PasswordSignInInput input, CancellationToken ct);
+    public Task<PasswordSignInResult> SignInWithPasswordAsync(PasswordSignInInput input, CancellationToken ct);
 
     /// <summary>
     /// Finds a user by their unique identifier.
@@ -45,7 +45,7 @@ public interface IUserService
     /// <param name="userId">The user's unique identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The account, or <see langword="null"/> if not found.</returns>
-    Task<UserIdentity?> FindByIdAsync(string userId, CancellationToken ct);
+    public Task<UserIdentity?> FindByIdAsync(string userId, CancellationToken ct);
 
     /// <summary>
     /// Checks whether the specified user's email has been confirmed.
@@ -53,7 +53,7 @@ public interface IUserService
     /// <param name="userId">The user's unique identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>True if the user's email is confirmed; false otherwise.</returns>
-    Task<bool> IsEmailConfirmedAsync(string userId, CancellationToken ct);
+    public Task<bool> IsEmailConfirmedAsync(string userId, CancellationToken ct);
 
     /// <summary>
     /// Updates the last login timestamp for a user.
@@ -61,7 +61,7 @@ public interface IUserService
     /// <param name="userId">The user's unique identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the timestamp is saved.</returns>
-    Task UpdateLastLoginAsync(string userId, CancellationToken ct);
+    public Task UpdateLastLoginAsync(string userId, CancellationToken ct);
 
     /// <summary>
     /// Returns whether two-factor authentication is currently enabled for the user.
@@ -69,7 +69,7 @@ public interface IUserService
     /// <param name="userId">The user's unique identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>True if 2FA is enabled; false otherwise.</returns>
-    Task<bool> IsTwoFactorEnabledAsync(string userId, CancellationToken ct);
+    public Task<bool> IsTwoFactorEnabledAsync(string userId, CancellationToken ct);
 
     /// <summary>
     /// Generates a new Base32-encoded TOTP secret and stores it as the account's pending secret.
@@ -79,7 +79,7 @@ public interface IUserService
     /// <param name="userId">The user's unique identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The newly generated Base32-encoded TOTP secret.</returns>
-    Task<string> GenerateTwoFactorSecretAsync(string userId, CancellationToken ct);
+    public Task<string> GenerateTwoFactorSecretAsync(string userId, CancellationToken ct);
 
     /// <summary>
     /// Checks <paramref name="code"/> against the account's pending secret and, when it matches,
@@ -89,7 +89,7 @@ public interface IUserService
     /// <param name="code">The 6-digit TOTP code from the authenticator app.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>True when it was enabled; false when there is no pending secret or the code did not match.</returns>
-    Task<bool> EnableTwoFactorAsync(string userId, string code, CancellationToken ct);
+    public Task<bool> EnableTwoFactorAsync(string userId, string code, CancellationToken ct);
 
     /// <summary>
     /// Disables two-factor authentication for the user, clears the active and pending TOTP
@@ -98,7 +98,7 @@ public interface IUserService
     /// <param name="userId">The user's unique identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the flag and the secret are cleared.</returns>
-    Task DisableTwoFactorAsync(string userId, CancellationToken ct);
+    public Task DisableTwoFactorAsync(string userId, CancellationToken ct);
 
     /// <summary>
     /// Verifies a 6-digit TOTP code against the user's stored secret.
@@ -108,7 +108,7 @@ public interface IUserService
     /// <param name="code">The 6-digit TOTP code from the authenticator app.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>True if the code is valid within the allowed time window; false otherwise.</returns>
-    Task<bool> VerifyTwoFactorCodeAsync(string userId, string code, CancellationToken ct);
+    public Task<bool> VerifyTwoFactorCodeAsync(string userId, string code, CancellationToken ct);
 
     /// <summary>
     /// Checks the account's current password.
@@ -117,7 +117,7 @@ public interface IUserService
     /// <param name="password">The plain-text password to verify.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>True when the account exists and the password is its current one; false otherwise.</returns>
-    Task<bool> CheckPasswordAsync(string userId, string password, CancellationToken ct);
+    public Task<bool> CheckPasswordAsync(string userId, string password, CancellationToken ct);
 
     /// <summary>
     /// Returns the account's current session version: a value derived from its security stamp that
@@ -128,7 +128,7 @@ public interface IUserService
     /// <param name="userId">The user's unique identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The current version, or <see langword="null"/> when the account does not exist or is deleted.</returns>
-    Task<string?> GetSessionVersionAsync(string userId, CancellationToken ct);
+    public Task<string?> GetSessionVersionAsync(string userId, CancellationToken ct);
 
     /// <summary>
     /// Retrieves all roles assigned to the specified user.
@@ -136,5 +136,5 @@ public interface IUserService
     /// <param name="userId">The user's unique identifier.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The role names assigned to the user.</returns>
-    Task<IReadOnlyList<string>> GetRolesAsync(string userId, CancellationToken ct);
+    public Task<IReadOnlyList<string>> GetRolesAsync(string userId, CancellationToken ct);
 }

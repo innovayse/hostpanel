@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Persistence;
 public sealed class ActivityLoggerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A recorded line is saved by the caller's save, with the client and description it was given.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RecordAsync_ThenSave_WritesTheLineAsync()
     {
@@ -34,6 +35,7 @@ public sealed class ActivityLoggerTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A recorded line whose caller never saves is not written.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RecordAsync_WithoutSave_WritesNothingAsync()
     {

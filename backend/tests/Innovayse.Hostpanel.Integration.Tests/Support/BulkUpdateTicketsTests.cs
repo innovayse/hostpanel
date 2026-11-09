@@ -1,6 +1,6 @@
-using Innovayse.Hostpanel.Application.Support.Common.Enums;
 using System.Net;
 using System.Net.Http.Json;
+using Innovayse.Hostpanel.Application.Support.Common.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Support;
 
@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class BulkUpdateTicketsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can flag several tickets in one bulk call.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanBulkFlagTicketsAsync()
     {
@@ -26,6 +27,7 @@ public sealed class BulkUpdateTicketsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An unrecognised bulk action is refused by the validator before any ticket is touched.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BulkActionRefusesAnUnknownActionAsync()
     {
@@ -39,6 +41,7 @@ public sealed class BulkUpdateTicketsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A caller with no credential cannot run a bulk ticket action.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

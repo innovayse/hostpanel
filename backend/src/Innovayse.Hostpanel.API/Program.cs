@@ -3,28 +3,28 @@ using Innovayse.Auth;
 using Innovayse.Auth.Endpoints;
 #endif
 using Innovayse.Hostpanel.API;
+using Innovayse.Hostpanel.API.Auth;
 using Innovayse.Hostpanel.API.Authorization;
 using Innovayse.Hostpanel.API.Extensions;
 using Innovayse.Hostpanel.Application;
-using Innovayse.Hostpanel.Application.Common.Settings;
-using Innovayse.Hostpanel.Domain.Auth;
-using Innovayse.Hostpanel.Infrastructure;
-using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using JasperFx;
-using Microsoft.Extensions.Options;
-using Serilog;
-using Innovayse.Hostpanel.API.Auth;
 using Innovayse.Hostpanel.Application.Admin.Seeding;
 using Innovayse.Hostpanel.Application.Auth.Seeding;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Notifications.Seeding;
 using Innovayse.Hostpanel.Application.Support.Seeding;
+using Innovayse.Hostpanel.Domain.Auth;
+using Innovayse.Hostpanel.Infrastructure;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Middleware;
 using Innovayse.Hostpanel.Shared.Settings;
+using JasperFx;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -318,7 +318,6 @@ try
 
         app.UseAuthorization();
     }
-
 
     app.MapControllers();
 

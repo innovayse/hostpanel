@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class CancelInvoiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Cancelling an unpaid invoice transitions it to Cancelled.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelTransitionsAnUnpaidInvoiceToCancelled()
     {
@@ -34,6 +35,7 @@ public sealed class CancelInvoiceTests(IntegrationTestFactory factory) : IClassF
     /// take money, so the refusal is a 409 with <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> and the invoice stays open.
     /// </summary>
     /// <param name="pending"><see langword="true"/> for a pending charge, <see langword="false"/> for an action required one.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -56,6 +58,7 @@ public sealed class CancelInvoiceTests(IntegrationTestFactory factory) : IClassF
     /// <summary>
     /// An invoice with a charge held for an operator can be cancelled: cancelling is one way the operator settles it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancellingAnInvoiceWithAHeldStoredChargeIsAllowed()
     {
@@ -73,6 +76,7 @@ public sealed class CancelInvoiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Cancelling a paid invoice is refused with a 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancellingAPaidInvoiceRefusesBadRequest()
     {
@@ -87,6 +91,7 @@ public sealed class CancelInvoiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Cancelling an invoice returns the credit applied to it to the client's balance.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancellingReturnsAppliedCredit()
     {
@@ -104,6 +109,7 @@ public sealed class CancelInvoiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Cancelling an id that names no invoice answers 404 with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelUnknownInvoiceRefusesNotFound()
     {
@@ -116,6 +122,7 @@ public sealed class CancelInvoiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Cancelling an invoice is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelRefusesAnonymous()
     {
@@ -125,6 +132,7 @@ public sealed class CancelInvoiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Cancelling an invoice that already took part of its total is refused with <c>INVOICE_HAS_PAYMENTS</c> and stays open.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancellingAPartPaidInvoiceRefusesWithHasPayments()
     {

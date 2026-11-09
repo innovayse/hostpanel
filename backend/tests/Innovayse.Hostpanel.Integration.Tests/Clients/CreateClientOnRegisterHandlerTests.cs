@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class CreateClientOnRegisterHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The event creates a client row for the subject with the names and registration details it carries.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientRegistered_CreatesClientRowWithRegistrationDetailsAsync()
     {
@@ -37,6 +38,7 @@ public sealed class CreateClientOnRegisterHandlerTests(IntegrationTestFactory fa
     }
 
     /// <summary>A second delivery of the event for a subject that already has a client leaves the one row untouched.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientRegistered_Twice_KeepsSingleClientRowAsync()
     {
@@ -55,6 +57,7 @@ public sealed class CreateClientOnRegisterHandlerTests(IntegrationTestFactory fa
     /// A delivery for an account that no longer exists (the demo reset truncated it after the event was
     /// queued) creates no client row pointing at nobody.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientRegistered_ForAnAccountThatNoLongerExists_CreatesNoClientAsync()
     {

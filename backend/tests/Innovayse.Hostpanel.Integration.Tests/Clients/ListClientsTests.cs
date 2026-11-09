@@ -8,6 +8,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A seeded client shows up on the default, unfiltered first page.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIncludesASeededClient()
     {
@@ -24,6 +25,7 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Listing clients is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAnonymous()
     {
@@ -33,6 +35,7 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A client, who is not staff, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAClient()
     {
@@ -56,6 +59,7 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The search finds a client by the full name read as "First Last", in any letter case.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SearchFindsAClientByFullName()
     {
@@ -68,6 +72,7 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A whole-number search finds the client with that id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SearchFindsAClientById()
     {
@@ -79,6 +84,7 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A search wildcard typed by a person matches itself and nothing else.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SearchTreatsWildcardsAsLiteralText()
     {
@@ -91,6 +97,7 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Equal names are ordered by id, so pages never repeat or skip a client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListOrdersEqualNamesById()
     {
@@ -104,6 +111,7 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The status filter keeps only clients in that status.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StatusFilterKeepsOnlyThatStatus()
     {
@@ -115,6 +123,7 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A page size above the limit is refused with 400, not silently reduced.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAPageSizeAboveTheLimit()
     {
@@ -126,6 +135,7 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A page number below 1 is refused with 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAPageBelowOne()
     {
@@ -138,6 +148,7 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
 
     /// <summary>An unknown status, by name or by number, is refused with 400.</summary>
     /// <param name="status">The status value sent.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Nonsense")]
     [InlineData("99")]
@@ -152,6 +163,7 @@ public sealed class ListClientsTests(IntegrationTestFactory factory) : IClassFix
 
     /// <summary>A search, email or phone filter longer than the limit is refused with 400.</summary>
     /// <param name="filter">The query-string key of the filter.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("search")]
     [InlineData("email")]

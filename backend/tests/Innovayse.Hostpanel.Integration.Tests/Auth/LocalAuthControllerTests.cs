@@ -19,6 +19,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
     private const string Password = "Password123!";
 
     /// <summary>A wrong password is a 401 with the sign-in code and a Russian sentence.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LoginWithWrongPassword_Refuses401WithLocalizedDetail()
     {
@@ -62,6 +63,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A pending token that is not base64 is a 401 with the pending-token code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoFactorLoginWithMalformedPendingToken_Refuses401()
     {
@@ -76,6 +78,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
     /// An empty pending token, which the admin panel sends once its in-memory token is lost, is a 401
     /// with the pending-token code and a localized detail, not a 400 from model binding or a 500.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoFactorLoginWithEmptyPendingToken_Refuses401WithLocalizedDetail()
     {
@@ -87,6 +90,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A body with no pending token at all gets the same 401 as an empty one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoFactorLoginWithMissingPendingToken_Refuses401WithLocalizedDetail()
     {
@@ -98,6 +102,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A well-formed pending token with the wrong code is a 401 with the code-mismatch code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoFactorLoginWithWrongCode_Refuses401()
     {
@@ -126,6 +131,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Registering an address that already has an account is a 400 with the registration code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterDuplicateEmail_Refuses400()
     {
@@ -139,6 +145,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>An unknown reset token is a 400 with the token code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ResetPasswordWithBadToken_Refuses400()
     {
@@ -152,6 +159,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>An unknown confirmation token is a 400 with the token code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConfirmEmailWithBadToken_Refuses400()
     {
@@ -164,6 +172,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The same refusal in English when no language is asked for.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Login_WithoutLanguageHeader_AnswersInEnglish()
     {
@@ -210,6 +219,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
     /// <param name="response">The refusal.</param>
     /// <param name="status">The expected status.</param>
     /// <param name="code">The expected error code.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private static async Task AssertRefusalAsync(HttpResponseMessage response, HttpStatusCode status, string code)
     {
         response.StatusCode.Should().Be(status);
@@ -228,6 +238,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
     /// Registration creates the account and does not sign the caller in: a token comes from
     /// /api/auth/login like it does for everyone else. The login case below covers the token.
     /// </remarks>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Register_WithValidData_Returns200WithUserIdAsync()
     {
@@ -248,6 +259,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Login with valid credentials returns 200 with access token.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Login_WithValidCredentials_Returns200WithAccessTokenAsync()
     {
@@ -273,6 +285,7 @@ public sealed class LocalAuthControllerTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Login with wrong password returns non-200 status.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Login_WithWrongPassword_ReturnsErrorAsync()
     {

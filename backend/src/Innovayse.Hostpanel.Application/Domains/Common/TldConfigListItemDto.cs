@@ -1,5 +1,3 @@
-using Innovayse.Hostpanel.Domain.Domains.Enums;
-
 namespace Innovayse.Hostpanel.Application.Domains.Common;
 
 /// <summary>Summary TLD configuration for admin list views.</summary>

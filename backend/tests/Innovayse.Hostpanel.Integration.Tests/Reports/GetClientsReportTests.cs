@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetClientsReportTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A freshly created client appears in the paginated clients report, email included.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IncludesANewClientWithEmail()
     {
@@ -29,6 +30,7 @@ public sealed class GetClientsReportTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A page size outside the allowed range is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnOversizedPage()
     {
@@ -40,6 +42,7 @@ public sealed class GetClientsReportTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -49,6 +52,7 @@ public sealed class GetClientsReportTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

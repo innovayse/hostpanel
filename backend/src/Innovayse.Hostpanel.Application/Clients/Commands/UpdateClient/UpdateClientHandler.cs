@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Auth.Common;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Queries.ListClientInvoices;
-using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;

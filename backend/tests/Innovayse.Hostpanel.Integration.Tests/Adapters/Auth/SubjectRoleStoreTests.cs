@@ -33,6 +33,7 @@ public sealed class SubjectRoleStoreTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A granted role is visible to the next reader.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddAsync_ThenGetRoles_ReturnsTheRoleAsync()
     {
@@ -51,6 +52,7 @@ public sealed class SubjectRoleStoreTests(IntegrationTestFactory factory)
     /// Granting the same role twice leaves one row and does not throw. The migration
     /// replays grants from the Identity role tables, and a re-run of it must be harmless.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddAsync_Twice_IsIdempotentAsync()
     {
@@ -70,6 +72,7 @@ public sealed class SubjectRoleStoreTests(IntegrationTestFactory factory)
     /// One subject's roles never appear against another. Trivial to state and the whole
     /// point of the table: every authorization decision downstream trusts this.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRolesAsync_DoesNotLeakBetweenSubjectsAsync()
     {
@@ -89,6 +92,7 @@ public sealed class SubjectRoleStoreTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A subject nobody has granted anything to holds no roles.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRolesAsync_ForAnUnknownSubject_ReturnsEmptyAsync()
     {
@@ -102,6 +106,7 @@ public sealed class SubjectRoleStoreTests(IntegrationTestFactory factory)
     /// Revoking removes only what was named. A revoke that took the subject's other roles
     /// with it would lock someone out in a way no caller would think to check for.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveAsync_TakesOnlyTheNamedRoleAsync()
     {
@@ -124,6 +129,7 @@ public sealed class SubjectRoleStoreTests(IntegrationTestFactory factory)
     /// so the "nobody holds it" half is real, and no other test sharing the database ever sees the
     /// removal or the new grant.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnyHasRoleAsync_ReflectsWhetherAnyoneHoldsItAsync()
     {

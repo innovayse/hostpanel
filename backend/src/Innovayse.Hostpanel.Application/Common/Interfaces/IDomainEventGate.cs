@@ -13,9 +13,9 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 public interface IDomainEventGate
 {
     /// <summary>Whether events raised by saves in this scope are currently being discarded.</summary>
-    bool IsSuppressed { get; }
+    public bool IsSuppressed { get; }
 
     /// <summary>Starts discarding events for this scope until the returned handle is disposed.</summary>
     /// <returns>A handle that restores the previous state when disposed.</returns>
-    IDisposable Suppress();
+    public IDisposable Suppress();
 }

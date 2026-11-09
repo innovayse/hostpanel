@@ -3,11 +3,11 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Support.Enums;
 using Microsoft.Extensions.DependencyInjection;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 
@@ -21,6 +21,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 public sealed class GetDashboardStatsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Dashboard stats answer 200 with every counter present.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsEveryCounterAsync()
     {
@@ -38,6 +39,7 @@ public sealed class GetDashboardStatsTests(IntegrationTestFactory factory) : ICl
     /// The open ticket count reflects only <see cref="TicketStatus.Open"/> tickets, as counted by
     /// <c>GetDashboardStatsHandler</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OpenTicketsCountsOnlyOpenStatusAsync()
     {
@@ -71,6 +73,7 @@ public sealed class GetDashboardStatsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -82,6 +85,7 @@ public sealed class GetDashboardStatsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The dashboard is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {
@@ -95,6 +99,7 @@ public sealed class GetDashboardStatsTests(IntegrationTestFactory factory) : ICl
     /// partial refund, the imported history, the converted foreign payment, no credit), all of it
     /// long before the last 30 days, so the monthly figure does not move.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RevenueIsIncomeNetOfRefundsAsync()
     {
@@ -113,6 +118,7 @@ public sealed class GetDashboardStatsTests(IntegrationTestFactory factory) : ICl
     /// Revenue adds invoices up in the base currency: a paid invoice in a currency worth half the base adds half
     /// its total, not the whole of it, so a mixed-currency demo does not report a thousand times its real revenue.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RevenueIsCountedInTheBaseCurrencyAsync()
     {

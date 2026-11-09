@@ -27,6 +27,7 @@ public sealed class TwoFactorLoginTests(IntegrationTestFactory factory) : IClass
     private readonly TwoFactorHost _two = new(factory);
 
     /// <summary>A forged token in the retired base64 format is refused even with the right code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ForgedBase64Token_IsRefusedEvenWithTheRightCode()
     {
@@ -41,6 +42,7 @@ public sealed class TwoFactorLoginTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A genuine token with one character changed is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TamperedToken_IsRefused()
     {
@@ -59,6 +61,7 @@ public sealed class TwoFactorLoginTests(IntegrationTestFactory factory) : IClass
     /// A token signed with the host's own key ring but already past its lifetime is refused. It is
     /// issued by a second service instance with a negative lifetime, so no clock has to be waited out.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExpiredToken_IsRefused()
     {
@@ -76,6 +79,7 @@ public sealed class TwoFactorLoginTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A genuine token and the right code sign in and return an access token.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ValidTokenAndCorrectCode_SignsIn()
     {
@@ -91,6 +95,7 @@ public sealed class TwoFactorLoginTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A token that already signed in once cannot be replayed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TokenAlreadyUsed_IsRefused()
     {
@@ -109,6 +114,7 @@ public sealed class TwoFactorLoginTests(IntegrationTestFactory factory) : IClass
     /// Five wrong codes are answered as wrong codes; after that the challenge is dead and even the
     /// correct code is refused, so the six digits cannot be brute forced against one token.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TooManyWrongCodes_KillTheChallenge()
     {
@@ -129,6 +135,7 @@ public sealed class TwoFactorLoginTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A dead challenge does not stop the same person starting a new one with the password.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeadChallenge_DoesNotBlockANewSignIn()
     {
@@ -147,6 +154,7 @@ public sealed class TwoFactorLoginTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A code that already signed one challenge in is refused on a second one in the same time window.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CodeAcceptedOnce_IsRefusedOnAnotherChallenge()
     {
@@ -166,6 +174,7 @@ public sealed class TwoFactorLoginTests(IntegrationTestFactory factory) : IClass
     /// Wrong codes are counted per account across challenges: after ten of them, spread over several
     /// pending tokens, even a fresh token with the right code is refused.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WrongCodesAcrossChallenges_LockTheAccount()
     {
@@ -190,6 +199,7 @@ public sealed class TwoFactorLoginTests(IntegrationTestFactory factory) : IClass
     /// A sign-in finished at the second factor carries the account's real email-verified state, as the
     /// password-only sign-in does; the freshly registered account here has not confirmed its address.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SignInAtTheSecondFactor_CarriesTheEmailVerifiedState()
     {
@@ -256,6 +266,7 @@ public sealed class TwoFactorLoginTests(IntegrationTestFactory factory) : IClass
     /// <summary>Asserts a 401 problem+json carrying the given code.</summary>
     /// <param name="response">The refusal.</param>
     /// <param name="code">The expected error code.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private static async Task AssertRefusalAsync(HttpResponseMessage response, string code)
     {
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);

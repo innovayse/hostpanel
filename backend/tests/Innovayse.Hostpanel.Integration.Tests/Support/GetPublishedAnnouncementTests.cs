@@ -28,6 +28,7 @@ public sealed class GetPublishedAnnouncementTests(IntegrationTestFactory factory
     }
 
     /// <summary>A published announcement is readable with no credential, in the public shape.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublishedAnnouncement_IsReadableAnonymouslyAsync()
     {
@@ -44,6 +45,7 @@ public sealed class GetPublishedAnnouncementTests(IntegrationTestFactory factory
     }
 
     /// <summary>A draft answers 404, the same as an id that names nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Draft_AnswersNotFoundAsync()
     {
@@ -55,6 +57,7 @@ public sealed class GetPublishedAnnouncementTests(IntegrationTestFactory factory
     }
 
     /// <summary>An unknown id answers 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownId_AnswersNotFoundAsync()
     {

@@ -20,7 +20,7 @@ public sealed class ConfirmBankTransferTests(IntegrationTestFactory factory) : I
 {
     /// <summary>Reads an invoice with its payments from the database.</summary>
     /// <param name="invoiceId">The invoice.</param>
-    /// <returns>The invoice.</returns>
+    /// <returns>The invoice as stored.</returns>
     private async Task<Invoice> LoadAsync(int invoiceId)
     {
         using var scope = factory.Services.CreateScope();
@@ -42,6 +42,7 @@ public sealed class ConfirmBankTransferTests(IntegrationTestFactory factory) : I
     /// Confirming pays the invoice through the shared path: Paid, one payment in the invoice's history under the reference,
     /// one client ledger row, the payment event's mail and the confirmation mail, and the linked order is fulfilled.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Confirm_PaysTheInvoiceThroughTheSharedPath()
     {
@@ -81,6 +82,7 @@ public sealed class ConfirmBankTransferTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A second confirm of the same transfer is refused with 409 and records no second payment.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Confirm_Twice_RecordsOnePaymentAndRefusesTheSecond()
     {
@@ -100,6 +102,7 @@ public sealed class ConfirmBankTransferTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Two confirms racing each other never both pay: one wins with 204, the other is refused with 409.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Confirm_RacedByTwoAdmins_PaysExactlyOnce()
     {
@@ -119,6 +122,7 @@ public sealed class ConfirmBankTransferTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>An invoice nobody chose a transfer for has nothing to confirm: 409, still Unpaid, nothing recorded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Confirm_WhenNoTransferWaits_Returns409()
     {
@@ -136,6 +140,7 @@ public sealed class ConfirmBankTransferTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A stored card charge that has not finished refuses the confirm, and the transfer keeps waiting.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Confirm_WhileAStoredChargeIsUnfinished_Returns409AndKeepsWaiting()
     {
@@ -155,6 +160,7 @@ public sealed class ConfirmBankTransferTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A claim held for an operator does not stop the confirm: recording the payment is how the operator settles it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Confirm_OnAHeldClaim_IsAllowed()
     {
@@ -171,6 +177,7 @@ public sealed class ConfirmBankTransferTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>An id that names no invoice answers 404 with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Confirm_AnUnknownInvoice_Returns404()
     {
@@ -183,6 +190,7 @@ public sealed class ConfirmBankTransferTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Staff only: anonymous callers get 401, and a client account gets 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Confirm_IsForStaffOnly()
     {
@@ -196,6 +204,7 @@ public sealed class ConfirmBankTransferTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Confirm_WithNonPositiveId_Returns400ValidationError()
     {

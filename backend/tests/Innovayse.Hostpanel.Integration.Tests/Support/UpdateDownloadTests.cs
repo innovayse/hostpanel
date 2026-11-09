@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class UpdateDownloadTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can update an existing download entry.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanUpdateADownloadAsync()
     {
@@ -47,6 +48,7 @@ public sealed class UpdateDownloadTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Updating a download that does not exist answers 404 with <c>DOWNLOAD_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateUnknownDownloadAnswersNotFoundAsync()
     {
@@ -70,6 +72,7 @@ public sealed class UpdateDownloadTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A caller with no credential cannot update a download entry.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

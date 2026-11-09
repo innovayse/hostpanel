@@ -1,11 +1,10 @@
+using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Application.Billing.Commands.ReconcileGatewayPaymentsCron;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Payment;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -97,7 +96,7 @@ public sealed class BankTransferGatewaySessionTests(IntegrationTestFactory facto
     /// <summary>Reads an invoice with its payments.</summary>
     /// <param name="host">The host whose database is read.</param>
     /// <param name="invoiceId">The invoice.</param>
-    /// <returns>The invoice.</returns>
+    /// <returns>The invoice as stored.</returns>
     private static async Task<Invoice> LoadAsync(WebApplicationFactory<Program> host, int invoiceId)
     {
         using var scope = host.Services.CreateScope();
@@ -109,6 +108,8 @@ public sealed class BankTransferGatewaySessionTests(IntegrationTestFactory facto
     /// A card payment finished after the window, while the invoice waits for a transfer, settles the invoice with the gateway's money
     /// and ends the wait; nothing goes to the balance, and the money is recorded once.
     /// </summary>
+    /// <param name="sessionAgeHours">Age of the transfer session in hours.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(1)]
     [InlineData(30)]
@@ -134,6 +135,7 @@ public sealed class BankTransferGatewaySessionTests(IntegrationTestFactory facto
     }
 
     /// <summary>A card session that is still pending leaves the waiting transfer alone.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APendingCardSession_LeavesTheWaitingTransferAlone()
     {
@@ -157,6 +159,7 @@ public sealed class BankTransferGatewaySessionTests(IntegrationTestFactory facto
     /// Staff confirm the transfer more than a day after the session started; the session then reports paid. The money goes to the
     /// client's balance once, because the invoice was already settled by the transfer.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ATransferConfirmedAfterADay_StillCreditsALateCardPayment()
     {

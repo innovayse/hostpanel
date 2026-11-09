@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class SetDnsManagementTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary><c>PUT /api/domains/{id}/dns-management</c> with <c>{ enabled: true }</c> succeeds and persists.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetDnsManagement_WithEnabledField_Returns204AndPersistsAsync()
     {
@@ -32,6 +33,7 @@ public sealed class SetDnsManagementTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An unknown domain id answers 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetDnsManagement_UnknownDomain_Returns404Async()
     {
@@ -45,6 +47,7 @@ public sealed class SetDnsManagementTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetDnsManagement_WithoutToken_Returns401Async()
     {
@@ -57,6 +60,7 @@ public sealed class SetDnsManagementTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A non-positive domain id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetDnsManagement_NonPositiveDomainId_Returns400ValidationErrorAsync()
     {

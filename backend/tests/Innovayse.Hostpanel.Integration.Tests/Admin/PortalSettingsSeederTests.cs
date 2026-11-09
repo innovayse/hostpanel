@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Application.Admin.Seeding;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Microsoft.EntityFrameworkCore;
@@ -31,12 +30,14 @@ public sealed class PortalSettingsSeederTests(IntegrationTestFactory factory)
     /// observe the seeder's behaviour on a genuinely empty table.
     /// </summary>
     /// <param name="context">The data context to clear.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private static async Task ClearSettingsAsync(IHostpanelDbContext context)
     {
         await context.Settings.ExecuteDeleteAsync();
     }
 
     /// <summary>An empty table gets every default row added exactly once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureSeededAsync_EmptyTable_AddsEveryDefaultOnceAsync()
     {
@@ -54,6 +55,7 @@ public sealed class PortalSettingsSeederTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An operator's existing choice is left alone; only the missing keys are added.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureSeededAsync_ExistingChoice_IsLeftAloneAndOnlyMissingKeysAddedAsync()
     {
@@ -75,6 +77,7 @@ public sealed class PortalSettingsSeederTests(IntegrationTestFactory factory)
     /// Nothing is created and nothing changes when every key is already present, which is the
     /// state <see cref="IntegrationTestFactory.InitializeAsync"/> already left the table in.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureSeededAsync_NothingMissing_CreatesNothingAsync()
     {
@@ -90,6 +93,7 @@ public sealed class PortalSettingsSeederTests(IntegrationTestFactory factory)
     /// Two instances starting together both seed an empty table: whichever loses the race to the unique
     /// index on the key carries on instead of failing the start, and every key exists exactly once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureSeededAsync_TwoConcurrentStarts_BothSucceedAndEveryKeyExistsOnceAsync()
     {
@@ -108,6 +112,7 @@ public sealed class PortalSettingsSeederTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A fresh install starts in dark mode with the toggle on, matching the storefront's pre-existing default.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureSeededAsync_NewInstall_StartsDarkWithToggleOnAsync()
     {

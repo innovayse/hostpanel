@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
-using Innovayse.Hostpanel.Domain.Products;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
@@ -40,6 +39,7 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     }
 
     /// <summary>A one-time item due now is invoiced and marked invoiced.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DueOneTimeItem_IsInvoiced()
     {
@@ -64,6 +64,7 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     }
 
     /// <summary>A one-time item not yet due is left uninvoiced.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NotYetDueOneTimeItem_IsNotInvoiced()
     {
@@ -84,6 +85,7 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     }
 
     /// <summary>A recurring item due now is invoiced and re-armed: its due date advances and it is eligible again.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DueRecurringItem_IsInvoicedAndAdvanced()
     {
@@ -113,6 +115,7 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     /// Due is decided by the host clock: a one-time item due in five days is not invoiced today and
     /// is invoiced once the clock stands past its due date.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FutureOneTimeItem_IsInvoicedOnceTheClockReachesItsDueDate()
     {
@@ -140,6 +143,7 @@ public sealed class ProcessBillableItemsCronTests(IntegrationTestFactory factory
     /// other client is invoiced, the failing one has neither an invoice nor an invoiced item, so the
     /// next run invoices it once rather than twice.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OneFailingClient_DoesNotStopTheOthersAndLeavesNoInvoice()
     {

@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class ListCatalogProductsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An anonymous caller reads the catalogue.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListCatalog_ReturnsOk_WithoutAuthAsync()
     {
@@ -28,6 +29,7 @@ public sealed class ListCatalogProductsTests(IntegrationTestFactory factory) : I
     /// The catalogue carries no provisioning package, server group or status, though the product
     /// has a package and a server group, and never lists an inactive product of the same group.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListCatalog_CarriesNoProvisioningFieldAndNoInactiveProductAsync()
     {
@@ -76,6 +78,7 @@ public sealed class ListCatalogProductsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A non-positive group filter is refused by the validator with 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListCatalog_NonPositiveGroupId_Returns400Async()
     {
@@ -85,6 +88,7 @@ public sealed class ListCatalogProductsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A product filter lists that one product and no other, in any group.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListCatalog_ProductId_ReturnsOnlyThatProductAsync()
     {
@@ -100,6 +104,7 @@ public sealed class ListCatalogProductsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A several-group filter lists the products of exactly those groups.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListCatalog_GroupIds_ReturnsTheProductsOfThoseGroupsOnlyAsync()
     {
@@ -125,6 +130,7 @@ public sealed class ListCatalogProductsTests(IntegrationTestFactory factory) : I
 
     /// <summary>A non-positive product id or a non-positive group in the list is refused with 400.</summary>
     /// <param name="query">The query string under test.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("productId=0")]
     [InlineData("groupIds=1&groupIds=0")]
@@ -136,6 +142,7 @@ public sealed class ListCatalogProductsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A list of more groups than a store has is refused with 400, so the filter cannot grow an unbounded SQL list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListCatalog_TooManyGroupIds_Returns400Async()
     {

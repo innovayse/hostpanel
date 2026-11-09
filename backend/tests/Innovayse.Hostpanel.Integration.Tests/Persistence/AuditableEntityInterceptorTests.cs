@@ -32,6 +32,7 @@ public sealed class AuditableEntityInterceptorTests(IntegrationTestFactory facto
             }));
 
     /// <summary>Inserting stamps the clock's moment; a later update leaves it as it was.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Save_StampsCreatedAtOnInsert_AndKeepsItOnUpdateAsync()
     {
@@ -71,6 +72,7 @@ public sealed class AuditableEntityInterceptorTests(IntegrationTestFactory facto
     }
 
     /// <summary>A creation date set before the first save, as the history import does, is not overwritten.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Save_KeepsABackdatedCreatedAtOnInsertAsync()
     {

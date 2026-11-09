@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class AddTicketTagTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Staff can add a tag to a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanAddATagAsync()
     {
@@ -24,6 +25,7 @@ public sealed class AddTicketTagTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Adding a tag to a ticket that does not exist answers 404 with <c>TICKET_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddTagToUnknownTicketAnswersNotFoundAsync()
     {
@@ -36,6 +38,7 @@ public sealed class AddTicketTagTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A caller with no credential cannot tag a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

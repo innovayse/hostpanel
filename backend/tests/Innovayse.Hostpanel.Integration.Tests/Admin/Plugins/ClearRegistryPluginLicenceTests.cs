@@ -34,6 +34,7 @@ public sealed class ClearRegistryPluginLicenceTests(IntegrationTestFactory facto
     }
 
     /// <summary>A clear deletes the row and the details page then reports no key and sends none.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AClear_DeletesTheKeyAsync()
     {
@@ -54,6 +55,7 @@ public sealed class ClearRegistryPluginLicenceTests(IntegrationTestFactory facto
     }
 
     /// <summary>Clearing a key that is not stored succeeds and writes nothing to the activity log.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AClearWithNoKey_SucceedsAndRecordsNothingAsync()
     {
@@ -70,6 +72,7 @@ public sealed class ClearRegistryPluginLicenceTests(IntegrationTestFactory facto
     }
 
     /// <summary>A save and a clear are written to the activity log with the plugin id and never the key.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SaveAndClear_AreAuditedWithoutTheKeyAsync()
     {
@@ -96,6 +99,7 @@ public sealed class ClearRegistryPluginLicenceTests(IntegrationTestFactory facto
 
     /// <summary>An id of the wrong shape is refused.</summary>
     /// <param name="pluginId">The route id.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Bad_Id")]
     [InlineData("UPPER")]
@@ -110,6 +114,7 @@ public sealed class ClearRegistryPluginLicenceTests(IntegrationTestFactory facto
     }
 
     /// <summary>A caller with only the Client role is refused with 403 and the key is kept.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -132,6 +137,7 @@ public sealed class ClearRegistryPluginLicenceTests(IntegrationTestFactory facto
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class CreateTldConfigTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can create, read, list, update and delete a TLD configuration.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanCreateReadUpdateAndDeleteATldConfigAsync()
     {
@@ -68,6 +69,7 @@ public sealed class CreateTldConfigTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Creating a second configuration for an already-configured extension answers 409 with <c>TLD_CONFIG_ALREADY_EXISTS</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateRefusesADuplicateExtensionWithAlreadyExistsAsync()
     {
@@ -82,6 +84,7 @@ public sealed class CreateTldConfigTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An unrecognized registrar module answers 400 with <c>TLD_REGISTRAR_MODULE_UNKNOWN</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateRefusesAnUnknownRegistrarModuleAsync()
     {
@@ -111,6 +114,7 @@ public sealed class CreateTldConfigTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_WithoutToken_Returns401Async()
     {

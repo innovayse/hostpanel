@@ -15,6 +15,7 @@ public sealed class GetMyDomainNameserversTests(IntegrationTestFactory factory) 
     /// Reading nameservers refuses a stranger and, on the owner's own domain, returns the two
     /// just set through <c>UpdateMyDomainNameservers</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetNameservers_RefusesAStrangerAndServesTheOwnerAsync()
     {
@@ -35,6 +36,7 @@ public sealed class GetMyDomainNameserversTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetNameservers_WithoutToken_Returns401Async()
     {
@@ -46,6 +48,7 @@ public sealed class GetMyDomainNameserversTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetNameservers_WithNonPositiveId_Returns400ValidationErrorAsync()
     {

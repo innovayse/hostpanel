@@ -24,6 +24,7 @@ public sealed class ClientClosedServicesHandlerTests(IntegrationTestFactory fact
     }
 
     /// <summary>The closing suspends the client's active service as <see cref="SuspensionSource.Other"/>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientClosed_SuspendsTheActiveServicesOfThatClientOnlyAsync()
     {
@@ -42,6 +43,7 @@ public sealed class ClientClosedServicesHandlerTests(IntegrationTestFactory fact
     }
 
     /// <summary>A service that is not active (terminated here) is left as it is, and the handler does not throw.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientClosed_LeavesAServiceThatIsNotActiveAloneAsync()
     {

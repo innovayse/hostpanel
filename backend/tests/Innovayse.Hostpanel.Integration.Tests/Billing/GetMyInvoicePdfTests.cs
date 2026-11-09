@@ -22,6 +22,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetMyInvoicePdfTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The owner downloads their published invoice as a PDF attachment.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyPdf_Owner_GetsPublishedInvoice()
     {
@@ -39,6 +40,7 @@ public sealed class GetMyInvoicePdfTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The client's download is not kept by the browser or a proxy either.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyPdf_IsNeverCached()
     {
@@ -57,6 +59,7 @@ public sealed class GetMyInvoicePdfTests(IntegrationTestFactory factory) : IClas
     /// A client's download waits no longer than <c>InvoicePdf:MaxRenderWaitSeconds</c> for a render
     /// slot either: with the only one taken, it answers 503 with the configured <c>Retry-After</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyPdf_AnswersBusyWhenNoRenderSlotFrees()
     {
@@ -116,6 +119,7 @@ public sealed class GetMyInvoicePdfTests(IntegrationTestFactory factory) : IClas
     /// The owner's own draft is not theirs to see yet: it answers exactly like an id that names no
     /// invoice, so a client cannot tell that a draft is being prepared.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyPdf_RefusesOwnDraftLikeUnknownId()
     {
@@ -132,6 +136,7 @@ public sealed class GetMyInvoicePdfTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A stranger's invoice answers exactly like an id that names no invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyPdf_Stranger_Gets404LikeUnknownId()
     {
@@ -149,6 +154,7 @@ public sealed class GetMyInvoicePdfTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Downloading an invoice is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyPdf_Anonymous_Returns401()
     {

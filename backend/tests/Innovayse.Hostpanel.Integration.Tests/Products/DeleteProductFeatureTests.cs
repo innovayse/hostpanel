@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class DeleteProductFeatureTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>DELETE without auth answers 401 Unauthorized.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -22,6 +23,7 @@ public sealed class DeleteProductFeatureTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Deleting an unknown line id answers 404 with <c>PRODUCT_FEATURE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownId_RefusesNotFound()
     {
@@ -34,6 +36,7 @@ public sealed class DeleteProductFeatureTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A deleted line no longer appears in the product's list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemovesTheLineFromTheList()
     {

@@ -17,6 +17,7 @@ public sealed class InitiateMyOutgoingTransferTests(IntegrationTestFactory facto
     /// Starting an outgoing transfer refuses a stranger before the registrar is asked, and for
     /// the owner returns the EPP code <see cref="StubRegistrarProvider.GetEppCodeAsync"/> answers.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetEppCode_RefusesAStrangerAndAnswersTheOwnerAsync()
     {
@@ -34,6 +35,7 @@ public sealed class InitiateMyOutgoingTransferTests(IntegrationTestFactory facto
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetEppCode_WithoutToken_Returns401Async()
     {
@@ -45,6 +47,7 @@ public sealed class InitiateMyOutgoingTransferTests(IntegrationTestFactory facto
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InitiateOutgoingTransfer_WithNonPositiveId_Returns400ValidationErrorAsync()
     {

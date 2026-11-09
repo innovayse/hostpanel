@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Hostpanel.Sdk.Packaging.Naming;
-using PluginVersionChange = Hostpanel.Sdk.Packaging.Enums.PluginVersionChange;
 using Microsoft.Extensions.Logging;
+using PluginVersionChange = Hostpanel.Sdk.Packaging.Enums.PluginVersionChange;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 

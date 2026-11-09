@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class GetOrderableProductsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A known product comes back with its status and its prices in the asked currency; an unknown id is left out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_KnownAndUnknownIds_ReturnsTheKnownProductPricedInTheCurrencyAsync()
     {
@@ -50,6 +51,7 @@ public sealed class GetOrderableProductsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A product priced for the three newer cycles comes back with each amount under its own cycle.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ProductPricedForTheNewCycles_ReturnsEachAmountUnderItsCycleAsync()
     {
@@ -82,6 +84,7 @@ public sealed class GetOrderableProductsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>No ids answer an empty list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NoIds_ReturnsEmptyAsync()
     {

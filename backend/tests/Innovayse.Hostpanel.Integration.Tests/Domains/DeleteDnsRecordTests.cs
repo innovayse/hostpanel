@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class DeleteDnsRecordTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Deleting a DNS record on an unknown domain answers 404 with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteDnsRecord_UnknownDomain_Returns404Async()
     {
@@ -29,6 +30,7 @@ public sealed class DeleteDnsRecordTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An unknown record id on a real domain answers 404 with <c>DNS_RECORD_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteDnsRecord_UnknownRecord_Returns404WithDnsRecordNotFoundAsync()
     {
@@ -44,6 +46,7 @@ public sealed class DeleteDnsRecordTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Deleting a record that exists succeeds and removes it from the zone.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteDnsRecord_ExistingRecord_Returns204AndRemovesItAsync()
     {
@@ -67,6 +70,7 @@ public sealed class DeleteDnsRecordTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteDnsRecord_WithoutToken_Returns401Async()
     {
@@ -78,6 +82,7 @@ public sealed class DeleteDnsRecordTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A non-positive record id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteDnsRecord_NonPositiveRecordId_Returns400ValidationErrorAsync()
     {

@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class CancelOrderTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An id nothing names answers 404 with <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderRefusesNotFound()
     {
@@ -31,6 +32,7 @@ public sealed class CancelOrderTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Cancelling a pending order moves it to Cancelled.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelMovesAPendingOrderToCancelled()
     {
@@ -48,6 +50,7 @@ public sealed class CancelOrderTests(IntegrationTestFactory factory) : IClassFix
     /// Cancelling a pending order cancels its open invoice through Billing in the same flow, so no
     /// invoice is left payable for an order that will never be fulfilled.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelCancelsThePendingOrdersOpenInvoice()
     {
@@ -69,6 +72,7 @@ public sealed class CancelOrderTests(IntegrationTestFactory factory) : IClassFix
     /// A pending order whose invoice already took the payment is not cancelled: Billing refuses to
     /// cancel a paid invoice, and the order stays Pending for its fulfilment.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnOrderWhoseInvoiceIsPaid()
     {
@@ -96,6 +100,7 @@ public sealed class CancelOrderTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An active order is refused with <c>ORDER_NOT_PENDING</c>; only Pending orders may be cancelled.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnActiveOrder()
     {
@@ -109,6 +114,7 @@ public sealed class CancelOrderTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Cancelling is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -120,6 +126,7 @@ public sealed class CancelOrderTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A plain client caller, who is not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAClientCaller()
     {

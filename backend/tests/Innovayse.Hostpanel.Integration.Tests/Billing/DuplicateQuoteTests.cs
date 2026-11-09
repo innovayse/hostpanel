@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class DuplicateQuoteTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Duplicating a quote creates a new draft with a different id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DuplicateCreatesANewDraft()
     {
@@ -27,6 +28,7 @@ public sealed class DuplicateQuoteTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Duplicating an id that names no quote answers 404 with <c>QUOTE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DuplicateUnknownQuoteRefusesNotFound()
     {
@@ -39,6 +41,7 @@ public sealed class DuplicateQuoteTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Duplicating a quote is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DuplicateRefusesAnonymous()
     {

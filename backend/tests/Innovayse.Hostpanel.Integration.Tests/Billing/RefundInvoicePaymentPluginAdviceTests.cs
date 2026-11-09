@@ -1,12 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
+using Hostpanel.Sdk.Plugins.Fulfilment;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
-using Hostpanel.Sdk.Plugins.Fulfilment;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -76,6 +75,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     }
 
     /// <summary>A plugin that caps the refund lowers the amount and its reason is written to the notes.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginCapReducesTheRefundAndWritesItsReasonToTheNotes()
     {
@@ -95,6 +95,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     }
 
     /// <summary>A plugin that allows the whole amount changes neither the refund nor its notes.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginAllowingTheAmountLeavesTheRefundUnchanged()
     {
@@ -112,6 +113,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     }
 
     /// <summary>A plugin that allows nothing refuses the refund and nothing is recorded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginAllowingNothingRefusesTheRefund()
     {
@@ -128,6 +130,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     }
 
     /// <summary>A plugin that throws leaves the refund refused, fail closed, with nothing recorded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginThatThrowsRefusesTheRefund()
     {
@@ -144,6 +147,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     }
 
     /// <summary>A plugin that does not answer within the call timeout refuses the refund, like one that throws.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginThatTimesOutRefusesTheRefund()
     {
@@ -164,6 +168,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     }
 
     /// <summary>With no fulfilment plugin enabled nobody is asked and the refund goes through as requested.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NoEnabledPluginLeavesTheRefundUnchanged()
     {
@@ -188,6 +193,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     /// The plugin asked for advice is told its own reference to the invoice's client, the one the host computes
     /// for that plugin and client.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdvisingPlugin_IsToldItsOwnClientReference()
     {
@@ -203,6 +209,7 @@ public sealed class RefundInvoicePaymentPluginAdviceTests(IntegrationTestFactory
     }
 
     /// <summary>Two plugins asked about one refund are each told their own, different reference to the client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoAdvisingPlugins_AreToldDifferentReferences()
     {

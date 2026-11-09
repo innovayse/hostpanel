@@ -125,7 +125,6 @@ public sealed class AddMySshKeyTests(IntegrationTestFactory factory) : IClassFix
         var (http, _, serverId, serviceId) = await SshTestSeeds.OwnerWithServiceAsync(factory, "ssh-add-down");
         SshTestSeeds.Agents(factory).AgentFor(serverId).FailWith = SshProviderFailure.Unreachable;
 
-
         var response = await AddAsync(http, serviceId, SshTestSeeds.Key(1));
 
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
@@ -135,7 +134,6 @@ public sealed class AddMySshKeyTests(IntegrationTestFactory factory) : IClassFix
         record.ServerId.Should().Be(serverId);
         record.LastSyncError.Should().Be(SshProviderFailure.Unreachable);
     }
-
 
     /// <summary>Extra body fields such as server, account or path are ignored, so the key lands only on the service account.</summary>
     /// <returns>A task that completes when the assertions have run.</returns>

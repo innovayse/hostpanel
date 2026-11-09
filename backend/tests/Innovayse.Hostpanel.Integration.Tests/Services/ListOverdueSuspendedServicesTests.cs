@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class ListOverdueSuspendedServicesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Only a service suspended for an overdue invoice is listed; a manual suspension and an active service are not.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_MixedSuspensions_ListsOnlyOverdueOnesAsync()
     {

@@ -2,7 +2,6 @@ using System.IdentityModel.Tokens.Jwt;
 using Innovayse.Hostpanel.API.Auth;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Auth.Settings;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.API.Identity;

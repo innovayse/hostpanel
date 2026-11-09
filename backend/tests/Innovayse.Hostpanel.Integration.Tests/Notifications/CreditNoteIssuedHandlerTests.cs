@@ -8,6 +8,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class CreditNoteIssuedHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Issuing a note mails the client one message that names the note and the amount, and no balance mail goes with it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Issue_MailsTheClientTheNoteOnce()
     {
@@ -27,6 +28,7 @@ public sealed class CreditNoteIssuedHandlerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A note that is refused sends nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARefusedNote_MailsNothing()
     {

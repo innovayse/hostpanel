@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class BeginOrderLineRefundTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An order that does not exist is refused as <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderIsRefused()
     {
@@ -25,6 +26,7 @@ public sealed class BeginOrderLineRefundTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A line the order does not hold is refused as <c>ORDER_ITEM_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingLineIsRefused()
     {
@@ -39,6 +41,7 @@ public sealed class BeginOrderLineRefundTests(IntegrationTestFactory factory) : 
     /// A failed line becomes Refunding, the order stays Incomplete, and a retry of the line is refused with
     /// <c>ORDER_LINE_NOT_RETRYABLE</c> while the refund runs.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClaimsTheFailedLineAndKeepsARetryOff()
     {
@@ -59,6 +62,7 @@ public sealed class BeginOrderLineRefundTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A line that is not failed (fulfilled here) is refused as <c>ORDER_LINE_NOT_REFUNDABLE</c> and left as it is.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesALineThatDidNotFail()
     {
@@ -75,6 +79,7 @@ public sealed class BeginOrderLineRefundTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A line already being refunded cannot be claimed a second time, so two refunds never run for one line.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesALineThatIsAlreadyBeingRefunded()
     {
@@ -90,6 +95,7 @@ public sealed class BeginOrderLineRefundTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A non-positive id is refused by the validator.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NonPositiveIdsAreRefusedByTheValidator()
     {

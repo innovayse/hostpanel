@@ -1,13 +1,3 @@
-using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
-using PluginSignatureRule = Hostpanel.Sdk.Packaging.Enums.PluginSignatureRule;
-using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
-using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
-using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures.Enums;
-using Innovayse.Hostpanel.Integration.Tests.Shared;
 using Hostpanel.Sdk.Plugins.Endpoints;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Fulfilment;
@@ -15,9 +5,19 @@ using Hostpanel.Sdk.Plugins.Hosting;
 using Hostpanel.Sdk.Plugins.Identity;
 using Hostpanel.Sdk.Plugins.Manifest;
 using Hostpanel.Sdk.Plugins.Payment;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
+using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Infrastructure.Plugins;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
+using Innovayse.Hostpanel.Integration.Tests.Fixtures.Enums;
+using Innovayse.Hostpanel.Integration.Tests.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using PluginSignatureRule = Hostpanel.Sdk.Packaging.Enums.PluginSignatureRule;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 

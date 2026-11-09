@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 public sealed class OrdersImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An order with no line items for a known client is imported.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Orders_ImportsAnOrderForAKnownClientAsync()
     {
@@ -52,6 +53,7 @@ public sealed class OrdersImporterTests(IntegrationTestFactory factory) : IClass
     /// A service line is linked to the product imported for its source product id, even when another
     /// product here carries the name the line was ordered under; the domain line beside it is not stored.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Orders_LinksAServiceLineToTheProductImportedForItsSourceIdAsync()
     {
@@ -85,6 +87,7 @@ public sealed class OrdersImporterTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An order whose every line is a domain or an addon is skipped as having no product lines.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Orders_SkipsAnOrderWithOnlyDomainLinesAsync()
     {
@@ -109,6 +112,7 @@ public sealed class OrdersImporterTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An order with a service line whose source product was not imported here is skipped, never linked to another product.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Orders_SkipsAnOrderWhoseSourceProductIsUnknownAsync()
     {

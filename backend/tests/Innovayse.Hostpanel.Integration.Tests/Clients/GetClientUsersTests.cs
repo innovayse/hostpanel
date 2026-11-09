@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class GetClientUsersTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A real client's users lists its owner.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIncludesTheOwner()
     {
@@ -25,6 +26,7 @@ public sealed class GetClientUsersTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Listing users for an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesUnknownClient()
     {
@@ -37,6 +39,7 @@ public sealed class GetClientUsersTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Listing a client's users is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAnonymous()
     {
@@ -46,6 +49,7 @@ public sealed class GetClientUsersTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A client, who is not staff, is refused with 403 on the admin route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAClient()
     {

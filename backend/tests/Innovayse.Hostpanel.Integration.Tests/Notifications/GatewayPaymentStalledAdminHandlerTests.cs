@@ -18,6 +18,7 @@ public sealed class GatewayPaymentStalledAdminHandlerTests(IntegrationTestFactor
     private const string AdminEmail = "ops@example.test";
 
     /// <summary>Publishing the event sends one staff mail naming the invoice and the hours, and the template row exists.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayPaymentStalled_MailsStaffOnceAndSeedsTheTemplate()
     {
@@ -42,6 +43,7 @@ public sealed class GatewayPaymentStalledAdminHandlerTests(IntegrationTestFactor
     }
 
     /// <summary>With neither address configured nothing is sent (the handler logs an error naming the setting instead).</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayPaymentStalled_WithNoAddress_SendsNothing()
     {

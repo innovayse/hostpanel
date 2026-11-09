@@ -60,6 +60,7 @@ public sealed class PortalSessionRevokerTests : IAsyncLifetime
     }
 
     /// <summary>Every session of the person and their id set are deleted; another person's stay.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RevokeAllAsync_DeletesEverySessionOfThePersonOnlyAsync()
     {
@@ -78,6 +79,7 @@ public sealed class PortalSessionRevokerTests : IAsyncLifetime
     }
 
     /// <summary>A person with no portal session is not an error, so a repeated fan-out is harmless.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RevokeAllAsync_WithNoSessionsSucceedsAsync()
     {

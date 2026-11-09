@@ -104,6 +104,7 @@ public enum PluginManifestRule
     /// not a boolean in a form's <c>submit</c>.
     /// </summary>
     ViewFollowUpInvalid = 26,
+
     /// <summary>A callback route in <c>api.callbacks</c> declares a permission or streams; a callback has no signed-in caller and one reply.</summary>
     CallbackInvalid = 27,
 

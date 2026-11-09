@@ -34,5 +34,5 @@ public interface ITicketOwnership
     /// telling them apart would let the route be used to enumerate ticket ids.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
-    Task<Result> RequireOwnedByCallerAsync(int ticketId, CancellationToken ct);
+    public Task<Result> RequireOwnedByCallerAsync(int ticketId, CancellationToken ct);
 }

@@ -22,6 +22,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Integrations;
 public sealed class TestIntegrationConnectionTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An integration with no required fields is always reported as configured.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NoRequiredFields_AlwaysSucceedsAsync()
     {
@@ -35,6 +36,7 @@ public sealed class TestIntegrationConnectionTests(IntegrationTestFactory factor
     }
 
     /// <summary>Testing an unconfigured integration reports the missing fields, still as 200.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnUnconfiguredIntegration_ReportsMissingFieldsAsync()
     {
@@ -50,6 +52,7 @@ public sealed class TestIntegrationConnectionTests(IntegrationTestFactory factor
     }
 
     /// <summary>An unrecognised slug on the test route answers 404 with <c>INTEGRATION_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownSlug_RefusesNotFoundAsync()
     {
@@ -65,6 +68,7 @@ public sealed class TestIntegrationConnectionTests(IntegrationTestFactory factor
     /// A failed payment plugin probe still answers 200 and never puts the gateway's own exception text
     /// on the wire.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaymentPluginProbeFails_NeverLeaksGatewayDetailAsync()
     {
@@ -96,6 +100,7 @@ public sealed class TestIntegrationConnectionTests(IntegrationTestFactory factor
     /// A built-in integration with a live probe reports the credentials as accepted when the probe
     /// succeeds, and the probe was asked exactly once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NameAmProbeSucceeds_ReportsCredentialsAcceptedAsync()
     {
@@ -116,6 +121,7 @@ public sealed class TestIntegrationConnectionTests(IntegrationTestFactory factor
     /// A failed built-in probe still answers 200 with <c>success = false</c> and never puts the
     /// provider's own exception text on the wire.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NameAmProbeFails_NeverLeaksProviderDetailAsync()
     {
@@ -144,6 +150,7 @@ public sealed class TestIntegrationConnectionTests(IntegrationTestFactory factor
     /// A built-in integration with a required field left blank is reported as incomplete and the
     /// provider is never called.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NameAmMissingPassword_DoesNotProbeAsync()
     {
@@ -161,6 +168,7 @@ public sealed class TestIntegrationConnectionTests(IntegrationTestFactory factor
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -172,6 +180,7 @@ public sealed class TestIntegrationConnectionTests(IntegrationTestFactory factor
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

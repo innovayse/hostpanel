@@ -1,11 +1,11 @@
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Payment;
 using Innovayse.Hostpanel.Application.Billing.Commands.ReconcileGatewayPaymentsCron;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Payment;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -85,6 +85,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
     /// An Unpaid invoice whose gateway session started 1 hour ago (inside the 25-minute-to-24-hour
     /// window) is reconciled.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnpaidInvoiceWithinWindow_IsReconciled()
     {
@@ -108,6 +109,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
     /// An Overdue invoice within the window is reconciled too: the filter ORs Unpaid and
     /// Overdue, it does not restrict to Unpaid alone.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OverdueInvoiceWithinWindow_IsAlsoReconciled()
     {
@@ -131,6 +133,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
     /// A session that started 10 minutes ago is younger than the 25-minute settle margin:
     /// the payer may still be on the payment page, so it is left alone.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SessionYoungerThanSettleMargin_IsNotReconciled()
     {
@@ -154,6 +157,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
     /// A session of a still unpaid invoice that started 25 hours ago is not given up on: the
     /// reconciler keeps asking the gateway until it gives a final answer.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnpaidSessionOlderThanADay_IsStillReconciled()
     {
@@ -174,6 +178,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
     }
 
     /// <summary>An Unpaid invoice with no gateway session at all is never picked up.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvoiceWithNoGatewaySession_IsNotReconciled()
     {
@@ -204,6 +209,7 @@ public sealed class ReconcileGatewayPaymentsCronTests(IntegrationTestFactory fac
     /// hour later, credits what the session took to the client's balance once; a second run credits
     /// nothing more.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SettledInvoiceWithLatePaidSession_IsCreditedOnce()
     {

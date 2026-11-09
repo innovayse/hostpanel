@@ -1,8 +1,8 @@
 using Innovayse.Hostpanel.API.Authorization;
-using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Application.Notifications.Common;
 using Innovayse.Hostpanel.Application.Notifications.Queries.GetMyEmailLog;
 using Innovayse.Hostpanel.Application.Notifications.Queries.ListMyEmailLogs;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;

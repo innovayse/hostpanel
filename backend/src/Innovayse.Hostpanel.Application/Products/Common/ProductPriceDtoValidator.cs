@@ -1,6 +1,5 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
-using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Resources;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Microsoft.Extensions.Localization;

@@ -24,6 +24,7 @@ public sealed class SyncTldCostPricesTests(IntegrationTestFactory factory) : ICl
     /// Uses <see cref="FakeRegistrarProviderFactory"/> so the sync never resolves a real,
     /// credentialed registrar client.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SyncTldCostPrices_UpdatesCostPricesForAMatchingTldAsync()
     {

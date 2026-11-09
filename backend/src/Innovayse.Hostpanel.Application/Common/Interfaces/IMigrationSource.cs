@@ -27,7 +27,7 @@ public interface IMigrationSource
     /// <param name="source">Where the source listens and the key it accepts.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes when the source has answered successfully.</returns>
-    Task PingAsync(MigrationSourceEndpoint source, CancellationToken ct);
+    public Task PingAsync(MigrationSourceEndpoint source, CancellationToken ct);
 
     /// <summary>
     /// Asks the source how many records of each kind it holds, so the job can size its
@@ -36,7 +36,7 @@ public interface IMigrationSource
     /// <param name="source">Where the source listens and the key it accepts.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The per-kind counts the source reports.</returns>
-    Task<MigrationSourceTotals> GetTotalsAsync(MigrationSourceEndpoint source, CancellationToken ct);
+    public Task<MigrationSourceTotals> GetTotalsAsync(MigrationSourceEndpoint source, CancellationToken ct);
 
     /// <summary>
     /// Fetches one page of records of a single kind.
@@ -46,6 +46,6 @@ public interface IMigrationSource
     /// <param name="selection">The kind of record and the page of it to fetch.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The records on this page and how many pages the source holds in total.</returns>
-    Task<MigrationRecordPage<TRecord>> GetRecordPageAsync<TRecord>(
+    public Task<MigrationRecordPage<TRecord>> GetRecordPageAsync<TRecord>(
         MigrationSourceEndpoint source, MigrationPageSelection selection, CancellationToken ct);
 }

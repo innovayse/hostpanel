@@ -1,3 +1,5 @@
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Payment;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Domain.Domains;
@@ -5,8 +7,6 @@ using Innovayse.Hostpanel.Domain.Provisioning;
 using Innovayse.Hostpanel.Domain.Provisioning.Enums;
 using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Time;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Payment;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Demo;
 
@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Demo;
 public sealed class DemoAdaptersTests
 {
     /// <summary>The hosted-page gateway sends the customer straight back and then reports the order paid.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaymentPlugin_ReturnsToTheShopAndReportsPaidAsync()
     {
@@ -33,6 +34,7 @@ public sealed class DemoAdaptersTests
     }
 
     /// <summary>The registrar succeeds for every module and answers the same reference for the same name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Registrar_RegistersDeterministicallyAndOffersAvailabilityBothWaysAsync()
     {
@@ -53,6 +55,7 @@ public sealed class DemoAdaptersTests
     }
 
     /// <summary>Provisioning succeeds, derives the reference from the account and returns usable credentials.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provisioning_CreatesAnAccountAndReturnsCredentialsAsync()
     {
@@ -73,6 +76,7 @@ public sealed class DemoAdaptersTests
     /// The fixed rate table answers "1 unit = X base units", the rate the catalogue seeder stores, so
     /// a refresh leaves the seeded euro rate as it was.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExchangeRates_AreFixedAndConsistentAsync()
     {

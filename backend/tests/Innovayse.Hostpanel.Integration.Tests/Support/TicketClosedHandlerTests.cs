@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class TicketClosedHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Closing a ticket notifies the owning client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TicketClosed_SendsTicketClosedEmailToClientAsync()
     {
@@ -41,6 +42,7 @@ public sealed class TicketClosedHandlerTests(IntegrationTestFactory factory) : I
     /// A ticket subject carrying a link and a script reaches the HTML body as text: every character
     /// that would open markup is encoded, so a client cannot plant a link or a script in the mail.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TicketClosed_EncodesMarkupInTheTicketSubjectInTheBodyAsync()
     {
@@ -66,6 +68,7 @@ public sealed class TicketClosedHandlerTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Closing a ticket for a client that does not exist sends no email.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TicketClosed_WhenClientNotFound_DoesNotSendAsync()
     {
@@ -82,6 +85,7 @@ public sealed class TicketClosedHandlerTests(IntegrationTestFactory factory) : I
     /// A late copy of the event naming a ticket that is gone or belongs to another client (the demo reset
     /// reused the ids) does not mail the client the event names.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TicketClosed_ForATicketThatIsNotTheClients_DoesNotSendAsync()
     {

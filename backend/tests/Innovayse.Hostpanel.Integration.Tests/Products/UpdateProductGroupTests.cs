@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class UpdateProductGroupTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Updating an unknown group id answers 404 with <c>PRODUCT_GROUP_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_UnknownId_RefusesNotFound()
     {
@@ -30,6 +31,7 @@ public sealed class UpdateProductGroupTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Creating then updating a group round-trips its new name and description.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenUpdate_RoundTrips()
     {
@@ -50,6 +52,7 @@ public sealed class UpdateProductGroupTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>PUT /api/products/groups/{id} without auth returns 401 Unauthorized.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_Returns401_WithoutAuth()
     {

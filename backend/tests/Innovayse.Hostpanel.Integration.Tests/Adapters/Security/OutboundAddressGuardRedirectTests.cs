@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Infrastructure.Security;
 using Innovayse.Hostpanel.Infrastructure.Security.Extensions;
 using Innovayse.Hostpanel.Infrastructure.Security.Settings;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.CPanel;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 

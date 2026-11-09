@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
@@ -5,7 +6,6 @@ using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Time;
 using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
-using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -145,7 +145,7 @@ public sealed class StoredCredentialScenario : IDisposable
 
     /// <summary>Reads one consent.</summary>
     /// <param name="consentId">The consent.</param>
-    /// <returns>The consent.</returns>
+    /// <returns>The consent as stored.</returns>
     public async Task<CardChargeConsent> ConsentAsync(int consentId)
     {
         using var scope = Host.Services.CreateScope();
@@ -301,7 +301,7 @@ public sealed class StoredCredentialScenario : IDisposable
 
     /// <summary>Reads an invoice with its payments.</summary>
     /// <param name="invoiceId">The invoice.</param>
-    /// <returns>The invoice.</returns>
+    /// <returns>The invoice as stored.</returns>
     public async Task<Invoice> InvoiceAsync(int invoiceId)
     {
         using var scope = Host.Services.CreateScope();

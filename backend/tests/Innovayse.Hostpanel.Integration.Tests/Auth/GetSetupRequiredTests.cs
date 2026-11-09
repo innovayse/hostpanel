@@ -9,6 +9,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 public sealed class GetSetupRequiredTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An anonymous caller reads whether setup is outstanding, and the answer carries nothing else.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetSetupRequiredAnswersAnonymously()
     {

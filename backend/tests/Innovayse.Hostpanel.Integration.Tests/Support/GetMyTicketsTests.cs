@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class GetMyTicketsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A registered client can list their own tickets.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientCanListTheirOwnTicketsAsync()
     {
@@ -21,6 +22,7 @@ public sealed class GetMyTicketsTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A caller with no credential cannot list client tickets.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -128,6 +128,7 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <param name="req">The service's provisioning reference and the suspension reason.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses and the account is not already suspended.</exception>
+    /// <returns>A task that completes when the account is suspended.</returns>
     public async Task SuspendAsync(SuspendAccountOrder req, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(req);
@@ -140,6 +141,7 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <param name="provisioningRef">The account's username.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses and the account is not already active.</exception>
+    /// <returns>A task that completes when the account is active again.</returns>
     public async Task UnsuspendAsync(string provisioningRef, CancellationToken ct)
     {
         RequireReference(provisioningRef);
@@ -151,6 +153,7 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <param name="req">The service's provisioning reference.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses and does not positively report the account gone.</exception>
+    /// <returns>A task that completes when the account is removed.</returns>
     public async Task TerminateAsync(TerminateAccountOrder req, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(req);
@@ -219,6 +222,7 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <param name="newPassword">The new password.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses the change.</exception>
+    /// <returns>A task that completes when the password is changed.</returns>
     public async Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct)
     {
         RequireReference(provisioningRef);
@@ -236,6 +240,7 @@ public sealed class WhmProvisioningProvider : IProvisioningProvider
     /// <param name="newPackage">The name of the package to switch to.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when WHM refuses and the account is not already on the package.</exception>
+    /// <returns>A task that completes when the package is changed.</returns>
     public async Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct)
     {
         RequireReference(provisioningRef);

@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Support.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Security;
@@ -23,6 +22,7 @@ public sealed class RemoveAnsweredTicketStatusMigrationTests
     /// A ticket stored as <c>Answered</c> reads back as <see cref="TicketStatus.AwaitingReply"/> once the migration ran,
     /// and the tickets in every other status keep theirs.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Up_MovesAnAnsweredTicketToAwaitingReplyAndLeavesTheOthersAsync()
     {

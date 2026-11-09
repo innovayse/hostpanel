@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetMonthlyOrdersTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An active order for a product in an active group is counted in the Monthly Orders report.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CountsAnActiveOrder()
     {
@@ -58,6 +59,7 @@ public sealed class GetMonthlyOrdersTests(IntegrationTestFactory factory) : ICla
     /// A unit is an order line on a pending or accepted order, never a cancelled one, and the
     /// foreign order's value is converted: 30 plus 8,000 (20 in the base) is 50.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CountsPendingAndAcceptedLinesInTheBaseCurrency()
     {
@@ -75,6 +77,7 @@ public sealed class GetMonthlyOrdersTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An out-of-range month is refused before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnInvalidMonth()
     {
@@ -86,6 +89,7 @@ public sealed class GetMonthlyOrdersTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -95,6 +99,7 @@ public sealed class GetMonthlyOrdersTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

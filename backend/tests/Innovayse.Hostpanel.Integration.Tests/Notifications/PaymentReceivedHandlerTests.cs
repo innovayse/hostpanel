@@ -17,6 +17,7 @@ public sealed class PaymentReceivedHandlerTests(IntegrationTestFactory factory) 
     private static readonly DateTimeOffset EventMoment = new(2026, 10, 1, 9, 0, 0, TimeSpan.Zero);
 
     /// <summary>A recorded payment notifies the owning client exactly once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaymentReceived_NotifiesOwningClientExactlyOnceAsync()
     {

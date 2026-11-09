@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class DeleteBillableItemTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Deleting an uninvoiced billable item removes it from the uninvoiced list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRemovesTheBillableItem()
     {
@@ -39,6 +40,7 @@ public sealed class DeleteBillableItemTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Deleting an id that names no billable item answers 404 with <c>BILLABLE_ITEM_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteUnknownBillableItemRefusesNotFound()
     {
@@ -52,6 +54,7 @@ public sealed class DeleteBillableItemTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Deleting a billable item is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesAnonymous()
     {

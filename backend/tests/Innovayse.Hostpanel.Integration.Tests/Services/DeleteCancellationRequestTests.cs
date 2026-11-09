@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class DeleteCancellationRequestTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Deleting a cancellation request that does not exist answers 404, not a crash.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteCancellationRequest_OnAnUnknownId_Returns404()
     {
@@ -26,6 +27,7 @@ public sealed class DeleteCancellationRequestTests(IntegrationTestFactory factor
     }
 
     /// <summary>Deleting an existing cancellation request succeeds with no content.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteCancellationRequest_OnAnExistingRequest_Returns204()
     {
@@ -50,6 +52,7 @@ public sealed class DeleteCancellationRequestTests(IntegrationTestFactory factor
     }
 
     /// <summary>Deleting without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteCancellationRequest_Returns401_WithoutAuthAsync()
     {
@@ -61,6 +64,7 @@ public sealed class DeleteCancellationRequestTests(IntegrationTestFactory factor
     }
 
     /// <summary>A plain client calling the admin delete route is refused: the policy is admin only.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteCancellationRequest_Returns403_AsPlainClientAsync()
     {

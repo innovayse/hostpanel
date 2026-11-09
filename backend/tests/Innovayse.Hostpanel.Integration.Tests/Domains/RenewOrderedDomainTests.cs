@@ -21,6 +21,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class RenewOrderedDomainTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A name that is not registered here is refused with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnknownDomain_RefusesNotFoundAsync()
     {
@@ -30,6 +31,7 @@ public sealed class RenewOrderedDomainTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Another client's domain is refused with the same code, so the answer never tells whose it is.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_AnotherClientsDomain_RefusesNotFoundAsync()
     {
@@ -52,6 +54,7 @@ public sealed class RenewOrderedDomainTests(IntegrationTestFactory factory) : IC
     /// The payer's own domain is found whatever case the order line spells it in, so the renewal
     /// goes on to the registrar instead of being refused as missing.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_OwnDomainInAnotherCase_IsNotRefusedAsMissingAsync()
     {
@@ -75,6 +78,7 @@ public sealed class RenewOrderedDomainTests(IntegrationTestFactory factory) : IC
     /// A retry of an order line whose renewal already reached the registrar and was stored with the line is counted as
     /// renewed: the registrar is asked once, not twice, for a period the client paid for once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_TheSameOrderLineTwice_RenewsOnlyOnceAsync()
     {
@@ -98,6 +102,7 @@ public sealed class RenewOrderedDomainTests(IntegrationTestFactory factory) : IC
     /// A renewal made some other way (staff, the renewal job, another order line) after the line's own renewal does not make
     /// the line forget it: the retry of the first line is still counted as renewed, and the registrar is asked once for it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_AnotherRenewalInBetween_DoesNotMakeTheLineRenewAgainAsync()
     {
@@ -120,6 +125,7 @@ public sealed class RenewOrderedDomainTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A renewal bought on a different order line is a different period and is sent to the registrar.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ADifferentOrderLine_RenewsAgainAsync()
     {

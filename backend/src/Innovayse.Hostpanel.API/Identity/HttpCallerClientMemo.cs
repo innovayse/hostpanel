@@ -1,6 +1,5 @@
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Microsoft.AspNetCore.Http;
 
 namespace Innovayse.Hostpanel.API.Identity;
 

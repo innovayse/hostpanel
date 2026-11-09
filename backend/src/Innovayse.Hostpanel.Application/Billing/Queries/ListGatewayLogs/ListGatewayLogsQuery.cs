@@ -1,4 +1,3 @@
-
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 
 namespace Innovayse.Hostpanel.Application.Billing.Queries.ListGatewayLogs;

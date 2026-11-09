@@ -38,6 +38,7 @@ public sealed class UpdateExchangeRatesTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A quoted currency is rewritten; an unquoted one is listed as missing and keeps its rate.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRatesWritesWhatIsQuotedAndReportsTheRest()
     {
@@ -76,6 +77,7 @@ public sealed class UpdateExchangeRatesTests(IntegrationTestFactory factory) : I
     /// Only the non-base codes are asked for: the base's rate to itself is not a question, and asking
     /// for it is how a source ends up quoting 1.0 over the real figure.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRatesAsksOnlyForTheNonBaseCodes()
     {
@@ -93,6 +95,7 @@ public sealed class UpdateExchangeRatesTests(IntegrationTestFactory factory) : I
     /// A source that does not answer is 503 with <c>Retry-After</c> and its fixed code, and no stored
     /// rate changes.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRatesWithTheSourceDownIsServiceUnavailable()
     {
@@ -113,6 +116,7 @@ public sealed class UpdateExchangeRatesTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Updating rates is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRatesRefusesAnonymous()
     {

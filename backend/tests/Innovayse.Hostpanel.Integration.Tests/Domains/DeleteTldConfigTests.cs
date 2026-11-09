@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class DeleteTldConfigTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Deleting an id that names no configuration answers 404 with <c>TLD_CONFIG_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Delete_UnknownId_Returns404WithTldConfigNotFoundAsync()
     {
@@ -25,6 +26,7 @@ public sealed class DeleteTldConfigTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Delete_WithoutToken_Returns401Async()
     {
@@ -36,6 +38,7 @@ public sealed class DeleteTldConfigTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Delete_NonPositiveId_Returns400ValidationErrorAsync()
     {

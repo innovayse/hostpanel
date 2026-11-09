@@ -4,7 +4,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Infrastructure.Auth;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -38,6 +37,7 @@ public sealed class GetInstalledVersionTests(IntegrationTestFactory factory)
     public Task DisposeAsync() => Task.CompletedTask;
 
     /// <summary>An admin gets 200 with only the installed version.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsTheInstalledVersionToAnAdminAsync()
     {
@@ -52,6 +52,7 @@ public sealed class GetInstalledVersionTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A non-admin staff role (reseller) also gets 200 with the installed version.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsTheInstalledVersionToANonAdminStaffRoleAsync()
     {
@@ -65,6 +66,7 @@ public sealed class GetInstalledVersionTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -76,6 +78,7 @@ public sealed class GetInstalledVersionTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The version endpoint is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

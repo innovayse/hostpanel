@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class GetActiveDomainProductTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>With an active domain product stored, the first one by name is answered.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ActiveDomainProduct_ReturnsTheFirstByNameAsync()
     {
@@ -47,6 +48,7 @@ public sealed class GetActiveDomainProductTests(IntegrationTestFactory factory) 
     /// With no product stored at all, the query refuses with <c>DOMAIN_PRODUCT_NOT_CONFIGURED</c>. Runs on
     /// a factory of its own, since the shared database holds the domain products other tests add.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NoActiveDomainProduct_ReturnsDomainProductNotConfiguredAsync()
     {
@@ -66,6 +68,7 @@ public sealed class GetActiveDomainProductTests(IntegrationTestFactory factory) 
     /// stored, the query still refuses with <c>DOMAIN_PRODUCT_NOT_CONFIGURED</c>. Runs on a factory of
     /// its own, since the shared database holds the active domain products other tests add.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_InactiveDomainAndHostingProducts_AreNotPickedAsync()
     {

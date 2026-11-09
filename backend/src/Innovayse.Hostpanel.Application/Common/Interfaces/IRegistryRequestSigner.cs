@@ -14,7 +14,7 @@ public interface IRegistryRequestSigner
     /// <param name="target">The request target exactly as it will be sent: the path and the query.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The header values, or <c>PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED</c> or <c>PLUGIN_REGISTRY_INSTANCE_REVOKED</c> when this installation has no verified identity.</returns>
-    Task<Result<RegistryRequestSignature>> SignAsync(string method, string target, CancellationToken ct);
+    public Task<Result<RegistryRequestSignature>> SignAsync(string method, string target, CancellationToken ct);
 
     /// <summary>
     /// Records what the registry said about this identity when it refused a signed call, so the admin page shows the truth:
@@ -24,5 +24,5 @@ public interface IRegistryRequestSigner
     /// <param name="errorCode">The host error code the refusal was mapped to.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the identity is saved.</returns>
-    Task ReportRefusalAsync(string errorCode, CancellationToken ct);
+    public Task ReportRefusalAsync(string errorCode, CancellationToken ct);
 }

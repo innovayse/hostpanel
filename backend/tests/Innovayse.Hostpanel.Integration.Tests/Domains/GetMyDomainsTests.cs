@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class GetMyDomainsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary><c>GET /api/me/domains</c> without auth returns 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyDomains_WithoutToken_Returns401Async()
     {
@@ -24,6 +25,7 @@ public sealed class GetMyDomainsTests(IntegrationTestFactory factory) : IClassFi
     /// Registers a user, waits for the Client record to be created by Wolverine, then calls
     /// <c>GET /api/me/domains</c> and expects 200 OK even with no domains yet.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MyDomains_ClientCanSeeOwnDomainsAsync()
     {
@@ -36,6 +38,7 @@ public sealed class GetMyDomainsTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>The caller's own domain shows up in their list; nothing else could, since only one exists.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyDomains_ReturnsOwnDomainsAsync()
     {

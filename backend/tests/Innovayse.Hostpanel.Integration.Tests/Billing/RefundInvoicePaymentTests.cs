@@ -57,6 +57,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A full refund to the credit balance marks the invoice Refunded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefundViaCreditBalanceRefundsAPaidInvoice()
     {
@@ -77,6 +78,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     /// A partial manual refund leaves the invoice PartiallyRefunded and writes its client ledger row,
     /// under the refund's own reference, with the status change.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PartialRefundLeavesTheInvoicePartiallyRefundedWithItsLedgerRow()
     {
@@ -116,6 +118,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     /// second may not pass the rest, the exact rest is accepted, and only then is the invoice Refunded.
     /// Each accepted refund writes its own ledger row; the refused one writes none.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SecondPartialRefundIsCappedByWhatTheFirstLeftAsync()
     {
@@ -140,6 +143,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     /// Two partial refunds in a row that both stay below what was paid each pass the cap and leave the
     /// invoice PartiallyRefunded, with what is left still refundable.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoPartialRefundsInARowStayPartiallyRefunded()
     {
@@ -170,6 +174,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
         });
 
     /// <summary>A refund above what was paid answers 400 with <c>INVOICE_REFUND_EXCEEDS_PAID</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefundAbovePaidIsRefused()
     {
@@ -188,6 +193,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A gateway refund for money no gateway took answers 400 with <c>INVOICE_NOT_GATEWAY_PAID</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayRefundOfAManualPaymentIsRefused()
     {
@@ -209,6 +215,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     /// answers 400 <c>INVOICE_NOT_GATEWAY_PAID</c>: no on-site card gateway exists any more, so such
     /// a payment is refunded by recording a manual refund.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayRefundOfALegacyCardPaymentIsRefused()
     {
@@ -242,6 +249,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     /// An invoice paid 30 by a recorded payment and the rest by a settlement can be refunded in full:
     /// refunding the first 30 leaves it Paid, and the other 70 is still refundable.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PartialPaymentThenSettlementIsRefundableInFull()
     {
@@ -288,6 +296,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     /// each changes the invoice row, so the second save fails the row's concurrency check and only
     /// one refund is recorded.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConcurrentPartialRefundsCannotBothBeSaved()
     {
@@ -318,6 +327,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     /// A hosted-gateway refund is capped by what that gateway took: on an invoice paid 30 manually
     /// and 70 through the gateway, 80 is refused before the plugin is called and 70 goes through.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HostedGatewayRefundIsCappedByThatGatewaysPayments()
     {
@@ -355,6 +365,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     /// records nothing; its outcome is unknown, so the claim stays and a retry is a 409 conflict
     /// rather than a second blind refund.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HostedGatewayThatThrowsIsARefusalAndKeepsTheClaim()
     {
@@ -396,6 +407,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     /// The host sends the plugin a refund id with the claim, and a retry of the same refund after the claim's lease has run
     /// out (the first call threw, so its outcome was unknown) sends the same id, so a gateway that keys on it refunds once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RetryOfTheSameGatewayRefund_ReusesTheRefundId()
     {
@@ -421,6 +433,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A retry for another amount is another refund and gets its own id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RetryWithAnotherAmount_GetsANewRefundId()
     {
@@ -442,6 +455,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Once a refund is recorded its id is spent: the next refund, even of the same amount, gets a new one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARecordedRefund_EndsItsId_SoTheNextRefundGetsAnother()
     {
@@ -462,6 +476,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>The first partial refund of a gateway order tells the plugin nothing was refunded before it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FirstPartialGatewayRefund_SendsZeroAlreadyRefunded()
     {
@@ -479,6 +494,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A second, smaller partial refund carries the sum the ledger recorded for the first one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SecondSmallerPartialGatewayRefund_SendsTheRecordedSum()
     {
@@ -500,6 +516,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A retry of the pending refund sends the same id and the same sum, not counting the pending refund itself.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RetryOfThePendingGatewayRefund_SendsTheSameAlreadyRefunded()
     {
@@ -579,6 +596,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Refunding an id that names no invoice answers 404 with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefundRefusesAnUnknownInvoice()
     {
@@ -597,6 +615,7 @@ public sealed class RefundInvoicePaymentTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Refunding a payment is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefundRefusesAnonymous()
     {

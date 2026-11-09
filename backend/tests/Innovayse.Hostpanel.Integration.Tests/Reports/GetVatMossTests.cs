@@ -3,10 +3,10 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 
@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A paid, taxed invoice for a member-state client appears by country code, with the quarter's bounds.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IncludesAPaidTaxedInvoiceForAMemberState()
     {
@@ -39,6 +40,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A client outside the EU is not part of the VAT MOSS settlement.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LeavesOutCountriesOutsideTheEu()
     {
@@ -56,6 +58,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     /// A half refund made in the quarter takes back half of both the net value and the VAT, split in
     /// the proportion the invoice charged them, and the invoice still counts once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NetsAPartialRefundMadeInTheQuarter()
     {
@@ -81,6 +84,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A quarter outside 1-4 is refused rather than silently answering for Q4.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnInvalidQuarter()
     {
@@ -93,6 +97,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
 
     /// <summary>A year outside the supported range is refused instead of failing while the period is built.</summary>
     /// <param name="year">The year asked for.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(0)]
     [InlineData(1999)]
@@ -107,6 +112,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -116,6 +122,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {
@@ -130,6 +137,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     /// A partial account credit note issued in the same quarter as its invoice takes its net and VAT off the row: a 40 note on a
     /// 100 invoice at 20% leaves 60 net and 12 VAT, and the invoice still counts once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NetsACreditNoteIssuedInTheSameQuarterAsItsInvoice()
     {
@@ -148,6 +156,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     /// A credit note is a correction made on the day it is issued: issued in the next quarter it leaves the quarter of the sale
     /// as it was and reduces the next quarter, whose row then shows no invoices and a negative net and VAT.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BooksACreditNoteInTheQuarterItWasIssuedNotTheQuarterOfItsInvoice()
     {
@@ -167,6 +176,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>Several partial notes on one invoice each take their own share; together they are less than the whole invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NetsSeveralPartialCreditNotesOfOneInvoice()
     {
@@ -183,6 +193,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>Each note reduces only the row of its own country and rate, also when one country sold at two rates.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NetsCreditNotesPerCountryAndRate()
     {
@@ -210,6 +221,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A note in one currency reduces the row of that currency only; the same country and rate in another currency is untouched.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NetsACreditNoteInItsOwnCurrencyOnly()
     {
@@ -228,6 +240,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A voided note and a draft reverse nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IgnoresAVoidedCreditNoteAndADraft()
     {
@@ -246,6 +259,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     /// A gateway refund note with its refund row reduces the quarter once, by the refund row: the note itself is not read again, so
     /// a 50 note at 20% leaves 50 net and 10 VAT, not 0 and 0.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CountsAGatewayRefundNoteOnceThroughItsRefundRow()
     {
@@ -261,6 +275,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>An account credit note already Applied to the client's balance still reverses its net and VAT.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NetsAnAppliedAccountCreditNote()
     {
@@ -275,6 +290,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A note issued at the first instant of a quarter belongs to that quarter, not to the one before it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BooksANoteIssuedAtTheFirstInstantOfAQuarterInThatQuarter()
     {
@@ -292,6 +308,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A note whose tax rounds to zero still reduces the net, because the rate is what makes a note taxed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NetsANoteWhoseTaxRoundedToZero()
     {
@@ -340,6 +357,7 @@ public sealed class GetVatMossTests(IntegrationTestFactory factory) : IClassFixt
     /// <param name="issuedAt">When the note is issued (UTC).</param>
     /// <param name="status">Draft, Issued, Applied or Voided; Issued by default.</param>
     /// <param name="method">Account credit by default; a gateway refund note also records its refund row, as the real use case does.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private async Task SeedCreditNoteAsync(
         int invoiceId, decimal price, DateTimeOffset issuedAt, CreditNoteStatus status = CreditNoteStatus.Issued,
         CreditNoteMethod method = CreditNoteMethod.AccountCredit)

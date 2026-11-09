@@ -1,6 +1,5 @@
 using System.Globalization;
 using Innovayse.Hostpanel.Shared.Settings;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 

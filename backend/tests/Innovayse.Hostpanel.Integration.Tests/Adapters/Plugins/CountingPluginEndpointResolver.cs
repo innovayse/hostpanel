@@ -1,7 +1,7 @@
-using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Hostpanel.Sdk.Plugins.Endpoints;
 using Hostpanel.Sdk.Plugins.Manifest;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Infrastructure.Plugins;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 

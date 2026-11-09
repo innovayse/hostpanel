@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Application.Billing.Commands.ApplyStoredChargeOutcome;
 using Innovayse.Hostpanel.Application.Billing.Commands.ChargeInvoiceStoredMethod;
 using Innovayse.Hostpanel.Application.Billing.Common;
@@ -5,7 +6,6 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Shared.Models;
-using Hostpanel.Sdk.Plugins.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 

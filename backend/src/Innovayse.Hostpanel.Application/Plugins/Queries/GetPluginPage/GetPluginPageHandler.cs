@@ -1,7 +1,7 @@
+using Hostpanel.Sdk.Packaging.Naming;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
-using Hostpanel.Sdk.Packaging.Naming;
 using Innovayse.Hostpanel.Shared.Models;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Queries.GetPluginPage;

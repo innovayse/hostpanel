@@ -1,7 +1,6 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Commands.MarkDomainExpired;
-using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class MarkDomainExpiredTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Marking an active domain expired transitions its status and persists the change.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MarkDomainExpired_ActiveDomain_TransitionsToExpiredAsync()
     {
@@ -37,6 +37,7 @@ public sealed class MarkDomainExpiredTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An unknown domain id answers a failed <see cref="Result"/> carrying <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MarkDomainExpired_UnknownDomain_FailsWithDomainNotFoundAsync()
     {
@@ -51,6 +52,7 @@ public sealed class MarkDomainExpiredTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A non-positive domain id is refused by the validator before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MarkDomainExpired_NonPositiveId_IsRefusedByTheValidatorAsync()
     {

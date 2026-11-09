@@ -3,7 +3,6 @@ using System.Net;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration.Settings;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Migration;
@@ -26,6 +25,7 @@ public sealed class DownloadMigrationPluginTests(IntegrationTestFactory factory)
     /// No credential is required, and the build output carries the plugin under the default
     /// <c>MigrationPlugin:Path</c>, so the answer is the zip archive in the installable layout.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DownloadPlugin_IsAnonymousAndAnswersTheZipAsync()
     {
@@ -40,6 +40,7 @@ public sealed class DownloadMigrationPluginTests(IntegrationTestFactory factory)
     /// When <c>MigrationPlugin:Path</c> names a folder that does not exist, the download is the
     /// coded 404 refusal with a sentence, never an unmapped fault.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DownloadPlugin_WithTheFolderMissing_AnswersTheCodedRefusalAsync()
     {

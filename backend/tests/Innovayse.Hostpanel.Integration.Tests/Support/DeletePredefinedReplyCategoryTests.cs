@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class DeletePredefinedReplyCategoryTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can create and delete a predefined reply category.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanDeleteACategoryAsync()
     {
@@ -28,6 +29,7 @@ public sealed class DeletePredefinedReplyCategoryTests(IntegrationTestFactory fa
     /// Deleting a reply category that does not exist answers 404 with
     /// <c>PREDEFINED_REPLY_CATEGORY_NOT_FOUND</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteUnknownReplyCategoryAnswersNotFoundAsync()
     {
@@ -43,6 +45,7 @@ public sealed class DeletePredefinedReplyCategoryTests(IntegrationTestFactory fa
     /// A predefined reply category with a sub-category is refused with 409
     /// <c>PREDEFINED_REPLY_CATEGORY_IN_USE</c> and kept; once the sub-category is gone it can be deleted.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesACategoryWithSubCategoriesAsync()
     {
@@ -68,6 +71,7 @@ public sealed class DeletePredefinedReplyCategoryTests(IntegrationTestFactory fa
     /// A predefined reply category that still holds a reply is refused with 409
     /// <c>PREDEFINED_REPLY_CATEGORY_IN_USE</c>; once the reply is gone it can be deleted.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesACategoryWithRepliesAsync()
     {
@@ -91,6 +95,7 @@ public sealed class DeletePredefinedReplyCategoryTests(IntegrationTestFactory fa
     }
 
     /// <summary>A caller with no credential cannot delete a predefined reply category.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

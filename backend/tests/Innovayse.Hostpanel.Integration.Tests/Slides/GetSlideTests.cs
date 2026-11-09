@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Slides;
 public sealed class GetSlideTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A known id returns the slide with its translations.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_KnownId_ReturnsTheSlide()
     {
@@ -26,6 +27,7 @@ public sealed class GetSlideTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>An id that names no slide answers 404 with <c>SLIDE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_UnknownId_RefusesNotFound()
     {
@@ -38,6 +40,7 @@ public sealed class GetSlideTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_RefusesAnonymous()
     {
@@ -47,6 +50,7 @@ public sealed class GetSlideTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_NonPositiveId_RefusesWithValidationError()
     {

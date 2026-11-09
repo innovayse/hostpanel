@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 public sealed class ServiceUnsuspendedHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An unsuspended service calls the provisioning provider's unsuspend endpoint exactly once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceUnsuspended_CallsProviderUnsuspendExactlyOnceAsync()
     {

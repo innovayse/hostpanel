@@ -24,6 +24,7 @@ public sealed class IntegrationSettingsLookupTests(IntegrationTestFactory factor
     }
 
     /// <summary>The enabled flag is read case-insensitively and a blank value does not count as filled in.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LoadAsync_ReadsTheEnabledFlagAndFieldValuesAsync()
     {
@@ -47,6 +48,7 @@ public sealed class IntegrationSettingsLookupTests(IntegrationTestFactory factor
     }
 
     /// <summary>An integration with no enabled flag stored is not enabled.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsEnabled_WithoutAFlag_IsFalseAsync()
     {
@@ -61,6 +63,7 @@ public sealed class IntegrationSettingsLookupTests(IntegrationTestFactory factor
     }
 
     /// <summary>Loading with one integration's prefix hides every other integration's settings.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LoadAsync_KeepsOnlyTheRequestedPrefixAsync()
     {
@@ -80,6 +83,7 @@ public sealed class IntegrationSettingsLookupTests(IntegrationTestFactory factor
     }
 
     /// <summary>The single-value reader returns the stored value, or null when nothing is stored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetIntegrationValueAsync_ReturnsTheStoredValueOrNullAsync()
     {
@@ -98,6 +102,7 @@ public sealed class IntegrationSettingsLookupTests(IntegrationTestFactory factor
     }
 
     /// <summary>A secret stored encrypted is returned as the plain value the operator entered.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetIntegrationValueAsync_DecryptsAProtectedSecretAsync()
     {

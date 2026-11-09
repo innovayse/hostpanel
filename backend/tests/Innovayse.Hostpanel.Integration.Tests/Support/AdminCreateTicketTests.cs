@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class AdminCreateTicketTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Staff can create a ticket on behalf of a client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanCreateATicketAsync()
     {
@@ -37,6 +38,7 @@ public sealed class AdminCreateTicketTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A missing department is refused 400 on the <c>departmentId</c> field with a specific message.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingDepartmentIsRefusedOnTheDepartmentFieldAsync()
     {
@@ -58,6 +60,7 @@ public sealed class AdminCreateTicketTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A caller with no credential cannot file a ticket on behalf of a client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {
@@ -74,6 +77,7 @@ public sealed class AdminCreateTicketTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A ticket for a client that does not exist is refused 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownClientIsRefusedNotFoundAsync()
     {
@@ -94,6 +98,7 @@ public sealed class AdminCreateTicketTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A ticket in a department that does not exist is refused 404 with <c>DEPARTMENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownDepartmentIsRefusedNotFoundAsync()
     {

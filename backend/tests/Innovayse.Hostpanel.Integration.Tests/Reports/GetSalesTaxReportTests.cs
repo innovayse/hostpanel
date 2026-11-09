@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetSalesTaxReportTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A paid invoice with tax is listed with its currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IncludesAPaidTaxedInvoice()
     {
@@ -38,6 +39,7 @@ public sealed class GetSalesTaxReportTests(IntegrationTestFactory factory) : ICl
     /// The range is matched on the day the invoice was paid, not the day it was raised, and the
     /// totals come per currency, never added across currencies.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MatchesThePaymentDayAndTotalsPerCurrency()
     {
@@ -79,6 +81,7 @@ public sealed class GetSalesTaxReportTests(IntegrationTestFactory factory) : ICl
     /// The tax of an account credit note issued in the period comes off the liability of its currency: the note reversed part of the
     /// tax the invoice collected, though no refund row says so. The invoice itself is still listed and counted.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SubtractsTheTaxOfAnAccountCreditNoteIssuedInThePeriod()
     {
@@ -125,6 +128,7 @@ public sealed class GetSalesTaxReportTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A page size above the report ceiling is refused by the validator.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnOversizedPage()
     {
@@ -136,6 +140,7 @@ public sealed class GetSalesTaxReportTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -145,6 +150,7 @@ public sealed class GetSalesTaxReportTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

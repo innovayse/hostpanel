@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class GetOwnedDomainNamesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Only the client's own domains come back, matched without regard to letter case.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_MixedNames_ReturnsOnlyTheClientsOwnInLowerCaseAsync()
     {
@@ -49,6 +50,7 @@ public sealed class GetOwnedDomainNamesTests(IntegrationTestFactory factory) : I
     /// Asked for live domains only, a domain that is cancelled is not held, while one that is pending or active is; asked for
     /// every domain, the cancelled one counts too (a renewal needs it).
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_LiveOnly_LeavesOutADomainThatIsNoLongerLiveAsync()
     {
@@ -86,6 +88,7 @@ public sealed class GetOwnedDomainNamesTests(IntegrationTestFactory factory) : I
     /// Asked for the domains one order created, the query leaves out a domain the client holds from elsewhere (no order, or
     /// another order), so a held domain is never taken for the line's own registration.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ForAnOrder_LeavesOutADomainAnotherOrderOrNoOrderCreatedAsync()
     {

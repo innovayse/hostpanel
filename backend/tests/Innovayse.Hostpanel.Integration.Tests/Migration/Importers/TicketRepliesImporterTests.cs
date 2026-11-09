@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A reply for an existing open ticket is appended.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_TicketReplies_AppendsAReplyToAnOpenTicketAsync()
     {
@@ -117,6 +118,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A second run adds no second reply: the retry imports 0 and skips the record as already existing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_TicketReplies_SecondRunSkipsAsAlreadyExistsAsync()
     {
@@ -139,6 +141,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Two different replies on one ticket are both imported.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_TicketReplies_DifferentRepliesAreBothImportedAsync()
     {
@@ -155,6 +158,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The same message from a different author is a different reply and is imported.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_TicketReplies_SameMessageFromAnotherAuthorIsImportedAsync()
     {
@@ -171,6 +175,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The same person writing the same words twice in one run gets both replies, since only replies older than the job count as duplicates.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_TicketReplies_IdenticalRepliesInOneRunAreBothImportedAsync()
     {
@@ -187,6 +192,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A retry of a run that imported two identical replies skips both and adds none.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_TicketReplies_RetrySkipsIdenticalRepliesImportedEarlierAsync()
     {
@@ -205,6 +211,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A ticket closed between two runs still reports the earlier reply as already existing, not as a closed ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_TicketReplies_ClosedBetweenRunsReportsAlreadyExistsAsync()
     {
@@ -228,6 +235,7 @@ public sealed class TicketRepliesImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A blank message and author are normalised to the shared placeholders, so the retry matches the stored form.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_TicketReplies_BlankValuesMatchTheirNormalisedFormAsync()
     {

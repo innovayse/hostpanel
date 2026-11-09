@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetMyCreditNotePdfTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The owner downloads their note as a PDF attachment named after its number.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_OfTheCallersOwnNote_ReturnsThePdf()
     {
@@ -34,6 +35,7 @@ public sealed class GetMyCreditNotePdfTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Another client's note, a draft and an unknown id all answer 404 with the same code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_OfAStrangersNoteADraftOrNothing_AnswersAlike()
     {
@@ -55,6 +57,7 @@ public sealed class GetMyCreditNotePdfTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The route needs a client session.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_NeedsAClientSession()
     {

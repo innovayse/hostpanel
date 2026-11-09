@@ -1,3 +1,5 @@
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Host;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Application.Services.Common;
@@ -5,8 +7,6 @@ using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Ssh.Enums;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Settings;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Host;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -26,6 +26,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     private const string Label = "deploy";
 
     /// <summary>A bound service of the caller gets an identity on its own account, recorded as issued to the plugin and audited.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BoundService_IsIssuedAnIdentityOnItsOwnAccountAsync()
     {
@@ -57,6 +58,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     }
 
     /// <summary>The issued key is listed among the service's keys by the client's own route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IssuedKey_IsListedForTheClientAsync()
     {
@@ -74,6 +76,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     }
 
     /// <summary>The private key is in no text, JSON or byte column of any table, the message store included, and in no log line.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PrivateKey_IsNeverStoredOrLoggedAsync()
     {
@@ -92,6 +95,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     }
 
     /// <summary>A plugin whose manifest does not declare SSH is refused before anything is read or sent.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ManifestWithoutSsh_IsNotAllowedAsync()
     {
@@ -105,6 +109,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     }
 
     /// <summary>An admin-area call acts for no client's hosting and is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCall_IsNotAllowedAsync()
     {
@@ -118,6 +123,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     }
 
     /// <summary>Another client's service answers NotFound, as a missing one does, even when its product is bound.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnotherClientsService_IsNotFoundAsync()
     {
@@ -134,6 +140,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     }
 
     /// <summary>A service whose product is not bound to the plugin is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnboundProduct_IsNotAllowedAsync()
     {
@@ -149,6 +156,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     /// A product listed only in the plugin's own manifest is not bound: until an operator binds it, the plugin reaches no
     /// hosting, however many product ids it claims.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ProductListedOnlyInTheManifest_IsNotAllowedAsync()
     {
@@ -165,6 +173,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     /// A plugin switched off while its key is being installed gets no key: the issue answers NotAllowed, and the key that
     /// reached the account is taken back and recorded as revoked, so it does not outlive the plugin.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginSwitchedOffDuringTheInstall_GetsNoKeyAndTheKeyIsRevokedAsync()
     {
@@ -189,6 +198,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     }
 
     /// <summary>A plugin switched off after the call began, before a key pair is made, is refused and nothing is installed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginSwitchedOffBeforeTheKeyIsMade_IsNotAllowedAsync()
     {
@@ -210,6 +220,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     }
 
     /// <summary>An unreachable agent answers ServerUnavailable and the record says the install failed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnreachableServer_IsServerUnavailableAsync()
     {
@@ -227,6 +238,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     }
 
     /// <summary>A service already holding as many keys as the host allows is refused before a key is generated or sent.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceAtTheKeyLimit_IsLimitReachedAsync()
     {
@@ -249,6 +261,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     }
 
     /// <summary>A server without SSH key management is refused Unavailable and no agent is called.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SshNotAvailable_IsUnavailableAsync()
     {
@@ -264,6 +277,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
 
     /// <summary>An agent that refuses the account outright is answered Unavailable and leaves no key record.</summary>
     /// <param name="agentFailure">The refusal the agent answers with.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(SshProviderFailure.SshDisabled)]
     [InlineData(SshProviderFailure.AccountSuspended)]
@@ -281,6 +295,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     }
 
     /// <summary>Two issues for one service are two identities, each recorded as the plugin's.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EachIssue_IsANewIdentityAsync()
     {
@@ -301,6 +316,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     /// A contact without <see cref="ClientPermission.ViewModifyPasswords"/> may not have hosting credentials issued through
     /// a plugin, as they may not manage the account's access in the portal: NotAllowed, and no agent is called.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ContactWithoutThePasswordsRight_IsNotAllowedAsync()
     {
@@ -321,6 +337,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     /// stored or sent. The limiter is disposed, the one way a real limiter stops answering in-process; the port does not
     /// catch that, so the plugin sees an exception (502 <c>PLUGIN_FAILED</c> at the door), never an issued key.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ALimiterThatCannotAnswer_RefusesTheIssueAsync()
     {
@@ -351,6 +368,7 @@ public sealed class IssuePluginSshAccessTests(PluginSshFixture fixture) : IClass
     /// Once the plugin's SSH issue budget for the client is spent, the next issue is refused as ServerUnavailable before a
     /// key pair is generated: the agent sees one add only.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SpentIssueBudget_IsRefusedBeforeAnyKeyIsMadeAsync()
     {

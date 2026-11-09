@@ -19,6 +19,7 @@ public sealed class ListClaimedDomainRenewalsTests(IntegrationTestFactory factor
     }
 
     /// <summary>A claimed line is listed with its invoice, client and domain, oldest claim first.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AClaimedLine_IsListed_OldestFirst()
     {
@@ -37,6 +38,7 @@ public sealed class ListClaimedDomainRenewalsTests(IntegrationTestFactory factor
     }
 
     /// <summary>A line nobody claimed is not listed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnUnclaimedLine_IsNotListed()
     {
@@ -46,6 +48,7 @@ public sealed class ListClaimedDomainRenewalsTests(IntegrationTestFactory factor
     }
 
     /// <summary>Anonymous callers get 401 and a client who is not staff gets 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OnlyStaffMayList()
     {

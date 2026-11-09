@@ -32,6 +32,7 @@ public sealed class SendRenewalReminderTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A due invoice is mailed and its threshold recorded; invoking again is a Success with no second mail.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DueInvoice_SendsOnceAndRecords()
     {
@@ -55,6 +56,7 @@ public sealed class SendRenewalReminderTests(IntegrationTestFactory factory) : I
     /// nothing. This covers the pre-check; the DbUpdateException branch for a race between the check
     /// and the save needs interleaved scopes and is not exercised here.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AlreadyRecorded_SucceedsWithoutMail()
     {
@@ -73,6 +75,7 @@ public sealed class SendRenewalReminderTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>An unknown invoice is a quiet Success: nothing to remind.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownInvoice_IsSuccess()
     {
@@ -89,6 +92,7 @@ public sealed class SendRenewalReminderTests(IntegrationTestFactory factory) : I
     /// A client who turned payment reminders off is not mailed, but the threshold is still spent so
     /// the reminder is not retried every day.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OverdueNoticesOff_SendsNothingButRecordsTheThreshold()
     {

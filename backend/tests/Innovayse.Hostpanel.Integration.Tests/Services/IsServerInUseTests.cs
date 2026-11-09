@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class IsServerInUseTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A server no service or SSH key points at is not in use.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnreferencedServer_IsNotInUseAsync()
     {

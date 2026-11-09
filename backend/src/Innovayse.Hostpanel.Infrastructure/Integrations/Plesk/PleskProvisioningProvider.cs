@@ -159,6 +159,7 @@ public sealed class PleskProvisioningProvider : IProvisioningProvider
     /// <param name="req">The service's provisioning reference.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when Plesk refuses and the customer is not already disabled.</exception>
+    /// <returns>A task that completes when the account is suspended.</returns>
     public async Task SuspendAsync(SuspendAccountOrder req, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(req);
@@ -169,6 +170,7 @@ public sealed class PleskProvisioningProvider : IProvisioningProvider
     /// <param name="provisioningRef">The customer's login.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when Plesk refuses and the customer is not already active.</exception>
+    /// <returns>A task that completes when the account is active again.</returns>
     public Task UnsuspendAsync(string provisioningRef, CancellationToken ct) =>
         SetSuspendedAsync(provisioningRef, false, ct);
 
@@ -176,6 +178,7 @@ public sealed class PleskProvisioningProvider : IProvisioningProvider
     /// <param name="req">The service's provisioning reference.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when Plesk refuses and does not positively report the customer gone.</exception>
+    /// <returns>A task that completes when the account is removed.</returns>
     public async Task TerminateAsync(TerminateAccountOrder req, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(req);
@@ -269,6 +272,7 @@ public sealed class PleskProvisioningProvider : IProvisioningProvider
     /// The account is created with one password for both, so both change together; otherwise FTP and
     /// SSH would keep a password the client can no longer see anywhere.
     /// </remarks>
+    /// <returns>A task that completes when the password is changed.</returns>
     public async Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct)
     {
         if (!(await _client.SetCustomerPasswordAsync(_connection, provisioningRef, newPassword, ct)).IsSuccess)
@@ -289,6 +293,7 @@ public sealed class PleskProvisioningProvider : IProvisioningProvider
     /// <param name="newPackage">The name of the service plan to switch to.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when the plan does not exist or Plesk refuses the switch.</exception>
+    /// <returns>A task that completes when the package is changed.</returns>
     public async Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct)
     {
         var plan = await _client.FindPlanGuidAsync(_connection, newPackage, ct);

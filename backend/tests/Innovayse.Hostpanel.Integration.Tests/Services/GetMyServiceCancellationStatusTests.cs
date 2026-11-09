@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class GetMyServiceCancellationStatusTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Reading a stranger's cancellation status is refused rather than answered as "not pending".</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancellationStatus_AStrangersService_Returns404WithServiceNotFound()
     {
@@ -26,6 +27,7 @@ public sealed class GetMyServiceCancellationStatusTests(IntegrationTestFactory f
     }
 
     /// <summary>The owner reads their own service's cancellation status without a stray refusal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancellationStatus_TheCallersOwnService_Returns200WithNoOpenRequest()
     {
@@ -40,6 +42,7 @@ public sealed class GetMyServiceCancellationStatusTests(IntegrationTestFactory f
     }
 
     /// <summary>Reading cancellation status without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancellationStatus_Returns401_WithoutAuthAsync()
     {

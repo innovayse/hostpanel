@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetDiskUsageByDomainsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The newest sample per server and domain is answered, matched without regard to case.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_SeveralSamples_AnswersTheNewestPerDomainAsync()
     {
@@ -37,6 +38,7 @@ public sealed class GetDiskUsageByDomainsTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A domain with no sample is left out and an empty list answers an empty list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnknownOrNoDomains_AnswersNothingAsync()
     {

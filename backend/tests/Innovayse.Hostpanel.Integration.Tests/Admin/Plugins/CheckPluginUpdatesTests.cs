@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An outdated plugin is listed with both versions; a current one and one the registry does not know are not.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OnlyOutdatedPlugins_AreListedAsync()
     {
@@ -52,6 +53,7 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>An upgrade that already waits for the restart at the registry's version is not offered again.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnAlreadyStagedUpgrade_IsNotOfferedAgainAsync()
     {
@@ -76,6 +78,7 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The registry's failure keeps its code and status.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AFailingRegistry_AnswersItsCodeAsync()
     {
@@ -100,6 +103,7 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>With the registry off by default the check answers 409 <c>PLUGIN_REGISTRY_DISABLED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheDefaultConfiguration_AnswersDisabledAsync()
     {
@@ -122,6 +126,7 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A Client-role caller is refused and a caller with no credential is unauthorised.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OnlyAnAdministrator_MayCheckAsync()
     {
@@ -136,6 +141,7 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
     /// A plugin with a stored licence key is read again with it: the licensee's view of the newest version wins over the
     /// anonymous one, and the key is sent. A plugin without a key is asked about without one.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AStoredLicenceKey_IsSentAndItsViewWinsAsync()
     {
@@ -169,6 +175,7 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A plugin the registry does not show to the licensee keeps the answer it had and does not fail the check.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APluginTheRegistryHidesFromTheLicensee_KeepsItsAnswerAsync()
     {
@@ -197,6 +204,7 @@ public sealed class CheckPluginUpdatesTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>With two plugins that have keys, each plugin page call carries only that plugin's own key; a plugin without a key is asked without one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoPlugins_EachSendOnlyTheirOwnKeyAsync()
     {

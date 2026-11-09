@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetInvoiceBriefTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An existing invoice is described with its client, status, total, amount due and currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ExistingInvoice_ReturnsItsBriefAsync()
     {
@@ -47,6 +48,7 @@ public sealed class GetInvoiceBriefTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An id that names no invoice is refused with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnknownInvoice_RefusesNotFoundAsync()
     {

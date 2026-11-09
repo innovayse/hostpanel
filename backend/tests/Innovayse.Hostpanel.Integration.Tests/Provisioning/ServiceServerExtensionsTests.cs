@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Application.Provisioning.Common;
 using Innovayse.Hostpanel.Application.Provisioning.Extensions;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Products;
@@ -58,6 +57,7 @@ public sealed class ServiceServerExtensionsTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A service activated on a server resolves to that server.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindServerAsync_ForAnAssignedService_ReturnsTheServerAsync()
     {
@@ -78,6 +78,7 @@ public sealed class ServiceServerExtensionsTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A service that was never assigned a server resolves to null.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindServerAsync_ForAServiceWithNoServer_ReturnsNullAsync()
     {

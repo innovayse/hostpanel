@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin lists the configured servers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanListServersAsync()
     {
@@ -24,6 +25,7 @@ public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -35,6 +37,7 @@ public sealed class ListServersTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

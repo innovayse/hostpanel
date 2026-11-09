@@ -15,15 +15,15 @@ public interface ISecretSettingCipher
     /// <summary>Encrypts a secret value for storage. An empty value stays empty.</summary>
     /// <param name="plaintext">The value the operator entered.</param>
     /// <returns>The value to store.</returns>
-    string Protect(string plaintext);
+    public string Protect(string plaintext);
 
     /// <summary>Returns the plain value of a stored secret.</summary>
     /// <param name="stored">The stored value, protected or a plain value from an earlier release.</param>
     /// <returns>The plain value.</returns>
-    string Reveal(string stored);
+    public string Reveal(string stored);
 
     /// <summary>Tells whether a stored value is already protected.</summary>
     /// <param name="stored">The stored value.</param>
     /// <returns><c>true</c> when the value carries the protection marker.</returns>
-    bool IsProtected(string stored);
+    public bool IsProtected(string stored);
 }

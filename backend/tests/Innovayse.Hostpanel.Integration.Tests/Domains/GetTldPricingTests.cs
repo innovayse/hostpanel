@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class GetTldPricingTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An anonymous caller reaches the endpoint and gets 200 with a currency block, even with nothing configured.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetTldPricing_AnonymousCaller_Returns200WithDefaultCurrencyAsync()
     {
@@ -36,6 +37,7 @@ public sealed class GetTldPricingTests(IntegrationTestFactory factory) : IClassF
     /// <c>BASE_CURRENCY_NOT_CONFIGURED</c> rather than a table in an empty currency code. Runs on a
     /// factory of its own, since removing the base currency would change every other test's database.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetTldPricing_NoBaseCurrency_Returns503BaseCurrencyNotConfiguredAsync()
     {
@@ -55,6 +57,7 @@ public sealed class GetTldPricingTests(IntegrationTestFactory factory) : IClassF
     /// A currency that is not configured is refused with 404 <c>CURRENCY_NOT_FOUND</c> instead of a
     /// table of unconverted prices labelled with that code.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetTldPricing_UnconfiguredCurrency_Returns404CurrencyNotFoundAsync()
     {
@@ -71,6 +74,7 @@ public sealed class GetTldPricingTests(IntegrationTestFactory factory) : IClassF
     /// The configs kept in the cache between requests are not tracked by the data context that
     /// loaded them, so no tracked entity outlives its request.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetTldPricing_CachesUntrackedConfigsAsync()
     {
@@ -91,6 +95,7 @@ public sealed class GetTldPricingTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An enabled TLD configuration is included in the pricing table, converted to the requested currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetTldPricing_IncludesAnEnabledTldConfigAsync()
     {
@@ -123,6 +128,7 @@ public sealed class GetTldPricingTests(IntegrationTestFactory factory) : IClassF
     /// Each action's prices come as a list of typed period entries, shortest period first,
     /// whatever order the periods were stored in.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetTldPricing_ListsEachPeriodPriceShortestFirstAsync()
     {
@@ -163,6 +169,7 @@ public sealed class GetTldPricingTests(IntegrationTestFactory factory) : IClassF
     /// AMD prices follow the stored exchange rate: a 10 USD sell price is 10 / rate AMD, and
     /// changing the rate changes the price on the next call (no hard-coded table).
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetTldPricing_AmdPricesFollowTheStoredExchangeRateAsync()
     {

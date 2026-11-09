@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 public sealed class DownloadsImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A category and a download file are both created.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Downloads_CreatesTheCategoryAndFileAsync()
     {
@@ -49,6 +50,7 @@ public sealed class DownloadsImporterTests(IntegrationTestFactory factory) : ICl
     /// A file whose source holds no category at all has nowhere to go: it is skipped with
     /// <see cref="MigrationSkipReason.DownloadCategoryNotFound"/> and nothing is written.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Downloads_SkipsAFileWhenThereIsNoCategoryAsync()
     {
@@ -101,6 +103,7 @@ public sealed class DownloadsImporterTests(IntegrationTestFactory factory) : ICl
     /// A second run reuses the category by name and skips the file as already existing: one category,
     /// one file, and the retry is never reported as <see cref="MigrationSkipReason.DownloadCategoryNotFound"/>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Downloads_SecondRunSkipsAsAlreadyExistsAsync()
     {
@@ -125,6 +128,7 @@ public sealed class DownloadsImporterTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The same title in two different categories is two files, not a duplicate.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Downloads_SameTitleInTwoCategoriesIsNotADuplicateAsync()
     {

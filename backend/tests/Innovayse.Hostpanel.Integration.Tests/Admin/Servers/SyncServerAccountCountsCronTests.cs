@@ -60,6 +60,7 @@ public sealed class SyncServerAccountCountsCronTests(IntegrationTestFactory fact
     }
 
     /// <summary>A non-disabled server is tested and its connection result recorded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NonDisabledServer_IsTestedAndItsConnectionResultRecorded()
     {
@@ -78,6 +79,7 @@ public sealed class SyncServerAccountCountsCronTests(IntegrationTestFactory fact
     }
 
     /// <summary>A disabled server is skipped entirely: never handed to the connection tester.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DisabledServer_IsSkippedEntirely()
     {
@@ -94,6 +96,7 @@ public sealed class SyncServerAccountCountsCronTests(IntegrationTestFactory fact
     }
 
     /// <summary>A server whose connection test fails is still recorded, not left to crash the run.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AServerWhoseConnectionTestFails_IsRecordedNotCrashed()
     {
@@ -115,6 +118,7 @@ public sealed class SyncServerAccountCountsCronTests(IntegrationTestFactory fact
     /// One server whose result cannot be saved is skipped and does not poison the next server's save:
     /// the following server still gets its account count recorded.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AServerWhoseResultCannotBeSaved_DoesNotStopTheNext()
     {

@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A known client's statement includes their invoice as a debit line.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ShowsAKnownClientsInvoice()
     {
@@ -45,6 +46,7 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A payment transaction appears as a Transaction line with its description, credit and the running balance.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ShowsATransactionLineWithTheRunningBalance()
     {
@@ -83,6 +85,7 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
     /// An invoice imported as already paid, with no payment recorded here, gets a matching history
     /// credit, so the statement nets to zero instead of reading as a debt.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreditsAnInvoicePaidBeforeImport()
     {
@@ -102,6 +105,7 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A draft and a cancelled invoice ask for no money, so neither is a charge on the statement.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LeavesOutDraftAndCancelledInvoices()
     {
@@ -131,6 +135,7 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
     /// credit-balance ledger row is not a payout, so the statement shows the client holding the
     /// refunded amount.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefundToTheCreditBalanceLeavesTheClientInCredit()
     {
@@ -163,6 +168,7 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
     /// A client billed in two currencies gets each line in its own currency and one balance per
     /// currency; the amounts are never added across currencies.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task KeepsASeparateBalancePerCurrency()
     {
@@ -202,6 +208,7 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
         body.GetProperty("balances").EnumerateArray().Single(b => b.GetProperty("currency").GetString() == currency);
 
     /// <summary>An id naming nobody is refused as CLIENT_NOT_FOUND, not a 500.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnUnknownClient()
     {
@@ -214,6 +221,7 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -223,6 +231,7 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {
@@ -234,6 +243,7 @@ public sealed class ClientStatementTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A non-positive client id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientStatement_NonPositiveClientId_Returns400ValidationError()
     {

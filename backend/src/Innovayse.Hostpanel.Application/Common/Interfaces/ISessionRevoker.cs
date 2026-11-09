@@ -10,5 +10,5 @@ public interface ISessionRevoker
     /// <param name="subject">How the configured identity provider names the person.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the sessions are gone.</returns>
-    Task RevokeAllAsync(string subject, CancellationToken ct);
+    public Task RevokeAllAsync(string subject, CancellationToken ct);
 }

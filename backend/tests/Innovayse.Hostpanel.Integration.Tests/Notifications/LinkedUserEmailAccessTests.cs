@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class LinkedUserEmailAccessTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The account owner reads the email sent to the account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OwnerSeesTheEmailAsync()
     {
@@ -25,6 +26,7 @@ public sealed class LinkedUserEmailAccessTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A user linked with the emails permission reads the email sent to the account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedLinkedUserSeesTheEmailAsync()
     {
@@ -38,6 +40,7 @@ public sealed class LinkedUserEmailAccessTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A user linked without the emails permission is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LinkedUserWithoutThePermissionIsRefusedAsync()
     {
@@ -51,6 +54,7 @@ public sealed class LinkedUserEmailAccessTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A user permitted on another account does not see the email sent to this account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedUserOfAnotherAccountDoesNotSeeTheEmailAsync()
     {

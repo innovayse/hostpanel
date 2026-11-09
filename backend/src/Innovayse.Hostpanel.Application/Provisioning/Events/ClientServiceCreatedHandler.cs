@@ -26,6 +26,7 @@ public sealed class ClientServiceCreatedHandler
     /// </summary>
     /// <param name="evt">The domain event carrying the new service identifier.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the message has been handled.</returns>
     public Task HandleAsync(ClientServiceCreatedEvent evt, CancellationToken ct)
     {
         _logger.LogInformation(

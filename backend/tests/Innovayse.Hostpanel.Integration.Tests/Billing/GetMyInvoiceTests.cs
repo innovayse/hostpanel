@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetMyInvoiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The owner reads their own invoice by id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_TheOwnersInvoice_Returns200()
     {
@@ -33,6 +34,7 @@ public sealed class GetMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
     /// The client's own invoice carries no staff note, no gateway reference and no gateway fee,
     /// though the invoice has all three, and neither does the same invoice in the list.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_CarriesNoStaffNoteOrGatewayReference()
     {
@@ -71,6 +73,7 @@ public sealed class GetMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
     /// After a partial payment the client's invoice carries what is still owed, in the single read
     /// and in the list alike, so the pay button charges the rest and not the whole total again.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_AfterPartialPayment_CarriesTheAmountStillDue()
     {
@@ -96,6 +99,7 @@ public sealed class GetMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Reading a stranger's invoice is refused with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_AStrangersInvoice_Returns404WithInvoiceNotFound()
     {
@@ -115,6 +119,7 @@ public sealed class GetMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
     /// does not exist. An attacker walking sequential invoice ids must not learn which ones are
     /// real from the status alone.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_AnUnknownInvoice_AnswersIdenticallyToAStrangersInvoice()
     {
@@ -132,6 +137,7 @@ public sealed class GetMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An id naming no invoice at all answers exactly like a stranger's invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_AnUnknownInvoice_Returns404WithInvoiceNotFound()
     {
@@ -144,6 +150,7 @@ public sealed class GetMyInvoiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Reading an invoice is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetByIdRefusesAnonymous()
     {

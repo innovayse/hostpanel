@@ -15,6 +15,7 @@ public sealed class GetRegistryChallengeTests(IntegrationTestFactory factory) : 
     private const string Route = "/.well-known/hostpanel-registry/";
 
     /// <summary>The challenge is served as plain text with no-store, byte for byte as the registry gave it, with no sign-in.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheChallenge_IsServedAsPlainText_NoStore_ExactlyAsGivenAsync()
     {
@@ -33,6 +34,7 @@ public sealed class GetRegistryChallengeTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Another id is a 404 with the not found code, and the response does not tell whether an installation is registered.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnotherId_IsNotFoundAsync()
     {
@@ -49,6 +51,7 @@ public sealed class GetRegistryChallengeTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Before any registration there is nothing to serve, and a value that is not an id is not a route at all.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BeforeARegistration_ThereIsNothingToServeAsync()
     {

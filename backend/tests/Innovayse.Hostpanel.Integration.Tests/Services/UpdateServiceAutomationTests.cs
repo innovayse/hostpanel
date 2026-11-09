@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class UpdateServiceAutomationTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A valid save answers 204 and stores the hold and the end-of-cycle termination.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateAutomation_WithHoldAndTermination_StoresBothAsync()
     {
@@ -46,6 +47,7 @@ public sealed class UpdateServiceAutomationTests(IntegrationTestFactory factory)
     /// Switching a service to manual billing answers 204 and stores <c>AutoRenew</c> off; a body without
     /// the field keeps automatic billing.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateAutomation_ManualBilling_StoresAutoRenewOffAsync()
     {
@@ -86,6 +88,7 @@ public sealed class UpdateServiceAutomationTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A hold date without the hold is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateAutomation_WithAHoldDateButNoHold_Returns400ValidationErrorAsync()
     {
@@ -104,6 +107,7 @@ public sealed class UpdateServiceAutomationTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Saving the settings of a service that does not exist answers 404 <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateAutomation_OnAnUnknownService_Returns404Async()
     {
@@ -118,6 +122,7 @@ public sealed class UpdateServiceAutomationTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Saving without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateAutomation_WithoutAuth_Returns401Async()
     {

@@ -12,5 +12,5 @@ public interface IPluginAvailabilityInvalidator
     /// Forgets the remembered availability. Cheap and safe to call after any settings save, whether or not a plugin's
     /// availability actually changed; a lookup that was computing when this is called does not keep its result.
     /// </summary>
-    void Invalidate();
+    public void Invalidate();
 }

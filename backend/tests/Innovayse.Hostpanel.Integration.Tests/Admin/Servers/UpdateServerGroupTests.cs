@@ -17,6 +17,7 @@ public sealed class UpdateServerGroupTests(IntegrationTestFactory factory) : ICl
     /// <summary>
     /// Updating a group's membership to drop a server clears that server's group assignment.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemovingAServer_ClearsItsGroupAsync()
     {
@@ -39,6 +40,7 @@ public sealed class UpdateServerGroupTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Updating an unknown group id answers 404 with <c>SERVER_GROUP_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownId_RefusesNotFoundAsync()
     {
@@ -56,6 +58,7 @@ public sealed class UpdateServerGroupTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -68,6 +71,7 @@ public sealed class UpdateServerGroupTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

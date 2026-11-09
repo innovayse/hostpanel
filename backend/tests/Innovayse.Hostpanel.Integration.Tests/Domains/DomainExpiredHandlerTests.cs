@@ -28,6 +28,7 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
     /// An expired domain with a linked, active hosting service suspends that service exactly once
     /// and notifies the owning client exactly once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainExpired_SuspendsLinkedServiceAndNotifiesExactlyOnceAsync()
     {
@@ -56,6 +57,7 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
     /// A second delivery of the same event leaves the service suspended once with its source intact:
     /// the services module refuses to suspend a suspended service, and the handler does not throw.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainExpired_Redelivered_KeepsTheSingleSuspensionAsync()
     {
@@ -80,6 +82,7 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
     /// A late copy of the event for a domain that is active again (renewed after it expired) does not
     /// suspend the linked service.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainExpired_ForADomainNoLongerExpired_LeavesTheServiceActiveAsync()
     {
@@ -101,6 +104,7 @@ public sealed class DomainExpiredHandlerTests(IntegrationTestFactory factory) : 
     /// An event whose domain no longer exists, or now belongs to another client (the demo reset reused the
     /// id), neither suspends the service it names nor mails anyone.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainExpired_ForADomainOfAnotherClient_DoesNothingAsync()
     {

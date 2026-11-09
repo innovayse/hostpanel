@@ -1,11 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Hostpanel.Sdk.Plugins.Identity;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Hostpanel.Sdk.Plugins.Identity;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -90,6 +90,7 @@ public sealed class PlaceOrderCallerAccountTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A sub-user with the ordering permission orders on the account they are linked to, not on a new one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SubUserWithThePermission_OrdersOnTheLinkedAccountAsync()
     {
@@ -104,6 +105,7 @@ public sealed class PlaceOrderCallerAccountTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A sub-user without the ordering permission is refused, and nothing is created for them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SubUserWithoutThePermission_IsRefusedAsync()
     {
@@ -119,6 +121,7 @@ public sealed class PlaceOrderCallerAccountTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A plugin member who may purchase orders on the client linked to their account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginMemberWhoMayPurchase_OrdersOnTheLinkedClientAsync()
     {
@@ -140,6 +143,7 @@ public sealed class PlaceOrderCallerAccountTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A plugin member who may only view is refused, and no client is created for their account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginMemberWhoMayOnlyView_IsRefusedAndNoClientIsCreatedAsync()
     {
@@ -161,6 +165,7 @@ public sealed class PlaceOrderCallerAccountTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A signed-in user the plugin refuses is refused the order and no client row is created for them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginRefusedMember_IsRefusedAndNoClientIsCreatedAsync()
     {
@@ -181,6 +186,7 @@ public sealed class PlaceOrderCallerAccountTests(IntegrationTestFactory factory)
     }
 
     /// <summary>With no identity plugin a signed-in first time buyer still orders and gets a client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FirstTimeBuyerWithoutAPlugin_StillOrdersAsync()
     {
@@ -202,6 +208,7 @@ public sealed class PlaceOrderCallerAccountTests(IntegrationTestFactory factory)
     /// A plugin member with no client yet gets one linked to their plugin account on the first order, the same
     /// client takes the second order, and another member of the account lands on it too.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginMemberWithoutAClient_FirstOrderCreatesItAndLaterOrdersReuseItAsync()
     {

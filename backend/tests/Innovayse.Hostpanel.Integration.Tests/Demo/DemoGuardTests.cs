@@ -40,6 +40,7 @@ public sealed class DemoGuardTests(IntegrationTestFactory factory)
     }
 
     /// <summary>On a demo deployment the restricted command is refused 403 with the demo code and a sentence.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenEnabled_RefusesARestrictedCommandAsync()
     {
@@ -55,6 +56,7 @@ public sealed class DemoGuardTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The refusal sentence follows <c>X-Language</c>: Russian and Armenian differ from English and each other.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenEnabled_TheSentenceFollowsTheRequestLanguageAsync()
     {
@@ -74,6 +76,7 @@ public sealed class DemoGuardTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The guard refuses before any write: the setting keeps its value.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenEnabled_LeavesTheSettingUntouchedAsync()
     {
@@ -87,6 +90,7 @@ public sealed class DemoGuardTests(IntegrationTestFactory factory)
     }
 
     /// <summary>With the demo off the same command runs exactly as before.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenDisabled_TheSameCommandRunsAsync()
     {

@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A server on any of the asked modules can be chosen.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SelectAsync_ChoosesAServerOnAnyOfTheModules()
     {
@@ -31,6 +32,7 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A server on a module that was not asked for is never chosen, however much room it has.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SelectAsync_NeverChoosesAServerOnAnotherModule()
     {
@@ -44,6 +46,7 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Only modules that some enabled server is on are reported as in use.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ModulesInUseAsync_ListsOnlyModulesWithAnEnabledServer()
     {
@@ -57,6 +60,7 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A group member on a module that was not asked for is skipped, even when it is the emptier one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SelectFromGroupAsync_SkipsAMemberOnAnotherModule()
     {
@@ -79,6 +83,7 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A fill until full group fills the first server by name, then the next once it is full.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SelectFromGroupAsync_FillUntilFull_ChoosesTheFirstByNameThenTheNext()
     {
@@ -102,6 +107,7 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A least full group picks the emptier server whatever its name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SelectFromGroupAsync_LeastFull_ChoosesTheEmptier()
     {
@@ -121,6 +127,7 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An unknown group and a group whose servers are all full give no server.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SelectFromGroupAsync_ReturnsNullForAnUnknownOrFullGroup()
     {
@@ -140,6 +147,7 @@ public sealed class ServerSelectorTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>With no group the default server wins a tie on fill and capacity.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SelectAsync_PrefersTheDefaultOnATie()
     {

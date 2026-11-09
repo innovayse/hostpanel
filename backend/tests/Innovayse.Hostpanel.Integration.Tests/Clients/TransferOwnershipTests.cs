@@ -15,6 +15,7 @@ public sealed class TransferOwnershipTests(IntegrationTestFactory factory) : ICl
     /// Transferring ownership to a client account makes it the owner, and the previous owner stays on
     /// the account as a user with every permission instead of being locked out of it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferWritesTheNewOwnerAndKeepsThePreviousOne()
     {
@@ -35,6 +36,7 @@ public sealed class TransferOwnershipTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A new owner who is no account at all is refused as unknown, not saved as an owner nobody can sign in as.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferRefusesASubjectThatIsNoAccount()
     {
@@ -50,6 +52,7 @@ public sealed class TransferOwnershipTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A staff account is refused as a new owner: it holds no client role.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferRefusesAStaffAccount()
     {
@@ -65,6 +68,7 @@ public sealed class TransferOwnershipTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A closed account's ownership is frozen: the transfer answers 409 <c>CLIENT_RECORD_CLOSED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferRefusesAClosedClient()
     {
@@ -80,6 +84,7 @@ public sealed class TransferOwnershipTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A successful transfer leaves one activity line naming the client and the acting admin, and no personal data.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferIsAuditedWithTheActingAdmin()
     {
@@ -106,6 +111,7 @@ public sealed class TransferOwnershipTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Transferring ownership to a user who already owns another client answers 409, not a database error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferRefusesAUserWhoAlreadyOwnsAnotherClient()
     {
@@ -120,6 +126,7 @@ public sealed class TransferOwnershipTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Transferring ownership on an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferRefusesUnknownClient()
     {
@@ -133,6 +140,7 @@ public sealed class TransferOwnershipTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Transferring ownership is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferRefusesAnonymous()
     {
@@ -143,6 +151,7 @@ public sealed class TransferOwnershipTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A client, who is not staff, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferRefusesAClient()
     {

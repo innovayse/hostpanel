@@ -39,6 +39,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>A signed call carries the four headers, a timestamp near now and a nonce in the accepted shape, and never a licence key.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheVersionList_OfARestrictedPlugin_IsSigned_AndCarriesNoLicenceKeyAsync()
     {
@@ -63,6 +64,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>Two calls never share a nonce, so the registry's replay check never refuses an honest host.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EveryCall_CarriesAFreshNonceAsync()
     {
@@ -83,6 +85,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>The version details come from a signed call, name the checksum and carry the distribution to the download.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheRelease_OfARestrictedPlugin_IsSigned_AndKeepsItsDistributionAsync()
     {
@@ -106,6 +109,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>The package is fetched through a signed ticket request and a signed fetch of the ticket address, in that order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARestrictedPackage_IsFetchedThroughATicket_BothCallsSignedAsync()
     {
@@ -135,6 +139,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>A ticket is good for one fetch, so every download asks for a ticket of its own, with a different token each time.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EveryDownload_AsksForATicketOfItsOwnAsync()
     {
@@ -159,6 +164,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>A public plugin is asked for as before: no signature, and the licence key when one is given.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APublicPlugin_IsAskedForAsBefore_WithTheLicenceKeyAndNoSignatureAsync()
     {
@@ -179,6 +185,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>An installation the registry has not verified signs nothing: the call is not made and the code says so.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithoutAVerifiedIdentity_NoSignedCallIsMade_AndTheCodeSaysSoAsync()
     {
@@ -198,6 +205,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     /// <param name="status">The status the registry answers with.</param>
     /// <param name="registryCode">The registry error code in the body, or an empty string for a body with none.</param>
     /// <param name="expected">The host code.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(401, "INSTANCE_SIGNATURE_INVALID_UNAUTHORIZED", "PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED")]
     [InlineData(401, "INSTANCE_TIMESTAMP_UNAUTHORIZED", "PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW")]
@@ -232,6 +240,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>A registry that finds the clock of this server too far off is answered with the clock code, and the real window decides it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AClockOutsideTheWindow_IsRefusedWithTheClockCodeAsync()
     {
@@ -249,6 +258,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>A revocation is remembered: the status turns Revoked and the next signed call is not made at all.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARevocation_IsRememberedOnTheIdentityAsync()
     {
@@ -272,6 +282,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>A ticket address on another host is refused before anything is fetched from it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ATicketAddressOnAnotherHost_IsRefusedAsync()
     {
@@ -297,6 +308,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>The newest-version lookup is unsigned and an empty package address for a restricted plugin is not invalid there.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheLatestLookup_IsUnsigned_AndAnEmptyAddressIsNotAnErrorAsync()
     {
@@ -315,6 +327,7 @@ public sealed class PluginRegistryClientSignedCallTests(IntegrationTestFactory f
     }
 
     /// <summary>The listing and the plugin page carry the distribution, and a registry that sends none reads as a public plugin.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheListingAndThePluginPage_ReadTheDistributionAsync()
     {

@@ -18,5 +18,5 @@ public interface IIdentityPluginResolver
     /// More than one identity plugin is enabled. The host never picks one of them, because each would map the
     /// same principal to a different client.
     /// </exception>
-    Task<IClientResolver?> ResolveAsync(CancellationToken ct);
+    public Task<IClientResolver?> ResolveAsync(CancellationToken ct);
 }

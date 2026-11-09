@@ -21,6 +21,7 @@ public sealed class ListCurrenciesTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>The migration seeded USD as the base and AMD beside it; the admin list shows both, with rates.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminListShowsTheSeededPairWithRates()
     {
@@ -37,6 +38,7 @@ public sealed class ListCurrenciesTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminListRefusesAnonymous()
     {

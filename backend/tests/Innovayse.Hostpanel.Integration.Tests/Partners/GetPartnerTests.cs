@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Partners;
 public sealed class GetPartnerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A stored partner is returned with its id and every translation.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_ReturnsTheRecordWithTranslations()
     {
@@ -27,6 +28,7 @@ public sealed class GetPartnerTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>An id that names no partner answers 404 with the not-found code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_UnknownId_RefusesWithNotFoundCode()
     {
@@ -39,6 +41,7 @@ public sealed class GetPartnerTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A non-positive id is refused as a validation failure before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_NonPositiveId_RefusesWithValidationFailure()
     {
@@ -50,6 +53,7 @@ public sealed class GetPartnerTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_RefusesAnonymous()
     {

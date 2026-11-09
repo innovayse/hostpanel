@@ -23,6 +23,7 @@ public sealed class UpsertCurrencyTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>PUT on a new code creates the row, and PUT again rewrites it in place.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PutCreatesThenRewritesACurrency()
     {
@@ -44,6 +45,7 @@ public sealed class UpsertCurrencyTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Upserting a currency is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PutRefusesAnonymous()
     {

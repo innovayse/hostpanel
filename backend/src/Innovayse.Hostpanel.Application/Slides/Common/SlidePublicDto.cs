@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Domain.Slides;
 using Innovayse.Hostpanel.Domain.Slides.Enums;
 
 namespace Innovayse.Hostpanel.Application.Slides.Common;

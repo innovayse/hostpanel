@@ -2,7 +2,6 @@ using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
-using Innovayse.Hostpanel.Domain.Clients;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Clients.Commands.UpdateClient;

@@ -1,5 +1,3 @@
-using Innovayse.Hostpanel.Domain.Billing;
-
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <summary>DTO representing a financial transaction on an invoice.</summary>

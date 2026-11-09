@@ -1,8 +1,7 @@
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Support.Commands.ReplyToTicket;
-using Innovayse.Hostpanel.Application.Support.Common;
 using Innovayse.Hostpanel.Shared.Models;
 using Wolverine;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
 
 namespace Innovayse.Hostpanel.Application.Support.Commands.ReplyToMyTicket;
 

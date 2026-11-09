@@ -1,17 +1,17 @@
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
+using Hostpanel.Sdk.Packaging.Archive;
+using Hostpanel.Sdk.Packaging.Naming;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Hostpanel.Sdk.Packaging.Archive;
-using Hostpanel.Sdk.Packaging.Naming;
-using PluginVersionChange = Hostpanel.Sdk.Packaging.Enums.PluginVersionChange;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
-using Hostpanel.Sdk.Plugins.Manifest;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using PluginVersionChange = Hostpanel.Sdk.Packaging.Enums.PluginVersionChange;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 

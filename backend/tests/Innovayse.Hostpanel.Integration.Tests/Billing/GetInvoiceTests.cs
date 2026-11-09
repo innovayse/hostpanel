@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetInvoiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin reads back the invoice they just created, with its client's name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetByIdReturnsTheCreatedInvoice()
     {
@@ -29,6 +30,7 @@ public sealed class GetInvoiceTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>Reading an id that names no invoice answers 404 with the <c>INVOICE_NOT_FOUND</c> code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetUnknownInvoiceRefusesNotFound()
     {
@@ -41,6 +43,7 @@ public sealed class GetInvoiceTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>Reading an invoice is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRefusesAnonymous()
     {

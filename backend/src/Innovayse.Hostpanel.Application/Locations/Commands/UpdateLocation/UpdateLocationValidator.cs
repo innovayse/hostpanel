@@ -2,7 +2,6 @@ using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Locations.Common;
 using Innovayse.Hostpanel.Application.Resources;
-using Innovayse.Hostpanel.Domain.Locations;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Locations.Commands.UpdateLocation;

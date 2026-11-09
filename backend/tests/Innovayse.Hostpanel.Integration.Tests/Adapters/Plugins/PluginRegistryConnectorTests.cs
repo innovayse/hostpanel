@@ -48,6 +48,7 @@ public sealed class PluginRegistryConnectorTests
     }
 
     /// <summary>A name that resolves to a forbidden address is refused before any connection is made.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ALoopbackName_IsRefusedAsync()
     {

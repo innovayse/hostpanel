@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 public sealed class EnableTwoFactorTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Enabling with the code an authenticator app would show switches it on.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnableWithTheRightCodeSwitchesItOn()
     {
@@ -30,6 +31,7 @@ public sealed class EnableTwoFactorTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Enabling with a code that does not match the issued secret is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnableRefusesAWrongCode()
     {
@@ -44,6 +46,7 @@ public sealed class EnableTwoFactorTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Once enabled, a login with just the password answers that a second factor is required.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LoginAfterEnablingAsksForTheSecondFactor()
     {
@@ -74,6 +77,7 @@ public sealed class EnableTwoFactorTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnableRefusesAnonymous()
     {

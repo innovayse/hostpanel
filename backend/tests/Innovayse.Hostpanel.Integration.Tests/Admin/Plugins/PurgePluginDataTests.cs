@@ -34,6 +34,7 @@ public sealed class PurgePluginDataTests(IntegrationTestFactory factory) : IClas
     /// Remove then purge: the removal keeps the data and lists the plugin as removed, the purge deletes the plugin's
     /// entries and scope rows, records who purged them, and leaves another plugin's rows alone.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveThenPurge_KeepsThenDeletesTheDataAndAuditsItAsync()
     {
@@ -66,6 +67,7 @@ public sealed class PurgePluginDataTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A plugin whose package is still installed is refused with 409 and keeps its data.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhileInstalled_RefusesAndKeepsTheDataAsync()
     {
@@ -93,6 +95,7 @@ public sealed class PurgePluginDataTests(IntegrationTestFactory factory) : IClas
     /// A package folder whose <c>plugin.json</c> is corrupt is still installed: it is not in the list of readable
     /// manifests, but the purge looks at the folder itself and refuses, keeping the data.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CorruptManifestFolder_StillCountsAsInstalledAsync()
     {
@@ -125,6 +128,7 @@ public sealed class PurgePluginDataTests(IntegrationTestFactory factory) : IClas
     /// A removed plugin whose only leftover is its slot widget bindings is listed as removed and can be purged: the
     /// bindings count as kept data, and the purge deletes them.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OnlyBindingsKept_ListsTheRemovedPluginAndPurgesThemAsync()
     {
@@ -142,6 +146,7 @@ public sealed class PurgePluginDataTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Purging twice is safe: the second purge finds nothing kept, answers <c>PLUGIN_NOT_FOUND</c> and audits nothing more.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RepeatedPurge_IsIdempotentAsync()
     {
@@ -162,6 +167,7 @@ public sealed class PurgePluginDataTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A plugin that keeps no data answers 404 <c>PLUGIN_NOT_FOUND</c> and writes nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginWithoutData_AnswersNotFoundAsync()
     {
@@ -178,6 +184,7 @@ public sealed class PurgePluginDataTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An id breaking the plugin id rule is refused by the validator with <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnIdBreakingTheRule_RefusesAsync()
     {
@@ -190,6 +197,7 @@ public sealed class PurgePluginDataTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -201,6 +209,7 @@ public sealed class PurgePluginDataTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

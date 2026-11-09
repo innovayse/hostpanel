@@ -9,6 +9,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class RemoveUserFromClientTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Removing a linked non-owner user drops the link.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveDropsTheLink()
     {
@@ -24,6 +25,7 @@ public sealed class RemoveUserFromClientTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Removing a user from an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveRefusesUnknownClient()
     {
@@ -37,6 +39,7 @@ public sealed class RemoveUserFromClientTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Removing a user is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveRefusesAnonymous()
     {
@@ -47,6 +50,7 @@ public sealed class RemoveUserFromClientTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A client, who is not staff, is refused with 403 on the admin route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveRefusesAClient()
     {
@@ -58,6 +62,7 @@ public sealed class RemoveUserFromClientTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>The account owner cannot be removed as a user: the answer is 409 <c>CLIENT_OWNER_CANNOT_BE_REMOVED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveRefusesTheAccountOwner()
     {
@@ -71,6 +76,7 @@ public sealed class RemoveUserFromClientTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Removing a user who is not linked answers 404 with <c>CLIENT_USER_NOT_LINKED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveRefusesAUserWhoIsNotLinked()
     {
@@ -84,6 +90,7 @@ public sealed class RemoveUserFromClientTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Removing a linked user leaves one activity line naming the client and the acting admin.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveIsAuditedWithTheActingAdmin()
     {

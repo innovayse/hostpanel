@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class ListTldConfigsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Listing never refuses: it answers 200 even before any configuration is created.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_ReturnsOkEvenWithNoConfigurationsCreatedByThisTestAsync()
     {
@@ -23,6 +24,7 @@ public sealed class ListTldConfigsTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A newly created configuration shows up in the list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_IncludesANewlyCreatedConfigurationAsync()
     {
@@ -38,6 +40,7 @@ public sealed class ListTldConfigsTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_WithoutToken_Returns401Async()
     {

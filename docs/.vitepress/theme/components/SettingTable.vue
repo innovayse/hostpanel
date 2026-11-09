@@ -3,6 +3,7 @@
  * Renders a bordered table of configuration settings with name, type, default
  * value, and description columns.
  */
+import { useUi } from '../useUi'
 
 /** A single row in the settings table. */
 export interface Setting {
@@ -20,6 +21,9 @@ defineProps<{
   /** Rows to render; one object per setting. */
   settings: Setting[]
 }>()
+
+/** The texts of the language of the open page. */
+const { ui } = useUi()
 </script>
 
 <template>
@@ -27,10 +31,10 @@ defineProps<{
     <table class="setting-table">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Default</th>
-          <th>Description</th>
+          <th>{{ ui.components.settingTable.name }}</th>
+          <th>{{ ui.components.settingTable.type }}</th>
+          <th>{{ ui.components.settingTable.default }}</th>
+          <th>{{ ui.components.settingTable.description }}</th>
         </tr>
       </thead>
       <tbody>

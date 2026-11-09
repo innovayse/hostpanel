@@ -3,6 +3,9 @@
  * Inline badge used in documentation pages to mark features as admin-only,
  * newly added, locally hosted, or SSO-managed.
  */
+import { computed } from 'vue'
+import { format } from '../../i18n/ui'
+import { useUi } from '../useUi'
 
 /** The visual variant of the label. */
 type LabelType = 'admin' | 'new' | 'local' | 'sso'
@@ -17,17 +20,16 @@ withDefaults(
   { version: undefined },
 )
 
-const labels: Record<LabelType, string> = {
-  admin: 'Admin',
-  new: 'New',
-  local: 'Local',
-  sso: 'SSO',
-}
+/** The texts of the language of the open page. */
+const { ui } = useUi()
+
+/** Text of each variant in the language of the open page. */
+const labels = computed<Record<LabelType, string>>(() => ui.value.components.label)
 </script>
 
 <template>
   <span :class="['label', `label--${type}`]">
-    <template v-if="type === 'new' && version">New in {{ version }}</template>
+    <template v-if="type === 'new' && version">{{ format(ui.components.label.newIn, { version }) }}</template>
     <template v-else>{{ labels[type] }}</template>
   </span>
 </template>

@@ -934,7 +934,7 @@ rollback() {
   # The restore swaps databases by renaming them from the maintenance database, which is named postgres,
   # so it cannot replace a live database of that name. Said before anything is touched.
   if [ "$(get_env "$env" POSTGRES_DB)" = "postgres" ]; then
-    fail "POSTGRES_DB in ${env} is 'postgres', the server's own maintenance database. The rollback swaps databases by renaming them from that one, so it cannot replace it. Nothing was changed. Restore the backup by hand, connected to the template1 database to drop and create it (dropping the database you are connected to fails): see 'A database named postgres' in the rollback guide, docs/operators/rollback.md."
+    fail "POSTGRES_DB in ${env} is 'postgres', the server's own maintenance database. The rollback swaps databases by renaming them from that one, so it cannot replace it. Nothing was changed. Restore the backup by hand, connected to the template1 database to drop and create it (dropping the database you are connected to fails): see 'A database named postgres' in the rollback guide, docs/en/operators/rollback.md."
   fi
 
   while IFS= read -r candidate; do

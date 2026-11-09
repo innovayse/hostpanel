@@ -1,0 +1,234 @@
+{
+  "site": {
+    "title": "Hostpanel",
+    "description": "Open source web hosting control panel"
+  },
+  "nav": {
+    "home": "Home",
+    "getStarted": "Get started",
+    "guides": "Guides",
+    "apiReference": "API Reference",
+    "changelog": "Changelog",
+    "demo": "Try the demo"
+  },
+  "sections": {
+    "get-started": "Get started",
+    "operators": "Operators",
+    "staff": "Staff",
+    "customers": "Customers",
+    "payments": "Payments",
+    "servers": "Servers & SSH",
+    "migration": "Migration",
+    "developers": "Developers",
+    "contributing": "Contributing",
+    "api-reference": "API reference"
+  },
+  "pages": {
+    "/get-started/": "Introduction",
+    "/get-started/requirements": "Requirements",
+    "/get-started/quick-start": "Quick start",
+    "/operators/": "Overview",
+    "/operators/install": "Install Hostpanel",
+    "/operators/upgrade": "Upgrade",
+    "/operators/backup": "Back up and restore",
+    "/operators/rollback": "Rollback",
+    "/operators/plugin-registry": "Plugin registry",
+    "/operators/storefront": "Storefront & branding",
+    "/operators/configuration": "Configuration reference",
+    "/staff/": "Overview",
+    "/staff/clients": "Clients, users and contacts",
+    "/staff/orders": "Orders",
+    "/staff/billing": "Invoices and payments",
+    "/staff/transactions": "Transactions, billable items and quotes",
+    "/staff/currencies": "Currencies, renewals and jobs",
+    "/staff/products": "Products and pricing",
+    "/staff/tld-pricing": "Domain extensions and registrars",
+    "/staff/domains": "Domains",
+    "/staff/support-tickets": "Support tickets",
+    "/staff/announcements": "Announcements, knowledge base and downloads",
+    "/staff/network-issues": "Network issues",
+    "/staff/email-templates": "Email templates",
+    "/customers/": "Overview",
+    "/customers/portal": "Client portal",
+    "/customers/account": "Your account and signing in",
+    "/customers/two-factor": "Two-factor authentication",
+    "/customers/ordering": "Ordering",
+    "/customers/invoices": "Invoices and paying",
+    "/customers/services": "Services and SSH keys",
+    "/customers/domains": "Domains",
+    "/customers/tickets": "Support tickets",
+    "/payments/": "Overview",
+    "/payments/gateways": "Gateways",
+    "/payments/confirming": "How online payments are confirmed",
+    "/payments/plugins": "Plugins",
+    "/servers/": "Overview",
+    "/servers/servers": "Servers",
+    "/servers/cpanel": "cPanel servers",
+    "/servers/ssh-key-agent": "SSH key agent",
+    "/servers/provisioning": "Provisioning",
+    "/migration/": "Overview",
+    "/migration/from-another-system": "Moving from WHMCS",
+    "/migration/import-report": "Import report and skip reasons",
+    "/developers/": "Overview",
+    "/developers/architecture": "Architecture overview",
+    "/developers/backend": "Backend",
+    "/developers/frontends": "Frontends",
+    "/developers/local-dev": "Run locally",
+    "/developers/tests": "Tests and checks",
+    "/developers/new-feature": "Where a new feature goes",
+    "/developers/contributing": "Contributing",
+    "/developers/translating": "Translating Hostpanel",
+    "/developers/translating-docs": "Translating the documentation",
+    "/developers/documentation-versions": "Documentation versions",
+    "/developers/add-language": "Add a new language",
+    "/developers/integrations": "Integrations",
+    "/developers/write-a-plugin": "Write a plugin",
+    "/developers/publishing-a-plugin": "Publishing a plugin",
+    "/developers/plugin-registry-contract": "Plugin registry contract",
+    "/components": "Components",
+    "/api-reference/": "Overview",
+    "/api-reference/authentication": "Authentication",
+    "/api-reference/errors": "Errors",
+    "/api-reference/languages": "Languages",
+    "/api-reference/rate-limits": "Rate limits",
+    "/api-reference/pagination": "Pagination"
+  },
+  "apiGroups": {
+    "Auth endpoints": "Auth endpoints",
+    "Public endpoints": "Public endpoints",
+    "Client endpoints": "Client endpoints",
+    "Any signed-in user": "Any signed-in user",
+    "Admin endpoints": "Admin endpoints"
+  },
+  "theme": {
+    "outlineTitle": "On this page",
+    "docFooterPrev": "Previous page",
+    "docFooterNext": "Next page",
+    "lastUpdatedText": "Last updated",
+    "editLinkText": "Edit this page on GitHub",
+    "darkModeSwitchLabel": "Appearance",
+    "lightModeSwitchTitle": "Switch to light theme",
+    "darkModeSwitchTitle": "Switch to dark theme",
+    "sidebarMenuLabel": "Menu",
+    "returnToTopLabel": "Return to top",
+    "langMenuLabel": "Change language",
+    "skipToContentLabel": "Skip to content",
+    "footerMessage": "Released under the AGPL-3.0 License."
+  },
+  "search": {
+    "buttonText": "Search",
+    "buttonAriaLabel": "Search",
+    "displayDetails": "Display detailed list",
+    "resetButtonTitle": "Reset search",
+    "backButtonTitle": "Close search",
+    "noResultsText": "No results for",
+    "recentTitle": "Recently viewed",
+    "suggestedTitle": "Suggested",
+    "selectText": "to select",
+    "selectKeyAriaLabel": "enter",
+    "navigateText": "to navigate",
+    "navigateUpKeyAriaLabel": "up arrow",
+    "navigateDownKeyAriaLabel": "down arrow",
+    "closeText": "to close",
+    "closeKeyAriaLabel": "escape",
+    "closeKeyLabel": "esc",
+    "suggestedPages": {
+      "quickStart": "Quick start",
+      "install": "Install Hostpanel",
+      "configuration": "Configuration reference",
+      "apiReference": "API reference"
+    }
+  },
+  "components": {
+    "versionSwitcher": {
+      "ariaLabel": "Documentation version: {version}",
+      "latest": "latest"
+    },
+    "versionBanner": {
+      "next": "This is the documentation of the next, unreleased version.",
+      "release": "This is the documentation of {version}, not the latest release.",
+      "link": "Read the latest version"
+    },
+    "pageFeedback": {
+      "question": "Was this page helpful?",
+      "yes": "Yes",
+      "no": "No",
+      "thanks": "Thanks for the feedback!"
+    },
+    "homeSearch": {
+      "ariaLabel": "Open documentation search",
+      "placeholder": "Search documentation…"
+    },
+    "screenshot": {
+      "enlarge": "Enlarge image",
+      "preview": "Image preview",
+      "close": "Close image preview"
+    },
+    "settingTable": {
+      "name": "Name",
+      "type": "Type",
+      "default": "Default",
+      "description": "Description"
+    },
+    "label": {
+      "admin": "Admin",
+      "new": "New",
+      "local": "Local",
+      "sso": "SSO",
+      "newIn": "New in {version}"
+    },
+    "notFound": {
+      "label": "Error 404",
+      "title": "This page does not exist",
+      "body": "The address may have changed, or it was never here. Try the start of the documentation.",
+      "back": "Back to the documentation",
+      "getStarted": "Get started",
+      "apiReference": "API reference"
+    }
+  },
+  "seo": {
+    "defaultDescription": "Documentation for Hostpanel, the open source web hosting control panel.",
+    "sectionNames": {
+      "get-started": "Get started",
+      "operators": "Operators",
+      "staff": "Staff",
+      "customers": "Customers",
+      "payments": "Payments",
+      "servers": "Servers and SSH",
+      "migration": "Migration",
+      "developers": "Developers",
+      "api-reference": "API reference",
+      "changelog": "Changelog"
+    },
+    "sectionDescriptions": {
+      "get-started": "Get started with Hostpanel, the open source web hosting control panel: requirements and a quick start.",
+      "operators": "Install, upgrade, back up and configure Hostpanel, the open source web hosting control panel.",
+      "staff": "Staff guide to Hostpanel: clients, orders, billing, products, domains and support tickets.",
+      "customers": "Customer guide to the Hostpanel client portal: orders, invoices, services, domains and tickets.",
+      "payments": "Set up payment gateways and online payments in Hostpanel, the open source web hosting control panel.",
+      "servers": "Connect servers, manage SSH keys and provision hosting accounts with Hostpanel.",
+      "migration": "Move your hosting business to Hostpanel and read the import report.",
+      "developers": "Developer documentation for Hostpanel: architecture, local setup, tests and plugins.",
+      "api-reference": "Hostpanel REST API reference: authentication, errors, languages, rate limits and every endpoint.",
+      "changelog": "What changed in each Hostpanel release."
+    },
+    "sectionKeywords": {
+      "get-started": ["hostpanel", "hosting control panel", "open source", "quick start"],
+      "operators": ["hostpanel", "install", "upgrade", "backup", "configuration"],
+      "staff": ["hostpanel", "hosting billing", "admin guide", "support tickets"],
+      "customers": ["hostpanel", "client portal", "hosting account", "invoices"],
+      "payments": ["hostpanel", "payment gateways", "online payments", "billing"],
+      "servers": ["hostpanel", "server management", "ssh keys", "provisioning"],
+      "migration": ["hostpanel", "migration", "data import", "hosting billing"],
+      "developers": ["hostpanel", "developer guide", "plugins", "open source"],
+      "api-reference": ["hostpanel", "rest api", "api reference", "openapi"],
+      "changelog": ["hostpanel", "changelog", "release notes"]
+    },
+    "defaultKeywords": ["hostpanel", "hosting control panel", "web hosting billing", "open source"]
+  },
+  "fallback": {
+    "title": "This page is not translated yet",
+    "message": "This page has not been translated into your language yet. The English text is shown below.",
+    "original": "Read the original page"
+  }
+}

@@ -10,8 +10,8 @@ translation and review makes a real difference.
 - **Report a bug** or **request a feature** through [the issue forms](../../issues/new/choose)
 - **Translate**: the UI ships in English, Russian and Armenian. Strings live in
   `admin/src/locales/{en,ru,hy}/<area>.json` (loaded by `messages.ts`) and `client/locales/<lang>/`. A new language or a fix to an
-  existing one is a great first PR. See [Translating Hostpanel](docs/developers/translating.md) and
-  [Add a new language](docs/developers/add-language.md) for the full guide
+  existing one is a great first PR. See [Translating Hostpanel](docs/en/developers/translating.md) and
+  [Add a new language](docs/en/developers/add-language.md) for the full guide
 - **Improve the docs**: if something in the README tripped you up, it will trip the next
   person too. The published guides are at [hostpanel.innovayse.com/docs](https://hostpanel.innovayse.com/docs/),
   and [the contributor guide](https://hostpanel.innovayse.com/docs/developers/contributing) explains how they are built

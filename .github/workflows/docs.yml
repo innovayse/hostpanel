@@ -123,6 +123,8 @@ jobs:
         env:
           DEMO_ADMIN_URL: ${{ vars.DEMO_ADMIN_URL }}
           DEMO_CLIENT_URL: ${{ vars.DEMO_CLIENT_URL }}
+          # Three languages triple the pages the server render holds; the default heap runs out.
+          NODE_OPTIONS: --max-old-space-size=8192
         run: npm run build
 
       - name: Check docs

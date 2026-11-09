@@ -7,31 +7,37 @@
  * the API reference. The page is marked `noindex` by `transformHead` in `seo.ts`.
  */
 import { withBase } from 'vitepress'
+import { computed } from 'vue'
+import { localizeLink } from '../../i18n/locales'
+import { useUi } from '../useUi'
 
 /** One link under the message. */
 interface Way {
   /** The label of the link. */
   text: string
-  /** The address, relative to the documentation root. */
+  /** The address, relative to the documentation root, in the language of the page. */
   link: string
   /** The button style of the default theme: `brand` for the main way, `alt` for the others. */
   theme: 'brand' | 'alt'
 }
 
+/** The texts and the language of the open page; the 404 page is shown in the language of the address that was not found. */
+const { ui, locale } = useUi()
+
 /** The ways on, the main one first. */
-const ways: Way[] = [
-  { text: 'Back to the documentation', link: '/', theme: 'brand' },
-  { text: 'Get started', link: '/get-started/', theme: 'alt' },
-  { text: 'API reference', link: '/api-reference/', theme: 'alt' },
-]
+const ways = computed<Way[]>(() => [
+  { text: ui.value.components.notFound.back, link: localizeLink(locale.value, '/'), theme: 'brand' },
+  { text: ui.value.components.notFound.getStarted, link: localizeLink(locale.value, '/get-started/'), theme: 'alt' },
+  { text: ui.value.components.notFound.apiReference, link: localizeLink(locale.value, '/api-reference/'), theme: 'alt' },
+])
 </script>
 
 <template>
   <div class="not-found" data-testid="not-found">
-    <p class="not-found__label">Error 404</p>
+    <p class="not-found__label">{{ ui.components.notFound.label }}</p>
     <p class="not-found__code" aria-hidden="true">404</p>
-    <h1 class="not-found__title">This page does not exist</h1>
-    <p class="not-found__body">The address may have changed, or it was never here. Try the start of the documentation.</p>
+    <h1 class="not-found__title">{{ ui.components.notFound.title }}</h1>
+    <p class="not-found__body">{{ ui.components.notFound.body }}</p>
     <div class="not-found__actions">
       <a
         v-for="way in ways"

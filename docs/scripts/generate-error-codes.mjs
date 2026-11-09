@@ -5,7 +5,7 @@
  * `ValidationMessages.resx` for the codes the shared edge answers with on its own) and the HTTP
  * status from `StatusMapping.cs`. See `lib/errorCatalog.mjs`.
  *
- * The output is `docs/api-reference/_partials/error-codes.md`, which `errors.md` includes. It is
+ * The output is `docs/en/api-reference/_partials/error-codes.md`, which `errors.md` includes. It is
  * not committed.
  *
  * Usage (from anywhere):
@@ -17,7 +17,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadErrorCatalog } from './lib/errorCatalog.mjs'
 
-const outFile = resolve(dirname(fileURLToPath(import.meta.url)), '../api-reference/_partials/error-codes.md')
+const outFile = resolve(dirname(fileURLToPath(import.meta.url)), '../en/api-reference/_partials/error-codes.md')
 
 /**
  * Escapes a sentence for a Markdown table cell that VitePress also compiles as a Vue template.

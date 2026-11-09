@@ -103,9 +103,11 @@
   --duration-base: 200ms;
   --duration-slow: 300ms;
 
-  /* Fonts */
-  --font-display: 'Syne', sans-serif;
-  --font-sans:    'Inter', system-ui, sans-serif;
+  /* Fonts: one bundled sans for the whole panel (body, headings, titles and numbers), with the
+     Armenian face as the fallback for Armenian text. `--font-display` stays as an alias so the
+     `font-display` utility keeps working, but it is the same family. Nothing loads from a URL. */
+  --font-sans:    'Inter Variable', Inter, 'Noto Sans Armenian', system-ui, sans-serif;
+  --font-display: var(--font-sans);
 
   /* Brand typefaces an operator can pick; each one backs a `font-brand-*` utility used to preview it. */
   --font-brand-inter: 'Inter Variable', Inter, 'Noto Sans Armenian', system-ui, sans-serif;
@@ -118,6 +120,9 @@
   * { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
 
   h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
+
+  /* Tables carry counts and money: tabular figures keep the digits of every row lined up. */
+  table { font-variant-numeric: tabular-nums; }
 
   body { background-color: var(--color-surface-base); color: var(--color-text-primary); }
 

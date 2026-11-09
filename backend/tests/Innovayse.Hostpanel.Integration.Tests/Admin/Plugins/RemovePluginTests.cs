@@ -49,7 +49,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
 
         var list = await client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/admin/plugins");
         list!.Should().NotContain(p => p.GetProperty("id").GetString() == pluginId);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
         (await SwitchValueAsync(pluginId)).Should().Be(
             IntegrationSettingKeys.DisabledValue, "the still-loaded plugin must be refused from the commit on");
 
@@ -282,7 +282,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
     {
         var client = await PluginsTestSeeds.AdminClientAsync(factory);
         const string reservedId = "ui";
-        var folder = PluginsTestSeeds.InstalledFolder(reservedId);
+        var folder = PluginsTestSeeds.InstalledFolder(factory, reservedId);
         Directory.CreateDirectory(folder);
         File.WriteAllText(Path.Combine(folder, "plugin.json"), PluginsTestSeeds.ManifestJson(reservedId));
 
@@ -321,7 +321,7 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_MANIFEST_ID_INVALID);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder("ui")).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, "ui")).Should().BeFalse();
     }
 
     /// <summary>
@@ -339,14 +339,14 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
 
         var install = await client.PostAsJsonAsync($"/api/admin/plugins/registry/{pluginId}/install", PluginRegistryTestSeeds.InstallBody("1.0.0"));
         install.StatusCode.Should().Be(HttpStatusCode.OK);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeTrue();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeTrue();
 
         var remove = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
 
         remove.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await remove.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
         body.GetProperty("requiresRestart").GetBoolean().Should().BeTrue();
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
         var list = await client.GetFromJsonAsync<List<System.Text.Json.JsonElement>>("/api/admin/plugins");
         list!.Should().NotContain(p => p.GetProperty("id").GetString() == pluginId);
         var detail = await client.GetFromJsonAsync<System.Text.Json.JsonElement>($"/api/admin/plugins/registry/{pluginId}");
@@ -370,13 +370,13 @@ public sealed class RemovePluginTests(IntegrationTestFactory factory) : IClassFi
         registry.Publish(pluginId, "2.0.0", PluginRegistryTestSeeds.SignedVersionedZip(pluginId, "2.0.0"));
         (await client.PostAsJsonAsync($"/api/admin/plugins/registry/{pluginId}/install", PluginRegistryTestSeeds.InstallBody("2.0.0")))
             .StatusCode.Should().Be(HttpStatusCode.OK);
-        Directory.Exists(PluginsTestSeeds.StagedFolder(pluginId)).Should().BeTrue();
+        Directory.Exists(PluginsTestSeeds.StagedFolder(factory, pluginId)).Should().BeTrue();
 
         var remove = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
 
         remove.StatusCode.Should().Be(HttpStatusCode.OK);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
-        Directory.Exists(PluginsTestSeeds.StagedFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.StagedFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>

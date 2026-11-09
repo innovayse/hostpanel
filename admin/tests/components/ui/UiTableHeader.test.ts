@@ -24,6 +24,11 @@ describe('UiTableHeader', () => {
     expect(mount(UiTableHeader, { props: { align: 'center' } }).classes()).toContain('text-center')
   })
 
+  it('matches the numeric and actions cells below it', () => {
+    expect(mount(UiTableHeader, { props: { numeric: true } }).classes()).toEqual(expect.arrayContaining(['text-end', 'tabular-nums']))
+    expect(mount(UiTableHeader, { props: { actions: true } }).classes()).toEqual(expect.arrayContaining(['w-28', 'text-end']))
+  })
+
   it('has no sort button or aria-sort unless sortable', () => {
     const wrapper = mount(UiTableHeader)
 

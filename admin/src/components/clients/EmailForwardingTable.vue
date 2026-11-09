@@ -18,6 +18,7 @@ import UiInput from '@/components/ui/UiInput.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -46,11 +47,9 @@ const emit = defineEmits<{
   refresh: []
 }>()
 
-/** Icon markup (shape tags) of the row buttons. */
+/** Icon markup (shape tags) of the add, save and cancel buttons. */
 const ICONS = {
   add: '<line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />',
-  edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />',
-  remove: '<polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />',
   confirm: '<polyline points="20 6 9 17 4 12" />',
   cancel: '<line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />',
 } as const
@@ -242,6 +241,40 @@ const dismissDelete = (): void => {
     deleteTargetId.value = null
   }
 }
+
+/**
+ * The row actions of a forwarding rule: edit, and delete last (confirmed first).
+ *
+ * @param rule - The row.
+ * @returns The action list passed to UiRowActions.
+ */
+const forwardingRuleActions = (rule: EmailForwardingRuleItem): UiRowAction[] => [
+  {
+    label: t('shared.edit'),
+    testid: `clients-forwarding-edit-${rule.id}`,
+    /**
+     * Starts editing this row.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      startEdit(rule)
+    },
+  },
+  {
+    label: t('shared.delete'),
+    testid: `clients-forwarding-delete-${rule.id}`,
+    /**
+     * Asks for confirmation, then deletes this row.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      handleDelete(rule.id)
+    },
+    danger: true,
+  },
+]
 </script>
 
 <template>
@@ -269,7 +302,7 @@ const dismissDelete = (): void => {
             <UiTableHeader>{{ t('clients.emailForwardingTable.source') }}</UiTableHeader>
             <UiTableHeader>{{ t('clients.emailForwardingTable.destination') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.active') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -294,8 +327,8 @@ const dismissDelete = (): void => {
               <UiTableCell>
                 <UiText :tone="UiTextTone.Muted">&mdash;</UiText>
               </UiTableCell>
-              <UiTableCell>
-                <UiStack direction="row" gap="xs" :align="UiAlignItems.Center">
+              <UiTableCell actions>
+                <UiStack direction="row" gap="xs" :justify="UiJustify.End" :align="UiAlignItems.Center">
                   <UiIconButton
                     :label="t('shared.save')"
                     :size="UiSize.Sm"
@@ -326,25 +359,8 @@ const dismissDelete = (): void => {
                   @update:model-value="toggleActive(row.rule)"
                 />
               </UiTableCell>
-              <UiTableCell>
-                <UiStack direction="row" gap="xs" :align="UiAlignItems.Center">
-                  <UiIconButton
-                    :label="t('shared.edit')"
-                    :size="UiSize.Sm"
-                    :data-testid="`clients-forwarding-edit-${row.rule.id}`"
-                    @click="startEdit(row.rule)"
-                  >
-                    <UiIcon :markup="ICONS.edit" :size="UiSize.Sm" />
-                  </UiIconButton>
-                  <UiIconButton
-                    :label="t('shared.delete')"
-                    :size="UiSize.Sm"
-                    :data-testid="`clients-forwarding-delete-${row.rule.id}`"
-                    @click="handleDelete(row.rule.id)"
-                  >
-                    <UiIcon :markup="ICONS.remove" :size="UiSize.Sm" />
-                  </UiIconButton>
-                </UiStack>
+              <UiTableCell actions>
+                <UiRowActions :actions="forwardingRuleActions(row.rule)" />
               </UiTableCell>
             </template>
           </UiTableRow>

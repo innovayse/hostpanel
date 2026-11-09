@@ -37,7 +37,7 @@ const cases: Case[] = [
   { name: 'UiClientSelect', mountIt: () => mount(UiClientSelect, { props: { modelValue: null, clients: [{ id: 1, name: 'Acme' }] }, global }), opener: 'input' },
   { name: 'UiPhoneInput', mountIt: () => mount(UiPhoneInput, { global }), opener: '[data-testid="phone-country-trigger"]' },
   { name: 'UiFieldSelector', mountIt: () => mount(UiFieldSelector, { props: { fields: [{ key: 'a', label: 'A' }], selected: new Set<string>() }, global }), opener: '[data-testid="field-selector-trigger"]' },
-  { name: 'UiRowActions', mountIt: () => mount(UiRowActions, { props: { actions: [{ label: 'Edit', onSelect: () => undefined }] }, global }), opener: '[data-testid="row-actions-trigger"]' },
+  { name: 'UiRowActions', mountIt: () => mount(UiRowActions, { props: { actions: [{ label: 'Edit', onSelect: () => undefined }, { label: 'View', onSelect: () => undefined }] }, global }), opener: '[data-testid="row-actions-trigger"]' },
 ]
 
 /**

@@ -88,7 +88,7 @@ onMounted(() => store.fetchAll())
             <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
             <UiTableHeader>{{ t('clients.domainRegistrations.regPeriod') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.registrar') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.price') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('shared.price') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.nextDueDate') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.expiryDate') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
@@ -115,7 +115,7 @@ onMounted(() => store.fetchAll())
             </UiTableCell>
             <UiTableCell>{{ yearsLabel(domain.regPeriodYears) }}</UiTableCell>
             <UiTableCell>{{ domain.registrar ?? '—' }}</UiTableCell>
-            <UiTableCell>{{ formatPrice(domain.recurringAmount, domain.priceCurrency) }}</UiTableCell>
+            <UiTableCell numeric>{{ formatPrice(domain.recurringAmount, domain.priceCurrency) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(domain.nextDueDate) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(domain.expiresAt) }}</UiTableCell>
             <UiTableCell>

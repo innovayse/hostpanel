@@ -39,11 +39,13 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import type { Invoice } from '@/types/invoice'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
@@ -388,6 +390,52 @@ const openInvoice = (id: number, mode: InvoiceOpenAction): void => {
   router.push(`${invoicePath(id)}?mode=${mode}`)
 }
 
+/**
+ * The row actions of an invoice: view, edit, and delete last (confirmed first).
+ *
+ * @param invoice - The row.
+ * @returns The action list passed to UiRowActions.
+ */
+const invoiceActions = (invoice: Invoice): UiRowAction[] => [
+  {
+    label: t('shared.view'),
+    testid: `client-invoices-view-${invoice.id}`,
+    /**
+     * Opens this invoice to view it.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      openInvoice(invoice.id, InvoiceOpenAction.View)
+    },
+  },
+  {
+    label: t('shared.edit'),
+    testid: `client-invoices-edit-${invoice.id}`,
+    /**
+     * Opens this invoice to edit it.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      openInvoice(invoice.id, InvoiceOpenAction.Edit)
+    },
+  },
+  {
+    label: t('shared.delete'),
+    testid: `client-invoices-delete-${invoice.id}`,
+    /**
+     * Asks for confirmation, then deletes this row.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      confirmDelete(invoice.id)
+    },
+    danger: true,
+  },
+]
+
 /** Loads the first page. */
 onMounted(() => fetchInvoices())
 </script>
@@ -569,10 +617,10 @@ onMounted(() => fetchInvoices())
               <UiTableHeader>{{ t('shared.invoiceDate') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.dueDate') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.datePaid') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.total') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
@@ -589,41 +637,13 @@ onMounted(() => fetchInvoices())
               <UiTableCell muted>{{ formatDate(invoice.invoiceDate) }}</UiTableCell>
               <UiTableCell muted>{{ formatDate(invoice.dueDate) }}</UiTableCell>
               <UiTableCell muted>{{ invoice.paidAt ? formatDate(invoice.paidAt) : '-' }}</UiTableCell>
-              <UiTableCell>{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
+              <UiTableCell numeric>{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
               <UiTableCell muted>{{ invoice.paymentMethod || '-' }}</UiTableCell>
               <UiTableCell>
                 <UiBadge :tone="invoiceStatusTone(invoice.status)" small>{{ invoice.status }}</UiBadge>
               </UiTableCell>
-              <UiTableCell>
-                <UiStack direction="row" gap="sm" :align="UiAlignItems.Center">
-                  <UiButton
-                    type="button"
-                    :variant="UiButtonVariant.Ghost"
-                    :size="UiSize.Sm"
-                    :data-testid="`client-invoices-view-${invoice.id}`"
-                    @click="openInvoice(invoice.id, InvoiceOpenAction.View)"
-                  >
-                    {{ t('shared.view') }}
-                  </UiButton>
-                  <UiButton
-                    type="button"
-                    :variant="UiButtonVariant.Secondary"
-                    :size="UiSize.Sm"
-                    :data-testid="`client-invoices-edit-${invoice.id}`"
-                    @click="openInvoice(invoice.id, InvoiceOpenAction.Edit)"
-                  >
-                    {{ t('shared.edit') }}
-                  </UiButton>
-                  <UiButton
-                    type="button"
-                    :variant="UiButtonVariant.Danger"
-                    :size="UiSize.Sm"
-                    :data-testid="`client-invoices-delete-${invoice.id}`"
-                    @click="confirmDelete(invoice.id)"
-                  >
-                    {{ t('shared.delete') }}
-                  </UiButton>
-                </UiStack>
+              <UiTableCell actions>
+                <UiRowActions :actions="invoiceActions(invoice)" />
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>

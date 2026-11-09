@@ -55,6 +55,12 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
     /// <summary>The longest changelog kept from the registry.</summary>
     private const int MaxChangelogLength = 20000;
 
+    /// <summary>The most tags kept for one plugin.</summary>
+    private const int MaxTags = 20;
+
+    /// <summary>The longest tag kept from the registry.</summary>
+    private const int MaxTagLength = 50;
+
     /// <summary>The most screenshots kept for one version.</summary>
     private const int MaxScreenshots = 20;
 
@@ -683,7 +689,35 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
             pricing,
             Distribution: Enum.TryParse<PluginRegistryDistribution>(item.Distribution, ignoreCase: true, out var distribution) && Enum.IsDefined(distribution)
                 ? distribution
-                : PluginRegistryDistribution.Download);
+                : PluginRegistryDistribution.Download,
+            PublisherKind: Enum.TryParse<PluginRegistryPublisherKind>(item.PublisherKind, ignoreCase: true, out var kind) && Enum.IsDefined(kind)
+                ? kind
+                : null,
+            Tags: ToTags(item.Tags),
+            Downloads: item.Downloads is >= 0 ? item.Downloads : null);
+    }
+
+    /// <summary>Cleans the registry's tags: each is cleaned and capped, empty and repeated ones are dropped, and at most <see cref="MaxTags"/> are kept.</summary>
+    /// <param name="tags">The tags as sent; <see langword="null"/> when absent.</param>
+    /// <returns>The usable tags in the registry's order; empty when there are none.</returns>
+    private static List<string> ToTags(List<string?>? tags)
+    {
+        var kept = new List<string>();
+        foreach (var raw in tags ?? [])
+        {
+            var tag = UntrustedText.Clean(raw, MaxTagLength);
+            if (tag.Length > 0 && !kept.Contains(tag, StringComparer.OrdinalIgnoreCase))
+            {
+                kept.Add(tag);
+            }
+
+            if (kept.Count == MaxTags)
+            {
+                break;
+            }
+        }
+
+        return kept;
     }
 
     /// <summary>

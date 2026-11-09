@@ -2,12 +2,12 @@
  * Tests for PluginRegistryBrowser: a card per listing with its Verified badge and price, Install for a
  * plugin that is absent, Update for one with a newer version, a plain badge for one that is current,
  * the name button that opens details, the Details action for a paid plugin without a key, Uninstall, per card busy state, the
- * staged and update states, the debounced search, the empty, loading and error states, and the page event.
+ * staged and update states, the card layout (publisher kind, tags, footer with downloads and version), the debounced search, the empty, loading and error states, and the page event.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import PluginRegistryBrowser from '@/components/plugins/PluginRegistryBrowser.vue'
-import { PluginCategory, PluginPricing } from '@/types/plugin'
+import { PluginCategory, PluginPricing, PluginPublisherKind } from '@/types/plugin'
 import type { PluginRegistryItemDto } from '@/types/plugin'
 import { mountScreen } from '../../helpers/mount'
 import { pickOption } from '../../helpers/select'
@@ -153,6 +153,63 @@ describe('PluginRegistryBrowser', () => {
     await card.trigger('click')
     expect(wrapper.emitted('details')).toBeUndefined()
     expect(wrapper.get('[data-testid="registry-open-example-pay"]').element.tagName).toBe('BUTTON')
+  })
+
+  it('lays the card out as icon and name, publisher, description, chips, footer and actions', async () => {
+    const wrapper = await mountBrowser()
+    const card = wrapper.get('[data-testid="registry-card-example-pay"]')
+
+    expect(card.classes()).toContain('h-full')
+    expect(card.get('[data-testid="registry-author-example-pay"]').text()).toBe('by Hostpanel')
+    expect(card.get('[data-testid="registry-description-example-pay"]').classes()).toContain('line-clamp-3')
+    expect(card.get('[data-testid="registry-category-example-pay"]').find('svg').exists()).toBe(true)
+  })
+
+  it('keeps the name link free of padding so it lines up with the text below', async () => {
+    const wrapper = await mountBrowser()
+    const open = wrapper.get('[data-testid="registry-open-example-pay"]')
+
+    expect(open.classes().some((c) => /^p[xy]?-/.test(c))).toBe(false)
+    expect(open.classes()).toContain('focus-visible:ring-2')
+  })
+
+  it('shows the latest version with a tag icon in the footer under a divider', async () => {
+    const wrapper = await mountBrowser()
+    const footer = wrapper.get('[data-testid="registry-footer-example-pay"]')
+
+    expect(footer.classes()).toContain('border-t')
+    expect(footer.classes()).toContain('mt-auto')
+    expect(footer.get('[data-testid="registry-version-example-pay"]').find('svg').exists()).toBe(true)
+    expect(footer.text()).toContain('SDK 3.0.0')
+  })
+
+  it('shows the publisher kind chip only when the registry sends it', async () => {
+    const wrapper = await mountBrowser({
+      items: [{ ...fresh, publisherKind: PluginPublisherKind.Organization }, outdated],
+    })
+
+    expect(wrapper.get('[data-testid="registry-publisher-kind-example-pay"]').text()).toBe('Organization')
+    expect(wrapper.find('[data-testid="registry-publisher-kind-example-registrar"]').exists()).toBe(false)
+  })
+
+  it('shows the first three tags as chips and folds the rest into +N', async () => {
+    const wrapper = await mountBrowser({ items: [{ ...fresh, tags: ['cards', 'billing', 'eu', 'sepa', 'wallets'] }, outdated] })
+    const tags = wrapper.get('[data-testid="registry-tags-example-pay"]')
+
+    expect(tags.text()).toContain('#cards')
+    expect(tags.text()).toContain('#eu')
+    expect(tags.text()).not.toContain('#sepa')
+    expect(wrapper.get('[data-testid="registry-more-tags-example-pay"]').text()).toBe('+2')
+    expect(wrapper.find('[data-testid="registry-tags-example-registrar"]').exists()).toBe(false)
+  })
+
+  it('shows the download count with an icon only when the registry sends it', async () => {
+    const wrapper = await mountBrowser({ items: [{ ...fresh, downloads: 1234 }, outdated] })
+    const downloads = wrapper.get('[data-testid="registry-downloads-example-pay"]')
+
+    expect(downloads.text()).toBe('1,234 downloads')
+    expect(downloads.find('svg').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="registry-downloads-example-registrar"]').text()).toBe('')
   })
 
   it('does not open the details page when Install is clicked', async () => {

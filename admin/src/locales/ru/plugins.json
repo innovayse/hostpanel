@@ -107,7 +107,14 @@
       "Free": "Бесплатный",
       "Paid": "Платный",
       "Private": "Приватный"
-    }
+    },
+    "publisherKind": {
+      "Personal": "Частный",
+      "Organization": "Организация"
+    },
+    "tag": "#{tag}",
+    "moreTags": "+{count}",
+    "downloads": "Загрузок: {count}"
   },
   "registryTrust": {
     "title": "Доверие к каталогу",

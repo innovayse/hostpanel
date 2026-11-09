@@ -122,7 +122,7 @@ public sealed class PluginRegistryClientTests(IntegrationTestFactory factory) : 
         result.Value.Page.Should().Be(2);
         result.Value.PageSize.Should().Be(20);
         var entry = result.Value.Items.Single();
-        entry.Should().Be(new RegistryPluginDto("acme-pay", "Name", "a", "d", null, PluginRegistryCategory.Payment, "1.2.3", string.Empty, true, PluginRegistryPricing.Paid));
+        entry.Should().BeEquivalentTo(new RegistryPluginDto("acme-pay", "Name", "a", "d", null, PluginRegistryCategory.Payment, "1.2.3", string.Empty, true, PluginRegistryPricing.Paid, Tags: []));
         handler.Requests.Single().AbsoluteUri.Should().Be("https://registry.example.com/api/plugins?q=a%20b%26c&category=Payment&page=2&pageSize=20");
     }
 
@@ -173,6 +173,31 @@ public sealed class PluginRegistryClientTests(IntegrationTestFactory factory) : 
         var items = (await Client(handler).SearchAsync(new RegistryPluginSearch(null, null, 1, 20), CancellationToken.None)).Value!.Items;
 
         items.Select(i => (i.Id, i.Author)).Should().Equal(("long-form", "Publisher"), ("short-form", "Writer"));
+    }
+
+    /// <summary>The publisher kind, the tags and the download count are passed on; tags are cleaned, deduplicated and capped.</summary>
+    [Fact]
+    public async Task Search_ReadsThePublisherKindTagsAndDownloadsAsync()
+    {
+        var tags = string.Join(",", Enumerable.Range(0, 30).Select(i => $"\"t{i}\""));
+        var handler = ScriptedHttpMessageHandler.Json($$"""
+            {"items":[
+              {{EntryJson("org", ",\"publisherKind\":\"Organization\",\"tags\":[\" billing \",\"BILLING\",\"\",null,\"cards\"],\"downloads\":1234")}},
+              {{EntryJson("odd", ",\"publisherKind\":\"Robot\",\"downloads\":-5,\"tags\":[" + tags + "]")}},
+              {{EntryJson("old")}}],"total":3}
+            """);
+
+        var items = (await Client(handler).SearchAsync(new RegistryPluginSearch(null, null, 1, 20), CancellationToken.None)).Value!.Items;
+
+        items[0].PublisherKind.Should().Be(PluginRegistryPublisherKind.Organization);
+        items[0].Tags.Should().Equal("billing", "cards");
+        items[0].Downloads.Should().Be(1234);
+        items[1].PublisherKind.Should().BeNull();
+        items[1].Downloads.Should().BeNull();
+        items[1].Tags.Should().HaveCount(20);
+        items[2].PublisherKind.Should().BeNull();
+        items[2].Tags.Should().BeEmpty();
+        items[2].Downloads.Should().BeNull();
     }
 
     /// <summary>An entry whose latest version is null, missing or not a version is left out and the rest of the page is kept.</summary>

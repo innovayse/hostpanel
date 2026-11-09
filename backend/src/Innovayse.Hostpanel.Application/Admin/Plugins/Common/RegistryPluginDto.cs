@@ -21,6 +21,9 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="InstalledVersion">The installed version; <see langword="null"/> when not installed.</param>
 /// <param name="UpdateAvailable">Whether <paramref name="LatestVersion"/> is newer than the installed one and not already staged.</param>
 /// <param name="Distribution">Where the package can be obtained from; a host only plugin is asked for with a signed request.</param>
+/// <param name="PublisherKind">Whether a person or an organization publishes the plugin; <see langword="null"/> when the registry does not say.</param>
+/// <param name="Tags">The plugin's tags, cleaned and capped; <see langword="null"/> when the source carries none (the update list).</param>
+/// <param name="Downloads">Downloads of every version added up; <see langword="null"/> when the registry does not say.</param>
 public sealed record RegistryPluginDto(
     string Id,
     string Name,
@@ -35,4 +38,7 @@ public sealed record RegistryPluginDto(
     bool Installed = false,
     string? InstalledVersion = null,
     bool UpdateAvailable = false,
-    PluginRegistryDistribution Distribution = PluginRegistryDistribution.Download);
+    PluginRegistryDistribution Distribution = PluginRegistryDistribution.Download,
+    PluginRegistryPublisherKind? PublisherKind = null,
+    IReadOnlyList<string>? Tags = null,
+    long? Downloads = null);

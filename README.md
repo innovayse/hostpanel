@@ -270,8 +270,14 @@ Every compose stack (shared, dev, prod, platform, demo, hub) is described in [do
 **In GitHub Codespaces** you need nothing installed. On the repository page choose **Code**, then **Codespaces**, then
 **Create codespace on develop** and pick a machine with 4 cores or more. The setup in `.devcontainer/` installs .NET 9 and
 Node 22, fetches the plugin SDK submodule, writes `docker/.env` and starts the development stack above. The first start
-builds the images and takes a few minutes. When it is done, open the **Ports** tab and use the forwarded **Client portal**
+builds the images and takes about ten minutes. When it is done, open the **Ports** tab and use the forwarded **Client portal**
 (3001) and **Admin panel** (5174) with the sample accounts above.
+
+When a stopped codespace starts again, the stack comes back by itself in two to four minutes. The API is the slowest: it
+rebuilds under `dotnet watch`, and `docker ps` can show it as `unhealthy` until that is done. The running stack uses about
+18 GB of the 32 GB disk (images 12 GB, volumes 3 GB, the tools of the codespace 3 GB). The first build leaves another
+5 to 11 GB of build cache that nothing reads again, so the start removes it once the stack is up. To see where the space
+goes, run `bash .devcontainer/measure.sh` in the codespace.
 
 The stack builds and runs the backend, the admin panel and the client portal inside its own containers. The .NET and
 Node installed in the codespace serve your editor and your tools: do not start the host `dotnet` or `yarn dev` against the

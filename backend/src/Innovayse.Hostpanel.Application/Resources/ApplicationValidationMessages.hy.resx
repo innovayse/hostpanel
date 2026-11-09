@@ -400,8 +400,11 @@
   <data name="KbArticleContentRequired" xml:space="preserve">
     <value>Բովանդակությունը պարտադիր է։</value>
   </data>
-  <data name="KbArticleCategoryRequired" xml:space="preserve">
-    <value>Կատեգորիան պարտադիր է։</value>
+  <data name="KbArticleTitleTooLong" xml:space="preserve">
+    <value>Վերնագիրը կարող է պարունակել առավելագույնը {0} նիշ։</value>
+  </data>
+  <data name="KbArticleSlugInvalid" xml:space="preserve">
+    <value>Հոդվածի հասցեն անվավեր է։</value>
   </data>
   <data name="KbArticleCategoryTooLong" xml:space="preserve">
     <value>Կատեգորիան չպետք է գերազանցի {0} նիշը։</value>

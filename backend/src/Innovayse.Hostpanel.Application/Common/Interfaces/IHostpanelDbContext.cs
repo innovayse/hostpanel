@@ -144,6 +144,9 @@ public interface IHostpanelDbContext
     /// <summary>Gets the knowledge base articles table.</summary>
     public DbSet<KbArticle> KbArticles { get; }
 
+    /// <summary>Gets the per-locale translations of the knowledge base articles.</summary>
+    public DbSet<KbArticleTranslation> KbArticleTranslations { get; }
+
     /// <summary>Gets the network issues table.</summary>
     public DbSet<NetworkIssue> NetworkIssues { get; }
 

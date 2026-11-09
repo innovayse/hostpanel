@@ -277,7 +277,7 @@
     <value>Такая категория базы знаний не найдена.</value>
   </data>
 <data name="KBCATEGORY_IN_USE" xml:space="preserve">
-    <value>В этой категории базы знаний ещё есть подкатегории. Сначала перенесите или удалите их.</value>
+    <value>В этой категории базы знаний ещё есть подкатегории или статьи. Сначала перенесите или удалите их.</value>
   </data>
 <data name="ANNOUNCEMENT_NOT_FOUND" xml:space="preserve">
     <value>Такое объявление не найдено.</value>

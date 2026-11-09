@@ -277,7 +277,7 @@
     <value>No such knowledge base category exists.</value>
   </data>
 <data name="KBCATEGORY_IN_USE" xml:space="preserve">
-    <value>This knowledge base category still has sub-categories. Move or delete them first.</value>
+    <value>This knowledge base category still has sub-categories or articles. Move or delete them first.</value>
   </data>
 <data name="ANNOUNCEMENT_NOT_FOUND" xml:space="preserve">
     <value>No such announcement exists.</value>

@@ -1,21 +1,23 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
+using Innovayse.Hostpanel.Application.Support.Common;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Support.Commands.UpdateKbArticle;
 
-/// <summary>Validator for <see cref="UpdateKbArticleCommand"/>.</summary>
+/// <summary>Validates <see cref="UpdateKbArticleCommand"/>.</summary>
 public sealed class UpdateKbArticleValidator : LocalizedValidator<UpdateKbArticleCommand>
 {
-    /// <summary>Initializes validator with localization service.</summary>
-    /// <param name="localizer">String localizer for validation messages.</param>
+    /// <summary>Initializes the rules.</summary>
+    /// <param name="localizer">Resolves the validation messages in the request's language.</param>
     public UpdateKbArticleValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
         RuleFor(x => x.Id).NotNull().GreaterThan(0).WithMessage(L["KbArticleIdInvalid"]);
-        RuleFor(x => x.Title).NotEmpty().WithMessage(L["KbArticleTitleRequired"]);
-        RuleFor(x => x.Content).NotEmpty().WithMessage(L["KbArticleContentRequired"]);
-        RuleFor(x => x.Category).NotEmpty().WithMessage(L["KbArticleCategoryRequired"]);
+        RuleFor(x => x.CategoryId).MustBePositiveId(L["KbCategoryIdInvalid"]);
+        RuleFor(x => x.Translations).NotEmpty().WithMessage(L["ContentTranslationsRequired"]);
+        RuleFor(x => x.Translations).MustIncludeDefaultLocale(L["ContentDefaultTranslationRequired"]);
+        RuleForEach(x => x.Translations).SetValidator(new KbArticleTranslationValidator(localizer));
     }
 }

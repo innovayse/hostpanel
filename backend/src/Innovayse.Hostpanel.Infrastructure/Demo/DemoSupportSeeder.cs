@@ -1,6 +1,8 @@
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Support.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Infrastructure.Demo;
@@ -233,10 +235,11 @@ internal sealed class DemoSupportSeeder
 
         foreach (var (name, description) in categories)
         {
-            _db.KbCategories.Add(KbCategory.Create(name, description, false));
+            _db.KbCategories.Add(KbCategory.Create(name, SlugGenerator.FromText(name, "category", KbSlugRules.MaxLength), description, false));
         }
 
         await _db.SaveChangesAsync(ct);
+        var categoryIds = await _db.KbCategories.AsNoTracking().ToDictionaryAsync(c => c.Name, c => c.Id, ct);
 
         (string Title, string Content, string Category)[] articles =
         [
@@ -277,7 +280,8 @@ internal sealed class DemoSupportSeeder
 
         foreach (var (title, content, category) in articles)
         {
-            var article = KbArticle.Create(title, content, category);
+            var article = KbArticle.Create(categoryIds[category], SlugGenerator.FromText(title, "article", KbSlugRules.MaxLength));
+            article.SetTranslation(SupportedLanguages.Default, title, content);
             if (!title.StartsWith("Draft:", StringComparison.Ordinal))
             {
                 article.Publish();

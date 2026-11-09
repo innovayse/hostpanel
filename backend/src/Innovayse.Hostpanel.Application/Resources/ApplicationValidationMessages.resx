@@ -400,8 +400,11 @@
   <data name="KbArticleContentRequired" xml:space="preserve">
     <value>The content is required.</value>
   </data>
-  <data name="KbArticleCategoryRequired" xml:space="preserve">
-    <value>The category is required.</value>
+  <data name="KbArticleTitleTooLong" xml:space="preserve">
+    <value>The title can be at most {0} characters.</value>
+  </data>
+  <data name="KbArticleSlugInvalid" xml:space="preserve">
+    <value>The article address is not valid.</value>
   </data>
   <data name="KbArticleCategoryTooLong" xml:space="preserve">
     <value>The category can be at most {0} characters.</value>

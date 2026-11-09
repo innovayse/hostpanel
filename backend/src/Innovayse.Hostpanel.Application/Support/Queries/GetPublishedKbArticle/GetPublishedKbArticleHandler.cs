@@ -1,55 +1,53 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Support.Common;
 using Innovayse.Hostpanel.Application.Support.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.Application.Support.Queries.GetPublishedKbArticle;
 
-/// <summary>Returns a knowledge base article only while it is published.</summary>
-/// <remarks>
-/// The check lives here rather than at the endpoint so it travels with the message: nothing can
-/// read an article through <see cref="GetPublishedKbArticleQuery"/> without it having run. The
-/// row is projected through the shared <see cref="KbArticleMappingExtensions.SelectPublishedDto"/>
-/// mapping, so it carries no editorial field.
-/// </remarks>
+/// <summary>Loads one published knowledge base article by id, in the reader's language.</summary>
 public sealed class GetPublishedKbArticleHandler
 {
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
+    /// <summary>The locale settings of this deployment.</summary>
+    private readonly IOptions<LocaleOptions> _localeOptions;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
-    public GetPublishedKbArticleHandler(IHostpanelDbContext context)
+    /// <param name="localeOptions">The locale settings of this deployment.</param>
+    public GetPublishedKbArticleHandler(IHostpanelDbContext context, IOptions<LocaleOptions> localeOptions)
     {
         _context = context;
+        _localeOptions = localeOptions;
     }
 
     /// <summary>Handles the query.</summary>
-    /// <param name="query">The query naming the article to read.</param>
+    /// <param name="query">The article to read.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The matching article, or <c>KBARTICLE_NOT_FOUND</c>, answered identically
-    /// whether the id names no row at all or names an unpublished draft. Ids here are sequential
-    /// and this route is anonymous, so telling those two cases apart would let a visitor map the
-    /// unpublished backlog one guessed id at a time; the refusal is deliberately indistinguishable.
+    /// The article in the reader's language (else the fallback, else the first language it has), or
+    /// <c>KBARTICLE_NOT_FOUND</c> when no published article has the id. An unpublished article is not found.
     /// </returns>
     public async Task<Result<PublishedKbArticleDto>> HandleAsync(GetPublishedKbArticleQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var article = await _context.KbArticles
+        var row = await _context.KbArticles
             .AsNoTracking()
             .Where(a => a.Id == query.Id && a.IsPublished)
-            .SelectPublishedDto()
+            .SelectRows(_context.KbCategories.AsNoTracking())
             .FirstOrDefaultAsync(ct);
 
-        if (article is null)
-        {
-            return Result<PublishedKbArticleDto>.FailureCode(HostpanelErrorCodes.KBARTICLE_NOT_FOUND);
-        }
+        var article = row?.ToPublishedDto(KbLanguage.Requested(), KbLanguage.Fallback(_localeOptions.Value));
 
-        return Result<PublishedKbArticleDto>.Success(article);
+        return article is null
+            ? Result<PublishedKbArticleDto>.FailureCode(HostpanelErrorCodes.KBARTICLE_NOT_FOUND)
+            : Result<PublishedKbArticleDto>.Success(article);
     }
 }

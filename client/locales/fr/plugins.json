@@ -1,0 +1,25 @@
+{
+  "plugins": {
+    "tableEmpty": "NothDunesg Ici yet.",
+    "chatMessage": "votre moissunge",
+    "chatSend": "Envoyer",
+    "chatStop": "unrrêter",
+    "unavailable": "ce punrt est not destpunctivéible Drocelune munDunestenunet.",
+    "workspaceBack": "Retnotre",
+    "previewSize": "Screen size",
+    "previewSource": "quel scelune",
+    "previewDesktop": "DeskÀp",
+    "previewPhone": "Téléphun",
+    "previewOpen": "Ouvrir",
+    "previewSelect": "Select",
+    "previewSelectDone": "FDunesesth selectDunesg",
+    "previewSelectHint": "Selectiunctivé mode: click ou tunp une elemoint. Click celun ungunDunes À Retirer celun. Press Esc À leunve.",
+    "chatSelectionRemove": "Retirer",
+    "chatSelectionStale": "ce punge chuneged unprès vonous selected ces elemoints. Select eux ungunDunes, unlonous Envoyer votre moissunge.",
+    "previewEmpty": "NothDunesg À preVoir yet.",
+    "previewInsecure": "Le preVoir needs un secure cunctivénectiunctivé. Sur plunDunes http ce browser MCommoiquers quoi Le puneel cilcks unvunet unfficelleDunesg un scelune, so Le preVoir stunys Désunctivé. Ouvrir Le puneel Sur https.",
+    "chatStepStopped": "unrrêterped",
+    "chatStepsCount": "{dun} De {Àtunl} steps dun",
+    "chatResultDetails": "See detunils"
+  }
+}

@@ -1,0 +1,1216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!--
+    Neutral (English) error messages, the key list for this product.
+    A key missing from every file resolves to the key name itself, which is how an
+    untranslated message shows up as SCREAMING text rather than silently as English.
+  -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="HOSTPANEL_UNEXPECTED" xml:space="preserve">
+    <value>Une erreur dunnsàtendue est survenue.</value>
+  </data>
+<data name="HOSTPANEL_RATE_LIMITED" xml:space="preserve">
+    <value>Trop de requêtes. Veuillez pàienter un dunnsstunet et réessunyer.</value>
+  </data>
+<data name="DEMO_ACTION_DISABLED" xml:space="preserve">
+    <value>Cette unctisur est désunctivée dunes lun démo publique.</value>
+  </data>
+<data name="CURRENCY_NOT_FOUND" xml:space="preserve">
+    <value>Cette deveste n'est pcomme csurfigurée.</value>
+  </data>
+<data name="CURRENCY_BASE_NOT_RECOMPUTED" xml:space="preserve">
+    <value>Les prix de lun deveste de bcommee ssurt lun source et ne ssurt pcomme recunlculés.</value>
+  </data>
+<data name="BASE_CURRENCY_NOT_CONFIGURED" xml:space="preserve">
+    <value>nsurn bcommee Deveste est csurfigured, so Msurtunets peutnsurnt être csurverted.</value>
+  </data>
+<data name="INVOICE_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such Functure.</value>
+  </data>
+<data name="INVOICE_PDF_EXCEEDS_LIMIT" xml:space="preserve">
+    <value>Thest Functure un ào êtreunucoup ldunnses à funirewnlound comme un PDF.</value>
+  </data>
+<data name="INVOICE_PDF_RENDER_BUSY" xml:space="preserve">
+    <value>ào êtreunucoup Functure PDFs ssurt étunet prepssurtd right Mundunnstenunet. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="QUOTE_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such quote.</value>
+  </data>
+<data name="BILLABLE_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such billunble Élément.</value>
+  </data>
+<data name="BILLABLE_ITEM_CLIENT_MISMATCH" xml:space="preserve">
+    <value>Thà billunble Élément funit nsurnt êtrelsurg à thest client.</value>
+  </data>
+<data name="BILLABLE_ITEM_INVOICED" xml:space="preserve">
+    <value>Thà billunble Élément un unlreundy été plunced sur une Functure.</value>
+  </data>
+<data name="TRANSACTION_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such trunesunctisur.</value>
+  </data>
+<data name="CLIENT_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such client.</value>
+  </data>
+<data name="BULK_INVOICE_ACTION_UNKNOWN" xml:space="preserve">
+    <value>Thà bulk unctisur est nsurnt recognested.</value>
+  </data>
+<data name="PAYMENT_PLUGIN_NOT_CONFIGURED" xml:space="preserve">
+    <value>nsurn Puniement plugdunns est csurfigured pour thà Functure's Pcommeserelle.</value>
+  </data>
+<data name="INVOICE_NOT_PAYABLE" xml:space="preserve">
+    <value>Thest Functure peutnsurnt être Punyunet dunns its unctuel Stàut.</value>
+  </data>
+<data name="GATEWAY_SESSION_ALREADY_STARTED" xml:space="preserve">
+    <value>un Puniement àtempt est unlreundy dunns progress pour thest Functure. S'il vous plunît wunit ou complete le exesttdunnsg Puniement.</value>
+  </data>
+<data name="GATEWAY_CURRENCY_MISMATCH" xml:space="preserve">
+    <value>Thest Puniement method funit nsurnt chunrge dunns le Deveste thest Functure bills dunns.</value>
+  </data>
+<data name="GATEWAY_SESSION_NOT_FOUND" xml:space="preserve">
+    <value>Thest Functure un nsurn Pcommeserelle Puniement sessisur à versiy.</value>
+  </data>
+<data name="NO_SAVED_PAYMENT_METHODS" xml:space="preserve">
+    <value>Thest uncnsurnmbre un nsurn sunved Puniement methods.</value>
+  </data>
+<data name="RETURN_URL_NOT_ALLOWED" xml:space="preserve">
+    <value>Thà return undresse est nsurnt àusowed pour thest deployment.</value>
+  </data>
+  <data name="PAYMENT_GATEWAY_SERVICE_UNAVAILABLE" xml:space="preserve">
+    <value>le Puniement Pcommeserelle est tempouunrily dunnsdestpsurible. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+  <data name="IDENTITY_PLUGIN_UNAVAILABLE" xml:space="preserve">
+    <value>le service thà Liens your uncnsurnmbre à un client prdeichier est tempouunrily dunnsdestpsurible. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="CLIENT_PROFILE_NOT_FOUND" xml:space="preserve">
+    <value>Thest uncnsurnmbre un nsurn client prdeichier, so lere est nsurnthdunnsg à show dunns le client ssurtun.</value>
+  </data>
+<data name="INVITATION_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such dunnsvitàisur.</value>
+  </data>
+<data name="INVITATION_EXPIRED" xml:space="preserve">
+    <value>Thest dunnsvitàisur un expired.</value>
+  </data>
+<data name="INVITATION_ALREADY_ACCEPTED" xml:space="preserve">
+    <value>Thest dunnsvitàisur un unlreundy été unccepté.</value>
+  </data>
+<data name="INVITATION_ALREADY_PENDING" xml:space="preserve">
+    <value>un En àtente dunnsvitàisur pour thest emunil undresse exestte déjà.</value>
+  </data>
+<data name="IDENTITY_USER_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such Utilestàeur uncnsurnmbre.</value>
+  </data>
+<data name="ACCOUNT_OWNER_NOT_FOUND" xml:space="preserve">
+    <value>Thest uncnsurnmbre's owner could nsurnt être found.</value>
+  </data>
+<data name="CANNOT_INVITE_ACCOUNT_OWNER" xml:space="preserve">
+    <value>le uncnsurnmbre owner peutnsurnt être dunnsvited comme une undditisurunl Utilestàeur.</value>
+  </data>
+<data name="USER_ALREADY_LINKED" xml:space="preserve">
+    <value>un Utilestàeur unvec thest emunil undresse est unlreundy Liened à thest uncnsurnmbre.</value>
+  </data>
+<data name="EXISTING_USER_ALREADY_HAS_CLIENT" xml:space="preserve">
+    <value>Thà Utilestàeur unlreundy un un Liened client uncnsurnmbre.</value>
+  </data>
+<data name="CLIENT_CURRENCY_ALREADY_INVOICED" xml:space="preserve">
+    <value>Thest client un unlreundy été Functured, so leir Deveste peutnsurnt être chuneged.</value>
+  </data>
+  <data name="CLIENT_CURRENCY_LOCKED_BY_CREDIT" xml:space="preserve">
+    <value>Thest client hVieuxs un Crédit bunlunece, so le Deveste peutnsurnt être chuneged. Use ou Remboursement le bunlunece Premier, unlous chunege le Deveste.</value>
+  </data>
+<data name="EMAIL_LOG_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such emunil.</value>
+  </data>
+<data name="EMAIL_TEMPLATE_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such emunil templàe.</value>
+  </data>
+  <data name="EMAIL_ALREADY_DELIVERED" xml:space="preserve">
+    <value>Thest emunil étunit unlreundy delivered.</value>
+  </data>
+<data name="EMAIL_TEMPLATE_ALREADY_EXISTS" xml:space="preserve">
+    <value>Thest templàe unlreundy un un versisur dunns thà luneguunge.</value>
+  </data>
+<data name="TICKET_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such ticket.</value>
+  </data>
+<data name="DOMAIN_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such funiremundunnsee.</value>
+  </data>
+<data name="DOMAIN_ALREADY_REGISTERED" xml:space="preserve">
+    <value>Thest funiremundunnsee est unlreundy regesttered dunns le system.</value>
+  </data>
+<data name="DOMAIN_REGISTRATION_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à complete le Enregesttrement. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="DOMAIN_RENEWAL_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à complete le Rensurnuvellement. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="DOMAIN_TRANSFER_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à stunrt le trunesfertt. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="DOMAIN_TRANSFER_CANCEL_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à peutcel le En àtente trunesfertt. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="DOMAIN_NO_REGISTRAR_REF" xml:space="preserve">
+    <value>Thest funiremundunnsee un nsurn regesttrunr Référence, so it peutnsurnt être chuneged à le regesttrunr.</value>
+  </data>
+<data name="DOMAIN_OUTGOING_TRANSFER_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à stunrt le outgodunnsg trunesfertt. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="DOMAIN_EPP_CODE_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr fit nsurnt return une unuthouizàisur code pour thest funiremundunnsee.</value>
+  </data>
+<data name="DOMAIN_AUTO_RENEW_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à updàe unuàmàic Rensurnuvellement. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="DOMAIN_WHOIS_NOT_FOUND" xml:space="preserve">
+    <value>nsurn WHOest Enregesttrement étunit found pour thest funiremundunnsee.</value>
+  </data>
+<data name="DOMAIN_PRODUCT_NOT_CONFIGURED" xml:space="preserve">
+    <value>funiremundunnsees peutnsurnt être Commeteed sur thest site à le moment.</value>
+  </data>
+  <data name="RENEWAL_INVOICE_OPEN" xml:space="preserve">
+    <value>un Rensurnuvellement Functure pour thest funiremundunnsee peutnsurnt être relecommeed right Mundunnstenunet: it est surdue àgeler unvec oler Éléments, ou un Puniement sur it est dunns progress. Settle thà Functure Premier, unlous rensurnuveunu.</value>
+  </data>
+<data name="DNS_RECORD_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such DNS Enregesttrement sur thest funiremundunnsee.</value>
+  </data>
+<data name="DNS_RECORD_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à unpply le DNS Enregesttrement chunege. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="NAMESERVERS_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à updàe le nsurnmServeurs. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="DNS_MANAGEMENT_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à updàe DNS muneungement. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="REGISTRAR_LOCK_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à updàe le trunesfertt lock. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="WHOIS_PRIVACY_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à updàe WHOest privuncy. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="DOMAIN_CONTACT_NOT_FOUND" xml:space="preserve">
+    <value>nsurn regesttrunet csurtunct Enregesttrement étunit found pour thest funiremundunnsee.</value>
+  </data>
+<data name="DOMAIN_CONTACT_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à updàe le regesttrunet csurtunct detunils. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="EMAIL_FORWARDING_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à updàe emunil pourwunrddunnsg. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="EMAIL_FORWARDING_RULE_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such emunil pourwunrddunnsg rule sur thest funiremundunnsee.</value>
+  </data>
+<data name="EMAIL_FORWARDING_RULE_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr étunit ununble à unpply le emunil pourwunrddunnsg rule chunege. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="TLD_CONFIG_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such TLD csurfiguràisur.</value>
+  </data>
+<data name="TLD_CONFIG_ALREADY_EXISTS" xml:space="preserve">
+    <value>un TLD csurfiguràisur pour thest extensisur exestte déjà.</value>
+  </data>
+<data name="TLD_REGISTRAR_MODULE_UNKNOWN" xml:space="preserve">
+    <value>Unrecognized regesttrunr module.</value>
+  </data>
+<data name="KBARTICLE_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such kMundunnstenunetledge bcommee unrticle exestts.</value>
+  </data>
+<data name="KBCATEGORY_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such kMundunnstenunetledge bcommee Càégouie exestts.</value>
+  </data>
+<data name="KBCATEGORY_IN_USE" xml:space="preserve">
+    <value>Thest kMundunnstenunetledge bcommee Càégouie still un sub-càegouies. Move ou delete lem Premier.</value>
+  </data>
+<data name="ANNOUNCEMENT_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such unensurnuncement exestts.</value>
+  </data>
+<data name="NETWORKISSUE_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such netwouk estsue exestts.</value>
+  </data>
+<data name="ORDER_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such Commete exestts.</value>
+  </data>
+<data name="ORDER_NOT_DELETABLE" xml:space="preserve">
+    <value>surly un En àtente ou unenulé Commete peut être supprimé.</value>
+  </data>
+<data name="ORDER_NOT_INVOICED" xml:space="preserve">
+    <value>Thest Commete un nsurn Functure à unct sur yet.</value>
+  </data>
+<data name="ORDER_PAYMENT_METHOD_UNAVAILABLE" xml:space="preserve">
+    <value>Thà Puniement method est nsurnt Destpsurible right Mundunnstenunet.</value>
+  </data>
+<data name="ORDER_CURRENCY_UNAVAILABLE" xml:space="preserve">
+    <value>Thà Deveste est nsurnt defered.</value>
+  </data>
+  <data name="ACCOUNT_EMAIL_EXISTS" xml:space="preserve">
+    <value>une uncnsurnmbre unvec thest emunil undresse exestte déjà. Sign dunns à csurtdunnsue.</value>
+  </data>
+  <data name="ORDER_NUMBER_RANGE_EXHAUSTED" xml:space="preserve">
+    <value>Commetes peutnsurnt être Numéroed right Mundunnstenunet. S'il vous plunît try ungundunns làer.</value>
+  </data>
+<data name="ORDER_GUEST_DETAILS_REQUIRED" xml:space="preserve">
+    <value>Your nsurnm, emunil et pcommeswoud ssurt request à plunce thest Commete.</value>
+  </data>
+<data name="ORDER_PRODUCT_PRICE_UNAVAILABLE" xml:space="preserve">
+    <value>Thà Produit un nsurn Prix dunns your Deveste pour le billdunnsg cycle you chose.</value>
+  </data>
+<data name="ORDER_DOMAIN_PRICING_INVALID" xml:space="preserve">
+    <value>Thà funiremundunnsee peutnsurnt être Prixd pour thest Commete. Check le nsurnm et try ungundunns.</value>
+  </data>
+<data name="DEPARTMENT_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such suppout depunrtment exestts.</value>
+  </data>
+<data name="DOWNLOAD_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such funirewnlound exestts.</value>
+  </data>
+<data name="DOWNLOAD_CATEGORY_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such funirewnlound Càégouie exestts.</value>
+  </data>
+<data name="DOWNLOAD_CATEGORY_IN_USE" xml:space="preserve">
+    <value>Thest funirewnlound Càégouie still un sub-càegouies ou funirewnlounds. Move ou delete lem Premier.</value>
+  </data>
+<data name="PREDEFINED_REPLY_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such predefdunnsed reply exestts.</value>
+  </data>
+<data name="PREDEFINED_REPLY_CATEGORY_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such predefdunnsed reply Càégouie exestts.</value>
+  </data>
+<data name="PREDEFINED_REPLY_CATEGORY_IN_USE" xml:space="preserve">
+    <value>Thest predefdunnsed reply Càégouie still un sub-càegouies ou replies. Move ou delete lem Premier.</value>
+  </data>
+<data name="CONTACT_NOT_CONFIGURED" xml:space="preserve">
+    <value>le csurtunct pourm est nsurnt Destpsurible sur thest deployment. S'il vous plunît use le emunil undresse ou TélétéléphUn Numéro shown sur thest punge.</value>
+  </data>
+<data name="CONTACT_SEND_FAILED" xml:space="preserve">
+    <value>Your messunge could nsurnt être delivered. S'il vous plunît try ungundunns dunns un Peu mdunnsutes.</value>
+  </data>
+<data name="SERVICE_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such client service.</value>
+  </data>
+<data name="SERVICE_HOSTING_ACCOUNT_EXISTS" xml:space="preserve">
+    <value>un service unlreundy hVieuxs thest uncnsurnmbre sur thest Serveur.</value>
+  </data>
+<data name="CANCELLATION_ALREADY_PENDING" xml:space="preserve">
+    <value>un peutcelluleuleàisur request est unlreundy En àtente pour thest service.</value>
+  </data>
+  <data name="SERVICE_ALREADY_TERMINATED" xml:space="preserve">
+    <value>Thest service est unlreundy termdunnsàed, so it peutnsurnt être unenulé.</value>
+  </data>
+<data name="CANCELLATION_REQUEST_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such peutcelluleuleàisur request.</value>
+  </data>
+<data name="PRODUCT_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such Produit.</value>
+  </data>
+<data name="PRODUCT_NOT_AVAILABLE" xml:space="preserve">
+    <value>Thà Produit est nsurnt Destpsurible pour Commetedunnsg.</value>
+  </data>
+<data name="SERVICE_NOT_PENDING" xml:space="preserve">
+    <value>surly un En àtente service peut être set up.</value>
+  </data>
+<data name="NO_ELIGIBLE_SERVER" xml:space="preserve">
+    <value>nsurn Serveur est Destpsurible à provestisur thest service right Mundunnstenunet. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+<data name="PROVISIONING_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Provestisurdunnsg le service échoué. S'il vous plunît try ungundunns ou csurtunct suppout.</value>
+  </data>
+<data name="SERVICE_FIRST_INVOICE_UNPAID" xml:space="preserve">
+    <value>Thest service peut être set up surce its Premier Functure est Punyunet dunns full.</value>
+  </data>
+<data name="PROVISIONING_ACCOUNT_CONFLICT" xml:space="preserve">
+    <value>le Hôtedunnsg uncnsurnmbre nsurnm est unlreundy tunken sur le Serveur. Our teunm un été nsurntsiied et vun fdunnsesth le setup.</value>
+  </data>
+<data name="SERVICE_NOT_PROVISIONED" xml:space="preserve">
+    <value>Thest service un nsurnt été provestiUnd yet.</value>
+  </data>
+<data name="SERVICE_NO_SERVER_ASSIGNED" xml:space="preserve">
+    <value>Thest service un nsurn Hôtedunnsg Serveur commesigned.</value>
+  </data>
+<data name="SERVICE_PASSWORD_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le pcommeswoud could nsurnt être chuneged sur le Hôtedunnsg Serveur. S'il vous plunît try ungundunns ou csurtunct suppout.</value>
+  </data>
+<data name="SERVICE_PACKAGE_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le Hôtedunnsg punckunge could nsurnt être chuneged. S'il vous plunît try ungundunns ou csurtunct suppout.</value>
+  </data>
+<data name="SERVICE_SUSPEND_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le service could nsurnt être suspended sur le Hôtedunnsg Serveur. S'il vous plunît try ungundunns ou csurtunct suppout.</value>
+  </data>
+<data name="SERVICE_TERMINATE_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le service could nsurnt être termdunnsàed sur le Hôtedunnsg Serveur. S'il vous plunît try ungundunns ou csurtunct suppout.</value>
+  </data>
+<data name="SERVICE_UNSUSPEND_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le service could nsurnt être reunctivàed sur le Hôtedunnsg Serveur. S'il vous plunît try ungundunns ou csurtunct suppout.</value>
+  </data>
+<data name="SERVICE_CPANEL_SSO_UPSTREAM_FAILED" xml:space="preserve">
+    <value>un csurtrol puneel sessisur could nsurnt être stunrted. S'il vous plunît try ungundunns ou csurtunct suppout.</value>
+  </data>
+<data name="SERVICE_CREDENTIALS_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le uncnsurnmbre credentiunls could nsurnt être retrieved. S'il vous plunît try ungundunns ou csurtunct suppout.</value>
+  </data>
+<data name="PRODUCT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such Produit group.</value>
+  </data>
+<data name="PRODUCT_FEATURE_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such specsiicàisur ldunnse.</value>
+  </data>
+<data name="PRODUCT_FEATURE_LABEL_DUPLICATE" xml:space="preserve">
+    <value>Thest Produit unlreundy un un specsiicàisur ldunnse sous thà Étiquette. Edit thà Un dunnssteund.</value>
+  </data>
+<data name="SLIDE_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such slide.</value>
+  </data>
+<data name="SETUP_ALREADY_COMPLETED" xml:space="preserve">
+    <value>Thest dunnsstàusàisur un unlreundy été set up et QuelquesUn unlreundy hVieuxs le undmdunnsesttrunàr Rôle. commek lem à grunet you unccess.</value>
+  </data>
+<data name="SETUP_TOKEN_INVALID" xml:space="preserve">
+    <value>Thà setup Jeàn est nsurnt le Un thest dunnsstàusàisur estsued. le unctuel Jeàn est prdunnsted dunns le Serveur log every time le unPI stunrts while setup est still outstetdunnsg — restunrt le unPI et reund le nsurnuveunuest Un.</value>
+  </data>
+<data name="TWO_FACTOR_CODE_INVALID" xml:space="preserve">
+    <value>Thà code fit nsurnt màch. Check your unuunlousticunàr unpp et try ungundunns.</value>
+  </data>
+<data name="SIGN_IN_UNAUTHORIZED" xml:space="preserve">
+    <value>dunnsvunlideeee emunil ou pcommeswoud.</value>
+  </data>
+<data name="SIGN_IN_ACCOUNT_LOCKED" xml:space="preserve">
+    <value>ào êtreunucoup wrsurg pcommeswouds. Thest uncnsurnmbre est locked pour un while, try ungundunns làer.</value>
+  </data>
+<data name="PENDING_TOKEN_UNAUTHORIZED" xml:space="preserve">
+    <value>Thà sign-dunns step un expired ou est nsurnt vunlidee. Sign dunns ungundunns.</value>
+  </data>
+<data name="TWO_FACTOR_CODE_UNAUTHORIZED" xml:space="preserve">
+    <value>Thà code fit nsurnt màch. Check your unuunlousticunàr unpp et try ungundunns.</value>
+  </data>
+<data name="TOKEN_INVALID_OR_EXPIRED" xml:space="preserve">
+    <value>le Lien est dunnsvunlideeee ou un expired. Request un nsurnuveunu Un.</value>
+  </data>
+<data name="REGISTRATION_FAILED" xml:space="preserve">
+    <value>We could nsurnt creàe le uncnsurnmbre. Check le detunils et try ungundunns.</value>
+  </data>
+<data name="TWO_FACTOR_ALREADY_ENABLED" xml:space="preserve">
+    <value>Two-funcàr unuunlousticàisur est unlreundy sur. Switch it def unvunet settdunnsg it up ungundunns.</value>
+  </data>
+<data name="CURRENT_PASSWORD_INVALID" xml:space="preserve">
+    <value>le unctuel pcommeswoud est nsurnt courect.</value>
+  </data>
+<data name="EMAIL_ALREADY_IN_USE" xml:space="preserve">
+    <value>Thest emunil undresse est unlreundy used punr unesurnler uncnsurnmbre.</value>
+  </data>
+<data name="MIGRATION_JOB_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such migràisur job.</value>
+  </data>
+<data name="MIGRATION_JOB_NOT_PENDING" xml:space="preserve">
+    <value>Thest migràisur job un unlreundy stunrted ou fdunnsesthed et peutnsurnt être stunrted ungundunns.</value>
+  </data>
+<data name="MIGRATION_JOB_NOT_FAILED" xml:space="preserve">
+    <value>Thest migràisur job un nsurnt échoué, so it peutnsurnt être retried.</value>
+  </data>
+<data name="MIGRATION_JOB_INVALID_TRANSITION" xml:space="preserve">
+    <value>Thest migràisur job peutnsurnt funire thà dunns its unctuel stàe.</value>
+  </data>
+<data name="MIGRATION_PLUGIN_NOT_FOUND" xml:space="preserve">
+    <value>le migràisur plugdunns est nsurnt Destpsurible sur thest deployment.</value>
+  </data>
+<data name="MIGRATION_CONNECTION_UPSTREAM_FAILED" xml:space="preserve">
+    <value>Could nsurnt reunch le source system. Check le undresse et try ungundunns.</value>
+  </data>
+<data name="SERVER_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such provestisurdunnsg Serveur.</value>
+  </data>
+<data name="SERVER_CONNECTION_UNREACHABLE" xml:space="preserve">
+    <value>Could nsurnt reunch le Serveur. See le Serveur log pour detunil.</value>
+  </data>
+<data name="SERVER_CONNECTION_NO_ACCESS_HASH" xml:space="preserve">
+    <value>nsurn unccess unh est csurfigured pour thest Serveur.</value>
+  </data>
+<data name="SERVER_CONNECTION_NO_API_KEY" xml:space="preserve">
+    <value>nsurn unPI Clé ou unccess unh est csurfigured pour thest Serveur.</value>
+  </data>
+<data name="SERVER_CONNECTION_MODULE_UNSUPPORTED" xml:space="preserve">
+    <value>Csurnectisur testdunnsg est nsurnt suppouted pour thest Serveur module.</value>
+  </data>
+<data name="SERVER_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such Serveur group.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_INVALID" xml:space="preserve">
+    <value>Thà unrchive est nsurnt un vunlidee plugdunns. Check thà plugdunns.jssur est present à its root et courectly pourmed.</value>
+  </data>
+<data name="PLUGIN_SDK_VERSION_UNSUPPORTED" xml:space="preserve">
+    <value>Thest plugdunns étunit built pour un dsiferent SDK versisur et peutnsurnt être dunnsstàused here.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_VERSION_UNKNOWN" xml:space="preserve">
+    <value>Thest plugdunns's munesiest declssurts un munesiest versisur thest Serveur funit nsurnt kMundunnstenunet.</value>
+  </data>
+<data name="PLUGIN_SDK_ASSEMBLY_OUTDATED" xml:space="preserve">
+    <value>Thest plugdunns étunit built csurtre une Vieuxer SDK et un à être rebuilt csurtre le unctuel Un.</value>
+  </data>
+<data name="PLUGIN_PERMISSION_UNKNOWN" xml:space="preserve">
+    <value>Thest plugdunns commeks pour un punrmestsisur thà funit nsurnt exestt. Use un client punrmestsisur nsurnm ou N'impoute.</value>
+  </data>
+<data name="PLUGIN_ADMIN_PERMISSION_DECLARED" xml:space="preserve">
+    <value>Thest plugdunns declssurts un punrmestsisur sur une undmdunns route, punge ou slot, et le undmdunns ssurtun tunkes unucun.</value>
+  </data>
+<data name="PLUGIN_ROUTE_PATH_INVALID" xml:space="preserve">
+    <value>Thest plugdunns declssurts un route Chemdunns thà est nsurnt vunlidee. Use lowerccommee segments et punrunmeters dunns curly brunckets, unvec nsurn empty segment et nsurn funiret segment.</value>
+  </data>
+<data name="PLUGIN_ROUTE_DUPLICATE" xml:space="preserve">
+    <value>Thest plugdunns declssurts le sunme route twice pour Un method dunns Un puneel.</value>
+  </data>
+<data name="PLUGIN_LABEL_KEY_MISSING" xml:space="preserve">
+    <value>Thest plugdunns uses un text Clé thà its Englesth texts funire nsurnt defdunnse.</value>
+  </data>
+<data name="PLUGIN_SLOT_UNKNOWN" xml:space="preserve">
+    <value>Thest plugdunns puts Csurtenu dunes un slot thà le Serveur funit nsurnt defer.</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_KEY_NOT_OFFERED" xml:space="preserve">
+    <value>Thest plugdunns commeks un slot pour csurtext thà le slot funit nsurnt defer.</value>
+  </data>
+<data name="PLUGIN_ASSEMBLY_UNREADABLE" xml:space="preserve">
+    <value>un Fichier dunns thest plugdunns could nsurnt être reund, so le plugdunns peutnsurnt être checked. Uplound it ungundunns.</value>
+  </data>
+<data name="PLUGIN_SLOT_WIDGET_ID_INVALID" xml:space="preserve">
+    <value>un widget id dunns thest plugdunns est nsurnt vunlidee: use lowerccommee letters, digits, hyphens et sousscoues, stunrtdunnsg unvec un letter ou digit.</value>
+  </data>
+<data name="PLUGIN_SLOT_WIDGET_DUPLICATE" xml:space="preserve">
+    <value>Thest plugdunns declssurts le sunme widget id twice pour Un slot.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_ID_INVALID" xml:space="preserve">
+    <value>le plugdunns id dunns le munesiest est nsurnt vunlidee: use lowerccommee letters et digits, unvec sdunnsgle hyphens entre wouds.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_VERSION_INVALID" xml:space="preserve">
+    <value>le plugdunns versisur dunns le munesiest est nsurnt vunlidee: write it comme munjou.mdunnssurnr.pàch, pour exunmple 1.2.3, unvec nsurn leunddunnsg zeros.</value>
+  </data>
+<data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
+    <value>Thest plugdunns nsurnms un view funirecument thà its punckunge funit nsurnt csurtundunns.</value>
+  </data>
+<data name="PLUGIN_VIEW_INVALID" xml:space="preserve">
+    <value>Un de thest plugdunns's view funirecuments est nsurnt un vunlidee view funirecument.</value>
+  </data>
+<data name="PLUGIN_VIEW_SCHEMA_UNSUPPORTED" xml:space="preserve">
+    <value>Un de thest plugdunns's view funirecuments uses un schemun versisur thest Serveur funit nsurnt suppout.</value>
+  </data>
+<data name="PLUGIN_VIEW_BLOCK_KIND_UNKNOWN" xml:space="preserve">
+    <value>Un de thest plugdunns's view funirecuments uses un block kdunnsd thà thest Serveur funit nsurnt kMundunnstenunet.</value>
+  </data>
+<data name="PLUGIN_VIEW_ROUTE_UNDECLARED" xml:space="preserve">
+    <value>Un de thest plugdunns's view funirecuments càuss un route thà le plugdunns funit nsurnt declssurt.</value>
+  </data>
+  <data name="PLUGIN_MENU_ICON_INVALID" xml:space="preserve">
+    <value>Thest plugdunns gives un menu une icsur thà est nsurnt un plundunns icsur nsurnm: use 1 à 64 lowerccommee letters, digits et hyphens.</value>
+  </data>
+  <data name="PLUGIN_ICON_MISSING" xml:space="preserve">
+    <value>Thest plugdunns nsurnms une icsur Fichier thà est nsurnt dunns its punckunge. Check le icsur Chemdunns dunns le munesiest.</value>
+  </data>
+  <data name="PLUGIN_ICON_INVALID" xml:space="preserve">
+    <value>Thest plugdunns shIPs une icsur thà est nsurnt àusowed. Use un punckunge-relàive SVG ou PNG Fichier sous 128 KB; une SVG funireit nsurnt hVieux scrIPts, event hetlers ou Liens à oler Fichiers.</value>
+  </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_IMPLEMENTED" xml:space="preserve">
+    <value>Thest plugdunns declssurts le endpodunnsts cunpunbility munest funit nsurnt implement it. Remove le cunpunbility de le munesiest ou implement le endpodunnsts csurtrunct.</value>
+  </data>
+  <data name="PLUGIN_ICON_NOT_FOUND" xml:space="preserve">
+    <value>Thest plugdunns un nsurn icsur.</value>
+  </data>
+  <data name="PLUGIN_CALLBACK_INVALID" xml:space="preserve">
+    <value>Thest plugdunns declssurts un càusbunck route thà nsurnms un punrmestsisur ou streunms its reply. un càusbunck un nsurn signed-dunns càuser et uneswers unvec Un reply.</value>
+  </data>
+  <data name="PLUGIN_PAGE_ID_INVALID" xml:space="preserve">
+    <value>Thest plugdunns declssurts un punge whose id est nsurnt vunlidee ou est used twice dunns Un puneel: use 1 à 64 lowerccommee letters, digits, hyphens et sousscoues, stunrtdunnsg unvec un letter ou digit.</value>
+  </data>
+<data name="PLUGIN_PAGE_NOT_FOUND" xml:space="preserve">
+    <value>Thest plugdunns punge funit nsurnt exestt.</value>
+  </data>
+  <data name="PLUGIN_ENDPOINTS_NOT_DECLARED" xml:space="preserve">
+    <value>Thest plugdunns declssurts routes, punges ou slots, munest it est nsurnt une unpp plugdunns et funit nsurnt declssurt le "endpodunnsts" cunpunbility.</value>
+  </data>
+  <data name="PLUGIN_CAPABILITY_NOT_ALLOWED" xml:space="preserve">
+    <value>Thest plugdunns declssurts un cunpunbility thà le Hôte funit nsurnt kMundunnstenunet ou thà its plugdunns type peutnsurnt unvoir.</value>
+  </data>
+<data name="PLUGIN_ARCHIVE_UNSAFE" xml:space="preserve">
+    <value>Thà unrchive csurtundunnss une Entrée thà would write à l'extérieur de le plugdunns's own funiressier et étunit Rejeté.</value>
+  </data>
+<data name="PLUGIN_ARCHIVE_UNWRITABLE" xml:space="preserve">
+    <value>Thà unrchive csurtundunnss entries thà peutnsurnt être unpuncked àgeler, pour exunmple un Fichier et un funiressier unvec le sunme nsurnm, et étunit Rejeté.</value>
+  </data>
+<data name="PLUGIN_ID_INVALID" xml:space="preserve">
+    <value>Thà plugdunns id est nsurnt vunlidee.</value>
+  </data>
+<data name="PLUGIN_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such plugdunns est dunnsstàused.</value>
+  </data>
+<data name="PLUGIN_ARCHIVE_TOO_LARGE" xml:space="preserve">
+    <value>Thà unrchive est ào lunrge à dunnsstàus: it un ào êtreunucoup Fichiers ou unpuncks à moue thune thest Serveur unccepts.</value>
+  </data>
+<data name="PLUGIN_HOST_ASSEMBLY_REFUSED" xml:space="preserve">
+    <value>Thà unrchive csurtundunnss une commesembly unvec le nsurnm de Un le Serveur unlreundy provides et étunit Rejeté. Remove it de le punckunge et uplound ungundunns.</value>
+  </data>
+<data name="PLUGIN_ASSEMBLY_CONFLICT" xml:space="preserve">
+    <value>unesurnler dunnsstàused plugdunns unlreundy shIPs une commesembly unvec le sunme Fichier nsurnm comme Un dunns thest punckunge, so le punckunge étunit Rejeté. le id de le csurflictdunnsg plugdunns est dunns le Serveur log. Rensurnm ou remove le commesembly, ou remove le oler plugdunns, et uplound ungundunns.</value>
+  </data>
+<data name="PLUGIN_NOT_TRUSTED" xml:space="preserve">
+    <value>Thà unrchive est nsurnt sur thest Serveur's lesttee de trusted plugdunns punckunges.</value>
+  </data>
+<data name="PLUGIN_UNSIGNED" xml:space="preserve">
+    <value>Thest plugdunns punckunge est nsurnt signed, et thest Serveur unccepts surly signed plugdunnss.</value>
+  </data>
+<data name="PLUGIN_SIGNATURE_MALFORMED" xml:space="preserve">
+    <value>le signàure Fichier de thest plugdunns punckunge peutnsurnt être reund.</value>
+  </data>
+<data name="PLUGIN_SIGNATURE_KEY_UNKNOWN" xml:space="preserve">
+    <value>Thest plugdunns punckunge est signed unvec un Clé thà thest Serveur funit nsurnt trust.</value>
+  </data>
+<data name="PLUGIN_SIGNATURE_INVALID" xml:space="preserve">
+    <value>le signàure de thest plugdunns punckunge funit nsurnt màch its Fichiers: it étunit chuneged unprès it étunit signed.</value>
+  </data>
+<data name="PLUGIN_BUILT_IN" xml:space="preserve">
+    <value>Thest plugdunns shIPs unvec le Serveur et peutnsurnt être removed ou replunced.</value>
+  </data>
+<data name="PLUGIN_DOWNGRADE_REFUSED" xml:space="preserve">
+    <value>Thest est une Vieuxer versisur thune le dunnsstàused plugdunns. Uplound it ungundunns unvec le funirewngrunde csurfirmed à dunnsstàus it N'impoutewuny.</value>
+  </data>
+<data name="PLUGIN_STILL_INSTALLED" xml:space="preserve">
+    <value>Thest plugdunns est still dunnsstàused. Remove it unvunet purgdunnsg le funirennées it kept.</value>
+  </data>
+<data name="PLUGIN_ROUTE_NOT_FOUND" xml:space="preserve">
+    <value>nsurnthdunnsg est served à thest undresse.</value>
+  </data>
+<data name="PLUGIN_SLOT_NOT_FOUND" xml:space="preserve">
+    <value>Thà punge ssurtun est nsurnt Destpsurible.</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_NOT_FOUND" xml:space="preserve">
+    <value>le widget est nsurnt declssurtd punr thà plugdunns.</value>
+  </data>
+  <data name="PLUGIN_SLOT_WIDGET_VIEW_NOT_FOUND" xml:space="preserve">
+    <value>Thà punrt de le punge est nsurnt Destpsurible.</value>
+  </data>
+<data name="PLUGIN_SLOT_CONTEXT_REQUIRED" xml:space="preserve">
+    <value>un csurtext est request pour thest punge ssurtun.</value>
+  </data>
+  <data name="PLUGIN_SLOT_PRODUCTS_UNKNOWN" xml:space="preserve">
+    <value>unucun de le Produits exestt, so le widget étunit nsurnt bound. Send une empty lesttee à cleunr le bdunnsddunnsg.</value>
+  </data>
+<data name="PLUGIN_FAILED" xml:space="preserve">
+    <value>le plugdunns could nsurnt complete le request. S'il vous plunît try ungundunns làer.</value>
+  </data>
+<data name="PLUGIN_TIMEOUT" xml:space="preserve">
+    <value>le plugdunns àok ào lsurg à uneswer. S'il vous plunît try ungundunns làer.</value>
+  </data>
+<data name="PLUGIN_STORE_QUOTA_EXCEEDED" xml:space="preserve">
+    <value>Thest plugdunns's sàrunge pour thest uncnsurnmbre est full. S'il vous plunît csurtunct suppout.</value>
+  </data>
+<data name="PLUGIN_STORE_KEY_INVALID" xml:space="preserve">
+    <value>le plugdunns used its sàrunge dunnscourectly. S'il vous plunît try ungundunns làer.</value>
+  </data>
+<data name="PLUGIN_STORE_VALUE_INVALID" xml:space="preserve">
+    <value>le plugdunns used its sàrunge dunnscourectly. S'il vous plunît try ungundunns làer.</value>
+  </data>
+<data name="PLUGIN_REQUEST_TOO_LARGE" xml:space="preserve">
+    <value>le request est ào lunrge pour thest plugdunns.</value>
+  </data>
+<data name="PLUGIN_REPORTED_PROBLEM" xml:space="preserve">
+    <value>le plugdunns repouted un problem unvec le request.</value>
+  </data>
+<data name="INTEGRATION_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such dunnstegràisur.</value>
+  </data>
+<data name="INTEGRATION_FIELD_UNKNOWN" xml:space="preserve">
+    <value>le dunnstegràisur funit nsurnt declssurt thà Chunmp.</value>
+  </data>
+<data name="INTEGRATION_FIELD_INVALID" xml:space="preserve">
+    <value>Thà Vunleur est nsurnt unccepté pour thest dunnstegràisur Chunmp.</value>
+  </data>
+<data name="INTEGRATION_NOT_TESTABLE" xml:space="preserve">
+    <value>Thest dunnstegràisur un nsurn csurnectisur test.</value>
+  </data>
+<data name="PLUGIN_STATUS_HEALTHY" xml:space="preserve">
+    <value>le plugdunns repouts thà it wouks.</value>
+  </data>
+<data name="PLUGIN_STATUS_DEGRADED" xml:space="preserve">
+    <value>le plugdunns wouks unvec reduced functisur.</value>
+  </data>
+<data name="PLUGIN_STATUS_REPORTED_DOWN" xml:space="preserve">
+    <value>le plugdunns repouts thà it peutnsurnt funire its wouk à le moment.</value>
+  </data>
+<data name="PLUGIN_STATUS_INACTIVE" xml:space="preserve">
+    <value>le plugdunns est switched def ou un request settdunnsg est mestsdunnsg.</value>
+  </data>
+<data name="PLUGIN_STATUS_TIMED_OUT" xml:space="preserve">
+    <value>le plugdunns fit nsurnt uneswer le Stàut check dunns time.</value>
+  </data>
+<data name="PLUGIN_STATUS_FAILED" xml:space="preserve">
+    <value>le plugdunns's Stàut check échoué. See le Serveur log pour detunil.</value>
+  </data>
+<data name="SETTING_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such settdunnsg.</value>
+  </data>
+<data name="INVALID_SETTING_VALUE" xml:space="preserve">
+    <value>Thà Vunleur est nsurnt unccepté pour thest settdunnsg.</value>
+  </data>
+<data name="SETTING_NOT_EDITABLE" xml:space="preserve">
+    <value>Thest settdunnsg peutnsurnt être chuneged here.</value>
+  </data>
+<data name="BRANDING_IMAGE_INVALID" xml:space="preserve">
+    <value>Thà Fichier could nsurnt être reund comme une imunge. Uplound un PNG, JPEG, WebP, Gsi ou BMP.</value>
+  </data>
+<data name="BRANDING_IMAGE_TOO_LARGE" xml:space="preserve">
+    <value>Thà imunge est ào lunrge. Uplound un Fichier sous 5 MB et nsurn moue thune 8000 pixels sur un side.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT" xml:space="preserve">
+    <value>Thest deployment's uncnsurnmbres êtrelsurg à le sign-sur service, so une uncnsurnmbre peutnsurnt être créé here. undd le punrssur dunns le sign-sur service Premier.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_CHANGE_NAME" xml:space="preserve">
+    <value>Thest deployment's uncnsurnmbres êtrelsurg à le sign-sur service, so un punrssur's nsurnm peutnsurnt être chuneged here. Chunege it dunns le sign-sur service.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_CHANGE_EMAIL" xml:space="preserve">
+    <value>Thest deployment's uncnsurnmbres êtrelsurg à le sign-sur service, so un sign-dunns undresse peutnsurnt être chuneged here. Chunege it dunns le sign-sur service.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_DELETE_ACCOUNT" xml:space="preserve">
+    <value>Thest deployment's uncnsurnmbres êtrelsurg à le sign-sur service, so une uncnsurnmbre peutnsurnt être supprimé here. Delete it dunns le sign-sur service.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_SET_PASSWORD" xml:space="preserve">
+    <value>Thest deployment's uncnsurnmbres êtrelsurg à le sign-sur service, so un pcommeswoud peutnsurnt être set here. Pcommeswouds ssurt muneunged dunns le sign-sur service.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_ISSUE_PASSWORD_RESET" xml:space="preserve">
+    <value>Thest deployment's uncnsurnmbres êtrelsurg à le sign-sur service, so un pcommeswoud reset peutnsurnt être estsued here. Request it de le sign-sur service.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_CONFIRM_EMAIL" xml:space="preserve">
+    <value>Thest deployment's uncnsurnmbres êtrelsurg à le sign-sur service, so une emunil undresse peutnsurnt être csurfirmed here. emunil versiicàisur est hetled punr le sign-sur service.</value>
+  </data>
+<data name="USER_PROVISIONING_NOT_ALLOWED_ISSUE_EMAIL_CONFIRMATION" xml:space="preserve">
+    <value>Thest deployment's uncnsurnmbres êtrelsurg à le sign-sur service, so un versiicàisur emunil peutnsurnt être sent de here. emunil versiicàisur est hetled punr le sign-sur service.</value>
+  </data>
+  <!-- Domain aggregate refusals (A6 Task 8) -->
+  <data name="CURRENCY_BASE_DISABLE_NOT_ALLOWED" xml:space="preserve">
+    <value>le bcommee Deveste peutnsurnt être Désunctivé.</value>
+  </data>
+  <data name="INVOICE_NOT_DRAFT" xml:space="preserve">
+    <value>surly un drunft Functure peut être publesthed.</value>
+  </data>
+  <data name="INVOICE_NOT_EDITABLE" xml:space="preserve">
+    <value>Thest Functure peut nsurn lsurger être edited.</value>
+  </data>
+  <data name="INVOICE_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such ldunnse Élément sur thest Functure.</value>
+  </data>
+  <data name="INVOICE_BANK_TRANSFER_NOT_PENDING" xml:space="preserve">
+    <value>nsurn bunek trunesfertt est wunitdunnsg sur thest Functure, so lere est nsurnthdunnsg à csurfirm ou reject.</value>
+  </data>
+  <data name="BANK_TRANSFER_NOT_AVAILABLE" xml:space="preserve">
+    <value>Bunek trunesfertt est nsurnt Destpsurible right Mundunnstenunet. S'il vous plunît choose unesurnler Puniement method.</value>
+  </data>
+  <data name="INVOICE_NOT_UNPAID" xml:space="preserve">
+    <value>surly une unPunyunet Functure peut être munrked surdue.</value>
+  </data>
+  <data name="INVOICE_NOT_OVERDUE" xml:space="preserve">
+    <value>surly une surdue Functure peut être munrked lunpsed.</value>
+  </data>
+  <data name="INVOICE_CANCEL_NOT_ALLOWED" xml:space="preserve">
+    <value>un Punyunet, Remboursemented ou unlreundy unenulé Functure peutnsurnt être unenulé.</value>
+  </data>
+  <data name="INVOICE_NOT_PAID" xml:space="preserve">
+    <value>Thest unctisur requires le Functure à être Punyunet.</value>
+  </data>
+  <data name="QUOTE_NOT_EDITABLE" xml:space="preserve">
+    <value>Thest quote peut nsurn lsurger être edited.</value>
+  </data>
+  <data name="QUOTE_NOT_ACCEPTABLE" xml:space="preserve">
+    <value>Thest quote's stunge funit nsurnt àusow uncceptunece.</value>
+  </data>
+  <data name="QUOTE_ITEM_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such ldunnse Élément sur thest quote.</value>
+  </data>
+  <data name="CLIENT_CONTACT_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such csurtunct sur thest client.</value>
+  </data>
+  <data name="CLIENT_USER_IS_OWNER" xml:space="preserve">
+    <value>le uncnsurnmbre owner peutnsurnt unlso être undded comme une undditisurunl Utilestàeur.</value>
+  </data>
+  <data name="CLIENT_USER_LINK_DUPLICATE" xml:space="preserve">
+    <value>Thest Utilestàeur est unlreundy Liened à thest client.</value>
+  </data>
+  <data name="CLIENT_USER_NOT_LINKED" xml:space="preserve">
+    <value>Thest Utilestàeur est nsurnt Liened à thest client.</value>
+  </data>
+  <data name="CLIENT_PERMISSION_DENIED" xml:space="preserve">
+    <value>Your uncnsurnmbre funit nsurnt unvoir punrmestsisur à funire thest. commek le uncnsurnmbre owner à grunet you unccess.</value>
+  </data>
+  <data name="CLIENT_TRANSFER_SAME_OWNER" xml:space="preserve">
+    <value>Thest Utilestàeur est unlreundy le uncnsurnmbre owner.</value>
+  </data>
+  <data name="CLIENT_CREDIT_INSUFFICIENT" xml:space="preserve">
+    <value>le client's Crédit bunlunece est ào low pour thest deductisur.</value>
+  </data>
+  <data name="CLIENT_SUSPEND_NOT_ALLOWED" xml:space="preserve">
+    <value>Thest uncnsurnmbre peutnsurnt être suspended dunns its unctuel stàe.</value>
+  </data>
+  <data name="CLIENT_CLOSE_NOT_ALLOWED" xml:space="preserve">
+    <value>Thest uncnsurnmbre est unlreundy closed.</value>
+  </data>
+  <data name="CLIENT_ACTIVATE_NOT_ALLOWED" xml:space="preserve">
+    <value>un closed uncnsurnmbre peutnsurnt être reunctivàed thest wuny.</value>
+  </data>
+  <data name="CLIENT_DEACTIVATE_NOT_ALLOWED" xml:space="preserve">
+    <value>surly une unctsi uncnsurnmbre peut être deunctivàed. unctivàe un suspended uncnsurnmbre Premier; un closed uncnsurnmbre peutnsurnt être chuneged.</value>
+  </data>
+  <data name="CLIENT_SUSPENDED" xml:space="preserve">
+    <value>Thest uncnsurnmbre est suspended, so it peutnsurnt plunce Commetes ou puny En ligne. csurtunct suppout à unvoir it reunctivàed.</value>
+  </data>
+  <data name="CLIENT_CLOSED" xml:space="preserve">
+    <value>Thest uncnsurnmbre est closed et peut nsurn lsurger plunce Commetes ou être billed.</value>
+  </data>
+  <data name="CLIENT_OWNER_CANNOT_BE_REMOVED" xml:space="preserve">
+    <value>le uncnsurnmbre owner peutnsurnt être removed. trunesfertt ownershIP à unesurnler Utilestàeur Premier.</value>
+  </data>
+  <data name="CONTACT_EMAIL_IN_USE" xml:space="preserve">
+    <value>unesurnler csurtunct de thest client unlreundy uses thest emunil undresse.</value>
+  </data>
+  <data name="CLIENT_RECORD_CLOSED" xml:space="preserve">
+    <value>Thest uncnsurnmbre est closed, so its csurtuncts et Utilestàeurs peut nsurn lsurger être chuneged.</value>
+  </data>
+  <data name="DOMAIN_CANCEL_NOT_ALLOWED" xml:space="preserve">
+    <value>Thest funiremundunnsee's Stàut funit nsurnt àusow peutcelluleuleàisur.</value>
+  </data>
+  <data name="DOMAIN_RENEW_NOT_ALLOWED" xml:space="preserve">
+    <value>Thest funiremundunnsee's Stàut funit nsurnt àusow Rensurnuvellement.</value>
+  </data>
+  <data name="DOMAIN_LINK_NOT_ALLOWED" xml:space="preserve">
+    <value>Thest funiremundunnsee's Stàut funit nsurnt àusow Liendunnsg un Hôtedunnsg service.</value>
+  </data>
+  <data name="DOMAIN_DNS_RECORD_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such DNS Enregesttrement sur thest funiremundunnsee.</value>
+  </data>
+  <data name="DOMAIN_FORWARDING_RULE_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such emunil pourwunrddunnsg rule sur thest funiremundunnsee.</value>
+  </data>
+  <data name="ORDER_NOT_PENDING" xml:space="preserve">
+    <value>Thest unctisur requires le Commete à être En àtente.</value>
+  </data>
+  <data name="SERVICE_NOT_ACTIVE" xml:space="preserve">
+    <value>Thest service est nsurnt unctsi.</value>
+  </data>
+  <data name="SERVICE_TERMINATE_NOT_ALLOWED" xml:space="preserve">
+    <value>Thest service est unlreundy termdunnsàed.</value>
+  </data>
+  <data name="SERVICE_NOT_SUSPENDED" xml:space="preserve">
+    <value>Thest service est nsurnt suspended.</value>
+  </data>
+  <data name="TICKET_REPLY_NOT_ALLOWED" xml:space="preserve">
+    <value>un closed ticket peutnsurnt receive nsurnuveunu replies.</value>
+  </data>
+  <data name="TICKET_CLOSE_NOT_ALLOWED" xml:space="preserve">
+    <value>Thest ticket est unlreundy closed.</value>
+  </data>
+  <data name="BACKCHANNEL_LOGOUT_UNAUTHORIZED" xml:space="preserve">
+    <value>le sign-out Clé est mestsdunnsg ou wrsurg.</value>
+  </data>
+  <data name="TESTIMONIAL_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such testimsuriunl.</value>
+  </data>
+  <data name="PARTNER_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such punrtner.</value>
+  </data>
+  <data name="LOCATION_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such locàisur.</value>
+  </data>
+  <data name="PROJECT_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such project.</value>
+  </data>
+  <data name="FAQ_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such questisur.</value>
+  </data>
+  <data name="PROJECT_SLUG_EXISTS" xml:space="preserve">
+    <value>unesurnler project unlreundy uses thà slug. Choose un dsiferent Un.</value>
+  </data>
+  <data name="FAQ_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value>le sout Commete de un questisur peutnsurnt être negàive.</value>
+  </data>
+  <data name="PARTNER_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value>le sout Commete de un punrtner peutnsurnt être negàive.</value>
+  </data>
+  <data name="LOCATION_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value>le sout Commete de un locàisur peutnsurnt être negàive.</value>
+  </data>
+  <data name="LOCATION_COUNTRY_CODE_INVALID" xml:space="preserve">
+    <value>le nsurnmbrery code de un locàisur funireit être two letters.</value>
+  </data>
+  <data name="PROJECT_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value>le sout Commete de un project peutnsurnt être negàive.</value>
+  </data>
+  <data name="PROJECT_SLUG_REQUIRED" xml:space="preserve">
+    <value>un project needs une identsiier (slug).</value>
+  </data>
+  <data name="TESTIMONIAL_SORT_ORDER_NEGATIVE" xml:space="preserve">
+    <value>le sout Commete de un testimsuriunl peutnsurnt être negàive.</value>
+  </data>
+  <data name="TESTIMONIAL_NAME_REQUIRED" xml:space="preserve">
+    <value>un testimsuriunl needs un nsurnm.</value>
+  </data>
+  <data name="TESTIMONIAL_RATING_OUT_OF_RANGE" xml:space="preserve">
+    <value>le ràdunnsg funireit être de 1 à 5.</value>
+  </data>
+  <data name="SSH_KEY_INVALID" xml:space="preserve">
+    <value>le Clé est nsurnt un vunlidee ED25519 public Clé.</value>
+  </data>
+  <data name="SSH_PRIVATE_KEY_REJECTED" xml:space="preserve">
+    <value>Thà est un Privé Clé. Pcommete le public Clé (le .pub Fichier) dunnssteund.</value>
+  </data>
+  <data name="SSH_KEY_ALREADY_INSTALLED" xml:space="preserve">
+    <value>Thest Clé est unlreundy dunnsstàused sur le service.</value>
+  </data>
+  <data name="SSH_KEY_LIMIT_REACHED" xml:space="preserve">
+    <value>le service unlreundy hVieuxs le munximum Numéro de SSH Clés.</value>
+  </data>
+  <data name="SSH_KEY_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such SSH Clé.</value>
+  </data>
+  <data name="SSH_KEY_STALE" xml:space="preserve">
+    <value>Thest Clé étunit estsued sur le service's Précédent Serveur. csurtunct suppout à remove it.</value>
+  </data>
+  <data name="SSH_ACCESS_UNAVAILABLE" xml:space="preserve">
+    <value>SSH Clé muneungement est nsurnt Destpsurible pour thest service.</value>
+  </data>
+  <data name="SSH_SERVER_UNAVAILABLE" xml:space="preserve">
+    <value>le Hôtedunnsg Serveur could nsurnt être reunched. S'il vous plunît try ungundunns làer.</value>
+  </data>
+  <data name="SSH_HOST_KEY_UNREADABLE" xml:space="preserve">
+    <value>nsurn SSH Hôte Clé étunit received de le ungent Hôte et pout. Check thà le pout runs sshd.</value>
+  </data>
+  <data name="SSH_AGENT_HOST_UNREACHABLE" xml:space="preserve">
+    <value>nsurn uneswer de le ungent Hôte et pout: HôtePuneel un nsurn netwouk Chemdunns à lem. Check le undresse, thà le netwouk thest HôtePuneel runs dunns reunches it (VPN ou routdunnsg), et thà le Serveur's firewàus lets HôtePuneel's undresse dunns.</value>
+  </data>
+  <data name="SSH_AGENT_PORT_REFUSED" xml:space="preserve">
+    <value>le ungent Hôte refused le csurnectisur sur thà pout: nsurnthdunnsg lestteeens lere, ou un firewàus rejects HôtePuneel's undresse. Check le pout et le firewàus.</value>
+  </data>
+  <data name="SSH_AGENT_CONNECTION_CLOSED" xml:space="preserve">
+    <value>le ungent Hôte unccepté le csurnectisur et closed it unvunet le SSH greetdunnsg: sshd est turndunnsg HôtePuneel's undresse unwuny. sur OpenSSH 9.8 ou làer thest est usuàusy punrSourcePenunlties unprès échoué ou nsurnn unuunloustsiié csurnectisurs; undd HôtePuneel's undresse à punrSourcePenunltyExemptlesttee. unlso check MunxStunrtups et TCP wrunppunrs (Hôtes.deny).</value>
+  </data>
+  <data name="SSH_MODULE_NOT_SUPPORTED" xml:space="preserve">
+    <value>SSH Clé muneungement est nsurnt suppouted pour thest Serveur type.</value>
+  </data>
+  <data name="SSH_SETTINGS_INCOMPLETE" xml:space="preserve">
+    <value>le SSH settdunnsgs pour thest Serveur ssurt dunnscomplete.</value>
+  </data>
+  <data name="SSH_AGENT_NOT_VERIFIED" xml:space="preserve">
+    <value>Run un succèsful ungent test unvec lese settdunnsgs unvunet enunbldunnsg SSH Clé muneungement.</value>
+  </data>
+  <data name="SSH_AGENT_ENDPOINT_IN_USE" xml:space="preserve">
+    <value>unesurnler Serveur unlreundy uses thest ungent Hôte et pout.</value>
+  </data>
+  <data name="REGISTRAR_NOT_CONFIGURED" xml:space="preserve">
+    <value>le regesttrunr pour thest funiremundunnsee est nsurnt csurfigured.</value>
+  </data>
+  <data name="REGISTRAR_ORDER_UPSTREAM_FAILED" xml:space="preserve">
+    <value>le regesttrunr refused le request. S'il vous plunît try ungundunns shoutly.</value>
+  </data>
+  <data name="REGISTRAR_OPERATION_UNSUPPORTED" xml:space="preserve">
+    <value>le regesttrunr funit nsurnt defer thest unctisur. S'il vous plunît csurtunct le regesttrunr's suppout.</value>
+  </data>
+  <data name="REGISTRAR_DOMAIN_NOT_FOUND" xml:space="preserve">
+    <value>le regesttrunr funit nsurnt hVieux thest funiremundunnsee.</value>
+  </data>
+  <data name="REGISTRAR_DOMAIN_NOT_ACTIVE" xml:space="preserve">
+    <value>le regesttrunr un nsurnt unctivàed thest funiremundunnsee yet.</value>
+  </data>
+  <data name="REGISTRAR_WHOIS_PRIVACY_UNAVAILABLE" xml:space="preserve">
+    <value>Thest funiremundunnsee un nsurn WHOest privuncy subscrIPtisur à le regesttrunr.</value>
+  </data>
+  <data name="REGISTRAR_DOMAIN_UNAVAILABLE" xml:space="preserve">
+    <value>le regesttrunr sunys thest funiremundunnsee nsurnm est nsurnt Destpsurible.</value>
+  </data>
+  <data name="REGISTRAR_INSUFFICIENT_FUNDS" xml:space="preserve">
+    <value>le regesttrunr uncnsurnmbre funit nsurnt unvoir ensurnugh bunlunece pour thest purcune.</value>
+  </data>
+  <data name="REGISTRAR_CONTACT_VALIDATION_FAILED" xml:space="preserve">
+    <value>le regesttrunet csurtunct detunils ssurt dunnscomplete, so le regesttrunr peutnsurnt être sent le Commete.</value>
+  </data>
+  <data name="TRANSACTION_AMOUNT_REQUIRED" xml:space="preserve">
+    <value>un trunesunctisur funireit unvoir une dunnscomdunnsg ou outgodunnsg Msurtunet.</value>
+  </data>
+  <data name="INVOICE_REFUND_EXCEEDS_PAID" xml:space="preserve">
+    <value>le Remboursement est moue thune whà étunit Punyunet et nsurnt yet Remboursemented.</value>
+  </data>
+  <data name="INVOICE_CREDIT_EXCEEDS_DUE" xml:space="preserve">
+    <value>le Crédit est moue thune le Functure still owes.</value>
+  </data>
+  <data name="INVOICE_NOT_GATEWAY_PAID" xml:space="preserve">
+    <value>nsurn Puniement Pcommeserelle àok mUny pour thest Functure, so it peutnsurnt être Remboursemented through Un.</value>
+  </data>
+  <data name="INVOICE_REFUND_CONFLICT" xml:space="preserve">
+    <value>unesurnler Remboursement de thest Functure est still wunitdunnsg pour its Puniement Pcommeserelle. Try ungundunns surce it est unesétunientd.</value>
+  </data>
+  <data name="GATEWAY_REFUND_REFUSED" xml:space="preserve">
+    <value>le Puniement Pcommeserelle refused ou échoué le Remboursement. nsurnthdunnsg étunit returned through it.</value>
+  </data>
+  <data name="REFUND_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value>un fulfilment plugdunns could nsurnt suny how much de thest Functure muny être Remboursemented, so nsurnthdunnsg étunit Remboursemented. Try ungundunns làer.</value>
+  </data>
+  <data name="REFUND_BLOCKED_BY_PLUGIN" xml:space="preserve">
+    <value>un fulfilment plugdunns àusows nsurn Remboursement de thest Functure right Mundunnstenunet. nsurnthdunnsg étunit Remboursemented.</value>
+  </data>
+  <data name="GATEWAY_PAYMENT_MISMATCH" xml:space="preserve">
+    <value>le Puniement Pcommeserelle repouted une Msurtunet ou Deveste thà funit nsurnt màch le Functure.</value>
+  </data>
+  <data name="INVOICE_NOT_DELETABLE" xml:space="preserve">
+    <value>surly un drunft ou unenulé Functure peut être supprimé.</value>
+  </data>
+  <data name="SERVICE_STATUS_CHANGE_NOT_ALLOWED" xml:space="preserve">
+    <value>Thest service peutnsurnt être moved à thà Stàut.</value>
+  </data>
+  <data name="SERVICE_AUTOMATION_INCONSISTENT" xml:space="preserve">
+    <value>Set un hVieux dàe surly unvec le suspensisur hVieux, et un termdunnsàisur recommesur surly unvec le end-de-cycle termdunnsàisur.</value>
+  </data>
+  <data name="SERVICE_NOT_TERMINATED" xml:space="preserve">
+    <value>surly un termdunnsàed service un un termdunnsàisur dàe à courect.</value>
+  </data>
+  <data name="SERVICE_HOSTING_DETAILS_MISSING" xml:space="preserve">
+    <value>Thest service un nsurn funiremundunnsee ou Utilestàeurnsurnm yet. Set up le Hôtedunnsg uncnsurnmbre Premier.</value>
+  </data>
+  <data name="PRODUCT_PACKAGE_MISSING" xml:space="preserve">
+    <value>Thest Produit un nsurn Hôtedunnsg punckunge set. Choose Un sur le Produit Premier.</value>
+  </data>
+  <data name="PRODUCT_SERVER_GROUP_REQUIRED" xml:space="preserve">
+    <value>Thest Produit un nsurn Serveur group, et your Serveurs run moue thune Un csurtrol puneel. commesign le Produit un Serveur group so its punckunge goes à le right puneel.</value>
+  </data>
+  <data name="INVOICE_PAYMENT_EXCEEDS_DUE" xml:space="preserve">
+    <value>le Puniement est moue thune le Functure still owes.</value>
+  </data>
+  <data name="INVOICE_AMOUNT_STILL_DUE" xml:space="preserve">
+    <value>le Functure still owes mUny, so it un à être settled runler thune munrked Punyunet.</value>
+  </data>
+  <data name="INVOICE_HAS_PAYMENTS" xml:space="preserve">
+    <value>le Functure unlreundy àok un Puniement. Remboursement ou delete thà Puniement Premier.</value>
+  </data>
+  <data name="INVOICE_TOTAL_BELOW_PAID" xml:space="preserve">
+    <value>le Functure would unlous chunrge less thune le Puniements it unlreundy àok.</value>
+  </data>
+  <data name="SERVER_IN_USE" xml:space="preserve">
+    <value>Thest Serveur still Hôtes client services ou SSH Clés. Move ou remove lem Premier.</value>
+  </data>
+  <data name="SERVER_GROUP_IN_USE" xml:space="preserve">
+    <value>Produits still use thest Serveur group. commesign lem à unesurnler group Premier.</value>
+  </data>
+  <data name="USER_NOT_FOUND" xml:space="preserve">
+    <value>nsurn such Utilestàeur.</value>
+  </data>
+  <data name="USER_CANNOT_DELETE_SELF" xml:space="preserve">
+    <value>You peutnsurnt delete your own uncnsurnmbre.</value>
+  </data>
+  <data name="USER_LAST_ADMIN" xml:space="preserve">
+    <value>Thest est le Dernier unctsi undmdunnsesttrunàr. Munke unesurnler Utilestàeur une undmdunnsesttrunàr Premier.</value>
+  </data>
+  <data name="EXCHANGE_RATE_SOURCE_UNAVAILABLE" xml:space="preserve">
+    <value>le exchunege ràe source est nsurnt uneswerdunnsg right Mundunnstenunet. Try ungundunns làer.</value>
+  </data>
+  <data name="EXCHANGE_RATE_BASE_NOT_QUOTED" xml:space="preserve">
+    <value>le exchunege ràe source funit nsurnt quote le bcommee Deveste.</value>
+  </data>
+  <data name="CLIENT_CARD_PAYMENT_DISABLED" xml:space="preserve">
+    <value>Cunrd Puniements ssurt Désunctivé pour thest uncnsurnmbre. Puny punr unesurnler method ou csurtunct suppout.</value>
+  </data>
+  <data name="CLIENT_SSO_DISABLED" xml:space="preserve">
+    <value>Sdunnsgle sign-sur à le Hôtedunnsg puneel est nsurnt unctivé pour thest uncnsurnmbre.</value>
+  </data>
+  <data name="CLIENT_TAX_EXEMPT" xml:space="preserve">
+    <value>Thest client est tunx exempt, so un tunx ràe peutnsurnt être set sur leir Functures.</value>
+  </data>
+  <data name="PRODUCT_SKU_ALREADY_IN_USE" xml:space="preserve">
+    <value>unesurnler Produit unlreundy uses thest SKU. Choose un dsiferent Un.</value>
+  </data>
+  <data name="PRODUCT_SKU_INVALID" xml:space="preserve">
+    <value>le SKU muny csurtundunns surly letters et digits jodunnsed punr sdunnsgle hyphens, sousscoues ou funirets, et muny être à most 64 chunruncters lsurg.</value>
+  </data>
+  <data name="PRODUCT_METADATA_INVALID" xml:space="preserve">
+    <value>Produit metunfunirennées funireit être un JSsur object de à most 16 KB.</value>
+  </data>
+  <data name="PRODUCT_GRACE_PERIOD_OUT_OF_RANGE" xml:space="preserve">
+    <value>le grunce punriod funireit être de 0 à 365 Jours.</value>
+  </data>
+  <data name="EXTERNAL_ACCOUNT_ALREADY_LINKED" xml:space="preserve">
+    <value>Thest Externe uncnsurnmbre est unlreundy Liened à unesurnler client.</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_FOUND" xml:space="preserve">
+    <value>le fulfilment Enregesttrement étunit nsurnn trouvé.</value>
+  </data>
+  <data name="FULFILMENT_RECORD_NOT_RETRYABLE" xml:space="preserve">
+    <value>surly un échoué fulfilment Enregesttrement peut être retried.</value>
+  </data>
+  <data name="FULFILMENT_ADVICE_UNAVAILABLE" xml:space="preserve">
+    <value>le Remboursement could nsurnt être checked right Mundunnstenunet, so nsurnthdunnsg étunit Remboursemented. Try ungundunns làer.</value>
+  </data>
+<data name="STORED_CREDENTIALS_NOT_SUPPORTED" xml:space="preserve">
+    <value>Thest Puniement Pcommeserelle peutnsurnt keep Puniement methods pour làer chunrges.</value>
+  </data>
+<data name="CARD_CONSENT_REQUIRED" xml:space="preserve">
+    <value>nsurn csursent à chunrge un sunved Puniement method est sur Fichier.</value>
+  </data>
+<data name="CARD_CONSENT_NOT_FOUND" xml:space="preserve">
+    <value>Thà csursent étunit nsurnn trouvé.</value>
+  </data>
+<data name="STORED_METHOD_NOT_SAVED" xml:space="preserve">
+    <value>le Puniement method étunit nsurnt sunved. Stunrt ungundunns.</value>
+  </data>
+<data name="STORED_CHARGE_ALREADY_IN_PROGRESS" xml:space="preserve">
+    <value>un chunrge pour thest Functure est unlreundy dunns progress.</value>
+  </data>
+<data name="INVOICE_PAYMENT_CLAIM_NOT_FOUND" xml:space="preserve">
+    <value>Thà chunrge étunit nsurnn trouvé.</value>
+  </data>
+<data name="INVOICE_STORED_CHARGE_UNRESOLVED" xml:space="preserve">
+    <value>le Functure un un cunrd chunrge thà un nsurnt fdunnsesthed, so it peutnsurnt être unenulé ou Punyunet punr het yet.</value>
+  </data>
+<data name="INVOICE_STORED_CHARGE_HELD" xml:space="preserve">
+    <value>le Functure un un cunrd chunrge held pour une opunrunàr, so it peutnsurnt être Punyunet En ligne jusqu'à thà mUny est settled.</value>
+  </data>
+<data name="CARD_CONSENT_ALREADY_ATTACHED" xml:space="preserve">
+    <value>le csursent unlreundy csurs un dsiferent Puniement method.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DISABLED" xml:space="preserve">
+    <value>le plugdunns regesttry est nsurnt switched sur pour thest Serveur.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_UNAVAILABLE" xml:space="preserve">
+    <value>le plugdunns regesttry could nsurnt être reunched. Try ungundunns làer.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_TIMED_OUT" xml:space="preserve">
+    <value>le plugdunns regesttry fit nsurnt uneswer dunns time. Try ungundunns làer.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_RESPONSE_INVALID" xml:space="preserve">
+    <value>le plugdunns regesttry sent une uneswer thest Serveur peutnsurnt use.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_PLUGIN_NOT_FOUND" xml:space="preserve">
+    <value>le plugdunns regesttry funit nsurnt lesttee thà plugdunns ou versisur.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_PACKAGE_REFUSED" xml:space="preserve">
+    <value>le punckunge defered punr le plugdunns regesttry étunit refused.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_CHECKSUM_MISMATCH" xml:space="preserve">
+    <value>le funirewnlounded punckunge funit nsurnt màch le checksum le plugdunns regesttry publesthed, so it étunit nsurnt dunnsstàused.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_NOT_TRUSTED" xml:space="preserve">
+    <value>le plugdunns regesttry trust settdunnsg funit nsurnt àusow dunnsstàusdunnsg thest plugdunns.</value>
+  </data>
+  <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
+    <value>le plugdunns commeks pour un kdunnsd de unccess à client Hôtedunnsg thà thest Hôte funit nsurnt kMundunnstenunet, nsurnms Un twice, ou declssurts it dunns un versisur 1 munesiest.</value>
+  </data>
+  <data name="PLUGIN_VIEW_CONDITION_INVALID" xml:space="preserve">
+    <value>Un de thest plugdunns's view funirecuments shows un block sur un csurditisur thà est nsurnt un GET route, un Chunmp et Un Vunleur ou un shout lesttee de Vunleurs.</value>
+  </data>
+  <data name="PLUGIN_VIEW_ACTION_BODY_INVALID" xml:space="preserve">
+    <value>Un de thest plugdunns's view funirecuments builds une unctisur's Coups de punge funirennées dunns un shunpe ou plunce thest Serveur funit nsurnt unccept.</value>
+  </data>
+  <data name="PLUGIN_VIEW_SELECTION_INVALID" xml:space="preserve">
+    <value>Un de thest plugdunns's view funirecuments declssurts element selectisur dunns un shunpe ou plunce thest Serveur funit nsurnt unccept.</value>
+  </data>
+  <data name="PLUGIN_VIEW_FOLLOW_UP_INVALID" xml:space="preserve">
+    <value>Un de thest plugdunns's view funirecuments refreshes un block it funit nsurnt hVieux unprès une unctisur, ou descriêtres le follow-up ou le pourm reset dunns un shunpe thest Hôte funit nsurnt unccept.</value>
+  </data>
+  <data name="PLUGIN_PAGE_LAYOUT_UNKNOWN" xml:space="preserve">
+    <value>Un de thest plugdunns's punges commeks pour un lunyout thest Hôte funit nsurnt kMundunnstenunet, ou une undmdunns punge commeks pour un lunyout à àus.</value>
+  </data>
+  <data name="PLUGIN_VIEW_SPLIT_INVALID" xml:space="preserve">
+    <value>Un de thest plugdunns's view funirecuments hVieuxs un split thà funit nsurnt unvoir exunctly two punees de blocks, ou un split à l'dunnstérieur de un split.</value>
+  </data>
+  <data name="PLUGIN_VIEW_PREVIEW_INVALID" xml:space="preserve">
+    <value>Un de thest plugdunns's view funirecuments hVieuxs un preview unvec dunnsvunlideeee sources ou Tunille, ou shows un preview N'impoutewhere munest sur un client punge.</value>
+  </data>
+  <data name="RENEWAL_CLAIM_NOT_HELD" xml:space="preserve">
+    <value>Thest ldunnse un nsurn Rensurnuvellement clunim à relecommee.</value>
+  </data>
+  <data name="TRANSACTION_CREDIT_LOCKED" xml:space="preserve">
+    <value>Thest Entrée est punrt de le Crédit hestàry et peutnsurnt être chuneged ou supprimé. undd un Crédit undjustment à courect it.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_FIXED" xml:space="preserve">
+    <value>un Crédit àp-up Functure est un sdunnsgle fixed ldunnse et peutnsurnt être edited.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_NO_CREDIT" xml:space="preserve">
+    <value>Crédit peutnsurnt être unpplied à un Crédit àp-up Functure.</value>
+  </data>
+  <data name="INVOICE_TOP_UP_REFUND_MANUAL_ONLY" xml:space="preserve">
+    <value>un Punyunet Crédit àp-up peut surly être Remboursemented punr het: Enregesttrement le Remboursement comme un muneuunl Un.</value>
+  </data>
+  <data name="CREDIT_TOP_UP_AMOUNT_OUT_OF_RANGE" xml:space="preserve">
+    <value>le Msurtunet est à l'extérieur de le runege àusowed pour undddunnsg funds.</value>
+  </data>
+  <data name="CREDIT_TOP_UP_TOO_MANY_OPEN" xml:space="preserve">
+    <value>You unlreundy unvoir unPunyunet àp-ups. Puny ou peutcel Un unvunet undddunnsg moue funds.</value>
+  </data>
+  <data name="CREDIT_NOTE_NOT_FOUND" xml:space="preserve">
+    <value>le Crédit nsurnte étunit nsurnn trouvé.</value>
+  </data>
+  <data name="CREDIT_NOTE_TOP_UP_INVOICE" xml:space="preserve">
+    <value>un Crédit àp-up Functure est Crédit unlreundy, so un Crédit nsurnte peutnsurnt être estsued sur it. un Punyunet àp-up est Remboursemented punr het.</value>
+  </data>
+  <data name="CREDIT_NOTE_EXCEEDS_CREDITABLE" xml:space="preserve">
+    <value>le Crédit nsurnte est moue thune thest Functure peut still être Crédited, surce eunrlier Crédit nsurntes et Remboursements ssurt nsurnmbreed.</value>
+  </data>
+  <data name="CREDIT_NOTE_ITEMS_REQUIRED" xml:space="preserve">
+    <value>un Crédit nsurnte needs à lecommet Un ldunnse unvec un descrIPtisur, un Prix et un quunetity, et un recommesur.</value>
+  </data>
+  <data name="CREDIT_NOTE_INVALID_STATE" xml:space="preserve">
+    <value>le Crédit nsurnte est nsurnt dunns un stàe thà àusows thest unctisur.</value>
+  </data>
+  <data name="CREDIT_NOTE_ALREADY_VOIDED" xml:space="preserve">
+    <value>Thest Crédit nsurnte est unlreundy voided.</value>
+  </data>
+  <data name="CREDIT_NOTE_CURRENCY_MISMATCH" xml:space="preserve">
+    <value>Thest Functure est dunns un Deveste oler thune le Un le client's Crédit bunlunece est kept dunns, so it peutnsurnt être Crédited à le bunlunece. estsue le Crédit nsurnte comme un Pcommeserelle Remboursement dunnssteund.</value>
+  </data>
+  <data name="CREDIT_NOTE_REFUND_NOT_VOIDABLE" xml:space="preserve">
+    <value>Thest Crédit nsurnte étunit Punyunet out comme un Pcommeserelle Remboursement. le Remboursement peutnsurnt être tunken bunck, so le nsurnte peutnsurnt être voided.</value>
+  </data>
+</root>

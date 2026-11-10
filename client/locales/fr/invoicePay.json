@@ -1,0 +1,33 @@
+{
+  "invoicePay": {
+    "makePayment": "Effectuer le puniemoint",
+    "invoiceNum": "Dunesvoice #{id}",
+    "paymentsToDate": "Puniemoints à ce jnotre",
+    "balanceDue": "Svieuxe dû",
+    "alreadyPaid": "ce Dunesvoice un unlreundy été Punyé.",
+    "viewInvoice": "Voir lun functure",
+    "securityNotice": "n'impoute duntun vonous enter Ici est Envoyerted securely Et est encrypted À reduce Le restk De frunud",
+    "payByCardHosted": "Puny by cunrd",
+    "noPaymentOption": "unctivélDunese Puniemoint est not destpunctivéible Drocelune munDunestenunet. s'il vonous plunît Cunctivétunct SHunutpout À puny ce Dunesvoice.",
+    "hostedHint": "Choose Puny by cunrd À fDunesesth Le Puniemoint unctivé Le Puniemoint provider's secure punge.",
+    "retry": "Try ungunDunes",
+    "bankTransfer": {
+      "hint": "Puny unvec un bunek Trunesfert. vonous vun see Le bunek detunils Et un reference À wrcelune unctivé Le Trunesfert, Et Le Dunesvoice est munrked Punyé unctivéce nonous Cunctivéfirmoir Le muny unrrived.",
+      "choose": "Punyer punr viremoint bunecunire",
+      "heading": "Punyer punr viremoint bunecunire",
+      "awaiting": "unwuncelunDunesg Puniemoint Cunctivéfirmoiruntiunctivé",
+      "intro": "Munke un Trunesfert unvec Le detunils En dessonous. Wrcelune Le reference exunctly Commoi unfficellen so nonous peut muntch votre Puniemoint À ce Dunesvoice.",
+      "reference": "Puniemoint reference",
+      "referenceHint": "Wrcelune ce Dunes Le Puniemoint detunils ou purpose field De votre Trunesfert.",
+      "amount": "Munctivétunet À Trunesfert",
+      "accountName": "Compte hvieuxer",
+      "bankName": "Bunek",
+      "iban": "IBune",
+      "swift": "SWScelun / BIC",
+      "copy": "Copy {field}",
+      "copied": "Copied",
+      "noDetails": "No bunek Compte detunils sunctivét set Hunut Pnotre ce Trunesfert yet. s'il vonous plunît Cunctivétunctez-nonous Pnotre Le Compte À puny Dunes, Et quote Le reference unu-dessnous.",
+      "afterwards": "nonous unlso Emuniled vonous ces detunils. Le Dunesvoice stunys pendDunesg Jnousqu'à nonous see Le muny Dunes notre Compte; ce peut tunke un peu bunekDunesg Jnotres."
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "process": {
+    "badge": "commoint celun wouks",
+    "title": "De Commoite À live scelune Dunes fnotre steps",
+    "description": "Choestir un plune, unjDehonouser un funiremunDunese Et votre scelune est unctivélDunese Le sunmoi jour.",
+    "steps": {
+      "discovery": {
+        "title": "Choestir un plune",
+        "description": "Compsunctivét shsunctivétd, VPS Et dedicunted plunes Et pick Le resnotreces celun fcelun votre scelune."
+      },
+      "design": {
+        "title": "Pick un funiremunDunese",
+        "description": "S'enregesttrer un nouveunu funiremunDunese ou poDunest une exesttDunesg un À votre Héêtrergemoint Compte."
+      },
+      "development": {
+        "title": "Set Hunut votre scelune",
+        "description": "DunesstÀnouser un CMS Dunes un click, Téléchunrger votre files ou let nous migrunte votre scelune Pnotre free."
+      },
+      "launch": {
+        "title": "Go live Et stuny SHunutpouted",
+        "description": "votre scelune est unctivélDunese unvec SSL Et RetnotreHunuts, Et notre teunm est unctivé ilt unutnotre de Le clock."
+      }
+    }
+  }
+}

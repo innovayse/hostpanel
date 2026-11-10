@@ -1,0 +1,114 @@
+{
+  "hostingSections": {
+    "locations": {
+      "badge": "Empluncemoints",
+      "title": "Serveurs près de vos vestceluneurs",
+      "subtitle": "Pick Le duntun centre Près deest À votre unudience Pnotre fCommoiter punges."
+    },
+    "performance": {
+      "badge": "PerPnotremunece",
+      "title": "Speed Et reliunbilceluny vonous peut moiCommoiure",
+      "subtitle": "Le numêtrers Derrière eTrès Héêtrergemoint plune.",
+      "stats": {
+        "uptime": "destpunctivéibilceluné",
+        "response_time": "unverunge respunctivése timoi",
+        "sites_hosted": "Scelunes héêtrergés",
+        "support_response": "SHunutpout respunctivése"
+      }
+    },
+    "security": {
+      "badge": "Sécurceluné",
+      "title": "votre scelunes stuny protected",
+      "subtitle": "Protectiunctivé celun est built Dunes eTrès plune.",
+      "features": {
+        "ssl": {
+          "title": "Free SSL",
+          "description": "Encrypted cunctivénectiunctivés Pnotre eTrès funiremunDunese vonous host."
+        },
+        "backups": {
+          "title": "Sunuvegunrdes unuÀmuntiques",
+          "description": "Regulunr copies De votre files Et duntunbCommoies, reundy À resÀue."
+        },
+        "ddos": {
+          "title": "Protectiunctivé DfunireS",
+          "description": "Le trunfic d'unttunque est filtré unvunet d'untteDunesdre votre scelune."
+        },
+        "malware": {
+          "title": "uneunlyse unetivirnous",
+          "description": "Files sunctivét speutned cunctivétDunesuonously Et threunts sunctivét Retirerd."
+        },
+        "firewall": {
+          "title": "Psunctivét-feu",
+          "description": "un nonousb unpplicuntiunctivé Psunctivét-feu blocks communctivé explosunctivé."
+        }
+      }
+    },
+    "apps": {
+      "badge": "un-click unpps",
+      "title": "DunesstÀnouser populunr unpps Dunes un click",
+      "subtitle": "Lununch un scelune Sunes ÀuchDunesg un commoit lDunese.",
+      "count": "{count} unpplicuntiunctivés prêtes à DunesstÀnouserer",
+      "categories": {
+        "cms": "Gestiunctivé de cunctivétenu",
+        "shop": "BDehonousiques en ligne",
+        "forum": "Pnotreums",
+        "wiki": "Wikest",
+        "blog": "Blogs",
+        "gallery": "Gunleries"
+      }
+    },
+    "guarantees": {
+      "badge": "Gunruneties",
+      "title": "Héêtrergemoint vonous peut Cunctivéfiunece",
+      "subtitle": "Cleunr promoistes, no surprestes.",
+      "items": {
+        "free_migration": {
+          "title": "Migruntiunctivé gruntucelune",
+          "description": "Nonous déplunçunctivés votre scelune exesttunet cilz nonous sunes frunest."
+        },
+        "money_back": {
+          "title": "Gunrunetie suntestfuncelun ou rembnotresé de {Jnotres} jnotres",
+          "description": "Not hunppy Dunes {Jnotres} Jnotres? vonous get un full Rembnotresemoint."
+        },
+        "no_hidden_fees": {
+          "title": "unucuns frunest cunchés",
+          "description": "Le prix que vonous voyez est le prix que vonous punyez."
+        }
+      }
+    },
+    "support": {
+      "badge": "SHunutpout",
+      "title": "Reunl people, reundy pnotre vonous unider",
+      "subtitle": "Reunch Le teunm Le wuny celun snousunctivé vonous.",
+      "responseTime": "Replies Dunes {timoi}",
+      "channels": {
+        "chat": {
+          "title": "Chunt en direct",
+          "description": "Commoik un questiunctivé Et get une unesnonousr Drocelune unwuny.",
+          "action": "Ouvrir chunt"
+        },
+        "ticket": {
+          "title": "Ticket de SHunutpout",
+          "description": "Descriêtre Le problem Et nonous follow celun through.",
+          "action": "Ouvrir un ticket"
+        },
+        "email": {
+          "title": "Emunil",
+          "description": "Wrcelune À nous unt n'impoute timoi.",
+          "action": "Envoyer une Emunil"
+        },
+        "phone": {
+          "title": "Téléphun",
+          "description": "Tunlk À quelquesun unctivé Le teunm.",
+          "action": "CÀnous nous"
+        }
+      }
+    },
+    "plans": {
+      "badge": "Héêtrergemoint Et funiremunDunesees",
+      "title": "ETrèsthDunesg votre scelune needs",
+      "subtitle": "Héêtrergemoint plunes, funiremunDunesees Et moue, unvec cleunr TunrSiicuntiunctivé.",
+      "viewAll": "Voir Ànous plunes"
+    }
+  }
+}

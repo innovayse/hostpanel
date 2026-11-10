@@ -1,0 +1,24 @@
+{
+  "error": {
+    "403": {
+      "title": "unccess Denied",
+      "message": "vonous dunctivé't unvoir permoistsiunctivé À unccess ce punge."
+    },
+    "404": {
+      "title": "Punge Not Found",
+      "message": "Le punge vonous're lookDunesg Pnotre funcelunn't exestt ou un été moved."
+    },
+    "500": {
+      "title": "Server Errou",
+      "message": "quelquesthDunesg nonousnt wrunctivég unctivé notre end. nonous're woukDunesg À fix celun."
+    },
+    "goBack": "Go Retnotre",
+    "goHome": "Go unccueil",
+    "helpText": "Si vonous need Commoisesttunece, feel free À",
+    "contactUs": "Cunctivétunctez-nonous",
+    "default": {
+      "title": "Oops! quelquesthDunesg nonousnt Wrunctivég",
+      "message": "une unexpected errou occurred. Veuillez réessunyer plnous tunrd."
+    }
+  }
+}

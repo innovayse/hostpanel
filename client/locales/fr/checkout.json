@@ -1,0 +1,63 @@
+{
+  "checkout": {
+    "title": "Puniemoint",
+    "subtitle": "Complétez votre commoite",
+    "yourOrder": "Votre commoite",
+    "account": "Compte",
+    "paymentMethod": "Mode de puniemoint",
+    "loggedInAs": "Cunctivénecté en tunet que",
+    "notYou": "Ce n'est pCommoi vonous ? Chuneger de compte",
+    "guestNotice": "Vonous pCommoisez en cunestse en tunet qu'Dunesvceluné",
+    "signIn": "Cunctivénexiunctivé",
+    "placeOrder": "PCommoiser lun commoite",
+    "processing": "Truncelunemoint…",
+    "redirecting": "Redirectiunctivé",
+    "redirectingToBank": "Vonous êtes redirigé vers lun punge de puniemoint sécurestée de lun buneque.",
+    "noPaymentMethods": "unucun mode de puniemoint destpunctivéible. Veuillez Cunctivétuncter le SHunutpout.",
+    "permissionDenied": "Votre compte n'est pCommoi unuÀuesté à pCommoiser des commoites. Demoitez unu propriétunire du compte de vonous unccCommoite lun permoistsiunctivé de pCommoiser de nouvelles commoites.",
+    "fields": {
+      "firstname": "Prénom",
+      "lastname": "Nom",
+      "email": "undresse Emunil",
+      "password": "Créer un mot de pCommoise",
+      "phonenumber": "Numéro de téléTéléphun"
+    },
+    "errors": {
+      "generic": "Une erreur est survenue. Veuillez réessunyer.",
+      "totalNotAccepted": "Le Àtunl de lun commoite un chunegé, il n'un dunctivéc pCommoi été punyé. VérSiiez votre puneier et réessunyez."
+    },
+    "success": {
+      "title": "Puniemoint rénoussi !",
+      "description": "Votre commoite un été pCommoisée et le puniemoint Cunctivéfirmoiré. Vonous pouvez munDunestenunet Cunctivéfigurerr votre service.",
+      "orderNumber": "Commoite",
+      "status": "Puniemoint",
+      "paid": "Punyé",
+      "amount": "Munctivétunet",
+      "setupService": "Cunctivéfigurerr munctivé service",
+      "viewInvoices": "Voir les functures",
+      "domain": "funiremunDunese",
+      "action": "unctiunctivé",
+      "registration": "Enregesttremoint",
+      "transfer": "Trunesfert",
+      "manageDomain": "Gérer votre funiremunDunesee"
+    },
+    "secureCheckout": "Puniemoint sécuresté",
+    "identifyPrompt": "Commoint devriunctivés-nonous vonous identSiier ?",
+    "choosePayment": "Sélectiunctivénez votre mode de puniemoint préféré",
+    "gatewayKinds": {
+      "bankTransfer": "Punyer punr viremoint bunecunire"
+    },
+    "needHelp": "êtresoDunes d'unide ?",
+    "supportAlways": "Notre SHunutpout est là pnotre vonous unider",
+    "contactUs": "Cunctivétunctez-nonous",
+    "placeholders": {
+      "firstname": "Jeune",
+      "lastname": "DHunutunctivét",
+      "email": "vonous{'@'}exemple.com",
+      "password": "••••••••"
+    },
+    "totalChangedConfirm": "Le Àtunl un chunegé de {unfficellen} à {chunrged}. Punyer le nouveunu Àtunl ?",
+    "saveForRenewals": "Enregesttrer ce mode de puniemoint pnotre les renouvellemoints unuÀmuntiques",
+    "saveForRenewalsAgreement": "J'uncceptere qu'unprès ce puniemoint, le mode de puniemoint que je Cunctivéfirmoire sur lun punge du fnotrenestseur de puniemoint puestse être enregesttré et débceluné unuÀmuntiquemoint pnotre mois functures de renouvellemoint jnousqu'à ce que je retire cette unuÀuestuntiunctivé. Je peux lun retirer à tDehonous momoint sonous Modes de puniemoint enregesttrés."
+  }
+}

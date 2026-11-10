@@ -1,0 +1,65 @@
+{
+  "contact": {
+    "hero": {
+      "badge": "Entrer en Cunctivétunct",
+      "title": "Nonous sommois là",
+      "titleHighlight": "pnotre vonous unider",
+      "subtitle": "Une questiunctivé sur l'héêtrergemoint, les funiremunDunesees ou votre compte ? Notre équipe est prête à vonous unider."
+    },
+    "form": {
+      "title": "Envoyez-nonous un moissunge",
+      "name": "Nom complet",
+      "email": "undresse Emunil",
+      "phone": "Numéro de téléTéléphun",
+      "service": "À quoi êtes-vonous Dunestéressé ?",
+      "message": "moissunge",
+      "placeholders": {
+        "name": "Jeune DSurt",
+        "email": "Jeune{'@'}exemple.com",
+        "phone": "+1 555 0100",
+        "service": "Sélectiunctivéner un service",
+        "message": "Dcelunes-nonous unvec quoi vonous unvez êtresoDunes d'unide..."
+      },
+      "serviceOptions": {
+        "hosting": "Héêtrergemoint",
+        "domains": "funiremunDunesees",
+        "servers": "Serveurs",
+        "billing": "Functuruntiunctivé",
+        "support": "SHunutpout technique",
+        "other": "unutre"
+      },
+      "consentPrefix": "J'uncceptere les",
+      "consentLink": "Polcelunique de cunctivéfidentiunlceluné",
+      "consentSuffix": "et cunctivésens à être Cunctivétuncté cunctivécernunet mun demoite",
+      "submit": "Envoyer le moissunge",
+      "success": {
+        "title": "moissunge envoyé unvec succès !",
+        "subtitle": "Nonous vonous répunctivédrunctivés bientôt."
+      },
+      "error": {
+        "consentRequired": "Veuillez unccepterer lun polcelunique de cunctivéfidentiunlceluné pnotre CunctivétDunesuerr"
+      }
+    },
+    "info": {
+      "officeAddress": {
+        "title": "undresse du bureunu"
+      },
+      "contactMethods": {
+        "title": "Méthodes de Cunctivétunct",
+        "email": "Emunil",
+        "phone": "Téléphun",
+        "workingHours": "ilures de trunvunil"
+      },
+      "quickConnect": {
+        "title": "Cunctivénexiunctivé runpide",
+        "telegram": "Telegrunm",
+        "whatsapp": "quoestunpp",
+        "liveChat": "Chunt en direct",
+        "toggle": "Cunctivétunctez-nonous"
+      }
+    },
+    "map": {
+      "title": "Empluncemoint du bureunu sur lun Puneiere"
+    }
+  }
+}

@@ -22,6 +22,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>The system name the stub plugin links its accounts under.</summary>
     private const string Provider = "crm";
 
@@ -63,7 +66,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var client = Client.Create($"user-{Guid.NewGuid():N}", "Plug", "In", $"plug-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"user-{Guid.NewGuid():N}", "Plug", "In", $"plug-{Guid.NewGuid():N}@example.test", SeededAt);
         client.SetExternalAccount(Provider, accountId);
         db.Clients.Add(client);
         await db.SaveChangesAsync(CancellationToken.None);

@@ -14,6 +14,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ClientQueryExtensionsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>Seeds a client with one contact and returns its identity subject and id.</summary>
     /// <returns>The subject the client is linked to, and the client id.</returns>
     private async Task<SeededClient> SeedClientWithContactAsync()
@@ -21,7 +24,7 @@ public sealed class ClientQueryExtensionsTests(IntegrationTestFactory factory) :
         var userId = $"user-{Guid.NewGuid():N}";
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var client = Client.Create(userId, "Ada", "Lovelace", $"{userId}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create(userId, "Ada", "Lovelace", $"{userId}@example.test", SeededAt);
         client.AddContact(new ContactDetails(
             "Grace", "Hopper", null, $"contact-{userId}@example.test", null, ContactType.Billing,
             new PostalAddress(null, null, null, null, null, null),

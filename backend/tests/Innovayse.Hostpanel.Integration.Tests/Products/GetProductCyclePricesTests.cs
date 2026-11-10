@@ -17,6 +17,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetProductCyclePricesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>Each lookup answers exactly what the entity resolves, priced, unpriced and any case alike; an unknown product is left out.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -29,7 +32,7 @@ public sealed class GetProductCyclePricesTests(IntegrationTestFactory factory) :
             var group = ProductGroup.Create($"cycle-prices-{Guid.NewGuid():N}", null);
             context.ProductGroups.Add(group);
             await context.SaveChangesAsync(CancellationToken.None);
-            var product = Product.Create(group.Id, "Priced", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            var product = Product.Create(group.Id, "Priced", null, null, null, null, ProductType.SharedHosting, 0m, 0m, SeededAt);
             product.SetPrice("USD", BillingCycle.Monthly, 3.5m);
             product.SetPrice("USD", BillingCycle.Annual, 35m);
             context.Products.Add(product);

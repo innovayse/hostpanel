@@ -12,6 +12,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class IsServerGroupInUseTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>A group a product provisions into is reported in use.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -27,7 +30,7 @@ public sealed class IsServerGroupInUseTests(IntegrationTestFactory factory) : IC
             await context.SaveChangesAsync(CancellationToken.None);
             context.Products.Add(Product.Create(
                 productGroup.Id, $"Plan {Guid.NewGuid():N}", null, null, null, "plan", ProductType.SharedHosting, 0m, 0m,
-                DateTimeOffset.UtcNow, serverGroupId: groupId));
+                SeededAt, serverGroupId: groupId));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

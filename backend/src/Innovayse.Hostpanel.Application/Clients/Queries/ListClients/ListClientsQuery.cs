@@ -14,10 +14,12 @@ namespace Innovayse.Hostpanel.Application.Clients.Queries.ListClients;
 /// <param name="Email">Optional sign-in email filter (partial match).</param>
 /// <param name="Phone">Optional phone filter (partial match).</param>
 /// <param name="Status">Optional status filter.</param>
+/// <param name="ClientGroupId">Optional client group filter: only the clients that belong to this group.</param>
 public sealed record ListClientsQuery(
     int Page,
     int PageSize,
     string? Search = null,
     string? Email = null,
     string? Phone = null,
-    ClientStatus? Status = null);
+    ClientStatus? Status = null,
+    int? ClientGroupId = null);

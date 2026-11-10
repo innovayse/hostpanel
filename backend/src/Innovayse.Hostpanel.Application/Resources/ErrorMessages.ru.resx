@@ -1342,4 +1342,16 @@
   <data name="STATUS_INCIDENT_ALREADY_RESOLVED" xml:space="preserve">
     <value>Инцидент закрыт и больше не принимает обновлений.</value>
   </data>
+  <data name="CLIENT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Такой группы клиентов нет.</value>
+  </data>
+  <data name="CLIENT_GROUP_IN_USE" xml:space="preserve">
+    <value>В этой группе ещё есть клиенты. Сначала переведите их в другую группу.</value>
+  </data>
+  <data name="CLIENT_GROUP_DISCOUNT_INVALID" xml:space="preserve">
+    <value>Скидка должна быть от 0 до 100 процентов.</value>
+  </data>
+  <data name="CLIENT_GROUP_COLOR_INVALID" xml:space="preserve">
+    <value>Цвет нужно записать в виде #RRGGBB.</value>
+  </data>
 </root>

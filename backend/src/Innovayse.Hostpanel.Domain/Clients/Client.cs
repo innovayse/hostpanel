@@ -93,6 +93,9 @@ public sealed class Client : BaseEntity, IAggregateRoot
     /// </summary>
     public string? ExternalAccountId { get; private set; }
 
+    /// <summary>Gets the id of the <see cref="ClientGroup"/> the client belongs to, or <see langword="null"/> when it has none.</summary>
+    public int? ClientGroupId { get; private set; }
+
     /// <summary>Gets the billing contact reference.</summary>
     public string? BillingContact { get; private set; }
 
@@ -352,6 +355,19 @@ public sealed class Client : BaseEntity, IAggregateRoot
     {
         ExternalAccountProvider = null;
         ExternalAccountId = null;
+    }
+
+    /// <summary>Puts the client in a group, replacing the one it was in.</summary>
+    /// <param name="clientGroupId">The id of the <see cref="ClientGroup"/>; the caller has checked it exists.</param>
+    public void AssignToGroup(int clientGroupId)
+    {
+        ClientGroupId = clientGroupId;
+    }
+
+    /// <summary>Takes the client out of its group. Does nothing when it has none.</summary>
+    public void ClearGroup()
+    {
+        ClientGroupId = null;
     }
 
     /// <summary>

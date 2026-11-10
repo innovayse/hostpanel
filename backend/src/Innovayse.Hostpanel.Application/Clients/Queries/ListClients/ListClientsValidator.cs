@@ -26,6 +26,8 @@ public sealed class ListClientsValidator : LocalizedValidator<ListClientsQuery>
         // IsInEnum: the model binder also accepts a numeric segment and yields a value that is not a status.
         RuleFor(x => x.Status).IsInEnum().WithMessage(L["ClientListStatusInvalid"]);
 
+        RuleFor(x => x.ClientGroupId).MustBePositiveId(L["ContentIdInvalid"]);
+
         RuleFor(x => x.Search).MaximumLength(MaxFilterLength).WithMessage(L["ClientListSearchTooLong", MaxFilterLength]);
         RuleFor(x => x.Email).MaximumLength(MaxFilterLength).WithMessage(L["ClientListEmailTooLong", MaxFilterLength]);
         RuleFor(x => x.Phone).MaximumLength(MaxFilterLength).WithMessage(L["ClientListPhoneTooLong", MaxFilterLength]);

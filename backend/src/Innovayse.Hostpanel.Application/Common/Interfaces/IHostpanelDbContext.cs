@@ -58,6 +58,9 @@ public interface IHostpanelDbContext
     /// <summary>Gets the clients table.</summary>
     public DbSet<Client> Clients { get; }
 
+    /// <summary>Gets the client groups table.</summary>
+    public DbSet<ClientGroup> ClientGroups { get; }
+
     /// <summary>Gets the contacts table.</summary>
     public DbSet<Contact> Contacts { get; }
 

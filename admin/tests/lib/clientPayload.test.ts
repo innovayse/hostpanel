@@ -70,7 +70,7 @@ describe('toUpdateClientPayload', () => {
       settings: { taxExempt: true, allowSso: false, statusUpdate: false, overdueNotices: false },
     })
     // Every key of the payload is present, so none is stored as false or cleared by omission.
-    expect(Object.keys(payload)).toHaveLength(10)
+    expect(Object.keys(payload)).toHaveLength(11)
     expect(Object.keys(payload.notifications)).toHaveLength(6)
     expect(Object.keys(payload.settings)).toHaveLength(7)
   })
@@ -82,6 +82,18 @@ describe('toUpdateClientPayload', () => {
     expect(payload.preferences.language).toBeNull()
     expect(payload.preferences.currency).toBeNull()
     expect(payload.status).toBeNull()
+  })
+
+  it('sends the loaded client group back so an unchanged edit does not drop it', () => {
+    const grouped: ClientDetail = { ...CLIENT, clientGroupId: 3 }
+
+    expect(toUpdateClientPayload(grouped, {}).clientGroupId).toBe(3)
+    expect(toUpdateClientPayload(grouped, { firstName: 'Grace' }).clientGroupId).toBe(3)
+  })
+
+  it('sends null for a client without a group', () => {
+    expect(toUpdateClientPayload(CLIENT, {}).clientGroupId).toBeNull()
+    expect(toUpdateClientPayload({ ...CLIENT, clientGroupId: null }, {}).clientGroupId).toBeNull()
   })
 
   it('sends a chosen status as the enum member the API binds', () => {

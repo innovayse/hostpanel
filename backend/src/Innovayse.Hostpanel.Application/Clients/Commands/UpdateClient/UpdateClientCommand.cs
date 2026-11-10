@@ -32,6 +32,7 @@ namespace Innovayse.Hostpanel.Application.Clients.Commands.UpdateClient;
 /// <param name="Notifications">Updated email notification flags.</param>
 /// <param name="Settings">Updated billing and account switches.</param>
 /// <param name="Status">The status to move the client to; null keeps the current one. The move follows the client's own transitions.</param>
+/// <param name="ClientGroupId">The client group to put the client in; null takes the client out of its group, like every other optional field of this full replacement.</param>
 public sealed record UpdateClientCommand(
     int ClientId,
     string? Email,
@@ -43,4 +44,5 @@ public sealed record UpdateClientCommand(
     ClientPreferencesDto Preferences,
     ContactNotifications Notifications,
     ClientSettingsDto Settings,
-    ClientStatus? Status);
+    ClientStatus? Status,
+    int? ClientGroupId = null);

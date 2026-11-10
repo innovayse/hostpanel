@@ -150,6 +150,15 @@ describe('ClientProfileView', () => {
     })
   })
 
+  it('sends the loaded client group back on save so the edit cannot clear it', async () => {
+    const { wrapper, fetchMock } = await mountProfile({ ...detail, clientGroupId: 4 })
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    const put = fetchMock.mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === 'PUT')
+    expect(JSON.parse(String((put?.[1] as RequestInit | undefined)?.body))).toMatchObject({ clientGroupId: 4 })
+  })
+
   it('does not save when the operator backs out of the prompt', async () => {
     const { wrapper, fetchMock } = await mountProfile()
     await chooseStatus(wrapper, ClientStatus.Suspended)

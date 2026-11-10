@@ -1486,4 +1486,31 @@
   <data name="CreditNoteItemQuantityInvalid" xml:space="preserve">
     <value>Յուրաքանչյուր տողի քանակը պետք է լինի 1-ից մինչև 100000։</value>
   </data>
+  <data name="StatusNameRequired" xml:space="preserve">
+    <value>Մուտքագրեք անունը։</value>
+  </data>
+  <data name="StatusNameTooLong" xml:space="preserve">
+    <value>Անունը չի կարող {0} նիշից երկար լինել։</value>
+  </data>
+  <data name="StatusDescriptionTooLong" xml:space="preserve">
+    <value>Նկարագրությունը չի կարող {0} նիշից երկար լինել։</value>
+  </data>
+  <data name="StatusTitleRequired" xml:space="preserve">
+    <value>Մուտքագրեք միջադեպի վերնագիրը։</value>
+  </data>
+  <data name="StatusTitleTooLong" xml:space="preserve">
+    <value>Վերնագիրը չի կարող {0} նիշից երկար լինել։</value>
+  </data>
+  <data name="StatusMessageRequired" xml:space="preserve">
+    <value>Մուտքագրեք հաղորդագրությունը։</value>
+  </data>
+  <data name="StatusMessageTooLong" xml:space="preserve">
+    <value>Հաղորդագրությունը չի կարող {0} նիշից երկար լինել։</value>
+  </data>
+  <data name="StatusStateInvalid" xml:space="preserve">
+    <value>Ընտրեք թույլատրելի վիճակ։</value>
+  </data>
+  <data name="StatusDaysInvalid" xml:space="preserve">
+    <value>Ընտրեք օրերի քանակ 1-ից մինչև {0}։</value>
+  </data>
 </root>

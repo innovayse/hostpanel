@@ -1453,7 +1453,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasIndex("DomainId");
 
                     b.HasIndex("OrderItemId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("IX_DomainLineRenewals_OrderItemId");
 
                     b.ToTable("DomainLineRenewals");
                 });
@@ -3859,6 +3860,146 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("SslChecks");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusComponent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CurrentState")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId", "DisplayOrder");
+
+                    b.ToTable("StatusComponents");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusComponentGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DisplayOrder");
+
+                    b.ToTable("StatusComponentGroups");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusIncident", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StartedAt");
+
+                    b.HasIndex("State");
+
+                    b.ToTable("StatusIncidents");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusIncidentUpdate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("IncidentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IncidentId", "CreatedAt");
+
+                    b.ToTable("StatusIncidentUpdates");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.Announcement", b =>
                 {
                     b.Property<int>("Id")
@@ -5074,6 +5215,24 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusComponent", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.StatusPage.StatusComponentGroup", null)
+                        .WithMany("Components")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusIncidentUpdate", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.StatusPage.StatusIncident", null)
+                        .WithMany("Updates")
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.Download", b =>
                 {
                     b.HasOne("Innovayse.Hostpanel.Domain.Support.DownloadCategory", null)
@@ -5289,6 +5448,16 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Slides.Slide", b =>
                 {
                     b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusComponentGroup", b =>
+                {
+                    b.Navigation("Components");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusIncident", b =>
+                {
+                    b.Navigation("Updates");
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.Ticket", b =>

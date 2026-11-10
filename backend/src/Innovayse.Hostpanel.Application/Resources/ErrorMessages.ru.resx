@@ -1318,4 +1318,28 @@
   <data name="CREDIT_NOTE_REFUND_NOT_VOIDABLE" xml:space="preserve">
     <value>Эта кредит-нота выплачена возвратом через платёжный шлюз. Возврат нельзя отменить, поэтому кредит-ноту нельзя аннулировать.</value>
   </data>
+  <data name="STATUS_COMPONENT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Такой группы страницы статуса нет.</value>
+  </data>
+  <data name="STATUS_COMPONENT_NOT_FOUND" xml:space="preserve">
+    <value>Такого компонента страницы статуса нет.</value>
+  </data>
+  <data name="STATUS_INCIDENT_NOT_FOUND" xml:space="preserve">
+    <value>Такого инцидента страницы статуса нет.</value>
+  </data>
+  <data name="STATUS_NAME_REQUIRED" xml:space="preserve">
+    <value>Нужно указать название.</value>
+  </data>
+  <data name="STATUS_DISPLAY_ORDER_NEGATIVE" xml:space="preserve">
+    <value>Порядок отображения не может быть отрицательным.</value>
+  </data>
+  <data name="STATUS_INCIDENT_TITLE_REQUIRED" xml:space="preserve">
+    <value>Инциденту нужен заголовок.</value>
+  </data>
+  <data name="STATUS_INCIDENT_MESSAGE_REQUIRED" xml:space="preserve">
+    <value>Обновлению нужно сообщение.</value>
+  </data>
+  <data name="STATUS_INCIDENT_ALREADY_RESOLVED" xml:space="preserve">
+    <value>Инцидент закрыт и больше не принимает обновлений.</value>
+  </data>
 </root>

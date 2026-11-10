@@ -70,6 +70,7 @@ public sealed class CloseOrderLineRefundTests(IntegrationTestFactory factory) : 
             using var claimScope = factory.Services.CreateScope();
             var bus = claimScope.ServiceProvider.GetRequiredService<IMessageBus>();
             (await bus.InvokeAsync<Result>(new BeginOrderLineRefundCommand(seeded.OrderId, failed.Id))).IsSuccess.Should().BeTrue();
+            await BackdateRefundStartAsync(failed.Id, TimeSpan.FromDays(1));
         }
 
         var response = await admin.PostAsync($"/api/orders/{seeded.OrderId}/items/{failed.Id}/close-refund", content: null);
@@ -87,6 +88,44 @@ public sealed class CloseOrderLineRefundTests(IntegrationTestFactory factory) : 
             .Should().Be(1);
         var retry = await admin.PostAsync($"/api/orders/{seeded.OrderId}/items/{failed.Id}/retry", content: null);
         retry.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    /// <summary>
+    /// A refund that began moments ago may still be giving the money back: closing it by hand is refused with 409 and
+    /// <c>ORDER_LINE_REFUND_IN_PROGRESS</c>, the line stays Refunding, nothing is audited, and the order detail does not offer
+    /// the close button for it.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task RefusesARefundThatMayStillBeRunning()
+    {
+        var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        var admin = await OrdersTestSeeds.AdminClientAsync(factory);
+        (await admin.PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null)).EnsureSuccessStatusCode();
+        var failed = (await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId)).Single(i => i.Domain == seeded.Domain);
+        using (var claimScope = factory.Services.CreateScope())
+        {
+            var bus = claimScope.ServiceProvider.GetRequiredService<IMessageBus>();
+            (await bus.InvokeAsync<Result>(new BeginOrderLineRefundCommand(seeded.OrderId, failed.Id))).IsSuccess.Should().BeTrue();
+        }
+
+        var response = await admin.PostAsync($"/api/orders/{seeded.OrderId}/items/{failed.Id}/close-refund", content: null);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await OrdersTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.ORDER_LINE_REFUND_IN_PROGRESS);
+        var after = await OrdersTestReads.ReadOrderWithItemsAsync(factory.Services, seeded.OrderId);
+        after.Items.Single(i => i.Id == failed.Id).FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunding);
+        after.Status.Should().Be(OrderStatus.Incomplete);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        (await db.ActivityLogs.AsNoTracking().CountAsync(
+            a => a.ClientId == seeded.ClientId
+                && a.Description.Contains($"Closed Order Line Refund - Order ID: {seeded.OrderId} - Line ID: {failed.Id}")))
+            .Should().Be(0);
+        using var detail = System.Text.Json.JsonDocument.Parse(await admin.GetStringAsync($"/api/orders/{seeded.OrderId}"));
+        detail.RootElement.GetProperty("items").EnumerateArray()
+            .Single(i => i.GetProperty("id").GetInt32() == failed.Id)
+            .GetProperty("canClose").GetBoolean().Should().BeFalse();
     }
 
     /// <summary>A fulfilled line has nothing to give back: 409 with <c>ORDER_LINE_NOT_REFUNDABLE</c>, and it stays fulfilled.</summary>
@@ -167,6 +206,22 @@ public sealed class CloseOrderLineRefundTests(IntegrationTestFactory factory) : 
         var response = await client.PostAsync("/api/orders/1/items/1/close-refund", content: null);
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    /// <summary>
+    /// Moves a refunding line's refund start into the past, the way a refund that died long ago looks, so it is stuck past
+    /// the retry lease.
+    /// </summary>
+    /// <param name="lineId">The refunding line.</param>
+    /// <param name="age">How long ago the refund is to have begun.</param>
+    /// <returns>A task that completes when the line is updated.</returns>
+    private async Task BackdateRefundStartAsync(int lineId, TimeSpan age)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var startedAt = DateTimeOffset.UtcNow - age;
+        await db.OrderItems.Where(i => i.Id == lineId).ExecuteUpdateAsync(s => s
+            .SetProperty(i => i.LastFulfilmentAttemptAt, startedAt));
     }
 
     /// <summary>

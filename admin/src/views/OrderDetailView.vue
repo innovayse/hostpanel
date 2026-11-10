@@ -3,7 +3,7 @@
  * Order detail view: one order with its items, linked invoice and the admin actions
  * (accept, cancel, delete), a retry on each line the API says may be retried (`canRetry`, decided
  * with its configured lease), and a button that closes a line as refunded by hand on each line the
- * API says may be closed (`canClose`: failed, stuck in refunding, or partly refunded).
+ * API says may be closed (`canClose`: failed, stuck in refunding past the retry lease, or partly refunded).
  *
  * Reads `stores/orders`; a refused load shows `store.error` with a retry. The outcome of an accept
  * or cancel (success, or the API's sentence) shows above the order; a delete returns to the list.

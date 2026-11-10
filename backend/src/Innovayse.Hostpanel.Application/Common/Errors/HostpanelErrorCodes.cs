@@ -1507,6 +1507,12 @@ public static class HostpanelErrorCodes
     public const string ORDER_LINE_NOT_REFUNDABLE = Domain.Orders.OrdersErrors.OrderLineNotRefundable;
 
     /// <summary>
+    /// The order line's refund may still be running (409): it began less than the retry lease ago, so staff cannot close it
+    /// by hand yet without risking a second refund. <see cref="Domain.Orders.Order.CloseLineRefund"/>.
+    /// </summary>
+    public const string ORDER_LINE_REFUND_IN_PROGRESS = Domain.Orders.OrdersErrors.OrderLineRefundInProgress;
+
+    /// <summary>
     /// The code a line is recorded with when its attempt was cut short before it ended (the request was cancelled
     /// or the host stopped), so the line can be retried at once instead of waiting for the retry claim to run out.
     /// </summary>

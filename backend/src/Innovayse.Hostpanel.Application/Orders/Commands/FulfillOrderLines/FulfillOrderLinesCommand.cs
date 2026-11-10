@@ -1,3 +1,5 @@
+using Innovayse.Hostpanel.Application.Orders.Common;
+
 namespace Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
 
 /// <summary>
@@ -11,4 +13,8 @@ namespace Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
 /// The one line to fulfil, as a retry of it; <see langword="null"/> fulfils every line that is not fulfilled yet.
 /// A retry has already claimed the line, so its attempt is not counted a second time.
 /// </param>
-public sealed record FulfillOrderLinesCommand(int OrderId, int? ItemId = null);
+/// <param name="Claimed">
+/// The lines the sender already claimed, with the attempt each was given (acceptance claims in the save that accepts the
+/// order, a retry claims its one line); exactly these run. <see langword="null"/> has the run claim the lines itself.
+/// </param>
+public sealed record FulfillOrderLinesCommand(int OrderId, int? ItemId = null, IReadOnlyList<ClaimedOrderLineDto>? Claimed = null);

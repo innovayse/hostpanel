@@ -224,14 +224,20 @@ public sealed class OrderTests
         order.Status.Should().Be(OrderStatus.Incomplete);
     }
 
-    /// <summary>A claim for one line leaves the other lines alone, and a line a claim already holds is not claimed twice.</summary>
+    /// <summary>
+    /// A claim for one line leaves the other lines alone, a line a claim already holds is not claimed twice, and each claim
+    /// returns exactly the lines it took.
+    /// </summary>
     [Fact]
     public void BeginFulfilment_ForOneLine_ClaimsOnlyThatLineAndNeverTwice()
     {
         var order = NewAcceptedOrder();
 
-        order.BeginFulfilment(Now, onlyItemId: 2);
-        order.BeginFulfilment(Now.AddMinutes(1), onlyItemId: 2);
+        var first = order.BeginFulfilment(Now, onlyItemId: 2);
+        var second = order.BeginFulfilment(Now.AddMinutes(1), onlyItemId: 2);
+
+        first.Select(i => i.Id).Should().Equal(2);
+        second.Should().BeEmpty();
 
         order.Items.Single(i => i.Id == 1).FulfilmentState.Should().Be(OrderItemFulfilmentState.Pending);
         var claimed = order.Items.Single(i => i.Id == 2);
@@ -566,7 +572,7 @@ public sealed class OrderTests
     {
         var order = NewIncompleteOrder();
 
-        order.BeginLineRefund(2);
+        order.BeginLineRefund(2, Now);
 
         order.Items.Single(i => i.Id == 2).FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunding);
         order.CanRetryLine(2, Now.AddHours(1), Lease).Should().BeFalse();
@@ -582,8 +588,8 @@ public sealed class OrderTests
 
         order.CanRefundLine(1).Should().BeFalse();
         order.CanRefundLine(2).Should().BeFalse();
-        var fulfilled = () => order.BeginLineRefund(1);
-        var claimed = () => order.BeginLineRefund(2);
+        var fulfilled = () => order.BeginLineRefund(1, Now);
+        var claimed = () => order.BeginLineRefund(2, Now);
 
         fulfilled.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRefundable);
         claimed.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRefundable);
@@ -602,7 +608,7 @@ public sealed class OrderTests
         order.CanRefundLine(2, heldAttempt: 2).Should().BeFalse();
         order.CanRefundLine(2, heldAttempt: 1).Should().BeTrue();
 
-        order.BeginLineRefund(2, heldAttempt: 1, errorCode: "DOMAIN_ALREADY_REGISTERED");
+        order.BeginLineRefund(2, Now, heldAttempt: 1, errorCode: "DOMAIN_ALREADY_REGISTERED");
 
         var line = order.Items.Single(i => i.Id == 2);
         line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunding);
@@ -615,7 +621,7 @@ public sealed class OrderTests
     public void RecordLineRefunded_ClosesTheLineAndLetsTheOrderReturnToActive()
     {
         var order = NewIncompleteOrder();
-        order.BeginLineRefund(2);
+        order.BeginLineRefund(2, Now);
 
         order.RecordLineRefunded(2);
 
@@ -640,7 +646,7 @@ public sealed class OrderTests
     public void RecordLineRefundReleased_WithNothingRefunded_ReturnsTheLineToFailed()
     {
         var order = NewIncompleteOrder();
-        order.BeginLineRefund(2);
+        order.BeginLineRefund(2, Now);
 
         order.RecordLineRefundReleased(2, partlyRefunded: false);
 
@@ -659,7 +665,7 @@ public sealed class OrderTests
     public void RecordLineRefundReleased_WithPartRefunded_KeepsTheLineForManualAction()
     {
         var order = NewIncompleteOrder();
-        order.BeginLineRefund(2);
+        order.BeginLineRefund(2, Now);
 
         order.RecordLineRefundReleased(2, partlyRefunded: true);
 
@@ -688,7 +694,7 @@ public sealed class OrderTests
     public void RecordLineFulfilled_OnALineBeingRefunded_Throws()
     {
         var order = NewIncompleteOrder();
-        order.BeginLineRefund(2);
+        order.BeginLineRefund(2, Now);
 
         var fulfilled = () => order.RecordLineFulfilled(2, 1, Now);
         var failed = () => order.RecordLineFailed(2, 1, null, Now);
@@ -707,14 +713,14 @@ public sealed class OrderTests
     public void CloseLineRefund_OnAPartlyRefundedLine_RefundsItAndLetsTheOrderReturnToActive()
     {
         var order = NewIncompleteOrder();
-        order.BeginLineRefund(2);
+        order.BeginLineRefund(2, Now);
         order.RecordLineRefundReleased(2, partlyRefunded: true);
-        order.CanCloseLineRefund(2).Should().BeTrue();
+        order.CanCloseLineRefund(2, Now.AddHours(1), Lease).Should().BeTrue();
 
-        order.CloseLineRefund(2);
+        order.CloseLineRefund(2, Now.AddHours(1), Lease);
 
         order.Items.Single(i => i.Id == 2).FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunded);
-        order.CanCloseLineRefund(2).Should().BeFalse();
+        order.CanCloseLineRefund(2, Now.AddHours(1), Lease).Should().BeFalse();
         order.CanRetryLine(2, Now.AddHours(1), Lease).Should().BeFalse();
         order.Status.Should().Be(OrderStatus.Active);
     }
@@ -726,10 +732,10 @@ public sealed class OrderTests
         var order = NewClaimedOrder();
         order.RecordLineFailed(1, 1, "A", Now);
         order.RecordLineFailed(2, 1, "B", Now);
-        order.BeginLineRefund(2);
+        order.BeginLineRefund(2, Now);
         order.RecordLineRefundReleased(2, partlyRefunded: true);
 
-        order.CloseLineRefund(2);
+        order.CloseLineRefund(2, Now.AddHours(1), Lease);
 
         order.Status.Should().Be(OrderStatus.Incomplete);
     }
@@ -747,15 +753,36 @@ public sealed class OrderTests
         var order = NewIncompleteOrder();
         if (stuckInRefunding)
         {
-            order.BeginLineRefund(2);
+            order.BeginLineRefund(2, Now);
         }
 
-        order.CanCloseLineRefund(2).Should().BeTrue();
-        order.CloseLineRefund(2);
+        order.CanCloseLineRefund(2, Now.AddHours(1), Lease).Should().BeTrue();
+        order.CloseLineRefund(2, Now.AddHours(1), Lease);
 
         order.Items.Single(i => i.Id == 2).FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunded);
-        order.CanCloseLineRefund(2).Should().BeFalse();
+        order.CanCloseLineRefund(2, Now.AddHours(1), Lease).Should().BeFalse();
         order.Status.Should().Be(OrderStatus.Active);
+    }
+
+    /// <summary>
+    /// A refund that began less than the lease ago may still be giving the money back, so staff cannot close it by hand: it
+    /// is refused as <see cref="OrdersErrors.OrderLineRefundInProgress"/> and stays Refunding until the lease runs out.
+    /// </summary>
+    [Fact]
+    public void CloseLineRefund_OnARefundInsideItsLease_ThrowsRefundInProgress()
+    {
+        var order = NewIncompleteOrder();
+        order.BeginLineRefund(2, Now);
+        var fresh = Now.Add(Lease).AddSeconds(-1);
+
+        var act = () => order.CloseLineRefund(2, fresh, Lease);
+
+        order.HasRunningLineRefund(2, fresh, Lease).Should().BeTrue();
+        order.CanCloseLineRefund(2, fresh, Lease).Should().BeFalse();
+        act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineRefundInProgress);
+        order.Items.Single(i => i.Id == 2).FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunding);
+        order.HasRunningLineRefund(2, Now.Add(Lease), Lease).Should().BeFalse();
+        order.CanCloseLineRefund(2, Now.Add(Lease), Lease).Should().BeTrue();
     }
 
     /// <summary>A fulfilled, claimed or unknown line cannot be closed as refunded.</summary>
@@ -765,13 +792,13 @@ public sealed class OrderTests
         var order = NewIncompleteOrder();
         order.StartLineRetry(2, Now, Lease);
 
-        var claimed = () => order.CloseLineRefund(2);
-        var fulfilled = () => order.CloseLineRefund(1);
-        var unknown = () => order.CloseLineRefund(99);
+        var claimed = () => order.CloseLineRefund(2, Now.AddHours(1), Lease);
+        var fulfilled = () => order.CloseLineRefund(1, Now.AddHours(1), Lease);
+        var unknown = () => order.CloseLineRefund(99, Now.AddHours(1), Lease);
 
-        order.CanCloseLineRefund(2).Should().BeFalse();
-        order.CanCloseLineRefund(1).Should().BeFalse();
-        order.CanCloseLineRefund(99).Should().BeFalse();
+        order.CanCloseLineRefund(2, Now.AddHours(1), Lease).Should().BeFalse();
+        order.CanCloseLineRefund(1, Now.AddHours(1), Lease).Should().BeFalse();
+        order.CanCloseLineRefund(99, Now.AddHours(1), Lease).Should().BeFalse();
         claimed.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRefundable);
         fulfilled.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderLineNotRefundable);
         unknown.Should().Throw<DomainRuleException>().Which.Code.Should().Be(OrdersErrors.OrderItemNotFound);

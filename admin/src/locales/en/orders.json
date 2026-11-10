@@ -28,7 +28,7 @@
     "finishRefund": "Part of the cost was given back. Finish the refund by hand.",
     "closeRefund": "Refund finished",
     "confirmCloseRefundTitle": "Close this refund?",
-    "confirmCloseRefundMessage": "Confirm that the cost of this line was given back to the client, by you or by the stopped refund. The line will be closed as refunded and can no longer be retried. The action is recorded in the client log.",
+    "confirmCloseRefundMessage": "Confirm that the cost of this line was given back to the client, by you or by a refund that stopped. A refund that started recently may still be running and cannot be closed yet; only one stuck for longer than the retry lease can. The line will be closed as refunded and can no longer be retried. The action is recorded in the client log.",
     "refundClosed": "Line closed as refunded."
   },
   "ordersList": {

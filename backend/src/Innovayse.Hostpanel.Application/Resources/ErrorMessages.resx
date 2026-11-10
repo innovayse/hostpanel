@@ -874,6 +874,9 @@
   <data name="ORDER_LINE_NOT_REFUNDABLE" xml:space="preserve">
     <value>This order line cannot be refunded now. Only a failed line can start being refunded, only a line being refunded can be settled, and only a failed, refunding or partly refunded line can be closed as refunded.</value>
   </data>
+  <data name="ORDER_LINE_REFUND_IN_PROGRESS" xml:space="preserve">
+    <value>The refund of this order line started less than the retry lease ago and may still be giving the money back. Wait until it settles; only a refund stuck for longer than that can be closed by hand.</value>
+  </data>
   <data name="ORDER_LINE_INTERRUPTED" xml:space="preserve">
     <value>The attempt to fulfil this line was interrupted before it finished. Retry the line.</value>
   </data>

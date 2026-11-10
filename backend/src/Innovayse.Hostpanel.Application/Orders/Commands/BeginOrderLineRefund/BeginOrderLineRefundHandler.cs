@@ -17,11 +17,16 @@ public sealed class BeginOrderLineRefundHandler
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
+    /// <summary>The clock the refund's start is stamped with.</summary>
+    private readonly IClock _clock;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
-    public BeginOrderLineRefundHandler(IHostpanelDbContext context)
+    /// <param name="clock">The clock the refund's start is stamped with.</param>
+    public BeginOrderLineRefundHandler(IHostpanelDbContext context, IClock clock)
     {
         _context = context;
+        _clock = clock;
     }
 
     /// <summary>Handles the command.</summary>
@@ -55,7 +60,7 @@ public sealed class BeginOrderLineRefundHandler
             return Result.FailureCode(HostpanelErrorCodes.ORDER_LINE_NOT_REFUNDABLE);
         }
 
-        order.BeginLineRefund(cmd.ItemId, cmd.HeldAttempt, cmd.ErrorCode);
+        order.BeginLineRefund(cmd.ItemId, _clock.UtcNow, cmd.HeldAttempt, cmd.ErrorCode);
         try
         {
             await _context.SaveChangesAsync(ct);

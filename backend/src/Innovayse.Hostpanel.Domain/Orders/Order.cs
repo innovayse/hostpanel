@@ -254,8 +254,12 @@ public sealed class Order : BaseEntity, IAggregateRoot
     /// </summary>
     /// <param name="now">The current moment (UTC).</param>
     /// <param name="onlyItemId">The one line to claim, or <see langword="null"/> for every line that is pending or failed.</param>
+    /// <returns>
+    /// The lines this call claimed, each holding the attempt number it was given; the run that claimed them runs exactly
+    /// these, never a line another run's claim holds.
+    /// </returns>
     /// <exception cref="DomainRuleException">Thrown when the order was not accepted (it is pending, cancelled or fraud).</exception>
-    public void BeginFulfilment(DateTimeOffset now, int? onlyItemId = null)
+    public IReadOnlyList<OrderItem> BeginFulfilment(DateTimeOffset now, int? onlyItemId = null)
     {
         if (!IsAccepted)
         {
@@ -264,12 +268,14 @@ public sealed class Order : BaseEntity, IAggregateRoot
                 $"Cannot fulfil the lines of an order with status {Status}. Only an accepted order can.");
         }
 
-        foreach (var item in _items.Where(i => (onlyItemId is null || i.Id == onlyItemId) && i.IsUnclaimed()))
+        var claimed = _items.Where(i => (onlyItemId is null || i.Id == onlyItemId) && i.IsUnclaimed()).ToList();
+        foreach (var item in claimed)
         {
             item.BeginAttempt(now);
         }
 
         RefreshStatusFromLines();
+        return claimed.AsReadOnly();
     }
 
     /// <summary>
@@ -351,6 +357,7 @@ public sealed class Order : BaseEntity, IAggregateRoot
     /// refunded, so the line is never both delivered and refunded; the order stays incomplete.
     /// </summary>
     /// <param name="itemId">The failed order line whose cost is about to be given back.</param>
+    /// <param name="now">The moment the refund begins (UTC); the lease that keeps staff from closing it by hand counts from it.</param>
     /// <param name="heldAttempt">
     /// The attempt of the run that still holds the line (in progress) because it could not record the failure, or
     /// <see langword="null"/> for a line whose failure is on record. With it the refund runs anyway, since the run that
@@ -358,9 +365,9 @@ public sealed class Order : BaseEntity, IAggregateRoot
     /// </param>
     /// <param name="errorCode">The code the unrecorded failure ended with; kept on the line when <paramref name="heldAttempt"/> is given.</param>
     /// <exception cref="DomainRuleException">Thrown when the order holds no such line or the line may not start being refunded.</exception>
-    public void BeginLineRefund(int itemId, int? heldAttempt = null, string? errorCode = null)
+    public void BeginLineRefund(int itemId, DateTimeOffset now, int? heldAttempt = null, string? errorCode = null)
     {
-        FindItem(itemId).BeginRefund(heldAttempt, errorCode);
+        FindItem(itemId).BeginRefund(now, heldAttempt, errorCode);
         RefreshStatusFromLines();
     }
 
@@ -392,13 +399,28 @@ public sealed class Order : BaseEntity, IAggregateRoot
 
     /// <summary>
     /// Tells whether staff can close the line as refunded by hand: it failed and they gave its cost back themselves, its
-    /// refund is stuck under way, or its refund stopped part way and they finished it.
+    /// refund has been stuck for longer than the lease, or its refund stopped part way and they finished it.
     /// </summary>
     /// <param name="itemId">The order line.</param>
-    /// <returns><see langword="false"/> for a line this order does not hold, or one in another state.</returns>
-    public bool CanCloseLineRefund(int itemId)
+    /// <param name="now">The current moment (UTC).</param>
+    /// <param name="lease">How long a running refund is respected; the retry lease.</param>
+    /// <returns><see langword="false"/> for a line this order does not hold, one in another state, or one whose refund may still run.</returns>
+    public bool CanCloseLineRefund(int itemId, DateTimeOffset now, TimeSpan lease)
     {
-        return _items.FirstOrDefault(i => i.Id == itemId)?.CanCloseRefund == true;
+        return _items.FirstOrDefault(i => i.Id == itemId)?.CanCloseRefund(now, lease) == true;
+    }
+
+    /// <summary>
+    /// Tells whether a line's refund may still be running: it began less than the lease ago, so the automatic refund could
+    /// be giving the money back right now.
+    /// </summary>
+    /// <param name="itemId">The order line.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <param name="lease">How long a running refund is respected; the retry lease.</param>
+    /// <returns><see langword="false"/> for a line this order does not hold, or one with no running refund.</returns>
+    public bool HasRunningLineRefund(int itemId, DateTimeOffset now, TimeSpan lease)
+    {
+        return _items.FirstOrDefault(i => i.Id == itemId)?.HasRunningRefund(now, lease) == true;
     }
 
     /// <summary>
@@ -406,10 +428,14 @@ public sealed class Order : BaseEntity, IAggregateRoot
     /// refunded for good, and the order is complete again unless another line is still open.
     /// </summary>
     /// <param name="itemId">The failed, refunding or partly refunded order line.</param>
-    /// <exception cref="DomainRuleException">Thrown when the order holds no such line or the line is in another state.</exception>
-    public void CloseLineRefund(int itemId)
+    /// <param name="now">The current moment (UTC).</param>
+    /// <param name="lease">How long a running refund is respected; the retry lease.</param>
+    /// <exception cref="DomainRuleException">
+    /// Thrown when the order holds no such line, the line's refund may still be running, or the line is in another state.
+    /// </exception>
+    public void CloseLineRefund(int itemId, DateTimeOffset now, TimeSpan lease)
     {
-        FindItem(itemId).CloseRefund();
+        FindItem(itemId).CloseRefund(now, lease);
         RefreshStatusFromLines();
     }
 

@@ -1,5 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Orders.Common;
+using Innovayse.Hostpanel.Application.Orders.Extensions;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +10,8 @@ namespace Innovayse.Hostpanel.Application.Orders.Commands.ClaimOrderLines;
 
 /// <summary>
 /// Handles <see cref="ClaimOrderLinesCommand"/>: claims the pending and failed lines of an accepted order in one save, on
-/// the order as the database holds it now. A line another run already claimed is left to that run.
+/// the order as the database holds it now, and answers with exactly the lines it claimed and their attempt numbers. A line
+/// another run already claimed is left to that run and is not in the answer.
 /// </summary>
 public sealed class ClaimOrderLinesHandler
 {
@@ -31,11 +34,12 @@ public sealed class ClaimOrderLinesHandler
     /// <param name="cmd">The order and, optionally, the one line to claim.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// Success once the claim is saved (a claim that changes nothing is Success too); <c>ORDER_NOT_FOUND</c> or
+    /// The lines this claim took, each with its attempt number, once the claim is saved (empty when there was nothing to
+    /// claim); <c>ORDER_NOT_FOUND</c> or
     /// <c>ORDER_ITEM_NOT_FOUND</c> when an id names nothing; <c>ORDER_NOT_ACCEPTED</c> when the order is pending, cancelled
     /// or fraud; <c>ORDER_LINE_CHANGED</c> when another writer saved the order first (the caller sends the claim again).
     /// </returns>
-    public async Task<Result> HandleAsync(ClaimOrderLinesCommand cmd, CancellationToken ct)
+    public async Task<Result<IReadOnlyList<ClaimedOrderLineDto>>> HandleAsync(ClaimOrderLinesCommand cmd, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
@@ -44,20 +48,20 @@ public sealed class ClaimOrderLinesHandler
             .FirstOrDefaultAsync(o => o.Id == cmd.OrderId, ct);
         if (order is null)
         {
-            return Result.FailureCode(HostpanelErrorCodes.ORDER_NOT_FOUND);
+            return Result<IReadOnlyList<ClaimedOrderLineDto>>.FailureCode(HostpanelErrorCodes.ORDER_NOT_FOUND);
         }
 
         if (cmd.ItemId is { } itemId && order.Items.All(i => i.Id != itemId))
         {
-            return Result.FailureCode(HostpanelErrorCodes.ORDER_ITEM_NOT_FOUND);
+            return Result<IReadOnlyList<ClaimedOrderLineDto>>.FailureCode(HostpanelErrorCodes.ORDER_ITEM_NOT_FOUND);
         }
 
         if (!order.IsAccepted)
         {
-            return Result.FailureCode(HostpanelErrorCodes.ORDER_NOT_ACCEPTED);
+            return Result<IReadOnlyList<ClaimedOrderLineDto>>.FailureCode(HostpanelErrorCodes.ORDER_NOT_ACCEPTED);
         }
 
-        order.BeginFulfilment(_clock.UtcNow, cmd.ItemId);
+        var claimed = order.BeginFulfilment(_clock.UtcNow, cmd.ItemId);
 
         try
         {
@@ -66,9 +70,9 @@ public sealed class ClaimOrderLinesHandler
         catch (ConcurrencyConflictException)
         {
             // Another run or a staff action saved the order between the load and the save; nothing was claimed.
-            return Result.FailureCode(HostpanelErrorCodes.ORDER_LINE_CHANGED);
+            return Result<IReadOnlyList<ClaimedOrderLineDto>>.FailureCode(HostpanelErrorCodes.ORDER_LINE_CHANGED);
         }
 
-        return Result.Success();
+        return Result.Success(claimed.ToClaimedLines());
     }
 }

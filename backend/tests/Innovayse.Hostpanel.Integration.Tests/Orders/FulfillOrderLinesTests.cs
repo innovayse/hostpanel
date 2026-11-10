@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Orders.Commands.ClaimOrderLines;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Common.Enums;
@@ -107,6 +108,58 @@ public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : ICl
         items.Should().OnlyContain(i => i.FulfilmentState == OrderItemFulfilmentState.Fulfilled && i.FulfilmentAttempts == 1);
     }
 
+    /// <summary>
+    /// A run over the whole order runs only the lines its own claim took: a line another run's claim holds (in progress
+    /// under that run's attempt) is left to it, so its service is not created and its attempt is not touched, while the
+    /// line this run claimed is fulfilled.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ALineAnotherClaimHoldsIsNotRun()
+    {
+        var seeded = await OrdersTestSeeds.SeedDigitalAndHostingOrderAsync(factory);
+        await OrdersTestSeeds.AcceptWithoutFulfilmentAsync(factory, seeded.OrderId);
+        var lines = await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId);
+        var held = lines[0];
+        var free = lines[1];
+        (await ClaimAsync(new ClaimOrderLinesCommand(seeded.OrderId, held.Id))).IsSuccess.Should().BeTrue();
+
+        var result = await InvokeAsync(new FulfillOrderLinesCommand(seeded.OrderId));
+
+        result.IsSuccess.Should().BeTrue();
+        var after = await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId);
+        after.Single(i => i.Id == held.Id).FulfilmentState.Should().Be(OrderItemFulfilmentState.InProgress);
+        after.Single(i => i.Id == held.Id).FulfilmentAttempts.Should().Be(1);
+        after.Single(i => i.Id == free.Id).FulfilmentState.Should().Be(OrderItemFulfilmentState.Fulfilled);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        (await db.ClientServices.AsNoTracking().CountAsync(s => s.OrderItemId == held.Id)).Should().Be(0);
+        (await db.ClientServices.AsNoTracking().CountAsync(s => s.OrderItemId == free.Id)).Should().Be(1);
+    }
+
+    /// <summary>
+    /// Lines the sender claimed itself are run exactly as handed over, under the attempt it gave: the handed-over line is
+    /// fulfilled, and a pending line it did not hand over is neither claimed nor run.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task RunsExactlyTheHandedOverClaim()
+    {
+        var seeded = await OrdersTestSeeds.SeedDigitalAndHostingOrderAsync(factory);
+        await OrdersTestSeeds.AcceptWithoutFulfilmentAsync(factory, seeded.OrderId);
+        var lines = await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId);
+        var claim = await ClaimAsync(new ClaimOrderLinesCommand(seeded.OrderId, lines[1].Id));
+
+        var result = await InvokeAsync(new FulfillOrderLinesCommand(seeded.OrderId, Claimed: claim.Value));
+
+        result.IsSuccess.Should().BeTrue();
+        claim.Value.Should().Equal(new ClaimedOrderLineDto(lines[1].Id, 1));
+        var after = await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId);
+        after.Single(i => i.Id == lines[1].Id).FulfilmentState.Should().Be(OrderItemFulfilmentState.Fulfilled);
+        after.Single(i => i.Id == lines[0].Id).FulfilmentState.Should().Be(OrderItemFulfilmentState.Pending);
+        after.Single(i => i.Id == lines[0].Id).FulfilmentAttempts.Should().Be(0);
+    }
+
     /// <summary>A retry that names a line the order does not hold is refused with <c>ORDER_ITEM_NOT_FOUND</c>.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -178,5 +231,15 @@ public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : ICl
         using var scope = factory.Services.CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         return await bus.InvokeAsync<Result<OrderFulfillmentDto>>(command);
+    }
+
+    /// <summary>Sends a claim on a fresh scope's bus, the way another run claims lines, and reads what it took.</summary>
+    /// <param name="command">The claim.</param>
+    /// <returns>The lines the claim took with their attempts.</returns>
+    private async Task<Result<IReadOnlyList<ClaimedOrderLineDto>>> ClaimAsync(ClaimOrderLinesCommand command)
+    {
+        using var scope = factory.Services.CreateScope();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        return await bus.InvokeAsync<Result<IReadOnlyList<ClaimedOrderLineDto>>>(command);
     }
 }

@@ -104,10 +104,11 @@ public sealed class FulfillPaidOrderHandler
         // order Incomplete (retryable once the claim runs out) instead of Active over lines that never started.
         var now = _clock.UtcNow;
         order.Accept(now);
-        order.BeginFulfilment(now);
+        var claimed = order.BeginFulfilment(now);
         await _context.SaveChangesAsync(ct);
 
-        var fulfilled = await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(new FulfillOrderLinesCommand(order.Id), ct);
+        var fulfilled = await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(
+            new FulfillOrderLinesCommand(order.Id, Claimed: claimed.ToClaimedLines()), ct);
         if (fulfilled.IsFailure)
         {
             return Result.FailureCode(fulfilled.ErrorCode ?? HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);

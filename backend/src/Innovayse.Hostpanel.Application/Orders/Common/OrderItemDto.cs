@@ -21,7 +21,7 @@ namespace Innovayse.Hostpanel.Application.Orders.Common;
 /// Whether staff may retry the line now, decided by the server with the configured retry lease
 /// (<c>Orders:RetryLeaseMinutes</c>), so the admin never works it out with a lease of its own.
 /// </param>
-/// <param name="CanClose">Whether staff may close the line as refunded by hand: it failed, its refund is stuck, or it was only partly refunded.</param>
+/// <param name="CanClose">Whether staff may close the line as refunded by hand: it failed, its refund has been stuck for longer than the retry lease, or it was only partly refunded.</param>
 public sealed record OrderItemDto(
     int Id,
     int ProductId,

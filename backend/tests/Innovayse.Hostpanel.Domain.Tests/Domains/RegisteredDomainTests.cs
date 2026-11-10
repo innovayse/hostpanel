@@ -592,6 +592,28 @@ public sealed class RegisteredDomainTests
         domain.NextDueDate.Should().Be(renewedTo);
     }
 
+    /// <summary>
+    /// A later expiry the registrar reported is adopted with the due date and raises no renewal event; an earlier or equal
+    /// one leaves the expiry on record.
+    /// </summary>
+    [Fact]
+    public void AdoptLaterRegistrarExpiry_TakesOnlyALaterDate()
+    {
+        var domain = CreateActiveDomain();
+        domain.Renew(Now.AddYears(2), Now);
+        domain.ClearDomainEvents();
+
+        domain.AdoptLaterRegistrarExpiry(Now.AddYears(1)).Should().BeFalse();
+        domain.AdoptLaterRegistrarExpiry(Now.AddYears(2)).Should().BeFalse();
+        domain.ExpiresAt.Should().Be(Now.AddYears(2));
+
+        domain.AdoptLaterRegistrarExpiry(Now.AddYears(3)).Should().BeTrue();
+
+        domain.ExpiresAt.Should().Be(Now.AddYears(3));
+        domain.NextDueDate.Should().Be(Now.AddYears(3));
+        domain.DomainEvents.Should().BeEmpty();
+    }
+
     /// <summary>Renew brings an expired domain back to active when the new expiry lies ahead.</summary>
     [Fact]
     public void Renew_WhenExpired_ReturnsToActive()

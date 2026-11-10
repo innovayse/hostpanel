@@ -110,7 +110,7 @@ public sealed class GetOrderHandler
             .Select(item => item with
             {
                 CanRetry = Order.IsLineRetryable(dto.Status, item.FulfilmentState, item.LastFulfilmentAttemptAt, now, lease),
-                CanClose = OrderItem.IsClosableByHand(item.FulfilmentState),
+                CanClose = OrderItem.IsClosableByHand(item.FulfilmentState, item.LastFulfilmentAttemptAt, now, lease),
             })
             .ToList();
 

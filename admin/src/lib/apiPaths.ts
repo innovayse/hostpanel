@@ -33,6 +33,8 @@ export enum ApiPath {
   AdminPlugins = '/admin/plugins',
   /** `/admin/plugins/slots` collection and its members. */
   AdminPluginSlots = '/admin/plugins/slots',
+  /** `/admin/plugins/ui` index of the plugin pages and menu items, and each page by its path. */
+  AdminPluginUi = '/admin/plugins/ui',
   /** `/admin/projects` collection and its members. */
   AdminProjects = '/admin/projects',
   /** `/admin/server-groups` collection and its members. */

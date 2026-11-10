@@ -57,3 +57,14 @@ describe('UiMarkdownInline', () => {
     expect(wrapper.text()).toBe('docs')
   })
 })
+
+describe('UiMarkdownInline without links', () => {
+  it('draws a link as its text when links are off', () => {
+    const wrapper = mount(UiMarkdownInline, {
+      props: { nodes: [piece(1, MarkdownInlineKind.Link, 'site', 'https://example.org/')], links: false },
+    })
+
+    expect(wrapper.find('a').exists()).toBe(false)
+    expect(wrapper.text()).toBe('site')
+  })
+})

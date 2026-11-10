@@ -201,5 +201,15 @@
     "unavailable": "Այս վիջեթը հնարավոր չեղավ ցուցադրել։",
     "timedOut": "Այս վիջեթը չափազանց երկար է բեռնվում։",
     "hideNotSeeded": "{key} կարգավորումը այս սերվերում չկա, ուստի վիջեթը հնարավոր չէ թաքցնել։"
+  },
+  "pluginPage": {
+    "notFoundTitle": "Էջը չի գտնվել",
+    "tableEmpty": "Դեռ ցուցադրելու բան չկա։",
+    "chatMessage": "Հաղորդագրություն",
+    "chatSend": "Ուղարկել",
+    "chatStop": "Կանգնեցնել",
+    "chatResultDetails": "Մանրամասներ",
+    "chatStepStopped": "կանգնեցված է",
+    "chatStepsCount": "Կատարված է {done}-ը {total}-ից"
   }
 }

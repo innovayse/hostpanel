@@ -51,3 +51,13 @@ describe('UiMarkdown', () => {
     expect(mount(UiMarkdown, { props: { source: null } }).text()).toBe('')
   })
 })
+
+describe('UiMarkdown without links', () => {
+  it('keeps a link as its text when links are off', () => {
+    const wrapper = mount(UiMarkdown, { props: { source: 'see [ok](https://example.org/a) **now**', links: false } })
+
+    expect(wrapper.find('a').exists()).toBe(false)
+    expect(wrapper.text()).toBe('see ok now')
+    expect(wrapper.get('strong').text()).toBe('now')
+  })
+})

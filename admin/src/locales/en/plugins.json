@@ -201,5 +201,15 @@
     "unavailable": "This widget could not be shown.",
     "timedOut": "This widget took too long to load.",
     "hideNotSeeded": "The setting {key} does not exist on this server, so the widget cannot be hidden."
+  },
+  "pluginPage": {
+    "notFoundTitle": "Page not found",
+    "tableEmpty": "Nothing to show yet.",
+    "chatMessage": "Message",
+    "chatSend": "Send",
+    "chatStop": "Stop",
+    "chatResultDetails": "Details",
+    "chatStepStopped": "stopped",
+    "chatStepsCount": "{done} of {total} done"
   }
 }

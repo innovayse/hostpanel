@@ -79,6 +79,8 @@ export const PluginErrorCode = {
   RegistryLicenceRequired: 'PLUGIN_REGISTRY_LICENCE_REQUIRED',
   /** The registry refused the licence key the server holds; the details page then offers the key card. */
   RegistryLicenceInvalid: 'PLUGIN_REGISTRY_LICENCE_INVALID',
+  /** No page the operator may open answers the address: unknown, unavailable or switched off alike. */
+  PageNotFound: 'PLUGIN_PAGE_NOT_FOUND',
 } as const
 
 /** One of the {@link PluginErrorCode} values. */

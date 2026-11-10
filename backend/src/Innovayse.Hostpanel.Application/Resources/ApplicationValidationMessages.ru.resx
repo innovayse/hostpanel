@@ -1513,4 +1513,16 @@
   <data name="StatusDaysInvalid" xml:space="preserve">
     <value>Выберите число дней от 1 до {0}.</value>
   </data>
+  <data name="ClientGroupNameInvalid" xml:space="preserve">
+    <value>Название группы обязательно, не более 100 символов.</value>
+  </data>
+  <data name="ClientGroupDescriptionInvalid" xml:space="preserve">
+    <value>Описание может содержать не более 500 символов.</value>
+  </data>
+  <data name="ClientGroupDiscountInvalid" xml:space="preserve">
+    <value>Скидка должна быть от 0 до 100 процентов.</value>
+  </data>
+  <data name="ClientGroupColorInvalid" xml:space="preserve">
+    <value>Цвет нужно записать в виде #RRGGBB.</value>
+  </data>
 </root>

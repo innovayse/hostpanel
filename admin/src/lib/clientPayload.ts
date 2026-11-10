@@ -43,5 +43,7 @@ export const toUpdateClientPayload = (detail: ClientDetail, changes: Partial<Upd
   notifications: { ...detail.notifications },
   settings: { ...detail.settings },
   status: null,
+  // The update replaces the whole record, so the group has to travel back or the save clears it.
+  clientGroupId: detail.clientGroupId ?? null,
   ...changes,
 })

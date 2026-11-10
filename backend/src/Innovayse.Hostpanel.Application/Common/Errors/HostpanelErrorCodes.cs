@@ -136,6 +136,12 @@ public static class HostpanelErrorCodes
     /// <summary>The id names no client (404).</summary>
     public const string CLIENT_NOT_FOUND = "CLIENT_NOT_FOUND";
 
+    /// <summary>The id names no client group (404).</summary>
+    public const string CLIENT_GROUP_NOT_FOUND = "CLIENT_GROUP_NOT_FOUND";
+
+    /// <summary>The client group still has clients, so it cannot be deleted (409).</summary>
+    public const string CLIENT_GROUP_IN_USE = "CLIENT_GROUP_IN_USE";
+
     /// <summary>The requested bulk action name is not one this endpoint knows (400).</summary>
     public const string BULK_INVOICE_ACTION_UNKNOWN = "BULK_INVOICE_ACTION_UNKNOWN";
 
@@ -1424,6 +1430,12 @@ public static class HostpanelErrorCodes
     /// <c>StatusMapping</c> row).
     /// </summary>
     public const string CLIENT_TAX_EXEMPT = Domain.Clients.ClientsErrors.ClientTaxExempt;
+
+    /// <summary>The discount of a client group is outside 0 to 100 percent (400).</summary>
+    public const string CLIENT_GROUP_DISCOUNT_INVALID = Domain.Clients.ClientsErrors.ClientGroupDiscountInvalid;
+
+    /// <summary>The colour of a client group is not <c>#RRGGBB</c> (400).</summary>
+    public const string CLIENT_GROUP_COLOR_INVALID = Domain.Clients.ClientsErrors.ClientGroupColorInvalid;
 
     /// <summary>
     /// The account owner cannot be removed as an additional user (409, an exact <c>StatusMapping</c> row):

@@ -1069,6 +1069,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int?>("ClientGroupId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("CompanyName")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -1201,6 +1204,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ClientGroupId");
+
                     b.HasIndex("UserId")
                         .IsUnique();
 
@@ -1211,6 +1216,46 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("Clients", t =>
                         {
                             t.HasCheckConstraint("CK_Clients_ExternalAccount", "(\"ExternalAccountProvider\" IS NULL) = (\"ExternalAccountId\" IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Clients.ClientGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDefault")
+                        .IsUnique()
+                        .HasFilter("\"IsDefault\"");
+
+                    b.ToTable("ClientGroups", t =>
+                        {
+                            t.HasCheckConstraint("CK_ClientGroups_DiscountPercent", "\"DiscountPercent\" >= 0 AND \"DiscountPercent\" <= 100");
                         });
                 });
 
@@ -4968,6 +5013,14 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.SetNull);
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Clients.Client", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Clients.ClientGroup", null)
+                        .WithMany()
+                        .HasForeignKey("ClientGroupId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Clients.ClientUser", b =>

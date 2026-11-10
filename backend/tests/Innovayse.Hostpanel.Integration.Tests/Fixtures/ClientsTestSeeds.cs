@@ -384,9 +384,11 @@ public static class ClientsTestSeeds
     /// <param name="status">The status string to send, or null to leave it untouched.</param>
     /// <param name="email">The email to send, or null to leave it untouched.</param>
     /// <param name="adminNotes">The internal notes to send, or null to clear them.</param>
+    /// <param name="clientGroupId">The client group to send, or null to take the client out of its group.</param>
     /// <returns>The request body.</returns>
     public static object UpdateBody(
-        string firstName = "Ada", string? currency = null, string? status = null, string? email = null, string? adminNotes = null) => new
+        string firstName = "Ada", string? currency = null, string? status = null, string? email = null, string? adminNotes = null,
+        int? clientGroupId = null) => new
         {
             email,
             firstName,
@@ -414,14 +416,17 @@ public static class ClientsTestSeeds
                 allowSso = true,
             },
             status,
+            clientGroupId,
         };
 
     /// <summary>The body <c>POST /api/clients/admin</c> takes, linking to an existing Identity subject.</summary>
     /// <param name="existingUserId">The subject id to link.</param>
     /// <param name="currency">The currency to send, or null to leave it unset.</param>
     /// <param name="status">The status string to send, or null to leave it unset.</param>
+    /// <param name="clientGroupId">The client group to send, or null to leave it to the default group.</param>
     /// <returns>The request body.</returns>
-    public static object AdminCreateBody(string existingUserId, string? currency = null, string? status = null) => new
+    public static object AdminCreateBody(
+        string existingUserId, string? currency = null, string? status = null, int? clientGroupId = null) => new
     {
         createNewUser = false,
         existingUserId,
@@ -441,6 +446,7 @@ public static class ClientsTestSeeds
             adminNotes = (string?)null,
         },
         status,
+        clientGroupId,
     };
 
     /// <summary>A contact body with every field populated.</summary>

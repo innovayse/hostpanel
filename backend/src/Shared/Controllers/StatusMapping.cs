@@ -163,9 +163,9 @@ public static class StatusMapping
             // CONFLICT / ALREADY token for the generic arms.
             "SERVER_IN_USE" or "SERVER_GROUP_IN_USE" or "USER_CANNOT_DELETE_SELF" or "USER_LAST_ADMIN"
                 => new(409, "Conflict"),
-            // Exact rows: a category that still holds sub-categories or records, a state conflict whose
+            // Exact rows: a category or client group that still holds sub-categories or records, a state conflict whose
             // names carry no CONFLICT / ALREADY token for the generic arms.
-            "KBCATEGORY_IN_USE" or "DOWNLOAD_CATEGORY_IN_USE" or "PREDEFINED_REPLY_CATEGORY_IN_USE"
+            "KBCATEGORY_IN_USE" or "DOWNLOAD_CATEGORY_IN_USE" or "PREDEFINED_REPLY_CATEGORY_IN_USE" or "CLIENT_GROUP_IN_USE"
                 => new(409, "Conflict"),
             // Exact rows: the rate source is down (a dependency, so 503 with Retry-After), or it
             // quotes nothing against the configured base (the deployment's state, a conflict).

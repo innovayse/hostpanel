@@ -33,4 +33,6 @@ export interface UpdateClientPayload {
   settings: ClientSettings
   /** The status to move the client to, or null to keep the current one. */
   status: ClientStatus | null
+  /** The client group to keep the client in; null takes the client out of its group, like every other optional field of this full replacement. */
+  clientGroupId: number | null
 }

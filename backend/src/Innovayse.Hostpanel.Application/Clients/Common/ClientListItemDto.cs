@@ -13,6 +13,9 @@ namespace Innovayse.Hostpanel.Application.Clients.Common;
 /// <param name="IsUserDeleted">True if the linked Identity user no longer exists.</param>
 /// <param name="TwoFactorEnabled">True if the user has TOTP 2FA enabled.</param>
 /// <param name="CreatedAt">Account creation timestamp.</param>
+/// <param name="ClientGroupId">The client group the client belongs to, null when it has none.</param>
+/// <param name="ClientGroupName">The name of that group, null when the client has none.</param>
+/// <param name="ClientGroupColor">The colour of that group as <c>#RRGGBB</c>, null when the client has none.</param>
 public sealed record ClientListItemDto(
     int Id,
     string UserId,
@@ -23,4 +26,7 @@ public sealed record ClientListItemDto(
     ClientStatus Status,
     bool IsUserDeleted,
     bool TwoFactorEnabled,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    int? ClientGroupId,
+    string? ClientGroupName,
+    string? ClientGroupColor);

@@ -44,6 +44,8 @@ public sealed class StatusMappingTests
     [InlineData(HostpanelErrorCodes.KBCATEGORY_IN_USE, 409)]
     [InlineData(HostpanelErrorCodes.DOWNLOAD_CATEGORY_IN_USE, 409)]
     [InlineData(HostpanelErrorCodes.PREDEFINED_REPLY_CATEGORY_IN_USE, 409)]
+    [InlineData(HostpanelErrorCodes.CLIENT_GROUP_IN_USE, 409)]
+    [InlineData(HostpanelErrorCodes.CLIENT_GROUP_NOT_FOUND, 404)]
     [InlineData(HostpanelErrorCodes.USER_NOT_FOUND, 404)]
     [InlineData(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE, 503)]
     [InlineData(HostpanelErrorCodes.IDENTITY_PLUGIN_UNAVAILABLE, 503)]

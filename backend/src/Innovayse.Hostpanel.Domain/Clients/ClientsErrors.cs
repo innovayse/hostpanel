@@ -103,4 +103,10 @@ public static class ClientsErrors
     /// Raised by the invoice options use case, not by the aggregate; declared here with the other client codes.
     /// </summary>
     public const string ClientTaxExempt = "CLIENT_TAX_EXEMPT";
+
+    /// <summary>The discount of a client group is outside 0 to 100 percent (400): <see cref="ClientGroup.Create"/> and <see cref="ClientGroup.Update"/>.</summary>
+    public const string ClientGroupDiscountInvalid = "CLIENT_GROUP_DISCOUNT_INVALID";
+
+    /// <summary>The colour of a client group is not <c>#RRGGBB</c> (400): <see cref="ClientGroup.Create"/> and <see cref="ClientGroup.Update"/>.</summary>
+    public const string ClientGroupColorInvalid = "CLIENT_GROUP_COLOR_INVALID";
 }

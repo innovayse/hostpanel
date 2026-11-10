@@ -11,7 +11,7 @@ namespace Innovayse.Hostpanel.Application.Clients.Queries.ListClients;
 
 /// <summary>
 /// Returns a paginated list of clients with the details of the people behind them. Supports
-/// filtering by name (first, last or full name), company, client id, email, phone and status. The order is
+/// filtering by name (first, last or full name), company, client id, email, phone, status and client group. The order is
 /// stable: last name, first name, then id, so a page never repeats or skips a row between requests.
 /// </summary>
 public sealed class ListClientsHandler
@@ -89,6 +89,11 @@ public sealed class ListClientsHandler
             clients = clients.Where(c => c.Status == status);
         }
 
+        if (query.ClientGroupId is { } clientGroupId)
+        {
+            clients = clients.Where(c => c.ClientGroupId == clientGroupId);
+        }
+
         if (emailUserIds is not null)
         {
             clients = clients.Where(c => emailUserIds.Contains(c.UserId));
@@ -106,7 +111,13 @@ public sealed class ListClientsHandler
         // One lookup for the whole page, rather than one per row.
         var accounts = await _identity.GetAccountsBySubjectsAsync(items.Select(c => c.UserId).Distinct(), ct);
 
-        var dtos = items.Select(c => MapToListItem(c, accounts)).ToList();
+        // One lookup for the groups of the page as well.
+        var groupIds = items.Select(c => c.ClientGroupId).OfType<int>().Distinct().ToList();
+        var groups = await _context.ClientGroups.AsNoTracking()
+            .Where(g => groupIds.Contains(g.Id))
+            .ToDictionaryAsync(g => g.Id, ct);
+
+        var dtos = items.Select(c => MapToListItem(c, accounts, groups)).ToList();
 
         return Result<PaginatedList<ClientListItemDto>>.Success(new PaginatedList<ClientListItemDto>(dtos, totalCount, query.Page, query.PageSize));
     }
@@ -114,16 +125,20 @@ public sealed class ListClientsHandler
     /// <summary>Maps a <see cref="Client"/> to <see cref="ClientListItemDto"/>.</summary>
     /// <param name="client">The client to map.</param>
     /// <param name="accounts">Subject to account lookup for this page.</param>
+    /// <param name="groups">Group id to group lookup for this page.</param>
     /// <returns>The list item DTO.</returns>
-    private static ClientListItemDto MapToListItem(Client client, IReadOnlyDictionary<string, IdentityAccount> accounts)
+    private static ClientListItemDto MapToListItem(
+        Client client, IReadOnlyDictionary<string, IdentityAccount> accounts, IReadOnlyDictionary<int, ClientGroup> groups)
     {
         // A client row whose subject resolves to nobody is flagged rather than hidden: it is how a
         // legacy or deleted account shows up, and the screen has a column for it.
         var account = accounts.GetValueOrDefault(client.UserId);
+        var group = client.ClientGroupId is { } groupId ? groups.GetValueOrDefault(groupId) : null;
 
         return new ClientListItemDto(
             client.Id, client.UserId, account?.Email ?? string.Empty,
             client.FirstName, client.LastName, client.CompanyName, client.Status,
-            account is null, account?.TwoFactorEnabled ?? false, client.CreatedAt);
+            account is null, account?.TwoFactorEnabled ?? false, client.CreatedAt,
+            group?.Id, group?.Name, group?.Color);
     }
 }

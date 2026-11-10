@@ -89,6 +89,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// </summary>
     public DbSet<SubjectRole> SubjectRoles => Set<SubjectRole>();
 
+    /// <summary>Gets the client groups table.</summary>
+    public DbSet<ClientGroup> ClientGroups => Set<ClientGroup>();
+
     /// <summary>Gets the clients table.</summary>
     public DbSet<Client> Clients => Set<Client>();
 

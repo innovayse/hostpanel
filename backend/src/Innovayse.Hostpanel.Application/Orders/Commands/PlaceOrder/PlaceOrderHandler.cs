@@ -615,6 +615,9 @@ public sealed class PlaceOrderHandler
         var newClient = Client.Create(userId, cmd.FirstName!, cmd.LastName!, cmd.Email!, now);
         newClient.Update(cmd.FirstName!, cmd.LastName!, companyName: null, phone: cmd.PhoneNumber);
         newClient.SetCurrency(currencyCode);
+
+        // Like a client who registers, a guest has no say in groups: the default one, when there is one.
+        await _context.AssignDefaultClientGroupAsync(newClient, ct);
         var written = await _clientRecords.AddOrGetAsync(newClient, ct);
 
         return Result.Success<int?>(written.Client.Id);
@@ -718,6 +721,9 @@ public sealed class PlaceOrderHandler
         // A new row, so this order is the one that chooses its currency: the same rule as a
         // guest's, because the caller is choosing at the same checkout.
         client.SetCurrency(currencyCode);
+
+        // The same default group a registering client joins.
+        await _context.AssignDefaultClientGroupAsync(client, ct);
 
         // A plugin member's first order creates the client of their whole account, so it is linked to
         // the account the plugin named: that link is what the resolver finds it by afterwards.

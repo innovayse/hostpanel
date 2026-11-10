@@ -15,7 +15,7 @@ public sealed class CreateClientGroupValidator : LocalizedValidator<CreateClient
     {
         RuleFor(x => x.Name).MustBeClientGroupName(L["ClientGroupNameInvalid"]);
         RuleFor(x => x.Description).MustBeClientGroupDescription(L["ClientGroupDescriptionInvalid"]);
-        RuleFor(x => x.DiscountPercent).MustBeDiscountPercent(L["ClientGroupDiscountInvalid"]);
+        RuleFor(x => x.DiscountPercent).MustBeDiscountPercent(L["ClientGroupDiscountInvalid"], L["ClientGroupDiscountDecimalsInvalid"]);
         RuleFor(x => x.Color).MustBeClientGroupColor(L["ClientGroupColorInvalid"]);
     }
 }

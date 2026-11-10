@@ -69,10 +69,7 @@ public sealed class CreateClientOnRegisterHandler
             registration: new RegistrationInfo(evt.IpAddress, evt.UserAgent, evt.DeviceType, evt.OperatingSystem, evt.Browser));
 
         // A client who registers has no say in groups: it joins the default one, when there is one.
-        if (await _context.FindDefaultClientGroupIdAsync(ct) is { } defaultGroupId)
-        {
-            client.AssignToGroup(defaultGroupId);
-        }
+        await _context.AssignDefaultClientGroupAsync(client, ct);
 
         _context.Clients.Add(client);
         try

@@ -8,6 +8,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
@@ -986,6 +987,60 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
 
         second.StatusCode.Should().Be(HttpStatusCode.Conflict);
         await AssertCodeAsync(second, HostpanelErrorCodes.ACCOUNT_EMAIL_EXISTS);
+    }
+
+    /// <summary>A guest checkout creates a client in the default group, as registering does.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task GuestCheckoutJoinsTheDefaultClientGroup()
+    {
+        await EnableBankTransferAsync();
+        var productId = await SeedProductAsync();
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        var defaultGroup = await ClientGroupTestSeeds.CreateAsync(admin);
+        await ClientGroupTestSeeds.SetDefaultAsync(admin, defaultGroup, true);
+
+        var response = await factory.CreateClient().PostAsJsonAsync("/api/orders", GuestOrder(productId));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        await ClientGroupTestSeeds.SetDefaultAsync(admin, defaultGroup, false);
+        (await StoredClientOfOrderAsync(response)).ClientGroupId.Should().Be(defaultGroup);
+    }
+
+    /// <summary>A signed-in caller's first order creates a client in the default group, as registering does.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SignedInCallersFirstOrderJoinsTheDefaultClientGroup()
+    {
+        await EnableBankTransferAsync();
+        var productId = await SeedProductAsync();
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        var defaultGroup = await ClientGroupTestSeeds.CreateAsync(admin);
+        await ClientGroupTestSeeds.SetDefaultAsync(admin, defaultGroup, true);
+        var caller = await ClientsTestSeeds.CreateUnlinkedUserAsync(factory, "first-order-group");
+
+        var response = await caller.Client.PostAsJsonAsync("/api/orders", new
+        {
+            paymentMethod = "bank_transfer",
+            items = new[] { new { productId, billingCycle = nameof(BillingCycle.Monthly) } },
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        await ClientGroupTestSeeds.SetDefaultAsync(admin, defaultGroup, false);
+        (await StoredClientOfOrderAsync(response)).ClientGroupId.Should().Be(defaultGroup);
+    }
+
+    /// <summary>The client record an order was placed for, read straight from the database.</summary>
+    /// <param name="created">The answer to the order request.</param>
+    /// <returns>The stored client.</returns>
+    private async Task<Client> StoredClientOfOrderAsync(HttpResponseMessage created)
+    {
+        using var body = JsonDocument.Parse(await created.Content.ReadAsStringAsync());
+        var orderId = body.RootElement.GetProperty("orderId").GetInt32();
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var clientId = await db.Orders.AsNoTracking().Where(o => o.Id == orderId).Select(o => o.ClientId).SingleAsync();
+        return await db.Clients.AsNoTracking().SingleAsync(c => c.Id == clientId);
     }
 
     /// <summary>A signed-in caller's first order keeps the phone number they gave, as a guest's does.</summary>

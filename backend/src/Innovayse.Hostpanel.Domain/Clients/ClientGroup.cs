@@ -23,6 +23,12 @@ public sealed class ClientGroup : BaseEntity, IAggregateRoot
     /// <summary>The largest discount a group can give, in percent.</summary>
     public const decimal MaxDiscountPercent = 100m;
 
+    /// <summary>Digits the <c>ClientGroups.DiscountPercent</c> column holds in all, before and after the decimal point.</summary>
+    public const int DiscountPercentPrecision = 5;
+
+    /// <summary>Decimals the <c>ClientGroups.DiscountPercent</c> column keeps; a finer discount would be rounded on save.</summary>
+    public const int DiscountPercentScale = 2;
+
     /// <summary>The character a colour starts with.</summary>
     private const char ColorPrefix = '#';
 

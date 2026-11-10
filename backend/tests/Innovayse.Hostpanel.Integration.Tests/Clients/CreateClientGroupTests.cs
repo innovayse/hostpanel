@@ -38,6 +38,7 @@ public sealed class CreateClientGroupTests(IntegrationTestFactory factory) : ICl
     [InlineData("", 10, "#3B82F6")]
     [InlineData("Valid", -0.01, "#3B82F6")]
     [InlineData("Valid", 100.01, "#3B82F6")]
+    [InlineData("Valid", 10.005, "#3B82F6")]
     [InlineData("Valid", 10, "blue")]
     [InlineData("Valid", 10, "#3B82F")]
     [InlineData("Valid", 10, "#GGGGGG")]

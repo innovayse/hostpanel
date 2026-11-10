@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Clients;
 using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Clients.Extensions;
@@ -34,5 +35,24 @@ public static class ClientGroupLookupExtensions
             .Where(g => g.IsDefault)
             .Select(g => (int?)g.Id)
             .FirstOrDefaultAsync(ct);
+    }
+
+    /// <summary>
+    /// Puts a new client in the default group, when there is one. Every path that creates a client
+    /// without a group of its own (registering, guest checkout, a signed-in first order) goes through here.
+    /// </summary>
+    /// <param name="context">The module's data context.</param>
+    /// <param name="client">The client that has just been created and not yet saved.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes once the client has been placed, or left ungrouped when no group is the default.</returns>
+    public static async Task AssignDefaultClientGroupAsync(this IHostpanelDbContext context, Client client, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(client);
+
+        if (await context.FindDefaultClientGroupIdAsync(ct) is { } defaultGroupId)
+        {
+            client.AssignToGroup(defaultGroupId);
+        }
     }
 }

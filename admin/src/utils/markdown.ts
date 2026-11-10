@@ -99,19 +99,33 @@ const FENCE_PATTERN = /^\s{0,3}(```|~~~)/
 const QUOTE_PATTERN = /^\s{0,3}>\s?(.*)$/
 
 /**
- * Tells whether an address is safe to link to: an absolute https address with a host.
+ * Normalises an address to link to: an absolute https address with a host, written with the
+ * scheme and two slashes. A form such as https:host is refused even though the URL parser
+ * would read it as an https address, and the address handed back is the parsed one, so what is
+ * rendered is exactly what was checked.
+ *
+ * @param href - The address from the text.
+ * @returns The normalised address, or null when it may not become a link.
+ */
+export const safeLinkHref = (href: string): string | null => {
+  if (!href.toLowerCase().startsWith('https://')) {
+    return null
+  }
+  try {
+    const url = new URL(href)
+    return url.protocol === 'https:' && url.hostname !== '' ? url.href : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Tells whether an address is safe to link to: an absolute https:// address with a host.
  *
  * @param href - The address from the text.
  * @returns True when it may become a link.
  */
-export const isSafeLink = (href: string): boolean => {
-  try {
-    const url = new URL(href)
-    return url.protocol === 'https:' && url.hostname !== ''
-  } catch {
-    return false
-  }
-}
+export const isSafeLink = (href: string): boolean => safeLinkHref(href) !== null
 
 /**
  * Reads the inline constructs of one line of text.
@@ -144,8 +158,14 @@ const parseInlines = (source: string, nextId: () => number): MarkdownInline[] =>
       push(MarkdownInlineKind.Strong, strong ?? strongUnderscore ?? '')
     } else if (emphasis !== undefined || emphasisUnderscore !== undefined) {
       push(MarkdownInlineKind.Emphasis, emphasis ?? emphasisUnderscore ?? '')
-    } else if (label !== undefined && href !== undefined && isSafeLink(href)) {
-      push(MarkdownInlineKind.Link, label, href)
+    } else if (label !== undefined && href !== undefined) {
+      const safeHref = safeLinkHref(href)
+      if (safeHref === null) {
+        // An unsafe or malformed link is shown exactly as written, never as a link.
+        push(MarkdownInlineKind.Text, whole)
+      } else {
+        push(MarkdownInlineKind.Link, label, safeHref)
+      }
     } else {
       // An unsafe or malformed link is shown exactly as written, never as a link.
       push(MarkdownInlineKind.Text, whole)

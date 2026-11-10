@@ -104,5 +104,7 @@ describe('isSafeLink', () => {
     expect(isSafeLink('javascript:alert(1)')).toBe(false)
     expect(isSafeLink('//example.org')).toBe(false)
     expect(isSafeLink('not a url')).toBe(false)
+    expect(isSafeLink('https:evil.com')).toBe(false)
+    expect(isSafeLink('https:/evil.com')).toBe(false)
   })
 })

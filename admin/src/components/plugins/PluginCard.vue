@@ -149,7 +149,7 @@ const emit = defineEmits<{
             >
               {{ updateNotesOpen ? t('plugins.pluginCard.hideUpdateNotes') : t('plugins.pluginCard.showUpdateNotes', { version: updateVersion }) }}
             </UiButton>
-            <!-- The installed list updates in one click, so the way to read what the update changes is the details page. -->
+            <!-- The details page explains the whole update, with the notes of every version in between. -->
             <UiButton
               v-if="updateVersion && hasDetails"
               type="button"

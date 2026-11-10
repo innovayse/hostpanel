@@ -87,8 +87,8 @@
     "tabInstalled": "Տեղադրված",
     "tabBrowse": "Կատալոգ",
     "registryInstalled": "Պլագինը տեղադրվել է կատալոգից։",
-    "confirmUpdateTitle": "Թարմացնե՞լ հավելագրիչը",
-    "confirmUpdateMessage": "Թարմացնե՞լ {id}-ը մինչև {version} տարբերակը։ Փոփոխությունը կգործի սերվերի վերագործարկումից հետո։",
+    "confirmUpdateTitle": "Թարմացնե՞լ այս պլագինը",
+    "confirmUpdateMessage": "Թարմացնե՞լ {id} պլագինը մինչև {version} տարբերակ։ Փոփոխությունը կգործի սերվերի վերագործարկումից հետո։",
     "confirmUpdate": "Թարմացնել"
   },
   "pluginSlotWidgets": {

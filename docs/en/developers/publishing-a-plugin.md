@@ -99,9 +99,9 @@ Operators who install your package straight from a ZIP, without a registry, add 
 
 ## Release notes {#release-notes}
 
-Every version needs release notes, because operators read them in the admin panel before they update. The notes are Markdown, between 10 and 10000 characters. A registry refuses a version that has none.
+Release notes tell operators what a version changes. In the registry contract they are optional: the `changelog` of a version is Markdown and Hostpanel keeps at most 20000 characters of it. The `changelog` member of the manifest is a shorter text, at most 4000 characters. The admin panel shows the notes on the plugin cards, on the details page and in the update dialog, which lists the notes of every version between the installed one and the new one, so write each section for a reader who has not seen the earlier ones.
 
-Write them in the `CHANGELOG.md` that you put in the signed package, one section per version with a heading such as `## [1.2.0]` (the Keep a Changelog style). The section of the version you upload is what the registry stores. You can also send the text with the upload or in the manifest `changelog` member, as the registry allows. The notes of every version between the installed one and the new one are shown to the operator in the update dialog, so write each section for a reader who has not seen the earlier ones.
+A registry may ask for more. The official plugin marketplace requires release notes of 10 to 10000 characters for every version. When you upload to it, it reads them from the `CHANGELOG.md` in the signed package, the section whose heading names the version, such as `## [1.2.0]` (the Keep a Changelog style). That is the rule of that registry, not of Hostpanel, so read the rules of the registry you publish to. A version without notes still installs, and the update dialog says it has none.
 
 ## Upload to a registry
 

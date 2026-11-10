@@ -240,7 +240,7 @@ Any manifest version may carry these optional members. They need SDK 3.4.0 or la
 <SettingTable :settings="[
   { name: 'minHostVersion', type: 'string', default: '', description: 'The lowest Hostpanel version the plugin runs on, a strict major.minor.patch version such as 2.1.0. Leave it out for no lower limit.' },
   { name: 'maxHostVersion', type: 'string', default: '', description: 'The highest Hostpanel version the plugin is known to run on, in the same format and never below minHostVersion. Leave it out for no upper limit.' },
-  { name: 'changelog', type: 'string', default: '', description: 'Short release notes for this version as plain text, at most 4000 characters. Line breaks are kept.' }
+  { name: 'changelog', type: 'string', default: '', description: 'Short release notes for this version in Markdown, at most 4000 characters. Line breaks are kept.' }
 ]" />
 
 ```json

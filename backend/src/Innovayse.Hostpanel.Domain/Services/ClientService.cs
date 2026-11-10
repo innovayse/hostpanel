@@ -516,6 +516,28 @@ public sealed class ClientService : BaseEntity, IAggregateRoot
     public void ChangeProduct(int productId) => ProductId = productId;
 
     /// <summary>
+    /// Moves an active service to another plan and bills it at the new plan's price from the next renewal on.
+    /// The cycle, the renewal date and the hosting account stay as they are: the prorated difference for the rest of
+    /// the current cycle is settled separately (<see cref="ServicePlanChangeProration"/>).
+    /// </summary>
+    /// <param name="productId">FK to the product the service moves to.</param>
+    /// <param name="recurringAmount">The new plan's price per cycle, in the client's billing currency; never negative.</param>
+    /// <exception cref="DomainRuleException">The service is not Active.</exception>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="recurringAmount"/> is negative.</exception>
+    public void ChangePlan(int productId, decimal recurringAmount)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(recurringAmount);
+        if (Status is not ServiceStatus.Active)
+        {
+            throw new DomainRuleException(
+                ServicesErrors.ServiceNotActive, $"Cannot change the plan of a service with status {Status}.");
+        }
+
+        ProductId = productId;
+        RecurringAmount = recurringAmount;
+    }
+
+    /// <summary>
     /// Records the hosting account the service lives on as staff see it on the panel: server, domain,
     /// panel reference, dedicated address and credentials. Unlike <see cref="AssignHostingAccount"/>,
     /// which prepares a pending service for provisioning, this corrects the record of an account in

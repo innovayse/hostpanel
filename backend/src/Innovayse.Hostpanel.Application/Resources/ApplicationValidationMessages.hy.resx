@@ -1525,4 +1525,13 @@
   <data name="ClientGroupColorInvalid" xml:space="preserve">
     <value>Գույնը պետք է գրվի #RRGGBB ձևաչափով։</value>
   </data>
+  <data name="ServiceChangeRequestIdInvalid" xml:space="preserve">
+    <value>Նշեք պլանի փոփոխության վավեր հայտ։</value>
+  </data>
+  <data name="ServiceChangeNoteTooLong" xml:space="preserve">
+    <value>Նշումը չպետք է գերազանցի {0} նիշը։</value>
+  </data>
+  <data name="ServiceChangeStatusInvalid" xml:space="preserve">
+    <value>Ընտրեք պլանի փոփոխության հայտի վավեր կարգավիճակ։</value>
+  </data>
 </root>

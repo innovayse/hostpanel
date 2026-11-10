@@ -15,6 +15,7 @@ public sealed class CreditMovementTypeExtensionsTests
     [InlineData(CreditMovementType.TopUp)]
     [InlineData(CreditMovementType.TopUpRefunded)]
     [InlineData(CreditMovementType.PaymentSurplus)]
+    [InlineData(CreditMovementType.PlanChangeCredit)]
     public void NotifiesClient_IsTrueForTheMovementsTheClientDidNotStart(CreditMovementType movement)
     {
         movement.NotifiesClient().Should().BeTrue();
@@ -42,6 +43,7 @@ public sealed class CreditMovementTypeExtensionsTests
         {
             CreditMovementType.AdminAdd, CreditMovementType.AdminDeduct, CreditMovementType.RefundToCredit,
             CreditMovementType.TopUp, CreditMovementType.TopUpRefunded, CreditMovementType.PaymentSurplus,
+            CreditMovementType.PlanChangeCredit,
         };
 
         foreach (var movement in Enum.GetValues<CreditMovementType>())

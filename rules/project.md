@@ -1463,6 +1463,23 @@ which looks only at invoices that are not `Cancelled` and refuses a target that 
 renewal line, a paid line not yet applied, or a line for the same period. A unique index would need a
 filter on the invoice status, which lives on another table, so it cannot be expressed as an index.
 
+**A plan change is one request, one proration rule, one completing use case (#79).** `ServiceChangeRequest`
+(`ServiceChangeRequests`) is Pending, Approved, Completed or Rejected, and only its own methods move it. The cost of a
+mid-cycle move is worked out in one place, `ServicePlanChangeProration` (Domain, pure): `|new - old|` times the days left
+of the cycle over the cycle's length, the cycle being `RenewalPeriod.MonthsIn` back from `NextRenewalAt`, a started day
+counting as a day, rounded by `CurrencyCode.RoundToMinorUnits`, never negative; a plan at the same price is refused. The
+options the client sees and the quote the request is made from both come from `ServicePlanChangeQuoter`, so the figures
+cannot differ. An upgrade is approved at once and its charge is an invoice raised through `CreateInvoiceCommand`; the
+request keeps the invoice id (an index, no foreign key, the invoice is Billing's) and `ServiceChangeInvoicePaidHandler`
+completes it on `PaymentReceivedEvent`. A downgrade is approved at once only when `billing.plan_change.auto_approve_downgrades`
+is on, otherwise by staff. `CompleteServiceChangeCommand` is the only place a change is applied, from automatic approval,
+staff approval and the payment event alike: it asks the panel for the new package first (`ChangePackageCommand`, only for a
+service holding a hosting account), and only then stages the plan, the price, the `PlanChangeCredit` of a downgrade, the
+Completed status and the activity line in one save. A refusal by the panel therefore changes and credits nothing and leaves
+the request Approved, and approving it again repeats the call; the request's `xmin` token stops two runs crediting twice.
+Rejecting an approved upgrade cancels its unpaid invoice first. The Services handlers never touch the `Invoices` table:
+they raise, read and cancel invoices through the Billing use cases.
+
 ### Client account status
 
 `Client.Status` is enforced, not just stored. The transitions live in the aggregate and nowhere else

@@ -70,6 +70,10 @@ public static class DependencyInjection
         // The SSH half of the plugin host API: issues and revokes a plugin's identities for the call's client (#758).
         services.AddScoped<PluginSshAccessService>();
 
+        // Which plans a service can move to and what each move costs, shared by the client's option list and the request itself.
+        services.AddScoped<ServicePlanChangeQuoter>();
+        services.AddScoped<ServicePlanChangeSettingsReader>();
+
         // This installation's identity towards the plugin registry: where it is kept, and the enrolment that registers and verifies it.
         services.AddScoped<RegistryInstanceStore>();
         services.AddScoped<RegistryInstanceEnrollment>();

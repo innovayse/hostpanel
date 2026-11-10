@@ -1525,4 +1525,13 @@
   <data name="ClientGroupColorInvalid" xml:space="preserve">
     <value>Цвет нужно записать в виде #RRGGBB.</value>
   </data>
+  <data name="ServiceChangeRequestIdInvalid" xml:space="preserve">
+    <value>Укажите корректный запрос на смену тарифа.</value>
+  </data>
+  <data name="ServiceChangeNoteTooLong" xml:space="preserve">
+    <value>Заметка не должна быть длиннее {0} символов.</value>
+  </data>
+  <data name="ServiceChangeStatusInvalid" xml:space="preserve">
+    <value>Выберите корректный статус запроса на смену тарифа.</value>
+  </data>
 </root>

@@ -33,6 +33,9 @@ public static class BillingSettingKeys
     /// <summary>The most unpaid credit top-up invoices a client may hold at once, so top-ups cannot pile up without being paid.</summary>
     public const string CreditTopUpMaxOpen = "billing.credit.topup_max_open";
 
+    /// <summary>Whether a client's downgrade is approved at once; when off, staff approve it and the credit is paid out then.</summary>
+    public const string AutoApproveDowngrades = "billing.plan_change.auto_approve_downgrades";
+
     /// <summary>
     /// The largest day count any of these settings accepts (the day-count and reminder patterns
     /// stop at 90). A reader that must look as far ahead as any setting can reach uses this instead
@@ -76,6 +79,13 @@ public static class BillingSettingKeys
         "a whole number from 1 to 20",
         v => v);
 
+    /// <summary>The switches: <c>true</c> or <c>false</c> in any case, stored in lower case.</summary>
+    /// <remarks>Declared before <see cref="Patterns"/>: static fields initialise in textual order.</remarks>
+    private static readonly ValuePattern TrueOrFalse = new(
+        new Regex("^(true|false)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
+        "true or false",
+        v => v.ToLowerInvariant());
+
     /// <summary>The shape each key accepts, with its canonical spelling.</summary>
     public static readonly IReadOnlyDictionary<string, ValuePattern> Patterns =
         new Dictionary<string, ValuePattern>
@@ -90,10 +100,8 @@ public static class BillingSettingKeys
             [CreditTopUpMinimum] = TopUpAmount,
             [CreditTopUpMaximum] = TopUpAmount,
             [CreditTopUpMaxOpen] = OpenCount,
-            [AutoApplyCredit] = new(
-                new Regex("^(true|false)$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
-                "true or false",
-                v => v.ToLowerInvariant()),
+            [AutoApplyCredit] = TrueOrFalse,
+            [AutoApproveDowngrades] = TrueOrFalse,
         };
 
     /// <summary>Every key with its seeded value and the description shown in System Settings.</summary>
@@ -107,6 +115,7 @@ public static class BillingSettingKeys
         new(CreditTopUpMinimum, "5", "Least a client can add to their credit balance in one top-up, in the client's billing currency."),
         new(CreditTopUpMaximum, "1000", "Most a client can add to their credit balance in one top-up, in the client's billing currency."),
         new(CreditTopUpMaxOpen, "3", "Most unpaid top-up invoices a client can hold at once; they pay or cancel one before raising another."),
+        new(AutoApproveDowngrades, "false", "Approve a client's downgrade to a cheaper plan at once and credit the rest of the billing cycle to their balance (true/false). When off, staff approve each downgrade."),
     ];
 
     /// <summary>Keys that may be saved empty although they seed with a value.</summary>

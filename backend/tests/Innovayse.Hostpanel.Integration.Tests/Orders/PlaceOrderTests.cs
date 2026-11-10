@@ -653,6 +653,50 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>
+    /// The storefront sends the domain action and the billing cycle in lower case
+    /// (<c>"register"</c>, <c>"annual"</c>): the order is placed, the line reads back as
+    /// <see cref="DomainAction.Register"/> on <see cref="BillingCycle.Annual"/>, and both columns hold the member name.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task StorefrontLowerCaseDomainActionIsStoredByMemberName()
+    {
+        await EnableBankTransferAsync();
+        var tld = $"x{Guid.NewGuid():N}"[..9];
+        await SeedUsdTldAndRatesAsync(tld, 10m);
+        var productId = await SeedDomainProductAsync();
+
+        var response = await factory.CreateClient().PostAsJsonAsync("/api/orders", new
+        {
+            firstName = "Ada",
+            lastName = "Lovelace",
+            email = $"guest-{Guid.NewGuid():N}@example.test",
+            password = TestPassword,
+            paymentMethod = "bank_transfer",
+            currency = "USD",
+            items = new[]
+            {
+                new { productId, billingcycle = "annual", domain = $"example.{tld}", domainAction = "register", years = 1 },
+            },
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var invoiceId = body.RootElement.GetProperty("invoiceId").GetInt32();
+
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var orderId = await db.Orders.AsNoTracking().Where(o => o.InvoiceId == invoiceId).Select(o => o.Id).SingleAsync();
+        var line = await db.OrderItems.AsNoTracking().SingleAsync(i => i.OrderId == orderId);
+        line.DomainAction.Should().Be(DomainAction.Register);
+        line.BillingCycle.Should().Be(BillingCycle.Annual);
+        var stored = await db.Database
+            .SqlQuery<string>($"SELECT \"DomainAction\" || '/' || \"BillingCycle\" AS \"Value\" FROM \"OrderItems\" WHERE \"OrderId\" = {orderId}")
+            .SingleAsync();
+        stored.Should().Be("Register/Annual");
+    }
+
+    /// <summary>
     /// A fractional domain price is read the same under every request language: a checkout sent
     /// in Russian, whose culture writes a decimal comma, still orders the domain at 9.99.
     /// </summary>

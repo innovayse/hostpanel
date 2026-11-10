@@ -56,7 +56,7 @@ const settingsStore = useSettingsStore()
 const productId = ref<number | null>(null)
 
 /** Chosen billing cycle. */
-const billingCycle = ref<string>(BillingCycle.Annual)
+const billingCycle = ref<BillingCycle>(BillingCycle.Annual)
 
 /** Amount each renewal invoice charges. */
 const recurringAmount = ref<number | null>(0)

@@ -91,7 +91,7 @@ public sealed class BillingCycleConverterTests(IntegrationTestFactory factory) :
         loaded.BillingCycle.Should().Be(expected);
     }
 
-    /// <summary>An order line is stored with the canonical cycle text and the domain action's exact text.</summary>
+    /// <summary>An order line is stored with the canonical cycle text and the domain action by member name.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderItems_WriteTheCanonicalCycleAndTheExactActionTextAsync()
@@ -110,7 +110,7 @@ public sealed class BillingCycleConverterTests(IntegrationTestFactory factory) :
         var action = await context.Database
             .SqlQueryRaw<string>("SELECT \"DomainAction\" AS \"Value\" FROM \"OrderItems\" WHERE \"Id\" = {0}", itemId)
             .SingleAsync();
-        action.Should().Be("renew");
+        action.Should().Be("Renew");
     }
 
     /// <summary>Reads the raw <c>BillingCycle</c> column of one row.</summary>

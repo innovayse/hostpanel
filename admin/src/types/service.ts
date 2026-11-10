@@ -294,7 +294,7 @@ export interface AddExistingServicePayload {
   /** Product the service is of. */
   productId: number
   /** Billing cycle. */
-  billingCycle: string
+  billingCycle: BillingCycle
   /** Amount each renewal invoice charges. */
   recurringAmount: number
   /** Server the account lives on. */

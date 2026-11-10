@@ -44,6 +44,22 @@ public sealed class UpdateClientGroupTests(IntegrationTestFactory factory) : ICl
         await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.CLIENT_GROUP_NOT_FOUND);
     }
 
+    /// <summary>A discount with more than two decimals is refused, since the column would round it, and the stored group keeps its old discount.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Update_RefusesADiscountWithMoreThanTwoDecimals()
+    {
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        var id = await ClientGroupTestSeeds.CreateAsync(admin, discountPercent: 5m);
+
+        var response = await admin.PutAsJsonAsync(
+            $"{ClientGroupTestSeeds.Route}/{id}", ClientGroupTestSeeds.Body(discountPercent: 12.345m));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await ClientsTestSeeds.AssertCodeAsync(response, SharedErrorCodes.ValidationError);
+        (await ClientGroupTestSeeds.GetAsync(admin, id)).GetProperty("discountPercent").GetDecimal().Should().Be(5m);
+    }
+
     /// <summary>A discount above 100 percent is refused and the stored group keeps its old discount.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

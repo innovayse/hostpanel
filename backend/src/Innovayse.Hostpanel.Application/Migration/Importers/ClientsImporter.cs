@@ -16,7 +16,9 @@ namespace Innovayse.Hostpanel.Application.Migration.Importers;
 /// <summary>
 /// Imports client records: provisions a new local account for each one not already known, then
 /// creates its <see cref="Client"/> row. An account that exists without a client row (an earlier
-/// pull that stopped between the two writes) gets its client row on the next pull.
+/// pull that stopped between the two writes) gets its client row on the next pull. An imported client
+/// joins no client group, on purpose: the default group is a rule for new sign-ups, and a migrated
+/// client keeps the standing it had before, which the source panel's groups do not map onto.
 /// </summary>
 public sealed class ClientsImporter : IMigrationEntityImporter
 {

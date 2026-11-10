@@ -24,6 +24,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>Updating a client's profile writes the change back.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -87,7 +90,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Invoices.Add(Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(14), "USD", DateTimeOffset.UtcNow));
+            db.Invoices.Add(Invoice.Create(clientId, SeededAt.AddDays(14), "USD", SeededAt));
             await db.SaveChangesAsync();
         }
 
@@ -114,7 +117,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
         using (var scope = factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var invoice = Invoice.Create(clientId, DateTimeOffset.UtcNow.AddDays(14), "USD", DateTimeOffset.UtcNow);
+            var invoice = Invoice.Create(clientId, SeededAt.AddDays(14), "USD", SeededAt);
             invoice.Cancel();
             db.Invoices.Add(invoice);
             await db.SaveChangesAsync();

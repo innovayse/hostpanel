@@ -18,6 +18,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetActiveDomainProductTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>With an active domain product stored, the first one by name is answered.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -28,7 +31,7 @@ public sealed class GetActiveDomainProductTests(IntegrationTestFactory factory) 
         var group = ProductGroup.Create($"domains-{Guid.NewGuid():N}", null);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
-        context.Products.Add(Product.Create(group.Id, "Domain Registration", null, null, null, null, ProductType.Domain, 0m, 0m, DateTimeOffset.UtcNow));
+        context.Products.Add(Product.Create(group.Id, "Domain Registration", null, null, null, null, ProductType.Domain, 0m, 0m, SeededAt));
         await context.SaveChangesAsync(CancellationToken.None);
 
         var expected = await context.Products.AsNoTracking()
@@ -79,10 +82,10 @@ public sealed class GetActiveDomainProductTests(IntegrationTestFactory factory) 
         var group = ProductGroup.Create($"domains-{Guid.NewGuid():N}", null);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
-        var inactiveDomain = Product.Create(group.Id, "A Domain", null, null, null, null, ProductType.Domain, 0m, 0m, DateTimeOffset.UtcNow);
+        var inactiveDomain = Product.Create(group.Id, "A Domain", null, null, null, null, ProductType.Domain, 0m, 0m, SeededAt);
         inactiveDomain.Deactivate();
         context.Products.Add(inactiveDomain);
-        context.Products.Add(Product.Create(group.Id, "A Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow));
+        context.Products.Add(Product.Create(group.Id, "A Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, SeededAt));
         await context.SaveChangesAsync(CancellationToken.None);
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 

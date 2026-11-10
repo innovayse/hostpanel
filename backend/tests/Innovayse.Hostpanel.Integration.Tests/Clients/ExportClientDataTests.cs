@@ -14,6 +14,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ExportClientDataTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>Exporting only the requested section returns that section and nothing else.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -250,7 +253,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = SeededAt;
         for (var i = 0; i < count; i++)
         {
             context.EmailLogs.Add(EmailLog.Create(to, $"Subject {i}", "body", null, now.AddSeconds(-i)));

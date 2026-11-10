@@ -21,6 +21,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 /// <param name="PublisherKind">The publisher kind name (<c>Personal</c> or <c>Organization</c>); absent from an older registry.</param>
 /// <param name="Tags">The plugin's tags; absent from an older registry.</param>
 /// <param name="Downloads">Downloads of every version added up; absent from an older registry.</param>
+/// <param name="LatestChangelog">The release notes of the newest version, Markdown; absent from an older registry.</param>
 internal sealed record PluginRegistryEntryWire(
     string? PluginId,
     string? Id,
@@ -37,4 +38,5 @@ internal sealed record PluginRegistryEntryWire(
     string? Distribution = null,
     string? PublisherKind = null,
     List<string?>? Tags = null,
-    long? Downloads = null);
+    long? Downloads = null,
+    string? LatestChangelog = null);

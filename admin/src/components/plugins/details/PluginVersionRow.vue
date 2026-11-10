@@ -14,6 +14,7 @@ import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiMarkdown from '@/components/ui/UiMarkdown.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { relationTo } from '@/components/plugins/details/versionOrder'
@@ -180,18 +181,11 @@ const installVariant = computed<UiButtonVariant>(() =>
 
       <UiStack gap="xs">
         <UiText tone="secondary" size="sm" class="font-semibold">{{ t('pluginDetails.versions.changelog') }}</UiText>
-        <UiText
-          v-if="version.changelog !== null && version.changelog !== ''"
-          tone="muted"
-          size="sm"
-          class="whitespace-pre-line"
+        <UiMarkdown
+          :source="version.changelog"
+          :empty="t('pluginDetails.versions.noChangelog')"
           :data-testid="`plugin-version-changelog-${version.version}`"
-        >
-          {{ version.changelog }}
-        </UiText>
-        <UiText v-else tone="muted" size="sm" :data-testid="`plugin-version-no-changelog-${version.version}`">
-          {{ t('pluginDetails.versions.noChangelog') }}
-        </UiText>
+        />
       </UiStack>
 
       <UiStack gap="xs">

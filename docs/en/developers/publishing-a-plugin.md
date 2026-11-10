@@ -97,6 +97,12 @@ A registry needs to know who you are before it accepts a package. The steps, in 
 
 Operators who install your package straight from a ZIP, without a registry, add the same public key to `PluginSigning:OperatorKeys` on their server. Without it the install is refused with `PLUGIN_SIGNATURE_KEY_UNKNOWN`.
 
+## Release notes {#release-notes}
+
+Every version needs release notes, because operators read them in the admin panel before they update. The notes are Markdown, between 10 and 10000 characters. A registry refuses a version that has none.
+
+Write them in the `CHANGELOG.md` that you put in the signed package, one section per version with a heading such as `## [1.2.0]` (the Keep a Changelog style). The section of the version you upload is what the registry stores. You can also send the text with the upload or in the manifest `changelog` member, as the registry allows. The notes of every version between the installed one and the new one are shown to the operator in the update dialog, so write each section for a reader who has not seen the earlier ones.
+
 ## Upload to a registry
 
 There are two ways to get a signed package into a registry. Use one or both.

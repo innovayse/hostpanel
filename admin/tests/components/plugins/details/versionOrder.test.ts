@@ -3,7 +3,7 @@
  * version to the installed one.
  */
 import { describe, expect, it } from 'vitest'
-import { compareVersions, relationTo } from '@/components/plugins/details/versionOrder'
+import { compareVersions, relationTo, versionsBetween } from '@/components/plugins/details/versionOrder'
 import { VersionRelation } from '@/types/plugin'
 
 describe('compareVersions', () => {
@@ -27,6 +27,31 @@ describe('compareVersions', () => {
 
   it('ignores build metadata', () => {
     expect(compareVersions('1.0.0+build5', '1.0.0')).toBe(0)
+  })
+})
+
+describe('versionsBetween', () => {
+  const listed = ['1.0.0', '2.0.0', '2.1.0', '3.0.0', '4.0.0'].map((version) => ({ version }))
+
+  it('returns every version after the installed one up to the target, newest first', () => {
+    expect(versionsBetween(listed, '2.0.0', '3.0.0').map((entry) => entry.version)).toEqual(['3.0.0', '2.1.0'])
+  })
+
+  it('returns only the target when nothing is installed', () => {
+    expect(versionsBetween(listed, null, '3.0.0').map((entry) => entry.version)).toEqual(['3.0.0'])
+  })
+
+  it('returns nothing when the target is not newer than the installed version', () => {
+    expect(versionsBetween(listed, '3.0.0', '2.0.0')).toEqual([])
+    expect(versionsBetween(listed, '3.0.0', '3.0.0')).toEqual([])
+  })
+
+  it('does not change the order of the list it is given', () => {
+    const input = [{ version: '1.0.0' }, { version: '2.0.0' }, { version: '3.0.0' }]
+
+    versionsBetween(input, '1.0.0', '3.0.0')
+
+    expect(input.map((entry) => entry.version)).toEqual(['1.0.0', '2.0.0', '3.0.0'])
   })
 })
 

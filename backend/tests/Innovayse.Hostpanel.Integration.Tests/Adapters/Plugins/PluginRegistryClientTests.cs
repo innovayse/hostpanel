@@ -245,6 +245,34 @@ public sealed class PluginRegistryClientTests(IntegrationTestFactory factory) : 
         handler.Bodies.Single().Should().Be("""{"ids":["acme-pay","other"]}""");
     }
 
+    /// <summary>The release notes of the newest version are read from the listing and from the newest-version lookup, line breaks kept and control characters removed; an absent or blank value is null.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task TheLatestReleaseNotes_AreReadFromTheListingAndTheLatestLookupAsync()
+    {
+        var listing = ScriptedHttpMessageHandler.Json($$"""
+            {"items":[
+              {{EntryJson("with-notes", ",\"latestChangelog\":\"- Faster **refunds**\\r\\n- Fixed\\u0007 rounding\"")}},
+              {{EntryJson("blank-notes", ",\"latestChangelog\":\"   \"")}},
+              {{EntryJson("no-notes")}}],"total":3}
+            """);
+
+        var items = (await Client(listing).SearchAsync(new RegistryPluginSearch(null, null, 1, 20), CancellationToken.None)).Value!.Items;
+
+        items[0].LatestChangelog.Should().Be("- Faster **refunds**\n- Fixed  rounding");
+        items[1].LatestChangelog.Should().BeNull();
+        items[2].LatestChangelog.Should().BeNull();
+
+        var latest = ScriptedHttpMessageHandler.Json("""
+            [{"pluginId":"acme-pay","version":"1.2.3","downloadUrl":"/x.zip","sha256":"abc","verified":true,"changelog":"New flow."},
+             {"pluginId":"free-one","version":"0.9.0","downloadUrl":"/y.zip","sha256":"abc","verified":false,"changelog":null}]
+            """);
+
+        var result = await Client(latest).GetLatestAsync(["acme-pay", "free-one"], CancellationToken.None);
+
+        result.Value!.Select(p => p.LatestChangelog).Should().Equal("New flow.", null);
+    }
+
     /// <summary>A release is resolved, a relative package address is made absolute on the registry's host, the checksum is lower-cased.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

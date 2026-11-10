@@ -121,6 +121,27 @@ describe('PluginRegistryBrowser', () => {
     expect(wrapper.emitted('install')).toEqual([['example-registrar', '2.0.0']])
   })
 
+  it('opens the release notes of the latest version as Markdown, and says when there are none', async () => {
+    const wrapper = await mountBrowser({ items: [{ ...fresh, latestChangelog: '- Faster **refunds**' }, outdated] })
+
+    expect(wrapper.get('[data-testid="registry-notes-toggle-example-pay"]').text()).toBe('What is new in 2.0.0')
+    await wrapper.get('[data-testid="registry-notes-toggle-example-pay"]').trigger('click')
+    await wrapper.get('[data-testid="registry-notes-toggle-example-registrar"]').trigger('click')
+
+    expect(wrapper.get('[data-testid="registry-notes-example-pay"]').find('li strong').text()).toBe('refunds')
+    expect(wrapper.get('[data-testid="registry-notes-example-registrar"]').text()).toBe('This version has no release notes.')
+  })
+
+  it('links an available update to the details page where its release notes are', async () => {
+    const wrapper = await mountBrowser()
+
+    await wrapper.get('[data-testid="registry-changes-example-registrar"]').trigger('click')
+
+    expect(wrapper.emitted('details')).toEqual([['example-registrar']])
+    expect(wrapper.find('[data-testid="registry-changes-example-pay"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="registry-changes-example-host"]').exists()).toBe(false)
+  })
+
   it('shows a plain installed badge, with no install button, for a current plugin', async () => {
     const wrapper = await mountBrowser()
 

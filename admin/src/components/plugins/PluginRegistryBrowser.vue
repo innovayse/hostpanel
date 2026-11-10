@@ -21,7 +21,9 @@ import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
+import UiCollapse from '@/components/ui/UiCollapse.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiMarkdown from '@/components/ui/UiMarkdown.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -174,6 +176,20 @@ const pricingTone: Record<PluginPricing, UiTone> = {
   Private: UiTone.Info,
 }
 
+/** Ids of the cards whose release notes are open. */
+const notesOpenIds = ref<string[]>([])
+
+/**
+ * Opens or closes the release notes of one card.
+ *
+ * @param id - The listing id.
+ */
+const toggleNotes = (id: string): void => {
+  notesOpenIds.value = notesOpenIds.value.includes(id)
+    ? notesOpenIds.value.filter(open => open !== id)
+    : [...notesOpenIds.value, id]
+}
+
 /**
  * Whether a listing offers an action: Install when absent, Update when a newer version exists.
  *
@@ -300,6 +316,26 @@ const busy = (id: string): boolean => props.installingIds.includes(id) || props.
             <UiText tone="muted" size="sm" class="line-clamp-3" :data-testid="`registry-description-${item.id}`">
               {{ item.description }}
             </UiText>
+            <UiStack v-if="item.latestVersion" gap="xs">
+              <UiButton
+                type="button"
+                :variant="UiButtonVariant.Link"
+                size="sm"
+                class="self-start"
+                :aria-expanded="notesOpenIds.includes(item.id)"
+                :data-testid="`registry-notes-toggle-${item.id}`"
+                @click="toggleNotes(item.id)"
+              >
+                {{ notesOpenIds.includes(item.id) ? t('plugins.pluginRegistry.hideNotes') : t('plugins.pluginRegistry.showNotes', { version: item.latestVersion }) }}
+              </UiButton>
+              <UiCollapse :open="notesOpenIds.includes(item.id)">
+                <UiMarkdown
+                  :source="item.latestChangelog ?? null"
+                  :empty="t('plugins.pluginRegistry.noNotes')"
+                  :data-testid="`registry-notes-${item.id}`"
+                />
+              </UiCollapse>
+            </UiStack>
             <UiStack v-if="visibleTags(item).length" direction="row" align="center" gap="xs" wrap :data-testid="`registry-tags-${item.id}`">
               <UiBadge v-for="tag in visibleTags(item)" :key="tag" :tone="UiTone.Neutral" small>
                 {{ t('plugins.pluginRegistry.tag', { tag }) }}
@@ -395,6 +431,16 @@ const busy = (id: string): boolean => props.installingIds.includes(id) || props.
               >
                 {{ t('plugins.pluginRegistry.installed', { version: item.installedVersion ?? item.latestVersion }) }}
               </UiBadge>
+              <UiButton
+                v-if="item.installed && item.updateAvailable && !needsDetails(item)"
+                type="button"
+                :variant="UiButtonVariant.Link"
+                size="sm"
+                :data-testid="`registry-changes-${item.id}`"
+                @click="emit('details', item.id)"
+              >
+                {{ t('plugins.pluginRegistry.whatChanged') }}
+              </UiButton>
               <UiButton
                 v-if="item.installed"
                 type="button"

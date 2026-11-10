@@ -56,7 +56,7 @@ describe('PluginVersionRow', () => {
     expect(withBoth.get('[data-testid="plugin-version-changelog-3.0.0"]').text()).toBe('Faster refunds.')
     expect(withBoth.get('[data-testid="plugin-version-permissions-3.0.0"]').text()).toContain('payments.charge')
     expect(withBoth.get('[data-testid="plugin-version-permissions-3.0.0"]').text()).toContain('orders.read')
-    expect(withNone.find('[data-testid="plugin-version-no-changelog-3.0.0"]').exists()).toBe(true)
+    expect(withNone.get('[data-testid="plugin-version-changelog-3.0.0"]').text()).toBe('No release notes.')
     expect(withNone.find('[data-testid="plugin-version-no-permissions-3.0.0"]').exists()).toBe(true)
   })
 

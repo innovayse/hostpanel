@@ -13,7 +13,13 @@
     "refused": "Մերժված",
     "staged": "{version} տարբերակը պատրաստ է, կկիրառվի վերագործարկումից հետո",
     "brokenRule": "{id} · խախտված կանոն՝ {rule}",
-    "updateAvailable": "Հասանելի է թարմացում՝ {version}"
+    "updateAvailable": "Հասանելի է թարմացում՝ {version}",
+    "showNotes": "{version} տարբերակի փոփոխությունները",
+    "hideNotes": "Թաքցնել փոփոխությունները",
+    "noNotes": "Այս տարբերակի համար փոփոխություններ նշված չեն։",
+    "whatChanged": "Ինչ կփոխվի {to} տարբերակում",
+    "showUpdateNotes": "Ինչ նոր է {version} տարբերակում",
+    "hideUpdateNotes": "Թաքցնել նորությունները"
   },
   "pluginUploader": {
     "dropYourPlugin": "Քաշեք ձեր պլագինը",
@@ -80,7 +86,10 @@
     "pluginStaged": "{version} տարբերակը բեռնվեց և պատրաստ է։ Այն կփոխարինի տեղադրվածին սերվերի վերագործարկումից հետո։",
     "tabInstalled": "Տեղադրված",
     "tabBrowse": "Կատալոգ",
-    "registryInstalled": "Պլագինը տեղադրվել է կատալոգից։"
+    "registryInstalled": "Պլագինը տեղադրվել է կատալոգից։",
+    "confirmUpdateTitle": "Թարմացնե՞լ հավելագրիչը",
+    "confirmUpdateMessage": "Թարմացնե՞լ {id}-ը մինչև {version} տարբերակը։ Փոփոխությունը կգործի սերվերի վերագործարկումից հետո։",
+    "confirmUpdate": "Թարմացնել"
   },
   "pluginSlotWidgets": {
     "title": "Սլոտի վիջեթներ. {plugin}",
@@ -134,7 +143,11 @@
     },
     "tag": "#{tag}",
     "moreTags": "+{count}",
-    "downloads": "Ներբեռնումներ՝ {count}"
+    "downloads": "Ներբեռնումներ՝ {count}",
+    "whatChanged": "Ինչ է փոխվել",
+    "showNotes": "Ինչ նոր է {version} տարբերակում",
+    "hideNotes": "Թաքցնել նորությունները",
+    "noNotes": "Այս տարբերակի համար փոփոխություններ նշված չեն։"
   },
   "registryTrust": {
     "title": "Վստահություն կատալոգի նկատմամբ",

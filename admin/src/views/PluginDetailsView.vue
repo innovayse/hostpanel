@@ -17,10 +17,12 @@ import { usePluginsStore } from '@/stores/plugins'
 import PluginDetailsHeader from '@/components/plugins/details/PluginDetailsHeader.vue'
 import PluginDetailsLinks from '@/components/plugins/details/PluginDetailsLinks.vue'
 import PluginLicenceCard from '@/components/plugins/details/PluginLicenceCard.vue'
+import PluginUpdateChanges from '@/components/plugins/details/PluginUpdateChanges.vue'
 import PluginVersionList from '@/components/plugins/details/PluginVersionList.vue'
 import { relationTo } from '@/components/plugins/details/versionOrder'
 import RestartBanner from '@/components/plugins/RestartBanner.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
+import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
@@ -35,7 +37,7 @@ import { AppRoute } from '@/lib/routes'
 import { PluginErrorCode, VersionRelation } from '@/types/plugin'
 import type { RegistryDetailsState, RegistryPluginDetailsDto } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
-import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 
 /** Translation function. */
@@ -108,6 +110,15 @@ const installPromptOpen = computed<boolean>(() => pendingInstall.value !== null 
 
 /** Whether the open install prompt is the explicit downgrade one. */
 const downgradePromptOpen = computed<boolean>(() => pendingInstall.value !== null && pendingInstall.value.downgrade)
+
+/** Whether an update is on offer and not yet staged, so the page lists what it changes. */
+const updatePending = computed<boolean>(
+  () =>
+    details.value !== null &&
+    details.value.installed &&
+    details.value.updateAvailable &&
+    details.value.stagedVersion !== details.value.latestVersion,
+)
 
 /** Whether the paid plugin still needs a key before it can be installed. */
 const licenceNeeded = computed<boolean>(() => details.value !== null && details.value.requiresLicence && !details.value.hasLicenceKey)
@@ -289,6 +300,13 @@ onMounted(load)
     <template v-else-if="details !== null">
       <PluginDetailsHeader :details="details" :busy="busy" @update="askUpdate" @uninstall="askUninstall" />
       <PluginDetailsLinks :details="details" />
+      <UiCard v-if="updatePending" padding="md" data-testid="plugin-details-changes">
+        <PluginUpdateChanges
+          :versions="details.versions"
+          :installed-version="details.installedVersion"
+          :target-version="details.latestVersion"
+        />
+      </UiCard>
       <template v-if="details.requiresLicence">
         <UiAlert v-if="licenceNeeded" :variant="UiTone.Warning" data-testid="plugin-details-licence-needed">
           {{ t('pluginDetails.licence.needed') }}
@@ -319,10 +337,18 @@ onMounted(load)
       :confirm-label="t('pluginDetails.confirm.install')"
       :loading="busy"
       :tone="UiTone.Primary"
+      :size="UiDialogSize.Lg"
       data-testid="plugin-details-install-dialog"
       @confirm="handleInstall"
       @close="dismissInstall"
-    />
+    >
+      <PluginUpdateChanges
+        v-if="details !== null && pendingInstall !== null"
+        :versions="details.versions"
+        :installed-version="details.installedVersion"
+        :target-version="pendingInstall.version"
+      />
+    </UiDialog>
 
     <UiDialog
       :open="downgradePromptOpen"

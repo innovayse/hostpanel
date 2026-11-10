@@ -9,13 +9,15 @@
  * registry shows an update badge with an Update button, a plugin the registry lists has a Details button, and each capability the manifest declares (such as serving pages from a
  * fulfilment plugin) is shown as a badge.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { PluginStatus } from '@/types/plugin'
 import type { PluginListItemDto } from '@/types/plugin'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
+import UiCollapse from '@/components/ui/UiCollapse.vue'
+import UiMarkdown from '@/components/ui/UiMarkdown.vue'
 import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
@@ -33,12 +35,15 @@ const props = withDefaults(defineProps<{
   removing: boolean
   /** The newer version the registry offers for this plugin; null or omitted when it is up to date. */
   updateVersion?: string | null
+  /** Release notes of the newer registry version as Markdown; null when the registry sent none. */
+  updateChangelog?: string | null
   /** True while this plugin's update from the registry is in flight. */
   updating?: boolean
   /** True when the registry lists this plugin, so it has a details page to open. */
   hasDetails?: boolean
 }>(), {
   updateVersion: null,
+  updateChangelog: null,
   updating: false,
   hasDetails: false,
 })
@@ -50,6 +55,12 @@ const refused = computed<boolean>(() => props.plugin.status === PluginStatus.Ref
 const reason = computed<string>(() =>
   props.plugin.refusedRule === null ? '' : t(`plugins.rules.${props.plugin.refusedRule}`),
 )
+
+/** Whether the release notes of the installed version are open. */
+const notesOpen = ref(false)
+
+/** Whether the release notes of the offered update are open. */
+const updateNotesOpen = ref(false)
 
 /** Events emitted by PluginCard. */
 const emit = defineEmits<{
@@ -114,6 +125,56 @@ const emit = defineEmits<{
           <UiText v-if="plugin.refusedDetail" tone="muted" size="xs" class="font-mono break-all">
             {{ plugin.refusedDetail }}
           </UiText>
+        </UiStack>
+        <UiStack v-if="!refused" gap="xs">
+          <UiStack direction="row" align="center" gap="sm" wrap>
+            <UiButton
+              type="button"
+              :variant="UiButtonVariant.Link"
+              size="sm"
+              :aria-expanded="notesOpen"
+              :data-testid="`plugin-notes-toggle-${plugin.id}`"
+              @click="notesOpen = !notesOpen"
+            >
+              {{ notesOpen ? t('plugins.pluginCard.hideNotes') : t('plugins.pluginCard.showNotes', { version: plugin.version }) }}
+            </UiButton>
+            <UiButton
+              v-if="updateVersion"
+              type="button"
+              :variant="UiButtonVariant.Link"
+              size="sm"
+              :aria-expanded="updateNotesOpen"
+              :data-testid="`plugin-update-notes-toggle-${plugin.id}`"
+              @click="updateNotesOpen = !updateNotesOpen"
+            >
+              {{ updateNotesOpen ? t('plugins.pluginCard.hideUpdateNotes') : t('plugins.pluginCard.showUpdateNotes', { version: updateVersion }) }}
+            </UiButton>
+            <!-- The installed list updates in one click, so the way to read what the update changes is the details page. -->
+            <UiButton
+              v-if="updateVersion && hasDetails"
+              type="button"
+              :variant="UiButtonVariant.Link"
+              size="sm"
+              :data-testid="`plugin-changes-${plugin.id}`"
+              @click="emit('details', plugin.id)"
+            >
+              {{ t('plugins.pluginCard.whatChanged', { from: plugin.version, to: updateVersion }) }}
+            </UiButton>
+          </UiStack>
+          <UiCollapse :open="notesOpen">
+            <UiMarkdown
+              :source="plugin.changelog ?? null"
+              :empty="t('plugins.pluginCard.noNotes')"
+              :data-testid="`plugin-notes-${plugin.id}`"
+            />
+          </UiCollapse>
+          <UiCollapse :open="updateNotesOpen && !!updateVersion">
+            <UiMarkdown
+              :source="updateChangelog"
+              :empty="t('plugins.pluginCard.noNotes')"
+              :data-testid="`plugin-update-notes-${plugin.id}`"
+            />
+          </UiCollapse>
         </UiStack>
         <UiText tone="muted" size="xs">
           {{ t('plugins.pluginCard.categoryByAuthor', { category: plugin.category, author: plugin.author }) }}

@@ -350,6 +350,8 @@ export interface PluginRegistryItemDto {
   tags?: string[] | null
   /** Downloads of every version added up; null or absent when the registry does not say. */
   downloads?: number | null
+  /** Release notes of the latest version as Markdown; null or absent when the registry sends none. */
+  latestChangelog?: string | null
 }
 
 /** One page of registry listings. */

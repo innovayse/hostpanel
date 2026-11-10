@@ -13,7 +13,13 @@
     "refused": "Refused",
     "staged": "Version {version} staged, applies after restart",
     "brokenRule": "{id} · broken rule: {rule}",
-    "updateAvailable": "Update available: {version}"
+    "updateAvailable": "Update available: {version}",
+    "showNotes": "Release notes of {version}",
+    "hideNotes": "Hide release notes",
+    "noNotes": "This version has no release notes.",
+    "whatChanged": "What changes in {to}",
+    "showUpdateNotes": "What is new in {version}",
+    "hideUpdateNotes": "Hide what is new"
   },
   "pluginUploader": {
     "dropYourPlugin": "Drop your plugin",
@@ -80,7 +86,10 @@
     "pluginStaged": "Version {version} uploaded and staged. It replaces the installed version after the server restarts.",
     "tabInstalled": "Installed",
     "tabBrowse": "Browse",
-    "registryInstalled": "Plugin installed from the registry."
+    "registryInstalled": "Plugin installed from the registry.",
+    "confirmUpdateTitle": "Update this plugin?",
+    "confirmUpdateMessage": "Update {id} to version {version}? The change applies after a server restart.",
+    "confirmUpdate": "Update"
   },
   "pluginSlotWidgets": {
     "title": "Slot widgets: {plugin}",
@@ -134,7 +143,11 @@
     },
     "tag": "#{tag}",
     "moreTags": "+{count}",
-    "downloads": "{count} downloads"
+    "downloads": "{count} downloads",
+    "whatChanged": "What changed",
+    "showNotes": "What is new in {version}",
+    "hideNotes": "Hide what is new",
+    "noNotes": "This version has no release notes."
   },
   "registryTrust": {
     "title": "Registry trust",

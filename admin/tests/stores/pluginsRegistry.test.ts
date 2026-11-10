@@ -127,6 +127,15 @@ describe('pluginsStore.fetchRegistryUpdates', () => {
     expect(store.updateVersions).toEqual({ 'example-pay': '2.0.0' })
   })
 
+  it('maps the release notes of the newer version by plugin id, null when the registry sent none', async () => {
+    stubFetch(json([{ ...listing, latestChangelog: '- Faster **refunds**' }, { ...listing, id: 'other-pay' }]))
+    const store = usePluginsStore()
+
+    await store.fetchRegistryUpdates()
+
+    expect(store.updateChangelogs).toEqual({ 'example-pay': '- Faster **refunds**', 'other-pay': null })
+  })
+
   it('leaves the list empty on a refusal, with no error shown', async () => {
     stubFetch(problem('Registry unavailable.', 503))
     const store = usePluginsStore()

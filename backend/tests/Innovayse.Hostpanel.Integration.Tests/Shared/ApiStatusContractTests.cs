@@ -58,6 +58,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ApiStatusContractTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>The RFC 9457 media type every error body carries.</summary>
     private const string ProblemJson = "application/problem+json";
 
@@ -191,13 +194,13 @@ public sealed class ApiStatusContractTests(IntegrationTestFactory factory) : ICl
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var seededClient = Client.Create(
-            $"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            $"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", SeededAt);
         db.Clients.Add(seededClient);
         await db.SaveChangesAsync();
 
         // Invoice.Create (not CreateDraft) starts Unpaid, so Publish's own "must be Draft"
         // invariant is the only thing that can refuse this call; nothing upstream pre-checks it.
-        var invoice = Invoice.Create(seededClient.Id, DateTimeOffset.UtcNow.AddDays(14), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(seededClient.Id, SeededAt.AddDays(14), "USD", SeededAt);
         db.Invoices.Add(invoice);
         await db.SaveChangesAsync();
 

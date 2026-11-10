@@ -21,6 +21,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Pdf;
 /// </remarks>
 public sealed class MigraDocInvoicePdfRendererTests : IDisposable
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>A web root of the test's own, so nothing outside it is ever read.</summary>
     private readonly string _webRoot = Directory.CreateTempSubdirectory("invoice-pdf-").FullName;
 
@@ -726,7 +729,7 @@ public sealed class MigraDocInvoicePdfRendererTests : IDisposable
     [Fact]
     public async Task Render_StaysSmallEnoughToEmail()
     {
-        var bytes = (await Create().RenderAsync(SampleModel() with { Status = InvoiceStatus.Paid, PaidAt = DateTimeOffset.UtcNow }, CancellationToken.None)).Value!;
+        var bytes = (await Create().RenderAsync(SampleModel() with { Status = InvoiceStatus.Paid, PaidAt = SeededAt }, CancellationToken.None)).Value!;
 
         bytes.Length.Should().BeLessThan(60_000);
     }

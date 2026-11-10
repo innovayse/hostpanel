@@ -18,6 +18,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.Namecheap;
 /// </summary>
 public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
 {
+    /// <summary>The moment the clock of the provider built by <c>BuildProvider</c> stands at.</summary>
+    private static readonly DateTimeOffset Now = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>The loopback server standing in for the Namecheap API; started per test class instance.</summary>
     private StubHttpServer namecheap = null!;
 
@@ -56,7 +59,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
         return new NamecheapRegistrarProvider(
             new NamecheapClient(new HttpClient(), Options.Create(Settings)),
             NullLogger<NamecheapRegistrarProvider>.Instance,
-            new SystemClock(TimeProvider.System));
+            new SystemClock(new ManualTimeProvider(Now)));
     }
 
     /// <summary>Gets the most recent request the stub received.</summary>
@@ -571,7 +574,7 @@ public sealed class NamecheapRegistrarProviderTests : IAsyncLifetime
         }
         else
         {
-            result.ExpiresAt!.Value.Should().BeCloseTo(DateTimeOffset.UtcNow.AddYears(2), TimeSpan.FromMinutes(5));
+            result.ExpiresAt!.Value.Should().Be(Now.AddYears(2));
         }
     }
 

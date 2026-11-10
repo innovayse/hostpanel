@@ -240,7 +240,7 @@ public class MyGatewayTests
 <SettingTable :settings="[
   { name: 'minHostVersion', type: 'string', default: '', description: 'Hostpanel-ի ամենացածր տարբերակը, որի հետ պլագինն աշխատում է, խիստ major.minor.patch ձևով, օրինակ՝ 2.1.0։ Բաց թողեք, եթե ներքևի սահման չկա։' },
   { name: 'maxHostVersion', type: 'string', default: '', description: 'Hostpanel-ի ամենաբարձր տարբերակը, որի հետ պլագինը հաստատ աշխատում է, նույն ձևով և ոչ ցածր minHostVersion-ից։ Բաց թողեք, եթե վերևի սահման չկա։' },
-  { name: 'changelog', type: 'string', default: '', description: 'Այս տարբերակի փոփոխությունների կարճ ցանկ՝ պարզ տեքստով, առավելագույնը 4000 նիշ։ Տողադարձերը պահպանվում են։' }
+  { name: 'changelog', type: 'string', default: '', description: 'Այս տարբերակի փոփոխությունների կարճ ցանկ՝ Markdown-ով, առավելագույնը 4000 նիշ։ Տողադարձերը պահպանվում են։' }
 ]" />
 
 ```json

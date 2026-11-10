@@ -146,6 +146,15 @@ Each version row has one action: **Install** for a plugin you do not have, **Upd
 
 A **downgrade is allowed, but only after an explicit confirmation** that warns an older version may lack fixes and may not read data a newer one wrote. Without the confirmation the request is refused with `PLUGIN_DOWNGRADE_REFUSED`. A script that calls `POST /api/admin/plugins/registry/{id}/install` has to send `"allowDowngrade": true` for the same effect. A downgrade is staged for the next restart like an update and is written to the activity log as a forced downgrade.
 
+### Release notes and updates {#release-notes-and-updates}
+
+Release notes tell you what a version changes before you install it. They are Markdown written by the publisher and shown as formatted text.
+
+- **Browse tab.** A card with a version has a **What is new in** link that opens the release notes of the newest version inline. For a plugin you already have, when a newer version exists, a **What changed** link opens the details page, where the update is explained.
+- **Installed tab.** Each plugin has a **Release notes of** link for the installed version. A plugin with an update also has **What is new in** for the new version and **What changes in**, which opens the details page.
+- **Details page.** The rows of the **Versions** list open their release notes, and a plugin with an update shows **What changes from 1.0.0 to 1.2.0** above them.
+- **Update.** **Update** does not start at once. A confirmation dialog, "Update this plugin?", shows **What changes from 1.0.0 to 1.2.0** with the release notes of every version after the installed one up to the one you chose, newest first, so an update that skips versions still shows all of them. A version in between without notes shows "This version has no release notes." instead of being left out. Press **Update** in the dialog to stage the version, or cancel to leave things as they are. The update is applied at the next restart, as before.
+
 ### Licence keys
 
 A paid or private plugin needs a licence key from its publisher. The Licence key card on the details page says whether a key is saved, and lets you save a new one (it replaces the old) or remove it. A key is at most 256 printable characters, with no spaces. The key is write only: it is stored encrypted on your server and never shown again, no endpoint returns it, and it is left out of the logs and the activity log. Save the key before you install. Without one the registry answers that a licence is needed, and with a wrong one that it is not valid (`PLUGIN_REGISTRY_LICENCE_REQUIRED` and `PLUGIN_REGISTRY_LICENCE_INVALID` below).

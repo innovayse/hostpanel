@@ -240,7 +240,7 @@ public class MyGatewayTests
 <SettingTable :settings="[
   { name: 'minHostVersion', type: 'string', default: '', description: 'Самая ранняя версия Hostpanel, с которой работает плагин, строго в виде major.minor.patch, например 2.1.0. Не указывайте, если нижней границы нет.' },
   { name: 'maxHostVersion', type: 'string', default: '', description: 'Самая поздняя версия Hostpanel, с которой плагин заведомо работает, в том же формате и не ниже minHostVersion. Не указывайте, если верхней границы нет.' },
-  { name: 'changelog', type: 'string', default: '', description: 'Краткий список изменений этой версии обычным текстом, не более 4000 символов. Переносы строк сохраняются.' }
+  { name: 'changelog', type: 'string', default: '', description: 'Краткий список изменений этой версии в Markdown, не более 4000 символов. Переносы строк сохраняются.' }
 ]" />
 
 ```json

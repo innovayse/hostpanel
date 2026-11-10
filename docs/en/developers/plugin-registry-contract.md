@@ -115,12 +115,15 @@ The ids are those of the plugins the operator installed or uploaded. Answer with
     "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
     "verified": true,
     "sdkVersion": "3.1.0",
-    "requiresLicence": false
+    "requiresLicence": false,
+    "changelog": "Fixes a rounding error."
   }
 ]
 ```
 
 The reply is not paged: it must fit in 1 MiB. An item for an id that was not asked about is ignored, and an item whose `version` is not a strict `major.minor.patch` is left out. `verified` and `requiresLicence` may be `null`, which reads as `false`. `pluginId` must be a well formed plugin id or the whole reply is invalid. This is how the Installed tab learns that an update exists, from `version` alone. The item has no name, so Hostpanel shows the id; `requiresLicence` set to `true` reads as a paid plugin.
+
+The item may also carry `changelog`, the release notes of that newest version in Markdown, with the same rules as the member of a version row. Hostpanel uses it to show what an update brings, so a registry that has release notes should send it.
 
 ### One release
 
@@ -206,7 +209,7 @@ Reply: a JSON array of versions, newest first.
 | `status` | Required: `InReview`, `Published`, `Rejected`, `Deprecated` or `Yanked`, read case-insensitively. A row with another value is left out. |
 | `permissions` | Optional. `Process`, `RawSockets`, `ReflectionEmit`, `NativeInterop` or `FileSystem`. Unknown names are ignored. |
 | `icon`, `screenshots` | Optional. `url` is absolute or relative to `BaseUrl`; an image that is not on the registry's own origin is dropped. At most 20 screenshots are kept. |
-| `changelog` | Optional, plain text, line breaks kept, at most 20000 characters. |
+| `changelog` | Optional, Markdown, line breaks kept, at most 20000 characters. Hostpanel draws it as formatted text (headings, lists, bold, code and `https` links; raw HTML is shown as text). |
 | other text members | Cleaned of control characters and capped. |
 
 If the same `version` is listed twice with different statuses, Hostpanel keeps the strictest one: `Yanked`, then `Rejected`, `InReview`, `Deprecated` and `Published`.
@@ -222,6 +225,7 @@ Hostpanel checks every entry, and one entry that is not a plugin (bad id, no nam
 | `pluginId` | Required (`id` is read too). A plugin id: lower-case letters, digits and single hyphens, at most 64 characters. |
 | `name` | Required, not empty once control characters and surrounding space are removed. Kept to 200 characters. |
 | `latestVersion` | A strict `major.minor.patch` version, or `null` for a plugin with nothing published. An entry with a missing, `null` or malformed value is left out of the page; the other entries are kept. |
+| `latestChangelog` | Optional, Markdown, at most 20000 characters. The release notes of the newest version, shown on the card in the catalogue. |
 | `pricing` | Required. `Free`, `Paid` or `Private`, read case-insensitively. |
 | `category` | Optional. An unknown or missing value is shown as `Other`. |
 | `description` | Optional, kept to 2000 characters. |

@@ -19,8 +19,14 @@ const props = withDefaults(defineProps<{
   source: string | null
   /** Text shown when there is no source, already translated; omit to draw nothing. */
   empty?: string
+  /**
+   * Whether an https link of the source is drawn as a link. Off for text whose links must pass a stricter rule
+   * of the caller's own (a plugin's reply links only to the plugin's allowed origins), so a link stays its text.
+   */
+  links?: boolean
 }>(), {
   empty: undefined,
+  links: true,
 })
 
 /** The parsed blocks of the source. */
@@ -31,19 +37,19 @@ const blocks = computed(() => parseMarkdown(props.source))
   <div v-if="blocks.length > 0" class="flex flex-col gap-2 text-sm text-text-secondary" data-testid="markdown">
     <template v-for="block in blocks" :key="block.id">
       <p v-if="block.kind === MarkdownBlockKind.Heading" class="font-semibold text-text-primary">
-        <UiMarkdownInline :nodes="block.inlines" />
+        <UiMarkdownInline :nodes="block.inlines" :links="links" />
       </p>
       <p v-else-if="block.kind === MarkdownBlockKind.Paragraph" class="break-words">
-        <UiMarkdownInline :nodes="block.inlines" />
+        <UiMarkdownInline :nodes="block.inlines" :links="links" />
       </p>
       <ol v-else-if="block.kind === MarkdownBlockKind.List && block.ordered" class="list-decimal space-y-1 pl-5">
-        <li v-for="item in block.items" :key="item.id" class="break-words"><UiMarkdownInline :nodes="item.inlines" /></li>
+        <li v-for="item in block.items" :key="item.id" class="break-words"><UiMarkdownInline :nodes="item.inlines" :links="links" /></li>
       </ol>
       <ul v-else-if="block.kind === MarkdownBlockKind.List" class="list-disc space-y-1 pl-5">
-        <li v-for="item in block.items" :key="item.id" class="break-words"><UiMarkdownInline :nodes="item.inlines" /></li>
+        <li v-for="item in block.items" :key="item.id" class="break-words"><UiMarkdownInline :nodes="item.inlines" :links="links" /></li>
       </ul>
       <blockquote v-else-if="block.kind === MarkdownBlockKind.Quote" class="border-l-2 border-border pl-3 italic">
-        <UiMarkdownInline :nodes="block.inlines" />
+        <UiMarkdownInline :nodes="block.inlines" :links="links" />
       </blockquote>
       <pre
         v-else-if="block.kind === MarkdownBlockKind.Code"

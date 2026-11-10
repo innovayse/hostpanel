@@ -9,7 +9,7 @@ import type { RouteLocationNormalized } from 'vue-router'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useNavigationStore } from '@/stores/navigation'
 import { useVersionStore } from '@/stores/version'
-import { problem } from '../../helpers/fetch'
+import { json, problem } from '../../helpers/fetch'
 import { stubRoutes } from '../../helpers/routes'
 import { mountScreen, mountView } from '../../helpers/mount'
 import { resetThemeDocument, stubSchemeQuery } from '../../helpers/theme'
@@ -245,5 +245,47 @@ describe('AppSidebar', () => {
     expect(drawer.get('[data-testid="sidebar-theme-light"]').attributes('aria-checked')).toBe('true')
     expect(document.documentElement.classList.contains('light')).toBe(true)
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
+  })
+})
+
+describe('AppSidebar Add-ons', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('draws an Add-ons section before System from the menu items plugins declare', async () => {
+    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    stubRoutes({
+      'GET /api/admin/plugins/ui': () => json({
+        menus: [
+          { pluginId: 'sites', id: 'usage', label: 'Usage', page: 'usage', icon: 'chart', order: 2 },
+          { pluginId: 'sites', id: 'main', label: 'Sites', page: 'home', icon: null, order: 1 },
+        ],
+        pages: [
+          { pluginId: 'sites', id: 'home', path: '/', title: 'Sites' },
+          { pluginId: 'sites', id: 'usage', path: '/usage', title: 'Usage' },
+        ],
+      }),
+    })
+    const wrapper = await mountView(AppSidebar, { path: '/apps/sites/usage' })
+
+    const sections = wrapper.findAll('[data-testid^="nav-section-"]:not([data-testid$="-label"])').map((section) => section.attributes('data-testid'))
+    expect(sections).toEqual(['nav-section-daily', 'nav-section-insights', 'nav-section-setup', 'nav-section-addons', 'nav-section-system'])
+    expect(wrapper.get('[data-testid="nav-section-addons-label"]').text()).toBe('Add-ons')
+    const sites = wrapper.get('[data-testid="nav-apps-sites"]')
+    expect(sites.text()).toBe('Sites')
+    expect(sites.attributes('href')).toBe('/apps/sites')
+    const usage = wrapper.get('[data-testid="nav-apps-sites-usage"]')
+    expect(usage.attributes('href')).toBe('/apps/sites/usage')
+    expect(usage.classes()).toContain('bg-primary-500/10')
+    expect(sites.classes()).not.toContain('bg-primary-500/10')
+  })
+
+  it('draws no Add-ons section while no plugin declares a menu item', async () => {
+    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    stubRoutes({ 'GET /api/admin/plugins/ui': () => json({ menus: [], pages: [] }) })
+    const wrapper = await mountView(AppSidebar, { path: '/dashboard' })
+
+    expect(wrapper.find('[data-testid="nav-section-addons"]').exists()).toBe(false)
   })
 })

@@ -17,6 +17,7 @@ import {
   invoicePath,
   invoiceViewPath,
   orderPath,
+  pluginPagePath,
   pluginPath,
   quoteAddPath,
   quotePath,
@@ -77,5 +78,12 @@ describe('route builders', () => {
     expect(integrationCategoryPath('payments')).toBe('/integrations/payments')
     expect(integrationConfigurePath('bank-transfer')).toBe('/integrations/bank-transfer/configure')
     expect(reportPagePath('tax')).toBe('/reports/tax')
+  })
+})
+
+describe('pluginPagePath', () => {
+  it('builds the address of a plugin page and of its root page', () => {
+    expect(pluginPagePath('sites', 'sites/7')).toBe('/apps/sites/sites/7')
+    expect(pluginPagePath('sites', '')).toBe('/apps/sites')
   })
 })

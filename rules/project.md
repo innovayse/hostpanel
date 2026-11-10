@@ -337,8 +337,9 @@ docker/                              compose set (shared·dev·prod·platform), 
   fails too); it is proven on an in-memory planted source. The host interfaces are held to it by vitest,
   `admin/tests/lint/pluginNeutrality.test.ts` (the slot and plugin page components with no exemption) and
   `client/tests/config/pluginNeutrality.test.ts`. With no plugin installed `EmptyPluginsTests` asserts that every slot index
-  and both plugin ui indexes (pages and menus) are empty lists, so the panels show only what the core provides. Neither
-  panel renders the plugin ui index yet, so there is no plugin menu to test on the frontend until it does.
+  and both plugin ui indexes (pages and menus) are empty lists, so the panels show only what the core provides. Both
+  panels render the index (the client's side menu, the admin's Add-ons section, #645 and #647) and draw no plugin
+  entry while it is empty.
 - **The plugin contract at a glance (#650).** Where each part is specified; do not restate it elsewhere, link here.
   - **Manifest v2** (`"manifestVersion": 2`): `settings`, `capabilities`, `locales`, `api`, `ui`, `externalOrigins`. The rules
     are in "Manifest v2" and "One manifest validator" in this section and in "Menu icons and page ids".
@@ -2155,6 +2156,23 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   `` t(`area.${x}`) `` prefix counts as use of the keys under it) and a literal `t('...')` /
   `translate('...')` with no `en` entry; `tests/locales/parity.test.ts` also checks values and
   `{placeholders}`. A server-decided sentence is never copied into a locale file.
+- **Plugin pages and the Add-ons menu (#647).** A page a serving plugin adds to the admin lives at
+  `/apps/<plugin>/<path>` (`views/PluginPageView.vue`, route `apps/:plugin/:page*`); the store asks the API's
+  lookup by path (`GET /api/admin/plugins/ui/{plugin}/pages/by-path`) and shows its `PLUGIN_PAGE_NOT_FOUND`
+  sentence in a not-found state. Data flow: `stores/pluginUi.ts` (index, page, `callRoute`, `streamRoute`, the
+  `writes` count the shared reads follow) → `composables/apis/usePluginUiApi.ts` (calls go to
+  `/api/admin/plugins/{id}/ext/{path}`) → `useApi` (`request`, and `stream`, the one server-sent event reader,
+  `fetch` with the CSRF and language headers, never `EventSource`). `components/plugins/view/` renders the
+  schema 1 blocks with the admin kit, mirroring the client's design (header, text, stat, table, form, action,
+  link, badge, empty, alert, tabs, chat with steps, cards and issues, progress, split), with `visibleWhen`,
+  `resetOnSuccess`, `followUp` and the shared reads of `composables/usePluginView.ts`; `preview` and an
+  action's `bodySource` are a client page's alone (refused on an admin page at install) and draw nothing. Pure
+  rules live in `lib/pluginView.ts`: the path filling, the link rule (`pluginLinkTarget`: host-relative, never
+  `/api`, or https on the page's `externalOrigins`), the chat event readers and the follow-up bounds (the host's).
+  A reply's Markdown goes through `UiMarkdown` with `links` off, so an address renders only through the link
+  rule. The sidebar adds an Add-ons section before System from the index's menu items (`withAddons` in
+  `lib/navigation.ts`, a plugin entry carries its API label instead of an i18n key and a built-in icon by name),
+  hidden while no plugin declares one, and reads the index again on a language switch.
 - **Tests mirror the source.** `tests/` mirrors `src/` (components, views, layouts, stores,
   composables, `composables/apis`, lib, middleware, utils), with a real kit, real Pinia and the API
   stubbed at the network level (`tests/helpers/{fetch,routes,mount}.ts`), never a mocked store or

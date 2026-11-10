@@ -2,16 +2,21 @@
 /**
  * The inline pieces of one Markdown block: text, bold, italic, code and https links. Every piece is
  * drawn as a text node inside an ordinary element, so nothing from the source can become markup. A
- * link opens in a new tab with the safe `rel`. Used by {@link UiMarkdown}; it holds no state.
+ * link opens in a new tab with the safe `rel`; with `links` off it stays its text. Used by
+ * {@link UiMarkdown}; it holds no state.
  */
 import { MarkdownInlineKind } from '@/utils/markdown'
 import type { MarkdownInline } from '@/utils/markdown'
 
 /** Props for UiMarkdownInline. */
-defineProps<{
+withDefaults(defineProps<{
   /** The pieces to draw, in order. */
   nodes: MarkdownInline[]
-}>()
+  /** Whether a link is drawn as a link; off draws its text only. */
+  links?: boolean
+}>(), {
+  links: true,
+})
 </script>
 
 <template>
@@ -23,7 +28,7 @@ defineProps<{
       class="rounded bg-surface-field px-1 py-0.5 font-mono text-[0.85em] text-text-primary"
     >{{ node.text }}</code>
     <a
-      v-else-if="node.kind === MarkdownInlineKind.Link && node.href !== null"
+      v-else-if="links && node.kind === MarkdownInlineKind.Link && node.href !== null"
       :href="node.href"
       target="_blank"
       rel="noopener noreferrer nofollow"

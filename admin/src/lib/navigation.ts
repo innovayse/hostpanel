@@ -1,11 +1,14 @@
 /**
  * The admin's main navigation: the one place that decides which entries the sidebar shows, in
  * which order and under which section label. The desktop sidebar and the phone menu drawer both
- * draw this list, so their order cannot drift apart.
+ * draw this list, so their order cannot drift apart. The Add-ons section is built from the menu
+ * items plugins declare ({@link withAddons}) and is left out while no plugin declares one.
  */
+import { pluginIconPath } from '@/lib/pluginView'
 import { AppRoute } from '@/lib/routes'
+import type { PluginMenuLink } from '@/types/pluginui'
 
-/** Closed set of sidebar sections, in the order an operator works: daily work, insights, setup, system. */
+/** Closed set of sidebar sections, in the order an operator works: daily work, insights, setup, add-ons, system. */
 export enum NavSectionId {
   /** Everyday work: clients, orders, billing, domains and support. */
   Daily = 'daily',
@@ -13,6 +16,8 @@ export enum NavSectionId {
   Insights = 'insights',
   /** One-time and occasional setup: servers, integrations, plugins and storefront content. */
   Setup = 'setup',
+  /** The pages plugins add, one entry per menu item a plugin declares. */
+  Addons = 'addons',
   /** Rarely used tools: migration and settings. */
   System = 'system',
 }
@@ -25,17 +30,33 @@ export interface NavChild {
   labelKey: string
 }
 
-/** A top-level navigation item, optionally with children. */
-export interface NavItem {
+/** What every top-level item carries besides its label. */
+interface NavItemBase {
   /** Route path (used when no children). */
   to: string
-  /** i18n key for the display label. */
-  labelKey: string
   /** SVG path data for the icon. */
   icon: string
   /** Optional sub-menu items. */
   children?: NavChild[]
 }
+
+/**
+ * A top-level navigation item, optionally with children. Its label is an i18n key for the panel's own
+ * entries, or the text the API already put in the operator's language for a plugin's entry.
+ */
+export type NavItem = NavItemBase & (
+  | {
+    /** i18n key for the display label. */
+    labelKey: string
+    /** Not set on an entry of the panel's own. */
+    label?: never
+  }
+  | {
+    /** Not set on a plugin's entry. */
+    labelKey?: never
+    /** The display label, already translated by the API. */
+    label: string
+  })
 
 /** A labelled group of top-level items. */
 export interface NavSection {
@@ -174,3 +195,25 @@ export const NAV_SECTIONS: readonly NavSection[] = [
     ],
   },
 ]
+
+/**
+ * The sidebar sections with the Add-ons section of the plugins' menu items, placed before System. The
+ * section is left out while no plugin declares an item, so a panel without plugins shows only its own.
+ *
+ * @param sections - The panel's own sections, in display order.
+ * @param links - The plugins' menu entries, already in display order.
+ * @returns The sections to draw.
+ */
+export const withAddons = (sections: readonly NavSection[], links: readonly PluginMenuLink[]): NavSection[] => {
+  if (links.length === 0) {
+    return [...sections]
+  }
+  const addons: NavSection = {
+    id: NavSectionId.Addons,
+    labelKey: 'nav.sections.addons',
+    items: links.map((link) => ({ to: link.to, label: link.label, icon: pluginIconPath(link.icon) })),
+  }
+  const system = sections.findIndex((section) => section.id === NavSectionId.System)
+  const at = system === -1 ? sections.length : system
+  return [...sections.slice(0, at), addons, ...sections.slice(at)]
+}

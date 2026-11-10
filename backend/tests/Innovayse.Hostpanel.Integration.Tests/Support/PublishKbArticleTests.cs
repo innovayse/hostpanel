@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Support;

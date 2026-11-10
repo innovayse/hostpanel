@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
@@ -11,19 +12,24 @@ namespace Innovayse.Hostpanel.Integration.Tests.Faqs;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetFaqTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The moment the host's clock stands at while the record is created.</summary>
+    private static readonly DateTimeOffset CreatedAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>A stored question is returned with its id and every translation.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_ReturnsTheRecordWithTranslations()
     {
-        var client = await StorefrontContentTestSeeds.AdminClientAsync(factory);
+        using var host = new ClockedHost(factory, CreatedAt);
+        var client = host.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", await factory.GetAdminTokenAsync());
         var id = await StorefrontContentTestSeeds.CreateAsync(client, "/api/admin/faqs", StorefrontContentTestSeeds.FaqBody(sortOrder: 4));
 
         var fetched = await client.GetFromJsonAsync<JsonElement>($"/api/admin/faqs/{id}");
 
         fetched.GetProperty("id").GetInt32().Should().Be(id);
         fetched.GetProperty("sortOrder").GetInt32().Should().Be(4);
-        fetched.GetProperty("createdAt").GetDateTimeOffset().Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromMinutes(5));
+        fetched.GetProperty("createdAt").GetDateTimeOffset().Should().Be(CreatedAt);
         fetched.GetProperty("translations").GetProperty("en").GetProperty("question").GetString().Should().Be("English question?");
     }
 

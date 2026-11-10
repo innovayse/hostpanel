@@ -22,6 +22,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Audit;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>A client id no seeded or created client ever takes.</summary>
     private const int NoSuchClientId = 999_999_999;
 
@@ -68,7 +71,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = DateTimeOffset.UtcNow;
+        var now = SeededAt;
         await SeedLogAsync(context, clientId, "Oldest", now.AddDays(-2));
         await SeedLogAsync(context, clientId, "Newest", now);
         await SeedLogAsync(context, clientId, "Middle", now.AddDays(-1));
@@ -110,7 +113,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = DateTimeOffset.UtcNow;
+        var now = SeededAt;
         await SeedLogAsync(context, clientId, "ByName", now, adminName: "Ada Lovelace");
         await SeedLogAsync(context, clientId, "ByEmail", now.AddMinutes(-1), adminEmail: "ada@example.test");
         await SeedLogAsync(context, clientId, "NoMatch", now.AddMinutes(-2), adminName: "Grace Hopper");
@@ -131,7 +134,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = DateTimeOffset.UtcNow;
+        var now = SeededAt;
         await SeedLogAsync(context, clientId, "Added Invoice Payment", now);
         await SeedLogAsync(context, clientId, "Refunded Invoice", now.AddMinutes(-1));
 
@@ -151,7 +154,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = DateTimeOffset.UtcNow;
+        var now = SeededAt;
         await SeedLogAsync(context, clientId, "FromOffice", now, ipAddress: "10.0.0.5");
         await SeedLogAsync(context, clientId, "FromHome", now.AddMinutes(-1), ipAddress: "192.168.1.1");
 
@@ -173,7 +176,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         // A real second client: the log's client is a foreign key, so another client's entry needs one.
         var otherClientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = DateTimeOffset.UtcNow;
+        var now = SeededAt;
         await SeedLogAsync(context, clientId, "Mine", now);
         await SeedLogAsync(context, otherClientId, "TheirsNotMine", now);
 

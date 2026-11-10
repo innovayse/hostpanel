@@ -41,6 +41,33 @@ public sealed class TransferDomainTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>
+    /// An <c>orderId</c> in the body is never bound: only order fulfilment links a transferred domain to an order.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Transfer_OrderIdInBody_IsIgnoredAsync()
+    {
+        var admin = await DomainsTestSeeds.AdminClientAsync(factory);
+        var (_, clientId) = await DomainsTestSeeds.RegisterOwnerAsync(factory, "transfer-domain-order");
+
+        var domainName = $"{Guid.NewGuid():N}.test";
+        var response = await admin.PostAsJsonAsync("/api/domains/transfer", new
+        {
+            clientId,
+            domainName,
+            eppCode = "EPP-SECRET-CODE",
+            whoisPrivacy = false,
+            orderId = 424242,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var domain = await context.Domains.AsNoTracking().SingleAsync(d => d.Name == domainName);
+        domain.OrderId.Should().BeNull();
+    }
+
+    /// <summary>
     /// A confirmed transfer records the period bought with it and a due date that follows the
     /// expiry, instead of the minimum date.
     /// </summary>

@@ -11,6 +11,7 @@ using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Infrastructure.Integrations.NameAm;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -414,6 +415,42 @@ public sealed class FulfillPaidOrderTests(IntegrationTestFactory factory) : ICla
         line.FulfilmentErrorCode.Should().Be(HostpanelErrorCodes.DOMAIN_ALREADY_REGISTERED);
         order.Status.Should().Be(OrderStatus.Incomplete);
         order.CanRetryLine(line.Id, DateTimeOffset.UtcNow, TimeSpan.FromMinutes(10)).Should().BeTrue();
+    }
+
+    /// <summary>
+    /// When the refused domain line's failure cannot be recorded (the save of the outcome fails), the line stays in progress
+    /// under the run's attempt; the automatic refund still runs, claiming the line from there, so the client is never left
+    /// charged for a domain they did not get.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task RejectedDomainWhoseFailureCannotBeRecordedIsStillRefunded()
+    {
+        var plugin = new FakePaymentPlugin { RefundResult = "plugin-refund-unrecorded" };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var failRecord = new FailingSaveInterceptor(tracker => tracker.Entries<OrderItem>().Any(e =>
+            e.State == EntityState.Modified
+            && e.Entity.FulfilmentState == OrderItemFulfilmentState.Failed
+            && e.Property(i => i.FulfilmentState).OriginalValue == OrderItemFulfilmentState.InProgress));
+        var host = BuildHost(resolver, configure: s => s.ConfigureDbContext<AppDbContext>(o => o.AddInterceptors(failRecord)));
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var (clientId, _) = await SeedClientAndProductAsync(context);
+        var (orderId, invoice) = await SeedRejectedDomainOrderAsync(context, clientId, lineAmount: 25m);
+        invoice.SetGatewaySession("bank-gateway", "gw-order-unrecorded-1", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+        invoice.Settle("bank-gateway", "pre-refund-unrecorded", DateTimeOffset.UtcNow, TransactionSource.Manual);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        var result = await BuildHandler(scope).HandleAsync(new FulfillPaidOrderCommand(orderId), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        plugin.LastRefundAmountMinor.Should().Be(2500);
+        var order = await OrdersTestReads.ReadOrderWithItemsAsync(host.Services, orderId);
+        var line = order.Items.Should().ContainSingle().Which;
+        line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunded);
+        line.FulfilmentErrorCode.Should().Be(HostpanelErrorCodes.DOMAIN_ALREADY_REGISTERED);
+        order.Status.Should().Be(OrderStatus.Active);
     }
 
     /// <summary>

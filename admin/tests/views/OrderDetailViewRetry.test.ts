@@ -1,8 +1,8 @@
 /**
- * Mount tests for the line retry on OrderDetailView: a stale in-progress line offers a retry and a
- * fresh one does not, only the retried line shows progress, a refusal appears on its own row, an
- * unknown error code reads as the generic sentence, and a retry that failed again never claims
- * success, not even for a moment, and a partly refunded line is closed through a confirmation.
+ * Mount tests for the line retry on OrderDetailView: a retry shows exactly where the API says the line
+ * may be retried, only the retried line shows progress, a refusal appears on its own row, an unknown
+ * error code reads as the generic sentence, a retry that failed again never claims success, not even
+ * for a moment, and a failed, refunding or partly refunded line is closed through a confirmation.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -34,16 +34,31 @@ vi.mock('@/composables/useResultBanner', async (importOriginal) => {
   }
 })
 
+/** The states a line may be closed as refunded by hand from, as the API decides `canClose`. */
+const CLOSABLE: readonly OrderItemFulfilmentState[] = [
+  OrderItemFulfilmentState.Failed,
+  OrderItemFulfilmentState.Refunding,
+  OrderItemFulfilmentState.PartiallyRefunded,
+]
+
 /**
- * Builds one line of the test order.
+ * Builds one line of the test order. The API's answers default to what it says for the state: a failed
+ * line may be retried, and a failed, refunding or partly refunded one closed.
  *
  * @param id - Line id.
  * @param fulfilmentState - Where the line stands.
  * @param minutesAgo - How long ago the last attempt was.
  * @param fulfilmentErrorCode - The code of the last failure.
+ * @param canRetry - Whether the API says the line may be retried now.
  * @returns The line as the API sends it.
  */
-const line = (id: number, fulfilmentState: OrderItemFulfilmentState, minutesAgo: number, fulfilmentErrorCode: string | null = null) => ({
+const line = (
+  id: number,
+  fulfilmentState: OrderItemFulfilmentState,
+  minutesAgo: number,
+  fulfilmentErrorCode: string | null = null,
+  canRetry: boolean = fulfilmentState === OrderItemFulfilmentState.Failed,
+) => ({
   id,
   productId: 3,
   productName: `Product ${id}`,
@@ -57,6 +72,8 @@ const line = (id: number, fulfilmentState: OrderItemFulfilmentState, minutesAgo:
   fulfilmentErrorCode,
   fulfilmentAttempts: 1,
   lastFulfilmentAttemptAt: new Date(Date.now() - minutesAgo * 60_000).toISOString(),
+  canRetry,
+  canClose: CLOSABLE.includes(fulfilmentState),
 })
 
 /**
@@ -102,9 +119,12 @@ describe('OrderDetailView line retry', () => {
     shown.length = 0
   })
 
-  it('offers a retry on a stale in-progress line but not on a fresh one', async () => {
+  it('offers a retry only where the API says the line may be retried, whatever the attempt time', async () => {
     stubRoutes({
-      'GET /api/orders/8': () => json(orderWith([line(1, OrderItemFulfilmentState.InProgress, 30), line(2, OrderItemFulfilmentState.InProgress, 1)])),
+      'GET /api/orders/8': () => json(orderWith([
+        line(1, OrderItemFulfilmentState.InProgress, 1, null, true),
+        line(2, OrderItemFulfilmentState.InProgress, 90, null, false),
+      ])),
     })
     const wrapper = await mountDetail()
 
@@ -183,14 +203,61 @@ describe('OrderDetailView line retry', () => {
     expect(shown.at(-1)).toContain('cannot be refunded now')
   })
 
-  it('offers no close-refund button on a failed or refunded line', async () => {
+  it('offers the close button on a failed and a stuck refunding line, with no partial refund note, but not on a refunded one', async () => {
     stubRoutes({
-      'GET /api/orders/8': () => json(orderWith([line(1, OrderItemFulfilmentState.Failed, 5), line(2, OrderItemFulfilmentState.Refunded, 90)])),
+      'GET /api/orders/8': () => json(orderWith([
+        line(1, OrderItemFulfilmentState.Failed, 5),
+        line(2, OrderItemFulfilmentState.Refunding, 90),
+        line(3, OrderItemFulfilmentState.Refunded, 90),
+      ])),
     })
     const wrapper = await mountDetail()
 
+    expect(wrapper.find('[data-testid="order-item-close-refund-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="order-item-close-refund-2"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="order-item-close-refund-3"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="order-item-finish-refund-1"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="order-item-finish-refund-2"]').exists()).toBe(false)
+  })
+
+  it('closes a failed line refunded by hand only after the operator confirms', async () => {
+    const failed = orderWith([line(1, OrderItemFulfilmentState.Failed, 5, 'DOMAIN_ALREADY_REGISTERED')])
+    let closed = false
+    const closeCalls: string[] = []
+    stubRoutes({
+      'POST /api/orders/8/items/1/close-refund': () => {
+        closed = true
+        closeCalls.push('close')
+        return new Response(null, { status: 204 })
+      },
+      'GET /api/orders/8': () => json(closed ? { ...failed, status: OrderStatus.Active, items: [line(1, OrderItemFulfilmentState.Refunded, 5)] } : failed),
+    })
+    const wrapper = await mountDetail()
+
+    await wrapper.get('[data-testid="order-item-close-refund-1"]').trigger('click')
+    await flushPromises()
+    expect(closeCalls).toEqual([])
+    expect(wrapper.text()).toContain('recorded in the client log')
+
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(closeCalls).toEqual(['close'])
     expect(wrapper.find('[data-testid="order-item-close-refund-1"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="order-item-close-refund-2"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="order-item-retry-1"]').exists()).toBe(false)
+  })
+
+  it('words an interrupted attempt and a service conflict with their own sentences', async () => {
+    stubRoutes({
+      'GET /api/orders/8': () => json(orderWith([
+        line(1, OrderItemFulfilmentState.Failed, 5, 'ORDER_LINE_INTERRUPTED'),
+        line(2, OrderItemFulfilmentState.Failed, 5, 'ORDER_LINE_SERVICE_CONFLICT'),
+      ])),
+    })
+    const wrapper = await mountDetail()
+
+    expect(wrapper.get('[data-testid="order-item-error-1"]').text()).toContain('interrupted')
+    expect(wrapper.get('[data-testid="order-item-error-2"]').text()).toContain('belongs to another client or product')
   })
 
   it('shows no retry on a refunded line', async () => {

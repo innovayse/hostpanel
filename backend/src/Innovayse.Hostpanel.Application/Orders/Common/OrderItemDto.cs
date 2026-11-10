@@ -17,6 +17,11 @@ namespace Innovayse.Hostpanel.Application.Orders.Common;
 /// <param name="FulfilmentErrorCode">The code the last failed attempt ended with, or null when the line did not fail or gave none.</param>
 /// <param name="FulfilmentAttempts">How many times fulfilling the line has been attempted, the first run included.</param>
 /// <param name="LastFulfilmentAttemptAt">When the last attempt started or ended, or null before the first one.</param>
+/// <param name="CanRetry">
+/// Whether staff may retry the line now, decided by the server with the configured retry lease
+/// (<c>Orders:RetryLeaseMinutes</c>), so the admin never works it out with a lease of its own.
+/// </param>
+/// <param name="CanClose">Whether staff may close the line as refunded by hand: it failed, its refund has been stuck for longer than the retry lease, or it was only partly refunded.</param>
 public sealed record OrderItemDto(
     int Id,
     int ProductId,
@@ -30,4 +35,6 @@ public sealed record OrderItemDto(
     OrderItemFulfilmentState FulfilmentState,
     string? FulfilmentErrorCode,
     int FulfilmentAttempts,
-    DateTimeOffset? LastFulfilmentAttemptAt);
+    DateTimeOffset? LastFulfilmentAttemptAt,
+    bool CanRetry,
+    bool CanClose);

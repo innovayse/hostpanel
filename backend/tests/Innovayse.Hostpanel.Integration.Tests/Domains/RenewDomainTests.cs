@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Commands.RenewDomain;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Integration.Tests.Billing;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.TestHost;
@@ -224,6 +225,46 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
             .InvokeAsync<Result>(new RenewDomainCommand(domain.Id, 1), CancellationToken.None);
 
         result.ErrorCode.Should().Be(HostpanelErrorCodes.DOMAIN_RENEW_NOT_ALLOWED);
+    }
+
+    /// <summary>
+    /// Two attempts of one order line renew at once and this one loses: the line still counts as renewed, the client's
+    /// activity log names the domain and says the registrar may have renewed it twice, and the expiry on record is the later
+    /// of the winner's and the one the registrar reported to the loser.
+    /// </summary>
+    /// <param name="reportedLater">Whether the registrar reported a later expiry to the losing attempt than the winner stored.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task RenewDomain_LosingARaceForTheSameLine_LogsAPossibleDoubleRenewalAndKeepsTheLaterExpiryAsync(bool reportedLater)
+    {
+        var host = factory.WithWebHostBuilder(b =>
+            b.ConfigureTestServices(s => s.AddScoped<IRegistrarProvider, RacingRenewalRegistrar>()));
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var domainId = await DomainsTestSeeds.SeedActiveDomainAsync(context);
+        var seeded = await context.Domains.AsNoTracking().FirstAsync(d => d.Id == domainId, CancellationToken.None);
+        var line = 525_000 + (reportedLater ? 1 : 2);
+        var winnerExpiresAt = seeded.ExpiresAt.AddYears(1);
+        var reportedExpiresAt = reportedLater ? seeded.ExpiresAt.AddYears(2) : seeded.ExpiresAt.AddMonths(6);
+        RacingRenewalRegistrar.Race(factory.Services, seeded.Name, line, winnerExpiresAt, reportedExpiresAt);
+
+        var result = await scope.ServiceProvider.GetRequiredService<IMessageBus>()
+            .InvokeAsync<Result>(new RenewDomainCommand(domainId, 1, line), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        using var readScope = factory.Services.CreateScope();
+        var db = readScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var reloaded = await db.Domains.AsNoTracking().Include(d => d.LineRenewals).FirstAsync(d => d.Id == domainId);
+        reloaded.LineRenewals.Should().ContainSingle().Which.OrderItemId.Should().Be(line);
+        var expected = reportedLater ? reportedExpiresAt : winnerExpiresAt;
+        reloaded.ExpiresAt.Should().BeCloseTo(expected, TimeSpan.FromMilliseconds(1));
+        reloaded.NextDueDate.Should().BeCloseTo(expected, TimeSpan.FromMilliseconds(1));
+        (await db.ActivityLogs.AsNoTracking().CountAsync(
+            a => a.ClientId == seeded.ClientId
+                && a.Description.Contains($"Domain Possibly Renewed Twice - Domain: {seeded.Name} - Order Line ID: {line}")))
+            .Should().Be(1);
     }
 
     /// <summary>Renews a fresh active domain through a host whose registrar is <typeparamref name="TRegistrar"/>.</summary>

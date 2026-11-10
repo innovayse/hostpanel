@@ -16,6 +16,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Slides;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ListActiveSlidesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>GET /api/slides is publicly accessible without authentication.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -152,7 +155,7 @@ public sealed class ListActiveSlidesTests(IntegrationTestFactory factory) : ICla
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             var slide = Slide.Create(
                 new SlideSettings("mdi-server", "#123456", "/img/slide.png", null, null, null, 0, true, SlideAudience.All, null, null),
-                DateTimeOffset.UtcNow);
+                SeededAt);
             context.Slides.Add(slide);
             await context.SaveChangesAsync(CancellationToken.None);
             id = slide.Id;

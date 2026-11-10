@@ -36,6 +36,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 public sealed class ScheduledJobsSurviveFailureTests(IntegrationTestFactory factory)
     : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>Every self-scheduling job, as the command that runs it.</summary>
     public static TheoryData<object> Jobs => new()
     {
@@ -122,7 +125,7 @@ public sealed class ScheduledJobsSurviveFailureTests(IntegrationTestFactory fact
                     var fake = new FakeReleaseFeed();
                     fake.Next = new ReleaseInfo(
                         "99.0.0",
-                        DateTimeOffset.UtcNow,
+                        SeededAt,
                         "https://github.com/innovayse/hostpanel/releases/tag/v99.0.0");
                     return fake;
                 });

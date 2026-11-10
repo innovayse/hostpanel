@@ -163,15 +163,6 @@ public static class PluginLoader
                 continue;
             }
 
-            // A rule added after the plugin was installed does not take it away: it was accepted once and may be
-            // running payments. The author sees the fault here and an upload of a new version is refused for it.
-            foreach (var advisory in views.Advisories)
-            {
-                logger.LogWarning(
-                    "Plugin {Id} breaks view rule {Rule}: {Detail}. It stays loaded; a new upload would be refused.",
-                    manifest.Id, advisory.Rule, advisory.Detail);
-            }
-
             var icon = PluginIconReader.Read(pluginDir, manifest);
             if (icon.Violation is not null)
             {
@@ -235,6 +226,16 @@ public static class PluginLoader
                 registry.RegisterRefused(new RefusedPlugin(
                     manifest.Id, PluginManifestRule.EndpointsNotImplemented, detail, origin == PluginOrigin.BuiltIn));
                 continue;
+            }
+
+            // A rule added after the plugin was installed does not take it away: it was accepted once and may be
+            // running payments. Logged only here, after the icon check and the assembly load, so a plugin skipped by a
+            // later check never gets the line. The author sees the fault here and an upload of a new version is refused.
+            foreach (var advisory in views.Advisories)
+            {
+                logger.LogWarning(
+                    "Plugin {Id} breaks view rule {Rule}: {Detail}. It stays loaded; a new upload would be refused.",
+                    manifest.Id, advisory.Rule, advisory.Detail);
             }
 
             RegisterPluginType(services, manifest, pluginType, logger);

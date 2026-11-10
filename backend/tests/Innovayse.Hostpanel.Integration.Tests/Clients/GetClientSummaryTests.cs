@@ -14,6 +14,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>The summary groups its figures: invoices per status, transaction totals, record counts and the credit balance.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -43,7 +46,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var now = DateTimeOffset.UtcNow;
+            var now = SeededAt;
             var invoice = Invoice.Create(clientId, now.AddDays(7), "USD", now);
             invoice.AddItem("Hosting", 40m, 1);
             context.Invoices.Add(invoice);
@@ -79,7 +82,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var now = DateTimeOffset.UtcNow;
+            var now = SeededAt;
             foreach (var (currency, amount) in new[] { ("USD", 40m), ("AMD", 20000m), ("USD", 10m) })
             {
                 var invoice = Invoice.Create(clientId, now.AddDays(7), currency, now);
@@ -178,7 +181,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
             var baseCode = (await context.GetBaseCurrencyAsync(CancellationToken.None)).Code;
             var codes = new[] { "AMD", "EUR", "GBP" }.Where(c => !string.Equals(c, baseCode, StringComparison.OrdinalIgnoreCase)).ToArray();
             var (earlier, later) = (codes[0], codes[1]);
-            var now = DateTimeOffset.UtcNow;
+            var now = SeededAt;
 
             var first = Invoice.Create(clientId, now.AddDays(7), earlier, now);
             first.AddItem("Hosting", 1000m, 1);
@@ -220,7 +223,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             baseCode = (await context.GetBaseCurrencyAsync(CancellationToken.None)).Code;
             var invoiceCode = string.Equals(baseCode, "AMD", StringComparison.OrdinalIgnoreCase) ? "EUR" : "AMD";
-            var now = DateTimeOffset.UtcNow;
+            var now = SeededAt;
             var invoice = Invoice.Create(clientId, now.AddDays(7), invoiceCode, now);
             invoice.AddItem("Hosting", 1000m, 1);
             context.Invoices.Add(invoice);

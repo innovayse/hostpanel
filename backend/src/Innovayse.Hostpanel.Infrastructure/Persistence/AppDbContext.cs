@@ -343,7 +343,8 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// same gateway payment first (the unique reference of a gateway payment row was violated), another
     /// delivery claimed the same email first (the unique delivery key of an email log row was violated), or another
     /// call wrote the first value of the same plugin store key, or another call opened the same plugin store scope, or
-    /// another call created the service of the same order line first.
+    /// another call created the service of the same order line first, or another attempt recorded the renewal of the same
+    /// order line first.
     /// </exception>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -459,6 +460,17 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             // OrderServiceHandler answers it by reading the service the winner created, so the line gets one service.
             throw new ConcurrencyConflictException(
                 "Another attempt created the service of the same order line concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: DomainLineRenewalConfiguration.OrderItemIndex,
+        })
+        {
+            // Two attempts of one order line recorded its renewal at once: the same lost race as a concurrent save.
+            // RenewDomainHandler answers it by finding the renewal the winner recorded, so the line counts as renewed.
+            throw new ConcurrencyConflictException(
+                "Another attempt recorded the renewal of the same order line concurrently.", ex);
         }
     }
 

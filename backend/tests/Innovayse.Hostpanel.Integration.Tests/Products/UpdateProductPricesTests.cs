@@ -18,6 +18,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class UpdateProductPricesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>The seeded AMD rate: 1 AMD = 0.0025641 USD, so $2.99 is 1166 ֏ at zero decimals.</summary>
     private const decimal ExpectedAmdMonthly = 1166m;
 
@@ -45,7 +48,7 @@ public sealed class UpdateProductPricesTests(IntegrationTestFactory factory) : I
             db.ProductGroups.Add(group);
             await db.SaveChangesAsync();
 
-            var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 0m, 0m, SeededAt);
             product.SetPrice("USD", BillingCycle.Monthly, 2.99m);
             db.Products.Add(product);
             await db.SaveChangesAsync();
@@ -85,7 +88,7 @@ public sealed class UpdateProductPricesTests(IntegrationTestFactory factory) : I
             db.ProductGroups.Add(group);
             await db.SaveChangesAsync();
 
-            var product = Product.Create(group.Id, "Monthly only", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            var product = Product.Create(group.Id, "Monthly only", null, null, null, null, ProductType.SharedHosting, 0m, 0m, SeededAt);
             product.SetPrice("USD", BillingCycle.Monthly, 2.99m);
             product.SetPrice("AMD", BillingCycle.Annual, 99_999m);
             db.Products.Add(product);
@@ -125,7 +128,7 @@ public sealed class UpdateProductPricesTests(IntegrationTestFactory factory) : I
             db.ProductGroups.Add(group);
             await db.SaveChangesAsync();
 
-            var product = Product.Create(group.Id, "Five cycles", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            var product = Product.Create(group.Id, "Five cycles", null, null, null, null, ProductType.SharedHosting, 0m, 0m, SeededAt);
             product.SetPrice("USD", BillingCycle.Monthly, 2.99m);
             product.SetPrice("USD", BillingCycle.Quarterly, 10m);
             product.SetPrice("USD", BillingCycle.Biennial, 20m);

@@ -534,13 +534,41 @@ const readResultCondition = (condition: unknown, values: Readonly<Record<string,
   const equals = readPluginField(condition, 'equalsAny')
   if (
     typeof route?.path !== 'string' || typeof route.method !== 'string' || pluginRouteMethod(route) !== HttpMethod.Get
-    || fillPluginPath(route.path, values) === null
     || typeof field !== 'string' || field.length > PLUGIN_CONDITION_MAX_FIELD_LENGTH || !PLUGIN_CONDITION_FIELD_PATTERN.test(field)
     || !Array.isArray(equals) || equals.length === 0 || equals.length > PLUGIN_CONDITION_MAX_VALUES || !equals.every(isConditionValue)
   ) {
     return undefined
   }
+  if (fillPluginPath(route.path, values) === null) {
+    warnUnfilledConditionRoute(route.path, values)
+    return undefined
+  }
   return { route: { method: route.method, path: route.path }, field, equals }
+}
+
+/**
+ * Tells a plugin author, in development only, that a chat card condition was dropped because its route names a parameter
+ * the page does not have. In production the condition is dropped silently: a reader cannot act on the line, and the
+ * card stays honest either way (an action whose `visibleWhen` is dropped is not shown).
+ *
+ * @param path - The condition route's path, as the event wrote it.
+ * @param values - The page's parameter values, by name.
+ * @param dev - Whether this is a development build; the build flag when omitted.
+ * @returns Nothing.
+ */
+export const warnUnfilledConditionRoute = (
+  path: string,
+  values: Readonly<Record<string, string>>,
+  dev: boolean = Boolean(import.meta.dev),
+): void => {
+  if (!dev) {
+    return
+  }
+  const names = Object.keys(values)
+  console.warn(
+    `[plugin chat] a card condition on ${path} was dropped: its route names a parameter this page does not have`
+    + ` (the page has ${names.length > 0 ? names.join(', ') : 'none'}).`,
+  )
 }
 
 /**

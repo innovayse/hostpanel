@@ -19,6 +19,12 @@ public static class OrdersErrors
     public const string OrderNotPending = "ORDER_NOT_PENDING";
 
     /// <summary>
+    /// The order was not accepted (400): only an Active or Incomplete order has lines to fulfil,
+    /// <see cref="Order.BeginFulfilment"/>.
+    /// </summary>
+    public const string OrderNotAccepted = "ORDER_NOT_ACCEPTED";
+
+    /// <summary>
     /// The line may not be retried (409): the order was not accepted, the line did not fail, was refunded, or
     /// another retry is running it: <see cref="Order.StartLineRetry"/>.
     /// </summary>
@@ -43,4 +49,10 @@ public static class OrdersErrors
     /// and <see cref="Order.RecordLineRefundReleased"/>.
     /// </summary>
     public const string OrderLineNotRefundable = "ORDER_LINE_NOT_REFUNDABLE";
+
+    /// <summary>
+    /// The line's refund may still be running (409): it began less than the retry lease ago, so closing it by hand could
+    /// have the cost given back twice: <see cref="Order.CloseLineRefund"/>.
+    /// </summary>
+    public const string OrderLineRefundInProgress = "ORDER_LINE_REFUND_IN_PROGRESS";
 }

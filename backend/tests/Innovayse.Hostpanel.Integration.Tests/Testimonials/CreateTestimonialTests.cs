@@ -51,8 +51,9 @@ public sealed class CreateTestimonialTests(IntegrationTestFactory factory) : ICl
     public async Task Create_FuturePublishedAt_Refuses()
     {
         var client = await StorefrontContentTestSeeds.AdminClientAsync(factory);
+        var future = new DateTimeOffset(2999, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
-        var response = await client.PostAsJsonAsync("/api/admin/testimonials", StorefrontContentTestSeeds.TestimonialBody(publishedAt: DateTimeOffset.UtcNow.AddYears(1)));
+        var response = await client.PostAsJsonAsync("/api/admin/testimonials", StorefrontContentTestSeeds.TestimonialBody(publishedAt: future));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

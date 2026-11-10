@@ -36,6 +36,7 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
     /// Every scope of the removed plugin is purged (plugin wide and two clients, entries and scope rows) and another
     /// plugin's entries and scope rows are left with their totals.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Publish_PluginWithSeveralScopes_RemovesOnlyThatPluginsRowsAsync()
     {
@@ -58,6 +59,7 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A scope holding more entries than one batch has every one of them removed, then the scope row.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Publish_MoreRowsThanOneBatchInOneScope_RemovesAllOfThemAsync()
     {
@@ -79,6 +81,7 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
     /// the scope that keeps a newer row is not deleted, and its totals equal exactly the rows left in it; a scope
     /// holding only old rows is emptied and deleted.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Publish_RowsWrittenAfterTheRemoval_AreKeptWithTheirScopeAsync()
     {
@@ -107,6 +110,7 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
     /// An old key whose value was rewritten after the removal counts as written after it (its <c>UpdatedAt</c>), so it
     /// is kept with its scope, while the old key beside it is purged.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Publish_RowRewrittenAfterTheRemoval_IsKeptAsync()
     {
@@ -126,6 +130,7 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
     /// More than one batch of old rows sharing a scope with a newer row: every old row goes, the scope and the newer
     /// row stay.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Publish_MoreOldRowsThanOneBatchBesideANewerRow_KeepsTheScopeAsync()
     {
@@ -145,6 +150,7 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
     /// A second delivery of the same removal finds nothing old and completes, leaving a newer row and its scope as
     /// they were.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Publish_Twice_TheSecondDeliveryIsANoOpAsync()
     {
@@ -169,6 +175,7 @@ public sealed class PurgeRemovedPluginDataTests(IntegrationTestFactory factory) 
     /// the other delivery's change of the scope row is detached and the scope is read again. Run on two scopes of their
     /// own, because the tracked publish waits for one session at a time.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_TwoConcurrentDeliveries_BothCompleteAndNothingIsLeftAsync()
     {

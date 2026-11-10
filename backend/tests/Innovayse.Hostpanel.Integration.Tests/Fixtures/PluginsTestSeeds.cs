@@ -159,12 +159,13 @@ internal static class PluginsTestSeeds
         });
     }
 
-    /// <summary>The folder an upgrade of an uploaded plugin waits in until the next restart, under the default settings.</summary>
+    /// <summary>The folder an upgrade of an uploaded plugin waits in until the next restart, under the factory's upload folder.</summary>
+    /// <param name="factory">The host whose upload folder is meant.</param>
     /// <param name="pluginId">The plugin id.</param>
     /// <returns>The absolute folder path.</returns>
-    public static string StagedFolder(string pluginId)
+    public static string StagedFolder(IntegrationTestFactory factory, string pluginId)
     {
-        return Path.Combine(new PluginOptions().InstallRoot, ".staged", pluginId);
+        return Path.Combine(factory.PluginInstallRoot, ".staged", pluginId);
     }
 
     /// <summary>Builds a ZIP with no <c>plugin.json</c> at its root.</summary>
@@ -174,12 +175,13 @@ internal static class PluginsTestSeeds
         return BuildZip(new Dictionary<string, string> { ["readme.txt"] = "no manifest here" });
     }
 
-    /// <summary>The folder an uploaded plugin with this id is unpacked into, under the default settings.</summary>
+    /// <summary>The folder an uploaded plugin with this id is unpacked into, under the factory's upload folder.</summary>
+    /// <param name="factory">The host whose upload folder is meant.</param>
     /// <param name="pluginId">The plugin id.</param>
     /// <returns>The absolute folder path.</returns>
-    public static string InstalledFolder(string pluginId)
+    public static string InstalledFolder(IntegrationTestFactory factory, string pluginId)
     {
-        return Path.Combine(new PluginOptions().InstallRoot, pluginId);
+        return Path.Combine(factory.PluginInstallRoot, pluginId);
     }
 
     /// <summary>
@@ -220,6 +222,19 @@ internal static class PluginsTestSeeds
         fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
         content.Add(fileContent, "file", "plugin.zip");
         return await client.PostAsync(force ? "/api/admin/plugins/install?force=true" : "/api/admin/plugins/install", content);
+    }
+
+    /// <summary>Posts a multipart inspect request carrying the given ZIP bytes.</summary>
+    /// <param name="client">Authenticated admin client.</param>
+    /// <param name="zipBytes">The archive to upload.</param>
+    /// <returns>The inspect response.</returns>
+    public static async Task<HttpResponseMessage> InspectAsync(HttpClient client, byte[] zipBytes)
+    {
+        using var content = new MultipartFormDataContent();
+        var fileContent = new ByteArrayContent(zipBytes);
+        fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/zip");
+        content.Add(fileContent, "file", "plugin.zip");
+        return await client.PostAsync("/api/admin/plugins/inspect", content);
     }
 
     /// <summary>Posts a multipart install request whose form carries no file at all.</summary>

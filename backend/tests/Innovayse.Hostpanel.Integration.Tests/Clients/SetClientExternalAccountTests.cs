@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class SetClientExternalAccountTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Setting the link writes both halves, trimmed, and answers 204.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetWritesTheLink()
     {
@@ -32,6 +33,7 @@ public sealed class SetClientExternalAccountTests(IntegrationTestFactory factory
     }
 
     /// <summary>Sending no provider and no account id clears an existing link and answers 204.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClearRemovesTheLink()
     {
@@ -52,6 +54,7 @@ public sealed class SetClientExternalAccountTests(IntegrationTestFactory factory
     }
 
     /// <summary>Linking a pair another client already holds answers 409 and leaves this client unlinked.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRefusesAPairAnotherClientHolds()
     {
@@ -71,6 +74,7 @@ public sealed class SetClientExternalAccountTests(IntegrationTestFactory factory
     }
 
     /// <summary>Writing the link a client already holds is not a conflict with itself.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAgainOnTheSameClientSucceeds()
     {
@@ -86,6 +90,7 @@ public sealed class SetClientExternalAccountTests(IntegrationTestFactory factory
     }
 
     /// <summary>Only one half of the pair answers 400, since the link is whole or absent.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRefusesAHalfLink()
     {
@@ -99,6 +104,7 @@ public sealed class SetClientExternalAccountTests(IntegrationTestFactory factory
     }
 
     /// <summary>An id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRefusesUnknownClient()
     {
@@ -113,6 +119,7 @@ public sealed class SetClientExternalAccountTests(IntegrationTestFactory factory
     }
 
     /// <summary>A client, who is not staff, is refused with 403, even on their own record.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRefusesAClient()
     {
@@ -127,6 +134,7 @@ public sealed class SetClientExternalAccountTests(IntegrationTestFactory factory
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRefusesAnonymous()
     {

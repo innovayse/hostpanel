@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class AddMyContactTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The contact lands on the caller's own account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddMyContactWritesToTheOwnAccount()
     {
@@ -31,6 +32,7 @@ public sealed class AddMyContactTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A caller with the Client role but no client row owns no account and is linked to none, so the permission gate refuses before any write with 403 <c>CLIENT_PERMISSION_DENIED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddMyContactWithNoClientRowIsRefusedByThePermissionGate()
     {
@@ -48,6 +50,7 @@ public sealed class AddMyContactTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddMyContactRefusesAnonymous()
     {
@@ -58,6 +61,7 @@ public sealed class AddMyContactTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An admin, who is not a client, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddMyContactRefusesAnAdmin()
     {

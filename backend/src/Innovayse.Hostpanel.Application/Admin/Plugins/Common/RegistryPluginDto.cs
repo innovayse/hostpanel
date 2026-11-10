@@ -24,6 +24,7 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// <param name="PublisherKind">Whether a person or an organization publishes the plugin; <see langword="null"/> when the registry does not say.</param>
 /// <param name="Tags">The plugin's tags, cleaned and capped; <see langword="null"/> when the source carries none (the update list).</param>
 /// <param name="Downloads">Downloads of every version added up; <see langword="null"/> when the registry does not say.</param>
+/// <param name="LatestChangelog">The release notes of <paramref name="LatestVersion"/> as Markdown text, cleaned and capped; <see langword="null"/> when the registry sends none.</param>
 public sealed record RegistryPluginDto(
     string Id,
     string Name,
@@ -41,4 +42,5 @@ public sealed record RegistryPluginDto(
     PluginRegistryDistribution Distribution = PluginRegistryDistribution.Download,
     PluginRegistryPublisherKind? PublisherKind = null,
     IReadOnlyList<string>? Tags = null,
-    long? Downloads = null);
+    long? Downloads = null,
+    string? LatestChangelog = null);

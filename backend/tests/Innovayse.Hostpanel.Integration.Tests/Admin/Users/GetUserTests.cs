@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Users;
 public sealed class GetUserTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A registered account can be read back by id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterThenGetById_ReturnsTheAccountAsync()
     {
@@ -28,6 +29,7 @@ public sealed class GetUserTests(IntegrationTestFactory factory) : IClassFixture
     }
 
     /// <summary>Reading an unknown subject answers 404 with <c>IDENTITY_USER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownSubject_RefusesNotFoundAsync()
     {
@@ -40,6 +42,7 @@ public sealed class GetUserTests(IntegrationTestFactory factory) : IClassFixture
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -51,6 +54,7 @@ public sealed class GetUserTests(IntegrationTestFactory factory) : IClassFixture
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

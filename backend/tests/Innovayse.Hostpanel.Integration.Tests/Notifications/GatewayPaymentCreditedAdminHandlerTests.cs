@@ -24,6 +24,7 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
     private const string AdminEmail = "ops@example.test";
 
     /// <summary>A credited payment sends one staff mail naming the invoice, the reference and the amount, and the template row exists.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayPaymentCredited_MailsStaffOnceAndSeedsTheTemplate()
     {
@@ -46,6 +47,7 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
     }
 
     /// <summary>A payment held for an operator says so instead of claiming it was credited.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayPaymentHeld_MailsStaffThatAnOperatorMustResolveIt()
     {
@@ -63,6 +65,7 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
     }
 
     /// <summary>With neither address configured nothing is sent (the handler logs an error naming the setting instead).</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayPaymentCredited_WithNoAddress_SendsNothing()
     {
@@ -81,6 +84,7 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
     /// (no placeholder is left unfilled), and says differently whether the amount was credited or held.
     /// </summary>
     /// <param name="language">The language under test.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("en")]
     [InlineData("ru")]

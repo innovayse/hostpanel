@@ -1,10 +1,10 @@
 using Innovayse.Hostpanel.Application.Admin.Common;
+using Innovayse.Hostpanel.Application.Admin.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Storage.Settings;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Innovayse.Hostpanel.Application.Admin.Common.Enums;
 
 namespace Innovayse.Hostpanel.Infrastructure.Storage;
 

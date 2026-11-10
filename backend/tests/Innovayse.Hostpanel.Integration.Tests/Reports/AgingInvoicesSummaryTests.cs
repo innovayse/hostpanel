@@ -2,9 +2,9 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 
@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class AgingInvoicesSummaryTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The summary totals an overdue invoice into its currency and period.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TotalsByCurrency()
     {
@@ -34,6 +35,7 @@ public sealed class AgingInvoicesSummaryTests(IntegrationTestFactory factory) : 
     /// An invoice is summed under its own currency, not its client's, at what it still owes after a
     /// part payment, in the period its due date falls in.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SumsTheAmountDueUnderTheInvoiceCurrency()
     {
@@ -63,6 +65,7 @@ public sealed class AgingInvoicesSummaryTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -72,6 +75,7 @@ public sealed class AgingInvoicesSummaryTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

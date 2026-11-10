@@ -11,5 +11,5 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 public interface IClock
 {
     /// <summary>Gets the current moment in UTC.</summary>
-    DateTimeOffset UtcNow { get; }
+    public DateTimeOffset UtcNow { get; }
 }

@@ -1,8 +1,8 @@
-using Innovayse.Hostpanel.Application.Common.Errors;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 public sealed class GetMyServiceControlPanelSsoUrlTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The owner can fetch their own service's control-panel sign-in link.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetControlPanelSsoUrl_TheCallersOwnService_Returns200()
     {
@@ -35,6 +36,7 @@ public sealed class GetMyServiceControlPanelSsoUrlTests(IntegrationTestFactory f
     }
 
     /// <summary>A stranger's service is refused, not told which part is wrong.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetControlPanelSsoUrl_AStrangersService_Returns404WithServiceNotFound()
     {
@@ -62,6 +64,7 @@ public sealed class GetMyServiceControlPanelSsoUrlTests(IntegrationTestFactory f
     }
 
     /// <summary>Requesting the control-panel sign-in link without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetControlPanelSsoUrl_Returns401_WithoutAuthAsync()
     {
@@ -73,6 +76,7 @@ public sealed class GetMyServiceControlPanelSsoUrlTests(IntegrationTestFactory f
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetSsoUrl_WithNonPositiveId_Returns400ValidationErrorAsync()
     {
@@ -85,6 +89,7 @@ public sealed class GetMyServiceControlPanelSsoUrlTests(IntegrationTestFactory f
     }
 
     /// <summary>An account that does not allow single sign-on is refused with 403 and no link is issued.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetControlPanelSsoUrl_ByAccountWithSsoDisabled_Returns403WithClientSsoDisabled()
     {

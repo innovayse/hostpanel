@@ -4,6 +4,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+    <HostpanelSdkProject>$(MSBuildProjectDirectory.Replace('\', '/').Contains('/Hostpanel.Sdk'))</HostpanelSdkProject>
+    <EnforceCodeStyleInBuild Condition="!$(HostpanelSdkProject)">true</EnforceCodeStyleInBuild>
   </PropertyGroup>
 
   <!--
@@ -29,4 +31,14 @@
   <PropertyGroup Condition="'$(InnovayseSso)' == 'true'">
     <DefineConstants>$(DefineConstants);INNOVAYSE_SSO</DefineConstants>
   </PropertyGroup>
+
+  <!--
+    The style rules of .editorconfig run in the build: StyleCop.Analyzers brings the SA rules, and
+    EnforceCodeStyleInBuild turns the IDE rules on. stylecop.json holds the settings the SA rules read.
+    The Hostpanel.Sdk submodule keeps its own conventions and is left out.
+  -->
+  <ItemGroup Condition="!$(HostpanelSdkProject)">
+    <PackageReference Include="StyleCop.Analyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
 </Project>

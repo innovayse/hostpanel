@@ -33,6 +33,7 @@ public sealed class RetryRegistryInstanceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The first run registers, serves the challenge, is verified, and reports a state that carries nothing secret.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheFirstRun_RegistersAndIsVerifiedAsync()
     {
@@ -60,6 +61,7 @@ public sealed class RetryRegistryInstanceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The registration sends the public key (32 bytes) and the configured address, and never the private key or a header of identity.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheRegistration_SendsThePublicKeyAndTheAddressOnly_NeverThePrivateKeyAsync()
     {
@@ -81,6 +83,7 @@ public sealed class RetryRegistryInstanceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The identity is stored as one encrypted secret setting: not in plain text, readable only through the cipher.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheIdentity_IsStoredEncrypted_ThePrivateKeyNotInPlainTextAsync()
     {
@@ -103,6 +106,7 @@ public sealed class RetryRegistryInstanceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A second run changes nothing: a verified identity is not registered again.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ASecondRun_DoesNotRegisterAgainAsync()
     {
@@ -120,6 +124,7 @@ public sealed class RetryRegistryInstanceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A registry that cannot read the challenge leaves the state Error with the code, a sentence and the next attempt.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AChallengeTheRegistryCannotRead_IsAnErrorWithACodeAndASentenceAsync()
     {
@@ -139,6 +144,7 @@ public sealed class RetryRegistryInstanceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>When the challenge ran out of time the host registers again, with a new key pair, and is verified.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnExpiredChallenge_RegistersAgainWithANewPairAsync()
     {
@@ -158,6 +164,7 @@ public sealed class RetryRegistryInstanceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A registry that already knows the key asks for a fresh start too: the pair is generated again.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AKeyTheRegistryAlreadyKnows_StartsOverWithANewPairAsync()
     {
@@ -188,6 +195,7 @@ public sealed class RetryRegistryInstanceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>While the registry is switched off the retry answers 409 and stores nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhileTheRegistryIsOff_TheRetryIsRefused_AndNothingIsStoredAsync()
     {
@@ -205,6 +213,7 @@ public sealed class RetryRegistryInstanceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>An address the registry cannot use is told at once, with the sentence naming the setting, and no call is made.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnAddressTheRegistryCannotUse_IsToldAtOnce_AndNoCallIsMadeAsync()
     {
@@ -224,6 +233,7 @@ public sealed class RetryRegistryInstanceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A revoked installation registers again on the explicit retry, with a new pair and a new instance.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARevokedInstallation_RegistersAgainOnTheExplicitRetryAsync()
     {
@@ -249,6 +259,7 @@ public sealed class RetryRegistryInstanceTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A caller who is not an administrator is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ACallerWhoIsNotAnAdministrator_IsRefusedAsync()
     {

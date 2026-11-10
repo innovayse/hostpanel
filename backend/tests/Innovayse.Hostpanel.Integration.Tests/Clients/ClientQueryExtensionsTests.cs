@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients;
@@ -33,6 +32,7 @@ public sealed class ClientQueryExtensionsTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The shared include list brings the contacts along with the client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IncludeChildren_LoadsTheContactsAsync()
     {

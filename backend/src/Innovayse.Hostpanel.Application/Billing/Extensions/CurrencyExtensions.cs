@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Domain.Billing;
 using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Billing.Extensions;
+
 /// <summary>Questions handlers ask the data context about currencies that it does not answer by itself.</summary>
 public static class CurrencyExtensions
 {

@@ -79,6 +79,8 @@ export const PluginErrorCode = {
   RegistryLicenceRequired: 'PLUGIN_REGISTRY_LICENCE_REQUIRED',
   /** The registry refused the licence key the server holds; the details page then offers the key card. */
   RegistryLicenceInvalid: 'PLUGIN_REGISTRY_LICENCE_INVALID',
+  /** No page the operator may open answers the address: unknown, unavailable or switched off alike. */
+  PageNotFound: 'PLUGIN_PAGE_NOT_FOUND',
 } as const
 
 /** One of the {@link PluginErrorCode} values. */
@@ -94,6 +96,43 @@ export const PluginCapability = {
 
 /** One of the {@link PluginCapability} values. */
 export type PluginCapability = (typeof PluginCapability)[keyof typeof PluginCapability]
+
+/** Closed set of kinds of access to a client's hosting a manifest may ask for; the strings are the SDK's `PluginHostAccess` names. */
+export const PluginHostAccess = {
+  /** Runs commands on the client's hosting account over SSH. */
+  Ssh: 'ssh',
+} as const
+
+/** One of the {@link PluginHostAccess} values. */
+export type PluginHostAccess = (typeof PluginHostAccess)[keyof typeof PluginHostAccess]
+
+/** What an uploaded plugin ZIP asks for before it is installed (POST /api/admin/plugins/inspect). */
+export interface PluginPackagePreviewDto {
+  /** Plugin id from plugin.json. */
+  id: string
+  /** Display name. */
+  name: string
+  /** The package's version. */
+  version: string
+  /** Author name or organisation. */
+  author: string
+  /** Short description. */
+  description: string
+  /** The kinds of access to a client's hosting the plugin asks for, in manifest order; empty when none. */
+  hostAccess: PluginHostAccess[]
+  /** The capabilities the plugin declares, in manifest order; empty when none. */
+  capabilities: PluginCapability[]
+  /** Release notes of this version as plain text, null when the manifest has none. */
+  changelog: string | null
+  /** Lowest server version the plugin runs on, null for no lower bound. */
+  minHostVersion: string | null
+  /** Highest server version the plugin runs on, null for no upper bound. */
+  maxHostVersion: string | null
+  /** The version this server runs, the one the range is compared with. */
+  hostVersion: string
+  /** Whether this server's version is inside the range; the install is refused otherwise. */
+  compatible: boolean
+}
 
 /** Summary of one installed plugin returned by GET /api/admin/plugins. */
 export interface PluginListItemDto {
@@ -129,6 +168,14 @@ export interface PluginListItemDto {
   stagedVersion: string | null
   /** The capabilities the manifest declares, in manifest order; empty when it declares none. */
   capabilities: PluginCapability[]
+  /** The kinds of access to a client's hosting the manifest asks for; empty when none or for a refused or removed row. */
+  hostAccess?: PluginHostAccess[] | null
+  /** Release notes of the installed version, null when none. */
+  changelog?: string | null
+  /** Lowest server version the plugin runs on, null for no lower bound. */
+  minHostVersion?: string | null
+  /** Highest server version the plugin runs on, null for no upper bound. */
+  maxHostVersion?: string | null
 }
 
 /** Result returned by install and remove plugin operations. */
@@ -305,6 +352,8 @@ export interface PluginRegistryItemDto {
   tags?: string[] | null
   /** Downloads of every version added up; null or absent when the registry does not say. */
   downloads?: number | null
+  /** Release notes of the latest version as Markdown; null or absent when the registry sends none. */
+  latestChangelog?: string | null
 }
 
 /** One page of registry listings. */

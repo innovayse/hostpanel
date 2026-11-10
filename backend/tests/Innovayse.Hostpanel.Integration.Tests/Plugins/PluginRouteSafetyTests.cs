@@ -1,7 +1,6 @@
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.TestHost;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 

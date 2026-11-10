@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class GetProductsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin reads the staff view, inactive and unsellable products included.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetProductsAsync_ReturnsOk_ForAnAdminAsync()
     {
@@ -21,6 +22,7 @@ public sealed class GetProductsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An anonymous caller is refused with 401: the storefront reads <c>/api/public/products</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetProductsAsync_Returns401_WithoutAuthAsync()
     {

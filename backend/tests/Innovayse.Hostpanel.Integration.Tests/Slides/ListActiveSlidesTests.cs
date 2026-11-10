@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Slides;
 public sealed class ListActiveSlidesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>GET /api/slides is publicly accessible without authentication.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_ReturnsOk_WithoutAuth()
     {
@@ -26,6 +27,7 @@ public sealed class ListActiveSlidesTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The public feed excludes an inactive slide and one restricted to a different audience.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_ExcludesInactiveAndWrongAudienceSlides()
     {
@@ -49,6 +51,7 @@ public sealed class ListActiveSlidesTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The public feed resolves the requested locale over the default when both are stored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_ResolvesTheRequestedLocaleOverTheDefault()
     {
@@ -102,6 +105,7 @@ public sealed class ListActiveSlidesTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A query-string audience is ignored: an anonymous caller never receives an Authenticated slide.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListActive_AnonymousAskingForAuthenticated_StillGetsNone()
     {
@@ -118,6 +122,7 @@ public sealed class ListActiveSlidesTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A signed-in caller receives Authenticated slides and not the guest-only ones.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListActive_SignedInCaller_GetsAuthenticatedAndNotGuestSlides()
     {
@@ -137,6 +142,7 @@ public sealed class ListActiveSlidesTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A slide with no translation at all is left out of the public feed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListActive_SlideWithoutTranslation_IsSkipped()
     {
@@ -159,6 +165,7 @@ public sealed class ListActiveSlidesTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A slide linked to a product priced only quarterly, semi-annually and biennially carries a from price and no monthly or annual price.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListActive_LinkedProductPricedOnLongCycles_CarriesTheLowestMonthlyEquivalentAsFromPrice()
     {
@@ -178,6 +185,7 @@ public sealed class ListActiveSlidesTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A slide linked to a product with monthly and annual prices keeps both and gets the cheaper monthly equivalent as its from price.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListActive_LinkedProductPricedMonthlyAndAnnual_KeepsBothAndAddsFromPrice()
     {
@@ -197,6 +205,7 @@ public sealed class ListActiveSlidesTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A slide with no linked product has a null from price.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListActive_SlideWithoutProduct_HasNullFromPrice()
     {
@@ -212,6 +221,7 @@ public sealed class ListActiveSlidesTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A successful public list is marked cacheable for a short time.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListActive_AnonymousAnswer_CarriesShortPublicCacheHeaders()
     {

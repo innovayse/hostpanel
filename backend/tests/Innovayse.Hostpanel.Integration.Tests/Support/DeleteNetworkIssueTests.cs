@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class DeleteNetworkIssueTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can delete a network issue.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanDeleteANetworkIssueAsync()
     {
@@ -35,6 +36,7 @@ public sealed class DeleteNetworkIssueTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Deleting a network issue that does not exist answers 404 with <c>NETWORKISSUE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteUnknownNetworkIssueAnswersNotFoundAsync()
     {
@@ -47,6 +49,7 @@ public sealed class DeleteNetworkIssueTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A caller with no credential cannot delete a network issue.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

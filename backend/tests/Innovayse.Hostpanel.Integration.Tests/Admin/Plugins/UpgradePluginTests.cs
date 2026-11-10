@@ -5,7 +5,6 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Plugins;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,6 +65,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     /// the settings and stored data of the plugin are untouched, the list shows the staged version, and the staging is
     /// audited.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NewerVersion_IsStagedAndLeavesTheInstalledPluginAndItsDataAsync()
     {
@@ -108,6 +108,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Uploading an upgrade twice keeps only the last one staged.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SecondUpgrade_ReplacesTheStagedOneAsync()
     {
@@ -129,6 +130,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An older version is refused with 409 <c>PLUGIN_DOWNGRADE_REFUSED</c> and nothing is staged.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Downgrade_IsRefusedWithoutForceAsync()
     {
@@ -152,6 +154,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A forced downgrade is staged like an upgrade.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Downgrade_IsStagedWhenForcedAsync()
     {
@@ -175,6 +178,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An upgrade that breaks a manifest rule is refused with that rule's code and is never staged.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpgradeBreakingAManifestRule_IsNeverStagedAsync()
     {
@@ -202,6 +206,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Removing a plugin drops the upgrade staged for it, so it cannot come back at the next start.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Remove_DropsTheStagedUpgradeAsync()
     {
@@ -218,6 +223,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A forced downgrade is audited as a forced downgrade with both versions, not as an ordinary upgrade.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ForcedDowngrade_IsAuditedExplicitlyAsync()
     {
@@ -240,6 +246,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A refused downgrade attempt is audited too, with both versions.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusedDowngrade_IsAuditedAsync()
     {
@@ -264,6 +271,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     /// The downgrade check also compares with the version already staged: an upload older than the staged one is
     /// refused even though it is newer than the installed one, and a forced one replaces the staged upload.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UploadOlderThanTheStagedOne_IsADowngradeAsync()
     {
@@ -295,6 +303,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     /// An installed version that cannot be compared (its manifest was edited by hand) is not provably older, so an
     /// upload is refused as a downgrade unless forced; it cannot slip through as a "different version".
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnparseableInstalledVersion_CountsAsADowngradeUnlessForcedAsync()
     {
@@ -319,6 +328,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
 
     /// <summary>A version that is not a strict semantic version is refused with its own code and nothing is installed or staged.</summary>
     /// <param name="version">The version text in the uploaded manifest.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("1.0")]
     [InlineData("01.0.0")]
@@ -339,6 +349,7 @@ public sealed class UpgradePluginTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The same version uploaded again while an upgrade is staged replaces the staged upload and is audited as a replacement.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SameVersionAsTheStagedOne_IsAuditedAsAReplacementAsync()
     {

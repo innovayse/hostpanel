@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Innovayse.Hostpanel.Application.Common.Errors;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Testimonials;
 
@@ -12,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Testimonials;
 public sealed class CreateTestimonialTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Creating a testimonial and reading it back round-trips its fields and its translations.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenGet_RoundTrips()
     {
@@ -32,6 +32,7 @@ public sealed class CreateTestimonialTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The admin-set date round-trips through the admin read.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenGet_RoundTripsPublishedAt()
     {
@@ -45,17 +46,20 @@ public sealed class CreateTestimonialTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A date in the future is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_FuturePublishedAt_Refuses()
     {
         var client = await StorefrontContentTestSeeds.AdminClientAsync(factory);
+        var future = new DateTimeOffset(2999, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
-        var response = await client.PostAsJsonAsync("/api/admin/testimonials", StorefrontContentTestSeeds.TestimonialBody(publishedAt: DateTimeOffset.UtcNow.AddYears(1)));
+        var response = await client.PostAsJsonAsync("/api/admin/testimonials", StorefrontContentTestSeeds.TestimonialBody(publishedAt: future));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     /// <summary>A field the validator refuses answers 400 with the validation code, and nothing is stored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_InvalidField_RefusesWithValidationFailure()
     {
@@ -67,6 +71,7 @@ public sealed class CreateTestimonialTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A body with no translation at all is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_WithoutTranslations_Refuses()
     {
@@ -78,6 +83,7 @@ public sealed class CreateTestimonialTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A translation keyed by a language the panel does not support is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_UnsupportedLocale_Refuses()
     {
@@ -89,6 +95,7 @@ public sealed class CreateTestimonialTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_RefusesAnonymous()
     {

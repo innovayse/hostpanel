@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Controllers;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Shared;
+
 /// <summary>The one code → status table, pinned row by row so a stray substring cannot move a status.</summary>
 public sealed class StatusMappingTests
 {

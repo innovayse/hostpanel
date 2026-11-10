@@ -24,6 +24,7 @@ public sealed class ReleaseDomainRenewalClaimTests(IntegrationTestFactory factor
     }
 
     /// <summary>A claimed line is released with 204 and the release is logged.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Release_ClearsTheClaim_AndLogsIt()
     {
@@ -43,6 +44,7 @@ public sealed class ReleaseDomainRenewalClaimTests(IntegrationTestFactory factor
     }
 
     /// <summary>Releasing twice: the second call finds no claim and answers 409 <c>RENEWAL_CLAIM_NOT_HELD</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Release_Twice_Returns409()
     {
@@ -57,6 +59,7 @@ public sealed class ReleaseDomainRenewalClaimTests(IntegrationTestFactory factor
     }
 
     /// <summary>A line nobody claimed cannot be released.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnUnclaimedLine_CannotBeReleased()
     {
@@ -70,6 +73,7 @@ public sealed class ReleaseDomainRenewalClaimTests(IntegrationTestFactory factor
     }
 
     /// <summary>An unknown invoice answers 404 <c>INVOICE_NOT_FOUND</c>, and a line of another invoice answers 404 <c>INVOICE_ITEM_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownInvoiceOrLine_Returns404()
     {
@@ -87,6 +91,7 @@ public sealed class ReleaseDomainRenewalClaimTests(IntegrationTestFactory factor
     }
 
     /// <summary>Anonymous callers get 401 and a client who is not staff gets 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OnlyStaffMayRelease()
     {

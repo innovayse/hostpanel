@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class ListCancellationRequestsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Admin reads the paged list of cancellation requests without a refusal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetAll_AsAdmin_Returns200()
     {
@@ -23,6 +24,7 @@ public sealed class ListCancellationRequestsTests(IntegrationTestFactory factory
     }
 
     /// <summary>The list answers the shared page shape: items with page number, size, total count and total pages.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetAll_AsAdmin_AnswersTheSharedPageShapeAsync()
     {
@@ -42,6 +44,7 @@ public sealed class ListCancellationRequestsTests(IntegrationTestFactory factory
     }
 
     /// <summary>Reading the list without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetAll_Returns401_WithoutAuthAsync()
     {
@@ -53,6 +56,7 @@ public sealed class ListCancellationRequestsTests(IntegrationTestFactory factory
     }
 
     /// <summary>A plain client calling the admin list route is refused: the policy is admin only.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetAll_Returns403_AsPlainClientAsync()
     {
@@ -64,6 +68,7 @@ public sealed class ListCancellationRequestsTests(IntegrationTestFactory factory
     }
 
     /// <summary>A request names the service's product even when the product has no price in the admin's currency, and the service's owner.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetAll_NamesAProductWithNoPriceInTheCurrencyAsync()
     {

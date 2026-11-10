@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class ClientsByCityTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A client with a city and country is grouped correctly.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IncludesANewClient()
     {
@@ -28,6 +29,7 @@ public sealed class ClientsByCityTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -37,6 +39,7 @@ public sealed class ClientsByCityTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

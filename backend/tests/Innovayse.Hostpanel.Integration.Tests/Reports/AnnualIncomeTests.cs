@@ -3,10 +3,10 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 
@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class AnnualIncomeTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Twelve months come back regardless of whether anything was paid.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsTwelveMonths()
     {
@@ -34,6 +35,7 @@ public sealed class AnnualIncomeTests(IntegrationTestFactory factory) : IClassFi
     /// January stays in January), an invoice settled without a payment counts its total when paid,
     /// credit is not income, and the foreign invoice is converted to the base currency.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SumsIncomeByTheMonthTheMoneyMoved()
     {
@@ -51,6 +53,7 @@ public sealed class AnnualIncomeTests(IntegrationTestFactory factory) : IClassFi
     /// An imported paid invoice that is then fully refunded nets to zero: it keeps its paid moment, so
     /// its total and its refund cancel out instead of leaving the refund as negative income.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NetsAFullyRefundedHistoryInvoiceToZero()
     {
@@ -64,6 +67,7 @@ public sealed class AnnualIncomeTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -73,6 +77,7 @@ public sealed class AnnualIncomeTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetClientGrowthReportTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin reads the client-growth report for a well-formed range.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanReadTheReportAsync()
     {
@@ -31,6 +32,7 @@ public sealed class GetClientGrowthReportTests(IntegrationTestFactory factory) :
     /// A sign-up is counted on its UTC day, and the window is half-open: a window ending at the
     /// first instant of that day leaves it out.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CountsSignUpsPerDayInsideAHalfOpenWindowAsync()
     {
@@ -57,6 +59,7 @@ public sealed class GetClientGrowthReportTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -68,6 +71,7 @@ public sealed class GetClientGrowthReportTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The client-growth report is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

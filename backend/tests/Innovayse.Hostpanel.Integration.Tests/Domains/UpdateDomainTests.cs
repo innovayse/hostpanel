@@ -33,6 +33,7 @@ public sealed class UpdateDomainTests(IntegrationTestFactory factory) : IClassFi
     };
 
     /// <summary>Updating an existing domain succeeds and persists the new admin notes.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateDomain_ExistingDomain_Returns204AndPersistsAsync()
     {
@@ -49,6 +50,7 @@ public sealed class UpdateDomainTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An unrecognized status name is refused with 400 when the body is bound to <see cref="DomainStatus"/>, before any handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateDomain_WithInvalidStatus_Returns400Async()
     {
@@ -63,6 +65,7 @@ public sealed class UpdateDomainTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An unknown domain id answers 404 with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateDomain_UnknownDomain_Returns404Async()
     {
@@ -75,6 +78,7 @@ public sealed class UpdateDomainTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateDomain_WithoutToken_Returns401Async()
     {

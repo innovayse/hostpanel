@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 public sealed class SendVerificationEmailTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Registration sends exactly one verification mail, and its link points at the client portal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Register_SendsExactlyOneMailWithAWorkingLinkAsync()
     {
@@ -28,6 +29,7 @@ public sealed class SendVerificationEmailTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The token from the mailed link confirms the address.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConfirmEmail_WithTheMailedToken_MarksTheAddressVerifiedAsync()
     {
@@ -47,6 +49,7 @@ public sealed class SendVerificationEmailTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A token that was never issued is refused and confirms nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConfirmEmail_WithABadToken_IsRefusedAndLeavesTheAddressUnverifiedAsync()
     {

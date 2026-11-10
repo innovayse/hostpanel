@@ -5,6 +5,8 @@
 
 /** Closed set of screen paths shared across files. */
 export enum AppRoute {
+  /** The `/apps` root under which every plugin page lives (`/apps/<plugin>/<path>`). */
+  Apps = '/apps',
   /** The `/billing` screen. */
   Billing = '/billing',
   /** The `/billing/add-transaction` screen. */
@@ -319,3 +321,13 @@ export const integrationConfigurePath = (slug: string): string => `${AppRoute.In
  * @returns `/reports/<slug>`.
  */
 export const reportPagePath = (slug: string): string => `${AppRoute.Reports}/${slug}`
+
+/**
+ * Path of a page a plugin adds to the admin panel.
+ *
+ * @param pluginId - Id of the plugin.
+ * @param path - The page's filled path below the plugin's prefix, without a leading `/`; empty for its root page.
+ * @returns `/apps/<plugin>`, or `/apps/<plugin>/<path>`.
+ */
+export const pluginPagePath = (pluginId: string, path: string): string =>
+  path === '' ? `${AppRoute.Apps}/${encodeURIComponent(pluginId)}` : `${AppRoute.Apps}/${encodeURIComponent(pluginId)}/${path}`

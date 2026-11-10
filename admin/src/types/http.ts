@@ -33,4 +33,14 @@ export enum MimeType {
   Bmp = 'image/bmp',
   /** An SVG image. */
   Svg = 'image/svg+xml',
+  /** A stream of server-sent events. */
+  EventStream = 'text/event-stream',
+}
+
+/** One server-sent event of a streamed answer, as `useApi().stream` hands it over. */
+export interface ServerSentEvent {
+  /** The event name; `message` when the stream named none. */
+  type: string
+  /** The event's data: parsed JSON, or the text when it is not JSON. */
+  data: unknown
 }

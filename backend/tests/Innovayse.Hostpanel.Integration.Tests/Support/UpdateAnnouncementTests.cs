@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class UpdateAnnouncementTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can update an existing announcement.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanUpdateAnAnnouncementAsync()
     {
@@ -36,6 +37,7 @@ public sealed class UpdateAnnouncementTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Updating an announcement that does not exist answers 404 with <c>ANNOUNCEMENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateUnknownAnnouncementAnswersNotFoundAsync()
     {
@@ -53,6 +55,7 @@ public sealed class UpdateAnnouncementTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A caller with no credential cannot update an announcement.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

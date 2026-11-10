@@ -15,6 +15,7 @@ public sealed class AddMyDomainDnsRecordTests(IntegrationTestFactory factory) : 
     /// Adding a DNS record refuses a stranger before anything is written, and for the owner
     /// persists a record that then shows up on a read of the domain.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddDnsRecord_RefusesAStrangerAndPersistsForTheOwnerAsync()
     {
@@ -35,6 +36,7 @@ public sealed class AddMyDomainDnsRecordTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddDnsRecord_WithoutToken_Returns401Async()
     {
@@ -48,6 +50,7 @@ public sealed class AddMyDomainDnsRecordTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddDnsRecord_WithNonPositiveId_Returns400ValidationErrorAsync()
     {

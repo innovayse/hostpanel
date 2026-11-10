@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 public sealed class ProductsImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A group and product not already known are both created.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Products_CreatesTheGroupAndProductAsync()
     {
@@ -53,6 +54,7 @@ public sealed class ProductsImporterTests(IntegrationTestFactory factory) : ICla
     /// A cycle the source does not sell arrives as a null price and gets no price row; the cycle
     /// it sells gets its price.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_ProductNotSoldAnnually_GetsOnlyTheMonthlyPriceAsync()
     {

@@ -174,6 +174,7 @@ public static class ProvisioningTestSeeds
     /// </remarks>
     /// <param name="factory">The shared API + PostgreSQL host.</param>
     /// <param name="serviceId">The service to strip.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     public static async Task ClearAssignedServerAsync(IntegrationTestFactory factory, int serviceId)
     {
         using var scope = factory.Services.CreateScope();

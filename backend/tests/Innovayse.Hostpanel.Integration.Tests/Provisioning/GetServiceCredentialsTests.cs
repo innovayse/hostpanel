@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 public sealed class GetServiceCredentialsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Admin can retrieve credentials for a provisioned service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetCredentials_AdminCanGetCredentialsAsync()
     {
@@ -33,6 +34,7 @@ public sealed class GetServiceCredentialsTests(IntegrationTestFactory factory) :
     /// The credentials come from the provider configured for the service's server, not from the
     /// host-wide stub: the values the server's provider answers reach the caller.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetCredentials_ProvisionedService_ReturnsTheServersProviderValuesAsync()
     {
@@ -55,6 +57,7 @@ public sealed class GetServiceCredentialsTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A provisioned service without an assigned server answers 400 with <c>SERVICE_NO_SERVER_ASSIGNED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetCredentials_ServiceHasNoServer_Returns400WithServiceNoServerAssigned()
     {
@@ -71,6 +74,7 @@ public sealed class GetServiceCredentialsTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Reading credentials for a never-provisioned service answers 400 with <c>SERVICE_NOT_PROVISIONED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetCredentials_ServiceNeverProvisioned_Returns400WithServiceNotProvisioned()
     {
@@ -85,6 +89,7 @@ public sealed class GetServiceCredentialsTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Reading credentials for an id no service takes answers 404 with <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetCredentials_UnknownService_Returns404WithServiceNotFound()
     {
@@ -102,6 +107,7 @@ public sealed class GetServiceCredentialsTests(IntegrationTestFactory factory) :
     /// A provider that refuses to return credentials answers 502 with
     /// <c>SERVICE_CREDENTIALS_UPSTREAM_FAILED</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetCredentials_ProviderRefuses_Returns502WithServiceCredentialsUpstreamFailed()
     {
@@ -120,6 +126,7 @@ public sealed class GetServiceCredentialsTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Reading credentials without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetCredentials_Returns401_WithoutAuthAsync()
     {

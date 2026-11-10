@@ -26,6 +26,7 @@ public sealed class UpdateClientStatusTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>An active client can be marked Inactive, and Active again.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_CanDeactivateAndReactivateAClientAsync()
     {
@@ -44,6 +45,7 @@ public sealed class UpdateClientStatusTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A suspended client cannot be moved straight to Inactive: the refusal carries its own code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_RefusesDeactivatingASuspendedClientAsync()
     {
@@ -60,6 +62,7 @@ public sealed class UpdateClientStatusTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A closed client cannot be reactivated: the refusal is the activate code, the account stays closed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_RefusesReactivatingAClosedClientAsync()
     {

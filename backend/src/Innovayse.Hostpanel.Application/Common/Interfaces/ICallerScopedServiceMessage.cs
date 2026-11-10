@@ -33,5 +33,5 @@ public interface ICallerScopedServiceMessage
     /// <summary>
     /// Primary key of the client service this message acts on, which must belong to the caller.
     /// </summary>
-    int ServiceId { get; }
+    public int ServiceId { get; }
 }

@@ -1,6 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
@@ -15,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ListInvoicesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Listing invoices is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetInvoicesAsync_Returns401_WithoutAuthAsync()
     {
@@ -26,6 +25,7 @@ public sealed class ListInvoicesTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An admin lists invoices and sees the page.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetInvoicesAsync_Returns200_AsAdminAsync()
     {
@@ -37,6 +37,7 @@ public sealed class ListInvoicesTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An invoice just created for a client appears in the admin's list, named after its client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIncludesAFreshlyCreatedInvoice()
     {
@@ -56,6 +57,7 @@ public sealed class ListInvoicesTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Every row of the list names the currency its amounts are in, so a list can print a figure with the right unit.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRowsCarryTheInvoiceCurrencyAsync()
     {
@@ -81,6 +83,7 @@ public sealed class ListInvoicesTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A status filter that names no invoice status is refused instead of silently ignored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownStatusFilterIsRefused()
     {

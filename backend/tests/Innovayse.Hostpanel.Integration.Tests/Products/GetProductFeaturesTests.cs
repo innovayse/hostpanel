@@ -9,6 +9,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class GetProductFeaturesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>GET is public: the storefront's comparison table reads it without a session.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_ReturnsOk_WithoutAuth()
     {

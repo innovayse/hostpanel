@@ -18,10 +18,10 @@ public interface IJwtService
     /// <summary>Issues a short-lived access token for one person.</summary>
     /// <param name="claims">Who the credential is for and what it says about them.</param>
     /// <returns>The signed credential, ready to be handed to the caller as a bearer token.</returns>
-    string GenerateAccessToken(AccessTokenClaims claims);
+    public string GenerateAccessToken(AccessTokenClaims claims);
 
     /// <summary>How long one issued access token stays valid.</summary>
-    TimeSpan AccessTokenLifetime { get; }
+    public TimeSpan AccessTokenLifetime { get; }
 
     /// <summary>Re-issues an access token that is close to expiry (sliding renewal).</summary>
     /// <param name="accessToken">The token the caller presented.</param>
@@ -33,12 +33,12 @@ public interface IJwtService
     /// soon as the account's version moves on. The renewed expiry is
     /// capped at that maximum age.
     /// </returns>
-    string? RenewAccessToken(string accessToken);
+    public string? RenewAccessToken(string accessToken);
 
     /// <summary>Issues a fresh refresh token.</summary>
     /// <returns>
     /// A cryptographically random, opaque string. It carries no claims and nothing can be read
     /// out of it: it is only ever compared against a stored copy.
     /// </returns>
-    string GenerateRefreshToken();
+    public string GenerateRefreshToken();
 }

@@ -792,6 +792,15 @@ public static class HostpanelErrorCodes
     /// <summary>The manifest tags list has too many tags, a tag that is not 2 to 30 lowercase letters, digits and hyphens, or a tag listed twice (400).</summary>
     public const string PLUGIN_MANIFEST_TAGS_INVALID = "PLUGIN_MANIFEST_TAGS_INVALID";
 
+    /// <summary>The manifest minHostVersion or maxHostVersion is not a valid semantic version (400).</summary>
+    public const string PLUGIN_MANIFEST_HOST_VERSION_INVALID = "PLUGIN_MANIFEST_HOST_VERSION_INVALID";
+
+    /// <summary>The manifest minHostVersion is above its maxHostVersion (400).</summary>
+    public const string PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED = "PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED";
+
+    /// <summary>The manifest changelog is longer than the SDK allows (400).</summary>
+    public const string PLUGIN_MANIFEST_CHANGELOG_TOO_LONG = "PLUGIN_MANIFEST_CHANGELOG_TOO_LONG";
+
     /// <summary>A page or slot names a view document the plugin package does not hold, or a path that is not a package-relative .json file (400).</summary>
     public const string PLUGIN_VIEW_MISSING = "PLUGIN_VIEW_MISSING";
 
@@ -951,6 +960,9 @@ public static class HostpanelErrorCodes
 
     /// <summary>The upload is an older version than the installed plugin and the operator did not force the downgrade (409).</summary>
     public const string PLUGIN_DOWNGRADE_REFUSED = "PLUGIN_DOWNGRADE_REFUSED";
+
+    /// <summary>The running Hostpanel version is outside the minHostVersion and maxHostVersion the package declares (409).</summary>
+    public const string PLUGIN_HOST_VERSION_OUT_OF_RANGE = "PLUGIN_HOST_VERSION_OUT_OF_RANGE";
 
     /// <summary>The plugin's package is still installed, so its stored data cannot be purged; remove the plugin first (409).</summary>
     public const string PLUGIN_STILL_INSTALLED = "PLUGIN_STILL_INSTALLED";

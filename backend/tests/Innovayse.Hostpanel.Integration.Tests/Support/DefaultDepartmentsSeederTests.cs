@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Support.Seeding;
@@ -26,12 +25,14 @@ public sealed class DefaultDepartmentsSeederTests(IntegrationTestFactory factory
 {
     /// <summary>Deletes every row in the <c>Departments</c> table so a test starts from empty.</summary>
     /// <param name="context">The data context to clear.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private static async Task ClearDepartmentsAsync(IHostpanelDbContext context)
     {
         await context.Departments.ExecuteDeleteAsync();
     }
 
     /// <summary>An empty table gets every default department created exactly once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureSeededAsync_EmptyTable_CreatesEveryDefaultOnceAsync()
     {
@@ -53,6 +54,7 @@ public sealed class DefaultDepartmentsSeederTests(IntegrationTestFactory factory
     /// Nothing is created, and an operator's own department survives untouched, when the table
     /// already holds at least one row: the seeder is keyed on "the table is empty", not on names.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureSeededAsync_TableAlreadyHasARow_CreatesNothingAndLeavesItAloneAsync()
     {
@@ -74,6 +76,7 @@ public sealed class DefaultDepartmentsSeederTests(IntegrationTestFactory factory
     /// Two instances starting together both seed an empty table: whichever loses the race to the unique
     /// index on the name carries on instead of failing the start, and the departments exist exactly once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureSeededAsync_TwoConcurrentStarts_BothSucceedAndCreateEachDepartmentOnceAsync()
     {
@@ -93,6 +96,7 @@ public sealed class DefaultDepartmentsSeederTests(IntegrationTestFactory factory
     }
 
     /// <summary>The configured addresses, not built-in literals, become the departments' contact emails.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureSeededAsync_ConfiguredAddresses_AreUsedAsDepartmentEmailsAsync()
     {

@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class ClientRegisteredHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A newly registered client is sent the welcome email exactly once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientRegistered_SendsWelcomeEmailExactlyOnceAsync()
     {

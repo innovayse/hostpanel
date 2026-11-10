@@ -543,6 +543,15 @@
 <data name="PLUGIN_MANIFEST_TAGS_INVALID" xml:space="preserve">
     <value>The tags in the manifest are not valid: list at most 10 tags, each 2 to 30 lowercase letters, digits or hyphens with no leading #, and no tag twice.</value>
   </data>
+<data name="PLUGIN_MANIFEST_HOST_VERSION_INVALID" xml:space="preserve">
+    <value>The minimum or maximum host version in the manifest is not valid: write it as major.minor.patch, for example 2.1.0.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED" xml:space="preserve">
+    <value>The minimum host version in the manifest is above its maximum host version.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_CHANGELOG_TOO_LONG" xml:space="preserve">
+    <value>The changelog in the manifest is too long: keep it to 4000 characters.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>This plugin names a view document that its package does not contain.</value>
   </data>
@@ -1188,6 +1197,9 @@
   </data>
   <data name="PLUGIN_REGISTRY_HOST_INCOMPATIBLE" xml:space="preserve">
     <value>This version of the plugin does not run on this Hostpanel version.</value>
+  </data>
+  <data name="PLUGIN_HOST_VERSION_OUT_OF_RANGE" xml:space="preserve">
+    <value>This plugin does not run on the Hostpanel version this server runs: it is outside the minimum and maximum host version the plugin supports.</value>
   </data>
   <data name="PLUGIN_REGISTRY_VERSION_YANKED" xml:space="preserve">
     <value>The plugin registry withdrew this version, so it cannot be installed. Choose another version.</value>

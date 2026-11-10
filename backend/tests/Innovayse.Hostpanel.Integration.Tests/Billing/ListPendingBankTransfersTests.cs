@@ -26,6 +26,7 @@ public sealed class ListPendingBankTransfersTests(IntegrationTestFactory factory
     /// A waiting transfer is listed with its reference, client and amount; an unpaid invoice, a confirmed one and a rejected one
     /// are not.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_ShowsOnlyTheTransfersThatWait()
     {
@@ -53,6 +54,7 @@ public sealed class ListPendingBankTransfersTests(IntegrationTestFactory factory
     }
 
     /// <summary>Staff only: anonymous callers get 401, and a client account gets 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_IsForStaffOnly()
     {

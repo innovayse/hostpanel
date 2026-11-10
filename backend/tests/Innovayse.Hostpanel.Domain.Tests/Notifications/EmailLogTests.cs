@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Notifications;
 using Innovayse.Hostpanel.Domain.Notifications.Enums;
 

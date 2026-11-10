@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Innovayse.Hostpanel.Domain.Products;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 
@@ -17,6 +16,7 @@ public sealed class PlaceOrderClientStatusTests(IntegrationTestFactory factory) 
     /// <summary>A suspended or closed account cannot place an order; the refusal names the status.</summary>
     /// <param name="status">The status the account is in.</param>
     /// <param name="expectedCode">The code the refusal carries.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(ClientStatus.Suspended, HostpanelErrorCodes.CLIENT_SUSPENDED)]
     [InlineData(ClientStatus.Closed, HostpanelErrorCodes.CLIENT_CLOSED)]

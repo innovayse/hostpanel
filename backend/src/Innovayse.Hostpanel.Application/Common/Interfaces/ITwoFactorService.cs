@@ -34,7 +34,7 @@ public interface ITwoFactorService
     /// <c>TWO_FACTOR_ALREADY_ENABLED</c> when two-factor is already on, so a setup can never replace
     /// the secret an enabled account signs in with.
     /// </returns>
-    Task<Result<TwoFactorSetupDto>> StartSetupAsync(string userId, CancellationToken ct);
+    public Task<Result<TwoFactorSetupDto>> StartSetupAsync(string userId, CancellationToken ct);
 
     /// <summary>
     /// Switches two-factor authentication on, once the code proves the authenticator app holds
@@ -43,7 +43,7 @@ public interface ITwoFactorService
     /// <param name="confirmation">Whose account and the code the app currently shows.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Success once it is on, or <c>TWO_FACTOR_CODE_INVALID</c> when the code did not match a pending secret.</returns>
-    Task<Result> EnableAsync(TwoFactorConfirmation confirmation, CancellationToken ct);
+    public Task<Result> EnableAsync(TwoFactorConfirmation confirmation, CancellationToken ct);
 
     /// <summary>
     /// Switches two-factor authentication off, once the caller proves they still hold the second
@@ -55,5 +55,5 @@ public interface ITwoFactorService
     /// Success once it is off, <c>CURRENT_PASSWORD_INVALID</c> when the password is missing or wrong,
     /// or <c>TWO_FACTOR_CODE_INVALID</c> when the code did not match.
     /// </returns>
-    Task<Result> DisableAsync(TwoFactorRemoval removal, CancellationToken ct);
+    public Task<Result> DisableAsync(TwoFactorRemoval removal, CancellationToken ct);
 }

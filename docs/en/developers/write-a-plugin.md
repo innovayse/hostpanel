@@ -233,6 +233,27 @@ Tags are plain keywords, written in the manifest like this:
 
 The host checks the list when the plugin is installed and when it is loaded, with the same rule the `Hostpanel.Sdk.Packaging` package runs on your build: a tag shorter than 2 or longer than 30 characters, one with an upper case letter, a space, a leading `#` or any character outside letters, digits and hyphens, a tag listed twice, or more than 10 tags is refused with `PLUGIN_MANIFEST_TAGS_INVALID`. A manifest with no `tags` is fine.
 
+### Supported host versions and changelog
+
+Any manifest version may carry these optional members. They need SDK 3.4.0 or later.
+
+<SettingTable :settings="[
+  { name: 'minHostVersion', type: 'string', default: '', description: 'The lowest Hostpanel version the plugin runs on, a strict major.minor.patch version such as 2.1.0. Leave it out for no lower limit.' },
+  { name: 'maxHostVersion', type: 'string', default: '', description: 'The highest Hostpanel version the plugin is known to run on, in the same format and never below minHostVersion. Leave it out for no upper limit.' },
+  { name: 'changelog', type: 'string', default: '', description: 'Short release notes for this version in Markdown, at most 4000 characters. Line breaks are kept.' }
+]" />
+
+```json
+"minHostVersion": "2.1.0",
+"maxHostVersion": "2.9.0",
+"changelog": "Adds refunds.
+Fixes the renewal date."
+```
+
+Both bounds are inclusive and compared in semantic version order, so a pre-release such as `2.1.0-rc.1` ranks below `2.1.0`. A bound that is not a valid version is refused with `PLUGIN_MANIFEST_HOST_VERSION_INVALID`, a `minHostVersion` above the `maxHostVersion` with `PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED`, and a longer changelog with `PLUGIN_MANIFEST_CHANGELOG_TOO_LONG`.
+
+When an administrator uploads a package, the admin panel first shows what it asks for (each `hostAccess` kind and each capability, in words), the changelog and the supported versions, and installs it only after a confirmation. The host compares the range with the version it runs on every install path: an upload, a registry install and an upgrade of an installed plugin. Outside the range the install is refused with `PLUGIN_HOST_VERSION_OUT_OF_RANGE` (409) and nothing is unpacked or staged.
+
 Wherever a label, title or description may be a text, write either a key of `locales` or plain text. A value shaped like a key (letters, digits, dashes and underscores in two or more parts separated by dots) is looked up in the `en` texts and refused when it is not defined (`PLUGIN_LABEL_KEY_MISSING`).
 
 Each entry in `settings`:

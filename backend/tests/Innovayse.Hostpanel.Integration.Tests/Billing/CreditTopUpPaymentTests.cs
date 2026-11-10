@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Payment;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
@@ -99,6 +98,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     /// A confirmed bank transfer of a top-up pays the invoice and puts exactly its amount on the balance: one history line
     /// that is the payment's own ledger entry, the client mailed the new balance, and nothing fulfilled.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BankTransfer_Confirm_CreditsTheBalanceOnce()
     {
@@ -134,6 +134,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A top-up fulfils nothing: no fulfilment record, no order, no service, no domain is touched by paying it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PayingATopUp_FulfilsNothing()
     {
@@ -153,6 +154,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A second confirm of the same transfer is refused and credits nothing more.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BankTransfer_ConfirmTwice_CreditsOnce()
     {
@@ -172,6 +174,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Two admins confirming the one transfer together: one wins, and the balance rises once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BankTransfer_ConfirmRacedByTwoAdmins_CreditsOnce()
     {
@@ -192,6 +195,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A rejected transfer credits nothing, and the invoice can still be paid and credited later.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BankTransfer_Reject_CreditsNothing()
     {
@@ -210,6 +214,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A payment staff record by hand completes the top-up and credits it once; a second full payment is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ManualPayment_CreditsOnce_AndAReplayIsRefused()
     {
@@ -228,6 +233,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A part payment credits nothing; the payment that completes the top-up credits the whole amount, once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PartPayments_CreditTheWholeAmountWhenTheLastOneCompletesIt()
     {
@@ -248,6 +254,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A bulk mark-paid of a top-up credits it, like every other road that pays an invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BulkMarkPaid_CreditsOnce()
     {
@@ -273,6 +280,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A gateway that reports the top-up paid credits the balance once, with the payment's own ledger entry as the line.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Gateway_Completion_CreditsTheBalanceOnce()
     {
@@ -295,6 +303,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Completing the same payment again, as a reloaded return page or the reconciler does, credits nothing more.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Gateway_CompletionReplayed_CreditsOnce()
     {
@@ -315,6 +324,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The return page and the reconciler completing at the same moment: both answer Paid, the balance rises once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Gateway_CompletionDoneTwiceAtOnce_CreditsOnce()
     {
@@ -336,6 +346,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     /// A gateway completion racing a payment staff record: the top-up is credited once whichever lands first, and the
     /// loser's money is never lost (a gateway payment that cannot pay the settled invoice goes to the balance as a surplus).
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Gateway_CompletionRacingAManualPayment_CreditsTheTopUpOnce()
     {
@@ -358,6 +369,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A gateway that took more than the top-up credits the top-up and the surplus as two lines, and nothing is lost.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Gateway_TookMoreThanDue_CreditsTheTopUpAndTheSurplus()
     {
@@ -380,6 +392,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A gateway that took less than the top-up is refused as a mismatch: nothing is credited and the invoice stays open.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Gateway_TookLessThanDue_CreditsNothing()
     {
@@ -399,6 +412,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A gateway that has not taken the money yet credits nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Gateway_StillPending_CreditsNothing()
     {
@@ -419,6 +433,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     /// Two top-ups of one client paid at the same moment both reach the balance: the later save finds the balance moved,
     /// is refused, and its retry credits it on the fresh balance, so neither is lost and neither is counted twice.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoTopUpsOfOneClientPaidTogether_AreBothCredited()
     {
@@ -445,6 +460,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Credit cannot pay for credit: staff and the client are both refused, and nothing moves.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreditCannotBeAppliedToATopUp()
     {
@@ -465,6 +481,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The line cannot be edited into another invoice, and the invoice cannot be duplicated.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ATopUpCannotBeEditedOrDuplicated()
     {
@@ -486,6 +503,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>An unpaid top-up past its due date is never a debt: the overdue sweep leaves it alone.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheOverdueSweepLeavesATopUpAlone()
     {
@@ -515,6 +533,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     /// The cash is counted once. Paying the top-up is income of the amount paid; spending that credit on another invoice
     /// adds none, because an invoice paid with credit counts only what is left after the credit.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheMoneyIsNotCountedAsRevenueTwice()
     {
@@ -536,6 +555,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A top-up nobody paid can be cancelled; nothing was credited, so nothing moves.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancellingAnUnpaidTopUp_MovesNoCredit()
     {
@@ -552,6 +572,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A paid top-up cannot be cancelled: its credit would stay on the balance with the invoice gone. A refund is the way back.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APaidTopUpCannotBeCancelled()
     {
@@ -571,6 +592,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     /// A manual refund of a paid top-up takes the refunded amount off the balance in the same save, as one history line that is
     /// the refund's own ledger entry; the invoice turns Refunded.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ManualRefund_TakesTheCreditOffTheBalance()
     {
@@ -600,6 +622,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A client who already spent the credit leaves the balance short: the refund is refused whole and nothing is recorded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Refund_OfCreditAlreadySpent_IsRefusedAndRecordsNothing()
     {
@@ -641,6 +664,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
 
     /// <summary>A top-up is refunded by hand only: a gateway refund or a refund back to the balance would send the same money twice.</summary>
     /// <param name="refundType">A refund type other than Manual.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(nameof(RefundType.Gateway))]
     [InlineData(nameof(RefundType.CreditBalance))]
@@ -660,6 +684,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The payment entry of a top-up is part of the credit history: it cannot be edited or deleted, so the balance cannot drift from it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ThePaymentEntry_CannotBeEditedOrDeleted()
     {

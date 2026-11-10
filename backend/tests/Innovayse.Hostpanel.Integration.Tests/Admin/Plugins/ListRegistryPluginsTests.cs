@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The page carries the contract members, marks the installed plugin and offers its update.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InstalledPlugin_IsMarkedWithItsVersionAndTheUpdateAsync()
     {
@@ -58,6 +59,7 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A plugin installed at the registry's newest version is not offered an update.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InstalledAtTheLatestVersion_OffersNoUpdateAsync()
     {
@@ -83,6 +85,7 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The search text, the category and the page reach the registry; a blank search is no search.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Filters_ReachTheRegistryAsync()
     {
@@ -98,6 +101,7 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A search over 100 characters and an undefined category are refused before the registry is asked.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvalidFilters_AreRefusedAsync()
     {
@@ -111,6 +115,7 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>An unreachable registry answers its own code and status, with the localised sentence.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AFailingRegistry_AnswersItsCodeAsync()
     {
@@ -124,6 +129,7 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>With no registry configured (the default) the real client answers 409 <c>PLUGIN_REGISTRY_DISABLED</c> in the caller's language.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheDefaultConfiguration_AnswersDisabledAsync()
     {
@@ -140,6 +146,7 @@ public sealed class ListRegistryPluginsTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A Client-role caller is refused and a caller with no credential is unauthorised.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OnlyAnAdministrator_MayBrowseAsync()
     {

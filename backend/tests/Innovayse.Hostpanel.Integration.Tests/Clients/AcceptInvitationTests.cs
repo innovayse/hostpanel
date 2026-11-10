@@ -1,10 +1,8 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class AcceptInvitationTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Accepting a valid, pending invitation links the signed-in caller to the client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AcceptLinksTheCallerToTheClient()
     {
@@ -35,6 +34,7 @@ public sealed class AcceptInvitationTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Accepting a token nobody issued answers <c>INVITATION_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AcceptRefusesAnUnknownToken()
     {
@@ -47,6 +47,7 @@ public sealed class AcceptInvitationTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Accepting an invitation whose client row no longer exists answers <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AcceptRefusesAnOrphanedInvitation()
     {
@@ -60,6 +61,7 @@ public sealed class AcceptInvitationTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Accepting the same invitation twice answers <c>INVITATION_ALREADY_ACCEPTED</c> the second time.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AcceptRefusesAnAlreadyAcceptedInvitation()
     {
@@ -77,6 +79,7 @@ public sealed class AcceptInvitationTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Accepting an invitation is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AcceptRefusesAnonymous()
     {

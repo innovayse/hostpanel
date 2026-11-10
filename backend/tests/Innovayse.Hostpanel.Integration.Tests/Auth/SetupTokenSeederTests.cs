@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Application.Auth.Seeding;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
@@ -35,6 +34,7 @@ public sealed class SetupTokenSeederTests
         );
 
     /// <summary>On a fresh install a token is issued, persisted and returned.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureIssued_OnFreshInstall_IssuesAndPersistsAsync()
     {
@@ -58,6 +58,7 @@ public sealed class SetupTokenSeederTests
     /// A restart while setup is still outstanding re-announces the same token rather than
     /// issuing a new one. This is what makes a container restart mid-setup recoverable.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureIssued_WhenTokenOutstanding_ReturnsTheSameOneAsync()
     {
@@ -76,6 +77,7 @@ public sealed class SetupTokenSeederTests
     /// Once somebody holds Admin nothing is issued and nothing is announced: a completed
     /// installation must not keep printing a claimable secret to its log.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureIssued_WhenAdminHeld_IssuesNothingAsync()
     {
@@ -95,6 +97,7 @@ public sealed class SetupTokenSeederTests
     /// A spent row on an installation that is unclaimed again (setup completed, then every
     /// Admin grant revoked) is re-armed rather than left as a permanent lockout.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureIssued_WhenRowSpentAndAdminUnheld_ReArmsAsync()
     {
@@ -117,6 +120,7 @@ public sealed class SetupTokenSeederTests
     /// Two issues never collide. The value is 256 bits of cryptographic randomness; this pins
     /// that it is generated rather than derived from anything stable.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EnsureIssued_IssuesADistinctTokenPerInstallationAsync()
     {

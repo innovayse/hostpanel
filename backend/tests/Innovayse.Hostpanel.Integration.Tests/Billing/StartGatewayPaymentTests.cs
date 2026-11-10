@@ -1,10 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
-using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +37,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     /// <param name="host">The host whose database the client lives in.</param>
     /// <param name="clientId">The client to stamp.</param>
     /// <param name="currency">ISO 4217 alpha code.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private static async Task SetClientCurrencyAsync(WebApplicationFactory<Program> host, int clientId, string currency)
     {
         using var scope = host.Services.CreateScope();
@@ -60,6 +60,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
             new { module, returnUrl = returnUrl ?? BillingTestSeeds.AllowedReturnUrl });
 
     /// <summary>Registers a payment and stores the session, handing back the gateway's redirect URL.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StartRegistersPaymentAndStoresSession()
     {
@@ -83,6 +84,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>An AMD invoice against a plugin configured for AMD registers normally.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AmdInvoiceAgainstAmdPluginRegistersNormally()
     {
@@ -106,6 +108,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     /// currency decides the match, not the client's current one, and no other lookup is made
     /// that a later currency change on the client record could reach.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UsdInvoiceAgainstAmdPluginRefusesWithoutCallingTheGateway()
     {
@@ -125,6 +128,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A module the resolver does not know answers <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnavailableModuleRefusesWithPluginNotConfigured()
     {
@@ -139,6 +143,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>An already-paid invoice is refused before the plugin is ever resolved.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AlreadyPaidInvoiceRefusesWithoutResolvingAPlugin()
     {
@@ -158,6 +163,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A return URL whose origin the panel does not allow is refused before any resolution happens.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnUrlOriginNotAllowedRefuses()
     {
@@ -176,6 +182,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     /// <c>GATEWAY_SESSION_ALREADY_STARTED</c> rather than letting a second one orphan it at the
     /// gateway.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FreshLiveSessionRefusesUntilItIsKnownDeclined()
     {
@@ -203,6 +210,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     /// <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c>, so no second payment is registered.
     /// </summary>
     /// <param name="held"><see langword="true"/> for a held claim, <see langword="false"/> for a pending one.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -233,6 +241,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A fresh session already known to be declined is replaced with a new one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FreshLiveSessionAlreadyDeclinedIsReplaced()
     {
@@ -262,6 +271,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> and <c>Retry-After</c>, never a 500; the gateway's
     /// own text stays out of the body and no session is stored on the invoice.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginOutageAnswersServiceUnavailableWithoutStoringASession()
     {
@@ -297,6 +307,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     /// After a partial manual payment, the gateway session charges only what is still due, never the
     /// whole total a second time.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StartAfterPartialPayment_ChargesOnlyTheRemainder()
     {
@@ -326,6 +337,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     /// After credit is applied to the invoice, the gateway session charges what is still due, the total net of that credit:
     /// the credit is never charged to the bank card a second time.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StartAfterCredit_ChargesTheAmountDueNetOfCredit()
     {
@@ -348,6 +360,7 @@ public sealed class StartGatewayPaymentTests(IntegrationTestFactory factory) : I
     /// <summary>
     /// Credit that covers the whole invoice settles it, so no gateway session can be started for it: nothing is left to charge.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StartAfterCreditThatCoversTheInvoice_IsRefusedAsNotPayable()
     {

@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class RecordOrderLineOutcomeTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An order that does not exist is refused as <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderIsRefused()
     {
@@ -29,6 +30,7 @@ public sealed class RecordOrderLineOutcomeTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A line the order does not hold is refused as <c>ORDER_ITEM_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingLineIsRefused()
     {
@@ -43,6 +45,7 @@ public sealed class RecordOrderLineOutcomeTests(IntegrationTestFactory factory) 
     /// A failure of the claimed attempt is stored with its code and makes the accepted order Incomplete; the retry's claim
     /// counts the second attempt, and its success clears the code and returns the order to Active.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RecordsAFailureThenASuccessAndTheOrderFollowsItsLine()
     {
@@ -77,6 +80,7 @@ public sealed class RecordOrderLineOutcomeTests(IntegrationTestFactory factory) 
     /// and changes nothing, so it cannot overwrite what the newer attempt recorded; an outcome for a line nobody claimed is
     /// refused the same way.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnOutcomeFromAStaleAttemptIsRefusedAndTheNewerResultStays()
     {
@@ -107,6 +111,7 @@ public sealed class RecordOrderLineOutcomeTests(IntegrationTestFactory factory) 
     /// An attempt that finishes after the line's refund began cannot record itself: it is refused as <c>ORDER_LINE_CHANGED</c>
     /// and the line stays Refunding, so a late success never turns a refunded line into a delivered one.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnAttemptTheRefundOvertookIsRefused()
     {
@@ -124,6 +129,7 @@ public sealed class RecordOrderLineOutcomeTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A non-positive id or attempt, or an undefined outcome, is refused by the validator.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvalidInputIsRefusedByTheValidator()
     {

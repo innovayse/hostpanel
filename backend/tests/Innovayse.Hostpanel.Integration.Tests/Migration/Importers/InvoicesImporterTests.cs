@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 public sealed class InvoicesImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An invoice for a known client is imported, with its line items.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Invoices_ImportsAnInvoiceForAKnownClientAsync()
     {
@@ -50,6 +51,7 @@ public sealed class InvoicesImporterTests(IntegrationTestFactory factory) : ICla
     /// A paid invoice keeps the source's tax, credit and total, and is paid at the source's payment
     /// moment rather than at the import.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_PaidInvoice_KeepsSourceTotalsAndPaidMomentAsync()
     {
@@ -77,6 +79,7 @@ public sealed class InvoicesImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An invoice whose source holds no due date is skipped with its own reason.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_InvoiceWithoutDueDate_IsSkippedAsDateMissingAsync()
     {

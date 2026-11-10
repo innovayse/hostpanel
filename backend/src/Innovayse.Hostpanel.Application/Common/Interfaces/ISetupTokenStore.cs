@@ -14,7 +14,7 @@ public interface ISetupTokenStore
     /// <param name="candidate">A freshly generated token, stored only when none is outstanding.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The token that is outstanding after the call.</returns>
-    Task<string> GetOrIssueAsync(string candidate, CancellationToken ct);
+    public Task<string> GetOrIssueAsync(string candidate, CancellationToken ct);
 
     /// <summary>
     /// Compares the presented token with the outstanding one in fixed time and, on a match, blanks
@@ -26,5 +26,5 @@ public interface ISetupTokenStore
     /// <see langword="true"/> when the token matched and is now retired; <see langword="false"/>
     /// when none was presented, none is outstanding, or it does not match.
     /// </returns>
-    Task<bool> TryConsumeAsync(string? presented, CancellationToken ct);
+    public Task<bool> TryConsumeAsync(string? presented, CancellationToken ct);
 }

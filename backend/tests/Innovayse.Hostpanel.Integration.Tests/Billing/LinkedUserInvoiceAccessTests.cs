@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class LinkedUserInvoiceAccessTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The account owner lists and reads their own invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OwnerSeesTheInvoiceAsync()
     {
@@ -28,6 +29,7 @@ public sealed class LinkedUserInvoiceAccessTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A user linked with the invoices permission lists and reads the account's invoice and its payment methods.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedLinkedUserSeesTheInvoiceAsync()
     {
@@ -45,6 +47,7 @@ public sealed class LinkedUserInvoiceAccessTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A user linked without the invoices permission is refused every invoice route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LinkedUserWithoutThePermissionIsRefusedAsync()
     {
@@ -66,6 +69,7 @@ public sealed class LinkedUserInvoiceAccessTests(IntegrationTestFactory factory)
     /// A user permitted on another account never sees this account's invoice: the list is theirs
     /// alone and the id answers <c>INVOICE_NOT_FOUND</c>, like an id naming no invoice.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedUserOfAnotherAccountAnswersNotFoundAsync()
     {

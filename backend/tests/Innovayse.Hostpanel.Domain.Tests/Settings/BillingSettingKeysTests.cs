@@ -16,6 +16,8 @@ public sealed class BillingSettingKeysTests
     }
 
     /// <summary>The day lists accept what an operator types and refuse the rest.</summary>
+    /// <param name="value">The setting value.</param>
+    /// <param name="ok">Whether the value is accepted.</param>
     [Theory]
     [InlineData("7,3,1", true)]
     [InlineData("14", true)]

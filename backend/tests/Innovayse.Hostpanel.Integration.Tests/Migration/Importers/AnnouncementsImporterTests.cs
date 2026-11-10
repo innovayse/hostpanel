@@ -19,6 +19,7 @@ public sealed class AnnouncementsImporterTests(IntegrationTestFactory factory) :
     /// Two distinct announcement records: <see cref="AnnouncementsImporter"/> creates both, keeping the
     /// source creation date of each.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Announcements_CreatesEveryDistinctRecordAsync()
     {
@@ -70,6 +71,7 @@ public sealed class AnnouncementsImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A second run of the same dataset creates no second row: the retry imports 0 and skips every record as already existing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Announcements_SecondRunSkipsAsAlreadyExistsAsync()
     {
@@ -91,6 +93,7 @@ public sealed class AnnouncementsImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The title match ignores case, so a retry with differently cased text is still a duplicate.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Announcements_TitleMatchIgnoresCaseAsync()
     {
@@ -112,6 +115,7 @@ public sealed class AnnouncementsImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The same title on a different date is a different announcement and is created.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Announcements_SameTitleOnADifferentDateIsCreatedAsync()
     {
@@ -131,6 +135,7 @@ public sealed class AnnouncementsImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A source date finer than a microsecond still matches on a retry, because it is stored at microsecond precision.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Announcements_SubMicrosecondDateIsStillDuplicateOnRetryAsync()
     {

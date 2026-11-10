@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Products;
@@ -18,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 public sealed class DeleteServerGroupTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Creating then deleting a group removes it; deleting again answers 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenDelete_RemovesTheGroupAsync()
     {
@@ -34,6 +34,7 @@ public sealed class DeleteServerGroupTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A group a product still provisions into is refused with 409 and is kept.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GroupUsedByAProduct_IsRefusedAsync()
     {
@@ -58,6 +59,7 @@ public sealed class DeleteServerGroupTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -69,6 +71,7 @@ public sealed class DeleteServerGroupTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

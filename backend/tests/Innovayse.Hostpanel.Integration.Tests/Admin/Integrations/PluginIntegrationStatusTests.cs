@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
@@ -10,8 +12,6 @@ using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Manifest;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -142,6 +142,7 @@ public sealed class PluginIntegrationStatusTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The detail answers every setting text in the admin's language, English where the locale lacks the key.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetIntegration_ResolvesSettingTextsInTheRequestLanguageAsync()
     {
@@ -162,6 +163,7 @@ public sealed class PluginIntegrationStatusTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Test Connection asks the plugin and answers its own detail in the admin's language.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TestConnection_HealthyPlugin_ReportsSuccessInTheRequestLanguageAsync()
     {
@@ -179,6 +181,7 @@ public sealed class PluginIntegrationStatusTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A throwing check fails closed and never puts the plugin's exception text on the wire.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TestConnection_ThrowingPlugin_FailsClosedWithoutLeakingAsync()
     {
@@ -196,6 +199,7 @@ public sealed class PluginIntegrationStatusTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A plugin that ignores its token is abandoned at the host's limit and reported as not working.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TestConnection_HangingPlugin_TimesOutWithinTheLimitAsync()
     {
@@ -214,6 +218,7 @@ public sealed class PluginIntegrationStatusTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A switched-off plugin is not called and the test reports it as not active.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TestConnection_SwitchedOffPlugin_IsNotCalledAsync()
     {
@@ -228,6 +233,7 @@ public sealed class PluginIntegrationStatusTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A plugin without <c>IPluginStatus</c> cannot be tested: the detail says so and the test is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginWithoutStatus_CannotBeTestedAsync()
     {
@@ -247,6 +253,7 @@ public sealed class PluginIntegrationStatusTests(IntegrationTestFactory factory)
     /// The list shows a switched-on plugin's connection state, asks the plugin once for two loads (cached), and asks
     /// again after a save of the integration.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIntegrations_ShowsTheCachedConnectionStateAsync()
     {

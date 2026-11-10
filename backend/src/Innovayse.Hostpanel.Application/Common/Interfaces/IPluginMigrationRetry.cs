@@ -16,5 +16,5 @@ public interface IPluginMigrationRetry
     /// <param name="pluginId">The plugin whose settings were just saved.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the attempt ended.</returns>
-    Task RetryAsync(string pluginId, CancellationToken ct);
+    public Task RetryAsync(string pluginId, CancellationToken ct);
 }

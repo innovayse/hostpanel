@@ -15,6 +15,7 @@ public sealed class SetMyDomainAutoRenewTests(IntegrationTestFactory factory) : 
     /// Auto-renew refuses a stranger and applies for the owner: the handler dispatches through
     /// <c>IDomainOwnership</c>'s <see cref="Innovayse.Hostpanel.Shared.Models.Result"/>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_RefusesAStrangerAndAppliesForTheOwnerAsync()
     {
@@ -32,6 +33,7 @@ public sealed class SetMyDomainAutoRenewTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_WithoutToken_Returns401Async()
     {
@@ -44,6 +46,7 @@ public sealed class SetMyDomainAutoRenewTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_WithNonPositiveId_Returns400ValidationErrorAsync()
     {
@@ -58,6 +61,7 @@ public sealed class SetMyDomainAutoRenewTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A body without <c>value</c> is refused with 400 <c>VALIDATION_ERROR</c>, not read as <c>false</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_WithoutValue_Returns400ValidationErrorAsync()
     {

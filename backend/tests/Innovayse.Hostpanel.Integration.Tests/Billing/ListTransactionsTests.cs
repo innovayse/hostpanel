@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ListTransactionsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A transaction just created appears in the admin's list, named after its client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIncludesAFreshlyCreatedTransaction()
     {
@@ -37,6 +38,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
     /// The totals add up every client's ledger in the base currency: a row in a currency worth half the base adds half
     /// its amount, and the answer names the base currency the tiles are in. Before, the global list reported zero.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TotalsAcrossAllClientsAreInTheBaseCurrency()
     {
@@ -56,6 +58,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A transaction recorded by hand with no invoice is in the currency its client is billed in.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ManualTransactionTakesTheClientsCurrency()
     {
@@ -70,6 +73,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A transaction recorded against an invoice is in the invoice's currency, whatever the client is billed in now.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransactionOfAnInvoiceTakesTheInvoiceCurrency()
     {
@@ -100,6 +104,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The transaction endpoints are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAnonymous()
     {
@@ -124,6 +129,7 @@ public sealed class ListTransactionsTests(IntegrationTestFactory factory) : ICla
     /// <param name="amountIn">The amount credited.</param>
     /// <param name="fees">The fees charged.</param>
     /// <param name="currency">ISO 4217 code the amounts are in.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private async Task SeedTransactionAsync(int clientId, decimal amountIn, decimal fees, string currency)
     {
         using var scope = factory.Services.CreateScope();

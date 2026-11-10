@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ListClientQuotesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin lists a client's quotes and finds the one just created for them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListByClientIncludesTheClientsOwnQuote()
     {
@@ -27,6 +28,7 @@ public sealed class ListClientQuotesTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A client with no quotes lists an empty page, not an error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListByClientWithNoQuotesReturnsAnEmptyPage()
     {
@@ -41,6 +43,7 @@ public sealed class ListClientQuotesTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Listing a client's quotes is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListByClientRefusesAnonymous()
     {

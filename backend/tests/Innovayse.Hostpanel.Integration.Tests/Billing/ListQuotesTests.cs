@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A quote just created appears in the admin's list, named after its client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIncludesAFreshlyCreatedQuote()
     {
@@ -29,6 +30,7 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A quote is priced in its client's currency, and the list and the detail both say so.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task QuoteCarriesTheClientsCurrency()
     {
@@ -49,6 +51,7 @@ public sealed class ListQuotesTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>Listing quotes is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAnonymous()
     {

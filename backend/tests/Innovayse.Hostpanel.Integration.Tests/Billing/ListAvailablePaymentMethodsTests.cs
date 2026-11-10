@@ -1,10 +1,10 @@
 using System.Net.Http.Json;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Constants;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Manifest;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -41,6 +41,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     /// <param name="host">The host to switch it on.</param>
     /// <param name="slug">The integration slug.</param>
     /// <param name="enabled">Whether it should end up enabled.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private async Task SwitchIntegrationAsync(WebApplicationFactory<Program> host, string slug, bool enabled)
     {
         var admin = host.CreateClient();
@@ -57,6 +58,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     /// tests in the shared database have already switched it on or off.
     /// </summary>
     /// <param name="slug">The integration slug.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private async Task ForgetIntegrationSettingsAsync(string slug)
     {
         using var scope = factory.Services.CreateScope();
@@ -94,6 +96,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     }
 
     /// <summary>Bank transfer is not offered while the admin has it switched off.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BankTransferIsNotOfferedWhenTheAdminHasItOff()
     {
@@ -104,6 +107,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     }
 
     /// <summary>A switch that was never saved reads as off, the way the admin list reads it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BankTransferIsNotOfferedWhenTheSwitchWasNeverSaved()
     {
@@ -114,6 +118,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     }
 
     /// <summary>Switching bank transfer on offers it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BankTransferIsOfferedWhenTheAdminHasItOn()
     {
@@ -127,6 +132,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     /// A transfer switched on with no account holder, IBAN, SWIFT, bank name or instructions is not offered: the payer could not pay
     /// with a card that holds only an amount and a reference. Giving it one detail offers it again.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BankTransferIsNotOfferedWhenItHasNothingToShowThePayer()
     {
@@ -152,6 +158,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     /// No built-in method offers card payments: they are offered only by payment plugins, so with
     /// no plugin loaded the list holds nothing but bank transfer.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NoPluginLoadedLeavesOnlyBankTransfer()
     {
@@ -164,6 +171,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     }
 
     /// <summary>A plugin the resolver refuses is not listed; one it resolves is, under its manifest name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginsFollowTheResolver()
     {
@@ -198,6 +206,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     /// A gateway in another currency is not offered: a client billed in USD must not be offered an
     /// AMD-only gateway that Place Order would then refuse.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AGatewayInAnotherCurrencyIsNotOffered()
     {
@@ -218,6 +227,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     }
 
     /// <summary>A named currency the panel does not offer lists nothing, not the base's methods.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ANamedCurrencyNotOnOfferListsNothing()
     {
@@ -228,6 +238,7 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     }
 
     /// <summary>A named currency the panel does offer replaces the caller's own, even for an anonymous caller.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ANamedCurrencyReplacesTheCallersOwn()
     {

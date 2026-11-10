@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class CreateDepartmentTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can create a department.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanCreateADepartmentAsync()
     {
@@ -26,6 +27,7 @@ public sealed class CreateDepartmentTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A caller with no credential cannot create a department.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -19,17 +19,17 @@ public interface IHostedAccountOperations
     /// <param name="input">The account to suspend and why.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Whether the panel was told, had nothing to tell, or refused.</returns>
-    Task<HostedAccountOutcome> SuspendAsync(HostedAccountSuspension input, CancellationToken ct);
+    public Task<HostedAccountOutcome> SuspendAsync(HostedAccountSuspension input, CancellationToken ct);
 
     /// <summary>Reactivates a suspended hosting account on its panel.</summary>
     /// <param name="input">The account to reactivate.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Whether the panel was told, had nothing to tell, or refused.</returns>
-    Task<HostedAccountOutcome> UnsuspendAsync(HostedAccountUnsuspension input, CancellationToken ct);
+    public Task<HostedAccountOutcome> UnsuspendAsync(HostedAccountUnsuspension input, CancellationToken ct);
 
     /// <summary>Removes the hosting account from its panel.</summary>
     /// <param name="input">The account to remove and why.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Whether the panel was told, had nothing to tell, or refused.</returns>
-    Task<HostedAccountOutcome> TerminateAsync(HostedAccountTermination input, CancellationToken ct);
+    public Task<HostedAccountOutcome> TerminateAsync(HostedAccountTermination input, CancellationToken ct);
 }

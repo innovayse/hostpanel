@@ -16,13 +16,13 @@ public interface IPluginPackageStore
     /// <param name="upload">The uploaded archive.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The outcome; <see cref="Admin.Plugins.Common.Enums.PluginPackageOutcome.Installed"/> on success.</returns>
-    Task<PluginPackageResult> InstallAsync(PluginPackageUpload upload, CancellationToken ct);
+    public Task<PluginPackageResult> InstallAsync(PluginPackageUpload upload, CancellationToken ct);
 
     /// <summary>Deletes an uploaded plugin's folder. A plugin shipped with the build is refused.</summary>
     /// <param name="removal">The plugin to remove.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The outcome; <see cref="Admin.Plugins.Common.Enums.PluginPackageOutcome.Removed"/> on success.</returns>
-    Task<PluginPackageResult> RemoveAsync(PluginPackageRemoval removal, CancellationToken ct);
+    public Task<PluginPackageResult> RemoveAsync(PluginPackageRemoval removal, CancellationToken ct);
 
     /// <summary>
     /// Tells whether a plugin's package folder exists on disk, in the build's own folder or the upload folder. It looks
@@ -30,10 +30,10 @@ public interface IPluginPackageStore
     /// </summary>
     /// <param name="pluginId">The plugin id; an id that breaks the plugin id rule names no folder.</param>
     /// <returns><see langword="true"/> when a folder named by the id exists in either root.</returns>
-    bool HasPackageFolder(string pluginId);
+    public bool HasPackageFolder(string pluginId);
 
     /// <summary>Every plugin on disk with a readable manifest, built-in ones first.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The plugins found.</returns>
-    Task<IReadOnlyList<InstalledPluginPackage>> ListAsync(CancellationToken ct);
+    public Task<IReadOnlyList<InstalledPluginPackage>> ListAsync(CancellationToken ct);
 }

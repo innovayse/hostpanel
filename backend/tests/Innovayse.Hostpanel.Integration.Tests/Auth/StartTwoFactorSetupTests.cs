@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 public sealed class StartTwoFactorSetupTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A signed-in account is issued a secret and an <c>otpauth://</c> URI.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Setup_SignedInAccount_IssuesASecret()
     {
@@ -33,6 +34,7 @@ public sealed class StartTwoFactorSetupTests(IntegrationTestFactory factory) : I
     /// A setup on an account that already has two-factor on is refused, and the secret the account
     /// signs in with is left as it was: a code from it still switches two-factor off.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Setup_WhileEnabled_IsRefusedAndKeepsTheActiveSecret()
     {
@@ -59,6 +61,7 @@ public sealed class StartTwoFactorSetupTests(IntegrationTestFactory factory) : I
     /// A secret that was issued but never confirmed is not the one sign-in asks about: the account
     /// still signs in with its password alone.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Setup_WithoutConfirming_LeavesSignInUnchanged()
     {
@@ -77,6 +80,7 @@ public sealed class StartTwoFactorSetupTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetupRefusesAnonymous()
     {

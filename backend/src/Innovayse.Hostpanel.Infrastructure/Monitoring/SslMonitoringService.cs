@@ -1,8 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Reports.Common;
-using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
-using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Domain.Ssl;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -89,7 +87,10 @@ public sealed class SslMonitoringService : ISslMonitoringService
             {
                 return new DomainSslProbe(domain.Name, domain.IsActive, await CheckSslAsync(domain.Name, ct));
             }
-            finally { semaphore.Release(); }
+            finally
+            {
+                semaphore.Release();
+            }
         });
 
         var results = await Task.WhenAll(probes);

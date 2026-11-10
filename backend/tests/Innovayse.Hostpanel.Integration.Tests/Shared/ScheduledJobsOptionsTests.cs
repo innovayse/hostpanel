@@ -99,6 +99,7 @@ public sealed class ScheduledJobsOptionsTests
 
         Validate(options).Should().BeEmpty();
     }
+
     /// <summary>Runs the full options validation, annotations and relations alike.</summary>
     /// <param name="options">The options to check.</param>
     /// <returns>The failures found.</returns>

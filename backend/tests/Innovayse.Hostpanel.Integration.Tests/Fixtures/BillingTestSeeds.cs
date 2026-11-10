@@ -85,6 +85,7 @@ public static class BillingTestSeeds
     /// <param name="code">The ISO 4217 alpha code.</param>
     /// <param name="numeric">The ISO 4217 numeric code, unique per currency.</param>
     /// <param name="rateToBase">What one unit of the currency is worth in the base currency.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     public static async Task EnsureCurrencyAsync(
         WebApplicationFactory<Program> host, string code, string numeric, decimal rateToBase)
     {
@@ -217,6 +218,7 @@ public static class BillingTestSeeds
     /// <param name="admin">The authenticated admin client.</param>
     /// <param name="invoiceId">The invoice to settle.</param>
     /// <param name="amount">The payment amount, the invoice's total.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     public static async Task MarkPaidAsync(HttpClient admin, int invoiceId, decimal amount)
     {
         var response = await admin.PostAsJsonAsync($"/api/billing/{invoiceId}/payment", new
@@ -301,6 +303,7 @@ public static class BillingTestSeeds
     /// <param name="host">The host whose database the client lives in.</param>
     /// <param name="clientId">The client to credit.</param>
     /// <param name="amount">The credit to add.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     public static async Task GiveCreditAsync(WebApplicationFactory<Program> host, int clientId, decimal amount)
     {
         using var scope = host.Services.CreateScope();

@@ -1,7 +1,6 @@
-using Innovayse.Hostpanel.Application.Common.Errors;
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -28,6 +27,7 @@ public sealed class StartMyGatewayPaymentTests(IntegrationTestFactory factory) :
                 services.AddSingleton<IPaymentPluginResolver>(resolver)));
 
     /// <summary>The owner starts a gateway payment session on their own invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Start_TheOwnersInvoice_Returns200()
     {
@@ -50,6 +50,7 @@ public sealed class StartMyGatewayPaymentTests(IntegrationTestFactory factory) :
     /// Starting a hosted-gateway payment on a stranger's invoice is refused with
     /// <c>INVOICE_NOT_FOUND</c> before any payment plugin is resolved.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Start_AStrangersInvoice_Returns404WithInvoiceNotFound()
     {
@@ -67,6 +68,7 @@ public sealed class StartMyGatewayPaymentTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Starting a session is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StartRefusesAnonymous()
     {
@@ -78,6 +80,7 @@ public sealed class StartMyGatewayPaymentTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StartGateway_WithNonPositiveId_Returns400ValidationErrorAsync()
     {

@@ -1,8 +1,6 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class GetServicesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>GET /api/services without auth returns 401 Unauthorized.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetServicesAsync_Returns401_WithoutAuthAsync()
     {
@@ -28,6 +27,7 @@ public sealed class GetServicesTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A plain client calling GET /api/services is refused: the policy is admin only.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetServicesAsync_Returns403_AsPlainClientAsync()
     {
@@ -39,6 +39,7 @@ public sealed class GetServicesTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Admin GET /api/services returns 200 OK with paged results.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetServicesAsync_Returns200_AsAdminAsync()
     {
@@ -50,6 +51,7 @@ public sealed class GetServicesTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The list answers the shared page shape: items with page number, size, total count and total pages.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetServicesAsync_AnswersTheSharedPageShapeAsync()
     {
@@ -69,6 +71,7 @@ public sealed class GetServicesTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A service that runs on a site of its own, not on a registered domain, shows that site in the admin list instead of an empty cell, beside its owner's name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetServicesAsync_ShowsTheServicesOwnDomainWhenNoRegisteredDomainIsLinkedAsync()
     {
@@ -102,6 +105,7 @@ public sealed class GetServicesTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The list's price is the one the product entity resolves for the owner's currency and the service's cycle.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetServicesAsync_PriceEqualsTheProductsOwnResolutionAsync()
     {

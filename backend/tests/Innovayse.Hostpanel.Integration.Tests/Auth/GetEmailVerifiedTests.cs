@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 public sealed class GetEmailVerifiedTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A signed-in caller gets the answer under the <c>verified</c> key.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetEmailVerifiedAnswersForASignedInCaller()
     {
@@ -25,6 +26,7 @@ public sealed class GetEmailVerifiedTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetEmailVerifiedRefusesAnonymous()
     {

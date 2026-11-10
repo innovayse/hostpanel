@@ -58,6 +58,7 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
     /// A restricted plugin installs from a host that was never registered: it registers on demand, then the details, the list, the
     /// ticket and the package fetch are signed, none carries the licence key that is stored for the plugin, and the install is audited.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARestrictedPlugin_RegistersOnDemand_AndInstallsThroughATicketAsync()
     {
@@ -75,7 +76,7 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
 
             status.Should().Be(HttpStatusCode.OK);
             body.GetProperty("requiresRestart").GetBoolean().Should().BeTrue();
-            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), "readme.txt")).Should().BeTrue();
+            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(factory, pluginId), "readme.txt")).Should().BeTrue();
             registry.Instances.Single().Verified.Should().BeTrue();
             var signed = registry.Calls.Where(c => c.IsSigned).Select(c => (c.Method, Path: c.Target.Split('?')[0])).ToList();
             signed.Should().Equal(
@@ -99,6 +100,7 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
     }
 
     /// <summary>A second restricted install finds the installation verified and does not register it again.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ASecondRestrictedInstall_DoesNotRegisterAgainAsync()
     {
@@ -124,6 +126,7 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
     }
 
     /// <summary>The checksum rule still applies to a restricted package: a package that does not hash to the published value is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARestrictedPackage_WithTheWrongChecksum_IsRefusedAsync()
     {
@@ -136,10 +139,11 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
 
         status.Should().Be(HttpStatusCode.BadGateway);
         body.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_REGISTRY_CHECKSUM_MISMATCH);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>An installation that cannot be confirmed gets the code of the cause, and no signed call is made.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnInstallationThatCannotBeConfirmed_IsToldWhy_AndNoSignedCallIsMadeAsync()
     {
@@ -157,6 +161,7 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
     }
 
     /// <summary>A restricted plugin on a host whose registry is off is refused like any registry call.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhileTheRegistryIsOff_TheInstallIsRefusedAsync()
     {
@@ -176,6 +181,7 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
     /// <param name="registryCode">The registry error code.</param>
     /// <param name="httpStatus">The status the admin API answers with.</param>
     /// <param name="code">The host code.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(401, "INSTANCE_SIGNATURE_INVALID_UNAUTHORIZED", 502, "PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED")]
     [InlineData(401, "INSTANCE_TIMESTAMP_UNAUTHORIZED", 502, "PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW")]
@@ -204,6 +210,7 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
     }
 
     /// <summary>The ticket the registry refuses becomes its own code with a sentence.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARefusedTicket_ReachesTheAdminAsAClearCodeAsync()
     {
@@ -227,6 +234,7 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
     /// <summary>The clock refusal tells the admin to fix the server clock, in English, Russian and Armenian.</summary>
     /// <param name="language">The <c>X-Language</c> value.</param>
     /// <param name="fragment">A fragment of the sentence in that language.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("en", "Fix the server clock")]
     [InlineData("ru", "Исправьте время на сервере")]
@@ -247,6 +255,7 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
     }
 
     /// <summary>The details page of a restricted plugin lists its versions through a signed call.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheDetailsPage_OfARestrictedPlugin_ListsItsVersionsThroughASignedCallAsync()
     {
@@ -265,6 +274,7 @@ public sealed class InstallRestrictedRegistryPluginTests(IntegrationTestFactory 
     }
 
     /// <summary>The update check is the unsigned lookup and a restricted plugin with no package address in it is not an error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheUpdateCheck_IsUnsigned_AndARestrictedPluginInItIsNotAnErrorAsync()
     {

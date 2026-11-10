@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class ExportClientDataTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Exporting only the requested section returns that section and nothing else.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportReturnsOnlyTheRequestedSection()
     {
@@ -31,6 +32,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Exporting an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportRefusesUnknownClient()
     {
@@ -43,6 +45,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Exporting a client's data is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportRefusesAnonymous()
     {
@@ -53,6 +56,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A client, who is not staff, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportRefusesAClient()
     {
@@ -64,6 +68,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The profile section carries the billing preferences, switches, notification flags and registration facts.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportProfileCarriesTheWholeProfile()
     {
@@ -93,6 +98,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Contacts are exported with their address and notification flags.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportContactsCarryTheirAddressAndNotifyFlags()
     {
@@ -110,6 +116,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Invitations are exported without their secret token; linked users with their permissions.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportCarriesInvitationsWithoutTheTokenAndLinkedUsers()
     {
@@ -132,6 +139,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     /// The email section finds mail addressed to a contact in any letter case, and carries the flag
     /// saying nothing was cut.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportEmailsMatchContactAddressesCaseInsensitively()
     {
@@ -149,6 +157,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A long mail history is cut at the limit and the payload says so.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportEmailsStatesTruncation()
     {
@@ -167,6 +176,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The activity log states its limit and that nothing was cut when the history is short.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportActivityLogStatesItsLimit()
     {
@@ -189,6 +199,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Sections with nothing to say are empty arrays or data, never an English sentence.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportEmptySectionsCarryNoSentence()
     {
@@ -206,6 +217,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A section key that names nothing is refused with 400 instead of being silently skipped.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportRefusesAnUnknownSectionKey()
     {
@@ -218,6 +230,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Section keys are matched in any letter case.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportAcceptsSectionKeysInAnyCase()
     {
@@ -250,6 +263,7 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     /// An export leaves one activity line for the acting admin that names the sections taken and holds
     /// none of their content; an export that finds no client leaves none.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExportIsAuditedWithTheActingAdmin()
     {

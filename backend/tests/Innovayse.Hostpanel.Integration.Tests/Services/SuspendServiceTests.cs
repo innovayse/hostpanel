@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Services.Enums;
@@ -20,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Suspending a service that does not exist answers 404 <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Suspend_OnAnUnknownService_Returns404()
     {
@@ -32,6 +32,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An admin may suspend any client's service: the admin surface is not ownership-scoped.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminSuspend_AnyClientsService_StillSucceeds()
     {
@@ -54,6 +55,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A staff suspension through the admin route is recorded as <see cref="SuspensionSource.Manual"/>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminSuspend_RecordsTheSuspensionAsManualAsync()
     {
@@ -82,6 +84,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Suspending without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Suspend_Returns401_WithoutAuthAsync()
     {
@@ -93,6 +96,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A plain client calling the admin suspend route is refused: the policy is admin only.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Suspend_Returns403_AsPlainClientAsync()
     {
@@ -107,6 +111,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
     /// A service that is not Active is refused with 400 <c>SERVICE_NOT_ACTIVE</c> before the panel is
     /// asked: a refusing panel would otherwise have answered 502.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Suspend_NotActive_Returns400BeforeThePanelIsAskedAsync()
     {
@@ -125,6 +130,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A pending service is refused with 400 <c>SERVICE_NOT_ACTIVE</c>, not a server error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Suspend_PendingService_Returns400ServiceNotActiveAsync()
     {
@@ -138,6 +144,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Staff can suspend a provisioned service through the provisioning route; it is recorded as manual.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ProvisioningSuspend_ProvisionedService_Returns204AsManualAsync()
     {
@@ -161,6 +168,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
     /// A provider that refuses to suspend answers 502 with <c>SERVICE_SUSPEND_UPSTREAM_FAILED</c>, and the
     /// service stays Active on the platform.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Suspend_ProviderRefuses_Returns502AndLeavesTheServiceActiveAsync()
     {
@@ -184,6 +192,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
     /// One suspension asks the panel exactly once: the handler suspends the account itself, so the
     /// domain events it publishes must not ask the panel a second time.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Suspend_AsksThePanelExactlyOnceAsync()
     {
@@ -208,6 +217,7 @@ public sealed class SuspendServiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Suspending through the provisioning route without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ProvisioningSuspend_Returns401_WithoutAuthAsync()
     {

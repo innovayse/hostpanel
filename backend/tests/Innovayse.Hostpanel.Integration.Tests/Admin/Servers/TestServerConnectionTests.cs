@@ -1,9 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Hostpanel.Sdk.Plugins.HostingPanel;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,6 +23,7 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
     /// A successful probe answers 200 with the provider's reported account count, and persists the
     /// server as online.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenProviderSucceeds_ReportsConnectedAsync()
     {
@@ -52,6 +52,7 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
     /// A failed probe still answers 200 (the diagnostic result is the answer the caller asked
     /// for) and never puts the provider's own exception text on the wire.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenProviderFails_ReportsDisconnectedWithoutLeakingDetailAsync()
     {
@@ -81,6 +82,7 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
 
 #pragma warning disable CS0618 // Legacy HostingPanel contract, obsolete since SDK 3.1.0; stays until the CWP providers become IProvisioningPanelPlugin plugins.
     /// <summary>A failed probe words its reason in the language the request asked for, not in English only.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenProviderFails_WordsTheReasonInTheRequestLanguageAsync()
     {
@@ -108,6 +110,7 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
     /// A server whose host is the cloud metadata address is never dialled: the outbound guard
     /// refuses it, and the test reports the server as unreachable.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MetadataAddress_IsRefusedAsUnreachableAsync()
     {
@@ -126,6 +129,7 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Testing the connection of an unknown server id answers 404 with <c>SERVER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownId_RefusesNotFoundAsync()
     {
@@ -138,6 +142,7 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -149,6 +154,7 @@ public sealed class TestServerConnectionTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

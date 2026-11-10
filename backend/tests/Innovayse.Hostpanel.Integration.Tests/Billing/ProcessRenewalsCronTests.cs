@@ -11,7 +11,6 @@ using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -133,6 +132,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
         WaitForAlertCountAsync(sender, domainName, 1, attempts);
 
     /// <summary>The cron raises renewal invoices for every due client and does not advance the service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Cron_RaisesForDueClient_WithoutAdvancing()
     {
@@ -166,6 +166,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     /// <c>invoice_days_before</c> raised to 30 a service renewing in 20 days is invoiced, and one in
     /// 40 is not.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Cron_CandidateHorizon_FollowsTheConfiguredLeadTime()
     {
@@ -194,6 +195,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The sweep applies a paid renewal line whose event was lost.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Cron_SweepsPaidUnappliedLines()
     {
@@ -227,6 +229,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     /// refuses that), which overflows the invoice's <c>numeric(18,4)</c> columns: A's own save throws
     /// a genuine database error inside A's message, not a stub.
     /// </remarks>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Cron_OneClientFailing_DoesNotStopOthers()
     {
@@ -259,6 +262,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     /// between the two saves) is marked paid by the next run, with no ledger row, and its renewal
     /// is then applied by the sweep.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Cron_PaysZeroTotalOpenRenewalInvoice()
     {
@@ -286,6 +290,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     /// One zero-total renewal invoice whose save fails does not stop the others: the database refuses
     /// the update of the first invoice, and the second is still marked paid in the same run.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Cron_OneFailingZeroTotalInvoiceDoesNotStopTheOthers()
     {
@@ -346,6 +351,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     /// every daily run once the claim is a day old, once per run, until a person resolves the line;
     /// a claim younger than a day is not reported yet, and the sweep never re-applies a claimed line.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Cron_AlertsStaleClaimEveryDayUntilResolved()
     {
@@ -414,6 +420,7 @@ public sealed class ProcessRenewalsCronTests(IntegrationTestFactory factory) : I
     /// (its payment event lost) is unsuspended; one still on an Overdue invoice, and one an operator
     /// suspended, stay suspended.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Cron_LiftsOverdueSuspensionWhoseInvoiceIsNoLongerOverdue()
     {

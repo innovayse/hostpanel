@@ -22,6 +22,7 @@ public sealed class DomainExpiringNotificationHandlerTests(IntegrationTestFactor
     private const string TemplateSlug = "domain-expiring";
 
     /// <summary>A domain approaching its expiry date notifies the owning client exactly once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainExpiring_NotifiesOwningClientExactlyOnceAsync()
     {
@@ -44,6 +45,7 @@ public sealed class DomainExpiringNotificationHandlerTests(IntegrationTestFactor
     /// An event naming a domain that belongs to another client (an id the demo reset reused) or no domain at
     /// all mails nobody.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainExpiring_ForADomainThatIsNotTheClients_SendsNothingAsync()
     {

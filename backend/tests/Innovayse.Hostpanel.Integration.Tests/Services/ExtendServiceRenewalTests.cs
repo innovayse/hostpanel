@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class ExtendServiceRenewalTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The renewal date becomes the period end, and a repeat of the same command keeps it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_SentTwice_ExtendsOnceAsync()
     {
@@ -35,6 +36,7 @@ public sealed class ExtendServiceRenewalTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An earlier period end never moves the date back.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_EarlierPeriodEnd_LeavesTheDateAsync()
     {
@@ -49,6 +51,7 @@ public sealed class ExtendServiceRenewalTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An id that names no service is refused with <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnknownService_RefusesNotFoundAsync()
     {

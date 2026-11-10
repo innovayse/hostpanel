@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class ListCatalogProductGroupsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An anonymous caller reads the list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListCatalog_ReturnsOk_WithoutAuthAsync()
     {
@@ -27,6 +28,7 @@ public sealed class ListCatalogProductGroupsTests(IntegrationTestFactory factory
     /// <summary>
     /// An inactive group is never listed, an active one is, and no row carries the active flag.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListCatalog_ReturnsOnlyActiveGroupsWithoutActiveFlagAsync()
     {

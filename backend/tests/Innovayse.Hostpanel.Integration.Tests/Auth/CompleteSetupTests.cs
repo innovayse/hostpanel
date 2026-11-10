@@ -5,7 +5,6 @@ using System.Security.Claims;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Auth.Commands.CompleteSetup;
 using Innovayse.Hostpanel.Application.Auth.Seeding;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Auth;
@@ -76,6 +75,7 @@ public sealed class CompleteSetupTests
     }
 
     /// <summary>The correct token grants Admin and shows up on the caller's own profile.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CorrectTokenGrantsAdmin()
     {
@@ -102,6 +102,7 @@ public sealed class CompleteSetupTests
     /// before the claim still says unverified; in local mode both endpoints read the user store,
     /// so the same token reports <c>true</c> with no new sign-in.
     /// </remarks>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClaimingSetupConfirmsTheClaimantsEmail()
     {
@@ -141,6 +142,7 @@ public sealed class CompleteSetupTests
     }
 
     /// <summary>A wrong token is refused as forbidden, and grants nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WrongTokenRefuses()
     {
@@ -161,6 +163,7 @@ public sealed class CompleteSetupTests
     }
 
     /// <summary>A second claim, once Admin is already held, is refused as a conflict.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AlreadyCompletedRefuses()
     {
@@ -200,6 +203,7 @@ public sealed class CompleteSetupTests
     /// reachable only by resolving the handler outside a request, since the route it serves is
     /// <c>[Authorize]</c> and never lets an unauthenticated call reach it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandlerRefusesWithNoSubject()
     {
@@ -247,6 +251,7 @@ public sealed class CompleteSetupTests
     /// Under an external sign-on provider a signed-in caller without the setup token is refused and
     /// granted nothing: being known to the provider does not prove the caller runs the installation.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExternalSignOnModeRefusesWithoutTheToken()
     {
@@ -265,6 +270,7 @@ public sealed class CompleteSetupTests
     }
 
     /// <summary>Under an external sign-on provider the issued token grants Admin, as in local mode.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExternalSignOnModeGrantsAdminWithTheToken()
     {

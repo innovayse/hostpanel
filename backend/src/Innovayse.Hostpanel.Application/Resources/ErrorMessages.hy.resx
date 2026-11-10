@@ -543,6 +543,15 @@
 <data name="PLUGIN_MANIFEST_TAGS_INVALID" xml:space="preserve">
     <value>Մանիֆեստի թեգերը անվավեր են․ նշեք առավելագույնը 10 թեգ, յուրաքանչյուրը՝ 2-ից 30 փոքրատառ, թվանշան կամ գծիկ, առանց սկզբի # նշանի և առանց կրկնության։</value>
   </data>
+<data name="PLUGIN_MANIFEST_HOST_VERSION_INVALID" xml:space="preserve">
+    <value>Մանիֆեստում նշված հոսթի նվազագույն կամ առավելագույն տարբերակը անվավեր է․ գրեք major.minor.patch ձևով, օրինակ՝ 2.1.0։</value>
+  </data>
+<data name="PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED" xml:space="preserve">
+    <value>Մանիֆեստում հոսթի նվազագույն տարբերակը մեծ է առավելագույնից։</value>
+  </data>
+<data name="PLUGIN_MANIFEST_CHANGELOG_TOO_LONG" xml:space="preserve">
+    <value>Մանիֆեստի փոփոխությունների ցանկը չափազանց երկար է․ առավելագույնը 4000 նիշ։</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Այս հավելագրիչը հղում է անում ներկայացման փաստաթղթի, որը իր փաթեթում չկա։</value>
   </data>
@@ -1188,6 +1197,9 @@
   </data>
   <data name="PLUGIN_REGISTRY_HOST_INCOMPATIBLE" xml:space="preserve">
     <value>Հավելագրիչի այս տարբերակը չի աշխատում Hostpanel-ի տեղադրված տարբերակի հետ։</value>
+  </data>
+  <data name="PLUGIN_HOST_VERSION_OUT_OF_RANGE" xml:space="preserve">
+    <value>Այս հավելագրիչը չի աշխատում այս սերվերի Hostpanel-ի տարբերակի հետ․ այն դուրս է հավելագրիչի աջակցած հոսթի նվազագույն և առավելագույն տարբերակներից։</value>
   </data>
   <data name="PLUGIN_REGISTRY_VERSION_YANKED" xml:space="preserve">
     <value>Հավելագրիչների ռեեստրը հետ է կանչել այս տարբերակը, ուստի այն հնարավոր չէ տեղադրել։ Ընտրեք այլ տարբերակ։</value>

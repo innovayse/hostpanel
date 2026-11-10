@@ -29,6 +29,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     /// A renewal order cannot be placed against a stranger's domain, refused before an order
     /// number is spent, by the same ownership check every other action here goes through.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewMyDomain_RefusesAStrangersDomainAsync()
     {
@@ -43,6 +44,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewMyDomain_WithoutToken_Returns401Async()
     {
@@ -176,6 +178,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     /// and still places the order. Fails if the handler leaves the renewal invoice Unpaid, keeps
     /// the credit on the cancelled invoice, or fails to place the order.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewMyDomain_CancelsTheOpenAutoRenewalInvoiceAndReturnsItsCreditAsync()
     {
@@ -193,6 +196,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A paid renewal invoice for the domain is left as it is; the order is still placed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewMyDomain_LeavesAPaidRenewalInvoiceAloneAsync()
     {
@@ -208,6 +212,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Another domain's open renewal invoice is not touched by this domain's renew order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewMyDomain_LeavesAnotherDomainsInvoiceAloneAsync()
     {
@@ -227,6 +232,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     /// domain's line is removed, the total drops, and the credit that now exceeds it goes back to
     /// the client.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewMyDomain_MixedUnpaidInvoice_RemovesOnlyThisDomainsLineAsync()
     {
@@ -234,7 +240,11 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
 
         // 12 + 12 billed, 20 of credit applied: after this domain's 12 goes, 8 of credit is excess.
         var invoiceId = await SeedInvoiceAsync(
-            clientId, i => { AddRenewal(i, domainId); AddRenewal(i, otherDomainId); }, clientCredit: 20m);
+            clientId, i =>
+            {
+                AddRenewal(i, domainId);
+                AddRenewal(i, otherDomainId);
+            }, clientCredit: 20m);
 
         var response = await RenewAsync(owner, domainId);
 
@@ -251,12 +261,17 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     /// An overdue invoice that bills this domain with something else cannot be split, so the renew
     /// order is refused with 409 <c>RENEWAL_INVOICE_OPEN</c> and the invoice is left exactly as it was.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewMyDomain_MixedOverdueInvoice_Returns409Async()
     {
         var (owner, clientId, domainId, _) = await ArrangeAsync("renew-my-domain-overdue");
         var invoiceId = await SeedInvoiceAsync(
-            clientId, i => { AddRenewal(i, domainId); i.AddItem("Hosting", 10m, 1); }, after: i => i.MarkOverdue(DateTimeOffset.UtcNow));
+            clientId, i =>
+            {
+                AddRenewal(i, domainId);
+                i.AddItem("Hosting", 10m, 1);
+            }, after: i => i.MarkOverdue(DateTimeOffset.UtcNow));
 
         var response = await RenewAsync(owner, domainId);
 
@@ -273,6 +288,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     /// <c>RENEWAL_INVOICE_OPEN</c> and the invoice is left as it was. No domain method reaches
     /// PaymentPending today, so the status is written directly.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewMyDomain_PaymentPendingInvoice_Returns409Async()
     {
@@ -299,6 +315,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     /// unknown payment method), the domain is not left without a renewal: the next renewal run
     /// raises a fresh invoice for it. Fails if the cancelled line still blocks its period.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewMyDomain_ReleasedButOrderFailed_NextRenewalRunRaisesANewInvoiceAsync()
     {
@@ -336,6 +353,7 @@ public sealed class RenewMyDomainTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A period outside one to ten years is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewMyDomain_YearsOutOfRange_Returns400ValidationErrorAsync()
     {

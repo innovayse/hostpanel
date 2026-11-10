@@ -18,5 +18,5 @@ public interface INumberSequence
     /// <param name="kind">Which counter to advance.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A number no earlier or concurrent caller of the same kind has received.</returns>
-    Task<long> NextAsync(NumberKind kind, CancellationToken ct);
+    public Task<long> NextAsync(NumberKind kind, CancellationToken ct);
 }

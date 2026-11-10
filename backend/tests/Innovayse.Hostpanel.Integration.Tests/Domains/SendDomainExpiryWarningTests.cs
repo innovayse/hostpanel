@@ -33,6 +33,7 @@ public sealed class SendDomainExpiryWarningTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A domain inside the warning window gets the nearest warning recorded, and a second command records nothing more.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainInsideTheWindow_IsWarnedOncePerCycle()
     {
@@ -52,6 +53,7 @@ public sealed class SendDomainExpiryWarningTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A domain far from its expiry gets no warning and the command still succeeds.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainOutsideTheWindow_IsNotWarned()
     {
@@ -69,6 +71,7 @@ public sealed class SendDomainExpiryWarningTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An id that names no domain is refused with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownDomain_IsRefused()
     {

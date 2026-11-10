@@ -347,6 +347,7 @@ public static class PortalSettingKeys
 
     // Declared before Patterns: static fields initialise in textual order, and the dictionary
     // below reads this one.
+
     /// <summary>A six-digit hex colour, stored lower-case with its <c>#</c>.</summary>
     private static readonly ValuePattern HexColour = new(
         new Regex("^#[0-9a-f]{6}$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant),
@@ -428,7 +429,6 @@ public static class PortalSettingKeys
                 "a whole number of days like 30",
                 v => v),
         };
-
 
     /// <summary>
     /// The keys whose value must come from a fixed vocabulary, and that vocabulary.

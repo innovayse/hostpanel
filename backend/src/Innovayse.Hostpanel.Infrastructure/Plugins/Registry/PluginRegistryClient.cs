@@ -694,7 +694,8 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
                 ? kind
                 : null,
             Tags: ToTags(item.Tags),
-            Downloads: item.Downloads is >= 0 ? item.Downloads : null);
+            Downloads: item.Downloads is >= 0 ? item.Downloads : null,
+            LatestChangelog: CleanMultiline(item.LatestChangelog, MaxChangelogLength));
     }
 
     /// <summary>Cleans the registry's tags: each is cleaned and capped, empty and repeated ones are dropped, and at most <see cref="MaxTags"/> are kept.</summary>
@@ -752,7 +753,8 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
                 item.Version!,
                 UntrustedText.Clean(item.SdkVersion, MaxSdkVersionLength),
                 item.Verified ?? false,
-                item.RequiresLicence ?? false ? PluginRegistryPricing.Paid : PluginRegistryPricing.Free));
+                item.RequiresLicence ?? false ? PluginRegistryPricing.Paid : PluginRegistryPricing.Free,
+                LatestChangelog: CleanMultiline(item.Changelog, MaxChangelogLength)));
         }
 
         return plugins;

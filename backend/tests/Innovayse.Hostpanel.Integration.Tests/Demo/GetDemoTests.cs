@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Demo;
 public sealed class GetDemoTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A deployment that is not a demo answers <c>{ enabled: false, nextResetAt: null, accounts: [] }</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenDisabled_AnswersTheEmptyShapeAsync()
     {
@@ -28,6 +29,7 @@ public sealed class GetDemoTests(IntegrationTestFactory factory) : IClassFixture
     /// A demo deployment publishes both accounts with the role as a string, and a reset time about
     /// one interval ahead, with no credential presented.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenEnabled_PublishesTheAccountsAndTheNextResetAsync()
     {

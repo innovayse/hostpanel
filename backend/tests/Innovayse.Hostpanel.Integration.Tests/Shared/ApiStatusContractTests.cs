@@ -100,6 +100,7 @@ public sealed class ApiStatusContractTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An authenticated caller with the wrong role answers 403, not a redirect or an empty body.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WrongRole_Answers403WithLocalizedDetailAndShimAsync()
     {
@@ -113,6 +114,7 @@ public sealed class ApiStatusContractTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An id naming no resource answers 404 with the resource's own not-found code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownId_Answers404WithLocalizedDetailAndShimAsync()
     {
@@ -129,6 +131,7 @@ public sealed class ApiStatusContractTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An upload over the configured byte ceiling answers 413, not a host-level reset.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OversizedUpload_Answers413WithLocalizedDetailAndShimAsync()
     {
@@ -153,6 +156,7 @@ public sealed class ApiStatusContractTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A dependency this deployment has not configured answers 503, not a silent success.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnconfiguredDependency_Answers503WithLocalizedDetailAndShimAsync()
     {
@@ -180,6 +184,7 @@ public sealed class ApiStatusContractTests(IntegrationTestFactory factory) : ICl
     /// <see cref="Innovayse.Hostpanel.Shared.Middleware.ExceptionHandlingMiddleware"/> maps a domain exception to the
     /// same localized <c>problem+json</c> body every other refusal answers with.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Publish_OnNonDraftInvoice_Answers400WithLocalizedDetailAsync()
     {

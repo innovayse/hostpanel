@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing.Currencies;
 public sealed class ConvertAmountsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An amount in a stored currency is converted through the rates; an unknown currency is left as it was.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ConvertsKnownAndLeavesUnknownAsync()
     {
@@ -37,6 +38,7 @@ public sealed class ConvertAmountsTests(IntegrationTestFactory factory) : IClass
     /// A target currency with no stored row is refused with <c>CURRENCY_NOT_FOUND</c> instead of
     /// answering unconverted amounts labelled with the requested code.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnconfiguredTarget_ReturnsCurrencyNotFoundAsync()
     {
@@ -52,6 +54,7 @@ public sealed class ConvertAmountsTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>With no target named, the base currency is the target.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NoTarget_UsesTheBaseCurrencyAsync()
     {
@@ -71,6 +74,7 @@ public sealed class ConvertAmountsTests(IntegrationTestFactory factory) : IClass
     /// <c>BASE_CURRENCY_NOT_CONFIGURED</c> instead of answering in an empty currency code. Runs on a
     /// factory of its own, since unmarking the base currency would change every other test's database.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NoTargetAndNoBaseCurrency_ReturnsBaseCurrencyNotConfiguredAsync()
     {

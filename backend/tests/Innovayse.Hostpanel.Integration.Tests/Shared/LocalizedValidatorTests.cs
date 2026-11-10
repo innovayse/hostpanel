@@ -11,7 +11,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 /// for the framework's <see cref="IStringLocalizer"/>, not for anything this product owns.</remarks>
 public sealed class LocalizedValidatorTests
 {
-
     /// <summary>A refused field carries the sentence the localizer holds under the rule's key.</summary>
     [Fact]
     public void Validate_RefusedField_UsesTheLocalizedSentence()

@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class UpdateQuoteTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Editing a quote's subject and stage writes the new values.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateWritesTheNewSubjectAndStage()
     {
@@ -40,6 +41,7 @@ public sealed class UpdateQuoteTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Editing a line's values writes the new total, the discounted sum rounded once to the currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateWithChangedLineValuesWritesTheNewTotal()
     {
@@ -79,6 +81,7 @@ public sealed class UpdateQuoteTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Updating an id that names no quote answers 404, not 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateUnknownQuoteRefusesNotFound()
     {
@@ -101,6 +104,7 @@ public sealed class UpdateQuoteTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Updating a quote is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAnonymous()
     {

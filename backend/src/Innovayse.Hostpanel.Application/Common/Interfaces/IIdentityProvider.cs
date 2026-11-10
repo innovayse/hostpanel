@@ -18,13 +18,13 @@ public interface IIdentityProvider
     /// <param name="subject">The provider's identifier for the person.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The account, or <see langword="null"/> when the provider does not know the subject.</returns>
-    Task<IdentityAccount?> FindBySubjectAsync(string subject, CancellationToken ct);
+    public Task<IdentityAccount?> FindBySubjectAsync(string subject, CancellationToken ct);
 
     /// <summary>The person with this email address, or null.</summary>
     /// <param name="email">The address to look up, matched without regard to case.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The account, or <see langword="null"/> when no live account has the address.</returns>
-    Task<IdentityAccount?> FindByEmailAsync(string email, CancellationToken ct);
+    public Task<IdentityAccount?> FindByEmailAsync(string email, CancellationToken ct);
 
     /// <summary>
     /// Full accounts for many subjects at once, keyed by subject. Subjects the provider
@@ -39,12 +39,12 @@ public interface IIdentityProvider
     /// <param name="subjects">The subjects to resolve; duplicates are resolved once.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The known accounts, keyed by subject.</returns>
-    Task<IReadOnlyDictionary<string, IdentityAccount>> GetAccountsBySubjectsAsync(
+    public Task<IReadOnlyDictionary<string, IdentityAccount>> GetAccountsBySubjectsAsync(
         IEnumerable<string> subjects, CancellationToken ct);
 
     /// <summary>One page of people, optionally filtered, with the unpaged total.</summary>
     /// <param name="query">The search text and the page to read.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The page of accounts with the total across all pages.</returns>
-    Task<PaginatedList<IdentityAccount>> ListAsync(IdentityAccountListQuery query, CancellationToken ct);
+    public Task<PaginatedList<IdentityAccount>> ListAsync(IdentityAccountListQuery query, CancellationToken ct);
 }

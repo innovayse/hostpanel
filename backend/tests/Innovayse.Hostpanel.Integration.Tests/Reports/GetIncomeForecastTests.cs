@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetIncomeForecastTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The forecast projects the same twelve months the annual income report shows.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsTwelveMonths()
     {
@@ -27,6 +28,7 @@ public sealed class GetIncomeForecastTests(IntegrationTestFactory factory) : ICl
     /// The forecast windows add up the same income the annual report books: payments less refunds,
     /// settled totals, no credit, the foreign invoice converted to the base currency.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BuildsTheWindowsFromTheBookedIncome()
     {
@@ -47,6 +49,7 @@ public sealed class GetIncomeForecastTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -56,6 +59,7 @@ public sealed class GetIncomeForecastTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

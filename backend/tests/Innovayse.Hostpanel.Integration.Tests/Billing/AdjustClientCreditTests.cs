@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class AdjustClientCreditTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Adding credit raises the balance and writes one credit-only line with the reason, which moves no cash.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Add_RaisesTheBalanceAndRecordsTheLine()
     {
@@ -39,6 +40,7 @@ public sealed class AdjustClientCreditTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Taking credit lowers the balance and the line carries the negative change and the balance it left.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Deduct_LowersTheBalanceAndRecordsTheLine()
     {
@@ -64,6 +66,7 @@ public sealed class AdjustClientCreditTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A deduction of more than the balance holds is refused with its code and changes nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Deduct_MoreThanTheBalance_IsRefused()
     {
@@ -88,6 +91,7 @@ public sealed class AdjustClientCreditTests(IntegrationTestFactory factory) : IC
     /// <param name="direction">The direction sent.</param>
     /// <param name="amount">The amount sent.</param>
     /// <param name="reason">The reason sent.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Add", 10, "")]
     [InlineData("Add", 10, "   ")]
@@ -111,6 +115,7 @@ public sealed class AdjustClientCreditTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A reason longer than the history line holds is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAReasonThatIsTooLong()
     {
@@ -128,6 +133,7 @@ public sealed class AdjustClientCreditTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>An id that names no client is refused with 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnUnknownClient()
     {
@@ -145,6 +151,7 @@ public sealed class AdjustClientCreditTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The route is staff's: a client, or nobody, is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToClientsAndAnonymousCallers()
     {
@@ -160,6 +167,7 @@ public sealed class AdjustClientCreditTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The client is mailed the change and the new balance, in the same moment the staff adjustment lands.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MailsTheClientTheNewBalance()
     {
@@ -177,6 +185,7 @@ public sealed class AdjustClientCreditTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Two adjustments at once both land: the later save finds the balance moved and the retry is not needed by the caller's data.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoAdjustmentsAtOnce_NeverLoseOne()
     {

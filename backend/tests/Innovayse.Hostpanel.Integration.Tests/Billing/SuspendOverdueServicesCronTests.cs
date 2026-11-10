@@ -131,6 +131,7 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
         context.ClientServices.AsNoTracking().FirstAsync(s => s.Id == id, CancellationToken.None);
 
     /// <summary>An invoice overdue past the grace suspends exactly its services, with source Overdue.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PastGrace_SuspendsOnlyItsServices()
     {
@@ -155,6 +156,7 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     }
 
     /// <summary>An invoice overdue for less than the grace period suspends nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InsideGrace_Nothing()
     {
@@ -173,6 +175,7 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     /// A suspension hold (OverrideAutoSuspend) protects a service, for good or until a future
     /// SuspendUntil; a hold whose SuspendUntil has passed does not.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Overrides_Protect()
     {
@@ -194,6 +197,7 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     }
 
     /// <summary>A service billed by hand (<c>AutoRenew</c> off) is never suspended by the overdue run.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ManualBilling_IsNotSuspended()
     {
@@ -211,6 +215,7 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     }
 
     /// <summary>An overdue invoice with no service lines suspends nothing: only the services an invoice bills are suspended, never the client's other services.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NoServiceLines_Nothing()
     {
@@ -226,6 +231,7 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     }
 
     /// <summary>One suspension whose save throws does not stop another service from being suspended.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OneFailingSuspension_DoesNotStopTheOthers()
     {
@@ -249,6 +255,7 @@ public sealed class SuspendOverdueServicesCronTests(IntegrationTestFactory facto
     /// the second service's invoice is paid while the first service is being suspended (after the
     /// run listed both), and the second service is not suspended.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaymentDuringTheRun_IsNotAnsweredWithASuspension()
     {

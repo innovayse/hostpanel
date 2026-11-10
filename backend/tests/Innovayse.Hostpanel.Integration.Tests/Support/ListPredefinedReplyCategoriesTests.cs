@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class ListPredefinedReplyCategoriesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can list predefined reply categories.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanListCategoriesAsync()
     {
@@ -22,6 +23,7 @@ public sealed class ListPredefinedReplyCategoriesTests(IntegrationTestFactory fa
     }
 
     /// <summary>The category list is closed to a caller with no credential.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIsClosedToAnonymousCallersAsync()
     {

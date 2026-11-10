@@ -21,6 +21,7 @@ public sealed class RegisterDomainTests(IntegrationTestFactory factory) : IClass
     /// Admin POSTs to <c>/api/domains/register</c> with a valid body. Expects 201 Created and a
     /// Location header pointing to the new domain.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Register_ValidRequest_Returns201Async()
     {
@@ -45,6 +46,7 @@ public sealed class RegisterDomainTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An unauthenticated caller is refused with 401 before anything is registered.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Register_WithoutToken_Returns401Async()
     {
@@ -63,6 +65,7 @@ public sealed class RegisterDomainTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A period outside one to ten years is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterDomain_YearsOutOfRange_Returns400ValidationErrorAsync()
     {
@@ -85,6 +88,7 @@ public sealed class RegisterDomainTests(IntegrationTestFactory factory) : IClass
     /// A registration paid in a currency other than the base keeps that currency on the domain,
     /// so its recorded prices are not read as base-currency amounts.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterDomain_WithPriceCurrency_StoresThatCurrencyAsync()
     {

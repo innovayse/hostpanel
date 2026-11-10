@@ -15,6 +15,7 @@ public sealed class ConfirmMyEmailChangeTests(IntegrationTestFactory factory) : 
     /// The mailed token moves the sign-in to the new address, the old address is told, and the
     /// session that confirmed it has ended.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MailedToken_MovesTheSignInAndEndsEarlierSessions()
     {
@@ -37,6 +38,7 @@ public sealed class ConfirmMyEmailChangeTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A token that was never issued is refused and the address stays as it was.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WrongToken_IsRefusedAndChangesNothing()
     {
@@ -52,6 +54,7 @@ public sealed class ConfirmMyEmailChangeTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A token issued for one address does not confirm another.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TokenForAnotherAddress_IsRefused()
     {
@@ -70,6 +73,7 @@ public sealed class ConfirmMyEmailChangeTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Anonymous_IsRefused()
     {

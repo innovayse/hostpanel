@@ -1,11 +1,11 @@
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
-using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Infrastructure.Plugins;
 using PackageArchiveRule = Hostpanel.Sdk.Packaging.Enums.PluginArchiveRule;
 using PackageIconRule = Hostpanel.Sdk.Packaging.Enums.PluginIconRule;
-using PackageManifestViolation = Hostpanel.Sdk.Packaging.Manifest.PluginManifestViolation;
 using PackageManifestRule = Hostpanel.Sdk.Packaging.Enums.PluginManifestRule;
+using PackageManifestViolation = Hostpanel.Sdk.Packaging.Manifest.PluginManifestViolation;
 using PackageSignatureRule = Hostpanel.Sdk.Packaging.Enums.PluginSignatureRule;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;

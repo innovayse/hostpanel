@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Clients.Commands.AddContact;
 using Innovayse.Hostpanel.Application.Clients.Commands.AddUserToClient;
@@ -19,6 +18,7 @@ using Innovayse.Hostpanel.Application.Clients.Queries.GetClientUser;
 using Innovayse.Hostpanel.Application.Clients.Queries.GetClientUsers;
 using Innovayse.Hostpanel.Application.Clients.Queries.ListClients;
 using Innovayse.Hostpanel.Shared.Authorization;
+using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Authorization;

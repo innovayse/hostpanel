@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Commands.RenewDomain;
-using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Integration.Tests.Billing;
@@ -25,6 +24,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Renewing an active domain succeeds and extends its expiry date.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewDomain_ActiveDomain_Returns204AndExtendsExpiryAsync()
     {
@@ -46,6 +46,7 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
     /// A renew body that names an order line is ignored: the renewal succeeds but is not recorded against any line, so a
     /// request cannot make a line believe it already renewed a domain.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewDomain_BodyNamingAnOrderLine_IsIgnoredAsync()
     {
@@ -62,6 +63,7 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An unknown domain id answers 404 with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewDomain_UnknownDomain_Returns404Async()
     {
@@ -75,6 +77,7 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewDomain_WithoutToken_Returns401Async()
     {
@@ -91,6 +94,7 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
     /// refused with <c>DOMAIN_NO_REGISTRAR_REF</c> and the expiry stays put; extending it locally
     /// would mark a paid domain renewed while it lapses at the registrar.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewDomain_WithoutRegistrarRef_Returns400AndKeepsExpiryAsync()
     {
@@ -118,6 +122,7 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
     /// When the registrar renews but reports no expiry, the current expiry is extended by the
     /// renewed years, so an early renewal keeps its remaining days.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewDomain_RegistrarReportsNoExpiry_ExtendsTheCurrentExpiryAsync()
     {

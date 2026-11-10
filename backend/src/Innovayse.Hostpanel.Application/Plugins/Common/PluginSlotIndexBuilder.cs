@@ -1,9 +1,9 @@
-using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Clients.Enums;
-using Innovayse.Hostpanel.Domain.Settings;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Manifest;
 using Hostpanel.Sdk.Plugins.Slots;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Domain.Settings;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Common;
 

@@ -86,6 +86,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A clean seed produces exactly the documented amounts in every table.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Seed_ProducesTheDeterministicCountsAsync()
     {
@@ -97,6 +98,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Two resets in a row produce the identical amounts, so the demo looks the same every day.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Reset_ReseedsEverythingIdenticallyAsync()
     {
@@ -124,6 +126,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Running the seed twice leaves exactly the rows the first run made.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SeedingTwice_ChangesNothingTheSecondTimeAsync()
     {
@@ -140,6 +143,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Every plan of a product group carries the same feature labels in the same order, so no comparison cell is empty.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SeededPlans_ShareTheSameFeatureLabelsWithinAGroupAsync()
     {
@@ -168,6 +172,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The sample has one digital product with a SKU, small JSON metadata and a grace period, so the product form's new fields have data to show.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SeededCatalogue_HasOneDigitalProductWithSkuMetadataAndGracePeriodAsync()
     {
@@ -186,6 +191,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Exactly one hosting plan and one VPS plan are featured, and each group's plans read in a logical order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SeededPlans_FeatureTheMiddleTierAndOrderEachGroupAsync()
     {
@@ -210,6 +216,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The sample covers every state the entities can reach, in both currencies, over twelve months.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SeededData_CoversEveryStateAsync()
     {
@@ -254,6 +261,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Domains cover every state, including one close to expiry and one waiting for a transfer, with their zones.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SeededDomains_CoverEveryStatusAndStayUnderReservedNamesAsync()
     {
@@ -276,6 +284,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The demo client has a full profile, and the storefront settings carry the demo's identity.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DemoClientAndPortal_AreFullyPopulatedAsync()
     {
@@ -336,6 +345,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The published accounts are real: both sign in with the published passwords.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublishedAccounts_SignInAsync()
     {
@@ -358,6 +368,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     /// The storefront shows a full testimonial carousel: at least nine translated testimonials rated four or five,
     /// some with a bundled portrait and some without, so both the picture and the initials fallback appear.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Seed_FillsTheTestimonialCarouselAsync()
     {
@@ -378,6 +389,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     /// Every demo partner has its own bundled logo file named after the partner, so the partner strips show logos,
     /// and the renamed security partner carries its new name in all three languages.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Seed_GivesEveryPartnerItsOwnLogoAsync()
     {
@@ -394,6 +406,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Every demo project has its own bundled preview picture named after its slug.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Seed_GivesEveryProjectItsOwnPreviewImageAsync()
     {
@@ -429,6 +442,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     /// The content-only entry the development seeder uses adds nothing to tables that already hold rows and never
     /// touches the settings, so a developer's local edits survive a restart.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SeedContent_OnPopulatedTables_ChangesNothingAsync()
     {
@@ -449,6 +463,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A deployment that is not a demo is never seeded, even if the manager is asked.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenDisabled_SeedsNothingAsync()
     {
@@ -467,6 +482,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A configured contact pair replaces the fictional one on the storefront, and a later seed keeps it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConfiguredContact_IsWhatThePortalShowsAsync()
     {

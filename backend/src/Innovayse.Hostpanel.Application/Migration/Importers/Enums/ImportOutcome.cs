@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 
 namespace Innovayse.Hostpanel.Application.Migration.Importers.Enums;

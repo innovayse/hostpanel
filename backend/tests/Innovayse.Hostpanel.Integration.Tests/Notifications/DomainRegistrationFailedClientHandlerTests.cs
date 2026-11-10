@@ -17,6 +17,7 @@ public sealed class DomainRegistrationFailedClientHandlerTests(IntegrationTestFa
     /// The same failed domain registration also notifies the owning client exactly once, through a second,
     /// independent handler for the one event.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRegistrationFailed_NotifiesOwningClientExactlyOnceAsync()
     {

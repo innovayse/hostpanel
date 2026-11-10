@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class UpdateKbCategoryTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can update an existing knowledge base category.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanUpdateAKbCategoryAsync()
     {
@@ -54,6 +55,7 @@ public sealed class UpdateKbCategoryTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Updating a knowledge base category that does not exist answers 404 with <c>KBCATEGORY_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateUnknownKbCategoryAnswersNotFoundAsync()
     {
@@ -72,6 +74,7 @@ public sealed class UpdateKbCategoryTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A caller with no credential cannot update a knowledge base category.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -25,6 +25,7 @@ public sealed class RegistryInstanceEnrollmentTests(IntegrationTestFactory facto
     }
 
     /// <summary>A failed attempt is not repeated before its back-off has run out, and is repeated, and succeeds, after it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AFailedAttempt_WaitsItsBackoff_ThenTriesAgainAsync()
     {
@@ -55,6 +56,7 @@ public sealed class RegistryInstanceEnrollmentTests(IntegrationTestFactory facto
     }
 
     /// <summary>The pause doubles with each failure in a row.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EachFailureInARow_WaitsLongerAsync()
     {
@@ -74,6 +76,7 @@ public sealed class RegistryInstanceEnrollmentTests(IntegrationTestFactory facto
     }
 
     /// <summary>A forced run ignores the back-off.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AForcedRun_IgnoresTheBackoffAsync()
     {
@@ -91,6 +94,7 @@ public sealed class RegistryInstanceEnrollmentTests(IntegrationTestFactory facto
     }
 
     /// <summary>A revoked identity is not registered again by the automatic run, only by a forced one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARevokedIdentity_IsLeftAloneUnlessForcedAsync()
     {
@@ -114,6 +118,7 @@ public sealed class RegistryInstanceEnrollmentTests(IntegrationTestFactory facto
     }
 
     /// <summary>Several callers at once, the startup job and requests together, register the installation once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SeveralCallersAtOnce_RegisterOnceAsync()
     {
@@ -128,6 +133,7 @@ public sealed class RegistryInstanceEnrollmentTests(IntegrationTestFactory facto
     }
 
     /// <summary>An identity the registry stops treating as verified goes back to Pending and is confirmed again by the next run.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnIdentityTheRegistryNoLongerTrusts_IsConfirmedAgainAsync()
     {

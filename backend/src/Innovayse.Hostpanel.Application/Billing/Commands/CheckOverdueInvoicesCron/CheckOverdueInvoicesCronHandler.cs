@@ -1,5 +1,5 @@
-using Innovayse.Hostpanel.Application.Billing.Commands.LapseOverdueInvoice;
 using Innovayse.Hostpanel.Application.Billing.Commands.LapseBankTransfer;
+using Innovayse.Hostpanel.Application.Billing.Commands.LapseOverdueInvoice;
 using Innovayse.Hostpanel.Application.Billing.Commands.MarkInvoiceOverdue;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common;
@@ -62,6 +62,7 @@ public sealed class CheckOverdueInvoicesCronHandler
     /// </summary>
     /// <param name="cmd">The scheduled command (marker, no payload).</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the message has been handled.</returns>
     public Task HandleAsync(CheckOverdueInvoicesCronCommand cmd, CancellationToken ct)
     {
         _ = cmd;

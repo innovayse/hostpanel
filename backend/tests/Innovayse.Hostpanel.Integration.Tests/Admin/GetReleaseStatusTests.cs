@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Admin;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -43,6 +42,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
     public Task DisposeAsync() => Task.CompletedTask;
 
     /// <summary>The release status endpoint returns 200 with the installed version for an admin.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsInstalledVersionAsync()
     {
@@ -59,6 +59,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
     /// When no release has been cached yet (the cron has not run), the response carries
     /// <c>isUpgradeAvailable: false</c> and no latest version.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsNoUpgradeWhenNoReleaseIsCachedAsync()
     {
@@ -76,6 +77,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
     /// When a newer version is present in the cache, the response carries
     /// <c>isUpgradeAvailable: true</c>, the latest version, and the upgrade command.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsUpgradeAvailableWhenCacheHasANewerVersionAsync()
     {
@@ -102,6 +104,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
     /// <summary>
     /// When the cached version equals the installed version, no upgrade is available.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsNoUpgradeWhenCachedVersionMatchesInstalledAsync()
     {
@@ -125,6 +128,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
     /// <summary>
     /// When the cached version is older than the installed version, no upgrade is available.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsNoUpgradeWhenCachedVersionIsOlderThanInstalledAsync()
     {
@@ -149,6 +153,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
     /// When the cached version string is not a parseable semantic version, no upgrade is shown
     /// (unparseable versions are never treated as upgrades).
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsNoUpgradeWhenCachedVersionIsUnparseableAsync()
     {
@@ -173,6 +178,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
     /// When the installed version itself is unparseable, no upgrade is shown even when the
     /// cache has a well-formed version.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsNoUpgradeWhenInstalledVersionIsUnparseableAsync()
     {
@@ -196,6 +202,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -207,6 +214,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The release status endpoint is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

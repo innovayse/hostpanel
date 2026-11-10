@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 public sealed class GetSettingsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The seeded storefront settings come back, in full, for an admin.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsTheSeededSettingsAsync()
     {
@@ -25,6 +26,7 @@ public sealed class GetSettingsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A row outside the general catalogue (an integration field) is not listed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OmitsRowsOutsideTheCatalogueAsync()
     {
@@ -37,6 +39,7 @@ public sealed class GetSettingsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -48,6 +51,7 @@ public sealed class GetSettingsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A caller with no credential is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

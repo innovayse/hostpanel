@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class GetServiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>GET on an unknown service answers 404 <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_OnAnUnknownService_Returns404()
     {
@@ -23,6 +24,7 @@ public sealed class GetServiceTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>GET on a service that exists returns 200 with its detail, named after its owner.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_OnAnExistingService_Returns200()
     {
@@ -38,6 +40,7 @@ public sealed class GetServiceTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>GET on a service without auth returns 401 Unauthorized.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_Returns401_WithoutAuthAsync()
     {
@@ -49,6 +52,7 @@ public sealed class GetServiceTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>The detail names the product even when the product has no price in the caller's currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_NamesAProductWithNoPriceInTheCurrencyAsync()
     {

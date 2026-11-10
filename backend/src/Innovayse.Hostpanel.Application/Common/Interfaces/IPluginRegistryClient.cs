@@ -15,13 +15,13 @@ public interface IPluginRegistryClient
     /// <param name="search">The filters and the page.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The page (installed state not yet set), or a <c>PLUGIN_REGISTRY_*</c> failure.</returns>
-    Task<Result<RegistryPluginPageDto>> SearchAsync(RegistryPluginSearch search, CancellationToken ct);
+    public Task<Result<RegistryPluginPageDto>> SearchAsync(RegistryPluginSearch search, CancellationToken ct);
 
     /// <summary>Asks the registry for the newest version of each of the given plugins.</summary>
     /// <param name="pluginIds">The plugin ids to look up; the registry omits the ones it does not list.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The plugins the registry knows (installed state not yet set), or a <c>PLUGIN_REGISTRY_*</c> failure.</returns>
-    Task<Result<IReadOnlyList<RegistryPluginDto>>> GetLatestAsync(IReadOnlyCollection<string> pluginIds, CancellationToken ct);
+    public Task<Result<IReadOnlyList<RegistryPluginDto>>> GetLatestAsync(IReadOnlyCollection<string> pluginIds, CancellationToken ct);
 
     /// <summary>
     /// Resolves one published version of a plugin to its package address and published checksum. For a host only plugin
@@ -36,7 +36,7 @@ public interface IPluginRegistryClient
     /// <c>PLUGIN_REGISTRY_LICENCE_REQUIRED</c> (the registry answered 401) or <c>PLUGIN_REGISTRY_LICENCE_INVALID</c> (403),
     /// for a host only plugin the refusal of the signed call (<c>PLUGIN_REGISTRY_INSTANCE_*</c>), or another <c>PLUGIN_REGISTRY_*</c> failure.
     /// </returns>
-    Task<Result<RegistryPluginRelease>> GetReleaseAsync(RegistryPluginVersionRef target, CancellationToken ct, string? licenceKey = null);
+    public Task<Result<RegistryPluginRelease>> GetReleaseAsync(RegistryPluginVersionRef target, CancellationToken ct, string? licenceKey = null);
 
     /// <summary>
     /// Downloads a release's package from the registry's own host only, within the configured size limit, into a
@@ -51,7 +51,7 @@ public interface IPluginRegistryClient
     /// <c>PLUGIN_REGISTRY_*</c> failure (<c>PLUGIN_REGISTRY_LICENCE_REQUIRED</c> for a 401, <c>PLUGIN_REGISTRY_LICENCE_INVALID</c>
     /// for a 403), with nothing left on disk.
     /// </returns>
-    Task<Result<Stream>> DownloadAsync(RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null);
+    public Task<Result<Stream>> DownloadAsync(RegistryPluginRelease release, CancellationToken ct, string? licenceKey = null);
 
     /// <summary>Reads the registry's full page for one plugin.</summary>
     /// <param name="pluginId">The plugin id.</param>
@@ -61,7 +61,7 @@ public interface IPluginRegistryClient
     /// The details, a successful result holding <see langword="null"/> when the registry does not list the plugin (404), or a
     /// <c>PLUGIN_REGISTRY_*</c> failure.
     /// </returns>
-    Task<Result<RegistryPluginDetails?>> GetPluginAsync(string pluginId, string? licenceKey, CancellationToken ct);
+    public Task<Result<RegistryPluginDetails?>> GetPluginAsync(string pluginId, string? licenceKey, CancellationToken ct);
 
     /// <summary>
     /// Lists every version of a plugin the registry shows. For a host only plugin the call is signed with this installation's
@@ -76,6 +76,6 @@ public interface IPluginRegistryClient
     /// <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c> for a 404, for a host only plugin the refusal of the signed call
     /// (<c>PLUGIN_REGISTRY_INSTANCE_*</c>), or another <c>PLUGIN_REGISTRY_*</c> failure.
     /// </returns>
-    Task<Result<IReadOnlyList<RegistryPluginVersion>>> ListVersionsAsync(
+    public Task<Result<IReadOnlyList<RegistryPluginVersion>>> ListVersionsAsync(
         string pluginId, string? licenceKey, CancellationToken ct, PluginRegistryDistribution distribution = PluginRegistryDistribution.Download);
 }

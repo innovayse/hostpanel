@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class SetMyDomainEmailForwardingTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Email forwarding toggling refuses a stranger's attempt and applies for the owner.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetEmailForwarding_RefusesAStrangerAndAppliesForTheOwnerAsync()
     {
@@ -30,6 +31,7 @@ public sealed class SetMyDomainEmailForwardingTests(IntegrationTestFactory facto
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetEmailForwarding_WithoutToken_Returns401Async()
     {
@@ -42,6 +44,7 @@ public sealed class SetMyDomainEmailForwardingTests(IntegrationTestFactory facto
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetEmailForwarding_WithNonPositiveId_Returns400ValidationErrorAsync()
     {

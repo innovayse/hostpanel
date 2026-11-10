@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ListBillableItemsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A billable item just created for a client appears in the admin-wide list, named after its client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIncludesAFreshlyCreatedBillableItem()
     {
@@ -39,6 +40,7 @@ public sealed class ListBillableItemsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Listing billable items is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAnonymous()
     {
@@ -48,6 +50,7 @@ public sealed class ListBillableItemsTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A type filter that names no billable item type is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownTypeFilterIsRefused()
     {

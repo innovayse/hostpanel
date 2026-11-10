@@ -33,6 +33,7 @@ public sealed class PluginMemberBillingAccessTests(IntegrationTestFactory factor
     }
 
     /// <summary>A member who may purchase lists and reads the linked client's invoice and reaches its payment methods.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberWhoMayPurchase_SeesTheLinkedClientsInvoicesAndPaymentMethodsAsync()
     {
@@ -50,6 +51,7 @@ public sealed class PluginMemberBillingAccessTests(IntegrationTestFactory factor
     }
 
     /// <summary>The member's own client record is never what they act for: it has no invoices of the plugin account in it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberActsForThePluginAccountNotForTheirOwnClientRecordAsync()
     {
@@ -67,6 +69,7 @@ public sealed class PluginMemberBillingAccessTests(IntegrationTestFactory factor
     }
 
     /// <summary>A member who may only view is refused the invoice and payment method routes.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberWhoMayOnlyView_IsRefusedTheMoneyRoutesAsync()
     {
@@ -85,6 +88,7 @@ public sealed class PluginMemberBillingAccessTests(IntegrationTestFactory factor
     }
 
     /// <summary>A member who only manages payment methods reaches them, through the same flag the invoices need.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberWhoManagesPaymentMethods_ReachesThemAsync()
     {
@@ -97,6 +101,7 @@ public sealed class PluginMemberBillingAccessTests(IntegrationTestFactory factor
     }
 
     /// <summary>The profile belongs to the account holder alone: a plugin member never owns the client and gets no profile.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Member_GetsNoProfileOfTheLinkedClientAsync()
     {

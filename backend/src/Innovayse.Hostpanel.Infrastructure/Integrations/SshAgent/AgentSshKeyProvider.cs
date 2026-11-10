@@ -133,7 +133,6 @@ internal sealed class AgentSshKeyProvider : ISshKeyProvider
             var code = response["error"]?.GetValue<string>();
             var failure = code is null ? SshProviderFailure.InternalError : AgentFailureCodes.Parse(code);
             throw new SshProviderException(failure, $"Agent on server {_endpoint.ServerId} refused: {code}.");
-
         }
 
         return response;

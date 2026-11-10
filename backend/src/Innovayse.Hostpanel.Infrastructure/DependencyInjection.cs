@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
@@ -50,7 +51,6 @@ using Innovayse.Hostpanel.Infrastructure.Time;
 using Innovayse.Hostpanel.Shared.Settings;
 using Innovayse.Providers.CWP;
 using Innovayse.Providers.CWP7;
-using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -60,11 +60,11 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Net.Http.Headers;
 using Npgsql;
 using IProvisioningProvider = Innovayse.Hostpanel.Application.Common.Interfaces.IProvisioningProvider;
 
 namespace Innovayse.Hostpanel.Infrastructure;
+
 /// <summary>
 /// Registers all Infrastructure layer services into the DI container.
 /// Call <see cref="AddInfrastructure"/> from <c>Program.cs</c>.
@@ -156,8 +156,8 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>((serviceProvider, options) =>
         {
+            // The fulfilment records go first, so the auditable stamp that follows stamps them on insert.
             options.AddInterceptors(
-                // Before the auditable stamp, so the records it adds are stamped on insert.
                 serviceProvider.GetRequiredService<FulfilmentRecordInterceptor>(),
                 serviceProvider.GetRequiredService<AuditableEntityInterceptor>(),
                 serviceProvider.GetRequiredService<DomainEventDispatchInterceptor>());

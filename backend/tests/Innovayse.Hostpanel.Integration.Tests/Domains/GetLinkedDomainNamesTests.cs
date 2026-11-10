@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class GetLinkedDomainNamesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A linked service gets its domain's name; a service with no linked domain is left out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_LinkedAndUnlinkedServices_ReturnsOnlyTheLinkedOneAsync()
     {
@@ -40,6 +41,7 @@ public sealed class GetLinkedDomainNamesTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An empty id list answers an empty list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NoIds_ReturnsEmptyAsync()
     {

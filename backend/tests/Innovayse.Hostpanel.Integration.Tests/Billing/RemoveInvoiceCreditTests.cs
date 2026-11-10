@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class RemoveInvoiceCreditTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Removing credit that was applied earlier restores the invoice's total.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveCreditRestoresTheTotal()
     {
@@ -34,6 +35,7 @@ public sealed class RemoveInvoiceCreditTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Removing credit against an id that names no invoice answers 404 with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveCreditRefusesAnUnknownInvoice()
     {
@@ -46,6 +48,7 @@ public sealed class RemoveInvoiceCreditTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Removing credit is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveCreditRefusesAnonymous()
     {
@@ -55,6 +58,7 @@ public sealed class RemoveInvoiceCreditTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Credit cannot be taken off a paid invoice: 400 with <c>INVOICE_NOT_EDITABLE</c>, balance untouched.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveCreditRefusesAPaidInvoice()
     {

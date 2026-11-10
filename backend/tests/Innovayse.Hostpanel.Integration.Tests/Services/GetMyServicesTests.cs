@@ -1,6 +1,5 @@
 using System.Net;
 using System.Text.Json;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Hosting;
 using Innovayse.Hostpanel.Domain.Products;
@@ -20,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>GET /api/me/services without auth returns 401 Unauthorized.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyServicesAsync_Returns401_WithoutAuthAsync()
     {
@@ -31,6 +31,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An admin calling <c>GET /api/me/services</c> is refused with 403: the route requires the Client role.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyServicesAsync_Returns403_AsAdminAsync()
     {
@@ -42,6 +43,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A registered client reads their own services, empty or not, without a refusal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyServicesAsync_Returns200_AsClientAsync()
     {
@@ -53,6 +55,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Each service carries the day it was ordered, which the client area shows as its registration date.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyServicesAsync_CarriesTheDateTheServiceWasOrderedAsync()
     {
@@ -68,6 +71,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The client's own list names the product even when the product has no price in the client's currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyServicesAsync_NamesAProductWithNoPriceInTheCurrencyAsync()
     {
@@ -83,6 +87,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A service of a digital product says so, and a hosting one does not, so the client area asks for setup only on the latter.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyServicesAsync_FlagsAServiceOfADigitalProductAsync()
     {
@@ -100,6 +105,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A service carries its product's SKU, in the normalised form it is stored in, and null when the product has none.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyServicesAsync_CarriesTheProductSkuOrNullAsync()
     {
@@ -120,6 +126,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
     /// A suspended service names why it is suspended, and carries the disk and bandwidth figures its
     /// server last reported for its domain.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyServicesAsync_CarriesSuspensionSourceAndUsageAsync()
     {
@@ -143,6 +150,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
     /// <summary>
     /// A service on a server names the server for display but never carries its internal id.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyServicesAsync_OmitsTheServerIdAsync()
     {
@@ -159,6 +167,7 @@ public sealed class GetMyServicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A service the server reported nothing for, and that is not suspended, carries neither field.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyServicesAsync_LeavesSuspensionSourceAndUsageNullWhenAbsentAsync()
     {

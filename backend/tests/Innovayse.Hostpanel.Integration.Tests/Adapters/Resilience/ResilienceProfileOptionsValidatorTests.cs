@@ -60,6 +60,8 @@ public sealed class ResilienceProfileOptionsValidatorTests
     }
 
     /// <summary>Values exactly on a bound are accepted.</summary>
+    /// <param name="property">Name of the option under test.</param>
+    /// <param name="milliseconds">The value in milliseconds.</param>
     [Theory]
     [InlineData(nameof(ResilienceProfileOptions.AttemptTimeout), 100)]
     [InlineData(nameof(ResilienceProfileOptions.AttemptTimeout), 600000)]
@@ -77,6 +79,8 @@ public sealed class ResilienceProfileOptionsValidatorTests
     }
 
     /// <summary>A value just outside either bound is refused and the message names the property.</summary>
+    /// <param name="property">Name of the option under test.</param>
+    /// <param name="milliseconds">The value in milliseconds.</param>
     [Theory]
     [InlineData(nameof(ResilienceProfileOptions.AttemptTimeout), 99)]
     [InlineData(nameof(ResilienceProfileOptions.AttemptTimeout), 600001)]

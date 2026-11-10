@@ -6,8 +6,8 @@ using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Orders;
-using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Products;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Domain.Slides;
@@ -93,6 +93,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A client who still has an invoice cannot be deleted: the database refuses and the client stays.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientWithAnInvoiceCannotBeDeleted()
     {
@@ -116,6 +117,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An invoice cannot be written for a client who does not exist.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvoiceForAMissingClientIsRefused()
     {
@@ -129,6 +131,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Deleting an invoice keeps the ledger row that settled it and only clears the link.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeletingAnInvoiceKeepsItsLedgerRow()
     {
@@ -153,6 +156,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A product that a client holds a service of cannot be deleted.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ProductWithAServiceCannotBeDeleted()
     {
@@ -177,6 +181,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
     /// Deleting a service removes its cancellation requests and clears the link of a domain that was
     /// ordered with it, which stays.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeletingAServiceRemovesItsRequestsAndUnlinksItsDomain()
     {
@@ -207,6 +212,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Deleting a department keeps its tickets, which are left without one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeletingADepartmentKeepsItsTickets()
     {
@@ -230,6 +236,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Deleting a product keeps the slide that promoted it, which is left without one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeletingAProductKeepsItsSlide()
     {
@@ -253,6 +260,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A client's audit entry outlives the client and loses only the link.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeletingAClientKeepsItsActivityLogEntry()
     {

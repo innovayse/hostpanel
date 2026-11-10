@@ -17,7 +17,7 @@ public interface ISubjectRoleStore
     /// <param name="subject">The subject, as the configured identity provider names them.</param>
     /// <param name="ct">Cancels the operation.</param>
     /// <returns>The held roles.</returns>
-    Task<IReadOnlyList<Role>> GetRolesAsync(string subject, CancellationToken ct);
+    public Task<IReadOnlyList<Role>> GetRolesAsync(string subject, CancellationToken ct);
 
     /// <summary>
     /// Grants a role. Granting one already held is not an error, because a migration pull
@@ -27,14 +27,14 @@ public interface ISubjectRoleStore
     /// <param name="role">The role asked about or changed.</param>
     /// <param name="ct">Cancels the operation.</param>
     /// <returns>A task that completes once the grant is saved.</returns>
-    Task AddAsync(string subject, Role role, CancellationToken ct);
+    public Task AddAsync(string subject, Role role, CancellationToken ct);
 
     /// <summary>Revokes a role. Revoking one not held is not an error.</summary>
     /// <param name="subject">The subject, as the configured identity provider names them.</param>
     /// <param name="role">The role asked about or changed.</param>
     /// <param name="ct">Cancels the operation.</param>
     /// <returns>A task that completes once the grant is gone.</returns>
-    Task RemoveAsync(string subject, Role role, CancellationToken ct);
+    public Task RemoveAsync(string subject, Role role, CancellationToken ct);
 
     /// <summary>
     /// Whether any subject currently holds this role.
@@ -49,7 +49,7 @@ public interface ISubjectRoleStore
     /// <param name="role">The role asked about or changed.</param>
     /// <param name="ct">Cancels the operation.</param>
     /// <returns>Whether at least one subject holds the role.</returns>
-    Task<bool> AnyHasRoleAsync(Role role, CancellationToken ct);
+    public Task<bool> AnyHasRoleAsync(Role role, CancellationToken ct);
 
     /// <summary>
     /// The subjects that hold a role. Backs the guard that keeps an installation from losing its
@@ -58,7 +58,7 @@ public interface ISubjectRoleStore
     /// <param name="role">The role asked about or changed.</param>
     /// <param name="ct">Cancels the operation.</param>
     /// <returns>The holders' subjects, each once.</returns>
-    Task<IReadOnlyList<string>> GetHoldersAsync(Role role, CancellationToken ct);
+    public Task<IReadOnlyList<string>> GetHoldersAsync(Role role, CancellationToken ct);
 
     /// <summary>
     /// Whether one subject holds a role, counting every store the deployment authorizes on, the
@@ -68,5 +68,5 @@ public interface ISubjectRoleStore
     /// <param name="role">The role asked about or changed.</param>
     /// <param name="ct">Cancels the operation.</param>
     /// <returns>Whether the subject holds the role.</returns>
-    Task<bool> HoldsAsync(string subject, Role role, CancellationToken ct);
+    public Task<bool> HoldsAsync(string subject, Role role, CancellationToken ct);
 }

@@ -1,8 +1,7 @@
+using Hostpanel.Sdk.Plugins.Endpoints;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Endpoints;
-using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;

@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.API.Authorization;
 

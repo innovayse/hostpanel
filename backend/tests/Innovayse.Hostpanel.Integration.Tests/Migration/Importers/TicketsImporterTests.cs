@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Migration.Common;
 using Innovayse.Hostpanel.Application.Migration.Importers;
 using Innovayse.Hostpanel.Application.Migration.Pull;
-using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +19,7 @@ public sealed class TicketsImporterTests(IntegrationTestFactory factory) : IClas
     /// Two ticket records for the same client with the same subject: <see cref="TicketsImporter"/>
     /// creates the first and skips the second as an in-run duplicate, matched on client and subject.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Tickets_CreatesFirstRecordAndSkipsTheInRunDuplicateAsync()
     {
@@ -31,7 +31,7 @@ public sealed class TicketsImporterTests(IntegrationTestFactory factory) : IClas
 
         // A record that names no department goes to one of this install's departments, so one must exist.
         await SupportTestSeeds.SeedDepartmentAsync(context);
-        var job =await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Tickets);
+        var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Tickets);
         source.SetDatasetJson("tickets", $$"""
             [
                 {"ClientEmail":"{{email}}","Subject":"Duplicate Subject","Message":"First","Status":"Open","Priority":"Medium","DepartmentName":null,"CreatedAt":"2025-01-01T00:00:00Z"},

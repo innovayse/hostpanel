@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Clients.Common.Enums;
-using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Notifications.Commands.SendEmail;
@@ -41,6 +40,7 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
             builder.ConfigureTestServices(services => services.AddSingleton<IEmailSender>(emailSender)));
 
     /// <summary>A known, active template renders and sends, and the attempt is logged as successful.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Send_KnownActiveTemplate_SendsAndLogsSuccess()
     {
@@ -63,6 +63,7 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A slug naming no template refuses with <c>EMAIL_TEMPLATE_NOT_FOUND</c>, and nothing is sent.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Send_UnknownTemplateSlug_RefusesNotFound()
     {
@@ -82,6 +83,7 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>An inactive template is not sent, but the command still answers success.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Send_InactiveTemplate_SucceedsWithoutSending()
     {
@@ -101,6 +103,7 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A recipient whose language is Russian gets the Russian version of the template, not the default one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Send_RussianRecipient_SendsTheRussianVersion()
     {
@@ -121,6 +124,7 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A recipient whose language has no version yet gets the default language's version instead of nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Send_MissingTranslation_FallsBackToTheDefaultLanguage()
     {
@@ -144,6 +148,7 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
     /// A relay that refuses the message is logged as failed with the classified reason, and the
     /// command still answers success because every caller fires it and forgets it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Send_RelayRefuses_LogsTheClassifiedFailure()
     {
@@ -186,6 +191,7 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
     /// A mail sent with a contact copy also reaches the contacts who switched that kind of email on,
     /// and only them: a contact who switched it off, and the recipient's own address, get nothing extra.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Send_WithContactCopy_AlsoMailsTheContactsWhoWantThatKind()
     {
@@ -215,6 +221,7 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A keyed send replayed with the same key reaches the relay once and leaves one Sent row.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Send_KeyedReplay_SendsOnce()
     {
@@ -234,6 +241,7 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>Two deliveries of the same keyed command running at once send the mail once between them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Send_TwoConcurrentKeyedSends_SendOnce()
     {
@@ -250,6 +258,7 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A keyed mail the relay refused is sent again on replay, on the same row.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Send_FailedKeyedRowOnReplay_IsResent()
     {
@@ -275,6 +284,7 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
     /// longer ago than the lease (a sender that crashed before saving its outcome) is sent again.
     /// </summary>
     /// <param name="outsideLease">Whether the existing claim is older than the configured lease.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -305,6 +315,7 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>An unkeyed command sent twice is two mails and two log rows, exactly as before keys existed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Send_UnkeyedTwice_SendsTwice()
     {
@@ -322,6 +333,7 @@ public sealed class SendEmailTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A key that is not 64 lower-case hex characters is refused before anything is sent.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Send_MalformedKey_IsRefusedByValidation()
     {

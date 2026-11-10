@@ -1,10 +1,10 @@
 using Innovayse.Hostpanel.API.Authorization;
-using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Application.Support.Commands.CreateTicket;
 using Innovayse.Hostpanel.Application.Support.Commands.ReplyToMyTicket;
 using Innovayse.Hostpanel.Application.Support.Common;
 using Innovayse.Hostpanel.Application.Support.Queries.GetMyTicket;
 using Innovayse.Hostpanel.Application.Support.Queries.GetMyTickets;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;

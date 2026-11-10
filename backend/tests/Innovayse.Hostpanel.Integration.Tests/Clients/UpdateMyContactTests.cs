@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class UpdateMyContactTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The route's contact id selects the contact and the change is written.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyContactWritesTheContact()
     {
@@ -32,6 +33,7 @@ public sealed class UpdateMyContactTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A contact id that is not on the caller's account answers 404 with <c>CLIENT_CONTACT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyContactRefusesAnUnknownContact()
     {
@@ -44,6 +46,7 @@ public sealed class UpdateMyContactTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A caller with the Client role but no client row owns no account and is linked to none, so the permission gate refuses with 403 <c>CLIENT_PERMISSION_DENIED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyContactWithNoClientRowIsRefusedByThePermissionGate()
     {
@@ -61,6 +64,7 @@ public sealed class UpdateMyContactTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyContactRefusesAnonymous()
     {
@@ -71,6 +75,7 @@ public sealed class UpdateMyContactTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An admin, who is not a client, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateMyContactRefusesAnAdmin()
     {

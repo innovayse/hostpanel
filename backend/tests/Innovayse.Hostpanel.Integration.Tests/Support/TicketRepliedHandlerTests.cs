@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class TicketRepliedHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A staff reply notifies the client who owns the ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TicketReplied_WhenStaffReplies_NotifiesClientAsync()
     {
@@ -41,6 +42,7 @@ public sealed class TicketRepliedHandlerTests(IntegrationTestFactory factory) : 
     /// The reply email carries the ticket's subject as the client typed it: the subject line is
     /// plain text, so markup in it arrives as the same characters, neither dropped nor encoded.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TicketReplied_RendersTheTicketSubjectInTheEmailSubjectAsync()
     {
@@ -63,6 +65,7 @@ public sealed class TicketRepliedHandlerTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A client reply notifies the ticket's assigned department.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TicketReplied_WhenClientReplies_NotifiesDepartmentAsync()
     {

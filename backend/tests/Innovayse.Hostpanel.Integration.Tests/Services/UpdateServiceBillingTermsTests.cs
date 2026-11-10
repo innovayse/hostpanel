@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.UpdateServiceBillingTerms;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class UpdateServiceBillingTermsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A valid save answers 204 and stores every billing term, leaving the rest of the service alone.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateBillingTerms_OnAnExistingService_StoresTheTermsAsync()
     {
@@ -57,6 +57,7 @@ public sealed class UpdateServiceBillingTermsTests(IntegrationTestFactory factor
     }
 
     /// <summary>Moving the service to a product that does not exist answers 404 <c>PRODUCT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateBillingTerms_ToAnUnknownProduct_Returns404ProductNotFoundAsync()
     {
@@ -70,6 +71,7 @@ public sealed class UpdateServiceBillingTermsTests(IntegrationTestFactory factor
     }
 
     /// <summary>A negative amount is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateBillingTerms_WithANegativeAmount_Returns400ValidationErrorAsync()
     {
@@ -90,6 +92,7 @@ public sealed class UpdateServiceBillingTermsTests(IntegrationTestFactory factor
     }
 
     /// <summary>A billing cycle the parser does not know is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateBillingTerms_WithAnUnknownBillingCycle_Returns400ValidationErrorAsync()
     {
@@ -110,6 +113,7 @@ public sealed class UpdateServiceBillingTermsTests(IntegrationTestFactory factor
     }
 
     /// <summary>Saving the terms of a service that does not exist answers 404 <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateBillingTerms_OnAnUnknownService_Returns404Async()
     {
@@ -123,6 +127,7 @@ public sealed class UpdateServiceBillingTermsTests(IntegrationTestFactory factor
     }
 
     /// <summary>Saving without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateBillingTerms_WithoutAuth_Returns401Async()
     {

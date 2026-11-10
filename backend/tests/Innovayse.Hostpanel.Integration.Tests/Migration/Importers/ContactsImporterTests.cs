@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 public sealed class ContactsImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A contact for a known client is added.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Contacts_AddsAContactToAKnownClientAsync()
     {
@@ -48,6 +49,7 @@ public sealed class ContactsImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A client closed in the source still gets its contacts: importing history is not a user change.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Contacts_AddsAContactToAClosedClientAsync()
     {

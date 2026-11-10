@@ -13,7 +13,13 @@
     "refused": "Մերժված",
     "staged": "{version} տարբերակը պատրաստ է, կկիրառվի վերագործարկումից հետո",
     "brokenRule": "{id} · խախտված կանոն՝ {rule}",
-    "updateAvailable": "Հասանելի է թարմացում՝ {version}"
+    "updateAvailable": "Հասանելի է թարմացում՝ {version}",
+    "showNotes": "{version} տարբերակի փոփոխությունները",
+    "hideNotes": "Թաքցնել փոփոխությունները",
+    "noNotes": "Այս տարբերակի համար փոփոխություններ նշված չեն։",
+    "whatChanged": "Ինչ կփոխվի {to} տարբերակում",
+    "showUpdateNotes": "Ինչ նոր է {version} տարբերակում",
+    "hideUpdateNotes": "Թաքցնել նորությունները"
   },
   "pluginUploader": {
     "dropYourPlugin": "Քաշեք ձեր պլագինը",
@@ -22,6 +28,26 @@
     "orClickToBrowseFiles": "կամ սեղմեք՝ ֆայլ ընտրելու համար",
     "valueKbReadyToInstall": "{value} ԿԲ · պատրաստ է տեղադրման",
     "installPlugin": "Տեղադրել պլագին"
+  },
+  "pluginInstallDialog": {
+    "title": "Տեղադրե՞լ {name} {version}",
+    "byAuthor": "հեղինակ՝ {author}",
+    "requests": "Հավելագրիչը պահանջում է",
+    "noRequests": "Ոչ մի մուտք հաճախորդների հոսթինգին և ոչ մի լրացուցիչ հնարավորություն։",
+    "changelog": "Ինչ է նոր այս տարբերակում",
+    "noChangelog": "Հավելագրիչը այս տարբերակի համար փոփոխություններ չի նշել։",
+    "rangeBetween": "Աշխատում է սերվերի {min}-ից {max} տարբերակների հետ։",
+    "rangeFrom": "Աշխատում է սերվերի {min} և ավելի նոր տարբերակների հետ։",
+    "rangeUpTo": "Աշխատում է սերվերի մինչև {max} տարբերակների հետ։",
+    "incompatible": "Այս հավելագրիչը չի աշխատում այս սերվերի {host} տարբերակի հետ։ {range}",
+    "install": "Տեղադրել",
+    "hostAccess": {
+      "ssh": "Կատարել հրամաններ հաճախորդի հոսթինգ հաշվում SSH-ով"
+    },
+    "capabilities": {
+      "endpoints": "Ավելացնել իր էջերը, մենյուները և վիջեթները վահանակներում",
+      "storedCredentials": "Գանձել պահպանված քարտերից և վճարային հաշիվներից"
+    }
   },
   "restartBanner": {
     "restartRequired": "Անհրաժեշտ է վերագործարկում",
@@ -60,7 +86,10 @@
     "pluginStaged": "{version} տարբերակը բեռնվեց և պատրաստ է։ Այն կփոխարինի տեղադրվածին սերվերի վերագործարկումից հետո։",
     "tabInstalled": "Տեղադրված",
     "tabBrowse": "Կատալոգ",
-    "registryInstalled": "Պլագինը տեղադրվել է կատալոգից։"
+    "registryInstalled": "Պլագինը տեղադրվել է կատալոգից։",
+    "confirmUpdateTitle": "Թարմացնե՞լ այս պլագինը",
+    "confirmUpdateMessage": "Թարմացնե՞լ {id} պլագինը մինչև {version} տարբերակ։ Փոփոխությունը կգործի սերվերի վերագործարկումից հետո։",
+    "confirmUpdate": "Թարմացնել"
   },
   "pluginSlotWidgets": {
     "title": "Սլոտի վիջեթներ. {plugin}",
@@ -114,7 +143,11 @@
     },
     "tag": "#{tag}",
     "moreTags": "+{count}",
-    "downloads": "Ներբեռնումներ՝ {count}"
+    "downloads": "Ներբեռնումներ՝ {count}",
+    "whatChanged": "Ինչ է փոխվել",
+    "showNotes": "Ինչ նոր է {version} տարբերակում",
+    "hideNotes": "Թաքցնել նորությունները",
+    "noNotes": "Այս տարբերակի համար փոփոխություններ նշված չեն։"
   },
   "registryTrust": {
     "title": "Վստահություն կատալոգի նկատմամբ",
@@ -168,5 +201,15 @@
     "unavailable": "Այս վիջեթը հնարավոր չեղավ ցուցադրել։",
     "timedOut": "Այս վիջեթը չափազանց երկար է բեռնվում։",
     "hideNotSeeded": "{key} կարգավորումը այս սերվերում չկա, ուստի վիջեթը հնարավոր չէ թաքցնել։"
+  },
+  "pluginPage": {
+    "notFoundTitle": "Էջը չի գտնվել",
+    "tableEmpty": "Դեռ ցուցադրելու բան չկա։",
+    "chatMessage": "Հաղորդագրություն",
+    "chatSend": "Ուղարկել",
+    "chatStop": "Կանգնեցնել",
+    "chatResultDetails": "Մանրամասներ",
+    "chatStepStopped": "կանգնեցված է",
+    "chatStepsCount": "Կատարված է {done}-ը {total}-ից"
   }
 }

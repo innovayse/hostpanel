@@ -2,7 +2,6 @@ using System.Security.Claims;
 using Innovayse.Hostpanel.API.Auth;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.MultiTenancy;
-using Microsoft.AspNetCore.Http;
 
 namespace Innovayse.Hostpanel.API.Identity;
 

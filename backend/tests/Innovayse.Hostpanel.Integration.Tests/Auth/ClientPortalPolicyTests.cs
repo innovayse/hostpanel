@@ -1,5 +1,4 @@
 using System.Net;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 
@@ -12,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 public sealed class ClientPortalPolicyTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A roleless member who may purchase reads their invoices without ever having ordered, on the client linked to their plugin account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RolelessMemberWhoMayPurchase_ReadsInvoicesWithoutAnOrderAsync()
     {
@@ -24,6 +24,7 @@ public sealed class ClientPortalPolicyTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A roleless member who may only view reads their services without ever having ordered, on the client linked to their plugin account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RolelessViewOnlyMember_ReadsServicesWithoutAnOrderAsync()
     {
@@ -36,6 +37,7 @@ public sealed class ClientPortalPolicyTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>With no identity plugin a user without the client role is refused every portal route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RolelessUserWithoutAPlugin_IsRefusedAsync()
     {
@@ -47,6 +49,7 @@ public sealed class ClientPortalPolicyTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A roleless user the enabled plugin refuses is refused the portal too.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RolelessUserThePluginRefuses_IsRefusedAsync()
     {

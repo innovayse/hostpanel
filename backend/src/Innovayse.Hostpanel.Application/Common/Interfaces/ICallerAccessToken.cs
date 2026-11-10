@@ -14,5 +14,5 @@ public interface ICallerAccessToken
     /// The token, or <c>null</c> when the caller is not bearer-authenticated (for example a cookie
     /// session) or there is no current request.
     /// </returns>
-    string? GetBearerToken();
+    public string? GetBearerToken();
 }

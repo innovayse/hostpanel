@@ -18,6 +18,7 @@ public sealed class RowVersionTests(IntegrationTestFactory factory) : IClassFixt
     /// Two units of work load the same ticket and each change it: the first save wins, the second
     /// conflicts on the ticket's row version and the first change is not lost.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Ticket_TwoConcurrentWriters_SecondSaveConflictsAsync()
     {

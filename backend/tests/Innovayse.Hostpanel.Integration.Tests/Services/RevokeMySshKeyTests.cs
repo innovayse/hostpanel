@@ -130,7 +130,6 @@ public sealed class RevokeMySshKeyTests(IntegrationTestFactory factory) : IClass
         var keyId = await SshTestSeeds.AddKeyAsync(http, serviceId, 1);
         SshTestSeeds.Agents(factory).AgentFor(serverId).FailWith = SshProviderFailure.Unreachable;
 
-
         var response = await http.DeleteAsync($"/api/me/services/{serviceId}/ssh/keys/{keyId}");
 
         response.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
@@ -139,7 +138,6 @@ public sealed class RevokeMySshKeyTests(IntegrationTestFactory factory) : IClass
         key.IsActive.Should().BeTrue();
         key.LastSyncError.Should().Be(SshProviderFailure.Unreachable);
     }
-
 
     /// <summary>Loads a stored key record by its key id.</summary>
     /// <param name="keyId">The key id.</param>

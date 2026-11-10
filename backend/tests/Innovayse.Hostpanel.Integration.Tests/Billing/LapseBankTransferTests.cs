@@ -54,7 +54,7 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
 
     /// <summary>Reads an invoice from the database.</summary>
     /// <param name="invoiceId">The invoice.</param>
-    /// <returns>The invoice.</returns>
+    /// <returns>The invoice as stored.</returns>
     private async Task<Invoice> LoadAsync(int invoiceId)
     {
         using var scope = _host.Services.CreateScope();
@@ -63,6 +63,7 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A transfer that waited longer than the default fourteen days lapses back to Unpaid, and a younger one is left alone.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheOverdueJob_LapsesATransferThatWaitedTooLong_AndLeavesAYoungerOne()
     {
@@ -80,6 +81,7 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A transfer that lapses after the invoice's due date returns it to Overdue, so overdue and suspension carry on.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ALapsedTransfer_OfAnInvoicePastItsDueDate_ReturnsToOverdue()
     {
@@ -93,6 +95,7 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The number of days is the admin's: a shorter setting lapses a transfer the default would still wait for.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheAdminsNumberOfDays_DecidesWhenATransferLapses()
     {
@@ -113,6 +116,8 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An expiry the admin typed wrongly falls back to the default instead of lapsing every transfer at once.</summary>
+    /// <param name="typed">The text the admin typed.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("0")]
     [InlineData("soon")]
@@ -136,6 +141,7 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The command lapses a waiting transfer and refuses an invoice that waits for none.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheCommand_LapsesAWaitingTransfer_AndRefusesAnInvoiceThatWaitsForNone()
     {
@@ -156,6 +162,7 @@ public sealed class LapseBankTransferTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A rejection after the due date returns the invoice to Overdue, over the real staff endpoint.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AStaffRejection_OfAnInvoicePastItsDueDate_ReturnsToOverdue()
     {

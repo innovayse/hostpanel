@@ -5,8 +5,8 @@ using Innovayse.Hostpanel.Domain;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Contracts.Interfaces;
-using Innovayse.Hostpanel.Shared.Middleware;
 using Innovayse.Hostpanel.Shared.Infrastructure;
+using Innovayse.Hostpanel.Shared.Middleware;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,6 +66,7 @@ public sealed class ExceptionHandlingMiddlewareTests
     /// A fault nothing upstream classified answers 500, as <c>application/problem+json</c>, with a
     /// localized <c>detail</c>, and the compatibility shim carries the same pair by default.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnclassifiedFault_Answers500WithProblemJsonAndShimAsync()
     {
@@ -97,6 +98,7 @@ public sealed class ExceptionHandlingMiddlewareTests
     /// arm would: the request was well-formed and nothing is broken, but the row the caller read
     /// no longer matches what is stored.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConcurrencyConflict_Answers409WithProblemJsonAndShimAsync()
     {
@@ -122,6 +124,7 @@ public sealed class ExceptionHandlingMiddlewareTests
     }
 
     /// <summary>A client cancellation is not answered at all: there is no one left to write a body to.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientCancellation_WritesNothingAsync()
     {
@@ -152,6 +155,7 @@ public sealed class ExceptionHandlingMiddlewareTests
     /// resolved by that code from <c>ErrorMessages.resx</c> in the request's culture, never the
     /// exception's English message, which only reaches the log.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainException_MapsByCodeWithLocalizedDetailAsync()
     {

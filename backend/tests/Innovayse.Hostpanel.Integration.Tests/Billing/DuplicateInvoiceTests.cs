@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class DuplicateInvoiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Duplicating an invoice creates a new draft carrying the same line items.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DuplicateCreatesADraftCopy()
     {
@@ -35,6 +36,7 @@ public sealed class DuplicateInvoiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Duplicating an id that names no invoice answers 404 with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DuplicateUnknownInvoiceRefusesNotFound()
     {
@@ -47,6 +49,7 @@ public sealed class DuplicateInvoiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Duplicating an invoice is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DuplicateRefusesAnonymous()
     {

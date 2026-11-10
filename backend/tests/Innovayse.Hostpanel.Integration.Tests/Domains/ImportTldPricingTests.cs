@@ -38,6 +38,7 @@ public sealed class ImportTldPricingTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Importing from a registrar creates new TLDs and updates the ones already configured.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ImportCreatesNewTldsAndUpdatesExistingOnesAsync()
     {
@@ -66,6 +67,7 @@ public sealed class ImportTldPricingTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Importing from an unrecognized registrar module answers 400 with <c>TLD_REGISTRAR_MODULE_UNKNOWN</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ImportRefusesAnUnknownRegistrarModuleAsync()
     {
@@ -78,6 +80,7 @@ public sealed class ImportTldPricingTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Import_WithoutToken_Returns401Async()
     {

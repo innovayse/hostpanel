@@ -111,6 +111,7 @@ public sealed class Cwp7ProvisioningProvider : IProvisioningProvider
     /// <param name="req">Suspend request with provisioning reference (username) and reason.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when CWP7 refuses and the account is not already suspended.</exception>
+    /// <returns>A task that completes when the account is suspended.</returns>
     public async Task SuspendAsync(SuspendAccountOrder req, CancellationToken ct)
     {
         var response = await _client.SuspendAccountAsync(_connection, req.ProvisioningRef, ct);
@@ -137,6 +138,7 @@ public sealed class Cwp7ProvisioningProvider : IProvisioningProvider
     /// <param name="provisioningRef">Username of the account to unsuspend.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when CWP7 refuses and the account is not already active.</exception>
+    /// <returns>A task that completes when the account is active again.</returns>
     public async Task UnsuspendAsync(string provisioningRef, CancellationToken ct)
     {
         var response = await _client.UnsuspendAccountAsync(_connection, provisioningRef, ct);
@@ -163,6 +165,7 @@ public sealed class Cwp7ProvisioningProvider : IProvisioningProvider
     /// <param name="req">Terminate request with provisioning reference (username) and reason.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <exception cref="InvalidOperationException">Thrown when CWP7 refuses and the account still exists or its absence is unconfirmed.</exception>
+    /// <returns>A task that completes when the account is removed.</returns>
     public async Task TerminateAsync(TerminateAccountOrder req, CancellationToken ct)
     {
         var response = await _client.TerminateAccountAsync(
@@ -227,6 +230,7 @@ public sealed class Cwp7ProvisioningProvider : IProvisioningProvider
     /// <param name="provisioningRef">Username of the account.</param>
     /// <param name="newPassword">New password to set.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the password is changed.</returns>
     public async Task ChangePasswordAsync(string provisioningRef, string newPassword, CancellationToken ct)
     {
         var response = await _client.ChangePasswordAsync(_connection, provisioningRef, newPassword, ct);
@@ -246,6 +250,7 @@ public sealed class Cwp7ProvisioningProvider : IProvisioningProvider
     /// <param name="provisioningRef">Username of the account.</param>
     /// <param name="newPackage">New package name or ID (prefix ID with @).</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the package is changed.</returns>
     public async Task ChangePackageAsync(string provisioningRef, string newPackage, CancellationToken ct)
     {
         var response = await _client.ChangePackageAsync(

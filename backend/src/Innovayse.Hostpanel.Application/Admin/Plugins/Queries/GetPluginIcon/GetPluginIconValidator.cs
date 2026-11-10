@@ -1,8 +1,8 @@
+using FluentValidation;
+using Hostpanel.Sdk.Packaging.Naming;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
-using Hostpanel.Sdk.Packaging.Naming;
 using Microsoft.Extensions.Localization;
-using FluentValidation;
 
 namespace Innovayse.Hostpanel.Application.Admin.Plugins.Queries.GetPluginIcon;
 

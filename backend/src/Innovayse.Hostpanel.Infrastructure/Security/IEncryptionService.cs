@@ -10,10 +10,10 @@ public interface IEncryptionService
     /// <summary>Encrypts a plaintext string.</summary>
     /// <param name="plaintext">The string to encrypt.</param>
     /// <returns>Base64-encoded ciphertext with prepended IV.</returns>
-    string Encrypt(string plaintext);
+    public string Encrypt(string plaintext);
 
     /// <summary>Decrypts a Base64-encoded ciphertext.</summary>
     /// <param name="ciphertext">The Base64-encoded string to decrypt.</param>
     /// <returns>The original plaintext.</returns>
-    string Decrypt(string ciphertext);
+    public string Decrypt(string ciphertext);
 }

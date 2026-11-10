@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class CreateNetworkIssueTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can create a network issue.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanCreateANetworkIssueAsync()
     {
@@ -31,6 +32,7 @@ public sealed class CreateNetworkIssueTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Creating a network issue with an unrecognised type answers 400, not a 500.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateNetworkIssueWithBadTypeAnswersBadRequestAsync()
     {
@@ -52,6 +54,7 @@ public sealed class CreateNetworkIssueTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A caller with no credential cannot create a network issue.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

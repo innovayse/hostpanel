@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Domain.Billing.Enums;
-using Innovayse.Hostpanel.Domain.Billing;
 
 namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <summary>DTO for a billable item in admin lists with client name.</summary>

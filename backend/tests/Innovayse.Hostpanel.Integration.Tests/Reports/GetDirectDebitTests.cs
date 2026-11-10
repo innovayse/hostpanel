@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetDirectDebitTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An unpaid invoice on a direct-debit payment method is listed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ShowsAnUnpaidDirectDebitInvoice()
     {
@@ -38,6 +39,7 @@ public sealed class GetDirectDebitTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -47,6 +49,7 @@ public sealed class GetDirectDebitTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

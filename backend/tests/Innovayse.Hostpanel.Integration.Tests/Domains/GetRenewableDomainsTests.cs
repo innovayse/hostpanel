@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class GetRenewableDomainsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A due auto-renewing domain is listed for its client; later and manual-renew domains are not.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_MixedDomains_ListsOnlyDueAutoRenewingOnesAsync()
     {

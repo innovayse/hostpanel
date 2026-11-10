@@ -1,7 +1,7 @@
-using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,6 +66,7 @@ public sealed class ListGatewayLogsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A recorded payment appears as a Payment entry carrying its gateway and reference.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIncludesARecordedPayment()
     {
@@ -83,6 +84,7 @@ public sealed class ListGatewayLogsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An invoice with an unsettled gateway session appears as a Pending entry.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIncludesAnOpenGatewaySessionAsPending()
     {
@@ -99,6 +101,7 @@ public sealed class ListGatewayLogsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The result and debug-text filters narrow the list, and the date range excludes entries outside it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListFiltersByResultDebugTextAndDateRange()
     {
@@ -120,6 +123,7 @@ public sealed class ListGatewayLogsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Paging splits the log and reports the page number, the page count and the total across pages.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListPagesTheLog()
     {
@@ -140,6 +144,7 @@ public sealed class ListGatewayLogsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A page size over the ceiling is refused by the validator with 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAnOversizedPage()
     {
@@ -151,6 +156,7 @@ public sealed class ListGatewayLogsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The log is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAnonymous()
     {
@@ -160,6 +166,7 @@ public sealed class ListGatewayLogsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The log is not for client callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAClientCaller()
     {

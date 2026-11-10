@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Products.Enums;
@@ -47,6 +46,7 @@ public sealed class ListUpcomingServiceRenewalsTests(IntegrationTestFactory fact
     }
 
     /// <summary>A wider window brings in later renewals, and a service on manual billing is listed with its switch off.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Windows_BringInLaterRenewals_AndKeepManualBillingVisible()
     {
@@ -66,6 +66,7 @@ public sealed class ListUpcomingServiceRenewalsTests(IntegrationTestFactory fact
     }
 
     /// <summary>A terminated service is not listed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InactiveServices_AreLeftOut()
     {
@@ -82,6 +83,7 @@ public sealed class ListUpcomingServiceRenewalsTests(IntegrationTestFactory fact
     }
 
     /// <summary>A window that is not one of the three is refused with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnUnknownWindow_Returns400()
     {
@@ -94,6 +96,7 @@ public sealed class ListUpcomingServiceRenewalsTests(IntegrationTestFactory fact
     }
 
     /// <summary>Without authentication the call is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithoutAuth_Returns401()
     {

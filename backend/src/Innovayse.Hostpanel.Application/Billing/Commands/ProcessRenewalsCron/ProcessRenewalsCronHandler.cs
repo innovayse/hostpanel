@@ -395,6 +395,7 @@ public sealed class ProcessRenewalsCronHandler
     }
 
     /// <summary>Dispatches one unit of work and logs, never rethrows, its failure, so one client cannot stop the run.</summary>
+    /// <typeparam name="TResult">What the dispatched call returns.</typeparam>
     /// <param name="label">What is dispatched, for the log.</param>
     /// <param name="invoke">Invokes the command and returns its result.</param>
     /// <param name="ct">Cancellation token.</param>

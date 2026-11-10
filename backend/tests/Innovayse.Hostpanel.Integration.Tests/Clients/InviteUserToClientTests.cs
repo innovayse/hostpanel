@@ -9,6 +9,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class InviteUserToClientTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Inviting a fresh address to a real client succeeds.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteSendsTheInvitation()
     {
@@ -28,6 +29,7 @@ public sealed class InviteUserToClientTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>An invitation leaves one activity line for the client, stamped with the acting admin and free of the invited address.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteWritesAnAuditLine()
     {
@@ -48,6 +50,7 @@ public sealed class InviteUserToClientTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Inviting to an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesUnknownClient()
     {
@@ -66,6 +69,7 @@ public sealed class InviteUserToClientTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Inviting the account owner's own address answers <c>CANNOT_INVITE_ACCOUNT_OWNER</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesTheOwnersOwnAddress()
     {
@@ -86,6 +90,7 @@ public sealed class InviteUserToClientTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Inviting the same address twice answers <c>INVITATION_ALREADY_PENDING</c> the second time.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesADuplicatePendingInvitation()
     {
@@ -115,6 +120,7 @@ public sealed class InviteUserToClientTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Inviting onto a client whose owner subject resolves to nobody answers <c>ACCOUNT_OWNER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesWhenTheOwnerCannotBeResolved()
     {
@@ -134,6 +140,7 @@ public sealed class InviteUserToClientTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Inviting an address already linked to the client answers <c>USER_ALREADY_LINKED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesAnAlreadyLinkedAddress()
     {
@@ -157,6 +164,7 @@ public sealed class InviteUserToClientTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Inviting a user is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesAnonymous()
     {
@@ -172,6 +180,7 @@ public sealed class InviteUserToClientTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A client, who is not staff, is refused with 403 on the admin route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InviteRefusesAClient()
     {

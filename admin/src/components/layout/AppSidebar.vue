@@ -9,11 +9,12 @@
  * - Emits `navigate` on link click so the mobile drawer can close.
  * - In the drawer (`embedded`) it also carries the theme select, which the top bar has no room for on a phone.
  */
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useNavigationStore } from '@/stores/navigation'
+import { usePluginUiStore } from '@/stores/pluginUi'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiIconButton from '@/components/ui/UiIconButton.vue'
@@ -26,7 +27,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { getRuntimeConfig } from '@/lib/runtimeConfig'
 import { AppRoute } from '@/lib/routes'
-import { NAV_SECTIONS } from '@/lib/navigation'
+import { NAV_SECTIONS, withAddons } from '@/lib/navigation'
 import type { NavItem, NavSection } from '@/lib/navigation'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 
@@ -45,7 +46,7 @@ const emit = defineEmits<{
 }>()
 
 /** Translation function. */
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 /** Auth store: the sign-out action. */
 const authStore = useAuthStore()
@@ -58,6 +59,9 @@ const route = useRoute()
 
 /** The navigation in flight, whose target is marked while its screen downloads. */
 const navigation = useNavigationStore()
+
+/** Plugin ui store: the menu items plugins declare, drawn as the Add-ons section. */
+const pluginUi = usePluginUiStore()
 
 /**
  * The path the menu marks as active: the target of a navigation still downloading its screen, so
@@ -80,11 +84,22 @@ const BOOK_MARKUP = '<path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20
 /** Documentation URL from runtime config; empty when the docs site is not configured. */
 const { docsUrl } = getRuntimeConfig()
 
-/** The sidebar sections, in display order; a section with no item left draws no label. */
-const sections = computed<NavSection[]>(() => NAV_SECTIONS.filter((section) => section.items.length > 0))
+/**
+ * The sidebar sections, in display order, with the Add-ons section while a plugin declares a menu item;
+ * a section with no item left draws no label.
+ */
+const sections = computed<NavSection[]>(() => withAddons(NAV_SECTIONS, pluginUi.menu).filter((section) => section.items.length > 0))
 
 /** First letter of the account label, for the footer tile. */
 const adminInitial = computed<string>(() => t('common.admin').charAt(0).toUpperCase())
+
+/**
+ * The label of a top-level entry: the panel's own through its i18n key, a plugin's as the API sent it.
+ *
+ * @param item - The entry.
+ * @returns The label to draw.
+ */
+const labelOf = (item: NavItem): string => (item.labelKey === undefined ? item.label : t(item.labelKey))
 
 /**
  * Turns SVG path data into the shape markup `UiIcon` draws.
@@ -119,6 +134,10 @@ const handleLogout = async (): Promise<void> => {
  * @returns True if the current route matches.
  */
 const isActive = (item: NavItem): boolean => {
+  // A plugin's entries nest inside each other (`/apps/x` and `/apps/x/usage`): only the page on screen is marked.
+  if (item.labelKey === undefined) {
+    return activePath.value === item.to
+  }
   if (item.to !== AppRoute.Dashboard && activePath.value.startsWith(item.to)) {
     return true
   }
@@ -166,6 +185,15 @@ const isExpanded = (item: NavItem): boolean => {
   }
   return item.children !== undefined && isActive(item)
 }
+
+onMounted(() => {
+  void pluginUi.loadUi()
+})
+
+// The plugins' labels come in the operator's language, so a language switch reads the index again.
+watch(locale, () => {
+  void pluginUi.loadUi(true)
+})
 </script>
 
 <template>
@@ -203,7 +231,7 @@ const isExpanded = (item: NavItem): boolean => {
                 @click="toggleExpand(item.to)"
               >
                 <UiIcon :markup="iconMarkup(item.icon)" size="sm" :class="isActive(item) ? 'text-primary-400' : 'opacity-60'" />
-                <span class="flex-1">{{ t(item.labelKey) }}</span>
+                <span class="flex-1">{{ labelOf(item) }}</span>
                 <UiIcon :markup="CHEVRON_MARKUP" size="sm" class="text-text-muted transition-transform duration-300" :class="isExpanded(item) ? 'rotate-90' : ''" />
               </UiButton>
 
@@ -254,7 +282,7 @@ const isExpanded = (item: NavItem): boolean => {
               @click="emit('navigate')"
             >
               <UiIcon :markup="iconMarkup(item.icon)" size="sm" :class="isActive(item) ? 'text-primary-400' : 'opacity-60'" />
-              <span>{{ t(item.labelKey) }}</span>
+              <span>{{ labelOf(item) }}</span>
             </UiLink>
           </template>
         </UiStack>

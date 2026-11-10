@@ -1,6 +1,6 @@
-using Innovayse.Hostpanel.Application.Common.Errors;
 using System.Net;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Shared.Constants;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Domains;
@@ -19,6 +19,7 @@ public sealed class GetMyDomainWhoisTests(IntegrationTestFactory factory) : ICla
     /// answers a <em>different</em> 404: <c>DOMAIN_WHOIS_NOT_FOUND</c>. The two land on the same
     /// status but are distinguishable by code, which is the point of a code at all.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetWhois_RefusesAStrangerAndAnswersTheRegistrarsOwnNotFoundForTheOwnerAsync()
     {
@@ -38,6 +39,7 @@ public sealed class GetMyDomainWhoisTests(IntegrationTestFactory factory) : ICla
     /// The registrar is asked about the domain's full stored name (<c>label.com</c>) exactly as it
     /// is, never with the TLD appended a second time (<c>label.com.com</c>).
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetWhois_AsksTheRegistrarForTheFullDomainNameAsync()
     {
@@ -54,6 +56,7 @@ public sealed class GetMyDomainWhoisTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetWhois_WithoutToken_Returns401Async()
     {
@@ -65,6 +68,7 @@ public sealed class GetMyDomainWhoisTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetWhois_WithNonPositiveId_Returns400ValidationErrorAsync()
     {

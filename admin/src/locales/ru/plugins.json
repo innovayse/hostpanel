@@ -13,7 +13,13 @@
     "refused": "Отклонён",
     "staged": "Версия {version} подготовлена, применится после перезапуска",
     "brokenRule": "{id} · нарушенное правило: {rule}",
-    "updateAvailable": "Доступно обновление: {version}"
+    "updateAvailable": "Доступно обновление: {version}",
+    "showNotes": "Что нового в {version}",
+    "hideNotes": "Скрыть список изменений",
+    "noNotes": "У этой версии нет списка изменений.",
+    "whatChanged": "Что изменится в {to}",
+    "showUpdateNotes": "Что нового в {version}",
+    "hideUpdateNotes": "Скрыть, что нового"
   },
   "pluginUploader": {
     "dropYourPlugin": "Перетащите плагин",
@@ -22,6 +28,26 @@
     "orClickToBrowseFiles": "или нажмите, чтобы выбрать файл",
     "valueKbReadyToInstall": "{value} КБ · готово к установке",
     "installPlugin": "Установить плагин"
+  },
+  "pluginInstallDialog": {
+    "title": "Установить {name} {version}?",
+    "byAuthor": "автор: {author}",
+    "requests": "Плагин запрашивает",
+    "noRequests": "Никакого доступа к хостингу клиентов и никаких дополнительных возможностей.",
+    "changelog": "Что нового в этой версии",
+    "noChangelog": "Плагин не указал изменений для этой версии.",
+    "rangeBetween": "Работает с версиями сервера от {min} до {max}.",
+    "rangeFrom": "Работает с версией сервера {min} и новее.",
+    "rangeUpTo": "Работает с версиями сервера до {max}.",
+    "incompatible": "Этот плагин не работает с версией этого сервера {host}. {range}",
+    "install": "Установить",
+    "hostAccess": {
+      "ssh": "Выполнять команды в хостинг-аккаунте клиента по SSH"
+    },
+    "capabilities": {
+      "endpoints": "Добавлять свои страницы, меню и виджеты в панели",
+      "storedCredentials": "Списывать оплату с сохранённых карт и платёжных аккаунтов"
+    }
   },
   "restartBanner": {
     "restartRequired": "Требуется перезапуск",
@@ -60,7 +86,10 @@
     "pluginStaged": "Версия {version} загружена и подготовлена. Она заменит установленную после перезапуска сервера.",
     "tabInstalled": "Установленные",
     "tabBrowse": "Каталог",
-    "registryInstalled": "Плагин установлен из каталога."
+    "registryInstalled": "Плагин установлен из каталога.",
+    "confirmUpdateTitle": "Обновить плагин?",
+    "confirmUpdateMessage": "Обновить {id} до версии {version}? Изменение вступит в силу после перезапуска сервера.",
+    "confirmUpdate": "Обновить"
   },
   "pluginSlotWidgets": {
     "title": "Виджеты слотов: {plugin}",
@@ -114,7 +143,11 @@
     },
     "tag": "#{tag}",
     "moreTags": "+{count}",
-    "downloads": "Загрузок: {count}"
+    "downloads": "Загрузок: {count}",
+    "whatChanged": "Что изменилось",
+    "showNotes": "Что нового в {version}",
+    "hideNotes": "Скрыть, что нового",
+    "noNotes": "У этой версии нет списка изменений."
   },
   "registryTrust": {
     "title": "Доверие к каталогу",
@@ -168,5 +201,15 @@
     "unavailable": "Не удалось показать этот виджет.",
     "timedOut": "Этот виджет слишком долго загружается.",
     "hideNotSeeded": "Настройки {key} нет на этом сервере, поэтому виджет нельзя скрыть."
+  },
+  "pluginPage": {
+    "notFoundTitle": "Страница не найдена",
+    "tableEmpty": "Пока нечего показать.",
+    "chatMessage": "Сообщение",
+    "chatSend": "Отправить",
+    "chatStop": "Остановить",
+    "chatResultDetails": "Подробнее",
+    "chatStepStopped": "остановлено",
+    "chatStepsCount": "Выполнено {done} из {total}"
   }
 }

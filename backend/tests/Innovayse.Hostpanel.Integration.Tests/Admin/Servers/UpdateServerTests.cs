@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
-using Innovayse.Hostpanel.Domain.Servers.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 
@@ -14,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 public sealed class UpdateServerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Creating then updating a server round-trips its new name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenUpdate_RoundTripsAsync()
     {
@@ -34,6 +34,7 @@ public sealed class UpdateServerTests(IntegrationTestFactory factory) : IClassFi
     /// The list says a credential is stored without returning it; an update with the field empty
     /// keeps it, and an explicit clear removes it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Credentials_AreReportedKeptOnBlankAndRemovedOnClearAsync()
     {
@@ -56,6 +57,7 @@ public sealed class UpdateServerTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Updating an unknown server id answers 404 with <c>SERVER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownId_RefusesNotFoundAsync()
     {
@@ -70,6 +72,7 @@ public sealed class UpdateServerTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -82,6 +85,7 @@ public sealed class UpdateServerTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

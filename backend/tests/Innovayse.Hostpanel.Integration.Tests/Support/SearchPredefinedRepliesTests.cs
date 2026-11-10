@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class SearchPredefinedRepliesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can search predefined replies and finds a match by content.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanSearchRepliesAsync()
     {
@@ -33,6 +34,7 @@ public sealed class SearchPredefinedRepliesTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An empty search term is refused before any query runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SearchRefusesAnEmptyTermAsync()
     {
@@ -44,6 +46,7 @@ public sealed class SearchPredefinedRepliesTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The search route is closed to a caller with no credential.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

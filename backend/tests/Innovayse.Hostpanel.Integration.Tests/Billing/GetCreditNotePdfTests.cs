@@ -22,6 +22,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetCreditNotePdfTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin downloads the note as a PDF attachment named after its number, with its content on it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_ReturnsAPdfAttachmentNamedAfterTheNumber()
     {
@@ -45,6 +46,7 @@ public sealed class GetCreditNotePdfTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A voided note downloads too, stamped as voided, so the record stays complete.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_OfAVoidedNote_IsStamped()
     {
@@ -62,6 +64,7 @@ public sealed class GetCreditNotePdfTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A note with more lines than <c>InvoicePdf:MaxLines</c> is refused before anything is rendered.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_RefusesANoteOverTheLineLimit()
     {
@@ -89,6 +92,7 @@ public sealed class GetCreditNotePdfTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>With the only render slot taken, the download answers 503 with the configured <c>Retry-After</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_AnswersBusyWhenNoRenderSlotFrees()
     {
@@ -108,6 +112,7 @@ public sealed class GetCreditNotePdfTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An id that names no note answers 404 with its code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_UnknownId_Returns404()
     {
@@ -120,6 +125,7 @@ public sealed class GetCreditNotePdfTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The staff download is not for anonymous callers or clients.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_IsStaffOnly()
     {
@@ -148,12 +154,12 @@ public sealed class GetCreditNotePdfTests(IntegrationTestFactory factory) : ICla
             (StatusCodes.Status404NotFound, typeof(ErrorResponse)),
             (StatusCodes.Status503ServiceUnavailable, typeof(ErrorResponse)),
         });
-        Declared(issue).Select(d => d.Item1).Should().BeEquivalentTo(new[]
+        Declared(issue).Select(d => d.StatusCode).Should().BeEquivalentTo(new[]
         {
             StatusCodes.Status201Created, StatusCodes.Status400BadRequest, StatusCodes.Status401Unauthorized, StatusCodes.Status403Forbidden,
             StatusCodes.Status404NotFound, StatusCodes.Status409Conflict, StatusCodes.Status502BadGateway, StatusCodes.Status503ServiceUnavailable,
         });
-        Declared(voidAction).Select(d => d.Item1).Should().BeEquivalentTo(new[]
+        Declared(voidAction).Select(d => d.StatusCode).Should().BeEquivalentTo(new[]
         {
             StatusCodes.Status204NoContent, StatusCodes.Status400BadRequest, StatusCodes.Status401Unauthorized, StatusCodes.Status403Forbidden,
             StatusCodes.Status404NotFound, StatusCodes.Status409Conflict,
@@ -163,6 +169,6 @@ public sealed class GetCreditNotePdfTests(IntegrationTestFactory factory) : ICla
     /// <summary>Reads the statuses and body types an action declares.</summary>
     /// <param name="action">The controller action.</param>
     /// <returns>The status and type pairs.</returns>
-    private static List<(int, Type)> Declared(MethodInfo action) =>
+    private static List<(int StatusCode, Type Type)> Declared(MethodInfo action) =>
         [.. action.GetCustomAttributes<ProducesResponseTypeAttribute>().Select(a => (a.StatusCode, a.Type))];
 }

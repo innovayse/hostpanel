@@ -3,7 +3,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +30,7 @@ public static class CreditTestSeeds
     /// <summary>Reads the client's invoice from the database with its payments.</summary>
     /// <param name="host">The host whose database is read.</param>
     /// <param name="invoiceId">The invoice.</param>
-    /// <returns>The invoice.</returns>
+    /// <returns>The invoice as stored.</returns>
     public static async Task<Invoice> InvoiceAsync(WebApplicationFactory<Program> host, int invoiceId)
     {
         using var scope = host.Services.CreateScope();

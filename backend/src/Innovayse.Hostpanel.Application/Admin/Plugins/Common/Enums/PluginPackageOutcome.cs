@@ -62,4 +62,10 @@ public enum PluginPackageOutcome
 
     /// <summary>No uploaded plugin with that id exists.</summary>
     NotFound,
+
+    /// <summary>
+    /// The running Hostpanel version is below the package's <c>minHostVersion</c> or above its <c>maxHostVersion</c>;
+    /// a bound the manifest leaves out is no limit.
+    /// </summary>
+    HostVersionOutOfRange,
 }

@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
 
 namespace Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -17,5 +16,5 @@ public interface IRegistrarProviderFactory
     /// <exception cref="System.ArgumentOutOfRangeException">
     /// Thrown when <paramref name="module"/> does not have a registered provider.
     /// </exception>
-    IRegistrarProvider GetProvider(RegistrarModule module);
+    public IRegistrarProvider GetProvider(RegistrarModule module);
 }

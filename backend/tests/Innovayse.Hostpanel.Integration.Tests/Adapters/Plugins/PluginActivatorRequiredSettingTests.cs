@@ -1,10 +1,10 @@
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Payment;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Manifest;
-using Hostpanel.Sdk.Plugins.Payment;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
@@ -67,6 +67,7 @@ public sealed class PluginActivatorRequiredSettingTests(IntegrationTestFactory f
     }
 
     /// <summary>A required setting of a version 2 manifest that is stored lets the plugin activate.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RequiredSetting_Stored_Activates()
     {
@@ -78,6 +79,7 @@ public sealed class PluginActivatorRequiredSettingTests(IntegrationTestFactory f
     }
 
     /// <summary>A required setting of a version 2 manifest that is not stored keeps the plugin out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RequiredSetting_Missing_IsRequiredSettingMissing()
     {
@@ -89,6 +91,7 @@ public sealed class PluginActivatorRequiredSettingTests(IntegrationTestFactory f
     }
 
     /// <summary>A required setting stored as blank text counts as missing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RequiredSetting_Blank_IsRequiredSettingMissing()
     {
@@ -100,6 +103,7 @@ public sealed class PluginActivatorRequiredSettingTests(IntegrationTestFactory f
     }
 
     /// <summary>A manifest with only legacy fields still gates on its required field, through the fallback.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RequiredLegacyField_Missing_IsRequiredSettingMissing()
     {
@@ -111,6 +115,7 @@ public sealed class PluginActivatorRequiredSettingTests(IntegrationTestFactory f
     }
 
     /// <summary>A manifest with only legacy fields activates once its required field is stored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RequiredLegacyField_Stored_Activates()
     {
@@ -122,6 +127,7 @@ public sealed class PluginActivatorRequiredSettingTests(IntegrationTestFactory f
     }
 
     /// <summary>When a manifest lists settings, a legacy required field no longer gates the plugin: the settings supersede.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SettingsSupersedeFields_LegacyRequiredFieldIsIgnored()
     {

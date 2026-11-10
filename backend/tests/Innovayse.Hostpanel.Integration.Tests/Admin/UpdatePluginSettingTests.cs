@@ -22,6 +22,7 @@ public sealed class UpdatePluginSettingTests(IntegrationTestFactory factory) : I
     private const string AuditPrefix = "Changed Setting - Setting: plugins.allow_unsigned";
 
     /// <summary>Turning the setting on and off again writes one system-wide audit line per change, naming both values.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EveryChangeOfAllowUnsigned_IsWrittenToTheActivityLogAsync()
     {
@@ -47,6 +48,7 @@ public sealed class UpdatePluginSettingTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Saving the value the setting already has changes nothing and so writes no audit line.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SavingTheSameValue_WritesNoAuditLineAsync()
     {
@@ -60,6 +62,7 @@ public sealed class UpdatePluginSettingTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Any value but <c>true</c> or <c>false</c> is refused with <c>INVALID_SETTING_VALUE</c> and nothing is logged.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AValueThatIsNotABoolean_IsRefusedAsync()
     {

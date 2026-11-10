@@ -37,6 +37,7 @@ public sealed class CreditBalanceTemplatesSeederTests(IntegrationTestFactory fac
 
     /// <summary>The mail prints the change, the new balance, the currency and the link, with nothing left unfilled.</summary>
     /// <param name="language">The language under test.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("en")]
     [InlineData("ru")]
@@ -50,6 +51,7 @@ public sealed class CreditBalanceTemplatesSeederTests(IntegrationTestFactory fac
     }
 
     /// <summary>The Russian and Armenian versions are written in their own scripts.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheTranslationsAreReallyTranslated()
     {
@@ -58,6 +60,7 @@ public sealed class CreditBalanceTemplatesSeederTests(IntegrationTestFactory fac
     }
 
     /// <summary>Seeding again leaves an edit the operator made alone and adds nothing twice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SeedingAgain_KeepsTheOperatorsEditAndAddsNothing()
     {

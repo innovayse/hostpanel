@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class DeleteOrderTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An id nothing names answers 404 with <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderRefusesNotFound()
     {
@@ -29,6 +30,7 @@ public sealed class DeleteOrderTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A pending order can be permanently deleted.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRemovesAPendingOrder()
     {
@@ -45,6 +47,7 @@ public sealed class DeleteOrderTests(IntegrationTestFactory factory) : IClassFix
     /// Deleting a pending order cancels its open invoice through Billing in the same flow, so no
     /// invoice is left to be paid for an order that is gone.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteCancelsThePendingOrdersOpenInvoice()
     {
@@ -65,6 +68,7 @@ public sealed class DeleteOrderTests(IntegrationTestFactory factory) : IClassFix
     /// A pending order whose invoice already took the payment is not deleted: Billing refuses to
     /// cancel a paid invoice, and the order stays for its fulfilment.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnOrderWhoseInvoiceIsPaid()
     {
@@ -89,6 +93,7 @@ public sealed class DeleteOrderTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An active order may not be deleted; only Pending or Cancelled ones may.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnActiveOrder()
     {
@@ -102,6 +107,7 @@ public sealed class DeleteOrderTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Deleting is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -113,6 +119,7 @@ public sealed class DeleteOrderTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A plain client caller, who is not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAClientCaller()
     {

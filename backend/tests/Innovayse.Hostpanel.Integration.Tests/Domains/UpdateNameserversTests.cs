@@ -17,6 +17,7 @@ public sealed class UpdateNameserversTests(IntegrationTestFactory factory) : ICl
     /// <c>PUT /api/domains/{id}/nameservers</c> with <c>{ nameservers: ["ns1", "ns2"] }</c>, the exact
     /// shape <c>ClientDomainDetailView.vue</c> sends, succeeds with two entries.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateNameservers_WithTwoEntries_Returns204Async()
     {
@@ -33,6 +34,7 @@ public sealed class UpdateNameserversTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Fewer than two nameservers refuses with 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateNameservers_WithOneEntry_Returns400Async()
     {
@@ -48,6 +50,7 @@ public sealed class UpdateNameserversTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateNameservers_WithoutToken_Returns401Async()
     {

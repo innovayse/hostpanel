@@ -2,12 +2,10 @@ using Innovayse.Hostpanel.Application.Admin.Commands.CheckReleaseUpdatesCron;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Admin;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Wolverine;
 using Wolverine.Tracking;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Admin;

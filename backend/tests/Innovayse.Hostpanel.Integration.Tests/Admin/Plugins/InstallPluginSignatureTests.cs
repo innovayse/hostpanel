@@ -5,9 +5,7 @@ using Hostpanel.Sdk.Packaging.Signing;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures.Enums;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +23,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A package signed by a trusted key installs on a host that enforces signatures.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SignedPackage_InstallsOnAnEnforcingHostAsync()
     {
@@ -36,7 +35,7 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
             var response = await PluginsTestSeeds.InstallAsync(client, PluginSigningTestSeeds.SignedZip(pluginId));
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
-            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(pluginId), PluginSignatureFile.FileName)).Should().BeTrue();
+            File.Exists(Path.Combine(PluginsTestSeeds.InstalledFolder(factory, pluginId), PluginSignatureFile.FileName)).Should().BeTrue();
         }
         finally
         {
@@ -50,6 +49,7 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
     /// </summary>
     /// <param name="flaw">What is wrong with the package.</param>
     /// <param name="code">The error code the rule answers with.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(PluginPackageFlaw.Unsigned, "PLUGIN_UNSIGNED")]
     [InlineData(PluginPackageFlaw.Tampered, "PLUGIN_SIGNATURE_INVALID")]
@@ -66,13 +66,14 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         body.RootElement.GetProperty("type").GetString().Should().Be(code);
         body.RootElement.GetProperty("detail").GetString().Should().MatchRegex("[А-Яа-яЁё]").And.NotContain("PLUGIN_");
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>
     /// An upgrade of an installed plugin is signature-checked like a first install: an unsigned newer version is
     /// refused with <c>PLUGIN_UNSIGNED</c> and nothing is staged.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnEnforcingHost_RefusesAnUnsignedUpgradeAndStagesNothingAsync()
     {
@@ -86,7 +87,7 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
 
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             await PluginsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PLUGIN_UNSIGNED);
-            Directory.Exists(PluginsTestSeeds.StagedFolder(pluginId)).Should().BeFalse("a refused upgrade is never staged");
+            Directory.Exists(PluginsTestSeeds.StagedFolder(factory, pluginId)).Should().BeFalse("a refused upgrade is never staged");
         }
         finally
         {
@@ -95,6 +96,7 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A <c>plugin.sig</c> that cannot be read is refused as <c>PLUGIN_SIGNATURE_MALFORMED</c>, in Armenian when asked.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnEnforcingHost_RefusesAnUnreadableSignatureAsync()
     {
@@ -110,13 +112,14 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
         using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
         body.RootElement.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.PLUGIN_SIGNATURE_MALFORMED);
         body.RootElement.GetProperty("detail").GetString().Should().MatchRegex("[Ա-Ֆա-ֆ]");
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
     }
 
     /// <summary>
     /// With the admin setting "allow unsigned plugins" on, an enforcing host installs an unsigned package; turned off
     /// again, the very next unsigned upload is refused.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheAllowUnsignedSetting_AdmitsAnUnsignedPackageUntilItIsTurnedOffAsync()
     {
@@ -147,6 +150,7 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The setting is seeded off, so an enforcing host refuses an unsigned package out of the box.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheAllowUnsignedSetting_IsSeededOffAsync()
     {
@@ -159,6 +163,7 @@ public sealed class InstallPluginSignatureTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A Development or Testing host installs an unsigned package without the setting.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ADevelopmentHost_InstallsAnUnsignedPackageAsync()
     {

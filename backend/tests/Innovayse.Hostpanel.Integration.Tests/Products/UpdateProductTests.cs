@@ -22,6 +22,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Updating an unknown product id answers 404 with <c>PRODUCT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_UnknownId_RefusesNotFound()
     {
@@ -39,6 +40,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A currency left out of an update's price list is removed from the product.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_PriceList_DropsACurrencyLeftOut()
     {
@@ -75,6 +77,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     /// The three newer cycles are stored and read back under their own names, and a list written in the
     /// two-cycle shape (no keys for them) still saves and leaves them unpriced.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_PriceList_StoresTheNewCyclesAndAcceptsTheTwoCycleShape()
     {
@@ -115,6 +118,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     /// A save from the legacy two-figure form speaks only for the base currency's monthly and annual prices:
     /// the quarterly, semi-annual and biennial prices the product already has there survive it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_LegacyPair_KeepsTheBaseCurrencyNewCycles()
     {
@@ -147,6 +151,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
 
     /// <summary>A negative amount for a newer cycle is refused as a 400, like one for monthly.</summary>
     /// <param name="cycle">The JSON name of the cycle given the negative amount.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("quarterly")]
     [InlineData("semiAnnual")]
@@ -172,6 +177,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An empty price list on update clears every price, and the product becomes unsellable.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_EmptyPriceList_MakesTheProductUnsellable()
     {
@@ -202,6 +208,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     /// The legacy pair sent without a list replaces only the base currency's rows; a currency
     /// priced through the list earlier is left untouched.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_LegacyPairWithoutAList_ReplacesOnlyTheBaseCurrency()
     {
@@ -238,6 +245,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Featuring a product on update clears the flag on its group's other featured product.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_Featured_ClearsTheSiblingsFlag()
     {
@@ -259,6 +267,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Featuring in one group leaves another group's featured product alone.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_Featured_DoesNotTouchOtherGroups()
     {
@@ -277,6 +286,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An update that omits the flag and the order keeps what is stored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_WithoutFeaturedAndSortOrder_KeepsThem()
     {
@@ -299,6 +309,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The product list is ordered by sort order first, then by name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_SortOrder_DrivesTheListOrder()
     {
@@ -321,6 +332,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A negative sort order on update is refused with 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_NegativeSortOrder_IsRefused()
     {
@@ -357,6 +369,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>PUT /api/products/{id} without auth returns 401 Unauthorized.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_Returns401_WithoutAuth()
     {
@@ -367,6 +380,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The SKU, metadata and grace period sent on update are stored and returned, the SKU normalised.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_FulfilmentFields_AreStoredAndReturned()
     {
@@ -387,6 +401,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     /// An update that omits the fulfilment fields keeps what is stored, so a form that does not know them
     /// never wipes them.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_WithoutFulfilmentFields_KeepsThem()
     {
@@ -406,6 +421,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An empty SKU and empty metadata on update clear both.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_EmptySkuAndMetadata_ClearThem()
     {
@@ -423,6 +439,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Sending the product's own SKU again, in another case, is not a clash with itself.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_KeepingItsOwnSku_Succeeds()
     {
@@ -437,6 +454,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A SKU another product holds is refused with 409 <c>PRODUCT_SKU_ALREADY_IN_USE</c> and nothing is changed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_SkuOfAnotherProduct_RefusesWithConflict()
     {
@@ -460,6 +478,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     /// index, and the handler answers 409 <c>PRODUCT_SKU_ALREADY_IN_USE</c> rather than a server error,
     /// leaving the product as it was.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_SkuTakenDuringTheSave_RefusesWithConflict()
     {
@@ -480,6 +499,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A malformed SKU on update is refused with 400 naming the field.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_MalformedSku_IsRefused()
     {
@@ -492,6 +512,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Metadata that is not a JSON object on update is refused with 400 naming the field.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_MetadataThatIsNotAnObject_IsRefused()
     {
@@ -504,6 +525,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Metadata over the 16 KB cap on update is refused with 400 naming the field.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateProduct_MetadataOverTheSizeCap_IsRefused()
     {
@@ -518,6 +540,7 @@ public sealed class UpdateProductTests(IntegrationTestFactory factory) : IClassF
 
     /// <summary>A grace period outside 0 to 365 days on update is refused with 400 naming the field.</summary>
     /// <param name="days">A grace period just outside either bound.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(Product.MinGracePeriodDays - 1)]
     [InlineData(Product.MaxGracePeriodDays + 1)]

@@ -54,6 +54,7 @@ public sealed class BankTransferTemplatesSeederTests(IntegrationTestFactory fact
 
     /// <summary>The client mail prints the amount, the reference and every bank detail that is set, and skips the ones that are not.</summary>
     /// <param name="language">The language under test.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("en")]
     [InlineData("ru")]
@@ -80,6 +81,7 @@ public sealed class BankTransferTemplatesSeederTests(IntegrationTestFactory fact
 
     /// <summary>The staff notice names the invoice, the client, the reference and the amount.</summary>
     /// <param name="language">The language under test.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("en")]
     [InlineData("ru")]
@@ -100,6 +102,7 @@ public sealed class BankTransferTemplatesSeederTests(IntegrationTestFactory fact
 
     /// <summary>The confirmation prints the reference and the amount that arrived.</summary>
     /// <param name="language">The language under test.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("en")]
     [InlineData("ru")]
@@ -119,6 +122,7 @@ public sealed class BankTransferTemplatesSeederTests(IntegrationTestFactory fact
 
     /// <summary>The rejection prints the reason, escaped, and the reference.</summary>
     /// <param name="language">The language under test.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("en")]
     [InlineData("ru")]

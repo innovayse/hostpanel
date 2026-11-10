@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Installing then listing shows the plugin, not loaded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InstallThenList_ShowsThePluginAsync()
     {
@@ -44,6 +45,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The list shows the capabilities a manifest declares, as the SDK spells them, and an empty list for none (#818).</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task APluginDeclaringCapabilities_ListsThemAsync()
     {
@@ -73,7 +75,50 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
         }
     }
 
+    /// <summary>
+    /// The list shows the host access, changelog and supported host versions a manifest declares, and empty or null
+    /// values for a manifest without them (#937).
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task APluginDeclaringItsRequirements_ListsThemAsync()
+    {
+        var client = await PluginsTestSeeds.AdminClientAsync(factory);
+        var pluginId = $"test-plugin-{Guid.NewGuid():N}";
+        var plainId = $"test-plugin-{Guid.NewGuid():N}";
+        var zip = PluginsTestSeeds.BuildZip(new Dictionary<string, string>
+        {
+            ["plugin.json"] = PluginsTestSeeds.ManifestJson(
+                pluginId,
+                ",\"manifestVersion\":2,\"hostAccess\":[\"ssh\"],\"changelog\":\"First release.\",\"minHostVersion\":\"0.1.0\",\"maxHostVersion\":\"99.0.0\""),
+        });
+
+        try
+        {
+            (await PluginsTestSeeds.InstallAsync(client, zip)).StatusCode.Should().Be(HttpStatusCode.OK);
+            (await PluginsTestSeeds.InstallAsync(client, PluginsTestSeeds.BuildValidPluginZip(plainId))).StatusCode.Should().Be(HttpStatusCode.OK);
+
+            var list = await client.GetFromJsonAsync<List<JsonElement>>("/api/admin/plugins");
+
+            var row = list!.Single(p => p.GetProperty("id").GetString() == pluginId);
+            row.GetProperty("hostAccess").EnumerateArray().Select(c => c.GetString()).Should().Equal("ssh");
+            row.GetProperty("changelog").GetString().Should().Be("First release.");
+            row.GetProperty("minHostVersion").GetString().Should().Be("0.1.0");
+            row.GetProperty("maxHostVersion").GetString().Should().Be("99.0.0");
+            var plain = list!.Single(p => p.GetProperty("id").GetString() == plainId);
+            plain.GetProperty("hostAccess").GetArrayLength().Should().Be(0);
+            plain.GetProperty("changelog").ValueKind.Should().Be(JsonValueKind.Null);
+            plain.GetProperty("minHostVersion").ValueKind.Should().Be(JsonValueKind.Null);
+        }
+        finally
+        {
+            await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
+            await client.DeleteAsync($"/api/admin/plugins/{plainId}");
+        }
+    }
+
     /// <summary>A plugin in the build output's plugin folder is listed as built-in.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ABuiltInPlugin_IsMarkedBuiltInAsync()
     {
@@ -98,6 +143,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
     /// A plugin the loader refused for a broken manifest rule is listed as refused, with its rule and detail, and never
     /// as loaded; a plugin that loaded stays a loaded row with no rule.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusedPlugin_IsListedAsRefusedAndALoadedOneStaysUnchangedAsync()
     {
@@ -135,6 +181,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A loaded plugin that ships an icon carries the icon endpoint as <c>iconUrl</c>; one without, and a refused row, carry null.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IconUrl_IsSetOnlyForALoadedPluginWithAnIconAsync()
     {
@@ -164,6 +211,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A refused upload is removed like any other: the folder goes and the row with it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusedUpload_CanBeRemovedAsync()
     {
@@ -178,7 +226,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
         var remove = await client.DeleteAsync($"/api/admin/plugins/{pluginId}");
 
         remove.StatusCode.Should().Be(HttpStatusCode.OK);
-        Directory.Exists(PluginsTestSeeds.InstalledFolder(pluginId)).Should().BeFalse();
+        Directory.Exists(PluginsTestSeeds.InstalledFolder(factory, pluginId)).Should().BeFalse();
         (await NewHandler(registry).HandleAsync(new ListPluginsQuery(), CancellationToken.None))
             .Value!.Should().NotContain(r => r.Id == pluginId, "the refusal belongs to the startup snapshot; with the folder gone there is no row");
     }
@@ -196,6 +244,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -207,6 +256,7 @@ public sealed class ListPluginsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -16,6 +16,7 @@ public sealed class DailyPerformanceTests(IntegrationTestFactory factory) : ICla
     private static readonly DateTimeOffset Now = new(2026, 3, 15, 12, 0, 0, TimeSpan.Zero);
 
     /// <summary>A window with no activity still answers with one zero-filled row per day.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsOneRowPerDay()
     {
@@ -32,6 +33,7 @@ public sealed class DailyPerformanceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A start after the end is a malformed range, not a crash.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnInvertedRange()
     {
@@ -48,6 +50,7 @@ public sealed class DailyPerformanceTests(IntegrationTestFactory factory) : ICla
     /// An invoice counts as paid on the day it was paid, the last day of the range counts in full,
     /// and only an accepted order is a completed one.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CountsPaidInvoicesByPaidDayAndOnlyAcceptedOrders()
     {
@@ -63,6 +66,7 @@ public sealed class DailyPerformanceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -72,6 +76,7 @@ public sealed class DailyPerformanceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

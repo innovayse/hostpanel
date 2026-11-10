@@ -31,6 +31,13 @@ namespace Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 /// The version of a newer (or forced older) upload that waits to replace the running one at the next restart;
 /// <see langword="null"/> when nothing is staged.
 /// </param>
+/// <param name="HostAccess">
+/// The kinds of access to a client's hosting the manifest asks for (for example <c>ssh</c>), as the SDK spells them;
+/// empty when it asks for none and for a refused or removed row.
+/// </param>
+/// <param name="Changelog">The release notes of the installed version; <see langword="null"/> when none.</param>
+/// <param name="MinHostVersion">The lowest Hostpanel version the plugin runs on; <see langword="null"/> for no lower bound.</param>
+/// <param name="MaxHostVersion">The highest Hostpanel version the plugin runs on; <see langword="null"/> for no upper bound.</param>
 public sealed record PluginListItemDto(
     string Id,
     string Name,
@@ -47,4 +54,8 @@ public sealed record PluginListItemDto(
     PluginManifestRule? RefusedRule = null,
     string? RefusedDetail = null,
     string? StagedVersion = null,
-    string? IconUrl = null);
+    string? IconUrl = null,
+    IReadOnlyList<string>? HostAccess = null,
+    string? Changelog = null,
+    string? MinHostVersion = null,
+    string? MaxHostVersion = null);

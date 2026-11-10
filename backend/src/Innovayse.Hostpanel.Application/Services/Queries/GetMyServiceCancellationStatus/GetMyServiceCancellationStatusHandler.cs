@@ -1,8 +1,8 @@
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Application.Services.Queries.GetCancellationStatus;
 using Innovayse.Hostpanel.Shared.Models;
 using Wolverine;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
 
 namespace Innovayse.Hostpanel.Application.Services.Queries.GetMyServiceCancellationStatus;
 

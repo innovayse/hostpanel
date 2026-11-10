@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class CreateProductGroupTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Admin can create a product group and receives 201 Created with the new id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProductGroupAsync_ReturnsCreated_AsAdminAsync()
     {
@@ -25,6 +26,7 @@ public sealed class CreateProductGroupTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>POST /api/products/groups without auth returns 401 Unauthorized.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateProductGroupAsync_Returns401_WithoutAuthAsync()
     {

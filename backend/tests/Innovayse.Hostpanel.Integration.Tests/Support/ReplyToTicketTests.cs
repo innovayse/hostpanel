@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class ReplyToTicketTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Staff can reply to a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanReplyToATicketAsync()
     {
@@ -26,6 +27,7 @@ public sealed class ReplyToTicketTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The reply is recorded under the signed-in staff member's name, taken from the token.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReplyAuthorIsTheSignedInStaffMemberAsync()
     {
@@ -39,6 +41,7 @@ public sealed class ReplyToTicketTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A name supplied in the body is ignored: identity comes from the token only.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BodySuppliedAuthorNameIsIgnoredAsync()
     {
@@ -63,6 +66,7 @@ public sealed class ReplyToTicketTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Replying to a ticket that does not exist answers 404 with <c>TICKET_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReplyToUnknownTicketAnswersNotFoundAsync()
     {
@@ -76,6 +80,7 @@ public sealed class ReplyToTicketTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A caller with no credential cannot reply to a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

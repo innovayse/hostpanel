@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class DeleteTransactionTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Deleting a transaction reverses the credit it had added, then removes it from the ledger.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteReversesCreditThenRemovesTheTransaction()
     {
@@ -33,6 +34,7 @@ public sealed class DeleteTransactionTests(IntegrationTestFactory factory) : ICl
     /// Deleting an entry older than the credit history undoes its credit move and writes that undoing to the history, so the
     /// history still adds up to what the balance moved by since.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeletingALegacyEntry_RecordsTheReversal()
     {
@@ -56,6 +58,7 @@ public sealed class DeleteTransactionTests(IntegrationTestFactory factory) : ICl
     /// An entry written after the credit history existed is part of it and is not deleted: a delete would take the line out
     /// of the history while the balance moved, so the answer is 409 and nothing changes.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeletingAnEntryOfTheHistory_IsRefused()
     {
@@ -75,6 +78,7 @@ public sealed class DeleteTransactionTests(IntegrationTestFactory factory) : ICl
     /// Deleting a transaction whose credit has already been spent answers 400 with
     /// <c>CLIENT_CREDIT_INSUFFICIENT</c> and keeps both the transaction and the balance.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesWhenTheAddedCreditIsSpent()
     {
@@ -95,6 +99,7 @@ public sealed class DeleteTransactionTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Deleting an id that names no transaction answers 404 with <c>TRANSACTION_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteUnknownTransactionRefusesNotFound()
     {
@@ -107,6 +112,7 @@ public sealed class DeleteTransactionTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Deleting a transaction is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesAnonymous()
     {

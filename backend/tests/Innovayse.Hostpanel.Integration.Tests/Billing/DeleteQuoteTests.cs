@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class DeleteQuoteTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Deleting a quote removes it: a later read answers 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRemovesTheQuote()
     {
@@ -26,6 +27,7 @@ public sealed class DeleteQuoteTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Deleting an id that names no quote answers 404 with <c>QUOTE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteUnknownQuoteRefusesNotFound()
     {
@@ -38,6 +40,7 @@ public sealed class DeleteQuoteTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Deleting a quote is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesAnonymous()
     {

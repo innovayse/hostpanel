@@ -1,7 +1,7 @@
 /**
  * Pinia store for managing installed plugins.
  *
- * Handles list, install or upgrade (multipart ZIP), forced downgrade, remove, purge of the data a
+ * Handles list, the preview of a ZIP before its install (what it asks for), install or upgrade (multipart ZIP), forced downgrade, remove, purge of the data a
  * removed plugin kept, restart operations and the registry (browse with search, category and page,
  * the update list, install or update from it). The only caller of
  * `usePluginsApi`; a refused load is kept as the API's own sentence in `error`, a refused install or
@@ -19,6 +19,7 @@ import { PluginErrorCode, PluginStatus } from '@/types/plugin'
 import type {
   PluginActionOutcome,
   PluginListItemDto,
+  PluginPackagePreviewDto,
   PluginRegistryItemDto,
   PluginRegistryQuery,
   RegistryInstanceDto,
@@ -104,6 +105,15 @@ export const usePluginsStore = defineStore('plugins', () => {
   /** Version the last install staged for the next restart, null when it staged nothing. */
   const stagedVersion = ref<string | null>(null)
 
+  /**
+   * The archive the admin picked and the server described, waiting for the admin to confirm the install after reading
+   * what it asks for; null when no upload waits for that decision.
+   */
+  const pendingFile = shallowRef<File | null>(null)
+
+  /** What {@link pendingFile} asks for, as the server read it; null when nothing waits. */
+  const preview = ref<PluginPackagePreviewDto | null>(null)
+
   /** Listings per registry page, as the server answered; 0 until the first page has loaded. */
   const registryPageSize = ref(0)
 
@@ -158,6 +168,11 @@ export const usePluginsStore = defineStore('plugins', () => {
   /** The newer version the registry offers, by installed plugin id; drives the update badge. */
   const updateVersions = computed<Record<string, string>>(() =>
     Object.fromEntries(registryUpdates.value.map(item => [item.id, item.latestVersion])),
+  )
+
+  /** The release notes of the newer version the registry offers, by installed plugin id; null when it sent none. */
+  const updateChangelogs = computed<Record<string, string | null>>(() =>
+    Object.fromEntries(registryUpdates.value.map(item => [item.id, item.latestChangelog ?? null])),
   )
 
   /** The plugins that are on disk (loaded or refused): every row except a removed plugin that only keeps data. */
@@ -220,6 +235,47 @@ export const usePluginsStore = defineStore('plugins', () => {
       await fetchAll()
     }
     return result.ok
+  }
+
+  /**
+   * Asks the server what an archive asks for (host access, capabilities, changelog, supported server versions) and
+   * keeps the answer for the confirmation dialog. Nothing is installed.
+   *
+   * @param file - The ZIP file selected by the admin.
+   * @returns True when the archive was described; false when refused (see `actionError`).
+   */
+  const inspect = async (file: File): Promise<boolean> => {
+    loading.value = true
+    pendingFile.value = null
+    preview.value = null
+    const result = await runAction(actionError, () => api.inspectPlugin(file))
+    loading.value = false
+    if (result.ok) {
+      pendingFile.value = file
+      preview.value = result.value
+    }
+    return result.ok
+  }
+
+  /**
+   * Installs the archive waiting for confirmation, now that the admin confirmed it.
+   *
+   * @returns True when installed; false when nothing waits or the server refused it.
+   */
+  const confirmInstall = async (): Promise<boolean> => {
+    const file = pendingFile.value
+    pendingFile.value = null
+    preview.value = null
+    if (file === null) {
+      return false
+    }
+    return install(file)
+  }
+
+  /** Drops the archive waiting for confirmation without installing it. */
+  const dismissPreview = (): void => {
+    pendingFile.value = null
+    preview.value = null
   }
 
   /**
@@ -565,12 +621,12 @@ export const usePluginsStore = defineStore('plugins', () => {
   }
 
   return {
-    plugins, loading, error, actionError, requiresRestart, downgradeFile, stagedVersion, installed, keptDataIds, slotWidgets, productOptions, slotWidgetsError, bindingError,
+    plugins, loading, error, actionError, requiresRestart, downgradeFile, stagedVersion, pendingFile, preview, installed, keptDataIds, slotWidgets, productOptions, slotWidgetsError, bindingError,
     registryPageSize, registryItems, registryTotal, registryQuery, registryLoading, registryError, registryDisabled, registryUpdates, registryUpdatesError,
-    registryInstallError, registryInstallingId, updateVersions, licenceError, registryDetails,
+    registryInstallError, registryInstallingId, updateVersions, updateChangelogs, licenceError, registryDetails,
     registryInstance, registryInstanceBusy, registryInstanceError,
     isBusy, fetchRegistryDetails, saveLicenceKey, removeLicenceKey,
     fetchRegistry, setRegistryFilter, fetchRegistryUpdates, fetchRegistryInstance, retryRegistryInstance, installFromRegistry,
-    fetchAll, install, forceDowngrade, dismissDowngrade, remove, purge, restart, fetchSlotWidgets, saveSlotWidgetProducts,
+    fetchAll, inspect, confirmInstall, dismissPreview, install, forceDowngrade, dismissDowngrade, remove, purge, restart, fetchSlotWidgets, saveSlotWidgetProducts,
   }
 })

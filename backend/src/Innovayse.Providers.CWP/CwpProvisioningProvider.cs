@@ -1,8 +1,7 @@
-using Innovayse.Providers.CWP.Models;
-using Innovayse.Providers.CWP.Models.Enums;
 using Hostpanel.Sdk.Base;
 using Hostpanel.Sdk.Plugins.HostingPanel;
-using Hostpanel.Sdk.Plugins.Provisioning;
+using Innovayse.Providers.CWP.Models;
+using Innovayse.Providers.CWP.Models.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 

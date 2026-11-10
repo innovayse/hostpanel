@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 public sealed class GetControlPanelSsoUrlTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Admin can obtain a control-panel single-sign-on URL for a provisioned service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetControlPanelSsoUrl_AdminCanGetUrlAsync()
     {
@@ -35,6 +36,7 @@ public sealed class GetControlPanelSsoUrlTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Requesting a control-panel sign-in link for a service with no assigned server answers 400 with <c>SERVICE_NO_SERVER_ASSIGNED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetControlPanelSsoUrl_ServiceHasNoServer_Returns400WithServiceNoServerAssigned()
     {
@@ -51,6 +53,7 @@ public sealed class GetControlPanelSsoUrlTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Requesting a control-panel sign-in link for an id no service takes answers 404 with <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetControlPanelSsoUrl_UnknownService_Returns404WithServiceNotFound()
     {
@@ -68,6 +71,7 @@ public sealed class GetControlPanelSsoUrlTests(IntegrationTestFactory factory) :
     /// A provider that refuses to issue a control-panel sign-in link answers 502 with
     /// <c>SERVICE_CPANEL_SSO_UPSTREAM_FAILED</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetControlPanelSsoUrl_ProviderRefuses_Returns502WithServiceCpanelSsoUpstreamFailed()
     {
@@ -89,6 +93,7 @@ public sealed class GetControlPanelSsoUrlTests(IntegrationTestFactory factory) :
     /// A provider that names an address not on its own server (its coded refusal) answers 502 with
     /// <c>SERVICE_CPANEL_SSO_URL_UPSTREAM_FAILED</c>, and only that code, whatever the provider's text.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetControlPanelSsoUrl_ProviderRejectsTheAddress_Returns502WithTheUrlCodeAsync()
     {
@@ -113,6 +118,7 @@ public sealed class GetControlPanelSsoUrlTests(IntegrationTestFactory factory) :
     /// The handler asks the provider for a link bound to the caller's resolved address: a panel that
     /// binds its session to the browser (Plesk) depends on it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetControlPanelSsoUrl_PassesTheCallersAddressToTheProviderAsync()
     {
@@ -137,6 +143,7 @@ public sealed class GetControlPanelSsoUrlTests(IntegrationTestFactory factory) :
     /// A terminated service keeps its reference but no longer has an account, so a sign-in link is
     /// refused with 400 <c>SERVICE_NOT_ACTIVE</c> instead of asking the panel.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetControlPanelSsoUrl_TerminatedService_Returns400WithServiceNotActiveAsync()
     {
@@ -153,6 +160,7 @@ public sealed class GetControlPanelSsoUrlTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Requesting a control-panel sign-in link without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetControlPanelSsoUrl_Returns401_WithoutAuthAsync()
     {

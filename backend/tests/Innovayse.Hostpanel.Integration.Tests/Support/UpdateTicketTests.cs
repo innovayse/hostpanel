@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class UpdateTicketTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can update a ticket's status.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanUpdateATicketAsync()
     {
@@ -29,6 +30,7 @@ public sealed class UpdateTicketTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Updating a ticket that does not exist answers 404 with <c>TICKET_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateUnknownTicketAnswersNotFoundAsync()
     {
@@ -41,6 +43,7 @@ public sealed class UpdateTicketTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A caller with no credential cannot update a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {
@@ -51,6 +54,7 @@ public sealed class UpdateTicketTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A priority given by name is applied to the ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanChangeThePriorityByNameAsync()
     {
@@ -67,6 +71,7 @@ public sealed class UpdateTicketTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A priority that names no priority is refused with 400 and leaves the ticket alone.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownPriorityIsRejectedAsync()
     {
@@ -79,6 +84,7 @@ public sealed class UpdateTicketTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A status that names no status is refused with 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownStatusIsRejectedAsync()
     {
@@ -91,6 +97,7 @@ public sealed class UpdateTicketTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Moving a ticket to a department that does not exist is refused 404 with <c>DEPARTMENT_NOT_FOUND</c> and changes nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownDepartmentIsRefusedNotFoundAsync()
     {

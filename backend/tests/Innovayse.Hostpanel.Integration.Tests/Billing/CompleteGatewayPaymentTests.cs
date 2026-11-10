@@ -1,9 +1,9 @@
-using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Application.Billing.Commands.CompleteGatewayPayment;
-using Innovayse.Hostpanel.Application.Billing.Extensions;
+using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -14,7 +14,6 @@ using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Infrastructure;
-using Hostpanel.Sdk.Plugins.Enums;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -80,6 +79,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         client.PostAsync($"/api/me/invoices/{invoiceId}/gateway-payment/complete", content: null);
 
     /// <summary>A gateway that reports Paid marks the invoice paid with the gateway's own transaction id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewaySaysPaidMarksPaidWithGatewayTransaction()
     {
@@ -121,6 +121,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// A gateway that reports a paid amount other than what the invoice owes is refused with
     /// <c>GATEWAY_PAYMENT_MISMATCH</c> and the invoice stays unpaid.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayReportingAnotherAmountIsRefused()
     {
@@ -145,6 +146,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A gateway that reports exactly the amount owed completes the payment.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayReportingTheOwedAmountMarksPaid()
     {
@@ -168,6 +170,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>An already-paid invoice answers Paid again without ever asking the gateway a second time.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AlreadyPaidIsIdempotentWithoutASecondGatewayCall()
     {
@@ -191,6 +194,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A gateway session still pending leaves the invoice unpaid and answers Pending.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PendingLeavesTheInvoiceUnpaid()
     {
@@ -213,6 +217,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A declined gateway session leaves the invoice unpaid and answers Declined.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeclinedLeavesTheInvoiceUnpaid()
     {
@@ -236,6 +241,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// <see cref="GatewayCompletionState.Paid"/> rather than surface that as a failure once the
     /// winner already recorded the payment.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConcurrentCompletionAlreadyWonReturnsPaidWithoutThrowing()
     {
@@ -272,6 +278,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// swallowed: the handler rethrows rather than answering <c>Paid</c> for a row that is still
     /// unpaid on reload.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConcurrentCompletionOtherWriterDidNotWinRethrows()
     {
@@ -318,6 +325,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// conflict (409), never as a server error: the unique index refuses the second row and nothing is
     /// recorded twice.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayReferenceAlreadyOnTheLedgerForAnotherPayment_IsAConflictAndNothingIsRecordedTwice()
     {
@@ -354,6 +362,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// the gateway then takes more than the invoice still owes: the invoice settles on what is due
     /// and the rest goes to the client's credit balance instead of the payment being refused.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaymentRecordedDuringTheSessionSettlesAndCreditsTheRest()
     {
@@ -400,6 +409,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// A paid status that reports no amount says nothing about what was taken: it is refused with
     /// <c>GATEWAY_PAYMENT_MISMATCH</c> and the invoice stays unpaid.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaidWithoutAnAmountIsAMismatch()
     {
@@ -424,6 +434,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// session took, which no payment records, goes whole to the client's balance once: the replay
     /// credits nothing more.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SessionPaidAfterAnotherPathSettledCreditsTheWholeAmountOnce()
     {
@@ -474,6 +485,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// the session keeps its state, so when the gateway later reports it paid the money is matched
     /// and goes whole to the client's balance, once, however often the completion is replayed.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminPaymentDuringAnOpenSessionThenGatewayPaidCreditsTheBalanceOnce()
     {
@@ -510,6 +522,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// gateway's money unrecordable on it: the conflict is caught, the money goes to the client's
     /// balance under the gateway's reference, and the answer is <c>INVOICE_NOT_PAYABLE</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConcurrentCancelCreditsTheGatewayPayment()
     {
@@ -548,6 +561,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// session) puts the surplus on the client's balance and tells staff exactly once, after the save:
     /// the replay finds the settled invoice and its ledger row and publishes nothing.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SurplusCreditedToTheBalance_PublishesOneAlertAndNoneOnReplay()
     {
@@ -573,6 +587,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// A session paid for an invoice another path already settled: the whole amount is kept on the
     /// client's balance, staff are told once with the amount credited, and a replay tells nobody.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaymentForAnAlreadySettledInvoice_PublishesOneCreditedAlertAndNoneOnReplay()
     {
@@ -595,6 +610,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// Money the client's balance cannot take (a client billed in another currency than the charge) is
     /// held for an operator, and the alert says it was not credited. It is sent once, not on replay.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaymentHeldForAnOperator_PublishesOneAlertMarkedNotCreditedAndNoneOnReplay()
     {
@@ -620,6 +636,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A payment of exactly what is due leaves nothing over, so no alert is published.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ExactPayment_PublishesNoAlert()
     {
@@ -636,6 +653,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// nothing more and staff are alerted once.
     /// </summary>
     /// <param name="blankReference">The unusable transaction id the gateway reports.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -671,6 +689,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// </summary>
     /// <param name="sessionId">The unusable session id the invoice holds.</param>
     /// <param name="transactionId">The unusable transaction id the gateway reports.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("", "")]
     [InlineData("   ", "  ")]
@@ -708,6 +727,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// </summary>
     /// <param name="sessionId">The unusable session id the invoice holds.</param>
     /// <param name="transactionId">The unusable transaction id the gateway reports.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("", "")]
     [InlineData("   ", "  ")]
@@ -744,6 +764,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// A session that already stalled has its stalled alert marked, yet a later paid report with no
     /// reference still alerts staff: the two alerts are tracked apart.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NoReferenceOnAnOpenInvoice_AfterTheStalledAlert_StillAlertsOnce()
     {
@@ -764,6 +785,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// An open invoice whose gateway reports no transaction id (null) settles under the session id the
     /// invoice holds, with no alert, and a replay finds the settled invoice and changes nothing.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OpenInvoice_WithANullTransactionId_SettlesUnderTheSessionIdAndAReplayChangesNothing()
     {
@@ -795,6 +817,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// printing a wrong one.
     /// </summary>
     /// <param name="currencyNumeric">The numeric currency code the gateway reports, or null for none.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("978")]
     [InlineData(null)]
@@ -811,6 +834,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The session id the invoice holds is trimmed too when it stands in for a missing transaction id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OpenInvoice_WithAPaddedSessionIdAndNoTransactionId_SettlesUnderTheTrimmedSessionId()
     {
@@ -829,6 +853,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// When the save of the alert's mark loses to another writer nothing is published, the refusal is
     /// still answered, and the next pass finds no mark and alerts staff exactly once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConcurrentWriterDuringTheAlertMark_PublishesNothingAndTheNextPassAlertsOnce()
     {
@@ -867,6 +892,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A reference with surrounding whitespace is stored trimmed, so a replay looks up what was stored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReferenceWithSurroundingWhitespace_IsStoredTrimmed()
     {
@@ -884,6 +910,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// The conflict path (the invoice was cancelled between the read and the save) hands the gateway's
     /// money back through the balance and publishes the credited alert exactly once, after the save.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConcurrentCancel_PublishesTheCreditedAlertExactlyOnce()
     {
@@ -914,6 +941,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// When the hand-back's own save is lost (the client's balance moved underneath it), nothing is
     /// published: no ledger row, no credit and no alert, because the event follows the save.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConcurrentCancel_WhenTheHandBackSaveIsLost_PublishesNothing()
     {
@@ -962,6 +990,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// stands down. The ledger keeps the one row the other request wrote, nothing is credited twice and
     /// staff are not alerted a second time.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandBackUnrecorded_WhenTheLedgerHoldsThePaymentAfterTheSaveIsRefused_StandsDownQuietly()
     {
@@ -1012,6 +1041,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// the client's balance moved) is not a stand-down: the ledger holds no row for the payment, so the
     /// conflict reaches the caller and nothing is recorded or alerted.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandBackUnrecorded_WhenTheSaveIsRefusedAndNoRowIsOnTheLedger_TheConflictPropagatesAndNothingIsRecorded()
     {
@@ -1053,6 +1083,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// payment (the invoice settled, its ledger row written) answers <see cref="GatewayCompletionState.Paid"/>
     /// and records nothing a second time.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConcurrentCompletion_WhenTheWinnerRecordedThePaymentOnTheLedger_TheLoserAnswersPaidAndRecordsNothingMore()
     {
@@ -1091,6 +1122,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     /// A gateway reference that the ledger already holds for another payment answers 409 with the
     /// standard problem body over HTTP, not a server error, and the payment is not recorded twice.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayReferenceAlreadyOnTheLedgerForAnotherPayment_AnswersConflictWithTheStandardErrorBody()
     {

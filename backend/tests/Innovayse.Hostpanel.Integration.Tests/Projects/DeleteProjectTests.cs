@@ -1,6 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
-using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Shared.Constants;
 
@@ -13,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Projects;
 public sealed class DeleteProjectTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Deleting removes the project: a later read of the id answers 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Delete_RemovesTheRecord()
     {
@@ -27,6 +26,7 @@ public sealed class DeleteProjectTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An id that names no project answers 404 with the not-found code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Delete_UnknownId_RefusesWithNotFoundCode()
     {
@@ -39,6 +39,7 @@ public sealed class DeleteProjectTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Delete_RefusesAnonymous()
     {
@@ -48,6 +49,7 @@ public sealed class DeleteProjectTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Delete_NonPositiveId_RefusesWithValidationError()
     {

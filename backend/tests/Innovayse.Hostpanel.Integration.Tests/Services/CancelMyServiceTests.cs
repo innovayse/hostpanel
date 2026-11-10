@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class CancelMyServiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A stranger cancelling somebody else's service is refused, not told which part is wrong.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Cancel_AStrangersService_Returns404WithServiceNotFound()
     {
@@ -29,6 +30,7 @@ public sealed class CancelMyServiceTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The owner can cancel their own service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Cancel_TheCallersOwnService_Succeeds()
     {
@@ -42,6 +44,7 @@ public sealed class CancelMyServiceTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A second open cancellation request on the caller's own service is refused as a conflict.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Cancel_ASecondOpenRequest_Returns409WithAlreadyPending()
     {
@@ -59,6 +62,7 @@ public sealed class CancelMyServiceTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Cancelling without authentication is refused before ownership is even considered.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Cancel_Returns401_WithoutAuthAsync()
     {

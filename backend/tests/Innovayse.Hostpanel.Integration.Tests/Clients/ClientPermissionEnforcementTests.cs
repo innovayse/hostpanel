@@ -77,6 +77,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     /// <param name="method">The HTTP method.</param>
     /// <param name="path">The path.</param>
     /// <param name="needs">The permission the path needs.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [MemberData(nameof(Requests))]
     public async Task ALinkedUserWithoutThePermission_IsRefused(string method, string path, ClientPermission needs)
@@ -95,6 +96,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     /// <param name="method">The HTTP method.</param>
     /// <param name="path">The path.</param>
     /// <param name="needs">The permission the path needs.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [MemberData(nameof(Requests))]
     public async Task ALinkedUserWithThePermission_IsNotRefusedForIt(string method, string path, ClientPermission needs)
@@ -112,6 +114,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     /// <param name="method">The HTTP method.</param>
     /// <param name="path">The path.</param>
     /// <param name="needs">The permission the path needs.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [MemberData(nameof(Requests))]
     public async Task TheAccountOwner_IsNeverRefusedForPermission(string method, string path, ClientPermission needs)
@@ -126,6 +129,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     }
 
     /// <summary>An owner reads their own invoices: the gate admits them and the use case answers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheOwner_ReadsTheirOwnInvoices()
     {
@@ -137,6 +141,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     }
 
     /// <summary>A user who holds the client role but is on no account at all is refused: no link means no permission.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AClientRoleUserOnNoAccount_IsRefused()
     {
@@ -153,6 +158,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     }
 
     /// <summary>A stored bit that no permission defines grants nothing, so it cannot open an action by accident.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnUnknownStoredBit_GrantsNothing()
     {
@@ -165,6 +171,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     }
 
     /// <summary>A user linked to two accounts holds only what both links grant: nothing says which account is meant.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AUserLinkedToTwoAccounts_HoldsOnlyWhatBothGrant()
     {
@@ -185,6 +192,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     /// Linked to another account with a narrow grant, a user who owns a client record keeps the full access
     /// of the account they own: the owner bypass is decided by the record, not by the link.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnOwnerLinkedElsewhereWithANarrowGrant_KeepsTheirOwnAccess()
     {
@@ -202,6 +210,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     /// Identity comes from the credential: a request that names the owner's subject in its query, a header and a body
     /// is still judged as the linked user it was signed in as.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AUserNamingSomeoneElseInTheRequest_IsStillJudgedAsThemselves()
     {
@@ -218,6 +227,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
 
     /// <summary>The refusal is the standard error body, in the caller's language, with a sentence and not the bare code.</summary>
     /// <param name="language">The <c>X-Language</c> value.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("en")]
     [InlineData("ru")]
@@ -239,6 +249,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     }
 
     /// <summary>The account endpoint reports the caller's permissions: all for the owner, the grant for a linked user, none without an account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheAccountEndpoint_ReportsThePermissionsTheCallerHolds()
     {
@@ -257,6 +268,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     }
 
     /// <summary>The profile the portal opens with is open to every user of the account, whatever they were granted.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheProfile_IsNotGatedByAPermission()
     {
@@ -269,6 +281,7 @@ public sealed class ClientPermissionEnforcementTests(IntegrationTestFactory fact
     }
 
     /// <summary>The route is not for anonymous callers; the permission filter is never what answers them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnAnonymousCaller_IsAskedToSignInNotToHoldAPermission()
     {

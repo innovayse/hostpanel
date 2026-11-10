@@ -13,5 +13,5 @@ public interface IEmailSender
     /// classified reason it did not. A refusal is answered, never thrown; the adapter logs the
     /// relay's own wording, which no caller stores or shows.
     /// </returns>
-    Task<EmailSendResult> SendAsync(EmailMessage message, CancellationToken ct);
+    public Task<EmailSendResult> SendAsync(EmailMessage message, CancellationToken ct);
 }

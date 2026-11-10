@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class DeleteEmailForwardingRuleTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Deleting a rule on an unknown domain answers 404 with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteEmailForwardingRule_UnknownDomain_Returns404Async()
     {
@@ -29,6 +30,7 @@ public sealed class DeleteEmailForwardingRuleTests(IntegrationTestFactory factor
     }
 
     /// <summary>An unknown rule id on a real domain answers 404 with <c>EMAIL_FORWARDING_RULE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteEmailForwardingRule_UnknownRule_Returns404WithRuleNotFoundAsync()
     {
@@ -45,6 +47,7 @@ public sealed class DeleteEmailForwardingRuleTests(IntegrationTestFactory factor
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteEmailForwardingRule_WithoutToken_Returns401Async()
     {
@@ -56,6 +59,7 @@ public sealed class DeleteEmailForwardingRuleTests(IntegrationTestFactory factor
     }
 
     /// <summary>A non-positive rule id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteEmailForwardingRule_NonPositiveRuleId_Returns400ValidationErrorAsync()
     {

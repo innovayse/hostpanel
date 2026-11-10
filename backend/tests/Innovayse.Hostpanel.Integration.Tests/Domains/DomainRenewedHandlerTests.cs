@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Events;
 using Innovayse.Hostpanel.Domain.Notifications;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +23,7 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
     /// A renewed domain with a linked, suspended hosting service unsuspends that service exactly
     /// once and notifies the owning client exactly once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRenewed_UnsuspendsLinkedServiceAndNotifiesExactlyOnceAsync()
     {
@@ -76,6 +76,7 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
     /// A renewal does not lift a suspension staff made by hand: the linked service stays suspended
     /// with its source intact, while the client is still notified.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRenewed_LeavesAManuallySuspendedLinkedServiceSuspendedAsync()
     {
@@ -130,6 +131,7 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
     /// by the renewal, as it was before the billing engine: the renewal is the only thing that
     /// knows to reactivate it, and payments never lift an unknown source.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRenewed_UnsuspendsALinkedServiceWithNoRecordedSourceAsync()
     {
@@ -182,6 +184,7 @@ public sealed class DomainRenewedHandlerTests(IntegrationTestFactory factory) : 
     /// A late copy of the event naming a domain that now belongs to another client (the demo reset reused
     /// the id) neither lifts the linked service's expiry suspension nor mails anyone.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRenewed_ForADomainOfAnotherClient_DoesNothingAsync()
     {

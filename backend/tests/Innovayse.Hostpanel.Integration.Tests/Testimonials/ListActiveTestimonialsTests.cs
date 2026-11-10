@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Innovayse.Hostpanel.Application.Common.Errors;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Testimonials;
 
@@ -13,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Testimonials;
 public sealed class ListActiveTestimonialsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The feed is publicly accessible without authentication.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_ReturnsOk_WithoutAuth()
     {
@@ -22,6 +22,7 @@ public sealed class ListActiveTestimonialsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The feed carries the contract's flat shape and leaves out admin-only members.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_ReturnsTheFlatContractShape()
     {
@@ -41,6 +42,7 @@ public sealed class ListActiveTestimonialsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The feed carries the admin-set date, and the creation time when none was set.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_CarriesPublishedAt_FallingBackToCreatedAt()
     {
@@ -57,6 +59,7 @@ public sealed class ListActiveTestimonialsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The feed excludes an inactive record and orders the rest by sort order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_ExcludesInactive_AndOrdersBySortOrder()
     {
@@ -74,6 +77,7 @@ public sealed class ListActiveTestimonialsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The feed resolves the requested locale over the default when both are stored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_ResolvesTheRequestedLocale()
     {
@@ -88,6 +92,7 @@ public sealed class ListActiveTestimonialsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A locale with no stored translation falls back to the default locale.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_FallsBackToTheDefaultLocale()
     {

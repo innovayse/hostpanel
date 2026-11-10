@@ -37,5 +37,5 @@ public interface IInvoiceOwnership
     /// apart would let the route be used to enumerate invoice ids.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
-    Task<Result> RequireOwnedByCallerAsync(int invoiceId, CancellationToken ct);
+    public Task<Result> RequireOwnedByCallerAsync(int invoiceId, CancellationToken ct);
 }

@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 public sealed class SetupTokenStoreTests
 {
     /// <summary>The issued token is accepted, then blanked, so a second use is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TryConsume_IssuedToken_AcceptsOnceAsync()
     {
@@ -34,6 +35,7 @@ public sealed class SetupTokenStoreTests
     }
 
     /// <summary>A wrong or missing token is refused and leaves the outstanding one live.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TryConsume_WrongOrMissingToken_RefusesAndKeepsTheTokenAsync()
     {
@@ -50,6 +52,7 @@ public sealed class SetupTokenStoreTests
     }
 
     /// <summary>Two consumes of the same token racing on separate connections: exactly one wins.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TryConsume_ConcurrentConsumes_ExactlyOneWinsAsync()
     {

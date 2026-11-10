@@ -24,6 +24,7 @@ public sealed class BackfillOrderQuoteTransactionCurrencyMigrationTests
     /// Transactions take the linked invoice's currency, else the client's, else the base currency; a transaction
     /// that already has a currency keeps it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Up_OnTransactionsWithEmptyCurrency_TakesInvoiceThenClientThenBaseAsync()
     {
@@ -41,6 +42,7 @@ public sealed class BackfillOrderQuoteTransactionCurrencyMigrationTests
     /// Orders take the linked invoice's currency, else the client's, else the base currency; an order that already
     /// has a currency keeps it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Up_OnOrdersWithEmptyCurrency_TakesInvoiceThenClientThenBaseAsync()
     {
@@ -55,6 +57,7 @@ public sealed class BackfillOrderQuoteTransactionCurrencyMigrationTests
     }
 
     /// <summary>Quotes take the client's currency, else the base currency; a quote that already has a currency keeps it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Up_OnQuotesWithEmptyCurrency_TakesClientThenBaseAsync()
     {
@@ -68,6 +71,7 @@ public sealed class BackfillOrderQuoteTransactionCurrencyMigrationTests
     }
 
     /// <summary>The backfill cannot be undone, so going down keeps the data and the filled currencies.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Down_AfterTheBackfill_KeepsTheFilledCurrenciesAsync()
     {

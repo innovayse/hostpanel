@@ -1,8 +1,7 @@
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Commands.ModifyDomainContact;
-using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Shared.Models;
 using Wolverine;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
 
 namespace Innovayse.Hostpanel.Application.Domains.Commands.ModifyMyDomainContact;
 

@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Innovayse.Hostpanel.Application.Admin.Servers.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -9,7 +10,6 @@ using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Plesk.Models;
 using Innovayse.Hostpanel.Infrastructure.Provisioning.Settings;
 using Innovayse.Hostpanel.Infrastructure.Resilience;
-using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -45,15 +45,15 @@ public sealed class ServerConnectionTester : IServerConnectionTester
     /// <param name="loggerFactory">Builds the Plesk client's logger.</param>
     /// <param name="options">The port Plesk servers answer on.</param>
     /// <param name="logger">Records why a connection test failed, detail the caller never sees.</param>
-    public ServerConnectionTester(
 #pragma warning disable CS0618 // Legacy HostingPanel contract (the CWP clients and HostingPanelAddress, which the Plesk and cPanel paths also use), obsolete since SDK 3.1.0; stays until the panel providers become IProvisioningPanelPlugin plugins.
+    public ServerConnectionTester(
         IHostingPanelApiClient cwpClient,
         IHostingPanelV7ApiClient cwp7Client,
-#pragma warning restore CS0618
         IHttpClientFactory httpClientFactory,
         ILoggerFactory loggerFactory,
         IOptions<ProvisioningOptions> options,
         ILogger<ServerConnectionTester> logger)
+#pragma warning restore CS0618
     {
         _cwpClient = cwpClient;
         _cwp7Client = cwp7Client;

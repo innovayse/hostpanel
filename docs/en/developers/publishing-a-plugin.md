@@ -97,6 +97,12 @@ A registry needs to know who you are before it accepts a package. The steps, in 
 
 Operators who install your package straight from a ZIP, without a registry, add the same public key to `PluginSigning:OperatorKeys` on their server. Without it the install is refused with `PLUGIN_SIGNATURE_KEY_UNKNOWN`.
 
+## Release notes {#release-notes}
+
+Release notes tell operators what a version changes. In the registry contract they are optional: the `changelog` of a version is Markdown and Hostpanel keeps at most 20000 characters of it. The `changelog` member of the manifest is a shorter text, at most 4000 characters. The admin panel shows the notes on the plugin cards, on the details page and in the update dialog, which lists the notes of every version between the installed one and the new one, so write each section for a reader who has not seen the earlier ones.
+
+A registry may ask for more. The official plugin marketplace requires release notes of 10 to 10000 characters for every version. When you upload to it, it reads them from the `CHANGELOG.md` in the signed package, the section whose heading names the version, such as `## [1.2.0]` (the Keep a Changelog style). That is the rule of that registry, not of Hostpanel, so read the rules of the registry you publish to. A version without notes still installs, and the update dialog says it has none.
+
 ## Upload to a registry
 
 There are two ways to get a signed package into a registry. Use one or both.

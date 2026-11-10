@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class ClientClosedSessionsHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The closing revokes the owner's subject at every registered revoker.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientClosed_RevokesTheOwnersSessionsAtEveryRevokerAsync()
     {
@@ -34,6 +35,7 @@ public sealed class ClientClosedSessionsHandlerTests(IntegrationTestFactory fact
     }
 
     /// <summary>A closing with no owner subject revokes nothing and does not throw.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientClosed_WithoutAnOwnerSubject_RevokesNothingAsync()
     {

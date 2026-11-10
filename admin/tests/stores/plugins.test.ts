@@ -78,6 +78,68 @@ describe('pluginsStore.install', () => {
   })
 })
 
+/** What the server reads out of a package that asks for SSH access, as the inspect endpoint answers it. */
+const preview = {
+  id: 'example-backup',
+  name: 'Example Backup',
+  version: '1.1.0',
+  author: 'Example',
+  description: 'Backups',
+  hostAccess: ['ssh'],
+  capabilities: [],
+  changelog: 'Faster restores.',
+  minHostVersion: '1.0.0',
+  maxHostVersion: null,
+  hostVersion: '2.0.0',
+  compatible: true,
+}
+
+describe('pluginsStore.inspect', () => {
+  it('keeps the preview and the archive without installing it', async () => {
+    const mock = stubFetch(json(preview))
+    const store = usePluginsStore()
+
+    expect(await store.inspect(zip)).toBe(true)
+    expect(store.preview).toEqual(preview)
+    expect(store.pendingFile).toBe(zip)
+    expect(String(mock.mock.calls[0]?.[0])).toBe('/api/admin/plugins/inspect')
+    expect(mock).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the API sentence and no preview on refusal', async () => {
+    stubFetch(problem('Not a plugin archive.', 400))
+    const store = usePluginsStore()
+
+    expect(await store.inspect(zip)).toBe(false)
+    expect(store.actionError).toBe('Not a plugin archive.')
+    expect(store.preview).toBeNull()
+    expect(store.pendingFile).toBeNull()
+  })
+
+  it('installs the waiting archive on confirmation and clears the preview', async () => {
+    const mock = stubFetch(json(preview), json({ requiresRestart: true }), json([{ id: 'a' }]))
+    const store = usePluginsStore()
+    await store.inspect(zip)
+
+    expect(await store.confirmInstall()).toBe(true)
+    expect(String(mock.mock.calls[1]?.[0])).toBe('/api/admin/plugins/install')
+    expect(store.requiresRestart).toBe(true)
+    expect(store.preview).toBeNull()
+    expect(store.pendingFile).toBeNull()
+  })
+
+  it('installs nothing when the preview is dismissed', async () => {
+    const mock = stubFetch(json(preview))
+    const store = usePluginsStore()
+    await store.inspect(zip)
+
+    store.dismissPreview()
+
+    expect(await store.confirmInstall()).toBe(false)
+    expect(mock).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe('pluginsStore.remove', () => {
   it('marks only that plugin busy while the removal runs and clears it afterwards', async () => {
     let seen: boolean[] = []

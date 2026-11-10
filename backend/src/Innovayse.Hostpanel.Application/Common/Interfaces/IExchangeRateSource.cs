@@ -19,5 +19,5 @@ public interface IExchangeRateSource
     /// with an error or with a body it does not publish, or <c>EXCHANGE_RATE_BASE_NOT_QUOTED</c> when
     /// the source cannot express anything against the base currency.
     /// </returns>
-    Task<Result<ExchangeRateQuotes>> QuoteAsync(ExchangeRateLookup lookup, CancellationToken ct);
+    public Task<Result<ExchangeRateQuotes>> QuoteAsync(ExchangeRateLookup lookup, CancellationToken ct);
 }

@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class OrderMyServiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The order lands on the caller's own account and is priced from the product, whatever amounts the body carries.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderCreatesTheServiceForTheCallerAtTheProductPrice()
     {
@@ -47,6 +47,7 @@ public sealed class OrderMyServiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An unknown product answers 404 with <c>PRODUCT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderRefusesAnUnknownProduct()
     {
@@ -63,6 +64,7 @@ public sealed class OrderMyServiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OrderRefusesAnonymous()
     {

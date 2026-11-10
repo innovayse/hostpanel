@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class MarkInvoiceOverdueTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Marking an unpaid invoice overdue transitions it to Overdue.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MarkOverdueTransitionsAnUnpaidInvoiceToOverdue()
     {
@@ -30,6 +31,7 @@ public sealed class MarkInvoiceOverdueTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Marking a draft invoice overdue is refused with a 400: only Unpaid transitions.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MarkOverdueOnADraftInvoiceRefusesBadRequest()
     {
@@ -43,6 +45,7 @@ public sealed class MarkInvoiceOverdueTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Marking an id that names no invoice overdue answers 404 with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MarkOverdueOnUnknownInvoiceRefusesNotFound()
     {
@@ -55,6 +58,7 @@ public sealed class MarkInvoiceOverdueTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Marking an invoice overdue is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MarkOverdueRefusesAnonymous()
     {

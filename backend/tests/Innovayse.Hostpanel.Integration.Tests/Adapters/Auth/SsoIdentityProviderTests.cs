@@ -59,6 +59,7 @@ public sealed class SsoIdentityProviderTests : IAsyncLifetime
     private static StubReply Status(HttpStatusCode status) => new(status, string.Empty);
 
     /// <summary>Finding by subject returns the account the sign-on provider holds.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindBySubjectAsync_ReturnsTheAccountAsync()
     {
@@ -75,6 +76,7 @@ public sealed class SsoIdentityProviderTests : IAsyncLifetime
     }
 
     /// <summary>Finding by subject returns null when the sign-on provider has no such account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindBySubjectAsync_WhenTheSsoHasNoSuchAccount_ReturnsNullAsync()
     {
@@ -86,6 +88,7 @@ public sealed class SsoIdentityProviderTests : IAsyncLifetime
     }
 
     /// <summary>Finding by subject throws when the sign-on provider fails, rather than returning null.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindBySubjectAsync_WhenTheSsoFails_ThrowsRatherThanReturningNullAsync()
     {
@@ -100,6 +103,7 @@ public sealed class SsoIdentityProviderTests : IAsyncLifetime
     }
 
     /// <summary>Finding by subject throws when the service key is rejected.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindBySubjectAsync_WhenTheServiceKeyIsRejected_ThrowsAsync()
     {
@@ -113,6 +117,7 @@ public sealed class SsoIdentityProviderTests : IAsyncLifetime
     }
 
     /// <summary>Finding by email resolves the subject through the lookup, then reads the account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindByEmailAsync_ResolvesThroughTheLookupThenTheAccountAsync()
     {
@@ -131,6 +136,7 @@ public sealed class SsoIdentityProviderTests : IAsyncLifetime
     }
 
     /// <summary>Finding by an unknown email returns null without a second call.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindByEmailAsync_ForAnUnknownAddress_ReturnsNullWithoutASecondCallAsync()
     {
@@ -143,6 +149,7 @@ public sealed class SsoIdentityProviderTests : IAsyncLifetime
     }
 
     /// <summary>Finding by email escapes the address in the request.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindByEmailAsync_EscapesTheAddressAsync()
     {
@@ -164,6 +171,7 @@ public sealed class SsoIdentityProviderTests : IAsyncLifetime
         """;
 
     /// <summary>Reading accounts by subjects returns whole accounts in one call.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetAccountsBySubjectsAsync_ReturnsWholeAccountsInOneCallAsync()
     {
@@ -184,6 +192,7 @@ public sealed class SsoIdentityProviderTests : IAsyncLifetime
     }
 
     /// <summary>Reading accounts by subjects throws when the sign-on provider fails.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetAccountsBySubjectsAsync_WhenTheSsoFails_ThrowsAsync()
     {
@@ -197,6 +206,7 @@ public sealed class SsoIdentityProviderTests : IAsyncLifetime
     }
 
     /// <summary>Reading accounts for no subjects makes no request.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetAccountsBySubjectsAsync_ForNoSubjects_MakesNoRequestAsync()
     {
@@ -209,6 +219,7 @@ public sealed class SsoIdentityProviderTests : IAsyncLifetime
     }
 
     /// <summary>Listing returns the page and the unpaged total.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListAsync_ReturnsThePageAndTheUnpagedTotalAsync()
     {
@@ -232,6 +243,7 @@ public sealed class SsoIdentityProviderTests : IAsyncLifetime
     }
 
     /// <summary>Listing without a search sends no search parameter.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListAsync_WithoutASearch_SendsNoSearchParameterAsync()
     {
@@ -244,6 +256,7 @@ public sealed class SsoIdentityProviderTests : IAsyncLifetime
     }
 
     /// <summary>Listing throws when the sign-on provider fails, rather than returning an empty page.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListAsync_WhenTheSsoFails_ThrowsRatherThanReturningAnEmptyPageAsync()
     {

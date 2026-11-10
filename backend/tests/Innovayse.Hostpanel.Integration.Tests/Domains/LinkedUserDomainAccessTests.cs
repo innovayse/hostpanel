@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class LinkedUserDomainAccessTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The account owner lists and reads their own domain.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OwnerSeesTheDomainAsync()
     {
@@ -27,6 +28,7 @@ public sealed class LinkedUserDomainAccessTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A user linked with the domains permission lists and reads the account's domain.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedLinkedUserSeesTheDomainAsync()
     {
@@ -42,6 +44,7 @@ public sealed class LinkedUserDomainAccessTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A user linked without the domains permission is refused both routes.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LinkedUserWithoutThePermissionIsRefusedAsync()
     {
@@ -62,6 +65,7 @@ public sealed class LinkedUserDomainAccessTests(IntegrationTestFactory factory) 
     /// A user permitted on another account never sees this account's domain: the list is theirs
     /// alone and the id answers <c>DOMAIN_NOT_FOUND</c>, like an id naming no domain.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedUserOfAnotherAccountAnswersNotFoundAsync()
     {

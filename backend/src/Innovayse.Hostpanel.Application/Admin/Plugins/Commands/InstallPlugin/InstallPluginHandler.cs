@@ -1,13 +1,13 @@
+using Hostpanel.Sdk.Packaging.Naming;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Hostpanel.Sdk.Packaging.Naming;
-using PluginVersionChange = Hostpanel.Sdk.Packaging.Enums.PluginVersionChange;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
+using PluginVersionChange = Hostpanel.Sdk.Packaging.Enums.PluginVersionChange;
 
 namespace Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallPlugin;
 
@@ -65,7 +65,9 @@ public sealed class InstallPluginHandler
     /// one of <c>PLUGIN_UNSIGNED</c>, <c>PLUGIN_SIGNATURE_MALFORMED</c>, <c>PLUGIN_SIGNATURE_KEY_UNKNOWN</c> or
     /// <c>PLUGIN_SIGNATURE_INVALID</c> when the host enforces signatures, the setting "allow unsigned plugins" is off and
     /// the package fails that check;
-    /// <c>PLUGIN_BUILT_IN</c> when the id belongs to a plugin shipped with the build.
+    /// <c>PLUGIN_BUILT_IN</c> when the id belongs to a plugin shipped with the build;
+    /// <c>PLUGIN_HOST_VERSION_OUT_OF_RANGE</c> when the running Hostpanel version is outside the package's
+    /// <c>minHostVersion</c> and <c>maxHostVersion</c>.
     /// </returns>
     public async Task<Result<PluginActionResultDto>> HandleAsync(InstallPluginCommand command, CancellationToken ct)
     {

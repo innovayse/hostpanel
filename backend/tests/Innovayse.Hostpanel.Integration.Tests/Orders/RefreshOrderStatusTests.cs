@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class RefreshOrderStatusTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An order that does not exist is refused as <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderIsRefused()
     {
@@ -30,6 +31,7 @@ public sealed class RefreshOrderStatusTests(IntegrationTestFactory factory) : IC
     /// An order left Incomplete by a copy that still saw a line open, while every line is fulfilled in the database, is settled
     /// Active.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SettlesAnOrderWhoseLinesAreAllDone()
     {
@@ -46,6 +48,7 @@ public sealed class RefreshOrderStatusTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>An order with a line still failed stays Incomplete.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LeavesAnOrderWithAFailedLineIncomplete()
     {
@@ -60,6 +63,7 @@ public sealed class RefreshOrderStatusTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A pending order's status is the admin's decision and a refresh never changes it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LeavesAPendingOrderPending()
     {

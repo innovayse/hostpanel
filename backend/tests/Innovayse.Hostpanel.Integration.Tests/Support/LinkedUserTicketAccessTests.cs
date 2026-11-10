@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class LinkedUserTicketAccessTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The account owner reads and replies to a ticket filed on the account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OwnerReadsAndRepliesAsync()
     {
@@ -27,6 +28,7 @@ public sealed class LinkedUserTicketAccessTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A user linked to the account with the tickets permission reads and replies to its ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedLinkedUserReadsAndRepliesAsync()
     {
@@ -44,6 +46,7 @@ public sealed class LinkedUserTicketAccessTests(IntegrationTestFactory factory) 
     /// A user linked to the account without the tickets permission is refused both actions, and the
     /// reply never lands on the ticket.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LinkedUserWithoutThePermissionIsRefusedAsync()
     {
@@ -66,6 +69,7 @@ public sealed class LinkedUserTicketAccessTests(IntegrationTestFactory factory) 
     /// A user permitted on one account is answered <c>TICKET_NOT_FOUND</c> for a ticket of another
     /// account, exactly like an id naming no ticket.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedUserOfAnotherAccountAnswersNotFoundAsync()
     {

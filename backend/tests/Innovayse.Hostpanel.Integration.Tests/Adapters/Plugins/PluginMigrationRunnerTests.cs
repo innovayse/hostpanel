@@ -1,10 +1,10 @@
-using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
-using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
-using Innovayse.Hostpanel.Integration.Tests.Shared;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Lifecycle;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Innovayse.Hostpanel.Infrastructure.Plugins;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
+using Innovayse.Hostpanel.Integration.Tests.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class LinkedUserAccountAccessTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The account owner reads the profile and the account's users.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OwnerReadsTheProfileAndTheUsersAsync()
     {
@@ -28,6 +29,7 @@ public sealed class LinkedUserAccountAccessTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A user linked with the contacts permission reads the account's contacts and adds one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedLinkedUserReadsAndAddsContactsAsync()
     {
@@ -47,6 +49,7 @@ public sealed class LinkedUserAccountAccessTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A user linked without the contacts permission is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LinkedUserWithoutThePermissionIsRefusedAsync()
     {
@@ -60,6 +63,7 @@ public sealed class LinkedUserAccountAccessTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A user permitted on another account does not see this account's contacts.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedUserOfAnotherAccountDoesNotSeeTheContactsAsync()
     {
@@ -78,6 +82,7 @@ public sealed class LinkedUserAccountAccessTests(IntegrationTestFactory factory)
     /// A linked user holding every permission still never reaches the owner's profile or the
     /// account's users: both answer <c>CLIENT_PROFILE_NOT_FOUND</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LinkedUserWithEveryPermissionNeverReachesTheOwnerOnlyActionsAsync()
     {

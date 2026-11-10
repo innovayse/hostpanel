@@ -1,5 +1,3 @@
-using Innovayse.Hostpanel.Application.Domains.Common;
-
 namespace Innovayse.Hostpanel.Application.Domains.Queries.GetLinkedDomainNames;
 
 /// <summary>

@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class RemoveContactTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Removing an existing contact takes it off the client's record.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveDropsTheContact()
     {
@@ -28,6 +29,7 @@ public sealed class RemoveContactTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Removing a contact on an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveRefusesUnknownClient()
     {
@@ -40,6 +42,7 @@ public sealed class RemoveContactTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Removing a contact id that is not this client's answers 404 with <c>CLIENT_CONTACT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveRefusesAWrongContactId()
     {
@@ -54,6 +57,7 @@ public sealed class RemoveContactTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Removing a contact is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveRefusesAnonymous()
     {
@@ -63,6 +67,7 @@ public sealed class RemoveContactTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A client, who is not staff, is refused with 403 on the admin route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveRefusesAClient()
     {
@@ -74,6 +79,7 @@ public sealed class RemoveContactTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Removing a contact leaves one activity line naming the client and the acting admin.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveIsAuditedWithTheActingAdmin()
     {

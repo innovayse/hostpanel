@@ -27,6 +27,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
     private static string LicenceRoute(string pluginId) => $"/api/admin/plugins/registry/{pluginId}/licence";
 
     /// <summary>A plugin that is not installed answers every field of the page, with the versions newest first and no installed state.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ANotInstalledPlugin_AnswersTheWholePageAsync()
     {
@@ -108,6 +109,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An installed plugin shows its version, a staged upgrade and whether a newer one is published.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnInstalledPlugin_ShowsTheInstalledStateAsync()
     {
@@ -140,6 +142,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A free plugin does not ask for a licence key.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AFreePlugin_DoesNotRequireALicenceAsync()
     {
@@ -154,6 +157,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The stored licence key is sent to the registry, reported as <c>hasLicenceKey</c> and never returned.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheStoredLicenceKey_IsSentAndNeverReturnedAsync()
     {
@@ -184,6 +188,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Without a stored key the registry is sent none.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithoutAStoredKey_NoneIsSentAsync()
     {
@@ -202,6 +207,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
     /// <param name="min">The version's lower bound.</param>
     /// <param name="max">The version's upper bound.</param>
     /// <param name="expected">Whether the version runs on that host.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("1.4.0", null, null, true)]
     [InlineData("1.4.0", "1.4.0", "1.4.0", true)]
@@ -223,6 +229,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A plugin the registry does not list answers 404 with <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnUnknownPlugin_AnswersNotFoundAsync()
     {
@@ -238,6 +245,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
     /// <summary>Registry failures keep their codes and statuses.</summary>
     /// <param name="failureCode">The registry's failure.</param>
     /// <param name="status">The status the code maps to.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("PLUGIN_REGISTRY_DISABLED", HttpStatusCode.Conflict)]
     [InlineData("PLUGIN_REGISTRY_UNAVAILABLE", HttpStatusCode.BadGateway)]
@@ -257,6 +265,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The real client with the default configuration answers <c>PLUGIN_REGISTRY_DISABLED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheDefaultConfiguration_AnswersDisabledAsync()
     {
@@ -270,6 +279,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
 
     /// <summary>An id of the wrong shape is refused before the registry is asked.</summary>
     /// <param name="pluginId">The route id.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Bad_Id")]
     [InlineData("UPPER")]
@@ -286,6 +296,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The updates route is not taken for a plugin called "updates".</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheUpdatesRoute_StaysTheUpdateListAsync()
     {
@@ -299,6 +310,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -310,6 +322,7 @@ public sealed class GetRegistryPluginTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

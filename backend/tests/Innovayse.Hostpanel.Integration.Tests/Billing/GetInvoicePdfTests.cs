@@ -24,6 +24,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin downloads the invoice as a PDF attachment named after it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_ReturnsPdfAttachmentForAdmin()
     {
@@ -46,6 +47,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The PDF carries a client's billing details, so no browser or proxy may keep a copy.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_IsNeverCached()
     {
@@ -64,6 +66,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
     /// An invoice with more lines than <c>InvoicePdf:MaxLines</c> is refused before anything is
     /// rendered; one at the limit still renders.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_RefusesInvoiceOverTheLineLimit()
     {
@@ -87,6 +90,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
     /// With the only render slot taken for longer than <c>InvoicePdf:MaxRenderWaitSeconds</c>, the
     /// download answers 503 with the configured <c>Retry-After</c> instead of queueing on.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_AnswersBusyWhenNoRenderSlotFrees()
     {
@@ -144,6 +148,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An id that names no invoice answers 404 with the <c>INVOICE_NOT_FOUND</c> code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_UnknownId_Returns404()
     {
@@ -156,6 +161,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Downloading an invoice is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_Anonymous_Returns401()
     {
@@ -165,6 +171,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A client cannot use the staff route, even for their own invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_ClientToken_Returns403()
     {
@@ -178,6 +185,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Staff can download a draft, and it is stamped so nobody mistakes it for an issued invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_DraftForAdmin_IsStamped()
     {
@@ -192,6 +200,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The admins' internal notes stay off the PDF, which gets forwarded to customers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPdf_LeavesOutInternalNotes()
     {
@@ -208,6 +217,7 @@ public sealed class GetInvoicePdfTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An invoice in a currency with no row still renders, with the code written after each amount.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetInvoicePdf_FallsBackWhenCurrencyRowMissing()
     {

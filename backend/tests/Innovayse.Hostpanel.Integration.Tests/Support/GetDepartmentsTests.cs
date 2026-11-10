@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class GetDepartmentsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The department list is reachable with no credential at all.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIsReachableAnonymouslyAsync()
     {
@@ -21,6 +22,7 @@ public sealed class GetDepartmentsTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Staff can list the departments through <c>/api/tickets/departments</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StaffCanListDepartmentsAsync()
     {
@@ -33,6 +35,7 @@ public sealed class GetDepartmentsTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A caller with no credential cannot list departments through the ticket screens' route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StaffRouteIsClosedToAnonymousCallersAsync()
     {

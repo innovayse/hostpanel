@@ -86,5 +86,9 @@
     "uninstalled": "The plugin is uninstalled. Restart the server to finish the removal.",
     "licenceSaved": "The licence key is saved.",
     "licenceRemoved": "The licence key is removed."
+  },
+  "changes": {
+    "heading": "What changes from {from} to {to}",
+    "headingFresh": "Release notes of {version}"
   }
 }

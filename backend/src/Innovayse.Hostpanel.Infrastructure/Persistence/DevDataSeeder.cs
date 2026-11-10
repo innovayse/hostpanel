@@ -91,6 +91,7 @@ public sealed class DevDataSeeder
 
     /// <summary>Seeds test clients, invoices, transactions, quotes and billable items.</summary>
     /// <param name="ct">Cancels the request.</param>
+    /// <returns>A task that completes when the data is seeded.</returns>
     public async Task SeedAsync(CancellationToken ct = default)
     {
         // Seeded rows are fixtures, not business events: no welcome mails, and the seed runs before
@@ -196,7 +197,7 @@ public sealed class DevDataSeeder
             ("customer4@example.test", "Customer",  "Four",    "Customer Hosting",     "+1-555-0107", "321 Elm St",         "Austin",        "TX",  "73301",    "US", ClientStatus.Active),
             ("customer5@example.test", "Customer",  "Five",    "Customer Digital",     "+1-555-0144", "4 Harbour St",  "Fairhaven",         null,  "06000",    "KR", ClientStatus.Active),
             ("developer@example.test", "Developer", "One",     null,                   "+1-555-0145", "5 Harbour St", "Fairhaven",     null,  "75001",    "FR", ClientStatus.Inactive),
-            ("developer2@example.test","Developer", "Two",     "Dev Media",            "+1-555-0146", "6 Harbour St",   "Fairhaven",        "NSW", "2000",     "AU", ClientStatus.Active),
+            ("developer2@example.test", "Developer", "Two",     "Dev Media",            "+1-555-0146", "6 Harbour St",   "Fairhaven",        "NSW", "2000",     "AU", ClientStatus.Active),
             ("manager@example.test",   "Manager",   "One",     null,                   null,          null,                 null,            null,  null,       null, ClientStatus.Active),
             ("manager2@example.test",  "Manager",   "Two",     "Manager Corp",         "+1-555-0112", "555 Broadway",       "New York",      "NY",  "10012",    "US", ClientStatus.Active),
             ("partner@example.test",   "Partner",   "One",     null,                   "+1-555-0147", "7 Harbour St", "Fairhaven",   null,  "10117",    "DE", ClientStatus.Active),
@@ -204,7 +205,7 @@ public sealed class DevDataSeeder
             ("reseller2@example.test", "Reseller",  "Two",     null,                   "+1-555-0115", "77 Sunset Blvd",     "Los Angeles",   "CA",  "90028",    "US", ClientStatus.Active),
             ("customer6@example.test", "Customer",  "Six",     "Six Tech Ltd",         "+1-555-0148", "8 Harbour St",     "Fairhaven",       "ON",  "M5J 2J3",  "CA", ClientStatus.Active),
             ("customer7@example.test", "Customer",  "Seven",   null,                   "+1-555-0149", "9 Harbour St", "Fairhaven", null, "01310-100", "BR", ClientStatus.Active),
-            ("developer3@example.test","Developer", "Three",   "Dev Studio AM",        "+1-555-0150", "10 Harbour St", "Fairhaven",       null,  "0019",     "AM", ClientStatus.Active),
+            ("developer3@example.test", "Developer", "Three",   "Dev Studio AM",        "+1-555-0150", "10 Harbour St", "Fairhaven",       null,  "0019",     "AM", ClientStatus.Active),
             ("partner2@example.test",  "Partner",   "Two",     "Partner Solutions",    "+1-555-0151", "11 Harbour St", "Fairhaven",      null,  "00000",    "AE", ClientStatus.Active),
             ("reseller3@example.test", "Reseller",  "Three",   "Reseller Networks",    "+1-555-0152", "12 Harbour St",  "Fairhaven",     null,  "048616",   "SG", ClientStatus.Suspended),
         };
@@ -343,7 +344,7 @@ public sealed class DevDataSeeder
 
                 var payDate = inv.DueDate.AddDays(-Rng.Next(1, 10));
                 var gateway = Rng.Next(2) switch { 0 => PaymentMethodNames.Card, _ => PaymentMethodNames.BankTransfer };
-                var fees = Math.Round(inv.Total * 0.029m + 0.30m, 2);
+                var fees = Math.Round((inv.Total * 0.029m) + 0.30m, 2);
 
                 var tx = InvoiceTransaction.Create(
                     inv.Id, payDate, gateway,
@@ -367,7 +368,7 @@ public sealed class DevDataSeeder
                 for (int m = 0; m < 3; m++)
                 {
                     var date = MonthsAgo(_now, m * 2, Rng.Next(1, 28));
-                    var amount = Math.Round((decimal)(Rng.NextDouble() * 200 + 50), 2);
+                    var amount = Math.Round((decimal)((Rng.NextDouble() * 200) + 50), 2);
                     // A card payment is a gateway payment, like the demo seeder records it.
                     var tx = Transaction.Create(
                         client.Id, date, "Monthly hosting payment",
@@ -600,7 +601,7 @@ public sealed class DevDataSeeder
         if (!await _db.SslChecks.AnyAsync(ct))
         {
             var now = _now;
-            (string domain, bool hasSsl, string? issuer, DateTimeOffset? expires, bool isActive)[] sslDefs =
+            (string Domain, bool HasSsl, string? Issuer, DateTimeOffset? Expires, bool IsActive)[] sslDefs =
             [
                 ("example.test",         true,  "Example Root CA",       now.AddDays(60),  true),
                 ("shop.example",         true,  "Example Issuing CA",    now.AddDays(75),  true),
@@ -681,7 +682,7 @@ public sealed class DevDataSeeder
         var kbCatDefs = new[]
         {
             ("Getting Started",   "Guides to help you get up and running quickly."),
-            ("Billing & Payments","Information about invoices, payment methods, and refunds."),
+            ("Billing & Payments", "Information about invoices, payment methods, and refunds."),
             ("Domains",           "Domain registration, DNS management, and transfers."),
             ("Hosting",           "Shared hosting, VPS, and server management guides."),
             ("Security",          "SSL certificates, 2FA, and account security tips."),
@@ -901,7 +902,7 @@ public sealed class DevDataSeeder
         {
             var server = Server.Create(serverDefs[i], now);
             server.AssignToGroup(groupIds[i]);
-            server.RecordConnectionTest(true, 10 + i * 5, now);
+            server.RecordConnectionTest(true, 10 + (i * 5), now);
             db.Servers.Add(server);
         }
 
@@ -929,7 +930,7 @@ public sealed class DevDataSeeder
             ("billing.tax_rate",          "0",                               "Default tax rate percentage"),
             ("billing.payment_gateway",   "bank_transfer",                 "Default payment gateway"),
             ("support.ticket_auto_close", "14",                              "Days after last reply before a ticket is auto-closed"),
-            ("support.department_default","1",                               "Default department ID for new tickets"),
+            ("support.department_default", "1",                               "Default department ID for new tickets"),
             ("domain.registrar_default",  "Namecheap",                       "Default domain registrar module"),
             ("domain.ns1",                "ns1.example.test",               "Primary nameserver"),
             ("domain.ns2",                "ns2.example.test",               "Secondary nameserver"),

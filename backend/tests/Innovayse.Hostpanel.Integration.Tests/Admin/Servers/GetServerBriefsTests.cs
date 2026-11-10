@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 public sealed class GetServerBriefsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A known server comes back with its name, host and address; an unknown id is left out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_KnownAndUnknownIds_ReturnsOnlyTheKnownServerAsync()
     {
@@ -54,6 +55,7 @@ public sealed class GetServerBriefsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An empty id list answers an empty list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NoIds_ReturnsEmptyAsync()
     {

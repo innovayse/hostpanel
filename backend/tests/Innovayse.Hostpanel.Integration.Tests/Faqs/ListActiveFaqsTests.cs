@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Faqs.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Faqs;
@@ -14,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Faqs;
 public sealed class ListActiveFaqsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The feed is publicly accessible without authentication.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_ReturnsOk_WithoutAuth()
     {
@@ -23,6 +23,7 @@ public sealed class ListActiveFaqsTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>The feed carries the contract's flat shape and leaves out admin-only members.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_ReturnsTheFlatContractShape()
     {
@@ -41,6 +42,7 @@ public sealed class ListActiveFaqsTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>The feed excludes an inactive record and orders the rest by sort order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_ExcludesInactive_AndOrdersBySortOrder()
     {
@@ -58,6 +60,7 @@ public sealed class ListActiveFaqsTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>The feed resolves the requested locale over the default when both are stored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_ResolvesTheRequestedLocale()
     {
@@ -72,6 +75,7 @@ public sealed class ListActiveFaqsTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A locale with no stored translation falls back to the default locale.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublicList_FallsBackToTheDefaultLocale()
     {

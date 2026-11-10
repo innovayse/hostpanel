@@ -8,9 +8,11 @@ using Microsoft.EntityFrameworkCore;
 namespace Innovayse.Hostpanel.Application.Orders.Commands.CloseOrderLineRefund;
 
 /// <summary>
-/// Handles <see cref="CloseOrderLineRefundCommand"/>: a partly refunded line is closed to retries and keeps its order
-/// incomplete until staff finish the refund by hand; this is how they tell the system it is finished. The line becomes
-/// Refunded, the order's status follows its lines, and the action is written to the client's activity log in the same save.
+/// Handles <see cref="CloseOrderLineRefundCommand"/>: how staff tell the system they gave a line's cost back by hand. A
+/// failed line they refunded themselves, a line whose refund is stuck in Refunding, and a partly refunded line all keep the
+/// order incomplete until then. The line becomes Refunded, the order's status follows its lines, and the action, with the
+/// state the line was closed from, is written to the client's activity log in the same save. The admin asks for a
+/// confirmation before it sends this.
 /// </summary>
 public sealed class CloseOrderLineRefundHandler
 {
@@ -30,11 +32,11 @@ public sealed class CloseOrderLineRefundHandler
     }
 
     /// <summary>Handles the command.</summary>
-    /// <param name="cmd">The order and the partly refunded line.</param>
+    /// <param name="cmd">The order and the failed, refunding or partly refunded line.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success once the line is Refunded; <c>ORDER_NOT_FOUND</c> or <c>ORDER_ITEM_NOT_FOUND</c> when an id names nothing;
-    /// <c>ORDER_LINE_NOT_REFUNDABLE</c> when the line is not partly refunded; <c>ORDER_LINE_CHANGED</c> when another writer
+    /// <c>ORDER_LINE_NOT_REFUNDABLE</c> when the line is in another state; <c>ORDER_LINE_CHANGED</c> when another writer
     /// saved the order first (the caller opens the order again).
     /// </returns>
     public async Task<Result> HandleAsync(CloseOrderLineRefundCommand cmd, CancellationToken ct)
@@ -59,11 +61,12 @@ public sealed class CloseOrderLineRefundHandler
             return Result.FailureCode(HostpanelErrorCodes.ORDER_LINE_NOT_REFUNDABLE);
         }
 
+        var closedFrom = order.Items.First(i => i.Id == cmd.ItemId).FulfilmentState;
         order.CloseLineRefund(cmd.ItemId);
         await _activityLogger.RecordAsync(
             new ActivityLogEntry(
                 order.ClientId,
-                $"Closed Order Line Refund - Order ID: {order.Id} - Line ID: {cmd.ItemId}"),
+                $"Closed Order Line Refund - Order ID: {order.Id} - Line ID: {cmd.ItemId} - From: {closedFrom}"),
             ct);
         try
         {

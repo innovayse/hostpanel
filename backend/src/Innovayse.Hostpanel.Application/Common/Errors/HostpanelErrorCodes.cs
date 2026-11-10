@@ -1470,6 +1470,12 @@ public static class HostpanelErrorCodes
     public const string ORDER_NOT_PENDING = Domain.Orders.OrdersErrors.OrderNotPending;
 
     /// <summary>
+    /// The order was not accepted (400): only an Active or Incomplete order has lines to fulfil.
+    /// <see cref="Domain.Orders.Order.BeginFulfilment"/>.
+    /// </summary>
+    public const string ORDER_NOT_ACCEPTED = Domain.Orders.OrdersErrors.OrderNotAccepted;
+
+    /// <summary>
     /// The order line may not be retried (409): the order was not accepted, the line did not fail, its cost
     /// was given back, or another retry is running it. <see cref="Domain.Orders.Order.StartLineRetry"/>.
     /// </summary>
@@ -1495,7 +1501,7 @@ public static class HostpanelErrorCodes
 
     /// <summary>
     /// The order line is not in the state a refund needs (409): only a failed line can start being refunded, only a line
-    /// being refunded can be settled, and only a partly refunded line can be closed as refunded by hand.
+    /// being refunded can be settled, and only a failed, refunding or partly refunded line can be closed as refunded by hand.
     /// <see cref="Domain.Orders.Order.BeginLineRefund"/>, <see cref="Domain.Orders.Order.CloseLineRefund"/>.
     /// </summary>
     public const string ORDER_LINE_NOT_REFUNDABLE = Domain.Orders.OrdersErrors.OrderLineNotRefundable;

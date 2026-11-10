@@ -547,7 +547,9 @@ docker/                              compose set (shared·dev·prod·platform), 
       (`route`, `field`, `equalsAny`); both conditions go through one reader, `readResultCondition` in `utils/plugins.ts`,
       which holds an event to the view's own bounds (`constants/pluginCondition.ts`: a GET route the page can fill, a dotted
       field of at most 200 characters, 1 to 20 scalars). A card is not checked at install, so a `visibleWhen` the reader
-      cannot accept drops the action whole, where a malformed `until` only loses its follow-up. `PluginChatCardAction` draws
+      cannot accept drops the action whole, where a malformed `until` only loses its follow-up. A condition whose route names a
+      parameter the page lacks is dropped the same way, with a `console.warn` in a development build only
+      (`warnUnfilledConditionRoute`). `PluginChatCardAction` draws
       each action and evaluates the condition with `usePluginCondition`, which takes the block ids whose refresh reads it
       again: a block names its own id, a card action the chat's `refresh` list. With no `refresh` list the condition is read
       once, when the card is drawn. `PluginChatCardActions` is the row under a card: it hides itself while every action is

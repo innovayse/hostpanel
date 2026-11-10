@@ -19,6 +19,12 @@ public static class OrdersErrors
     public const string OrderNotPending = "ORDER_NOT_PENDING";
 
     /// <summary>
+    /// The order was not accepted (400): only an Active or Incomplete order has lines to fulfil,
+    /// <see cref="Order.BeginFulfilment"/>.
+    /// </summary>
+    public const string OrderNotAccepted = "ORDER_NOT_ACCEPTED";
+
+    /// <summary>
     /// The line may not be retried (409): the order was not accepted, the line did not fail, was refunded, or
     /// another retry is running it: <see cref="Order.StartLineRetry"/>.
     /// </summary>

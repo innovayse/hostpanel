@@ -29,6 +29,24 @@ public sealed class ClaimOrderLinesTests(IntegrationTestFactory factory) : IClas
         result.ErrorCode.Should().Be(HostpanelErrorCodes.ORDER_NOT_FOUND);
     }
 
+    /// <summary>
+    /// An order that was never accepted has no lines to claim: refused as <c>ORDER_NOT_ACCEPTED</c>, and its lines stay
+    /// pending with no attempt counted.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task APendingOrderIsRefused()
+    {
+        var orderId = await OrdersTestSeeds.SeedOrderAsync(factory);
+
+        var result = await InvokeAsync(new ClaimOrderLinesCommand(orderId));
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.ORDER_NOT_ACCEPTED);
+        var line = (await OrdersTestReads.ReadItemsAsync(factory.Services, orderId)).Single();
+        line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Pending);
+        line.FulfilmentAttempts.Should().Be(0);
+    }
+
     /// <summary>A line the order does not hold is refused as <c>ORDER_ITEM_NOT_FOUND</c>.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

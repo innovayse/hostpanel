@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Models;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
@@ -14,8 +15,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 
 /// <summary>
 /// <see cref="FulfillOrderLinesCommand"/> through the real <see cref="IMessageBus"/>: every line is
-/// run the way its type asks, a failed line is reported and never stops the rest, and an unknown
-/// order is refused.
+/// run the way its type asks, a failed line is reported and never stops the rest, a line a retry took over while it waited
+/// its turn is never run a second time, and an unknown or unaccepted order is refused.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -39,6 +40,7 @@ public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : ICl
     public async Task ReportsTheRefusedDomainLineAndFulfilsTheRest()
     {
         var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        await OrdersTestSeeds.AcceptWithoutFulfilmentAsync(factory, seeded.OrderId);
 
         var result = await InvokeAsync(new FulfillOrderLinesCommand(seeded.OrderId));
 
@@ -63,6 +65,7 @@ public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : ICl
     public async Task ActivatesTheDigitalLineWithoutProvisioningAndLeavesTheHostingLinePending()
     {
         var seeded = await OrdersTestSeeds.SeedDigitalAndHostingOrderAsync(factory);
+        await OrdersTestSeeds.AcceptWithoutFulfilmentAsync(factory, seeded.OrderId);
 
         var result = await InvokeAsync(new FulfillOrderLinesCommand(seeded.OrderId));
 
@@ -90,6 +93,7 @@ public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : ICl
     public async Task ALineAlreadyFulfilledIsNeverFulfilledAgain()
     {
         var seeded = await OrdersTestSeeds.SeedDigitalAndHostingOrderAsync(factory);
+        await OrdersTestSeeds.AcceptWithoutFulfilmentAsync(factory, seeded.OrderId);
         (await InvokeAsync(new FulfillOrderLinesCommand(seeded.OrderId))).IsSuccess.Should().BeTrue();
 
         var again = await InvokeAsync(new FulfillOrderLinesCommand(seeded.OrderId));
@@ -113,6 +117,57 @@ public sealed class FulfillOrderLinesTests(IntegrationTestFactory factory) : ICl
         var result = await InvokeAsync(new FulfillOrderLinesCommand(seeded.OrderId, 987_654_321));
 
         result.ErrorCode.Should().Be(HostpanelErrorCodes.ORDER_ITEM_NOT_FOUND);
+    }
+
+    /// <summary>
+    /// An order that was never accepted has no lines to fulfil: the run is refused with <c>ORDER_NOT_ACCEPTED</c>, no line
+    /// is claimed and no service is created.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task APendingOrderIsRefused()
+    {
+        var seeded = await OrdersTestSeeds.SeedDigitalAndHostingOrderAsync(factory);
+
+        var result = await InvokeAsync(new FulfillOrderLinesCommand(seeded.OrderId));
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.ORDER_NOT_ACCEPTED);
+        var order = await OrdersTestReads.ReadOrderWithItemsAsync(factory.Services, seeded.OrderId);
+        order.Status.Should().Be(OrderStatus.Pending);
+        order.Items.Should().OnlyContain(i => i.FulfilmentState == OrderItemFulfilmentState.Pending && i.FulfilmentAttempts == 0);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        (await db.ClientServices.AsNoTracking().CountAsync(s => s.ClientId == seeded.ClientId)).Should().Be(0);
+    }
+
+    /// <summary>
+    /// Every line is claimed at once and the lines run one after another. A staff retry that takes a waiting line over (its
+    /// lease ran out before its turn) owns it from then on: the first run checks its claim right before the line's action,
+    /// finds the newer attempt and leaves the line alone, so the line's service is never created by the first run.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ALineARetryTookOverWhileItWaitedIsNotRunAgain()
+    {
+        var seeded = await OrdersTestSeeds.SeedDigitalAndHostingOrderAsync(factory);
+        await OrdersTestSeeds.AcceptWithoutFulfilmentAsync(factory, seeded.OrderId);
+        var interceptor = new TakeOverOnFirstActionInterceptor();
+        using var host = factory.WithWebHostBuilder(b => b.ConfigureTestServices(s =>
+            s.ConfigureDbContext<AppDbContext>(o => o.AddInterceptors(interceptor))));
+        interceptor.Services = host.Services;
+        using var scope = host.Services.CreateScope();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+
+        var result = await bus.InvokeAsync<Result<OrderFulfillmentDto>>(new FulfillOrderLinesCommand(seeded.OrderId));
+
+        result.IsSuccess.Should().BeTrue();
+        interceptor.TakenOverItemId.Should().NotBeNull();
+        var taken = (await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId)).Single(i => i.Id == interceptor.TakenOverItemId);
+        taken.FulfilmentState.Should().Be(OrderItemFulfilmentState.InProgress);
+        taken.FulfilmentAttempts.Should().Be(2);
+        using var readScope = factory.Services.CreateScope();
+        var db = readScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        (await db.ClientServices.AsNoTracking().CountAsync(s => s.OrderItemId == interceptor.TakenOverItemId)).Should().Be(0);
     }
 
     /// <summary>Dispatches the command on a fresh scope's bus.</summary>

@@ -32,8 +32,8 @@ public sealed class ClaimOrderLinesHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success once the claim is saved (a claim that changes nothing is Success too); <c>ORDER_NOT_FOUND</c> or
-    /// <c>ORDER_ITEM_NOT_FOUND</c> when an id names nothing; <c>ORDER_LINE_CHANGED</c> when another writer saved the order
-    /// first (the caller sends the claim again).
+    /// <c>ORDER_ITEM_NOT_FOUND</c> when an id names nothing; <c>ORDER_NOT_ACCEPTED</c> when the order is pending, cancelled
+    /// or fraud; <c>ORDER_LINE_CHANGED</c> when another writer saved the order first (the caller sends the claim again).
     /// </returns>
     public async Task<Result> HandleAsync(ClaimOrderLinesCommand cmd, CancellationToken ct)
     {
@@ -50,6 +50,11 @@ public sealed class ClaimOrderLinesHandler
         if (cmd.ItemId is { } itemId && order.Items.All(i => i.Id != itemId))
         {
             return Result.FailureCode(HostpanelErrorCodes.ORDER_ITEM_NOT_FOUND);
+        }
+
+        if (!order.IsAccepted)
+        {
+            return Result.FailureCode(HostpanelErrorCodes.ORDER_NOT_ACCEPTED);
         }
 
         order.BeginFulfilment(_clock.UtcNow, cmd.ItemId);

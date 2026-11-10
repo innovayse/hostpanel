@@ -28,7 +28,7 @@
     "finishRefund": "Part of the cost was given back. Finish the refund by hand.",
     "closeRefund": "Refund finished",
     "confirmCloseRefundTitle": "Close this refund?",
-    "confirmCloseRefundMessage": "Confirm that you gave back the rest of this line by hand. The line will be closed as refunded and can no longer be retried.",
+    "confirmCloseRefundMessage": "Confirm that the cost of this line was given back to the client, by you or by the stopped refund. The line will be closed as refunded and can no longer be retried. The action is recorded in the client log.",
     "refundClosed": "Line closed as refunded."
   },
   "ordersList": {
@@ -66,6 +66,8 @@
     "productPackageMissing": "The product has no server package set.",
     "productServerGroupRequired": "The product has no server group set.",
     "serverConnectionUnreachable": "The server could not be reached.",
+    "orderLineInterrupted": "The attempt was interrupted before it finished. Retry the line.",
+    "orderLineServiceConflict": "The service stored for this line belongs to another client or product. Check the line and its service by hand.",
     "unexpected": "An unexpected error stopped the line.",
     "generic": "The line could not be fulfilled."
   }

@@ -246,17 +246,50 @@ public sealed class PluginLoaderTests
 
             registry.IsLoaded("repeats-an-id").Should().BeTrue("an installed plugin is not lost to a stricter host");
             registry.IsLoaded("breaks-an-old-rule").Should().BeFalse();
-            logs.Entries.Should().Contain(e => e.Level == LogLevel.Warning
+            logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning
                 && e.Message.Contains("repeats-an-id")
                 && e.Message.Contains(nameof(PluginManifestRule.ViewBlockIdRepeated))
                 && e.Message.Contains("stays loaded"));
-            logs.Entries.Should().Contain(e => e.Level == LogLevel.Warning
+            logs.Entries.Should().ContainSingle(e => e.Level == LogLevel.Warning
                 && e.Message.Contains("repeats-an-id")
                 && e.Message.Contains(nameof(PluginManifestRule.ViewInvalid))
                 && e.Message.Contains("stays loaded"));
             logs.Entries.Should().ContainSingle(e => e.Message.Contains("breaks-an-old-rule")
                 && e.Message.Contains(nameof(PluginManifestRule.ViewBlockKindUnknown))
                 && e.Message.Contains("Skipping"));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    /// <summary>
+    /// A plugin whose view only breaks a rule added later, but which is skipped by a later check (here it has no
+    /// assembly), never gets the "stays loaded" line: the advisory is logged only once the plugin has loaded.
+    /// </summary>
+    [Fact]
+    public void DiscoverAndRegister_AdvisoryPluginSkippedLater_DoesNotSayItStaysLoaded()
+    {
+        var root = PluginSigningTestSeeds.NewFolder("loader-advisory-skipped");
+        try
+        {
+            const string repeated = """
+                {"schema":1,"blocks":[{"kind":"text","id":"a","text":"x"},{"kind":"text","id":"a","text":"y"}]}
+                """;
+            WriteViewPlugin(root, "no-assembly", repeated);
+            foreach (var dll in Directory.GetFiles(Path.Combine(root, "no-assembly"), "*.dll"))
+            {
+                File.Delete(dll);
+            }
+
+            var (registry, logs) = Discover(
+                [new PluginRoot(root, PluginOrigin.Uploaded)],
+                PluginSigningTestSeeds.Verifier(enforced: false),
+                allowUnsigned: false);
+
+            registry.IsLoaded("no-assembly").Should().BeFalse();
+            logs.Entries.Should().NotContain(e => e.Message.Contains("stays loaded"));
         }
         finally
         {

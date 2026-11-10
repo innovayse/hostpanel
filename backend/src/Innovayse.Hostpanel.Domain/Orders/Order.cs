@@ -85,6 +85,9 @@ public sealed class Order : BaseEntity, IAggregateRoot
     /// </summary>
     public bool CanBeDeleted => Status is OrderStatus.Pending or OrderStatus.Cancelled;
 
+    /// <summary>Gets whether the order was accepted (Active or Incomplete), which is when its lines may be fulfilled.</summary>
+    public bool IsAccepted => Status is OrderStatus.Active or OrderStatus.Incomplete;
+
     /// <summary>EF Core parameterless constructor: do not call directly.</summary>
     private Order() { }
 
@@ -186,7 +189,39 @@ public sealed class Order : BaseEntity, IAggregateRoot
     public bool CanRetryLine(int itemId, DateTimeOffset now, TimeSpan lease)
     {
         var item = _items.FirstOrDefault(i => i.Id == itemId);
-        return item is not null && Status is OrderStatus.Incomplete && item.CanBeRetried(now, lease);
+        return item is not null && IsLineRetryable(Status, item.FulfilmentState, item.LastFulfilmentAttemptAt, now, lease);
+    }
+
+    /// <summary>
+    /// The retry rule on its own, for a reader that holds the line's values and not the order: the order is
+    /// <see cref="OrderStatus.Incomplete"/>, and the line failed or a claim on it is older than the lease. The admin is
+    /// told this answer instead of working it out with a lease of its own.
+    /// </summary>
+    /// <param name="orderStatus">The order's status.</param>
+    /// <param name="lineState">The line's fulfilment state.</param>
+    /// <param name="lastAttemptAt">When the line's last attempt started or ended, or <see langword="null"/> before the first.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <param name="lease">How long a claim on a line is respected.</param>
+    /// <returns><see langword="true"/> when a retry may claim the line now.</returns>
+    public static bool IsLineRetryable(
+        OrderStatus orderStatus, OrderItemFulfilmentState lineState, DateTimeOffset? lastAttemptAt, DateTimeOffset now, TimeSpan lease)
+    {
+        return orderStatus is OrderStatus.Incomplete && OrderItem.CanBeRetried(lineState, lastAttemptAt, now, lease);
+    }
+
+    /// <summary>
+    /// Stamps the line the moment its action starts. A run over the whole order claims every line at once, and the lines
+    /// run one after another; the stamp starts the claim's lease again for this line, so a retry can take the line over
+    /// only once the action itself has run longer than the lease, never while the line waits its turn. A run whose
+    /// attempt no longer holds the line (a retry took it over meanwhile, or a refund) is refused and must not run it.
+    /// </summary>
+    /// <param name="itemId">The order line about to run.</param>
+    /// <param name="attempt">The attempt number the run was given when its claim was saved.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <exception cref="DomainRuleException">Thrown when the order holds no such line, or the attempt no longer holds it.</exception>
+    public void StartLineAction(int itemId, int attempt, DateTimeOffset now)
+    {
+        FindItem(itemId).StampAction(attempt, now);
     }
 
     /// <summary>
@@ -219,8 +254,16 @@ public sealed class Order : BaseEntity, IAggregateRoot
     /// </summary>
     /// <param name="now">The current moment (UTC).</param>
     /// <param name="onlyItemId">The one line to claim, or <see langword="null"/> for every line that is pending or failed.</param>
+    /// <exception cref="DomainRuleException">Thrown when the order was not accepted (it is pending, cancelled or fraud).</exception>
     public void BeginFulfilment(DateTimeOffset now, int? onlyItemId = null)
     {
+        if (!IsAccepted)
+        {
+            throw new DomainRuleException(
+                OrdersErrors.OrderNotAccepted,
+                $"Cannot fulfil the lines of an order with status {Status}. Only an accepted order can.");
+        }
+
         foreach (var item in _items.Where(i => (onlyItemId is null || i.Id == onlyItemId) && i.IsUnclaimed()))
         {
             item.BeginAttempt(now);
@@ -292,13 +335,15 @@ public sealed class Order : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
-    /// Tells whether a failed line may start being refunded: it failed, and no retry holds it.
+    /// Tells whether a failed line may start being refunded: it failed, and no retry holds it; or the run that holds it
+    /// under <paramref name="heldAttempt"/> failed it but could not record that, and refunds it itself.
     /// </summary>
     /// <param name="itemId">The order line.</param>
-    /// <returns><see langword="false"/> for a line this order does not hold, or one that is not failed.</returns>
-    public bool CanRefundLine(int itemId)
+    /// <param name="heldAttempt">The attempt of the run that holds the line and could not record its failure, or <see langword="null"/>.</param>
+    /// <returns><see langword="false"/> for a line this order does not hold, or one that may not start being refunded.</returns>
+    public bool CanRefundLine(int itemId, int? heldAttempt = null)
     {
-        return _items.FirstOrDefault(i => i.Id == itemId)?.IsFailed == true;
+        return _items.FirstOrDefault(i => i.Id == itemId)?.CanBeginRefund(heldAttempt) == true;
     }
 
     /// <summary>
@@ -306,10 +351,16 @@ public sealed class Order : BaseEntity, IAggregateRoot
     /// refunded, so the line is never both delivered and refunded; the order stays incomplete.
     /// </summary>
     /// <param name="itemId">The failed order line whose cost is about to be given back.</param>
-    /// <exception cref="DomainRuleException">Thrown when the order holds no such line or the line is not failed.</exception>
-    public void BeginLineRefund(int itemId)
+    /// <param name="heldAttempt">
+    /// The attempt of the run that still holds the line (in progress) because it could not record the failure, or
+    /// <see langword="null"/> for a line whose failure is on record. With it the refund runs anyway, since the run that
+    /// holds the claim is the one refunding.
+    /// </param>
+    /// <param name="errorCode">The code the unrecorded failure ended with; kept on the line when <paramref name="heldAttempt"/> is given.</param>
+    /// <exception cref="DomainRuleException">Thrown when the order holds no such line or the line may not start being refunded.</exception>
+    public void BeginLineRefund(int itemId, int? heldAttempt = null, string? errorCode = null)
     {
-        FindItem(itemId).BeginRefund();
+        FindItem(itemId).BeginRefund(heldAttempt, errorCode);
         RefreshStatusFromLines();
     }
 
@@ -339,20 +390,23 @@ public sealed class Order : BaseEntity, IAggregateRoot
         RefreshStatusFromLines();
     }
 
-    /// <summary>Tells whether staff can close the line as refunded: its refund stopped part way and they finished it by hand.</summary>
+    /// <summary>
+    /// Tells whether staff can close the line as refunded by hand: it failed and they gave its cost back themselves, its
+    /// refund is stuck under way, or its refund stopped part way and they finished it.
+    /// </summary>
     /// <param name="itemId">The order line.</param>
-    /// <returns><see langword="false"/> for a line this order does not hold, or one that is not partly refunded.</returns>
+    /// <returns><see langword="false"/> for a line this order does not hold, or one in another state.</returns>
     public bool CanCloseLineRefund(int itemId)
     {
         return _items.FirstOrDefault(i => i.Id == itemId)?.CanCloseRefund == true;
     }
 
     /// <summary>
-    /// Records that staff finished a partly done refund by hand: the line is refunded for good, and the order is
-    /// complete again unless another line is still open.
+    /// Records that staff gave a line's cost back by hand (from failed, a stuck refund, or a partly done one): the line is
+    /// refunded for good, and the order is complete again unless another line is still open.
     /// </summary>
-    /// <param name="itemId">The partly refunded order line.</param>
-    /// <exception cref="DomainRuleException">Thrown when the order holds no such line or the line is not partly refunded.</exception>
+    /// <param name="itemId">The failed, refunding or partly refunded order line.</param>
+    /// <exception cref="DomainRuleException">Thrown when the order holds no such line or the line is in another state.</exception>
     public void CloseLineRefund(int itemId)
     {
         FindItem(itemId).CloseRefund();

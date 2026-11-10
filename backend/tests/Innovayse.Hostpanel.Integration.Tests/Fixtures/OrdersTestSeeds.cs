@@ -9,6 +9,7 @@ using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
@@ -94,6 +95,22 @@ public static class OrdersTestSeeds
         await db.SaveChangesAsync();
 
         return order.Id;
+    }
+
+    /// <summary>
+    /// Accepts a seeded order without running its lines, so a test can run line fulfilment itself: only an accepted order
+    /// has lines to fulfil.
+    /// </summary>
+    /// <param name="factory">The factory whose database holds the order.</param>
+    /// <param name="orderId">The pending order.</param>
+    /// <returns>A task that completes when the order is Active with its lines still pending.</returns>
+    public static async Task AcceptWithoutFulfilmentAsync(IntegrationTestFactory factory, int orderId)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var order = await db.Orders.Include(o => o.Items).FirstAsync(o => o.Id == orderId);
+        order.Accept(DateTimeOffset.UtcNow);
+        await db.SaveChangesAsync();
     }
 
     /// <summary>

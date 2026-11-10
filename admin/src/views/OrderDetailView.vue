@@ -1,8 +1,9 @@
 <script setup lang="ts">
 /**
  * Order detail view: one order with its items, linked invoice and the admin actions
- * (accept, cancel, delete), a retry for each failed line or line a dead retry left in progress, and a
- * button that closes a partly refunded line once staff finished its refund by hand.
+ * (accept, cancel, delete), a retry on each line the API says may be retried (`canRetry`, decided
+ * with its configured lease), and a button that closes a line as refunded by hand on each line the
+ * API says may be closed (`canClose`: failed, stuck in refunding, or partly refunded).
  *
  * Reads `stores/orders`; a refused load shows `store.error` with a retry. The outcome of an accept
  * or cancel (success, or the API's sentence) shows above the order; a delete returns to the list.
@@ -38,7 +39,7 @@ import { BILLING_CYCLE_OPTIONS, INVOICE_STATUS_OPTIONS, ORDER_LINE_FULFILMENT_OP
 import { formatDateTime } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { invoiceStatusTone, orderItemStatusTone, orderLineFulfilmentTone, orderStatusTone, statusLabel } from '@/lib/tones'
-import { canRetryOrderLine, orderLineErrorKey } from '@/lib/orderLines'
+import { orderLineErrorKey } from '@/lib/orderLines'
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
 import { useOrdersStore } from '@/stores/orders'
 import { AppRoute, clientPath, invoicePath } from '@/lib/routes'
@@ -176,9 +177,9 @@ const handleRetryLine = async (itemId: number): Promise<void> => {
 }
 
 /**
- * Asks the operator to confirm that the refund of a partly refunded line was finished by hand.
+ * Asks the operator to confirm that the cost of a line was given back by hand, before it is closed as refunded.
  *
- * @param itemId - The partly refunded line.
+ * @param itemId - The failed, refunding or partly refunded line.
  */
 const askCloseRefund = (itemId: number): void => {
   closingRefundItemId.value = itemId
@@ -407,7 +408,7 @@ onMounted(async () => {
                       {{ statusLabel(ORDER_LINE_FULFILMENT_OPTIONS, item.fulfilmentState) }}
                     </UiBadge>
                     <UiButton
-                      v-if="canRetryOrderLine(store.currentOrder.status, item)"
+                      v-if="item.canRetry"
                       variant="secondary"
                       size="sm"
                       :loading="store.retryingItemId === item.id"
@@ -419,13 +420,18 @@ onMounted(async () => {
                     </UiButton>
                   </UiStack>
                   <UiStack
-                    v-if="item.fulfilmentState === OrderItemFulfilmentState.PartiallyRefunded"
+                    v-if="item.canClose"
                     direction="row"
                     gap="sm"
                     align="center"
                     wrap
                   >
-                    <UiText tone="warning" size="xs" :data-testid="`order-item-finish-refund-${item.id}`">
+                    <UiText
+                      v-if="item.fulfilmentState === OrderItemFulfilmentState.PartiallyRefunded"
+                      tone="warning"
+                      size="xs"
+                      :data-testid="`order-item-finish-refund-${item.id}`"
+                    >
                       {{ t('orders.orderDetail.finishRefund') }}
                     </UiText>
                     <UiButton

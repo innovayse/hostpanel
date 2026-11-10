@@ -45,6 +45,35 @@ public sealed class RegisterDomainTests(IntegrationTestFactory factory) : IClass
         response.Headers.Location.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// An <c>orderId</c> in the body is never bound: only order fulfilment links a domain to an order, so a staff call
+    /// cannot make a domain read as created by an order (which a retry of that order's line would count as done).
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Register_OrderIdInBody_IsIgnoredAsync()
+    {
+        var admin = await DomainsTestSeeds.AdminClientAsync(factory);
+        var (_, clientId) = await DomainsTestSeeds.RegisterOwnerAsync(factory, "register-domain-order");
+
+        var domainName = $"order-{Guid.NewGuid():N}.com";
+        var response = await admin.PostAsJsonAsync("/api/domains/register", new
+        {
+            domainName,
+            years = 1,
+            clientId,
+            whoisPrivacy = false,
+            autoRenew = false,
+            orderId = 424242,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var domain = await context.Domains.AsNoTracking().SingleAsync(d => d.Name == domainName);
+        domain.OrderId.Should().BeNull();
+    }
+
     /// <summary>An unauthenticated caller is refused with 401 before anything is registered.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

@@ -7,6 +7,7 @@ using Innovayse.Hostpanel.Application.Domains.Commands.TransferDomain;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetOwnedDomainNames;
 using Innovayse.Hostpanel.Application.Orders.Commands.ClaimOrderLines;
 using Innovayse.Hostpanel.Application.Orders.Commands.RecordOrderLineOutcome;
+using Innovayse.Hostpanel.Application.Orders.Commands.StartOrderLineAction;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Common.Enums;
 using Innovayse.Hostpanel.Application.Orders.Extensions;
@@ -39,6 +40,11 @@ namespace Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
 /// the order's status is computed from the lines as the database holds them rather than from the copy this run loaded. A
 /// line whose action throws is recorded as failed with a code and the run goes on; a cancelled run releases every line it
 /// had not finished before it rethrows.
+/// <para>
+/// Right before each line's action the claim is checked and the line stamped (<see cref="StartOrderLineActionCommand"/>):
+/// every line was claimed at once, so a line waiting its turn could have been taken over by a staff retry once its lease
+/// ran out. Such a line is skipped, never run a second time, and the stamp starts the lease again for the line that runs.
+/// </para>
 /// </remarks>
 public sealed class FulfillOrderLinesHandler
 {
@@ -159,6 +165,28 @@ public sealed class FulfillOrderLinesHandler
                 continue;
             }
 
+            // Checked and stamped right before the action: a line a retry took over while it waited its turn is that retry's
+            // to run, and must never be run twice.
+            Result started;
+            try
+            {
+                started = await StartActionAsync(order, item, ct);
+            }
+            catch (Exception ex) when (IsCancellation(ex, ct))
+            {
+                await ReleaseUnfinishedAsync(order, toRun.SkipWhile(i => i != item).ToList());
+                throw;
+            }
+
+            if (started.IsFailure)
+            {
+                _logger.LogWarning(
+                    "Order {OrderId} item {ItemId}: attempt {Attempt} no longer holds the line ({Reason}); it is not run by this attempt.",
+                    order.Id, item.Id, item.FulfilmentAttempts, DescribeFailure(started));
+                recordRefusal ??= started.ErrorCode ?? HostpanelErrorCodes.ORDER_LINE_CHANGED;
+                continue;
+            }
+
             OrderLineRunOutcome outcome;
             try
             {
@@ -199,7 +227,9 @@ public sealed class FulfillOrderLinesHandler
 
             if (outcome.Failed)
             {
-                failures.Add(Failure(item, outcome));
+                // A failure that could not be recorded still names the attempt that holds the line, so the caller can
+                // refund a refused domain all the same: the line is this run's, and it is not delivered.
+                failures.Add(Failure(item, outcome, recorded.IsFailure ? item.FulfilmentAttempts : null));
                 continue;
             }
 
@@ -257,6 +287,32 @@ public sealed class FulfillOrderLinesHandler
         {
             _logger.LogCritical(
                 ex, "Order {OrderId} item {ItemId}: recording the outcome of attempt {Attempt} threw.",
+                order.Id, item.Id, item.FulfilmentAttempts);
+            return Result.FailureCode(HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);
+        }
+    }
+
+    /// <summary>
+    /// Checks that the attempt still holds the line and stamps the start of its action. A cancellation of the run is
+    /// rethrown, so the caller releases the lines it had not finished.
+    /// </summary>
+    /// <param name="order">The order the line belongs to.</param>
+    /// <param name="item">The line, as it stood after the claim.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Success when the action may run, or the refusal (<c>ORDER_LINE_CHANGED</c> when another attempt holds the line).</returns>
+    private async Task<Result> StartActionAsync(Order order, OrderItem item, CancellationToken ct)
+    {
+        try
+        {
+            return await _bus.InvokeLineChangeAsync(
+                new StartOrderLineActionCommand(order.Id, item.Id, item.FulfilmentAttempts), ct);
+        }
+        catch (Exception ex) when (!IsCancellation(ex, ct))
+        {
+            // Not knowing whether the claim still holds, the line is not run: it stays claimed, and a retry takes it once
+            // the lease runs out. Running it could run it twice.
+            _logger.LogError(
+                ex, "Order {OrderId} item {ItemId}: the start of attempt {Attempt} could not be recorded.",
                 order.Id, item.Id, item.FulfilmentAttempts);
             return Result.FailureCode(HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);
         }
@@ -538,9 +594,10 @@ public sealed class FulfillOrderLinesHandler
     /// <summary>Builds the report of one line that could not be fulfilled.</summary>
     /// <param name="item">The failed line.</param>
     /// <param name="outcome">What running the line produced.</param>
+    /// <param name="unrecordedAttempt">The attempt that still holds the line when its failure could not be recorded, else <see langword="null"/>.</param>
     /// <returns>The line's failure report.</returns>
-    private static OrderLineFailureDto Failure(OrderItem item, OrderLineRunOutcome outcome) =>
-        new(item.Id, outcome.Kind, item.ProductName, item.Domain, item.FirstPaymentAmount, outcome.ErrorCode, outcome.FailureReason!);
+    private static OrderLineFailureDto Failure(OrderItem item, OrderLineRunOutcome outcome, int? unrecordedAttempt) =>
+        new(item.Id, outcome.Kind, item.ProductName, item.Domain, item.FirstPaymentAmount, outcome.ErrorCode, outcome.FailureReason!, unrecordedAttempt);
 
     /// <summary>Renders a failed <see cref="Result{T}"/> as one sentence for a log line or a refund note.</summary>
     /// <typeparam name="T">The value type of a successful result.</typeparam>

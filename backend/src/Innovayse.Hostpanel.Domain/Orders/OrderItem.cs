@@ -77,17 +77,28 @@ public sealed class OrderItem : BaseEntity
         or OrderItemFulfilmentState.Refunding
         or OrderItemFulfilmentState.PartiallyRefunded;
 
-    /// <summary>
-    /// Gets whether the line can be closed as refunded by hand: only a line whose refund stopped part way
-    /// (<see cref="OrderItemFulfilmentState.PartiallyRefunded"/>) waits for staff to finish it.
-    /// </summary>
-    public bool CanCloseRefund => FulfilmentState is OrderItemFulfilmentState.PartiallyRefunded;
+    /// <summary>Gets whether staff can close the line as refunded by hand: see <see cref="IsClosableByHand"/>.</summary>
+    public bool CanCloseRefund => IsClosableByHand(FulfilmentState);
 
     /// <summary>Gets whether a refund of the line is under way, so only its settlement may change the line.</summary>
     public bool IsBeingRefunded => FulfilmentState is OrderItemFulfilmentState.Refunding;
 
     /// <summary>EF Core parameterless constructor: do not call directly.</summary>
     private OrderItem() { }
+
+    /// <summary>
+    /// Tells whether a line in this state can be closed as refunded by hand: a failed line whose cost staff gave back
+    /// themselves, a line whose refund is stuck under way (<see cref="OrderItemFulfilmentState.Refunding"/>), and one whose
+    /// refund stopped part way (<see cref="OrderItemFulfilmentState.PartiallyRefunded"/>).
+    /// </summary>
+    /// <param name="state">The line's fulfilment state.</param>
+    /// <returns><see langword="true"/> for those three states.</returns>
+    public static bool IsClosableByHand(OrderItemFulfilmentState state)
+    {
+        return state is OrderItemFulfilmentState.Failed
+            or OrderItemFulfilmentState.Refunding
+            or OrderItemFulfilmentState.PartiallyRefunded;
+    }
 
     /// <summary>
     /// Creates a new pending order item with snapshotted product data and optional domain registration fields.
@@ -146,12 +157,36 @@ public sealed class OrderItem : BaseEntity
     /// <returns><see langword="true"/> when the line may be claimed for a retry.</returns>
     internal bool CanBeRetried(DateTimeOffset now, TimeSpan lease)
     {
-        return FulfilmentState switch
+        return CanBeRetried(FulfilmentState, LastFulfilmentAttemptAt, now, lease);
+    }
+
+    /// <summary>The retry rule of a line over its values alone; see <see cref="CanBeRetried(DateTimeOffset, TimeSpan)"/>.</summary>
+    /// <param name="state">The line's fulfilment state.</param>
+    /// <param name="lastAttemptAt">When the line's attempt was claimed or its action last started.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <param name="lease">How long a claim is respected.</param>
+    /// <returns><see langword="true"/> when the line may be claimed for a retry.</returns>
+    internal static bool CanBeRetried(OrderItemFulfilmentState state, DateTimeOffset? lastAttemptAt, DateTimeOffset now, TimeSpan lease)
+    {
+        return state switch
         {
             OrderItemFulfilmentState.Failed => true,
-            OrderItemFulfilmentState.InProgress => LastFulfilmentAttemptAt is { } startedAt && startedAt + lease <= now,
+            OrderItemFulfilmentState.InProgress => lastAttemptAt is { } startedAt && startedAt + lease <= now,
             _ => false,
         };
+    }
+
+    /// <summary>
+    /// Stamps the moment the claiming attempt starts the line's action, so the claim's lease counts from there and not from
+    /// the claim of the whole order.
+    /// </summary>
+    /// <param name="attempt">The attempt number the run was given when its claim was saved.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <exception cref="DomainRuleException">Thrown when the attempt no longer holds the line: it was refunded, or a newer attempt took it over.</exception>
+    internal void StampAction(int attempt, DateTimeOffset now)
+    {
+        EnsureOutcomeCanBeRecorded(attempt);
+        LastFulfilmentAttemptAt = now;
     }
 
     /// <summary>
@@ -214,17 +249,37 @@ public sealed class OrderItem : BaseEntity
     }
 
     /// <summary>
-    /// Claims a failed line for its refund: no retry can take it while the money goes back, so what is refunded is
-    /// never also delivered.
+    /// Tells whether the line may start being refunded: it failed, or it is in progress under
+    /// <paramref name="heldAttempt"/>, the run that failed it but could not record that.
     /// </summary>
-    /// <exception cref="DomainRuleException">Thrown when the line did not fail, so there is nothing to give back.</exception>
-    internal void BeginRefund()
+    /// <param name="heldAttempt">The attempt of the run that still holds the line, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when a refund may claim the line.</returns>
+    internal bool CanBeginRefund(int? heldAttempt)
     {
-        if (FulfilmentState is not OrderItemFulfilmentState.Failed)
+        return FulfilmentState is OrderItemFulfilmentState.Failed
+            || (heldAttempt is { } attempt && HoldsAttempt(attempt));
+    }
+
+    /// <summary>
+    /// Claims a failed line for its refund: no retry can take it while the money goes back, so what is refunded is
+    /// never also delivered. A line still in progress under <paramref name="heldAttempt"/> is claimed too, keeping the
+    /// failure's code, because the run that holds it failed it and could only not record that.
+    /// </summary>
+    /// <param name="heldAttempt">The attempt of the run that still holds the line, or <see langword="null"/>.</param>
+    /// <param name="errorCode">The code of the unrecorded failure; kept only when the line is claimed from in progress.</param>
+    /// <exception cref="DomainRuleException">Thrown when the line may not start being refunded.</exception>
+    internal void BeginRefund(int? heldAttempt = null, string? errorCode = null)
+    {
+        if (!CanBeginRefund(heldAttempt))
         {
             throw new DomainRuleException(
                 OrdersErrors.OrderLineNotRefundable,
-                $"Order line {Id} is {FulfilmentState}; only a failed line can start being refunded.");
+                $"Order line {Id} is {FulfilmentState}; only a failed line, or one its own run failed, can start being refunded.");
+        }
+
+        if (FulfilmentState is OrderItemFulfilmentState.InProgress)
+        {
+            FulfilmentErrorCode = errorCode is null ? null : Truncate(errorCode);
         }
 
         FulfilmentState = OrderItemFulfilmentState.Refunding;
@@ -252,17 +307,17 @@ public sealed class OrderItem : BaseEntity
     }
 
     /// <summary>
-    /// Closes a line whose refund staff finished by hand: the part of the cost the automatic refund could not give back
-    /// is back now, so the line is refunded for good and no longer keeps its order incomplete.
+    /// Closes a line whose cost staff gave back by hand (it failed, its refund is stuck, or it stopped part way), so the
+    /// line is refunded for good and no longer keeps its order incomplete.
     /// </summary>
-    /// <exception cref="DomainRuleException">Thrown when the line is not partly refunded.</exception>
+    /// <exception cref="DomainRuleException">Thrown when the line is in a state that cannot be closed by hand.</exception>
     internal void CloseRefund()
     {
         if (!CanCloseRefund)
         {
             throw new DomainRuleException(
                 OrdersErrors.OrderLineNotRefundable,
-                $"Order line {Id} is {FulfilmentState}; only a partly refunded line can be closed as refunded.");
+                $"Order line {Id} is {FulfilmentState}; only a failed, refunding or partly refunded line can be closed as refunded.");
         }
 
         FulfilmentState = OrderItemFulfilmentState.Refunded;

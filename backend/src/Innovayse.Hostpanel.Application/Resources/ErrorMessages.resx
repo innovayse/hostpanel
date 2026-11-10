@@ -856,6 +856,9 @@
   <data name="ORDER_NOT_PENDING" xml:space="preserve">
     <value>This action requires the order to be pending.</value>
   </data>
+  <data name="ORDER_NOT_ACCEPTED" xml:space="preserve">
+    <value>Only an accepted order has lines to fulfil.</value>
+  </data>
   <data name="ORDER_LINE_NOT_RETRYABLE" xml:space="preserve">
     <value>This order line cannot be retried now. Only a failed line of an accepted order can be, and not while another retry is running it.</value>
   </data>
@@ -869,7 +872,7 @@
     <value>This order line was changed while it was being processed, so the result could not be recorded. Open the order again to see where the line stands.</value>
   </data>
   <data name="ORDER_LINE_NOT_REFUNDABLE" xml:space="preserve">
-    <value>This order line cannot be refunded now. Only a failed line can start being refunded, only a line being refunded can be settled, and only a partly refunded line can be closed as refunded.</value>
+    <value>This order line cannot be refunded now. Only a failed line can start being refunded, only a line being refunded can be settled, and only a failed, refunding or partly refunded line can be closed as refunded.</value>
   </data>
   <data name="ORDER_LINE_INTERRUPTED" xml:space="preserve">
     <value>The attempt to fulfil this line was interrupted before it finished. Retry the line.</value>

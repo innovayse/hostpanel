@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Extensions;
 using Innovayse.Hostpanel.Application.Domains.Registrar;
+using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -89,7 +90,40 @@ public sealed class RenewDomainHandler
         var newExpiresAt = result.ExpiresAt ?? domain.ExpiresAt.AddYears(cmd.Years);
 
         domain.Renew(newExpiresAt, _clock.UtcNow, cmd.OrderItemId);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException) when (cmd.OrderItemId is not null)
+        {
+            var lineId = cmd.OrderItemId.Value;
+            if (!await IsRenewedForLineAsync(domain.Id, lineId, ct))
+            {
+                // Not the line's renewal recorded by another attempt: an ordinary lost race, answered as before.
+                throw;
+            }
+
+            // Another attempt of the same order line recorded its renewal first (the unique index on the line refused this
+            // one). The line is renewed; the registrar was asked twice, which staff must look at, but the line's answer is
+            // the same as the winner's.
+            _logger.LogCritical(
+                "Domain {DomainId} was renewed for order line {OrderItemId} by two attempts at once; the registrar may have " +
+                "extended it twice. The line counts as renewed.",
+                domain.Id, lineId);
+        }
+
         return Result.Success();
+    }
+
+    /// <summary>Tells whether a renewal of the domain for the order line is on record, as the database holds it now.</summary>
+    /// <param name="domainId">The domain.</param>
+    /// <param name="orderItemId">The order line.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns><see langword="true"/> when the line's renewal is recorded.</returns>
+    private Task<bool> IsRenewedForLineAsync(int domainId, int orderItemId, CancellationToken ct)
+    {
+        return _context.Domains
+            .AsNoTracking()
+            .AnyAsync(d => d.Id == domainId && d.LineRenewals.Any(r => r.OrderItemId == orderItemId), ct);
     }
 }

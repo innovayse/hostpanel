@@ -298,7 +298,7 @@ Order numbering, invoice and retry settings are not in <code>.env</code>. Set th
 | `Orders__NumberPrefix` | `ORD-` | Order number prefix |
 | `Orders__NumberDigits` | `4` | Zero-padded digits (e.g., `0042`) |
 | `Orders__InvoicePaymentTermDays` | `7` | Invoice payment term in days (0–365) |
-| `Orders__RetryLeaseMinutes` | `10` | Minutes a claim on an order line (the accept's, or a retry's) is respected before a retry may take the line over (1 to 1440). Set it longer than the slowest registrar or provisioning call. |
+| `Orders__RetryLeaseMinutes` | `10` | Minutes a claim on an order line (the accept's, or a retry's) is respected before a retry may take the line over (1 to 1440). The lease counts from the moment the line's own action starts, and the admin order page offers a retry only where this lease allows it. Set it longer than the slowest registrar or provisioning call. |
 | `InvoicePdf__MaxLines` | `500` | Maximum line items per PDF |
 | `InvoicePdf__MaxConcurrentRenders` | `4` | Concurrent PDF renders |
 | `InvoicePdf__MaxRenderWaitSeconds` | `10` | Seconds a download waits for a free render slot before answering 503 with Retry-After. |

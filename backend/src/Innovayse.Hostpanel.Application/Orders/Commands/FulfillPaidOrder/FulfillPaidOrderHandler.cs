@@ -172,7 +172,10 @@ public sealed class FulfillPaidOrderHandler
     {
         var reason = failure.Reason;
 
-        var claimed = await _bus.InvokeLineChangeAsync(new BeginOrderLineRefundCommand(orderId, failure.ItemId), ct);
+        // A failure the run could not record leaves the line in progress under the run's attempt; naming that attempt lets
+        // the refund claim it all the same, so a refused domain is never left charged because a save was lost.
+        var claimed = await _bus.InvokeLineChangeAsync(
+            new BeginOrderLineRefundCommand(orderId, failure.ItemId, failure.UnrecordedAttempt, failure.ErrorCode), ct);
         if (claimed.IsFailure)
         {
             // A retry holds the line, or it is settled already: that run owns what happens to the line now.

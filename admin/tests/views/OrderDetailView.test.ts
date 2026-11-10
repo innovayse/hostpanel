@@ -43,6 +43,8 @@ const pendingOrder = {
       fulfilmentErrorCode: null,
       fulfilmentAttempts: 0,
       lastFulfilmentAttemptAt: null,
+      canRetry: false,
+      canClose: false,
     },
   ],
 }
@@ -62,6 +64,8 @@ const incompleteOrder = {
       fulfilmentErrorCode: 'DOMAIN_ALREADY_REGISTERED',
       fulfilmentAttempts: 2,
       lastFulfilmentAttemptAt: '2026-03-04T10:10:00Z',
+      canRetry: true,
+      canClose: true,
     },
   ],
 }
@@ -273,7 +277,7 @@ describe('OrderDetailView', () => {
   })
 
   it('retries a failed line and confirms it above the order', async () => {
-    const fulfilled = { ...incompleteOrder, status: 'Active', items: [incompleteOrder.items[0], { ...incompleteOrder.items[1], fulfilmentState: 'Fulfilled', fulfilmentErrorCode: null }] }
+    const fulfilled = { ...incompleteOrder, status: 'Active', items: [incompleteOrder.items[0], { ...incompleteOrder.items[1], fulfilmentState: 'Fulfilled', fulfilmentErrorCode: null, canRetry: false, canClose: false }] }
     let reads = 0
     const mock = stubRoutes({
       'POST /api/orders/8/items/2/retry': () => json({ failedLines: [] }),

@@ -194,8 +194,9 @@ public sealed class OrdersController : BaseApiController
     /// <returns>
     /// 204 when the line is closed as refunded; 400 with <c>VALIDATION_ERROR</c> for a non-positive id; 401 without a
     /// session; 403 for a non-admin; 404 with <c>ORDER_NOT_FOUND</c> or <c>ORDER_ITEM_NOT_FOUND</c> when an id names
-    /// nothing; 409 with <c>ORDER_LINE_NOT_REFUNDABLE</c> when the line is not partly refunded, or <c>ORDER_LINE_CHANGED</c>
-    /// when another writer saved the order first; 429 when the rate limit is hit.
+    /// nothing; 409 with <c>ORDER_LINE_REFUND_IN_PROGRESS</c> when the line's refund began less than the retry lease ago,
+    /// <c>ORDER_LINE_NOT_REFUNDABLE</c> when the line is not failed, stuck refunding or partly refunded, or
+    /// <c>ORDER_LINE_CHANGED</c> when another writer saved the order first; 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{id:int}/items/{itemId:int}/close-refund")]
     [Authorize(Policy = Policies.Admin)]

@@ -104,10 +104,11 @@ public sealed class FulfillPaidOrderHandler
         // order Incomplete (retryable once the claim runs out) instead of Active over lines that never started.
         var now = _clock.UtcNow;
         order.Accept(now);
-        order.BeginFulfilment(now);
+        var claimed = order.BeginFulfilment(now);
         await _context.SaveChangesAsync(ct);
 
-        var fulfilled = await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(new FulfillOrderLinesCommand(order.Id), ct);
+        var fulfilled = await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(
+            new FulfillOrderLinesCommand(order.Id, Claimed: claimed.ToClaimedLines()), ct);
         if (fulfilled.IsFailure)
         {
             return Result.FailureCode(fulfilled.ErrorCode ?? HostpanelErrorCodes.HOSTPANEL_UNEXPECTED);
@@ -172,7 +173,10 @@ public sealed class FulfillPaidOrderHandler
     {
         var reason = failure.Reason;
 
-        var claimed = await _bus.InvokeLineChangeAsync(new BeginOrderLineRefundCommand(orderId, failure.ItemId), ct);
+        // A failure the run could not record leaves the line in progress under the run's attempt; naming that attempt lets
+        // the refund claim it all the same, so a refused domain is never left charged because a save was lost.
+        var claimed = await _bus.InvokeLineChangeAsync(
+            new BeginOrderLineRefundCommand(orderId, failure.ItemId, failure.UnrecordedAttempt, failure.ErrorCode), ct);
         if (claimed.IsFailure)
         {
             // A retry holds the line, or it is settled already: that run owns what happens to the line now.

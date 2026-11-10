@@ -39,6 +39,7 @@ import {
   pluginConditionHolds,
   parsePluginSelectionMessage,
   readPluginField,
+  warnUnfilledConditionRoute,
 } from '~/utils/plugins'
 import { UiAlertVariant, UiButtonVariant, UiTone } from '~/utils/ui/enums'
 
@@ -222,6 +223,30 @@ describe('pluginConditionHolds', () => {
     expect(pluginConditionHolds({ route, field: 'version', equals: '1' }, { version: 1 })).toBe(false)
     expect(pluginConditionHolds({ route, field: 'version', equals: 1 }, { version: '1' })).toBe(false)
     expect(pluginConditionHolds({ route, field: 'exists', equals: true }, { exists: 'true' })).toBe(false)
+  })
+})
+
+describe('warnUnfilledConditionRoute', () => {
+  it('warns in development, naming the route and the parameters the page has', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+
+    warnUnfilledConditionRoute('/sites/{siteId}/versions/{versionId}', { siteId: '7' }, true)
+
+    expect(warn).toHaveBeenCalledOnce()
+    expect(String(warn.mock.calls[0]?.[0])).toContain('/sites/{siteId}/versions/{versionId}')
+    expect(String(warn.mock.calls[0]?.[0])).toContain('siteId')
+    warn.mockRestore()
+  })
+
+  it('stays silent outside development, and the card still drops the action', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const visibleWhen = { route: { method: 'get', path: '/sites/{siteId}/versions/{versionId}' }, field: 'live', equalsAny: [true] }
+
+    const card = parsePluginChatResult({ title: 'Ready', actions: [{ label: 'Open', href: '/client/dashboard', visibleWhen }] }, { siteId: '7' }, [])
+
+    expect(card?.actions).toEqual([])
+    expect(warn).not.toHaveBeenCalled()
+    warn.mockRestore()
   })
 })
 

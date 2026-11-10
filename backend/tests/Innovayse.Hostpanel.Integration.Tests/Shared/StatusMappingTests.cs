@@ -90,6 +90,7 @@ public sealed class StatusMappingTests
     [InlineData(HostpanelErrorCodes.ORDER_LINE_NOT_RETRYABLE, 409)]
     [InlineData(HostpanelErrorCodes.ORDER_LINE_CHANGED, 409)]
     [InlineData(HostpanelErrorCodes.ORDER_LINE_NOT_REFUNDABLE, 409)]
+    [InlineData(HostpanelErrorCodes.ORDER_LINE_REFUND_IN_PROGRESS, 409)]
     [InlineData(HostpanelErrorCodes.ORDER_LINE_ALREADY_FULFILLED, 409)]
     [InlineData(HostpanelErrorCodes.ORDER_LINE_SERVICE_CONFLICT, 409)]
     [InlineData(HostpanelErrorCodes.ORDER_ITEM_NOT_FOUND, 404)]

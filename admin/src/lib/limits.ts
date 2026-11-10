@@ -66,6 +66,3 @@ export const POLL_INTERVAL_MS = 2 * MS_PER_SECOND
 
 /** How long a "copied" confirmation stays on screen, in milliseconds. */
 export const COPIED_VISIBLE_MS = 2 * MS_PER_SECOND
-
-/** How long a retry may hold an order line before staff can claim it again, in milliseconds (matches the API's lease of ten minutes). */
-export const ORDER_LINE_RETRY_LEASE_MS = 10 * MS_PER_MINUTE

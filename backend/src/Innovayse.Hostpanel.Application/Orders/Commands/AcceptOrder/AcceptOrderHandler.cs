@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillOrderLines;
 using Innovayse.Hostpanel.Application.Orders.Common;
+using Innovayse.Hostpanel.Application.Orders.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Wolverine;
@@ -61,9 +62,10 @@ public sealed class AcceptOrderHandler
         // order Incomplete (retryable once the claim runs out) instead of Active over lines that never started.
         var now = _clock.UtcNow;
         order.Accept(now);
-        order.BeginFulfilment(now);
+        var claimed = order.BeginFulfilment(now);
         await _context.SaveChangesAsync(ct);
 
-        return await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(new FulfillOrderLinesCommand(order.Id), ct);
+        return await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(
+            new FulfillOrderLinesCommand(order.Id, Claimed: claimed.ToClaimedLines()), ct);
     }
 }

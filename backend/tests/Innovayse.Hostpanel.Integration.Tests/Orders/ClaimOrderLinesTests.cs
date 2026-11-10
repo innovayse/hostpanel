@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Orders.Commands.ClaimOrderLines;
 using Innovayse.Hostpanel.Application.Orders.Commands.RecordOrderLineOutcome;
+using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Orders.Common.Enums;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -27,6 +28,24 @@ public sealed class ClaimOrderLinesTests(IntegrationTestFactory factory) : IClas
         var result = await InvokeAsync(new ClaimOrderLinesCommand(987_654_321));
 
         result.ErrorCode.Should().Be(HostpanelErrorCodes.ORDER_NOT_FOUND);
+    }
+
+    /// <summary>
+    /// An order that was never accepted has no lines to claim: refused as <c>ORDER_NOT_ACCEPTED</c>, and its lines stay
+    /// pending with no attempt counted.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task APendingOrderIsRefused()
+    {
+        var orderId = await OrdersTestSeeds.SeedOrderAsync(factory);
+
+        var result = await InvokeAsync(new ClaimOrderLinesCommand(orderId));
+
+        result.ErrorCode.Should().Be(HostpanelErrorCodes.ORDER_NOT_ACCEPTED);
+        var line = (await OrdersTestReads.ReadItemsAsync(factory.Services, orderId)).Single();
+        line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Pending);
+        line.FulfilmentAttempts.Should().Be(0);
     }
 
     /// <summary>A line the order does not hold is refused as <c>ORDER_ITEM_NOT_FOUND</c>.</summary>
@@ -104,6 +123,31 @@ public sealed class ClaimOrderLinesTests(IntegrationTestFactory factory) : IClas
         done.FulfilmentAttempts.Should().Be(2);
     }
 
+    /// <summary>
+    /// The claim answers with exactly the lines it took and the attempt each was given: a failed line comes back with its
+    /// new attempt, and a line another claim already holds, or one that is done, is not in the answer.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ReturnsTheLinesItClaimedWithTheirAttempts()
+    {
+        var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        await AcceptWithoutFulfilmentAsync(seeded.OrderId);
+        var lines = await OrdersTestReads.ReadItemsAsync(factory.Services, seeded.OrderId);
+
+        var first = await ClaimAsync(new ClaimOrderLinesCommand(seeded.OrderId, lines[0].Id));
+        var rest = await ClaimAsync(new ClaimOrderLinesCommand(seeded.OrderId));
+        var none = await ClaimAsync(new ClaimOrderLinesCommand(seeded.OrderId));
+        (await InvokeAsync(new RecordOrderLineOutcomeCommand(seeded.OrderId, lines[0].Id, 1, OrderLineOutcome.Failed, "SOME_FAILURE")))
+            .IsSuccess.Should().BeTrue();
+        var again = await ClaimAsync(new ClaimOrderLinesCommand(seeded.OrderId));
+
+        first.Value.Should().Equal(new ClaimedOrderLineDto(lines[0].Id, 1));
+        rest.Value.Should().Equal(new ClaimedOrderLineDto(lines[1].Id, 1));
+        none.Value.Should().BeEmpty();
+        again.Value.Should().Equal(new ClaimedOrderLineDto(lines[0].Id, 2));
+    }
+
     /// <summary>A non-positive id is refused by the validator.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -124,6 +168,16 @@ public sealed class ClaimOrderLinesTests(IntegrationTestFactory factory) : IClas
         var order = await db.Orders.Include(o => o.Items).FirstAsync(o => o.Id == orderId);
         order.Accept(DateTimeOffset.UtcNow);
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>Sends a claim on a fresh scope's bus and reads the lines it answered with.</summary>
+    /// <param name="command">The claim.</param>
+    /// <returns>The claim's answer.</returns>
+    private async Task<Result<IReadOnlyList<ClaimedOrderLineDto>>> ClaimAsync(ClaimOrderLinesCommand command)
+    {
+        using var scope = factory.Services.CreateScope();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        return await bus.InvokeAsync<Result<IReadOnlyList<ClaimedOrderLineDto>>>(command);
     }
 
     /// <summary>Dispatches the command on a fresh scope's bus.</summary>

@@ -476,6 +476,25 @@ public sealed class RegisteredDomain : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
+    /// Takes the expiry a registrar reported for a renewal that was not recorded, when it lies past the one on record: the
+    /// registrar holds the truth, so a second renewal it made must not be hidden behind an earlier date. The billing due date
+    /// moves with it. No <see cref="DomainRenewedEvent"/> is raised, because the renewal on record already raised one.
+    /// </summary>
+    /// <param name="reportedExpiresAt">The expiry date the registrar reported.</param>
+    /// <returns><see langword="true"/> when the expiry moved; <see langword="false"/> when the one on record is as late or later.</returns>
+    public bool AdoptLaterRegistrarExpiry(DateTimeOffset reportedExpiresAt)
+    {
+        if (reportedExpiresAt <= ExpiresAt)
+        {
+            return false;
+        }
+
+        ExpiresAt = reportedExpiresAt;
+        NextDueDate = reportedExpiresAt;
+        return true;
+    }
+
+    /// <summary>
     /// Enables or disables automatic renewal for this domain.
     /// </summary>
     /// <param name="value">The desired auto-renew flag value.</param>

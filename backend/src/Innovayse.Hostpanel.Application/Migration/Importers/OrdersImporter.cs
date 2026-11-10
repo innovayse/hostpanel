@@ -135,7 +135,10 @@ public sealed class OrdersImporter : IMigrationEntityImporter
         switch (rec.Status)
         {
             case SourceOrderStatuses.Active:
+                // The source delivered the lines long ago: accepted and fulfilled from history, so they never read as
+                // not run yet, and no run here starts them again.
                 order.Accept(now);
+                order.MarkLinesFulfilledFromHistory(rec.CreatedAt ?? now);
                 break;
             case SourceOrderStatuses.Cancelled:
                 order.Cancel();

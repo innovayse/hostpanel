@@ -42,8 +42,22 @@ describe('PluginView', () => {
       { kind: PluginBlockKind.Text, id: 'a', text: 'two' },
     ])
     await settle()
-
     expect(wrapper.findAll('[data-testid="plugin-text"]').map(t => t.text())).toEqual(['one', 'two'])
+
+    // Vue checks keys for duplicates only when keyed children are patched, so a new view runs that update.
+    await wrapper.setProps({
+      view: {
+        schema: 1,
+        blocks: [
+          { kind: PluginBlockKind.Text, id: 'a', text: 'three' },
+          { kind: PluginBlockKind.Text, id: 'a', text: 'four' },
+          { kind: PluginBlockKind.Text, id: 'a', text: 'five' },
+        ],
+      },
+    })
+    await settle()
+
+    expect(wrapper.findAll('[data-testid="plugin-text"]').map(t => t.text())).toEqual(['three', 'four', 'five'])
     expect(warn.mock.calls.flat().join(' ')).not.toContain('Duplicate keys')
     warn.mockRestore()
   })

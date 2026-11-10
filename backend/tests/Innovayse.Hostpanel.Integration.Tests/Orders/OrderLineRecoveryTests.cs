@@ -142,6 +142,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
     public async Task ACancelledRunReleasesTheLinesItDidNotFinish()
     {
         var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        await OrdersTestSeeds.AcceptWithoutFulfilmentAsync(factory, seeded.OrderId);
         await OrdersTestReads.ReleaseDomainAsync(factory.Services, seeded.Domain);
         using var host = HostWith<CancellingRegistrar>();
         using var scope = host.Services.CreateScope();

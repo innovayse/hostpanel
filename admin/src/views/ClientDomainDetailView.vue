@@ -102,6 +102,9 @@ const showRenewModal = ref(false)
 /** Whether the register confirmation modal is visible. */
 const showRegisterModal = ref(false)
 
+/** Whether the cancel-transfer confirmation modal is visible. */
+const showCancelTransferModal = ref(false)
+
 /** Number of years to renew, bound to the renew modal input. */
 const renewYears = ref(1)
 
@@ -315,6 +318,17 @@ const confirmRenew = async (): Promise<void> => {
   }
   showRenewModal.value = false
   await runCommand(() => store.renew(domainId.value, years))
+}
+
+/**
+ * Sends the cancel-transfer command and closes the confirmation modal. A registrar that offers no
+ * cancel-transfer operation refuses, and its sentence shows beside the Save button.
+ *
+ * @returns Promise that resolves when the action completes.
+ */
+const confirmCancelTransfer = async (): Promise<void> => {
+  showCancelTransferModal.value = false
+  await runCommand(() => store.cancelTransfer(domainId.value))
 }
 
 /**
@@ -557,6 +571,16 @@ onBeforeUnmount(() => {
                     {{ commandLoading ? t('shared.processing') : t('clients.clientDomainDetail.renew') }}
                   </UiButton>
                   <UiButton
+                    v-if="domain.status === DomainStatus.PendingTransfer"
+                    type="button"
+                    :variant="UiButtonVariant.Secondary"
+                    :disabled="commandLoading"
+                    data-testid="client-domain-cancel-transfer"
+                    @click="showCancelTransferModal = true"
+                  >
+                    {{ commandLoading ? t('shared.processing') : t('clients.clientDomainDetail.cancelTransfer') }}
+                  </UiButton>
+                  <UiButton
                     type="button"
                     :variant="UiButtonVariant.Secondary"
                     :disabled="commandLoading"
@@ -739,6 +763,19 @@ onBeforeUnmount(() => {
         tone="primary"
         @confirm="confirmRegister"
         @close="showRegisterModal = false"
+      />
+
+      <UiDialog
+        v-if="showCancelTransferModal"
+        variant="confirm"
+        :title="t('clients.clientDomainDetail.cancelTransfer')"
+        :message="t('clients.clientDomainDetail.cancelThisTransferAtThe')"
+        :confirm-label="t('clients.clientDomainDetail.cancelTransfer')"
+        :loading-label="t('shared.processing')"
+        :loading="commandLoading"
+        tone="danger"
+        @confirm="confirmCancelTransfer"
+        @close="showCancelTransferModal = false"
       />
 
       <UiDialog

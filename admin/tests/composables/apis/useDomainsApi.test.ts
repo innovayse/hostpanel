@@ -82,6 +82,14 @@ describe('useDomainsApi', () => {
     expect(callOf(mock, 1)).toMatchObject({ url: '/api/domains/3/initiate-outgoing-transfer', method: 'POST' })
   })
 
+  it('cancelTransfer POSTs to /cancel-transfer', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+    const api = useDomainsApi()
+
+    await api.cancelTransfer(3)
+    expect(callOf(mock)).toMatchObject({ url: '/api/domains/3/cancel-transfer', method: 'POST' })
+  })
+
   it('DNS record calls hit /dns', async () => {
     const mock = stubFetch(new Response(null, { status: 204 }))
     const api = useDomainsApi()

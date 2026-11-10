@@ -204,6 +204,8 @@
     "registrarLock": "Registrar Lock",
     "renewDomain": "Renew Domain",
     "numberOfYears": "Number of years",
+    "cancelTransfer": "Cancel Transfer",
+    "cancelThisTransferAtThe": "Cancel this pending transfer at the registrar?",
     "registerDomain": "Register Domain",
     "registerThisDomainWithThe": "Register this domain with the registrar?",
     "eppAuthorizationCode": "EPP Authorization Code",

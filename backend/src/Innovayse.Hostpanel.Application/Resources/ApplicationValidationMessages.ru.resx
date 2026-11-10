@@ -1486,4 +1486,31 @@
   <data name="CreditNoteItemQuantityInvalid" xml:space="preserve">
     <value>У каждой строки количество должно быть от 1 до 100000.</value>
   </data>
+  <data name="StatusNameRequired" xml:space="preserve">
+    <value>Укажите название.</value>
+  </data>
+  <data name="StatusNameTooLong" xml:space="preserve">
+    <value>Название не может быть длиннее {0} символов.</value>
+  </data>
+  <data name="StatusDescriptionTooLong" xml:space="preserve">
+    <value>Описание не может быть длиннее {0} символов.</value>
+  </data>
+  <data name="StatusTitleRequired" xml:space="preserve">
+    <value>Укажите заголовок инцидента.</value>
+  </data>
+  <data name="StatusTitleTooLong" xml:space="preserve">
+    <value>Заголовок не может быть длиннее {0} символов.</value>
+  </data>
+  <data name="StatusMessageRequired" xml:space="preserve">
+    <value>Введите сообщение.</value>
+  </data>
+  <data name="StatusMessageTooLong" xml:space="preserve">
+    <value>Сообщение не может быть длиннее {0} символов.</value>
+  </data>
+  <data name="StatusStateInvalid" xml:space="preserve">
+    <value>Выберите допустимое состояние.</value>
+  </data>
+  <data name="StatusDaysInvalid" xml:space="preserve">
+    <value>Выберите число дней от 1 до {0}.</value>
+  </data>
 </root>

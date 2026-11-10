@@ -22,6 +22,7 @@ using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Domain.Slides;
 using Innovayse.Hostpanel.Domain.Ssh;
 using Innovayse.Hostpanel.Domain.Ssl;
+using Innovayse.Hostpanel.Domain.StatusPage;
 using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Testimonials;
 using Innovayse.Hostpanel.Infrastructure.Auth;
@@ -276,6 +277,18 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
 
     /// <summary>Gets the per-locale translations of the storefront client testimonials.</summary>
     public DbSet<TestimonialTranslation> TestimonialTranslations => Set<TestimonialTranslation>();
+
+    /// <summary>Gets the public status page's component groups.</summary>
+    public DbSet<StatusComponentGroup> StatusComponentGroups => Set<StatusComponentGroup>();
+
+    /// <summary>Gets the components the public status page reports on.</summary>
+    public DbSet<StatusComponent> StatusComponents => Set<StatusComponent>();
+
+    /// <summary>Gets the incidents announced on the public status page.</summary>
+    public DbSet<StatusIncident> StatusIncidents => Set<StatusIncident>();
+
+    /// <summary>Gets the timeline entries of the status page incidents.</summary>
+    public DbSet<StatusIncidentUpdate> StatusIncidentUpdates => Set<StatusIncidentUpdate>();
 
     /// <summary>Gets the storefront partners table.</summary>
     public DbSet<Partner> Partners => Set<Partner>();

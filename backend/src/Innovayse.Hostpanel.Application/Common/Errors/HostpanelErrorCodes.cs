@@ -1090,6 +1090,15 @@ public static class HostpanelErrorCodes
     /// <summary>The id names no testimonial (404).</summary>
     public const string TESTIMONIAL_NOT_FOUND = "TESTIMONIAL_NOT_FOUND";
 
+    /// <summary>The group id names no status page group (404).</summary>
+    public const string STATUS_COMPONENT_GROUP_NOT_FOUND = "STATUS_COMPONENT_GROUP_NOT_FOUND";
+
+    /// <summary>The id names no status page component (404).</summary>
+    public const string STATUS_COMPONENT_NOT_FOUND = "STATUS_COMPONENT_NOT_FOUND";
+
+    /// <summary>The id names no status page incident (404).</summary>
+    public const string STATUS_INCIDENT_NOT_FOUND = "STATUS_INCIDENT_NOT_FOUND";
+
     /// <summary>The id names no partner (404).</summary>
     public const string PARTNER_NOT_FOUND = "PARTNER_NOT_FOUND";
 
@@ -1592,6 +1601,21 @@ public static class HostpanelErrorCodes
 
     /// <summary>A testimonial's rating is outside 1 to 5 (400).</summary>
     public const string TESTIMONIAL_RATING_OUT_OF_RANGE = Domain.Testimonials.TestimonialErrors.RatingOutOfRange;
+
+    /// <summary>A status page group or component has no name (400).</summary>
+    public const string STATUS_NAME_REQUIRED = Domain.StatusPage.StatusPageErrors.NameRequired;
+
+    /// <summary>A status page display order is negative (400).</summary>
+    public const string STATUS_DISPLAY_ORDER_NEGATIVE = Domain.StatusPage.StatusPageErrors.DisplayOrderNegative;
+
+    /// <summary>A status page incident has no title (400).</summary>
+    public const string STATUS_INCIDENT_TITLE_REQUIRED = Domain.StatusPage.StatusPageErrors.IncidentTitleRequired;
+
+    /// <summary>A status page incident update has no message (400).</summary>
+    public const string STATUS_INCIDENT_MESSAGE_REQUIRED = Domain.StatusPage.StatusPageErrors.IncidentMessageRequired;
+
+    /// <summary>The status page incident is resolved and takes no more updates (409).</summary>
+    public const string STATUS_INCIDENT_ALREADY_RESOLVED = Domain.StatusPage.StatusPageErrors.IncidentAlreadyResolved;
 
     /// <summary>The refund is more than what was paid and not yet refunded (400): <see cref="Domain.Billing.Invoice.AddRefund"/>.</summary>
     public const string INVOICE_REFUND_EXCEEDS_PAID = Domain.Billing.BillingErrors.InvoiceRefundExceedsPaid;

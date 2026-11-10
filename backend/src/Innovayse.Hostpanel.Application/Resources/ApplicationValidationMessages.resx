@@ -1486,4 +1486,31 @@
   <data name="CreditNoteItemQuantityInvalid" xml:space="preserve">
     <value>Every line needs a quantity between 1 and 100000.</value>
   </data>
+  <data name="StatusNameRequired" xml:space="preserve">
+    <value>Enter a name.</value>
+  </data>
+  <data name="StatusNameTooLong" xml:space="preserve">
+    <value>The name cannot be longer than {0} characters.</value>
+  </data>
+  <data name="StatusDescriptionTooLong" xml:space="preserve">
+    <value>The description cannot be longer than {0} characters.</value>
+  </data>
+  <data name="StatusTitleRequired" xml:space="preserve">
+    <value>Enter the incident title.</value>
+  </data>
+  <data name="StatusTitleTooLong" xml:space="preserve">
+    <value>The title cannot be longer than {0} characters.</value>
+  </data>
+  <data name="StatusMessageRequired" xml:space="preserve">
+    <value>Enter a message.</value>
+  </data>
+  <data name="StatusMessageTooLong" xml:space="preserve">
+    <value>The message cannot be longer than {0} characters.</value>
+  </data>
+  <data name="StatusStateInvalid" xml:space="preserve">
+    <value>Choose a valid state.</value>
+  </data>
+  <data name="StatusDaysInvalid" xml:space="preserve">
+    <value>Choose a number of days from 1 to {0}.</value>
+  </data>
 </root>

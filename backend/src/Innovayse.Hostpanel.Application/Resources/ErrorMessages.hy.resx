@@ -1318,4 +1318,28 @@
   <data name="CREDIT_NOTE_REFUND_NOT_VOIDABLE" xml:space="preserve">
     <value>Այս կրեդիտ-նոտան վճարվել է վճարային դարպասի միջոցով վերադարձով։ Վերադարձը հնարավոր չէ հետ վերցնել, ուստի կրեդիտ-նոտան չի կարելի չեղարկել։</value>
   </data>
+  <data name="STATUS_COMPONENT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Կարգավիճակի էջի այդպիսի խումբ չկա։</value>
+  </data>
+  <data name="STATUS_COMPONENT_NOT_FOUND" xml:space="preserve">
+    <value>Կարգավիճակի էջի այդպիսի բաղադրիչ չկա։</value>
+  </data>
+  <data name="STATUS_INCIDENT_NOT_FOUND" xml:space="preserve">
+    <value>Կարգավիճակի էջի այդպիսի միջադեպ չկա։</value>
+  </data>
+  <data name="STATUS_NAME_REQUIRED" xml:space="preserve">
+    <value>Անհրաժեշտ է անուն։</value>
+  </data>
+  <data name="STATUS_DISPLAY_ORDER_NEGATIVE" xml:space="preserve">
+    <value>Ցուցադրման կարգը չի կարող բացասական լինել։</value>
+  </data>
+  <data name="STATUS_INCIDENT_TITLE_REQUIRED" xml:space="preserve">
+    <value>Միջադեպին անհրաժեշտ է վերնագիր։</value>
+  </data>
+  <data name="STATUS_INCIDENT_MESSAGE_REQUIRED" xml:space="preserve">
+    <value>Թարմացմանն անհրաժեշտ է հաղորդագրություն։</value>
+  </data>
+  <data name="STATUS_INCIDENT_ALREADY_RESOLVED" xml:space="preserve">
+    <value>Միջադեպը լուծված է և այլևս թարմացումներ չի ընդունում։</value>
+  </data>
 </root>

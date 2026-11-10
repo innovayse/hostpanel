@@ -20,6 +20,7 @@ using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Domain.Slides;
 using Innovayse.Hostpanel.Domain.Ssh;
 using Innovayse.Hostpanel.Domain.Ssl;
+using Innovayse.Hostpanel.Domain.StatusPage;
 using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Testimonials;
 using Microsoft.EntityFrameworkCore;
@@ -218,6 +219,18 @@ public interface IHostpanelDbContext
 
     /// <summary>Gets the per-locale translations of the storefront client testimonials.</summary>
     public DbSet<TestimonialTranslation> TestimonialTranslations { get; }
+
+    /// <summary>Gets the public status page's component groups.</summary>
+    public DbSet<StatusComponentGroup> StatusComponentGroups { get; }
+
+    /// <summary>Gets the components the public status page reports on.</summary>
+    public DbSet<StatusComponent> StatusComponents { get; }
+
+    /// <summary>Gets the incidents announced on the public status page.</summary>
+    public DbSet<StatusIncident> StatusIncidents { get; }
+
+    /// <summary>Gets the timeline entries of the status page incidents.</summary>
+    public DbSet<StatusIncidentUpdate> StatusIncidentUpdates { get; }
 
     /// <summary>Gets the storefront partners table.</summary>
     public DbSet<Partner> Partners { get; }

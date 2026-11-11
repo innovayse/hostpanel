@@ -1,8 +1,6 @@
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.CancelService;
-using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
@@ -22,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class CancelServiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A second cancellation request while one is already open is refused, not duplicated.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelService_ASecondOpenRequestIsRefused()
     {
@@ -41,6 +40,7 @@ public sealed class CancelServiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A closed earlier request does not hide an open one: a second open request is still refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelService_AClosedRequestDoesNotHideAnOpenOne()
     {
@@ -63,6 +63,7 @@ public sealed class CancelServiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Cancelling a service that does not exist refuses <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelService_UnknownServiceRefusesNotFound()
     {
@@ -77,6 +78,7 @@ public sealed class CancelServiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A terminated service has nothing left to cancel: refused, and no request is recorded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelService_TerminatedServiceIsRefused()
     {
@@ -93,6 +95,7 @@ public sealed class CancelServiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An end-of-period request marks the service to end with its cycle, with the reason, and leaves it running.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelService_EndOfBillingPeriodMarksTheServiceToEndWithItsCycle()
     {
@@ -114,6 +117,7 @@ public sealed class CancelServiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An immediate request terminates the service through the terminate use case.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelService_ImmediateTerminatesTheService()
     {

@@ -38,6 +38,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Every slide links to a storefront page that exists, not to a path with no page behind it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Slides_LinkOnlyToPagesThatExistAsync()
     {
@@ -50,6 +51,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Tickets are opened on different days in the past, and each reply follows the message before it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Tickets_AreSpreadOverThePastAndRepliesFollowEachOtherAsync()
     {
@@ -69,6 +71,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A ticket about abuse or security goes to that department, one about an invoice to billing, and customers sign their replies with their own name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Tickets_SitInTheDepartmentThatHandlesTheirSubjectAsync()
     {
@@ -89,6 +92,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Announcements are posted on different days, none in the future.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Announcements_AreSpreadOverThePastAsync()
     {
@@ -102,6 +106,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A resolved incident ends after it started, within a day, and nothing ends in the future.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ResolvedNetworkIssues_LastMinutesOrHoursAsync()
     {
@@ -115,6 +120,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A server never holds more accounts than the limit it is set up with.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Servers_NeverHoldMoreAccountsThanTheirLimitAsync()
     {
@@ -127,6 +133,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Customers signed up on different days, and nothing in a customer's history is older than the customer.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CustomerRecords_AreNeverOlderThanTheCustomerAsync()
     {
@@ -151,6 +158,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A domain is registered in the past, before it expires; a quote is written before it expires, and only an expired one has already expired.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainsAndQuotes_AreDatedInTheirOwnOrderAsync()
     {
@@ -168,6 +176,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The logs read as history: mail and activity are dated in the past on many different days.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Logs_AreSpreadOverThePastAsync()
     {
@@ -188,6 +197,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The welcome mail template names the demo site instead of the product's own name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WelcomeTemplate_NamesTheDemoAsync()
     {
@@ -203,6 +213,7 @@ public sealed class DemoSeedConsistencyTests(IntegrationTestFactory factory)
     /// A visitor can provision any pending service the demo shows: every hosting plan names its panel package, and
     /// every pending service is a hosting service that already carries the domain and username its account is created with.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PendingServices_CarryWhatProvisioningNeedsAsync()
     {

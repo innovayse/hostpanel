@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Domain.Admin;
 using Innovayse.Hostpanel.Domain.Audit;
 using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Campaigns;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Faqs;
@@ -22,6 +23,7 @@ using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Domain.Slides;
 using Innovayse.Hostpanel.Domain.Ssh;
 using Innovayse.Hostpanel.Domain.Ssl;
+using Innovayse.Hostpanel.Domain.StatusPage;
 using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Testimonials;
 using Innovayse.Hostpanel.Infrastructure.Auth;
@@ -88,6 +90,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// </summary>
     public DbSet<SubjectRole> SubjectRoles => Set<SubjectRole>();
 
+    /// <summary>Gets the client groups table.</summary>
+    public DbSet<ClientGroup> ClientGroups => Set<ClientGroup>();
+
     /// <summary>Gets the clients table.</summary>
     public DbSet<Client> Clients => Set<Client>();
 
@@ -114,6 +119,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
 
     /// <summary>Gets the cancellation requests table.</summary>
     public DbSet<CancellationRequest> CancellationRequests => Set<CancellationRequest>();
+
+    /// <summary>Gets the plan change requests table.</summary>
+    public DbSet<ServiceChangeRequest> ServiceChangeRequests => Set<ServiceChangeRequest>();
 
     /// <summary>Gets the domains table.</summary>
     public DbSet<RegisteredDomain> Domains => Set<RegisteredDomain>();
@@ -199,6 +207,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the knowledge base articles table.</summary>
     public DbSet<KbArticle> KbArticles => Set<KbArticle>();
 
+    /// <summary>Gets the per-locale translations of the knowledge base articles.</summary>
+    public DbSet<KbArticleTranslation> KbArticleTranslations => Set<KbArticleTranslation>();
+
     /// <summary>Gets the network issues table.</summary>
     public DbSet<NetworkIssue> NetworkIssues => Set<NetworkIssue>();
 
@@ -277,6 +288,18 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the per-locale translations of the storefront client testimonials.</summary>
     public DbSet<TestimonialTranslation> TestimonialTranslations => Set<TestimonialTranslation>();
 
+    /// <summary>Gets the public status page's component groups.</summary>
+    public DbSet<StatusComponentGroup> StatusComponentGroups => Set<StatusComponentGroup>();
+
+    /// <summary>Gets the components the public status page reports on.</summary>
+    public DbSet<StatusComponent> StatusComponents => Set<StatusComponent>();
+
+    /// <summary>Gets the incidents announced on the public status page.</summary>
+    public DbSet<StatusIncident> StatusIncidents => Set<StatusIncident>();
+
+    /// <summary>Gets the timeline entries of the status page incidents.</summary>
+    public DbSet<StatusIncidentUpdate> StatusIncidentUpdates => Set<StatusIncidentUpdate>();
+
     /// <summary>Gets the storefront partners table.</summary>
     public DbSet<Partner> Partners => Set<Partner>();
 
@@ -300,6 +323,15 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
 
     /// <summary>Gets the per-locale translations of the storefront frequently asked questions.</summary>
     public DbSet<FaqTranslation> FaqTranslations => Set<FaqTranslation>();
+
+    /// <summary>Gets the marketing email campaigns an admin writes and sends.</summary>
+    public DbSet<EmailCampaign> EmailCampaigns => Set<EmailCampaign>();
+
+    /// <summary>Gets the rules that pick the recipients of each campaign.</summary>
+    public DbSet<EmailCampaignSegment> EmailCampaignSegments => Set<EmailCampaignSegment>();
+
+    /// <summary>Gets the clients each campaign is delivered to, with the outcome of every delivery.</summary>
+    public DbSet<EmailCampaignRecipient> EmailCampaignRecipients => Set<EmailCampaignRecipient>();
 
     /// <summary>
     /// Gets the values plugins keep in their host-kept store, one row per plugin, opaque client reference (or none, for a
@@ -340,7 +372,8 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// same gateway payment first (the unique reference of a gateway payment row was violated), another
     /// delivery claimed the same email first (the unique delivery key of an email log row was violated), or another
     /// call wrote the first value of the same plugin store key, or another call opened the same plugin store scope, or
-    /// another call created the service of the same order line first.
+    /// another call created the service of the same order line first, or another attempt recorded the renewal of the same
+    /// order line first, or another call opened a plan change request for the same service first.
     /// </exception>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -456,6 +489,28 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             // OrderServiceHandler answers it by reading the service the winner created, so the line gets one service.
             throw new ConcurrencyConflictException(
                 "Another attempt created the service of the same order line concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: DomainLineRenewalConfiguration.OrderItemIndex,
+        })
+        {
+            // Two attempts of one order line recorded its renewal at once: the same lost race as a concurrent save.
+            // RenewDomainHandler answers it by finding the renewal the winner recorded, so the line counts as renewed.
+            throw new ConcurrencyConflictException(
+                "Another attempt recorded the renewal of the same order line concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: ServiceChangeRequestConfiguration.OpenRequestIndex,
+        })
+        {
+            // Two requests to change the plan of one service were raised at once: the same lost race as a concurrent save.
+            // RequestMyServicePlanChangeHandler answers it as the request that is already open.
+            throw new ConcurrencyConflictException(
+                "Another call opened a plan change request for the same service concurrently.", ex);
         }
     }
 

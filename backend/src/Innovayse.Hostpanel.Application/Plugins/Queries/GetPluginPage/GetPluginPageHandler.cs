@@ -1,10 +1,8 @@
+using Hostpanel.Sdk.Packaging.Naming;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
-using Hostpanel.Sdk.Packaging.Naming;
 using Innovayse.Hostpanel.Shared.Models;
-using Microsoft.Extensions.Options;
 
 namespace Innovayse.Hostpanel.Application.Plugins.Queries.GetPluginPage;
 
@@ -24,19 +22,10 @@ public sealed class GetPluginPageHandler
     /// <summary>Initializes the handler.</summary>
     /// <param name="source">The plugins whose pages the panels may show.</param>
     /// <param name="callerClient">Resolves the account the caller acts for and the permissions held there.</param>
-    /// <param name="facts">Reads the domains of the caller's own hosting services.</param>
-    /// <param name="slots">Reads the products the operator bound a plugin's slot widgets to.</param>
-    /// <param name="preview">The origins allowed over plain http on a developer machine.</param>
-    /// <param name="portal">The panel's own address, whose origin is never framed.</param>
-    public GetPluginPageHandler(
-        IPluginUiSource source,
-        ICallerClientResolver callerClient,
-        IPluginHostFactsReader facts,
-        IPluginSlotContextReader slots,
-        IOptions<PluginPreviewOptions> preview,
-        IOptions<ClientPortalOptions> portal)
+    /// <param name="origins">Works out the origins a view may frame or link to for the caller.</param>
+    public GetPluginPageHandler(IPluginUiSource source, ICallerClientResolver callerClient, PluginFrameOriginResolver origins)
     {
-        _reader = new PluginPageReader(source, callerClient, facts, slots, preview, portal);
+        _reader = new PluginPageReader(source, callerClient, origins);
     }
 
     /// <summary>Reads and localises the page.</summary>

@@ -11,9 +11,8 @@ import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiCheckbox from '@/components/ui/UiCheckbox.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
@@ -25,12 +24,12 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import UiTextarea from '@/components/ui/UiTextarea.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
-import { Icon } from '@/lib/icons'
 import { formatPlainAmount } from '@/lib/money'
 import { useBillingStore } from '@/stores/billing'
 import type { InvoiceDetail, InvoiceItemUpdate } from '@/types/invoice'
 import { MAX_PERCENT } from '@/lib/limits'
 import { UiTone } from '@/utils/ui/tone'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -232,6 +231,28 @@ const save = async (): Promise<void> => {
   }
 }
 
+/**
+ * The one row action of an editable line: remove it from the draft (nothing is saved until Save).
+ *
+ * @param index - The line position.
+ * @returns The action list passed to UiRowActions.
+ */
+const lineActions = (index: number): UiRowAction[] => [
+  {
+    label: t('billing.invoiceItems.removeItem'),
+    testid: `billing-invoice-item-remove-${index}`,
+    danger: true,
+    /**
+     * Removes this line from the draft.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      removeLine(index)
+    },
+  },
+]
+
 onMounted(populate)
 
 // Another section of the screen saving reloads the invoice; unsaved line edits must survive that.
@@ -256,7 +277,7 @@ watch(
         <!-- Read-only lines -->
         <UiTable
           v-if="readonly"
-          density="compact"
+          :density="UiTableDensity.Compact"
           :empty="(invoice.items ?? []).length === 0"
           :colspan="2"
           data-testid="billing-invoice-items-table"
@@ -264,13 +285,13 @@ watch(
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-              <UiTableHeader align="right">{{ t('shared.amount') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
             <UiTableRow v-for="item in invoice.items ?? []" :key="item.id" hoverable>
               <UiTableCell>{{ item.description }}</UiTableCell>
-              <UiTableCell align="right">{{ formatPlainAmount(item.amount, props.invoice.currency) }}</UiTableCell>
+              <UiTableCell numeric>{{ formatPlainAmount(item.amount, props.invoice.currency) }}</UiTableCell>
             </UiTableRow>
           </UiTableBody>
           <template #empty>
@@ -281,7 +302,7 @@ watch(
         <!-- Editable lines -->
         <UiTable
           v-else
-          density="compact"
+          :density="UiTableDensity.Compact"
           :empty="lines.length === 0"
           :colspan="6"
           data-testid="billing-invoice-items-editor"
@@ -299,8 +320,8 @@ watch(
               <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.qty') }}</UiTableHeader>
               <UiTableHeader>{{ t('billing.quoteDetail.unitPrice') }}</UiTableHeader>
-              <UiTableHeader align="right">{{ t('shared.amount') }}</UiTableHeader>
-              <UiTableHeader />
+              <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
+              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
@@ -338,17 +359,11 @@ watch(
                   :data-testid="`billing-invoice-item-price-${index}`"
                 />
               </UiTableCell>
-              <UiTableCell align="right">
+              <UiTableCell numeric>
                 {{ formatPlainAmount(lineTotal(line), props.invoice.currency) }}
               </UiTableCell>
-              <UiTableCell align="right">
-                <UiIconButton
-                  :label="t('billing.invoiceItems.removeItem')"
-                  :data-testid="`billing-invoice-item-remove-${index}`"
-                  @click="removeLine(index)"
-                >
-                  <UiIcon :markup="Icon.Close" size="sm" />
-                </UiIconButton>
+              <UiTableCell actions>
+                <UiRowActions :actions="lineActions(index)" :testid="`billing-invoice-item-actions-${index}`" />
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>

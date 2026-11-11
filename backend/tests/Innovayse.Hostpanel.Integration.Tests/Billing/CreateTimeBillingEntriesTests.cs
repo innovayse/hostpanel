@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class CreateTimeBillingEntriesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Creating time billing entries produces one billable item per entry.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateTimeBillingEntriesCreatesOneItemPerEntry()
     {
@@ -33,6 +34,7 @@ public sealed class CreateTimeBillingEntriesTests(IntegrationTestFactory factory
     }
 
     /// <summary>Creating time billing entries is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateTimeBillingEntriesRefusesAnonymous()
     {
@@ -45,6 +47,7 @@ public sealed class CreateTimeBillingEntriesTests(IntegrationTestFactory factory
     }
 
     /// <summary>Time billing entries for a client that does not exist answer 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateTimeBillingEntriesRefusesAnUnknownClient()
     {

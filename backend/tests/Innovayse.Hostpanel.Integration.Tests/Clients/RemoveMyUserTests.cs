@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class RemoveMyUserTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A linked second user is removed from the caller's own account and no longer listed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveDropsTheLinkedUserFromTheCallersAccount()
     {
@@ -33,6 +34,7 @@ public sealed class RemoveMyUserTests(IntegrationTestFactory factory) : IClassFi
 
     /// <summary>A user id that is not linked to the caller's account answers 404 with <c>CLIENT_USER_NOT_LINKED</c>.</summary>
     /// <remarks>An id that is not on the caller's account reads as absent, so <c>StatusMapping</c> answers 404.</remarks>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveRefusesAnUnknownUser()
     {
@@ -45,6 +47,7 @@ public sealed class RemoveMyUserTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Removing a user is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemoveRefusesAnonymous()
     {

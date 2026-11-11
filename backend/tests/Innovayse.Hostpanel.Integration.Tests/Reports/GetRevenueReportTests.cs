@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetRevenueReportTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin reads the revenue report for a well-formed range.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanReadTheReportAsync()
     {
@@ -31,6 +32,7 @@ public sealed class GetRevenueReportTests(IntegrationTestFactory factory) : ICla
     /// the last second of January lands on 31 January, and a window ending at 1 February leaves out
     /// the payment taken at that very instant.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SumsIncomePerDayInsideAHalfOpenWindowAsync()
     {
@@ -50,6 +52,7 @@ public sealed class GetRevenueReportTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A start after the end answers an empty report rather than a refusal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StartAfterEnd_AnswersAnEmptyReportAsync()
     {
@@ -65,6 +68,7 @@ public sealed class GetRevenueReportTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -76,6 +80,7 @@ public sealed class GetRevenueReportTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The revenue report is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

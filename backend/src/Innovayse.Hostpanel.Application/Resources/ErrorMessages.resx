@@ -277,7 +277,7 @@
     <value>No such knowledge base category exists.</value>
   </data>
 <data name="KBCATEGORY_IN_USE" xml:space="preserve">
-    <value>This knowledge base category still has sub-categories. Move or delete them first.</value>
+    <value>This knowledge base category still has sub-categories or articles. Move or delete them first.</value>
   </data>
 <data name="ANNOUNCEMENT_NOT_FOUND" xml:space="preserve">
     <value>No such announcement exists.</value>
@@ -542,6 +542,15 @@
   </data>
 <data name="PLUGIN_MANIFEST_TAGS_INVALID" xml:space="preserve">
     <value>The tags in the manifest are not valid: list at most 10 tags, each 2 to 30 lowercase letters, digits or hyphens with no leading #, and no tag twice.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_HOST_VERSION_INVALID" xml:space="preserve">
+    <value>The minimum or maximum host version in the manifest is not valid: write it as major.minor.patch, for example 2.1.0.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED" xml:space="preserve">
+    <value>The minimum host version in the manifest is above its maximum host version.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_CHANGELOG_TOO_LONG" xml:space="preserve">
+    <value>The changelog in the manifest is too long: keep it to 4000 characters.</value>
   </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>This plugin names a view document that its package does not contain.</value>
@@ -847,6 +856,9 @@
   <data name="ORDER_NOT_PENDING" xml:space="preserve">
     <value>This action requires the order to be pending.</value>
   </data>
+  <data name="ORDER_NOT_ACCEPTED" xml:space="preserve">
+    <value>Only an accepted order has lines to fulfil.</value>
+  </data>
   <data name="ORDER_LINE_NOT_RETRYABLE" xml:space="preserve">
     <value>This order line cannot be retried now. Only a failed line of an accepted order can be, and not while another retry is running it.</value>
   </data>
@@ -860,7 +872,10 @@
     <value>This order line was changed while it was being processed, so the result could not be recorded. Open the order again to see where the line stands.</value>
   </data>
   <data name="ORDER_LINE_NOT_REFUNDABLE" xml:space="preserve">
-    <value>This order line cannot be refunded now. Only a failed line can start being refunded, only a line being refunded can be settled, and only a partly refunded line can be closed as refunded.</value>
+    <value>This order line cannot be refunded now. Only a failed line can start being refunded, only a line being refunded can be settled, and only a failed, refunding or partly refunded line can be closed as refunded.</value>
+  </data>
+  <data name="ORDER_LINE_REFUND_IN_PROGRESS" xml:space="preserve">
+    <value>The refund of this order line started less than the retry lease ago and may still be giving the money back. Wait until it settles; only a refund stuck for longer than that can be closed by hand.</value>
   </data>
   <data name="ORDER_LINE_INTERRUPTED" xml:space="preserve">
     <value>The attempt to fulfil this line was interrupted before it finished. Retry the line.</value>
@@ -1189,11 +1204,47 @@
   <data name="PLUGIN_REGISTRY_HOST_INCOMPATIBLE" xml:space="preserve">
     <value>This version of the plugin does not run on this Hostpanel version.</value>
   </data>
+  <data name="PLUGIN_HOST_VERSION_OUT_OF_RANGE" xml:space="preserve">
+    <value>This plugin does not run on the Hostpanel version this server runs: it is outside the minimum and maximum host version the plugin supports.</value>
+  </data>
   <data name="PLUGIN_REGISTRY_VERSION_YANKED" xml:space="preserve">
     <value>The plugin registry withdrew this version, so it cannot be installed. Choose another version.</value>
   </data>
   <data name="PLUGIN_REGISTRY_VERSION_COMPROMISED" xml:space="preserve">
     <value>The plugin registry rejected this version as unsafe, so it cannot be installed. Choose another version.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID" xml:space="preserve">
+    <value>The plugin registry cannot use the public address of this Hostpanel. Set ClientBaseUrl to the public https address of this installation, then retry the registration.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED" xml:space="preserve">
+    <value>The plugin registry has not verified this Hostpanel yet, so it cannot give out this restricted plugin. Registration runs on its own: check its state on the Plugins page and retry if it shows an error.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REVOKED" xml:space="preserve">
+    <value>The plugin registry revoked this Hostpanel installation, so it no longer gives it restricted plugins. Contact the operator of the registry. Retry the registration to ask for a new identity.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED" xml:space="preserve">
+    <value>The plugin registry did not accept the signature of this Hostpanel. Retry the registration from the Plugins page. If it happens again, the identity stored on this server may be damaged.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW" xml:space="preserve">
+    <value>The plugin registry refused the request because the clock of this server is too far from the correct time. Fix the server clock (turn on time synchronisation) and try again.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REPLAY_REJECTED" xml:space="preserve">
+    <value>The plugin registry took the request for a repeat of an earlier one and refused it. Try again.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED" xml:space="preserve">
+    <value>The plugin registry did not accept the one-time download ticket. Try the install again to get a new ticket.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED" xml:space="preserve">
+    <value>The plugin registry limits how often this Hostpanel may register or ask for restricted plugins, and the limit is reached. Wait a while, then try again.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE" xml:space="preserve">
+    <value>The plugin registry could not read the confirmation text from this Hostpanel at /.well-known/hostpanel-registry/. Make sure your public address sends that path to the Hostpanel API, then retry.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_RESTART_NEEDED" xml:space="preserve">
+    <value>The registration with the plugin registry ran out of time or was forgotten, so it starts again with a new key.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_FOUND" xml:space="preserve">
+    <value>No registration with this id is waiting for confirmation.</value>
   </data>
   <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
     <value>The plugin asks for a kind of access to client hosting that this host does not know, names one twice, or declares it in a version 1 manifest.</value>
@@ -1266,5 +1317,98 @@
   </data>
   <data name="CREDIT_NOTE_REFUND_NOT_VOIDABLE" xml:space="preserve">
     <value>This credit note was paid out as a gateway refund. The refund cannot be taken back, so the note cannot be voided.</value>
+  </data>
+  <data name="STATUS_COMPONENT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>No such status page group.</value>
+  </data>
+  <data name="STATUS_COMPONENT_NOT_FOUND" xml:space="preserve">
+    <value>No such status page component.</value>
+  </data>
+  <data name="STATUS_INCIDENT_NOT_FOUND" xml:space="preserve">
+    <value>No such status page incident.</value>
+  </data>
+  <data name="STATUS_NAME_REQUIRED" xml:space="preserve">
+    <value>A name is required.</value>
+  </data>
+  <data name="STATUS_DISPLAY_ORDER_NEGATIVE" xml:space="preserve">
+    <value>A display order cannot be negative.</value>
+  </data>
+  <data name="STATUS_INCIDENT_TITLE_REQUIRED" xml:space="preserve">
+    <value>An incident needs a title.</value>
+  </data>
+  <data name="STATUS_INCIDENT_MESSAGE_REQUIRED" xml:space="preserve">
+    <value>An update needs a message.</value>
+  </data>
+  <data name="STATUS_INCIDENT_ALREADY_RESOLVED" xml:space="preserve">
+    <value>The incident is resolved and takes no more updates.</value>
+  </data>
+  <data name="CLIENT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>No such client group exists.</value>
+  </data>
+  <data name="CLIENT_GROUP_IN_USE" xml:space="preserve">
+    <value>This client group still has clients. Move them to another group first.</value>
+  </data>
+  <data name="CLIENT_GROUP_DISCOUNT_INVALID" xml:space="preserve">
+    <value>A discount must be between 0 and 100 percent.</value>
+  </data>
+  <data name="CLIENT_GROUP_COLOR_INVALID" xml:space="preserve">
+    <value>A colour must be written as #RRGGBB.</value>
+  </data>
+  <data name="SERVICE_CHANGE_REQUEST_NOT_FOUND" xml:space="preserve">
+    <value>No such plan change request.</value>
+  </data>
+  <data name="SERVICE_CHANGE_ALREADY_PENDING" xml:space="preserve">
+    <value>A plan change is already pending for this service.</value>
+  </data>
+  <data name="SERVICE_CHANGE_SAME_PRODUCT" xml:space="preserve">
+    <value>The service already runs on this plan.</value>
+  </data>
+  <data name="SERVICE_CHANGE_SAME_PRICE" xml:space="preserve">
+    <value>This plan costs the same as the current one, so there is nothing to change.</value>
+  </data>
+  <data name="SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE" xml:space="preserve">
+    <value>This plan is not available for the service.</value>
+  </data>
+  <data name="SERVICE_CHANGE_PRICE_UNAVAILABLE" xml:space="preserve">
+    <value>This plan has no price for the service's billing cycle in your currency.</value>
+  </data>
+  <data name="SERVICE_CHANGE_NO_RENEWAL_DATE" xml:space="preserve">
+    <value>The service has no renewal date, so the plan cannot be changed in the middle of a billing cycle.</value>
+  </data>
+  <data name="SERVICE_CHANGE_INVALID_STATE" xml:space="preserve">
+    <value>The plan change request is not in a state that allows this action.</value>
+  </data>
+  <data name="SERVICE_CHANGE_INVOICE_UNPAID" xml:space="preserve">
+    <value>The invoice for the plan change must be paid before the plan changes.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_FOUND" xml:space="preserve">
+    <value>This email campaign does not exist.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_DRAFT" xml:space="preserve">
+    <value>Only a draft campaign can be edited, scheduled or deleted.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SCHEDULED" xml:space="preserve">
+    <value>This campaign is not scheduled.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SENDING" xml:space="preserve">
+    <value>This campaign is not being sent.</value>
+  </data>
+  <data name="CAMPAIGN_NO_SEGMENT" xml:space="preserve">
+    <value>Add at least one recipient segment before scheduling the campaign.</value>
+  </data>
+  <data name="CAMPAIGN_SCHEDULE_IN_PAST" xml:space="preserve">
+    <value>Choose a send time in the future.</value>
+  </data>
+  <data name="CAMPAIGN_SEGMENT_VALUE_INVALID" xml:space="preserve">
+    <value>The value of a recipient segment does not fit its filter.</value>
+  </data>
+  <data name="CAMPAIGN_RECIPIENT_NOT_PENDING" xml:space="preserve">
+    <value>This recipient is no longer waiting for delivery.</value>
+  </data>
+  <data name="CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND" xml:space="preserve">
+    <value>This unsubscribe link is not valid.</value>
+  </data>
+  <data name="CAMPAIGN_MAIL_LINK_NOT_FOUND" xml:space="preserve">
+    <value>This link is not valid.</value>
   </data>
 </root>

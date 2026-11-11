@@ -21,6 +21,7 @@ import { formatDate } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { InvoiceTransactionType } from '@/types/invoice'
 import type { InvoiceDetail, InvoiceTransaction } from '@/types/invoice'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -47,7 +48,7 @@ const payments = computed<InvoiceTransaction[]>(() =>
           {{ t('shared.transactions') }}
         </UiHeading>
         <UiTable
-          density="compact"
+          :density="UiTableDensity.Compact"
           :empty="payments.length === 0"
           :colspan="5"
           data-testid="billing-invoice-payments-table"
@@ -57,8 +58,8 @@ const payments = computed<InvoiceTransaction[]>(() =>
               <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.transactionId') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.amount') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.transactionFees') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('shared.transactionFees') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
@@ -66,10 +67,10 @@ const payments = computed<InvoiceTransaction[]>(() =>
               <UiTableCell muted>{{ formatDate(transaction.date) }}</UiTableCell>
               <UiTableCell>{{ transaction.gateway }}</UiTableCell>
               <UiTableCell muted>{{ transaction.transactionId || '—' }}</UiTableCell>
-              <UiTableCell>
+              <UiTableCell numeric>
                 <UiText tone="success">{{ formatPlainAmount(transaction.amount, props.invoice.currency) }}</UiText>
               </UiTableCell>
-              <UiTableCell muted>{{ formatPlainAmount(transaction.fees, props.invoice.currency) }}</UiTableCell>
+              <UiTableCell numeric muted>{{ formatPlainAmount(transaction.fees, props.invoice.currency) }}</UiTableCell>
             </UiTableRow>
           </UiTableBody>
           <template #empty>
@@ -85,7 +86,7 @@ const payments = computed<InvoiceTransaction[]>(() =>
           {{ t('shared.transactionHistory') }}
         </UiHeading>
         <UiTable
-          density="compact"
+          :density="UiTableDensity.Compact"
           :empty="allTransactions.length === 0"
           :colspan="5"
           data-testid="billing-invoice-history-table"

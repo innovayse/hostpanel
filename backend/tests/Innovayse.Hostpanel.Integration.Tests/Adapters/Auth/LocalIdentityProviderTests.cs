@@ -44,6 +44,7 @@ public sealed class LocalIdentityProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A user is findable by the subject the provider gave them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindBySubjectAsync_ReturnsTheUserAsync()
     {
@@ -66,6 +67,7 @@ public sealed class LocalIdentityProviderTests(IntegrationTestFactory factory)
     /// Lookup by email ignores case. People type their address the way they feel like it,
     /// and Identity stores a normalised copy precisely so that this works.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindByEmailAsync_IgnoresCaseAsync()
     {
@@ -82,6 +84,7 @@ public sealed class LocalIdentityProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An address nobody holds resolves to nothing rather than to someone else.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FindByEmailAsync_ForAnUnknownAddress_ReturnsNullAsync()
     {
@@ -99,6 +102,7 @@ public sealed class LocalIdentityProviderTests(IntegrationTestFactory factory)
     /// The admin screens feed it whatever subjects their client rows hold, including the
     /// legacy ones that resolve to nobody.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetAccountsBySubjectsAsync_AnswersOnlyForKnownSubjectsAsync()
     {
@@ -120,6 +124,7 @@ public sealed class LocalIdentityProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An empty request costs no query and returns nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetAccountsBySubjectsAsync_ForNoSubjects_ReturnsEmptyAsync()
     {
@@ -137,6 +142,7 @@ public sealed class LocalIdentityProviderTests(IntegrationTestFactory factory)
     /// stable order the same row can appear on two pages and another on none, which reads
     /// as data going missing.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListAsync_PagesWithoutRepeatingOrLosingRowsAsync()
     {
@@ -161,6 +167,7 @@ public sealed class LocalIdentityProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Search matches on name as well as address.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListAsync_SearchesByNameAsync()
     {

@@ -89,6 +89,7 @@ const router = createRouter({
         { path: 'clients/addons', component: lazy('views/ServiceAddonsView.vue') },
         { path: 'clients/domain-registrations', component: lazy('views/DomainRegistrationsView.vue') },
         { path: 'clients/cancellations', component: lazy('views/CancellationRequestsView.vue') },
+        { path: 'clients/plan-changes', component: lazy('views/ServiceChangeRequestsView.vue') },
         { path: 'clients/affiliates', component: lazy('views/ManageAffiliatesView.vue') },
         {
           path: 'clients/:id',
@@ -163,6 +164,9 @@ const router = createRouter({
         { path: 'support/announcements', component: lazy('views/AnnouncementsListView.vue') },
         { path: 'support/announcements/new', component: lazy('views/AnnouncementFormView.vue') },
         { path: 'support/announcements/:id/edit', component: lazy('views/AnnouncementFormView.vue') },
+        { path: 'support/email-campaigns', component: lazy('views/EmailCampaignsListView.vue') },
+        { path: 'support/email-campaigns/new', component: lazy('views/EmailCampaignFormView.vue') },
+        { path: 'support/email-campaigns/:id', component: lazy('views/EmailCampaignFormView.vue') },
         { path: 'support/downloads', component: lazy('views/DownloadsView.vue') },
         { path: 'support/knowledgebase', component: lazy('views/KnowledgebaseView.vue') },
         { path: 'support/network-issues', component: lazy('views/NetworkIssuesView.vue') },
@@ -170,6 +174,8 @@ const router = createRouter({
         { path: 'support/network-issues/:id/edit', component: lazy('views/NetworkIssueFormView.vue') },
         { path: 'plugins', component: lazy('views/PluginsView.vue') },
         { path: 'plugins/:id', component: lazy('views/PluginDetailsView.vue') },
+        // A page a plugin adds: the API matches the segments below the plugin id against its page templates.
+        { path: 'apps/:plugin/:page*', component: lazy('views/PluginPageView.vue') },
         { path: 'servers', component: lazy('views/ServersView.vue') },
         { path: 'integrations/:slug/configure', component: lazy('views/IntegrationDetailView.vue') },
         { path: 'migration', component: lazy('views/MigrationView.vue') },

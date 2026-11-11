@@ -13,10 +13,14 @@ namespace Innovayse.Hostpanel.Integration.Tests.Slides;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class SlideTranslationStorageTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>
     /// A JSON array stored with non-ASCII letters escaped, as the default serializer writes it,
     /// reads back as the same bullet points.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LegacyEscapedJson_ReadsBackAsTheBulletPointsAsync()
     {
@@ -36,6 +40,7 @@ public sealed class SlideTranslationStorageTests(IntegrationTestFactory factory)
     /// the converter did, instead of failing the query.
     /// </summary>
     /// <param name="stored">The column text as it sits in the table.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Free SSL, Daily backups")]
     [InlineData("")]
@@ -59,7 +64,7 @@ public sealed class SlideTranslationStorageTests(IntegrationTestFactory factory)
     {
         var slide = Slide.Create(
             new SlideSettings("mdi-server", "#123456", "/img/slide.png", null, null, null, 0, true, SlideAudience.All, null, null),
-            DateTimeOffset.UtcNow);
+            SeededAt);
         slide.SetTranslation("en", "Storage test", null, null, ["placeholder"], null, null);
         context.Slides.Add(slide);
         await context.SaveChangesAsync(CancellationToken.None);

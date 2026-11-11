@@ -21,13 +21,12 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
@@ -40,11 +39,9 @@ import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
-
-/** Icon markup (shape tags) of the delete button. */
-const TRASH_ICON = '<polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />'
 
 /** Current route, source of the client id. */
 const route = useRoute()
@@ -296,6 +293,29 @@ const onTimeBillingSaved = (): void => {
   void fetchBillableItems()
 }
 
+/**
+ * The row actions of an uninvoiced billable item: one, delete it (confirmed first).
+ *
+ * @param item - The row.
+ * @returns The action list passed to UiRowActions.
+ */
+const billableItemActions = (item: ClientBillableItem): UiRowAction[] => [
+  {
+    label: t('shared.delete'),
+    testid: `client-billable-delete-${item.id}`,
+    /**
+     * Asks for confirmation, then deletes this row.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      handleDelete(item.id)
+    },
+    danger: true,
+    disabled: deleting.value,
+  },
+]
+
 /** Loads the items. */
 onMounted(() => fetchBillableItems())
 </script>
@@ -348,7 +368,7 @@ onMounted(() => fetchBillableItems())
         </UiHeading>
 
         <UiCard v-if="uninvoicedItems.length > 0" class="overflow-x-auto">
-          <UiTable density="comfortable" data-testid="client-billable-uninvoiced-table">
+          <UiTable :density="UiTableDensity.Comfortable" data-testid="client-billable-uninvoiced-table">
             <UiTableHead>
               <UiTableRow>
                 <UiTableHeader>
@@ -361,8 +381,8 @@ onMounted(() => fetchBillableItems())
                 </UiTableHeader>
                 <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.amount') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+                <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
+                <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
               </UiTableRow>
             </UiTableHead>
             <UiTableBody divided>
@@ -377,17 +397,9 @@ onMounted(() => fetchBillableItems())
                 </UiTableCell>
                 <UiTableCell muted>{{ item.id }}</UiTableCell>
                 <UiTableCell>{{ item.description }}</UiTableCell>
-                <UiTableCell muted>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
-                <UiTableCell>
-                  <UiIconButton
-                    :label="t('shared.delete')"
-                    :size="UiSize.Sm"
-                    :disabled="deleting"
-                    :data-testid="`client-billable-delete-${item.id}`"
-                    @click="handleDelete(item.id)"
-                  >
-                    <UiIcon :markup="TRASH_ICON" />
-                  </UiIconButton>
+                <UiTableCell muted numeric>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
+                <UiTableCell actions>
+                  <UiRowActions :actions="billableItemActions(item)" :testid="`client-billable-actions-${item.id}`" />
                 </UiTableCell>
               </UiTableRow>
             </UiTableBody>
@@ -426,12 +438,12 @@ onMounted(() => fetchBillableItems())
         <UiHeading :level="2" variant="card">{{ t('clients.clientBillableItems.invoicedItems') }}</UiHeading>
 
         <UiCard v-if="invoicedItems.length > 0" class="overflow-x-auto">
-          <UiTable density="comfortable" data-testid="client-billable-invoiced-table">
+          <UiTable :density="UiTableDensity.Comfortable" data-testid="client-billable-invoiced-table">
             <UiTableHead>
               <UiTableRow>
                 <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-                <UiTableHeader>{{ t('shared.amount') }}</UiTableHeader>
+                <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
                 <UiTableHeader>{{ t('shared.invoice') }}</UiTableHeader>
               </UiTableRow>
             </UiTableHead>
@@ -439,7 +451,7 @@ onMounted(() => fetchBillableItems())
               <UiTableRow v-for="item in invoicedItems" :key="item.id" hoverable>
                 <UiTableCell muted>{{ item.id }}</UiTableCell>
                 <UiTableCell>{{ item.description }}</UiTableCell>
-                <UiTableCell muted>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
+                <UiTableCell muted numeric>{{ formatPlainAmount(item.amount, item.currency) }}</UiTableCell>
                 <UiTableCell>
                   <template v-if="item.invoiceId">#{{ item.invoiceId }}</template>
                   <template v-else>&mdash;</template>

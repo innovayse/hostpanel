@@ -20,6 +20,7 @@ public sealed class SetAutoRenewTests(IntegrationTestFactory factory) : IClassFi
     /// Registers a domain, then calls <c>PUT /api/domains/{id}/auto-renew</c> with
     /// <c>value=true</c>. Expects 204 No Content.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_ValueTrue_Returns204Async()
     {
@@ -37,6 +38,7 @@ public sealed class SetAutoRenewTests(IntegrationTestFactory factory) : IClassFi
     /// The body field is <c>value</c>: <c>{ value: true }</c> switches auto-renew on and
     /// <c>{ value: false }</c> switches it off, read back through <c>GET /api/domains/{id}</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_ValueField_TogglesTheFlagAsync()
     {
@@ -57,6 +59,7 @@ public sealed class SetAutoRenewTests(IntegrationTestFactory factory) : IClassFi
     /// A body that names the flag <c>enabled</c> instead of <c>value</c> is refused with 400
     /// <c>VALIDATION_ERROR</c>, not read as <c>false</c>: a domain that had auto-renew on keeps it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_EnabledFieldInsteadOfValue_Returns400AndKeepsTheFlagAsync()
     {
@@ -74,6 +77,7 @@ public sealed class SetAutoRenewTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An empty body is refused with 400 <c>VALIDATION_ERROR</c> as well.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_EmptyBody_Returns400ValidationErrorAsync()
     {
@@ -91,6 +95,7 @@ public sealed class SetAutoRenewTests(IntegrationTestFactory factory) : IClassFi
     /// A staff change writes one activity log line on the owning client, naming the domain id and
     /// the new value and nothing else about the client.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_StaffChange_RecordsAnActivityLogLineAsync()
     {
@@ -115,6 +120,7 @@ public sealed class SetAutoRenewTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A refused body writes no activity log line.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_RefusedBody_RecordsNoActivityLogLineAsync()
     {
@@ -142,6 +148,7 @@ public sealed class SetAutoRenewTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An id no domain ever took answers 404 with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_UnknownDomain_Returns404Async()
     {
@@ -155,6 +162,7 @@ public sealed class SetAutoRenewTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_WithoutToken_Returns401Async()
     {
@@ -167,6 +175,7 @@ public sealed class SetAutoRenewTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A non-positive domain id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetAutoRenew_NonPositiveDomainId_Returns400ValidationErrorAsync()
     {

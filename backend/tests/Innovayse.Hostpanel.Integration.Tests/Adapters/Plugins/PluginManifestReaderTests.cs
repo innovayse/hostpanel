@@ -1,6 +1,6 @@
-using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Manifest;
+using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;

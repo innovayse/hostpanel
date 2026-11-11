@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class UpdateContactTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Updating a contact writes the change back.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateWritesTheContact()
     {
@@ -29,6 +30,7 @@ public sealed class UpdateContactTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Updating a contact on an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesUnknownClient()
     {
@@ -42,6 +44,7 @@ public sealed class UpdateContactTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Updating a contact id that is not this client's answers 404 with <c>CLIENT_CONTACT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAWrongContactId()
     {
@@ -57,6 +60,7 @@ public sealed class UpdateContactTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Updating a contact is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAnonymous()
     {
@@ -67,6 +71,7 @@ public sealed class UpdateContactTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A client, who is not staff, is refused with 403 on the admin route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAClient()
     {
@@ -81,6 +86,7 @@ public sealed class UpdateContactTests(IntegrationTestFactory factory) : IClassF
     /// Updating a contact id that is not the caller's own, through the portal's own
     /// <c>PUT /api/clients/me/contacts/{contactId}</c>, answers 404 with <c>CLIENT_CONTACT_NOT_FOUND</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MyContactsWrongIdRefusesNotFound()
     {
@@ -93,6 +99,7 @@ public sealed class UpdateContactTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Moving a contact onto the address another contact of the client uses answers 409 <c>CONTACT_EMAIL_IN_USE</c>; keeping its own is fine.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAnAddressAnotherContactUses()
     {
@@ -116,6 +123,7 @@ public sealed class UpdateContactTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Updating a contact leaves one activity line naming the client and the acting admin.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateIsAuditedWithTheActingAdmin()
     {

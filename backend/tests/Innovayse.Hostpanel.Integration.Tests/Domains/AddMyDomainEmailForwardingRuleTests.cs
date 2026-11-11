@@ -16,6 +16,7 @@ public sealed class AddMyDomainEmailForwardingRuleTests(IntegrationTestFactory f
     /// Adding an email forwarding rule refuses a stranger before anything is written, and for
     /// the owner persists a rule that then shows up on a read of the domain.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddEmailForwardingRule_RefusesAStrangerAndPersistsForTheOwnerAsync()
     {
@@ -36,6 +37,7 @@ public sealed class AddMyDomainEmailForwardingRuleTests(IntegrationTestFactory f
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddEmailForwardingRule_WithoutToken_Returns401Async()
     {
@@ -49,6 +51,7 @@ public sealed class AddMyDomainEmailForwardingRuleTests(IntegrationTestFactory f
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddEmailForwardingRule_WithNonPositiveId_Returns400ValidationErrorAsync()
     {

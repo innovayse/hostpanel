@@ -1,5 +1,4 @@
 using System.Reflection;
-using Hostpanel.Sdk.Plugins.Manifest;
 
 namespace Innovayse.Hostpanel.Architecture.Tests;
 

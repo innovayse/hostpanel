@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 public sealed class NetworkIssuesImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A resolved network issue record is imported with its resolved status applied.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_NetworkIssues_ImportsAResolvedIssueAsync()
     {
@@ -60,6 +61,7 @@ public sealed class NetworkIssuesImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A second run creates no second row: the retry imports 0 and skips the record as already existing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_NetworkIssues_SecondRunSkipsAsAlreadyExistsAsync()
     {
@@ -81,6 +83,7 @@ public sealed class NetworkIssuesImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The same title with a different start date is a new incident and is created.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_NetworkIssues_SameTitleWithADifferentStartDateIsCreatedAsync()
     {
@@ -99,6 +102,7 @@ public sealed class NetworkIssuesImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A record without a start date is matched by title alone, so a retry does not duplicate it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_NetworkIssues_UndatedRecordMatchesByTitleAloneAsync()
     {
@@ -117,6 +121,7 @@ public sealed class NetworkIssuesImporterTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A source start date finer than a microsecond still matches on a retry, because it is stored at microsecond precision.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_NetworkIssues_SubMicrosecondStartDateIsStillDuplicateOnRetryAsync()
     {

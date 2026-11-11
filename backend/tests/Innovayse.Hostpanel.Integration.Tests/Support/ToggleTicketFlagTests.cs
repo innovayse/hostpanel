@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class ToggleTicketFlagTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Staff can toggle the flagged state of a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanToggleTheFlagAsync()
     {
@@ -24,6 +25,7 @@ public sealed class ToggleTicketFlagTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Toggling the flag on a ticket that does not exist answers 404 with <c>TICKET_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ToggleFlagOnUnknownTicketAnswersNotFoundAsync()
     {
@@ -36,6 +38,7 @@ public sealed class ToggleTicketFlagTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A caller with no credential cannot toggle a ticket's flag.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

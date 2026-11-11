@@ -1,7 +1,4 @@
 using Innovayse.Hostpanel.Application.Admin.Commands.CheckReleaseUpdatesCron;
-using Innovayse.Hostpanel.Application.Common;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Innovayse.Hostpanel.Application.Admin.Servers.Commands.SyncServerAccountCountsCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.CheckOverdueInvoicesCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.DispatchFulfilmentCron;
@@ -10,6 +7,7 @@ using Innovayse.Hostpanel.Application.Billing.Commands.ProcessRenewalsCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.ReconcileGatewayPaymentsCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.SendRenewalRemindersCron;
 using Innovayse.Hostpanel.Application.Billing.Commands.SuspendOverdueServicesCron;
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Commands.CheckDomainExpiries;
 using Innovayse.Hostpanel.Application.Domains.Commands.SyncPendingDomainStatuses;
@@ -22,9 +20,9 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Wolverine;
 using Wolverine.Tracking;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Shared;
@@ -38,6 +36,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 public sealed class ScheduledJobsSurviveFailureTests(IntegrationTestFactory factory)
     : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>Every self-scheduling job, as the command that runs it.</summary>
     public static TheoryData<object> Jobs => new()
     {
@@ -124,7 +125,7 @@ public sealed class ScheduledJobsSurviveFailureTests(IntegrationTestFactory fact
                     var fake = new FakeReleaseFeed();
                     fake.Next = new ReleaseInfo(
                         "99.0.0",
-                        DateTimeOffset.UtcNow,
+                        SeededAt,
                         "https://github.com/innovayse/hostpanel/releases/tag/v99.0.0");
                     return fake;
                 });

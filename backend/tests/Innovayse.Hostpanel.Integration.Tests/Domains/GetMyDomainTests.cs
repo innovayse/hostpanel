@@ -18,6 +18,7 @@ public sealed class GetMyDomainTests(IntegrationTestFactory factory) : IClassFix
     /// caller's own read of the same id succeeds, proving the refusal is about ownership, not
     /// about the route being broken.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_RefusesAStrangerAndServesTheOwnerAsync()
     {
@@ -36,6 +37,7 @@ public sealed class GetMyDomainTests(IntegrationTestFactory factory) : IClassFix
     /// the registrar's reference, the transfer code, the subscription id and the staff notes stay
     /// out though the record holds all four.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_CarriesNoRegistrarReferenceTransferCodeOrStaffNoteAsync()
     {
@@ -72,6 +74,7 @@ public sealed class GetMyDomainTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An id nobody's account ever took answers exactly like a stranger's domain would.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_UnknownIdAnswersLikeAStrangersDomainAsync()
     {
@@ -84,6 +87,7 @@ public sealed class GetMyDomainTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetById_WithoutToken_Returns401Async()
     {
@@ -95,6 +99,7 @@ public sealed class GetMyDomainTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetDomain_WithNonPositiveId_Returns400ValidationErrorAsync()
     {

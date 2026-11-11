@@ -19,6 +19,7 @@ import HostingDetailsCard from '@/components/settings/HostingDetailsCard.vue'
 import PortalAppearanceCard from '@/components/settings/PortalAppearanceCard.vue'
 import SettingOutcome from '@/components/settings/SettingOutcome.vue'
 import SettingsLoading from '@/components/settings/SettingsLoading.vue'
+import VersionLabel from '@/components/layout/VersionLabel.vue'
 import SiteIdentityCard from '@/components/settings/SiteIdentityCard.vue'
 import StorefrontContentCard from '@/components/settings/StorefrontContentCard.vue'
 import TrackingChatCard from '@/components/settings/TrackingChatCard.vue'
@@ -37,6 +38,7 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { useSettingsStore } from '@/stores/settings'
 import type { Setting, SettingSaveResult } from '@/types/setting'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -140,6 +142,8 @@ const saveRow = async (setting: Setting): Promise<void> => {
 <template>
   <UiStack gap="none" data-testid="system-settings-view">
     <UiPageHeader :title="t('settings.systemSettings')" />
+    <!-- The installed version, quietly under the title; absent when it could not be loaded. -->
+    <VersionLabel testid="settings-version" class="-mt-4 mb-4" />
 
     <SettingsLoading v-if="store.loading && store.settings.length === 0" :message="t('common.loading')" />
     <UiErrorState
@@ -160,16 +164,16 @@ const saveRow = async (setting: Setting): Promise<void> => {
       <BrandingCard :settings="store.settings" :save="onSave" />
       <TrackingChatCard :settings="store.settings" :save="onSave" />
 
-      <UiCard class="overflow-hidden overflow-x-auto">
-        <UiTable density="comfortable" :empty="store.settings.length === 0" :colspan="3">
+      <UiCard class="overflow-hidden">
+        <UiTable :density="UiTableDensity.Comfortable" :empty="store.settings.length === 0" :colspan="3">
           <template #empty>
             {{ t('settings.table.noSettings') }}
           </template>
           <UiTableHead>
             <UiTableRow>
-              <UiTableHeader align="left">{{ t('settings.table.key') }}</UiTableHeader>
-              <UiTableHeader align="left">{{ t('settings.table.value') }}</UiTableHeader>
-              <UiTableHeader align="left">{{ t('settings.table.description') }}</UiTableHeader>
+              <UiTableHeader>{{ t('settings.table.key') }}</UiTableHeader>
+              <UiTableHeader>{{ t('settings.table.value') }}</UiTableHeader>
+              <UiTableHeader>{{ t('settings.table.description') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>

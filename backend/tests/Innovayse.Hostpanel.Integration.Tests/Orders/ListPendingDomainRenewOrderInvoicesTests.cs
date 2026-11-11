@@ -1,10 +1,9 @@
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Orders.Queries.ListPendingDomainRenewOrderInvoices;
 using Innovayse.Hostpanel.Domain.Billing;
-using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Orders;
+using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
 using Wolverine;
@@ -19,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class ListPendingDomainRenewOrderInvoicesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A pending renew order for the name is listed; a cancelled one and one for another name are not.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_MixedOrders_ListsOnlyThePendingRenewalOfTheNameAsync()
     {

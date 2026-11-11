@@ -18,22 +18,20 @@ is the same build with `Demo__Enabled=true` (`deploy:demo`); its sign-in page sh
 served by `GET /api/public/demo` — they are not written in `README.md`.
 
 **This is a public, separately licensed repository.** AGPL-3.0-or-later, except the plugin SDK (`backend/src/Hostpanel.Sdk`), which is MIT (its own `LICENSE`, packed into the package) so a plugin may be free or paid, open or closed; `SdkPackageTests` pins the package metadata. The SDK lives in its own public repository, **github.com/innovayse/hostpanel-sdk**, and is a git submodule at that same path (`.gitmodules`): clone with `--recurse-submodules` (or run `git submodule update --init` after a plain clone), and an SDK change lands as a pull request there first, then as a submodule bump here. `origin` is **github.com/innovayse/hostpanel**. Anything written here
-is read by people who have never seen the rest of the workspace, and the repo must build from
+is read by people who only have a clone of this repository, and the repo must build from
 a clone of itself alone (with its submodule) — that is why `Innovayse.Auth` is consumed as an optional package (only in an
 `InnovayseSso=true` build, see `backend/Directory.Build.props`) rather than a project reference, and why `backend/nuget.config` restricts `auditSources` to nuget.org.
 
 **Read first:** the six rules files beside this one — [clean-architecture.md](clean-architecture.md),
 [csharp-style.md](csharp-style.md), [dotnet-format.md](dotnet-format.md),
 [xml-docs.md](xml-docs.md), [jsdoc.md](jsdoc.md), [vuejs-style.md](vuejs-style.md) — then this
-file. This repository is a submodule and keeps its **own** copies; the workspace's `rules/`
-folder is not vendored here, and editing anything under it means committing in another
-repository.
+file. They are part of this repository: change them here.
 
-## Where this project's rules differ from the workspace — read this before your first review
+## This project's own rules — read this before your first review
 
-This backend is on the workspace shape: no primary constructors on handlers or controllers, no
+This backend follows one shape: no primary constructors on handlers or controllers, no
 `*Request` records, no exception-only refusals, no feature-local `Interfaces/` folders, no
-repositories. The departures are short:
+repositories. What is specific to this project is short:
 
 - **`LocalAuthController` follows the shape like every other controller.** It sits in
   `API/Controllers/`, derives from `BaseApiController` and each action binds a command and
@@ -53,12 +51,11 @@ repositories. The departures are short:
   and still returns the token in the body for scripted callers, and `logout` clears the cookie
   through `HandleSessionEnded`. `HealthController` derives from `BaseApiController` with
   `[AllowAnonymous]` like the rest.
-- **Anonymous public storefront feeds.** `/api/public/{faqs,locations,partners,product-groups,products,projects,testimonials}` (like `/api/public/slides` and
+- **Anonymous public storefront feeds.** `/api/public/{faqs,locations,partners,product-groups,products,projects,status,testimonials}` (like `/api/public/slides` and
   `/api/public/demo` before them) are `[AllowAnonymous]` read-only queries: the storefront renders them before anyone has
   signed in, so they cannot carry the usual `[Authorize]` on every action. They stay on `BaseApiController`, dispatch one
   query, return only active, already-localised records and never expose an admin field; writes remain behind `Policies.Admin`.
-- **Handler and validator naming is `<UseCase>Handler` / `<UseCase>Validator`; the product rule wins over
-  workspace `cqrs.md`.** Use-case names are unique across modules (`ProvisionService` in Provisioning,
+- **Handler and validator naming is `<UseCase>Handler` / `<UseCase>Validator`.** Use-case names are unique across modules (`ProvisionService` in Provisioning,
   `SetupService` in Services), one use case per state transition (`SuspendService`, `UnsuspendService`,
   `TerminateService`: every route, cron and status change dispatches them, and each checks the state
   before it asks the panel), and a DTO two use cases share lives once in `<Module>/Common/` (one
@@ -71,7 +68,7 @@ repositories. The departures are short:
 - **Recurring jobs and background handlers return `Task`, not `Result`.** The crons
   (`CheckOverdueInvoicesCron`, `ProcessBillableItemsCron`, `ProcessRenewalsCron`,
   `ReconcileGatewayPaymentsCron`, `SendRenewalRemindersCron`, `SuspendOverdueServicesCron`,
-  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`) and `ResetDemoData`,
+  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`) and `ResetDemoData`,
   `CheckDomainExpiries` and `SyncPendingDomainStatuses` are scheduled messages, not dispatched by a
   caller, so nothing would receive a `Result`. So are `RunMigrationPull` (published by
   `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended; when two
@@ -146,10 +143,9 @@ client/  admin/                    Nuxt 4 portal, Vite admin SPA — each owns i
 docker/                              compose set (shared·dev·prod·platform), nginx/, scripts/, .env.example — docker/README.md
 ```
 
-- **SharedKernel deliberately differs from the `file-layout.md` tree.** It adds
-  `Domain/SecretMembers.cs` and `Domain/SecretMemberAttribute.cs`, and has no `TenantEntity`
-  (the tree lists one; the file does not exist in this product). The reason for the two
-  additions: one masking rule shared by every layer. A record that carries a secret prints it
+- **SharedKernel holds `Domain/SecretMembers.cs` and `Domain/SecretMemberAttribute.cs`, and has no
+  `TenantEntity`** (this product has no tenant entity). The reason for the two files:
+  one masking rule shared by every layer. A record that carries a secret prints it
   through the generated `ToString` into logs and exception messages, so Domain, Application
   and Infrastructure all need the same answer to "which members are secret"
   and the same printer. Only the kernel is visible to all of them, and
@@ -252,7 +248,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   `Plugins/<Area>/` and its namespace equals the folder: `Payment`, `Provisioning`, `Registrar`, `HostingPanel`, `Hosting`,
   `Fulfilment`, `Identity`, `StoredCredentials`, `Manifest`, `Api`, `Endpoints`, `Host`, `Store`,
   `Lifecycle`, `Slots`, `Ui`, `Enums`. Each interface sits next to the records it uses; there is no
-  `Interfaces/` folder (file-layout allows one only in Domain, `Application/Common/Interfaces/` and
+  `Interfaces/` folder (one exists only in Domain, `Application/Common/Interfaces/` and
   Shared) and nothing at the `Plugins/` root. Enums are in `Plugins/Enums/` with explicit values:
   `PluginType` keeps its released values starting at 0, every other enum starts at 1. The abstract base
   classes a plugin derives from live in the `Hostpanel.Sdk.Base` namespace (`Base/`), not in an area. Inputs are `*Instruction` or `*Context`, outputs `*Result`, `*Status`,
@@ -288,7 +284,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   stored cards: it is not activated at all (no shipped manifest declares it). `IdentityPluginResolver` counts such a
   plugin as enabled for its conflict check, as it does one missing a required setting. The manifest validator refuses
   an unknown capability, one declared twice and `storedCredentials` outside a payment plugin
-  (`PLUGIN_CAPABILITY_NOT_ALLOWED`); `docs/developers/write-a-plugin.md` documents both.
+  (`PLUGIN_CAPABILITY_NOT_ALLOWED`); `docs/en/developers/write-a-plugin.md` documents both.
 - **Stored credentials are an optional payment capability.** `IStoredCredentialPlugin` (SDK) is implemented by a payment plugin on top of `IPaymentPlugin`; `IStoredCredentialPluginResolver` resolves it on top of `IPaymentPluginResolver` and answers nothing when the chosen plugin does not implement it. It is not a seventh plugin type and has no manifest type of its own.
 - **What the three newer plugin types promise.** *Fulfilment* (`IFulfilmentPlugin`): the host writes a
   `FulfilmentRecords` row in the payment's own transaction and `DispatchFulfilmentCron` delivers it, so delivery is
@@ -341,8 +337,9 @@ docker/                              compose set (shared·dev·prod·platform), 
   fails too); it is proven on an in-memory planted source. The host interfaces are held to it by vitest,
   `admin/tests/lint/pluginNeutrality.test.ts` (the slot and plugin page components with no exemption) and
   `client/tests/config/pluginNeutrality.test.ts`. With no plugin installed `EmptyPluginsTests` asserts that every slot index
-  and both plugin ui indexes (pages and menus) are empty lists, so the panels show only what the core provides. Neither
-  panel renders the plugin ui index yet, so there is no plugin menu to test on the frontend until it does.
+  and both plugin ui indexes (pages and menus) are empty lists, so the panels show only what the core provides. Both
+  panels render the index (the client's side menu, the admin's Add-ons section, #645 and #647) and draw no plugin
+  entry while it is empty.
 - **The plugin contract at a glance (#650).** Where each part is specified; do not restate it elsewhere, link here.
   - **Manifest v2** (`"manifestVersion": 2`): `settings`, `capabilities`, `locales`, `api`, `ui`, `externalOrigins`. The rules
     are in "Manifest v2" and "One manifest validator" in this section and in "Menu icons and page ids".
@@ -363,7 +360,7 @@ docker/                              compose set (shared·dev·prod·platform), 
     maintainer and operator keys; the admin setting `plugins.allow_unsigned` admits unsigned packages (audited, off by default,
     never enforced in Development and Testing); `Plugins:TrustedPackageSha256` pins archive digests; built-in plugins are part
     of the image and are not signature-checked (see "Signed plugin packages").
-  - **For authors**: `docs/developers/write-a-plugin.md` is the guide. The SDK README and a sample plugin belong in the
+  - **For authors**: `docs/en/developers/write-a-plugin.md` is the guide. The SDK README and a sample plugin belong in the
     `hostpanel-sdk` repository, not in this checkout's submodule.
 - **`PluginActivator` takes `IConfiguration` (documented exception to configuration.md rule 6).**
   The plugin SDK's base classes take an `IConfiguration` in their constructor, so the
@@ -535,6 +532,7 @@ docker/                              compose set (shared·dev·prod·platform), 
       `https://www.d`, then `PluginPreview:DevelopmentHttpOrigins`. `PluginFrameOrigin` is the one parser, and everything
       that is not a plain DNS name is dropped, because a domain is what a client typed and the text reaches a response
       header. The list is cut at 2048 characters for the proxies' header limits; what falls off shows nothing.
+    - **Link origins.** `externalOrigins` of a page (`PluginPageViewDto`) and of a slot widget view is `PluginFrameOriginResolver.LinkOrigins`: the manifest's entries as written (wildcards allowed) followed by the `https` origins of the same list, so a plugin links to the live site of the reader's own bound service without naming its domain. The slot widget handler gets the resolver from DI; the admin panel has no frame origins, so there only the manifest applies.
     - **Browser enforcement.** The panel frames an address only when its origin is exactly on that list and is not the
       panel's own. The edges this repository ships (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`, held to one policy by `scripts/check-edge-csp.sh`, which compares the text, and run as they are in front of a stub upstream by `scripts/check-edge-headers.sh` with `edge-headers-assert.sh`, which asserts the response headers: one policy on `/`, the edge policy plus the plugin page's narrow `frame-src` as two headers on `/client/apps/*` (also under a language prefix), the upload policy on `/uploads/`, the admin upstream's policy passed through alone, and every location of the admin image's own configuration (`docker/nginx/admin.conf` with `snippets/admin-csp.conf`) sending exactly one; the plugin page's narrow policy there comes from the stub upstream, not from the portal middleware, so the script proves that the edges pass it and not that the portal sends it; the same script runs in the GitHub `edge-csp` job and the GitLab `edge:test:headers` job) keep `frame-src 'self' https:` (operator content on public pages, and domains cannot be
       listed statically). An operator's own edge may send that same policy as `Content-Security-Policy-Report-Only` while it is reviewed (#938), and a report-only policy does not intersect with an enforcing one, so on such a deployment, and on a deployment whose edge sends no policy, the header below is the only one enforced. `client/server/middleware/plugin-frame-csp.ts` adds a second header to the document of
@@ -550,7 +548,9 @@ docker/                              compose set (shared·dev·prod·platform), 
       (`route`, `field`, `equalsAny`); both conditions go through one reader, `readResultCondition` in `utils/plugins.ts`,
       which holds an event to the view's own bounds (`constants/pluginCondition.ts`: a GET route the page can fill, a dotted
       field of at most 200 characters, 1 to 20 scalars). A card is not checked at install, so a `visibleWhen` the reader
-      cannot accept drops the action whole, where a malformed `until` only loses its follow-up. `PluginChatCardAction` draws
+      cannot accept drops the action whole, where a malformed `until` only loses its follow-up. A condition whose route names a
+      parameter the page lacks is dropped the same way, with a `console.warn` in a development build only
+      (`warnUnfilledConditionRoute`). `PluginChatCardAction` draws
       each action and evaluates the condition with `usePluginCondition`, which takes the block ids whose refresh reads it
       again: a block names its own id, a card action the chat's `refresh` list. With no `refresh` list the condition is read
       once, when the card is drawn. `PluginChatCardActions` is the row under a card: it hides itself while every action is
@@ -789,6 +789,41 @@ docker/                              compose set (shared·dev·prod·platform), 
     audited as `Refused Plugin From Registry` with a fixed reason; a success as `Installed Plugin From Registry` or `Staged
     Plugin Upgrade From Registry` with the id, version and digest the store reports. An install of an installed plugin is
     an upgrade like any upload: staged, applied at the next restart, downgrades refused.
+- **Registry instance identity for restricted plugins (#1022).** A registry plugin whose `distribution` is `HostOnly` (read from the
+  listing row and the plugin page; missing or unknown reads as `Download`) is asked for with this installation's identity, never with a
+  licence key. The identity is one JSON document, `RegistryInstanceRecord` (`Application/Admin/Plugins/Common`): the Ed25519 key pair, the
+  public address (`ClientBaseUrl`), the instance id and challenge the registry gave, the state (`RegistryInstanceState`: NotRegistered,
+  Pending, Verified, Revoked, Error), the last failure code, the failure count and the next attempt. It lives in the settings row
+  `plugins.registry_instance` (`PluginSettingKeys.RegistryInstance`, in `SecretSettingKeys.StandaloneKeys`), stored through
+  `ISecretSettingCipher` by `RegistryInstanceStore`; the row is outside the settings catalogue, so no list or update reaches it, and no
+  response carries a key (`RegistryInstanceDto` has the id, the address, the state and the sentence only). There is no table and no migration.
+  - **One enrolment.** `RegistryInstanceEnrollment` (scoped, one at a time per process) does register then verify through the ports
+    `IRegistryInstanceApi` (the two unsigned calls, `Infrastructure/Plugins/Registry/RegistryInstanceApi`) and `IRegistryInstanceKeys`
+    (Ed25519 over the BouncyCastle library the package signature check already uses; no new dependency). It is idempotent: a Verified
+    identity answers without a call, a failed attempt waits `RegistryInstanceBackoff` (30 seconds doubling to one hour) unless forced, and a
+    revoked identity is left alone unless forced. The registry refuses one key twice, so when it asks for a fresh start (challenge failed
+    with `INSTANCE_CHALLENGE_VALIDATION_FAILED`, unknown or not pending instance, key already registered) the pair is generated again and the
+    two calls are made once more. Nothing is saved while the registry is off (`PLUGIN_REGISTRY_DISABLED`) or when `ClientBaseUrl` is not a
+    public https address (`RegistryInstanceAddress`, `PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID`). Three callers: the recurring job
+    `EnrollRegistryInstanceCron` (started by `AdminScheduledJobsStartup`, every `ScheduledJobs:EnrollRegistryInstanceIntervalSeconds`, default 60;
+    the back-off kept on the identity decides how often the registry is asked), the handlers that need a restricted plugin
+    (`InstallRegistryPluginHandler`, `GetRegistryPluginHandler`), and `RetryRegistryInstanceCommand` (`POST /api/admin/plugins/registry-instance/retry`,
+    forced, demo restricted). `GET /api/admin/plugins/registry-instance` reports the state (`GetRegistryInstanceQuery`).
+  - **The challenge.** `GET /.well-known/hostpanel-registry/{id}` (`RegistryChallengeController`, anonymous because the registry has no
+    credential for a new installation) answers exactly the stored challenge for that id as `text/plain` with `Cache-Control: no-store`
+    (`BaseApiController.HandlePlainText`), and `PLUGIN_REGISTRY_INSTANCE_NOT_FOUND` (404) for any other id. The edge proxy must route the prefix to
+    the API (`docker/caddy/Caddyfile`, `docker/nginx/templates/default.conf.template`).
+  - **Signing.** `RegistryCallSigning` is the one definition of the signed text: `HOSTPANEL-REGISTRY-V1`, method, request target as sent
+    (path and query, `?ticket=` included), lower-case hex SHA-256 of the body (the empty string: no signed call has a body), timestamp and
+    nonce, joined with a line feed and no trailing one; `RegistryCallSigningTests` pins it against a vector made by an independent Ed25519
+    implementation. `IRegistryRequestSigner` (`RegistryRequestSigner`) signs only while the identity is Verified and hands out the four
+    header values, never the key. `PluginRegistryClient` signs the version list, the release details, the ticket request and the final fetch of the
+    ticket address, on every hop (a fresh nonce each), and sends no `X-Licence-Key` on them; the ticket address must be on the registry's origin
+    and carry the ticket. `POST plugins/latest` stays unsigned and its empty package address for a restricted plugin is not invalid.
+  - **Refusals.** A 401, 403 or 429 of a signed call is read for the registry's error code in `type` only (bounded read) and becomes
+    `PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED`, `_CLOCK_SKEW`, `_REPLAY_REJECTED`, `_NOT_VERIFIED`, `_REVOKED`,
+    `PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED` or `_INSTANCE_LIMIT_REACHED` (resx en/ru/hy, `StatusMapping`); a revocation or an unverified answer is
+    reported to the identity (`ReportRefusalAsync`) so the admin page tells the truth. No registry text reaches a response or a log line.
 - **Plugin routes: one safe door for every serving plugin (#639, #818).** A serving plugin (`PluginType.App`, or any type
   declaring `endpoints`; `IPluginEndpoints`)
   answers HTTP-shaped calls the host forwards, never a request or a token. Two thin catch-all controllers bind the request
@@ -1312,7 +1347,7 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   AccountCredit/GatewayRefund) reverses part of a paid invoice at the invoice's own tax rate and is not invoice credit. It is numbered
   `CN-0001` from its own sequence through `INumberSequence` (`NumberKind.CreditNote`), taken as the last step before the save and reused
   across a retried save; a database sequence cannot promise there are no gaps, and the numbering is a cautious default not checked
-  against any local law (documented in `docs/staff/billing.md`). The cap lives on the invoice (`Invoice.CreditableAmount`,
+  against any local law (documented in `docs/en/staff/billing.md`). The cap lives on the invoice (`Invoice.CreditableAmount`,
   `CreditNotedAmount`, `EnsureCreditable`): the charge before credit less every refund and every account credit note, and every
   account credit note also lowers `RefundableAmount`, so the same money never goes back twice. `CreditNotedAmount` changes the invoice
   row, so two notes racing on one invoice fail the row's concurrency check and the loser is retried on what the winner saved. An
@@ -1417,7 +1452,7 @@ activity log line). The admin Upcoming Renewals page (`/billing/renewals`) lists
 after staff checked the registrar, with an activity log line; the line stays unapplied, so the next sweep renews the
 domain again, which is why the page asks for confirmation. The confirmation dialog is a warning in so many words: a release
 of a renewal the registrar already carried out renews the domain twice and is charged twice, so staff check the registrar
-first (`billing.renewals.releaseMessage`, and `docs/staff/currencies.md`). `ClaimedDomainRenewalDto` carries the client's name.
+first (`billing.renewals.releaseMessage`, and `docs/en/staff/currencies.md`). `ClaimedDomainRenewalDto` carries the client's name.
 
 **Renewal invoice lines are not unique per period, on purpose.** The indexes on `InvoiceItems`
 `(ClientServiceId, RenewalPeriodStart)` and `(RegisteredDomainId, RenewalPeriodStart)` stay non-unique: a
@@ -1427,6 +1462,23 @@ at a time runs `ProcessRenewalsCron`), and the `AnyAsync` guard in `RaiseClientR
 which looks only at invoices that are not `Cancelled` and refuses a target that already has an open
 renewal line, a paid line not yet applied, or a line for the same period. A unique index would need a
 filter on the invoice status, which lives on another table, so it cannot be expressed as an index.
+
+**A plan change is one request, one proration rule, one completing use case (#79).** `ServiceChangeRequest`
+(`ServiceChangeRequests`) is Pending, Approved, Completed or Rejected, and only its own methods move it. The cost of a
+mid-cycle move is worked out in one place, `ServicePlanChangeProration` (Domain, pure): `|new - old|` times the days left
+of the cycle over the cycle's length, the cycle being `RenewalPeriod.MonthsIn` back from `NextRenewalAt`, a started day
+counting as a day, rounded by `CurrencyCode.RoundToMinorUnits`, never negative; a plan at the same price is refused. The
+options the client sees and the quote the request is made from both come from `ServicePlanChangeQuoter`, so the figures
+cannot differ. An upgrade is approved at once and its charge is an invoice raised through `CreateInvoiceCommand`; the
+request keeps the invoice id (an index, no foreign key, the invoice is Billing's) and `ServiceChangeInvoicePaidHandler`
+completes it on `PaymentReceivedEvent`. A downgrade is approved at once only when `billing.plan_change.auto_approve_downgrades`
+is on, otherwise by staff. `CompleteServiceChangeCommand` is the only place a change is applied, from automatic approval,
+staff approval and the payment event alike: it asks the panel for the new package first (`ChangePackageCommand`, only for a
+service holding a hosting account), and only then stages the plan, the price, the `PlanChangeCredit` of a downgrade, the
+Completed status and the activity line in one save. A refusal by the panel therefore changes and credits nothing and leaves
+the request Approved, and approving it again repeats the call; the request's `xmin` token stops two runs crediting twice.
+Rejecting an approved upgrade cancels its unpaid invoice first. The Services handlers never touch the `Invoices` table:
+they raise, read and cancel invoices through the Billing use cases.
 
 ### Client account status
 
@@ -1475,8 +1527,9 @@ Three roles exist: `Admin`, `Reseller` and `Client`. The staff API is `Policies.
 linked to no clients (no `ResellerId` on any record), so there is nothing to scope a reseller's view to, and
 every route that once accepted `Reseller` over unscoped data (clients, domains, invoices, orders, services,
 transactions, reports, quotes, dashboard, provisioning, tickets) is now Admin only; `Policies.ResellerOrAdmin`
-no longer exists. Today the Reseller role can sign in and can do what any signed-in user can; it reaches no
-staff route. Introducing reseller-owned clients is a separate design (a `ResellerId` on `Clients` and a scope on
+no longer exists. Today the Reseller role can sign in and can do what any signed-in user can; the only staff
+route it reaches is `GET /api/admin/version` under `Policies.Staff` (Admin or Reseller), which returns the
+running version and names no client data. The admin panel itself still opens only for an Admin. Introducing reseller-owned clients is a separate design (a `ResellerId` on `Clients` and a scope on
 every query), not a policy change.
 
 ### Client account switches and contact copies
@@ -1540,6 +1593,62 @@ feature does not exist is not kept. The decisions:
   validated (400, not clamped), and the order ends in the id so a page never repeats a row. A
   `pg_trgm` GIN index on `lower("FirstName")`, `lower("LastName")`, `lower("FirstName" || ' ' || "LastName")`
   and `lower("CompanyName")` would serve the search once the table is large; it is not created yet.
+
+### Email campaigns
+
+A campaign (`Campaigns` module, tables `EmailCampaigns`, `EmailCampaignSegments`, `EmailCampaignRecipients`) is a subject, an HTML body and
+segments: every active client, owners of a product, clients in a country, clients with a service that renews within 1 to 365 days,
+members of a client group (the value is the group id), or clients who have not signed in for 1 to 3650 days.
+`CampaignAudience` is the one place a segment becomes a query, so the count an admin sees (`POST /api/admin/email-campaigns/audience-count`)
+and the recipients fixed at the start of sending never disagree; it is on the cross-module read allow-list for that reason. A client is
+in the audience only when it is active and `MarketingOptIn` is true, and a client matched by several segments counts once. One address is mailed once:
+the audience is resolved to sign-in addresses (clients with none are not reached) and clients that share an address, compared without case or
+surrounding spaces, make one recipient, the one with the lowest client id; the count is the number of those mails.
+
+- **Segment shapes.** The segment as the admin API sends and answers with it is one DTO, `CampaignSegmentDto` (`Campaigns/Common/`), used by
+  the create and update commands, the audience count query, `EmailCampaignDto` and `CampaignAudience`. `CampaignSegmentDefinition` in Domain is
+  only the input `EmailCampaign.Create` and `Update` take and check; `CampaignSegmentExtensions` (`Campaigns/Extensions/`) is the one place the
+  two meet (`ToDefinitions` going in, `ToDtos` coming out of the stored `EmailCampaignSegment`). Domain never learns the wire shape.
+- **Last sign-in.** A client record stores no sign-in time. It lives in the identity store (`IdentityAccount.LastLoginAt`, read through
+  `IIdentityProvider`), so the "not signed in for N days" segment is answered by `CampaignAudience` in batches from the identity accounts of the
+  opted-in active clients, not in SQL: the last sign-in, or the creation of the client record for one who never signed in, is at least N days old.
+  A sign-on provider tracks sign-ins to itself and not to this product, so where the deployment does not own its accounts the time is unknown and
+  `EmailCampaignSegmentValidator` refuses the segment with `CampaignSegmentSignInUnavailable` (400); the admin form does not offer it there.
+
+- **Sending.** `DispatchEmailCampaignsCron` (every `ScheduledJobs:DispatchEmailCampaignsIntervalSeconds`, 30 by default) starts the
+  scheduled campaigns that are due (`StartEmailCampaign` fixes the recipients, one per mailbox) and sends one batch of pending recipients of every sending campaign (`DeliverEmailCampaign`). "Send now" is a
+  schedule with no time. A mail goes through `SendEmailCommand` with the `email-campaign` template (the admin's HTML printed raw above a
+  footer with the unsubscribe link, seeded in en, ru and hy at startup) and a per-recipient idempotency key, so a replay never mails twice;
+  the outcome is read back from the email log (`GetEmailDelivery`). A refused mail is tried up to three times, then the recipient is Failed.
+  The consent is read again right before each send, and a client who withdrew it is skipped as unsubscribed. Just before the mail leaves, the
+  recipient is given a random unsubscribe token and only its SHA-256 hash (`UnsubscribeTokenHash`) is saved, so the token exists in the mail alone;
+  the email log keeps the body with the link masked (`SecretMembers.Conceal`), and the mail carries a `List-Unsubscribe` header with the page address
+  (not `List-Unsubscribe-Post`: one-click needs a bare-POST endpoint, which the portal's CSRF check does not allow). The campaign template is seeded at
+  startup only. If a reader unsubscribes while a mail is leaving, the sender's save of that recipient loses (`ConcurrencyConflictException`), the
+  rest of the batch is read again by the next pass, and nothing fails.
+- **Unsubscribe.** The mail links to the portal page `/unsubscribe?token=...`, which posts the token to the anonymous
+  `POST /api/public/unsubscribe` (rate limited with the strict tier). The hash of the token names one recipient row; the client's
+  `MarketingOptIn` is set to false (`WithdrawClientMarketingConsent`) so every later campaign skips it, and the recipient is marked
+  Unsubscribed. When the sender saved the recipient first, the recipient is read and marked again (three attempts), and the answer is 204 even if
+  every attempt loses, because the consent is already withdrawn. Following the link again answers the same 204; a token that names nobody answers 404 `CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND`.
+- **Open and click tracking.** The mail built for one recipient (`DeliverEmailCampaign`, through `CampaignTrackingLinks.Track`) carries
+  a one-pixel image and every trackable link of the campaign body rewritten to `{ClientBaseUrl}/api/public/campaign-mail/click/{token}/{index}`;
+  the token is the recipient's tracking token, a secret of its own (`TrackingTokenHash`, unique, issued by `IssueTrackingToken` beside the
+  unsubscribe token in the same pre-send save and under the same pending-only rule), never the unsubscribe token: a pixel address travels
+  further (image proxies, logs, forwarded mail) and must not be enough to unsubscribe the reader. The email log masks it in the tracked
+  addresses (`EmailCampaignTemplateModel.RecipientToken`). The anonymous `PublicCampaignTrackingController` is held to the global rate
+  limit only, not the strict tier, because image proxies of large mail providers fetch from few addresses. It serves `GET .../open/{token}` (a no-store 1x1 GIF, 404
+  `CAMPAIGN_MAIL_LINK_NOT_FOUND` for an unknown token) and `GET .../click/{token}/{index}` (302, no-store). **No open redirect:** the
+  destination is never read from the request. `RecordEmailCampaignClick` re-reads the stored body of the recipient's campaign (immutable
+  once it leaves draft) and takes the link at `index` from `CampaignBodyLinks.Extract`, the same reader the mail was rewritten with, so
+  the index always names the link it replaced and only absolute http or https links the admin wrote are ever an answer; mail, tel,
+  script, data, relative and scheme-relative links are neither rewritten nor redirected to, and an index past the last link is a 404.
+  The recipient counts opens and clicks (`OpenCount`, `FirstOpenedAt`, `ClickCount`, `FirstClickedAt`, written by `RecordOpen` and
+  `RecordClick` through `CampaignMailTracker`, which re-reads and repeats a save that loses to the sender or the unsubscribe page).
+  `EmailCampaignStatsDto` adds `Opened`, `UniqueOpened`, `Clicked`, `UniqueClicked` and the rates `OpenRate` and `ClickRate` (unique
+  readers over the mails delivered, that is recipients with a `SentAt`, from 0 to 1). The pixel counts a mail client that loads images
+  on its own (image proxies, prefetch) as an open, so opens are an upper bound.
+- **Preview.** `GET /api/admin/email-campaigns/{id}/preview` renders the stored template in the default language with a sample link.
 
 ## Demo mode
 
@@ -1737,7 +1846,7 @@ Its own nginx exists for a standalone install.
   `EncryptionKey` is required in every environment, and `AppDbContext` cannot be built without an
   `IEncryptionService`; the encrypted columns (server credentials, SSH agent keys, client-service
   passwords, two-factor secrets) are listed once in `ProtectedColumns`, which also sizes them.
-  Every deployed tier (staging, prod, demo) sets `Production`, per `rules/environments.md`; the tier
+  Every deployed tier (staging, prod, demo) sets `Production`; the tier
   is named by the job's `environment:`, never by `ASPNETCORE_ENVIRONMENT`.
 - **Demo mode (`Demo__Enabled`).** Set through `DEMO_*` env in `docker/docker-compose.demo.yml`, an overlay
   placed last in the chain (`shared` + `prod` + `platform` + `demo`, project `hostpanel-demo`). It swaps the
@@ -1758,6 +1867,38 @@ translations, managed in the admin under **Storefront content**. The public endp
 client hides any section that is empty, so an empty table is a valid state, not an error. Production runs a
 one-time import of the previous static content; the demo does not, because its seed is fixed.
 
+## Knowledge base: category by id, slug, text per language
+
+An article belongs to a category by `CategoryId` (a foreign key, `Restrict`: a category that holds articles, or sub-categories,
+is refused with `KBCATEGORY_IN_USE`). Its title and body are `KbArticleTranslations` rows, one per language, written like the
+FAQ: the default language `SupportedLanguages.Default` (`en`) is required, `en/ru/hy` are the only languages.
+
+- **Which language a reader gets.** The request's language, else the *fallback*, else the first language the article has in
+  ordinal order. The fallback is the configured `DefaultLocale` reduced to its two letters (`en-US` is `en`) when that is one of
+  `en/ru/hy`, otherwise `en` (`KbLanguage.Fallback`). The requirement to write English and the fallback are two different
+  things: the first never depends on `DefaultLocale`. Search looks into every language.
+- **Slugs** (`KbArticles.Slug`, `KbCategories.Slug`). Lower case Latin letters and digits joined by single hyphens, at most 150
+  characters, unique, and never purely numeric (a number in that place is the id). An article slug is also never `articles` or
+  `categories`, the literal segments of the same route. The rules live in `KbSlugRules` and again as check constraints and
+  unique indexes, so no writer can store a slug that breaks them. A slug is built once, from the English title or the category
+  name, and never changes, so a link to a renamed article keeps working. `SlugGenerator` only builds the candidate;
+  `KbSlugAllocator` makes it unique by trying `-2`, `-3` and so on until a value is free, and `KbSlugSaver` is the one place
+  that saves a new article or category and asks the allocator again when the unique index refuses the save because another
+  request took the value (the create use cases and the importer all go through it). The shape is written for two engines: .NET
+  patterns anchor with `\A` and `\z` (its `$` also matches before a trailing newline), the database check constraints use
+  `^` and `$` (PostgreSQL's `$` only matches at the end), and a test pins that both refuse `foo\n`.
+- **Routes.** `GET /api/knowledgebase/{id:int}` and `GET /api/knowledgebase/{slug}` share one segment. ASP.NET Core matches
+  literals and `regex` constraints without regard to case, so `Articles` is the list and `CATEGORIES` the categories; the slug
+  route's pattern refuses a purely numeric segment (otherwise a number matches both routes and the request fails as
+  ambiguous), and a number too large for an id matches no route. The handler lower cases the slug, so `Foo-Bar` finds
+  `foo-bar`, and the answer carries the canonical slug.
+- **Data migrated from free text.** `AddKbTranslationsAndSlugs` merges category spellings that differ by case or edge spaces,
+  assigns slugs one row at a time in id order (each checked against those already given, so `Foo`, `Foo`, `Foo-2` end as `foo`,
+  `foo-2`, `foo-2-2`), and stores each existing text as one translation in the language its own letters show (Armenian `hy`,
+  else Cyrillic `ru`, else `en`), because SQL cannot read `DefaultLocale`. Its `Down` is not exact: it restores `Category` as the
+  category's name, `Title` and `Content` from the English translation (else the first language), and loses the other languages
+  and the slugs.
+
 ## The frontend: three templates, one live header, and one env-var trap
 
 `client/` is Nuxt 4 with SSR on the public site and `ssr: false` route rules for `/client/**`,
@@ -1770,14 +1911,14 @@ templates — `aurora`, `nova`, `classic` — and the active one is decided by, 
 operator's `portal.template` admin setting, then `NUXT_PUBLIC_PORTAL_TEMPLATE`, then the
 built-in default **`classic`** (`DEFAULT_TEMPLATE`, mirrored by `PortalSettingKeys.DefaultTemplate`); anything unrecognised falls back to `classic` rather than
 rendering nothing. `components/layout/Header.vue` is reached only through
-`templates/classic/layout/Header.vue`, a two-line wrapper — so on an aurora or nova deployment it is
+`templates/classic/layout/ClassicHeader.vue`, a two-line wrapper — so on an aurora or nova deployment it is
 live code that nothing renders. Editing it and reloading changes nothing, and that has cost
-real time. Start from `templates/<active>/layout/Header.vue`.
+real time. Start from `templates/<active>/layout/<Active>Header.vue` (`AuroraHeader.vue`, `NovaHeader.vue`,
+`ClassicHeader.vue`).
 
-`nova` deliberately reuses `aurora`'s `Domains.vue` and `Checkout.vue` — the checkout is the
-ordering path and a second copy is a second place for a payment bug to live. If a shared aurora
-page grows a new section import, add it to `AURORA_SHARED_COMMERCE` in `nuxt.config.ts` or nova
-starts downloading the whole `template-aurora` chunk.
+`nova` deliberately reuses `aurora`'s `pages/AuroraDomains.vue` and `pages/AuroraCheckout.vue` (see
+`templates/registry.ts`) — the checkout is the ordering path and a second copy is a second place for a
+payment bug to live.
 
 **Runtime config in a production image.** A production Nitro build freezes `runtimeConfig`
 defaults — `nuxt.config.ts` is not re-evaluated at container start as it is in dev. Nitro's own
@@ -1879,11 +2020,11 @@ twin** of that list; it cannot import the class, so a new key is added in both p
 `nuxt.config.ts`'s `runtimeConfig.public` **and** both compose files' `NUXT_PUBLIC_*` lines.
 `PortalSettingKeysTests` fails if `Defaults` and `Public` drift; nothing tests the BFF twin.
 
-### The client's shape (Nuxt exception, conformance C complete)
+### The client's shape (Nuxt)
 
-`client/` is the Nuxt exception the workspace `frontend.md` allows: it has public, crawlable pages
-(SEO, SSR) beside the session-gated `/client/**` area, so it builds on Nuxt where the other
-products are Vite SPAs. Everything else in `rules/frontend.md` holds in full; the Nuxt specifics
+`client/` is a Nuxt app, where `admin/` is a Vite SPA: it has public, crawlable pages
+(SEO, SSR) beside the session-gated `/client/**` area. The frontend rules in this folder
+([vuejs-style.md](vuejs-style.md), [jsdoc.md](jsdoc.md)) hold in full; the Nuxt specifics
 are these, and **no part of the client is exempt any more — the ratchet that once scoped the
 rules is deleted and the ESLint conformance block applies to every `.vue` and `.ts` file.**
 
@@ -2075,10 +2216,10 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
   `yarn test --maxWorkers=2`, `yarn build`, then `yarn e2e`. On this laptop vitest needs
   `--maxWorkers=2`.
 
-### The admin's shape (Vite SPA, conformance B complete)
+### The admin's shape (Vite SPA)
 
-`admin/` is the workspace's standard Vite SPA (`rules/frontend.md`) with no exception: the operator
-back office is session-gated, so it has no crawlable pages. **No part of it is exempt — the ratchet
+`admin/` is a standard Vite SPA with no exception to the frontend rules ([vuejs-style.md](vuejs-style.md),
+[jsdoc.md](jsdoc.md)): the operator back office is session-gated, so it has no crawlable pages. **No part of it is exempt — the ratchet
 that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` applies to every `.vue` and
 `.ts` file under `src/`** (the one carve-out is `lib/brandPalette.ts`, a generated byte-for-byte copy).
 
@@ -2122,6 +2263,23 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   `` t(`area.${x}`) `` prefix counts as use of the keys under it) and a literal `t('...')` /
   `translate('...')` with no `en` entry; `tests/locales/parity.test.ts` also checks values and
   `{placeholders}`. A server-decided sentence is never copied into a locale file.
+- **Plugin pages and the Add-ons menu (#647).** A page a serving plugin adds to the admin lives at
+  `/apps/<plugin>/<path>` (`views/PluginPageView.vue`, route `apps/:plugin/:page*`); the store asks the API's
+  lookup by path (`GET /api/admin/plugins/ui/{plugin}/pages/by-path`) and shows its `PLUGIN_PAGE_NOT_FOUND`
+  sentence in a not-found state. Data flow: `stores/pluginUi.ts` (index, page, `callRoute`, `streamRoute`, the
+  `writes` count the shared reads follow) → `composables/apis/usePluginUiApi.ts` (calls go to
+  `/api/admin/plugins/{id}/ext/{path}`) → `useApi` (`request`, and `stream`, the one server-sent event reader,
+  `fetch` with the CSRF and language headers, never `EventSource`). `components/plugins/view/` renders the
+  schema 1 blocks with the admin kit, mirroring the client's design (header, text, stat, table, form, action,
+  link, badge, empty, alert, tabs, chat with steps, cards and issues, progress, split), with `visibleWhen`,
+  `resetOnSuccess`, `followUp` and the shared reads of `composables/usePluginView.ts`; `preview` and an
+  action's `bodySource` are a client page's alone (refused on an admin page at install) and draw nothing. Pure
+  rules live in `lib/pluginView.ts`: the path filling, the link rule (`pluginLinkTarget`: host-relative, never
+  `/api`, or https on the page's `externalOrigins`), the chat event readers and the follow-up bounds (the host's).
+  A reply's Markdown goes through `UiMarkdown` with `links` off, so an address renders only through the link
+  rule. The sidebar adds an Add-ons section before System from the index's menu items (`withAddons` in
+  `lib/navigation.ts`, a plugin entry carries its API label instead of an i18n key and a built-in icon by name),
+  hidden while no plugin declares one, and reads the index again on a language switch.
 - **Tests mirror the source.** `tests/` mirrors `src/` (components, views, layouts, stores,
   composables, `composables/apis`, lib, middleware, utils), with a real kit, real Pinia and the API
   stubbed at the network level (`tests/helpers/{fetch,routes,mount}.ts`), never a mocked store or
@@ -2174,7 +2332,7 @@ the letters of a split folder do not cover A to Z exactly once.
 ## Packages worth knowing
 
 - **Branding images are rendered with SkiaSharp (MIT)**, in
-  `Infrastructure/ImageProcessing/SkiaBrandingImageProcessor.cs`, behind the
+  `Infrastructure/ImageProcessing/BrandingImageProcessor.cs`, behind the
   `IBrandingImageProcessor` port. Do not use `SixLabors.ImageSharp`: its Apache-2.0 2.1.x line
   receives no fixes and carries high-severity advisories, and 3.x is a split licence this public
   AGPL repository cannot hand to downstream users; `.github/dependabot.yml` ignores that package.
@@ -2298,7 +2456,6 @@ Never spread one of these, and never restructure as a side effect of a feature.
 | Admin screen | `admin/src/views/<Page>View.vue` (+ `admin/src/components/<area>/`) |
 | Admin store / API call | `admin/src/stores/<area>.ts` / `admin/src/composables/apis/use<Area>Api.ts` |
 | Admin e2e flow | `admin/e2e/<flow>.spec.ts` (fixtures in `admin/e2e/fixtures/`) |
-| Plan / spec | `docs/superpowers/plans/`, `docs/superpowers/specs/` |
 
 ## Gotchas
 

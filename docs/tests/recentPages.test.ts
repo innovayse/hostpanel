@@ -17,9 +17,12 @@ import {
   plainSidebarText,
   recordRouteView,
   sanitizePaths,
+  suggestedPagePath,
 } from '../.vitepress/theme/recentPages'
 import type { SidebarConfig, StringStore } from '../.vitepress/theme/recentPages'
 import { SEARCH_ICONS } from '../.vitepress/theme/searchIcons'
+import { DEFAULT_LOCALE, LOCALE_KEYS, LocaleKey } from '../.vitepress/i18n/locales'
+import { UI_STRINGS } from '../.vitepress/i18n/ui'
 
 /** Folder of the documentation sources. */
 const docsRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -206,11 +209,14 @@ describe('recordRouteView', () => {
   })
 })
 
+/** The suggested titles of a language, as `buildHomeGroups` receives them. */
+const titlesOf = (locale: LocaleKey) => UI_STRINGS[locale].search.suggestedPages
+
 describe('buildHomeGroups', () => {
   const catalog = buildPageCatalog(sidebar)
 
   it('shows only suggested pages when nothing was viewed', () => {
-    const groups = buildHomeGroups([], catalog)
+    const groups = buildHomeGroups([], catalog, LocaleKey.En, titlesOf(LocaleKey.En))
     expect(groups.map((group) => group.id)).toEqual(['suggested'])
     expect(groups[0].items.map((item) => item.title)).toEqual([
       'Quick start',
@@ -218,10 +224,37 @@ describe('buildHomeGroups', () => {
       'Configuration reference',
       'API reference',
     ])
+    expect(groups[0].items.map((item) => item.path)).toEqual([
+      '/get-started/quick-start',
+      '/operators/install',
+      '/operators/configuration',
+      '/api-reference/',
+    ])
   })
 
+  it.each(LOCALE_KEYS.filter((locale) => locale !== DEFAULT_LOCALE).map((locale) => [locale]))(
+    'puts the %s folder in front of every suggested address and takes the titles from its language file',
+    (locale) => {
+      const groups = buildHomeGroups([], catalog, locale, titlesOf(locale))
+      const items = groups[0].items
+      expect(items.map((item) => item.path)).toEqual([
+        `/${locale}/get-started/quick-start`,
+        `/${locale}/operators/install`,
+        `/${locale}/operators/configuration`,
+        `/${locale}/api-reference/`,
+      ])
+      expect(items.map((item) => item.title)).toEqual([
+        UI_STRINGS[locale].search.suggestedPages.quickStart,
+        UI_STRINGS[locale].search.suggestedPages.install,
+        UI_STRINGS[locale].search.suggestedPages.configuration,
+        UI_STRINGS[locale].search.suggestedPages.apiReference,
+      ])
+      expect(items.map((item) => item.title)).not.toEqual(Object.values(titlesOf(LocaleKey.En)))
+    },
+  )
+
   it('numbers the rows of both groups as one list', () => {
-    const groups = buildHomeGroups(['/servers/', '/get-started/quick-start'], catalog)
+    const groups = buildHomeGroups(['/servers/', '/get-started/quick-start'], catalog, LocaleKey.En, titlesOf(LocaleKey.En))
     expect(groups.map((group) => group.id)).toEqual(['recent', 'suggested'])
     const indexes = groups.flatMap((group) => group.items.map((item) => item.index))
     expect(indexes).toEqual([0, 1, 2, 3, 4, 5])
@@ -229,15 +262,41 @@ describe('buildHomeGroups', () => {
   })
 })
 
+describe('suggestedPagePath', () => {
+  const page = SUGGESTED_PAGES[0]
+
+  it('keeps the English address and adds the folder for the other languages', () => {
+    expect(suggestedPagePath(page)).toBe('/get-started/quick-start')
+    expect(suggestedPagePath(page, LocaleKey.En)).toBe('/get-started/quick-start')
+    expect(suggestedPagePath(page, LocaleKey.Ru)).toBe('/ru/get-started/quick-start')
+    expect(suggestedPagePath(page, LocaleKey.Hy)).toBe('/hy/get-started/quick-start')
+  })
+
+  it('keeps the trailing slash of a folder index', () => {
+    const index = SUGGESTED_PAGES.find((entry) => entry.path.endsWith('/'))
+    expect(index).toBeDefined()
+    expect(suggestedPagePath(index!, LocaleKey.Ru)).toBe('/ru/api-reference/')
+  })
+})
+
 describe('suggested pages', () => {
   it.each(SUGGESTED_PAGES.map((page) => [page.path]))('%s has a source file', (path) => {
     const file = path.endsWith('/') ? `${path}index.md` : `${path}.md`
-    expect(existsSync(resolve(docsRoot, `.${file}`))).toBe(true)
+    expect(existsSync(resolve(docsRoot, 'en', `.${file}`))).toBe(true)
   })
 
-  it('gives every suggested page a one line title and a drawable icon', () => {
+  it('has a non-empty one line title in every language for every suggested page', () => {
+    for (const locale of LOCALE_KEYS) {
+      for (const page of SUGGESTED_PAGES) {
+        const title = UI_STRINGS[locale].search.suggestedPages[page.titleKey]
+        expect(title.trim()).not.toBe('')
+        expect(title).not.toMatch(/\n/)
+      }
+    }
+  })
+
+  it('gives every suggested page a drawable icon', () => {
     for (const page of SUGGESTED_PAGES) {
-      expect(page.title).not.toMatch(/\n/)
       expect(SEARCH_ICONS[page.icon].length).toBeGreaterThan(0)
     }
     expect(SEARCH_ICONS['file-text'].length).toBeGreaterThan(0)

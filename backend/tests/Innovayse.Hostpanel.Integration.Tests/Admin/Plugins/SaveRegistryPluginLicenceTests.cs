@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
@@ -35,6 +34,7 @@ public sealed class SaveRegistryPluginLicenceTests(IntegrationTestFactory factor
     }
 
     /// <summary>A saved key is stored encrypted, decrypts to what was sent and is not returned.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ASavedKey_IsStoredEncryptedAsync()
     {
@@ -63,6 +63,7 @@ public sealed class SaveRegistryPluginLicenceTests(IntegrationTestFactory factor
     }
 
     /// <summary>A second save replaces the first and the key is trimmed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ASecondSave_ReplacesTheKeyAsync()
     {
@@ -91,6 +92,7 @@ public sealed class SaveRegistryPluginLicenceTests(IntegrationTestFactory factor
     }
 
     /// <summary>The key is a secret setting: the settings list does not carry it and the secret registry names it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheKey_IsASecretSettingThatNoReadReturnsAsync()
     {
@@ -114,6 +116,7 @@ public sealed class SaveRegistryPluginLicenceTests(IntegrationTestFactory factor
     }
 
     /// <summary>A save is written to the activity log with the plugin id and never the key.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ASave_IsAuditedWithoutTheKeyAsync()
     {
@@ -143,6 +146,7 @@ public sealed class SaveRegistryPluginLicenceTests(IntegrationTestFactory factor
 
     /// <summary>An empty, blank or missing key is refused and nothing is stored.</summary>
     /// <param name="key">The key sent.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -160,6 +164,7 @@ public sealed class SaveRegistryPluginLicenceTests(IntegrationTestFactory factor
     }
 
     /// <summary>A key over the length limit is refused and nothing is stored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnOverLongKey_IsRefusedAsync()
     {
@@ -176,6 +181,7 @@ public sealed class SaveRegistryPluginLicenceTests(IntegrationTestFactory factor
     /// <summary>A key with a space inside, a non-ASCII character or 257 characters is refused; 256 is accepted and a padded key is trimmed first.</summary>
     /// <param name="key">The key sent.</param>
     /// <param name="accepted">Whether it is stored.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("has space", false)]
     [InlineData("kéy-ա", false)]
@@ -201,6 +207,7 @@ public sealed class SaveRegistryPluginLicenceTests(IntegrationTestFactory factor
     }
 
     /// <summary>Exactly 256 characters are accepted and 257 are refused, counted after trimming.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheLengthLimit_Is256AfterTrimmingAsync()
     {
@@ -223,6 +230,7 @@ public sealed class SaveRegistryPluginLicenceTests(IntegrationTestFactory factor
 
     /// <summary>An id of the wrong shape is refused and nothing is stored.</summary>
     /// <param name="pluginId">The route id.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Bad_Id")]
     [InlineData("UPPER")]
@@ -236,6 +244,7 @@ public sealed class SaveRegistryPluginLicenceTests(IntegrationTestFactory factor
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -247,6 +256,7 @@ public sealed class SaveRegistryPluginLicenceTests(IntegrationTestFactory factor
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

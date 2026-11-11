@@ -17,6 +17,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { formatDate } from '@/lib/format'
 import { DOMAIN_REMINDER_TYPE_LABEL_KEYS } from '@/types/domain'
 import type { DomainReminderItem } from '@/types/domain'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -34,7 +35,7 @@ defineProps<{
         {{ t('clients.domainRemindersTable.domainReminderHistory') }}
       </UiHeading>
       <UiTable
-        density="compact"
+        :density="UiTableDensity.Compact"
         :empty="reminders.length === 0"
         :colspan="3"
         data-testid="clients-domain-reminders-table"

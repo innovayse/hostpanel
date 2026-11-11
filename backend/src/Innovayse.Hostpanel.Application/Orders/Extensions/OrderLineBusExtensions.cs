@@ -1,5 +1,7 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Orders.Commands.ClaimOrderLines;
 using Innovayse.Hostpanel.Application.Orders.Commands.RefreshOrderStatus;
+using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Shared.Models;
 using Wolverine;
 
@@ -57,5 +59,31 @@ public static class OrderLineBusExtensions
     public static Task<Result> RefreshOrderStatusAsync(this IMessageBus bus, int orderId, CancellationToken ct)
     {
         return bus.InvokeLineChangeAsync(new RefreshOrderStatusCommand(orderId), ct);
+    }
+
+    /// <summary>
+    /// Claims an order's lines for a run, sending the claim again while a concurrent save wins the race, up to
+    /// <see cref="MaxAttempts"/> times.
+    /// </summary>
+    /// <param name="bus">The message bus.</param>
+    /// <param name="command">The order and, optionally, the one line to claim.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The lines the claim gave this run with their attempts, or the refusal that stopped it.</returns>
+    public static async Task<Result<IReadOnlyList<ClaimedOrderLineDto>>> ClaimOrderLinesAsync(
+        this IMessageBus bus, ClaimOrderLinesCommand command, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(bus);
+
+        var result = Result<IReadOnlyList<ClaimedOrderLineDto>>.FailureCode(HostpanelErrorCodes.ORDER_LINE_CHANGED);
+        for (var attempt = 0; attempt < MaxAttempts; attempt++)
+        {
+            result = await bus.InvokeAsync<Result<IReadOnlyList<ClaimedOrderLineDto>>>(command, ct);
+            if (result.IsSuccess || result.ErrorCode != HostpanelErrorCodes.ORDER_LINE_CHANGED)
+            {
+                return result;
+            }
+        }
+
+        return result;
     }
 }

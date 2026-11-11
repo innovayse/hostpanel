@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An unauthenticated caller is refused with 401 before any query runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListDomains_WithoutToken_Returns401Async()
     {
@@ -26,6 +27,7 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
     /// A signed-in Client, who does not hold the Admin role this
     /// admin-only listing requires, is refused with 403.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminOnly_ClientForbiddenAsync()
     {
@@ -37,6 +39,7 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An admin lists domains and sees the one just registered for a client, named after that client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListDomains_AdminSeesARegisteredDomainAsync()
     {
@@ -54,6 +57,7 @@ public sealed class ListDomainsTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A page number below one is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListDomains_PageBelowOne_Returns400ValidationErrorAsync()
     {

@@ -32,6 +32,7 @@ import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { DEFAULT_PAGE_SIZE } from '@/lib/limits'
 import { ClientSection, clientItemPath } from '@/lib/routes'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -143,13 +144,13 @@ onMounted(() => fetchServices())
     />
 
     <UiCard v-else-if="services.length > 0" class="overflow-x-auto">
-      <UiTable density="comfortable" data-testid="client-services-table">
+      <UiTable :density="UiTableDensity.Comfortable" data-testid="client-services-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.productService') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.domain') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.price') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('shared.price') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.billingCycle') }}</UiTableHeader>
             <UiTableHeader>{{ t('clients.clientServicesList.nextDue') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
@@ -167,7 +168,7 @@ onMounted(() => fetchServices())
             <UiTableCell muted>{{ service.id }}</UiTableCell>
             <UiTableCell>{{ service.productName }}</UiTableCell>
             <UiTableCell muted>{{ service.domain ?? '—' }}</UiTableCell>
-            <UiTableCell muted>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
+            <UiTableCell muted numeric>{{ formatPrice(service.price, service.priceCurrency) }}</UiTableCell>
             <UiTableCell muted>{{ statusLabel(BILLING_CYCLE_OPTIONS, service.billingCycle) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(service.nextDueDate) }}</UiTableCell>
             <UiTableCell>

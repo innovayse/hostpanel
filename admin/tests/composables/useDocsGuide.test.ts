@@ -1,7 +1,7 @@
 /**
  * Tests for useDocsGuide: returns null when docsUrl is absent or the route is unmapped,
  * and returns the full guide URL when both are set. Also verifies every mapped docs path
- * resolves to a real file under docs/.
+ * resolves to a real file under docs/en/ (English pages sit at the site root).
  */
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -79,13 +79,13 @@ describe('useDocsGuide', () => {
 })
 
 describe('DOCS_GUIDES paths', () => {
-  const docsRoot = resolve(__dirname, '../../../docs')
+  const docsRoot = resolve(__dirname, '../../../docs/en')
 
   it.each(Object.entries(DOCS_GUIDES))(
     'mapped path %s → %s resolves to a real .md file',
     (_route, docPath) => {
       const mdFile = resolve(docsRoot, `${docPath}.md`)
-      expect(existsSync(mdFile), `missing: docs/${docPath}.md`).toBe(true)
+      expect(existsSync(mdFile), `missing: docs/en/${docPath}.md`).toBe(true)
     },
   )
 })

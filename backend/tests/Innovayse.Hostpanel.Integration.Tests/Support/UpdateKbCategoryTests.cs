@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class UpdateKbCategoryTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can update an existing knowledge base category.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanUpdateAKbCategoryAsync()
     {
@@ -30,7 +31,31 @@ public sealed class UpdateKbCategoryTests(IntegrationTestFactory factory) : ICla
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
+    /// <summary>Renaming a category leaves its slug alone, so links to it keep working.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task RenamingACategory_KeepsItsSlugAsync()
+    {
+        var client = await SupportTestSeeds.AdminClientAsync(factory);
+        var id = await KbTestSeeds.CreateCategoryAsync(client, $"Before {Guid.NewGuid():N}");
+        var slug = (await KbTestSeeds.GetCategoryAsync(client, id)).GetProperty("slug").GetString();
+
+        var response = await client.PutAsJsonAsync($"/api/admin/knowledgebase/categories/{id}", new
+        {
+            name = "After the rename",
+            description = "Updated.",
+            isHidden = false,
+            parentCategoryId = (int?)null,
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        var category = await KbTestSeeds.GetCategoryAsync(client, id);
+        category.GetProperty("name").GetString().Should().Be("After the rename");
+        category.GetProperty("slug").GetString().Should().Be(slug);
+    }
+
     /// <summary>Updating a knowledge base category that does not exist answers 404 with <c>KBCATEGORY_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateUnknownKbCategoryAnswersNotFoundAsync()
     {
@@ -49,6 +74,7 @@ public sealed class UpdateKbCategoryTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A caller with no credential cannot update a knowledge base category.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

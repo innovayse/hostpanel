@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class GetMyProfileTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A registered client reads their own profile.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyProfileReturnsTheOwnProfile()
     {
@@ -29,6 +30,7 @@ public sealed class GetMyProfileTests(IntegrationTestFactory factory) : IClassFi
     /// The client's own profile carries none of the staff-owned fields: an internal note written
     /// on the record never reaches the client, and neither do the staff switches.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyProfileCarriesNoStaffOwnedField()
     {
@@ -66,6 +68,7 @@ public sealed class GetMyProfileTests(IntegrationTestFactory factory) : IClassFi
     /// straight from the database, after registration has already granted the role and created
     /// it, is what leaves the role behind without the record.
     /// </remarks>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyProfileWithNoClientRowRefusesNotFound()
     {
@@ -84,6 +87,7 @@ public sealed class GetMyProfileTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Reading the own profile is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyProfileRefusesAnonymous()
     {
@@ -93,6 +97,7 @@ public sealed class GetMyProfileTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An admin, who is not a client, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyProfileRefusesAnAdmin()
     {

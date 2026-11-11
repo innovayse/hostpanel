@@ -20,7 +20,7 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 public interface IMigrationEntityImporter
 {
     /// <summary>The kind of record this importer pulls; the worker runs it only when the job selected that kind.</summary>
-    MigrationEntityType EntityType { get; }
+    public MigrationEntityType EntityType { get; }
 
     /// <summary>
     /// Pulls every page of this importer's entity kind for <paramref name="job"/>, imports each
@@ -30,5 +30,5 @@ public interface IMigrationEntityImporter
     /// <param name="job">The migration job being run, already started with its totals recorded.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once every page for this entity kind has been imported.</returns>
-    Task ImportAsync(MigrationJob job, CancellationToken ct);
+    public Task ImportAsync(MigrationJob job, CancellationToken ct);
 }

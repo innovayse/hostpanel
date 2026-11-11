@@ -42,6 +42,7 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -92,6 +93,12 @@ const id = ref(0)
 
 /** Joined date (read-only). */
 const createdAt = ref('')
+
+/**
+ * The client group the client belongs to, kept from the loaded client and sent back on save:
+ * the update replaces the whole record, so leaving it out would take the client out of its group.
+ */
+const clientGroupId = ref<number | null>(null)
 
 /** Street address line 1. */
 const street = ref('')
@@ -239,6 +246,7 @@ const populateForm = (): void => {
   companyName.value = c.companyName ?? ''
   status.value = c.status
   createdAt.value = c.createdAt
+  clientGroupId.value = c.clientGroupId ?? null
 
   // Phone is stored as one string; split it back into country code and national number.
   if (c.phone) {
@@ -335,6 +343,7 @@ const saveClient = async (): Promise<void> => {
       adminNotes: adminNotes.value.trim() || null,
     },
     status: status.value,
+    clientGroupId: clientGroupId.value,
     notifications: { ...notify },
     settings: { ...settings },
   })
@@ -607,7 +616,7 @@ onBeforeUnmount(() => {
           {{ t('clients.clientProfile.contactsLength', { length: store.current.contacts.length }) }}
         </UiHeading>
         <UiTable
-          density="comfortable"
+          :density="UiTableDensity.Comfortable"
           :empty="store.current.contacts.length === 0"
           :colspan="4"
           data-testid="client-profile-contacts"

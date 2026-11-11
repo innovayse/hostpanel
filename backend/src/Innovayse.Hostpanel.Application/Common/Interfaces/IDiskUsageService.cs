@@ -8,10 +8,10 @@ public interface IDiskUsageService
     /// <summary>Returns cached disk usage stats grouped by server.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The last stored usage figures per server and account; never contacts a server.</returns>
-    Task<DiskUsageDto> GetReportAsync(CancellationToken ct);
+    public Task<DiskUsageDto> GetReportAsync(CancellationToken ct);
 
     /// <summary>Fetches fresh stats from all servers and updates the cache.</summary>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The usage figures just fetched, the same shape the cached report has.</returns>
-    Task<DiskUsageDto> UpdateNowAsync(CancellationToken ct);
+    public Task<DiskUsageDto> UpdateNowAsync(CancellationToken ct);
 }

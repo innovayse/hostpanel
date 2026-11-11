@@ -4,6 +4,8 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import UiButton from '@/components/ui/UiButton.vue'
+import { UiButtonVariant } from '@/utils/ui/button'
+import { UiSize } from '@/utils/ui/size'
 
 describe('UiButton', () => {
   it('renders the native button with its slot', () => {
@@ -41,6 +43,14 @@ describe('UiButton', () => {
 
     expect(small.classes()).toContain('px-2.5')
     expect(large.classes()).toContain('px-6')
+  })
+
+  it('gives the link look no padding so it aligns with neighbouring text', () => {
+    const link = mount(UiButton, { props: { variant: UiButtonVariant.Link, size: UiSize.Sm } })
+
+    expect(link.classes().some((c) => /^p[xy]?-/.test(c))).toBe(false)
+    expect(link.classes()).toContain('text-[0.75rem]')
+    expect(link.classes()).toContain('focus-visible:ring-2')
   })
 
   it('stretches to the container with block', () => {

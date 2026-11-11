@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class GetMyEmailLogTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The caller reads one of their own emails, body included.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetReturnsTheCallersEmail()
     {
@@ -27,6 +28,7 @@ public sealed class GetMyEmailLogTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A failed send is read as failed, with no failure reason, which is for staff only.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetOmitsTheDeliveryError()
     {
@@ -45,6 +47,7 @@ public sealed class GetMyEmailLogTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An email addressed to somebody else answers 404 with <c>EMAIL_LOG_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRefusesSomebodyElsesEmail()
     {
@@ -59,6 +62,7 @@ public sealed class GetMyEmailLogTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRefusesAnonymous()
     {

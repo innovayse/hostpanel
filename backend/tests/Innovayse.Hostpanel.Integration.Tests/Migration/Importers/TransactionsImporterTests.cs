@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 public sealed class TransactionsImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A transaction for a known client is imported.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Transactions_ImportsATransactionForAKnownClientAsync()
     {
@@ -52,6 +53,7 @@ public sealed class TransactionsImporterTests(IntegrationTestFactory factory) : 
     /// The source invoice number is resolved to the local invoice imported from it, never used as
     /// a local invoice id itself.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_TransactionForImportedInvoice_LinksTheLocalInvoiceAsync()
     {
@@ -81,6 +83,7 @@ public sealed class TransactionsImporterTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A transaction paying a source invoice that was not imported is skipped with its own reason.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_TransactionForMissingInvoice_IsSkippedAsInvoiceNotFoundAsync()
     {
@@ -102,6 +105,7 @@ public sealed class TransactionsImporterTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A transaction whose source currency is not a three-letter code is skipped, not guessed at.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_TransactionWithMalformedCurrency_IsSkippedAsCurrencyInvalidAsync()
     {
@@ -123,6 +127,7 @@ public sealed class TransactionsImporterTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A padded, lower-case source currency is imported trimmed and upper-cased.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_TransactionWithPaddedCurrency_IsImportedNormalisedAsync()
     {

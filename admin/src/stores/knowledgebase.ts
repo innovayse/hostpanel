@@ -8,7 +8,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { useKnowledgebaseApi } from '@/composables/apis/useKnowledgebaseApi'
 import { runAction } from '@/lib/runAction'
-import type { KbArticle, KbArticlePayload, KbCategory, KbCategoryPayload } from '@/types/kbarticle'
+import type { KbArticle, KbArticlePayload, KbArticleUpdatePayload, KbCategory, KbCategoryPayload } from '@/types/kbarticle'
 
 /** Loads and changes knowledge base categories and articles. */
 export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
@@ -20,8 +20,11 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
   /** List of KB articles. */
   const articles = ref<KbArticle[]>([])
 
-  /** True while a load or create request is in flight. */
+  /** True while the categories load or one of them is being created. */
   const loading = ref(false)
+
+  /** True while the articles load; apart from `loading`, so a slow list never hides the other. */
+  const articlesLoading = ref(false)
 
   /** Sentence for the last failed call, null when none. */
   const error = ref<string | null>(null)
@@ -96,9 +99,9 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
    * @returns True when loaded; false when refused (see `error`).
    */
   const fetchArticles = async (): Promise<boolean> => {
-    loading.value = true
+    articlesLoading.value = true
     const result = await runAction(error, () => api.listArticles())
-    loading.value = false
+    articlesLoading.value = false
     if (result.ok) {
       articles.value = result.value
     }
@@ -106,16 +109,33 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
   }
 
   /**
-   * Creates an article.
+   * Creates an article, then reloads the list.
    *
    * @param payload - Article data.
    * @returns The new article's id, or null when refused (see `error` and `fieldErrors`).
    */
   const createArticle = async (payload: KbArticlePayload): Promise<number | null> => {
-    loading.value = true
     const result = await runAction(error, () => api.createArticle(payload), fieldErrors)
-    loading.value = false
-    return result.ok ? result.value : null
+    if (!result.ok) {
+      return null
+    }
+    await fetchArticles()
+    return result.value
+  }
+
+  /**
+   * Replaces the category and translations of an article, then reloads the list.
+   *
+   * @param id - The article identifier.
+   * @param payload - Updated category and translations.
+   * @returns True when saved; false when refused (see `error` and `fieldErrors`).
+   */
+  const updateArticle = async (id: number, payload: KbArticleUpdatePayload): Promise<boolean> => {
+    const result = await runAction(error, () => api.updateArticle(id, payload), fieldErrors)
+    if (result.ok) {
+      await fetchArticles()
+    }
+    return result.ok
   }
 
   /**
@@ -131,6 +151,7 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
     categories,
     articles,
     loading,
+    articlesLoading,
     error,
     fieldErrors,
     fetchCategories,
@@ -139,6 +160,7 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
     deleteCategory,
     fetchArticles,
     createArticle,
+    updateArticle,
     deleteArticle,
   }
 })

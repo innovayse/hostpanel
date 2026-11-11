@@ -403,6 +403,14 @@ export enum UiPlacement {
   Top = 'top',
 }
 
+/** Which edge of its trigger a floating menu lines up with. */
+export enum UiMenuAlign {
+  /** The menu's left edge sits under the trigger's left edge and it grows right. */
+  Start = 'start',
+  /** The menu's right edge sits under the trigger's right edge and it grows left. */
+  End = 'end',
+}
+
 /** Layout of the language switcher. */
 export enum UiLanguageLayout {
   /** A trigger with a dropdown menu. */

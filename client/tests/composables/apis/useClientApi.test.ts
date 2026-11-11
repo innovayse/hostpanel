@@ -54,6 +54,8 @@ const rows: ExpectedRequest[] = [
   { name: 'fetchServiceInvoices reads the service invoices', call: () => api.fetchServiceInvoices('9'), method: HttpMethod.Get, url: '/api/portal/client/services/9/invoices' },
   { name: 'changeServicePassword posts the password', call: () => api.changeServicePassword('9', 'longenough'), method: HttpMethod.Post, url: '/api/portal/client/services/9/change-password', body: { password: 'longenough' } },
   { name: 'cancelService posts the type as a member name', call: () => api.cancelService('9', { type: CancellationType.EndOfBillingPeriod, reason: 'moving' }), method: HttpMethod.Post, url: '/api/portal/client/services/9/cancel', body: { type: 'EndOfBillingPeriod', reason: 'moving' } },
+  { name: 'fetchPlanChangeOptions reads the sub-resource', call: () => api.fetchPlanChangeOptions('9'), method: HttpMethod.Get, url: '/api/portal/client/services/9/plan-change-options' },
+  { name: 'requestPlanChange posts the target product', call: () => api.requestPlanChange('9', 12), method: HttpMethod.Post, url: '/api/portal/client/services/9/plan-change', body: { toProductId: 12 } },
   { name: 'fetchCpanelSsoUrl reads the sign-in address', call: () => api.fetchCpanelSsoUrl('9'), method: HttpMethod.Get, url: '/api/portal/client/services/9/cpanel-sso' },
   { name: 'setUpService posts the setup answers', call: () => api.setUpService('9', { domain: 'a.com' }), method: HttpMethod.Post, url: '/api/portal/client/services/9/setup', body: { domain: 'a.com' } },
 ]

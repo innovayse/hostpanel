@@ -38,7 +38,7 @@ const valueClasses = computed<string>(() => toneTextClasses[props.tone])
       </UiText>
       <slot name="icon" />
     </div>
-    <p class="mt-2 font-display text-[1.6rem] font-bold leading-none" :class="valueClasses">
+    <p class="mt-2 font-display text-[1.6rem] font-bold leading-none tabular-nums" :class="valueClasses">
       {{ value }}
     </p>
     <UiText v-if="hint" tone="secondary" size="sm" class="mt-1.5">

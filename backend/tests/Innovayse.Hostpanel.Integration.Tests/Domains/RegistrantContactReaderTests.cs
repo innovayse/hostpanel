@@ -4,7 +4,6 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Extensions;
 using Innovayse.Hostpanel.Application.Domains.Registrar;
 using Innovayse.Hostpanel.Domain.Clients;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -48,6 +47,7 @@ public sealed class RegistrantContactReaderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The contact is built from the client's name, company, phone and address, and the account's e-mail.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReadAsync_BuildsTheContactFromTheClientAsync()
     {
@@ -73,6 +73,7 @@ public sealed class RegistrantContactReaderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A client with no address on record gets a contact that is not complete enough to buy with.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReadAsync_WithoutAnAddress_GivesAnIncompleteContactAsync()
     {
@@ -88,6 +89,7 @@ public sealed class RegistrantContactReaderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An unknown client id is refused rather than registered to a blank contact.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReadAsync_WithAnUnknownClient_FailsAsync()
     {

@@ -12,7 +12,7 @@ docker/
 │                                 hostpanel-mailhog; host ports and resource caps for the infrastructure
 ├── docker-compose.prod.yml       the applications by ${IMAGE_TAG} (registry images; a build: block lets a host
 │                                 build the same image in place) and the bundled hostpanel-nginx
-├── docker-compose.platform.yml   joins the shared external network; parks rabbitmq, redis and nginx
+├── docker-compose.platform.yml   the platform overlay (see "Which chain when")
 ├── docker-compose.demo.yml       demo overlay: project hostpanel-demo, own db/broker/redis/mailhog, demo-mode API env
 ├── .env.example                  every variable of the stack, each named once; copy to .env (gitignored)
 ├── nginx/
@@ -30,11 +30,18 @@ run directly in the app).
 | Where | Compose files (all `-f docker/...` from the project root, or plain from `docker/`) |
 |---|---|
 | laptop, product alone | `shared` + `dev` |
-| laptop, inside the workspace | `shared` + `dev` + `platform` |
+| laptop, joining a platform network | `shared` + `dev` + `platform` |
 | deployed host | `shared` + `prod` + `platform` (stage and production) |
 | demo, beside prod on a deployed host | `shared` + `prod` + `platform` + `demo`, project `-p hostpanel-demo` |
 | demo, laptop | `shared` + `prod` + `demo` |
 | standalone install | `hub` alone, driven by `install.sh` (a single curl-to-bash command) |
+
+**The platform overlay** (`docker-compose.platform.yml`) is for a machine where other services already share one
+external Docker network and bring their own message broker, Redis and edge proxy. It goes last in the chain and
+attaches the stack to that existing network instead of creating its own (`STACK_NETWORK_SUBNET` then names that
+network's subnet), parks this stack's RabbitMQ, Redis and bundled nginx so they do not start (the API relies on the
+platform's broker and Redis, and takes its mail settings from `SMTP_*`), and keeps the stack's own database. Parked
+services carry no `container_name`, so their names never collide with the platform's.
 
 Compose reads `docker/.env` because the files sit in `docker/`. Every compose file pins
 `name: hostpanel`, and volumes carry fixed names (`hostpanel_pgdata`, ...), so moving the files did

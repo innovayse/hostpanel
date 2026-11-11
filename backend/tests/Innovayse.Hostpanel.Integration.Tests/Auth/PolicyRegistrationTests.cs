@@ -49,6 +49,7 @@ public sealed class PolicyRegistrationTests
         member.Requirements.OfType<DenyAnonymousAuthorizationRequirement>().Should().ContainSingle();
 
         RolesOf(options.GetPolicy(Policies.Admin)!).Should().BeEquivalentTo([Roles.Admin]);
+        RolesOf(options.GetPolicy(Policies.Staff)!).Should().BeEquivalentTo([Roles.Admin, Roles.Reseller]);
 
         // The client portal is not a plain role check: a member an identity plugin vouches for holds no role.
         var client = options.GetPolicy(Policies.Client)!;
@@ -62,7 +63,7 @@ public sealed class PolicyRegistrationTests
     {
         var options = Build(isLocalMode: true);
 
-        foreach (var name in new[] { Policies.Member, Policies.Admin, Policies.Client })
+        foreach (var name in new[] { Policies.Member, Policies.Admin, Policies.Staff, Policies.Client })
         {
             options.GetPolicy(name)!.AuthenticationSchemes.Should().BeEmpty();
         }
@@ -77,7 +78,7 @@ public sealed class PolicyRegistrationTests
     {
         var options = Build(isLocalMode: false);
 
-        foreach (var name in new[] { Policies.Member, Policies.Admin, Policies.Client })
+        foreach (var name in new[] { Policies.Member, Policies.Admin, Policies.Staff, Policies.Client })
         {
             var schemes = options.GetPolicy(name)!.AuthenticationSchemes;
             schemes.Should().HaveCount(3);

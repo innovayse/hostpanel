@@ -302,11 +302,20 @@ export const useDomainsStore = defineStore('domains', () => {
     return result.ok ? result.value.eppCode : null
   }
 
+  /**
+   * Cancels a pending incoming transfer. A registrar without a cancel-transfer operation refuses
+   * with the API's sentence for `REGISTRAR_OPERATION_UNSUPPORTED`.
+   *
+   * @param id - Domain primary key.
+   * @returns True when accepted; false when refused (see `actionError`).
+   */
+  const cancelTransfer = (id: number | string): Promise<boolean> => mutate(() => api.cancelTransfer(id))
+
   return {
     domains, clientDomains, current, page, pageSize, totalCount, search, loading, error, actionError, fieldErrors,
     fetchAll, fetchByClient, fetchClientPage, fetchById, update, register, renew,
     setAutoRenew, setWhoisPrivacy, setLock, setDnsManagement, setEmailForwarding,
-    modifyContact, getEppCode,
+    modifyContact, getEppCode, cancelTransfer,
     addDnsRecord, updateDnsRecord, deleteDnsRecord,
     addForwardingRule, updateForwardingRule, deleteForwardingRule,
   }

@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class ClientServiceTerminatedHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The termination event closes the open request of the terminated service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientServiceTerminated_ClosesTheOpenCancellationRequest()
     {
@@ -32,6 +33,7 @@ public sealed class ClientServiceTerminatedHandlerTests(IntegrationTestFactory f
     }
 
     /// <summary>A refusal from the command (the service is unknown) is logged, not thrown into the event chain.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientServiceTerminated_UnknownServiceDoesNotThrow()
     {

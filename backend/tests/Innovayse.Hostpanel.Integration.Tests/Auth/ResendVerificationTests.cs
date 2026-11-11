@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 public sealed class ResendVerificationTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An unverified caller gets a second mail whose link confirms the address.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Resend_ForAnUnverifiedCaller_SendsAWorkingLinkAsync()
     {
@@ -33,6 +34,7 @@ public sealed class ResendVerificationTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Once the address is confirmed, resending answers success and sends nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Resend_ForAVerifiedCaller_IsANoOpAsync()
     {
@@ -53,6 +55,7 @@ public sealed class ResendVerificationTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Resend_WithoutASession_Refuses401Async()
     {

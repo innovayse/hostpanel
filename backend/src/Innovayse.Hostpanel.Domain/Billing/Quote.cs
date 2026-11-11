@@ -270,7 +270,7 @@ public sealed class Quote : BaseEntity, IAggregateRoot
     /// </summary>
     /// <returns>Read-only list of the lines to bill, each at its unit price after the line discount.</returns>
     public IReadOnlyList<QuoteInvoiceLine> GetInvoiceItemData()
-        => _items.Select(i => new QuoteInvoiceLine(i.Description, i.UnitPrice * (1 - i.DiscountPercent / 100), i.Quantity)).ToList();
+        => _items.Select(i => new QuoteInvoiceLine(i.Description, i.UnitPrice * (1 - (i.DiscountPercent / 100)), i.Quantity)).ToList();
 
     /// <summary>Sets <see cref="Total"/> to the sum of the unrounded line amounts, rounded once to the quote's currency like an invoice.</summary>
     private void RecalculateTotal() => Total = CurrencyCode.RoundToMinorUnits(_items.Sum(i => i.Amount), Currency);

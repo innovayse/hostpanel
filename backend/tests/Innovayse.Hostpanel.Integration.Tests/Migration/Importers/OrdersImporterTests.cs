@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Migration.Common;
 using Innovayse.Hostpanel.Application.Migration.Importers;
 using Innovayse.Hostpanel.Application.Migration.Pull;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
+using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 public sealed class OrdersImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An order with no line items for a known client is imported.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Orders_ImportsAnOrderForAKnownClientAsync()
     {
@@ -52,6 +54,7 @@ public sealed class OrdersImporterTests(IntegrationTestFactory factory) : IClass
     /// A service line is linked to the product imported for its source product id, even when another
     /// product here carries the name the line was ordered under; the domain line beside it is not stored.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Orders_LinksAServiceLineToTheProductImportedForItsSourceIdAsync()
     {
@@ -84,7 +87,43 @@ public sealed class OrdersImporterTests(IntegrationTestFactory factory) : IClass
         Assert.Equal(lineName, item.ProductName);
     }
 
+    /// <summary>
+    /// An imported Active order is accepted with its lines fulfilled from history, dated when the source placed it, so they
+    /// never read as not run yet and the order reads as complete.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task RunAsync_Orders_MarksTheLinesOfAnActiveOrderFulfilledFromHistoryAsync()
+    {
+        var source = new FakeMigrationPullSource { Totals = MigrationSourceTotals.Empty with { Billing = new MigrationBillingTotals(Orders: 1) } };
+        using var host = MigrationTestSeeds.HostWithFakeSource(factory, source);
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var email = await MigrationTestSeeds.SeedClientAsync(scope.ServiceProvider, context);
+        var product = await SeedProductAsync(context, $"product-{Guid.NewGuid():N}");
+        var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Orders);
+        var orderNumber = NewOrderNumber();
+        source.SetDatasetJson("products", $$"""
+            [{"Id":502,"GroupId":1,"Name":"{{product.Name}}","Description":null,"Type":"hostingaccount","MonthlyPrice":9.99,"AnnualPrice":null}]
+            """);
+        source.SetDatasetJson("orders", $$"""
+            [{"ClientEmail":"{{email}}","OrderNumber":"{{orderNumber}}","PaymentMethod":"manual","Status":"Active","Amount":9.99,"CreatedAt":"2025-01-01T00:00:00Z","Items":[
+              {"ProductId":502,"ProductName":"Hosting","BillingCycle":"Monthly","FirstPaymentAmount":9.99,"RecurringAmount":9.99,"Domain":"svc.test","Hostname":null}]}]
+            """);
+
+        var worker = scope.ServiceProvider.GetRequiredService<MigrationPullWorker>();
+        await worker.RunAsync(job.Id, CancellationToken.None);
+
+        var order = await context.Orders.AsNoTracking().Include(o => o.Items).SingleAsync(o => o.OrderNumber == orderNumber);
+        Assert.Equal(OrderStatus.Active, order.Status);
+        var item = Assert.Single(order.Items);
+        Assert.Equal(OrderItemFulfilmentState.Fulfilled, item.FulfilmentState);
+        Assert.Equal(1, item.FulfilmentAttempts);
+        Assert.Equal(new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero), item.LastFulfilmentAttemptAt);
+    }
+
     /// <summary>An order whose every line is a domain or an addon is skipped as having no product lines.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Orders_SkipsAnOrderWithOnlyDomainLinesAsync()
     {
@@ -109,6 +148,7 @@ public sealed class OrdersImporterTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An order with a service line whose source product was not imported here is skipped, never linked to another product.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Orders_SkipsAnOrderWhoseSourceProductIsUnknownAsync()
     {

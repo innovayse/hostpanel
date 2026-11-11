@@ -59,6 +59,7 @@ public sealed class InvoiceClientBillableItemsTests(IntegrationTestFactory facto
         tracker.Entries<BillableItem>().Any(e => e.State == EntityState.Modified && e.Entity.Id == itemId);
 
     /// <summary>All of a client's one-time items due now land on one invoice and are marked with its id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DueOneTimeItems_AreInvoicedTogetherAndMarked()
     {
@@ -81,6 +82,7 @@ public sealed class InvoiceClientBillableItemsTests(IntegrationTestFactory facto
     }
 
     /// <summary>Recurring items due now are invoiced and re-armed in the same save, with no invoice id kept.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DueRecurringItems_AreInvoicedAndReArmed()
     {
@@ -102,6 +104,7 @@ public sealed class InvoiceClientBillableItemsTests(IntegrationTestFactory facto
     }
 
     /// <summary>Items not yet due are left alone and no invoice is raised.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NothingDue_RaisesNoInvoice()
     {
@@ -123,6 +126,7 @@ public sealed class InvoiceClientBillableItemsTests(IntegrationTestFactory facto
     /// A failure on the save that marks the items leaves no invoice behind (the transaction rolls
     /// back), so the next run invoices the items once, not twice.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CrashBetweenTheInvoiceAndTheMarking_CannotDoubleInvoice()
     {

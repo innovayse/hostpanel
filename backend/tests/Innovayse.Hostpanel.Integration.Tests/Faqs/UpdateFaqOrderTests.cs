@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Faqs;
 public sealed class UpdateFaqOrderTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The listed ids take their new positions and the public feed follows the new order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Reorder_MovesTheListedRecords()
     {
@@ -32,6 +33,7 @@ public sealed class UpdateFaqOrderTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>An id that names no record refuses the whole request and moves nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Reorder_UnknownId_RefusesNotFoundAndMovesNothing()
     {
@@ -50,6 +52,7 @@ public sealed class UpdateFaqOrderTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A negative sort order is refused as a validation failure.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Reorder_NegativeSortOrder_Refuses()
     {
@@ -64,6 +67,7 @@ public sealed class UpdateFaqOrderTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Reorder_RefusesAnonymous()
     {

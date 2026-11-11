@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class AddContactTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Adding a contact writes it onto the client's record and answers 201 with the new contact's id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddWritesTheContact()
     {
@@ -27,6 +28,7 @@ public sealed class AddContactTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A second contact with an address the client already has answers 409 <c>CONTACT_EMAIL_IN_USE</c>, whatever the case.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddRefusesAnAddressAnotherContactUses()
     {
@@ -46,6 +48,7 @@ public sealed class AddContactTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>Another client may hold the same address: the rule is per client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddAllowsTheAddressAnotherClientUses()
     {
@@ -61,6 +64,7 @@ public sealed class AddContactTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A closed account's contacts are frozen: adding one answers 409 <c>CLIENT_RECORD_CLOSED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddRefusesAClosedClient()
     {
@@ -74,6 +78,7 @@ public sealed class AddContactTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>Adding a contact stores its country upper case and leaves one activity line without the contact's data.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddNormalisesTheCountryAndIsAuditedWithTheActingAdmin()
     {
@@ -107,6 +112,7 @@ public sealed class AddContactTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>Adding a contact to an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddRefusesUnknownClient()
     {
@@ -120,6 +126,7 @@ public sealed class AddContactTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>Adding a contact is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddRefusesAnonymous()
     {
@@ -130,6 +137,7 @@ public sealed class AddContactTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A client, who is not staff, is refused with 403 on the admin route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddRefusesAClient()
     {
@@ -144,6 +152,7 @@ public sealed class AddContactTests(IntegrationTestFactory factory) : IClassFixt
     /// A contact added, updated and removed through the client portal's own
     /// <c>POST /api/clients/me/contacts</c> round-trips the same way the admin route does.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MyContactsAddUpdateRemoveRoundTrips()
     {

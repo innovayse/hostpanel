@@ -79,6 +79,8 @@ export const PluginErrorCode = {
   RegistryLicenceRequired: 'PLUGIN_REGISTRY_LICENCE_REQUIRED',
   /** The registry refused the licence key the server holds; the details page then offers the key card. */
   RegistryLicenceInvalid: 'PLUGIN_REGISTRY_LICENCE_INVALID',
+  /** No page the operator may open answers the address: unknown, unavailable or switched off alike. */
+  PageNotFound: 'PLUGIN_PAGE_NOT_FOUND',
 } as const
 
 /** One of the {@link PluginErrorCode} values. */
@@ -94,6 +96,43 @@ export const PluginCapability = {
 
 /** One of the {@link PluginCapability} values. */
 export type PluginCapability = (typeof PluginCapability)[keyof typeof PluginCapability]
+
+/** Closed set of kinds of access to a client's hosting a manifest may ask for; the strings are the SDK's `PluginHostAccess` names. */
+export const PluginHostAccess = {
+  /** Runs commands on the client's hosting account over SSH. */
+  Ssh: 'ssh',
+} as const
+
+/** One of the {@link PluginHostAccess} values. */
+export type PluginHostAccess = (typeof PluginHostAccess)[keyof typeof PluginHostAccess]
+
+/** What an uploaded plugin ZIP asks for before it is installed (POST /api/admin/plugins/inspect). */
+export interface PluginPackagePreviewDto {
+  /** Plugin id from plugin.json. */
+  id: string
+  /** Display name. */
+  name: string
+  /** The package's version. */
+  version: string
+  /** Author name or organisation. */
+  author: string
+  /** Short description. */
+  description: string
+  /** The kinds of access to a client's hosting the plugin asks for, in manifest order; empty when none. */
+  hostAccess: PluginHostAccess[]
+  /** The capabilities the plugin declares, in manifest order; empty when none. */
+  capabilities: PluginCapability[]
+  /** Release notes of this version as plain text, null when the manifest has none. */
+  changelog: string | null
+  /** Lowest server version the plugin runs on, null for no lower bound. */
+  minHostVersion: string | null
+  /** Highest server version the plugin runs on, null for no upper bound. */
+  maxHostVersion: string | null
+  /** The version this server runs, the one the range is compared with. */
+  hostVersion: string
+  /** Whether this server's version is inside the range; the install is refused otherwise. */
+  compatible: boolean
+}
 
 /** Summary of one installed plugin returned by GET /api/admin/plugins. */
 export interface PluginListItemDto {
@@ -129,6 +168,14 @@ export interface PluginListItemDto {
   stagedVersion: string | null
   /** The capabilities the manifest declares, in manifest order; empty when it declares none. */
   capabilities: PluginCapability[]
+  /** The kinds of access to a client's hosting the manifest asks for; empty when none or for a refused or removed row. */
+  hostAccess?: PluginHostAccess[] | null
+  /** Release notes of the installed version, null when none. */
+  changelog?: string | null
+  /** Lowest server version the plugin runs on, null for no lower bound. */
+  minHostVersion?: string | null
+  /** Highest server version the plugin runs on, null for no upper bound. */
+  maxHostVersion?: string | null
 }
 
 /** Result returned by install and remove plugin operations. */
@@ -210,6 +257,63 @@ export const PluginRegistryTrust = {
 /** One of the {@link PluginRegistryTrust} values. */
 export type PluginRegistryTrust = (typeof PluginRegistryTrust)[keyof typeof PluginRegistryTrust]
 
+/** Closed set of where a registry plugin's package can be obtained from; the strings are the server's names. */
+export const PluginRegistryDistribution = {
+  /** Offered to everyone. */
+  Download: 'Download',
+  /** Offered only to an installation the registry has verified; asked for with signed requests. */
+  HostOnly: 'HostOnly',
+} as const
+
+/** One of the {@link PluginRegistryDistribution} values. */
+export type PluginRegistryDistribution = (typeof PluginRegistryDistribution)[keyof typeof PluginRegistryDistribution]
+
+/** Closed set of who publishes a registry plugin; the strings are the server's names. */
+export const PluginPublisherKind = {
+  /** One person publishes the plugin. */
+  Personal: 'Personal',
+  /** An organization publishes the plugin. */
+  Organization: 'Organization',
+} as const
+
+/** One of the {@link PluginPublisherKind} values. */
+export type PluginPublisherKind = (typeof PluginPublisherKind)[keyof typeof PluginPublisherKind]
+
+/** Closed set of where this server stands with the plugin registry; the strings are the server's names. */
+export const RegistryInstanceState = {
+  /** Nothing was registered yet. */
+  NotRegistered: 'NotRegistered',
+  /** Registered; the registry has not confirmed it yet. */
+  Pending: 'Pending',
+  /** The registry confirmed this server; restricted plugins can be asked for. */
+  Verified: 'Verified',
+  /** The registry revoked this server. */
+  Revoked: 'Revoked',
+  /** The last attempt failed. */
+  Error: 'Error',
+} as const
+
+/** One of the {@link RegistryInstanceState} values. */
+export type RegistryInstanceState = (typeof RegistryInstanceState)[keyof typeof RegistryInstanceState]
+
+/** Where this server stands with the plugin registry (GET /api/admin/plugins/registry-instance). Carries nothing secret. */
+export interface RegistryInstanceDto {
+  /** The registration state. */
+  state: RegistryInstanceState
+  /** The id the registry gave this server; null before the first registration. */
+  instanceId: string | null
+  /** The public address told to the registry; null before the first attempt. */
+  baseUrl: string | null
+  /** Code of the last failure; null when there is none. */
+  errorCode: string | null
+  /** The finished sentence for the code in the admin's language; null when there is none. */
+  message: string | null
+  /** When the registry confirmed this server; null until it did. */
+  verifiedAt: string | null
+  /** When the next automatic attempt is due; null when none waits. */
+  nextAttemptAt: string | null
+}
+
 /** One plugin listed by the registry (GET /api/admin/plugins/registry). */
 export interface PluginRegistryItemDto {
   /** Unique plugin identifier, the `id` field of plugin.json. */
@@ -240,6 +344,16 @@ export interface PluginRegistryItemDto {
   updateAvailable: boolean
   /** Whether installing it needs a licence key; absent on older registries, where a paid or private price implies it. */
   requiresLicence?: boolean
+  /** Where the package can be obtained from; absent on an older server, which reads as `Download`. */
+  distribution?: PluginRegistryDistribution
+  /** Whether a person or an organization publishes it; null or absent when the registry does not say. */
+  publisherKind?: PluginPublisherKind | null
+  /** The plugin's tags without the hash; null or absent when the registry sends none. */
+  tags?: string[] | null
+  /** Downloads of every version added up; null or absent when the registry does not say. */
+  downloads?: number | null
+  /** Release notes of the latest version as Markdown; null or absent when the registry sends none. */
+  latestChangelog?: string | null
 }
 
 /** One page of registry listings. */

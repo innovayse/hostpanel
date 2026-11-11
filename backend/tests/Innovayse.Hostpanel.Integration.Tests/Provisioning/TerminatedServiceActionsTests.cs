@@ -60,6 +60,7 @@ public sealed class TerminatedServiceActionsTests(IntegrationTestFactory factory
     }
 
     /// <summary>A terminated service is refused with 400 <c>SERVICE_NOT_ACTIVE</c> and the provider is never called.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Terminated_AllFourRequestsAreRefusedWithoutReachingTheProviderAsync()
     {
@@ -78,6 +79,7 @@ public sealed class TerminatedServiceActionsTests(IntegrationTestFactory factory
 
     /// <summary>An active and a suspended service still hold their account, so each request reaches the provider.</summary>
     /// <param name="target">The status of the service.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(ServiceStatus.Active)]
     [InlineData(ServiceStatus.Suspended)]
@@ -103,6 +105,7 @@ public sealed class TerminatedServiceActionsTests(IntegrationTestFactory factory
     /// with 400 <c>SERVICE_NOT_ACTIVE</c> and the provider receives no call, so nothing reaches the account
     /// that now belongs to the other service.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task FormerOwner_SharedReferenceWithALiveService_IsRefusedAndTheProviderIsNotCalledAsync()
     {

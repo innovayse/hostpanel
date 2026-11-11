@@ -18,6 +18,7 @@ public sealed class DomainRenewalFailedAdminHandlerTests(IntegrationTestFactory 
     private const string AdminEmail = "ops@example.test";
 
     /// <summary>Publishing the event sends one staff mail under the renewal-failed subject, and the template row exists.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRenewalFailed_MailsStaffOnceAndSeedsTheTemplate()
     {
@@ -48,6 +49,7 @@ public sealed class DomainRenewalFailedAdminHandlerTests(IntegrationTestFactory 
     /// An alert about a domain no invoice was raised for (invoice id 0, an unpriceable TLD) does not
     /// name an "invoice #0".
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRenewalFailed_WithoutInvoice_NamesNoInvoice()
     {
@@ -72,6 +74,7 @@ public sealed class DomainRenewalFailedAdminHandlerTests(IntegrationTestFactory 
     /// With no admin address configured (the case on every tier today) the alert falls back to the
     /// contact inbox rather than reaching nobody.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRenewalFailed_FallsBackToTheContactInbox()
     {
@@ -94,6 +97,7 @@ public sealed class DomainRenewalFailedAdminHandlerTests(IntegrationTestFactory 
     }
 
     /// <summary>With neither address configured nothing is sent (the handler logs an error naming the setting instead).</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRenewalFailed_WithNoAddress_SendsNothing()
     {

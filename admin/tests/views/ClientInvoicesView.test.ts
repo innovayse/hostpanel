@@ -52,6 +52,8 @@ describe('ClientInvoicesView', () => {
     stubRoutes({ 'GET /api/billing/client/7': listPage, 'DELETE /api/billing/1': () => new Response(null, { status: 204 }) })
     const wrapper = await mountInvoices()
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="client-invoices-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="client-invoices-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -63,6 +65,8 @@ describe('ClientInvoicesView', () => {
     stubRoutes({ 'GET /api/billing/client/7': listPage, 'DELETE /api/billing/1': () => problem('The invoice has payments.', 409) })
     const wrapper = await mountInvoices()
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="client-invoices-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="client-invoices-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -75,6 +79,8 @@ describe('ClientInvoicesView', () => {
     const mock = stubRoutes({ 'GET /api/billing/client/7': listPage })
     const wrapper = await mountInvoices()
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="client-invoices-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="client-invoices-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     await flushPromises()

@@ -42,6 +42,7 @@ public sealed class SshAgentSetupAdapterTests
     }
 
     /// <summary>Nothing listening: the connection is refused, so the port or a rejecting firewall is at fault.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Scanner_ReportsAClosedPortAsRefused()
     {
@@ -57,6 +58,7 @@ public sealed class SshAgentSetupAdapterTests
     }
 
     /// <summary>A port that accepts and hangs up before any banner: sshd turning the address away.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Scanner_ReportsAHangUpBeforeTheBannerAsClosedBeforeGreeting()
     {
@@ -85,6 +87,7 @@ public sealed class SshAgentSetupAdapterTests
     }
 
     /// <summary>No answer at all within the timeout: no network path (VPN, routing, a dropping firewall).</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Scanner_ReportsSilenceAsNoAnswer()
     {

@@ -9,6 +9,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 public sealed class GetAuthModeTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An anonymous caller reads the mode; the suite runs the local mode.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetAuthModeAnswersAnonymously()
     {

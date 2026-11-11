@@ -22,6 +22,7 @@ public sealed class DomainTransferredNotificationHandlerTests(IntegrationTestFac
     private const string TemplateSlug = "domain-transferred";
 
     /// <summary>A transferred-in domain notifies the owning client exactly once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainTransferredIn_NotifiesOwningClientExactlyOnceAsync()
     {
@@ -44,6 +45,7 @@ public sealed class DomainTransferredNotificationHandlerTests(IntegrationTestFac
     /// An event naming a domain that belongs to another client (an id the demo reset reused) or no domain at
     /// all mails nobody.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainTransferredIn_ForADomainThatIsNotTheClients_SendsNothingAsync()
     {

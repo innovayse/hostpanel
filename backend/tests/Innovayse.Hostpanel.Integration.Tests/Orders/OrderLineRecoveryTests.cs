@@ -37,6 +37,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
     /// A digital line whose service was created but could not be activated is retried: the retry activates that same
     /// service, so the client has one service for the line (not two to provision and bill) and the line and order complete.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RetryOfADigitalLineWhoseActivationFailedReusesItsService()
     {
@@ -72,6 +73,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
     /// A registrar that times out fails only the domain line, with a code: the order is still accepted, the hosting line after
     /// it is fulfilled and every outcome is on record, instead of the exception costing the whole run.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARegistrarThatTimesOutFailsOnlyItsOwnLine()
     {
@@ -96,6 +98,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
     /// A retry whose action throws records the line failed with the code, answers with it, and leaves the line retryable
     /// at once: it is not left claimed for the length of the lease, and the next retry finishes it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARetryWhoseActionThrowsLeavesTheLineFailedAndRetryableAtOnce()
     {
@@ -134,10 +137,12 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
     /// A run the caller cancels part way rethrows the cancellation, but first records the line it was running and the lines
     /// after it as interrupted, so none is left unrecorded and staff can retry them at once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ACancelledRunReleasesTheLinesItDidNotFinish()
     {
         var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        await OrdersTestSeeds.AcceptWithoutFulfilmentAsync(factory, seeded.OrderId);
         await OrdersTestReads.ReleaseDomainAsync(factory.Services, seeded.Domain);
         using var host = HostWith<CancellingRegistrar>();
         using var scope = host.Services.CreateScope();
@@ -160,6 +165,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
     /// Two retries of different lines whose actions overlap, each holding the order as it loaded it before the other finished,
     /// both complete their line, and the order ends Active instead of staying Incomplete over lines that are all fulfilled.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoRetriesOfDifferentLinesFinishingTogetherLeaveTheOrderActive()
     {
@@ -186,6 +192,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
     /// A domain the client holds under the line's name that is no longer live (cancelled here) is not the registration the line
     /// was for: the retry does not count it as done, it asks the registrar again, and the line stays failed with the code.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ACancelledDomainTheClientHoldsIsNotCountedAsDone()
     {
@@ -210,6 +217,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
     /// line, the database already shows both lines in progress under their first attempt and the order Incomplete, so a crash
     /// at that moment leaves lines a retry can take over instead of lines that read as never started on an Active order.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AcceptingAnOrderClaimsItsLinesBeforeTheFirstActionRuns()
     {
@@ -242,6 +250,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
     /// An outcome that cannot be saved does not stop the run: the line stays claimed (retryable once its claim runs out), and
     /// the line after it is still run and recorded, instead of staying Pending on an order nothing will ever pick up.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnOutcomeThatCannotBeRecordedDoesNotStopTheOtherLines()
     {
@@ -268,6 +277,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
     /// A retry the caller cancels after the line was claimed but before the run recorded anything does not leave the line in
     /// progress: it is recorded as interrupted, so the next retry takes it at once instead of waiting out the lease.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARetryCancelledAfterItsClaimLeavesTheLineInterruptedAndRetryableAtOnce()
     {
@@ -300,6 +310,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
     /// A domain the client holds under the line's name that no order created (it came from elsewhere) is not the registration
     /// the line was for: the retry does not count it as done, it asks the registrar again, and the line stays failed.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ALiveDomainThatNoOrderCreatedIsNotCountedAsDone()
     {
@@ -323,6 +334,7 @@ public sealed class OrderLineRecoveryTests(IntegrationTestFactory factory) : ICl
     /// A domain a first attempt of this very order registered (stored with the order) is counted as done by the retry, so the
     /// registrar is not asked to register it a second time.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ALiveDomainThisOrderCreatedIsCountedAsDone()
     {

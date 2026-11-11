@@ -3,9 +3,9 @@ using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Domains.Commands.RenewDomain;
-using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Integration.Tests.Billing;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.TestHost;
@@ -25,6 +25,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Renewing an active domain succeeds and extends its expiry date.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewDomain_ActiveDomain_Returns204AndExtendsExpiryAsync()
     {
@@ -46,6 +47,7 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
     /// A renew body that names an order line is ignored: the renewal succeeds but is not recorded against any line, so a
     /// request cannot make a line believe it already renewed a domain.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewDomain_BodyNamingAnOrderLine_IsIgnoredAsync()
     {
@@ -62,6 +64,7 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An unknown domain id answers 404 with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewDomain_UnknownDomain_Returns404Async()
     {
@@ -75,6 +78,7 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewDomain_WithoutToken_Returns401Async()
     {
@@ -91,6 +95,7 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
     /// refused with <c>DOMAIN_NO_REGISTRAR_REF</c> and the expiry stays put; extending it locally
     /// would mark a paid domain renewed while it lapses at the registrar.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewDomain_WithoutRegistrarRef_Returns400AndKeepsExpiryAsync()
     {
@@ -118,6 +123,7 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
     /// When the registrar renews but reports no expiry, the current expiry is extended by the
     /// renewed years, so an early renewal keeps its remaining days.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewDomain_RegistrarReportsNoExpiry_ExtendsTheCurrentExpiryAsync()
     {
@@ -219,6 +225,46 @@ public sealed class RenewDomainTests(IntegrationTestFactory factory) : IClassFix
             .InvokeAsync<Result>(new RenewDomainCommand(domain.Id, 1), CancellationToken.None);
 
         result.ErrorCode.Should().Be(HostpanelErrorCodes.DOMAIN_RENEW_NOT_ALLOWED);
+    }
+
+    /// <summary>
+    /// Two attempts of one order line renew at once and this one loses: the line still counts as renewed, the client's
+    /// activity log names the domain and says the registrar may have renewed it twice, and the expiry on record is the later
+    /// of the winner's and the one the registrar reported to the loser.
+    /// </summary>
+    /// <param name="reportedLater">Whether the registrar reported a later expiry to the losing attempt than the winner stored.</param>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task RenewDomain_LosingARaceForTheSameLine_LogsAPossibleDoubleRenewalAndKeepsTheLaterExpiryAsync(bool reportedLater)
+    {
+        var host = factory.WithWebHostBuilder(b =>
+            b.ConfigureTestServices(s => s.AddScoped<IRegistrarProvider, RacingRenewalRegistrar>()));
+        using var scope = host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var domainId = await DomainsTestSeeds.SeedActiveDomainAsync(context);
+        var seeded = await context.Domains.AsNoTracking().FirstAsync(d => d.Id == domainId, CancellationToken.None);
+        var line = 525_000 + (reportedLater ? 1 : 2);
+        var winnerExpiresAt = seeded.ExpiresAt.AddYears(1);
+        var reportedExpiresAt = reportedLater ? seeded.ExpiresAt.AddYears(2) : seeded.ExpiresAt.AddMonths(6);
+        RacingRenewalRegistrar.Race(factory.Services, seeded.Name, line, winnerExpiresAt, reportedExpiresAt);
+
+        var result = await scope.ServiceProvider.GetRequiredService<IMessageBus>()
+            .InvokeAsync<Result>(new RenewDomainCommand(domainId, 1, line), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        using var readScope = factory.Services.CreateScope();
+        var db = readScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var reloaded = await db.Domains.AsNoTracking().Include(d => d.LineRenewals).FirstAsync(d => d.Id == domainId);
+        reloaded.LineRenewals.Should().ContainSingle().Which.OrderItemId.Should().Be(line);
+        var expected = reportedLater ? reportedExpiresAt : winnerExpiresAt;
+        reloaded.ExpiresAt.Should().BeCloseTo(expected, TimeSpan.FromMilliseconds(1));
+        reloaded.NextDueDate.Should().BeCloseTo(expected, TimeSpan.FromMilliseconds(1));
+        (await db.ActivityLogs.AsNoTracking().CountAsync(
+            a => a.ClientId == seeded.ClientId
+                && a.Description.Contains($"Domain Possibly Renewed Twice - Domain: {seeded.Name} - Order Line ID: {line}")))
+            .Should().Be(1);
     }
 
     /// <summary>Renews a fresh active domain through a host whose registrar is <typeparamref name="TRegistrar"/>.</summary>

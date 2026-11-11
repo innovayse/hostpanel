@@ -60,7 +60,7 @@ describe('BillableItemsView', () => {
 
     const rows = wrapper.findAll('[data-testid="billing-billable-items-table"] tbody tr')
     expect(rows).toHaveLength(2)
-    expect(rows[0]?.text()).toContain('USD 12.00')
+    expect(rows[0]?.text()).toContain('12.00 USD')
     expect(rows[0]?.text()).toContain('No')
   })
 

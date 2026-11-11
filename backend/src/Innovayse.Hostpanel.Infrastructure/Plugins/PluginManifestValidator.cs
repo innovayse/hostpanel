@@ -3,8 +3,8 @@ using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Host;
 using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
-using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
 
 namespace Innovayse.Hostpanel.Infrastructure.Plugins;
 

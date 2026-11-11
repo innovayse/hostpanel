@@ -8,6 +8,8 @@ import { flushPromises } from '@vue/test-utils'
 import type { RouteLocationNormalized } from 'vue-router'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import { useNavigationStore } from '@/stores/navigation'
+import { useVersionStore } from '@/stores/version'
+import { json, problem } from '../../helpers/fetch'
 import { stubRoutes } from '../../helpers/routes'
 import { mountScreen, mountView } from '../../helpers/mount'
 import { resetThemeDocument, stubSchemeQuery } from '../../helpers/theme'
@@ -91,6 +93,56 @@ describe('AppSidebar', () => {
     expect(submenu.classes()).toEqual(expect.arrayContaining(['grid-rows-[1fr]', 'opacity-100']))
   })
 
+  it('groups the top-level entries under labelled sections in the order an operator works', async () => {
+    const wrapper = await mountSidebar('/dashboard')
+
+    const sections = wrapper.findAll('[data-testid^="nav-section-"]:not([data-testid$="-label"])')
+    expect(sections.map((section) => section.attributes('data-testid'))).toEqual([
+      'nav-section-daily',
+      'nav-section-insights',
+      'nav-section-setup',
+      'nav-section-system',
+    ])
+    expect(sections.map((section) => section.get('[data-testid$="-label"]').text())).toEqual([
+      'Daily work',
+      'Insights',
+      'Setup',
+      'System',
+    ])
+
+    /**
+     * Lists the top-level entries of a section in display order: entries outside the sub-menus whose ids have one segment after `nav-`.
+     *
+     * @param index - Position of the section.
+     * @returns The test ids of the section's top-level entries.
+     */
+    const entriesOf = (index: number): string[] => (sections[index]?.findAll('[data-testid^="nav-"]')
+      .filter((entry) => entry.element.closest('[data-testid$="-submenu"]') === null)
+      .map((entry) => entry.attributes('data-testid') ?? '')
+      .filter((id) => /^nav-[a-z]+$/.test(id))) ?? []
+    expect(entriesOf(0)).toEqual(['nav-dashboard', 'nav-clients', 'nav-orders', 'nav-billing', 'nav-domains', 'nav-support'])
+    expect(entriesOf(1)).toEqual(['nav-reports'])
+    expect(entriesOf(2)).toEqual(['nav-servers', 'nav-integrations', 'nav-plugins', 'nav-storefront'])
+    expect(entriesOf(3)).toEqual(['nav-migration', 'nav-settings'])
+  })
+
+  it('draws the phone menu drawer in the same order as the desktop sidebar', async () => {
+    const desktop = await mountSidebar('/dashboard')
+    const { wrapper: embedded } = await mountScreen(AppSidebar, { embedded: true }, '/dashboard')
+
+    /**
+     * Lists every top-level entry of a sidebar (outside the sub-menus) in display order.
+     *
+     * @param root - The mounted sidebar.
+     * @returns The test ids of the top-level entries.
+     */
+    const order = (root: typeof desktop): string[] => root.findAll('nav [data-testid^="nav-"]')
+      .filter((entry) => entry.element.closest('[data-testid$="-submenu"]') === null)
+      .map((entry) => entry.attributes('data-testid') ?? '')
+      .filter((id) => /^nav-[a-z]+$/.test(id))
+    expect(order(embedded)).toEqual(order(desktop))
+  })
+
   it('gives the list a quiet scrollbar that shows on hover', async () => {
     const wrapper = await mountSidebar('/dashboard')
 
@@ -133,6 +185,30 @@ describe('AppSidebar', () => {
     expect(wrapper.get('[data-testid="brand-logo-dark"]').attributes('alt')).toBe('Hostpanel')
   })
 
+  it('shows the installed version quietly in the footer', async () => {
+    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    stubRoutes({})
+    const wrapper = await mountView(AppSidebar, { path: '/dashboard' })
+    useVersionStore().version = '1.4.0'
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="sidebar-version"]').text()).toBe('Hostpanel 1.4.0')
+  })
+
+  it('shows no version line when the version cannot be loaded', async () => {
+    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    const mock = stubRoutes({ 'GET /api/admin/version': () => problem('No access.', 403) })
+    const wrapper = await mountView(AppSidebar, { path: '/dashboard' })
+    // The layout starts this load in the app; here the test starts it and waits for the refusal.
+    await useVersionStore().ensureLoaded()
+    await flushPromises()
+
+    expect(mock.mock.calls.some(([url]) => String(url).endsWith('/admin/version'))).toBe(true)
+    expect(useVersionStore().error).toBe('No access.')
+
+    expect(wrapper.find('[data-testid="sidebar-version"]').exists()).toBe(false)
+  })
+
   it('offers sign-out', async () => {
     const wrapper = await mountSidebar('/dashboard')
 
@@ -169,5 +245,47 @@ describe('AppSidebar', () => {
     expect(drawer.get('[data-testid="sidebar-theme-light"]').attributes('aria-checked')).toBe('true')
     expect(document.documentElement.classList.contains('light')).toBe(true)
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe(AdminTheme.Light)
+  })
+})
+
+describe('AppSidebar Add-ons', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('draws an Add-ons section before System from the menu items plugins declare', async () => {
+    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    stubRoutes({
+      'GET /api/admin/plugins/ui': () => json({
+        menus: [
+          { pluginId: 'sites', id: 'usage', label: 'Usage', page: 'usage', icon: 'chart', order: 2 },
+          { pluginId: 'sites', id: 'main', label: 'Sites', page: 'home', icon: null, order: 1 },
+        ],
+        pages: [
+          { pluginId: 'sites', id: 'home', path: '/', title: 'Sites' },
+          { pluginId: 'sites', id: 'usage', path: '/usage', title: 'Usage' },
+        ],
+      }),
+    })
+    const wrapper = await mountView(AppSidebar, { path: '/apps/sites/usage' })
+
+    const sections = wrapper.findAll('[data-testid^="nav-section-"]:not([data-testid$="-label"])').map((section) => section.attributes('data-testid'))
+    expect(sections).toEqual(['nav-section-daily', 'nav-section-insights', 'nav-section-setup', 'nav-section-addons', 'nav-section-system'])
+    expect(wrapper.get('[data-testid="nav-section-addons-label"]').text()).toBe('Add-ons')
+    const sites = wrapper.get('[data-testid="nav-apps-sites"]')
+    expect(sites.text()).toBe('Sites')
+    expect(sites.attributes('href')).toBe('/apps/sites')
+    const usage = wrapper.get('[data-testid="nav-apps-sites-usage"]')
+    expect(usage.attributes('href')).toBe('/apps/sites/usage')
+    expect(usage.classes()).toContain('bg-primary-500/10')
+    expect(sites.classes()).not.toContain('bg-primary-500/10')
+  })
+
+  it('draws no Add-ons section while no plugin declares a menu item', async () => {
+    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    stubRoutes({ 'GET /api/admin/plugins/ui': () => json({ menus: [], pages: [] }) })
+    const wrapper = await mountView(AppSidebar, { path: '/dashboard' })
+
+    expect(wrapper.find('[data-testid="nav-section-addons"]').exists()).toBe(false)
   })
 })

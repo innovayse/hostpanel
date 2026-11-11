@@ -42,9 +42,13 @@ public sealed class GetClientHandler
             return Result<ClientDto>.FailureCode(HostpanelErrorCodes.CLIENT_NOT_FOUND);
         }
 
+        var group = client.ClientGroupId is { } groupId
+            ? await _context.ClientGroups.AsNoTracking().FirstOrDefaultAsync(g => g.Id == groupId, ct)
+            : null;
+
         var user = await _identity.FindBySubjectAsync(client.UserId, ct);
         var email = user?.Email ?? "";
 
-        return Result<ClientDto>.Success(client.ToDto(email, user?.TwoFactorEnabled ?? false, user?.Language));
+        return Result<ClientDto>.Success(client.ToDto(group, email, user?.TwoFactorEnabled ?? false, user?.Language));
     }
 }

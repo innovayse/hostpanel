@@ -101,6 +101,23 @@ public sealed class PluginFrameOriginResolver
         return Bound(origins.Where(origin => !string.Equals(origin, own, StringComparison.Ordinal)));
     }
 
+    /// <summary>
+    /// Works out the origins the absolute links of a view may point at: what the manifest declares, as written (wildcards
+    /// included), then the <c>https</c> origins of <paramref name="frameOrigins"/>. The latter are the domains of the
+    /// reader's active services on products bound to the plugin, under the same rule a preview follows, so a plugin
+    /// published once for every installation can link to the reader's own sites without naming their domains. Plain-http development origins are left out.
+    /// </summary>
+    /// <param name="manifest">The plugin's manifest.</param>
+    /// <param name="frameOrigins">The result of <see cref="ResolveAsync"/> for the same caller; empty in the admin panel.</param>
+    /// <returns>The distinct origins.</returns>
+    public static IReadOnlyList<string> LinkOrigins(PluginManifest manifest, IReadOnlyList<string> frameOrigins)
+    {
+        return manifest.ExternalOrigins
+            .Concat(frameOrigins.Where(origin => origin.StartsWith("https://", StringComparison.Ordinal)))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+    }
+
     /// <summary>The panel's own origin in the list's canonical form.</summary>
     /// <returns>The origin, or null for an address that is not absolute, which then matches nothing.</returns>
     private string? OwnOrigin()

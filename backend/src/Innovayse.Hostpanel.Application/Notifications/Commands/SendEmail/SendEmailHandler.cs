@@ -3,11 +3,12 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Notifications.Common;
+using Innovayse.Hostpanel.Application.Notifications.Queries.FindEmailTemplate;
 using Innovayse.Hostpanel.Application.Notifications.Rendering;
 using Innovayse.Hostpanel.Domain.Notifications;
-using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
+using Innovayse.Hostpanel.SharedKernel.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -91,16 +92,8 @@ public sealed class SendEmailHandler
 
         // The recipient's version when one is written, the default language's otherwise: a template
         // nobody has translated yet still reaches the recipient rather than being lost.
-        var language = SupportedLanguages.IsSupported(cmd.Language?.ToLowerInvariant())
-            ? cmd.Language!.ToLowerInvariant()
-            : SupportedLanguages.Default;
-        var versions = await _context.EmailTemplates
-            .Where(t => t.Slug == cmd.TemplateSlug
-                && (t.Language == language || t.Language == SupportedLanguages.Default))
-            .ToListAsync(ct);
-        var template = versions.Find(t => t.Language == language)
-            ?? versions.Find(t => t.Language == SupportedLanguages.Default);
-        if (template is null)
+        var found = await _bus.InvokeAsync<Result<EmailTemplateDto>>(new FindEmailTemplateQuery(cmd.TemplateSlug, cmd.Language), ct);
+        if (found.Value is not { } template)
         {
             // Before the Result conversion this threw and surfaced in the log; every event handler
             // dispatches this and ignores the answer, so without this line the mail is lost silently.
@@ -116,7 +109,11 @@ public sealed class SendEmailHandler
         var subject = await _renderer.RenderTextAsync(template.Subject, cmd.TemplateData, ct);
         var body = await _renderer.RenderHtmlAsync(template.Body, cmd.TemplateData, ct);
 
-        await DeliverAsync(cmd.To, cmd.TemplateSlug, subject, body, cmd.IdempotencyKey, ct);
+        // The log keeps the mail for the admin and the client to read back, so the secrets the template was given (a reset or
+        // unsubscribe link) are masked there; the relay still gets the real body.
+        var loggedBody = SecretMembers.Conceal(body, cmd.TemplateData);
+
+        await DeliverAsync(new EmailMessage(cmd.To, subject, body, UnsubscribeUrl: cmd.UnsubscribeUrl), loggedBody, cmd.TemplateSlug, cmd.IdempotencyKey, ct);
 
         // The contacts who switched this kind of mail on get the same message. Each copy is its own
         // delivery and its own log line, and an address already written to is not mailed twice.
@@ -125,7 +122,7 @@ public sealed class SendEmailHandler
             var contacts = await _bus.ListContactNotificationEmailsAsync(copy.ClientId, copy.Topic, ct);
             foreach (var address in contacts.Where(a => !string.Equals(a, cmd.To, StringComparison.OrdinalIgnoreCase)))
             {
-                await DeliverAsync(address, cmd.TemplateSlug, subject, body, cmd.IdempotencyKey, ct);
+                await DeliverAsync(new EmailMessage(address, subject, body, UnsubscribeUrl: cmd.UnsubscribeUrl), loggedBody, cmd.TemplateSlug, cmd.IdempotencyKey, ct);
             }
         }
 
@@ -135,19 +132,18 @@ public sealed class SendEmailHandler
     }
 
     /// <summary>Delivers one rendered message to one address, keyed when the command carries a key.</summary>
-    /// <param name="to">The recipient address.</param>
+    /// <param name="message">The rendered message, addressed to the recipient.</param>
+    /// <param name="loggedBody">The body as the log keeps it, with the secrets masked.</param>
     /// <param name="templateSlug">The template the message was rendered from, for the log.</param>
-    /// <param name="subject">The rendered subject.</param>
-    /// <param name="body">The rendered HTML body.</param>
     /// <param name="messageKey">The command's idempotency key; null sends without a claim.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the address was delivered to, skipped, or staged for saving.</returns>
     private Task DeliverAsync(
-        string to, string templateSlug, string subject, string body, string? messageKey, CancellationToken ct)
+        EmailMessage message, string loggedBody, string templateSlug, string? messageKey, CancellationToken ct)
     {
         return messageKey is null
-            ? DeliverUnkeyedAsync(to, templateSlug, subject, body, ct)
-            : DeliverOnceAsync(to, templateSlug, subject, body, EmailIdempotencyKey.ForRecipient(messageKey, to), ct);
+            ? DeliverUnkeyedAsync(message, loggedBody, templateSlug, ct)
+            : DeliverOnceAsync(message, loggedBody, templateSlug, EmailIdempotencyKey.ForRecipient(messageKey, message.To), ct);
     }
 
     /// <summary>
@@ -155,21 +151,20 @@ public sealed class SendEmailHandler
     /// the relay is called, then saves the outcome. Every step is saved here, not by the caller, because
     /// the claim must be visible to a concurrent or replayed delivery before the mail leaves.
     /// </summary>
-    /// <param name="to">The recipient address.</param>
+    /// <param name="message">The rendered message, addressed to the recipient.</param>
+    /// <param name="loggedBody">The body as the log keeps it, with the secrets masked.</param>
     /// <param name="templateSlug">The template the message was rendered from, for the log.</param>
-    /// <param name="subject">The rendered subject.</param>
-    /// <param name="body">The rendered HTML body.</param>
     /// <param name="key">This recipient's idempotency key.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the outcome is saved, or at once when another delivery owns it.</returns>
     private async Task DeliverOnceAsync(
-        string to, string templateSlug, string subject, string body, string key, CancellationToken ct)
+        EmailMessage message, string loggedBody, string templateSlug, string key, CancellationToken ct)
     {
         var now = _clock.UtcNow;
         var log = await _context.EmailLogs.SingleOrDefaultAsync(l => l.IdempotencyKey == key, ct);
         if (log is null)
         {
-            log = EmailLog.Claim(to, subject, body, key, now);
+            log = EmailLog.Claim(message.To, message.Subject, loggedBody, key, now);
             _context.EmailLogs.Add(log);
         }
         else if (log.MayResend(now, _options.Value.DeliveryClaimLease))
@@ -198,7 +193,7 @@ public sealed class SendEmailHandler
             return;
         }
 
-        var sent = await _emailSender.SendAsync(new EmailMessage(to, subject, body), ct);
+        var sent = await _emailSender.SendAsync(message, ct);
         if (sent.Failure is { } failure)
         {
             _logger.LogWarning(
@@ -225,25 +220,24 @@ public sealed class SendEmailHandler
     }
 
     /// <summary>Hands one rendered message to the relay and stages its log line, as for every unkeyed send.</summary>
-    /// <param name="to">The recipient address.</param>
+    /// <param name="message">The rendered message, addressed to the recipient.</param>
+    /// <param name="loggedBody">The body as the log keeps it, with the secrets masked.</param>
     /// <param name="templateSlug">The template the message was rendered from, for the log.</param>
-    /// <param name="subject">The rendered subject.</param>
-    /// <param name="body">The rendered HTML body.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the relay has answered; the log line is saved by the caller.</returns>
     private async Task DeliverUnkeyedAsync(
-        string to, string templateSlug, string subject, string body, CancellationToken ct)
+        EmailMessage message, string loggedBody, string templateSlug, CancellationToken ct)
     {
         // The relay is a port this platform does not own; a failed send is recorded on the log
         // entry as its classified reason rather than turned into a refusal, so a caller that fires
         // this command and forgets it (every event handler in Notifications/Events does) never
         // sees a mail server being unreachable. The relay's own wording is logged by the adapter.
-        var sent = await _emailSender.SendAsync(new EmailMessage(to, subject, body), ct);
+        var sent = await _emailSender.SendAsync(message, ct);
         if (!sent.Delivered)
         {
             _logger.LogWarning("Email from template {TemplateSlug} was not delivered: {Failure}", templateSlug, sent.Failure);
         }
 
-        _context.EmailLogs.Add(EmailLog.Create(to, subject, body, sent.Failure, _clock.UtcNow));
+        _context.EmailLogs.Add(EmailLog.Create(message.To, message.Subject, loggedBody, sent.Failure, _clock.UtcNow));
     }
 }

@@ -22,6 +22,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Audit;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>A client id no seeded or created client ever takes.</summary>
     private const int NoSuchClientId = 999_999_999;
 
@@ -60,6 +63,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>Results come back newest first, so the latest activity leads.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_OrdersNewestFirstAsync()
     {
@@ -67,7 +71,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = DateTimeOffset.UtcNow;
+        var now = SeededAt;
         await SeedLogAsync(context, clientId, "Oldest", now.AddDays(-2));
         await SeedLogAsync(context, clientId, "Newest", now);
         await SeedLogAsync(context, clientId, "Middle", now.AddDays(-1));
@@ -80,6 +84,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The date filter matches only entries created on that UTC calendar day.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_DateFilter_MatchesOnlyThatUtcDayAsync()
     {
@@ -100,6 +105,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The admin search matches a substring of either the admin's name or their email.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_AdminSearch_MatchesNameOrEmailSubstringAsync()
     {
@@ -107,7 +113,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = DateTimeOffset.UtcNow;
+        var now = SeededAt;
         await SeedLogAsync(context, clientId, "ByName", now, adminName: "Ada Lovelace");
         await SeedLogAsync(context, clientId, "ByEmail", now.AddMinutes(-1), adminEmail: "ada@example.test");
         await SeedLogAsync(context, clientId, "NoMatch", now.AddMinutes(-2), adminName: "Grace Hopper");
@@ -120,6 +126,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The description filter matches a case-insensitive substring.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_DescriptionFilter_MatchesCaseInsensitiveSubstringAsync()
     {
@@ -127,7 +134,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = DateTimeOffset.UtcNow;
+        var now = SeededAt;
         await SeedLogAsync(context, clientId, "Added Invoice Payment", now);
         await SeedLogAsync(context, clientId, "Refunded Invoice", now.AddMinutes(-1));
 
@@ -139,6 +146,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The IP filter matches a substring of the recorded address.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_IpAddressFilter_MatchesSubstringAsync()
     {
@@ -146,7 +154,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = DateTimeOffset.UtcNow;
+        var now = SeededAt;
         await SeedLogAsync(context, clientId, "FromOffice", now, ipAddress: "10.0.0.5");
         await SeedLogAsync(context, clientId, "FromHome", now.AddMinutes(-1), ipAddress: "192.168.1.1");
 
@@ -158,6 +166,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>An entry belonging to a different client is never returned.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NeverReturnsAnotherClientsEntryAsync()
     {
@@ -167,7 +176,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
         // A real second client: the log's client is a foreign key, so another client's entry needs one.
         var otherClientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var now = DateTimeOffset.UtcNow;
+        var now = SeededAt;
         await SeedLogAsync(context, clientId, "Mine", now);
         await SeedLogAsync(context, otherClientId, "TheirsNotMine", now);
 
@@ -179,6 +188,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_RefusesAnonymousAsync()
     {
@@ -188,6 +198,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A client with no recorded activity answers 200 with an empty page.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_ClientWithNoActivity_ReturnsAnEmptyPageAsync()
     {
@@ -203,6 +214,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>An id that names no client simply answers an empty page, not a refusal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_UnknownClientId_ReturnsAnEmptyPageAsync()
     {
@@ -216,6 +228,7 @@ public sealed class ListClientActivityLogsTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A search filter past the length limit is refused before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Get_OverlongFilter_IsRefusedAsync()
     {

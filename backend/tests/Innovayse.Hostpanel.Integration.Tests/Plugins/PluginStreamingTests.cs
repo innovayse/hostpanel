@@ -2,9 +2,9 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using Hostpanel.Sdk.Plugins.Endpoints;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Shared.Infrastructure;
-using Hostpanel.Sdk.Plugins.Endpoints;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 

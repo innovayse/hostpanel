@@ -31,6 +31,7 @@ public sealed class ResetPasswordTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A valid token sets the new password and the account signs in with it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ValidTokenSetsThePasswordAsync()
     {
@@ -45,6 +46,7 @@ public sealed class ResetPasswordTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A reset ends every session issued before it: a token from an earlier sign-in is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ResetEndsTheSessionsIssuedBeforeAsync()
     {
@@ -71,6 +73,7 @@ public sealed class ResetPasswordTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A token that does not match is refused 400 <c>TOKEN_INVALID_OR_EXPIRED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvalidTokenIsRefusedAsync()
     {
@@ -84,6 +87,7 @@ public sealed class ResetPasswordTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An email that names no account is refused the same way, so existence is not revealed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownEmailIsRefusedAsync()
     {

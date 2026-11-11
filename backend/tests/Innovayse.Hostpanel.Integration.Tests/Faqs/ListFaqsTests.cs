@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Innovayse.Hostpanel.Application.Common.Errors;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Faqs;
 
@@ -12,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Faqs;
 public sealed class ListFaqsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The admin list holds active and inactive records, ordered by sort order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_ReturnsEveryRecord_OrderedBySortOrder()
     {
@@ -27,6 +27,7 @@ public sealed class ListFaqsTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_RefusesAnonymous()
     {

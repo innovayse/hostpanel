@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class UpdateDnsRecordTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Updating a DNS record on an unknown domain answers 404 with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateDnsRecord_UnknownDomain_Returns404Async()
     {
@@ -31,6 +32,7 @@ public sealed class UpdateDnsRecordTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An unknown record id on a real domain answers 404 with <c>DNS_RECORD_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateDnsRecord_UnknownRecord_Returns404WithDnsRecordNotFoundAsync()
     {
@@ -48,6 +50,7 @@ public sealed class UpdateDnsRecordTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Updating a record that exists succeeds and persists the new value.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateDnsRecord_ExistingRecord_Returns204AndPersistsAsync()
     {
@@ -73,6 +76,7 @@ public sealed class UpdateDnsRecordTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateDnsRecord_WithoutToken_Returns401Async()
     {
@@ -86,6 +90,7 @@ public sealed class UpdateDnsRecordTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A non-positive record id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateDnsRecord_NonPositiveRecordId_Returns400ValidationErrorAsync()
     {

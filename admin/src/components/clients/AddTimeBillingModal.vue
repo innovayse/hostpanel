@@ -20,6 +20,7 @@ import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -128,14 +129,14 @@ onMounted(() => fetchServices())
         {{ saveError }}
       </UiAlert>
 
-      <UiTable density="compact" :scrollable="false" data-testid="clients-time-billing-table">
+      <UiTable :density="UiTableDensity.Compact" :scrollable="false" data-testid="clients-time-billing-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('clients.addTimeBilling.item') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.hours') }}</UiTableHeader>
             <UiTableHeader>{{ t('clients.addTimeBilling.rate') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.amount') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('shared.amount') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody>
@@ -161,7 +162,7 @@ onMounted(() => fetchServices())
             <UiTableCell>
               <UiNumberInput v-model="row.rate" :step="0.01" :min="0" placeholder="0.00" :data-testid="`clients-time-billing-rate-${idx}`" />
             </UiTableCell>
-            <UiTableCell muted>${{ rowAmount(row).toFixed(2) }}</UiTableCell>
+            <UiTableCell muted numeric>${{ rowAmount(row).toFixed(2) }}</UiTableCell>
           </UiTableRow>
         </UiTableBody>
       </UiTable>

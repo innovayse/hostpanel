@@ -10,6 +10,10 @@ namespace Innovayse.Hostpanel.Application.Orders.Common;
 /// <param name="FirstPaymentAmount">The line's first payment, before tax, in the order currency.</param>
 /// <param name="ErrorCode">The code the refusing use case answered with, or <see langword="null"/> when it gave none.</param>
 /// <param name="Reason">A human-readable sentence for the log, the refund note and the admin.</param>
+/// <param name="UnrecordedAttempt">
+/// The attempt that still holds the line because its failure could not be recorded, or <see langword="null"/> when the
+/// failure is on record. The automatic refund of a refused domain passes it on, so it runs all the same.
+/// </param>
 public sealed record OrderLineFailureDto(
     int ItemId,
     OrderLineKind Kind,
@@ -17,4 +21,5 @@ public sealed record OrderLineFailureDto(
     string? Domain,
     decimal FirstPaymentAmount,
     string? ErrorCode,
-    string Reason);
+    string Reason,
+    int? UnrecordedAttempt = null);

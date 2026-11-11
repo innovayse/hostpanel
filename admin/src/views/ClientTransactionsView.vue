@@ -19,31 +19,28 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
-import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
+import type { Transaction } from '@/types/transaction'
 import UiText from '@/components/ui/UiText.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
-import { UiSize } from '@/utils/ui/size'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
-
-/** Icon markup (shape tags) of the delete button. */
-const TRASH_ICON = '<polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />'
 
 /** Current route, source of the client id. */
 const route = useRoute()
@@ -155,6 +152,29 @@ const dismissDelete = (): void => {
   }
 }
 
+/**
+ * The row actions of a transaction: one, delete it (confirmed first).
+ *
+ * @param tx - The row.
+ * @returns The action list passed to UiRowActions.
+ */
+const transactionActions = (tx: Transaction): UiRowAction[] => [
+  {
+    label: t('shared.delete'),
+    testid: `client-transactions-delete-${tx.id}`,
+    /**
+     * Asks for confirmation, then deletes this row.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      confirmDelete(tx.id)
+    },
+    danger: true,
+    disabled: store.loading,
+  },
+]
+
 /** Loads the first page. */
 onMounted(() => fetchTransactions())
 </script>
@@ -214,7 +234,7 @@ onMounted(() => fetchTransactions())
 
       <UiCard class="overflow-x-auto">
         <UiTable
-          density="comfortable"
+          :density="UiTableDensity.Comfortable"
           :empty="store.transactions.length === 0"
           :colspan="7"
           data-testid="client-transactions-table"
@@ -224,10 +244,10 @@ onMounted(() => fetchTransactions())
               <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.amountIn') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.amountOut') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.fees') }}</UiTableHeader>
-              <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('shared.amountIn') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('shared.amountOut') }}</UiTableHeader>
+              <UiTableHeader numeric>{{ t('shared.fees') }}</UiTableHeader>
+              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
@@ -235,23 +255,15 @@ onMounted(() => fetchTransactions())
               <UiTableCell muted>{{ formatDate(tx.date) }}</UiTableCell>
               <UiTableCell muted>{{ tx.paymentMethod }}</UiTableCell>
               <UiTableCell muted>{{ tx.description }}</UiTableCell>
-              <UiTableCell>
+              <UiTableCell numeric>
                 <UiText :tone="tx.amountIn > 0 ? UiTextTone.Success : UiTextTone.Muted">{{ formatPlainAmount(tx.amountIn, tx.currency) }}</UiText>
               </UiTableCell>
-              <UiTableCell>
+              <UiTableCell numeric>
                 <UiText :tone="tx.amountOut > 0 ? UiTextTone.Danger : UiTextTone.Muted">{{ formatPlainAmount(tx.amountOut, tx.currency) }}</UiText>
               </UiTableCell>
-              <UiTableCell muted>{{ formatPlainAmount(tx.fees, tx.currency) }}</UiTableCell>
-              <UiTableCell>
-                <UiIconButton
-                  :label="t('shared.delete')"
-                  :size="UiSize.Sm"
-                  :disabled="store.loading"
-                  :data-testid="`client-transactions-delete-${tx.id}`"
-                  @click="confirmDelete(tx.id)"
-                >
-                  <UiIcon :markup="TRASH_ICON" />
-                </UiIconButton>
+              <UiTableCell muted numeric>{{ formatPlainAmount(tx.fees, tx.currency) }}</UiTableCell>
+              <UiTableCell actions>
+                <UiRowActions :actions="transactionActions(tx)" :testid="`client-transactions-actions-${tx.id}`" />
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>

@@ -2,7 +2,6 @@ using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
-using Innovayse.Hostpanel.Domain.Clients;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Clients.Commands.UpdateClient;
@@ -72,6 +71,7 @@ public sealed class UpdateClientValidator : LocalizedValidator<UpdateClientComma
         RuleFor(x => x.Preferences.AdminNotes)
             .MaximumLength(2000).WithMessage(L["ClientAdminNotesInvalid"])
             .When(x => x.Preferences.AdminNotes is not null);
+        RuleFor(x => x.ClientGroupId).MustBePositiveId(L["ContentIdInvalid"]);
         RuleFor(x => x.Status)
             .IsInEnum()
             .WithMessage(L["ClientStatusInvalid"])

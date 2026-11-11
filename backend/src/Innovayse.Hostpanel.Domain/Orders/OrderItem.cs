@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.SharedKernel.Domain;
-using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
 
 namespace Innovayse.Hostpanel.Domain.Orders;
 
@@ -63,7 +62,10 @@ public sealed class OrderItem : BaseEntity
     /// <summary>Gets how many times fulfilling this line has been attempted, the first run included.</summary>
     public int FulfilmentAttempts { get; private set; }
 
-    /// <summary>Gets when the last attempt started or ended, or <see langword="null"/> before the first one.</summary>
+    /// <summary>
+    /// Gets when the last attempt started or ended, or when the line's refund began, or <see langword="null"/> before the
+    /// first attempt. A claim's lease and a running refund's lease both count from it.
+    /// </summary>
     public DateTimeOffset? LastFulfilmentAttemptAt { get; private set; }
 
     /// <summary>Gets whether the line failed and no money was given back for it, so staff may retry it.</summary>
@@ -78,17 +80,66 @@ public sealed class OrderItem : BaseEntity
         or OrderItemFulfilmentState.Refunding
         or OrderItemFulfilmentState.PartiallyRefunded;
 
-    /// <summary>
-    /// Gets whether the line can be closed as refunded by hand: only a line whose refund stopped part way
-    /// (<see cref="OrderItemFulfilmentState.PartiallyRefunded"/>) waits for staff to finish it.
-    /// </summary>
-    public bool CanCloseRefund => FulfilmentState is OrderItemFulfilmentState.PartiallyRefunded;
-
     /// <summary>Gets whether a refund of the line is under way, so only its settlement may change the line.</summary>
     public bool IsBeingRefunded => FulfilmentState is OrderItemFulfilmentState.Refunding;
 
     /// <summary>EF Core parameterless constructor: do not call directly.</summary>
     private OrderItem() { }
+
+    /// <summary>
+    /// Tells whether a line can be closed as refunded by hand: a failed line whose cost staff gave back themselves, one
+    /// whose refund stopped part way (<see cref="OrderItemFulfilmentState.PartiallyRefunded"/>), and one whose refund is
+    /// stuck (<see cref="OrderItemFulfilmentState.Refunding"/> for longer than the lease). A refund still inside its lease may
+    /// be giving the money back right now, so closing it by hand could have the cost refunded twice.
+    /// </summary>
+    /// <param name="state">The line's fulfilment state.</param>
+    /// <param name="lastAttemptAt">When the line's refund began (its last stamp), or <see langword="null"/>.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <param name="lease">How long a running refund is respected; the same lease a retry's claim has.</param>
+    /// <returns><see langword="true"/> for a failed or partly refunded line, and a refunding one past its lease.</returns>
+    public static bool IsClosableByHand(OrderItemFulfilmentState state, DateTimeOffset? lastAttemptAt, DateTimeOffset now, TimeSpan lease)
+    {
+        return state switch
+        {
+            OrderItemFulfilmentState.Failed or OrderItemFulfilmentState.PartiallyRefunded => true,
+            OrderItemFulfilmentState.Refunding => !IsRefundRunning(state, lastAttemptAt, now, lease),
+            _ => false,
+        };
+    }
+
+    /// <summary>
+    /// Tells whether a line's refund may still be running: it is refunding and began less than the lease ago. A line with no
+    /// stamp has no refund start to count from, so it is taken as stuck.
+    /// </summary>
+    /// <param name="state">The line's fulfilment state.</param>
+    /// <param name="lastAttemptAt">When the line's refund began, or <see langword="null"/>.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <param name="lease">How long a running refund is respected.</param>
+    /// <returns><see langword="true"/> when the refund is inside its lease.</returns>
+    public static bool IsRefundRunning(OrderItemFulfilmentState state, DateTimeOffset? lastAttemptAt, DateTimeOffset now, TimeSpan lease)
+    {
+        return state is OrderItemFulfilmentState.Refunding
+            && lastAttemptAt is { } startedAt
+            && startedAt + lease > now;
+    }
+
+    /// <summary>Tells whether staff can close this line as refunded by hand now: see <see cref="IsClosableByHand"/>.</summary>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <param name="lease">How long a running refund is respected.</param>
+    /// <returns><see langword="true"/> when the line may be closed by hand.</returns>
+    internal bool CanCloseRefund(DateTimeOffset now, TimeSpan lease)
+    {
+        return IsClosableByHand(FulfilmentState, LastFulfilmentAttemptAt, now, lease);
+    }
+
+    /// <summary>Tells whether this line's refund may still be running: see <see cref="IsRefundRunning"/>.</summary>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <param name="lease">How long a running refund is respected.</param>
+    /// <returns><see langword="true"/> when the refund is inside its lease.</returns>
+    internal bool HasRunningRefund(DateTimeOffset now, TimeSpan lease)
+    {
+        return IsRefundRunning(FulfilmentState, LastFulfilmentAttemptAt, now, lease);
+    }
 
     /// <summary>
     /// Creates a new pending order item with snapshotted product data and optional domain registration fields.
@@ -147,12 +198,36 @@ public sealed class OrderItem : BaseEntity
     /// <returns><see langword="true"/> when the line may be claimed for a retry.</returns>
     internal bool CanBeRetried(DateTimeOffset now, TimeSpan lease)
     {
-        return FulfilmentState switch
+        return CanBeRetried(FulfilmentState, LastFulfilmentAttemptAt, now, lease);
+    }
+
+    /// <summary>The retry rule of a line over its values alone; see <see cref="CanBeRetried(DateTimeOffset, TimeSpan)"/>.</summary>
+    /// <param name="state">The line's fulfilment state.</param>
+    /// <param name="lastAttemptAt">When the line's attempt was claimed or its action last started.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <param name="lease">How long a claim is respected.</param>
+    /// <returns><see langword="true"/> when the line may be claimed for a retry.</returns>
+    internal static bool CanBeRetried(OrderItemFulfilmentState state, DateTimeOffset? lastAttemptAt, DateTimeOffset now, TimeSpan lease)
+    {
+        return state switch
         {
             OrderItemFulfilmentState.Failed => true,
-            OrderItemFulfilmentState.InProgress => LastFulfilmentAttemptAt is { } startedAt && startedAt + lease <= now,
+            OrderItemFulfilmentState.InProgress => lastAttemptAt is { } startedAt && startedAt + lease <= now,
             _ => false,
         };
+    }
+
+    /// <summary>
+    /// Stamps the moment the claiming attempt starts the line's action, so the claim's lease counts from there and not from
+    /// the claim of the whole order.
+    /// </summary>
+    /// <param name="attempt">The attempt number the run was given when its claim was saved.</param>
+    /// <param name="now">The current moment (UTC).</param>
+    /// <exception cref="DomainRuleException">Thrown when the attempt no longer holds the line: it was refunded, or a newer attempt took it over.</exception>
+    internal void StampAction(int attempt, DateTimeOffset now)
+    {
+        EnsureOutcomeCanBeRecorded(attempt);
+        LastFulfilmentAttemptAt = now;
     }
 
     /// <summary>
@@ -215,20 +290,43 @@ public sealed class OrderItem : BaseEntity
     }
 
     /// <summary>
-    /// Claims a failed line for its refund: no retry can take it while the money goes back, so what is refunded is
-    /// never also delivered.
+    /// Tells whether the line may start being refunded: it failed, or it is in progress under
+    /// <paramref name="heldAttempt"/>, the run that failed it but could not record that.
     /// </summary>
-    /// <exception cref="DomainRuleException">Thrown when the line did not fail, so there is nothing to give back.</exception>
-    internal void BeginRefund()
+    /// <param name="heldAttempt">The attempt of the run that still holds the line, or <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> when a refund may claim the line.</returns>
+    internal bool CanBeginRefund(int? heldAttempt)
     {
-        if (FulfilmentState is not OrderItemFulfilmentState.Failed)
+        return FulfilmentState is OrderItemFulfilmentState.Failed
+            || (heldAttempt is { } attempt && HoldsAttempt(attempt));
+    }
+
+    /// <summary>
+    /// Claims a failed line for its refund: no retry can take it while the money goes back, so what is refunded is
+    /// never also delivered. A line still in progress under <paramref name="heldAttempt"/> is claimed too, keeping the
+    /// failure's code, because the run that holds it failed it and could only not record that. The refund's start is
+    /// stamped, so staff can close the line by hand only once the refund has been stuck for longer than the lease.
+    /// </summary>
+    /// <param name="now">The moment the refund begins (UTC).</param>
+    /// <param name="heldAttempt">The attempt of the run that still holds the line, or <see langword="null"/>.</param>
+    /// <param name="errorCode">The code of the unrecorded failure; kept only when the line is claimed from in progress.</param>
+    /// <exception cref="DomainRuleException">Thrown when the line may not start being refunded.</exception>
+    internal void BeginRefund(DateTimeOffset now, int? heldAttempt = null, string? errorCode = null)
+    {
+        if (!CanBeginRefund(heldAttempt))
         {
             throw new DomainRuleException(
                 OrdersErrors.OrderLineNotRefundable,
-                $"Order line {Id} is {FulfilmentState}; only a failed line can start being refunded.");
+                $"Order line {Id} is {FulfilmentState}; only a failed line, or one its own run failed, can start being refunded.");
+        }
+
+        if (FulfilmentState is OrderItemFulfilmentState.InProgress)
+        {
+            FulfilmentErrorCode = errorCode is null ? null : Truncate(errorCode);
         }
 
         FulfilmentState = OrderItemFulfilmentState.Refunding;
+        LastFulfilmentAttemptAt = now;
     }
 
     /// <summary>Closes a line whose refund was completed, so no retry can fulfil what was refunded.</summary>
@@ -253,17 +351,29 @@ public sealed class OrderItem : BaseEntity
     }
 
     /// <summary>
-    /// Closes a line whose refund staff finished by hand: the part of the cost the automatic refund could not give back
-    /// is back now, so the line is refunded for good and no longer keeps its order incomplete.
+    /// Closes a line whose cost staff gave back by hand (it failed, its refund is stuck, or it stopped part way), so the
+    /// line is refunded for good and no longer keeps its order incomplete.
     /// </summary>
-    /// <exception cref="DomainRuleException">Thrown when the line is not partly refunded.</exception>
-    internal void CloseRefund()
+    /// <param name="now">The current moment (UTC).</param>
+    /// <param name="lease">How long a running refund is respected.</param>
+    /// <exception cref="DomainRuleException">
+    /// Thrown with <see cref="OrdersErrors.OrderLineRefundInProgress"/> when the line's refund may still be running, and with
+    /// <see cref="OrdersErrors.OrderLineNotRefundable"/> when the line is in a state that cannot be closed by hand.
+    /// </exception>
+    internal void CloseRefund(DateTimeOffset now, TimeSpan lease)
     {
-        if (!CanCloseRefund)
+        if (HasRunningRefund(now, lease))
+        {
+            throw new DomainRuleException(
+                OrdersErrors.OrderLineRefundInProgress,
+                $"Order line {Id} began its refund less than {lease} ago; it may still be giving the money back.");
+        }
+
+        if (!CanCloseRefund(now, lease))
         {
             throw new DomainRuleException(
                 OrdersErrors.OrderLineNotRefundable,
-                $"Order line {Id} is {FulfilmentState}; only a partly refunded line can be closed as refunded.");
+                $"Order line {Id} is {FulfilmentState}; only a failed, refunding or partly refunded line can be closed as refunded.");
         }
 
         FulfilmentState = OrderItemFulfilmentState.Refunded;

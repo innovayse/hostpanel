@@ -5,8 +5,12 @@
  */
 import { ref } from 'vue'
 import { useData } from 'vitepress'
+import { useUi } from '../useUi'
 
 const { page } = useData()
+
+/** The texts of the language of the open page. */
+const { ui } = useUi()
 
 /** Whether the user already gave feedback on this page. */
 const voted = ref(false)
@@ -18,9 +22,10 @@ const voted = ref(false)
  */
 const vote = (helpful: boolean): void => {
   voted.value = true
+  // The issue is read by the maintainers, so its text stays English whatever the language of the page.
   const title = encodeURIComponent(`Docs feedback: ${page.value.title}`)
   const body = encodeURIComponent(
-    `Page: ${page.value.filePath}\nHelpful: ${helpful ? 'yes' : 'no'}\n\n<!-- Add your comment here -->`,
+    `Page: ${page.value.relativePath}\nHelpful: ${helpful ? 'yes' : 'no'}\n\n<!-- Add your comment here -->`,
   )
   window.open(
     `https://github.com/innovayse/hostpanel/issues/new?title=${title}&body=${body}&labels=documentation`,
@@ -33,11 +38,11 @@ const vote = (helpful: boolean): void => {
 <template>
   <div class="page-feedback">
     <template v-if="!voted">
-      <span class="page-feedback__label">Was this page helpful?</span>
-      <button class="page-feedback__btn" @click="vote(true)">Yes</button>
-      <button class="page-feedback__btn" @click="vote(false)">No</button>
+      <span class="page-feedback__label">{{ ui.components.pageFeedback.question }}</span>
+      <button class="page-feedback__btn" @click="vote(true)">{{ ui.components.pageFeedback.yes }}</button>
+      <button class="page-feedback__btn" @click="vote(false)">{{ ui.components.pageFeedback.no }}</button>
     </template>
-    <span v-else class="page-feedback__thanks">Thanks for the feedback!</span>
+    <span v-else class="page-feedback__thanks">{{ ui.components.pageFeedback.thanks }}</span>
   </div>
 </template>
 

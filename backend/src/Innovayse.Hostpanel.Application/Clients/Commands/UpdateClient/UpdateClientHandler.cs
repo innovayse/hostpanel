@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Audit.Common;
 using Innovayse.Hostpanel.Application.Auth.Common;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Queries.ListClientInvoices;
-using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -81,6 +80,7 @@ public sealed class UpdateClientHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success, or <c>CLIENT_NOT_FOUND</c> when the id names no client,
+    /// <c>CLIENT_GROUP_NOT_FOUND</c> when the client group id names no group,
     /// <c>CLIENT_CURRENCY_ALREADY_INVOICED</c> when the currency is changed on a client who has
     /// already been invoiced, <c>CURRENCY_NOT_FOUND</c> when the requested currency is not one
     /// this panel offers, <c>USER_PROVISIONING_NOT_ALLOWED_CHANGE_EMAIL</c> when the
@@ -101,6 +101,21 @@ public sealed class UpdateClientHandler
         if (client is null)
         {
             return Result.FailureCode(HostpanelErrorCodes.CLIENT_NOT_FOUND);
+        }
+
+        // A group that does not exist is refused before anything is written.
+        if (cmd.ClientGroupId is { } clientGroupId)
+        {
+            if (!await _context.ClientGroupExistsAsync(clientGroupId, ct))
+            {
+                return Result.FailureCode(HostpanelErrorCodes.CLIENT_GROUP_NOT_FOUND);
+            }
+
+            client.AssignToGroup(clientGroupId);
+        }
+        else
+        {
+            client.ClearGroup();
         }
 
         // Read before the writes below overwrite them: the audit lines say whether these changed.

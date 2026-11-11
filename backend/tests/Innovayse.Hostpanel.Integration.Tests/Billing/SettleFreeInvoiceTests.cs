@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class SettleFreeInvoiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A zero-total invoice is marked paid and no ledger transaction is written for it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ZeroTotal_MarksPaidWithoutALedgerRowAsync()
     {
@@ -34,6 +35,7 @@ public sealed class SettleFreeInvoiceTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An invoice that still owes money is refused with <c>INVOICE_NOT_PAYABLE</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_AmountStillDue_RefusesNotPayableAsync()
     {

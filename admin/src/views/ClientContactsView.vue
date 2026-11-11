@@ -24,10 +24,10 @@ import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
-import { UiAlign } from '@/utils/ui/table'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -240,14 +240,14 @@ const contactActions = (contact: Contact): UiRowAction[] => {
     </UiStack>
 
     <UiCard v-if="contacts.length > 0" class="overflow-x-auto">
-      <UiTable density="comfortable" data-testid="client-contacts-table">
+      <UiTable :density="UiTableDensity.Comfortable" data-testid="client-contacts-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.email') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.phone') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
-            <UiTableHeader :align="UiAlign.Right">{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -258,8 +258,8 @@ const contactActions = (contact: Contact): UiRowAction[] => {
             <UiTableCell>
               <UiBadge :tone="contactTypeTone(contact.type)" small>{{ contact.type }}</UiBadge>
             </UiTableCell>
-            <UiTableCell :align="UiAlign.Right">
-              <UiRowActions :actions="contactActions(contact)" />
+            <UiTableCell actions>
+              <UiRowActions :actions="contactActions(contact)" :testid="`client-contacts-actions-${contact.id}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

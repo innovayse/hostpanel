@@ -53,6 +53,10 @@ describe('OrdersListView', () => {
     expect(wrapper.get('[data-testid="orders-row-1"]').text()).toContain('ORD-0001')
     expect(wrapper.get('[data-testid="orders-row-1"]').text()).toContain('Ada Lovelace')
     expect(wrapper.get('[data-testid="orders-row-1"]').text()).toContain('12.50 EUR')
+    // A settled order has one action, the detail link, shown as a real link without a menu.
+    expect(wrapper.get('[data-testid="orders-view-2"]').attributes('href')).toBe('/orders/2')
+    // A pending order has several, so its menu is opened first.
+    await wrapper.get('[data-testid="orders-actions-1"]').trigger('click')
     expect(wrapper.get('[data-testid="orders-view-1"]').attributes('href')).toBe('/orders/1')
   })
 
@@ -90,8 +94,10 @@ describe('OrdersListView', () => {
     stubRoutes({ 'GET /api/orders': () => json({ items: [pendingOrder, activeOrder], totalCount: 2 }) })
     const wrapper = await mountList()
 
+    await wrapper.get('[data-testid="orders-actions-1"]').trigger('click')
     expect(wrapper.find('[data-testid="orders-accept-1"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="orders-cancel-1"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="orders-actions-2"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="orders-accept-2"]').exists()).toBe(false)
   })
 
@@ -103,6 +109,7 @@ describe('OrdersListView', () => {
     })
     const wrapper = await mountList()
 
+    await wrapper.get('[data-testid="orders-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="orders-accept-1"]').trigger('click')
     await flushPromises()
 
@@ -120,6 +127,7 @@ describe('OrdersListView', () => {
     })
     const wrapper = await mountList()
 
+    await wrapper.get('[data-testid="orders-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="orders-cancel-1"]').trigger('click')
     await flushPromises()
     expect(mock.mock.calls.some(([url]) => (url as string).endsWith('/cancel'))).toBe(false)
@@ -135,6 +143,7 @@ describe('OrdersListView', () => {
     const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 1 }) })
     const wrapper = await mountList()
 
+    await wrapper.get('[data-testid="orders-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="orders-cancel-1"]').trigger('click')
     await flushPromises()
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
@@ -151,6 +160,7 @@ describe('OrdersListView', () => {
     })
     const wrapper = await mountList()
 
+    await wrapper.get('[data-testid="orders-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="orders-accept-1"]').trigger('click')
     await flushPromises()
 

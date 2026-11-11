@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class DeleteInvoiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Deleting a draft invoice removes it: a later read answers 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRemovesTheInvoice()
     {
@@ -27,6 +28,7 @@ public sealed class DeleteInvoiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A cancelled invoice may be deleted.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRemovesACancelledInvoice()
     {
@@ -42,6 +44,7 @@ public sealed class DeleteInvoiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Deleting an unpaid invoice answers 400 with <c>INVOICE_NOT_DELETABLE</c> and keeps it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesAnIssuedInvoice()
     {
@@ -57,6 +60,7 @@ public sealed class DeleteInvoiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Deleting an id that names no invoice answers 404 with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteUnknownInvoiceRefusesNotFound()
     {
@@ -72,6 +76,7 @@ public sealed class DeleteInvoiceTests(IntegrationTestFactory factory) : IClassF
     /// A billable item that was put on the deleted invoice is released: it is no longer invoiced and
     /// the next invoicing run bills it on a new invoice.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteReleasesTheBillableItemsPutOnTheInvoice()
     {
@@ -93,6 +98,7 @@ public sealed class DeleteInvoiceTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Deleting an invoice is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesAnonymous()
     {

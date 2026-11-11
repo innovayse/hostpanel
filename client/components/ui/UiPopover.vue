@@ -4,6 +4,7 @@
 
     <div
       v-if="modelValue"
+      ref="panelEl"
       role="menu"
       data-testid="ui-popover-panel"
       :class="panelClasses"
@@ -19,22 +20,30 @@
  *
  * The trigger lives in the `trigger` slot and receives `open`, `toggle` and `close`; the default
  * slot is the panel body and receives `close`. The panel closes on Escape and on a click anywhere
- * outside the component. Where the panel sits and how wide it is stays with the screen, through
- * `panelClass`, because that depends on the header it hangs from.
+ * outside the component. The panel always hangs from the trigger: it opens right under it and
+ * lines up with the trigger's right edge by default (`align="end"`, the right end of a header) or
+ * its left edge (`align="start"`), and is capped to the viewport width, so it stays in the header
+ * and on screen at every width. When the preferred edge would push the panel past the viewport
+ * and the other edge would not, the panel opens from the other edge. The screen only chooses how wide the panel is, through `panelClass`.
  */
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { UiMenuAlign } from '~/utils/ui/enums'
+import { menuAlignClasses, resolveMenuAlign } from '~/utils/ui/menuAlign'
 
 /** Props of UiPopover. */
 interface Props {
   /** Whether the panel is open (v-model). */
   modelValue?: boolean
-  /** Position and width utilities of the panel (`fixed right-4 top-16 w-72`). */
+  /** Edge of the trigger the panel lines up with. */
+  align?: `${UiMenuAlign}`
+  /** Width utilities of the panel (`w-72`); placement belongs to the component. */
   panelClass?: string
 }
 
 /** Props of the component with their defaults applied. */
 const props = withDefaults(defineProps<Props>(), {
   modelValue: false,
+  align: UiMenuAlign.End,
   panelClass: '',
 })
 
@@ -47,11 +56,44 @@ const emit = defineEmits<{
 /** Root element, used to tell an inside click from an outside one. */
 const rootEl = ref<HTMLElement | null>(null)
 
-/** Class list of the panel: the surface, plus the screen's placement. */
+/** Panel element, measured once open to keep it inside the viewport. */
+const panelEl = ref<HTMLElement | null>(null)
+
+/** Edge the panel is anchored to now: the preferred one unless it would leave the viewport. */
+const activeAlign = ref<UiMenuAlign>(props.align as UiMenuAlign)
+
+/** Class list of the panel: the anchoring under the trigger, the surface, then the screen's width. */
 const panelClasses = computed(() => [
-  'z-40 flex flex-col rounded-2xl border border-gray-200 bg-ui-popover p-2.5 shadow-2xl dark:border-white/15',
+  menuAlignClasses(activeAlign.value),
+  'top-full mt-2 z-40 flex flex-col rounded-2xl border border-gray-200 bg-ui-popover p-2.5 shadow-2xl dark:border-white/15',
   props.panelClass,
 ].filter(Boolean).join(' '))
+
+/** Re-anchors the open panel: starts from the preferred edge, then flips when only the other one fits. */
+const placePanel = async (): Promise<void> => {
+  activeAlign.value = props.align as UiMenuAlign
+  await nextTick()
+  if (!rootEl.value || !panelEl.value) {
+    return
+  }
+  const trigger = rootEl.value.getBoundingClientRect()
+  activeAlign.value = resolveMenuAlign(
+    props.align,
+    trigger.left,
+    trigger.right,
+    panelEl.value.offsetWidth,
+    document.documentElement.clientWidth,
+  )
+}
+
+watch(
+  () => [props.modelValue, props.align] as const,
+  ([open]) => {
+    if (open) {
+      void placePanel()
+    }
+  },
+)
 
 /** Opens a closed panel and closes an open one. */
 const toggle = (): void => {
@@ -88,6 +130,9 @@ const onEscape = (event: KeyboardEvent): void => {
 onMounted(() => {
   document.addEventListener('click', onClickOutside)
   document.addEventListener('keydown', onEscape)
+  if (props.modelValue) {
+    void placePanel()
+  }
 })
 
 onBeforeUnmount(() => {

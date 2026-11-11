@@ -5,8 +5,8 @@ using Innovayse.Hostpanel.Application.Notifications.Seeding;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.TestHost;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Wolverine;
@@ -94,6 +94,7 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     /// Raised fourteen days ahead with thresholds 7, 3, 1: the 7 mail at seven days left, nothing at
     /// four, the 3 mail at three, nothing at two, the 1 mail at one. One mail per threshold, never repeated.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OneInvoice_ProgressesThroughTheThresholds()
     {
@@ -124,6 +125,7 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     /// One invoice whose save throws does not stop the run: another invoice is still reminded and the
     /// failing one is left unrecorded so the next run retries it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OneFailingInvoice_DoesNotStopTheOthers()
     {
@@ -150,6 +152,7 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     }
 
     /// <summary>Three days before due (raised fourteen days ahead of it) sends the 3-day reminder once; a second run sends nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ThreeDaysBefore_SendsOnce()
     {
@@ -167,6 +170,7 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     }
 
     /// <summary>The mail actually renders the invoice id and the portal link (nested template data must not render blank).</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Reminder_RendersInvoiceIdAndUrl()
     {
@@ -184,6 +188,7 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     }
 
     /// <summary>An invoice raised two days before due gets no 7- or 3-day reminder (thresholds not below its own lead are skipped).</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RaisedLate_NoStaleReminder()
     {
@@ -199,6 +204,7 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     }
 
     /// <summary>A paid invoice is never reminded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Paid_NotReminded()
     {
@@ -214,6 +220,7 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     }
 
     /// <summary>A client who opted out of invoice mail is not mailed, but the threshold is still recorded as spent.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OptedOut_NotReminded()
     {
@@ -229,6 +236,7 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     }
 
     /// <summary>A non-renewal invoice is not reminded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PlainInvoice_NotReminded()
     {
@@ -247,6 +255,7 @@ public sealed class SendRenewalRemindersCronTests(IntegrationTestFactory factory
     /// An unpaid invoice that fell due days ago is not walked on the daily run (its reminder window is
     /// over), while one that fell due hours ago and one due soon still are.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LongOverdueInvoice_IsNotDispatchedAgain()
     {

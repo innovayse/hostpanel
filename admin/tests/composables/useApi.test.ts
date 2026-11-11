@@ -5,7 +5,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { i18n } from '@/i18n'
 import { MessageLanguage } from '@/locales/messages'
-import { buildQuery, useApi } from '@/composables/useApi'
+import { buildQuery, MAX_STREAM_EVENT_CHARS, readEventStream, useApi } from '@/composables/useApi'
+import type { ServerSentEvent } from '@/types/http'
 import { json, problem } from '../helpers/fetch'
 
 /**
@@ -173,5 +174,77 @@ describe('useApi download', () => {
       status: 409,
       body: { detail: 'The invoice has too many lines for a PDF.' },
     })
+  })
+})
+
+/**
+ * Builds a body that hands the given chunks over one by one.
+ *
+ * @param chunks - The text of each chunk.
+ * @returns The stream.
+ */
+const chunked = (chunks: readonly string[]): ReadableStream<Uint8Array> => {
+  const encoder = new TextEncoder()
+  return new ReadableStream<Uint8Array>({
+    start: (controller) => {
+      for (const chunk of chunks) {
+        controller.enqueue(encoder.encode(chunk))
+      }
+      controller.close()
+    },
+  })
+}
+
+describe('readEventStream', () => {
+  it('reads named and unnamed events, skips heartbeats and keeps a split line end whole', async () => {
+    const events: ServerSentEvent[] = []
+
+    await readEventStream(
+      chunked([': ping\r\n\r', '\nevent: delta\r\ndata: {"text":"Hi"}\r\n\r\n', 'data: plain\n', 'data: two\n\n']),
+      (event) => events.push(event),
+      new AbortController().signal,
+    )
+
+    expect(events).toEqual([{ type: 'delta', data: { text: 'Hi' } }, { type: 'message', data: 'plain\ntwo' }])
+  })
+
+  it('gives up a stream whose one event grows past the cap', async () => {
+    const huge = `data: ${'x'.repeat(MAX_STREAM_EVENT_CHARS + 1)}`
+
+    await expect(readEventStream(chunked([huge]), () => undefined, new AbortController().signal)).rejects.toMatchObject({ status: 502 })
+  })
+})
+
+describe('useApi stream', () => {
+  it('posts the body with the CSRF and language headers and hands each event over', async () => {
+    const mock = vi.fn(async () => new Response('event: done\ndata: {}\n\n', { headers: { 'Content-Type': 'text/event-stream' } }))
+    vi.stubGlobal('fetch', mock)
+    const events: ServerSentEvent[] = []
+
+    await useApi().stream('/admin/plugins/sites/ext/chat', { message: 'Hi' }, (event) => events.push(event), new AbortController().signal)
+
+    const init = (mock.mock.calls[0] as unknown as [string, RequestInit])[1]
+    expect(init.method).toBe('POST')
+    expect(init.body).toBe('{"message":"Hi"}')
+    expect(init.headers).toEqual(expect.objectContaining({ 'X-Requested-With': 'XMLHttpRequest', 'X-Language': 'en', Accept: 'text/event-stream' }))
+    expect(events).toEqual([{ type: 'done', data: {} }])
+  })
+
+  it('throws the refusal with its body, and refuses an answer that is not a stream', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => problem('Out of credits.', 429)))
+    await expect(useApi().stream('/x', {}, () => undefined, new AbortController().signal)).rejects.toMatchObject({ status: 429 })
+
+    vi.stubGlobal('fetch', vi.fn(async () => json({ ok: true })))
+    await expect(useApi().stream('/x', {}, () => undefined, new AbortController().signal)).rejects.toMatchObject({ status: 502 })
+  })
+
+  it('ends quietly when aborted before the answer', async () => {
+    const controller = new AbortController()
+    vi.stubGlobal('fetch', vi.fn(async () => {
+      controller.abort()
+      throw new DOMException('aborted', 'AbortError')
+    }))
+
+    await expect(useApi().stream('/x', {}, () => undefined, controller.signal)).resolves.toBeUndefined()
   })
 })

@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Shared.Models;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Billing.Commands.CompleteMyGatewayPayment;
+
 /// <summary>
 /// Verifies a hosted-gateway payment on one of the calling client's own invoices, refusing every
 /// invoice that is not theirs.

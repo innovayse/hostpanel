@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -79,6 +78,7 @@ public sealed class BackchannelLogoutTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A wrong key is refused with 401 and revokes nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WrongKeyRefusesAsync()
     {
@@ -93,6 +93,7 @@ public sealed class BackchannelLogoutTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A missing key header is refused with 401 and revokes nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingKeyRefusesAsync()
     {
@@ -107,6 +108,7 @@ public sealed class BackchannelLogoutTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The right key revokes the sessions of the person the address names.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ValidKeyRevokesTheSessionAsync()
     {
@@ -124,6 +126,7 @@ public sealed class BackchannelLogoutTests(IntegrationTestFactory factory) : ICl
     /// Every registered session store is asked, so the client portal's sessions end together with
     /// the panel's own.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EverySessionStoreIsRevokedAsync()
     {
@@ -140,6 +143,7 @@ public sealed class BackchannelLogoutTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An address no account answers is a success that revokes nothing, so a retry is harmless.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownUserIsIdempotentSuccessAsync()
     {

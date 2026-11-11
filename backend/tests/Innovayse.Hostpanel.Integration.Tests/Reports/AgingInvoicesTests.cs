@@ -3,9 +3,9 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
-using Innovayse.Hostpanel.Domain.Billing.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 
@@ -20,6 +20,7 @@ public sealed class AgingInvoicesTests(IntegrationTestFactory factory) : IClassF
     /// A part-paid EUR invoice 45 days overdue shows what it still owes, in EUR, in the 31-60 day
     /// period, with its UTC due date.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ShowsThePartPaidAmountDueInTheInvoiceCurrency()
     {
@@ -52,6 +53,7 @@ public sealed class AgingInvoicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The list is paged: a page size of one answers one row and the count of every open invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PagesTheRows()
     {
@@ -79,6 +81,7 @@ public sealed class AgingInvoicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A page size above the report ceiling is refused by the validator.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnOversizedPage()
     {
@@ -90,6 +93,7 @@ public sealed class AgingInvoicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -99,6 +103,7 @@ public sealed class AgingInvoicesTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

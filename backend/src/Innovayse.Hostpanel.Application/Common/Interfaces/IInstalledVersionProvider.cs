@@ -10,5 +10,5 @@ public interface IInstalledVersionProvider
     /// Gets the installed version string, e.g. <c>1.4.0</c>. Returns <c>dev</c> for local
     /// builds that carry no informational version.
     /// </summary>
-    string Version { get; }
+    public string Version { get; }
 }

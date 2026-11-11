@@ -1,8 +1,7 @@
-using Innovayse.Hostpanel.Application.Common.Errors;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
@@ -44,6 +43,7 @@ public sealed class GetMyServiceInvoicesTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Reading a stranger's service invoices is refused with <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetInvoices_AStrangersService_Returns404WithServiceNotFound()
     {
@@ -61,6 +61,7 @@ public sealed class GetMyServiceInvoicesTests(IntegrationTestFactory factory) : 
     /// The owner reads their own service's invoices: an empty list, with the unattributable count
     /// alongside it rather than a bare list a caller could mistake for "nothing was charged".
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetInvoices_TheCallersOwnService_Returns200WithEmptyList()
     {
@@ -76,6 +77,7 @@ public sealed class GetMyServiceInvoicesTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Reading a service's invoices is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetInvoicesRefusesAnonymous()
     {
@@ -85,6 +87,7 @@ public sealed class GetMyServiceInvoicesTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetInvoices_WithNonPositiveId_Returns400ValidationErrorAsync()
     {

@@ -31,6 +31,7 @@ public sealed class ServiceTerminatedHandler
     /// </summary>
     /// <param name="evt">The domain event carrying the service identifier and reason.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the message has been handled.</returns>
     public async Task HandleAsync(ServiceTerminatedEvent evt, CancellationToken ct)
     {
         var service = await _context.ClientServices.AsNoTracking().FirstOrDefaultAsync(s => s.Id == evt.ServiceId, ct);

@@ -1,10 +1,10 @@
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Application.Migration.Importers.Enums;
 using Innovayse.Hostpanel.Application.Migration.Importers.Records;
+using Innovayse.Hostpanel.Application.Support.Common;
 using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Innovayse.Hostpanel.Domain.Support;
+using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Migration.Importers;
@@ -24,15 +24,21 @@ public sealed class KnowledgebaseImporter : IMigrationEntityImporter
     /// <summary>Pages through each record dataset and records each record's outcome.</summary>
     private readonly MigrationRecordRunner _runner;
 
+    /// <summary>Saves each new category and article under a slug nobody else has, trying again when another request takes it.</summary>
+    private readonly KbSlugSaver _slugs;
+
     /// <summary>Initializes a new instance of the <see cref="KnowledgebaseImporter"/> class.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="pager">Pages through the source plugin's knowledge-base datasets.</param>
     /// <param name="runner">Pages through each record dataset and records each record's outcome.</param>
-    public KnowledgebaseImporter(IHostpanelDbContext context, MigrationRecordPager pager, MigrationRecordRunner runner)
+    /// <param name="slugs">Saves each new category and article under a slug nobody else has.</param>
+    public KnowledgebaseImporter(
+        IHostpanelDbContext context, MigrationRecordPager pager, MigrationRecordRunner runner, KbSlugSaver slugs)
     {
         _context = context;
         _pager = pager;
         _runner = runner;
+        _slugs = slugs;
     }
 
     /// <inheritdoc/>
@@ -41,9 +47,9 @@ public sealed class KnowledgebaseImporter : IMigrationEntityImporter
     /// <inheritdoc/>
     public async Task ImportAsync(MigrationJob job, CancellationToken ct)
     {
-        // Step 1: fetch categories, create missing ones, build sourceCatId→localCategoryName map
+        // Step 1: fetch categories, create missing ones, build sourceCatId→localCategoryId map
         var localCats = await _context.KbCategories.AsNoTracking().OrderBy(c => c.Name).ToListAsync(ct);
-        var catNameMap = new Dictionary<int, string>(); // sourceCatId → local category name
+        var catIdMap = new Dictionary<int, int>(); // sourceCatId → local category id
 
         await foreach (var page in _pager.PagesAsync<KbCategoryRecord>(job, "knowledgebase_categories", ct))
         {
@@ -54,14 +60,13 @@ public sealed class KnowledgebaseImporter : IMigrationEntityImporter
 
                 if (existing is not null)
                 {
-                    catNameMap[cat.Id] = existing.Name;
+                    catIdMap[cat.Id] = existing.Id;
                 }
                 else
                 {
-                    var newCat = KbCategory.Create(cat.Name, cat.Description, false, null);
-                    _context.KbCategories.Add(newCat);
-                    await _context.SaveChangesAsync(ct);
-                    catNameMap[cat.Id] = newCat.Name;
+                    var newCat = await _slugs.SaveCategoryAsync(
+                        cat.Name, slug => KbCategory.Create(cat.Name, slug, cat.Description, false, null), ct);
+                    catIdMap[cat.Id] = newCat.Id;
                 }
             }
         }
@@ -72,23 +77,54 @@ public sealed class KnowledgebaseImporter : IMigrationEntityImporter
         // One record of the dataset; the runner counts, logs and isolates its outcome.
         async Task<RecordImportResult> ImportArticleAsync(KbArticleRecord rec, CancellationToken ct)
         {
-            var categoryName = rec.CategoryId.HasValue && catNameMap.TryGetValue(rec.CategoryId.Value, out var n) && !string.IsNullOrWhiteSpace(n)
-                ? n
-                : MigrationDefaults.KnowledgebaseCategoryName;
-
-            var existingArticle = await _context.KbArticles.FirstOrDefaultAsync(a => a.Title.ToLower() == rec.Title.ToLower(), ct);
-            if (existingArticle is not null)
+            var title = rec.Title.ToLower();
+            var exists = await _context.KbArticleTranslations.AnyAsync(t => t.Title.ToLower() == title, ct);
+            if (exists)
             {
                 return RecordImportResult.Skipped(MigrationSkipReason.AlreadyExists);
             }
 
-            var article = KbArticle.Create(rec.Title, rec.Content, categoryName);
+            var categoryId = rec.CategoryId.HasValue && catIdMap.TryGetValue(rec.CategoryId.Value, out var mapped)
+                ? mapped
+                : await DefaultCategoryIdAsync(ct);
 
-            article.Publish();
-
-            _context.KbArticles.Add(article);
-            await _context.SaveChangesAsync(ct);
+            await _slugs.SaveArticleAsync(
+                rec.Title,
+                slug =>
+                {
+                    var article = KbArticle.Create(categoryId, slug);
+                    // The source does not say which language an article is written in: it is stored under the platform's
+                    // default language, which every article must have, and the admin can add the others.
+                    article.SetTranslation(SupportedLanguages.Default, rec.Title, rec.Content);
+                    article.Publish();
+                    return article;
+                },
+                ct);
             return RecordImportResult.Imported;
         }
+    }
+
+    /// <summary>Finds the category that holds articles whose source category is unknown, creating it when missing.</summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The id of the category named <see cref="MigrationDefaults.KnowledgebaseCategoryName"/>.</returns>
+    private async Task<int> DefaultCategoryIdAsync(CancellationToken ct)
+    {
+        var name = MigrationDefaults.KnowledgebaseCategoryName.ToLower();
+        var existing = await _context.KbCategories
+            .AsNoTracking()
+            .Where(c => c.Name.ToLower() == name)
+            .Select(c => (int?)c.Id)
+            .FirstOrDefaultAsync(ct);
+        if (existing is { } id)
+        {
+            return id;
+        }
+
+        var category = await _slugs.SaveCategoryAsync(
+            MigrationDefaults.KnowledgebaseCategoryName,
+            slug => KbCategory.Create(MigrationDefaults.KnowledgebaseCategoryName, slug, string.Empty, false),
+            ct);
+
+        return category.Id;
     }
 }

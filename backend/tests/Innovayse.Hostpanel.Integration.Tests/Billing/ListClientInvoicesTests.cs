@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ListClientInvoicesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin lists a client's invoices and finds the one just created for them.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListByClientIncludesTheClientsOwnInvoice()
     {
@@ -27,6 +28,7 @@ public sealed class ListClientInvoicesTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A client with no invoices lists an empty page, not an error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListByClientWithNoInvoicesReturnsAnEmptyPage()
     {
@@ -41,6 +43,7 @@ public sealed class ListClientInvoicesTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Listing a client's invoices is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListByClientRefusesAnonymous()
     {

@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class CreateEmailTemplateTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Creating a template and reading it back round-trips the content, active by default.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenGet_RoundTrips()
     {
@@ -29,6 +30,7 @@ public sealed class CreateEmailTemplateTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A second language version of the same slug is its own template, carrying its language.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_SecondLanguageVersion_IsStoredBesideTheFirst()
     {
@@ -49,6 +51,7 @@ public sealed class CreateEmailTemplateTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A slug holds one version per language, so a second one in the same language is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_SameLanguageTwice_RefusesConflict()
     {
@@ -65,6 +68,7 @@ public sealed class CreateEmailTemplateTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>A language the platform does not serve is refused, since no recipient could ever be matched to it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_UnsupportedLanguage_RefusesBadRequest()
     {
@@ -78,6 +82,7 @@ public sealed class CreateEmailTemplateTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_RefusesAnonymous()
     {

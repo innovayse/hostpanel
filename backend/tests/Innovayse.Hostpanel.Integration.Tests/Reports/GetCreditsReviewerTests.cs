@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetCreditsReviewerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A transaction added to credit appears, scoped to its client, with an ISO date and its currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ShowsACreditedTransaction()
     {
@@ -39,6 +40,7 @@ public sealed class GetCreditsReviewerTests(IntegrationTestFactory factory) : IC
     /// Credits in two currencies are totalled apart, the last day of the range counts in full, and
     /// the rows are paged.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TotalsPerCurrencyOverTheWholeLastDayAndPages()
     {
@@ -65,6 +67,7 @@ public sealed class GetCreditsReviewerTests(IntegrationTestFactory factory) : IC
     /// Every movement of the balance is a credit here, not only cash added to it: a paid top-up, a credit note, staff goodwill and
     /// credit applied to an invoice are listed with their signed change, and the totals are the net of them.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ShowsTopUpsAndCreditMovementsWithTheirSignedChange()
     {
@@ -89,6 +92,7 @@ public sealed class GetCreditsReviewerTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -98,6 +102,7 @@ public sealed class GetCreditsReviewerTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

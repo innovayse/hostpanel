@@ -78,8 +78,7 @@ public sealed class DailyPerformanceHandler
             // A reply total needs the ticket-replies aggregate this report does not otherwise
             // compute, so it is reported as zero rather than invented.
             TicketReplies: 0,
-            CancellationRequests: cancellations.GetValueOrDefault(day)
-        )).ToList();
+            CancellationRequests: cancellations.GetValueOrDefault(day))).ToList();
 
         return Result<IReadOnlyList<DailyPerformanceDto>>.Success(rows);
     }

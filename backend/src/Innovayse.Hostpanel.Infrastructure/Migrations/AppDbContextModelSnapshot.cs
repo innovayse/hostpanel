@@ -1038,6 +1038,167 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("Transactions");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Campaigns.EmailCampaign", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(100000)
+                        .HasColumnType("character varying(100000)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("character varying(450)");
+
+                    b.Property<DateTimeOffset?>("ScheduledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status", "ScheduledAt");
+
+                    b.ToTable("EmailCampaigns");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Campaigns.EmailCampaignRecipient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CampaignId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ClickCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("FailureReason")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("FirstClickedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("FirstOpenedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Language")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("OpenCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("SentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("TrackingTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("UnsubscribeTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("SentAt");
+
+                    b.HasIndex("TrackingTokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UnsubscribeTokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("CampaignId", "ClientId")
+                        .IsUnique();
+
+                    b.HasIndex("CampaignId", "Status", "Id");
+
+                    b.ToTable("EmailCampaignRecipients");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Campaigns.EmailCampaignSegment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CampaignId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FilterType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("FilterValue")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampaignId");
+
+                    b.ToTable("EmailCampaignSegments");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Clients.Client", b =>
                 {
                     b.Property<int>("Id")
@@ -1068,6 +1229,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<string>("City")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("ClientGroupId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("CompanyName")
                         .HasMaxLength(200)
@@ -1201,6 +1365,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ClientGroupId");
+
                     b.HasIndex("UserId")
                         .IsUnique();
 
@@ -1211,6 +1377,46 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("Clients", t =>
                         {
                             t.HasCheckConstraint("CK_Clients_ExternalAccount", "(\"ExternalAccountProvider\" IS NULL) = (\"ExternalAccountId\" IS NULL)");
+                        });
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Clients.ClientGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("DiscountPercent")
+                        .HasColumnType("numeric(5,2)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsDefault")
+                        .IsUnique()
+                        .HasFilter("\"IsDefault\"");
+
+                    b.ToTable("ClientGroups", t =>
+                        {
+                            t.HasCheckConstraint("CK_ClientGroups_DiscountPercent", "\"DiscountPercent\" >= 0 AND \"DiscountPercent\" <= 100");
                         });
                 });
 
@@ -1453,7 +1659,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasIndex("DomainId");
 
                     b.HasIndex("OrderItemId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("IX_DomainLineRenewals_OrderItemId");
 
                     b.ToTable("DomainLineRenewals");
                 });
@@ -3601,6 +3808,87 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("ClientServices");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Services.ServiceChangeRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int>("FromProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("InvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("NewRecurringAmount")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<decimal>("ProrationAmount")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ServiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("ToProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("FromProductId");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("ServiceId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("ToProductId");
+
+                    b.HasIndex(new[] { "ServiceId" }, "IX_ServiceChangeRequests_ServiceId_Open")
+                        .IsUnique()
+                        .HasFilter("\"Status\" IN ('Pending', 'Approved')");
+
+                    b.ToTable("ServiceChangeRequests");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Settings.Setting", b =>
                 {
                     b.Property<int>("Id")
@@ -3859,6 +4147,146 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("SslChecks");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusComponent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("CurrentState")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GroupId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GroupId", "DisplayOrder");
+
+                    b.ToTable("StatusComponents");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusComponentGroup", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DisplayOrder");
+
+                    b.ToTable("StatusComponentGroups");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusIncident", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StartedAt");
+
+                    b.HasIndex("State");
+
+                    b.ToTable("StatusIncidents");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusIncidentUpdate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("IncidentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IncidentId", "CreatedAt");
+
+                    b.ToTable("StatusIncidentUpdates");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.Announcement", b =>
                 {
                     b.Property<int>("Id")
@@ -4006,17 +4434,55 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Category")
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Slug")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("IsPublished");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("KbArticles", t =>
+                        {
+                            t.HasCheckConstraint("CK_KbArticles_SlugNotNumeric", "\"Slug\" !~ '^[0-9]+$'");
+
+                            t.HasCheckConstraint("CK_KbArticles_SlugNotReserved", "\"Slug\" NOT IN ('articles', 'categories')");
+
+                            t.HasCheckConstraint("CK_KbArticles_SlugShape", "\"Slug\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$'");
+                        });
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.KbArticleTranslation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ArticleId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<bool>("IsPublished")
-                        .HasColumnType("boolean");
+                    b.Property<string>("Locale")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -4025,11 +4491,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Category");
+                    b.HasIndex("ArticleId", "Locale")
+                        .IsUnique();
 
-                    b.HasIndex("IsPublished");
-
-                    b.ToTable("KbArticles");
+                    b.ToTable("KbArticleTranslations");
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.KbCategory", b =>
@@ -4056,13 +4521,26 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<int?>("ParentCategoryId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name");
 
                     b.HasIndex("ParentCategoryId");
 
-                    b.ToTable("KbCategories");
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("KbCategories", t =>
+                        {
+                            t.HasCheckConstraint("CK_KbCategories_SlugNotNumeric", "\"Slug\" !~ '^[0-9]+$'");
+
+                            t.HasCheckConstraint("CK_KbCategories_SlugShape", "\"Slug\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$'");
+                        });
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.NetworkIssue", b =>
@@ -4829,6 +5307,38 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Campaigns.EmailCampaignRecipient", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Campaigns.EmailCampaign", null)
+                        .WithMany("Recipients")
+                        .HasForeignKey("CampaignId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Innovayse.Hostpanel.Domain.Clients.Client", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Campaigns.EmailCampaignSegment", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Campaigns.EmailCampaign", null)
+                        .WithMany("Segments")
+                        .HasForeignKey("CampaignId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Clients.Client", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Clients.ClientGroup", null)
+                        .WithMany()
+                        .HasForeignKey("ClientGroupId")
+                        .OnDelete(DeleteBehavior.Restrict);
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Clients.ClientUser", b =>
                 {
                     b.HasOne("Innovayse.Hostpanel.Domain.Clients.Client", null)
@@ -5048,6 +5558,33 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Services.ServiceChangeRequest", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Clients.Client", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Innovayse.Hostpanel.Domain.Products.Product", null)
+                        .WithMany()
+                        .HasForeignKey("FromProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Innovayse.Hostpanel.Domain.Services.ClientService", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Innovayse.Hostpanel.Domain.Products.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ToProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Slides.Slide", b =>
                 {
                     b.HasOne("Innovayse.Hostpanel.Domain.Products.Product", null)
@@ -5074,6 +5611,24 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusComponent", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.StatusPage.StatusComponentGroup", null)
+                        .WithMany("Components")
+                        .HasForeignKey("GroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusIncidentUpdate", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.StatusPage.StatusIncident", null)
+                        .WithMany("Updates")
+                        .HasForeignKey("IncidentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.Download", b =>
                 {
                     b.HasOne("Innovayse.Hostpanel.Domain.Support.DownloadCategory", null)
@@ -5089,6 +5644,24 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("ParentCategoryId")
                         .OnDelete(DeleteBehavior.Restrict);
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.KbArticle", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Support.KbCategory", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.KbArticleTranslation", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Support.KbArticle", null)
+                        .WithMany("Translations")
+                        .HasForeignKey("ArticleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.KbCategory", b =>
@@ -5226,6 +5799,13 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Navigation("Items");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Campaigns.EmailCampaign", b =>
+                {
+                    b.Navigation("Recipients");
+
+                    b.Navigation("Segments");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Clients.Client", b =>
                 {
                     b.Navigation("Contacts");
@@ -5287,6 +5867,21 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Slides.Slide", b =>
+                {
+                    b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusComponentGroup", b =>
+                {
+                    b.Navigation("Components");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusIncident", b =>
+                {
+                    b.Navigation("Updates");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.KbArticle", b =>
                 {
                     b.Navigation("Translations");
                 });

@@ -33,6 +33,8 @@ describe('AnnouncementsListView', () => {
     const wrapper = await mountView(AnnouncementsListView)
     expect(wrapper.find('[role="dialog"]').exists()).toBe(false)
 
+    await wrapper.get('[data-testid="announcements-3-actions"]').trigger('click')
+
     await wrapper.get('[data-testid="announcements-3-delete"]').trigger('click')
     expect(wrapper.find('[role="dialog"]').exists()).toBe(true)
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
@@ -63,6 +65,8 @@ describe('AnnouncementsListView', () => {
     stubFetch(json(list), new Response(null, { status: 204 }), json(list))
     const wrapper = await mountView(AnnouncementsListView)
 
+    await wrapper.get('[data-testid="announcements-3-actions"]').trigger('click')
+
     await wrapper.get('[data-testid="announcements-3-delete"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -73,6 +77,8 @@ describe('AnnouncementsListView', () => {
   it('shows the API sentence when the delete is refused and keeps the list', async () => {
     stubFetch(json({ items: [announcement], totalCount: 1 }), problem('Announcement is locked.', 409))
     const wrapper = await mountView(AnnouncementsListView)
+
+    await wrapper.get('[data-testid="announcements-3-actions"]').trigger('click')
 
     await wrapper.get('[data-testid="announcements-3-delete"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
@@ -86,6 +92,8 @@ describe('AnnouncementsListView', () => {
   it('does not delete when the confirmation is cancelled', async () => {
     const mock = stubFetch(json({ items: [announcement], totalCount: 1 }))
     const wrapper = await mountView(AnnouncementsListView)
+
+    await wrapper.get('[data-testid="announcements-3-actions"]').trigger('click')
 
     await wrapper.get('[data-testid="announcements-3-delete"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')

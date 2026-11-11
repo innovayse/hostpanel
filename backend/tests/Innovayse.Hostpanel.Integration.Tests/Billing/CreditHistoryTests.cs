@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class CreditHistoryTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin transaction that adds to credit is stamped as the adjustment: the cash entry is the history line.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminTransactionAddedToCredit_IsOneStampedEntry()
     {
@@ -34,6 +35,7 @@ public sealed class CreditHistoryTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A transaction that does not touch the balance leaves the history alone.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminTransactionNotAddedToCredit_IsNoHistory()
     {
@@ -47,6 +49,7 @@ public sealed class CreditHistoryTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>An admin transaction that takes from credit is stamped as the deduction.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminTransactionTakenFromCredit_IsOneStampedEntry()
     {
@@ -77,6 +80,7 @@ public sealed class CreditHistoryTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Removing credit from an invoice hands it back to the balance as a credit-only line tied to the invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RemovingCreditFromAnInvoice_IsAReturnLine()
     {
@@ -99,6 +103,7 @@ public sealed class CreditHistoryTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Cancelling an invoice that holds credit returns all of it to the balance, on the history.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancellingAnInvoiceWithCredit_ReturnsItOnTheHistory()
     {
@@ -119,6 +124,7 @@ public sealed class CreditHistoryTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>A refund paid back as credit stamps the refund's own cash entry: one line, the cash going out and the credit coming in.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefundToCredit_IsOneStampedRefundEntry()
     {
@@ -143,6 +149,7 @@ public sealed class CreditHistoryTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Every movement of the balance adds up: the history of a mixed run is exactly the balance, line by line.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AMixedRun_AddsUpLineByLine()
     {
@@ -166,6 +173,7 @@ public sealed class CreditHistoryTests(IntegrationTestFactory factory) : IClassF
     /// Credit-only lines move no cash, so the cash ledger list shows only the entries that moved money and its totals ignore
     /// the rest.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreditOnlyLines_StayOutOfTheCashLedger()
     {
@@ -186,6 +194,7 @@ public sealed class CreditHistoryTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>Entries older than the history carry no movement and are not shown in it; the history starts where the feature did.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OlderEntries_AreNotInventedIntoTheHistory()
     {

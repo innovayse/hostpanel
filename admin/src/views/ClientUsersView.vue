@@ -42,13 +42,13 @@ import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { UiAlign } from '@/utils/ui/table'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiLabelVariant, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import type { UiTabItem } from '@/utils/ui/tabs'
 import { MS_PER_SECOND, NOTICE_VISIBLE_MS } from '@/lib/limits'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -565,14 +565,14 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
       </UiCollapse>
 
       <UiCard v-if="users.length > 0" class="overflow-x-auto">
-        <UiTable density="comfortable" data-testid="client-users-table">
+        <UiTable :density="UiTableDensity.Comfortable" data-testid="client-users-table">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
               <UiTableHeader>{{ t('shared.email') }}</UiTableHeader>
               <UiTableHeader>{{ t('clients.clientUsers.role') }}</UiTableHeader>
               <UiTableHeader>{{ t('clients.clientUsers.lastLogin') }}</UiTableHeader>
-              <UiTableHeader :align="UiAlign.Right">{{ t('shared.actions') }}</UiTableHeader>
+              <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
             </UiTableRow>
           </UiTableHead>
           <UiTableBody divided>
@@ -589,8 +589,8 @@ const clientUserActions = (u: ClientUserItem): UiRowAction[] => {
                 <UiText v-else :tone="UiTextTone.Secondary">{{ t('clients.clientUsers.user') }}</UiText>
               </UiTableCell>
               <UiTableCell muted>{{ formatDate(u.lastLoginAt) }}</UiTableCell>
-              <UiTableCell :align="UiAlign.Right">
-                <UiRowActions :actions="clientUserActions(u)" />
+              <UiTableCell actions>
+                <UiRowActions :actions="clientUserActions(u)" :testid="`client-users-actions-${u.userId}`" />
               </UiTableCell>
             </UiTableRow>
           </UiTableBody>

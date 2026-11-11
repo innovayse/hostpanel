@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class UpdateTldConfigTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Updating an id that names no configuration answers 404 with <c>TLD_CONFIG_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_UnknownId_Returns404WithTldConfigNotFoundAsync()
     {
@@ -40,6 +41,7 @@ public sealed class UpdateTldConfigTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_WithoutToken_Returns401Async()
     {
@@ -65,6 +67,7 @@ public sealed class UpdateTldConfigTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A negative sort order is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_NegativeSortOrder_Returns400ValidationErrorAsync()
     {

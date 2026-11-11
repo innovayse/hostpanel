@@ -23,8 +23,7 @@ public sealed class DeleteKbCategoryHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success, <c>KBCATEGORY_NOT_FOUND</c> when the id names no category, or <c>KBCATEGORY_IN_USE</c>
-    /// when it still has sub-categories. Articles name their category as text, not by id, so they
-    /// do not hold a category back.
+    /// when it still has sub-categories or articles.
     /// </returns>
     public async Task<Result> HandleAsync(DeleteKbCategoryCommand cmd, CancellationToken ct)
     {
@@ -36,7 +35,8 @@ public sealed class DeleteKbCategoryHandler
             return Result.FailureCode(HostpanelErrorCodes.KBCATEGORY_NOT_FOUND);
         }
 
-        if (await _context.KbCategories.AnyAsync(c => c.ParentCategoryId == cmd.Id, ct))
+        if (await _context.KbCategories.AnyAsync(c => c.ParentCategoryId == cmd.Id, ct)
+            || await _context.KbArticles.AnyAsync(a => a.CategoryId == cmd.Id, ct))
         {
             return Result.FailureCode(HostpanelErrorCodes.KBCATEGORY_IN_USE);
         }

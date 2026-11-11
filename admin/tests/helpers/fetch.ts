@@ -93,3 +93,23 @@ export const callOf = (mock: ReturnType<typeof vi.fn>, index = 0): RecordedCall 
     init: requestInit,
   }
 }
+
+/**
+ * Decodes every call of a stubbed `fetch`, in order.
+ *
+ * @param mock - The mock returned by `stubFetch`.
+ * @returns One decoded call per request made.
+ */
+export const callsOf = (mock: ReturnType<typeof vi.fn>): RecordedCall[] => mock.mock.calls.map((_, index) => callOf(mock, index))
+
+/**
+ * Finds the first call with a verb and a URL.
+ *
+ * @param mock - The mock returned by `stubFetch`.
+ * @param method - The HTTP verb.
+ * @param url - The request URL, as sent.
+ * @returns The decoded call, or undefined when no such request was made.
+ */
+export const findCall = (mock: ReturnType<typeof vi.fn>, method: string, url: string): RecordedCall | undefined =>
+  callsOf(mock).find((call) => call.method === method && call.url === url)
+

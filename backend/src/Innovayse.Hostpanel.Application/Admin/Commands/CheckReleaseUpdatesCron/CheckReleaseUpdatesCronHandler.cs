@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Admin;
-using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -64,6 +63,7 @@ public sealed class CheckReleaseUpdatesCronHandler
     /// </summary>
     /// <param name="cmd">The scheduled command (marker, no payload).</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the message has been handled.</returns>
     public Task HandleAsync(CheckReleaseUpdatesCronCommand cmd, CancellationToken ct)
     {
         _ = cmd;

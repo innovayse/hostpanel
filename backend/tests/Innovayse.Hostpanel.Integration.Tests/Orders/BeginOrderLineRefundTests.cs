@@ -1,6 +1,7 @@
 using System.Net;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Orders.Commands.BeginOrderLineRefund;
+using Innovayse.Hostpanel.Application.Orders.Commands.ClaimOrderLines;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class BeginOrderLineRefundTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An order that does not exist is refused as <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderIsRefused()
     {
@@ -25,6 +27,7 @@ public sealed class BeginOrderLineRefundTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A line the order does not hold is refused as <c>ORDER_ITEM_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingLineIsRefused()
     {
@@ -39,6 +42,7 @@ public sealed class BeginOrderLineRefundTests(IntegrationTestFactory factory) : 
     /// A failed line becomes Refunding, the order stays Incomplete, and a retry of the line is refused with
     /// <c>ORDER_LINE_NOT_RETRYABLE</c> while the refund runs.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClaimsTheFailedLineAndKeepsARetryOff()
     {
@@ -58,7 +62,32 @@ public sealed class BeginOrderLineRefundTests(IntegrationTestFactory factory) : 
         await OrdersTestSeeds.AssertCodeAsync(retry, HostpanelErrorCodes.ORDER_LINE_NOT_RETRYABLE);
     }
 
+    /// <summary>
+    /// A line whose failure its own run could not record is still in progress: naming the attempt that holds it claims it
+    /// for the refund with the failure's code, while an attempt that does not hold it is refused.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task TheAttemptThatHoldsTheLineClaimsItFromInProgress()
+    {
+        var orderId = await OrdersTestSeeds.SeedOrderAsync(factory, OrderStatus.Active);
+        (await InvokeAsync(new ClaimOrderLinesCommand(orderId))).IsSuccess.Should().BeTrue();
+        var lineId = (await OrdersTestReads.ReadItemsAsync(factory.Services, orderId)).Single().Id;
+
+        var unheld = await InvokeAsync(new BeginOrderLineRefundCommand(orderId, lineId));
+        var stale = await InvokeAsync(new BeginOrderLineRefundCommand(orderId, lineId, HeldAttempt: 2));
+        var held = await InvokeAsync(new BeginOrderLineRefundCommand(orderId, lineId, HeldAttempt: 1, ErrorCode: "DOMAIN_ALREADY_REGISTERED"));
+
+        unheld.ErrorCode.Should().Be(HostpanelErrorCodes.ORDER_LINE_NOT_REFUNDABLE);
+        stale.ErrorCode.Should().Be(HostpanelErrorCodes.ORDER_LINE_NOT_REFUNDABLE);
+        held.IsSuccess.Should().BeTrue();
+        var line = (await OrdersTestReads.ReadItemsAsync(factory.Services, orderId)).Single();
+        line.FulfilmentState.Should().Be(OrderItemFulfilmentState.Refunding);
+        line.FulfilmentErrorCode.Should().Be("DOMAIN_ALREADY_REGISTERED");
+    }
+
     /// <summary>A line that is not failed (fulfilled here) is refused as <c>ORDER_LINE_NOT_REFUNDABLE</c> and left as it is.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesALineThatDidNotFail()
     {
@@ -75,6 +104,7 @@ public sealed class BeginOrderLineRefundTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A line already being refunded cannot be claimed a second time, so two refunds never run for one line.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesALineThatIsAlreadyBeingRefunded()
     {
@@ -90,6 +120,7 @@ public sealed class BeginOrderLineRefundTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A non-positive id is refused by the validator.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NonPositiveIdsAreRefusedByTheValidator()
     {
@@ -101,7 +132,7 @@ public sealed class BeginOrderLineRefundTests(IntegrationTestFactory factory) : 
     /// <summary>Dispatches the command on a fresh scope's bus.</summary>
     /// <param name="command">The command to send.</param>
     /// <returns>The handler's result.</returns>
-    private async Task<Result> InvokeAsync(BeginOrderLineRefundCommand command)
+    private async Task<Result> InvokeAsync(object command)
     {
         using var scope = factory.Services.CreateScope();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();

@@ -26,6 +26,7 @@ public sealed class GetMyCreditTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The credit carries the balance, its currency and the limits of one top-up.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReportsTheBalanceTheCurrencyAndTheLimits()
     {
@@ -41,6 +42,7 @@ public sealed class GetMyCreditTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Credit older than the history is a balance without lines: nothing is invented for it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreditOlderThanTheHistory_HasNoLines()
     {
@@ -55,6 +57,7 @@ public sealed class GetMyCreditTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The history lists the newest line first, with the type, the signed change and the balance it left, and pages.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListsTheHistoryNewestFirstAndPages()
     {
@@ -78,6 +81,7 @@ public sealed class GetMyCreditTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The staff's note is not written for the client: no line the client reads carries a description.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NeverShowsTheStaffNote()
     {
@@ -93,6 +97,7 @@ public sealed class GetMyCreditTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A client reads only their own account: another client's lines and balance are not in it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReadsOnlyTheCallersOwnAccount()
     {
@@ -109,6 +114,7 @@ public sealed class GetMyCreditTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A client id in the query is ignored: the account is the token's.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IgnoresAClientIdInTheQuery()
     {
@@ -123,6 +129,7 @@ public sealed class GetMyCreditTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The route needs a signed-in client, and an administrator without a client record has no credit of their own.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NeedsASignedInClientWithAnAccount()
     {
@@ -136,6 +143,7 @@ public sealed class GetMyCreditTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An oversized page is clamped rather than refused, so the table never asks for the whole ledger at once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClampsAnOversizedPage()
     {

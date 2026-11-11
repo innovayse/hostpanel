@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class SetMyDomainRegistrarLockTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The registrar lock toggle refuses a stranger's attempt and applies for the owner.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRegistrarLock_RefusesAStrangerAndAppliesForTheOwnerAsync()
     {
@@ -29,6 +30,7 @@ public sealed class SetMyDomainRegistrarLockTests(IntegrationTestFactory factory
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRegistrarLock_WithoutToken_Returns401Async()
     {
@@ -41,6 +43,7 @@ public sealed class SetMyDomainRegistrarLockTests(IntegrationTestFactory factory
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRegistrarLock_WithNonPositiveId_Returns400ValidationErrorAsync()
     {
@@ -58,6 +61,7 @@ public sealed class SetMyDomainRegistrarLockTests(IntegrationTestFactory factory
     /// The body field is <c>value</c>: <c>{ value: true }</c> switches registrar lock on and <c>{ value: false }</c>
     /// switches it off, read back through <c>GET /api/domains/{id}</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRegistrarLock_ValueField_TogglesTheFlagAsync()
     {
@@ -77,6 +81,7 @@ public sealed class SetMyDomainRegistrarLockTests(IntegrationTestFactory factory
     /// <c>VALIDATION_ERROR</c> and never read as <c>false</c>: a domain whose registrar lock is on keeps it.
     /// </summary>
     /// <param name="body">The JSON body the client sends.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("{\"enabled\":true}")]
     [InlineData("{\"enabled\":false}")]

@@ -1,9 +1,9 @@
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Host;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Ssh.Enums;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Host;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClassFixture<PluginSshFixture>
 {
     /// <summary>The plugin revokes its own key: it leaves the account, the record is revoked and the revoke is audited.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OwnKey_IsRevokedAndAuditedAsync()
     {
@@ -42,6 +43,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     }
 
     /// <summary>A client's own key, and a key of another client, answer NotFound and stay on the account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientsOwnKey_IsNotFoundAsync()
     {
@@ -57,6 +59,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     }
 
     /// <summary>Unbinding the product does not stop the plugin taking its key back.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnboundAfterIssue_StillRevokesAsync()
     {
@@ -73,6 +76,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     }
 
     /// <summary>The client revokes a plugin's key through its own route like any other key.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Client_CanRevokeAPluginsKeyAsync()
     {
@@ -86,6 +90,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     }
 
     /// <summary>Another plugin with SSH access cannot revoke a key issued to the first one; an unknown key answers the same.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnotherPluginsKey_IsNotFound_LikeAnUnknownKeyAsync()
     {
@@ -99,6 +104,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     }
 
     /// <summary>A call acting for another client answers NotFound for a key on a service it does not own.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnotherClientsService_IsNotFoundAsync()
     {
@@ -112,6 +118,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     }
 
     /// <summary>A plugin whose manifest does not declare SSH, and an admin-area call, are NotAllowed to revoke; the key stays.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ManifestWithoutSshOrAdminCall_IsNotAllowedAsync()
     {
@@ -125,6 +132,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     }
 
     /// <summary>An unreachable agent answers ServerUnavailable and the key is not recorded as revoked.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnreachableServer_IsServerUnavailableAsync()
     {
@@ -138,6 +146,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     }
 
     /// <summary>A contact without <see cref="ClientPermission.ViewModifyPasswords"/> may not revoke through a plugin either; the key stays.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ContactWithoutThePasswordsRight_IsNotAllowedAsync()
     {
@@ -151,6 +160,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     }
 
     /// <summary>A plugin can take its key back from a suspended service: removing access never needs the service usable.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InactiveService_StillRevokesAsync()
     {

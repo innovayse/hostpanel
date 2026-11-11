@@ -72,7 +72,11 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
         var ran = 0;
 
         var (next, session) = await TrackedAsync(() => jobs.RunAsync<CheckOverdueInvoicesCronCommand>(
-            Daily, () => { ran++; return Task.CompletedTask; }, CancellationToken.None));
+            Daily, () =>
+            {
+                ran++;
+                return Task.CompletedTask;
+            }, CancellationToken.None));
 
         ran.Should().Be(1);
         next.Should().Be(NextRegularRun);
@@ -110,7 +114,11 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
         var ran = 0;
 
         var (next, session) = await TrackedAsync(() => jobs.RunAsync<CheckOverdueInvoicesCronCommand>(
-            Daily, () => { ran++; return Task.CompletedTask; }, CancellationToken.None));
+            Daily, () =>
+            {
+                ran++;
+                return Task.CompletedTask;
+            }, CancellationToken.None));
 
         ran.Should().Be(0);
         next.Should().Be(NextRegularRun);
@@ -128,7 +136,11 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
 
         var (_, session) = await TrackedAsync(async () =>
         {
-            await jobs.RunOnceAsync<CheckOverdueInvoicesCronCommand>(Daily, () => { ran++; return Task.CompletedTask; }, CancellationToken.None);
+            await jobs.RunOnceAsync<CheckOverdueInvoicesCronCommand>(Daily, () =>
+            {
+                ran++;
+                return Task.CompletedTask;
+            }, CancellationToken.None);
             return null;
         });
 
@@ -149,7 +161,11 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
             new JobLeaseClaim(JobName, "other-instance", Now, TimeSpan.FromHours(1)), CancellationToken.None);
         var ran = 0;
 
-        await jobs.RunOnceAsync<CheckOverdueInvoicesCronCommand>(Daily, () => { ran++; return Task.CompletedTask; }, CancellationToken.None);
+        await jobs.RunOnceAsync<CheckOverdueInvoicesCronCommand>(Daily, () =>
+        {
+            ran++;
+            return Task.CompletedTask;
+        }, CancellationToken.None);
 
         ran.Should().Be(0);
     }
@@ -180,7 +196,11 @@ public sealed class RecurringJobsTests(IntegrationTestFactory factory) : IClassF
         var ran = 0;
 
         await TrackedAsync(() => jobs.RunAsync<CheckOverdueInvoicesCronCommand>(
-            Daily, () => { ran++; return Task.CompletedTask; }, CancellationToken.None));
+            Daily, () =>
+            {
+                ran++;
+                return Task.CompletedTask;
+            }, CancellationToken.None));
 
         ran.Should().Be(1);
     }

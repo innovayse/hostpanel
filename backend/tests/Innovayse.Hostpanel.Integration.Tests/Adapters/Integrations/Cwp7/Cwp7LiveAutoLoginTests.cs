@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Integrations.Cwp7;
 public sealed class Cwp7LiveAutoLoginTests
 {
     /// <summary>Auto login, issues ausable session url, against the real server.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [LiveCwp7Fact]
     public async Task AutoLogin_IssuesAUsableSessionUrl_AgainstTheRealServerAsync()
     {

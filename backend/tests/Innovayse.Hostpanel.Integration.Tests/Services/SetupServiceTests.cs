@@ -1,9 +1,8 @@
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.SetupService;
-using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Products;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Servers;
 using Innovayse.Hostpanel.Domain.Servers.Enums;
 using Innovayse.Hostpanel.Domain.Services;
@@ -24,6 +23,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Setting up a service that is already Active is refused as not Pending.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetupService_AnAlreadyActiveServiceRefusesNotPending()
     {
@@ -46,6 +46,7 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
     /// A Pending service with no server registered at all is refused as having none eligible,
     /// rather than crashing the request.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetupService_NoServerRegisteredRefusesNoEligibleServer()
     {
@@ -78,6 +79,7 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>Setting up a service that does not exist refuses <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetupService_UnknownServiceRefusesNotFound()
     {
@@ -97,6 +99,7 @@ public sealed class SetupServiceTests(IntegrationTestFactory factory) : IClassFi
     /// It used to pick from every server of the module, so a product tied to one server (for
     /// example the only one with SSH key management) was set up on the default server instead.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetupService_ProductWithServerGroupIsSetUpOnTheGroupsServer()
     {

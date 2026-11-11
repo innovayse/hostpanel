@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class ServiceProvisionedHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A provisioned service notifies the owning client exactly once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceProvisioned_NotifiesOwningClientExactlyOnceAsync()
     {

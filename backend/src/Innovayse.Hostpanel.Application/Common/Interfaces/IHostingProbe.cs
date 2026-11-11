@@ -15,5 +15,5 @@ public interface IHostingProbe
     /// <param name="input">The domain to probe.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>What could be read; <see cref="HostingInfoDto.Empty"/> when the domain was refused or nothing answered.</returns>
-    Task<HostingInfoDto> ProbeAsync(HostingProbeInput input, CancellationToken ct);
+    public Task<HostingInfoDto> ProbeAsync(HostingProbeInput input, CancellationToken ct);
 }

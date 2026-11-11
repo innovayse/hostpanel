@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class GetTicketTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Staff can read back a ticket by id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanReadATicketAsync()
     {
@@ -29,6 +30,7 @@ public sealed class GetTicketTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>Reading a ticket that does not exist answers 404 with <c>TICKET_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetUnknownTicketAnswersNotFoundAsync()
     {
@@ -41,6 +43,7 @@ public sealed class GetTicketTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A caller with no credential cannot read a ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

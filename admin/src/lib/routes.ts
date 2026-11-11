@@ -5,6 +5,8 @@
 
 /** Closed set of screen paths shared across files. */
 export enum AppRoute {
+  /** The `/apps` root under which every plugin page lives (`/apps/<plugin>/<path>`). */
+  Apps = '/apps',
   /** The `/billing` screen. */
   Billing = '/billing',
   /** The `/billing/add-transaction` screen. */
@@ -47,6 +49,8 @@ export enum AppRoute {
   ClientsCancellations = '/clients/cancellations',
   /** The `/clients/domain-registrations` screen. */
   ClientsDomainRegistrations = '/clients/domain-registrations',
+  /** The `/clients/plan-changes` screen. */
+  ClientsPlanChanges = '/clients/plan-changes',
   /** The `/clients/shared-hostings` screen. */
   ClientsSharedHostings = '/clients/shared-hostings',
   /** The `/clients/users` screen. */
@@ -109,6 +113,10 @@ export enum AppRoute {
   SupportAnnouncements = '/support/announcements',
   /** The `/support/announcements/new` screen. */
   SupportAnnouncementsNew = '/support/announcements/new',
+  /** The `/support/email-campaigns` screen. */
+  SupportEmailCampaigns = '/support/email-campaigns',
+  /** The `/support/email-campaigns/new` screen. */
+  SupportEmailCampaignsNew = '/support/email-campaigns/new',
   /** The `/support/downloads` screen. */
   SupportDownloads = '/support/downloads',
   /** The `/support/knowledgebase` screen. */
@@ -297,6 +305,14 @@ export const orderPath = (id: RouteId): string => `${AppRoute.Orders}/${id}`
 export const supportTicketPath = (id: RouteId): string => `${AppRoute.SupportTickets}/${id}`
 
 /**
+ * Path of one email campaign (its form while a draft, its delivery view afterwards).
+ *
+ * @param id - Campaign ID.
+ * @returns `/support/email-campaigns/<id>`.
+ */
+export const emailCampaignPath = (id: RouteId): string => `${AppRoute.SupportEmailCampaigns}/${id}`
+
+/**
  * Path of an integration category page.
  *
  * @param category - Category key.
@@ -319,3 +335,21 @@ export const integrationConfigurePath = (slug: string): string => `${AppRoute.In
  * @returns `/reports/<slug>`.
  */
 export const reportPagePath = (slug: string): string => `${AppRoute.Reports}/${slug}`
+
+/**
+ * Path of a page a plugin adds to the admin panel.
+ *
+ * @param pluginId - Id of the plugin.
+ * @param path - The page's filled path below the plugin's prefix, without a leading `/`; empty for its root page.
+ * @returns `/apps/<plugin>`, or `/apps/<plugin>/<path>`.
+ */
+export const pluginPagePath = (pluginId: string, path: string): string =>
+  path === '' ? `${AppRoute.Apps}/${encodeURIComponent(pluginId)}` : `${AppRoute.Apps}/${encodeURIComponent(pluginId)}/${path}`
+
+/**
+ * Path of the plan change requests screen filtered to one service's history.
+ *
+ * @param serviceId - Service ID.
+ * @returns `/clients/plan-changes?serviceId=<id>`.
+ */
+export const servicePlanChangesPath = (serviceId: RouteId): string => `${AppRoute.ClientsPlanChanges}?serviceId=${serviceId}`

@@ -7,7 +7,6 @@ using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -77,6 +76,7 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     }
 
     /// <summary>A service staff suspended by hand is never terminated by this job, however long ago.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ManualSuspensionPastTheLimit_IsNotTerminated()
     {
@@ -92,6 +92,7 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     }
 
     /// <summary>A service imported already suspended is never terminated by this job, however long ago.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ImportedSuspensionPastTheLimit_IsNotTerminated()
     {
@@ -114,6 +115,7 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     }
 
     /// <summary>A service suspended well past the fourteen-day limit is terminated.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceSuspendedPastTheLimit_IsTerminated()
     {
@@ -164,6 +166,7 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     }
 
     /// <summary>A service suspended only recently is left alone.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceSuspendedRecently_IsNotTerminated()
     {
@@ -179,6 +182,7 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     }
 
     /// <summary>An Active service is never picked up by the suspended-only filter, however old.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ActiveService_IsNeverTerminatedByThisCron()
     {
@@ -207,6 +211,7 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     /// The threshold is read from the host clock: a service suspended a day ago is left alone today
     /// and terminated once the clock stands past the fourteen-day limit.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceSuspendedRecently_IsTerminatedOnceTheClockPassesTheLimit()
     {

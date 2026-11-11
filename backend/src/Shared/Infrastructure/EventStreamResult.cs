@@ -1,10 +1,8 @@
 using System.Diagnostics;
 using System.Text;
 using Innovayse.Hostpanel.Shared.Models;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Innovayse.Hostpanel.Shared.Infrastructure;

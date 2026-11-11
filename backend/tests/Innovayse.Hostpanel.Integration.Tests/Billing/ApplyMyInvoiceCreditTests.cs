@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ApplyMyInvoiceCreditTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Applying part of the balance lowers what the invoice owes and the balance, and records the move.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AppliesPartOfTheBalanceToTheCallersInvoice()
     {
@@ -40,6 +41,7 @@ public sealed class ApplyMyInvoiceCreditTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Credit that covers all that is owed settles the invoice in the same save.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreditThatCoversTheInvoice_Settles()
     {
@@ -56,6 +58,7 @@ public sealed class ApplyMyInvoiceCreditTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Another client's invoice and an invoice that does not exist are both 404, so ids cannot be enumerated; nothing moves.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnotherClientsInvoice_IsNotFound()
     {
@@ -76,6 +79,7 @@ public sealed class ApplyMyInvoiceCreditTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An invoice id in the body is ignored: the route names the invoice, so a body cannot aim the credit elsewhere.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheRouteInvoiceWinsOverTheBody()
     {
@@ -93,6 +97,7 @@ public sealed class ApplyMyInvoiceCreditTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>More than the balance holds is refused with its code; so is more than the invoice owes, and a closed invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesWhatTheBalanceOrTheInvoiceCannotTake()
     {
@@ -117,6 +122,7 @@ public sealed class ApplyMyInvoiceCreditTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An amount of nothing is a malformed request.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesANonPositiveAmount()
     {
@@ -130,6 +136,7 @@ public sealed class ApplyMyInvoiceCreditTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Nobody is not a client: the route needs a signed-in one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NeedsASignedInClient()
     {
@@ -142,6 +149,7 @@ public sealed class ApplyMyInvoiceCreditTests(IntegrationTestFactory factory) : 
     /// Two applications of the same balance to two invoices at once: the balance is never overspent. One lands, the other is
     /// refused (short balance, or the balance moved underneath it), and the history holds exactly the one move.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoApplicationsOfOneBalance_NeverOverspendIt()
     {

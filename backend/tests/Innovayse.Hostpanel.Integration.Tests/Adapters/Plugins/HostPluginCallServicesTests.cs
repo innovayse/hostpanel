@@ -1,4 +1,7 @@
 using System.Reflection;
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Host;
+using Hostpanel.Sdk.Plugins.Store;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Plugins.Common;
@@ -10,9 +13,6 @@ using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Host;
-using Hostpanel.Sdk.Plugins.Store;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -43,6 +43,7 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
     /// A binding with a client stores under exactly the binding's reference, not one derived again from the client id,
     /// and lists that client's services.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BindingWithAClient_StoresUnderTheBindingsReference_AndListsItsServicesAsync()
     {
@@ -65,6 +66,7 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>The host facts the factory builds follow the binding's permissions: without the services right, no services.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheFacts_FollowTheBindingsPermissionsAsync()
     {
@@ -84,6 +86,7 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
     /// Each call gets its own quota signal: a store that refuses a write over the quota raises the signal of its own call
     /// and leaves another call's signal down.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheQuotaSignal_IsPerCallAsync()
     {
@@ -111,6 +114,7 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A binding without a client writes plugin wide (null reference) and sees no host facts.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BindingWithoutAClient_StoresPluginWide_AndSeesNoFactsAsync()
     {
@@ -133,6 +137,7 @@ public sealed class HostPluginCallServicesTests(IntegrationTestFactory factory) 
     /// An admin-area binding that carries a client (what #644 will pass) is the same record as the client's own, so a
     /// second instance built from an equal binding reads what the first wrote and sees the same facts.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EqualBindings_ShareTheStoreAndTheFactsAsync()
     {

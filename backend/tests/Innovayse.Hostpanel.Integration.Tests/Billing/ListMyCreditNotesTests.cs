@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ListMyCreditNotesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The caller sees their own notes, newest first, and none of a stranger's or a draft.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_ReturnsOnlyTheCallersIssuedNotes()
     {
@@ -38,6 +39,7 @@ public sealed class ListMyCreditNotesTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A voided note stays in the client's list, marked voided, so the record is complete.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_KeepsAVoidedNote()
     {
@@ -56,6 +58,7 @@ public sealed class ListMyCreditNotesTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A client with no notes gets an empty list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_WithoutNotes_IsEmpty()
     {
@@ -68,6 +71,7 @@ public sealed class ListMyCreditNotesTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>The route needs a session, and staff use their own route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_NeedsAClientSession()
     {

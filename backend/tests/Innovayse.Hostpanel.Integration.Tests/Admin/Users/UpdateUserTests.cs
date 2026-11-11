@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Users;
 public sealed class UpdateUserTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A profile update round-trips the new name and address.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RoundTripsTheProfileAsync()
     {
@@ -40,6 +41,7 @@ public sealed class UpdateUserTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>An unknown subject is refused with <c>USER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownSubject_IsNotFoundAsync()
     {
@@ -58,6 +60,7 @@ public sealed class UpdateUserTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>An address another account holds is refused before anything changes, the name included.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TakenEmail_IsRefusedAndChangesNothingAsync()
     {
@@ -81,6 +84,7 @@ public sealed class UpdateUserTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>Saving the stored address again renames the person without ending their sessions.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SameEmail_KeepsTheSecurityStampAsync()
     {
@@ -101,6 +105,7 @@ public sealed class UpdateUserTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>Moving the address ends the person's sessions: the security stamp changes.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NewEmail_RotatesTheSecurityStampAsync()
     {
@@ -121,6 +126,7 @@ public sealed class UpdateUserTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>An update with a malformed email is refused by the validator before it reaches the handler.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAMalformedEmailAsync()
     {
@@ -160,6 +166,7 @@ public sealed class UpdateUserTests(IntegrationTestFactory factory) : IClassFixt
 #endif
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -177,6 +184,7 @@ public sealed class UpdateUserTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

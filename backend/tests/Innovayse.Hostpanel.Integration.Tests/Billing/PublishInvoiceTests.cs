@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class PublishInvoiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Publishing a draft invoice transitions it to Unpaid.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublishTransitionsADraftToUnpaid()
     {
@@ -29,6 +30,7 @@ public sealed class PublishInvoiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Publishing an invoice that is not a draft is refused with a 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublishingAnAlreadyPublishedInvoiceRefusesBadRequest()
     {
@@ -42,6 +44,7 @@ public sealed class PublishInvoiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Publishing an id that names no invoice answers 404 with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublishUnknownInvoiceRefusesNotFound()
     {
@@ -54,6 +57,7 @@ public sealed class PublishInvoiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Publishing an invoice is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublishRefusesAnonymous()
     {

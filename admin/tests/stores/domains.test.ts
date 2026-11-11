@@ -164,6 +164,14 @@ describe('domainsStore', () => {
     expect(store.actionError).toBeNull()
   })
 
+  it('cancelTransfer reports the unsupported sentence as actionError', async () => {
+    const store = useDomainsStore()
+    stubFetch(problem("The registrar does not offer this action. Please contact the registrar's support.", 409))
+
+    expect(await store.cancelTransfer(3)).toBe(false)
+    expect(store.actionError).toBe("The registrar does not offer this action. Please contact the registrar's support.")
+  })
+
   it('getEppCode returns the code, null on failure', async () => {
     const store = useDomainsStore()
     stubFetch(json({ eppCode: 'ABC123' }))

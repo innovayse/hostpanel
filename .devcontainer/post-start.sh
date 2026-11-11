@@ -18,5 +18,10 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-exec docker compose --project-directory docker \
+docker compose --project-directory docker \
   -f docker/docker-compose.shared.yml -f docker/docker-compose.dev.yml up -d
+
+# The first start builds the images and leaves about 11 GB of build cache that nothing reads again: the sources run from
+# bind mounts, and the images are already built. On the 32 GB disk that cache took the codespace to 84 percent full.
+# A failure here only costs disk space, so it does not fail the start.
+docker builder prune --force >/dev/null 2>&1 || true

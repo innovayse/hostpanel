@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Support.Queries.ListKbArticles;
 
-/// <summary>Returns every knowledge base article, published or not.</summary>
+/// <summary>Lists every knowledge base article, published or not, with all its translations.</summary>
 public sealed class ListKbArticlesHandler
 {
     /// <summary>The module's data context.</summary>
@@ -20,18 +20,19 @@ public sealed class ListKbArticlesHandler
     }
 
     /// <summary>Handles the query.</summary>
-    /// <param name="query">The query; it carries no input.</param>
+    /// <param name="query">The query (no parameters).</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Success with the matching articles. This use case answers no refusal code.</returns>
+    /// <returns>Every article, oldest first.</returns>
     public async Task<Result<IReadOnlyList<KbArticleDto>>> HandleAsync(ListKbArticlesQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var articles = await _context.KbArticles
+        var rows = await _context.KbArticles
             .AsNoTracking()
-            .SelectDto()
+            .OrderBy(a => a.Id)
+            .SelectRows(_context.KbCategories.AsNoTracking())
             .ToListAsync(ct);
 
-        return Result.Success<IReadOnlyList<KbArticleDto>>(articles);
+        return Result.Success<IReadOnlyList<KbArticleDto>>(rows.Select(r => r.ToAdminDto()).ToList());
     }
 }

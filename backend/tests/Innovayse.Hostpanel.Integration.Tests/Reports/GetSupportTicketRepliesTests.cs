@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetSupportTicketRepliesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A staff reply posted today is counted in the Support Ticket Replies report.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CountsAStaffReplyToday()
     {
@@ -42,6 +43,7 @@ public sealed class GetSupportTicketRepliesTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An out-of-range month is refused before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnInvalidMonth()
     {
@@ -53,6 +55,7 @@ public sealed class GetSupportTicketRepliesTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -62,6 +65,7 @@ public sealed class GetSupportTicketRepliesTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

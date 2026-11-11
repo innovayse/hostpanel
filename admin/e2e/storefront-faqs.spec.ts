@@ -70,7 +70,7 @@ test('deleting an entry asks first and then removes the row', async ({ page }) =
   const api = await stubFaqs(page, [{ ...sampleFaq }])
 
   await page.goto('/storefront/faqs')
-  await page.getByTestId(`faq-row-${sampleFaq.id}`).getByTestId('row-actions-trigger').click()
+  await page.getByTestId(`faq-actions-${sampleFaq.id}`).click()
   await page.getByTestId(`faq-delete-${sampleFaq.id}`).click()
   expect(api.callsTo(HttpMethod.Delete, `${COLLECTION}/${sampleFaq.id}`)).toHaveLength(0)
   await page.getByTestId('dialog-confirm').click()

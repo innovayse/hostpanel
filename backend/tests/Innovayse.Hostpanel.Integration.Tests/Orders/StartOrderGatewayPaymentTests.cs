@@ -27,6 +27,7 @@ public sealed class StartOrderGatewayPaymentTests(IntegrationTestFactory factory
             builder.ConfigureTestServices(services => services.AddSingleton<IPaymentPluginResolver>(resolver)));
 
     /// <summary>A wrong payment token is refused as <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WrongTokenRefusesNotFound()
     {
@@ -43,6 +44,7 @@ public sealed class StartOrderGatewayPaymentTests(IntegrationTestFactory factory
     }
 
     /// <summary>An order with no linked invoice is refused as <c>ORDER_NOT_INVOICED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UninvoicedOrderRefusesNotInvoiced()
     {
@@ -59,6 +61,7 @@ public sealed class StartOrderGatewayPaymentTests(IntegrationTestFactory factory
     }
 
     /// <summary>Starting a gateway payment with the right token registers a session and returns a redirect URL.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task StartWithTheRightTokenReturnsARedirectUrl()
     {
@@ -84,6 +87,7 @@ public sealed class StartOrderGatewayPaymentTests(IntegrationTestFactory factory
     /// </summary>
     /// <param name="returnUrl">The return URL the caller supplies.</param>
     /// <param name="code">The error code the refusal carries.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("https://attacker.example/payment/result", HostpanelErrorCodes.RETURN_URL_NOT_ALLOWED)]
     [InlineData("javascript:alert(1)", "VALIDATION_ERROR")]

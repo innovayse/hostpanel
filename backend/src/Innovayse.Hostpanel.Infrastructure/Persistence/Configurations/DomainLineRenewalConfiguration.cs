@@ -10,6 +10,12 @@ namespace Innovayse.Hostpanel.Infrastructure.Persistence.Configurations;
 /// </summary>
 internal sealed class DomainLineRenewalConfiguration : IEntityTypeConfiguration<DomainLineRenewal>
 {
+    /// <summary>
+    /// The name of the unique index on the order line a renewal was made for, the default EF already gave it, named here
+    /// so <see cref="AppDbContext"/> can tell its violation from any other.
+    /// </summary>
+    public const string OrderItemIndex = "IX_DomainLineRenewals_OrderItemId";
+
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<DomainLineRenewal> builder)
     {
@@ -20,7 +26,7 @@ internal sealed class DomainLineRenewalConfiguration : IEntityTypeConfiguration<
 
         // An order line renews at most one domain, once: the database refuses a second row for the line, and the
         // index also serves the lookup "did this line already renew".
-        builder.HasIndex(r => r.OrderItemId).IsUnique();
+        builder.HasIndex(r => r.OrderItemId).IsUnique().HasDatabaseName(OrderItemIndex);
 
         // The per-domain load of the set the renewal use case reads.
         builder.HasIndex(r => r.DomainId);

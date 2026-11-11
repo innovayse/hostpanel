@@ -1,12 +1,11 @@
+using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Payment;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
-using Hostpanel.Sdk.Plugins.Enums;
-using Hostpanel.Sdk.Plugins.Manifest;
-using Hostpanel.Sdk.Plugins.Payment;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -27,7 +26,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
     : IClassFixture<IntegrationTestFactory>
 {
-
     /// <summary>Builds a manifest for the fake plugin under the given module id.</summary>
     /// <param name="module">The module id to register the manifest under.</param>
     /// <param name="type">The manifest's declared plugin type.</param>
@@ -91,6 +89,7 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An enabled, fully configured plugin resolves with the composed configuration.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ResolveAsync_EnabledAndConfigured_ReturnsPluginWithComposedConfig()
     {
@@ -110,6 +109,7 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A secret stored encrypted reaches the plugin as the plain value.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ResolveAsync_EncryptedSecret_ReachesThePluginDecrypted()
     {
@@ -130,6 +130,7 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A plugin the admin has switched off resolves to nothing, whatever its credentials say.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ResolveAsync_Disabled_ReturnsNull()
     {
@@ -146,6 +147,7 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A plugin missing a required field resolves to nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ResolveAsync_MissingRequiredField_ReturnsNull()
     {
@@ -161,6 +163,7 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A module nobody registered resolves to nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ResolveAsync_UnknownModule_ReturnsNull()
     {
@@ -173,6 +176,7 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A manifest of the wrong plugin type resolves to nothing even when fully configured.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ResolveAsync_WrongPluginType_ReturnsNull()
     {
@@ -193,6 +197,7 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A missing <c>is_enabled</c> key counts as disabled, not as an error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ResolveAsync_IsEnabledKeyAbsent_ReturnsNull()
     {
@@ -212,6 +217,7 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
     /// type actually implements <see cref="IPaymentPlugin"/> before casting, and fail closed
     /// (null) rather than let an <see cref="InvalidCastException"/> escape the payment path.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ResolveAsync_ManifestClaimsPaymentButImplementationDoesNotImplementIPaymentPlugin_ReturnsNullWithoutThrowing()
     {
@@ -234,6 +240,7 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An admin-configured setting overrides the same key in the host's own configuration.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ResolveAsync_SettingsOverrideHostConfiguration()
     {
@@ -267,6 +274,7 @@ public sealed class PaymentPluginResolverTests(IntegrationTestFactory factory)
     /// The plugin sees only its own section: a host value under <c>integration:{id}</c> and its
     /// settings reach it, while the host's connection strings, keys and other integrations do not.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ResolveAsync_PassesOnlyThePluginsOwnConfiguration()
     {

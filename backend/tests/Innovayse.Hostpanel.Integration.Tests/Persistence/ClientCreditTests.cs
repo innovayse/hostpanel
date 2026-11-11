@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Persistence;
 public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An addition is saved by the caller's save and reports the new balance.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddAsync_ThenSave_RaisesTheBalanceAsync()
     {
@@ -37,6 +38,7 @@ public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A change whose caller never saves is not written.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddAsync_WithoutSave_WritesNothingAsync()
     {
@@ -52,6 +54,7 @@ public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A deduction within the balance is saved by the caller's save.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeductAsync_ThenSave_LowersTheBalanceAsync()
     {
@@ -71,6 +74,7 @@ public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>More than the balance is refused with <c>CLIENT_CREDIT_INSUFFICIENT</c> and stages nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeductAsync_MoreThanTheBalance_RefusesAndStagesNothingAsync()
     {
@@ -90,6 +94,7 @@ public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An id that names no client is refused with <c>CLIENT_NOT_FOUND</c> either way.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownClient_IsRefusedAsync()
     {
@@ -107,6 +112,7 @@ public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFi
     /// Two units of work both read the same balance and both deduct it in full: the first save wins,
     /// the second conflicts on the client's row version, and the balance is never overspent.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeductAsync_TwoConcurrentWriters_SecondSaveConflictsAsync()
     {
@@ -133,6 +139,7 @@ public sealed class ClientCreditTests(IntegrationTestFactory factory) : IClassFi
     /// An addition saved while another writer changed the balance underneath is retried once on the
     /// fresh row, so both changes land.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddAndSaveAsync_AfterAConcurrentChange_RetriesOnTheFreshBalanceAsync()
     {

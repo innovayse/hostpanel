@@ -1,8 +1,7 @@
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Provisioning.Commands.ChangePassword;
-using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Shared.Models;
 using Wolverine;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
 
 namespace Innovayse.Hostpanel.Application.Provisioning.Commands.ChangeMyServicePassword;
 

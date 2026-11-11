@@ -1,5 +1,3 @@
-using Innovayse.Hostpanel.Domain.Domains.Enums;
-
 namespace Innovayse.Hostpanel.Application.Domains.Commands.CreateTldConfig;
 
 /// <summary>Command to create a new TLD configuration with pricing and administrative settings.</summary>

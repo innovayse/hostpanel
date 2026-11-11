@@ -9,5 +9,5 @@ public interface IPluginCallScopeFactory
 {
     /// <summary>Opens a new scope, independent of the request's and the use case's.</summary>
     /// <returns>The scope; whoever holds it disposes it once the call, or the stream it answered with, is over.</returns>
-    IPluginCallScope Open();
+    public IPluginCallScope Open();
 }

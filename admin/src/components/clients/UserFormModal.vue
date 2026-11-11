@@ -28,6 +28,7 @@ import UiText from '@/components/ui/UiText.vue'
 import type { UserDetail } from '@/types/useraccount'
 import { ClientPermission, PERMISSION_LABELS } from '@/types/clientuser'
 import { LANGUAGE_OPTIONS } from '@/lib/constants'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -237,7 +238,7 @@ const confirmDelete = (): void => {
       <UiStack gap="sm">
         <UiHeading :level="3" variant="card">{{ t('shared.accounts') }}</UiHeading>
 
-        <UiTable v-if="user.accounts.length > 0" density="compact" data-testid="clients-userform-accounts">
+        <UiTable v-if="user.accounts.length > 0" :density="UiTableDensity.Compact" data-testid="clients-userform-accounts">
           <UiTableHead>
             <UiTableRow>
               <UiTableHeader>{{ t('shared.id') }}</UiTableHeader>

@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class ListPublishedAnnouncementsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A signed-in member reads the published announcements feed, drafts excluded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PublishedAnnouncementsFeedExcludesDraftsAsync()
     {
@@ -42,6 +43,7 @@ public sealed class ListPublishedAnnouncementsTests(IntegrationTestFactory facto
     }
 
     /// <summary>A caller with no credential cannot read the published announcements feed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

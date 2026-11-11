@@ -27,24 +27,30 @@ public sealed class GetRegistryPluginHandler
     /// <summary>The version of the running Hostpanel build.</summary>
     private readonly IInstalledVersionProvider _hostVersion;
 
+    /// <summary>Makes sure this installation is verified by the registry before the versions of a restricted plugin are asked for.</summary>
+    private readonly RegistryInstanceEnrollment _enrollment;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="registry">The plugin registry.</param>
     /// <param name="store">Reads the plugins installed on disk.</param>
     /// <param name="db">Reads the stored licence key.</param>
     /// <param name="cipher">Decrypts the stored licence key.</param>
     /// <param name="hostVersion">The version of the running Hostpanel build.</param>
+    /// <param name="enrollment">Makes sure this installation is verified by the registry before the versions of a restricted plugin are asked for.</param>
     public GetRegistryPluginHandler(
         IPluginRegistryClient registry,
         IPluginPackageStore store,
         IHostpanelDbContext db,
         ISecretSettingCipher cipher,
-        IInstalledVersionProvider hostVersion)
+        IInstalledVersionProvider hostVersion,
+        RegistryInstanceEnrollment enrollment)
     {
         _registry = registry;
         _store = store;
         _db = db;
         _cipher = cipher;
         _hostVersion = hostVersion;
+        _enrollment = enrollment;
     }
 
     /// <summary>Returns the details of one registry plugin.</summary>
@@ -52,7 +58,9 @@ public sealed class GetRegistryPluginHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The details; <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c> when the registry does not list the plugin; <c>PLUGIN_REGISTRY_LICENCE_REQUIRED</c>
-    /// or <c>PLUGIN_REGISTRY_LICENCE_INVALID</c> when the registry refuses to show it without a good key; or another
+    /// or <c>PLUGIN_REGISTRY_LICENCE_INVALID</c> when the registry refuses to show it without a good key; for a host only plugin
+    /// <c>PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED</c> and the other <c>PLUGIN_REGISTRY_INSTANCE_*</c> failures of the registration or of a
+    /// signed call; or another
     /// <c>PLUGIN_REGISTRY_*</c> failure when the registry cannot be used.
     /// </returns>
     public async Task<Result<RegistryPluginDetailsDto>> HandleAsync(GetRegistryPluginQuery query, CancellationToken ct)
@@ -71,7 +79,18 @@ public sealed class GetRegistryPluginHandler
             return Result<RegistryPluginDetailsDto>.FailureCode(HostpanelErrorCodes.PLUGIN_REGISTRY_PLUGIN_NOT_FOUND);
         }
 
-        var listed = await _registry.ListVersionsAsync(query.PluginId, licence, ct);
+        // A restricted plugin lists its versions only to a verified installation, with no licence key.
+        var distribution = details.Summary.Distribution;
+        if (distribution == PluginRegistryDistribution.HostOnly)
+        {
+            var enrolled = await _enrollment.EnsureVerifiedAsync(force: false, ct);
+            if (enrolled.IsFailure)
+            {
+                return Result<RegistryPluginDetailsDto>.FailureCode(enrolled.ErrorCode!);
+            }
+        }
+
+        var listed = await _registry.ListVersionsAsync(query.PluginId, licence, ct, distribution);
         if (listed.IsFailure)
         {
             return Result<RegistryPluginDetailsDto>.FailureCode(listed.ErrorCode!);

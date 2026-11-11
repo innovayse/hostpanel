@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Shared.Settings;
 using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;

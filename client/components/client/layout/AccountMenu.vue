@@ -1,5 +1,5 @@
 <template>
-  <UiPopover v-model="open" panel-class="absolute right-0 top-full mt-2 w-[min(280px,calc(100vw-32px))]">
+  <UiPopover v-model="open" panel-class="w-[280px]">
     <template #trigger="{ toggle }">
       <UiButton
         variant="ghost"

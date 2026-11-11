@@ -25,6 +25,7 @@ public sealed class UpdateEmailForwardingRuleTests(IntegrationTestFactory factor
     /// <see langword="true"/>.
     /// Then delete.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddUpdateDeleteEmailForwardingRule_OmittedIsActiveStaysTrue_SucceedsAsync()
     {
@@ -58,6 +59,7 @@ public sealed class UpdateEmailForwardingRuleTests(IntegrationTestFactory factor
     }
 
     /// <summary>Updating a rule on an unknown domain answers 404 with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateEmailForwardingRule_UnknownDomain_Returns404Async()
     {
@@ -72,6 +74,7 @@ public sealed class UpdateEmailForwardingRuleTests(IntegrationTestFactory factor
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateEmailForwardingRule_WithoutToken_Returns401Async()
     {
@@ -85,6 +88,7 @@ public sealed class UpdateEmailForwardingRuleTests(IntegrationTestFactory factor
     }
 
     /// <summary>A non-positive rule id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateEmailForwardingRule_NonPositiveRuleId_Returns400ValidationErrorAsync()
     {

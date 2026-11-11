@@ -14,7 +14,11 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>The summary groups its figures: invoices per status, transaction totals, record counts and the credit balance.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryGroupsItsFigures()
     {
@@ -34,6 +38,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     /// A partially refunded invoice is counted under its own status, with its total, and no longer
     /// under Paid or Refunded.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryCountsAPartiallyRefundedInvoiceUnderItsOwnStatus()
     {
@@ -41,7 +46,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var now = DateTimeOffset.UtcNow;
+            var now = SeededAt;
             var invoice = Invoice.Create(clientId, now.AddDays(7), "USD", now);
             invoice.AddItem("Hosting", 40m, 1);
             context.Invoices.Add(invoice);
@@ -69,6 +74,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     /// A client with paid invoices in USD and in AMD gets a separate total per currency, never one
     /// mixed sum, and the transaction figures split the same way, including money going out and fees.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryKeepsTheTotalsOfEachCurrencySeparate()
     {
@@ -76,7 +82,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var now = DateTimeOffset.UtcNow;
+            var now = SeededAt;
             foreach (var (currency, amount) in new[] { ("USD", 40m), ("AMD", 20000m), ("USD", 10m) })
             {
                 var invoice = Invoice.Create(clientId, now.AddDays(7), currency, now);
@@ -111,6 +117,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The credit balance is answered in the client's billing currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryReportsTheCreditBalanceInTheBillingCurrency()
     {
@@ -136,6 +143,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     /// A client with no billing currency and no credit answers the base currency: there is no invoice and
     /// no balance that could name another.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryForAClientWithoutACurrencyReportsTheBaseCurrency()
     {
@@ -161,6 +169,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     /// invoice, the same stand-in the rest of billing uses, not in the base currency and not in an older
     /// invoice's currency. The two invoices are saved apart, so the later one has the higher id.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryForAClientWithoutACurrencyButWithCreditUsesTheLatestInvoiceCurrency()
     {
@@ -172,7 +181,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
             var baseCode = (await context.GetBaseCurrencyAsync(CancellationToken.None)).Code;
             var codes = new[] { "AMD", "EUR", "GBP" }.Where(c => !string.Equals(c, baseCode, StringComparison.OrdinalIgnoreCase)).ToArray();
             var (earlier, later) = (codes[0], codes[1]);
-            var now = DateTimeOffset.UtcNow;
+            var now = SeededAt;
 
             var first = Invoice.Create(clientId, now.AddDays(7), earlier, now);
             first.AddItem("Hosting", 1000m, 1);
@@ -203,6 +212,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     /// A client with no billing currency and an invoice but no credit has nothing to place, so the base
     /// currency is answered, not the invoice's.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryForAClientWithoutACurrencyWithAnInvoiceButNoCreditReportsTheBaseCurrency()
     {
@@ -213,7 +223,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             baseCode = (await context.GetBaseCurrencyAsync(CancellationToken.None)).Code;
             var invoiceCode = string.Equals(baseCode, "AMD", StringComparison.OrdinalIgnoreCase) ? "EUR" : "AMD";
-            var now = DateTimeOffset.UtcNow;
+            var now = SeededAt;
             var invoice = Invoice.Create(clientId, now.AddDays(7), invoiceCode, now);
             invoice.AddItem("Hosting", 1000m, 1);
             context.Invoices.Add(invoice);
@@ -236,6 +246,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
         list.EnumerateArray().ToDictionary(e => e.GetProperty("currency").GetString()!, e => e.GetProperty("amount").GetDecimal());
 
     /// <summary>The summary for a real client answers 200.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryReturnsOkForARealClient()
     {
@@ -251,6 +262,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     /// The handler documents no refusal: an unknown client id answers a zero-valued summary
     /// rather than <c>CLIENT_NOT_FOUND</c>, the dashboard having never distinguished the two.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryForAnUnknownClientStillAnswersOk()
     {
@@ -262,6 +274,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Reading a client's summary is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryRefusesAnonymous()
     {
@@ -271,6 +284,7 @@ public sealed class GetClientSummaryTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A client, who is not staff, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SummaryRefusesAClient()
     {

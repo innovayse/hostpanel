@@ -1,10 +1,14 @@
 using FluentValidation;
+using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Campaigns.Common;
 using Innovayse.Hostpanel.Application.Clients.Commands.AcceptInvitation;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Application.Services.Common;
+using Innovayse.Hostpanel.Application.Support.Common;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Application;
@@ -41,6 +45,12 @@ public static class DependencyInjection
         // One pass of the fulfilment dispatch, run by the scheduled chain and by the pass kicked after a payment.
         services.AddScoped<FulfilmentDispatcher>();
 
+        // Resolves which clients a campaign's segments reach, for the audience count and for fixing the recipients.
+        services.AddScoped<CampaignAudience>();
+
+        // How many campaign mails the send rate still allows, read by the sender before every batch.
+        services.AddScoped<CampaignSendThrottle>();
+
         // Asks the enabled fulfilment plugins to cap a refund before any money moves.
         services.AddScoped<RefundAdviser>();
         services.AddScoped<GatewayPaymentCanceller>();
@@ -55,6 +65,9 @@ public static class DependencyInjection
         // Lists the widgets enabled plugins put into a page slot, for the client and the admin slot index.
         services.AddScoped<PluginSlotIndexBuilder>();
 
+        // The origins a plugin view may frame or link to for the caller, shared by the page reader and the slot widget view.
+        services.AddScoped<PluginFrameOriginResolver>();
+
         // The slot, caller and context checks the client slot index and the slot widget view share.
         services.AddScoped<ClientPluginSlotGate>();
 
@@ -63,8 +76,21 @@ public static class DependencyInjection
         services.AddScoped<SshKeyInstaller>();
         services.AddScoped<SshKeyRevocation>();
 
+        // Gives a new knowledge base article or category a slug nobody else has.
+        services.AddScoped<KbSlugAllocator>();
+        services.AddScoped<KbSlugSaver>();
+
         // The SSH half of the plugin host API: issues and revokes a plugin's identities for the call's client (#758).
         services.AddScoped<PluginSshAccessService>();
+
+        // Which plans a service can move to and what each move costs, shared by the client's option list and the request itself.
+        services.AddScoped<ServicePlanChangeQuoter>();
+        services.AddScoped<ServicePlanChangeSettingsReader>();
+        services.AddScoped<SettingSource>();
+
+        // This installation's identity towards the plugin registry: where it is kept, and the enrolment that registers and verifies it.
+        services.AddScoped<RegistryInstanceStore>();
+        services.AddScoped<RegistryInstanceEnrollment>();
 
         return services;
     }

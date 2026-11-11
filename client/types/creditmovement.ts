@@ -1,7 +1,7 @@
 /**
  * Why a client's credit balance moved, as `Innovayse.Hostpanel.Domain.Billing.Enums.CreditMovementType` serialises.
  *
- * `Program.cs` registers a `JsonStringEnumConverter`, so these arrive as the member names verbatim. All ten members are listed;
+ * `Program.cs` registers a `JsonStringEnumConverter`, so these arrive as the member names verbatim. All thirteen members are listed;
  * the history table names each by its `client.credit.movement.*` sentence.
  *
  * @module types/creditmovement
@@ -32,5 +32,7 @@ export enum CreditMovement {
   /** A credit note issued as account credit put its value on the balance. */
   CreditNoteIssued = 'CreditNoteIssued',
   /** A credit note issued as account credit was voided and its value came off the balance. */
-  CreditNoteVoided = 'CreditNoteVoided'
+  CreditNoteVoided = 'CreditNoteVoided',
+  /** The prorated difference of a downgrade was put on the balance. */
+  PlanChangeCredit = 'PlanChangeCredit'
 }

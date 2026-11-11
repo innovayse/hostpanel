@@ -9,10 +9,12 @@ import type {
   InstallRegistryPluginBody,
   PluginActionResultDto,
   PluginListItemDto,
+  PluginPackagePreviewDto,
   PluginRegistryItemDto,
   PluginRegistryPageDto,
   PluginRegistryQuery,
   PluginSlotWidgetBindingDto,
+  RegistryInstanceDto,
   RegistryPluginDetailsDto,
   SaveLicenceKeyBody,
   SavePluginSlotWidgetProductsBody,
@@ -45,6 +47,15 @@ export const usePluginsApi = () => {
    */
   const installPlugin = (file: File, force = false): Promise<PluginActionResultDto> =>
     upload<PluginActionResultDto>(`${ApiPath.AdminPlugins}/install${force ? '?force=true' : ''}`, file)
+
+  /**
+   * Reads what a plugin ZIP asks for before it is installed; nothing is installed.
+   *
+   * @param file - The ZIP file.
+   * @returns The package's requested access, changelog and supported server versions.
+   */
+  const inspectPlugin = (file: File): Promise<PluginPackagePreviewDto> =>
+    upload<PluginPackagePreviewDto>(`${ApiPath.AdminPlugins}/inspect`, file)
 
   /**
    * Removes an installed plugin.
@@ -134,6 +145,22 @@ export const usePluginsApi = () => {
     })
 
   /**
+   * Reads where this server stands with the plugin registry.
+   *
+   * @returns The registration state; rejects with the registry-disabled code when the registry is switched off.
+   */
+  const getRegistryInstance = (): Promise<RegistryInstanceDto> =>
+    request<RegistryInstanceDto>(`${ApiPath.AdminPlugins}/registry-instance`)
+
+  /**
+   * Registers this server with the plugin registry again at once, ignoring the pause between attempts.
+   *
+   * @returns The registration state after the run; a failed run is still an answer, with its code and sentence.
+   */
+  const retryRegistryInstance = (): Promise<RegistryInstanceDto> =>
+    request<RegistryInstanceDto>(`${ApiPath.AdminPlugins}/registry-instance/retry`, { method: HttpMethod.Post })
+
+  /**
    * Reads the details of one registry plugin.
    *
    * @param id - Plugin id as listed by the registry.
@@ -165,7 +192,7 @@ export const usePluginsApi = () => {
     request<void>(`${ApiPath.AdminPlugins}/registry/${encodeURIComponent(id)}/licence`, { method: HttpMethod.Delete })
 
   return {
-    listPlugins, installPlugin, removePlugin, purgePluginData, restartServer, listSlotWidgets, saveSlotWidgetProducts,
-    browseRegistry, listRegistryUpdates, installFromRegistry, getRegistryDetails, saveLicenceKey, removeLicenceKey,
+    listPlugins, inspectPlugin, installPlugin, removePlugin, purgePluginData, restartServer, listSlotWidgets, saveSlotWidgetProducts,
+    browseRegistry, listRegistryUpdates, installFromRegistry, getRegistryInstance, retryRegistryInstance, getRegistryDetails, saveLicenceKey, removeLicenceKey,
   }
 }

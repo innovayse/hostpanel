@@ -204,6 +204,8 @@
     "registrarLock": "Блокировка регистратора",
     "renewDomain": "Продлить домен",
     "numberOfYears": "Количество лет",
+    "cancelTransfer": "Отменить трансфер",
+    "cancelThisTransferAtThe": "Отменить ожидающий трансфер у регистратора?",
     "registerDomain": "Зарегистрировать домен",
     "registerThisDomainWithThe": "Зарегистрировать этот домен у регистратора?",
     "eppAuthorizationCode": "Код авторизации EPP",
@@ -611,7 +613,8 @@
       "PaymentSurplus": "Платёж сверх счёта",
       "TransactionReversed": "Запись журнала отменена",
       "CreditNoteIssued": "Кредит-нота выписана на баланс клиента",
-      "CreditNoteVoided": "Кредит-нота аннулирована"
+      "CreditNoteVoided": "Кредит-нота аннулирована",
+      "PlanChangeCredit": "Кредит за переход на дешёвый тариф"
     }
   }
 }

@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.Infrastructure.Integrations.GitHub;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.Hostpanel.Shared.Settings;
 using Microsoft.Extensions.Options;
 
@@ -30,6 +29,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     }
 
     /// <summary>Builds a <see cref="GitHubReleasesClient"/> aimed at the stub server.</summary>
+    /// <returns>The client.</returns>
     private GitHubReleasesClient BuildClient()
     {
         var http = new HttpClient { BaseAddress = _stubServer.BaseAddress };
@@ -38,6 +38,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     }
 
     /// <summary>A published release with a standard tag returns a populated release info record.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetLatestAsync_PublishedRelease_ReturnsParsedInfo()
     {
@@ -59,6 +60,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     }
 
     /// <summary>The leading <c>v</c> is stripped from the tag name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetLatestAsync_TagWithLeadingV_StripsOnlyOneV()
     {
@@ -78,6 +80,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     }
 
     /// <summary>A tag with two leading <c>v</c> characters strips only the first one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetLatestAsync_TagWithDoubleLeadingV_StripsOnlyFirstV()
     {
@@ -97,6 +100,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     }
 
     /// <summary>A tag without a leading <c>v</c> is returned unchanged.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetLatestAsync_TagWithoutLeadingV_ReturnsTagAsIs()
     {
@@ -116,6 +120,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     }
 
     /// <summary>A draft release is ignored and <see langword="null"/> is returned.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetLatestAsync_DraftRelease_ReturnsNull()
     {
@@ -135,6 +140,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     }
 
     /// <summary>A pre-release is ignored and <see langword="null"/> is returned.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetLatestAsync_Prerelease_ReturnsNull()
     {
@@ -154,6 +160,7 @@ public sealed class GitHubReleasesClientTests : IAsyncLifetime
     }
 
     /// <summary>A release with an empty tag name is ignored and <see langword="null"/> is returned.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetLatestAsync_EmptyTag_ReturnsNull()
     {

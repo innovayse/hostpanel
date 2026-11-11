@@ -204,6 +204,8 @@
     "registrarLock": "Գրանցողի արգելափակում",
     "renewDomain": "Երկարաձգել դոմեյնը",
     "numberOfYears": "Տարիների քանակ",
+    "cancelTransfer": "Չեղարկել փոխանցումը",
+    "cancelThisTransferAtThe": "Չեղարկե՞լ ընթացող փոխանցումը գրանցողի մոտ։",
     "registerDomain": "Գրանցել դոմեյնը",
     "registerThisDomainWithThe": "Գրանցե՞լ այս դոմեյնը գրանցողի մոտ",
     "eppAuthorizationCode": "EPP թույլտվության կոդ",
@@ -611,7 +613,8 @@
       "PaymentSurplus": "Հաշվից ավել վճարում",
       "TransactionReversed": "Մատյանի գրառումը չեղարկվեց",
       "CreditNoteIssued": "Կրեդիտ-նոտան տրվեց հաճախորդի մնացորդին",
-      "CreditNoteVoided": "Կրեդիտ-նոտան չեղարկվեց"
+      "CreditNoteVoided": "Կրեդիտ-նոտան չեղարկվեց",
+      "PlanChangeCredit": "Կրեդիտ ավելի էժան սակագնին անցնելու համար"
     }
   }
 }

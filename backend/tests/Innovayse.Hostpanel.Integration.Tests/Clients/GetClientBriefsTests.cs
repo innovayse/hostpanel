@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class GetClientBriefsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A known id comes back with its name and status; an unknown id is left out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_KnownAndUnknownIds_ReturnsOnlyTheKnownClientAsync()
     {
@@ -35,6 +36,7 @@ public sealed class GetClientBriefsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A record named by its owner's subject is found, and asking for the address resolves it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_BySubjectWithEmail_ResolvesTheOwnersAddressAsync()
     {
@@ -49,6 +51,7 @@ public sealed class GetClientBriefsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A record named both by id and by subject is answered once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_SameRecordByIdAndSubject_ReturnsItOnceAsync()
     {
@@ -60,6 +63,7 @@ public sealed class GetClientBriefsTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>No keys answer an empty list without touching the database.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NoKeys_ReturnsEmptyAsync()
     {

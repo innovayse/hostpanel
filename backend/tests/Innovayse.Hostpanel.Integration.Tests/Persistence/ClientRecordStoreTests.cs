@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Persistence;
 public sealed class ClientRecordStoreTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A record saved while another writer already holds the user's row yields that row, not an error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddOrGetReturnsTheExistingRecordWhenTheUserAlreadyHasOne()
     {
@@ -44,6 +45,7 @@ public sealed class ClientRecordStoreTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A record for a user nobody has saved yet is stored and reported as created.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddOrGetSavesTheCandidateWhenTheUserHasNoRecord()
     {

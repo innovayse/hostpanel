@@ -20,6 +20,7 @@ import { i18n } from '@/i18n'
 import { API_BASE } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
 import { MimeType } from '@/types/http'
+import type { ServerSentEvent } from '@/types/http'
 import type { DownloadedFile } from '@/types/download'
 
 /**
@@ -253,5 +254,156 @@ export const useApi = () => {
     return { blob: await response.blob(), fileName: fileNameOf(response) }
   }
 
-  return { request, upload, probe, download }
+  /**
+   * Posts a JSON body to a streaming endpoint and hands each server-sent event over as it arrives.
+   *
+   * Read with `fetch` and the response's reader, never `EventSource`, which cannot send the CSRF and
+   * language headers. A 2xx answer that is not `text/event-stream` is refused like a broken upstream.
+   *
+   * @param endpoint - API path (e.g. '/admin/plugins/sites/ext/chat').
+   * @param body - The JSON body.
+   * @param onEvent - Called with each event, in order.
+   * @param signal - Aborting it closes the stream; the promise then resolves.
+   * @returns Resolves when the stream ended or was aborted.
+   * @throws {ApiError} When the API refuses the call, answers something other than a stream, or one
+   *   event grows past {@link MAX_STREAM_EVENT_CHARS}; whatever reading throws when the connection breaks.
+   */
+  const stream = async (
+    endpoint: string,
+    body: unknown,
+    onEvent: (event: ServerSentEvent) => void,
+    signal: AbortSignal,
+  ): Promise<void> => {
+    let response: Response
+    try {
+      response = await fetch(`${API_BASE}${endpoint}`, {
+        method: HttpMethod.Post,
+        body: JSON.stringify(body),
+        signal,
+        headers: { 'Content-Type': MimeType.Json, Accept: MimeType.EventStream, ...CSRF_HEADER, ...languageHeader() },
+      })
+    } catch (cause) {
+      if (signal.aborted) {
+        return
+      }
+      throw cause
+    }
+    if (!response.ok) {
+      throw await failureOf(response)
+    }
+    if (!(response.headers.get('Content-Type') ?? '').startsWith(MimeType.EventStream) || response.body === null) {
+      throw new ApiError(BROKEN_STREAM_STATUS, null)
+    }
+    await readEventStream(response.body, onEvent, signal)
+  }
+
+  return { request, upload, probe, download, stream }
+}
+
+/** The status a stream that cannot be read is refused with, the one a broken upstream answer gets everywhere else. */
+const BROKEN_STREAM_STATUS = 502
+
+/** The event name of a server-sent event that names none. */
+const DEFAULT_EVENT = 'message'
+
+/** The most characters one unfinished event may hold before the stream is given up: 1 Mi characters. */
+export const MAX_STREAM_EVENT_CHARS = 1024 * 1024
+
+/**
+ * Parses one server-sent event block (the lines between two blank lines).
+ *
+ * @param block - The block's text, line ends already `\n`.
+ * @returns The event, or null for a block holding only comments (a heartbeat).
+ */
+const parseEventBlock = (block: string): ServerSentEvent | null => {
+  let type = DEFAULT_EVENT
+  const data: string[] = []
+  for (const line of block.split('\n')) {
+    if (line === '' || line.startsWith(':')) {
+      continue
+    }
+    const colon = line.indexOf(':')
+    const name = colon === -1 ? line : line.slice(0, colon)
+    const value = colon === -1 ? '' : line.slice(colon + 1).replace(/^ /, '')
+    if (name === 'event') {
+      type = value
+    } else if (name === 'data') {
+      data.push(value)
+    }
+  }
+  if (data.length === 0) {
+    return null
+  }
+  const text = data.join('\n')
+  try {
+    return { type, data: JSON.parse(text) as unknown }
+  } catch {
+    return { type, data: text }
+  }
+}
+
+/**
+ * Reads a server-sent event stream to its end, handing each event over as it arrives. Line ends are
+ * normalised after joining chunks, so a `\r\n` split across two chunks stays one line end.
+ *
+ * @param body - The response body.
+ * @param onEvent - Called with each event, in order.
+ * @param signal - Aborting it stops reading and releases the stream; the promise then resolves.
+ * @returns Resolves when the stream ended or was aborted.
+ * @throws {ApiError} With status 502 when one event passes {@link MAX_STREAM_EVENT_CHARS}; whatever reading throws otherwise.
+ */
+export const readEventStream = async (
+  body: ReadableStream<Uint8Array>,
+  onEvent: (event: ServerSentEvent) => void,
+  signal: AbortSignal,
+): Promise<void> => {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  /**
+   * Cancels the read in flight, so an abort does not wait for the next chunk.
+   *
+   * @returns Nothing.
+   */
+  const stop = (): void => {
+    reader.cancel().catch(() => undefined)
+  }
+  signal.addEventListener('abort', stop, { once: true })
+  let buffer = ''
+  let heldReturn = ''
+  try {
+    while (!signal.aborted) {
+      const { done, value } = await reader.read()
+      if (done) {
+        break
+      }
+      let text = heldReturn + decoder.decode(value, { stream: true })
+      heldReturn = text.endsWith('\r') ? '\r' : ''
+      text = heldReturn ? text.slice(0, -1) : text
+      const from = Math.max(0, buffer.length - 1)
+      buffer += text.replace(/\r\n?/g, '\n')
+      let start = 0
+      let end = buffer.indexOf('\n\n', from)
+      while (end !== -1) {
+        const event = parseEventBlock(buffer.slice(start, end))
+        if (event && !signal.aborted) {
+          onEvent(event)
+        }
+        start = end + 2
+        end = buffer.indexOf('\n\n', start)
+      }
+      buffer = buffer.slice(start)
+      // One event may not grow without end: a stream that never closes an event would hold the tab's memory.
+      if (buffer.length > MAX_STREAM_EVENT_CHARS) {
+        stop()
+        throw new ApiError(BROKEN_STREAM_STATUS, null)
+      }
+    }
+  } catch (cause) {
+    if (!signal.aborted) {
+      throw cause
+    }
+  } finally {
+    signal.removeEventListener('abort', stop)
+    reader.releaseLock()
+  }
 }

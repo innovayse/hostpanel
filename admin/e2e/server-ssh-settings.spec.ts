@@ -35,7 +35,7 @@ test('generating an identity shows an installer command that verifies the bundle
   })
 
   await page.goto('/servers')
-  await page.getByTestId(`server-row-${hostServer.id}`).getByTestId('row-actions-trigger').click()
+  await page.getByTestId(`server-actions-${hostServer.id}`).click()
   await page.getByTestId(`server-ssh-${hostServer.id}`).click()
   await expect(page.getByTestId('server-ssh-install-command')).toHaveCount(0)
   await page.getByTestId('server-ssh-generate').click()
@@ -68,7 +68,7 @@ test('enabling keeps the stored private key and stays in the dialog with a confi
   })
 
   await page.goto('/servers')
-  await page.getByTestId(`server-row-${hostServer.id}`).getByTestId('row-actions-trigger').click()
+  await page.getByTestId(`server-actions-${hostServer.id}`).click()
   await page.getByTestId(`server-ssh-${hostServer.id}`).click()
   await expect(page.getByTestId('server-ssh-hostname')).toHaveValue(hostServerSsh.sshHostname)
   await expect(page.getByTestId('server-ssh-private-key')).toHaveValue('')
@@ -99,7 +99,7 @@ test('a failed agent test says why in words', async ({ page }) => {
   })
 
   await page.goto('/servers')
-  await page.getByTestId(`server-row-${hostServer.id}`).getByTestId('row-actions-trigger').click()
+  await page.getByTestId(`server-actions-${hostServer.id}`).click()
   await page.getByTestId(`server-ssh-${hostServer.id}`).click()
   await page.getByTestId('server-ssh-test').click()
 
@@ -125,7 +125,7 @@ test('a test against an agent installed for another server explains the mismatch
   })
 
   await page.goto('/servers')
-  await page.getByTestId(`server-row-${hostServer.id}`).getByTestId('row-actions-trigger').click()
+  await page.getByTestId(`server-actions-${hostServer.id}`).click()
   await page.getByTestId(`server-ssh-${hostServer.id}`).click()
   await page.getByTestId('server-ssh-test').click()
 

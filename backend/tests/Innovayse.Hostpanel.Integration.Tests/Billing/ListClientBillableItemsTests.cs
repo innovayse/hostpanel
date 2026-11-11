@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ListClientBillableItemsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A newly created client has no billable items yet.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListForAFreshClientIsEmpty()
     {
@@ -28,6 +29,7 @@ public sealed class ListClientBillableItemsTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Uninvoiced items in two currencies give one total per currency, never one mixed sum.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListTotalsUninvoicedItemsPerCurrency()
     {
@@ -56,6 +58,7 @@ public sealed class ListClientBillableItemsTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Items created as <c>usd</c> and <c>USD</c> are one currency and give one total.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListGivesOneTotalForTheSameCurrencyInAnyCase()
     {
@@ -84,6 +87,7 @@ public sealed class ListClientBillableItemsTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Listing a client's billable items is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAnonymous()
     {

@@ -34,6 +34,7 @@ public sealed partial class PascalCaseRenameMigrationTests(IntegrationTestFactor
     /// A database built by the earlier migrations is renamed in full by the migration: it applies without error,
     /// and afterwards no table, index, sequence or constraint carries a lowercase or snake_case name.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Up_OnTheSchemaTheEarlierMigrationsCreate_LeavesOnlyPascalCaseNamesAsync()
     {
@@ -66,6 +67,7 @@ public sealed partial class PascalCaseRenameMigrationTests(IntegrationTestFactor
     /// On a database holding the demo data, going down and up again keeps every row: each table has the same
     /// count after <c>Down</c> and after <c>Up</c> as before, and <c>Up</c> restores exactly the names it started from.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DownThenUp_OnSeededDemoData_KeepsEveryRowAndRestoresTheNamesAsync()
     {
@@ -89,7 +91,7 @@ public sealed partial class PascalCaseRenameMigrationTests(IntegrationTestFactor
         // Tables created by migrations after the rename are dropped by going down past them, so they are not
         // expected in the Down snapshot; they are empty in the demo data, so nothing is lost.
         // Every later migration that creates a table must add it here, or going Down past it fails the comparison.
-        var createdAfterTheRename = new[] { "invoicereminders", "serversshsettings", "sshkeys", "jobruns", "dataprotectionkeys", "fulfilmentrecords", "latestreleases", "plugindataentries", "plugindatascopes", "pluginslotproductbindings", "cardchargeconsents", "gatewaycustomers", "invoicepaymentclaims", "creditnotes", "creditnoteitems", "domainlinerenewals" };
+        var createdAfterTheRename = new[] { "invoicereminders", "serversshsettings", "sshkeys", "jobruns", "dataprotectionkeys", "fulfilmentrecords", "latestreleases", "plugindataentries", "plugindatascopes", "pluginslotproductbindings", "cardchargeconsents", "gatewaycustomers", "invoicepaymentclaims", "creditnotes", "creditnoteitems", "domainlinerenewals", "statuscomponentgroups", "statuscomponents", "statusincidents", "statusincidentupdates", "clientgroups", "servicechangerequests", "emailcampaigns", "emailcampaignsegments", "emailcampaignrecipients", "kbarticletranslations" };
         var rowsExpectedDown = rowsBefore.Where(row => !createdAfterTheRename.Contains(row.Key)).ToDictionary(row => row.Key, row => row.Value);
         (await RowCountsAsync(connectionString)).Should().Equal(rowsExpectedDown, "Down renames in place and copies nothing");
 

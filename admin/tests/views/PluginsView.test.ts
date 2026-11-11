@@ -14,6 +14,7 @@ import { mountRouted } from '../helpers/mount'
 import { stubRoutes as stubAllRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 import { PluginErrorCode } from '@/types/plugin'
+import { makeDetails, makeVersion } from '../helpers/pluginDetails'
 import { PluginSettingKey } from '@/types/setting'
 
 /** One installed plugin as the list endpoint returns it. */
@@ -44,6 +45,22 @@ const plugin = {
 const registryDisabled = (): Response =>
   json({ type: PluginErrorCode.RegistryDisabled, title: 'Disabled', status: 404, detail: 'The registry is off.' }, 404)
 
+/** What the server reads out of an uploaded package, inside this server's version range. */
+const preview = {
+  id: 'example-pay',
+  name: 'Example Pay',
+  version: '1.3.0',
+  author: 'Hostpanel',
+  description: 'Card payments',
+  hostAccess: [],
+  capabilities: ['storedCredentials'],
+  changelog: 'Faster checkout.',
+  minHostVersion: null,
+  maxHostVersion: null,
+  hostVersion: '2.0.0',
+  compatible: true,
+}
+
 /** One registry listing: the installed plugin with a newer version on offer. */
 const listing = {
   id: 'example-pay',
@@ -60,6 +77,17 @@ const listing = {
   installedVersion: '1.2.0',
   updateAvailable: true,
 }
+
+/** The registry details of the updatable plugin: installed 1.2.0, 2.0.0 on offer with notes, 1.3.0 without. */
+const updateDetails = makeDetails({
+  installedVersion: '1.2.0',
+  latestVersion: '2.0.0',
+  versions: [
+    makeVersion({ version: '2.0.0', changelog: 'New **checkout** flow.' }),
+    makeVersion({ version: '1.3.0' }),
+    makeVersion({ version: '1.2.0', changelog: 'Installed notes.' }),
+  ],
+})
 
 /**
  * Stubs the routes a test names plus an empty slot widget list for the plugin: routes match by prefix, so
@@ -229,15 +257,54 @@ describe('PluginsView', () => {
   it('says a newer upload is staged and shows the restart banner', async () => {
     stubRoutes({
       'GET /api/admin/plugins': () => json([plugin]),
+      'POST /api/admin/plugins/inspect': () => json(preview),
       'POST /api/admin/plugins/install': () => json({ requiresRestart: true, stagedVersion: '1.3.0' }),
     })
     const wrapper = await mountPlugins()
 
     wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'new.zip'))
     await flushPromises()
+    await wrapper.get('[data-testid="plugin-install-confirm"]').trigger('click')
+    await flushPromises()
 
     expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Version 1.3.0 uploaded and staged.')
     expect(wrapper.find('[data-testid="plugins-restart-banner"]').exists()).toBe(true)
+  })
+
+  it('shows what an upload asks for and installs nothing until the admin confirms', async () => {
+    const mock = stubRoutes({
+      'GET /api/admin/plugins': () => json([plugin]),
+      'POST /api/admin/plugins/inspect': () => json(preview),
+      'POST /api/admin/plugins/install': () => json({ requiresRestart: true }),
+    })
+    const wrapper = await mountPlugins()
+
+    wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'new.zip'))
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="plugin-install-capability-storedCredentials"]').text()).toContain('saved cards')
+    expect(wrapper.get('[data-testid="plugin-install-changelog"]').text()).toBe('Faster checkout.')
+    expect(mock.mock.calls.some(([url]) => String(url) === '/api/admin/plugins/install')).toBe(false)
+
+    await wrapper.get('[data-testid="plugin-install-cancel"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="plugin-install-dialog"]').exists()).toBe(false)
+    expect(mock.mock.calls.some(([url]) => String(url) === '/api/admin/plugins/install')).toBe(false)
+  })
+
+  it('shows the API sentence when the upload cannot be read', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins': () => json([plugin]),
+      'POST /api/admin/plugins/inspect': () => problem('Not a plugin archive.', 400),
+    })
+    const wrapper = await mountPlugins()
+
+    wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'bad.zip'))
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Not a plugin archive.')
+    expect(wrapper.find('[data-testid="plugin-install-dialog"]').exists()).toBe(false)
   })
 
   it('shows the downgrade refusal and forces the older version after a confirmation', async () => {
@@ -248,10 +315,13 @@ describe('PluginsView', () => {
         { type: 'PLUGIN_DOWNGRADE_REFUSED', title: 'Refused', status: 409, detail: 'Version 1.0.0 is older than 1.2.0.' },
         409,
       ),
+      'POST /api/admin/plugins/inspect': () => json({ ...preview, version: '1.0.0' }),
     })
     const wrapper = await mountPlugins()
 
     wrapper.getComponent(PluginUploader).vm.$emit('upload', new File(['z'], 'old.zip'))
+    await flushPromises()
+    await wrapper.get('[data-testid="plugin-install-confirm"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Version 1.0.0 is older than 1.2.0.')
@@ -404,6 +474,7 @@ describe('PluginsView', () => {
 
   it('installs from the registry, shows the restart banner and the staged sentence', async () => {
     const mock = stubRoutes({
+      'GET /api/admin/plugins/registry/example-pay': () => json(updateDetails),
       'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true, stagedVersion: '2.0.0' }),
       'GET /api/admin/plugins/registry/updates': () => json([listing]),
       'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
@@ -415,6 +486,10 @@ describe('PluginsView', () => {
     await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
     await wrapper.get('[data-testid="registry-install-example-pay"]').trigger('click')
     await flushPromises()
+    // An update of an installed plugin waits for the confirmation.
+    expect(mock.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false)
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    await flushPromises()
 
     const post = mock.mock.calls.find(([, init]) => init?.method === 'POST')
     expect(JSON.parse(String(post?.[1]?.body))).toEqual({ version: '2.0.0', allowDowngrade: false })
@@ -424,6 +499,7 @@ describe('PluginsView', () => {
 
   it('shows the API sentence when the registry install is refused', async () => {
     stubRoutes({
+      'GET /api/admin/plugins/registry/example-pay': () => json(updateDetails),
       'POST /api/admin/plugins/registry/example-pay/install': () => problem('That publisher is not trusted.', 403),
       'GET /api/admin/plugins/registry/updates': () => json([listing]),
       'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
@@ -434,6 +510,8 @@ describe('PluginsView', () => {
 
     await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
     await wrapper.get('[data-testid="registry-install-example-pay"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('That publisher is not trusted.')
@@ -450,6 +528,20 @@ describe('PluginsView', () => {
     const wrapper = await mountPlugins()
 
     expect(wrapper.get('[data-testid="plugin-update-example-pay"]').text()).toContain('2.0.0')
+  })
+
+  it('shows the release notes of the update in the installed list from the update check', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins/registry/updates': () => json([{ ...listing, latestChangelog: 'New **checkout** flow.' }]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+
+    await wrapper.get('[data-testid="plugin-update-notes-toggle-example-pay"]').trigger('click')
+
+    expect(wrapper.get('[data-testid="plugin-update-notes-example-pay"]').find('strong').text()).toBe('checkout')
   })
 
   it('opens the details page from a registry card and from the installed list', async () => {
@@ -473,8 +565,58 @@ describe('PluginsView', () => {
     expect(router.currentRoute.value.path).toBe('/plugins/example-pay')
   })
 
-  it('updates an installed plugin from its Update button', async () => {
+  it('lists what the update changes before it installs, and installs nothing when dismissed', async () => {
     const mock = stubRoutes({
+      'GET /api/admin/plugins/registry/example-pay': () => json(updateDetails),
+      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true }),
+      'GET /api/admin/plugins/registry/updates': () => json([listing]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+
+    await wrapper.get('[data-testid="plugin-update-button-example-pay"]').trigger('click')
+    await flushPromises()
+
+    const dialog = wrapper.get('[data-testid="plugins-update-dialog"]')
+    expect(dialog.text()).toContain('Update example-pay to version 2.0.0')
+    expect(dialog.get('[data-testid="plugin-update-changes-heading"]').text()).toBe('What changes from 1.2.0 to 2.0.0')
+    expect(dialog.get('[data-testid="plugin-update-change-2.0.0"] strong').text()).toBe('checkout')
+    expect(dialog.get('[data-testid="plugin-update-change-1.3.0"]').text()).toContain('No release notes.')
+    expect(dialog.find('[data-testid="plugin-update-change-1.2.0"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="plugins-update-dialog"]').exists()).toBe(false)
+    expect(mock.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(false)
+  })
+
+  it('still lets the admin confirm an update when the notes cannot be read', async () => {
+    const mock = stubRoutes({
+      'GET /api/admin/plugins/registry/example-pay': () => problem('The registry is unavailable.', 503),
+      'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true }),
+      'GET /api/admin/plugins/registry/updates': () => json([listing]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+
+    await wrapper.get('[data-testid="plugin-update-button-example-pay"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="plugin-update-changes"]').exists()).toBe(false)
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
+    await flushPromises()
+
+    expect(mock.mock.calls.some(([, init]) => init?.method === 'POST')).toBe(true)
+  })
+
+  it('updates an installed plugin from its Update button, after the confirmation', async () => {
+    const mock = stubRoutes({
+      'GET /api/admin/plugins/registry/example-pay': () => json(updateDetails),
       'POST /api/admin/plugins/registry/example-pay/install': () => json({ requiresRestart: true, stagedVersion: '2.0.0' }),
       'GET /api/admin/plugins/registry/updates': () => json([listing]),
       'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
@@ -484,6 +626,8 @@ describe('PluginsView', () => {
     const wrapper = await mountPlugins()
 
     await wrapper.get('[data-testid="plugin-update-button-example-pay"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
     const post = mock.mock.calls.find(([, init]) => init?.method === 'POST')
@@ -510,5 +654,65 @@ describe('PluginsView', () => {
 
     expect(mock.mock.calls.some(([url, init]) => String(url) === '/api/admin/plugins/example-pay' && init?.method === 'DELETE')).toBe(true)
     expect(wrapper.get('[data-testid="plugins-feedback"]').text()).toContain('Plugin removed.')
+  })
+})
+
+describe('PluginsView registration card', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  /** A registration that failed, as the server answers it. */
+  const failedInstance = {
+    state: 'Error',
+    instanceId: null,
+    baseUrl: null,
+    errorCode: 'PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID',
+    message: 'The plugin registry cannot use the public address of this Hostpanel.',
+    verifiedAt: null,
+    nextAttemptAt: null,
+  }
+
+  it('shows the registration state on the Browse tab, with the sentence of the last failure', async () => {
+    stubRoutes({
+      'GET /api/admin/plugins/registry-instance': () => json(failedInstance),
+      'GET /api/admin/plugins/registry/updates': () => json([]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+
+    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+
+    expect(wrapper.get('[data-testid="plugin-registry-instance-state"]').text()).toBe('Failed')
+    expect(wrapper.get('[data-testid="plugin-registry-instance-problem"]').text()).toContain('cannot use the public address')
+  })
+
+  it('retries the registration from the card and shows the state the server answers', async () => {
+    const mock = stubRoutes({
+      'POST /api/admin/plugins/registry-instance/retry': () => json({ ...failedInstance, state: 'Verified', errorCode: null, message: null, verifiedAt: '2026-11-08T12:00:00Z' }),
+      'GET /api/admin/plugins/registry-instance': () => json(failedInstance),
+      'GET /api/admin/plugins/registry/updates': () => json([]),
+      'GET /api/admin/plugins/registry': () => json({ items: [listing], total: 1, pageSize: 10 }),
+      'GET /api/admin/plugins': () => json([plugin]),
+      'GET /api/admin/settings': () => json([signingRow]),
+    })
+    const wrapper = await mountPlugins()
+    await wrapper.get('[data-testid="plugins-tab-browse"]').trigger('click')
+
+    await wrapper.get('[data-testid="plugin-registry-instance-retry"]').trigger('click')
+    await flushPromises()
+
+    expect(mock.mock.calls.some(([url, init]) => String(url) === '/api/admin/plugins/registry-instance/retry' && init?.method === 'POST')).toBe(true)
+    expect(wrapper.get('[data-testid="plugin-registry-instance-state"]').text()).toBe('Verified')
+    expect(wrapper.find('[data-testid="plugin-registry-instance-retry"]').exists()).toBe(false)
+  })
+
+  it('asks for no registration state while the registry is switched off', async () => {
+    const mock = stubRoutes({ 'GET /api/admin/plugins': () => json([plugin]) })
+    await mountPlugins()
+
+    expect(mock.mock.calls.some(([url]) => String(url).includes('registry-instance'))).toBe(false)
   })
 })

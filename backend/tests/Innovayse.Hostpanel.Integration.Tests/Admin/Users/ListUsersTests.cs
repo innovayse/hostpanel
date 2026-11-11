@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Users;
 public sealed class ListUsersTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A freshly registered account appears in the admin's page of user summaries.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterThenList_ShowsTheAccountAsync()
     {
@@ -27,6 +28,7 @@ public sealed class ListUsersTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -38,6 +40,7 @@ public sealed class ListUsersTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

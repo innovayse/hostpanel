@@ -35,6 +35,7 @@ public sealed class TicketCreatedHandler
     /// </summary>
     /// <param name="evt">The ticket created domain event.</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the message has been handled.</returns>
     public async Task HandleAsync(TicketCreatedEvent evt, CancellationToken ct)
     {
         var departmentEmail = await _context.Departments

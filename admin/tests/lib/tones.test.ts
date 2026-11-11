@@ -5,10 +5,15 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
+  campaignStatusTone,
   cancellationStatusLabel,
   cancellationStatusTone,
   cancellationTypeLabel,
   cancellationTypeTone,
+  serviceChangeStatusLabel,
+  serviceChangeStatusTone,
+  serviceChangeTypeLabel,
+  serviceChangeTypeTone,
   clientStatusTone,
   contactTypeTone,
   domainStatusTone,
@@ -31,6 +36,7 @@ import {
   ticketStatusTone,
   transactionTypeTone,
 } from '@/lib/tones'
+import { CampaignStatus } from '@/types/emailcampaign'
 import { ClientStatus } from '@/types/client'
 import { ContactType } from '@/types/contact'
 import { DomainStatus } from '@/types/domain'
@@ -42,6 +48,7 @@ import { NetworkIssuePriority, NetworkIssueStatus } from '@/types/networkissue'
 import { OrderItemFulfilmentState, OrderItemStatus, OrderStatus } from '@/types/order'
 import { QuoteStage } from '@/types/quote'
 import { CancellationStatus, CancellationType, ServiceStatus } from '@/types/service'
+import { ServiceChangeStatus, ServiceChangeType } from '@/types/servicechangerequest'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -199,6 +206,17 @@ describe('support tones', () => {
   })
 })
 
+describe('email campaign tones', () => {
+  it('covers every campaign status and marks the extremes', () => {
+    for (const status of Object.values(CampaignStatus)) {
+      expect(campaignStatusTone[status]).toBeDefined()
+    }
+    expect(campaignStatusTone[CampaignStatus.Draft]).toBe(UiTone.Neutral)
+    expect(campaignStatusTone[CampaignStatus.Sending]).toBe(UiTone.Warning)
+    expect(campaignStatusTone[CampaignStatus.Sent]).toBe(UiTone.Success)
+  })
+})
+
 describe('migration tones', () => {
   it('gives every job state and log outcome a tone', () => {
     for (const status of Object.values(MigrationStatus)) {
@@ -257,5 +275,16 @@ describe('cancellation requests', () => {
     expect(cancellationStatusLabel(CancellationStatus.Open)).toBe('Open')
     expect(cancellationStatusLabel(CancellationStatus.Closed)).toBe('Closed')
     expect(cancellationStatusLabel(fromNewerApi<CancellationStatus>('Mystery'))).toBe('Mystery')
+  })
+
+  it('tones and words the plan change types and statuses', () => {
+    expect(serviceChangeTypeTone(ServiceChangeType.Upgrade)).toBe(UiTone.Success)
+    expect(serviceChangeTypeTone(ServiceChangeType.Downgrade)).toBe(UiTone.Primary)
+    expect(serviceChangeStatusTone(ServiceChangeStatus.Pending)).toBe(UiTone.Warning)
+    expect(serviceChangeStatusTone(ServiceChangeStatus.Rejected)).toBe(UiTone.Danger)
+    expect(serviceChangeStatusTone(fromNewerApi<ServiceChangeStatus>('Mystery'))).toBe(UiTone.Neutral)
+    expect(serviceChangeTypeLabel(ServiceChangeType.Downgrade)).toBe('Downgrade')
+    expect(serviceChangeStatusLabel(ServiceChangeStatus.Completed)).toBe('Completed')
+    expect(serviceChangeStatusLabel(fromNewerApi<ServiceChangeStatus>('Mystery'))).toBe('Mystery')
   })
 })

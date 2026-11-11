@@ -79,6 +79,19 @@ describe('PredefinedRepliesView', () => {
     expect(wrapper.get('[data-testid="predefined-replies-reply-add"]').attributes('disabled')).toBeDefined()
   })
 
+  it('opens the in-place edit form of a reply from its row actions menu', async () => {
+    stubPathRoutes(loadRoutes)
+    const wrapper = await mountView(PredefinedRepliesView)
+
+    await wrapper.get('[data-testid="predefined-replies-tab-reply"]').trigger('click')
+    // Edit and delete sit behind the row's own menu trigger.
+    await wrapper.get('[data-testid="predefined-replies-reply-4-actions"]').trigger('click')
+    await wrapper.get('[data-testid="predefined-replies-reply-4-edit"]').trigger('click')
+
+    expect((wrapper.get('[data-testid="predefined-replies-reply-edit-name"]').element as HTMLInputElement).value).toBe('Welcome')
+    expect(wrapper.find('[data-testid="predefined-replies-reply-4-actions"]').exists()).toBe(false)
+  })
+
   it('searches once typing pauses and shows the hits', async () => {
     const mock = stubPathRoutes([...loadRoutes, { path: '/predefined-replies/search', body: [reply] }])
     const wrapper = await mountView(PredefinedRepliesView)
@@ -97,6 +110,7 @@ describe('PredefinedRepliesView', () => {
     const mock = stubPathRoutes(loadRoutes)
     const wrapper = await mountView(PredefinedRepliesView)
 
+    await wrapper.get('[data-testid="predefined-replies-category-1-actions"]').trigger('click')
     await wrapper.get('[data-testid="predefined-replies-category-1-delete"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -114,11 +128,13 @@ describe('PredefinedRepliesView', () => {
     })
     const wrapper = await mountView(PredefinedRepliesView)
 
+    await wrapper.get('[data-testid="predefined-replies-category-1-actions"]').trigger('click')
     await wrapper.get('[data-testid="predefined-replies-category-1-delete"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     await flushPromises()
     expect(mock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === 'DELETE')).toBe(false)
 
+    await wrapper.get('[data-testid="predefined-replies-category-1-actions"]').trigger('click')
     await wrapper.get('[data-testid="predefined-replies-category-1-delete"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()

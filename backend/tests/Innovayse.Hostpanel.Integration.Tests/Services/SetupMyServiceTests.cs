@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class SetupMyServiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Setting up a stranger's service is refused before any provisioning is attempted.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Setup_AStrangersService_Returns404WithServiceNotFound()
     {
@@ -37,6 +38,7 @@ public sealed class SetupMyServiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Setting up the caller's own pending service, with no server registered, refuses, not crashes.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Setup_TheCallersOwnPendingService_WithNoServer_Returns503NoEligibleServer()
     {
@@ -55,6 +57,7 @@ public sealed class SetupMyServiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Setting up a service without authentication is refused before ownership is considered.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Setup_Returns401_WithoutAuthAsync()
     {
@@ -75,6 +78,7 @@ public sealed class SetupMyServiceTests(IntegrationTestFactory factory) : IClass
     /// recorded it, or by an administrator) keeps the earlier behaviour: it passes the payment check
     /// and reaches provisioning, which refuses only because no server is registered for it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Setup_AServiceWithoutFirstInvoice_PassesThePaymentCheck()
     {
@@ -88,6 +92,7 @@ public sealed class SetupMyServiceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A service whose first invoice is still unpaid is refused with 402, before any provisioning.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Setup_WithAnUnpaidFirstInvoice_Returns402FirstInvoiceUnpaid()
     {
@@ -104,6 +109,7 @@ public sealed class SetupMyServiceTests(IntegrationTestFactory factory) : IClass
     /// A service whose first invoice is paid in full passes the payment check and reaches
     /// provisioning, which refuses only because no server is registered for it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Setup_WithAPaidFirstInvoice_PassesThePaymentCheck()
     {

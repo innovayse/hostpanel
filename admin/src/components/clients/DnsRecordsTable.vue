@@ -21,19 +21,20 @@ import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTable from '@/components/ui/UiTable.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiTableBody from '@/components/ui/UiTableBody.vue'
 import UiTableCell from '@/components/ui/UiTableCell.vue'
 import UiTableHead from '@/components/ui/UiTableHead.vue'
 import UiTableHeader from '@/components/ui/UiTableHeader.vue'
 import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
-import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiSize } from '@/utils/ui/size'
 import { UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import type { DnsRecordItem } from '@/types/domain'
 import { DnsRecordType } from '@/types/domain'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -59,11 +60,9 @@ const DEFAULT_TYPE = 'A'
 /** Default TTL, in seconds. */
 const DEFAULT_TTL = '3600'
 
-/** Icon markup (shape tags) of the row buttons. */
+/** Icon markup (shape tags) of the add, save and cancel buttons. */
 const ICONS = {
   add: '<line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />',
-  edit: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />',
-  remove: '<polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />',
   confirm: '<polyline points="20 6 9 17 4 12" />',
   cancel: '<line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />',
 } as const
@@ -272,6 +271,40 @@ const dismissDelete = (): void => {
     deleteTargetId.value = null
   }
 }
+
+/**
+ * The row actions of a DNS record: edit, and delete last (confirmed first).
+ *
+ * @param record - The row.
+ * @returns The action list passed to UiRowActions.
+ */
+const dnsRecordActions = (record: DnsRecordItem): UiRowAction[] => [
+  {
+    label: t('shared.edit'),
+    testid: `clients-dns-edit-${record.id}`,
+    /**
+     * Starts editing this row.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      startEdit(record)
+    },
+  },
+  {
+    label: t('shared.delete'),
+    testid: `clients-dns-delete-${record.id}`,
+    /**
+     * Asks for confirmation, then deletes this row.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      handleDelete(record.id)
+    },
+    danger: true,
+  },
+]
 </script>
 
 <template>
@@ -293,7 +326,7 @@ const dismissDelete = (): void => {
 
       <UiStatusMessage :message="feedback.message.value" :tone="feedbackTone" data-testid="clients-dns-feedback" />
 
-      <UiTable density="compact" :scrollable="false" :empty="isEmpty" :colspan="6" data-testid="clients-dns-table">
+      <UiTable :density="UiTableDensity.Compact" :scrollable="false" :empty="isEmpty" :colspan="6" data-testid="clients-dns-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
@@ -301,7 +334,7 @@ const dismissDelete = (): void => {
             <UiTableHeader>{{ t('shared.value') }}</UiTableHeader>
             <UiTableHeader>{{ t('clients.dnsRecordsTable.ttl') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.priority') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -338,8 +371,8 @@ const dismissDelete = (): void => {
                 <UiNumberInput v-if="draftNeedsPriority" v-model="draftPriority" placeholder="10" data-testid="clients-dns-draft-priority" />
                 <UiText v-else :tone="UiTextTone.Muted">&mdash;</UiText>
               </UiTableCell>
-              <UiTableCell>
-                <UiStack direction="row" gap="xs" :align="UiAlignItems.Center">
+              <UiTableCell actions>
+                <UiStack direction="row" gap="xs" :justify="UiJustify.End" :align="UiAlignItems.Center">
                   <UiIconButton
                     :label="t('shared.save')"
                     :size="UiSize.Sm"
@@ -366,26 +399,8 @@ const dismissDelete = (): void => {
               <UiTableCell>{{ row.record.value }}</UiTableCell>
               <UiTableCell muted>{{ row.record.ttl }}</UiTableCell>
               <UiTableCell muted>{{ row.record.priority ?? '—' }}</UiTableCell>
-              <UiTableCell>
-                <UiStack direction="row" gap="xs" :align="UiAlignItems.Center">
-                  <UiIconButton
-                    :label="t('shared.edit')"
-                    :size="UiSize.Sm"
-                    :data-testid="`clients-dns-edit-${row.record.id}`"
-                    @click="startEdit(row.record)"
-                  >
-                    <UiIcon :markup="ICONS.edit" :size="UiSize.Sm" />
-                  </UiIconButton>
-                  <UiIconButton
-                    :label="t('shared.delete')"
-                    :variant="UiButtonVariant.Ghost"
-                    :size="UiSize.Sm"
-                    :data-testid="`clients-dns-delete-${row.record.id}`"
-                    @click="handleDelete(row.record.id)"
-                  >
-                    <UiIcon :markup="ICONS.remove" :size="UiSize.Sm" />
-                  </UiIconButton>
-                </UiStack>
+              <UiTableCell actions>
+                <UiRowActions :actions="dnsRecordActions(row.record)" :testid="`clients-dns-actions-${row.key}`" />
               </UiTableCell>
             </template>
           </UiTableRow>

@@ -22,6 +22,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration;
 public sealed class DeleteMigrationJobTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Deleting an existing job removes it; getting it afterwards answers 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRemovesTheJob()
     {
@@ -37,6 +38,7 @@ public sealed class DeleteMigrationJobTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Deleting a job removes its import report with it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRemovesTheJobsLogs()
     {
@@ -59,6 +61,7 @@ public sealed class DeleteMigrationJobTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>An id naming no job is refused as missing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesAnUnknownId()
     {
@@ -72,6 +75,7 @@ public sealed class DeleteMigrationJobTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesAnonymous()
     {
@@ -81,6 +85,7 @@ public sealed class DeleteMigrationJobTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A non-positive job id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteRefusesANonPositiveId()
     {

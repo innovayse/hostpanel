@@ -1,10 +1,13 @@
 node_modules
 .vitepress/dist
 .vitepress/cache
-api-reference/generated-sidebar.json
-api-reference/public/
-api-reference/auth/
-api-reference/client/
-api-reference/member/
-api-reference/admin/
-api-reference/_partials/
+en/api-reference/generated-sidebar.json
+en/api-reference/public/
+en/api-reference/auth/
+en/api-reference/client/
+en/api-reference/member/
+en/api-reference/admin/
+en/api-reference/_partials/
+
+# Placeholder pages for the languages, written by the build (scripts/generate-locale-fallbacks.mjs)
+_fallback/

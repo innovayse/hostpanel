@@ -8,6 +8,7 @@
     "addons": "Ծառայության հավելումներ",
     "domainRegistrations": "Դոմենի գրանցումներ",
     "cancellations": "Չեղարկման հայտեր",
+    "planChanges": "Սակագնի փոփոխություն",
     "affiliates": "Կառավարել գործընկերներին"
   },
   "billing": "Հաշվարկներ",
@@ -34,6 +35,7 @@
     "newTicket": "Բացել նոր հայտ",
     "predefinedReplies": "Պատրաստի պատասխաններ",
     "announcements": "Հայտարարություններ",
+    "emailCampaigns": "Էլ. փոստի ուղարկումներ",
     "downloads": "Ներբեռնումներ",
     "knowledgebase": "Գիտելիքների բազա",
     "networkIssues": "Ցանցային խնդիրներ"
@@ -62,5 +64,12 @@
     "locations": "Սերվերների տեղակայում"
   },
   "servicesTitle": "Ծառայություններ",
-  "documentation": "Փաստաթղթեր"
+  "documentation": "Փաստաթղթեր",
+  "sections": {
+    "daily": "Ամենօրյա աշխատանք",
+    "insights": "Վերլուծություն",
+    "setup": "Կարգավորում",
+    "addons": "Հավելումներ",
+    "system": "Համակարգ"
+  }
 }

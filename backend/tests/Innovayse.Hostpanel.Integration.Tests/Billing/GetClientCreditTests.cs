@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetClientCreditTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Staff read the balance, the currency and every line with its description, newest first.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsTheBalanceAndTheHistoryWithTheReasons()
     {
@@ -35,6 +36,7 @@ public sealed class GetClientCreditTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The route id wins over a client id in the query string.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TheRouteIdWinsOverTheQuery()
     {
@@ -50,6 +52,7 @@ public sealed class GetClientCreditTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>An id that names no client is refused with 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnUnknownClient()
     {
@@ -62,6 +65,7 @@ public sealed class GetClientCreditTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The route is staff's: a client reading it, even their own id, is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToClientsAndAnonymousCallers()
     {

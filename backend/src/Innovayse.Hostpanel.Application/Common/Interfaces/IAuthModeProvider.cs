@@ -12,5 +12,5 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 public interface IAuthModeProvider
 {
     /// <summary>True when this deployment owns its own people (ASP.NET Identity); false when an external sign-on provider does.</summary>
-    bool IsLocalMode { get; }
+    public bool IsLocalMode { get; }
 }

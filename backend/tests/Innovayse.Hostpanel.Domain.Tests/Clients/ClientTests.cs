@@ -1,7 +1,6 @@
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Clients.Events;
-using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Domain.Tests.Clients;
 
@@ -609,5 +608,35 @@ public class ClientTests
         client.ImportContact(ContactOf("Jane", "Doe", "jane@example.com"));
 
         Assert.Throws<DomainRuleException>(() => client.ImportContact(ContactOf("Janet", "Roe", "JANE@example.com")));
+    }
+
+    /// <summary>Withdrawing marketing consent clears the flag and leaves every other setting as it was.</summary>
+    [Fact]
+    public void WithdrawMarketingConsent_ClearsOnlyTheMarketingFlag()
+    {
+        var client = Client.Create("user-1", "John", "Doe", "john@example.com", Now);
+        client.UpdateSettings(overdueNotices: false, taxExempt: true, separateInvoices: true, disableCcProcessing: true, marketingOptIn: true, statusUpdate: false, allowSso: false);
+
+        client.WithdrawMarketingConsent();
+
+        Assert.False(client.MarketingOptIn);
+        Assert.False(client.OverdueNotices);
+        Assert.True(client.TaxExempt);
+        Assert.True(client.SeparateInvoices);
+        Assert.True(client.DisableCcProcessing);
+        Assert.False(client.StatusUpdate);
+        Assert.False(client.AllowSso);
+    }
+
+    /// <summary>Withdrawing consent a second time changes nothing and does not fail.</summary>
+    [Fact]
+    public void WithdrawMarketingConsent_WhenAlreadyWithdrawn_StaysWithdrawn()
+    {
+        var client = Client.Create("user-1", "John", "Doe", "john@example.com", Now);
+
+        client.WithdrawMarketingConsent();
+        client.WithdrawMarketingConsent();
+
+        Assert.False(client.MarketingOptIn);
     }
 }

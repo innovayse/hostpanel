@@ -78,13 +78,16 @@ import { computed, onMounted, ref } from 'vue'
 import { Check, ChevronDown, Lock } from 'lucide-vue-next'
 import { onClickOutside } from '@vueuse/core'
 import { useCurrencyStore } from '~/stores/currency'
-import { UiPlacement } from '~/utils/ui/enums'
+import { UiMenuAlign, UiPlacement } from '~/utils/ui/enums'
+import { menuAlignClasses } from '~/utils/ui/menuAlign'
 import { FOCUS_RING, PICKER_TRIGGER } from '~/utils/ui/tones'
 
 /** Props of CurrencySwitcher. */
 interface Props {
   /** Whether the menu opens below or above the trigger. */
   placement?: `${UiPlacement}`
+  /** Edge of the trigger the menu lines up with: `end` (default) for the right end of a header. */
+  align?: `${UiMenuAlign}`
   /** Replaces the default tinted frame of the trigger (shape, spacing and colours); focus and display stay. */
   triggerClass?: string
 }
@@ -92,6 +95,7 @@ interface Props {
 /** Props of the component with their defaults applied. */
 const props = withDefaults(defineProps<Props>(), {
   placement: UiPlacement.Bottom,
+  align: UiMenuAlign.End,
   triggerClass: undefined,
 })
 
@@ -145,7 +149,8 @@ const triggerClasses = computed(() => [
 
 /** Class list of the menu panel. */
 const menuClasses = computed(() => [
-  'absolute left-0 w-36 rounded-xl border border-gray-200 dark:border-white/15 bg-ui-popover shadow-xl shadow-black/10 dark:shadow-black/40 overflow-hidden py-1 z-50',
+  menuAlignClasses(props.align),
+  'w-36 rounded-xl border border-gray-200 dark:border-white/15 bg-ui-popover shadow-xl shadow-black/10 dark:shadow-black/40 overflow-hidden py-1 z-50',
   props.placement === UiPlacement.Top ? 'bottom-full mb-2' : 'top-full mt-2',
 ].join(' '))
 

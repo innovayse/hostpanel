@@ -1,75 +1,94 @@
 using Innovayse.Hostpanel.SharedKernel.Domain;
-using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
 
 namespace Innovayse.Hostpanel.Domain.Support;
 
 /// <summary>
-/// Represents a knowledge base article that can be published and made visible to clients.
+/// Represents a knowledge base article that can be published and made visible to clients. Its title and body
+/// live in per-locale <see cref="KbArticleTranslation"/> rows; the article itself holds what is the same in
+/// every language: its category, its slug and whether it is published.
 /// Created via <see cref="Create"/> factory: no public constructor.
 /// </summary>
 public sealed class KbArticle : BaseEntity
 {
-    /// <summary>Longest a category name may be: matches the <c>KbArticles.Category</c> column.</summary>
-    public const int CategoryMaxLength = 255;
+    /// <summary>The translations, kept in a field so only this class changes them.</summary>
+    private readonly List<KbArticleTranslation> _translations = [];
 
-    /// <summary>Gets the article title.</summary>
-    public string Title { get; private set; } = string.Empty;
+    /// <summary>Gets the id of the <see cref="KbCategory"/> this article belongs to.</summary>
+    public int CategoryId { get; private set; }
 
-    /// <summary>Gets the full article body content (supports Markdown or HTML).</summary>
-    public string Content { get; private set; } = string.Empty;
-
-    /// <summary>Gets the category this article belongs to.</summary>
-    public string Category { get; private set; } = string.Empty;
+    /// <summary>
+    /// Gets the article's address segment: unique without regard to case, fixed once the article is created so
+    /// links to it keep working. See <see cref="KbSlugRules"/>.
+    /// </summary>
+    public string Slug { get; private set; } = string.Empty;
 
     /// <summary>Gets a value indicating whether this article is visible to clients.</summary>
     public bool IsPublished { get; private set; }
 
+    /// <summary>Gets the title and body of the article in each locale it is written in.</summary>
+    public IReadOnlyList<KbArticleTranslation> Translations => _translations.AsReadOnly();
+
     /// <summary>EF Core parameterless constructor: do not call directly.</summary>
     private KbArticle() { }
 
-    /// <summary>Internal constructor: use <see cref="Create"/> factory instead.</summary>
-    /// <param name="title">The article title.</param>
-    /// <param name="content">The article body content.</param>
-    /// <param name="category">The category name.</param>
-    private KbArticle(string title, string content, string category)
-    {
-        Title = title;
-        Content = content;
-        Category = category;
-        IsPublished = false;
-    }
-
     /// <summary>
-    /// Creates a new unpublished <see cref="KbArticle"/> with the provided content.
+    /// Creates a new unpublished <see cref="KbArticle"/> with no translations yet.
     /// </summary>
-    /// <param name="title">The article title.</param>
-    /// <param name="content">The article body content.</param>
-    /// <param name="category">The category name.</param>
+    /// <param name="categoryId">The id of the category the article belongs to.</param>
+    /// <param name="slug">The article's slug, already unique: see <see cref="KbSlugRules.IsValidArticleSlug"/>.</param>
     /// <returns>A new unpublished <see cref="KbArticle"/>.</returns>
-    /// <exception cref="ArgumentException">Thrown when any argument is null or whitespace.</exception>
-    public static KbArticle Create(string title, string content, string category)
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the category id is not positive.</exception>
+    /// <exception cref="ArgumentException">Thrown when the slug is not a valid article slug.</exception>
+    public static KbArticle Create(int categoryId, string slug)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(title);
-        ArgumentException.ThrowIfNullOrWhiteSpace(content);
-        ArgumentException.ThrowIfNullOrWhiteSpace(category);
-        return new KbArticle(title, content, category);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(categoryId);
+        KbSlugRules.EnsureValidArticleSlug(slug);
+
+        return new KbArticle { CategoryId = categoryId, Slug = slug, IsPublished = false };
+    }
+
+    /// <summary>Moves the article to another category.</summary>
+    /// <param name="categoryId">The id of the new category.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the category id is not positive.</exception>
+    public void MoveToCategory(int categoryId)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(categoryId);
+        CategoryId = categoryId;
+    }
+
+    /// <summary>Sets the text of one locale, adding it or replacing the existing one.</summary>
+    /// <param name="locale">The locale code.</param>
+    /// <param name="title">The title in that locale.</param>
+    /// <param name="content">The body in that locale.</param>
+    /// <exception cref="ArgumentException">Thrown when any argument is null or whitespace.</exception>
+    public void SetTranslation(string locale, string title, string content)
+    {
+        var existing = _translations.FirstOrDefault(t => t.Locale == locale);
+        if (existing is not null)
+        {
+            existing.Update(title, content);
+        }
+        else
+        {
+            _translations.Add(KbArticleTranslation.Create(locale, title, content));
+        }
     }
 
     /// <summary>
-    /// Updates the title, content, and category of this article.
+    /// Makes the article's translations exactly the given set: a locale not in it is removed, the others are
+    /// added or updated.
     /// </summary>
-    /// <param name="title">The new article title.</param>
-    /// <param name="content">The new article body content.</param>
-    /// <param name="category">The new category name.</param>
-    /// <exception cref="ArgumentException">Thrown when any argument is null or whitespace.</exception>
-    public void Update(string title, string content, string category)
+    /// <param name="translations">The text of each locale, keyed by locale code.</param>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="translations"/> is null.</exception>
+    public void ReplaceTranslations(IReadOnlyDictionary<string, KbArticleTranslationContent> translations)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(title);
-        ArgumentException.ThrowIfNullOrWhiteSpace(content);
-        ArgumentException.ThrowIfNullOrWhiteSpace(category);
-        Title = title;
-        Content = content;
-        Category = category;
+        ArgumentNullException.ThrowIfNull(translations);
+
+        _translations.RemoveAll(t => !translations.ContainsKey(t.Locale));
+        foreach (var (locale, content) in translations)
+        {
+            SetTranslation(locale, content.Title, content.Content);
+        }
     }
 
     /// <summary>

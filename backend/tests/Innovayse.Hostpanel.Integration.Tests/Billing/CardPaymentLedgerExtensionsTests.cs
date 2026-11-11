@@ -15,6 +15,7 @@ public sealed class CardPaymentLedgerExtensionsTests(IntegrationTestFactory fact
     /// a context whose scope is already disposed, which would throw on any read.
     /// </summary>
     /// <param name="reference">The unusable reference.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -38,6 +39,7 @@ public sealed class CardPaymentLedgerExtensionsTests(IntegrationTestFactory fact
     /// A payment is recorded under the key the unique index uses, the method and the reference together:
     /// the same reference under another method is another payment and is not recorded.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsRecorded_MatchesTheMethodAndTheReferenceTogether()
     {

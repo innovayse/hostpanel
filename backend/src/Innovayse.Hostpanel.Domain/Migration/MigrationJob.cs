@@ -89,136 +89,181 @@ public sealed class MigrationJob : BaseEntity, IAggregateRoot
 
     /// <summary>Total number of clients to import.</summary>
     public int ClientsTotal { get; private set; }
+
     /// <summary>Number of clients successfully imported (new records created).</summary>
     public int ClientsImported { get; private set; }
+
     /// <summary>Number of clients skipped (already existed: deduplication).</summary>
     public int ClientsSkipped { get; private set; }
+
     /// <summary>Number of Clients records whose import failed with an error.</summary>
     public int ClientsFailed { get; private set; }
 
     /// <summary>Total number of invoices to import.</summary>
     public int InvoicesTotal { get; private set; }
+
     /// <summary>Number of invoices successfully imported.</summary>
     public int InvoicesImported { get; private set; }
+
     /// <summary>Number of invoices skipped (already existed).</summary>
     public int InvoicesSkipped { get; private set; }
+
     /// <summary>Number of Invoices records whose import failed with an error.</summary>
     public int InvoicesFailed { get; private set; }
 
     /// <summary>Total number of services to import.</summary>
     public int ServicesTotal { get; private set; }
+
     /// <summary>Number of services successfully imported.</summary>
     public int ServicesImported { get; private set; }
+
     /// <summary>Number of services skipped (already existed).</summary>
     public int ServicesSkipped { get; private set; }
+
     /// <summary>Number of Services records whose import failed with an error.</summary>
     public int ServicesFailed { get; private set; }
 
     /// <summary>Total number of domains to import.</summary>
     public int DomainsTotal { get; private set; }
+
     /// <summary>Number of domains successfully imported.</summary>
     public int DomainsImported { get; private set; }
+
     /// <summary>Number of domains skipped (already existed).</summary>
     public int DomainsSkipped { get; private set; }
+
     /// <summary>Number of Domains records whose import failed with an error.</summary>
     public int DomainsFailed { get; private set; }
 
     /// <summary>Total number of tickets to import.</summary>
     public int TicketsTotal { get; private set; }
+
     /// <summary>Number of tickets successfully imported.</summary>
     public int TicketsImported { get; private set; }
+
     /// <summary>Number of tickets skipped (already existed).</summary>
     public int TicketsSkipped { get; private set; }
+
     /// <summary>Number of Tickets records whose import failed with an error.</summary>
     public int TicketsFailed { get; private set; }
 
     /// <summary>Total number of products to import.</summary>
     public int ProductsTotal { get; private set; }
+
     /// <summary>Number of products successfully imported.</summary>
     public int ProductsImported { get; private set; }
+
     /// <summary>Number of products skipped (already existed).</summary>
     public int ProductsSkipped { get; private set; }
+
     /// <summary>Number of Products records whose import failed with an error.</summary>
     public int ProductsFailed { get; private set; }
 
     /// <summary>Total number of orders to import.</summary>
     public int OrdersTotal { get; private set; }
+
     /// <summary>Number of orders successfully imported.</summary>
     public int OrdersImported { get; private set; }
+
     /// <summary>Number of orders skipped (already existed).</summary>
     public int OrdersSkipped { get; private set; }
+
     /// <summary>Number of Orders records whose import failed with an error.</summary>
     public int OrdersFailed { get; private set; }
 
     /// <summary>Total number of transactions to import.</summary>
     public int TransactionsTotal { get; private set; }
+
     /// <summary>Number of transactions successfully imported.</summary>
     public int TransactionsImported { get; private set; }
+
     /// <summary>Number of transactions skipped (already existed).</summary>
     public int TransactionsSkipped { get; private set; }
+
     /// <summary>Number of Transactions records whose import failed with an error.</summary>
     public int TransactionsFailed { get; private set; }
 
     /// <summary>Total number of quotes to import.</summary>
     public int QuotesTotal { get; private set; }
+
     /// <summary>Number of quotes successfully imported.</summary>
     public int QuotesImported { get; private set; }
+
     /// <summary>Number of quotes skipped (already existed).</summary>
     public int QuotesSkipped { get; private set; }
+
     /// <summary>Number of Quotes records whose import failed with an error.</summary>
     public int QuotesFailed { get; private set; }
 
     /// <summary>Total number of knowledgebase articles to import.</summary>
     public int KnowledgebaseTotal { get; private set; }
+
     /// <summary>Number of knowledgebase articles successfully imported.</summary>
     public int KnowledgebaseImported { get; private set; }
+
     /// <summary>Number of knowledgebase articles skipped (already existed).</summary>
     public int KnowledgebaseSkipped { get; private set; }
+
     /// <summary>Number of Knowledgebase records whose import failed with an error.</summary>
     public int KnowledgebaseFailed { get; private set; }
 
     /// <summary>Total number of contacts to import.</summary>
     public int ContactsTotal { get; private set; }
+
     /// <summary>Number of contacts successfully imported.</summary>
     public int ContactsImported { get; private set; }
+
     /// <summary>Number of contacts skipped (already existed).</summary>
     public int ContactsSkipped { get; private set; }
+
     /// <summary>Number of Contacts records whose import failed with an error.</summary>
     public int ContactsFailed { get; private set; }
 
     /// <summary>Total number of ticket replies to import.</summary>
     public int TicketRepliesTotal { get; private set; }
+
     /// <summary>Number of ticket replies successfully imported.</summary>
     public int TicketRepliesImported { get; private set; }
+
     /// <summary>Number of ticket replies skipped.</summary>
     public int TicketRepliesSkipped { get; private set; }
+
     /// <summary>Number of TicketReplies records whose import failed with an error.</summary>
     public int TicketRepliesFailed { get; private set; }
 
     /// <summary>Total number of announcements to import.</summary>
     public int AnnouncementsTotal { get; private set; }
+
     /// <summary>Number of announcements successfully imported.</summary>
     public int AnnouncementsImported { get; private set; }
+
     /// <summary>Number of announcements skipped.</summary>
     public int AnnouncementsSkipped { get; private set; }
+
     /// <summary>Number of Announcements records whose import failed with an error.</summary>
     public int AnnouncementsFailed { get; private set; }
 
     /// <summary>Total number of downloads to import.</summary>
     public int DownloadsTotal { get; private set; }
+
     /// <summary>Number of downloads successfully imported.</summary>
     public int DownloadsImported { get; private set; }
+
     /// <summary>Number of downloads skipped.</summary>
     public int DownloadsSkipped { get; private set; }
+
     /// <summary>Number of Downloads records whose import failed with an error.</summary>
     public int DownloadsFailed { get; private set; }
 
     /// <summary>Total number of network issues to import.</summary>
     public int NetworkIssuesTotal { get; private set; }
+
     /// <summary>Number of network issues successfully imported.</summary>
     public int NetworkIssuesImported { get; private set; }
+
     /// <summary>Number of network issues skipped.</summary>
     public int NetworkIssuesSkipped { get; private set; }
+
     /// <summary>Number of NetworkIssues records whose import failed with an error.</summary>
     public int NetworkIssuesFailed { get; private set; }
 

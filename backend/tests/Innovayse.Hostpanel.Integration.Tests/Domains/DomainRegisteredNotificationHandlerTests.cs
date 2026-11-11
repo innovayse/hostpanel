@@ -22,6 +22,7 @@ public sealed class DomainRegisteredNotificationHandlerTests(IntegrationTestFact
     private const string TemplateSlug = "domain-registered";
 
     /// <summary>A registered domain notifies the owning client exactly once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRegistered_NotifiesOwningClientExactlyOnceAsync()
     {
@@ -44,6 +45,7 @@ public sealed class DomainRegisteredNotificationHandlerTests(IntegrationTestFact
     /// An event naming a domain that belongs to another client (an id the demo reset reused) or no domain at
     /// all mails nobody.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRegistered_ForADomainThatIsNotTheClients_SendsNothingAsync()
     {

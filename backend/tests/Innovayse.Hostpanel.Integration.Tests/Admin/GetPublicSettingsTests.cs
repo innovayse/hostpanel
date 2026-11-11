@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 public sealed class GetPublicSettingsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The public read is anonymous and never carries an id or description.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsAnonymousAndNarrowerThanTheAdminShapeAsync()
     {

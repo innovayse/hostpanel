@@ -4,7 +4,6 @@ using Hostpanel.Sdk.Packaging.Signing;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.Hostpanel.Integration.Tests.Fixtures.Enums;
 using Innovayse.Hostpanel.Integration.Tests.Shared;
 using Microsoft.Extensions.Hosting;

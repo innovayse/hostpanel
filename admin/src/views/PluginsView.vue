@@ -15,7 +15,9 @@
  * and installs or updates from it; the tab is not offered when the server answers that the registry is
  * switched off. A plugin with a newer registry version shows an update badge and an Update button in the
  * installed list, and a plugin the registry lists has a Details button. Registry cards open the details page,
- * and install, update and uninstall (the same confirmed removal as the installed list) per card.
+ * and install, update and uninstall (the same confirmed removal as the installed list) per card. An update,
+ * from the installed list or from a registry card, opens a prompt that lists the release notes of every
+ * version it passes through and installs only after the admin confirms.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -24,12 +26,15 @@ import { pluginPath } from '@/lib/routes'
 import { usePluginsStore } from '@/stores/plugins'
 import { useSettingsStore } from '@/stores/settings'
 import PluginCard from '@/components/plugins/PluginCard.vue'
+import PluginInstallDialog from '@/components/plugins/PluginInstallDialog.vue'
 import PluginRegistryBrowser from '@/components/plugins/PluginRegistryBrowser.vue'
+import PluginRegistryInstanceCard from '@/components/plugins/PluginRegistryInstanceCard.vue'
 import PluginRegistryTrustCard from '@/components/plugins/PluginRegistryTrustCard.vue'
 import PluginKeptData from '@/components/plugins/PluginKeptData.vue'
 import PluginSigningCard from '@/components/plugins/PluginSigningCard.vue'
 import PluginSlotWidgetsCard from '@/components/plugins/PluginSlotWidgetsCard.vue'
 import PluginUploader from '@/components/plugins/PluginUploader.vue'
+import PluginUpdateChanges from '@/components/plugins/details/PluginUpdateChanges.vue'
 import RestartBanner from '@/components/plugins/RestartBanner.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
@@ -41,7 +46,7 @@ import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
 import UiTabs from '@/components/ui/UiTabs.vue'
 import { useResultBanner } from '@/composables/useResultBanner'
-import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiDialogSize, UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import type { SettingSaveResult } from '@/types/setting'
 import type { PluginCategoryFilter } from '@/types/plugin'
@@ -170,13 +175,22 @@ const handleRestart = async (): Promise<void> => {
 }
 
 /**
- * Installs an uploaded plugin archive.
+ * Reads what a chosen plugin archive asks for and opens the confirmation; a refusal is shown at once.
  *
  * @param file - The chosen `.zip` archive.
  */
 const handleUpload = async (file: File): Promise<void> => {
   feedback.clear()
-  const ok = await store.install(file)
+  const ok = await store.inspect(file)
+  if (!ok) {
+    showOutcome(false, 'plugins.plugins.pluginInstalled', store.actionError)
+  }
+}
+
+/** Installs the archive the admin confirmed after reading what it asks for, and shows the outcome. */
+const handleConfirmInstall = async (): Promise<void> => {
+  feedback.clear()
+  const ok = await store.confirmInstall()
   if (ok && store.stagedVersion !== null) {
     feedback.show(t('plugins.plugins.pluginStaged', { version: store.stagedVersion }), false)
     return
@@ -265,6 +279,59 @@ const openDetails = (id: string): void => {
   void router.push(pluginPath(id))
 }
 
+/** The update the admin asked for and has not confirmed yet: null when no prompt is open. */
+const pendingUpdate = ref<{ id: string; version: string } | null>(null)
+
+/** The registry details of the plugin being updated, for the list of what changes; null until they load or when they cannot. */
+const pendingUpdateDetails = computed(() =>
+  pendingUpdate.value === null ? null : (store.registryDetails[pendingUpdate.value.id]?.details ?? null),
+)
+
+/**
+ * Opens the update prompt: it lists the release notes of every version the update passes through, and
+ * installs nothing until the admin confirms. The details are read for the notes; a failed read leaves the
+ * prompt without the list, and the update can still be confirmed.
+ *
+ * @param id - Plugin id.
+ * @param version - The version to update to.
+ */
+const askUpdate = (id: string, version: string): void => {
+  pendingUpdate.value = { id, version }
+  void store.fetchRegistryDetails(id)
+}
+
+/**
+ * Handles an install request from the registry list: an installed plugin is an update and is confirmed
+ * first, anything else installs at once.
+ *
+ * @param id - Plugin id as listed by the registry.
+ * @param version - Version to install.
+ */
+const handleRegistryInstallRequest = (id: string, version: string): void => {
+  if (store.installed.some(plugin => plugin.id === id)) {
+    askUpdate(id, version)
+  } else {
+    void handleRegistryInstall(id, version)
+  }
+}
+
+/** Closes the update prompt; ignored while the update runs. */
+const dismissUpdate = (): void => {
+  if (pendingUpdate.value !== null && !store.isBusy(pendingUpdate.value.id)) {
+    pendingUpdate.value = null
+  }
+}
+
+/** Installs the update the admin confirmed. */
+const confirmUpdate = async (): Promise<void> => {
+  const pending = pendingUpdate.value
+  if (pending === null) {
+    return
+  }
+  await handleRegistryInstall(pending.id, pending.version)
+  pendingUpdate.value = null
+}
+
 /**
  * Installs or updates a plugin from the registry and shows the outcome.
  *
@@ -318,7 +385,8 @@ const pluginsWithWidgets = computed(() => store.plugins.filter(plugin => (store.
  * and the registry (its first page decides whether the Browse tab exists; its updates feed the badges).
  */
 onMounted(() => Promise.all([
-  store.fetchRegistry(),
+  // The registration card exists only while the registry is on, which the first page decides.
+  store.fetchRegistry().then(() => (store.registryDisabled ? undefined : store.fetchRegistryInstance())),
   store.fetchRegistryUpdates(),
   // The widgets are listed per installed plugin, so they wait for the plugin list.
   store.fetchAll().then(() => store.fetchSlotWidgets()),
@@ -351,6 +419,12 @@ onMounted(() => Promise.all([
     <!-- Browse -->
     <template v-if="tab === PluginsTab.Browse && !store.registryDisabled">
       <PluginRegistryTrustCard :settings="settingsStore.settings" :save="saveSetting" />
+      <PluginRegistryInstanceCard
+        :instance="store.registryInstance"
+        :busy="store.registryInstanceBusy"
+        :error="store.registryInstanceError"
+        @retry="store.retryRegistryInstance()"
+      />
       <PluginRegistryBrowser
         :items="store.registryItems"
         :total="store.registryTotal"
@@ -367,7 +441,7 @@ onMounted(() => Promise.all([
         @update:query="handleRegistryQuery"
         @update:category="handleRegistryCategory"
         @update:page="handleRegistryPage"
-        @install="handleRegistryInstall"
+        @install="handleRegistryInstallRequest"
         @remove="askRemove"
         @details="openDetails"
         @retry="store.fetchRegistry()"
@@ -448,14 +522,37 @@ onMounted(() => Promise.all([
           :plugin="plugin"
           :removing="removingId === plugin.id"
           :update-version="store.updateVersions[plugin.id] ?? null"
+          :update-changelog="store.updateChangelogs[plugin.id] ?? null"
           :updating="installingIds.includes(plugin.id)"
           :has-details="registryListedIds.includes(plugin.id)"
           @remove="askRemove"
-          @update="handleRegistryInstall"
+          @update="askUpdate"
           @details="openDetails"
         />
       </UiStack>
     </template>
+
+    <!-- An update is never one click: the prompt lists what changes between the installed and the new version first. -->
+    <UiDialog
+      :open="pendingUpdate !== null"
+      :variant="UiDialogVariant.Confirm"
+      :title="t('plugins.plugins.confirmUpdateTitle')"
+      :message="t('plugins.plugins.confirmUpdateMessage', { id: pendingUpdate?.id ?? '', version: pendingUpdate?.version ?? '' })"
+      :confirm-label="t('plugins.plugins.confirmUpdate')"
+      :loading="pendingUpdate !== null && store.isBusy(pendingUpdate.id)"
+      :tone="UiTone.Primary"
+      :size="UiDialogSize.Lg"
+      data-testid="plugins-update-dialog"
+      @confirm="confirmUpdate"
+      @close="dismissUpdate"
+    >
+      <PluginUpdateChanges
+        v-if="pendingUpdate !== null && pendingUpdateDetails !== null"
+        :versions="pendingUpdateDetails.versions"
+        :installed-version="pendingUpdateDetails.installedVersion"
+        :target-version="pendingUpdate.version"
+      />
+    </UiDialog>
 
     <UiDialog
       :open="confirmingId !== null"
@@ -492,6 +589,14 @@ onMounted(() => Promise.all([
       data-testid="plugins-downgrade-dialog"
       @confirm="handleForceDowngrade"
       @close="store.dismissDowngrade()"
+    />
+
+    <PluginInstallDialog
+      v-if="store.preview !== null"
+      :preview="store.preview"
+      :loading="store.loading"
+      @confirm="handleConfirmInstall"
+      @close="store.dismissPreview()"
     />
   </UiStack>
 </template>

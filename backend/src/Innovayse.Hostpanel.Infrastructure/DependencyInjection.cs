@@ -1,3 +1,4 @@
+using Hostpanel.Sdk.Plugins.HostingPanel;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
@@ -50,7 +51,6 @@ using Innovayse.Hostpanel.Infrastructure.Time;
 using Innovayse.Hostpanel.Shared.Settings;
 using Innovayse.Providers.CWP;
 using Innovayse.Providers.CWP7;
-using Hostpanel.Sdk.Plugins.HostingPanel;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -60,11 +60,11 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.Net.Http.Headers;
 using Npgsql;
 using IProvisioningProvider = Innovayse.Hostpanel.Application.Common.Interfaces.IProvisioningProvider;
 
 namespace Innovayse.Hostpanel.Infrastructure;
+
 /// <summary>
 /// Registers all Infrastructure layer services into the DI container.
 /// Call <see cref="AddInfrastructure"/> from <c>Program.cs</c>.
@@ -156,8 +156,8 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>((serviceProvider, options) =>
         {
+            // The fulfilment records go first, so the auditable stamp that follows stamps them on insert.
             options.AddInterceptors(
-                // Before the auditable stamp, so the records it adds are stamped on insert.
                 serviceProvider.GetRequiredService<FulfilmentRecordInterceptor>(),
                 serviceProvider.GetRequiredService<AuditableEntityInterceptor>(),
                 serviceProvider.GetRequiredService<DomainEventDispatchInterceptor>());
@@ -830,6 +830,20 @@ public static class DependencyInjection
                 AllowAutoRedirect = false,
                 ConnectCallback = PluginRegistryConnector.ConnectAsync,
             });
+
+        // This installation's identity towards the registry: the two unsigned registration calls (same network rules as the
+        // client above), the Ed25519 keys, and the signer that adds the signature headers to a restricted plugin's calls.
+        services.AddHttpClient<IRegistryInstanceApi, RegistryInstanceApi>(client =>
+        {
+            client.Timeout = Timeout.InfiniteTimeSpan;
+        })
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+            {
+                AllowAutoRedirect = false,
+                ConnectCallback = PluginRegistryConnector.ConnectAsync,
+            });
+        services.AddSingleton<IRegistryInstanceKeys, Ed25519RegistryInstanceKeys>();
+        services.AddScoped<IRegistryRequestSigner, RegistryRequestSigner>();
         services.AddScoped<IPluginPackageInspector, PluginPackageInspector>();
         var signatureVerifier = PluginSignatureVerifier.Create(signingOptions, environment);
         services.AddSingleton(signatureVerifier);

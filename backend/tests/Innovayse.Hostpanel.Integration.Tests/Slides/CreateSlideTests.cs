@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Slides;
 public sealed class CreateSlideTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Creating a slide and reading it back round-trips its fields and translation.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenGet_RoundTrips()
     {
@@ -35,6 +36,7 @@ public sealed class CreateSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_RefusesAnonymous()
     {
@@ -44,6 +46,7 @@ public sealed class CreateSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A negative sort order is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_NegativeSortOrder_RefusesWithValidationError()
     {
@@ -92,6 +95,7 @@ public sealed class CreateSlideTests(IntegrationTestFactory factory) : IClassFix
     };
 
     /// <summary>A link that is not a web address is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_ScriptLink_Refuses()
     {
@@ -104,6 +108,7 @@ public sealed class CreateSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An image link that is not a web address is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_DataImageLink_Refuses()
     {
@@ -116,6 +121,7 @@ public sealed class CreateSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The same locale twice is refused rather than reaching the unique index.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_DuplicateLocale_Refuses()
     {
@@ -128,6 +134,7 @@ public sealed class CreateSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A locale the panel does not support is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_UnsupportedLocale_Refuses()
     {
@@ -140,6 +147,7 @@ public sealed class CreateSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A slide without the default-locale translation is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_WithoutDefaultLocale_Refuses()
     {
@@ -152,6 +160,7 @@ public sealed class CreateSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A text longer than its column is a 400, not a database failure.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_OverlongTagline_Refuses()
     {
@@ -164,6 +173,7 @@ public sealed class CreateSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A slide that promotes a product that does not exist answers 404 with <c>PRODUCT_NOT_FOUND</c> and writes nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_UnknownProduct_RefusesNotFound()
     {
@@ -177,6 +187,7 @@ public sealed class CreateSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A slide that promotes an existing product is created and keeps the product link.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_ExistingProduct_KeepsTheProductLink()
     {

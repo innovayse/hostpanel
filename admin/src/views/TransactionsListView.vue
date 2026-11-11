@@ -23,12 +23,12 @@ import UiFilterCard from '@/components/ui/UiFilterCard.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiInput from '@/components/ui/UiInput.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiNumberInput from '@/components/ui/UiNumberInput.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatTile from '@/components/ui/UiStatTile.vue'
@@ -187,6 +187,33 @@ const dismissDelete = (): void => {
   }
 }
 
+/**
+ * The row actions of a transaction: edit as a real link, and delete last (confirmed first).
+ *
+ * @param id - The transaction id.
+ * @returns The action list passed to UiRowActions.
+ */
+const transactionActions = (id: number): UiRowAction[] => [
+  {
+    label: t('shared.edit'),
+    testid: `billing-transaction-edit-${id}`,
+    to: transactionEditPath(id),
+  },
+  {
+    label: t('shared.delete'),
+    testid: `billing-transaction-delete-${id}`,
+    danger: true,
+    /**
+     * Asks for confirmation before the transaction is deleted.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      pendingDeleteId.value = id
+    },
+  },
+]
+
 onMounted(() => load(1))
 </script>
 
@@ -292,10 +319,10 @@ onMounted(() => load(1))
             <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.description') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.amountIn') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.fees') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.amountOut') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('shared.amountIn') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('shared.fees') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('shared.amountOut') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -304,33 +331,15 @@ onMounted(() => load(1))
             <UiTableCell muted>{{ formatDate(transaction.date) }}</UiTableCell>
             <UiTableCell>{{ transaction.paymentMethod || t('billing.transactionsList.manual') }}</UiTableCell>
             <UiTableCell>{{ transaction.description }}</UiTableCell>
-            <UiTableCell>
+            <UiTableCell numeric>
               <UiText :tone="transaction.amountIn > 0 ? 'success' : 'muted'">{{ cell(transaction.amountIn, transaction.currency) }}</UiText>
             </UiTableCell>
-            <UiTableCell>{{ formatPlainAmount(transaction.fees, transaction.currency) }}</UiTableCell>
-            <UiTableCell>
+            <UiTableCell numeric>{{ formatPlainAmount(transaction.fees, transaction.currency) }}</UiTableCell>
+            <UiTableCell numeric>
               <UiText :tone="transaction.amountOut > 0 ? 'danger' : 'muted'">{{ cell(transaction.amountOut, transaction.currency) }}</UiText>
             </UiTableCell>
-            <UiTableCell align="right">
-              <UiStack direction="row" gap="xs" justify="end">
-                <UiLink
-                  variant="ghost"
-                  size="sm"
-                  :to="transactionEditPath(transaction.id)"
-                  :aria-label="t('shared.edit')"
-                  :data-testid="`billing-transaction-edit-${transaction.id}`"
-                >
-                  <UiIcon :markup="Icon.Edit" size="sm" />
-                </UiLink>
-                <UiIconButton
-                  :label="t('shared.delete')"
-                  size="sm"
-                  :data-testid="`billing-transaction-delete-${transaction.id}`"
-                  @click="pendingDeleteId = transaction.id"
-                >
-                  <UiIcon :markup="Icon.TrashBin" size="sm" />
-                </UiIconButton>
-              </UiStack>
+            <UiTableCell actions>
+              <UiRowActions :actions="transactionActions(transaction.id)" :testid="`billing-transaction-actions-${transaction.id}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

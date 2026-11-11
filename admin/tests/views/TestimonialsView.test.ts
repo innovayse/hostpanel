@@ -87,7 +87,7 @@ describe('TestimonialsView', () => {
       expect(router.currentRoute.value.path).toBe('/storefront/testimonials/create')
     })
 
-    await wrapper.get('[data-testid="testimonial-row-2"] [data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="testimonial-actions-2"]').trigger('click')
     await wrapper.get('[data-testid="testimonial-edit-2"]').trigger('click')
     await vi.waitFor(() => {
       expect(router.currentRoute.value.path).toBe('/storefront/testimonials/2/edit')
@@ -101,7 +101,7 @@ describe('TestimonialsView', () => {
     })
     const { wrapper } = await mountScreen(TestimonialsView)
 
-    await wrapper.get('[data-testid="testimonial-row-1"] [data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="testimonial-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="testimonial-delete-1"]').trigger('click')
     expect(wrapper.get('[role="dialog"]').text()).toContain('Delete the testimonial from "Ann"?')
     expect(requestsOf(mock)).not.toContain('DELETE /admin/testimonials/1')
@@ -123,7 +123,7 @@ describe('TestimonialsView', () => {
     })
     const { wrapper } = await mountScreen(TestimonialsView)
 
-    await wrapper.get('[data-testid="testimonial-row-1"] [data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="testimonial-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="testimonial-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
 

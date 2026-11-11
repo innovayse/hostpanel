@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ListDomainsOnOpenRenewalInvoicesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Only the domain on an open renewal invoice is answered; a paid one and an unbilled one are not.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ReturnsOnlyDomainsOnOpenRenewalInvoicesAsync()
     {
@@ -41,6 +42,7 @@ public sealed class ListDomainsOnOpenRenewalInvoicesTests(IntegrationTestFactory
     }
 
     /// <summary>An empty id list answers an empty list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NoIds_ReturnsEmptyAsync()
     {

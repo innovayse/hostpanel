@@ -26,6 +26,7 @@ public sealed class ProtectedColumnsTests(IntegrationTestFactory factory)
     private const string Plain = "plain-credential-value-1";
 
     /// <summary>A service's password is stored encrypted and read back plain.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientServicePassword_IsEncryptedAtRestAsync()
     {
@@ -38,6 +39,7 @@ public sealed class ProtectedColumnsTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A server's password, API token and access hash are stored encrypted and read back plain.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServerCredentials_AreEncryptedAtRestAsync()
     {
@@ -56,6 +58,7 @@ public sealed class ProtectedColumnsTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A server's SSH agent private key is stored encrypted and read back plain.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AgentPrivateKey_IsEncryptedAtRestAsync()
     {
@@ -80,6 +83,7 @@ public sealed class ProtectedColumnsTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A user's active and pending two-factor secrets are stored encrypted and read back plain.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoFactorSecrets_AreEncryptedAtRestAsync()
     {
@@ -113,6 +117,7 @@ public sealed class ProtectedColumnsTests(IntegrationTestFactory factory)
     /// A row written before the marker existed, plain or encrypted by the earlier converter, is
     /// read as it is, and the next save of that column writes it encrypted and marked.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LegacyValues_StayReadable_AndAreWrittenProtectedOnNextSaveAsync()
     {

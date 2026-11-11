@@ -52,6 +52,13 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.ToTable(table => table.HasCheckConstraint(
             "CK_Clients_ExternalAccount",
             "(\"ExternalAccountProvider\" IS NULL) = (\"ExternalAccountId\" IS NULL)"));
+        // A group still holding clients cannot be deleted: the delete use case answers CLIENT_GROUP_IN_USE
+        // first, and this refuses it for any other writer instead of silently ungrouping the clients.
+        builder.HasOne<ClientGroup>()
+            .WithMany()
+            .HasForeignKey(x => x.ClientGroupId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(x => x.ClientGroupId);
         builder.Property(x => x.BillingContact).HasMaxLength(256);
         builder.Property(x => x.AdminNotes).HasMaxLength(2000);
 

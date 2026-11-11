@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 public sealed class GetServiceUsageReportTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin reads the service-usage report.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanReadTheReportAsync()
     {
@@ -30,6 +31,7 @@ public sealed class GetServiceUsageReportTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The report counts the services of each product and names the product.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CountsServicesPerProductAsync()
     {
@@ -61,6 +63,7 @@ public sealed class GetServiceUsageReportTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -72,6 +75,7 @@ public sealed class GetServiceUsageReportTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>The service-usage report is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

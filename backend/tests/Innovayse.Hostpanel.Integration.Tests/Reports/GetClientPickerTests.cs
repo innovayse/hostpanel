@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetClientPickerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The picker lists a freshly created client by name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IncludesANewClient()
     {
@@ -27,6 +28,7 @@ public sealed class GetClientPickerTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -36,6 +38,7 @@ public sealed class GetClientPickerTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

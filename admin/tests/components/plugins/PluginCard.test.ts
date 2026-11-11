@@ -92,6 +92,43 @@ describe('PluginCard', () => {
     expect(mountCard().find('[data-testid="plugin-update-button-example-pay"]').exists()).toBe(false)
   })
 
+  it('opens the release notes of the installed version as Markdown, and says when there are none', async () => {
+    const withNotes = mountCard({ plugin: { ...plugin, changelog: '- Faster **refunds**' } })
+    await withNotes.get('[data-testid="plugin-notes-toggle-example-pay"]').trigger('click')
+
+    expect(withNotes.get('[data-testid="plugin-notes-example-pay"]').find('li strong').text()).toBe('refunds')
+
+    const without = mountCard()
+    await without.get('[data-testid="plugin-notes-toggle-example-pay"]').trigger('click')
+
+    expect(without.get('[data-testid="plugin-notes-example-pay"]').text()).toBe('This version has no release notes.')
+  })
+
+  it('shows the release notes of the offered update behind its own toggle, and says when there are none', async () => {
+    const withNotes = mountCard({ updateVersion: '2.0.0', updateChangelog: '- Faster **refunds**' })
+
+    expect(withNotes.get('[data-testid="plugin-update-notes-toggle-example-pay"]').text()).toBe('What is new in 2.0.0')
+    await withNotes.get('[data-testid="plugin-update-notes-toggle-example-pay"]').trigger('click')
+    expect(withNotes.get('[data-testid="plugin-update-notes-example-pay"]').find('li strong').text()).toBe('refunds')
+
+    const without = mountCard({ updateVersion: '2.0.0' })
+    await without.get('[data-testid="plugin-update-notes-toggle-example-pay"]').trigger('click')
+    expect(without.get('[data-testid="plugin-update-notes-example-pay"]').text()).toBe('This version has no release notes.')
+
+    expect(mountCard().find('[data-testid="plugin-update-notes-toggle-example-pay"]').exists()).toBe(false)
+  })
+
+  it('points an update to the details page where the changes are listed', async () => {
+    const wrapper = mountCard({ updateVersion: '2.0.0', hasDetails: true })
+    const button = wrapper.get('[data-testid="plugin-changes-example-pay"]')
+
+    expect(button.text()).toBe('What changes in 2.0.0')
+    await button.trigger('click')
+
+    expect(wrapper.emitted('details')).toEqual([['example-pay']])
+    expect(mountCard({ updateVersion: '2.0.0' }).find('[data-testid="plugin-changes-example-pay"]').exists()).toBe(false)
+  })
+
   it('disables Update and Remove while the update runs', () => {
     const wrapper = mountCard({ updateVersion: '2.0.0', updating: true })
 

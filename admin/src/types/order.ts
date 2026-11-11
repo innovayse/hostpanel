@@ -75,6 +75,10 @@ export interface OrderItemDetail {
   fulfilmentAttempts: number
   /** ISO 8601 moment the last attempt started or ended, null before the first one. */
   lastFulfilmentAttemptAt: string | null
+  /** Whether staff may retry the line now, as the API decides it with its configured retry lease. */
+  canRetry: boolean
+  /** Whether staff may close the line as refunded by hand: it failed, its refund is stuck, or it was only partly refunded. */
+  canClose: boolean
 }
 
 /** What a line of an order is fulfilled as, exactly as the API sends it. */

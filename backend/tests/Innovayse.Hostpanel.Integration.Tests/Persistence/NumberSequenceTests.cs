@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Persistence;
 public sealed class NumberSequenceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Many concurrent callers receive distinct, increasing-per-caller numbers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConcurrentCallersReceiveDistinctNumbers()
     {
@@ -32,6 +33,7 @@ public sealed class NumberSequenceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A later call never receives a number an earlier one already did.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SuccessiveCallsAdvance()
     {
@@ -48,6 +50,7 @@ public sealed class NumberSequenceTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Many concurrent callers of the credit note counter receive distinct numbers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ConcurrentCreditNoteCallersReceiveDistinctNumbers()
     {
@@ -68,6 +71,7 @@ public sealed class NumberSequenceTests(IntegrationTestFactory factory) : IClass
     /// A value that was taken and not used is not handed out again. This is the property of a database sequence the credit note
     /// numbering relies on, and the reason the numbering cannot promise there are no gaps when a caller stops after taking one.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ATakenCreditNoteNumberIsNeverHandedOutAgain()
     {

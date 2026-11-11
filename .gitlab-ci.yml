@@ -399,7 +399,7 @@ backend:test:integration:d:
   extends: .test-integration
   variables:
     TEST_FILTER: >-
-      FullyQualifiedName~Integration.Tests.Domains.|FullyQualifiedName~Integration.Tests.Plugins.|FullyQualifiedName~Integration.Tests.Support.
+      FullyQualifiedName~Integration.Tests.Domains.|FullyQualifiedName~Integration.Tests.Plugins.|FullyQualifiedName~Integration.Tests.StatusPage.|FullyQualifiedName~Integration.Tests.Support.|FullyQualifiedName~Integration.Tests.Campaigns.
 
 backend:test:integration:e:
   extends: .test-integration
@@ -637,8 +637,9 @@ deploy:demo:
     - cd "$DEPLOY_DIR"
     # The demo's edge network is external (docker-compose.demo.yml) and is not the platform network: create it
     # when missing. The operator's edge proxy must also be attached to it to route here.
-    # The subnet is fixed (DEMO_EDGE_NETWORK_SUBNET): the operator's edge denies it on every host except the demo ones, so a
-    # demo container cannot reach production through the proxy. Keep it equal to the `deny` line there.
+    # The subnet is fixed (DEMO_EDGE_NETWORK_SUBNET): the operator's edge proxy must deny exactly this subnet on every host
+    # except the demo ones, so a demo container cannot reach production through the proxy. If the subnet changes here,
+    # change the `deny` rule of that edge proxy to the same value.
     - docker network inspect hostpanel_demo_edge >/dev/null 2>&1 || docker network create --subnet "$DEMO_EDGE_NETWORK_SUBNET" hostpanel_demo_edge
     - docker compose pull --ignore-buildable
     - docker compose build hostpanel-demo-api hostpanel-demo-client hostpanel-demo-admin

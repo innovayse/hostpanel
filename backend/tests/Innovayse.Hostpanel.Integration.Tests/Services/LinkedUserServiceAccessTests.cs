@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class LinkedUserServiceAccessTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The account owner lists their own service and reads its cancellation status.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OwnerSeesTheServiceAsync()
     {
@@ -28,6 +29,7 @@ public sealed class LinkedUserServiceAccessTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A user linked with the services permission lists the account's service and reads its cancellation status.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedLinkedUserSeesTheServiceAsync()
     {
@@ -43,6 +45,7 @@ public sealed class LinkedUserServiceAccessTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A user linked without the services permission is refused both routes.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LinkedUserWithoutThePermissionIsRefusedAsync()
     {
@@ -63,6 +66,7 @@ public sealed class LinkedUserServiceAccessTests(IntegrationTestFactory factory)
     /// A user permitted on another account never sees this account's service: the list is theirs
     /// alone and the id answers <c>SERVICE_NOT_FOUND</c>, like an id naming no service.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PermittedUserOfAnotherAccountAnswersNotFoundAsync()
     {

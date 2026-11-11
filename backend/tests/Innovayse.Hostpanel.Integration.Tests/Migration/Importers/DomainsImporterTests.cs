@@ -21,6 +21,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 public sealed class DomainsImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A domain for a known client is imported.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Domains_ImportsADomainForAKnownClientAsync()
     {
@@ -53,6 +54,7 @@ public sealed class DomainsImporterTests(IntegrationTestFactory factory) : IClas
     /// A domain whose client does not exist here is skipped, and its log row carries the
     /// <see cref="MigrationSkipReason.ClientNotFound"/> reason instead of free text.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Domains_SkipsADomainOfAnUnknownClientWithClientNotFoundAsync()
     {
@@ -82,6 +84,7 @@ public sealed class DomainsImporterTests(IntegrationTestFactory factory) : IClas
     /// <see cref="MigrationSkipReason.ImportFailed"/> reason: the exception text stays in the server
     /// log and never reaches the admin-facing migration log.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Domains_LogsAFailingRecordWithImportFailedAndNoExceptionTextAsync()
     {
@@ -111,6 +114,7 @@ public sealed class DomainsImporterTests(IntegrationTestFactory factory) : IClas
     /// currency. Domain events run for real here (only the mail relay is faked), so a raised
     /// registered or expired event would reach the fake sender.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Domains_ImportsAnExpiredDomainWithoutEventsOrMailAsync()
     {

@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Reports;
 public sealed class GetIncomeByProductGroupedTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>With no active product groups the report still answers with an empty, zeroed shape.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnswersEvenWithNoGroups()
     {
@@ -29,6 +30,7 @@ public sealed class GetIncomeByProductGroupedTests(IntegrationTestFactory factor
     /// line paid in the last second of January stays in January; in February the base line of 200,
     /// the credit-covered line (no income) and the foreign line (100 in the base) add up to 300.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AttributesPaidLinesToTheirProductByPaidMonth()
     {
@@ -48,6 +50,7 @@ public sealed class GetIncomeByProductGroupedTests(IntegrationTestFactory factor
     }
 
     /// <summary>An out-of-range month is refused before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnInvalidMonth()
     {
@@ -59,6 +62,7 @@ public sealed class GetIncomeByProductGroupedTests(IntegrationTestFactory factor
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -68,6 +72,7 @@ public sealed class GetIncomeByProductGroupedTests(IntegrationTestFactory factor
     }
 
     /// <summary>A client-role caller, not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesTheClientRole()
     {

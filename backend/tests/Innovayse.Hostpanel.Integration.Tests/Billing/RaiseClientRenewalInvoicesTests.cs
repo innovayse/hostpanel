@@ -7,8 +7,8 @@ using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Notifications;
-using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Orders;
+using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
@@ -177,6 +177,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>A service inside the lead time gets one renewal line for exactly its next period, due on its renewal date.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceInsideLeadTime_IsInvoicedOnce()
     {
@@ -219,6 +220,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     /// </summary>
     /// <param name="cycle">The service's billing cycle.</param>
     /// <param name="months">The months one period of that cycle covers.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(BillingCycle.Monthly, 1)]
     [InlineData(BillingCycle.Annual, 12)]
@@ -251,6 +253,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     /// </summary>
     /// <param name="type">The product's type.</param>
     /// <param name="digital">Whether the snapshot must flag the product as digital.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(ProductType.SharedHosting, false)]
     [InlineData(ProductType.Digital, true)]
@@ -278,6 +281,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>A service outside the lead time is not invoiced yet.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceOutsideLeadTime_IsNotInvoiced()
     {
@@ -295,6 +299,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
 
     /// <summary>AutoRenew off, AutoTerminateEndOfCycle or an open cancellation request all skip.</summary>
     /// <param name="why">Which of the three reasons the service is seeded with.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("autorenew")]
     [InlineData("terminate")]
@@ -334,6 +339,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>An open renewal invoice blocks a second one even after staff edit the renewal date.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OpenInvoice_BlocksAfterDateEdit()
     {
@@ -359,6 +365,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>A cancelled renewal invoice does not block its period.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelledInvoice_IsReRaised()
     {
@@ -385,6 +392,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>SeparateInvoices gives one invoice per line.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SeparateInvoices_OnePerLine()
     {
@@ -414,6 +422,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>Without SeparateInvoices, every due line of a client goes on one invoice due on the earliest period start.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OneInvoicePerClient_DueOnEarliestStart()
     {
@@ -435,6 +444,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     /// A period that already started (a back-dated renewal date) is not born overdue: the invoice is
     /// due after the normal payment window, now plus the lead time (14 days by default).
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BackDatedStart_DueAfterTheLeadTime()
     {
@@ -461,6 +471,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     /// A back-dated line sharing an invoice with a line that starts in three days is capped at that
     /// future start, so the back-dated one never pushes the other past its own period.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task BackDatedAndFutureStart_DueOnTheFutureStart()
     {
@@ -479,6 +490,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>A cancelled domain renewal invoice does not block its period, and the open one raised after it does.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelledDomainInvoice_IsReRaisedOnceOnly()
     {
@@ -505,6 +517,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>A domain inside the lead time is priced from its TLD's renew price in the payer currency.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Domain_PricedFromTld()
     {
@@ -537,6 +550,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     /// A domain whose TLD has no renew price is skipped, and staff are told on a checkpoint day
     /// (here 7 days left, a default reminder day).
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Domain_NoPrice_AtCheckpoint_SkippedAndAlerted()
     {
@@ -563,6 +577,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     /// Off a checkpoint day (5 days left: not the lead time, not a reminder day, not expiry day) the
     /// unpriced domain is skipped without a mail; the skip is still logged at Warning.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Domain_NoPrice_OffCheckpoint_SkippedWithoutAlert()
     {
@@ -587,6 +602,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     /// A domain already inside the window when the feature goes live (10 days left, no checkpoint)
     /// gets no mail that day, and still gets one when it reaches the next checkpoint (7 days left).
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Domain_NoPrice_InsideWindowAtGoLive_AlertedAtNextCheckpoint()
     {
@@ -610,6 +626,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>A sell price in another currency is converted at the stored rates and rounded to the payer's decimals.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Domain_SellCurrencyConvertedToPayer()
     {
@@ -629,6 +646,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>A sell currency with no currency row cannot be converted: the domain is skipped and staff are told why.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Domain_MissingCurrencyRow_Skipped()
     {
@@ -650,6 +668,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>A registration period of 0 is priced and invoiced as one year.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Domain_RegistrationPeriodZero_InvoicedAsOneYear()
     {
@@ -672,6 +691,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     /// A paid line whose renewal is not applied yet (a registrar claim left for staff) blocks a new
     /// invoice even after staff edit the expiry: that term is already paid for.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaidUnappliedLine_BlocksAfterExpiryEdit()
     {
@@ -699,6 +719,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>A paid invoice whose line for this exact period was applied blocks the period.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PaidSamePeriod_Blocks()
     {
@@ -719,6 +740,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>A refunded invoice for this exact period blocks it: a refunded term is re-billed only by hand.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefundedSamePeriod_Blocks()
     {
@@ -740,6 +762,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>A service with a negative price is skipped; the client's other renewals are still raised.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NegativeAmountService_Skipped_OthersInvoiced()
     {
@@ -758,6 +781,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>Credit pays part of the invoice and the balance goes down.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Credit_Partial()
     {
@@ -788,6 +812,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>Enough credit pays the invoice, writes no ledger row, and the renewal is applied.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Credit_Full_PaysAndApplies()
     {
@@ -820,6 +845,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>With <c>auto_apply_credit</c> off the credit balance is left alone.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AutoApplyCreditOff_LeavesCredit()
     {
@@ -852,6 +878,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>An unknown client is refused with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownClient_IsRefused()
     {
@@ -870,6 +897,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     /// fulfilled yet) and stops blocking once the order is fulfilled. Without the block the renew
     /// order's payment and the auto-renewal would each buy the same year.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OpenRenewOrder_BlocksTheDomainUntilFulfilled()
     {
@@ -907,6 +935,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
     }
 
     /// <summary>A cancelled renew order does not block the auto-renewal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CancelledRenewOrder_DoesNotBlock()
     {

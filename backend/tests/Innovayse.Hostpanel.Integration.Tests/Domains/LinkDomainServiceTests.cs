@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class LinkDomainServiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The domain records the linked service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ExistingDomain_LinksTheServiceAsync()
     {
@@ -46,6 +47,7 @@ public sealed class LinkDomainServiceTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A service id that names no service is refused with <c>SERVICE_NOT_FOUND</c> and nothing is linked.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnknownService_RefusesNotFoundAsync()
     {
@@ -72,6 +74,7 @@ public sealed class LinkDomainServiceTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An id that names no domain is refused with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnknownDomain_RefusesNotFoundAsync()
     {
@@ -81,6 +84,7 @@ public sealed class LinkDomainServiceTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A cancelled domain is no longer managed here, so linking is refused with <c>DOMAIN_LINK_NOT_ALLOWED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_CancelledDomain_RefusesLinkNotAllowedAsync()
     {

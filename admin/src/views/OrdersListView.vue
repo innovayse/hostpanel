@@ -15,10 +15,10 @@ import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
 import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -34,12 +34,14 @@ import { ORDER_STATUS_OPTIONS } from '@/lib/constants'
 import { formatDate } from '@/lib/format'
 import { formatPlainAmount } from '@/lib/money'
 import { OrderStatus } from '@/types/order'
+import type { OrderListItem } from '@/types/order'
 import { orderStatusTone, statusLabel } from '@/lib/tones'
 import { useOrdersStore } from '@/stores/orders'
 import { clientPath, orderPath } from '@/lib/routes'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -133,6 +135,38 @@ const dismissCancel = (): void => {
   }
 }
 
+/**
+ * The row actions of an order: accept a pending one, open its detail as a real link, and cancel a
+ * pending one last (confirmed first). A settled order only offers the detail link.
+ *
+ * @param order - The order of the row.
+ * @returns The action list passed to UiRowActions.
+ */
+const orderActions = (order: OrderListItem): UiRowAction[] => {
+  const pending = order.status === OrderStatus.Pending
+  /**
+   * Accepts this pending order.
+   *
+   * @returns Nothing.
+   */
+  const onAccept = (): void => {
+    void accept(order.id)
+  }
+  /**
+   * Asks for confirmation before this order is cancelled.
+   *
+   * @returns Nothing.
+   */
+  const onCancel = (): void => {
+    cancelling.value = order.id
+  }
+  return [
+    ...(pending ? [{ label: t('orders.ordersList.accept'), testid: `orders-accept-${order.id}`, onSelect: onAccept }] : []),
+    { label: t('shared.view'), testid: `orders-view-${order.id}`, to: orderPath(order.id) },
+    ...(pending ? [{ label: t('shared.cancel'), testid: `orders-cancel-${order.id}`, danger: true, onSelect: onCancel }] : []),
+  ]
+}
+
 onMounted(() => store.fetchAll())
 </script>
 
@@ -166,17 +200,17 @@ onMounted(() => store.fetchAll())
     />
 
     <UiCard v-else-if="store.orders.length > 0 || store.loading">
-      <UiTable density="comfortable" :loading="store.loading && store.orders.length === 0" :colspan="8" data-testid="orders-table">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && store.orders.length === 0" :colspan="8" data-testid="orders-table">
         <UiTableHead>
-          <UiTableRow bordered>
+          <UiTableRow>
             <UiTableHeader>{{ t('orders.ordersList.order') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.total') }}</UiTableHeader>
-            <UiTableHeader>{{ t('orders.ordersList.items') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('orders.ordersList.items') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.date') }}</UiTableHeader>
-            <UiTableHeader>{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody>
@@ -212,40 +246,11 @@ onMounted(() => store.fetchAll())
               </UiStack>
             </UiTableCell>
             <UiTableCell>{{ order.paymentMethod }}</UiTableCell>
-            <UiTableCell>{{ formatPlainAmount(order.total, order.currency) }}</UiTableCell>
-            <UiTableCell muted>{{ order.itemCount }}</UiTableCell>
+            <UiTableCell numeric>{{ formatPlainAmount(order.total, order.currency) }}</UiTableCell>
+            <UiTableCell numeric muted>{{ order.itemCount }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(order.createdAt) }}</UiTableCell>
-            <UiTableCell>
-              <UiStack direction="row" gap="xs" align="center">
-                <UiIconButton
-                  v-if="order.status === OrderStatus.Pending"
-                  :label="t('orders.ordersList.accept')"
-                  size="sm"
-                  :data-testid="`orders-accept-${order.id}`"
-                  @click="accept(order.id)"
-                >
-                  <UiIcon :markup="Icon.Check" size="sm" />
-                </UiIconButton>
-                <UiIconButton
-                  v-if="order.status === OrderStatus.Pending"
-                  :label="t('shared.cancel')"
-                  size="sm"
-                  :data-testid="`orders-cancel-${order.id}`"
-                  @click="cancelling = order.id"
-                >
-                  <UiIcon :markup="Icon.Close" size="sm" />
-                </UiIconButton>
-                <UiLink
-                  :to="orderPath(order.id)"
-                  variant="ghost"
-                  size="sm"
-                  :title="t('shared.view')"
-                  :aria-label="t('shared.view')"
-                  :data-testid="`orders-view-${order.id}`"
-                >
-                  <UiIcon :markup="Icon.Eye" size="sm" />
-                </UiLink>
-              </UiStack>
+            <UiTableCell actions>
+              <UiRowActions :actions="orderActions(order)" :testid="`orders-actions-${order.id}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

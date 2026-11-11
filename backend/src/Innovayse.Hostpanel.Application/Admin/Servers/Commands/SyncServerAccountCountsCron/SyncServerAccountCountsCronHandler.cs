@@ -18,7 +18,6 @@ public sealed class SyncServerAccountCountsCronHandler
     /// <summary>Tests connectivity and reads the account count off a server.</summary>
     private readonly IServerConnectionTester _connectionTester;
 
-
     /// <summary>Runs the passes under their lease and schedules the next run.</summary>
     private readonly RecurringJobs _jobs;
 
@@ -55,6 +54,7 @@ public sealed class SyncServerAccountCountsCronHandler
     /// </summary>
     /// <param name="cmd">The scheduled command (marker, no payload).</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the message has been handled.</returns>
     public Task HandleAsync(SyncServerAccountCountsCronCommand cmd, CancellationToken ct)
     {
         _ = cmd;

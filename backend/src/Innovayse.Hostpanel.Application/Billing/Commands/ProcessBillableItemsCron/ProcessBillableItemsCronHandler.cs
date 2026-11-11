@@ -58,6 +58,7 @@ public sealed class ProcessBillableItemsCronHandler
     /// </summary>
     /// <param name="cmd">The scheduled command (marker, no payload).</param>
     /// <param name="ct">Cancellation token.</param>
+    /// <returns>A task that completes when the message has been handled.</returns>
     public Task HandleAsync(ProcessBillableItemsCronCommand cmd, CancellationToken ct)
     {
         _ = cmd;

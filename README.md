@@ -83,7 +83,7 @@ Taken from the local development stack with its seeded sample data.
 | Plugin marketplace | [plugins-hostpanel.innovayse.com](https://plugins-hostpanel.innovayse.com) lists installable plugins, among them the payment gateways Stripe, PayPal, Inecobank, Idram and Ameriabank. See [Payment gateways](https://hostpanel.innovayse.com/docs/payments/gateways) |
 | Plugin SDK | `Hostpanel.Sdk` (MIT, a NuGet package, developed in [hostpanel-sdk](https://github.com/innovayse/hostpanel-sdk)) for your own payment, registrar, provisioning, identity, fulfilment and hosted plugins |
 | Integrations | Payments: bank transfer built in; card and bank gateways install as plugins. Registrars: Namecheap, Name.am. Control panels: CWP7, Plesk, cPanel. Notifications: Telegram |
-| Data import from WHMCS | A PHP addon you install in WHMCS. HostPanel pulls clients, contacts, products, orders, services, domains, invoices, transactions, quotes, tickets, announcements, knowledge base, downloads and network issues from it, page by page. See [Moving from another billing system](docs/migration/from-another-system.md) |
+| Data import from WHMCS | A PHP addon you install in WHMCS. HostPanel pulls clients, contacts, products, orders, services, domains, invoices, transactions, quotes, tickets, announcements, knowledge base, downloads and network issues from it, page by page. See [Moving from another billing system](docs/en/migration/from-another-system.md) |
 
 See the [open feature requests](https://github.com/innovayse/hostpanel/issues?q=is%3Aissue+is%3Aopen+label%3Aenhancement)
 for what is coming next.
@@ -236,7 +236,7 @@ Copy `docker/.env.example` to `docker/.env`; the file documents every variable. 
 | `POSTGRES_PASSWORD`, `RABBITMQ_PASSWORD` | Database and broker passwords |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_ENCRYPTION`, `SMTP_FROM` | Outgoing mail; `SMTP_ENCRYPTION` is `tls`, `ssl` or `none` and is never guessed from the port |
 | `IMAGE_TAG`, `DOCKERHUB_NAMESPACE` | Which published images `docker-compose.hub.yml` runs |
-| `NUXT_PUBLIC_PORTAL_*` | Storefront template, name, logo and colours (the name falls back to `Hostpanel`; no operator brand is built in), see [docs/operators/storefront.md](docs/operators/storefront.md) |
+| `NUXT_PUBLIC_PORTAL_*` | Storefront template, name, logo and colours (the name falls back to `Hostpanel`; no operator brand is built in), see [docs/en/operators/storefront.md](docs/en/operators/storefront.md) |
 
 ## Run from source
 
@@ -270,8 +270,14 @@ Every compose stack (shared, dev, prod, platform, demo, hub) is described in [do
 **In GitHub Codespaces** you need nothing installed. On the repository page choose **Code**, then **Codespaces**, then
 **Create codespace on develop** and pick a machine with 4 cores or more. The setup in `.devcontainer/` installs .NET 9 and
 Node 22, fetches the plugin SDK submodule, writes `docker/.env` and starts the development stack above. The first start
-builds the images and takes a few minutes. When it is done, open the **Ports** tab and use the forwarded **Client portal**
+builds the images and takes about ten minutes. When it is done, open the **Ports** tab and use the forwarded **Client portal**
 (3001) and **Admin panel** (5174) with the sample accounts above.
+
+When a stopped codespace starts again, the stack comes back by itself in two to four minutes. The API is the slowest: it
+rebuilds under `dotnet watch`, and `docker ps` can show it as `unhealthy` until that is done. The running stack uses about
+18 GB of the 32 GB disk (images 12 GB, volumes 3 GB, the tools of the codespace 3 GB). The first build leaves another
+5 to 11 GB of build cache that nothing reads again, so the start removes it once the stack is up. To see where the space
+goes, run `bash .devcontainer/measure.sh` in the codespace.
 
 The stack builds and runs the backend, the admin panel and the client portal inside its own containers. The .NET and
 Node installed in the codespace serve your editor and your tools: do not start the host `dotnet` or `yarn dev` against the
@@ -310,7 +316,7 @@ or control-panel integration is one of the most useful contributions: open an is
 
 ### Writing a plugin
 
-Start with [docs/developers/write-a-plugin.md](docs/developers/write-a-plugin.md) (also on the
+Start with [docs/en/developers/write-a-plugin.md](docs/en/developers/write-a-plugin.md) (also on the
 [documentation site](https://hostpanel.innovayse.com/docs/developers/write-a-plugin)). The contract lives in the
 [`Hostpanel.Sdk`](https://www.nuget.org/packages/Hostpanel.Sdk) package, and
 [Publishing a plugin](https://hostpanel.innovayse.com/docs/developers/publishing-a-plugin) explains how to list one on the

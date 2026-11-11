@@ -36,6 +36,14 @@ public static class PluginSettingKeys
     /// </summary>
     public const string RegistryLicencePrefix = "plugins.registry_licence:";
 
+    /// <summary>
+    /// The identity this installation uses towards the plugin registry: its Ed25519 key pair, the instance id and the
+    /// challenge the registry gave it, and where the registration stands, kept as one JSON document. The value is a secret
+    /// (<c>SecretSettingKeys</c>): it holds the private key, so the whole document is stored encrypted and never returned.
+    /// The row is outside the general settings catalogue, so neither the settings list nor a settings update reaches it.
+    /// </summary>
+    public const string RegistryInstance = "plugins.registry_instance";
+
     /// <summary>The stored value of a switch that is on.</summary>
     public const string On = "true";
 

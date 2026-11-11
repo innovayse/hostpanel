@@ -24,6 +24,7 @@ public sealed class ReferenceDataEndpointTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Countries are closed to an anonymous caller.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetCountries_RefusesAnonymousAsync()
     {
@@ -33,6 +34,7 @@ public sealed class ReferenceDataEndpointTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>An authenticated caller reads the full country list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetCountries_ReturnsTheListAsync()
     {
@@ -46,6 +48,7 @@ public sealed class ReferenceDataEndpointTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Currencies are readable by an anonymous caller: the storefront needs them before sign-in.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetCurrencies_IsAnonymousAndReturnsTheListAsync()
     {

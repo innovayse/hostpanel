@@ -7,7 +7,7 @@ namespace Innovayse.Hostpanel.Application.Common.Interfaces;
 public interface IIntegrationConnectionProbe
 {
     /// <summary>Gets the integration slug this probe checks, one of the <see cref="Innovayse.Hostpanel.Domain.Settings.IntegrationSlugs"/> values.</summary>
-    string Slug { get; }
+    public string Slug { get; }
 
     /// <summary>
     /// Calls the provider with the stored credentials.
@@ -15,5 +15,5 @@ public interface IIntegrationConnectionProbe
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes when the provider accepted the credentials.</returns>
     /// <exception cref="Exception">Thrown when the provider is unreachable or rejects the credentials.</exception>
-    Task ProbeAsync(CancellationToken ct);
+    public Task ProbeAsync(CancellationToken ct);
 }

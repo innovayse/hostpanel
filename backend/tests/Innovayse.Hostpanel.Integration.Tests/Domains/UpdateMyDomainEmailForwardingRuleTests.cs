@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class UpdateMyDomainEmailForwardingRuleTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Updating a rule refuses a stranger with <c>DOMAIN_NOT_FOUND</c> and round-trips for the owner.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateEmailForwardingRule_RefusesAStrangerAndRoundTripsForTheOwnerAsync()
     {
@@ -41,6 +42,7 @@ public sealed class UpdateMyDomainEmailForwardingRuleTests(IntegrationTestFactor
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateEmailForwardingRule_WithoutToken_Returns401Async()
     {
@@ -54,6 +56,7 @@ public sealed class UpdateMyDomainEmailForwardingRuleTests(IntegrationTestFactor
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateEmailForwardingRule_WithNonPositiveId_Returns400ValidationErrorAsync()
     {

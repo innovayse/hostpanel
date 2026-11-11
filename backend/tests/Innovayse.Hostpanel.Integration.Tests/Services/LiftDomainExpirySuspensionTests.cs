@@ -2,7 +2,6 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.LiftDomainExpirySuspension;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Models;
@@ -20,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class LiftDomainExpirySuspensionTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A service suspended by domain expiry is active again.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ExpirySuspension_UnsuspendsAsync()
     {
@@ -32,6 +32,7 @@ public sealed class LiftDomainExpirySuspensionTests(IntegrationTestFactory facto
     }
 
     /// <summary>A manual suspension is not lifted, and the command still succeeds.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ManualSuspension_LeavesItSuspendedAsync()
     {
@@ -44,6 +45,7 @@ public sealed class LiftDomainExpirySuspensionTests(IntegrationTestFactory facto
     }
 
     /// <summary>An unknown service answers <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnknownService_ReturnsNotFoundAsync()
     {

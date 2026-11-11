@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class PluginMemberDomainAccessTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The member lists and reads the linked client's domain, and the member's own client's domain stays out of reach.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberActsForThePluginAccountNotForTheirOwnClientRecordAsync()
     {
@@ -34,6 +35,7 @@ public sealed class PluginMemberDomainAccessTests(IntegrationTestFactory factory
     }
 
     /// <summary>Changing a domain setting needs a flag no plugin grants, so even a purchasing member is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Member_IsRefusedDomainSettingChangesAsync()
     {
@@ -47,6 +49,7 @@ public sealed class PluginMemberDomainAccessTests(IntegrationTestFactory factory
     }
 
     /// <summary>A member of an account no client is linked to yet gets no profile rather than another client's domains.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberOfAnAccountWithNoClient_GetsNoProfileAsync()
     {

@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Slides;
 public sealed class UpdateSlideTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A slide updated with a replaced translation set reflects the new fields and translation.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_ReplacesFieldsAndTranslations()
     {
@@ -60,6 +61,7 @@ public sealed class UpdateSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An id that names no slide answers 404 with <c>SLIDE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_UnknownId_RefusesNotFound()
     {
@@ -72,6 +74,7 @@ public sealed class UpdateSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_RefusesAnonymous()
     {
@@ -81,6 +84,7 @@ public sealed class UpdateSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A negative sort order is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_NegativeSortOrder_RefusesWithValidationError()
     {
@@ -93,6 +97,7 @@ public sealed class UpdateSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Pointing a slide at a product that does not exist answers 404 with <c>PRODUCT_NOT_FOUND</c> and keeps the slide as it was.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Update_UnknownProduct_RefusesNotFound()
     {

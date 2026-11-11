@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class DomainRegistrationFailedAdminHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A failed domain registration alerts the configured platform admin exactly once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRegistrationFailed_NotifiesAdminExactlyOnceAsync()
     {
@@ -37,6 +38,7 @@ public sealed class DomainRegistrationFailedAdminHandlerTests(IntegrationTestFac
     /// With neither staff address configured the admin alert is skipped without throwing, so the chain the
     /// client handler shares is not retried: the owning client is mailed exactly once and nothing else is sent.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRegistrationFailed_WithNoStaffAddress_MailsOnlyTheClientOnceAsync()
     {
@@ -57,6 +59,7 @@ public sealed class DomainRegistrationFailedAdminHandlerTests(IntegrationTestFac
     }
 
     /// <summary>With only the contact inbox configured the admin alert falls back to it, once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DomainRegistrationFailed_WithOnlyContactAddress_AlertsTheContactInboxOnceAsync()
     {

@@ -17,7 +17,7 @@ public interface IPluginEndpointResolver
     /// The manifest, or <see langword="null"/> when no plugin of that id is loaded or the plugin is not an app
     /// plugin, which are the same answer on purpose.
     /// </returns>
-    PluginManifest? Find(string pluginId);
+    public PluginManifest? Find(string pluginId);
 
     /// <summary>
     /// Finds the manifest of a loaded plugin that answers public callbacks: an app plugin, or a plugin of any other type
@@ -29,7 +29,7 @@ public interface IPluginEndpointResolver
     /// The manifest, or <see langword="null"/> when no such plugin is loaded or it does not answer callbacks, which are
     /// the same answer on purpose.
     /// </returns>
-    PluginManifest? FindForCallback(string pluginId);
+    public PluginManifest? FindForCallback(string pluginId);
 
     /// <summary>
     /// Checks that the plugin is switched on and configured, without building it, and returns the way to build it.
@@ -42,5 +42,5 @@ public interface IPluginEndpointResolver
     /// required setting or does not implement <see cref="IPluginEndpoints"/>. Building can throw what the plugin's
     /// own constructor throws.
     /// </returns>
-    Task<Func<IPluginEndpoints>?> PrepareAsync(string pluginId, CancellationToken ct);
+    public Task<Func<IPluginEndpoints>?> PrepareAsync(string pluginId, CancellationToken ct);
 }

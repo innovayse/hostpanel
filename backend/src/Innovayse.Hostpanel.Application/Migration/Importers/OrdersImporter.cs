@@ -1,13 +1,10 @@
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Application.Migration.Importers.Enums;
 using Innovayse.Hostpanel.Application.Migration.Importers.Records;
 using Innovayse.Hostpanel.Application.Migration.Importers.SourceValues;
 using Innovayse.Hostpanel.Domain.Migration;
 using Innovayse.Hostpanel.Domain.Migration.Enums;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Products;
-using Innovayse.Hostpanel.Domain.Products.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Migration.Importers;
@@ -138,7 +135,10 @@ public sealed class OrdersImporter : IMigrationEntityImporter
         switch (rec.Status)
         {
             case SourceOrderStatuses.Active:
+                // The source delivered the lines long ago: accepted and fulfilled from history, so they never read as
+                // not run yet, and no run here starts them again.
                 order.Accept(now);
+                order.MarkLinesFulfilledFromHistory(rec.CreatedAt ?? now);
                 break;
             case SourceOrderStatuses.Cancelled:
                 order.Cancel();

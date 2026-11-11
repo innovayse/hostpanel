@@ -9,7 +9,6 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
 import SettingsLoading from '@/components/settings/SettingsLoading.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -22,6 +21,7 @@ import { UiDialogVariant } from '@/utils/ui/dialog'
 import { UiTone } from '@/utils/ui/tone'
 import UiIcon from '@/components/ui/UiIcon.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
@@ -37,6 +37,7 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import { Icon } from '@/lib/icons'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { formatRelativeFromNow } from '@/lib/format'
 import { formatMarginPercent, formatTldPrice, marginPercentTone } from '@/lib/tldPricing'
 import { useTldConfigsStore } from '@/stores/tldConfigs'
@@ -46,11 +47,9 @@ import type { TldConfigListItem } from '@/types/tldconfig'
 import { TldStatusFilter } from '@/types/tldstatusfilter'
 import { DEFAULT_PAGE_SIZE, SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { AppRoute, createPath, editPath } from '@/lib/routes'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t, locale } = useI18n()
-
-/** Router, used to open the create and edit pages. */
-const router = useRouter()
 
 /** TLD configs store: the list, the loading flag and the refusal sentences. */
 const store = useTldConfigsStore()
@@ -161,19 +160,8 @@ const handleSearch = (): void => {
   }, SEARCH_DEBOUNCE_MS)
 }
 
-/** Navigates to the create TLD config page. */
-const navigateCreate = (): void => {
-  void router.push(createPath(AppRoute.SettingsTldPricing))
-}
-
-/**
- * Navigates to the edit page for a given TLD config.
- *
- * @param item - The TLD config to edit.
- */
-const navigateEdit = (item: TldConfigListItem): void => {
-  void router.push(editPath(AppRoute.SettingsTldPricing, item.id))
-}
+/** Route of the create TLD config page, opened by the header link. */
+const createRoute = createPath(AppRoute.SettingsTldPricing)
 
 /**
  * Opens the delete confirmation for a TLD config.
@@ -278,17 +266,12 @@ watch(statusFilter, () => {
  */
 const tldActions = (item: TldConfigListItem): UiRowAction[] => {
   /**
-   * Navigates to the edit page for this TLD entry.
-   * @returns Nothing.
-   */
-  const onEdit = (): void => navigateEdit(item)
-  /**
    * Prompts deletion of this TLD entry.
    * @returns Nothing.
    */
   const onDelete = (): void => promptDelete(item)
   return [
-    { label: t('settings.tldConfigs.editTld'), testid: `tld-edit-${item.tld}`, onSelect: onEdit },
+    { label: t('settings.tldConfigs.editTld'), testid: `tld-edit-${item.tld}`, to: editPath(AppRoute.SettingsTldPricing, item.id) },
     { label: t('settings.tldConfigs.deleteTld'), testid: `tld-delete-${item.tld}`, onSelect: onDelete, danger: true },
   ]
 }
@@ -319,10 +302,10 @@ const tldActions = (item: TldConfigListItem): UiRowAction[] => {
           <UiIcon :markup="Icon.Refresh" size="sm" />
           {{ syncing ? t('settings.tldConfigs.syncing') : t('settings.tldConfigs.syncPrices') }}
         </UiButton>
-        <UiButton type="button" variant="primary" data-testid="tld-configs-add" @click="navigateCreate">
+        <UiLink :to="createRoute" :variant="UiButtonVariant.Primary" data-testid="tld-configs-add">
           <UiIcon :markup="Icon.Add" size="sm" />
           {{ t('settings.tldConfigs.addTld') }}
-        </UiButton>
+        </UiLink>
       </template>
     </UiPageHeader>
 
@@ -362,21 +345,21 @@ const tldActions = (item: TldConfigListItem): UiRowAction[] => {
     <UiErrorState v-else-if="store.error" :message="store.error" testid="tld-configs-error" @retry="store.fetchAll()" />
 
     <UiCard v-else class="overflow-hidden">
-      <UiTable density="comfortable" :empty="paginatedConfigs.length === 0" :colspan="9">
+      <UiTable :density="UiTableDensity.Comfortable" :empty="paginatedConfigs.length === 0" :colspan="9">
         <template #empty>
           {{ t('settings.tldConfigs.noTldConfigurationsFoundAdd') }}
         </template>
         <UiTableHead>
-          <UiTableRow class="border-b border-border">
+          <UiTableRow>
             <UiTableHeader align="left">{{ t('settings.tldConfigs.tld') }}</UiTableHeader>
             <UiTableHeader align="left">{{ t('settings.tldConfigs.provider') }}</UiTableHeader>
             <UiTableHeader align="left">{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('settings.tldConfigs.cost1yr') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('settings.tldConfigs.sell1yr') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('settings.tldConfigs.margin') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('settings.tldConfigs.cost1yr') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('settings.tldConfigs.sell1yr') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('settings.tldConfigs.margin') }}</UiTableHeader>
             <UiTableHeader align="left">{{ t('shared.categories') }}</UiTableHeader>
             <UiTableHeader align="left">{{ t('settings.tldConfigs.lastSynced') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -397,13 +380,13 @@ const tldActions = (item: TldConfigListItem): UiRowAction[] => {
                 {{ item.isEnabled ? t('shared.enabled') : t('shared.disabled') }}
               </UiBadge>
             </UiTableCell>
-            <UiTableCell align="right" muted class="tabular-nums">
+            <UiTableCell numeric muted>
               {{ formatTldPrice(item.costRegister1yr, item.currency) }}
             </UiTableCell>
-            <UiTableCell align="right" muted class="tabular-nums">
+            <UiTableCell numeric muted>
               {{ formatTldPrice(item.sellRegister1yr, item.sellCurrency) }}
             </UiTableCell>
-            <UiTableCell align="right" class="tabular-nums">
+            <UiTableCell numeric>
               <UiText :tone="marginPercentTone(item.marginPercent)" size="lg" class="font-medium">
                 {{ formatMarginPercent(item.marginPercent) }}
               </UiText>
@@ -417,8 +400,8 @@ const tldActions = (item: TldConfigListItem): UiRowAction[] => {
               </UiStack>
             </UiTableCell>
             <UiTableCell muted>{{ lastSyncedText(item.lastSyncedAt) }}</UiTableCell>
-            <UiTableCell align="right">
-              <UiRowActions :actions="tldActions(item)" />
+            <UiTableCell actions>
+              <UiRowActions :actions="tldActions(item)" :testid="`tld-actions-${item.tld}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

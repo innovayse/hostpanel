@@ -5,13 +5,19 @@
   "type": "module",
   "scripts": {
     "dev": "vitepress dev",
+    "predev": "node scripts/generate-locale-fallbacks.mjs",
     "build": "vitepress build",
+    "prebuild": "node scripts/generate-locale-fallbacks.mjs",
+    "postbuild": "node scripts/generate-locale-fallbacks.mjs --clean",
     "preview": "vitepress preview",
     "test": "vitest run"
   },
   "devDependencies": {
+    "@vitejs/plugin-vue": "5.2.4",
+    "@vue/test-utils": "2.5.1",
     "@vueuse/core": "12.8.2",
     "@vueuse/integrations": "12.8.2",
+    "happy-dom": "20.14.6",
     "mark.js": "8.11.1",
     "minisearch": "7.2.0",
     "vitepress": "1.6.4",

@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class GetMyClientUsersTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The list includes the caller as the account owner.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIncludesTheCaller()
     {
@@ -24,6 +25,7 @@ public sealed class GetMyClientUsersTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The list is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListRefusesAnonymous()
     {

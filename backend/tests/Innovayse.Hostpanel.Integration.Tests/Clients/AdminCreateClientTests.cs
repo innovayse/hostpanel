@@ -21,6 +21,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class AdminCreateClientTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Linking a client account to an existing, unlinked Identity subject succeeds.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LinksAnExistingSubject()
     {
@@ -39,6 +40,7 @@ public sealed class AdminCreateClientTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Linking a client account to a subject that already has one answers <c>EXISTING_USER_ALREADY_HAS_CLIENT</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesASubjectThatAlreadyHasAClient()
     {
@@ -52,6 +54,7 @@ public sealed class AdminCreateClientTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Linking a nonexistent existing-user id answers <c>IDENTITY_USER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnUnknownExistingUser()
     {
@@ -65,6 +68,7 @@ public sealed class AdminCreateClientTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An unconfigured currency is refused as missing, even on the admin-create path.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnUnconfiguredCurrency()
     {
@@ -79,6 +83,7 @@ public sealed class AdminCreateClientTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Admin-creating a client is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -89,6 +94,7 @@ public sealed class AdminCreateClientTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A client, who is not staff, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAClient()
     {
@@ -101,6 +107,7 @@ public sealed class AdminCreateClientTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A status that names no member of the enum is refused, not quietly created Active.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnUnknownStatus()
     {
@@ -117,6 +124,7 @@ public sealed class AdminCreateClientTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A named status is applied: the client is created Suspended.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreatesTheClientInTheNamedStatus()
     {
@@ -136,6 +144,7 @@ public sealed class AdminCreateClientTests(IntegrationTestFactory factory) : ICl
     /// A refusal that is decided before the account exists leaves no account behind: an unconfigured
     /// currency on a request that would have created a new account creates neither.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARefusalLeavesNoAccountBehind()
     {
@@ -155,6 +164,7 @@ public sealed class AdminCreateClientTests(IntegrationTestFactory factory) : ICl
     /// Creating a client with a new account grants the account the client role, leaves one activity
     /// line for the acting admin, and the account signs in.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreatesTheAccountItsRoleAndAnAuditLine()
     {
@@ -183,6 +193,7 @@ public sealed class AdminCreateClientTests(IntegrationTestFactory factory) : ICl
     /// database refuses the row, which is the only way left to make the save fail once every
     /// request-level check has passed.
     /// </remarks>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AFailedSaveRemovesTheAccountItCreated()
     {

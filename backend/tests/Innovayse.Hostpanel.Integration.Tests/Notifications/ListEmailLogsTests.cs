@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class ListEmailLogsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A log written straight to the database shows up in the admin flat list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminList_ShowsASeededLog()
     {
@@ -24,6 +25,7 @@ public sealed class ListEmailLogsTests(IntegrationTestFactory factory) : IClassF
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminList_RefusesAnonymous()
     {

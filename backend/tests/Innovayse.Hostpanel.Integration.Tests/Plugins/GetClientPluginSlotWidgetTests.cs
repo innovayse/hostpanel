@@ -1,12 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Slots;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
-using Hostpanel.Sdk.Plugins.Manifest;
-using Hostpanel.Sdk.Plugins.Slots;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -298,5 +298,96 @@ public sealed class GetClientPluginSlotWidgetTests : IClassFixture<AppPluginFixt
         bound.StatusCode.Should().Be(HttpStatusCode.OK);
         ignored.StatusCode.Should().Be(HttpStatusCode.OK);
         _fixture.Probe.Constructed.Should().Be(0);
+    }
+
+    /// <summary>
+    /// A widget's link origins hold the manifest's origins and the https host of the caller's own active service on a
+    /// product the operator bound to the plugin, so a plugin published once links to the live site without naming its
+    /// domain; a plugin with no binding gets the manifest's origins alone.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task TheWidgetsLinkOrigins_HoldTheBoundServiceDomain_AndOnlyThen()
+    {
+        var owner = await ClientsTestSeeds.RegisterClientAsync(_fixture.Factory, "widget-links");
+        var domain = $"live-{Guid.NewGuid():N}.example";
+        var service = await ServicesTestSeeds.SeedPendingServiceAsync(_fixture.Factory, owner.ClientId, domain);
+        int product;
+        using (var scope = _fixture.Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<Infrastructure.Persistence.AppDbContext>();
+            var row = await db.ClientServices.SingleAsync(s => s.Id == service);
+            var now = DateTimeOffset.UtcNow;
+            row.Activate("ref", now, now);
+            product = row.ProductId;
+            await db.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var pluginId = PluginActivationTestSeeds.NewId("widget-links");
+        var tabs = PluginSlots.ClientServiceTabs;
+        using var host = await PluginSlotSeeds.HostAsync(
+            _fixture, [pluginId], WithViews(pluginId, PluginSlotSeeds.Widget("tab", tabs)));
+        using var http = AppPluginFixture.WithBearerOf(host, owner.Client);
+
+        var before = await http.GetFromJsonAsync<JsonElement>(Url(tabs, pluginId, "tab", service));
+        using (var scope = _fixture.Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<Infrastructure.Persistence.AppDbContext>();
+            db.PluginSlotProductBindings.Add(Domain.Plugins.PluginSlotProductBinding.Create(pluginId, tabs, "tab", product));
+            await db.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var after = await http.GetFromJsonAsync<JsonElement>(Url(tabs, pluginId, "tab", service));
+
+        before.GetProperty("externalOrigins").GetArrayLength().Should().Be(0);
+        after.GetProperty("externalOrigins").EnumerateArray().Select(o => o.GetString())
+            .Should().Equal($"https://{domain}", $"https://www.{domain}");
+    }
+
+    /// <summary>
+    /// A sub-user who may not see services gets only the manifest's link origins on a widget, though the account holder
+    /// gets the bound service domain as well: the domains follow the visibility rule of the host API.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task TheWidgetsLinkOrigins_ForASubUserWithoutViewProductsServices_AreTheManifestsOnly()
+    {
+        var owner = await ClientsTestSeeds.RegisterClientAsync(_fixture.Factory, "widget-links-owner");
+        var sub = await ClientsTestSeeds.LinkedToAsync(
+            _fixture.Factory, "widget-links-sub", owner.ClientId, ClientPermission.ViewDomains);
+        var domain = $"live-{Guid.NewGuid():N}.example";
+        var service = await ServicesTestSeeds.SeedPendingServiceAsync(_fixture.Factory, owner.ClientId, domain);
+        var pluginId = PluginActivationTestSeeds.NewId("widget-links-sub");
+        var cards = PluginSlots.ClientDashboardCards;
+        var tabs = PluginSlots.ClientServiceTabs;
+        int product;
+        using (var scope = _fixture.Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<Infrastructure.Persistence.AppDbContext>();
+            var row = await db.ClientServices.SingleAsync(s => s.Id == service);
+            var now = DateTimeOffset.UtcNow;
+            row.Activate("ref", now, now);
+            product = row.ProductId;
+            db.PluginSlotProductBindings.Add(Domain.Plugins.PluginSlotProductBinding.Create(pluginId, tabs, "tab", product));
+            await db.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var plugin = PluginSlotSeeds.Plugin(
+            pluginId,
+            global::Hostpanel.Sdk.Plugins.Enums.PluginType.App,
+            Locales,
+            ["https://docs.example.org"],
+            PluginSlotSeeds.Widget("card", cards, permission: nameof(ClientPermission.ViewDomains)));
+        using var host = await PluginSlotSeeds.HostAsync(_fixture, [pluginId], PluginSlotSeeds.WithView(plugin, "views/card.json", ViewJson));
+        using var ownerHttp = AppPluginFixture.WithBearerOf(host, owner.Client);
+        using var subHttp = AppPluginFixture.WithBearerOf(host, sub);
+
+        var holder = await ownerHttp.GetFromJsonAsync<JsonElement>(Url(cards, pluginId, "card"));
+        var limited = await subHttp.GetFromJsonAsync<JsonElement>(Url(cards, pluginId, "card"));
+
+        holder.GetProperty("externalOrigins").EnumerateArray().Select(o => o.GetString())
+            .Should().Equal("https://docs.example.org", $"https://{domain}", $"https://www.{domain}");
+        limited.GetProperty("externalOrigins").EnumerateArray().Select(o => o.GetString())
+            .Should().Equal("https://docs.example.org");
     }
 }

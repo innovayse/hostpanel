@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class CreateTransactionTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Creating a transaction, then reading it back, round-trips its amounts.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateThenGetRoundTripsTheTransaction()
     {
@@ -53,6 +54,7 @@ public sealed class CreateTransactionTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>Creating a transaction is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateRefusesAnonymous()
     {
@@ -74,6 +76,7 @@ public sealed class CreateTransactionTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A transaction for a client that does not exist answers 404 with <c>CLIENT_NOT_FOUND</c> and writes nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateRefusesAnUnknownClient()
     {
@@ -98,6 +101,7 @@ public sealed class CreateTransactionTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A transaction that settles an invoice that does not exist answers 404 with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreateRefusesAnUnknownInvoice()
     {

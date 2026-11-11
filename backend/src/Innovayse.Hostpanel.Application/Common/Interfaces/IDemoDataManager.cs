@@ -12,7 +12,7 @@ public interface IDemoDataManager
     /// </summary>
     /// <param name="ct">Cancels the seed.</param>
     /// <returns>A task that completes once the data is saved.</returns>
-    Task SeedAsync(CancellationToken ct);
+    public Task SeedAsync(CancellationToken ct);
 
     /// <summary>
     /// Wipes every business table and seeds again, inside one transaction, so a failure leaves the
@@ -20,5 +20,5 @@ public interface IDemoDataManager
     /// </summary>
     /// <param name="ct">Cancels the reset.</param>
     /// <returns>A task that completes once the new data is committed.</returns>
-    Task ResetAsync(CancellationToken ct);
+    public Task ResetAsync(CancellationToken ct);
 }

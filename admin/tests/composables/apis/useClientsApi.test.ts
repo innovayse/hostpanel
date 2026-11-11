@@ -30,6 +30,7 @@ const update: UpdateClientPayload = {
     allowSso: true,
   },
   status: null,
+  clientGroupId: null,
 }
 
 afterEach(() => {

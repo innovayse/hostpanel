@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class SshKeyLimitRaceTests(PluginSshFixture fixture) : IClassFixture<PluginSshFixture>
 {
     /// <summary>The last slot taken during the save: the loser answers 409, the agent never sees it, the limit holds.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LastSlotTakenDuringTheSave_IsRefusedAndTheLimitHoldsAsync()
     {
@@ -48,6 +49,7 @@ public sealed class SshKeyLimitRaceTests(PluginSshFixture fixture) : IClassFixtu
     /// A retry after a lost race forgets only the key and the service row it staged: something else the same request's
     /// context staged before the add (here a settings row, standing for a plugin call's store write) is still saved.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARetry_KeepsWhatElseTheRequestStagedAsync()
     {

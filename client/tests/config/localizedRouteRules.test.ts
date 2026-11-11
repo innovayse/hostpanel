@@ -20,3 +20,14 @@ describe('browser-only page rules', () => {
     },
   )
 })
+
+describe('unsubscribe page rule', () => {
+  it.each(['', '/ru', '/hy'].map(prefix => `${prefix}/unsubscribe/**`))(
+    '%s renders in the browser, is not indexed and sends no referrer, because its address carries a token',
+    (rule) => {
+      expect(config).toContain(
+        `'${rule}': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } }`,
+      )
+    },
+  )
+})

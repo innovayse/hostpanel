@@ -69,6 +69,8 @@ describe('EmailForwardingTable', () => {
   it('edits a rule through the same row', async () => {
     const wrapper = mountTable([rule()])
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="clients-forwarding-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-edit-3"]').trigger('click')
 
     expect((wrapper.get('[data-testid="clients-forwarding-draft-source"]').element as HTMLInputElement).value).toBe('info@')
@@ -78,6 +80,8 @@ describe('EmailForwardingTable', () => {
     const fetchMock = stubFetch(json({}))
     const wrapper = mountTable([rule()])
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="clients-forwarding-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-delete-3"]').trigger('click')
     expect(fetchMock).not.toHaveBeenCalled()
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
@@ -91,6 +95,8 @@ describe('EmailForwardingTable', () => {
     stubFetch(new Response(null, { status: 204 }))
     const wrapper = mountTable([rule()])
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="clients-forwarding-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-delete-3"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -102,6 +108,8 @@ describe('EmailForwardingTable', () => {
     stubFetch(problem('The registrar refused the change.', 502))
     const wrapper = mountTable([rule()])
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="clients-forwarding-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-delete-3"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -114,6 +122,8 @@ describe('EmailForwardingTable', () => {
     const fetchMock = stubFetch(json({}))
     const wrapper = mountTable([rule()])
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="clients-forwarding-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-delete-3"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     await flushPromises()
@@ -126,6 +136,8 @@ describe('EmailForwardingTable', () => {
     stubFetch(json({}))
     const wrapper = mountTable([rule()])
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="clients-forwarding-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-edit-3"]').trigger('click')
     await wrapper.get('[data-testid="clients-forwarding-draft-save"]').trigger('click')
     await flushPromises()

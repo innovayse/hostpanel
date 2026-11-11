@@ -32,6 +32,7 @@ import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { LEDGER_PAGE_SIZE } from '@/lib/limits'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -216,7 +217,7 @@ onMounted(load)
 
     <UiCard v-else class="overflow-x-auto">
       <UiTable
-        density="comfortable"
+        :density="UiTableDensity.Comfortable"
         :empty="store.logs.length === 0"
         :colspan="4"
         data-testid="client-log-table"

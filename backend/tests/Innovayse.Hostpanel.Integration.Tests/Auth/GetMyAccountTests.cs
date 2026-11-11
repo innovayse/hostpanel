@@ -3,7 +3,6 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 
@@ -12,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Auth;
 public sealed class GetMyAccountTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A signed-in caller reads their own email, roles and verification state.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyAccountReturnsTheCallersAccount()
     {
@@ -40,6 +40,7 @@ public sealed class GetMyAccountTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An owner whose client is not linked to another system gets the client id and a null link.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OwnerWithoutALink_GetsTheClientIdAndNoExternalAccount()
     {
@@ -53,6 +54,7 @@ public sealed class GetMyAccountTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>An owner whose client is linked to another system gets the link as provider and id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OwnerWithALink_GetsTheClientIdAndTheExternalAccount()
     {
@@ -68,6 +70,7 @@ public sealed class GetMyAccountTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A sub-user gets the id and the link of the client they are linked to, with the permissions of the link.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SubUser_GetsTheLinkedClientIdAndItsExternalAccount()
     {
@@ -83,6 +86,7 @@ public sealed class GetMyAccountTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A plugin member whose account has no client yet gets the account the plugin named and no client id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginMemberWithoutAClient_GetsTheNamedAccountAndNoClientId()
     {
@@ -98,6 +102,7 @@ public sealed class GetMyAccountTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A plugin member whose account already has a client gets that client id and the link.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PluginMemberWithAClient_GetsTheClientIdAndTheLink()
     {
@@ -112,6 +117,7 @@ public sealed class GetMyAccountTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A caller who acts for no client gets a null client id and a null link.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CallerWithNoClient_GetsNullClientIdAndNullLink()
     {
@@ -124,6 +130,7 @@ public sealed class GetMyAccountTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetMyAccountRefusesAnonymous()
     {

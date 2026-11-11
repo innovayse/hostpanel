@@ -133,6 +133,15 @@ describe('ServiceSidebar permissions', () => {
     expect(wrapper.find('[data-testid="service-tab-cancel"]').exists()).toBe(false)
   })
 
+  it('offers the plan change to a person with PlaceNewOrders on an active service only', async () => {
+    const active = mountSidebar()
+    const suspended = mountSidebar({ service: service({ status: ServiceStatus.Suspended }) })
+    await grantPermissions(Permission.PlaceNewOrders)
+
+    expect(active.find('[data-testid="service-tab-planChange"]').exists()).toBe(true)
+    expect(suspended.find('[data-testid="service-tab-planChange"]').exists()).toBe(false)
+  })
+
   it('offers cancelling and the setup with PlaceNewOrders, and a new ticket with ViewOpenSupportTickets', async () => {
     const wrapper = mountSidebar({ service: service({ status: ServiceStatus.Pending }) })
     await grantPermissions(Permission.PlaceNewOrders | Permission.ViewOpenSupportTickets)

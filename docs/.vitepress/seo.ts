@@ -7,7 +7,11 @@ import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { HeadConfig, PageData, SiteConfig, TransformContext } from 'vitepress'
 import { canonicalOf, hasSitemap, isNoindexByVersion, latestLinkOf } from './versions'
+import { VersionKind } from './theme/versionLinks'
 import type { DocsVersion } from './versions'
+import { DEFAULT_LOCALE, LOCALE_KEYS, LOCALES, localeOfPath, stripLocale, withLocale } from './i18n/locales'
+import type { LocaleKey } from './i18n/locales'
+import { stringsFor } from './i18n/ui'
 
 /** The sitemap entry shape the sitemap option hands to `transformItems`. */
 type SitemapEntry = { url: string }
@@ -18,36 +22,11 @@ const MAX_DESCRIPTION = 160
 /** Shortest paragraph that is worth using as a description, in characters. */
 const MIN_DESCRIPTION = 40
 
-/** Display name of each top level section, used for breadcrumbs. */
-const SECTION_NAMES: Record<string, string> = {
-  'get-started': 'Get started',
-  operators: 'Operators',
-  staff: 'Staff',
-  customers: 'Customers',
-  payments: 'Payments',
-  servers: 'Servers and SSH',
-  migration: 'Migration',
-  developers: 'Developers',
-  'api-reference': 'API reference',
-  changelog: 'Changelog',
-}
-
-/** Description used when a page has neither a frontmatter description nor a usable first paragraph. */
-const SECTION_DESCRIPTIONS: Record<string, string> = {
-  'get-started': 'Get started with Hostpanel, the open source web hosting control panel: requirements and a quick start.',
-  operators: 'Install, upgrade, back up and configure Hostpanel, the open source web hosting control panel.',
-  staff: 'Staff guide to Hostpanel: clients, orders, billing, products, domains and support tickets.',
-  customers: 'Customer guide to the Hostpanel client portal: orders, invoices, services, domains and tickets.',
-  payments: 'Set up payment gateways and online payments in Hostpanel, the open source web hosting control panel.',
-  servers: 'Connect servers, manage SSH keys and provision hosting accounts with Hostpanel.',
-  migration: 'Move your hosting business to Hostpanel and read the import report.',
-  developers: 'Developer documentation for Hostpanel: architecture, local setup, tests and plugins.',
-  'api-reference': 'Hostpanel REST API reference: authentication, errors, languages, rate limits and every endpoint.',
-  changelog: 'What changed in each Hostpanel release.',
-}
-
-/** Description used for pages outside every known section. */
-const DEFAULT_DESCRIPTION = 'Documentation for Hostpanel, the open source web hosting control panel.'
+/**
+ * The English names of the top level sections. Their keys are the sections that have share images,
+ * and the names of every language are in the language files (`seo.sectionNames`).
+ */
+const SECTION_NAMES: Record<string, string> = stringsFor(DEFAULT_LOCALE).seo.sectionNames
 
 /** Name shown as the site in link previews. */
 const SITE_NAME = 'Hostpanel'
@@ -71,23 +50,6 @@ const MAX_KEYWORDS = 10
 
 /** Words that say nothing as a keyword when they come from a page title. */
 const STOP_WORDS = new Set(['and', 'the', 'for', 'with', 'your', 'how', 'are', 'from', 'new'])
-
-/** Keywords of each top level section, written before the words of the page title. */
-const SECTION_KEYWORDS: Record<string, string[]> = {
-  'get-started': ['hostpanel', 'hosting control panel', 'open source', 'quick start'],
-  operators: ['hostpanel', 'install', 'upgrade', 'backup', 'configuration'],
-  staff: ['hostpanel', 'hosting billing', 'admin guide', 'support tickets'],
-  customers: ['hostpanel', 'client portal', 'hosting account', 'invoices'],
-  payments: ['hostpanel', 'payment gateways', 'online payments', 'billing'],
-  servers: ['hostpanel', 'server management', 'ssh keys', 'provisioning'],
-  migration: ['hostpanel', 'migration', 'data import', 'hosting billing'],
-  developers: ['hostpanel', 'developer guide', 'plugins', 'open source'],
-  'api-reference': ['hostpanel', 'rest api', 'api reference', 'openapi'],
-  changelog: ['hostpanel', 'changelog', 'release notes'],
-}
-
-/** Keywords of pages outside every section. */
-const DEFAULT_KEYWORDS = ['hostpanel', 'hosting control panel', 'web hosting billing', 'open source']
 
 /** Matches the container that marks a page as a stub. */
 const WORK_IN_PROGRESS = /^:::\s*warning\s+Work in progress\b/im
@@ -313,18 +275,21 @@ const uniqueKeywords = (keywords: string[]): string[] => {
  * @param frontmatterKeywords The raw `keywords` frontmatter value, if any.
  * @param sectionKey First path segment of the page, or an empty string for the home page.
  * @param title The page title.
+ * @param locale The language of the page; its section keywords are used.
  * @returns The keywords, distinct and capped.
  */
-export const buildKeywords = (frontmatterKeywords: unknown, sectionKey: string, title: string): string[] => {
+export const buildKeywords = (frontmatterKeywords: unknown, sectionKey: string, title: string, locale: LocaleKey = DEFAULT_LOCALE): string[] => {
   const own = toKeywordList(frontmatterKeywords)
   if (own.length > 0) {
     return uniqueKeywords(own)
   }
   const words = title
     .toLowerCase()
-    .split(/[^a-z0-9]+/)
+    .split(/[^\p{L}\p{N}]+/u)
     .filter((word) => word.length > 2 && !STOP_WORDS.has(word))
-  return uniqueKeywords([...(SECTION_KEYWORDS[sectionKey] ?? DEFAULT_KEYWORDS), ...words])
+  const seo = stringsFor(locale).seo
+  const sectionKeywords = (seo.sectionKeywords as Record<string, string[]>)[sectionKey] ?? seo.defaultKeywords
+  return uniqueKeywords([...sectionKeywords, ...words])
 }
 
 /**
@@ -363,34 +328,62 @@ export const toJsonLd = (data: unknown): string => {
 }
 
 /** The version of a build that is not versioned: it is its own latest, so no version rule applies. */
-const UNVERSIONED: DocsVersion = { kind: 'latest', label: '', latestUrl: '', versionsUrl: '', latestPages: null }
+const UNVERSIONED: DocsVersion = { kind: VersionKind.Latest, label: '', latestUrl: '', versionsUrl: '', latestPages: null }
+
+/**
+ * The pages each language really has, as address keys of the English tree (`staff/orders`, `staff/`, an
+ * empty string for the home page). English lists every page; another language lists only what is
+ * translated, never a generated placeholder. It decides which languages a page links to with `hreflang`.
+ */
+export type PageLanguages = Partial<Record<LocaleKey, ReadonlySet<string>>>
 
 /**
  * Builds the SEO hooks of the site for one public address.
  * @param siteUrl Public origin plus base path of THIS build, without a trailing slash.
  * @param version Which version of the docs this build is; defaults to an unversioned build, which is the latest.
+ * @param languages The pages each language really has; empty means no page has alternate languages.
  * @returns The `transformPageData`, `transformHead` and sitemap `transformItems` hooks.
  */
-export const createSeo = (siteUrl: string, version: DocsVersion = UNVERSIONED) => {
+export const createSeo = (siteUrl: string, version: DocsVersion = UNVERSIONED, languages: PageLanguages = {}) => {
+  /**
+   * The languages a page exists in, as links for `hreflang`.
+   * @param urlPath Address path of the page in any language, such as `ru/staff/orders`.
+   * @returns One entry per language that really has the page plus `x-default` (English); empty when only one language has it.
+   */
+  const alternatesOf = (urlPath: string): { hreflang: string; href: string }[] => {
+    const key = stripLocale(urlPath)
+    const present = LOCALE_KEYS.filter((locale) => languages[locale]?.has(key))
+    if (present.length < 2) {
+      return []
+    }
+    const links = present.map((locale) => ({ hreflang: LOCALES[locale].hreflang, href: canonicalOf(version, siteUrl, withLocale(locale, key)) }))
+    return present.includes(DEFAULT_LOCALE) ? [...links, { hreflang: 'x-default', href: canonicalOf(version, siteUrl, withLocale(DEFAULT_LOCALE, key)) }] : links
+  }
+
   /**
    * Fills the description of a page that has none and records the stubs that must stay out of the index.
    * @param pageData The page data VitePress built for one page.
    * @param ctx The build context, which carries the site config.
    */
   const transformPageData = (pageData: PageData, ctx: { siteConfig: SiteConfig }): void => {
-    const source = readSource(ctx.siteConfig, pageData.relativePath)
-    if (WORK_IN_PROGRESS.test(source)) {
+    // A placeholder page is read from the folder the build wrote it to, not from the address it is served at.
+    const source = readSource(ctx.siteConfig, pageData.filePath ?? pageData.relativePath)
+    const locale = localeOfPath(pageData.relativePath)
+    // A translation of a page that is still a stub is a stub too, whatever the translator called the notice.
+    const englishSource = locale === DEFAULT_LOCALE ? source : readSource(ctx.siteConfig, `${LOCALES[DEFAULT_LOCALE].folder}/${stripLocale(pageData.relativePath)}`)
+    if (WORK_IN_PROGRESS.test(source) || WORK_IN_PROGRESS.test(englishSource) || pageData.frontmatter?.i18nFallback === true) {
       noindexUrls.add(toUrlPath(pageData.relativePath))
     }
     // The banner of an older release or of next links to this page in the latest docs.
-    if (version.kind !== 'latest') {
+    if (version.kind !== VersionKind.Latest) {
       pageData.frontmatter.docsLatestUrl = latestLinkOf(version, toUrlPath(pageData.relativePath))
     }
     if (pageData.description) {
       return
     }
-    const section = pageData.relativePath.split('/')[0]
-    pageData.description = shorten(firstParagraph(source)) || SECTION_DESCRIPTIONS[section] || DEFAULT_DESCRIPTION
+    const section = stripLocale(pageData.relativePath).split('/')[0]
+    const seo = stringsFor(locale).seo
+    pageData.description = shorten(firstParagraph(source)) || (seo.sectionDescriptions as Record<string, string>)[section] || seo.defaultDescription
   }
 
   /**
@@ -406,13 +399,18 @@ export const createSeo = (siteUrl: string, version: DocsVersion = UNVERSIONED) =
     }
     const urlPath = toUrlPath(pageData.relativePath)
     const url = `${siteUrl}/${urlPath}`
+    const locale = localeOfPath(pageData.relativePath)
+    const sourcePath = stripLocale(pageData.relativePath)
+    // A placeholder page repeats the English text, so the English page is the original and the placeholder stays out of the index.
+    const isFallback = pageData.frontmatter.i18nFallback === true
     // What search engines should index: this page for the latest and next, the latest page for an older release.
-    const canonical = canonicalOf(version, siteUrl, urlPath)
-    const isHome = pageData.relativePath === 'index.md'
+    const canonical = canonicalOf(version, siteUrl, isFallback ? stripLocale(urlPath) : urlPath)
+    const isHome = sourcePath === 'index.md'
+    const seoTexts = stringsFor(locale).seo
     const title = pageData.title || ctx.siteConfig.site.title
-    const description = pageData.description || DEFAULT_DESCRIPTION
-    const sectionKey = isHome ? '' : pageData.relativePath.split('/')[0]
-    const sectionName = SECTION_NAMES[sectionKey]
+    const description = pageData.description || seoTexts.defaultDescription
+    const sectionKey = isHome ? '' : sourcePath.split('/')[0]
+    const sectionName = (seoTexts.sectionNames as Record<string, string>)[sectionKey]
     const imageAlt = sectionName ? `${SITE_NAME} Docs: ${sectionName}` : `${SITE_NAME} Docs`
     const frontmatterImage = typeof pageData.frontmatter.image === 'string' ? pageData.frontmatter.image.trim() : ''
     const customImage = /^https?:\/\//.test(frontmatterImage) ? frontmatterImage : `${siteUrl}/${frontmatterImage.replace(/^\/+/, '')}`
@@ -426,9 +424,9 @@ export const createSeo = (siteUrl: string, version: DocsVersion = UNVERSIONED) =
       ['link', { rel: 'canonical', href: canonical }],
       // VitePress writes its own description tag without escaping; a tag given here replaces it and is escaped once.
       ['meta', { name: 'description', content: description }],
-      ['meta', { name: 'keywords', content: buildKeywords(pageData.frontmatter.keywords, sectionKey, title).join(', ') }],
+      ['meta', { name: 'keywords', content: buildKeywords(pageData.frontmatter.keywords, sectionKey, title, locale).join(', ') }],
       ['meta', { property: 'og:site_name', content: SITE_NAME }],
-      ['meta', { property: 'og:locale', content: ctx.siteConfig.site.lang.replace('-', '_') }],
+      ['meta', { property: 'og:locale', content: LOCALES[locale].ogLocale }],
       ['meta', { property: 'og:type', content: isHome ? 'website' : 'article' }],
       ['meta', { property: 'og:title', content: title }],
       ['meta', { property: 'og:description', content: description }],
@@ -460,8 +458,14 @@ export const createSeo = (siteUrl: string, version: DocsVersion = UNVERSIONED) =
         ['meta', { name: 'twitter:image:alt', content: imageAlt }],
       )
     }
-    if (noindexUrls.has(urlPath) || isNoindexByVersion(version, urlPath)) {
+    if (isFallback || noindexUrls.has(urlPath) || isNoindexByVersion(version, urlPath)) {
       tags.push(['meta', { name: 'robots', content: 'noindex, follow' }])
+    }
+    if (!isFallback) {
+      // Every language the page really exists in, and English as the default for readers of any other language.
+      for (const alternate of alternatesOf(urlPath)) {
+        tags.push(['link', { rel: 'alternate', hreflang: alternate.hreflang, href: alternate.href }])
+      }
     }
     if (isHome) {
       return tags
@@ -473,9 +477,9 @@ export const createSeo = (siteUrl: string, version: DocsVersion = UNVERSIONED) =
     if (modified) {
       tags.push(['meta', { property: 'article:modified_time', content: modified }])
     }
-    const crumbs: { name: string; url: string }[] = [{ name: ctx.siteConfig.site.title, url: `${siteUrl}/` }]
-    if (sectionName && !/^[^/]+\/index\.md$/.test(pageData.relativePath)) {
-      crumbs.push({ name: sectionName, url: `${siteUrl}/${sectionKey}/` })
+    const crumbs: { name: string; url: string }[] = [{ name: ctx.siteConfig.site.title, url: `${siteUrl}/${withLocale(locale, '')}` }]
+    if (sectionName && !/^[^/]+\/index\.md$/.test(sourcePath)) {
+      crumbs.push({ name: sectionName, url: `${siteUrl}/${withLocale(locale, `${sectionKey}/`)}` })
     }
     crumbs.push({ name: title, url })
 
@@ -505,7 +509,7 @@ export const createSeo = (siteUrl: string, version: DocsVersion = UNVERSIONED) =
           url: canonical,
           mainEntityOfPage: canonical,
           image: frontmatterImage ? customImage : imageSet.map((image) => image.src),
-          inLanguage: ctx.siteConfig.site.lang,
+          inLanguage: LOCALES[locale].lang,
           ...(version.label ? { version: version.label } : {}),
           ...(modified ? { dateModified: modified } : {}),
         }),
@@ -523,7 +527,15 @@ export const createSeo = (siteUrl: string, version: DocsVersion = UNVERSIONED) =
     if (!hasSitemap(version)) {
       return []
     }
-    return items.filter((item) => !noindexUrls.has(item.url) && !NOT_FOUND_URL.test(item.url))
+    return items
+      .filter((item) => !noindexUrls.has(item.url) && !NOT_FOUND_URL.test(item.url))
+      .map((item) => {
+        // The sitemap lists each language as its own entry and links the other languages of the page to it. The
+        // list is always set, even when empty: VitePress otherwise links every page to the same address in each
+        // language, which for a language that lacks the page is a placeholder that must not be indexed.
+        const alternates = alternatesOf(item.url)
+        return { ...item, links: alternates.map((alternate) => ({ lang: alternate.hreflang, url: alternate.href })) }
+      })
   }
 
   return { transformPageData, transformHead, sitemapItems }

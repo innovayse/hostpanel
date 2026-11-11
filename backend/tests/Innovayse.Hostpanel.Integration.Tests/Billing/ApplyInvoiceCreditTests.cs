@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ApplyInvoiceCreditTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Applying credit reduces the invoice's total owed and the client's balance by the same amount.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ApplyCreditReducesTheTotal()
     {
@@ -33,6 +34,7 @@ public sealed class ApplyInvoiceCreditTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Applying more credit than the client holds answers 400 with <c>CLIENT_CREDIT_INSUFFICIENT</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ApplyCreditRefusesMoreThanTheBalance()
     {
@@ -49,6 +51,7 @@ public sealed class ApplyInvoiceCreditTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Applying more credit than the invoice owes answers 400 with <c>INVOICE_CREDIT_EXCEEDS_DUE</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ApplyCreditRefusesMoreThanTheInvoiceOwes()
     {
@@ -65,6 +68,7 @@ public sealed class ApplyInvoiceCreditTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Applying credit against an id that names no invoice answers 404 with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ApplyCreditRefusesAnUnknownInvoice()
     {
@@ -77,6 +81,7 @@ public sealed class ApplyInvoiceCreditTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Applying credit is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ApplyCreditRefusesAnonymous()
     {
@@ -89,6 +94,7 @@ public sealed class ApplyInvoiceCreditTests(IntegrationTestFactory factory) : IC
     /// Credit that covers what a partial payment left settles the invoice in the same save: nothing
     /// is owed, so it does not stay open and go overdue.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ApplyCreditCoveringTheRestOfAPartPaidInvoiceSettlesIt()
     {

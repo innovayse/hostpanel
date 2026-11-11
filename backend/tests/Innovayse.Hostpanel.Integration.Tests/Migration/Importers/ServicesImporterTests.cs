@@ -25,6 +25,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     private int _lastJobId;
 
     /// <summary>A service for a known client and an existing product is imported.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_ImportsAServiceForAKnownClientAsync()
     {
@@ -61,6 +62,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>An imported service keeps the registration date the source gives as its creation date.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_KeepsTheSourceRegistrationDateAsync()
     {
@@ -95,6 +97,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     /// An active service keeps the next due date the source gives, not the one activation anchors on
     /// the registration date.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_KeepsTheSourceNextDueDateAsync()
     {
@@ -106,6 +109,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A terminated service keeps the termination date the source gives, not the moment of the import.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_KeepsTheSourceTerminationDateAsync()
     {
@@ -121,6 +125,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     /// A service the source suspended by hand lands suspended with a manual source, keeps its panel
     /// username as the provisioning reference, and raises no event on the way in.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_ImportsAnAdminSuspensionAsManualAsync()
     {
@@ -137,6 +142,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A plain source suspension does not say why, so it lands as <see cref="SuspensionSource.Other"/>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_ImportsAPlainSuspensionAsOtherAsync()
     {
@@ -149,6 +155,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A record with no username has no provisioning reference, never a made-up one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_LeavesTheReferenceEmptyWithoutAUsernameAsync()
     {
@@ -158,6 +165,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A record whose product name matches no product here is skipped, not linked to another product.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_SkipsARecordWithAnUnknownProductAsync()
     {
@@ -171,6 +179,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
 
     /// <summary>A record naming a cycle this version cannot bill is skipped, not stored on a guessed cycle.</summary>
     /// <param name="cycleWord">The cycle word the source sends.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Triennially")]
     [InlineData("One Time")]
@@ -190,6 +199,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     /// </summary>
     /// <param name="cycleWord">The cycle word the source sends.</param>
     /// <param name="expected">The cycle the imported service must hold.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("Quarterly", BillingCycle.Quarterly)]
     [InlineData("Semi-Annually", BillingCycle.SemiAnnual)]
@@ -207,6 +217,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The source's "Annually" spelling is imported as the annual cycle.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_ReadsTheAnnuallySpellingAsAnnualAsync()
     {
@@ -219,6 +230,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A record with no domain is matched by its panel username, so a second import adds nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_DeduplicatesByUsernameWithoutADomainAsync()
     {
@@ -231,6 +243,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A record with a source id and no domain or username is imported once, however often the job runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_DeduplicatesBySourceIdWithoutADomainOrUsernameAsync()
     {
@@ -242,6 +255,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Two source services that share a domain but have different source ids are both imported, and stay so on a retry.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_ImportsTwoServicesWithTheSameDomainAndDifferentSourceIdsAsync()
     {
@@ -260,6 +274,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     /// A source id is trimmed before it is kept and matched, so the same id repeated in one file with stray spaces is
     /// imported once and the repeat is skipped as already existing.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_TrimsTheSourceIdAndSkipsARepeatInTheSameFileAsync()
     {
@@ -278,6 +293,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A source id longer than the column that keeps it is skipped with its own reason and nothing is imported.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_SkipsASourceIdLongerThanTheColumnAsync()
     {
@@ -294,6 +310,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A row imported before source ids were kept (no id) is still matched by domain, and is not imported again.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Services_MatchesALegacyRowWithoutASourceIdByDomainAsync()
     {

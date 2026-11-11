@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class GetMyTicketTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A client can read back their own ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientCanReadTheirOwnTicketAsync()
     {
@@ -39,6 +40,7 @@ public sealed class GetMyTicketTests(IntegrationTestFactory factory) : IClassFix
     /// The client's own ticket, read alone or in the list, carries none of the staff-only fields:
     /// a staff tag and the staff flag set on it stay out.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OwnTicketCarriesNoStaffTagFlagOrAssignmentAsync()
     {
@@ -74,6 +76,7 @@ public sealed class GetMyTicketTests(IntegrationTestFactory factory) : IClassFix
     /// A stranger reading another client's ticket, and an id naming no ticket at all, are both
     /// refused with <c>TICKET_NOT_FOUND</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetSomeoneElsesTicketAnswersNotFoundAsync()
     {
@@ -102,6 +105,7 @@ public sealed class GetMyTicketTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A caller with no credential cannot read a client ticket.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

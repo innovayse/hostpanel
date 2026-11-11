@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class GetClientTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Reading an existing client answers 200 with its profile.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetExistingClientReturnsTheProfile()
     {
@@ -25,6 +26,7 @@ public sealed class GetClientTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A client with no external account link answers a null <c>externalAccount</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetClientWithoutALinkReturnsNullExternalAccount()
     {
@@ -39,6 +41,7 @@ public sealed class GetClientTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A linked client answers its provider and account id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetLinkedClientReturnsTheExternalAccount()
     {
@@ -58,6 +61,7 @@ public sealed class GetClientTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>Reading an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetUnknownClientRefusesNotFound()
     {
@@ -70,6 +74,7 @@ public sealed class GetClientTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>Reading a client is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRefusesAnonymous()
     {
@@ -79,6 +84,7 @@ public sealed class GetClientTests(IntegrationTestFactory factory) : IClassFixtu
     }
 
     /// <summary>A client, who is not staff, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRefusesAClient()
     {

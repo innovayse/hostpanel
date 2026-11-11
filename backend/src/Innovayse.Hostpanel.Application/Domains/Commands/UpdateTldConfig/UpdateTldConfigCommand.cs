@@ -1,5 +1,3 @@
-using Innovayse.Hostpanel.Domain.Domains.Enums;
-
 namespace Innovayse.Hostpanel.Application.Domains.Commands.UpdateTldConfig;
 
 /// <summary>Command to update an existing TLD configuration's settings and pricing.</summary>

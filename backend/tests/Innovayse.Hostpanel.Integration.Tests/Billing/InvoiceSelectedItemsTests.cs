@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class InvoiceSelectedItemsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Invoicing a selected item creates an invoice and marks the item invoiced.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvoiceSelectedCreatesAnInvoiceAndMarksTheItemInvoiced()
     {
@@ -40,6 +41,7 @@ public sealed class InvoiceSelectedItemsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Invoicing an id that names no billable item answers 404 with <c>BILLABLE_ITEM_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvoiceSelectedWithUnknownIdRefusesNotFound()
     {
@@ -58,6 +60,7 @@ public sealed class InvoiceSelectedItemsTests(IntegrationTestFactory factory) : 
     /// Invoicing a billable item that belongs to a different client answers 400 with
     /// <c>BILLABLE_ITEM_CLIENT_MISMATCH</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvoiceSelectedForWrongClientRefusesClientMismatch()
     {
@@ -83,6 +86,7 @@ public sealed class InvoiceSelectedItemsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Invoicing an already-invoiced billable item answers 400 with <c>BILLABLE_ITEM_INVOICED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvoiceSelectedTwiceRefusesAlreadyInvoiced()
     {
@@ -110,6 +114,7 @@ public sealed class InvoiceSelectedItemsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Invoicing selected items is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task InvoiceSelectedRefusesAnonymous()
     {

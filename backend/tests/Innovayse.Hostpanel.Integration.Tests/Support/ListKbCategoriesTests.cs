@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class ListKbCategoriesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can list knowledge base categories.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanListKbCategoriesAsync()
     {
@@ -22,6 +23,7 @@ public sealed class ListKbCategoriesTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The knowledge base category list is closed to a caller with no credential.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListIsClosedToAnonymousCallersAsync()
     {

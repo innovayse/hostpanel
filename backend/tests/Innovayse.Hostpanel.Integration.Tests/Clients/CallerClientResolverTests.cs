@@ -1,12 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using Hostpanel.Sdk.Plugins.Identity;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
-using Hostpanel.Sdk.Plugins.Identity;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -22,6 +22,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>The system name the stub plugin links its accounts under.</summary>
     private const string Provider = "crm";
 
@@ -63,7 +66,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var client = Client.Create($"user-{Guid.NewGuid():N}", "Plug", "In", $"plug-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"user-{Guid.NewGuid():N}", "Plug", "In", $"plug-{Guid.NewGuid():N}@example.test", SeededAt);
         client.SetExternalAccount(Provider, accountId);
         db.Clients.Add(client);
         await db.SaveChangesAsync(CancellationToken.None);
@@ -72,6 +75,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>With no plugin the owner of a client record acts for it with every permission.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithoutAPlugin_TheOwnerActsForTheirClientWithEveryPermissionAsync()
     {
@@ -84,6 +88,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>With no plugin a sub-user acts for the one account they are linked to, with what the link grants.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithoutAPlugin_ASubUserActsForTheLinkedClientWithTheLinkedPermissionsAsync()
     {
@@ -98,6 +103,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A plugin member who may purchase acts for the linked client and may order and pay, but is never the owner.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithAPlugin_AMemberWhoMayPurchaseMayOrderAndPayButIsNotTheOwnerAsync()
     {
@@ -116,6 +122,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A plugin member who may view but not buy holds no ordering, invoice or payment method permission.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithAPlugin_AMemberWhoMayViewButNotBuyHoldsNoMoneyPermissionAsync()
     {
@@ -134,6 +141,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A member who may only manage payment methods gets the one flag those actions are guarded by, and cannot order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithAPlugin_APaymentMethodManagerGetsThePaymentFlagButCannotOrderAsync()
     {
@@ -150,6 +158,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An enabled plugin decides alone: a user it refuses acts for nothing even when they own a client record.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithAPlugin_APrincipalItRefusesActsForNoAccountEvenIfTheyOwnOneAsync()
     {
@@ -163,6 +172,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A caller who is not identified at all is no refusal: the resolver answers <c>None</c> even with a plugin.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithAPlugin_AnUnauthenticatedCallerIsNotMarkedRefusedAsync()
     {
@@ -177,6 +187,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An account no client is linked to yet keeps its mapped permissions and names no client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithAPlugin_AnAccountWithNoClientYetHasPermissionsButNoClientIdAsync()
     {
@@ -193,6 +204,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Over HTTP a plugin member who may view but not buy reads their services and is refused an order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithAPlugin_AViewOnlyMemberReadsServicesAndIsRefusedAnOrderAsync()
     {
@@ -214,6 +226,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>The caller is resolved once per request: asking again does not ask the plugin again.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithAPlugin_AskingTwiceInOneRequestCallsThePluginOnceAsync()
     {
@@ -232,6 +245,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>After <c>Invalidate</c> the next ask reads again, so a client created meanwhile is found.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Invalidate_MakesTheNextAskReadAgainAndFindTheClientCreatedMeanwhileAsync()
     {
@@ -255,6 +269,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
 
     /// <summary>A plugin that throws, times out or cancels itself gives the unavailable answer, never an exception.</summary>
     /// <param name="kind">Which failure the plugin raises.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("fault")]
     [InlineData("timeout")]
@@ -277,6 +292,7 @@ public sealed class CallerClientResolverTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Two enabled identity plugins give the unavailable answer, even for a user who owns a client record.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WithTwoPluginsEnabled_TheCallerIsUnavailableAsync()
     {

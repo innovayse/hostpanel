@@ -15,6 +15,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, relative, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { listMarkdown, listEnglishPages, readSettings } from './lib/localeFallbacks.mjs'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const docsRoot = join(__dirname, '..')
@@ -82,22 +83,26 @@ for (const htmlFile of collectHtml(distDir)) {
 // ---------------------------------------------------------------------------
 
 /**
- * Reads the sidebar links from config.ts by matching on the link property.
- * This avoids importing the TS file at runtime.
+ * Reads the sidebar links from `.vitepress/i18n/sidebar.json`, the one list the config builds the sidebar of
+ * every language from. This avoids importing the TS config at runtime.
  * @returns {Set<string>} Normalised link paths without trailing slash.
  */
 const sidebarLinks = () => {
-  const config = readFileSync(join(docsRoot, '.vitepress', 'config.ts'), 'utf8')
-  const linkRe = /link:\s*'([^']+)'/g
+  const sidebar = JSON.parse(readFileSync(join(docsRoot, '.vitepress', 'i18n', 'sidebar.json'), 'utf8'))
   const links = new Set()
-  let m
-  while ((m = linkRe.exec(config)) !== null) {
-    // Skip external links.
-    if (m[1].startsWith('http')) { continue }
-    links.add(m[1].replace(/\/$/, ''))
+  for (const link of [...sidebar.main.flatMap((section) => section.links), ...sidebar.apiReference.links]) {
+    links.add(link.replace(/\/$/, ''))
   }
   return links
 }
+
+/** The language settings: the folders of the languages other than English are not part of the English tree. */
+const localeSettings = readSettings()
+
+/** Source folders of the languages other than English. */
+const localePrefixes = Object.entries(localeSettings.locales)
+  .filter(([key]) => key !== localeSettings.default)
+  .map(([, locale]) => locale.folder)
 
 /**
  * Recursively collects every .md source file under a directory, returning
@@ -132,19 +137,34 @@ const addSidebarLinks = (item) => {
 
 // Also collect links from generated-sidebar.json when present (API reference endpoint pages,
 // grouped by audience and then by area).
-const generatedSidebarPath = join(docsRoot, 'api-reference', 'generated-sidebar.json')
+const generatedSidebarPath = join(docsRoot, 'en', 'api-reference', 'generated-sidebar.json')
 if (existsSync(generatedSidebarPath)) {
   for (const group of JSON.parse(readFileSync(generatedSidebarPath, 'utf8'))) { addSidebarLinks(group) }
 }
 
-// Pages intentionally excluded from the sidebar (home page, components demo).
-const excluded = new Set(['', '/components'])
+// Pages intentionally excluded from the sidebar (home page, components demo, and the changelog, which the top bar links to).
+const excluded = new Set(['', '/components', '/changelog'])
 
-for (const page of collectMd(docsRoot)) {
+for (const page of collectMd(join(docsRoot, 'en'))) {
   if (excluded.has(page)) { continue }
   if (!links.has(page)) {
     console.error(`Page not in sidebar: ${page}.md`)
     failures++
+  }
+}
+
+// ---------------------------------------------------------------------------
+// 3. Translations without an English page
+// ---------------------------------------------------------------------------
+
+// A translated page needs the English page it translates; without it nothing links to the translation.
+const englishPages = new Set(listEnglishPages(docsRoot, localeSettings))
+for (const prefix of localePrefixes) {
+  for (const page of listMarkdown(join(docsRoot, prefix))) {
+    if (!englishPages.has(page)) {
+      console.error(`Translation without an English page: ${prefix}/${page}`)
+      failures++
+    }
   }
 }
 

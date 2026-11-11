@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Slides;
 public sealed class ListSlidesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A created slide shows up in the admin list.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminList_ShowsACreatedSlide()
     {
@@ -24,6 +25,7 @@ public sealed class ListSlidesTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminList_RefusesAnonymous()
     {

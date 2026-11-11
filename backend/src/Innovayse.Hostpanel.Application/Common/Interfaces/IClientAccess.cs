@@ -34,7 +34,7 @@ public interface IClientAccess
     /// every link grants. <see cref="ClientPermission.None"/> when the caller owns no record, is
     /// linked to none, or is not identified at all.
     /// </returns>
-    Task<ClientPermission> GetCallerPermissionsAsync(CancellationToken ct);
+    public Task<ClientPermission> GetCallerPermissionsAsync(CancellationToken ct);
 
     /// <summary>Tells whether the identity plugin that decides the caller's account could not answer for this request.</summary>
     /// <param name="ct">Cancellation token.</param>
@@ -42,7 +42,7 @@ public interface IClientAccess
     /// <see langword="true"/> when the plugin threw, timed out, or two are enabled: the permission filter then answers
     /// <c>IDENTITY_PLUGIN_UNAVAILABLE</c> instead of a permission refusal the caller could take for permanent.
     /// </returns>
-    Task<bool> IsIdentityUnavailableAsync(CancellationToken ct);
+    public Task<bool> IsIdentityUnavailableAsync(CancellationToken ct);
 
     /// <summary>Resolves the id of the account the current credential acts for, owner or linked user.</summary>
     /// <param name="ct">Cancellation token.</param>
@@ -52,7 +52,7 @@ public interface IClientAccess
     /// identity plugin could not answer.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
-    Task<Result<int>> RequireClientIdAsync(CancellationToken ct);
+    public Task<Result<int>> RequireClientIdAsync(CancellationToken ct);
 
     /// <summary>Resolves the id of the account the current credential owns, refusing a linked user.</summary>
     /// <remarks>
@@ -65,5 +65,5 @@ public interface IClientAccess
     /// identity plugin could not answer.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
-    Task<Result<int>> RequireOwnClientIdAsync(CancellationToken ct);
+    public Task<Result<int>> RequireOwnClientIdAsync(CancellationToken ct);
 }

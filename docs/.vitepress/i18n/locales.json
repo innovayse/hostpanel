@@ -1,0 +1,10 @@
+{
+  "default": "en",
+  "fallbackDir": "_fallback",
+  "locales": {
+    "en": { "lang": "en-US", "ogLocale": "en_US", "hreflang": "en", "label": "English", "prefix": "", "folder": "en" },
+    "ru": { "lang": "ru-RU", "ogLocale": "ru_RU", "hreflang": "ru", "label": "Русский", "prefix": "ru", "folder": "ru" },
+    "hy": { "lang": "hy-AM", "ogLocale": "hy_AM", "hreflang": "hy", "label": "Հայերեն", "prefix": "hy", "folder": "hy" }
+  },
+  "untranslated": ["components.md", "api-reference/_partials/"]
+}

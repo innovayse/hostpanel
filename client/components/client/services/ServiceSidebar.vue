@@ -48,11 +48,12 @@
  * control panel and webmail.
  */
 import { computed } from 'vue'
-import { KeyRound, LayoutGrid, Link2, Mail, MessageSquare, Monitor, Puzzle, Settings, Terminal, XCircle, Zap } from 'lucide-vue-next'
+import { ArrowUpDown, KeyRound, LayoutGrid, Link2, Mail, MessageSquare, Monitor, Puzzle, Settings, Terminal, XCircle, Zap } from 'lucide-vue-next'
 import { CLIENT_TICKET_NEW_PATH, clientServiceSetupPath } from '~/constants/clientRoutes'
 import { Permission } from '~/types/permission'
 import { useClientStore } from '~/stores/client'
 import type { ClientService } from '~/types/clientservice'
+import { ServiceStatus } from '~/types/servicestatus'
 import type { PluginServiceTab } from '~/types/pluginservicetab'
 import { ServiceTab } from '~/types/servicetab'
 import { canSignInToControlPanel, hasLiveHostingAccount, webmailUrl as buildWebmailUrl } from '~/utils/controlPanel'
@@ -123,6 +124,10 @@ const tabs = computed(() => [
   // SSH keys are login credentials, so they sit behind the same permission as the password.
   ...(canChangePassword.value
     ? [{ key: ServiceTab.Ssh, label: t('client.services.tabSsh'), icon: Terminal }]
+    : []),
+  // The backend refuses a plan change on a service that is not active.
+  ...(canOrder.value && props.service.status === ServiceStatus.Active
+    ? [{ key: ServiceTab.PlanChange, label: t('client.services.tabPlanChange'), icon: ArrowUpDown }]
     : []),
   ...(canOrder.value ? [{ key: ServiceTab.Cancel, label: t('client.services.tabCancel'), icon: XCircle }] : []),
   ...props.pluginTabs.map(tab => ({ ...tab, icon: Puzzle })),

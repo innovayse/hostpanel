@@ -6,7 +6,7 @@
  * - Desktop (lg+): always visible, full width
  * - Smaller screens: hidden, opened as a drawer from the topbar hamburger
  */
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
@@ -17,12 +17,43 @@ import RoutedView from '@/components/layout/RoutedView.vue'
 import UiDrawer from '@/components/ui/UiDrawer.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import { useLinkPrefetch } from '@/composables/useLinkPrefetch'
+import { useAuthStore } from '@/stores/auth'
+import { useReleaseStatusStore } from '@/stores/releaseStatus'
+import { useVersionStore } from '@/stores/version'
 
 /** Translation function and the active language; the language keys the routed view so labels built once at setup re-render when it changes. */
 const { t, locale } = useI18n()
 
 // Hovering, focusing or touching any in-app link starts downloading its screen, so the click finds it ready.
 useLinkPrefetch(useRouter())
+
+/** Auth store: who is signed in and with which roles. */
+const authStore = useAuthStore()
+
+/** Version store: the installed version every staff role sees, loaded here and nowhere else. */
+const versionStore = useVersionStore()
+
+/** Release status store: the upgrade notice data, which only an Admin may read. */
+const releaseStatusStore = useReleaseStatusStore()
+
+// The one place that loads both. It runs on mount and again when the account or its roles change
+// (the version store has already dropped its old value by then), so a failed or refused load never
+// sticks. The upgrade notice data is asked for only when the account is an Admin.
+watch(
+  () => authStore.accountKey,
+  (account) => {
+    if (account === null) {
+      return
+    }
+    void versionStore.ensureLoaded()
+    if (authStore.isAdmin) {
+      void releaseStatusStore.fetch()
+    } else {
+      releaseStatusStore.reset()
+    }
+  },
+  { immediate: true },
+)
 
 /** Controls the mobile drawer open state. */
 const drawerOpen = ref(false)

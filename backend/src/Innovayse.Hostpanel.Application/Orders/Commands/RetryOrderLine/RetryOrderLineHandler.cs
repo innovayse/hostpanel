@@ -127,7 +127,7 @@ public sealed class RetryOrderLineHandler
         var attempt = item.FulfilmentAttempts;
         try
         {
-            return await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(new FulfillOrderLinesCommand(order.Id, item.Id), ct);
+            return await _bus.InvokeAsync<Result<OrderFulfillmentDto>>(new FulfillOrderLinesCommand(order.Id, item.Id, [new ClaimedOrderLineDto(item.Id, attempt)]), ct);
         }
         catch (Exception ex) when (ex is OperationCanceledException && ct.IsCancellationRequested)
         {

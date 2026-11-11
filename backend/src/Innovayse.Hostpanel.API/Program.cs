@@ -3,28 +3,29 @@ using Innovayse.Auth;
 using Innovayse.Auth.Endpoints;
 #endif
 using Innovayse.Hostpanel.API;
+using Innovayse.Hostpanel.API.Auth;
 using Innovayse.Hostpanel.API.Authorization;
 using Innovayse.Hostpanel.API.Extensions;
+using Innovayse.Hostpanel.API.Logging;
 using Innovayse.Hostpanel.Application;
-using Innovayse.Hostpanel.Application.Common.Settings;
-using Innovayse.Hostpanel.Domain.Auth;
-using Innovayse.Hostpanel.Infrastructure;
-using Innovayse.Hostpanel.Infrastructure.Persistence;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using JasperFx;
-using Microsoft.Extensions.Options;
-using Serilog;
-using Innovayse.Hostpanel.API.Auth;
 using Innovayse.Hostpanel.Application.Admin.Seeding;
 using Innovayse.Hostpanel.Application.Auth.Seeding;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Notifications.Seeding;
 using Innovayse.Hostpanel.Application.Support.Seeding;
+using Innovayse.Hostpanel.Domain.Auth;
+using Innovayse.Hostpanel.Infrastructure;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Extensions;
 using Innovayse.Hostpanel.Shared.Middleware;
 using Innovayse.Hostpanel.Shared.Settings;
+using JasperFx;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Serilog;
 
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
@@ -44,7 +45,9 @@ try
         builder.Host.UseSerilog((ctx, services, config) =>
             config.ReadFrom.Configuration(ctx.Configuration)
                   .ReadFrom.Services(services)
-                  .Enrich.FromLogContext());
+                  .Enrich.FromLogContext()
+                  // A campaign mail's tracking token is a credential: request logging writes the path, so it is masked there.
+                  .Enrich.With<CampaignTokenPathEnricher>());
     }
 
     // The layers, each registering itself. Application first (validators), then Infrastructure
@@ -140,6 +143,10 @@ try
         // The four domain mails the domain handlers send: with no stored template a send only logs
         // "template not found" and the client or staff member never hears about the event.
         await DomainTemplatesSeeder.EnsureSeededAsync(
+            scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>(), CancellationToken.None);
+
+        // The frame of marketing campaign mails, seeded here and nowhere else: the preview and every campaign send read it.
+        await EmailCampaignTemplateSeeder.EnsureSeededAsync(
             scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>(), CancellationToken.None);
 
         // Dev seed: populate test data in Development. Local mode only: the seeder
@@ -318,7 +325,6 @@ try
 
         app.UseAuthorization();
     }
-
 
     app.MapControllers();
 

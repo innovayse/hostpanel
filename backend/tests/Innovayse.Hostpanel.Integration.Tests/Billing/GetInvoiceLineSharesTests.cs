@@ -20,6 +20,7 @@ public sealed class GetInvoiceLineSharesTests(IntegrationTestFactory factory) : 
     /// On a taxed invoice that used credit, a line's paid share carries its part of the tax, and its
     /// credit share and paid share add up to what the line cost.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_TaxedInvoiceWithCredit_SplitsTheLineAsync()
     {
@@ -47,6 +48,7 @@ public sealed class GetInvoiceLineSharesTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>An id that names no invoice is refused with <c>INVOICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UnknownInvoice_RefusesNotFoundAsync()
     {

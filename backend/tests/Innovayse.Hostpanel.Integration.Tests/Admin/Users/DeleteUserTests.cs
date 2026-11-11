@@ -22,6 +22,7 @@ public sealed class DeleteUserTests(IntegrationTestFactory factory) : IClassFixt
     /// Deleting an unknown subject still answers success: this deployment's own delete is
     /// idempotent.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownSubject_StillSucceedsAsync()
     {
@@ -48,6 +49,7 @@ public sealed class DeleteUserTests(IntegrationTestFactory factory) : IClassFixt
 #endif
 
     /// <summary>An admin cannot delete their own account; it stays live.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OwnAccount_IsRefusedAsync()
     {
@@ -65,6 +67,7 @@ public sealed class DeleteUserTests(IntegrationTestFactory factory) : IClassFixt
     /// The last active administrator cannot be deleted: a caller whose token still carries Admin
     /// after the role was taken from them cannot remove the one account that holds it.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LastActiveAdmin_IsRefusedAsync()
     {
@@ -86,6 +89,7 @@ public sealed class DeleteUserTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>An administrator who is not the last one can be deleted.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnotherAdmin_CanBeDeletedAsync()
     {
@@ -98,6 +102,7 @@ public sealed class DeleteUserTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -109,6 +114,7 @@ public sealed class DeleteUserTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>The admin routes are not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -13,7 +13,7 @@ public interface IProvisioningProviderFactory
     /// The server modules <see cref="CreateFor"/> can build a provider for. A product with no server
     /// group is provisioned onto a server of any of these modules, never one the factory would refuse.
     /// </summary>
-    IReadOnlyCollection<ServerModule> SupportedModules { get; }
+    public IReadOnlyCollection<ServerModule> SupportedModules { get; }
 
     /// <summary>
     /// Creates a provisioning provider configured with the credentials and settings of the given server.
@@ -23,5 +23,5 @@ public interface IProvisioningProviderFactory
     /// <exception cref="System.NotSupportedException">
     /// Thrown when the server's <see cref="ServerConnectionDto.Module"/> is not supported.
     /// </exception>
-    IProvisioningProvider CreateFor(ServerConnectionDto server);
+    public IProvisioningProvider CreateFor(ServerConnectionDto server);
 }

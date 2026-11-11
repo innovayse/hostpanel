@@ -93,6 +93,9 @@ public sealed class Client : BaseEntity, IAggregateRoot
     /// </summary>
     public string? ExternalAccountId { get; private set; }
 
+    /// <summary>Gets the id of the <see cref="ClientGroup"/> the client belongs to, or <see langword="null"/> when it has none.</summary>
+    public int? ClientGroupId { get; private set; }
+
     /// <summary>Gets the billing contact reference.</summary>
     public string? BillingContact { get; private set; }
 
@@ -133,7 +136,10 @@ public sealed class Client : BaseEntity, IAggregateRoot
     /// <summary>Gets whether credit card processing is disabled: no card payment or saved card charge is taken from this client.</summary>
     public bool DisableCcProcessing { get; private set; }
 
-    /// <summary>Gets whether this client has opted in to marketing emails.</summary>
+    /// <summary>
+    /// Gets whether this client has opted in to marketing emails: the consent flag. Email campaigns go only to clients
+    /// where this is true, and an unsubscribe sets it to false through <see cref="WithdrawMarketingConsent"/>.
+    /// </summary>
     public bool MarketingOptIn { get; private set; }
 
     /// <summary>Gets whether status update emails are sent to this client.</summary>
@@ -354,6 +360,19 @@ public sealed class Client : BaseEntity, IAggregateRoot
         ExternalAccountId = null;
     }
 
+    /// <summary>Puts the client in a group, replacing the one it was in.</summary>
+    /// <param name="clientGroupId">The id of the <see cref="ClientGroup"/>; the caller has checked it exists.</param>
+    public void AssignToGroup(int clientGroupId)
+    {
+        ClientGroupId = clientGroupId;
+    }
+
+    /// <summary>Takes the client out of its group. Does nothing when it has none.</summary>
+    public void ClearGroup()
+    {
+        ClientGroupId = null;
+    }
+
     /// <summary>
     /// Updates the client's email notification preferences.
     /// </summary>
@@ -394,6 +413,12 @@ public sealed class Client : BaseEntity, IAggregateRoot
         MarketingOptIn = marketingOptIn;
         StatusUpdate = statusUpdate;
         AllowSso = allowSso;
+    }
+
+    /// <summary>Withdraws the client's consent to marketing emails and touches no other setting. Repeating it changes nothing.</summary>
+    public void WithdrawMarketingConsent()
+    {
+        MarketingOptIn = false;
     }
 
     /// <summary>

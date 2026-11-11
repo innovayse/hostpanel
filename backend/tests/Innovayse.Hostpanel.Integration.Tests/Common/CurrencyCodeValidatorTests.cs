@@ -1,5 +1,4 @@
 using FluentValidation.Results;
-using FluentValidation.TestHelper;
 using Innovayse.Hostpanel.Application.Billing.Commands.CreateBillableItem;
 using Innovayse.Hostpanel.Application.Billing.Commands.CreateOrderInvoice;
 using Innovayse.Hostpanel.Application.Billing.Currencies.Commands.SetBaseCurrency;
@@ -19,7 +18,6 @@ using Innovayse.Hostpanel.Application.Resources;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Products.Enums;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Innovayse.Hostpanel.Integration.Tests.Shared;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Common;

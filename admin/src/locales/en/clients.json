@@ -204,6 +204,8 @@
     "registrarLock": "Registrar Lock",
     "renewDomain": "Renew Domain",
     "numberOfYears": "Number of years",
+    "cancelTransfer": "Cancel Transfer",
+    "cancelThisTransferAtThe": "Cancel this pending transfer at the registrar?",
     "registerDomain": "Register Domain",
     "registerThisDomainWithThe": "Register this domain with the registrar?",
     "eppAuthorizationCode": "EPP Authorization Code",
@@ -611,7 +613,8 @@
       "PaymentSurplus": "Payment beyond an invoice",
       "TransactionReversed": "Ledger entry reversed",
       "CreditNoteIssued": "Credit note issued as account credit",
-      "CreditNoteVoided": "Credit note voided"
+      "CreditNoteVoided": "Credit note voided",
+      "PlanChangeCredit": "Downgrade credit"
     }
   }
 }

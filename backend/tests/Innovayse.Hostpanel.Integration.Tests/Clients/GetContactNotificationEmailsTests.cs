@@ -15,6 +15,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class GetContactNotificationEmailsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Only the contacts who switched the kind of email on are returned, each address once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_ReturnsOnlyTheContactsWhoWantThatKindAsync()
     {
@@ -33,6 +34,7 @@ public sealed class GetContactNotificationEmailsTests(IntegrationTestFactory fac
     }
 
     /// <summary>A client with no contacts, or an unknown id, has nobody to copy: an empty list, not a refusal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NoContacts_ReturnsAnEmptyListAsync()
     {

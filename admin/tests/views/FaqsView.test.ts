@@ -84,7 +84,7 @@ describe('FaqsView', () => {
       expect(router.currentRoute.value.path).toBe('/storefront/faqs/create')
     })
 
-    await wrapper.get('[data-testid="faq-row-2"] [data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="faq-actions-2"]').trigger('click')
     await wrapper.get('[data-testid="faq-edit-2"]').trigger('click')
     await vi.waitFor(() => {
       expect(router.currentRoute.value.path).toBe('/storefront/faqs/2/edit')
@@ -98,7 +98,7 @@ describe('FaqsView', () => {
     })
     const { wrapper } = await mountScreen(FaqsView)
 
-    await wrapper.get('[data-testid="faq-row-1"] [data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="faq-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="faq-delete-1"]').trigger('click')
     expect(wrapper.get('[role="dialog"]').text()).toContain('Delete the question "Why"?')
     expect(requestsOf(mock)).not.toContain('DELETE /admin/faqs/1')
@@ -119,7 +119,7 @@ describe('FaqsView', () => {
     })
     const { wrapper } = await mountScreen(FaqsView)
 
-    await wrapper.get('[data-testid="faq-row-1"] [data-testid="row-actions-trigger"]').trigger('click')
+    await wrapper.get('[data-testid="faq-actions-1"]').trigger('click')
     await wrapper.get('[data-testid="faq-delete-1"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
 

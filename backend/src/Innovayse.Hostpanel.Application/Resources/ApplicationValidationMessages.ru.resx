@@ -400,8 +400,11 @@
   <data name="KbArticleContentRequired" xml:space="preserve">
     <value>Содержимое обязательно.</value>
   </data>
-  <data name="KbArticleCategoryRequired" xml:space="preserve">
-    <value>Категория обязательна.</value>
+  <data name="KbArticleTitleTooLong" xml:space="preserve">
+    <value>Заголовок может содержать не более {0} символов.</value>
+  </data>
+  <data name="KbArticleSlugInvalid" xml:space="preserve">
+    <value>Адрес статьи недопустим.</value>
   </data>
   <data name="KbArticleCategoryTooLong" xml:space="preserve">
     <value>Категория не должна превышать {0} символов.</value>
@@ -1485,5 +1488,98 @@
   </data>
   <data name="CreditNoteItemQuantityInvalid" xml:space="preserve">
     <value>У каждой строки количество должно быть от 1 до 100000.</value>
+  </data>
+  <data name="StatusNameRequired" xml:space="preserve">
+    <value>Укажите название.</value>
+  </data>
+  <data name="StatusNameTooLong" xml:space="preserve">
+    <value>Название не может быть длиннее {0} символов.</value>
+  </data>
+  <data name="StatusDescriptionTooLong" xml:space="preserve">
+    <value>Описание не может быть длиннее {0} символов.</value>
+  </data>
+  <data name="StatusTitleRequired" xml:space="preserve">
+    <value>Укажите заголовок инцидента.</value>
+  </data>
+  <data name="StatusTitleTooLong" xml:space="preserve">
+    <value>Заголовок не может быть длиннее {0} символов.</value>
+  </data>
+  <data name="StatusMessageRequired" xml:space="preserve">
+    <value>Введите сообщение.</value>
+  </data>
+  <data name="StatusMessageTooLong" xml:space="preserve">
+    <value>Сообщение не может быть длиннее {0} символов.</value>
+  </data>
+  <data name="StatusStateInvalid" xml:space="preserve">
+    <value>Выберите допустимое состояние.</value>
+  </data>
+  <data name="StatusDaysInvalid" xml:space="preserve">
+    <value>Выберите число дней от 1 до {0}.</value>
+  </data>
+  <data name="ClientGroupNameInvalid" xml:space="preserve">
+    <value>Название группы обязательно, не более 100 символов.</value>
+  </data>
+  <data name="ClientGroupDescriptionInvalid" xml:space="preserve">
+    <value>Описание может содержать не более 500 символов.</value>
+  </data>
+  <data name="ClientGroupDiscountDecimalsInvalid" xml:space="preserve">
+    <value>Скидка может содержать не более двух знаков после запятой.</value>
+  </data>
+  <data name="ClientGroupDiscountInvalid" xml:space="preserve">
+    <value>Скидка должна быть от 0 до 100 процентов.</value>
+  </data>
+  <data name="ClientGroupColorInvalid" xml:space="preserve">
+    <value>Цвет нужно записать в виде #RRGGBB.</value>
+  </data>
+  <data name="ServiceChangeRequestIdInvalid" xml:space="preserve">
+    <value>Укажите корректный запрос на смену тарифа.</value>
+  </data>
+  <data name="ServiceChangeNoteTooLong" xml:space="preserve">
+    <value>Заметка не должна быть длиннее {0} символов.</value>
+  </data>
+  <data name="ServiceChangeStatusInvalid" xml:space="preserve">
+    <value>Выберите корректный статус запроса на смену тарифа.</value>
+  </data>
+  <data name="CampaignIdInvalid" xml:space="preserve">
+    <value>Укажите корректную рассылку.</value>
+  </data>
+  <data name="CampaignSubjectRequired" xml:space="preserve">
+    <value>Введите тему письма.</value>
+  </data>
+  <data name="CampaignSubjectTooLong" xml:space="preserve">
+    <value>Тема может содержать не более {0} символов.</value>
+  </data>
+  <data name="CampaignBodyRequired" xml:space="preserve">
+    <value>Напишите текст письма.</value>
+  </data>
+  <data name="CampaignBodyTooLong" xml:space="preserve">
+    <value>Текст письма может содержать не более {0} символов.</value>
+  </data>
+  <data name="CampaignSegmentsRequired" xml:space="preserve">
+    <value>Передайте список сегментов, он может быть пустым.</value>
+  </data>
+  <data name="CampaignSegmentsTooMany" xml:space="preserve">
+    <value>В рассылке может быть не более {0} сегментов.</value>
+  </data>
+  <data name="CampaignSegmentFilterInvalid" xml:space="preserve">
+    <value>Выберите известный фильтр для каждого сегмента.</value>
+  </data>
+  <data name="CampaignSegmentValueInvalid" xml:space="preserve">
+    <value>Значение не подходит к фильтру: для продукта нужен id продукта, для страны двухбуквенный код, для окончания срока число дней от 1 до 365, для группы клиентов id группы, для фильтра по входу число дней от 1 до 3650, а фильтр всех активных клиентов значения не принимает.</value>
+  </data>
+  <data name="CampaignSegmentSignInUnavailable" xml:space="preserve">
+    <value>Фильтр по последнему входу здесь недоступен: эта установка входит через провайдер единого входа, который не сообщает продукту, когда клиент входил в последний раз.</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenRequired" xml:space="preserve">
+    <value>В ссылке для отписки нет токена.</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenInvalid" xml:space="preserve">
+    <value>Эта ссылка для отписки недействительна.</value>
+  </data>
+  <data name="CampaignMailLinkInvalid" xml:space="preserve">
+    <value>Эта ссылка недействительна.</value>
+  </data>
+  <data name="EmailDeliveryKeyRequired" xml:space="preserve">
+    <value>Ключ письма обязателен.</value>
   </data>
 </root>

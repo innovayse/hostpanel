@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.API.Authorization;
 
@@ -60,6 +59,7 @@ public static class PolicyRegistration
 
             AddRolePolicy(Policies.Member);
             AddRolePolicy(Policies.Admin, Roles.Admin);
+            AddRolePolicy(Policies.Staff, Roles.Admin, Roles.Reseller);
 
             // The client portal is open to the stored client role and, when an identity plugin is enabled, to the
             // members it vouches for (they never receive the role; see ClientPortalAccessHandler).

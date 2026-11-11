@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class ListUndatedRenewingServicesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An active monthly service with no renewal date is listed; a dated one is not.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_UndatedMonthlyService_IsListedAsync()
     {

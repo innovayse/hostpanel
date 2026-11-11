@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ListCreditNotesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The list filters by invoice and by client, newest first, with the number, the status and the client name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_FiltersByInvoiceAndClient_NewestFirst()
     {
@@ -37,6 +38,7 @@ public sealed class ListCreditNotesTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The status filter keeps only the notes in that state.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_FiltersByStatus()
     {
@@ -56,6 +58,7 @@ public sealed class ListCreditNotesTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A malformed filter is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_WithAnUnknownStatus_Returns400()
     {
@@ -67,6 +70,7 @@ public sealed class ListCreditNotesTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>The list is not for anonymous callers or clients.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task List_IsStaffOnly()
     {

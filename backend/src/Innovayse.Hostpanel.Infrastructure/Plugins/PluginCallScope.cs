@@ -1,6 +1,6 @@
+using Hostpanel.Sdk.Plugins.Endpoints;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Plugins.Common;
-using Hostpanel.Sdk.Plugins.Endpoints;
 using Microsoft.Extensions.DependencyInjection;
 
 /*

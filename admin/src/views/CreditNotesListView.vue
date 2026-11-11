@@ -115,7 +115,7 @@ onMounted(() => load(1))
             <UiTableHeader>{{ t('billing.creditNotes.client') }}</UiTableHeader>
             <UiTableHeader>{{ t('billing.creditNotes.statusLabel') }}</UiTableHeader>
             <UiTableHeader>{{ t('billing.creditNotes.methodLabel') }}</UiTableHeader>
-            <UiTableHeader>{{ t('billing.creditNotes.total') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('billing.creditNotes.total') }}</UiTableHeader>
             <UiTableHeader>{{ t('billing.creditNotes.issuedAt') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
@@ -134,7 +134,7 @@ onMounted(() => load(1))
             </UiTableCell>
             <UiTableCell><CreditNoteStatusBadge :status="note.status" /></UiTableCell>
             <UiTableCell>{{ t(`billing.creditNotes.method.${note.method}`) }}</UiTableCell>
-            <UiTableCell>{{ formatPlainAmount(note.total, note.currency) }}</UiTableCell>
+            <UiTableCell numeric>{{ formatPlainAmount(note.total, note.currency) }}</UiTableCell>
             <UiTableCell muted>{{ formatDateTime(note.issuedAt) }}</UiTableCell>
           </UiTableRow>
         </UiTableBody>

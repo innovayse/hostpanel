@@ -84,6 +84,14 @@
 		reverse_proxy hostpanel-api:{$API_PORT}
 	}
 
+	# The plugin registry reads a confirmation text from here to verify this installation; the API answers it.
+	handle /.well-known/hostpanel-registry/* {
+		reverse_proxy hostpanel-api:{$API_PORT} {
+			header_up X-Real-IP {client_ip}
+			header_up X-Forwarded-For {remote_host}
+		}
+	}
+
 	# Everything else: Nuxt SSR (WebSocket upgrades are proxied automatically)
 	handle {
 		reverse_proxy hostpanel-client:{$CLIENT_PORT} {

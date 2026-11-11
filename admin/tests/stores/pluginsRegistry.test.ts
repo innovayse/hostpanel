@@ -127,6 +127,15 @@ describe('pluginsStore.fetchRegistryUpdates', () => {
     expect(store.updateVersions).toEqual({ 'example-pay': '2.0.0' })
   })
 
+  it('maps the release notes of the newer version by plugin id, null when the registry sent none', async () => {
+    stubFetch(json([{ ...listing, latestChangelog: '- Faster **refunds**' }, { ...listing, id: 'other-pay' }]))
+    const store = usePluginsStore()
+
+    await store.fetchRegistryUpdates()
+
+    expect(store.updateChangelogs).toEqual({ 'example-pay': '- Faster **refunds**', 'other-pay': null })
+  })
+
   it('leaves the list empty on a refusal, with no error shown', async () => {
     stubFetch(problem('Registry unavailable.', 503))
     const store = usePluginsStore()
@@ -379,5 +388,75 @@ describe('pluginsStore per call outcomes', () => {
 
     expect((await store.saveLicenceKey('example-pay', 'bad')).error).toBe('That key is not valid.')
     expect((await store.removeLicenceKey('example-pay')).error).toBe('That key is not valid.')
+  })
+})
+
+describe('pluginsStore registry registration', () => {
+  /** A verified registration state as the server answers it. */
+  const verified = {
+    state: 'Verified',
+    instanceId: '7a2b6d1e-0000-4000-8000-000000000001',
+    baseUrl: 'https://panel.example.com',
+    errorCode: null,
+    message: null,
+    verifiedAt: '2026-11-08T12:00:00Z',
+    nextAttemptAt: null,
+  }
+
+  it('keeps the registration state the server answers', async () => {
+    const mock = stubFetch(json(verified))
+    const store = usePluginsStore()
+
+    await store.fetchRegistryInstance()
+
+    expect(store.registryInstance).toEqual(verified)
+    expect(store.registryInstanceBusy).toBe(false)
+    expect(store.registryInstanceError).toBeNull()
+    expect(callOf(mock)).toMatchObject({ url: '/api/admin/plugins/registry-instance', method: 'GET' })
+  })
+
+  it('leaves the state empty when the registry is switched off, with no error shown', async () => {
+    stubFetch(disabled())
+    const store = usePluginsStore()
+
+    await store.fetchRegistryInstance()
+
+    expect(store.registryInstance).toBeNull()
+    expect(store.registryInstanceError).toBeNull()
+    expect(store.registryDisabled).toBe(true)
+  })
+
+  it('keeps the sentence of a refused load and the state it had', async () => {
+    stubFetch(json(verified), problem('Registry unavailable.', 503))
+    const store = usePluginsStore()
+    await store.fetchRegistryInstance()
+
+    await store.fetchRegistryInstance()
+
+    expect(store.registryInstanceError).toBe('Registry unavailable.')
+    expect(store.registryInstance).toEqual(verified)
+  })
+
+  it('posts the retry and keeps the state it answers, a failed run included', async () => {
+    const failed = { ...verified, state: 'Error', errorCode: 'PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE', message: 'Not reachable.', verifiedAt: null }
+    const mock = stubFetch(json(failed))
+    const store = usePluginsStore()
+
+    await store.retryRegistryInstance()
+
+    expect(callOf(mock)).toMatchObject({ url: '/api/admin/plugins/registry-instance/retry', method: 'POST' })
+    expect(store.registryInstance).toEqual(failed)
+    expect(store.registryInstanceError).toBeNull()
+    expect(store.registryInstanceBusy).toBe(false)
+  })
+
+  it('keeps the sentence of a refused retry', async () => {
+    stubFetch(problem('That is not allowed.', 403))
+    const store = usePluginsStore()
+
+    await store.retryRegistryInstance()
+
+    expect(store.registryInstance).toBeNull()
+    expect(store.registryInstanceError).toBe('That is not allowed.')
   })
 })

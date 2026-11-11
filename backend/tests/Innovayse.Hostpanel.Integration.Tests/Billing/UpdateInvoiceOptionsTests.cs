@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Writing a tax rate recomputes the invoice's total.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOptionsRecomputesTheTotalFromTheTaxRate()
     {
@@ -37,6 +38,7 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>The invoice date and the due date are stored and read back as written.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOptionsStoresTheDates()
     {
@@ -62,6 +64,7 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A tax rate above 100 is refused as a validation error and the stored total is kept.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOptionsRefusesATaxRateAboveOneHundred()
     {
@@ -84,6 +87,7 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Updating options on an id that names no invoice answers 404, not 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOptionsOnUnknownInvoiceRefusesNotFound()
     {
@@ -102,6 +106,7 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Updating options is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOptionsRefusesAnonymous()
     {
@@ -117,6 +122,7 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>The tax rate of a paid invoice cannot change: 400 with <c>INVOICE_NOT_EDITABLE</c>, total unchanged.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOptionsRefusesATaxRateChangeOnAPaidInvoice()
     {
@@ -144,6 +150,7 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
     /// Lowering the tax rate below what the applied credit covers sends the surplus credit back to
     /// the client's balance in the same save.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOptionsReturnsCreditTheLowerTaxNoLongerNeeds()
     {
@@ -168,6 +175,7 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
     /// A tax cut that would make the invoice charge less than the payments it already took is
     /// refused with <c>INVOICE_TOTAL_BELOW_PAID</c> and the total is kept.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOptionsRefusesATaxCutBelowThePaymentsTaken()
     {
@@ -201,6 +209,7 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
         });
 
     /// <summary>A tax rate is refused on the invoice of a tax-exempt client and the invoice is left as it was.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOptionsRefusesATaxRateForATaxExemptClient()
     {
@@ -225,6 +234,7 @@ public sealed class UpdateInvoiceOptionsTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A tax-exempt client's invoice can still be saved with no tax, so its dates and method stay editable.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateOptionsAllowsNoTaxForATaxExemptClient()
     {

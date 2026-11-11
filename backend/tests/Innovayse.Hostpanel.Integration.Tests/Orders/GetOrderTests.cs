@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class GetOrderTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An id nothing names answers 404 with <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderRefusesNotFound()
     {
@@ -30,6 +31,7 @@ public sealed class GetOrderTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>A seeded pending order can be read back by id, in full detail, named after its client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsTheSeededOrdersDetail()
     {
@@ -46,9 +48,34 @@ public sealed class GetOrderTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>
+    /// The server tells for each line whether staff may retry it or close it by hand: the failed domain line may be both
+    /// retried and closed, the fulfilled hosting line neither, so the admin needs no lease of its own.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task TellsForEachLineWhetherItMayBeRetriedOrClosed()
+    {
+        var seeded = await OrdersTestSeeds.SeedTakenDomainAndHostingOrderAsync(factory);
+        var admin = await OrdersTestSeeds.AdminClientAsync(factory);
+        (await admin.PostAsync($"/api/orders/{seeded.OrderId}/accept", content: null)).EnsureSuccessStatusCode();
+
+        var response = await admin.GetAsync($"/api/orders/{seeded.OrderId}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var items = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("items").EnumerateArray().ToList();
+        var domainLine = items.Single(i => i.GetProperty("domain").ValueKind == JsonValueKind.String);
+        var hostingLine = items.Single(i => i.GetProperty("domain").ValueKind == JsonValueKind.Null);
+        domainLine.GetProperty("canRetry").GetBoolean().Should().BeTrue();
+        domainLine.GetProperty("canClose").GetBoolean().Should().BeTrue();
+        hostingLine.GetProperty("canRetry").GetBoolean().Should().BeFalse();
+        hostingLine.GetProperty("canClose").GetBoolean().Should().BeFalse();
+    }
+
+    /// <summary>
     /// On a taxed invoice the order's own total stays the pre-tax sum of its lines, while the
     /// invoice total beside it carries the tax the client owes.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsTheLineSumAndTheTaxedInvoiceTotalApart()
     {
@@ -71,6 +98,7 @@ public sealed class GetOrderTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>An order without an invoice reads no invoice total.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ReturnsNoInvoiceTotalWithoutAnInvoice()
     {
@@ -83,6 +111,7 @@ public sealed class GetOrderTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>Reading an order is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -94,6 +123,7 @@ public sealed class GetOrderTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>A plain client caller, who is not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAClientCaller()
     {

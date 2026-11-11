@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class UpdateInvoiceItemsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Replacing an invoice's single line item rewrites its total.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateItemsRewritesTheTotal()
     {
@@ -39,6 +40,7 @@ public sealed class UpdateInvoiceItemsTests(IntegrationTestFactory factory) : IC
     /// One call can add a line, change the quantity of another and remove a third; every change is
     /// stored and the totals are recomputed from what is left.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateItemsAddsEditsAndRemovesLinesInOneCall()
     {
@@ -76,6 +78,7 @@ public sealed class UpdateInvoiceItemsTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A line with an empty description is refused as a validation error and nothing is stored.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateItemsRefusesAnEmptyDescription()
     {
@@ -116,6 +119,7 @@ public sealed class UpdateInvoiceItemsTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Updating line items on an id that names no invoice answers 404, not 400.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateItemsOnUnknownInvoiceRefusesNotFound()
     {
@@ -131,6 +135,7 @@ public sealed class UpdateInvoiceItemsTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Updating line items is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateItemsRefusesAnonymous()
     {
@@ -143,6 +148,7 @@ public sealed class UpdateInvoiceItemsTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>The lines of a paid invoice cannot change: 400 with <c>INVOICE_NOT_EDITABLE</c>, total unchanged.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateItemsRefusesAPaidInvoice()
     {
@@ -170,6 +176,7 @@ public sealed class UpdateInvoiceItemsTests(IntegrationTestFactory factory) : IC
     /// Lowering a line below the credit applied to the invoice sends the credit it no longer needs
     /// back to the client's balance in the same save, so the total never goes negative.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateItemsReturnsCreditTheLowerTotalNoLongerNeeds()
     {
@@ -197,6 +204,7 @@ public sealed class UpdateInvoiceItemsTests(IntegrationTestFactory factory) : IC
     /// A line change that would make the invoice charge less than the payments it already took is
     /// refused with <c>INVOICE_TOTAL_BELOW_PAID</c> and nothing is stored.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateItemsRefusesATotalBelowThePaymentsTaken()
     {
@@ -222,6 +230,7 @@ public sealed class UpdateInvoiceItemsTests(IntegrationTestFactory factory) : IC
     /// A line change that leaves the payments already taken covering the invoice settles it in the
     /// same save: nothing is owed, so it does not stay open and go overdue.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateItemsDownToThePaymentsTakenSettlesTheInvoice()
     {

@@ -3,8 +3,10 @@ using System.Text;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Settings;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
@@ -15,14 +17,23 @@ namespace Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
 /// redirect stays on the registry's host, the size and time limits, and that a failure becomes a
 /// <c>PLUGIN_REGISTRY_*</c> code with nothing of the upstream reply in it.
 /// </summary>
-public sealed class PluginRegistryClientTests : IDisposable
+/// <param name="factory">The shared API + PostgreSQL host, which supplies the real request signer the client is built with.</param>
+public sealed class PluginRegistryClientTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>, IDisposable
 {
+    /// <summary>The scopes the signers of the clients built here were resolved in; disposed with the test.</summary>
+    private readonly List<IServiceScope> _scopes = [];
+
     /// <summary>An upload folder of this test's own, so the staging folder the downloads use is isolated and checked.</summary>
     private readonly string _installPath = Path.Combine(Path.GetTempPath(), $"registry-client-{Guid.NewGuid():N}");
 
     /// <summary>Deletes the test's upload folder.</summary>
     public void Dispose()
     {
+        foreach (var scope in _scopes)
+        {
+            scope.Dispose();
+        }
+
         if (Directory.Exists(_installPath))
         {
             Directory.Delete(_installPath, recursive: true);
@@ -58,8 +69,14 @@ public sealed class PluginRegistryClientTests : IDisposable
             MaxDownloadBytes = maxBytes,
             Timeout = timeout ?? TimeSpan.FromSeconds(10),
         });
+        var scope = factory.Services.CreateScope();
+        _scopes.Add(scope);
         return new PluginRegistryClient(
-            new HttpClient(handler), options, Options.Create(new PluginOptions { InstallPath = _installPath }), NullLogger<PluginRegistryClient>.Instance);
+            new HttpClient(handler),
+            options,
+            Options.Create(new PluginOptions { InstallPath = _installPath }),
+            scope.ServiceProvider.GetRequiredService<IRegistryRequestSigner>(),
+            NullLogger<PluginRegistryClient>.Instance);
     }
 
     /// <summary>One valid plugin as the registry sends it: <c>pluginId</c> and <c>publisherName</c>, no SDK version.</summary>
@@ -81,6 +98,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A switched-off registry answers <c>PLUGIN_REGISTRY_DISABLED</c> and sends nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ADisabledRegistry_SendsNothingAsync()
     {
@@ -93,6 +111,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A listing is read into entries and the filters are put in the address.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Search_ReadsTheListingAndSendsTheFiltersAsync()
     {
@@ -105,11 +124,12 @@ public sealed class PluginRegistryClientTests : IDisposable
         result.Value.Page.Should().Be(2);
         result.Value.PageSize.Should().Be(20);
         var entry = result.Value.Items.Single();
-        entry.Should().Be(new RegistryPluginDto("acme-pay", "Name", "a", "d", null, PluginRegistryCategory.Payment, "1.2.3", string.Empty, true, PluginRegistryPricing.Paid));
+        entry.Should().BeEquivalentTo(new RegistryPluginDto("acme-pay", "Name", "a", "d", null, PluginRegistryCategory.Payment, "1.2.3", string.Empty, true, PluginRegistryPricing.Paid, Tags: []));
         handler.Requests.Single().AbsoluteUri.Should().Be("https://registry.example.com/api/plugins?q=a%20b%26c&category=Payment&page=2&pageSize=20");
     }
 
     /// <summary>An unknown category reads as Other; an icon is kept only when it is on the registry's host.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Search_NormalisesTheCategoryAndDropsAForeignIconAsync()
     {
@@ -130,6 +150,7 @@ public sealed class PluginRegistryClientTests : IDisposable
 
     /// <summary>An entry that is not a plugin (bad id, no pricing, no name) fails the whole reply as invalid.</summary>
     /// <param name="entry">The entry JSON.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("""{"id":"Bad Id","name":"n","latestVersion":"1.0.0","pricing":"Free"}""")]
     [InlineData("""{"id":"ok-id","name":"n","latestVersion":"1.0.0","pricing":"Gold"}""")]
@@ -144,6 +165,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>The registry's own member names are read: <c>pluginId</c> and <c>publisherName</c>, and the short forms too.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Search_ReadsBothNameFormsAsync()
     {
@@ -158,7 +180,34 @@ public sealed class PluginRegistryClientTests : IDisposable
         items.Select(i => (i.Id, i.Author)).Should().Equal(("long-form", "Publisher"), ("short-form", "Writer"));
     }
 
+    /// <summary>The publisher kind, the tags and the download count are passed on; tags are cleaned, deduplicated and capped.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Search_ReadsThePublisherKindTagsAndDownloadsAsync()
+    {
+        var tags = string.Join(",", Enumerable.Range(0, 30).Select(i => $"\"t{i}\""));
+        var handler = ScriptedHttpMessageHandler.Json($$"""
+            {"items":[
+              {{EntryJson("org", ",\"publisherKind\":\"Organization\",\"tags\":[\" billing \",\"BILLING\",\"\",null,\"cards\"],\"downloads\":1234")}},
+              {{EntryJson("odd", ",\"publisherKind\":\"Robot\",\"downloads\":-5,\"tags\":[" + tags + "]")}},
+              {{EntryJson("old")}}],"total":3}
+            """);
+
+        var items = (await Client(handler).SearchAsync(new RegistryPluginSearch(null, null, 1, 20), CancellationToken.None)).Value!.Items;
+
+        items[0].PublisherKind.Should().Be(PluginRegistryPublisherKind.Organization);
+        items[0].Tags.Should().Equal("billing", "cards");
+        items[0].Downloads.Should().Be(1234);
+        items[1].PublisherKind.Should().BeNull();
+        items[1].Downloads.Should().BeNull();
+        items[1].Tags.Should().HaveCount(20);
+        items[2].PublisherKind.Should().BeNull();
+        items[2].Tags.Should().BeEmpty();
+        items[2].Downloads.Should().BeNull();
+    }
+
     /// <summary>An entry whose latest version is null, missing or not a version is left out and the rest of the page is kept.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Search_SkipsAnEntryWithoutAUsableLatestVersionAsync()
     {
@@ -177,6 +226,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>The newest-version lookup posts the ids as JSON and reads a bare array of version details.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetLatest_PostsTheIdsAndReadsABareArrayAsync()
     {
@@ -195,7 +245,36 @@ public sealed class PluginRegistryClientTests : IDisposable
         handler.Bodies.Single().Should().Be("""{"ids":["acme-pay","other"]}""");
     }
 
+    /// <summary>The release notes of the newest version are read from the listing and from the newest-version lookup, line breaks kept and control characters removed; an absent or blank value is null.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task TheLatestReleaseNotes_AreReadFromTheListingAndTheLatestLookupAsync()
+    {
+        var listing = ScriptedHttpMessageHandler.Json($$"""
+            {"items":[
+              {{EntryJson("with-notes", ",\"latestChangelog\":\"- Faster **refunds**\\r\\n- Fixed\\u0007 rounding\"")}},
+              {{EntryJson("blank-notes", ",\"latestChangelog\":\"   \"")}},
+              {{EntryJson("no-notes")}}],"total":3}
+            """);
+
+        var items = (await Client(listing).SearchAsync(new RegistryPluginSearch(null, null, 1, 20), CancellationToken.None)).Value!.Items;
+
+        items[0].LatestChangelog.Should().Be("- Faster **refunds**\n- Fixed  rounding");
+        items[1].LatestChangelog.Should().BeNull();
+        items[2].LatestChangelog.Should().BeNull();
+
+        var latest = ScriptedHttpMessageHandler.Json("""
+            [{"pluginId":"acme-pay","version":"1.2.3","downloadUrl":"/x.zip","sha256":"abc","verified":true,"changelog":"New flow."},
+             {"pluginId":"free-one","version":"0.9.0","downloadUrl":"/y.zip","sha256":"abc","verified":false,"changelog":null}]
+            """);
+
+        var result = await Client(latest).GetLatestAsync(["acme-pay", "free-one"], CancellationToken.None);
+
+        result.Value!.Select(p => p.LatestChangelog).Should().Equal("New flow.", null);
+    }
+
     /// <summary>A release is resolved, a relative package address is made absolute on the registry's host, the checksum is lower-cased.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRelease_ResolvesARelativePackageAddressAsync()
     {
@@ -211,6 +290,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     /// <param name="downloadUrl">The package address.</param>
     /// <param name="sha">The checksum.</param>
     /// <param name="code">The expected error code.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("https://evil.example.net/a.zip", "SHA", HostpanelErrorCodes.PLUGIN_REGISTRY_PACKAGE_REFUSED)]
     [InlineData("http://registry.example.com/a.zip", "SHA", HostpanelErrorCodes.PLUGIN_REGISTRY_PACKAGE_REFUSED)]
@@ -228,6 +308,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A 404 for a version is <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRelease_A404_IsNotFoundAsync()
     {
@@ -237,6 +318,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A package is downloaded into a seekable stream at position zero.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Download_ReturnsTheBytesAsync()
     {
@@ -259,6 +341,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A package address outside the registry's origin is refused without a request.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Download_FromAnotherHost_IsRefusedWithoutARequestAsync()
     {
@@ -273,6 +356,7 @@ public sealed class PluginRegistryClientTests : IDisposable
 
     /// <summary>A package over the limit is refused whether or not the reply declares its length.</summary>
     /// <param name="declareLength">Whether the reply carries a <c>Content-Length</c>.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -292,6 +376,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A redirect inside the registry's host is followed; a redirect to another host is refused and that host is never contacted.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Redirects_AreFollowedOnlyInsideTheRegistryHostAsync()
     {
@@ -311,6 +396,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A redirect loop ends in <c>PLUGIN_REGISTRY_UNAVAILABLE</c> after a few hops.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARedirectLoop_StopsAsync()
     {
@@ -324,6 +410,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>Each upstream failure has its code, and the result carries no text from the failure or the reply.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpstreamFailures_BecomeCodesWithoutDetailAsync()
     {
@@ -350,6 +437,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A registry that does not answer within the time limit is <c>PLUGIN_REGISTRY_TIMED_OUT</c>; the caller's own cancellation is not.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ASlowRegistry_TimesOutAsync()
     {
@@ -369,6 +457,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A 404 means "not listed" for a release lookup only; for a listing, the newest-version lookup and a download it is an unavailable registry.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task A404_IsNotFoundOnlyForAReleaseAsync()
     {
@@ -385,6 +474,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A file system fault and a malformed address become registry codes instead of an unhandled exception.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IoAndUriFaults_BecomeCodesAsync()
     {
@@ -401,6 +491,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>Each request sets its own <c>Accept</c> header: JSON for a call, a package type for a download.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task EachRequest_SetsItsAcceptHeaderAsync()
     {
@@ -419,6 +510,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>The registry's text is cleaned of control characters, trimmed and capped before it reaches the admin panel.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegistryText_IsCleanedAndCappedAsync()
     {
@@ -435,6 +527,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A name that is blank once cleaned is not a plugin.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ABlankNameAfterCleaning_FailsTheReplyAsync()
     {
@@ -447,6 +540,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A reply that is not a bare array (the old listing shape) is invalid for the newest-version lookup.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetLatest_AnObjectReply_IsInvalidAsync()
     {
@@ -472,6 +566,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>The licence key is sent as <c>X-Licence-Key</c> on a release lookup and only when one is given.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRelease_SendsTheLicenceKeyOnlyWhenGivenAsync()
     {
@@ -486,6 +581,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>The licence key is sent on a download, including the hops of a redirect inside the registry's origin.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Download_SendsTheLicenceKeyOnEveryHopAsync()
     {
@@ -505,6 +601,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A 401 on a release lookup or a download is "licence required", a 403 is "licence invalid", and no text of the reply is kept.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LicenceStatuses_BecomeDistinctCodesAsync()
     {
@@ -533,6 +630,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A 401 or 403 on the anonymous calls (listing, newest versions) is not a licence matter: the registry is simply unavailable.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AnonymousCalls_DoNotMapLicenceStatusesAsync()
     {
@@ -546,6 +644,7 @@ public sealed class PluginRegistryClientTests : IDisposable
 
     /// <summary>A key that cannot be a header value is refused as invalid before anything is sent, and the key is not in the result.</summary>
     /// <param name="key">The key.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("has space")]
     [InlineData("line\nbreak")]
@@ -562,6 +661,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A plugin page is read: the summary, the external links, the licence and the latest version with its images.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPlugin_ReadsThePageAsync()
     {
@@ -590,6 +690,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A plugin page with nothing published keeps its summary with an empty latest version.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPlugin_WithoutALatestVersion_KeepsTheSummaryAsync()
     {
@@ -604,6 +705,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A 404 for a plugin page is a successful answer holding nothing; a 401 and a 403 are the licence codes; a bad summary is invalid.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetPlugin_HandlesNotFoundLicenceAndBadSummaryAsync()
     {
@@ -620,6 +722,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A version list is read; relative image addresses are resolved on the registry, foreign ones dropped, bad rows left out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListVersions_ReadsTheVersionsAsync()
     {
@@ -657,6 +760,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A version list answers not found for a 404 and the licence codes for a 401 and a 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListVersions_MapsFailureStatusesAsync()
     {
@@ -671,6 +775,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>The new reads are refused with the disabled code when the registry is off.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ThePluginReads_AreDisabledWithTheRegistryAsync()
     {
@@ -683,6 +788,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A redirect to another origin is refused while the licence key is set, and the other host receives no request.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ACrossOriginRedirect_WithAKey_IsRefusedBeforeReachingTheOtherHostAsync()
     {
@@ -703,6 +809,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A null <c>verified</c> or <c>requiresLicence</c> in the newest-version reply and in a release reads as false.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NullFlags_ReadAsFalseAsync()
     {
@@ -720,6 +827,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A version listed twice with different statuses keeps one row with the strictest status.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ListVersions_ADuplicateVersion_KeepsTheStrictestStatusAsync()
     {
@@ -735,6 +843,7 @@ public sealed class PluginRegistryClientTests : IDisposable
     }
 
     /// <summary>A key with a space, a non-ASCII character or over 256 characters is refused without a request; 256 is sent.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AKeyBreakingTheRule_IsRefusedWithoutARequestAsync()
     {

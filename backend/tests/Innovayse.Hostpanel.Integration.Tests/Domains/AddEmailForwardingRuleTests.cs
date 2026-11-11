@@ -18,6 +18,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Domains;
 public sealed class AddEmailForwardingRuleTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Adding a rule succeeds with 201 and the rule shows up on a read of the domain.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddEmailForwardingRule_ExistingDomain_Returns201AndPersistsAsync()
     {
@@ -35,6 +36,7 @@ public sealed class AddEmailForwardingRuleTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>Adding a rule to an unknown domain answers 404 with <c>DOMAIN_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddEmailForwardingRule_UnknownDomain_Returns404Async()
     {
@@ -49,6 +51,7 @@ public sealed class AddEmailForwardingRuleTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddEmailForwardingRule_WithoutToken_Returns401Async()
     {
@@ -62,6 +65,7 @@ public sealed class AddEmailForwardingRuleTests(IntegrationTestFactory factory) 
     }
 
     /// <summary>A non-positive domain id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddEmailForwardingRule_NonPositiveDomainId_Returns400ValidationErrorAsync()
     {

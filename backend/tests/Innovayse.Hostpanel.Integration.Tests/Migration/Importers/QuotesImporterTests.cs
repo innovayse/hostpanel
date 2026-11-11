@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 public sealed class QuotesImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A quote with one line item for a known client is imported.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RunAsync_Quotes_ImportsAQuoteForAKnownClientAsync()
     {

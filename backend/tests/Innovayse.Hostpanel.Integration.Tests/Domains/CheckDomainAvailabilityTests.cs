@@ -22,6 +22,7 @@ public sealed class CheckDomainAvailabilityTests(IntegrationTestFactory factory)
     /// <see cref="CheckDomainAvailabilityQuery"/> directly, whose <c>Domain</c> property
     /// is the camelCase <c>domain</c> on the wire, so this exact body binds.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckAvailabilityPost_WithDomainField_Returns200Async()
     {
@@ -37,6 +38,7 @@ public sealed class CheckDomainAvailabilityTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The POST form trims the name in the handler, so padded input answers the bare name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckAvailabilityPost_WithPaddedDomain_AnswersTheTrimmedNameAsync()
     {
@@ -50,6 +52,7 @@ public sealed class CheckDomainAvailabilityTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A blank domain name is refused by the validator on the bus: 400 <c>VALIDATION_ERROR</c> with a field message.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckAvailabilityPost_WithBlankDomain_Returns400ValidationErrorAsync()
     {
@@ -64,6 +67,7 @@ public sealed class CheckDomainAvailabilityTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A body with no domain at all is refused the same way, not with a null-reference 500.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckAvailabilityPost_WithoutDomainField_Returns400ValidationErrorAsync()
     {
@@ -80,6 +84,7 @@ public sealed class CheckDomainAvailabilityTests(IntegrationTestFactory factory)
     /// The refusal's sentence follows <c>X-Language</c>: the storefront's BFF forwards the reader's
     /// language, so a Russian reader gets Russian text from the validator resources, not a literal.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckAvailabilityPost_WithBlankDomain_AnswersInTheRequestLanguageAsync()
     {
@@ -97,6 +102,7 @@ public sealed class CheckDomainAvailabilityTests(IntegrationTestFactory factory)
     /// Anonymous caller hits <c>GET /api/domains/check?name=available.com</c>.
     /// <see cref="StubRegistrarProvider"/> always answers available, so the result reads available.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckAvailability_ReturnsTrueAsync()
     {
@@ -112,6 +118,7 @@ public sealed class CheckDomainAvailabilityTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The GET form is reachable without a token too: the storefront needs it before sign-in.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckAvailability_WithAdminToken_StillReturns200Async()
     {

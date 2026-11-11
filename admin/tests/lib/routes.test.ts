@@ -11,13 +11,16 @@ import {
   clientTicketNewPath,
   createPath,
   editPath,
+  emailCampaignPath,
   integrationCategoryPath,
   integrationConfigurePath,
   invoiceEditPath,
   invoicePath,
   invoiceViewPath,
   orderPath,
+  pluginPagePath,
   pluginPath,
+  servicePlanChangesPath,
   quoteAddPath,
   quotePath,
   reportPagePath,
@@ -58,6 +61,7 @@ describe('route builders', () => {
     expect(clientSectionPath(5, ClientSection.BillableItems)).toBe('/clients/5/billable-items')
     expect(clientItemPath(5, ClientSection.Services, 9)).toBe('/clients/5/services/9')
     expect(clientTicketNewPath(5)).toBe('/clients/5/tickets/new')
+    expect(servicePlanChangesPath(9)).toBe('/clients/plan-changes?serviceId=9')
   })
 
   it('builds the billing, order and support paths', () => {
@@ -71,11 +75,19 @@ describe('route builders', () => {
     expect(transactionEditPath(6)).toBe('/billing/transactions/6/edit')
     expect(orderPath(1)).toBe('/orders/1')
     expect(supportTicketPath(3)).toBe('/support/tickets/3')
+    expect(emailCampaignPath(8)).toBe('/support/email-campaigns/8')
   })
 
   it('builds the integration and report paths', () => {
     expect(integrationCategoryPath('payments')).toBe('/integrations/payments')
     expect(integrationConfigurePath('bank-transfer')).toBe('/integrations/bank-transfer/configure')
     expect(reportPagePath('tax')).toBe('/reports/tax')
+  })
+})
+
+describe('pluginPagePath', () => {
+  it('builds the address of a plugin page and of its root page', () => {
+    expect(pluginPagePath('sites', 'sites/7')).toBe('/apps/sites/sites/7')
+    expect(pluginPagePath('sites', '')).toBe('/apps/sites')
   })
 })

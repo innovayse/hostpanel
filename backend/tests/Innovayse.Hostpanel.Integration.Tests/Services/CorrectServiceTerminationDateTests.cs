@@ -19,6 +19,7 @@ public sealed class CorrectServiceTerminationDateTests(IntegrationTestFactory fa
     private static readonly DateTimeOffset EndedAt = new(2030, 1, 15, 0, 0, 0, TimeSpan.Zero);
 
     /// <summary>Correcting the date of a terminated service answers 204 and stores the date.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CorrectTerminationDate_OnATerminatedService_StoresTheDateAsync()
     {
@@ -36,6 +37,7 @@ public sealed class CorrectServiceTerminationDateTests(IntegrationTestFactory fa
     }
 
     /// <summary>A service that is not terminated has no date to correct: 409 <c>SERVICE_NOT_TERMINATED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CorrectTerminationDate_OnAnActiveService_Returns409NotTerminatedAsync()
     {
@@ -50,6 +52,7 @@ public sealed class CorrectServiceTerminationDateTests(IntegrationTestFactory fa
     }
 
     /// <summary>Correcting the date of a service that does not exist answers 404 <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CorrectTerminationDate_OnAnUnknownService_Returns404Async()
     {
@@ -63,6 +66,7 @@ public sealed class CorrectServiceTerminationDateTests(IntegrationTestFactory fa
     }
 
     /// <summary>Correcting the date without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CorrectTerminationDate_WithoutAuth_Returns401Async()
     {

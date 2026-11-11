@@ -52,6 +52,8 @@ describe('ClientQuotesView', () => {
     stubRoutes({ 'GET /api/billing/quotes/client/7': listPage, 'DELETE /api/quotes/3': () => new Response(null, { status: 204 }) })
     const wrapper = await mountQuotes()
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="client-quotes-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="client-quotes-delete-3"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -63,6 +65,8 @@ describe('ClientQuotesView', () => {
     stubRoutes({ 'GET /api/billing/quotes/client/7': listPage, 'DELETE /api/quotes/3': () => problem('The quote was accepted.', 409) })
     const wrapper = await mountQuotes()
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="client-quotes-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="client-quotes-delete-3"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -75,6 +79,8 @@ describe('ClientQuotesView', () => {
     const mock = stubRoutes({ 'GET /api/billing/quotes/client/7': listPage })
     const wrapper = await mountQuotes()
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="client-quotes-actions-3"]').trigger('click')
     await wrapper.get('[data-testid="client-quotes-delete-3"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     await flushPromises()

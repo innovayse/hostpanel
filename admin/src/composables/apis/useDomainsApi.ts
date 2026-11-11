@@ -158,6 +158,15 @@ export const useDomainsApi = () => {
     request<{ eppCode: string }>(`${ApiPath.Domains}/${id}/initiate-outgoing-transfer`, { method: HttpMethod.Post })
 
   /**
+   * Cancels a pending incoming transfer at the registrar.
+   *
+   * @param id - Domain id.
+   * @returns Nothing.
+   */
+  const cancelTransfer = (id: number | string): Promise<void> =>
+    request<void>(`${ApiPath.Domains}/${id}/cancel-transfer`, { method: HttpMethod.Post })
+
+  /**
    * Adds a DNS record.
    *
    * @param id - Domain id.
@@ -222,7 +231,7 @@ export const useDomainsApi = () => {
   return {
     listDomains, getDomain, updateDomain, registerDomain, renewDomain,
     setAutoRenew, setWhoisPrivacy, setLock, setDnsManagement, setEmailForwarding,
-    modifyContact, initiateOutgoingTransfer,
+    modifyContact, initiateOutgoingTransfer, cancelTransfer,
     addDnsRecord, updateDnsRecord, deleteDnsRecord,
     addForwardingRule, updateForwardingRule, deleteForwardingRule,
   }

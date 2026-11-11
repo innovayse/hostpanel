@@ -29,6 +29,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     /// invoice at the same rate, the balance rises by the note's total with a history line of its own type, and the invoice stays
     /// Paid with its credit noted.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AccountCredit_FullNote_PutsTheTotalOnTheBalanceAndTheHistory()
     {
@@ -62,6 +63,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A partial note is taxed at the invoice's rate and leaves the rest of the invoice creditable.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AccountCredit_PartialNote_FollowsTheInvoiceRate()
     {
@@ -78,6 +80,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Notes get distinct numbers in order from the one sequence, across invoices.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Numbers_AreDistinctAndRise()
     {
@@ -94,6 +97,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A note above the invoice's charge is refused with its code and changes nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OverCredit_AboveTheCharge_IsRefused()
     {
@@ -110,6 +114,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Earlier notes count: once 70 of 100 is credited, 30 more is allowed and a cent beyond is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OverCredit_CountsEarlierNotes()
     {
@@ -129,6 +134,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Earlier refunds count too: after a manual refund of 30, only 70 of the invoice can be credited.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OverCredit_CountsEarlierRefunds()
     {
@@ -155,6 +161,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     /// A refund made on its own creates no note, and a refund after an account credit note is held to what the note left, so
     /// the same money is never given back twice.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ARefundAlone_CreatesNoNote_AndAfterANoteIsHeldToTheRest()
     {
@@ -188,6 +195,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     /// Two notes racing for the same invoice cannot both pass the cap: of two notes of 60 on an invoice of 100 exactly one is
     /// saved, the other is refused, and the balance and the invoice agree on 60.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Race_TwoNotesAboveTheCapTogether_OnlyOneIsSaved()
     {
@@ -211,6 +219,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     /// Two notes that together fit are both saved even when they race: the loser of the row is retried on what the winner saved,
     /// under the same number, and is not refused.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Race_TwoNotesThatFitTogether_AreBothSaved()
     {
@@ -232,6 +241,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A credit top-up is credit already: a note on it is refused with its own code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TopUpInvoice_IsRefused()
     {
@@ -247,6 +257,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An invoice that is not paid takes no credit note.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnpaidInvoice_IsRefused()
     {
@@ -261,6 +272,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An id that names no invoice answers 404.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownInvoice_Returns404()
     {
@@ -274,6 +286,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
 
     /// <summary>A note without lines, without a reason, with a blank line or an unknown method is refused before anything is saved.</summary>
     /// <param name="body">Which malformed body to send.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("noItems")]
     [InlineData("noReason")]
@@ -302,6 +315,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A credit note is not for anonymous callers, and not for a client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task NotForAnonymousOrClients()
     {
@@ -317,6 +331,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     /// A gateway refund note goes through the one refund of the invoice: the gateway is asked once for the note's total, the
     /// invoice has one refund row and the ledger one refund line, the balance is untouched, and the note records the refund.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayRefund_RefundsOnceAndTheBalanceIsUntouched()
     {
@@ -344,6 +359,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A gateway that refuses the refund creates no note and takes no number's worth of state: nothing is saved.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayRefund_RefusedByTheGateway_CreatesNoNote()
     {
@@ -362,6 +378,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An invoice no gateway took money for cannot be refunded through one: no note, no refund.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayRefund_OfAManualPayment_IsRefusedWithoutANote()
     {
@@ -380,6 +397,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A gateway refund note is held to the cash the gateway can still return, after an account credit note took part.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GatewayRefund_AfterAnAccountCreditNote_IsHeldToTheRest()
     {
@@ -403,6 +421,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     /// A gateway refund that is claimed and not recorded yet holds the invoice: an account credit note for the same money is refused
     /// with 409 <c>INVOICE_REFUND_CONFLICT</c>, no number is taken and the balance is untouched.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AccountCredit_WhileAGatewayRefundIsInFlight_IsRefusedAsAConflict()
     {
@@ -432,6 +451,7 @@ public sealed partial class IssueCreditNoteTests(IntegrationTestFactory factory)
     /// The balance has no currency of its own, so account credit for an invoice in another currency than the client's balance is
     /// refused with its code before a number is taken, and changes nothing; the same invoice can still be refunded through the gateway.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AccountCredit_InAnotherCurrencyThanTheBalance_IsRefused()
     {

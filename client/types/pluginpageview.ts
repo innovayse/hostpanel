@@ -17,7 +17,7 @@ export interface PluginPageView {
   path: string
   /** The title, in the caller's language. */
   title: string
-  /** The web origins the plugin's absolute links may open (the manifest's `externalOrigins`); empty allows host-relative links only. */
+  /** The web origins the plugin's absolute links may open (the manifest's `externalOrigins` plus the https origins of the reader's own bound services); empty allows host-relative links only. */
   externalOrigins: string[]
   /** How the page is drawn, `PluginPageLayout` as a wire string; anything unknown reads as standard. */
   layout: string

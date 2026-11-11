@@ -1,5 +1,4 @@
 using FluentValidation;
-using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Constants;
 
@@ -17,6 +16,18 @@ public static class ValidationRuleExtensions
     /// <param name="message">The localized sentence reported when the id is not positive.</param>
     /// <returns>The rule builder, for chaining.</returns>
     public static IRuleBuilderOptions<T, int> MustBePositiveId<T>(this IRuleBuilder<T, int> rule, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.GreaterThan(0).WithMessage(message);
+    }
+
+    /// <summary>Requires an identifier, when one is given, to be a positive integer. An absent id passes.</summary>
+    /// <typeparam name="T">The command or query being validated.</typeparam>
+    /// <param name="rule">The rule builder for the optional id property.</param>
+    /// <param name="message">The localized sentence reported when the id is not positive.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, int?> MustBePositiveId<T>(this IRuleBuilder<T, int?> rule, string message)
     {
         ArgumentNullException.ThrowIfNull(rule);
 
@@ -100,6 +111,7 @@ public static class ValidationRuleExtensions
 
         return rule.Must(IsAbsoluteWebUrl).WithMessage(message);
     }
+
     /// <summary>Requires a reorder request to name no more than <see cref="SortOrderLimits.MaxItems"/> rows.</summary>
     /// <typeparam name="T">The command being validated.</typeparam>
     /// <param name="rule">The rule builder for the items property.</param>
@@ -168,7 +180,6 @@ public static class ValidationRuleExtensions
                     == list.Count(t => t is not null))
             .WithMessage(message);
     }
-
 
     /// <summary>Whether a value is an absolute http(s) address.</summary>
     /// <param name="value">The address to inspect.</param>

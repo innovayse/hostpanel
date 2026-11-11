@@ -20,6 +20,7 @@ public sealed class DisableTwoFactorTests(IntegrationTestFactory factory) : ICla
     private readonly TwoFactorHost _two = new(factory);
 
     /// <summary>Disabling with the current code switches it off.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DisableWithTheRightCodeSwitchesItOff()
     {
@@ -38,6 +39,7 @@ public sealed class DisableTwoFactorTests(IntegrationTestFactory factory) : ICla
     /// Switching it off ends every session issued before: the token that did it is refused on its
     /// next call.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DisableEndsTheSessionsIssuedBefore()
     {
@@ -55,6 +57,7 @@ public sealed class DisableTwoFactorTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The right code without the current password is refused, and the second factor stays on.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DisableRefusesAWrongPassword()
     {
@@ -79,6 +82,7 @@ public sealed class DisableTwoFactorTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The code that just enabled two-factor cannot also switch it off: an accepted code is good once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DisableRefusesTheCodeThatEnabledIt()
     {
@@ -97,6 +101,7 @@ public sealed class DisableTwoFactorTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Ten wrong codes lock the account's codes: the right one is refused afterwards.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DisableRefusesTheRightCodeAfterTooManyWrongOnes()
     {
@@ -118,6 +123,7 @@ public sealed class DisableTwoFactorTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Disabling with a code that does not match is refused, and the second factor stays on.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DisableRefusesAWrongCode()
     {
@@ -135,6 +141,7 @@ public sealed class DisableTwoFactorTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DisableRefusesAnonymous()
     {

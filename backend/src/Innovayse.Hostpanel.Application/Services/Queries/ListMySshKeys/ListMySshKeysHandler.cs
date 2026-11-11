@@ -86,7 +86,6 @@ public sealed class ListMySshKeysHandler
             catch (SshProviderException ex)
             {
                 _logger.LogWarning(ex, "SSH key listing for service {ServiceId} failed: {Failure}", context.Service.Id, ex.Failure);
-
             }
         }
 

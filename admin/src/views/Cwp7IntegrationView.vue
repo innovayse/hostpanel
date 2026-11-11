@@ -8,7 +8,7 @@
  */
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRouter } from 'vue-router'
+import type { RouteLocationRaw } from 'vue-router'
 import { useServersStore } from '@/stores/servers'
 import { INTEGRATION_META } from '@/types/integrationmeta'
 import { IntegrationSlug } from '@/types/integration'
@@ -17,7 +17,6 @@ import type { ServerDto } from '@/types/server'
 import type { UiTone } from '@/utils/ui/tone'
 import IntegrationBreadcrumb from '@/components/integrations/IntegrationBreadcrumb.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
-import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiHeading from '@/components/ui/UiHeading.vue'
@@ -27,12 +26,10 @@ import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { AppRoute } from '@/lib/routes'
+import { UiButtonVariant } from '@/utils/ui/button'
 
 /** Translation function. */
 const { t } = useI18n()
-
-/** Router, for the two quick actions. */
-const router = useRouter()
 
 /** Servers store: the server list. */
 const serversStore = useServersStore()
@@ -58,15 +55,11 @@ const stateTone = (server: ServerDto): UiTone => {
   return server.isOnline === false ? 'danger' : 'neutral'
 }
 
-/** Navigates to the servers page with CWP7 module pre-selected. */
-const goToCreateServer = (): void => {
-  void router.push({ path: AppRoute.Servers, query: { create: ServerModule.Cwp7 } })
-}
+/** Route of the servers page with the CWP7 server form open, opened by the create server links. */
+const createServerRoute: RouteLocationRaw = { path: AppRoute.Servers, query: { create: ServerModule.Cwp7 } }
 
-/** Navigates to the product creation page. */
-const goToCreateProduct = (): void => {
-  void router.push({ path: AppRoute.SettingsProducts, query: { create: 'true', module: ServerModule.Cwp7 } })
-}
+/** Route of the products page with a CWP7 product form open, opened by the create product link. */
+const createProductRoute: RouteLocationRaw = { path: AppRoute.SettingsProducts, query: { create: 'true', module: ServerModule.Cwp7 } }
 
 /** Loads the servers. */
 onMounted(() => {
@@ -112,18 +105,18 @@ onMounted(() => {
         <UiStack gap="sm" align="start">
           <UiHeading :level="3" variant="card">{{ t('integrations.cwp7Integration.createNewServer') }}</UiHeading>
           <UiText tone="muted" size="sm">{{ t('integrations.cwp7Integration.addACwp7ServerWith') }}</UiText>
-          <UiButton variant="secondary" data-testid="cwp7-create-server" @click="goToCreateServer">
+          <UiLink :to="createServerRoute" :variant="UiButtonVariant.Secondary" data-testid="cwp7-create-server">
             {{ t('integrations.cwp7Integration.createNewServer') }}
-          </UiButton>
+          </UiLink>
         </UiStack>
       </UiCard>
       <UiCard padding="md">
         <UiStack gap="sm" align="start">
           <UiHeading :level="3" variant="card">{{ t('integrations.cwp7Integration.createNewProduct') }}</UiHeading>
           <UiText tone="muted" size="sm">{{ t('integrations.cwp7Integration.createAHostingPlanLinked') }}</UiText>
-          <UiButton variant="secondary" data-testid="cwp7-create-product" @click="goToCreateProduct">
+          <UiLink :to="createProductRoute" :variant="UiButtonVariant.Secondary" data-testid="cwp7-create-product">
             {{ t('integrations.cwp7Integration.createNewProduct') }}
-          </UiButton>
+          </UiLink>
         </UiStack>
       </UiCard>
     </UiGrid>
@@ -139,9 +132,9 @@ onMounted(() => {
       <UiCard v-if="!serversStore.loading && cwp7Servers.length === 0" padding="md" data-testid="cwp7-servers-empty">
         <UiStack gap="sm" align="center">
           <UiText tone="muted" size="md">{{ t('integrations.cwp7Integration.noCwp7ServersConfiguredYet') }}</UiText>
-          <UiButton variant="link" data-testid="cwp7-add-first-server" @click="goToCreateServer">
+          <UiLink :to="createServerRoute" :variant="UiButtonVariant.Link" data-testid="cwp7-add-first-server">
             {{ t('integrations.cwp7Integration.addYourFirstServer') }}
-          </UiButton>
+          </UiLink>
         </UiStack>
       </UiCard>
 

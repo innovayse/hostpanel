@@ -2,7 +2,8 @@
  * Tests for the auth store's refusal wording: the API's own sentence wins, the only client
  * sentences are the shared no-answer line and the sign-in loop line, and there is no
  * status-to-sentence table. Also the session probe, and that the store remembers its answer
- * (signed in or signed out) until the session changes.
+ * (signed in or signed out) until the session changes, and the account key that marks a change of
+ * account or roles.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -241,5 +242,36 @@ describe('authStore.checkSession', () => {
 
     expect(store.isAuthenticated).toBe(false)
     expect(store.sessionChecked).toBe(true)
+  })
+})
+
+describe('auth store accountKey', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  it('is null when signed out and changes with the account and its roles', () => {
+    const store = useAuthStore()
+
+    expect(store.accountKey).toBeNull()
+
+    store.user = { email: 'staff@example.com', roles: ['Reseller'] }
+    const first = store.accountKey
+
+    store.user = { email: 'staff@example.com', roles: ['Reseller', 'Admin'] }
+
+    expect(first).not.toBeNull()
+    expect(store.accountKey).not.toBe(first)
+  })
+
+  it('does not change when the same roles arrive in another order', () => {
+    const store = useAuthStore()
+    store.user = { email: 'staff@example.com', roles: ['Reseller', 'Admin'] }
+    const first = store.accountKey
+
+    store.user = { email: 'staff@example.com', roles: ['Admin', 'Reseller'] }
+
+    expect(store.accountKey).toBe(first)
+    expect(store.user.roles).toEqual(['Admin', 'Reseller'])
   })
 })

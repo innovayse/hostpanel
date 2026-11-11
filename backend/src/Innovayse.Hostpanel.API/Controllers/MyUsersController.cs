@@ -1,9 +1,9 @@
 using Innovayse.Hostpanel.API.Authorization;
-using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Application.Clients.Commands.InviteMyUser;
 using Innovayse.Hostpanel.Application.Clients.Commands.RemoveMyUser;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Clients.Queries.GetMyClientUsers;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;

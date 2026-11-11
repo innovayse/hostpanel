@@ -13,8 +13,6 @@ using Innovayse.Hostpanel.Shared.MultiTenancy;
 using Innovayse.Hostpanel.Shared.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using CorsPolicyOptions = Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions;
@@ -238,8 +236,11 @@ public static class DependencyInjection
             // Billing scheduled jobs: the daily billing, renewal and suspension crons and the gateway reconcile.
             services.AddHostedService<BillingScheduledJobsStartup>();
 
-            // Admin scheduled jobs: the daily GitHub release-update check.
+            // Admin scheduled jobs: the daily GitHub release-update check and the plugin registry enrolment.
             services.AddHostedService<AdminScheduledJobsStartup>();
+
+            // Email campaign dispatch: starts the campaigns whose send time has come and sends their mails in batches.
+            services.AddHostedService<CampaignScheduledJobsStartup>();
 
             // Recurring recovery of migration jobs left queued or in progress with a stale heartbeat. Not in Testing:
             // the tests derive extra hosts over one database mid-test, and a recovery there would

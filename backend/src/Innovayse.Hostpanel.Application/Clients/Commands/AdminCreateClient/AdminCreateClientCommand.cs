@@ -29,6 +29,7 @@ namespace Innovayse.Hostpanel.Application.Clients.Commands.AdminCreateClient;
 /// Billing and account switches; when left out a new client gets reminders on, status updates on and
 /// single sign-on allowed, with tax exemption, separate invoices, card-processing refusal and marketing opt-in off.
 /// </param>
+/// <param name="ClientGroupId">The client group to put the client in; null puts it in the default group, when one is set.</param>
 public sealed record AdminCreateClientCommand(
     bool CreateNewUser,
     string? ExistingUserId,
@@ -42,7 +43,8 @@ public sealed record AdminCreateClientCommand(
     ClientPreferencesDto Preferences,
     ClientStatus? Status,
     ContactNotifications? Notifications = null,
-    ClientSettingsDto? Settings = null)
+    ClientSettingsDto? Settings = null,
+    int? ClientGroupId = null)
 {
     /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
     /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>

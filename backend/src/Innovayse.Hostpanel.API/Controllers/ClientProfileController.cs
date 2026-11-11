@@ -1,5 +1,4 @@
 using Innovayse.Hostpanel.API.Authorization;
-using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Application.Clients.Commands.AddMyContact;
 using Innovayse.Hostpanel.Application.Clients.Commands.ConfirmMyEmailChange;
 using Innovayse.Hostpanel.Application.Clients.Commands.RemoveMyContact;
@@ -9,6 +8,7 @@ using Innovayse.Hostpanel.Application.Clients.Commands.UpdateMyProfile;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Clients.Queries.GetMyContacts;
 using Innovayse.Hostpanel.Application.Clients.Queries.GetMyProfile;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Controllers;

@@ -21,6 +21,7 @@ public sealed class RenewalClientStatusTests(IntegrationTestFactory factory) : I
     /// <summary>Raising invoices for a suspended or closed client is refused and raises nothing.</summary>
     /// <param name="status">The status the client is in.</param>
     /// <param name="expectedCode">The code the refusal carries.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData(ClientStatus.Suspended, HostpanelErrorCodes.CLIENT_SUSPENDED)]
     [InlineData(ClientStatus.Closed, HostpanelErrorCodes.CLIENT_CLOSED)]
@@ -41,6 +42,7 @@ public sealed class RenewalClientStatusTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>The daily run invoices an active client's due service and skips a suspended client's.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DailyRun_SkipsASuspendedClientAndStillBillsAnActiveOneAsync()
     {

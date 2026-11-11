@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Slides;
 public sealed class DeleteSlideTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A deleted slide can no longer be read back.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Delete_RemovesTheSlide()
     {
@@ -27,6 +28,7 @@ public sealed class DeleteSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>An id that names no slide answers 404 with <c>SLIDE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Delete_UnknownId_RefusesNotFound()
     {
@@ -39,6 +41,7 @@ public sealed class DeleteSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Delete_RefusesAnonymous()
     {
@@ -48,6 +51,7 @@ public sealed class DeleteSlideTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Delete_NonPositiveId_RefusesWithValidationError()
     {

@@ -1,15 +1,8 @@
-using Innovayse.Hostpanel.Application.Support.Commands.CreateKbArticle;
-using Innovayse.Hostpanel.Application.Support.Commands.CreateKbCategory;
-using Innovayse.Hostpanel.Application.Support.Commands.DeleteKbArticle;
-using Innovayse.Hostpanel.Application.Support.Commands.DeleteKbCategory;
-using Innovayse.Hostpanel.Application.Support.Commands.PublishKbArticle;
-using Innovayse.Hostpanel.Application.Support.Commands.UpdateKbArticle;
-using Innovayse.Hostpanel.Application.Support.Commands.UpdateKbCategory;
 using Innovayse.Hostpanel.Application.Support.Common;
 using Innovayse.Hostpanel.Application.Support.Queries.GetPublishedKbArticle;
+using Innovayse.Hostpanel.Application.Support.Queries.GetPublishedKbArticleBySlug;
 using Innovayse.Hostpanel.Application.Support.Queries.ListPublishedKbArticles;
 using Innovayse.Hostpanel.Application.Support.Queries.ListPublishedKbCategories;
-using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -57,7 +50,7 @@ public sealed class KnowledgeBaseController : BaseApiController
     }
 
     /// <summary>
-    /// Returns one page of published knowledge base articles, filtered by category and search term: title,
+    /// Returns one page of published knowledge base articles, filtered by category (name or slug) and search term: title,
     /// plain-text excerpt and category of each, never the body.
     /// </summary>
     /// <param name="query">Category, search term and paging, bound from the query string.</param>
@@ -90,6 +83,31 @@ public sealed class KnowledgeBaseController : BaseApiController
     public async Task<IActionResult> GetPublishedByIdAsync(int id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<PublishedKbArticleDto>>(new GetPublishedKbArticleQuery(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Returns a single published knowledge base article by its slug.</summary>
+    /// <remarks>
+    /// Route matching ignores case, so the literal segments <c>articles</c> and <c>categories</c> (in any letter case) are
+    /// served by their own actions, not by this one. A purely numeric segment never reaches this action: the route
+    /// pattern refuses it (a negative look-ahead; the pattern is anchored with <c>\A</c> and <c>\z</c>, so a trailing newline does not slip through), so it is read as an id by <c>{id:int}</c>, and a number too large for
+    /// an <see cref="int"/> matches no route at all and is answered 404 by routing. Without that look-ahead a number
+    /// would match both routes and the request would fail as ambiguous. The slug is matched without regard to case.
+    /// </remarks>
+    /// <param name="slug">Article slug, in any letter case.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the article, its slug in the canonical lower case; 404 with <c>KBARTICLE_NOT_FOUND</c> when no published
+    /// article has the slug (an unpublished draft is answered like a missing one); 400 when the request is refused;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("{slug:regex(\\A(?![[0-9]]+\\z)[[a-zA-Z0-9]]+(-[[a-zA-Z0-9]]+)*\\z)}")]
+    [ProducesResponseType(typeof(PublishedKbArticleDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetPublishedBySlugAsync(string slug, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<PublishedKbArticleDto>>(new GetPublishedKbArticleBySlugQuery(slug), ct);
         return HandleResult(outcome);
     }
 }

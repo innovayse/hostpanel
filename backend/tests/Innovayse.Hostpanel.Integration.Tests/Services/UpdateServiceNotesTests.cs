@@ -17,6 +17,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Services;
 public sealed class UpdateServiceNotesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A valid save answers 204 and stores the notes.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateNotes_OnAnExistingService_StoresTheNotesAsync()
     {
@@ -34,6 +35,7 @@ public sealed class UpdateServiceNotesTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Notes over the stored length are refused with 400 <c>VALIDATION_ERROR</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateNotes_TooLong_Returns400ValidationErrorAsync()
     {
@@ -48,6 +50,7 @@ public sealed class UpdateServiceNotesTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Saving the notes of a service that does not exist answers 404 <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateNotes_OnAnUnknownService_Returns404Async()
     {
@@ -61,6 +64,7 @@ public sealed class UpdateServiceNotesTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>Saving without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateNotes_WithoutAuth_Returns401Async()
     {

@@ -13,24 +13,29 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class GetKbArticleTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can read a knowledge base article that has not yet been published.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanReadAnUnpublishedKbArticleAsync()
     {
         var client = await SupportTestSeeds.AdminClientAsync(factory);
-        var createResponse = await client.PostAsJsonAsync("/api/admin/knowledgebase", new
-        {
-            title = $"Article-{Guid.NewGuid():N}",
-            content = "Body text.",
-            category = "General",
-        });
-        var id = int.Parse((await createResponse.Content.ReadAsStringAsync()).Trim());
+        var categoryName = $"Cat-{Guid.NewGuid():N}";
+        var categoryId = await KbTestSeeds.CreateCategoryAsync(client, categoryName);
+        var id = await KbTestSeeds.CreateArticleAsync(client, categoryId, "Readable", "Some body.");
 
         var response = await client.GetAsync($"/api/admin/knowledgebase/{id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var article = await response.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+        article.GetProperty("id").GetInt32().Should().Be(id);
+        article.GetProperty("slug").GetString().Should().StartWith("readable");
+        article.GetProperty("categoryId").GetInt32().Should().Be(categoryId);
+        article.GetProperty("categoryName").GetString().Should().Be(categoryName);
+        article.GetProperty("isPublished").GetBoolean().Should().BeFalse();
+        article.GetProperty("translations").GetProperty("en").GetProperty("content").GetString().Should().Be("Some body.");
     }
 
     /// <summary>Reading a knowledge base article that does not exist answers 404 with <c>KBARTICLE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetUnknownKbArticleAnswersNotFoundAsync()
     {
@@ -43,6 +48,7 @@ public sealed class GetKbArticleTests(IntegrationTestFactory factory) : IClassFi
     }
 
     /// <summary>A caller with no credential cannot read the admin knowledge base article route.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

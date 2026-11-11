@@ -30,5 +30,5 @@ public interface IClientRecordStore
     /// The saved candidate with <see cref="ClientRecordWriteResult.Created"/> true, or the record
     /// that already existed for the user with it false. Any other failure to save is thrown as it was.
     /// </returns>
-    Task<ClientRecordWriteResult> AddOrGetAsync(Client candidate, CancellationToken ct);
+    public Task<ClientRecordWriteResult> AddOrGetAsync(Client candidate, CancellationToken ct);
 }

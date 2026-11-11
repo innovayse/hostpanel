@@ -277,7 +277,7 @@
     <value>Такая категория базы знаний не найдена.</value>
   </data>
 <data name="KBCATEGORY_IN_USE" xml:space="preserve">
-    <value>В этой категории базы знаний ещё есть подкатегории. Сначала перенесите или удалите их.</value>
+    <value>В этой категории базы знаний ещё есть подкатегории или статьи. Сначала перенесите или удалите их.</value>
   </data>
 <data name="ANNOUNCEMENT_NOT_FOUND" xml:space="preserve">
     <value>Такое объявление не найдено.</value>
@@ -542,6 +542,15 @@
   </data>
 <data name="PLUGIN_MANIFEST_TAGS_INVALID" xml:space="preserve">
     <value>Теги в манифесте недопустимы: укажите не более 10 тегов, каждый от 2 до 30 строчных букв, цифр или дефисов, без символа # в начале и без повторов.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_HOST_VERSION_INVALID" xml:space="preserve">
+    <value>Минимальная или максимальная версия хоста в манифесте недопустима: укажите её в виде major.minor.patch, например 2.1.0.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED" xml:space="preserve">
+    <value>Минимальная версия хоста в манифесте выше максимальной.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_CHANGELOG_TOO_LONG" xml:space="preserve">
+    <value>Список изменений в манифесте слишком длинный: не более 4000 символов.</value>
   </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Этот плагин ссылается на документ представления, которого нет в его пакете.</value>
@@ -847,6 +856,9 @@
   <data name="ORDER_NOT_PENDING" xml:space="preserve">
     <value>Это действие требует, чтобы заказ был в ожидании.</value>
   </data>
+  <data name="ORDER_NOT_ACCEPTED" xml:space="preserve">
+    <value>Выполнять позиции можно только у принятого заказа.</value>
+  </data>
   <data name="ORDER_LINE_NOT_RETRYABLE" xml:space="preserve">
     <value>Эту позицию заказа сейчас нельзя повторить. Повторить можно только позицию принятого заказа, которая завершилась ошибкой, и не пока её уже повторяет другой запрос.</value>
   </data>
@@ -860,7 +872,10 @@
     <value>Эта позиция заказа изменилась во время обработки, поэтому результат не удалось записать. Откройте заказ заново, чтобы увидеть, в каком состоянии позиция.</value>
   </data>
   <data name="ORDER_LINE_NOT_REFUNDABLE" xml:space="preserve">
-    <value>Эту позицию заказа сейчас нельзя вернуть. Начать возврат можно только для позиции, которая завершилась ошибкой, завершить его только для позиции, по которой возврат идёт, а закрыть как возвращённую только позицию с частичным возвратом.</value>
+    <value>Эту позицию заказа сейчас нельзя вернуть. Начать возврат можно только для позиции, которая завершилась ошибкой, завершить его только для позиции, по которой возврат идёт, а закрыть как возвращённую только позицию с ошибкой, с идущим или с частичным возвратом.</value>
+  </data>
+  <data name="ORDER_LINE_REFUND_IN_PROGRESS" xml:space="preserve">
+    <value>Возврат по этой позиции заказа начался меньше срока повторной попытки назад и, возможно, ещё возвращает деньги. Дождитесь его завершения; вручную можно закрыть только возврат, который завис дольше этого срока.</value>
   </data>
   <data name="ORDER_LINE_INTERRUPTED" xml:space="preserve">
     <value>Попытка выполнить эту позицию была прервана до завершения. Повторите позицию.</value>
@@ -1189,11 +1204,47 @@
   <data name="PLUGIN_REGISTRY_HOST_INCOMPATIBLE" xml:space="preserve">
     <value>Эта версия плагина не работает с установленной версией Hostpanel.</value>
   </data>
+  <data name="PLUGIN_HOST_VERSION_OUT_OF_RANGE" xml:space="preserve">
+    <value>Этот плагин не работает с версией Hostpanel на этом сервере: она вне минимальной и максимальной версии хоста, которые поддерживает плагин.</value>
+  </data>
   <data name="PLUGIN_REGISTRY_VERSION_YANKED" xml:space="preserve">
     <value>Реестр плагинов отозвал эту версию, поэтому её нельзя установить. Выберите другую версию.</value>
   </data>
   <data name="PLUGIN_REGISTRY_VERSION_COMPROMISED" xml:space="preserve">
     <value>Реестр плагинов отклонил эту версию как небезопасную, поэтому её нельзя установить. Выберите другую версию.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID" xml:space="preserve">
+    <value>Реестр плагинов не может использовать публичный адрес этого Hostpanel. Укажите в ClientBaseUrl публичный https-адрес установки и повторите регистрацию.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED" xml:space="preserve">
+    <value>Реестр плагинов ещё не подтвердил этот Hostpanel, поэтому не выдаёт этот закрытый плагин. Регистрация идёт автоматически: проверьте её состояние на странице «Плагины» и повторите, если там ошибка.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REVOKED" xml:space="preserve">
+    <value>Реестр плагинов отозвал эту установку Hostpanel и больше не выдаёт ей закрытые плагины. Свяжитесь с владельцем реестра. Повторите регистрацию, чтобы получить новую идентичность.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED" xml:space="preserve">
+    <value>Реестр плагинов не принял подпись этого Hostpanel. Повторите регистрацию на странице «Плагины». Если ошибка повторяется, сохранённая на сервере идентичность могла быть повреждена.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW" xml:space="preserve">
+    <value>Реестр плагинов отклонил запрос: часы этого сервера слишком сильно расходятся с точным временем. Исправьте время на сервере (включите синхронизацию времени) и повторите.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REPLAY_REJECTED" xml:space="preserve">
+    <value>Реестр плагинов принял запрос за повтор предыдущего и отклонил его. Повторите попытку.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED" xml:space="preserve">
+    <value>Реестр плагинов не принял одноразовый билет на скачивание. Повторите установку, чтобы получить новый билет.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED" xml:space="preserve">
+    <value>Реестр плагинов ограничивает частоту регистрации и запросов закрытых плагинов от этого Hostpanel, и лимит исчерпан. Подождите немного и повторите.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE" xml:space="preserve">
+    <value>Реестр плагинов не смог прочитать подтверждающий текст у этого Hostpanel по пути /.well-known/hostpanel-registry/. Убедитесь, что ваш публичный адрес направляет этот путь в API Hostpanel, и повторите.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_RESTART_NEEDED" xml:space="preserve">
+    <value>Регистрация в реестре плагинов истекла или была забыта, поэтому она начинается заново с новым ключом.</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_FOUND" xml:space="preserve">
+    <value>Регистрации с таким идентификатором, ожидающей подтверждения, нет.</value>
   </data>
   <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
     <value>Плагин запрашивает неизвестный этому серверу вид доступа к хостингу клиента, указывает его дважды или объявляет его в манифесте версии 1.</value>
@@ -1266,5 +1317,98 @@
   </data>
   <data name="CREDIT_NOTE_REFUND_NOT_VOIDABLE" xml:space="preserve">
     <value>Эта кредит-нота выплачена возвратом через платёжный шлюз. Возврат нельзя отменить, поэтому кредит-ноту нельзя аннулировать.</value>
+  </data>
+  <data name="STATUS_COMPONENT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Такой группы страницы статуса нет.</value>
+  </data>
+  <data name="STATUS_COMPONENT_NOT_FOUND" xml:space="preserve">
+    <value>Такого компонента страницы статуса нет.</value>
+  </data>
+  <data name="STATUS_INCIDENT_NOT_FOUND" xml:space="preserve">
+    <value>Такого инцидента страницы статуса нет.</value>
+  </data>
+  <data name="STATUS_NAME_REQUIRED" xml:space="preserve">
+    <value>Нужно указать название.</value>
+  </data>
+  <data name="STATUS_DISPLAY_ORDER_NEGATIVE" xml:space="preserve">
+    <value>Порядок отображения не может быть отрицательным.</value>
+  </data>
+  <data name="STATUS_INCIDENT_TITLE_REQUIRED" xml:space="preserve">
+    <value>Инциденту нужен заголовок.</value>
+  </data>
+  <data name="STATUS_INCIDENT_MESSAGE_REQUIRED" xml:space="preserve">
+    <value>Обновлению нужно сообщение.</value>
+  </data>
+  <data name="STATUS_INCIDENT_ALREADY_RESOLVED" xml:space="preserve">
+    <value>Инцидент закрыт и больше не принимает обновлений.</value>
+  </data>
+  <data name="CLIENT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Такой группы клиентов нет.</value>
+  </data>
+  <data name="CLIENT_GROUP_IN_USE" xml:space="preserve">
+    <value>В этой группе ещё есть клиенты. Сначала переведите их в другую группу.</value>
+  </data>
+  <data name="CLIENT_GROUP_DISCOUNT_INVALID" xml:space="preserve">
+    <value>Скидка должна быть от 0 до 100 процентов.</value>
+  </data>
+  <data name="CLIENT_GROUP_COLOR_INVALID" xml:space="preserve">
+    <value>Цвет нужно записать в виде #RRGGBB.</value>
+  </data>
+  <data name="SERVICE_CHANGE_REQUEST_NOT_FOUND" xml:space="preserve">
+    <value>Такой запрос на смену тарифа не найден.</value>
+  </data>
+  <data name="SERVICE_CHANGE_ALREADY_PENDING" xml:space="preserve">
+    <value>Для этой услуги уже есть незавершённый запрос на смену тарифа.</value>
+  </data>
+  <data name="SERVICE_CHANGE_SAME_PRODUCT" xml:space="preserve">
+    <value>Услуга уже работает на этом тарифе.</value>
+  </data>
+  <data name="SERVICE_CHANGE_SAME_PRICE" xml:space="preserve">
+    <value>Этот тариф стоит столько же, сколько текущий, менять нечего.</value>
+  </data>
+  <data name="SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE" xml:space="preserve">
+    <value>Этот тариф недоступен для этой услуги.</value>
+  </data>
+  <data name="SERVICE_CHANGE_PRICE_UNAVAILABLE" xml:space="preserve">
+    <value>У этого тарифа нет цены для расчётного периода услуги в вашей валюте.</value>
+  </data>
+  <data name="SERVICE_CHANGE_NO_RENEWAL_DATE" xml:space="preserve">
+    <value>У услуги нет даты продления, поэтому сменить тариф посреди расчётного периода нельзя.</value>
+  </data>
+  <data name="SERVICE_CHANGE_INVALID_STATE" xml:space="preserve">
+    <value>Запрос на смену тарифа находится в состоянии, при котором это действие невозможно.</value>
+  </data>
+  <data name="SERVICE_CHANGE_INVOICE_UNPAID" xml:space="preserve">
+    <value>Счёт за смену тарифа нужно оплатить до смены тарифа.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_FOUND" xml:space="preserve">
+    <value>Такой email-рассылки не существует.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_DRAFT" xml:space="preserve">
+    <value>Изменять, планировать и удалять можно только черновик рассылки.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SCHEDULED" xml:space="preserve">
+    <value>Эта рассылка не запланирована.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SENDING" xml:space="preserve">
+    <value>Эта рассылка сейчас не отправляется.</value>
+  </data>
+  <data name="CAMPAIGN_NO_SEGMENT" xml:space="preserve">
+    <value>Добавьте хотя бы один сегмент получателей, прежде чем планировать рассылку.</value>
+  </data>
+  <data name="CAMPAIGN_SCHEDULE_IN_PAST" xml:space="preserve">
+    <value>Выберите время отправки в будущем.</value>
+  </data>
+  <data name="CAMPAIGN_SEGMENT_VALUE_INVALID" xml:space="preserve">
+    <value>Значение сегмента получателей не подходит к его фильтру.</value>
+  </data>
+  <data name="CAMPAIGN_RECIPIENT_NOT_PENDING" xml:space="preserve">
+    <value>Этот получатель больше не ожидает доставки.</value>
+  </data>
+  <data name="CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND" xml:space="preserve">
+    <value>Эта ссылка для отписки недействительна.</value>
+  </data>
+  <data name="CAMPAIGN_MAIL_LINK_NOT_FOUND" xml:space="preserve">
+    <value>Эта ссылка недействительна.</value>
   </data>
 </root>

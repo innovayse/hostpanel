@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.IntegrationEvents.Contracts;
 using Innovayse.Hostpanel.Domain.Clients;
@@ -66,6 +67,10 @@ public sealed class CreateClientOnRegisterHandler
         var client = Client.Create(
             evt.UserId, evt.FirstName, evt.LastName, evt.Email, _clock.UtcNow,
             registration: new RegistrationInfo(evt.IpAddress, evt.UserAgent, evt.DeviceType, evt.OperatingSystem, evt.Browser));
+
+        // A client who registers has no say in groups: it joins the default one, when there is one.
+        await _context.AssignDefaultClientGroupAsync(client, ct);
+
         _context.Clients.Add(client);
         try
         {

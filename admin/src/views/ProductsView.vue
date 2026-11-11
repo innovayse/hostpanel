@@ -36,6 +36,7 @@ import { useResultBanner } from '@/composables/useResultBanner'
 import { useDocsGuide } from '@/composables/useDocsGuide'
 import PageHelpLink from '@/components/layout/PageHelpLink.vue'
 import { UiTone } from '@/utils/ui/tone'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -230,18 +231,18 @@ const productActions = (product: Product): UiRowAction[] => {
     />
 
     <UiCard v-else class="overflow-hidden">
-      <UiTable density="comfortable" :empty="store.products.length === 0" :colspan="10">
+      <UiTable :density="UiTableDensity.Comfortable" :empty="store.products.length === 0" :colspan="10">
         <template #empty>
           {{ t('settings.products.noProductsFoundCreateYour') }}
         </template>
         <UiTableHead>
-          <UiTableRow class="border-b border-border">
-            <UiTableHeader align="left">{{ t('shared.name') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('settings.products.group') }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('shared.type') }}</UiTableHeader>
-            <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" align="left">{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
-            <UiTableHeader align="left">{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
+          <UiTableRow>
+            <UiTableHeader>{{ t('shared.name') }}</UiTableHeader>
+            <UiTableHeader>{{ t('settings.products.group') }}</UiTableHeader>
+            <UiTableHeader>{{ t('shared.type') }}</UiTableHeader>
+            <UiTableHeader v-for="cycle in PRODUCT_PRICE_CYCLES" :key="cycle" numeric>{{ t(`settings.productForm.${cycle}`) }}</UiTableHeader>
+            <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -257,19 +258,19 @@ const productActions = (product: Product): UiRowAction[] => {
             </UiTableCell>
             <UiTableCell muted>{{ groupName(product.groupId) }}</UiTableCell>
             <UiTableCell muted>{{ typeLabels[product.type] ?? product.type }}</UiTableCell>
-            <UiTableCell v-for="(cycle, position) in PRODUCT_PRICE_CYCLES" :key="cycle" class="font-mono text-text-primary">
+            <UiTableCell v-for="(cycle, position) in PRODUCT_PRICE_CYCLES" :key="cycle" numeric class="font-mono text-text-primary">
               {{ formatPrice(product.pricing[cycle]) }}
               <UiText v-if="position === 0 && otherCurrencyCodes(product).length > 0" tone="muted" size="xs" class="ml-1 inline font-sans">
                 +{{ otherCurrencyCodes(product).join(', ') }}
               </UiText>
             </UiTableCell>
             <UiTableCell>
-              <UiBadge :tone="product.status === ProductStatus.Active ? 'success' : 'neutral'" small>
+              <UiBadge :tone="product.status === ProductStatus.Active ? UiTone.Success : UiTone.Neutral" small>
                 {{ product.status === ProductStatus.Active ? t('shared.active') : t('shared.inactive') }}
               </UiBadge>
             </UiTableCell>
-            <UiTableCell align="right">
-              <UiRowActions :actions="productActions(product)" />
+            <UiTableCell actions>
+              <UiRowActions :actions="productActions(product)" :testid="`product-actions-${product.id}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

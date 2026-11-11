@@ -88,6 +88,8 @@ public sealed class AdminCreateClientValidator : LocalizedValidator<AdminCreateC
             .MustBeCurrencyCode(L["ClientCurrencyInvalid"])
             .When(x => !string.IsNullOrEmpty(x.Preferences.Currency));
 
+        RuleFor(x => x.ClientGroupId).MustBePositiveId(L["ContentIdInvalid"]);
+
         // Null means Active. A number that names no status is refused here, the same as on update,
         // rather than quietly creating the client Active.
         RuleFor(x => x.Status)

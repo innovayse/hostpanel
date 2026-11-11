@@ -7,8 +7,12 @@
  */
 import { useData } from 'vitepress'
 import { computed } from 'vue'
+import { useUi } from '../useUi'
 
 const { theme } = useData()
+
+/** The texts of the language of the open page. */
+const { ui } = useUi()
 
 /** Address of the admin demo, or an empty string when the site has none. */
 const demoUrl = computed<string>(() => (theme.value as Record<string, string>).demoAdminUrl ?? '')
@@ -17,7 +21,7 @@ const demoUrl = computed<string>(() => (theme.value as Record<string, string>).d
 <template>
   <div v-if="demoUrl" class="home-demo-action">
     <a :href="demoUrl" target="_blank" rel="noopener noreferrer" class="VPButton medium alt">
-      Try the demo
+      {{ ui.nav.demo }}
     </a>
   </div>
 </template>

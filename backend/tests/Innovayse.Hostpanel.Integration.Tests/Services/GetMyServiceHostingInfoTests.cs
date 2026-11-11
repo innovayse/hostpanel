@@ -4,7 +4,6 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Monitoring;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -20,6 +19,7 @@ public sealed class GetMyServiceHostingInfoTests(IntegrationTestFactory factory)
     private const string ServiceDomain = "owned-by-caller.test";
 
     /// <summary>The owner reads the probe's answer for the domain stored on their service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HostingInfo_TheCallersOwnService_ProbesTheStoredDomainAndReturnsTheReading()
     {
@@ -38,6 +38,7 @@ public sealed class GetMyServiceHostingInfoTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A service with no domain answers empty and nothing is probed.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HostingInfo_AServiceWithoutADomain_ReturnsEmptyWithoutProbing()
     {
@@ -56,6 +57,7 @@ public sealed class GetMyServiceHostingInfoTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A stranger's service is refused before any probe, so the route cannot be used to look up someone else's domain.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HostingInfo_AStrangersService_Returns404WithServiceNotFoundAndProbesNothing()
     {
@@ -103,6 +105,7 @@ public sealed class GetMyServiceHostingInfoTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A non-positive id is refused by the validator.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HostingInfo_ANonPositiveId_Returns400()
     {
@@ -114,6 +117,7 @@ public sealed class GetMyServiceHostingInfoTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Reading hosting info without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HostingInfo_Returns401_WithoutAuthAsync()
     {

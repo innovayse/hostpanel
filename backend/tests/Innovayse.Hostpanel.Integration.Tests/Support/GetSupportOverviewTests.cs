@@ -10,6 +10,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class GetSupportOverviewTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Staff can read the support overview.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanReadTheOverviewAsync()
     {
@@ -22,6 +23,7 @@ public sealed class GetSupportOverviewTests(IntegrationTestFactory factory) : IC
 
     /// <summary>Every wire name of a period, in any case, binds and is answered.</summary>
     /// <param name="period">The period as the query string spells it.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("today")]
     [InlineData("yesterday")]
@@ -38,6 +40,7 @@ public sealed class GetSupportOverviewTests(IntegrationTestFactory factory) : IC
 
     /// <summary>A period that names no member, or a number outside the set, is refused with 400.</summary>
     /// <param name="period">The refused value.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("fortnight")]
     [InlineData("42")]
@@ -51,6 +54,7 @@ public sealed class GetSupportOverviewTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A caller with no credential cannot reach the staff overview report.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OverviewIsClosedToNonStaffCallersAsync()
     {

@@ -13,7 +13,11 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ClientClosedSessionsHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>The closing revokes the owner's subject at every registered revoker.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientClosed_RevokesTheOwnersSessionsAtEveryRevokerAsync()
     {
@@ -27,13 +31,14 @@ public sealed class ClientClosedSessionsHandlerTests(IntegrationTestFactory fact
         }));
         using var scope = host.Services.CreateScope();
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(1, "subject-closed", DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(1, "subject-closed", SeededAt));
 
         panel.Revoked.Should().Equal("subject-closed");
         portal.Revoked.Should().Equal("subject-closed");
     }
 
     /// <summary>A closing with no owner subject revokes nothing and does not throw.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ClientClosed_WithoutAnOwnerSubject_RevokesNothingAsync()
     {
@@ -45,7 +50,7 @@ public sealed class ClientClosedSessionsHandlerTests(IntegrationTestFactory fact
         }));
         using var scope = host.Services.CreateScope();
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(1, string.Empty, DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ClientClosedEvent(1, string.Empty, SeededAt));
 
         revoker.Revoked.Should().BeEmpty();
     }

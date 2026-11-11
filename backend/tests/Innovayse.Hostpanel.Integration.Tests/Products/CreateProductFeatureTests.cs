@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Products;
 public sealed class CreateProductFeatureTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>POST without auth answers 401 Unauthorized.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -26,6 +27,7 @@ public sealed class CreateProductFeatureTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>Adding a line to an unknown product answers 404 with <c>PRODUCT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownProduct_RefusesNotFound()
     {
@@ -39,6 +41,7 @@ public sealed class CreateProductFeatureTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A second line under the same label on the same product answers 400 with the duplicate code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DuplicateLabel_RefusesWithDuplicateCode()
     {
@@ -57,6 +60,7 @@ public sealed class CreateProductFeatureTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A line added to an existing product is created and reported with 201 Created.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CreatesALine()
     {

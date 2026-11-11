@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class UpdateDepartmentTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can update an existing department.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanUpdateADepartmentAsync()
     {
@@ -29,6 +30,7 @@ public sealed class UpdateDepartmentTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Updating a department that does not exist answers 404 with <c>DEPARTMENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateUnknownDepartmentAnswersNotFoundAsync()
     {
@@ -45,6 +47,7 @@ public sealed class UpdateDepartmentTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A caller with no credential cannot update a department.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

@@ -25,6 +25,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Admin can provision a pending service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_AdminCanProvisionServiceAsync()
     {
@@ -39,6 +40,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Client role calling /api/provisioning/{id}/provision receives 403 Forbidden.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_ClientForbiddenAsync()
     {
@@ -68,6 +70,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Provisioning an id no service takes answers 404 with <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_UnknownService_Returns404WithServiceNotFound()
     {
@@ -85,6 +88,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     /// A provider that refuses to provision answers 502 with <c>PROVISIONING_UPSTREAM_FAILED</c>,
     /// and no provider detail reaches the body.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_ProviderRefuses_Returns502WithProvisioningUpstreamFailed()
     {
@@ -103,6 +107,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>Provisioning without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_Returns401_WithoutAuthAsync()
     {
@@ -117,6 +122,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     /// A pending service with no domain or username is refused with
     /// <c>SERVICE_HOSTING_DETAILS_MISSING</c> instead of a made-up account being created.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_WithoutHostingDetails_RefusesHostingDetailsMissing()
     {
@@ -138,6 +144,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     /// A service whose product names no hosting package is refused with
     /// <c>PRODUCT_PACKAGE_MISSING</c> instead of a placeholder package being sent to the panel.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_ProductWithoutPackage_RefusesPackageMissing()
     {
@@ -167,6 +174,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     /// A retry that meets the account an earlier attempt created (same username and domain)
     /// adopts it and activates the service instead of failing again.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_ExistingAccountOfTheService_AdoptsItAndActivates()
     {
@@ -190,6 +198,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     /// An existing account under the username that belongs to another domain is not adopted: the
     /// service stays Pending and the answer is 409 <c>PROVISIONING_ACCOUNT_CONFLICT</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_ExistingAccountOfSomebodyElse_Returns409AccountConflict()
     {
@@ -212,6 +221,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     /// A provider that answers success without an account reference is refused with 502, and the
     /// service is not activated with a reference no later operation could use.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_SuccessWithoutReference_Returns502AndStaysPending()
     {
@@ -234,6 +244,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     /// A password generated for a service that had none is saved before the panel is called, so a
     /// refused attempt keeps it and the retry sends the same one.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_GeneratedPassword_IsSavedBeforeTheProviderIsCalled()
     {
@@ -341,6 +352,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
     /// The first billing period starts when provisioning succeeds, not on the order date: a service
     /// ordered months ago renews one cycle after its activation.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_AnchorsTheRenewalOnTheActivationMoment()
     {

@@ -27,11 +27,11 @@ public sealed class ListKbCategoriesHandler
         ArgumentNullException.ThrowIfNull(query);
 
         var categories = await _context.KbCategories.AsNoTracking().ToListAsync(ct);
-        var articles = await _context.KbArticles.AsNoTracking().ToListAsync(ct);
-
-        var countsByCategory = articles
-            .GroupBy(a => a.Category)
-            .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+        var countsByCategory = await _context.KbArticles
+            .AsNoTracking()
+            .GroupBy(a => a.CategoryId)
+            .Select(g => new { CategoryId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(g => g.CategoryId, g => g.Count, ct);
 
         var items = categories
             .Select(c => new KbCategoryDto(
@@ -40,7 +40,8 @@ public sealed class ListKbCategoriesHandler
                 c.Description,
                 c.IsHidden,
                 c.ParentCategoryId,
-                countsByCategory.GetValueOrDefault(c.Name, 0)))
+                countsByCategory.GetValueOrDefault(c.Id, 0),
+                c.Slug))
             .ToList();
 
         return Result.Success<IReadOnlyList<KbCategoryDto>>(items);

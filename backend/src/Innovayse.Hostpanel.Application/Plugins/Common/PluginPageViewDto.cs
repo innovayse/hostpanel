@@ -9,9 +9,10 @@ namespace Innovayse.Hostpanel.Application.Plugins.Common;
 /// <param name="Title">The title, in the caller's language.</param>
 /// <param name="View">The view document (<c>Hostpanel.Sdk.Plugins.Ui.PluginViews</c>), its labels resolved.</param>
 /// <param name="ExternalOrigins">
-/// The web origins (scheme, host and port, such as <c>https://example.com</c>) the plugin's manifest declares in
-/// <c>externalOrigins</c>, as written there; empty when it declares none. The panels need them to render the view's
-/// link blocks, which may point at an absolute <c>https</c> address only on one of these origins.
+/// The web origins (scheme, host and port, such as <c>https://example.com</c>) the view's absolute links may point at:
+/// the manifest's <c>externalOrigins</c>, as written there, then the <c>https</c> origins of the caller's own bound
+/// services (<see cref="PluginFrameOriginResolver.LinkOrigins"/>); empty when there are none. The panels need them to
+/// render the view's link blocks, which may point at an absolute <c>https</c> address only on one of these origins.
 /// </param>
 /// <param name="Layout">The layout the panel renders the page in, a <c>PluginPageLayouts</c> value, never absent.</param>
 /// <param name="FrameOrigins">

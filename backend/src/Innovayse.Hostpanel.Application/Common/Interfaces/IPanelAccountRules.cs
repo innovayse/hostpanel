@@ -16,7 +16,7 @@ public interface IPanelAccountRules
     /// <param name="module">The control panel module of the server the account is to live on.</param>
     /// <param name="username">The username.</param>
     /// <returns><see langword="true"/> when the panel accepts it for a new account, or has no rule for the module.</returns>
-    bool AcceptsNewUsername(ServerModule module, string? username);
+    public bool AcceptsNewUsername(ServerModule module, string? username);
 
     /// <summary>
     /// Whether the panel can be addressed by the username of an account that already exists. Looser
@@ -26,5 +26,5 @@ public interface IPanelAccountRules
     /// <param name="module">The control panel module of the server the account lives on.</param>
     /// <param name="username">The account's username.</param>
     /// <returns><see langword="true"/> when the name is safe to send to the panel, or the panel has no rule for the module.</returns>
-    bool AcceptsAccountUsername(ServerModule module, string? username);
+    public bool AcceptsAccountUsername(ServerModule module, string? username);
 }

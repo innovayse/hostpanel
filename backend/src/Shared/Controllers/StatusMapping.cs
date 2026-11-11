@@ -31,6 +31,8 @@ public static class StatusMapping
             "QUOTA_EXCEEDED" or "LIMIT_EXCEEDED" => new(402, "Payment Required"),
             // Exact row: the first invoice must be paid before the client may set the service up.
             "SERVICE_FIRST_INVOICE_UNPAID" => new(402, "Payment Required"),
+            // Exact row: the proration invoice of an upgrade must be paid before the plan changes.
+            "SERVICE_CHANGE_INVOICE_UNPAID" => new(402, "Payment Required"),
             "PAYLOAD_TOO_LARGE" => new(413, "Content Too Large"),
             "CONTENT_REJECTED" => new(422, "Unprocessable Content"),
             "CONFIRMATION_REQUIRED" => new(409, "Conflict"),
@@ -50,9 +52,16 @@ public static class StatusMapping
             // Exact rows: the stored service or product is not ready to provision, a state conflict
             // rather than a malformed request, and neither name carries a CONFLICT token.
             "SERVICE_HOSTING_DETAILS_MISSING" or "CPANEL_USERNAME_INVALID" or "CPANEL_DOMAIN_INVALID" or "PRODUCT_PACKAGE_MISSING" or "PRODUCT_SERVER_GROUP_REQUIRED" => new(409, "Conflict"),
+            // Exact rows: the campaign's or the recipient's state stands in the way of the action, a state conflict (409),
+            // and none of the names carries a CONFLICT / ALREADY token for the generic arms.
+            "CAMPAIGN_NOT_DRAFT" or "CAMPAIGN_NOT_SCHEDULED" or "CAMPAIGN_NOT_SENDING" or "CAMPAIGN_RECIPIENT_NOT_PENDING"
+                => new(409, "Conflict"),
             // Exact row: only a terminated service has a termination date to correct, so the stored
             // status stands in the way (a state conflict), and the name carries no CONFLICT token.
             "SERVICE_NOT_TERMINATED" => new(409, "Conflict"),
+            // Exact row: the plan change request is in a status that refuses the move, or the service left its plan since it was
+            // made, a state conflict whose name carries no CONFLICT / ALREADY token for the generic arms.
+            "SERVICE_CHANGE_INVALID_STATE" => new(409, "Conflict"),
             // A plugin shipped with the build: the request is well-formed, the target's state refuses it.
             "PLUGIN_BUILT_IN" => new(409, "Conflict"),
             // Exact row: a package whose assembly file name another plugin ships is a bad upload, a 400 like the host
@@ -60,6 +69,8 @@ public static class StatusMapping
             "PLUGIN_ASSEMBLY_CONFLICT" => new(400, "Bad Request"),
             // An upload older than the installed version, and a purge of data whose plugin is still installed: the target's state refuses it.
             "PLUGIN_DOWNGRADE_REFUSED" or "PLUGIN_STILL_INSTALLED" => new(409, "Conflict"),
+            // Exact row: the package is well formed, but the running host version is outside the range it declares.
+            "PLUGIN_HOST_VERSION_OUT_OF_RANGE" => new(409, "Conflict"),
             // Exact rows: the plugin registry is a dependency of the install, not part of the caller's request. Off in this
             // deployment is a state conflict (409); unreachable, a bad reply, a refused or altered package are a gateway
             // failing (502); no answer in time is a gateway timeout (504); the operator's trust policy declining a
@@ -76,6 +87,15 @@ public static class StatusMapping
             // is well formed and the version's state refuses it, a conflict (409); none of the names carries a CONFLICT token.
             "PLUGIN_REGISTRY_HOST_INCOMPATIBLE" or "PLUGIN_REGISTRY_VERSION_YANKED" or "PLUGIN_REGISTRY_VERSION_COMPROMISED"
                 => new(409, "Conflict"),
+            // Exact rows: this installation's identity towards the registry. The address and the registration state are
+            // things the operator fixes (422, 409); a refusal of a signed call is the registry declining us (502); the
+            // registry's own limit is a 429. None of the names carries a token for the generic arms.
+            "PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID" => new(422, "Unprocessable Content"),
+            "PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED" or "PLUGIN_REGISTRY_INSTANCE_REVOKED" or "PLUGIN_REGISTRY_INSTANCE_RESTART_NEEDED"
+                => new(409, "Conflict"),
+            "PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED" or "PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW" or "PLUGIN_REGISTRY_INSTANCE_REPLAY_REJECTED"
+                or "PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED" or "PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE" => new(502, "Bad Gateway"),
+            "PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED" => new(429, "Too Many Requests"),
             // Exact row: a plugin's own code failed the call (a gateway between us and code we do not own, 502); the name
             // carries no token.
             "PLUGIN_FAILED" => new(502, "Bad Gateway"),
@@ -152,9 +172,9 @@ public static class StatusMapping
             // CONFLICT / ALREADY token for the generic arms.
             "SERVER_IN_USE" or "SERVER_GROUP_IN_USE" or "USER_CANNOT_DELETE_SELF" or "USER_LAST_ADMIN"
                 => new(409, "Conflict"),
-            // Exact rows: a category that still holds sub-categories or records, a state conflict whose
+            // Exact rows: a category or client group that still holds sub-categories or records, a state conflict whose
             // names carry no CONFLICT / ALREADY token for the generic arms.
-            "KBCATEGORY_IN_USE" or "DOWNLOAD_CATEGORY_IN_USE" or "PREDEFINED_REPLY_CATEGORY_IN_USE"
+            "KBCATEGORY_IN_USE" or "DOWNLOAD_CATEGORY_IN_USE" or "PREDEFINED_REPLY_CATEGORY_IN_USE" or "CLIENT_GROUP_IN_USE"
                 => new(409, "Conflict"),
             // Exact rows: the rate source is down (a dependency, so 503 with Retry-After), or it
             // quotes nothing against the configured base (the deployment's state, a conflict).
@@ -169,7 +189,7 @@ public static class StatusMapping
             "ORDER_LINE_NOT_RETRYABLE" => new(409, "Conflict"),
             // Exact rows: the line changed under the attempt, or is not in the state a refund needs, so the line's
             // state stands in the way (a conflict), and neither name carries a CONFLICT / ALREADY token.
-            "ORDER_LINE_CHANGED" or "ORDER_LINE_NOT_REFUNDABLE" => new(409, "Conflict"),
+            "ORDER_LINE_CHANGED" or "ORDER_LINE_NOT_REFUNDABLE" or "ORDER_LINE_REFUND_IN_PROGRESS" => new(409, "Conflict"),
             // Exact row: the line has no claim to release (not a domain renewal, already applied, or not
             // claimed), a state conflict whose name carries no token for the generic arms.
             "RENEWAL_CLAIM_NOT_HELD" => new(409, "Conflict"),

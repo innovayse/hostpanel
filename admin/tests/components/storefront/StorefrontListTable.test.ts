@@ -1,6 +1,6 @@
 /**
  * Tests for StorefrontListTable: rows sorted by sort order through the row slot, the page states,
- * the Add / edit / delete events, the delete question and the order reported after a drag. The
+ * the Add and edit links, the delete event, the delete question and the order reported after a drag. The
  * drag library is replaced by a stub that renders the item slot for each element.
  */
 import { describe, expect, it, vi } from 'vitest'
@@ -48,6 +48,8 @@ const baseProps = {
   title: 'Widgets',
   subtitle: 'All widgets',
   addLabel: 'Add widget',
+  addTo: '/storefront/faqs/create',
+  editTo: (item: { id: number }): string => `/storefront/faqs/${item.id}/edit`,
   loadingLabel: 'Loading widgets...',
   emptyLabel: 'No widgets.',
   deleteTitle: 'Delete widget',
@@ -62,6 +64,7 @@ const baseProps = {
     actionError: 'widgets-action-error',
     savingOrder: 'widgets-saving-order',
     row: 'widget-row',
+    actions: 'widget-actions',
     edit: 'widget-edit',
     delete: 'widget-delete',
     moveUp: 'widget-move-up',
@@ -85,7 +88,7 @@ const baseProps = {
  * @param id - Id of the entry whose row menu to open.
  */
 const openMenu = async (wrapper: VueWrapper, id: number): Promise<void> => {
-  await wrapper.get(`[data-testid="widget-row-${id}"] [data-testid="row-actions-trigger"]`).trigger('click')
+  await wrapper.get(`[data-testid="widget-actions-${id}"]`).trigger('click')
 }
 
 /**
@@ -158,19 +161,16 @@ describe('StorefrontListTable', () => {
     expect(wrapper.findComponent(StorefrontListTable).emitted('confirmDelete')).toBeUndefined()
   })
 
-  it('emits add, edit and stage-delete from the buttons', async () => {
+  it('links Add and edit to their pages and emits stage-delete from the menu', async () => {
     const host = hostWith()
     const { wrapper } = await mountScreen(host)
     const table = wrapper.findComponent(StorefrontListTable)
 
-    await wrapper.get('[data-testid="widgets-add"]').trigger('click')
+    expect(wrapper.get('[data-testid="widgets-add"]').attributes('href')).toBe('/storefront/faqs/create')
     await openMenu(wrapper, 1)
-    await wrapper.get('[data-testid="widget-edit-1"]').trigger('click')
-    await openMenu(wrapper, 1)
+    expect(wrapper.get('[data-testid="widget-edit-1"]').attributes('href')).toBe('/storefront/faqs/1/edit')
     await wrapper.get('[data-testid="widget-delete-1"]').trigger('click')
 
-    expect(table.emitted('add')).toHaveLength(1)
-    expect(table.emitted('edit')?.[0]).toEqual([widgets[0]])
     expect(table.emitted('stageDelete')?.[0]).toEqual([widgets[0]])
   })
 

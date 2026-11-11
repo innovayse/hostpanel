@@ -1,12 +1,5 @@
 using System.Reflection;
-using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
-using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
-using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Hostpanel.Sdk.Packaging.Naming;
-using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
-using Innovayse.Hostpanel.Infrastructure.Resilience;
-using Innovayse.Hostpanel.Infrastructure.Resilience.Extensions;
 using Hostpanel.Sdk.Plugins.Endpoints;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Fulfilment;
@@ -16,7 +9,14 @@ using Hostpanel.Sdk.Plugins.Manifest;
 using Hostpanel.Sdk.Plugins.Payment;
 using Hostpanel.Sdk.Plugins.Provisioning;
 using Hostpanel.Sdk.Plugins.Registrar;
+using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Common.Enums;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Infrastructure.Plugins.Enums;
 using Innovayse.Hostpanel.Infrastructure.Plugins.Extensions;
+using Innovayse.Hostpanel.Infrastructure.Resilience;
+using Innovayse.Hostpanel.Infrastructure.Resilience.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -163,15 +163,6 @@ public static class PluginLoader
                 continue;
             }
 
-            // A rule added after the plugin was installed does not take it away: it was accepted once and may be
-            // running payments. The author sees the fault here and an upload of a new version is refused for it.
-            foreach (var advisory in views.Advisories)
-            {
-                logger.LogWarning(
-                    "Plugin {Id} breaks view rule {Rule}: {Detail}. It stays loaded; a new upload would be refused.",
-                    manifest.Id, advisory.Rule, advisory.Detail);
-            }
-
             var icon = PluginIconReader.Read(pluginDir, manifest);
             if (icon.Violation is not null)
             {
@@ -235,6 +226,16 @@ public static class PluginLoader
                 registry.RegisterRefused(new RefusedPlugin(
                     manifest.Id, PluginManifestRule.EndpointsNotImplemented, detail, origin == PluginOrigin.BuiltIn));
                 continue;
+            }
+
+            // A rule added after the plugin was installed does not take it away: it was accepted once and may be
+            // running payments. Logged only here, after the icon check and the assembly load, so a plugin skipped by a
+            // later check never gets the line. The author sees the fault here and an upload of a new version is refused.
+            foreach (var advisory in views.Advisories)
+            {
+                logger.LogWarning(
+                    "Plugin {Id} breaks view rule {Rule}: {Detail}. It stays loaded; a new upload would be refused.",
+                    manifest.Id, advisory.Rule, advisory.Detail);
             }
 
             RegisterPluginType(services, manifest, pluginType, logger);

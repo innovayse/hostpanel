@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An invoice billing only this domain is cancelled and its credit goes back to the balance, in one save.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_OnlyThisDomain_CancelsAndReturnsCreditAsync()
     {
@@ -35,6 +36,7 @@ public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory fac
     }
 
     /// <summary>An Unpaid invoice billing another domain too keeps the other line; the excess credit goes back.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_MixedUnpaid_RemovesOnlyThisDomainsLineAsync()
     {
@@ -61,6 +63,7 @@ public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory fac
     }
 
     /// <summary>A PaymentPending invoice refuses the release with <c>RENEWAL_INVOICE_OPEN</c> and is left as it was.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_PaymentPending_RefusesAndChangesNothingAsync()
     {
@@ -87,6 +90,7 @@ public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory fac
     /// An invoice that already took a payment refuses the release with <c>RENEWAL_INVOICE_OPEN</c>: cancelling
     /// it would strand the money and dropping the line could leave the payment above the total.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_PartPaid_RefusesAndChangesNothingAsync()
     {
@@ -108,6 +112,7 @@ public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory fac
     }
 
     /// <summary>A domain on no open invoice is released without any change.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_NoOpenInvoice_SucceedsAsync()
     {

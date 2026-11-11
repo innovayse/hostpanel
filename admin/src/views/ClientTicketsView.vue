@@ -34,6 +34,7 @@ import { UiTextSize, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { DEFAULT_PAGE_SIZE, SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { ClientSection, clientItemPath, clientTicketNewPath } from '@/lib/routes'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
 
@@ -164,7 +165,7 @@ onBeforeUnmount(() => {
 
       <UiCard class="overflow-x-auto">
         <UiTable
-          density="comfortable"
+          :density="UiTableDensity.Comfortable"
           :empty="store.tickets.length === 0"
           :colspan="5"
           data-testid="client-tickets-table"

@@ -17,6 +17,7 @@ public sealed class ProvisionServiceWithoutServerGroupTests(IntegrationTestFacto
     /// With servers on two supported panels the package's panel is ambiguous, so the order is
     /// refused with 409 <c>PRODUCT_SERVER_GROUP_REQUIRED</c> instead of going to whichever is emptier.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Provision_ServersOnTwoPanels_Returns409WithServerGroupRequired()
     {

@@ -23,7 +23,7 @@ public interface IRegistrarProvider
     /// Success, with a non-empty registrar reference and the expiry, only when the registrar
     /// accepted the registration; a failure when it refused or is not configured.
     /// </returns>
-    Task<RegistrarResult> RegisterAsync(DomainRegistrationOrder request, CancellationToken ct);
+    public Task<RegistrarResult> RegisterAsync(DomainRegistrationOrder request, CancellationToken ct);
 
     /// <summary>
     /// Initiates an incoming domain transfer from another registrar.
@@ -34,7 +34,7 @@ public interface IRegistrarProvider
     /// Success, with a non-empty transfer reference, only when the registrar accepted the
     /// transfer; a failure when it refused or is not configured.
     /// </returns>
-    Task<RegistrarResult> TransferAsync(DomainTransferOrder request, CancellationToken ct);
+    public Task<RegistrarResult> TransferAsync(DomainTransferOrder request, CancellationToken ct);
 
     /// <summary>
     /// Renews an existing domain registration for additional years.
@@ -45,7 +45,7 @@ public interface IRegistrarProvider
     /// Success only when the registrar renewed the domain, with the new expiry when the registrar
     /// reports one (otherwise <see langword="null"/>, and the caller extends the current expiry).
     /// </returns>
-    Task<RegistrarResult> RenewAsync(DomainRenewalOrder request, CancellationToken ct);
+    public Task<RegistrarResult> RenewAsync(DomainRenewalOrder request, CancellationToken ct);
 
     /// <summary>
     /// Cancels a pending incoming transfer before it completes.
@@ -53,7 +53,7 @@ public interface IRegistrarProvider
     /// <param name="domain">The domain at the registrar.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the cancellation succeeded.</returns>
-    Task<RegistrarResult> CancelTransferAsync(DomainRef domain, CancellationToken ct);
+    public Task<RegistrarResult> CancelTransferAsync(DomainRef domain, CancellationToken ct);
 
     /// <summary>
     /// Initiates an outgoing transfer to another registrar (unlocks and generates EPP code).
@@ -61,7 +61,7 @@ public interface IRegistrarProvider
     /// <param name="domain">The domain at the registrar.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating success; the EPP code is retrieved separately via <see cref="GetEppCodeAsync"/>.</returns>
-    Task<RegistrarResult> InitiateOutgoingTransferAsync(DomainRef domain, CancellationToken ct);
+    public Task<RegistrarResult> InitiateOutgoingTransferAsync(DomainRef domain, CancellationToken ct);
 
     /// <summary>
     /// Enables or disables automatic renewal at the registrar level.
@@ -69,7 +69,7 @@ public interface IRegistrarProvider
     /// <param name="change">The change to apply.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the update succeeded.</returns>
-    Task<RegistrarResult> SetAutoRenewAsync(RegistrarFlagChange change, CancellationToken ct);
+    public Task<RegistrarResult> SetAutoRenewAsync(RegistrarFlagChange change, CancellationToken ct);
 
     /// <summary>
     /// Enables or disables WHOIS privacy for a domain.
@@ -77,7 +77,7 @@ public interface IRegistrarProvider
     /// <param name="change">The change to apply.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the update succeeded.</returns>
-    Task<RegistrarResult> SetWhoisPrivacyAsync(RegistrarFlagChange change, CancellationToken ct);
+    public Task<RegistrarResult> SetWhoisPrivacyAsync(RegistrarFlagChange change, CancellationToken ct);
 
     /// <summary>
     /// Enables or disables the registrar lock (transfer-prohibit status) for a domain.
@@ -85,7 +85,7 @@ public interface IRegistrarProvider
     /// <param name="change">The change to apply.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the lock status was updated.</returns>
-    Task<RegistrarResult> SetRegistrarLockAsync(RegistrarFlagChange change, CancellationToken ct);
+    public Task<RegistrarResult> SetRegistrarLockAsync(RegistrarFlagChange change, CancellationToken ct);
 
     /// <summary>
     /// Retrieves the EPP (authorization) code for an outgoing transfer.
@@ -93,7 +93,7 @@ public interface IRegistrarProvider
     /// <param name="domain">The domain at the registrar.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The EPP code, or null if the registrar does not support retrieval.</returns>
-    Task<string?> GetEppCodeAsync(DomainRef domain, CancellationToken ct);
+    public Task<string?> GetEppCodeAsync(DomainRef domain, CancellationToken ct);
 
     /// <summary>
     /// Updates the nameservers for a domain at the registrar.
@@ -101,7 +101,7 @@ public interface IRegistrarProvider
     /// <param name="change">The change to apply.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the nameservers were updated.</returns>
-    Task<RegistrarResult> SetNameserversAsync(NameserverChange change, CancellationToken ct);
+    public Task<RegistrarResult> SetNameserversAsync(NameserverChange change, CancellationToken ct);
 
     /// <summary>
     /// Retrieves all DNS records for a domain from the registrar's DNS zone.
@@ -109,7 +109,7 @@ public interface IRegistrarProvider
     /// <param name="domain">The domain at the registrar.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>List of DNS records in the zone.</returns>
-    Task<IReadOnlyList<DnsRecord>> GetDnsRecordsAsync(DomainRef domain, CancellationToken ct);
+    public Task<IReadOnlyList<DnsRecord>> GetDnsRecordsAsync(DomainRef domain, CancellationToken ct);
 
     /// <summary>
     /// Adds a new DNS record to the domain's zone at the registrar.
@@ -117,7 +117,7 @@ public interface IRegistrarProvider
     /// <param name="change">The change to apply.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the record was added.</returns>
-    Task<RegistrarResult> AddDnsRecordAsync(DnsRecordChange change, CancellationToken ct);
+    public Task<RegistrarResult> AddDnsRecordAsync(DnsRecordChange change, CancellationToken ct);
 
     /// <summary>
     /// Updates an existing DNS record in the domain's zone at the registrar.
@@ -125,7 +125,7 @@ public interface IRegistrarProvider
     /// <param name="change">The change to apply.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the record was updated.</returns>
-    Task<RegistrarResult> UpdateDnsRecordAsync(DnsRecordChange change, CancellationToken ct);
+    public Task<RegistrarResult> UpdateDnsRecordAsync(DnsRecordChange change, CancellationToken ct);
 
     /// <summary>
     /// Deletes a DNS record from the domain's zone at the registrar.
@@ -133,7 +133,7 @@ public interface IRegistrarProvider
     /// <param name="removal">What to remove.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the record was deleted.</returns>
-    Task<RegistrarResult> DeleteDnsRecordAsync(DnsRecordRemoval removal, CancellationToken ct);
+    public Task<RegistrarResult> DeleteDnsRecordAsync(DnsRecordRemoval removal, CancellationToken ct);
 
     /// <summary>
     /// Modifies the WHOIS registrant contact details for a domain at the registrar.
@@ -141,7 +141,7 @@ public interface IRegistrarProvider
     /// <param name="change">The change to apply.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the contact details were updated.</returns>
-    Task<RegistrarResult> ModifyContactDetailsAsync(DomainContactChange change, CancellationToken ct);
+    public Task<RegistrarResult> ModifyContactDetailsAsync(DomainContactChange change, CancellationToken ct);
 
     /// <summary>
     /// Reads the current WHOIS registrant contact details of a domain from the registrar.
@@ -152,7 +152,7 @@ public interface IRegistrarProvider
     /// The registrant contact the registrar holds, or <see langword="null"/> when the registrar
     /// has no contact record for the name or is not configured.
     /// </returns>
-    Task<DomainContact?> GetContactDetailsAsync(string domainName, CancellationToken ct);
+    public Task<DomainContact?> GetContactDetailsAsync(string domainName, CancellationToken ct);
 
     /// <summary>
     /// Enables or disables email forwarding for a domain at the registrar.
@@ -160,7 +160,7 @@ public interface IRegistrarProvider
     /// <param name="toggle">The feature and whether it should be on.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the update succeeded.</returns>
-    Task<RegistrarResult> SetEmailForwardingAsync(DomainFeatureToggle toggle, CancellationToken ct);
+    public Task<RegistrarResult> SetEmailForwardingAsync(DomainFeatureToggle toggle, CancellationToken ct);
 
     /// <summary>
     /// Adds an email forwarding rule for a domain at the registrar.
@@ -168,7 +168,7 @@ public interface IRegistrarProvider
     /// <param name="change">The change to apply.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the rule was added.</returns>
-    Task<RegistrarResult> AddEmailForwardingRuleAsync(EmailForwardingRuleChange change, CancellationToken ct);
+    public Task<RegistrarResult> AddEmailForwardingRuleAsync(EmailForwardingRuleChange change, CancellationToken ct);
 
     /// <summary>
     /// Updates an existing email forwarding rule for a domain at the registrar.
@@ -176,7 +176,7 @@ public interface IRegistrarProvider
     /// <param name="change">The change to apply.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the rule was updated.</returns>
-    Task<RegistrarResult> UpdateEmailForwardingRuleAsync(EmailForwardingRuleChange change, CancellationToken ct);
+    public Task<RegistrarResult> UpdateEmailForwardingRuleAsync(EmailForwardingRuleChange change, CancellationToken ct);
 
     /// <summary>
     /// Deletes an email forwarding rule for a domain at the registrar.
@@ -184,7 +184,7 @@ public interface IRegistrarProvider
     /// <param name="removal">What to remove.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the rule was deleted.</returns>
-    Task<RegistrarResult> DeleteEmailForwardingRuleAsync(EmailForwardingRuleRemoval removal, CancellationToken ct);
+    public Task<RegistrarResult> DeleteEmailForwardingRuleAsync(EmailForwardingRuleRemoval removal, CancellationToken ct);
 
     /// <summary>
     /// Enables or disables DNS management for a domain at the registrar.
@@ -192,7 +192,7 @@ public interface IRegistrarProvider
     /// <param name="toggle">The feature and whether it should be on.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Result indicating whether the update succeeded.</returns>
-    Task<RegistrarResult> SetDnsManagementAsync(DomainFeatureToggle toggle, CancellationToken ct);
+    public Task<RegistrarResult> SetDnsManagementAsync(DomainFeatureToggle toggle, CancellationToken ct);
 
     /// <summary>
     /// Checks whether a domain name is available for registration.
@@ -200,7 +200,7 @@ public interface IRegistrarProvider
     /// <param name="domainName">The fully-qualified domain name to check.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns><see langword="true"/> if the domain is available; otherwise <see langword="false"/>.</returns>
-    Task<bool> CheckAvailabilityAsync(string domainName, CancellationToken ct);
+    public Task<bool> CheckAvailabilityAsync(string domainName, CancellationToken ct);
 
     /// <summary>
     /// Polls the registrar to check whether a pending domain registration or transfer has become active.
@@ -213,7 +213,7 @@ public interface IRegistrarProvider
     /// and a valid <see cref="RegistrarResult.RegistrarRef"/> and <see cref="RegistrarResult.ExpiresAt"/> when the
     /// domain is now active at the registrar; otherwise <see cref="RegistrarResult.Success"/> is <see langword="false"/>.
     /// </returns>
-    Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct);
+    public Task<RegistrarResult> CheckDomainActiveAsync(string domainName, CancellationToken ct);
 
     /// <summary>
     /// Performs a WHOIS lookup for the given domain name.
@@ -221,7 +221,7 @@ public interface IRegistrarProvider
     /// <param name="domainName">The fully-qualified domain name to look up.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>WHOIS information, or <see langword="null"/> if the domain is not found.</returns>
-    Task<WhoisInfo?> GetWhoisAsync(string domainName, CancellationToken ct);
+    public Task<WhoisInfo?> GetWhoisAsync(string domainName, CancellationToken ct);
 
     /// <summary>
     /// Retrieves TLD pricing from the registrar's product catalogue.
@@ -231,5 +231,5 @@ public interface IRegistrarProvider
     /// A list of <see cref="TldPricing"/> entries, one per TLD, containing register/renew/transfer
     /// prices keyed by period in years.
     /// </returns>
-    Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct);
+    public Task<IReadOnlyList<TldPricing>> GetTldPricingAsync(CancellationToken ct);
 }

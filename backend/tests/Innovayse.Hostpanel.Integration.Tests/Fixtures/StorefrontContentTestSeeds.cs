@@ -68,9 +68,9 @@ internal static class StorefrontContentTestSeeds
     public static object TestimonialBody(int sortOrder = 0, bool isActive = true, DateTimeOffset? publishedAt = null) => new
     {
         name = "Ann Client",
-            company = (string?)"Acme",
-            avatarUrl = (string?)null,
-            rating = 5,
+        company = (string?)"Acme",
+        avatarUrl = (string?)null,
+        rating = 5,
         sortOrder,
         isActive,
         publishedAt,
@@ -88,7 +88,7 @@ internal static class StorefrontContentTestSeeds
     public static object PartnerBody(int sortOrder = 0, bool isActive = true) => new
     {
         logoUrl = (string?)"/uploads/branding/content/seed/logo.png",
-            url = (string?)"https://partner.example",
+        url = (string?)"https://partner.example",
         sortOrder,
         isActive,
         translations = new
@@ -122,8 +122,8 @@ internal static class StorefrontContentTestSeeds
     public static object ProjectBody(int sortOrder = 0, bool isActive = true, string? slug = null) => new
     {
         slug = slug ?? $"project-{Guid.NewGuid():n}",
-            url = (string?)"https://project.example",
-            imageUrls = new[] { "/uploads/branding/content/seed/a.png" },
+        url = (string?)"https://project.example",
+        imageUrls = new[] { "/uploads/branding/content/seed/a.png" },
         sortOrder,
         isActive,
         translations = new

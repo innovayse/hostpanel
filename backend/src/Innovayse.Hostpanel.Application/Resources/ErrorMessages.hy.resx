@@ -277,7 +277,7 @@
     <value>Գիտելիքների բազայի նման կատեգորիա չի գտնվել։</value>
   </data>
 <data name="KBCATEGORY_IN_USE" xml:space="preserve">
-    <value>Գիտելիքների բազայի այս կատեգորիայում դեռ կան ենթակատեգորիաներ։ Նախ տեղափոխեք կամ հեռացրեք դրանք։</value>
+    <value>Գիտելիքների բազայի այս կատեգորիայում դեռ կան ենթակատեգորիաներ կամ հոդվածներ։ Նախ տեղափոխեք կամ հեռացրեք դրանք։</value>
   </data>
 <data name="ANNOUNCEMENT_NOT_FOUND" xml:space="preserve">
     <value>Նման հայտարարություն չի գտնվել։</value>
@@ -542,6 +542,15 @@
   </data>
 <data name="PLUGIN_MANIFEST_TAGS_INVALID" xml:space="preserve">
     <value>Մանիֆեստի թեգերը անվավեր են․ նշեք առավելագույնը 10 թեգ, յուրաքանչյուրը՝ 2-ից 30 փոքրատառ, թվանշան կամ գծիկ, առանց սկզբի # նշանի և առանց կրկնության։</value>
+  </data>
+<data name="PLUGIN_MANIFEST_HOST_VERSION_INVALID" xml:space="preserve">
+    <value>Մանիֆեստում նշված հոսթի նվազագույն կամ առավելագույն տարբերակը անվավեր է․ գրեք major.minor.patch ձևով, օրինակ՝ 2.1.0։</value>
+  </data>
+<data name="PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED" xml:space="preserve">
+    <value>Մանիֆեստում հոսթի նվազագույն տարբերակը մեծ է առավելագույնից։</value>
+  </data>
+<data name="PLUGIN_MANIFEST_CHANGELOG_TOO_LONG" xml:space="preserve">
+    <value>Մանիֆեստի փոփոխությունների ցանկը չափազանց երկար է․ առավելագույնը 4000 նիշ։</value>
   </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Այս հավելագրիչը հղում է անում ներկայացման փաստաթղթի, որը իր փաթեթում չկա։</value>
@@ -847,6 +856,9 @@
   <data name="ORDER_NOT_PENDING" xml:space="preserve">
     <value>Այս գործողությունը պահանջում է, որ պատվերը սպասման մեջ լինի։</value>
   </data>
+  <data name="ORDER_NOT_ACCEPTED" xml:space="preserve">
+    <value>Տողերը կատարել կարելի է միայն ընդունված պատվերի համար։</value>
+  </data>
   <data name="ORDER_LINE_NOT_RETRYABLE" xml:space="preserve">
     <value>Պատվերի այս տողը հնարավոր չէ հիմա կրկնել։ Կրկնել կարելի է միայն ընդունված պատվերի ձախողված տողը, և ոչ այն ժամանակ, երբ այն արդեն կրկնում է մեկ այլ հարցում։</value>
   </data>
@@ -860,7 +872,10 @@
     <value>Պատվերի այս տողը փոխվել է մշակման ընթացքում, ուստի արդյունքը չհաջողվեց գրանցել։ Բացեք պատվերը նորից՝ տեսնելու, թե ինչ վիճակում է տողը։</value>
   </data>
   <data name="ORDER_LINE_NOT_REFUNDABLE" xml:space="preserve">
-    <value>Պատվերի այս տողի գումարը հիմա հնարավոր չէ վերադարձնել։ Վերադարձը սկսել կարելի է միայն ձախողված տողի համար, ավարտել՝ միայն այն տողի, որի վերադարձն ընթացքի մեջ է, իսկ որպես վերադարձված փակել՝ միայն մասնակի վերադարձված տողը։</value>
+    <value>Պատվերի այս տողի գումարը հիմա հնարավոր չէ վերադարձնել։ Վերադարձը սկսել կարելի է միայն ձախողված տողի համար, ավարտել՝ միայն այն տողի, որի վերադարձն ընթացքի մեջ է, իսկ որպես վերադարձված փակել՝ միայն ձախողված, վերադարձի ընթացքում կամ մասնակի վերադարձված տողը։</value>
+  </data>
+  <data name="ORDER_LINE_REFUND_IN_PROGRESS" xml:space="preserve">
+    <value>Պատվերի այս տողի վերադարձը սկսվել է կրկնման ժամկետից ավելի քիչ առաջ և հնարավոր է դեռ վերադարձնում է գումարը։ Սպասեք դրա ավարտին․ ձեռքով կարելի է փակել միայն այն վերադարձը, որը կախված է այդ ժամկետից ավելի երկար։</value>
   </data>
   <data name="ORDER_LINE_INTERRUPTED" xml:space="preserve">
     <value>Այս տողը կատարելու փորձը ընդհատվել է ավարտից առաջ։ Կրկնեք տողը։</value>
@@ -1189,11 +1204,47 @@
   <data name="PLUGIN_REGISTRY_HOST_INCOMPATIBLE" xml:space="preserve">
     <value>Հավելագրիչի այս տարբերակը չի աշխատում Hostpanel-ի տեղադրված տարբերակի հետ։</value>
   </data>
+  <data name="PLUGIN_HOST_VERSION_OUT_OF_RANGE" xml:space="preserve">
+    <value>Այս հավելագրիչը չի աշխատում այս սերվերի Hostpanel-ի տարբերակի հետ․ այն դուրս է հավելագրիչի աջակցած հոսթի նվազագույն և առավելագույն տարբերակներից։</value>
+  </data>
   <data name="PLUGIN_REGISTRY_VERSION_YANKED" xml:space="preserve">
     <value>Հավելագրիչների ռեեստրը հետ է կանչել այս տարբերակը, ուստի այն հնարավոր չէ տեղադրել։ Ընտրեք այլ տարբերակ։</value>
   </data>
   <data name="PLUGIN_REGISTRY_VERSION_COMPROMISED" xml:space="preserve">
     <value>Հավելագրիչների ռեեստրը մերժել է այս տարբերակը որպես անապահով, ուստի այն հնարավոր չէ տեղադրել։ Ընտրեք այլ տարբերակ։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_ADDRESS_INVALID" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը չի կարող օգտագործել այս Hostpanel-ի հանրային հասցեն։ ClientBaseUrl-ում նշեք տեղադրման հանրային https հասցեն և կրկնեք գրանցումը։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_VERIFIED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը դեռ չի հաստատել այս Hostpanel-ը, ուստի չի տրամադրում այս փակ հավելագրիչը։ Գրանցումը կատարվում է ինքնաբերաբար, ստուգեք դրա վիճակը «Հավելագրիչներ» էջում և կրկնեք, եթե այնտեղ սխալ է երևում։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REVOKED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը չեղարկել է այս Hostpanel-ի տեղադրումը և այլևս չի տրամադրում նրան փակ հավելագրիչներ։ Դիմեք ռեեստրի սեփականատիրոջը։ Կրկնեք գրանցումը՝ նոր նույնականացում ստանալու համար։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_SIGNATURE_REJECTED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը չընդունեց այս Hostpanel-ի ստորագրությունը։ Կրկնեք գրանցումը «Հավելագրիչներ» էջում։ Եթե սխալը կրկնվի, սերվերում պահված նույնականացումը կարող է վնասված լինել։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CLOCK_SKEW" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը մերժեց հարցումը, քանի որ այս սերվերի ժամացույցը շատ է շեղվում ճշգրիտ ժամանակից։ Ուղղեք սերվերի ժամը (միացրեք ժամանակի համաժամեցումը) և կրկնեք։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_REPLAY_REJECTED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը հարցումը համարեց նախորդի կրկնություն և մերժեց այն։ Կրկնեք փորձը։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_DOWNLOAD_TICKET_REFUSED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը չընդունեց մեկանգամյա ներբեռնման տոմսը։ Կրկնեք տեղադրումը՝ նոր տոմս ստանալու համար։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_LIMIT_REACHED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը սահմանափակում է, թե որքան հաճախ կարող է այս Hostpanel-ը գրանցվել կամ պահանջել փակ հավելագրիչներ, և սահմանաչափը լրացել է։ Սպասեք մի փոքր և կրկնեք։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_CHALLENGE_UNREACHABLE" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրը չկարողացավ կարդալ հաստատման տեքստը այս Hostpanel-ից /.well-known/hostpanel-registry/ ճանապարհով։ Համոզվեք, որ ձեր հանրային հասցեն այդ ճանապարհը ուղարկում է Hostpanel API-ին, և կրկնեք։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_RESTART_NEEDED" xml:space="preserve">
+    <value>Հավելագրիչների ռեեստրի հետ գրանցման ժամկետը լրացել է կամ այն մոռացվել է, ուստի այն սկսվում է նորից՝ նոր բանալիով։</value>
+  </data>
+  <data name="PLUGIN_REGISTRY_INSTANCE_NOT_FOUND" xml:space="preserve">
+    <value>Այս նույնականացուցչով գրանցում, որը սպասում է հաստատման, չկա։</value>
   </data>
   <data name="PLUGIN_HOST_ACCESS_UNKNOWN" xml:space="preserve">
     <value>Հավելագրիչը պահանջում է հաճախորդի հոսթինգի մուտքի տեսակ, որը այս սերվերը չգիտի, նշում է այն երկու անգամ կամ հայտարարում է 1-ին տարբերակի մանիֆեստում։</value>
@@ -1266,5 +1317,98 @@
   </data>
   <data name="CREDIT_NOTE_REFUND_NOT_VOIDABLE" xml:space="preserve">
     <value>Այս կրեդիտ-նոտան վճարվել է վճարային դարպասի միջոցով վերադարձով։ Վերադարձը հնարավոր չէ հետ վերցնել, ուստի կրեդիտ-նոտան չի կարելի չեղարկել։</value>
+  </data>
+  <data name="STATUS_COMPONENT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Կարգավիճակի էջի այդպիսի խումբ չկա։</value>
+  </data>
+  <data name="STATUS_COMPONENT_NOT_FOUND" xml:space="preserve">
+    <value>Կարգավիճակի էջի այդպիսի բաղադրիչ չկա։</value>
+  </data>
+  <data name="STATUS_INCIDENT_NOT_FOUND" xml:space="preserve">
+    <value>Կարգավիճակի էջի այդպիսի միջադեպ չկա։</value>
+  </data>
+  <data name="STATUS_NAME_REQUIRED" xml:space="preserve">
+    <value>Անհրաժեշտ է անուն։</value>
+  </data>
+  <data name="STATUS_DISPLAY_ORDER_NEGATIVE" xml:space="preserve">
+    <value>Ցուցադրման կարգը չի կարող բացասական լինել։</value>
+  </data>
+  <data name="STATUS_INCIDENT_TITLE_REQUIRED" xml:space="preserve">
+    <value>Միջադեպին անհրաժեշտ է վերնագիր։</value>
+  </data>
+  <data name="STATUS_INCIDENT_MESSAGE_REQUIRED" xml:space="preserve">
+    <value>Թարմացմանն անհրաժեշտ է հաղորդագրություն։</value>
+  </data>
+  <data name="STATUS_INCIDENT_ALREADY_RESOLVED" xml:space="preserve">
+    <value>Միջադեպը լուծված է և այլևս թարմացումներ չի ընդունում։</value>
+  </data>
+  <data name="CLIENT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Այդպիսի հաճախորդների խումբ չկա։</value>
+  </data>
+  <data name="CLIENT_GROUP_IN_USE" xml:space="preserve">
+    <value>Այս խմբում դեռ հաճախորդներ կան։ Նախ տեղափոխեք նրանց մեկ այլ խումբ։</value>
+  </data>
+  <data name="CLIENT_GROUP_DISCOUNT_INVALID" xml:space="preserve">
+    <value>Զեղչը պետք է լինի 0-ից 100 տոկոս։</value>
+  </data>
+  <data name="CLIENT_GROUP_COLOR_INVALID" xml:space="preserve">
+    <value>Գույնը պետք է գրվի #RRGGBB ձևաչափով։</value>
+  </data>
+  <data name="SERVICE_CHANGE_REQUEST_NOT_FOUND" xml:space="preserve">
+    <value>Պլանի փոփոխության այդպիսի հայտ չի գտնվել։</value>
+  </data>
+  <data name="SERVICE_CHANGE_ALREADY_PENDING" xml:space="preserve">
+    <value>Այս ծառայության համար արդեն կա սպասող պլանի փոփոխության հայտ։</value>
+  </data>
+  <data name="SERVICE_CHANGE_SAME_PRODUCT" xml:space="preserve">
+    <value>Ծառայությունն արդեն աշխատում է այս պլանով։</value>
+  </data>
+  <data name="SERVICE_CHANGE_SAME_PRICE" xml:space="preserve">
+    <value>Այս պլանի գինը նույնն է, ինչ ընթացիկինը, փոփոխելու բան չկա։</value>
+  </data>
+  <data name="SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE" xml:space="preserve">
+    <value>Այս պլանը հասանելի չէ այս ծառայության համար։</value>
+  </data>
+  <data name="SERVICE_CHANGE_PRICE_UNAVAILABLE" xml:space="preserve">
+    <value>Այս պլանի համար չկա գին ծառայության վճարման ժամանակահատվածի և ձեր արժույթի համար։</value>
+  </data>
+  <data name="SERVICE_CHANGE_NO_RENEWAL_DATE" xml:space="preserve">
+    <value>Ծառայությունը վերանորոգման ամսաթիվ չունի, ուստի վճարման ժամանակահատվածի ընթացքում պլանը հնարավոր չէ փոխել։</value>
+  </data>
+  <data name="SERVICE_CHANGE_INVALID_STATE" xml:space="preserve">
+    <value>Պլանի փոփոխության հայտը այնպիսի վիճակում է, որում այս գործողությունը հնարավոր չէ։</value>
+  </data>
+  <data name="SERVICE_CHANGE_INVOICE_UNPAID" xml:space="preserve">
+    <value>Պլանի փոփոխության հաշիվը պետք է վճարվի մինչև պլանը փոխվելը։</value>
+  </data>
+  <data name="CAMPAIGN_NOT_FOUND" xml:space="preserve">
+    <value>Այս էլ. փոստի քարոզարշավը գոյություն չունի։</value>
+  </data>
+  <data name="CAMPAIGN_NOT_DRAFT" xml:space="preserve">
+    <value>Խմբագրել, պլանավորել և ջնջել կարելի է միայն քարոզարշավի սևագիրը։</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SCHEDULED" xml:space="preserve">
+    <value>Այս քարոզարշավը պլանավորված չէ։</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SENDING" xml:space="preserve">
+    <value>Այս քարոզարշավն այս պահին չի ուղարկվում։</value>
+  </data>
+  <data name="CAMPAIGN_NO_SEGMENT" xml:space="preserve">
+    <value>Քարոզարշավը պլանավորելուց առաջ ավելացրեք ստացողների առնվազն մեկ սեգմենտ։</value>
+  </data>
+  <data name="CAMPAIGN_SCHEDULE_IN_PAST" xml:space="preserve">
+    <value>Ընտրեք ուղարկման ժամանակը ապագայում։</value>
+  </data>
+  <data name="CAMPAIGN_SEGMENT_VALUE_INVALID" xml:space="preserve">
+    <value>Ստացողների սեգմենտի արժեքը չի համապատասխանում իր ֆիլտրին։</value>
+  </data>
+  <data name="CAMPAIGN_RECIPIENT_NOT_PENDING" xml:space="preserve">
+    <value>Այս ստացողն այլևս չի սպասում առաքման։</value>
+  </data>
+  <data name="CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND" xml:space="preserve">
+    <value>Ապաբաժանորդագրվելու այս հղումը վավեր չէ։</value>
+  </data>
+  <data name="CAMPAIGN_MAIL_LINK_NOT_FOUND" xml:space="preserve">
+    <value>Այս հղումը վավեր չէ։</value>
   </data>
 </root>

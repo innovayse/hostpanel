@@ -86,6 +86,8 @@ export interface ClientDetail extends ClientListItem {
   externalAccount?: ClientExternalAccount | null
   /** Credit held on the account in its billing currency; while it is not zero the currency cannot be changed. */
   creditBalance?: number
+  /** The client group the client belongs to; null or absent when it has none. */
+  clientGroupId?: number | null
 }
 
 /** Invoice count and total per status for one client. */

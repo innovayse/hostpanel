@@ -71,3 +71,27 @@ export const relationTo = (version: string, installed: string | null): VersionRe
   }
   return order > 0 ? VersionRelation.Newer : VersionRelation.Older
 }
+
+/**
+ * Picks the versions whose release notes an update shows: every version newer than the installed one, up to
+ * and including the one being installed, newest first. With nothing installed only the chosen version is
+ * returned, since there is no earlier state to compare against.
+ *
+ * @param versions - Every version the registry lists, in any order.
+ * @param installed - The installed version, null when the plugin is not installed.
+ * @param target - The version about to be installed.
+ * @returns The versions in the range, newest first; empty when the target is not newer than the installed one.
+ */
+export const versionsBetween = <T extends { version: string }>(
+  versions: T[],
+  installed: string | null,
+  target: string,
+): T[] => {
+  const inRange = versions.filter((entry) => {
+    if (installed === null) {
+      return entry.version === target
+    }
+    return compareVersions(entry.version, installed) > 0 && compareVersions(entry.version, target) <= 0
+  })
+  return inRange.sort((a, b) => compareVersions(b.version, a.version))
+}

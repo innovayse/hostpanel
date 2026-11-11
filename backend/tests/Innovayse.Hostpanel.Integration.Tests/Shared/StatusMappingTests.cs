@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Controllers;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Shared;
+
 /// <summary>The one code → status table, pinned row by row so a stray substring cannot move a status.</summary>
 public sealed class StatusMappingTests
 {
@@ -18,6 +19,8 @@ public sealed class StatusMappingTests
     [InlineData("QUOTA_EXCEEDED", 402)]
     [InlineData(HostpanelErrorCodes.PLUGIN_STORE_QUOTA_EXCEEDED, 402)]
     [InlineData(HostpanelErrorCodes.SERVICE_FIRST_INVOICE_UNPAID, 402)]
+    [InlineData(HostpanelErrorCodes.SERVICE_CHANGE_INVOICE_UNPAID, 402)]
+    [InlineData(HostpanelErrorCodes.SERVICE_CHANGE_INVALID_STATE, 409)]
     [InlineData(HostpanelErrorCodes.PROVISIONING_ACCOUNT_CONFLICT, 409)]
     [InlineData(SharedErrorCodes.Unauthorized, 401)]
     [InlineData(SharedErrorCodes.Forbidden, 403)]
@@ -43,7 +46,17 @@ public sealed class StatusMappingTests
     [InlineData(HostpanelErrorCodes.KBCATEGORY_IN_USE, 409)]
     [InlineData(HostpanelErrorCodes.DOWNLOAD_CATEGORY_IN_USE, 409)]
     [InlineData(HostpanelErrorCodes.PREDEFINED_REPLY_CATEGORY_IN_USE, 409)]
+    [InlineData(HostpanelErrorCodes.CLIENT_GROUP_IN_USE, 409)]
+    [InlineData(HostpanelErrorCodes.CLIENT_GROUP_NOT_FOUND, 404)]
     [InlineData(HostpanelErrorCodes.USER_NOT_FOUND, 404)]
+    [InlineData(HostpanelErrorCodes.CAMPAIGN_NOT_FOUND, 404)]
+    [InlineData(HostpanelErrorCodes.CAMPAIGN_NOT_DRAFT, 409)]
+    [InlineData(HostpanelErrorCodes.CAMPAIGN_NOT_SCHEDULED, 409)]
+    [InlineData(HostpanelErrorCodes.CAMPAIGN_NOT_SENDING, 409)]
+    [InlineData(HostpanelErrorCodes.CAMPAIGN_RECIPIENT_NOT_PENDING, 409)]
+    [InlineData(HostpanelErrorCodes.CAMPAIGN_NO_SEGMENT, 400)]
+    [InlineData(HostpanelErrorCodes.CAMPAIGN_SCHEDULE_IN_PAST, 400)]
+    [InlineData(HostpanelErrorCodes.CAMPAIGN_SEGMENT_VALUE_INVALID, 400)]
     [InlineData(HostpanelErrorCodes.EXCHANGE_RATE_SOURCE_UNAVAILABLE, 503)]
     [InlineData(HostpanelErrorCodes.IDENTITY_PLUGIN_UNAVAILABLE, 503)]
     [InlineData(HostpanelErrorCodes.PLUGIN_ROUTE_NOT_FOUND, 404)]
@@ -89,6 +102,7 @@ public sealed class StatusMappingTests
     [InlineData(HostpanelErrorCodes.ORDER_LINE_NOT_RETRYABLE, 409)]
     [InlineData(HostpanelErrorCodes.ORDER_LINE_CHANGED, 409)]
     [InlineData(HostpanelErrorCodes.ORDER_LINE_NOT_REFUNDABLE, 409)]
+    [InlineData(HostpanelErrorCodes.ORDER_LINE_REFUND_IN_PROGRESS, 409)]
     [InlineData(HostpanelErrorCodes.ORDER_LINE_ALREADY_FULFILLED, 409)]
     [InlineData(HostpanelErrorCodes.ORDER_LINE_SERVICE_CONFLICT, 409)]
     [InlineData(HostpanelErrorCodes.ORDER_ITEM_NOT_FOUND, 404)]

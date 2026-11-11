@@ -12,6 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 public sealed class ChangePasswordTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Admin can change the hosting account password of a provisioned service.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangePassword_AdminCanChangeAsync()
     {
@@ -27,6 +28,7 @@ public sealed class ChangePasswordTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Changing the password of a service with no assigned server answers 400 with <c>SERVICE_NO_SERVER_ASSIGNED</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangePassword_ServiceHasNoServer_Returns400WithServiceNoServerAssigned()
     {
@@ -44,6 +46,7 @@ public sealed class ChangePasswordTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Changing the password for an id no service takes answers 404 with <c>SERVICE_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangePassword_UnknownService_Returns404WithServiceNotFound()
     {
@@ -62,6 +65,7 @@ public sealed class ChangePasswordTests(IntegrationTestFactory factory) : IClass
     /// A provider that refuses to change the password answers 502 with
     /// <c>SERVICE_PASSWORD_UPSTREAM_FAILED</c>.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangePassword_ProviderRefuses_Returns502WithServicePasswordUpstreamFailed()
     {
@@ -81,6 +85,7 @@ public sealed class ChangePasswordTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Changing the password without authentication is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ChangePassword_Returns401_WithoutAuthAsync()
     {

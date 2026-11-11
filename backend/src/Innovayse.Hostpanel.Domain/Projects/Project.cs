@@ -11,12 +11,16 @@ public sealed class Project : BaseEntity, IAggregateRoot, ISortable
 {
     /// <summary>Longest Slug may be: matches the <c>Projects.Slug</c> column.</summary>
     public const int SlugMaxLength = 100;
+
     /// <summary>Longest Url may be: matches the <c>Projects.Url</c> column.</summary>
     public const int UrlMaxLength = 500;
+
     /// <summary>Most images a project may carry.</summary>
     public const int MaxImages = 10;
+
     /// <summary>Longest a single image URL may be.</summary>
     public const int ImageUrlMaxLength = 500;
+
     /// <summary>The shape a slug must have: lowercase letters and digits, single hyphens between them.</summary>
     public const string SlugPattern = "^[a-z0-9]+(?:-[a-z0-9]+)*$";
 

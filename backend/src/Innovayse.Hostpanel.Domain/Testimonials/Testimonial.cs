@@ -11,8 +11,10 @@ public sealed class Testimonial : BaseEntity, IAggregateRoot, ISortable
 {
     /// <summary>Longest Name may be: matches the <c>Testimonials.Name</c> column.</summary>
     public const int NameMaxLength = 200;
+
     /// <summary>Longest Company may be: matches the <c>Testimonials.Company</c> column.</summary>
     public const int CompanyMaxLength = 200;
+
     /// <summary>Longest AvatarUrl may be: matches the <c>Testimonials.AvatarUrl</c> column.</summary>
     public const int AvatarUrlMaxLength = 500;
 

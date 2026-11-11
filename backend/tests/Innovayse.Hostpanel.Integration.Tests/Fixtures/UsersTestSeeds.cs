@@ -6,7 +6,6 @@ using Innovayse.Hostpanel.Application.Auth.Common;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Auth;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -148,7 +147,6 @@ internal static class UsersTestSeeds
             LastName: "User",
             Roles: [Roles.Admin],
             EmailVerified: true,
-
             // Read by nothing in this mode: the session version is checked only where this
             // deployment owns the accounts.
             SessionVersion: "single-sign-on-mode"));

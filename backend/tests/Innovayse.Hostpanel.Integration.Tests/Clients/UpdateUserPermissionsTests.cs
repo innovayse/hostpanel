@@ -9,6 +9,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 public sealed class UpdateUserPermissionsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>Updating permissions for a linked user succeeds.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateWritesThePermissions()
     {
@@ -24,6 +25,7 @@ public sealed class UpdateUserPermissionsTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Updating permissions on an id that names no client answers 404 with <c>CLIENT_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesUnknownClient()
     {
@@ -38,6 +40,7 @@ public sealed class UpdateUserPermissionsTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Updating permissions is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAnonymous()
     {
@@ -49,6 +52,7 @@ public sealed class UpdateUserPermissionsTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>A client, who is not staff, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateRefusesAClient()
     {
@@ -61,6 +65,7 @@ public sealed class UpdateUserPermissionsTests(IntegrationTestFactory factory) :
     }
 
     /// <summary>Changing a user's permissions leaves one activity line naming the client and the acting admin.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UpdateIsAuditedWithTheActingAdmin()
     {

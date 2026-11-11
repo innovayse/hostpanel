@@ -68,6 +68,10 @@
         "component": "CancellationRequestsView.vue"
       },
       {
+        "path": "clients/plan-changes",
+        "component": "ServiceChangeRequestsView.vue"
+      },
+      {
         "path": "clients/affiliates",
         "component": "ManageAffiliatesView.vue"
       },
@@ -441,6 +445,18 @@
         "component": "AnnouncementFormView.vue"
       },
       {
+        "path": "support/email-campaigns",
+        "component": "EmailCampaignsListView.vue"
+      },
+      {
+        "path": "support/email-campaigns/new",
+        "component": "EmailCampaignFormView.vue"
+      },
+      {
+        "path": "support/email-campaigns/:id",
+        "component": "EmailCampaignFormView.vue"
+      },
+      {
         "path": "support/downloads",
         "component": "DownloadsView.vue"
       },
@@ -467,6 +483,10 @@
       {
         "path": "plugins/:id",
         "component": "PluginDetailsView.vue"
+      },
+      {
+        "path": "apps/:plugin/:page*",
+        "component": "PluginPageView.vue"
       },
       {
         "path": "servers",

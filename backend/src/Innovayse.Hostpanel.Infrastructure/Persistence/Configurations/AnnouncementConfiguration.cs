@@ -10,7 +10,6 @@ public sealed class AnnouncementConfiguration : IEntityTypeConfiguration<Announc
     /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<Announcement> builder)
     {
-
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.Title)

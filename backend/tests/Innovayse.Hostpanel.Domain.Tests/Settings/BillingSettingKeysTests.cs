@@ -15,7 +15,21 @@ public sealed class BillingSettingKeysTests
         }
     }
 
+    /// <summary>Downgrades wait for staff until the operator switches the automatic approval on.</summary>
+    [Fact]
+    public void AutoApproveDowngrades_IsOffByDefault_AndTakesTrueOrFalseOnly()
+    {
+        var seeded = BillingSettingKeys.Defaults.Single(d => d.Key == BillingSettingKeys.AutoApproveDowngrades);
+        var pattern = BillingSettingKeys.Patterns[BillingSettingKeys.AutoApproveDowngrades];
+
+        seeded.Value.Should().Be("false");
+        pattern.Regex.IsMatch("TRUE").Should().BeTrue();
+        pattern.Regex.IsMatch("yes").Should().BeFalse();
+    }
+
     /// <summary>The day lists accept what an operator types and refuse the rest.</summary>
+    /// <param name="value">The setting value.</param>
+    /// <param name="ok">Whether the value is accepted.</param>
     [Theory]
     [InlineData("7,3,1", true)]
     [InlineData("14", true)]

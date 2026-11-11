@@ -34,7 +34,6 @@
     "addDownload": "Добавить загрузку",
     "downloadHome": "Главная страница загрузок",
     "files": "Файлы",
-    "downloadsDownloadcount": "Загрузок: {downloadCount}",
     "noDownloadsFound": "Загрузки не найдены",
     "addADownloadUsingThe": "Добавьте загрузку с помощью формы выше.",
     "editCategory": "Редактировать категорию",
@@ -71,11 +70,17 @@
     "articleContent": "Текст статьи...",
     "saveArticle": "Сохранить статью",
     "deleteCategory": "Удалить категорию",
-    "areYouSureYouWant": "Вы уверены, что хотите удалить эту категорию? Это может затронуть все статьи в ней.",
+    "areYouSureYouWant": "Вы уверены, что хотите удалить эту категорию? Категорию, в которой остались статьи, удалить нельзя.",
     "addArticle": "Добавить статью",
     "categorySaved": "Категория сохранена.",
     "categoryDeleted": "Категория удалена.",
-    "articleSaved": "Статья сохранена."
+    "articleSaved": "Статья сохранена.",
+    "editArticle": "Редактирование статьи",
+    "articles": "Статьи",
+    "noArticlesFound": "Статьи не найдены",
+    "createYourFirstArticleAbove": "Создайте первую статью выше.",
+    "englishRequired": "Английский обязателен; остальные языки по желанию.",
+    "draft": "Черновик"
   },
   "networkIssueForm": {
     "updateTheNetworkIssueDetails": "Обновите данные сетевой проблемы ниже",

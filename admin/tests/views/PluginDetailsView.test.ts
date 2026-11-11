@@ -176,6 +176,46 @@ describe('PluginDetailsView', () => {
     expect(wrapper.get('[data-testid="plugin-details-feedback"]').text()).toContain('3.0.0')
   })
 
+  it('lists the release notes of every version between the installed one and the new one', async () => {
+    stubRoutes({
+      [DETAILS_URL]: () => json(makeDetails({
+        latestVersion: '4.0.0',
+        versions: [
+          makeVersion({ version: '4.0.0', changelog: 'Fourth **release**.' }),
+          makeVersion({ version: '3.0.0', changelog: 'New checkout flow.' }),
+          makeVersion({ version: '2.5.0' }),
+          makeVersion({ version: '2.0.0', changelog: 'Installed notes.' }),
+        ],
+      })),
+    })
+    const wrapper = await mountPage()
+
+    const card = wrapper.get('[data-testid="plugin-details-changes"]')
+    expect(card.get('[data-testid="plugin-update-changes-heading"]').text()).toBe('What changes from 2.0.0 to 4.0.0')
+    expect(card.get('[data-testid="plugin-update-change-4.0.0"] strong').text()).toBe('release')
+    expect(card.get('[data-testid="plugin-update-change-3.0.0"]').text()).toContain('New checkout flow.')
+    expect(card.get('[data-testid="plugin-update-change-2.5.0"]').text()).toContain('No release notes.')
+    expect(card.find('[data-testid="plugin-update-change-2.0.0"]').exists()).toBe(false)
+  })
+
+  it('shows no changes card when no update is on offer', async () => {
+    stubRoutes({ [DETAILS_URL]: () => json(makeDetails({ updateAvailable: false, latestVersion: '2.0.0' })) })
+    const wrapper = await mountPage()
+
+    expect(wrapper.find('[data-testid="plugin-details-changes"]').exists()).toBe(false)
+  })
+
+  it('repeats the changes in the update confirmation', async () => {
+    stubRoutes({ [DETAILS_URL]: () => json(makeDetails()) })
+    const wrapper = await mountPage()
+
+    await wrapper.get('[data-testid="plugin-details-update"]').trigger('click')
+    await flushPromises()
+
+    const dialog = wrapper.get('[data-testid="plugin-details-install-dialog"]')
+    expect(dialog.get('[data-testid="plugin-update-change-3.0.0"]').text()).toContain('Faster refunds.')
+  })
+
   it('updates to the newest version from the header, behind the confirmation', async () => {
     const mock = stubRoutes({
       [DETAILS_URL]: () => json(makeDetails()),

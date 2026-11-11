@@ -16,6 +16,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 public sealed class EmailTemplateSeedingTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The seeded password reset mail exists in English, Russian and Armenian.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PasswordReset_IsSeededInEveryLanguage()
     {
@@ -32,6 +33,7 @@ public sealed class EmailTemplateSeedingTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>A version an operator edited keeps the edit when the seed runs again; only the missing ones are added.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddMissing_KeepsAStoredVersionAndAddsTheRest()
     {
@@ -59,6 +61,7 @@ public sealed class EmailTemplateSeedingTests(IntegrationTestFactory factory) : 
     /// Two scopes that find the same slug and languages missing at once both finish without an
     /// error, and each slug and language pair is stored exactly once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddMissing_TwoSeedersAtOnce_BothSucceedAndStoreEachVersionOnce()
     {

@@ -5,7 +5,7 @@
  */
 
 import { useApi } from '@/composables/useApi'
-import type { KbArticle, KbArticlePayload, KbCategory, KbCategoryPayload } from '@/types/kbarticle'
+import type { KbArticle, KbArticlePayload, KbArticleUpdatePayload, KbCategory, KbCategoryPayload } from '@/types/kbarticle'
 import { ApiPath } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
 
@@ -63,11 +63,21 @@ export const useKnowledgebaseApi = () => {
   /**
    * Creates an article.
    *
-   * @param payload - Title, content and category name.
+   * @param payload - Category id, translations and the published flag.
    * @returns The new article's id.
    */
   const createArticle = (payload: KbArticlePayload): Promise<number> =>
     request<number>(ApiPath.AdminKnowledgebase, { method: HttpMethod.Post, body: JSON.stringify(payload) })
+
+  /**
+   * Replaces the category and the translations of an article; its slug stays.
+   *
+   * @param id - Article id.
+   * @param payload - Category id and translations.
+   * @returns Nothing.
+   */
+  const updateArticle = (id: number, payload: KbArticleUpdatePayload): Promise<void> =>
+    request<void>(`${ApiPath.AdminKnowledgebase}/${id}`, { method: HttpMethod.Put, body: JSON.stringify(payload) })
 
   /**
    * Deletes an article.
@@ -78,5 +88,5 @@ export const useKnowledgebaseApi = () => {
   const deleteArticle = (id: number): Promise<void> =>
     request<void>(`${ApiPath.AdminKnowledgebase}/${id}`, { method: HttpMethod.Delete })
 
-  return { listCategories, createCategory, updateCategory, deleteCategory, listArticles, createArticle, deleteArticle }
+  return { listCategories, createCategory, updateCategory, deleteCategory, listArticles, createArticle, updateArticle, deleteArticle }
 }

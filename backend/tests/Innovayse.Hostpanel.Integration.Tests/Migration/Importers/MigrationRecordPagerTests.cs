@@ -1,5 +1,5 @@
-using Innovayse.Hostpanel.Application.Migration.Importers;
 using Innovayse.Hostpanel.Application.Migration.Common;
+using Innovayse.Hostpanel.Application.Migration.Importers;
 using Innovayse.Hostpanel.Domain.Migration;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
@@ -11,6 +11,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 public sealed class MigrationRecordPagerTests
 {
     /// <summary>A keyset source is paged by the id it names, past the page count it reports.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PagesAsync_KeysetSource_ReadsEveryRowOnceAsync()
     {
@@ -38,6 +39,7 @@ public sealed class MigrationRecordPagerTests
     }
 
     /// <summary>A source with no records is read with one request and yields no page.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PagesAsync_EmptySource_MakesOneRequestAndYieldsNothingAsync()
     {
@@ -53,6 +55,7 @@ public sealed class MigrationRecordPagerTests
     /// When the record count is an exact multiple of the page size, the last full page still names
     /// a next id; the empty page after it ends the read, and no record is read twice.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PagesAsync_ExactMultipleOfThePageSize_StopsOnTheEmptyPageAsync()
     {
@@ -66,6 +69,7 @@ public sealed class MigrationRecordPagerTests
     }
 
     /// <summary>A next id that does not move forward ends the read instead of asking for the same page forever.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PagesAsync_NextIdThatDoesNotAdvance_StopsAsync()
     {
@@ -78,6 +82,7 @@ public sealed class MigrationRecordPagerTests
     }
 
     /// <summary>A source that names no keyset id is read by its page count, one page after another.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PagesAsync_NoKeysetIds_ReadsByThePageCountAsync()
     {
@@ -90,6 +95,7 @@ public sealed class MigrationRecordPagerTests
     }
 
     /// <summary>A page that fails stops the read with the failure, after the pages before it were handed out.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task PagesAsync_PageFails_ThrowsAfterTheEarlierPagesAsync()
     {

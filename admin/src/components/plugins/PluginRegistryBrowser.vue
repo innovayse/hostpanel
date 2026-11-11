@@ -2,8 +2,10 @@
 /**
  * The Browse tab's list: a search box, a category select and a page of registry cards.
  *
- * The card is not interactive itself: its name is a button that opens the plugin's details page. It shows the picture, name, publisher,
- * category, versions, a Verified badge, the price, the installed version and a staged or update state.
+ * The card is not interactive itself: its name is a link-looking button that opens the plugin's details page. Top to bottom it shows the
+ * picture and name with the Verified badge at the right end, the publisher with its kind, a clamped description, up to three tag chips and
+ * a "+N" chip, the category and price chips, a footer under a divider (downloads on the left, latest and SDK version on the right), then
+ * the installed version, staged or update state and the actions. Cards in a row share one height.
  * The action is Install for a plugin that is not installed, Update for one with a newer version and
  * Uninstall for an installed one; a paid plugin without a saved key shows Details instead of Install.
  * Only the card whose install or removal runs is disabled. The component owns no data: it
@@ -18,20 +20,24 @@ import UiCard from '@/components/ui/UiCard.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
 import UiErrorState from '@/components/ui/UiErrorState.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
+import UiIcon from '@/components/ui/UiIcon.vue'
+import UiCollapse from '@/components/ui/UiCollapse.vue'
 import UiInput from '@/components/ui/UiInput.vue'
+import UiMarkdown from '@/components/ui/UiMarkdown.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
 import UiPluginAvatar from '@/components/ui/UiPluginAvatar.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiSkeleton from '@/components/ui/UiSkeleton.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiText from '@/components/ui/UiText.vue'
+import { Icon } from '@/lib/icons'
 import { PluginCategory, PluginCategoryAll, PluginPricing } from '@/types/plugin'
 import type { PluginCategoryFilter, PluginRegistryItemDto } from '@/types/plugin'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 
-/** Translation function. */
-const { t } = useI18n()
+/** Translation function and the interface language. */
+const { t, locale } = useI18n()
 
 /** Milliseconds the search waits after the last keystroke before it is reported. */
 const SEARCH_DELAY_MS = 300
@@ -132,11 +138,56 @@ const categoryOptions = computed<{ value: PluginCategoryFilter; label: string }[
   ...Object.values(PluginCategory).map(value => ({ value, label: t(`plugins.pluginRegistry.category.${value}`) })),
 ])
 
+/** Icon per registry category, drawn in the category chip. */
+const categoryIcon: Record<PluginCategory, string> = {
+  [PluginCategory.Payment]: Icon.Dollar,
+  [PluginCategory.Provisioning]: Icon.Server,
+  [PluginCategory.Registrar]: Icon.Globe,
+  [PluginCategory.App]: Icon.Puzzle,
+  [PluginCategory.Other]: Icon.Box,
+}
+
+/** How many tag chips a card shows before the rest collapse into one "+N" chip. */
+const VISIBLE_TAGS = 3
+
+/**
+ * The tags a card shows as chips: the first {@link VISIBLE_TAGS}.
+ *
+ * @param item - The listing.
+ * @returns The visible tags; empty when the listing has none.
+ */
+const visibleTags = (item: PluginRegistryItemDto): string[] => (item.tags ?? []).slice(0, VISIBLE_TAGS)
+
+/**
+ * How many tags are not shown as chips.
+ *
+ * @param item - The listing.
+ * @returns The number folded into the "+N" chip; 0 when every tag is shown.
+ */
+const hiddenTagCount = (item: PluginRegistryItemDto): number => Math.max((item.tags ?? []).length - VISIBLE_TAGS, 0)
+
+/** Formatter of download counts in the interface language. */
+const downloadFormat = computed<Intl.NumberFormat>(() => new Intl.NumberFormat(locale.value))
+
 /** Badge tone per price. */
 const pricingTone: Record<PluginPricing, UiTone> = {
   Free: UiTone.Neutral,
   Paid: UiTone.Warning,
   Private: UiTone.Info,
+}
+
+/** Ids of the cards whose release notes are open. */
+const notesOpenIds = ref<string[]>([])
+
+/**
+ * Opens or closes the release notes of one card.
+ *
+ * @param id - The listing id.
+ */
+const toggleNotes = (id: string): void => {
+  notesOpenIds.value = notesOpenIds.value.includes(id)
+    ? notesOpenIds.value.filter(open => open !== id)
+    : [...notesOpenIds.value, id]
 }
 
 /**
@@ -223,105 +274,184 @@ const busy = (id: string): boolean => props.installingIds.includes(id) || props.
           v-for="item in items"
           :key="item.id"
           padding="sm"
-          class="transition-colors hover:border-accent"
+          class="h-full transition-colors hover:border-accent"
           :data-testid="`registry-card-${item.id}`"
         >
-          <UiStack direction="row" align="start" gap="md">
-            <UiPluginAvatar :name="item.name" :icon-url="item.iconUrl" />
-            <UiStack gap="xs" class="min-w-0 flex-1">
-              <UiStack direction="row" align="center" gap="sm" wrap>
+          <UiStack gap="sm" class="h-full">
+            <UiStack direction="row" align="center" justify="between" gap="sm">
+              <UiStack direction="row" align="center" gap="sm" class="min-w-0">
+                <UiPluginAvatar :name="item.name" :icon-url="item.iconUrl" />
                 <UiButton
                   type="button"
                   :variant="UiButtonVariant.Link"
-                  class="text-lg font-semibold"
+                  class="min-w-0 text-left text-lg font-semibold"
                   :data-testid="`registry-open-${item.id}`"
                   @click="emit('details', item.id)"
                 >
                   {{ item.name }}
                 </UiButton>
-                <UiBadge
-                  v-if="item.verified"
-                  :tone="UiTone.Success"
-                  small
-                  :data-testid="`registry-verified-${item.id}`"
-                >
-                  {{ t('plugins.pluginRegistry.verified') }}
-                </UiBadge>
-                <UiBadge :tone="pricingTone[item.pricing]" small :data-testid="`registry-price-${item.id}`">
-                  {{ t(`plugins.pluginRegistry.pricing.${item.pricing}`) }}
-                </UiBadge>
-                <UiBadge :tone="UiTone.Neutral" small :data-testid="`registry-category-${item.id}`">
-                  {{ t(`plugins.pluginRegistry.category.${item.category}`) }}
-                </UiBadge>
-                <UiBadge
-                  v-if="stagedVersions[item.id]"
-                  :tone="UiTone.Info"
-                  small
-                  :data-testid="`registry-staged-${item.id}`"
-                >
-                  {{ t('plugins.pluginCard.staged', { version: stagedVersions[item.id] }) }}
-                </UiBadge>
-                <UiBadge
-                  v-else-if="item.installed && item.updateAvailable"
-                  :tone="UiTone.Warning"
-                  small
-                  :data-testid="`registry-update-state-${item.id}`"
-                >
-                  {{ t('plugins.pluginCard.updateAvailable', { version: item.latestVersion }) }}
-                </UiBadge>
               </UiStack>
-              <UiText tone="muted" size="sm" class="line-clamp-2">{{ item.description }}</UiText>
-              <UiText tone="muted" size="xs">
+              <UiBadge
+                v-if="item.verified"
+                :tone="UiTone.Success"
+                small
+                :data-testid="`registry-verified-${item.id}`"
+              >
+                {{ t('plugins.pluginRegistry.verified') }}
+              </UiBadge>
+            </UiStack>
+            <UiStack direction="row" align="center" gap="sm" wrap>
+              <UiText tone="muted" size="xs" :data-testid="`registry-author-${item.id}`">
                 {{ t('plugins.pluginRegistry.byAuthor', { author: item.author }) }}
-                · {{ t('plugins.pluginRegistry.version', { version: item.latestVersion }) }}
-                · {{ t('plugins.pluginRegistry.sdkVersion', { version: item.sdkVersion }) }}
               </UiText>
-              <UiStack direction="row" align="center" gap="sm" wrap>
-                <UiButton
-                  v-if="needsDetails(item)"
-                  type="button"
-                  :variant="UiButtonVariant.Primary"
-                  size="sm"
-                  :data-testid="`registry-details-${item.id}`"
-                  @click="emit('details', item.id)"
-                >
-                  {{ t('plugins.pluginRegistry.details') }}
-                </UiButton>
-                <UiButton
-                  v-else-if="actionable(item)"
-                  type="button"
-                  :variant="item.installed ? UiButtonVariant.Secondary : UiButtonVariant.Primary"
-                  size="sm"
-                  :disabled="busy(item.id)"
-                  :data-testid="`registry-install-${item.id}`"
-                  @click="emit('install', item.id, item.latestVersion)"
-                >
-                  <template v-if="installingIds.includes(item.id)">{{ t('plugins.pluginRegistry.installing') }}</template>
-                  <template v-else-if="item.installed">
-                    {{ t('plugins.pluginRegistry.update', { version: item.latestVersion }) }}
-                  </template>
-                  <template v-else>{{ t('plugins.pluginRegistry.install') }}</template>
-                </UiButton>
-                <UiBadge
-                  v-if="item.installed"
-                  :tone="UiTone.Info"
-                  small
-                  :data-testid="`registry-installed-${item.id}`"
-                >
-                  {{ t('plugins.pluginRegistry.installed', { version: item.installedVersion ?? item.latestVersion }) }}
-                </UiBadge>
-                <UiButton
-                  v-if="item.installed"
-                  type="button"
-                  :variant="UiButtonVariant.Danger"
-                  size="sm"
-                  :disabled="busy(item.id)"
-                  :data-testid="`registry-uninstall-${item.id}`"
-                  @click="emit('remove', item.id)"
-                >
-                  {{ removingId === item.id ? t('plugins.pluginCard.removing') : t('plugins.pluginRegistry.uninstall') }}
-                </UiButton>
+              <UiBadge
+                v-if="item.publisherKind"
+                :tone="UiTone.Neutral"
+                small
+                :data-testid="`registry-publisher-kind-${item.id}`"
+              >
+                {{ t(`plugins.pluginRegistry.publisherKind.${item.publisherKind}`) }}
+              </UiBadge>
+            </UiStack>
+            <UiText tone="muted" size="sm" class="line-clamp-3" :data-testid="`registry-description-${item.id}`">
+              {{ item.description }}
+            </UiText>
+            <UiStack v-if="item.latestVersion" gap="xs">
+              <UiButton
+                type="button"
+                :variant="UiButtonVariant.Link"
+                size="sm"
+                class="self-start"
+                :aria-expanded="notesOpenIds.includes(item.id)"
+                :data-testid="`registry-notes-toggle-${item.id}`"
+                @click="toggleNotes(item.id)"
+              >
+                {{ notesOpenIds.includes(item.id) ? t('plugins.pluginRegistry.hideNotes') : t('plugins.pluginRegistry.showNotes', { version: item.latestVersion }) }}
+              </UiButton>
+              <UiCollapse :open="notesOpenIds.includes(item.id)">
+                <UiMarkdown
+                  :source="item.latestChangelog ?? null"
+                  :empty="t('plugins.pluginRegistry.noNotes')"
+                  :data-testid="`registry-notes-${item.id}`"
+                />
+              </UiCollapse>
+            </UiStack>
+            <UiStack v-if="visibleTags(item).length" direction="row" align="center" gap="xs" wrap :data-testid="`registry-tags-${item.id}`">
+              <UiBadge v-for="tag in visibleTags(item)" :key="tag" :tone="UiTone.Neutral" small>
+                {{ t('plugins.pluginRegistry.tag', { tag }) }}
+              </UiBadge>
+              <UiBadge v-if="hiddenTagCount(item)" :tone="UiTone.Neutral" small :data-testid="`registry-more-tags-${item.id}`">
+                {{ t('plugins.pluginRegistry.moreTags', { count: hiddenTagCount(item) }) }}
+              </UiBadge>
+            </UiStack>
+            <UiStack direction="row" align="center" gap="sm" wrap>
+              <UiBadge :tone="UiTone.Neutral" small :data-testid="`registry-category-${item.id}`">
+                <UiStack direction="row" align="center" gap="xs">
+                  <UiIcon :markup="categoryIcon[item.category]" size="sm" />
+                  {{ t(`plugins.pluginRegistry.category.${item.category}`) }}
+                </UiStack>
+              </UiBadge>
+              <UiBadge :tone="pricingTone[item.pricing]" small :data-testid="`registry-price-${item.id}`">
+                {{ t(`plugins.pluginRegistry.pricing.${item.pricing}`) }}
+              </UiBadge>
+              <UiBadge
+                v-if="stagedVersions[item.id]"
+                :tone="UiTone.Info"
+                small
+                :data-testid="`registry-staged-${item.id}`"
+              >
+                {{ t('plugins.pluginCard.staged', { version: stagedVersions[item.id] }) }}
+              </UiBadge>
+              <UiBadge
+                v-else-if="item.installed && item.updateAvailable"
+                :tone="UiTone.Warning"
+                small
+                :data-testid="`registry-update-state-${item.id}`"
+              >
+                {{ t('plugins.pluginCard.updateAvailable', { version: item.latestVersion }) }}
+              </UiBadge>
+            </UiStack>
+            <UiStack
+              direction="row"
+              align="center"
+              justify="between"
+              gap="sm"
+              class="mt-auto border-t border-border pt-2"
+              :data-testid="`registry-footer-${item.id}`"
+            >
+              <UiStack direction="row" align="center" gap="xs" :data-testid="`registry-downloads-${item.id}`">
+                <template v-if="item.downloads != null">
+                  <UiIcon :markup="Icon.Download" size="sm" />
+                  <UiText tone="muted" size="xs">
+                    {{ t('plugins.pluginRegistry.downloads', { count: downloadFormat.format(item.downloads) }) }}
+                  </UiText>
+                </template>
               </UiStack>
+              <UiStack direction="row" align="center" gap="xs" :data-testid="`registry-version-${item.id}`">
+                <UiIcon :markup="Icon.Tag" size="sm" />
+                <UiText tone="muted" size="xs">
+                  {{ t('plugins.pluginRegistry.version', { version: item.latestVersion }) }}
+                  <template v-if="item.sdkVersion">
+                    · {{ t('plugins.pluginRegistry.sdkVersion', { version: item.sdkVersion }) }}
+                  </template>
+                </UiText>
+              </UiStack>
+            </UiStack>
+            <UiStack direction="row" align="center" gap="sm" wrap>
+              <UiButton
+                v-if="needsDetails(item)"
+                type="button"
+                :variant="UiButtonVariant.Primary"
+                size="sm"
+                :data-testid="`registry-details-${item.id}`"
+                @click="emit('details', item.id)"
+              >
+                {{ t('plugins.pluginRegistry.details') }}
+              </UiButton>
+              <UiButton
+                v-else-if="actionable(item)"
+                type="button"
+                :variant="item.installed ? UiButtonVariant.Secondary : UiButtonVariant.Primary"
+                size="sm"
+                :disabled="busy(item.id)"
+                :data-testid="`registry-install-${item.id}`"
+                @click="emit('install', item.id, item.latestVersion)"
+              >
+                <template v-if="installingIds.includes(item.id)">{{ t('plugins.pluginRegistry.installing') }}</template>
+                <template v-else-if="item.installed">
+                  {{ t('plugins.pluginRegistry.update', { version: item.latestVersion }) }}
+                </template>
+                <template v-else>{{ t('plugins.pluginRegistry.install') }}</template>
+              </UiButton>
+              <UiBadge
+                v-if="item.installed"
+                :tone="UiTone.Info"
+                small
+                :data-testid="`registry-installed-${item.id}`"
+              >
+                {{ t('plugins.pluginRegistry.installed', { version: item.installedVersion ?? item.latestVersion }) }}
+              </UiBadge>
+              <UiButton
+                v-if="item.installed && item.updateAvailable && !needsDetails(item)"
+                type="button"
+                :variant="UiButtonVariant.Link"
+                size="sm"
+                :data-testid="`registry-changes-${item.id}`"
+                @click="emit('details', item.id)"
+              >
+                {{ t('plugins.pluginRegistry.whatChanged') }}
+              </UiButton>
+              <UiButton
+                v-if="item.installed"
+                type="button"
+                :variant="UiButtonVariant.Danger"
+                size="sm"
+                :disabled="busy(item.id)"
+                :data-testid="`registry-uninstall-${item.id}`"
+                @click="emit('remove', item.id)"
+              >
+                {{ removingId === item.id ? t('plugins.pluginCard.removing') : t('plugins.pluginRegistry.uninstall') }}
+              </UiButton>
             </UiStack>
           </UiStack>
         </UiCard>

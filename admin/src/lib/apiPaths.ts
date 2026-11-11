@@ -7,10 +7,16 @@
 export enum ApiPath {
   /** `/admin/cancellation-requests` collection and its members. */
   AdminCancellationRequests = '/admin/cancellation-requests',
+  /** `/admin/client-groups` collection and its members. */
+  AdminClientGroups = '/admin/client-groups',
   /** `/admin/currencies` collection and its members. */
   AdminCurrencies = '/admin/currencies',
+  /** `/admin/service-change-requests` collection and its members. */
+  AdminServiceChangeRequests = '/admin/service-change-requests',
   /** `/admin/dashboard` collection and its members. */
   AdminDashboard = '/admin/dashboard',
+  /** `/admin/email-campaigns` collection and its members. */
+  AdminEmailCampaigns = '/admin/email-campaigns',
   /** `/admin/email-logs` collection and its members. */
   AdminEmailLogs = '/admin/email-logs',
   /** `/admin/email-templates` collection and its members. */
@@ -33,6 +39,8 @@ export enum ApiPath {
   AdminPlugins = '/admin/plugins',
   /** `/admin/plugins/slots` collection and its members. */
   AdminPluginSlots = '/admin/plugins/slots',
+  /** `/admin/plugins/ui` index of the plugin pages and menu items, and each page by its path. */
+  AdminPluginUi = '/admin/plugins/ui',
   /** `/admin/projects` collection and its members. */
   AdminProjects = '/admin/projects',
   /** `/admin/server-groups` collection and its members. */
@@ -41,6 +49,8 @@ export enum ApiPath {
   AdminServers = '/admin/servers',
   /** `/admin/release-status` — installed version and latest GitHub release. */
   AdminReleaseStatus = '/admin/release-status',
+  /** `/admin/version` — installed version, readable by every staff role. */
+  AdminVersion = '/admin/version',
   /** `/admin/settings` collection and its members. */
   AdminSettings = '/admin/settings',
   /** `/admin/slides` collection and its members. */

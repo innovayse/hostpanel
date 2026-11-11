@@ -31,6 +31,7 @@ public sealed class SetBaseCurrencyTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>A code that names no configured currency cannot become the base.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MakeBaseRefusesAnUnconfiguredCurrency()
     {
@@ -43,6 +44,7 @@ public sealed class SetBaseCurrencyTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Promoting the currency that is already the base changes nothing and is not an error.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MakeBaseOnTheCurrentBaseIsANoOp()
     {
@@ -63,6 +65,7 @@ public sealed class SetBaseCurrencyTests(IntegrationTestFactory factory) : IClas
     /// and USD's rate is re-expressed as 1 / 0.0025641 ≈ 390. The base is put back to USD at the
     /// end because the fixture is shared and the other cases read the seeded pair.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MakeBaseSwitchesTheBaseAndReexpressesTheOtherRate()
     {
@@ -88,6 +91,7 @@ public sealed class SetBaseCurrencyTests(IntegrationTestFactory factory) : IClas
     }
 
     /// <summary>Promoting a currency to base is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MakeBaseRefusesAnonymous()
     {

@@ -3,11 +3,14 @@ using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallPlugin;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.InstallRegistryPlugin;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.PurgePluginData;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.RemovePlugin;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.RetryRegistryInstance;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Commands.SaveRegistryPluginLicence;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.CheckPluginUpdates;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.GetPluginIcon;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.GetRegistryInstance;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.GetRegistryPlugin;
+using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.InspectPluginPackage;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListPlugins;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Queries.ListRegistryPlugins;
 using Innovayse.Hostpanel.Shared.Authorization;
@@ -15,7 +18,6 @@ using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.API.Controllers;
@@ -91,6 +93,33 @@ public sealed class PluginsController : BaseApiController
     }
 
     /// <summary>
+    /// Reads what an uploaded plugin ZIP asks for before it is installed: the host access and capabilities it declares, the
+    /// release notes of the version and the Hostpanel versions it supports, with whether this server is inside that range.
+    /// Nothing is unpacked or installed; the admin panel shows the answer and asks for confirmation before the install.
+    /// </summary>
+    /// <param name="file">The uploaded ZIP file, absent when the form carried none.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the preview; 400 with <c>VALIDATION_ERROR</c> (no file) or <c>PLUGIN_MANIFEST_INVALID</c> when the archive
+    /// or its <c>plugin.json</c> cannot be read; 401 without a session; 403 for a caller who is not an administrator; 413
+    /// when the upload is over the request limit; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("inspect")]
+    [RequestSizeLimit(52_428_800)]
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(PluginPackagePreviewDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status413PayloadTooLarge)]
+    public async Task<IActionResult> InspectAsync(IFormFile? file, CancellationToken ct)
+    {
+        await using var content = file?.OpenReadStream();
+        var outcome = await _bus.InvokeAsync<Result<PluginPackagePreviewDto>>(new InspectPluginPackageQuery(content), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
     /// Installs a plugin from an uploaded ZIP archive. When a plugin of the same id is installed and the uploaded
     /// version differs, the upload is an upgrade: it passes the same checks, is staged, and replaces the installed
     /// plugin at the next restart, which then runs the plugin's migration hook once. An older version is refused unless
@@ -115,8 +144,9 @@ public sealed class PluginsController : BaseApiController
     /// <c>PLUGIN_SIGNATURE_KEY_UNKNOWN</c> and <c>PLUGIN_SIGNATURE_INVALID</c> when the host enforces signatures and the
     /// package fails that check while "allow unsigned plugins" is off; 401 without a session; 403 for a caller who is not an
     /// administrator; 409 with <c>PLUGIN_BUILT_IN</c> when the id belongs to a plugin shipped with
-    /// the build, or <c>PLUGIN_DOWNGRADE_REFUSED</c> when the upload is older than the installed version and <c>force</c>
-    /// is not set; 413 when the upload is over the request limit or with
+    /// the build, <c>PLUGIN_DOWNGRADE_REFUSED</c> when the upload is older than the installed version and <c>force</c>
+    /// is not set, or <c>PLUGIN_HOST_VERSION_OUT_OF_RANGE</c> when the running Hostpanel version is below the package's
+    /// <c>minHostVersion</c> or above its <c>maxHostVersion</c> (a bound it leaves out is no limit); 413 when the upload is over the request limit or with
     /// <c>PLUGIN_ARCHIVE_TOO_LARGE</c>; 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("install")]
@@ -186,6 +216,43 @@ public sealed class PluginsController : BaseApiController
     public async Task<IActionResult> CheckRegistryUpdatesAsync(CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<RegistryPluginDto>>>(new CheckPluginUpdatesQuery(), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Where this installation stands with the plugin registry: not registered yet, pending, verified, revoked or failed (with the
+    /// code and the sentence of the last failure). The identity is created and confirmed automatically; this only reports it.
+    /// Nothing secret is returned.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the state; 401 without a session; 403 for a caller who is not an administrator; 429 when the rate limit is hit.</returns>
+    [HttpGet("registry-instance")]
+    [ProducesResponseType(typeof(RegistryInstanceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetRegistryInstanceAsync(CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<RegistryInstanceDto>>(new GetRegistryInstanceQuery(), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Registers this installation with the plugin registry again at once, ignoring the back-off, and registers anew after a
+    /// revocation. A run that fails is still an answer: the returned state says what went wrong.
+    /// </summary>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the state after the run; 401 without a session; 403 for a caller who is not an administrator or in a demo
+    /// installation; 409 with <c>PLUGIN_REGISTRY_DISABLED</c> while the registry is off; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("registry-instance/retry")]
+    [ProducesResponseType(typeof(RegistryInstanceDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RetryRegistryInstanceAsync(CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<RegistryInstanceDto>>(new RetryRegistryInstanceCommand(), ct);
         return HandleResult(outcome);
     }
 
@@ -277,6 +344,7 @@ public sealed class PluginsController : BaseApiController
     /// for a caller who is not an administrator or with <c>PLUGIN_REGISTRY_NOT_TRUSTED</c> when the trust setting declines
     /// the plugin; 404 with <c>PLUGIN_REGISTRY_PLUGIN_NOT_FOUND</c>; 409 with <c>PLUGIN_REGISTRY_DISABLED</c>,
     /// <c>PLUGIN_BUILT_IN</c>, <c>PLUGIN_DOWNGRADE_REFUSED</c>, <c>PLUGIN_REGISTRY_HOST_INCOMPATIBLE</c>,
+    /// <c>PLUGIN_HOST_VERSION_OUT_OF_RANGE</c>,
     /// <c>PLUGIN_REGISTRY_VERSION_YANKED</c> or <c>PLUGIN_REGISTRY_VERSION_COMPROMISED</c>; 413 with
     /// <c>PLUGIN_ARCHIVE_TOO_LARGE</c>; 422 with <c>PLUGIN_REGISTRY_LICENCE_REQUIRED</c> or <c>PLUGIN_REGISTRY_LICENCE_INVALID</c>;
     /// 429 when the rate limit is hit; 502 with <c>PLUGIN_REGISTRY_UNAVAILABLE</c>, <c>PLUGIN_REGISTRY_RESPONSE_INVALID</c>,

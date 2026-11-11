@@ -14,6 +14,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Provisioning;
 public sealed class ServiceTerminatedHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A terminated service calls the provisioning provider's terminate endpoint exactly once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ServiceTerminated_CallsProviderTerminateExactlyOnceAsync()
     {

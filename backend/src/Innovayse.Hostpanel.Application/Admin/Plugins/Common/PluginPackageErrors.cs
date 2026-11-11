@@ -32,6 +32,7 @@ public static class PluginPackageErrors
             PluginPackageOutcome.SignatureRefused => CodeFor(
                 result.SignatureRule ?? throw new ArgumentOutOfRangeException(nameof(result), result, "A refused signature must be named.")),
             PluginPackageOutcome.DowngradeRefused => HostpanelErrorCodes.PLUGIN_DOWNGRADE_REFUSED,
+            PluginPackageOutcome.HostVersionOutOfRange => HostpanelErrorCodes.PLUGIN_HOST_VERSION_OUT_OF_RANGE,
             PluginPackageOutcome.BuiltIn => HostpanelErrorCodes.PLUGIN_BUILT_IN,
             PluginPackageOutcome.NotFound => HostpanelErrorCodes.PLUGIN_NOT_FOUND,
             _ => throw new ArgumentOutOfRangeException(nameof(result), result, "A success outcome has no error code."),
@@ -83,6 +84,9 @@ public static class PluginPackageErrors
             PluginManifestRule.IconInvalid => HostpanelErrorCodes.PLUGIN_ICON_INVALID,
             PluginManifestRule.EndpointsNotImplemented => HostpanelErrorCodes.PLUGIN_ENDPOINTS_NOT_IMPLEMENTED,
             PluginManifestRule.TagsInvalid => HostpanelErrorCodes.PLUGIN_MANIFEST_TAGS_INVALID,
+            PluginManifestRule.HostVersionInvalid => HostpanelErrorCodes.PLUGIN_MANIFEST_HOST_VERSION_INVALID,
+            PluginManifestRule.HostVersionRangeInverted => HostpanelErrorCodes.PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED,
+            PluginManifestRule.ChangelogTooLong => HostpanelErrorCodes.PLUGIN_MANIFEST_CHANGELOG_TOO_LONG,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a manifest rule."),
         };
     }

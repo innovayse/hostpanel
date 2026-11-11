@@ -2,7 +2,6 @@ using System.Linq.Expressions;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Billing.Events;
 using Innovayse.Hostpanel.SharedKernel.Domain;
-using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
 
 namespace Innovayse.Hostpanel.Domain.Billing;
 

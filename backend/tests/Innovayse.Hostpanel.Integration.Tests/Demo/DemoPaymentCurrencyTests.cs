@@ -21,6 +21,7 @@ public sealed class DemoPaymentCurrencyTests(IntegrationTestFactory factory) : I
 
     /// <summary>Makes sure the AMD currency is stored, as the demo seed stores it.</summary>
     /// <param name="host">The host whose database to prepare.</param>
+    /// <returns>A task that completes when the work is done.</returns>
     private static async Task EnsureAmdAsync(WebApplicationFactory<Program> host)
     {
         using var scope = host.Services.CreateScope();
@@ -33,6 +34,7 @@ public sealed class DemoPaymentCurrencyTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Demo on: an AMD invoice starts a payment through the demo gateway.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenEnabled_AnAmdInvoiceStartsAPaymentAsync()
     {
@@ -57,6 +59,7 @@ public sealed class DemoPaymentCurrencyTests(IntegrationTestFactory factory) : I
     }
 
     /// <summary>Demo on: the resolved gateway accepts every stored currency and nothing else.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WhenEnabled_TheGatewayAcceptsEveryStoredCurrencyAsync()
     {

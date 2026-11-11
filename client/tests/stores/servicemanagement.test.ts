@@ -240,6 +240,18 @@ describe('useServiceManagementStore reads', () => {
     expect(store.serviceLoading).toBe(false)
   })
 
+  it('keeps the service on screen while it is read again when asked to', async () => {
+    api.fetchService.mockResolvedValueOnce({ id: 3, name: 'Pro' }).mockResolvedValueOnce({ id: 3, name: 'Max' })
+    const store = useServiceManagementStore()
+    await store.loadService('3')
+
+    const reading = store.loadService('3', true)
+    expect(store.service).toMatchObject({ name: 'Pro' })
+    await reading
+
+    expect(store.service).toMatchObject({ name: 'Max' })
+  })
+
   it('marks a read refused as not found, and clears the mark on the next read', async () => {
     api.fetchService.mockRejectedValueOnce({ data: { data: { code: PortalErrorCode.ServiceNotFound } } }).mockResolvedValueOnce({ id: 3, name: 'Pro' })
     const store = useServiceManagementStore()

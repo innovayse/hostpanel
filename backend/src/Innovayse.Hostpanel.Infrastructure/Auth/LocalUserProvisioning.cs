@@ -362,6 +362,7 @@ public sealed class LocalUserProvisioning : IUserProvisioning
     /// caller of this port is prepared to act on it, and it belongs in the log rather than in a
     /// code a frontend would branch on.
     /// </exception>
+    /// <returns>A task that completes when the update has succeeded.</returns>
     private static async Task ThrowIfFailedAsync(Task<IdentityResult> update, string subject)
     {
         var result = await update;

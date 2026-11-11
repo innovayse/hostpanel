@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Shared.Constants;
 
@@ -16,6 +15,7 @@ public sealed class GetMyDomainContactTests(IntegrationTestFactory factory) : IC
     /// A stranger is refused with <c>DOMAIN_NOT_FOUND</c> before the registrar is asked; the owner
     /// receives the registrant contact <see cref="StubRegistrarProvider"/> holds.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetContact_RefusesAStrangerAndReturnsTheRegistrantForTheOwnerAsync()
     {
@@ -35,6 +35,7 @@ public sealed class GetMyDomainContactTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>An unauthenticated caller is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetContact_WithoutToken_Returns401Async()
     {
@@ -46,6 +47,7 @@ public sealed class GetMyDomainContactTests(IntegrationTestFactory factory) : IC
     }
 
     /// <summary>A non-positive id is refused by the validator with 400 <c>VALIDATION_ERROR</c> before the handler runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetContact_WithNonPositiveId_Returns400ValidationErrorAsync()
     {

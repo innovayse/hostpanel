@@ -63,6 +63,8 @@ describe('DnsRecordsTable', () => {
   it('edits a record through the same row', async () => {
     const wrapper = mountTable([record()])
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="clients-dns-actions-7"]').trigger('click')
     await wrapper.get('[data-testid="clients-dns-edit-7"]').trigger('click')
 
     expect((wrapper.get('[data-testid="clients-dns-draft-value"]').element as HTMLInputElement).value).toBe('10.0.0.1')
@@ -72,6 +74,8 @@ describe('DnsRecordsTable', () => {
     const fetchMock = stubFetch(json({}))
     const wrapper = mountTable([record()])
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="clients-dns-actions-7"]').trigger('click')
     await wrapper.get('[data-testid="clients-dns-delete-7"]').trigger('click')
     expect(fetchMock).not.toHaveBeenCalled()
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
@@ -85,6 +89,8 @@ describe('DnsRecordsTable', () => {
     stubFetch(new Response(null, { status: 204 }))
     const wrapper = mountTable([record()])
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="clients-dns-actions-7"]').trigger('click')
     await wrapper.get('[data-testid="clients-dns-delete-7"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -96,6 +102,8 @@ describe('DnsRecordsTable', () => {
     stubFetch(problem('The registrar refused the change.', 502))
     const wrapper = mountTable([record()])
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="clients-dns-actions-7"]').trigger('click')
     await wrapper.get('[data-testid="clients-dns-delete-7"]').trigger('click')
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
@@ -108,6 +116,8 @@ describe('DnsRecordsTable', () => {
     const fetchMock = stubFetch(json({}))
     const wrapper = mountTable([record()])
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="clients-dns-actions-7"]').trigger('click')
     await wrapper.get('[data-testid="clients-dns-delete-7"]').trigger('click')
     await wrapper.get('[data-testid="dialog-cancel"]').trigger('click')
     await flushPromises()
@@ -120,6 +130,8 @@ describe('DnsRecordsTable', () => {
     stubFetch(json({}))
     const wrapper = mountTable([record()])
 
+    // Two or more row actions sit behind the kebab menu, so it is opened first.
+    await wrapper.get('[data-testid="clients-dns-actions-7"]').trigger('click')
     await wrapper.get('[data-testid="clients-dns-edit-7"]').trigger('click')
     await wrapper.get('[data-testid="clients-dns-draft-save"]').trigger('click')
     await flushPromises()

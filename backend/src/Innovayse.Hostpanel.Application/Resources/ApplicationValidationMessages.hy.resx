@@ -400,8 +400,11 @@
   <data name="KbArticleContentRequired" xml:space="preserve">
     <value>Բովանդակությունը պարտադիր է։</value>
   </data>
-  <data name="KbArticleCategoryRequired" xml:space="preserve">
-    <value>Կատեգորիան պարտադիր է։</value>
+  <data name="KbArticleTitleTooLong" xml:space="preserve">
+    <value>Վերնագիրը կարող է պարունակել առավելագույնը {0} նիշ։</value>
+  </data>
+  <data name="KbArticleSlugInvalid" xml:space="preserve">
+    <value>Հոդվածի հասցեն անվավեր է։</value>
   </data>
   <data name="KbArticleCategoryTooLong" xml:space="preserve">
     <value>Կատեգորիան չպետք է գերազանցի {0} նիշը։</value>
@@ -1485,5 +1488,98 @@
   </data>
   <data name="CreditNoteItemQuantityInvalid" xml:space="preserve">
     <value>Յուրաքանչյուր տողի քանակը պետք է լինի 1-ից մինչև 100000։</value>
+  </data>
+  <data name="StatusNameRequired" xml:space="preserve">
+    <value>Մուտքագրեք անունը։</value>
+  </data>
+  <data name="StatusNameTooLong" xml:space="preserve">
+    <value>Անունը չի կարող {0} նիշից երկար լինել։</value>
+  </data>
+  <data name="StatusDescriptionTooLong" xml:space="preserve">
+    <value>Նկարագրությունը չի կարող {0} նիշից երկար լինել։</value>
+  </data>
+  <data name="StatusTitleRequired" xml:space="preserve">
+    <value>Մուտքագրեք միջադեպի վերնագիրը։</value>
+  </data>
+  <data name="StatusTitleTooLong" xml:space="preserve">
+    <value>Վերնագիրը չի կարող {0} նիշից երկար լինել։</value>
+  </data>
+  <data name="StatusMessageRequired" xml:space="preserve">
+    <value>Մուտքագրեք հաղորդագրությունը։</value>
+  </data>
+  <data name="StatusMessageTooLong" xml:space="preserve">
+    <value>Հաղորդագրությունը չի կարող {0} նիշից երկար լինել։</value>
+  </data>
+  <data name="StatusStateInvalid" xml:space="preserve">
+    <value>Ընտրեք թույլատրելի վիճակ։</value>
+  </data>
+  <data name="StatusDaysInvalid" xml:space="preserve">
+    <value>Ընտրեք օրերի քանակ 1-ից մինչև {0}։</value>
+  </data>
+  <data name="ClientGroupNameInvalid" xml:space="preserve">
+    <value>Խմբի անվանումը պարտադիր է և կարող է ունենալ առավելագույնը 100 նիշ։</value>
+  </data>
+  <data name="ClientGroupDescriptionInvalid" xml:space="preserve">
+    <value>Նկարագրությունը կարող է ունենալ առավելագույնը 500 նիշ։</value>
+  </data>
+  <data name="ClientGroupDiscountDecimalsInvalid" xml:space="preserve">
+    <value>Զեղչը կարող է ունենալ առավելագույնը երկու տասնորդական նիշ։</value>
+  </data>
+  <data name="ClientGroupDiscountInvalid" xml:space="preserve">
+    <value>Զեղչը պետք է լինի 0-ից 100 տոկոս։</value>
+  </data>
+  <data name="ClientGroupColorInvalid" xml:space="preserve">
+    <value>Գույնը պետք է գրվի #RRGGBB ձևաչափով։</value>
+  </data>
+  <data name="ServiceChangeRequestIdInvalid" xml:space="preserve">
+    <value>Նշեք պլանի փոփոխության վավեր հայտ։</value>
+  </data>
+  <data name="ServiceChangeNoteTooLong" xml:space="preserve">
+    <value>Նշումը չպետք է գերազանցի {0} նիշը։</value>
+  </data>
+  <data name="ServiceChangeStatusInvalid" xml:space="preserve">
+    <value>Ընտրեք պլանի փոփոխության հայտի վավեր կարգավիճակ։</value>
+  </data>
+  <data name="CampaignIdInvalid" xml:space="preserve">
+    <value>Նշեք ճիշտ քարոզարշավ։</value>
+  </data>
+  <data name="CampaignSubjectRequired" xml:space="preserve">
+    <value>Մուտքագրեք նամակի թեման։</value>
+  </data>
+  <data name="CampaignSubjectTooLong" xml:space="preserve">
+    <value>Թեման կարող է լինել առավելագույնը {0} նիշ։</value>
+  </data>
+  <data name="CampaignBodyRequired" xml:space="preserve">
+    <value>Գրեք նամակի տեքստը։</value>
+  </data>
+  <data name="CampaignBodyTooLong" xml:space="preserve">
+    <value>Նամակի տեքստը կարող է լինել առավելագույնը {0} նիշ։</value>
+  </data>
+  <data name="CampaignSegmentsRequired" xml:space="preserve">
+    <value>Ուղարկեք սեգմենտների ցանկը, այն կարող է դատարկ լինել։</value>
+  </data>
+  <data name="CampaignSegmentsTooMany" xml:space="preserve">
+    <value>Քարոզարշավը կարող է ունենալ առավելագույնը {0} սեգմենտ։</value>
+  </data>
+  <data name="CampaignSegmentFilterInvalid" xml:space="preserve">
+    <value>Ընտրեք հայտնի զտիչ յուրաքանչյուր սեգմենտի համար։</value>
+  </data>
+  <data name="CampaignSegmentValueInvalid" xml:space="preserve">
+    <value>Արժեքը չի համապատասխանում զտիչին. արտադրանքի համար պետք է արտադրանքի id, երկրի համար՝ երկտառ կոդ, ժամկետի ավարտի համար՝ օրերի քանակ 1-ից 365, հաճախորդների խմբի համար՝ խմբի id, մուտքի զտիչի համար՝ օրերի քանակ 1-ից 3650, իսկ բոլոր ակտիվ հաճախորդների զտիչը արժեք չի ընդունում։</value>
+  </data>
+  <data name="CampaignSegmentSignInUnavailable" xml:space="preserve">
+    <value>Վերջին մուտքով զտումն այստեղ հասանելի չէ. այս տեղադրումը մուտք է գործում միասնական մուտքի մատակարարի միջոցով, որը արտադրանքին չի հայտնում, թե հաճախորդը երբ է վերջին անգամ մուտք գործել։</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenRequired" xml:space="preserve">
+    <value>Ապաբաժանորդագրվելու հղումը տոկեն չի պարունակում։</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenInvalid" xml:space="preserve">
+    <value>Ապաբաժանորդագրվելու այս հղումը վավեր չէ։</value>
+  </data>
+  <data name="CampaignMailLinkInvalid" xml:space="preserve">
+    <value>Այս հղումը վավեր չէ։</value>
+  </data>
+  <data name="EmailDeliveryKeyRequired" xml:space="preserve">
+    <value>Նամակի բանալին պարտադիր է։</value>
   </data>
 </root>

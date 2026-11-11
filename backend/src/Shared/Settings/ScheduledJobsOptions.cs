@@ -102,6 +102,14 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     public int DispatchFulfilmentIntervalSeconds { get; init; } = 30;
 
     /// <summary>
+    /// Seconds between the end of one email campaign dispatch pass and the start of the next. A pass starts the campaigns whose
+    /// send time has come and sends one batch of mails of every campaign that is sending, so this is also how soon a campaign
+    /// sent "now" begins and how fast a large one goes out.
+    /// </summary>
+    [Range(1, 3600)]
+    public int DispatchEmailCampaignsIntervalSeconds { get; init; } = 30;
+
+    /// <summary>
     /// How many fulfilment deliveries one dispatch pass makes at most. A pass stops there and the next
     /// one carries on, so a backlog never keeps one pass (and the job it holds) running without end.
     /// </summary>
@@ -132,6 +140,14 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     /// <summary>Minutes between the end of one recovery of stalled migration pulls and the start of the next.</summary>
     [Range(1, 1440)]
     public int RecoverInterruptedMigrationJobsIntervalMinutes { get; init; } = 5;
+
+    /// <summary>
+    /// Seconds between the end of one pass of the plugin registry enrolment and the start of the next. A pass that has nothing
+    /// to do (the identity is verified, the registry is off, a back-off still runs) makes no call, so this only bounds how soon a
+    /// due retry is noticed; how often the registry is asked is the back-off kept on the identity.
+    /// </summary>
+    [Range(10, 3600)]
+    public int EnrollRegistryInstanceIntervalSeconds { get; init; } = 60;
 
     /// <summary>
     /// Seconds between the heartbeats a running migration pull writes. A pull saves its progress after
@@ -197,6 +213,10 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     public JobSchedule DispatchFulfilment =>
         JobSchedule.Every(TimeSpan.FromSeconds(DispatchFulfilmentIntervalSeconds));
 
+    /// <summary>Gets the schedule of the email campaign dispatch.</summary>
+    public JobSchedule DispatchEmailCampaigns =>
+        JobSchedule.Every(TimeSpan.FromSeconds(DispatchEmailCampaignsIntervalSeconds));
+
     /// <summary>Gets how long a fulfilment plugin has to answer one delivery, as a span.</summary>
     public TimeSpan FulfilmentCallTimeout => TimeSpan.FromSeconds(FulfilmentCallTimeoutSeconds);
 
@@ -219,6 +239,10 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     /// <summary>Gets the schedule of the recovery of stalled migration pulls.</summary>
     public JobSchedule RecoverInterruptedMigrationJobs =>
         JobSchedule.Every(TimeSpan.FromMinutes(RecoverInterruptedMigrationJobsIntervalMinutes));
+
+    /// <summary>Gets the schedule of the plugin registry enrolment.</summary>
+    public JobSchedule EnrollRegistryInstance =>
+        JobSchedule.Every(TimeSpan.FromSeconds(EnrollRegistryInstanceIntervalSeconds));
 
     /// <summary>Gets the time between the heartbeats of a running migration pull, as a span.</summary>
     public TimeSpan MigrationHeartbeat => TimeSpan.FromSeconds(MigrationHeartbeatSeconds);

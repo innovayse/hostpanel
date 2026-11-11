@@ -17,6 +17,7 @@ public sealed class GetSettingTests(IntegrationTestFactory factory) : IClassFixt
     private const int NoSuchSettingId = 999_999_999;
 
     /// <summary>An admin reads back a single seeded setting by id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanReadASettingAsync()
     {
@@ -31,6 +32,7 @@ public sealed class GetSettingTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>Reading an unknown id answers 404 with <c>SETTING_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownId_RefusesNotFoundAsync()
     {
@@ -43,6 +45,7 @@ public sealed class GetSettingTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A row outside the general catalogue answers 404 <c>SETTING_NOT_FOUND</c>, like an unknown id.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RowOutsideTheCatalogue_RefusesNotFoundAsync()
     {
@@ -56,6 +59,7 @@ public sealed class GetSettingTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A caller with only the Client role is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToTheClientRoleAsync()
     {
@@ -67,6 +71,7 @@ public sealed class GetSettingTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>A caller with no credential is refused with 401.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

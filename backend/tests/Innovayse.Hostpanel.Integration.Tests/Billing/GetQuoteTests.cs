@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class GetQuoteTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin reads back the quote they just created, named after its client.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetByIdReturnsTheCreatedQuote()
     {
@@ -28,6 +29,7 @@ public sealed class GetQuoteTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>A discounted line that leaves more decimals than the currency allows reads back rounded, line and total alike.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetByIdReturnsTheDiscountedAmountsRoundedToTheCurrency()
     {
@@ -53,6 +55,7 @@ public sealed class GetQuoteTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>Reading an id that names no quote answers 404 with the <c>QUOTE_NOT_FOUND</c> code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetUnknownQuoteRefusesNotFound()
     {
@@ -65,6 +68,7 @@ public sealed class GetQuoteTests(IntegrationTestFactory factory) : IClassFixtur
     }
 
     /// <summary>Reading a quote is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetRefusesAnonymous()
     {

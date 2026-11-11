@@ -18,5 +18,5 @@ public interface IPaymentPluginResolver
     /// The ready-to-use plugin, or <see langword="null"/> when the plugin is not loaded,
     /// is not a payment plugin, is disabled, or its required settings are missing.
     /// </returns>
-    Task<IPaymentPlugin?> ResolveAsync(string module, CancellationToken ct);
+    public Task<IPaymentPlugin?> ResolveAsync(string module, CancellationToken ct);
 }

@@ -33,6 +33,7 @@ import UiTableRow from '@/components/ui/UiTableRow.vue'
 import UiText from '@/components/ui/UiText.vue'
 import { NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { AppRoute } from '@/lib/routes'
+import { UiTableDensity } from '@/utils/ui/injection'
 
 /** Translation function and the active locale (for date formatting). */
 const { t, locale } = useI18n()
@@ -321,7 +322,7 @@ const manageUserActions = (user: UserListItem): UiRowAction[] => {
     <!-- Table (also draws the loading and the empty state) -->
     <UiTable
       v-else
-      density="comfortable"
+      :density="UiTableDensity.Comfortable"
       :loading="store.loading && store.users.length === 0"
       :empty="!store.loading && store.users.length === 0"
       :colspan="6"
@@ -334,7 +335,7 @@ const manageUserActions = (user: UserListItem): UiRowAction[] => {
           <UiTableHeader>{{ t('shared.lastName') }}</UiTableHeader>
           <UiTableHeader>{{ t('shared.email') }}</UiTableHeader>
           <UiTableHeader>{{ t('clients.manageUsers.lastLogin') }}</UiTableHeader>
-          <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
+          <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
         </UiTableRow>
       </UiTableHead>
       <UiTableBody divided>
@@ -344,8 +345,8 @@ const manageUserActions = (user: UserListItem): UiRowAction[] => {
           <UiTableCell>{{ user.lastName }}</UiTableCell>
           <UiTableCell muted>{{ user.email }}</UiTableCell>
           <UiTableCell muted>{{ formatDate(user.lastLoginAt) }}</UiTableCell>
-          <UiTableCell align="right">
-            <UiRowActions :actions="manageUserActions(user)" />
+          <UiTableCell actions>
+            <UiRowActions :actions="manageUserActions(user)" :testid="`users-actions-${user.id}`" />
           </UiTableCell>
         </UiTableRow>
       </UiTableBody>

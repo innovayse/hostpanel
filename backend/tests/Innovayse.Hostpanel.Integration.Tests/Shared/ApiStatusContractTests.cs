@@ -58,6 +58,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Shared;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ApiStatusContractTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>The RFC 9457 media type every error body carries.</summary>
     private const string ProblemJson = "application/problem+json";
 
@@ -100,6 +103,7 @@ public sealed class ApiStatusContractTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An authenticated caller with the wrong role answers 403, not a redirect or an empty body.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task WrongRole_Answers403WithLocalizedDetailAndShimAsync()
     {
@@ -113,6 +117,7 @@ public sealed class ApiStatusContractTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An id naming no resource answers 404 with the resource's own not-found code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnknownId_Answers404WithLocalizedDetailAndShimAsync()
     {
@@ -129,6 +134,7 @@ public sealed class ApiStatusContractTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>An upload over the configured byte ceiling answers 413, not a host-level reset.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task OversizedUpload_Answers413WithLocalizedDetailAndShimAsync()
     {
@@ -153,6 +159,7 @@ public sealed class ApiStatusContractTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>A dependency this deployment has not configured answers 503, not a silent success.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task UnconfiguredDependency_Answers503WithLocalizedDetailAndShimAsync()
     {
@@ -180,19 +187,20 @@ public sealed class ApiStatusContractTests(IntegrationTestFactory factory) : ICl
     /// <see cref="Innovayse.Hostpanel.Shared.Middleware.ExceptionHandlingMiddleware"/> maps a domain exception to the
     /// same localized <c>problem+json</c> body every other refusal answers with.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Publish_OnNonDraftInvoice_Answers400WithLocalizedDetailAsync()
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var seededClient = Client.Create(
-            $"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            $"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", SeededAt);
         db.Clients.Add(seededClient);
         await db.SaveChangesAsync();
 
         // Invoice.Create (not CreateDraft) starts Unpaid, so Publish's own "must be Draft"
         // invariant is the only thing that can refuse this call; nothing upstream pre-checks it.
-        var invoice = Invoice.Create(seededClient.Id, DateTimeOffset.UtcNow.AddDays(14), "USD", DateTimeOffset.UtcNow);
+        var invoice = Invoice.Create(seededClient.Id, SeededAt.AddDays(14), "USD", SeededAt);
         db.Invoices.Add(invoice);
         await db.SaveChangesAsync();
 

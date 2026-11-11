@@ -19,6 +19,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Orders;
 public sealed class AcceptOrderTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An id nothing names answers 404 with <c>ORDER_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MissingOrderRefusesNotFound()
     {
@@ -32,6 +33,7 @@ public sealed class AcceptOrderTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Accepting a pending order moves it to Active and reports no failed line.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AcceptMovesAPendingOrderToActive()
     {
@@ -52,6 +54,7 @@ public sealed class AcceptOrderTests(IntegrationTestFactory factory) : IClassFix
     /// registrar refuses is reported as a failed domain line, and the hosting line after it is
     /// still fulfilled, so one failure never stops the rest.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AcceptRunsTheDomainActionAndKeepsGoingPastAFailedLine()
     {
@@ -88,6 +91,7 @@ public sealed class AcceptOrderTests(IntegrationTestFactory factory) : IClassFix
     /// When every line is fulfilled the order stays Active, each line is Fulfilled after one attempt, and the
     /// order reads back with the state of its lines and no failed line.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AcceptOfAnOrderWhoseLinesAllSucceedLeavesItActiveWithFulfilledLines()
     {
@@ -107,6 +111,7 @@ public sealed class AcceptOrderTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>Accepting is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAnonymous()
     {
@@ -118,6 +123,7 @@ public sealed class AcceptOrderTests(IntegrationTestFactory factory) : IClassFix
     }
 
     /// <summary>A plain client caller, who is not an admin, is refused with 403.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RefusesAClientCaller()
     {

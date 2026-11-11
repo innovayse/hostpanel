@@ -11,5 +11,5 @@ public interface IPluginCallServices
     /// <summary>Builds the services for one call.</summary>
     /// <param name="binding">The plugin being called and the client the call acts for.</param>
     /// <returns>The services, valid for the call.</returns>
-    PluginCallServices Create(PluginCallBinding binding);
+    public PluginCallServices Create(PluginCallBinding binding);
 }

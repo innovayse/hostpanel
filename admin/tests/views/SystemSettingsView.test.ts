@@ -4,7 +4,9 @@
  * API's own sentence.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import SystemSettingsView from '@/views/SystemSettingsView.vue'
+import { useVersionStore } from '@/stores/version'
 import type { Setting } from '@/types/setting'
 import { json, problem } from '../helpers/fetch'
 import { mountScreen } from '../helpers/mount'
@@ -29,6 +31,32 @@ describe('SystemSettingsView', () => {
     expect((wrapper.get('[data-testid="site-identity-name"]').element as HTMLInputElement).value).toBe('Acme')
     expect(wrapper.get('[data-testid="setting-row-21"]').text()).toContain('portal.contact.email')
     expect(wrapper.get('[data-testid="setting-row-21"]').text()).toContain('Contact address')
+  })
+
+  it('shows the installed version under the title', async () => {
+    stubRouteTable({ 'GET /admin/settings': () => json(stored) })
+    const { wrapper } = await mountScreen(SystemSettingsView)
+    useVersionStore().version = '1.4.0'
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="settings-version"]').text()).toBe('Hostpanel 1.4.0')
+  })
+
+  it('shows no version line when the version cannot be loaded', async () => {
+    const mock = stubRouteTable({
+      'GET /admin/settings': () => json(stored),
+      'GET /admin/version': () => problem('No access.', 403),
+    })
+    const { wrapper } = await mountScreen(SystemSettingsView)
+    // The layout starts this load in the app; here the test starts it and waits for the refusal.
+    await useVersionStore().ensureLoaded()
+    await flushPromises()
+
+    expect(requestsOf(mock)).toContain('GET /admin/version')
+    expect(useVersionStore().error).toBe('No access.')
+
+    expect(wrapper.find('[data-testid="settings-version"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="system-settings-error"]').exists()).toBe(false)
   })
 
   it('draws the storefront card with the stored figure', async () => {

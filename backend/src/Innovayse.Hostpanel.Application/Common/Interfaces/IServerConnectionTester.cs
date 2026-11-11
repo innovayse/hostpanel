@@ -12,5 +12,5 @@ public interface IServerConnectionTester
     /// <param name="server">The server to test.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>Whether the server answered, what it reported, or why the probe failed.</returns>
-    Task<ServerConnectionTestResult> TestAsync(Server server, CancellationToken ct);
+    public Task<ServerConnectionTestResult> TestAsync(Server server, CancellationToken ct);
 }

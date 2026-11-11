@@ -21,10 +21,9 @@ import UiField from '@/components/ui/UiField.vue'
 import UiFilterCard from '@/components/ui/UiFilterCard.vue'
 import UiGrid from '@/components/ui/UiGrid.vue'
 import UiIcon from '@/components/ui/UiIcon.vue'
-import UiIconButton from '@/components/ui/UiIconButton.vue'
-import UiLink from '@/components/ui/UiLink.vue'
 import UiPageHeader from '@/components/ui/UiPageHeader.vue'
 import UiPagination from '@/components/ui/UiPagination.vue'
+import UiRowActions, { type UiRowAction } from '@/components/ui/UiRowActions.vue'
 import UiSelect from '@/components/ui/UiSelect.vue'
 import UiStack from '@/components/ui/UiStack.vue'
 import UiStatusMessage from '@/components/ui/UiStatusMessage.vue'
@@ -237,6 +236,38 @@ const dismissDelete = (): void => {
   }
 }
 
+/**
+ * The row actions of an invoice: view and edit as real links, and delete last (confirmed first).
+ *
+ * @param id - The invoice id.
+ * @returns The action list passed to UiRowActions.
+ */
+const invoiceActions = (id: number): UiRowAction[] => [
+  {
+    label: t('shared.view'),
+    testid: `billing-invoice-view-${id}`,
+    to: invoiceViewPath(id),
+  },
+  {
+    label: t('shared.edit'),
+    testid: `billing-invoice-edit-${id}`,
+    to: invoiceEditPath(id),
+  },
+  {
+    label: t('shared.delete'),
+    testid: `billing-invoice-delete-${id}`,
+    danger: true,
+    /**
+     * Asks for confirmation before the invoice is deleted.
+     *
+     * @returns Nothing.
+     */
+    onSelect: (): void => {
+      pendingDeleteId.value = id
+    },
+  },
+]
+
 onMounted(() => load(1))
 </script>
 
@@ -334,10 +365,10 @@ onMounted(() => load(1))
             <UiTableHeader>{{ t('shared.clientName') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.invoiceDate') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.dueDate') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('shared.total') }}</UiTableHeader>
+            <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
-            <UiTableHeader align="right">{{ t('shared.actions') }}</UiTableHeader>
+            <UiTableHeader actions>{{ t('shared.actions') }}</UiTableHeader>
           </UiTableRow>
         </UiTableHead>
         <UiTableBody divided>
@@ -354,40 +385,13 @@ onMounted(() => load(1))
             <UiTableCell>{{ invoice.clientName }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(invoice.createdAt) }}</UiTableCell>
             <UiTableCell muted>{{ formatDate(invoice.dueDate) }}</UiTableCell>
-            <UiTableCell align="right">{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
+            <UiTableCell numeric>{{ formatPlainAmount(invoice.total, invoice.currency) }}</UiTableCell>
             <UiTableCell muted>{{ invoice.paymentMethod || '—' }}</UiTableCell>
             <UiTableCell>
               <UiBadge :tone="invoiceStatusTone(invoice.status)">{{ invoice.status }}</UiBadge>
             </UiTableCell>
-            <UiTableCell align="right">
-              <UiStack direction="row" gap="xs" justify="end">
-                <UiLink
-                  variant="ghost"
-                  size="sm"
-                  :to="invoiceViewPath(invoice.id)"
-                  :aria-label="t('shared.view')"
-                  :data-testid="`billing-invoice-view-${invoice.id}`"
-                >
-                  <UiIcon :markup="Icon.Eye" size="sm" />
-                </UiLink>
-                <UiLink
-                  variant="ghost"
-                  size="sm"
-                  :to="invoiceEditPath(invoice.id)"
-                  :aria-label="t('shared.edit')"
-                  :data-testid="`billing-invoice-edit-${invoice.id}`"
-                >
-                  <UiIcon :markup="Icon.Edit" size="sm" />
-                </UiLink>
-                <UiIconButton
-                  :label="t('shared.delete')"
-                  size="sm"
-                  :data-testid="`billing-invoice-delete-${invoice.id}`"
-                  @click="pendingDeleteId = invoice.id"
-                >
-                  <UiIcon :markup="Icon.TrashBin" size="sm" />
-                </UiIconButton>
-              </UiStack>
+            <UiTableCell actions>
+              <UiRowActions :actions="invoiceActions(invoice.id)" :testid="`billing-invoice-actions-${invoice.id}`" />
             </UiTableCell>
           </UiTableRow>
         </UiTableBody>

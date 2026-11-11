@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Clients.Commands.AddContact;
 using Innovayse.Hostpanel.Application.Clients.Commands.AddUserToClient;
@@ -19,6 +18,7 @@ using Innovayse.Hostpanel.Application.Clients.Queries.GetClientUser;
 using Innovayse.Hostpanel.Application.Clients.Queries.GetClientUsers;
 using Innovayse.Hostpanel.Application.Clients.Queries.ListClients;
 using Innovayse.Hostpanel.Shared.Authorization;
+using Innovayse.Hostpanel.Shared.Constants;
 using Innovayse.Hostpanel.Shared.Controllers;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -86,7 +86,8 @@ public sealed class ClientsController : BaseApiController
     /// <remarks>
     /// A full replacement (PUT), not a patch: send the whole record as <c>GET /api/clients/{id}</c>
     /// returns it. Every notification and billing flag the body leaves out is stored as
-    /// <c>false</c>, and every optional text field it leaves out is cleared. Only <c>email</c>,
+    /// <c>false</c>, and every optional text field it leaves out is cleared, as is <c>clientGroupId</c>
+    /// (a null one takes the client out of its group). Only <c>email</c>,
     /// <c>language</c>, <c>currency</c> and <c>status</c> are left as they are when omitted.
     /// A save that fails because another writer changed the client first answers 409 with
     /// <c>CONFLICT</c>; read the client again and resubmit.
@@ -95,7 +96,7 @@ public sealed class ClientsController : BaseApiController
     /// <param name="command">The complete client record.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 204 when written; 404 with <c>CLIENT_NOT_FOUND</c> or <c>CURRENCY_NOT_FOUND</c>; 409 with <c>CLIENT_CURRENCY_ALREADY_INVOICED</c>, <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c> (the client holds a credit balance), <c>EMAIL_ALREADY_IN_USE</c> or <c>CONFLICT</c>; 400 when the body, query or route fails validation; 401 without a session; 403 for a caller who is not staff, or with <c>DEMO_ACTION_DISABLED</c> for a published demo account;
+    /// 204 when written; 404 with <c>CLIENT_NOT_FOUND</c>, <c>CLIENT_GROUP_NOT_FOUND</c> or <c>CURRENCY_NOT_FOUND</c>; 409 with <c>CLIENT_CURRENCY_ALREADY_INVOICED</c>, <c>CLIENT_CURRENCY_LOCKED_BY_CREDIT</c> (the client holds a credit balance), <c>EMAIL_ALREADY_IN_USE</c> or <c>CONFLICT</c>; 400 when the body, query or route fails validation; 401 without a session; 403 for a caller who is not staff, or with <c>DEMO_ACTION_DISABLED</c> for a published demo account;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPut("{id:int}")]
@@ -232,7 +233,7 @@ public sealed class ClientsController : BaseApiController
     /// <param name="command">Admin client creation data.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 201 with the new client's id; 404 with <c>CURRENCY_NOT_FOUND</c> or <c>IDENTITY_USER_NOT_FOUND</c>; 409 with <c>EXISTING_USER_ALREADY_HAS_CLIENT</c>, <c>ACCOUNT_EMAIL_EXISTS</c> or <c>CONFLICT</c>; 400 when the body, query or route fails validation, or with <c>USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT</c>; 401 without a session; 403 for a caller who is not staff;
+    /// 201 with the new client's id; 404 with <c>CURRENCY_NOT_FOUND</c>, <c>CLIENT_GROUP_NOT_FOUND</c> or <c>IDENTITY_USER_NOT_FOUND</c>; 409 with <c>EXISTING_USER_ALREADY_HAS_CLIENT</c>, <c>ACCOUNT_EMAIL_EXISTS</c> or <c>CONFLICT</c>; 400 when the body, query or route fails validation, or with <c>USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT</c>; 401 without a session; 403 for a caller who is not staff;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("admin")]

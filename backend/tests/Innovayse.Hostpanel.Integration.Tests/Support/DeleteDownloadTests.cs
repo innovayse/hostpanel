@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class DeleteDownloadTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>An admin can delete a download entry.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AdminCanDeleteADownloadAsync()
     {
@@ -37,6 +38,7 @@ public sealed class DeleteDownloadTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>Deleting a download that does not exist answers 404 with <c>DOWNLOAD_NOT_FOUND</c>.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task DeleteUnknownDownloadAnswersNotFoundAsync()
     {
@@ -49,6 +51,7 @@ public sealed class DeleteDownloadTests(IntegrationTestFactory factory) : IClass
     }
 
     /// <summary>A caller with no credential cannot delete a download entry.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task IsClosedToAnonymousCallersAsync()
     {

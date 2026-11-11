@@ -13,6 +13,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 public sealed class PluginMemberTicketAccessTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The member lists, reads and replies to the linked client's ticket, and the member's own client's ticket stays out of reach.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberActsForThePluginAccountNotForTheirOwnClientRecordAsync()
     {
@@ -40,6 +41,7 @@ public sealed class PluginMemberTicketAccessTests(IntegrationTestFactory factory
     }
 
     /// <summary>A ticket the member opens is filed on the linked client, not on the member's own record.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TicketTheMemberOpens_IsFiledOnTheLinkedClientAsync()
     {
@@ -62,6 +64,7 @@ public sealed class PluginMemberTicketAccessTests(IntegrationTestFactory factory
     }
 
     /// <summary>A member of an account no client is linked to yet gets no profile rather than another client's tickets.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task MemberOfAnAccountWithNoClient_GetsNoProfileAsync()
     {

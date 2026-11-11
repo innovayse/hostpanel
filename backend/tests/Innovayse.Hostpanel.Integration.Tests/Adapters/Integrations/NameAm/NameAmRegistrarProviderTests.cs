@@ -8,7 +8,6 @@ using Innovayse.Hostpanel.Infrastructure.Integrations.NameAm;
 using Innovayse.Hostpanel.Infrastructure.Integrations.NameAm.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Time;
-using Innovayse.Hostpanel.Integration.Tests.Fixtures;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -88,6 +87,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An unconfigured integration refuses the renewal and calls nothing.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewAsync_WhenNotConfigured_FailsWithoutCallingNameAmAsync()
     {
@@ -104,6 +104,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     /// An HTTP 200 whose body reports an error with no recognised cause is a refusal with the
     /// registrar's plain refusal code (a short balance or a taken name has its own code, tested below).
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewAsync_WhenBodyReportsAnError_FailsWithTheRefusalCodeAsync()
     {
@@ -120,6 +121,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     /// A successful purchase reports no expiry, so the caller extends the current one; reporting
     /// now + years would cost an early renewal its remaining days.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewAsync_WhenPurchased_SucceedsWithoutInventingAnExpiryAsync()
     {
@@ -135,6 +137,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>An HTTP 200 that is neither a purchase list nor a known error is not proof of a renewal.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewAsync_WhenBodyHasAnUnknownShape_FailsAsync()
     {
@@ -148,6 +151,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A 4xx is Name.am turning the order down: a clean refusal, not an exception.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewAsync_WhenNameAmAnswers4xx_FailsCleanlyAsync()
     {
@@ -162,6 +166,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A 5xx leaves the outcome unknown, so it stays an exception for the caller to treat as such.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewAsync_WhenNameAmAnswers5xx_ThrowsAsync()
     {
@@ -175,6 +180,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A registration on an unconfigured integration is refused, so a paid order is refunded.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WhenNotConfigured_FailsWithoutCallingNameAmAsync()
     {
@@ -192,6 +198,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     /// A registration Name.am turns down with a 4xx, for a name the account does not hold, is a
     /// clean refusal.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WhenNameAmAnswers4xx_FailsCleanlyAsync()
     {
@@ -208,6 +215,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A purchased registration succeeds and is left for polling to activate.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WhenPurchased_SucceedsPendingPollingAsync()
     {
@@ -223,6 +231,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A transfer on an unconfigured integration is refused.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferAsync_WhenNotConfigured_FailsAsync()
     {
@@ -239,6 +248,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     /// A change to a registrar-held domain on an unconfigured integration is refused, so the
     /// handler does not save a change the registrar never made.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetNameserversAsync_WhenNotConfigured_FailsAsync()
     {
@@ -276,6 +286,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     private const string EmptyListing = """{"docs":[]}""";
 
     /// <summary>A registration sends the client's own contact for every role, never a blank one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_SendsTheOrderContactForEveryRoleAsync()
     {
@@ -293,6 +304,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A contact missing a required detail is refused before anything is sent to Name.am.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WithIncompleteContact_FailsWithoutCallingNameAmAsync()
     {
@@ -308,6 +320,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A transfer sends the one year transfer plan, the EPP code and the client's contact.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TransferAsync_SendsTheTransferPlanAndTheOrderContactAsync()
     {
@@ -328,6 +341,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     /// account is consulted, and when it does not hold the name the order is refused.
     /// </summary>
     /// <param name="purchaseJson">The body Name.am answers the purchase with.</param>
+    /// <returns>A task that completes when the test has run.</returns>
     [Theory]
     [InlineData("""{"success":true}""")]
     [InlineData("[]")]
@@ -348,6 +362,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     /// A retry that Name.am refuses because the account already holds the name is the earlier
     /// attempt having gone through: success, left for polling, not a refusal that refunds.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WhenRefusedButHeldByTheAccount_SucceedsAsync()
     {
@@ -365,6 +380,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A refusal as unavailable for a name the account does not hold has its own code.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WhenRefusedAsUnavailableAndNotHeld_FailsWithTheUnavailableCodeAsync()
     {
@@ -381,6 +397,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A refusal in the body of a 200 that names the name as taken has the unavailable code too.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WhenBodyReportsTheNameTaken_FailsWithTheUnavailableCodeAsync()
     {
@@ -395,6 +412,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A short registrar balance has its own code and the account is not consulted for it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RegisterAsync_WhenPaymentIsRequired_FailsWithTheFundsCodeAsync()
     {
@@ -411,6 +429,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A renewal is never turned into success because the account holds the domain.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewAsync_WhenRefusedAsUnavailable_FailsWithoutLookingAtTheAccountAsync()
     {
@@ -426,6 +445,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A change Name.am fails with a server error is a failed result carrying a code, not an exception.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRegistrarLockAsync_WhenNameAmFails_ReturnsAFailedResultAsync()
     {
@@ -441,6 +461,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A change answered with a body that is not JSON is a failed result.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetWhoisPrivacyAsync_WhenAnswerIsNotJson_ReturnsAFailedResultAsync()
     {
@@ -456,6 +477,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A DNS change whose listing step fails is a failed result too.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task AddDnsRecordAsync_WhenTheListingFails_ReturnsAFailedResultAsync()
     {
@@ -472,6 +494,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>A domain name goes into the URL path escaped, so nothing in it can change the path.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task SetRegistrarLockAsync_EscapesTheDomainNameInThePathAsync()
     {
@@ -487,6 +510,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>The account e-mail is personal data and is never written to the log.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Login_DoesNotLogTheAccountEmailAsync()
     {
@@ -503,6 +527,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     /// Clients are created per request, but the connection has one token: a second client reuses it
     /// and Name.am is logged in to once.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task TwoClients_ShareOneLoginAsync()
     {
@@ -519,6 +544,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     /// A 401 means the token is no longer accepted and the request was not processed: a new login
     /// follows and the request is repeated once with the new token.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task RenewAsync_WhenTheTokenIsRejected_LogsInAgainAndRepeatsOnceAsync()
     {
@@ -540,6 +566,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     /// Pricing reads a price sent as a number or as a string, and a product or plan of the wrong
     /// shape is skipped without stopping the rest.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GetTldPricingAsync_ReadsBothPriceShapesAndSkipsBadProductsAsync()
     {
@@ -568,6 +595,7 @@ public sealed class NameAmRegistrarProviderTests(IntegrationTestFactory factory)
     }
 
     /// <summary>Dates Name.am reports without an offset are read as UTC, whatever culture the host runs in.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task CheckDomainActiveAsync_ReadsTheExpiryAsUtcAsync()
     {

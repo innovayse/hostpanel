@@ -20,6 +20,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration;
 public sealed class GetMigrationLogsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>A freshly created job's log page is empty.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LogsOnAFreshJobAreEmpty()
     {
@@ -39,6 +40,7 @@ public sealed class GetMigrationLogsTests(IntegrationTestFactory factory) : ICla
     /// the query record carries its own defaults for both, since a record bound from the query
     /// string has no method signature to hang them on.
     /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LogsWithNoPagingParametersUseTheDefaultsAndReturnTheEntry()
     {
@@ -64,6 +66,7 @@ public sealed class GetMigrationLogsTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A skipped entry carries its skip reason by name, so the admin report can translate it.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LogsReturnTheSkipReasonOfASkippedEntry()
     {
@@ -87,6 +90,7 @@ public sealed class GetMigrationLogsTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>A filter value that names no member of its enum is refused before the query runs.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LogsRefusesAnUnknownFilterValue()
     {
@@ -99,6 +103,7 @@ public sealed class GetMigrationLogsTests(IntegrationTestFactory factory) : ICla
     }
 
     /// <summary>The route is not for anonymous callers.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task LogsRefusesAnonymous()
     {

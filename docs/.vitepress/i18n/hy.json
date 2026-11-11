@@ -1,0 +1,234 @@
+{
+  "site": {
+    "title": "Hostpanel",
+    "description": "Բաց կոդով վեբ հոսթինգի կառավարման վահանակ"
+  },
+  "nav": {
+    "home": "Գլխավոր",
+    "getStarted": "Սկսել",
+    "guides": "Ուղեցույցներ",
+    "apiReference": "API տեղեկատու",
+    "changelog": "Փոփոխությունների պատմություն",
+    "demo": "Փորձել դեմոն"
+  },
+  "sections": {
+    "get-started": "Սկսել",
+    "operators": "Օպերատորներ",
+    "staff": "Աշխատակիցներ",
+    "customers": "Հաճախորդներ",
+    "payments": "Վճարումներ",
+    "servers": "Սերվերներ և SSH",
+    "migration": "Միգրացիա",
+    "developers": "Մշակողներ",
+    "contributing": "Մասնակցություն նախագծին",
+    "api-reference": "API տեղեկատու"
+  },
+  "pages": {
+    "/get-started/": "Ներածություն",
+    "/get-started/requirements": "Պահանջներ",
+    "/get-started/quick-start": "Արագ մեկնարկ",
+    "/operators/": "Ակնարկ",
+    "/operators/install": "Hostpanel-ի տեղադրում",
+    "/operators/upgrade": "Թարմացում",
+    "/operators/backup": "Պահուստավորում և վերականգնում",
+    "/operators/rollback": "Հետգրում",
+    "/operators/plugin-registry": "Պլագինների ռեեստր",
+    "/operators/storefront": "Հանրային կայք և բրենդինգ",
+    "/operators/configuration": "Կարգավորումների տեղեկատու",
+    "/staff/": "Ակնարկ",
+    "/staff/clients": "Հաճախորդներ, օգտատերեր և կոնտակտներ",
+    "/staff/orders": "Պատվերներ",
+    "/staff/billing": "Հաշիվ-ապրանքագրեր և վճարումներ",
+    "/staff/transactions": "Գործարքներ, վճարովի կետեր և գնառաջարկներ",
+    "/staff/currencies": "Արժույթներ, երկարացումներ և առաջադրանքներ",
+    "/staff/products": "Ապրանքներ և գներ",
+    "/staff/tld-pricing": "Դոմենի ընդլայնումներ և գրանցողներ",
+    "/staff/domains": "Դոմեններ",
+    "/staff/support-tickets": "Աջակցության հայտեր",
+    "/staff/announcements": "Հայտարարություններ, գիտելիքների բազա և ներբեռնումներ",
+    "/staff/network-issues": "Ցանցային խնդիրներ",
+    "/staff/email-templates": "Նամակների ձևանմուշներ",
+    "/customers/": "Ակնարկ",
+    "/customers/portal": "Հաճախորդի պորտալ",
+    "/customers/account": "Ձեր հաշիվը և մուտքը",
+    "/customers/two-factor": "Երկգործոն նույնականացում",
+    "/customers/ordering": "Պատվիրում",
+    "/customers/invoices": "Հաշիվ-ապրանքագրեր և վճարում",
+    "/customers/services": "Ծառայություններ և SSH բանալիներ",
+    "/customers/domains": "Դոմեններ",
+    "/customers/tickets": "Աջակցության հայտեր",
+    "/payments/": "Ակնարկ",
+    "/payments/gateways": "Վճարային համակարգեր",
+    "/payments/confirming": "Ինչպես են հաստատվում առցանց վճարումները",
+    "/payments/plugins": "Պլագիններ",
+    "/servers/": "Ակնարկ",
+    "/servers/servers": "Սերվերներ",
+    "/servers/cpanel": "cPanel սերվերներ",
+    "/servers/ssh-key-agent": "SSH բանալիների գործակալ",
+    "/servers/provisioning": "Պրովիժնինգ",
+    "/migration/": "Ակնարկ",
+    "/migration/from-another-system": "Անցում WHMCS-ից",
+    "/migration/import-report": "Ներմուծման հաշվետվություն և բաց թողնելու պատճառներ",
+    "/developers/": "Ակնարկ",
+    "/developers/architecture": "Ճարտարապետության ակնարկ",
+    "/developers/backend": "Բեքենդ",
+    "/developers/frontends": "Ֆրոնտենդներ",
+    "/developers/local-dev": "Աշխատեցնել տեղում",
+    "/developers/tests": "Թեստեր և ստուգումներ",
+    "/developers/new-feature": "Որտեղ ավելացնել նոր հնարավորություն",
+    "/developers/contributing": "Մասնակցություն նախագծին",
+    "/developers/translating": "Hostpanel-ի թարգմանություն",
+    "/developers/translating-docs": "Փաստաթղթերի թարգմանություն",
+    "/developers/documentation-versions": "Փաստաթղթերի տարբերակներ",
+    "/developers/add-language": "Նոր լեզվի ավելացում",
+    "/developers/integrations": "Ինտեգրացիաներ",
+    "/developers/write-a-plugin": "Պլագինի գրում",
+    "/developers/publishing-a-plugin": "Պլագինի հրապարակում",
+    "/developers/plugin-registry-contract": "Պլագինների ռեեստրի պայմանագիր",
+    "/components": "Կոմպոնենտներ",
+    "/api-reference/": "Ակնարկ",
+    "/api-reference/authentication": "Նույնականացում",
+    "/api-reference/errors": "Սխալներ",
+    "/api-reference/languages": "Լեզուներ",
+    "/api-reference/rate-limits": "Հարցումների սահմանափակումներ",
+    "/api-reference/pagination": "Էջավորում"
+  },
+  "apiGroups": {
+    "Auth endpoints": "Նույնականացման endpoint-ներ",
+    "Public endpoints": "Հանրային endpoint-ներ",
+    "Client endpoints": "Հաճախորդի endpoint-ներ",
+    "Any signed-in user": "Ցանկացած մուտք գործած օգտատեր",
+    "Admin endpoints": "Ադմինի endpoint-ներ"
+  },
+  "theme": {
+    "outlineTitle": "Այս էջում",
+    "docFooterPrev": "Նախորդ էջ",
+    "docFooterNext": "Հաջորդ էջ",
+    "lastUpdatedText": "Վերջին թարմացումը",
+    "editLinkText": "Խմբագրել այս էջը GitHub-ում",
+    "darkModeSwitchLabel": "Տեսք",
+    "lightModeSwitchTitle": "Անցնել լուսավոր թեմային",
+    "darkModeSwitchTitle": "Անցնել մութ թեմային",
+    "sidebarMenuLabel": "Մենյու",
+    "returnToTopLabel": "Վերադառնալ վերև",
+    "langMenuLabel": "Փոխել լեզուն",
+    "skipToContentLabel": "Անցնել բովանդակությանը",
+    "footerMessage": "Տարածվում է AGPL-3.0 լիցենզիայով։"
+  },
+  "search": {
+    "buttonText": "Որոնում",
+    "buttonAriaLabel": "Որոնում",
+    "displayDetails": "Ցույց տալ մանրամասն ցանկը",
+    "resetButtonTitle": "Մաքրել որոնումը",
+    "backButtonTitle": "Փակել որոնումը",
+    "noResultsText": "Արդյունքներ չկան՝",
+    "recentTitle": "Վերջերս դիտված",
+    "suggestedTitle": "Առաջարկվող",
+    "selectText": "ընտրելու համար",
+    "selectKeyAriaLabel": "enter",
+    "navigateText": "նավիգացիայի համար",
+    "navigateUpKeyAriaLabel": "սլաք վերև",
+    "navigateDownKeyAriaLabel": "սլաք ներքև",
+    "closeText": "փակելու համար",
+    "closeKeyAriaLabel": "escape",
+    "closeKeyLabel": "Esc",
+    "suggestedPages": {
+      "quickStart": "Արագ մեկնարկ",
+      "install": "Hostpanel-ի տեղադրում",
+      "configuration": "Կարգավորումների տեղեկատու",
+      "apiReference": "API տեղեկատու"
+    }
+  },
+  "components": {
+    "versionSwitcher": {
+      "ariaLabel": "Փաստաթղթերի տարբերակը՝ {version}",
+      "latest": "վերջին"
+    },
+    "versionBanner": {
+      "next": "Սա հաջորդ՝ դեռ չթողարկված տարբերակի փաստաթղթերն են։",
+      "release": "Սա {version} տարբերակի փաստաթղթերն են, ոչ թե վերջին թողարկման։",
+      "link": "Կարդալ վերջին տարբերակը"
+    },
+    "pageFeedback": {
+      "question": "Այս էջը օգտակա՞ր էր։",
+      "yes": "Այո",
+      "no": "Ոչ",
+      "thanks": "Շնորհակալություն արձագանքի համար։"
+    },
+    "homeSearch": {
+      "ariaLabel": "Բացել փաստաթղթերի որոնումը",
+      "placeholder": "Որոնել փաստաթղթերում…"
+    },
+    "screenshot": {
+      "enlarge": "Մեծացնել պատկերը",
+      "preview": "Պատկերի դիտում",
+      "close": "Փակել պատկերի դիտումը"
+    },
+    "settingTable": {
+      "name": "Անվանում",
+      "type": "Տեսակ",
+      "default": "Լռելյայն",
+      "description": "Նկարագրություն"
+    },
+    "label": {
+      "admin": "Ադմին",
+      "new": "Նոր",
+      "local": "Տեղային",
+      "sso": "SSO",
+      "newIn": "Նոր է {version} տարբերակում"
+    },
+    "notFound": {
+      "label": "Սխալ 404",
+      "title": "Այսպիսի էջ գոյություն չունի",
+      "body": "Հնարավոր է՝ հասցեն փոխվել է, կամ էջը երբեք չի եղել։ Սկսեք փաստաթղթերի գլխավոր էջից։",
+      "back": "Վերադառնալ փաստաթղթերին",
+      "getStarted": "Սկսել",
+      "apiReference": "API տեղեկատու"
+    }
+  },
+  "seo": {
+    "defaultDescription": "Hostpanel-ի փաստաթղթերը՝ բաց կոդով վեբ հոսթինգի կառավարման վահանակ։",
+    "sectionNames": {
+      "get-started": "Սկսել",
+      "operators": "Օպերատորներ",
+      "staff": "Աշխատակիցներ",
+      "customers": "Հաճախորդներ",
+      "payments": "Վճարումներ",
+      "servers": "Սերվերներ և SSH",
+      "migration": "Միգրացիա",
+      "developers": "Մշակողներ",
+      "api-reference": "API տեղեկատու",
+      "changelog": "Փոփոխությունների պատմություն"
+    },
+    "sectionDescriptions": {
+      "get-started": "Սկսեք աշխատել Hostpanel-ի՝ բաց կոդով վեբ հոսթինգի կառավարման վահանակի հետ. պահանջներ և արագ մեկնարկ։",
+      "operators": "Hostpanel-ի տեղադրում, թարմացում, պահուստավորում և կարգավորում։",
+      "staff": "Աշխատակիցների ուղեցույց Hostpanel-ի համար. հաճախորդներ, պատվերներ, հաշվարկներ, ապրանքներ, դոմեններ և աջակցության հայտեր։",
+      "customers": "Հաճախորդի ուղեցույց Hostpanel պորտալի համար. պատվերներ, հաշիվ-ապրանքագրեր, ծառայություններ, դոմեններ և հայտեր։",
+      "payments": "Վճարային համակարգերի և առցանց վճարումների կարգավորում Hostpanel-ում։",
+      "servers": "Սերվերների միացում, SSH բանալիների կառավարում և հոսթինգ հաշիվների ստեղծում Hostpanel-ով։",
+      "migration": "Տեղափոխեք ձեր հոսթինգ բիզնեսը Hostpanel և կարդացեք ներմուծման հաշվետվությունը։",
+      "developers": "Hostpanel-ի մշակողի փաստաթղթեր. ճարտարապետություն, տեղային գործարկում, թեստեր և պլագիններ։",
+      "api-reference": "Hostpanel-ի REST API տեղեկատու. նույնականացում, սխալներ, լեզուներ, հարցումների սահմանափակումներ և բոլոր endpoint-ները։",
+      "changelog": "Ինչ է փոխվել Hostpanel-ի յուրաքանչյուր թողարկման մեջ։"
+    },
+    "sectionKeywords": {
+      "get-started": ["hostpanel", "հոսթինգի կառավարման վահանակ", "բաց կոդ", "արագ մեկնարկ"],
+      "operators": ["hostpanel", "տեղադրում", "թարմացում", "պահուստավորում", "կարգավորում"],
+      "staff": ["hostpanel", "հոսթինգի հաշվարկ", "ադմինի ուղեցույց", "աջակցության հայտեր"],
+      "customers": ["hostpanel", "հաճախորդի պորտալ", "հոսթինգ հաշիվ", "հաշիվ-ապրանքագրեր"],
+      "payments": ["hostpanel", "վճարային համակարգեր", "առցանց վճարումներ", "հաշվարկ"],
+      "servers": ["hostpanel", "սերվերների կառավարում", "ssh բանալիներ", "պրովիժնինգ"],
+      "migration": ["hostpanel", "միգրացիա", "տվյալների ներմուծում", "հոսթինգի հաշվարկ"],
+      "developers": ["hostpanel", "մշակողի ուղեցույց", "պլագիններ", "բաց կոդ"],
+      "api-reference": ["hostpanel", "rest api", "api տեղեկատու", "openapi"],
+      "changelog": ["hostpanel", "փոփոխությունների պատմություն", "թողարկման նշումներ"]
+    },
+    "defaultKeywords": ["hostpanel", "հոսթինգի կառավարման վահանակ", "վեբ հոսթինգի հաշվարկ", "բաց կոդ"]
+  },
+  "fallback": {
+    "title": "Այս էջը դեռ թարգմանված չէ",
+    "message": "Այս էջը դեռ թարգմանված չէ ձեր լեզվով։ Ստորև ներկայացված է անգլերեն տեքստը։",
+    "original": "Բացել էջի բնօրինակը"
+  }
+}

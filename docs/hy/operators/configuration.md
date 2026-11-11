@@ -81,6 +81,7 @@ Orders__NumberPrefix (override)   → Orders__NumberPrefix (no rename)
   { name: 'ASPNETCORE_ENVIRONMENT', type: 'string', default: 'Development', description: 'Գործարկման ռեժիմը՝ Production կամ Development։ Development-ը նաև գործարկում է DevDataSeeder-ը, որը յուրաքանչյուր վերագործարկման ժամանակ նորից լցնում է թեստային տվյալները։ Սերվերը պետք է օգտագործի Production։ Պարտադիր է hub-ում և prod-ում։ Մակարդակներ՝ hub, prod, dev։' },
   { name: 'AUTH_APP_NAME', type: 'string', default: 'hostpanel', description: 'Նույնականացման շերտում գրանցված հավելվածի անունը (cookie-ների և հաճախորդի անվանում)։ Մակարդակներ՝ hub, prod, dev։' },
   { name: 'DISABLE_RELEASE_UPDATE_CHECKS', type: 'flag', default: 'false', description: 'Սահմանեք true՝ GitHub-ում նոր թողարկման օրական ստուգումն անջատելու համար։ Անջատեք, երբ տեղադրումը դուրս գնացող ինտերնետ հասանելիություն չունի։ Համապատասխանում է ScheduledJobs__DisableReleaseUpdateChecks-ին։ Մակարդակներ՝ hub, prod։' },
+  { name: 'DISABLE_EXCHANGE_RATE_UPDATES', type: 'flag', default: 'false', description: 'Սահմանեք true՝ արժույթների փոխարժեքների օրական թարմացումն (03:00 UTC) անջատելու համար։ Անջատեք, երբ տեղադրումը դուրս գնացող ինտերնետ հասանելիություն չունի․ այդ դեպքում փոխարժեքները փոխվում են միայն ձեռքով կամ «Թարմացնել փոխարժեքները» կոճակով։ Համապատասխանում է ScheduledJobs__DisableExchangeRateUpdates-ին։ Մակարդակներ՝ hub, prod։' },
 ]" />
 
 ## Մուտքի ռեժիմներ {#sign-in-modes}

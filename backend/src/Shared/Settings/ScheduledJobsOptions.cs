@@ -13,6 +13,13 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     /// <summary>The configuration section these options bind from.</summary>
     public const string SectionName = "ScheduledJobs";
 
+    /// <summary>
+    /// UTC hour (0-23) of the daily exchange rate update. Earlier than the other daily jobs, so the jobs of
+    /// the day find the rates already refreshed.
+    /// </summary>
+    [Range(0, 23)]
+    public int UpdateExchangeRatesHour { get; init; } = 3;
+
     /// <summary>UTC hour (0-23) of the daily sync of domain TLD cost prices.</summary>
     [Range(0, 23)]
     public int SyncTldCostPricesHour { get; init; } = 4;
@@ -59,6 +66,13 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     /// internet access.
     /// </summary>
     public bool DisableReleaseUpdateChecks { get; init; }
+
+    /// <summary>
+    /// When <see langword="true"/>, the daily exchange rate update is skipped entirely and no outbound
+    /// request is made to the rate source. Set this for installations that have no outbound internet
+    /// access; the rates then change only by hand or from the admin panel's update button.
+    /// </summary>
+    public bool DisableExchangeRateUpdates { get; init; }
 
     /// <summary>Minutes between the end of one gateway payment reconciliation and the start of the next.</summary>
     [Range(1, 1440)]
@@ -181,6 +195,9 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     /// <summary>Seconds waited between two attempts to schedule a job's next run.</summary>
     [Range(0, 600)]
     public int ScheduleRetryDelaySeconds { get; init; } = 5;
+
+    /// <summary>Gets the schedule of the exchange rate update.</summary>
+    public JobSchedule UpdateExchangeRates => JobSchedule.Daily(UpdateExchangeRatesHour);
 
     /// <summary>Gets the schedule of the TLD cost price sync.</summary>
     public JobSchedule SyncTldCostPrices => JobSchedule.Daily(SyncTldCostPricesHour);

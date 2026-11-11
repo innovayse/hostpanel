@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
 
@@ -100,23 +99,6 @@ public sealed class ClientGroup : BaseEntity, IAggregateRoot
         Description = description;
         DiscountPercent = discountPercent;
         Color = color.ToUpperInvariant();
-    }
-
-    /// <summary>
-    /// Takes a group's discount off a list price, rounded to the currency's minor unit. The one place the
-    /// discount of a client group becomes an amount, so an order line and its invoice line always agree.
-    /// </summary>
-    /// <param name="listPrice">The price before the discount, in <paramref name="currency"/>.</param>
-    /// <param name="discountPercent">The discount in percent, from 0 to <see cref="MaxDiscountPercent"/>.</param>
-    /// <param name="currency">ISO 4217 alpha code the price is in.</param>
-    /// <returns>The price after the discount.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">The discount is outside 0 to <see cref="MaxDiscountPercent"/>.</exception>
-    public static decimal PriceAfterDiscount(decimal listPrice, decimal discountPercent, string currency)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(discountPercent);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(discountPercent, MaxDiscountPercent);
-
-        return CurrencyCode.RoundToMinorUnits(listPrice * (1m - (discountPercent / MaxDiscountPercent)), currency);
     }
 
     /// <summary>

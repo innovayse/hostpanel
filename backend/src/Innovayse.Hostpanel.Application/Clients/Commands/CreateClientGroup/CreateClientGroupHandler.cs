@@ -22,7 +22,9 @@ public sealed class CreateClientGroupHandler
     /// <summary>Handles the command.</summary>
     /// <param name="cmd">The group's fields.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Success with the new group's id, or <c>CLIENT_GROUP_NAME_ALREADY_EXISTS</c> when another group has the name.</returns>
+    /// <returns>
+    /// Success with the new group's id, or <c>CLIENT_GROUP_NAME_ALREADY_EXISTS</c> when another group has the name.
+    /// </returns>
     public async Task<Result<int>> HandleAsync(CreateClientGroupCommand cmd, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(cmd);

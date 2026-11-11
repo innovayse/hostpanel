@@ -33,7 +33,12 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
         {
             var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
             result = await bus.InvokeAsync<Result<int>>(new CreateOrderInvoiceCommand(
-                clientId, "USD", [new OrderInvoiceItemDto("Starter Hosting", 10m, 1, Snapshot, 0m), new OrderInvoiceItemDto("example.test", 5m, 1, null, 0m)]));
+                clientId,
+                "USD",
+                [
+                    new OrderInvoiceItemDto("Starter Hosting", 10m, 1, Snapshot, 0m),
+                    new OrderInvoiceItemDto("example.test", 5m, 1, null, 0m),
+                ]));
         }
 
         result.IsSuccess.Should().BeTrue();
@@ -74,7 +79,7 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
         invoice.DueDate.Should().BeCloseTo(DateTimeOffset.UtcNow.AddDays(30), TimeSpan.FromMinutes(5));
     }
 
-    /// <summary>A line billed at a discounted price keeps the discount it was given, and the invoice totals the discounted price.</summary>
+    /// <summary>A discounted line keeps its discount, and the invoice totals the discounted price.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task HandleAsync_DiscountedLine_SnapshotsTheDiscountOnTheInvoiceItemAsync()
@@ -86,7 +91,12 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
         {
             var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
             result = await bus.InvokeAsync<Result<int>>(new CreateOrderInvoiceCommand(
-                clientId, "USD", [new OrderInvoiceItemDto("Starter Hosting", 7.5m, 1, Snapshot, 25m), new OrderInvoiceItemDto("example.test", 5m, 1, null, 0m)]));
+                clientId,
+                "USD",
+                [
+                    new OrderInvoiceItemDto("Starter Hosting", 7.5m, 1, Snapshot, 25m),
+                    new OrderInvoiceItemDto("example.test", 5m, 1, null, 0m),
+                ]));
         }
 
         result.IsSuccess.Should().BeTrue();

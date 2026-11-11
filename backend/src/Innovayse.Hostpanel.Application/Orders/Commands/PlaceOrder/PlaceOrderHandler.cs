@@ -19,6 +19,7 @@ using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Queries.GetOrderableProducts;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Innovayse.Hostpanel.Domain.Orders;
@@ -283,7 +284,10 @@ public sealed class PlaceOrderHandler
 
         // Raised before the order is saved: an invoice whose order then fails to save is cancelled
         // below, while an order saved without its invoice was a Pending order nobody could pay.
-        var invoiceItems = lines.Select(line => new OrderInvoiceItemDto(DescribeLine(line), line.Price, 1, line.Snapshot, line.DiscountPercent)).ToList();
+        var invoiceItems = lines
+            .Select(line => new OrderInvoiceItemDto(
+                DescribeLine(line), line.Price, 1, line.Snapshot, line.DiscountPercent))
+            .ToList();
         var invoice = await _bus.InvokeAsync<Result<int>>(
             new CreateOrderInvoiceCommand(clientId.Value, currency.Value!, invoiceItems), ct);
         if (invoice.IsFailure)
@@ -381,7 +385,10 @@ public sealed class PlaceOrderHandler
     /// <param name="clientId">The ordering client.</param>
     /// <param name="currencyCode">ISO 4217 alpha code the order bills in.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The lines unchanged when the client's group gives no discount; otherwise the product lines at their discounted price, carrying the percent.</returns>
+    /// <returns>
+    /// The lines unchanged when the client's group gives no discount; otherwise the product lines at their discounted
+    /// price, carrying the percent.
+    /// </returns>
     private async Task<IReadOnlyList<PricedOrderLine>> ApplyClientGroupDiscountAsync(
         IReadOnlyList<PricedOrderLine> lines, int clientId, string currencyCode, CancellationToken ct)
     {
@@ -395,7 +402,7 @@ public sealed class PlaceOrderHandler
             .Select(line => line.Item.DomainAction is null
                 ? line with
                 {
-                    Price = ClientGroup.PriceAfterDiscount(line.Price, discountPercent, currencyCode),
+                    Price = InvoiceItem.PriceAfterDiscount(line.Price, discountPercent, currencyCode),
                     DiscountPercent = discountPercent,
                 }
                 : line)

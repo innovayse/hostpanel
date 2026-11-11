@@ -1031,8 +1031,9 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>
-    /// An existing client in a group with a discount is billed the discounted price: the order line, the invoice line, the
-    /// total the checkout answers and the recurring amount of the service all carry it, and the invoice line keeps the percent.
+    /// An existing client in a group with a discount is billed the discounted price: the order line, the invoice
+    /// line, the total the checkout answers and the recurring amount of the service all carry it, and the invoice
+    /// line keeps the percent.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -1068,7 +1069,8 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     }
 
     /// <summary>
-    /// Changing a group's discount leaves the invoice already raised as it was billed: the discount is a snapshot on the
+    /// Changing a group's discount leaves the invoice already raised as it was billed: the discount is a snapshot on
+    /// the
     /// invoice line.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
@@ -1102,7 +1104,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         invoice.Total.Should().Be(30m);
     }
 
-    /// <summary>A guest's new client joins the default group, and the discount of that group is already on their first order.</summary>
+    /// <summary>A guest's new client joins the default group, whose discount is already on their first order.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task GuestCheckoutIsBilledTheDefaultGroupsDiscount()

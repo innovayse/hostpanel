@@ -8,8 +8,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Persistence.Configurations;
 public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
 {
     /// <summary>
-    /// The foreign key from a client to its group. Named so the context can tell a group deleted while a client joins it
-    /// (a violation of this key) from any other failure.
+    /// The foreign key from a client to its group. Named so the context can tell a group deleted while a client
+    /// joins it (a violation of this key) from any other failure.
     /// </summary>
     public const string ClientGroupForeignKey = "FK_Clients_ClientGroups_ClientGroupId";
 

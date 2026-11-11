@@ -520,8 +520,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             ConstraintName: ClientGroupConfiguration.NameIndex,
         })
         {
-            // Two groups were saved under one name at once, or a rename took a name another group has: the same lost race
-            // as a concurrent save. The create and update handlers answer it as CLIENT_GROUP_NAME_ALREADY_EXISTS.
+            // Two groups were saved under one name at once, or a rename took a name another group has: the same
+            // lost race as a concurrent save. The create and update handlers answer it as
+            // CLIENT_GROUP_NAME_ALREADY_EXISTS.
             throw new ConcurrencyConflictException(
                 "Another client group already has the same name.", ex);
         }
@@ -531,8 +532,8 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             ConstraintName: ClientConfiguration.ClientGroupForeignKey,
         })
         {
-            // A client joined a group while it was being deleted, or was saved into a group deleted a moment before: the
-            // same lost race as a concurrent save. The delete handler answers it as CLIENT_GROUP_IN_USE.
+            // A client joined a group while it was being deleted, or was saved into a group deleted a moment
+            // before: the same lost race as a concurrent save. The delete handler answers it as CLIENT_GROUP_IN_USE.
             throw new ConcurrencyConflictException(
                 "A client and its client group were saved against each other concurrently.", ex);
         }

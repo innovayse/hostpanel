@@ -42,7 +42,11 @@ public sealed class CreateOrderInvoiceHandler
         foreach (var item in cmd.Items)
         {
             invoice.AddItem(
-                item.Description, item.UnitPrice, item.Quantity, productSnapshot: item.ProductSnapshot, discountPercent: item.DiscountPercent);
+                item.Description,
+                item.UnitPrice,
+                item.Quantity,
+                productSnapshot: item.ProductSnapshot,
+                discountPercent: item.DiscountPercent);
         }
 
         _context.Invoices.Add(invoice);

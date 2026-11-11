@@ -76,7 +76,7 @@ public sealed class CreateClientGroupTests(IntegrationTestFactory factory) : ICl
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
-    /// <summary>A name another group already has is refused with 409 and the code, and no second group is stored.</summary>
+    /// <summary>A name another group already has is refused with 409, and no second group is kept.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Create_RefusesAnExistingName()

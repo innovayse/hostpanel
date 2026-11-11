@@ -104,7 +104,7 @@ public sealed class InvoiceItemTests
         Assert.Equal(0m, invoice.Items.Single().DiscountPercent);
     }
 
-    /// <summary>The line keeps the discount it was billed with, next to the discounted price it was billed at.</summary>
+    /// <summary>The line keeps the discount it was billed with, beside the discounted price it was billed at.</summary>
     [Fact]
     public void AddItem_WithADiscount_KeepsItAsTheSnapshot()
     {
@@ -143,7 +143,7 @@ public sealed class InvoiceItemTests
         Assert.Equal(25m, invoice.Items.Single().DiscountPercent);
     }
 
-    /// <summary>A duplicate is the same charges billed again, so each line keeps its discount and is not discounted twice.</summary>
+    /// <summary>A duplicate carries each line's discount across and discounts nothing twice.</summary>
     [Fact]
     public void Duplicate_CarriesTheDiscountAcrossWithoutDiscountingAgain()
     {
@@ -155,5 +155,36 @@ public sealed class InvoiceItemTests
         var item = copy.Items.Single();
         Assert.Equal(25m, item.DiscountPercent);
         Assert.Equal(30m, item.UnitPrice);
+    }
+
+    /// <summary>The discount comes off the list price and the result is rounded to the currency's minor unit.</summary>
+    /// <param name="listPrice">The price before the discount.</param>
+    /// <param name="discountPercent">The discount in percent.</param>
+    /// <param name="currency">The currency of the price.</param>
+    /// <param name="expected">The price after the discount.</param>
+    [Theory]
+    [InlineData(40, 25, "USD", 30)]
+    [InlineData(19.99, 15, "USD", 16.99)]
+    [InlineData(100, 0, "USD", 100)]
+    [InlineData(100, 100, "USD", 0)]
+    [InlineData(999, 10, "JPY", 899)]
+    public void PriceAfterDiscount_TakesThePercentOffAndRoundsToTheMinorUnit(
+        double listPrice, double discountPercent, string currency, double expected)
+    {
+        var price = InvoiceItem.PriceAfterDiscount((decimal)listPrice, (decimal)discountPercent, currency);
+
+        price.Should().Be((decimal)expected);
+    }
+
+    /// <summary>A discount outside 0 to 100 percent is refused, so a price can never grow or turn negative.</summary>
+    /// <param name="discountPercent">A discount outside the range.</param>
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(100.01)]
+    public void PriceAfterDiscount_RefusesADiscountOutsideTheRange(double discountPercent)
+    {
+        var act = () => InvoiceItem.PriceAfterDiscount(10m, (decimal)discountPercent, "USD");
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
     }
 }

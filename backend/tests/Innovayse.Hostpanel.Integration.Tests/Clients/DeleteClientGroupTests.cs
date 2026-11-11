@@ -66,7 +66,8 @@ public sealed class DeleteClientGroupTests(IntegrationTestFactory factory) : ICl
     }
 
     /// <summary>
-    /// A client that joins a group after the delete use case checked for members is refused by the foreign key, and the context
+    /// A client that joins a group after the delete use case checked for members is refused by the foreign key, and the
+    /// context
     /// reports it as the persistence-agnostic conflict the delete handler answers as <c>CLIENT_GROUP_IN_USE</c>.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>

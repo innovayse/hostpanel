@@ -27,7 +27,8 @@ public sealed class ClientGroupConfiguration : IEntityTypeConfiguration<ClientGr
         builder.Property(x => x.Color).IsRequired().HasMaxLength(ClientGroup.ColorLength);
         builder.Property(x => x.IsDefault).IsRequired();
 
-        // Two groups with one name cannot be told apart in the admin lists and filters, so the database refuses the second.
+        // Two groups with one name cannot be told apart in the admin lists and filters, so the database refuses
+        // the second.
         builder.HasIndex(x => x.Name, NameIndex).IsUnique();
 
         // At most one group is the default, for every writer: the domain clears the flag on the others

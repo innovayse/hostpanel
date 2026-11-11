@@ -6,8 +6,9 @@ namespace Innovayse.Hostpanel.Application.Clients.Extensions;
 
 /// <summary>
 /// Lookups over the client groups that more than one use case needs: whether the group an id points at
-/// exists, which group new clients join, and the discount a client's group gives. A handler that stores a group id checks it here before saving, so a
-/// missing group is refused with <c>CLIENT_GROUP_NOT_FOUND</c> instead of surfacing as a failed save.
+/// exists, which group new clients join, and the discount a client's group gives. A handler that stores a group id
+/// checks it here before saving, so a missing group is refused with <c>CLIENT_GROUP_NOT_FOUND</c> instead of
+/// surfacing as a failed save.
 /// </summary>
 public static class ClientGroupLookupExtensions
 {

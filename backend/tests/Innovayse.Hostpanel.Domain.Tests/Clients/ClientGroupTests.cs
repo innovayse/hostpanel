@@ -140,33 +140,4 @@ public class ClientGroupTests
         ClientGroup.IsValidColor("#abcDEF").Should().BeTrue();
         ClientGroup.IsValidColor(null).Should().BeFalse();
     }
-
-    /// <summary>The discount is taken off the list price and the result is rounded to the currency's minor unit.</summary>
-    /// <param name="listPrice">The price before the discount.</param>
-    /// <param name="discountPercent">The discount in percent.</param>
-    /// <param name="currency">The currency of the price.</param>
-    /// <param name="expected">The price after the discount.</param>
-    [Theory]
-    [InlineData(40, 25, "USD", 30)]
-    [InlineData(19.99, 15, "USD", 16.99)]
-    [InlineData(100, 0, "USD", 100)]
-    [InlineData(100, 100, "USD", 0)]
-    [InlineData(999, 10, "JPY", 899)]
-    public void PriceAfterDiscount_TakesThePercentOffAndRoundsToTheMinorUnit(
-        double listPrice, double discountPercent, string currency, double expected)
-    {
-        ClientGroup.PriceAfterDiscount((decimal)listPrice, (decimal)discountPercent, currency).Should().Be((decimal)expected);
-    }
-
-    /// <summary>A discount outside 0 to 100 percent is refused, so a price can never grow or turn negative.</summary>
-    /// <param name="discountPercent">A discount outside the range.</param>
-    [Theory]
-    [InlineData(-1)]
-    [InlineData(100.01)]
-    public void PriceAfterDiscount_RefusesADiscountOutsideTheRange(double discountPercent)
-    {
-        var act = () => ClientGroup.PriceAfterDiscount(10m, (decimal)discountPercent, "USD");
-
-        act.Should().Throw<ArgumentOutOfRangeException>();
-    }
 }

@@ -565,12 +565,17 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// </param>
     /// <exception cref="DomainRuleException">Thrown when the invoice is no longer editable.</exception>
     public void AddItem(
-        string description, decimal unitPrice, int quantity, int? clientServiceId = null, ProductSnapshot? productSnapshot = null,
+        string description,
+        decimal unitPrice,
+        int quantity,
+        int? clientServiceId = null,
+        ProductSnapshot? productSnapshot = null,
         decimal discountPercent = 0m)
     {
         EnsureEditable();
 
-        var item = InvoiceItem.Create(description, unitPrice, quantity, clientServiceId, productSnapshot, discountPercent);
+        var item = InvoiceItem.Create(
+            description, unitPrice, quantity, clientServiceId, productSnapshot, discountPercent);
         _items.Add(item);
         RecalculateTotals();
     }
@@ -1421,7 +1426,8 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     /// again, so a line that was for a service is still for that service and sells what it sold;
     /// dropping the link here would quietly hide the copy from the service it belongs to, and
     /// dropping the snapshot would leave a paid digital copy with nothing to fulfil. It also carries each line's
-    /// <see cref="InvoiceItem.DiscountPercent"/> with the already discounted price, so the copy is not discounted twice.
+    /// <see cref="InvoiceItem.DiscountPercent"/> with the already discounted price, so the copy is not discounted
+    /// twice.
     /// </remarks>
     /// <param name="issuedAt">When the copy is issued (UTC).</param>
     /// <returns>A new Draft invoice with the same client, due date, currency and lines.</returns>
@@ -1440,7 +1446,13 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         // AddItem, never a renewal factory: a copy is not a renewal, and paying it must extend nothing.
         foreach (var item in _items)
         {
-            copy.AddItem(item.Description, item.UnitPrice, item.Quantity, item.ClientServiceId, item.ProductSnapshot, item.DiscountPercent);
+            copy.AddItem(
+                item.Description,
+                item.UnitPrice,
+                item.Quantity,
+                item.ClientServiceId,
+                item.ProductSnapshot,
+                item.DiscountPercent);
         }
         return copy;
     }

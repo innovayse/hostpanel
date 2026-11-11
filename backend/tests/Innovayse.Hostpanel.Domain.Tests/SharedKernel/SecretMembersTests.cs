@@ -83,4 +83,33 @@ public sealed class SecretMembersTests
 
         SecretMembers.IsSecret(info).Should().Be(expected);
     }
+
+    /// <summary>Every secret text is replaced by the mask wherever it appears, and plain members stay readable.</summary>
+    [Fact]
+    public void Conceal_ReplacesEverySecretOccurrenceAndKeepsPlainText()
+    {
+        var probe = new SecretProbe("alice", "hunter2-password", "tok-12345", false);
+
+        var concealed = SecretMembers.Conceal("alice: hunter2-password and tok-12345, again tok-12345.", probe);
+
+        concealed.Should().Be("alice: *** and ***, again ***.");
+    }
+
+    /// <summary>A secret is also found as an HTML template engine writes it, so a rendered body is covered.</summary>
+    [Fact]
+    public void Conceal_FindsTheHtmlEncodedForm()
+    {
+        var probe = new SecretProbe("alice", "a&b<c", null, false);
+
+        SecretMembers.Conceal("<a href=\"x?p=a&amp;b&lt;c\">link</a>", probe).Should().Be("<a href=\"x?p=***\">link</a>");
+    }
+
+    /// <summary>An unset or empty secret changes nothing, and the text is returned as it is.</summary>
+    [Fact]
+    public void Conceal_WithNoSecretValue_ReturnsTheTextUnchanged()
+    {
+        var probe = new SecretProbe("alice", string.Empty, null, true);
+
+        SecretMembers.Conceal("nothing to hide", probe).Should().Be("nothing to hide");
+    }
 }

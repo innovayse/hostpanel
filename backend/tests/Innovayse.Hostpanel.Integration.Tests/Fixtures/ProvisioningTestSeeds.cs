@@ -214,6 +214,20 @@ public static class ProvisioningTestSeeds
     {
         var (client, product) = await SeedClientAndProductAsync(context);
 
+        var server = await SeedServerAsync(context);
+
+        var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, "provisioning-ref-1", DateTimeOffset.UtcNow, server.Id);
+        await context.SaveChangesAsync(CancellationToken.None);
+
+        return new SeededActiveService(client.Id, server.Id, service.Id);
+    }
+
+    /// <summary>Seeds a CWP7 server a provisioned service can be assigned to.</summary>
+    /// <param name="context">The data context to seed through.</param>
+    /// <returns>The saved server.</returns>
+    public static async Task<Server> SeedServerAsync(IHostpanelDbContext context)
+    {
         var server = Server.Create(new ServerDetails(
             Name: $"srv-{Guid.NewGuid():N}",
             Hostname: "srv.example.test",
@@ -233,11 +247,7 @@ public static class ProvisioningTestSeeds
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, "provisioning-ref-1", DateTimeOffset.UtcNow, server.Id);
-        await context.SaveChangesAsync(CancellationToken.None);
-
-        return new SeededActiveService(client.Id, server.Id, service.Id);
+        return server;
     }
 
     /// <summary>Seeds a client and a hosting service that has no server assigned.</summary>

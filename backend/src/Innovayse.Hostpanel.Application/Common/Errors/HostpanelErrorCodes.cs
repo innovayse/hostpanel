@@ -136,6 +136,12 @@ public static class HostpanelErrorCodes
     /// <summary>The id names no client (404).</summary>
     public const string CLIENT_NOT_FOUND = "CLIENT_NOT_FOUND";
 
+    /// <summary>The id names no client group (404).</summary>
+    public const string CLIENT_GROUP_NOT_FOUND = "CLIENT_GROUP_NOT_FOUND";
+
+    /// <summary>The client group still has clients, so it cannot be deleted (409).</summary>
+    public const string CLIENT_GROUP_IN_USE = "CLIENT_GROUP_IN_USE";
+
     /// <summary>The requested bulk action name is not one this endpoint knows (400).</summary>
     public const string BULK_INVOICE_ACTION_UNKNOWN = "BULK_INVOICE_ACTION_UNKNOWN";
 
@@ -610,6 +616,30 @@ public static class HostpanelErrorCodes
 
     /// <summary>The id names no cancellation request (404).</summary>
     public const string CANCELLATION_REQUEST_NOT_FOUND = "CANCELLATION_REQUEST_NOT_FOUND";
+
+    /// <summary>The id names no plan change request (404).</summary>
+    public const string SERVICE_CHANGE_REQUEST_NOT_FOUND = "SERVICE_CHANGE_REQUEST_NOT_FOUND";
+
+    /// <summary>An open plan change request already exists for the service (409).</summary>
+    public const string SERVICE_CHANGE_ALREADY_PENDING = "SERVICE_CHANGE_ALREADY_PENDING";
+
+    /// <summary>The plan asked for is the plan the service already runs on (400).</summary>
+    public const string SERVICE_CHANGE_SAME_PRODUCT = "SERVICE_CHANGE_SAME_PRODUCT";
+
+    /// <summary>The plan asked for costs the same as the current one, so there is nothing to change or prorate (400).</summary>
+    public const string SERVICE_CHANGE_SAME_PRICE = "SERVICE_CHANGE_SAME_PRICE";
+
+    /// <summary>The plan asked for is not active, or belongs to another product group than the service (400).</summary>
+    public const string SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE = "SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE";
+
+    /// <summary>The plan asked for has no price for the service's billing cycle in the client's currency (400).</summary>
+    public const string SERVICE_CHANGE_PRICE_UNAVAILABLE = "SERVICE_CHANGE_PRICE_UNAVAILABLE";
+
+    /// <summary>The proration invoice of an upgrade is not paid yet, so the plan cannot change (402).</summary>
+    public const string SERVICE_CHANGE_INVOICE_UNPAID = "SERVICE_CHANGE_INVOICE_UNPAID";
+
+    /// <summary>The service has no renewal date, so the rest of its billing cycle cannot be prorated (400).</summary>
+    public const string SERVICE_CHANGE_NO_RENEWAL_DATE = "SERVICE_CHANGE_NO_RENEWAL_DATE";
 
     /// <summary>The id names no product (404).</summary>
     public const string PRODUCT_NOT_FOUND = "PRODUCT_NOT_FOUND";
@@ -1090,6 +1120,15 @@ public static class HostpanelErrorCodes
     /// <summary>The id names no testimonial (404).</summary>
     public const string TESTIMONIAL_NOT_FOUND = "TESTIMONIAL_NOT_FOUND";
 
+    /// <summary>The group id names no status page group (404).</summary>
+    public const string STATUS_COMPONENT_GROUP_NOT_FOUND = "STATUS_COMPONENT_GROUP_NOT_FOUND";
+
+    /// <summary>The id names no status page component (404).</summary>
+    public const string STATUS_COMPONENT_NOT_FOUND = "STATUS_COMPONENT_NOT_FOUND";
+
+    /// <summary>The id names no status page incident (404).</summary>
+    public const string STATUS_INCIDENT_NOT_FOUND = "STATUS_INCIDENT_NOT_FOUND";
+
     /// <summary>The id names no partner (404).</summary>
     public const string PARTNER_NOT_FOUND = "PARTNER_NOT_FOUND";
 
@@ -1416,6 +1455,12 @@ public static class HostpanelErrorCodes
     /// </summary>
     public const string CLIENT_TAX_EXEMPT = Domain.Clients.ClientsErrors.ClientTaxExempt;
 
+    /// <summary>The discount of a client group is outside 0 to 100 percent (400).</summary>
+    public const string CLIENT_GROUP_DISCOUNT_INVALID = Domain.Clients.ClientsErrors.ClientGroupDiscountInvalid;
+
+    /// <summary>The colour of a client group is not <c>#RRGGBB</c> (400).</summary>
+    public const string CLIENT_GROUP_COLOR_INVALID = Domain.Clients.ClientsErrors.ClientGroupColorInvalid;
+
     /// <summary>
     /// The account owner cannot be removed as an additional user (409, an exact <c>StatusMapping</c> row):
     /// <see cref="Domain.Clients.Client.RemoveUser"/>.
@@ -1560,6 +1605,9 @@ public static class HostpanelErrorCodes
     /// <summary>The service is not terminated, so it has no termination date to correct (409), from <see cref="Domain.Services.ClientService.CorrectTerminationDate"/>.</summary>
     public const string SERVICE_NOT_TERMINATED = Domain.Services.ServicesErrors.ServiceNotTerminated;
 
+    /// <summary>The plan change request is not in the status the move needs, or the service moved off its plan since the request (409): <see cref="Domain.Services.ServiceChangeRequest"/>.</summary>
+    public const string SERVICE_CHANGE_INVALID_STATE = Domain.Services.ServicesErrors.ServiceChangeInvalidState;
+
     /// <summary>A closed ticket does not accept new replies (400): <see cref="Domain.Support.Ticket.AddReply"/>.</summary>
     public const string TICKET_REPLY_NOT_ALLOWED = Domain.Support.SupportErrors.TicketReplyNotAllowed;
 
@@ -1568,6 +1616,33 @@ public static class HostpanelErrorCodes
 
     /// <summary>The sort order of a question is negative (400).</summary>
     public const string FAQ_SORT_ORDER_NEGATIVE = Domain.Faqs.FaqErrors.SortOrderNegative;
+
+    /// <summary>No email campaign with that id exists (404).</summary>
+    public const string CAMPAIGN_NOT_FOUND = "CAMPAIGN_NOT_FOUND";
+
+    /// <summary>The campaign is not a draft, so it cannot be edited, scheduled or deleted (409): <see cref="Domain.Campaigns.EmailCampaign"/>.</summary>
+    public const string CAMPAIGN_NOT_DRAFT = Domain.Campaigns.CampaignErrors.NotDraft;
+
+    /// <summary>The campaign is not scheduled, so its schedule cannot be cancelled and it cannot start sending (409).</summary>
+    public const string CAMPAIGN_NOT_SCHEDULED = Domain.Campaigns.CampaignErrors.NotScheduled;
+
+    /// <summary>The campaign is not being sent, so it cannot gain recipients or be finished (409).</summary>
+    public const string CAMPAIGN_NOT_SENDING = Domain.Campaigns.CampaignErrors.NotSending;
+
+    /// <summary>The campaign has no segment, so it cannot be scheduled (400).</summary>
+    public const string CAMPAIGN_NO_SEGMENT = Domain.Campaigns.CampaignErrors.NoSegment;
+
+    /// <summary>The moment to send a campaign at is not in the future (400).</summary>
+    public const string CAMPAIGN_SCHEDULE_IN_PAST = Domain.Campaigns.CampaignErrors.ScheduleInPast;
+
+    /// <summary>A campaign segment's value does not fit its filter (400).</summary>
+    public const string CAMPAIGN_SEGMENT_VALUE_INVALID = Domain.Campaigns.CampaignErrors.SegmentValueInvalid;
+
+    /// <summary>The campaign recipient is not waiting for delivery, so its outcome cannot be recorded again (409).</summary>
+    public const string CAMPAIGN_RECIPIENT_NOT_PENDING = Domain.Campaigns.CampaignErrors.RecipientNotPending;
+
+    /// <summary>The token of an unsubscribe link names no campaign recipient (404).</summary>
+    public const string CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND = "CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND";
 
     /// <summary>The sort order of a partner is negative (400).</summary>
     public const string PARTNER_SORT_ORDER_NEGATIVE = Domain.Partners.PartnerErrors.SortOrderNegative;
@@ -1592,6 +1667,21 @@ public static class HostpanelErrorCodes
 
     /// <summary>A testimonial's rating is outside 1 to 5 (400).</summary>
     public const string TESTIMONIAL_RATING_OUT_OF_RANGE = Domain.Testimonials.TestimonialErrors.RatingOutOfRange;
+
+    /// <summary>A status page group or component has no name (400).</summary>
+    public const string STATUS_NAME_REQUIRED = Domain.StatusPage.StatusPageErrors.NameRequired;
+
+    /// <summary>A status page display order is negative (400).</summary>
+    public const string STATUS_DISPLAY_ORDER_NEGATIVE = Domain.StatusPage.StatusPageErrors.DisplayOrderNegative;
+
+    /// <summary>A status page incident has no title (400).</summary>
+    public const string STATUS_INCIDENT_TITLE_REQUIRED = Domain.StatusPage.StatusPageErrors.IncidentTitleRequired;
+
+    /// <summary>A status page incident update has no message (400).</summary>
+    public const string STATUS_INCIDENT_MESSAGE_REQUIRED = Domain.StatusPage.StatusPageErrors.IncidentMessageRequired;
+
+    /// <summary>The status page incident is resolved and takes no more updates (409).</summary>
+    public const string STATUS_INCIDENT_ALREADY_RESOLVED = Domain.StatusPage.StatusPageErrors.IncidentAlreadyResolved;
 
     /// <summary>The refund is more than what was paid and not yet refunded (400): <see cref="Domain.Billing.Invoice.AddRefund"/>.</summary>
     public const string INVOICE_REFUND_EXCEEDS_PAID = Domain.Billing.BillingErrors.InvoiceRefundExceedsPaid;

@@ -11,6 +11,7 @@ import {
   clientTicketNewPath,
   createPath,
   editPath,
+  emailCampaignPath,
   integrationCategoryPath,
   integrationConfigurePath,
   invoiceEditPath,
@@ -72,6 +73,7 @@ describe('route builders', () => {
     expect(transactionEditPath(6)).toBe('/billing/transactions/6/edit')
     expect(orderPath(1)).toBe('/orders/1')
     expect(supportTicketPath(3)).toBe('/support/tickets/3')
+    expect(emailCampaignPath(8)).toBe('/support/email-campaigns/8')
   })
 
   it('builds the integration and report paths', () => {

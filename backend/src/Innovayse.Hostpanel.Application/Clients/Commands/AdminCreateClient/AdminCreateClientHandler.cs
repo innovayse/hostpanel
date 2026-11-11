@@ -83,6 +83,7 @@ public sealed class AdminCreateClientHandler
     /// The new client's id, or <c>IDENTITY_USER_NOT_FOUND</c> when the existing user id names
     /// nobody, <c>EXISTING_USER_ALREADY_HAS_CLIENT</c> when that user already owns a client,
     /// <c>CURRENCY_NOT_FOUND</c> when the requested currency is not configured and enabled here,
+    /// <c>CLIENT_GROUP_NOT_FOUND</c> when the client group id names no group,
     /// <c>ACCOUNT_EMAIL_EXISTS</c> when the new account's address is taken, or
     /// <c>USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT</c> when asked to create a new account where
     /// an external sign-on provider owns the accounts.
@@ -99,6 +100,15 @@ public sealed class AdminCreateClientHandler
         {
             return Result<int>.FailureCode(HostpanelErrorCodes.CURRENCY_NOT_FOUND);
         }
+
+        // The group is checked with the currency, before an account exists. A client created without
+        // one joins the default group, when there is one.
+        if (cmd.ClientGroupId is { } requestedGroupId && !await _context.ClientGroupExistsAsync(requestedGroupId, ct))
+        {
+            return Result<int>.FailureCode(HostpanelErrorCodes.CLIENT_GROUP_NOT_FOUND);
+        }
+
+        var clientGroupId = cmd.ClientGroupId ?? await _context.FindDefaultClientGroupIdAsync(ct);
 
         string userId;
         string email;
@@ -153,7 +163,7 @@ public sealed class AdminCreateClientHandler
                 }
             }
 
-            clientId = await SaveClientAsync(cmd, userId, email, cmd.Status ?? ClientStatus.Active, currencyCode, ct);
+            clientId = await SaveClientAsync(cmd, userId, email, cmd.Status ?? ClientStatus.Active, currencyCode, clientGroupId, ct);
 
             // An existing account linked as owner holds no Client role unless it once registered or
             // ordered here, and without it the portal answers 403 to its own client.
@@ -183,10 +193,11 @@ public sealed class AdminCreateClientHandler
     /// <param name="email">The owner's address, stamped on the creation event.</param>
     /// <param name="status">The status to start the client in.</param>
     /// <param name="currencyCode">The upper-case currency code already checked to be on offer, or <see langword="null"/>.</param>
+    /// <param name="clientGroupId">The id of the existing group to put the client in, or <see langword="null"/> for none.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The new client's id.</returns>
     private async Task<int> SaveClientAsync(
-        AdminCreateClientCommand cmd, string userId, string email, ClientStatus status, string? currencyCode, CancellationToken ct)
+        AdminCreateClientCommand cmd, string userId, string email, ClientStatus status, string? currencyCode, int? clientGroupId, CancellationToken ct)
     {
         var client = Client.Create(userId, cmd.FirstName, cmd.LastName, email, _clock.UtcNow, cmd.CompanyName);
 
@@ -198,6 +209,11 @@ public sealed class AdminCreateClientHandler
         if (currencyCode is not null)
         {
             client.SetCurrency(currencyCode);
+        }
+
+        if (clientGroupId is { } groupId)
+        {
+            client.AssignToGroup(groupId);
         }
 
         // A group the body leaves out keeps the defaults Client.Create starts with.

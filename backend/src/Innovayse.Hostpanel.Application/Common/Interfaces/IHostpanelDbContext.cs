@@ -2,6 +2,7 @@ using Innovayse.Hostpanel.Domain.Admin;
 using Innovayse.Hostpanel.Domain.Audit;
 using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Campaigns;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Faqs;
@@ -20,6 +21,7 @@ using Innovayse.Hostpanel.Domain.Settings;
 using Innovayse.Hostpanel.Domain.Slides;
 using Innovayse.Hostpanel.Domain.Ssh;
 using Innovayse.Hostpanel.Domain.Ssl;
+using Innovayse.Hostpanel.Domain.StatusPage;
 using Innovayse.Hostpanel.Domain.Support;
 using Innovayse.Hostpanel.Domain.Testimonials;
 using Microsoft.EntityFrameworkCore;
@@ -57,6 +59,9 @@ public interface IHostpanelDbContext
     /// <summary>Gets the clients table.</summary>
     public DbSet<Client> Clients { get; }
 
+    /// <summary>Gets the client groups table.</summary>
+    public DbSet<ClientGroup> ClientGroups { get; }
+
     /// <summary>Gets the contacts table.</summary>
     public DbSet<Contact> Contacts { get; }
 
@@ -80,6 +85,9 @@ public interface IHostpanelDbContext
 
     /// <summary>Gets the cancellation requests table.</summary>
     public DbSet<CancellationRequest> CancellationRequests { get; }
+
+    /// <summary>Gets the plan change requests table.</summary>
+    public DbSet<ServiceChangeRequest> ServiceChangeRequests { get; }
 
     /// <summary>Gets the domains table.</summary>
     public DbSet<RegisteredDomain> Domains { get; }
@@ -222,6 +230,18 @@ public interface IHostpanelDbContext
     /// <summary>Gets the per-locale translations of the storefront client testimonials.</summary>
     public DbSet<TestimonialTranslation> TestimonialTranslations { get; }
 
+    /// <summary>Gets the public status page's component groups.</summary>
+    public DbSet<StatusComponentGroup> StatusComponentGroups { get; }
+
+    /// <summary>Gets the components the public status page reports on.</summary>
+    public DbSet<StatusComponent> StatusComponents { get; }
+
+    /// <summary>Gets the incidents announced on the public status page.</summary>
+    public DbSet<StatusIncident> StatusIncidents { get; }
+
+    /// <summary>Gets the timeline entries of the status page incidents.</summary>
+    public DbSet<StatusIncidentUpdate> StatusIncidentUpdates { get; }
+
     /// <summary>Gets the storefront partners table.</summary>
     public DbSet<Partner> Partners { get; }
 
@@ -245,6 +265,15 @@ public interface IHostpanelDbContext
 
     /// <summary>Gets the per-locale translations of the storefront frequently asked questions.</summary>
     public DbSet<FaqTranslation> FaqTranslations { get; }
+
+    /// <summary>Gets the marketing email campaigns an admin writes and sends.</summary>
+    public DbSet<EmailCampaign> EmailCampaigns { get; }
+
+    /// <summary>Gets the rules that pick the recipients of each campaign.</summary>
+    public DbSet<EmailCampaignSegment> EmailCampaignSegments { get; }
+
+    /// <summary>Gets the clients each campaign is delivered to, with the outcome of every delivery.</summary>
+    public DbSet<EmailCampaignRecipient> EmailCampaignRecipients { get; }
 
     /// <summary>Gets the values plugins keep in the host-kept plugin store, per plugin and per client reference.</summary>
     public DbSet<PluginDataEntry> PluginDataEntries { get; }

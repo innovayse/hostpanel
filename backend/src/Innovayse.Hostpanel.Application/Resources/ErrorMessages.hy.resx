@@ -1318,4 +1318,94 @@
   <data name="CREDIT_NOTE_REFUND_NOT_VOIDABLE" xml:space="preserve">
     <value>Այս կրեդիտ-նոտան վճարվել է վճարային դարպասի միջոցով վերադարձով։ Վերադարձը հնարավոր չէ հետ վերցնել, ուստի կրեդիտ-նոտան չի կարելի չեղարկել։</value>
   </data>
+  <data name="STATUS_COMPONENT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Կարգավիճակի էջի այդպիսի խումբ չկա։</value>
+  </data>
+  <data name="STATUS_COMPONENT_NOT_FOUND" xml:space="preserve">
+    <value>Կարգավիճակի էջի այդպիսի բաղադրիչ չկա։</value>
+  </data>
+  <data name="STATUS_INCIDENT_NOT_FOUND" xml:space="preserve">
+    <value>Կարգավիճակի էջի այդպիսի միջադեպ չկա։</value>
+  </data>
+  <data name="STATUS_NAME_REQUIRED" xml:space="preserve">
+    <value>Անհրաժեշտ է անուն։</value>
+  </data>
+  <data name="STATUS_DISPLAY_ORDER_NEGATIVE" xml:space="preserve">
+    <value>Ցուցադրման կարգը չի կարող բացասական լինել։</value>
+  </data>
+  <data name="STATUS_INCIDENT_TITLE_REQUIRED" xml:space="preserve">
+    <value>Միջադեպին անհրաժեշտ է վերնագիր։</value>
+  </data>
+  <data name="STATUS_INCIDENT_MESSAGE_REQUIRED" xml:space="preserve">
+    <value>Թարմացմանն անհրաժեշտ է հաղորդագրություն։</value>
+  </data>
+  <data name="STATUS_INCIDENT_ALREADY_RESOLVED" xml:space="preserve">
+    <value>Միջադեպը լուծված է և այլևս թարմացումներ չի ընդունում։</value>
+  </data>
+  <data name="CLIENT_GROUP_NOT_FOUND" xml:space="preserve">
+    <value>Այդպիսի հաճախորդների խումբ չկա։</value>
+  </data>
+  <data name="CLIENT_GROUP_IN_USE" xml:space="preserve">
+    <value>Այս խմբում դեռ հաճախորդներ կան։ Նախ տեղափոխեք նրանց մեկ այլ խումբ։</value>
+  </data>
+  <data name="CLIENT_GROUP_DISCOUNT_INVALID" xml:space="preserve">
+    <value>Զեղչը պետք է լինի 0-ից 100 տոկոս։</value>
+  </data>
+  <data name="CLIENT_GROUP_COLOR_INVALID" xml:space="preserve">
+    <value>Գույնը պետք է գրվի #RRGGBB ձևաչափով։</value>
+  </data>
+  <data name="SERVICE_CHANGE_REQUEST_NOT_FOUND" xml:space="preserve">
+    <value>Պլանի փոփոխության այդպիսի հայտ չի գտնվել։</value>
+  </data>
+  <data name="SERVICE_CHANGE_ALREADY_PENDING" xml:space="preserve">
+    <value>Այս ծառայության համար արդեն կա սպասող պլանի փոփոխության հայտ։</value>
+  </data>
+  <data name="SERVICE_CHANGE_SAME_PRODUCT" xml:space="preserve">
+    <value>Ծառայությունն արդեն աշխատում է այս պլանով։</value>
+  </data>
+  <data name="SERVICE_CHANGE_SAME_PRICE" xml:space="preserve">
+    <value>Այս պլանի գինը նույնն է, ինչ ընթացիկինը, փոփոխելու բան չկա։</value>
+  </data>
+  <data name="SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE" xml:space="preserve">
+    <value>Այս պլանը հասանելի չէ այս ծառայության համար։</value>
+  </data>
+  <data name="SERVICE_CHANGE_PRICE_UNAVAILABLE" xml:space="preserve">
+    <value>Այս պլանի համար չկա գին ծառայության վճարման ժամանակահատվածի և ձեր արժույթի համար։</value>
+  </data>
+  <data name="SERVICE_CHANGE_NO_RENEWAL_DATE" xml:space="preserve">
+    <value>Ծառայությունը վերանորոգման ամսաթիվ չունի, ուստի վճարման ժամանակահատվածի ընթացքում պլանը հնարավոր չէ փոխել։</value>
+  </data>
+  <data name="SERVICE_CHANGE_INVALID_STATE" xml:space="preserve">
+    <value>Պլանի փոփոխության հայտը այնպիսի վիճակում է, որում այս գործողությունը հնարավոր չէ։</value>
+  </data>
+  <data name="SERVICE_CHANGE_INVOICE_UNPAID" xml:space="preserve">
+    <value>Պլանի փոփոխության հաշիվը պետք է վճարվի մինչև պլանը փոխվելը։</value>
+  </data>
+  <data name="CAMPAIGN_NOT_FOUND" xml:space="preserve">
+    <value>Այս էլ. փոստի քարոզարշավը գոյություն չունի։</value>
+  </data>
+  <data name="CAMPAIGN_NOT_DRAFT" xml:space="preserve">
+    <value>Խմբագրել, պլանավորել և ջնջել կարելի է միայն քարոզարշավի սևագիրը։</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SCHEDULED" xml:space="preserve">
+    <value>Այս քարոզարշավը պլանավորված չէ։</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SENDING" xml:space="preserve">
+    <value>Այս քարոզարշավն այս պահին չի ուղարկվում։</value>
+  </data>
+  <data name="CAMPAIGN_NO_SEGMENT" xml:space="preserve">
+    <value>Քարոզարշավը պլանավորելուց առաջ ավելացրեք ստացողների առնվազն մեկ սեգմենտ։</value>
+  </data>
+  <data name="CAMPAIGN_SCHEDULE_IN_PAST" xml:space="preserve">
+    <value>Ընտրեք ուղարկման ժամանակը ապագայում։</value>
+  </data>
+  <data name="CAMPAIGN_SEGMENT_VALUE_INVALID" xml:space="preserve">
+    <value>Ստացողների սեգմենտի արժեքը չի համապատասխանում իր ֆիլտրին։</value>
+  </data>
+  <data name="CAMPAIGN_RECIPIENT_NOT_PENDING" xml:space="preserve">
+    <value>Այս ստացողն այլևս չի սպասում առաքման։</value>
+  </data>
+  <data name="CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND" xml:space="preserve">
+    <value>Ապաբաժանորդագրվելու այս հղումը վավեր չէ։</value>
+  </data>
 </root>

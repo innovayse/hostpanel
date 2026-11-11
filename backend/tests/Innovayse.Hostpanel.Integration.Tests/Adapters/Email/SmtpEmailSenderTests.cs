@@ -51,4 +51,24 @@ public sealed class SmtpEmailSenderTests
 
         Assert.Equal(EmailSendFailure.RecipientRejected, result.Failure);
     }
+
+    /// <summary>A marketing message is marked with the <c>List-Unsubscribe</c> header holding its unsubscribe page, and no one-click post header.</summary>
+    [Fact]
+    public void Compose_MessageWithUnsubscribeUrl_CarriesTheListUnsubscribeHeader()
+    {
+        var mime = CreateAgainstClosedPort().Compose(
+            new EmailMessage("someone@example.test", "Subject", "<p>Body</p>", UnsubscribeUrl: "https://portal.example/unsubscribe?token=abc"));
+
+        Assert.Equal("<https://portal.example/unsubscribe?token=abc>", mime.Headers["List-Unsubscribe"]);
+        Assert.Null(mime.Headers["List-Unsubscribe-Post"]);
+    }
+
+    /// <summary>A message that is not marketing carries no list headers.</summary>
+    [Fact]
+    public void Compose_MessageWithoutUnsubscribeUrl_CarriesNoListHeaders()
+    {
+        var mime = CreateAgainstClosedPort().Compose(new EmailMessage("someone@example.test", "Subject", "<p>Body</p>"));
+
+        Assert.Null(mime.Headers["List-Unsubscribe"]);
+    }
 }

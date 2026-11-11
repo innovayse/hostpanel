@@ -51,7 +51,7 @@ repositories. What is specific to this project is short:
   and still returns the token in the body for scripted callers, and `logout` clears the cookie
   through `HandleSessionEnded`. `HealthController` derives from `BaseApiController` with
   `[AllowAnonymous]` like the rest.
-- **Anonymous public storefront feeds.** `/api/public/{faqs,locations,partners,product-groups,products,projects,testimonials}` (like `/api/public/slides` and
+- **Anonymous public storefront feeds.** `/api/public/{faqs,locations,partners,product-groups,products,projects,status,testimonials}` (like `/api/public/slides` and
   `/api/public/demo` before them) are `[AllowAnonymous]` read-only queries: the storefront renders them before anyone has
   signed in, so they cannot carry the usual `[Authorize]` on every action. They stay on `BaseApiController`, dispatch one
   query, return only active, already-localised records and never expose an admin field; writes remain behind `Policies.Admin`.
@@ -68,7 +68,7 @@ repositories. What is specific to this project is short:
 - **Recurring jobs and background handlers return `Task`, not `Result`.** The crons
   (`CheckOverdueInvoicesCron`, `ProcessBillableItemsCron`, `ProcessRenewalsCron`,
   `ReconcileGatewayPaymentsCron`, `SendRenewalRemindersCron`, `SuspendOverdueServicesCron`,
-  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`) and `ResetDemoData`,
+  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`) and `ResetDemoData`,
   `CheckDomainExpiries` and `SyncPendingDomainStatuses` are scheduled messages, not dispatched by a
   caller, so nothing would receive a `Result`. So are `RunMigrationPull` (published by
   `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended; when two
@@ -1463,6 +1463,23 @@ which looks only at invoices that are not `Cancelled` and refuses a target that 
 renewal line, a paid line not yet applied, or a line for the same period. A unique index would need a
 filter on the invoice status, which lives on another table, so it cannot be expressed as an index.
 
+**A plan change is one request, one proration rule, one completing use case (#79).** `ServiceChangeRequest`
+(`ServiceChangeRequests`) is Pending, Approved, Completed or Rejected, and only its own methods move it. The cost of a
+mid-cycle move is worked out in one place, `ServicePlanChangeProration` (Domain, pure): `|new - old|` times the days left
+of the cycle over the cycle's length, the cycle being `RenewalPeriod.MonthsIn` back from `NextRenewalAt`, a started day
+counting as a day, rounded by `CurrencyCode.RoundToMinorUnits`, never negative; a plan at the same price is refused. The
+options the client sees and the quote the request is made from both come from `ServicePlanChangeQuoter`, so the figures
+cannot differ. An upgrade is approved at once and its charge is an invoice raised through `CreateInvoiceCommand`; the
+request keeps the invoice id (an index, no foreign key, the invoice is Billing's) and `ServiceChangeInvoicePaidHandler`
+completes it on `PaymentReceivedEvent`. A downgrade is approved at once only when `billing.plan_change.auto_approve_downgrades`
+is on, otherwise by staff. `CompleteServiceChangeCommand` is the only place a change is applied, from automatic approval,
+staff approval and the payment event alike: it asks the panel for the new package first (`ChangePackageCommand`, only for a
+service holding a hosting account), and only then stages the plan, the price, the `PlanChangeCredit` of a downgrade, the
+Completed status and the activity line in one save. A refusal by the panel therefore changes and credits nothing and leaves
+the request Approved, and approving it again repeats the call; the request's `xmin` token stops two runs crediting twice.
+Rejecting an approved upgrade cancels its unpaid invoice first. The Services handlers never touch the `Invoices` table:
+they raise, read and cancel invoices through the Billing use cases.
+
 ### Client account status
 
 `Client.Status` is enforced, not just stored. The transitions live in the aggregate and nowhere else
@@ -1576,6 +1593,34 @@ feature does not exist is not kept. The decisions:
   validated (400, not clamped), and the order ends in the id so a page never repeats a row. A
   `pg_trgm` GIN index on `lower("FirstName")`, `lower("LastName")`, `lower("FirstName" || ' ' || "LastName")`
   and `lower("CompanyName")` would serve the search once the table is large; it is not created yet.
+
+### Email campaigns
+
+A campaign (`Campaigns` module, tables `EmailCampaigns`, `EmailCampaignSegments`, `EmailCampaignRecipients`) is a subject, an HTML body and
+segments: every active client, owners of a product, clients in a country, or clients with a service that renews within 1 to 365 days.
+`CampaignAudience` is the one place a segment becomes a query, so the count an admin sees (`POST /api/admin/email-campaigns/audience-count`)
+and the recipients fixed at the start of sending never disagree; it is on the cross-module read allow-list for that reason. A client is
+in the audience only when it is active and `MarketingOptIn` is true, and a client matched by several segments counts once. One address is mailed once:
+the audience is resolved to sign-in addresses (clients with none are not reached) and clients that share an address, compared without case or
+surrounding spaces, make one recipient, the one with the lowest client id; the count is the number of those mails.
+
+- **Sending.** `DispatchEmailCampaignsCron` (every `ScheduledJobs:DispatchEmailCampaignsIntervalSeconds`, 30 by default) starts the
+  scheduled campaigns that are due (`StartEmailCampaign` fixes the recipients, one per mailbox) and sends one batch of pending recipients of every sending campaign (`DeliverEmailCampaign`). "Send now" is a
+  schedule with no time. A mail goes through `SendEmailCommand` with the `email-campaign` template (the admin's HTML printed raw above a
+  footer with the unsubscribe link, seeded in en, ru and hy at startup) and a per-recipient idempotency key, so a replay never mails twice;
+  the outcome is read back from the email log (`GetEmailDelivery`). A refused mail is tried up to three times, then the recipient is Failed.
+  The consent is read again right before each send, and a client who withdrew it is skipped as unsubscribed. Just before the mail leaves, the
+  recipient is given a random unsubscribe token and only its SHA-256 hash (`UnsubscribeTokenHash`) is saved, so the token exists in the mail alone;
+  the email log keeps the body with the link masked (`SecretMembers.Conceal`), and the mail carries a `List-Unsubscribe` header with the page address
+  (not `List-Unsubscribe-Post`: one-click needs a bare-POST endpoint, which the portal's CSRF check does not allow). The campaign template is seeded at
+  startup only. If a reader unsubscribes while a mail is leaving, the sender's save of that recipient loses (`ConcurrencyConflictException`), the
+  rest of the batch is read again by the next pass, and nothing fails.
+- **Unsubscribe.** The mail links to the portal page `/unsubscribe?token=...`, which posts the token to the anonymous
+  `POST /api/public/unsubscribe` (rate limited with the strict tier). The hash of the token names one recipient row; the client's
+  `MarketingOptIn` is set to false (`WithdrawClientMarketingConsent`) so every later campaign skips it, and the recipient is marked
+  Unsubscribed. When the sender saved the recipient first, the recipient is read and marked again (three attempts), and the answer is 204 even if
+  every attempt loses, because the consent is already withdrawn. Following the link again answers the same 204; a token that names nobody answers 404 `CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND`.
+- **Preview.** `GET /api/admin/email-campaigns/{id}/preview` renders the stored template in the default language with a sample link.
 
 ## Demo mode
 

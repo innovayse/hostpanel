@@ -22,6 +22,8 @@ public sealed class NoIdentityOnMessagesTests
         ["UpdateEmailTemplateCommand"] = "Subject is the email subject line of the template.",
         ["AdminCreateTicketCommand"] = "Subject is the ticket title typed by the staff member.",
         ["CreateTicketCommand"] = "Subject is the ticket title typed by the client.",
+        ["CreateEmailCampaignCommand"] = "Subject is the subject line of the campaign email.",
+        ["UpdateEmailCampaignCommand"] = "Subject is the subject line of the campaign email.",
     };
 
     /// <summary>No command or query record exposes a <c>UserId</c>, <c>TenantId</c>, <c>Subject</c> or <c>OrganizationId</c> property.</summary>

@@ -1489,4 +1489,91 @@
   <data name="CreditNoteItemQuantityInvalid" xml:space="preserve">
     <value>Every line needs a quantity between 1 and 100000.</value>
   </data>
+  <data name="StatusNameRequired" xml:space="preserve">
+    <value>Enter a name.</value>
+  </data>
+  <data name="StatusNameTooLong" xml:space="preserve">
+    <value>The name cannot be longer than {0} characters.</value>
+  </data>
+  <data name="StatusDescriptionTooLong" xml:space="preserve">
+    <value>The description cannot be longer than {0} characters.</value>
+  </data>
+  <data name="StatusTitleRequired" xml:space="preserve">
+    <value>Enter the incident title.</value>
+  </data>
+  <data name="StatusTitleTooLong" xml:space="preserve">
+    <value>The title cannot be longer than {0} characters.</value>
+  </data>
+  <data name="StatusMessageRequired" xml:space="preserve">
+    <value>Enter a message.</value>
+  </data>
+  <data name="StatusMessageTooLong" xml:space="preserve">
+    <value>The message cannot be longer than {0} characters.</value>
+  </data>
+  <data name="StatusStateInvalid" xml:space="preserve">
+    <value>Choose a valid state.</value>
+  </data>
+  <data name="StatusDaysInvalid" xml:space="preserve">
+    <value>Choose a number of days from 1 to {0}.</value>
+  </data>
+  <data name="ClientGroupNameInvalid" xml:space="preserve">
+    <value>A group name is required and can have at most 100 characters.</value>
+  </data>
+  <data name="ClientGroupDescriptionInvalid" xml:space="preserve">
+    <value>A description can have at most 500 characters.</value>
+  </data>
+  <data name="ClientGroupDiscountDecimalsInvalid" xml:space="preserve">
+    <value>A discount can have at most two decimal places.</value>
+  </data>
+  <data name="ClientGroupDiscountInvalid" xml:space="preserve">
+    <value>A discount must be between 0 and 100 percent.</value>
+  </data>
+  <data name="ClientGroupColorInvalid" xml:space="preserve">
+    <value>A colour must be written as #RRGGBB.</value>
+  </data>
+  <data name="ServiceChangeRequestIdInvalid" xml:space="preserve">
+    <value>Provide a valid plan change request.</value>
+  </data>
+  <data name="ServiceChangeNoteTooLong" xml:space="preserve">
+    <value>Keep the note within {0} characters.</value>
+  </data>
+  <data name="ServiceChangeStatusInvalid" xml:space="preserve">
+    <value>Choose a valid plan change status.</value>
+  </data>
+  <data name="CampaignIdInvalid" xml:space="preserve">
+    <value>Provide a valid campaign.</value>
+  </data>
+  <data name="CampaignSubjectRequired" xml:space="preserve">
+    <value>Enter a subject for the email.</value>
+  </data>
+  <data name="CampaignSubjectTooLong" xml:space="preserve">
+    <value>The subject can be at most {0} characters.</value>
+  </data>
+  <data name="CampaignBodyRequired" xml:space="preserve">
+    <value>Write the body of the email.</value>
+  </data>
+  <data name="CampaignBodyTooLong" xml:space="preserve">
+    <value>The body can be at most {0} characters.</value>
+  </data>
+  <data name="CampaignSegmentsRequired" xml:space="preserve">
+    <value>Provide the list of segments, which may be empty.</value>
+  </data>
+  <data name="CampaignSegmentsTooMany" xml:space="preserve">
+    <value>A campaign can have at most {0} segments.</value>
+  </data>
+  <data name="CampaignSegmentFilterInvalid" xml:space="preserve">
+    <value>Choose a known filter for every segment.</value>
+  </data>
+  <data name="CampaignSegmentValueInvalid" xml:space="preserve">
+    <value>The value does not fit the filter: a product needs a product id, a country a two-letter code, an expiry a number of days from 1 to 365, and all active clients takes no value.</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenRequired" xml:space="preserve">
+    <value>The unsubscribe link carries no token.</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenInvalid" xml:space="preserve">
+    <value>This unsubscribe link is not valid.</value>
+  </data>
+  <data name="EmailDeliveryKeyRequired" xml:space="preserve">
+    <value>The key of the email is required.</value>
+  </data>
 </root>

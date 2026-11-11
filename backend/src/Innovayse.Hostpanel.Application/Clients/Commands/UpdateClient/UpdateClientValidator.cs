@@ -71,6 +71,7 @@ public sealed class UpdateClientValidator : LocalizedValidator<UpdateClientComma
         RuleFor(x => x.Preferences.AdminNotes)
             .MaximumLength(2000).WithMessage(L["ClientAdminNotesInvalid"])
             .When(x => x.Preferences.AdminNotes is not null);
+        RuleFor(x => x.ClientGroupId).MustBePositiveId(L["ContentIdInvalid"]);
         RuleFor(x => x.Status)
             .IsInEnum()
             .WithMessage(L["ClientStatusInvalid"])

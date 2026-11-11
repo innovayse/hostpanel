@@ -22,6 +22,9 @@ namespace Innovayse.Hostpanel.Application.Clients.Common;
 /// <param name="Contacts">Additional contacts linked to this client.</param>
 /// <param name="ExternalAccount">The account in another system the client is linked to, null when there is no link.</param>
 /// <param name="CreditBalance">Credit held on the account, in the billing currency; while it is not zero the currency cannot change.</param>
+/// <param name="ClientGroupId">The client group the client belongs to, null when it has none.</param>
+/// <param name="ClientGroupName">The name of that group, null when the client has none.</param>
+/// <param name="ClientGroupColor">The colour of that group as <c>#RRGGBB</c>, null when the client has none.</param>
 public sealed record ClientDto(
     int Id,
     string UserId,
@@ -39,4 +42,7 @@ public sealed record ClientDto(
     DateTimeOffset CreatedAt,
     IReadOnlyList<ContactDto> Contacts,
     ExternalAccountDto? ExternalAccount,
-    decimal CreditBalance);
+    decimal CreditBalance,
+    int? ClientGroupId,
+    string? ClientGroupName,
+    string? ClientGroupColor);

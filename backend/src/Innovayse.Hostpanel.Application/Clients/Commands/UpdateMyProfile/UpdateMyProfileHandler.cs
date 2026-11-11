@@ -77,7 +77,8 @@ public sealed class UpdateMyProfileHandler
             },
             cmd.Notifications ?? current.Notifications,
             current.Settings,
-            null);
+            null,
+            current.ClientGroupId);
 
         var written = await _bus.InvokeAsync<Result>(update, ct);
         if (written.IsFailure)

@@ -14,11 +14,12 @@ public static class ClientMappingExtensions
 {
     /// <summary>Maps a <see cref="Client"/> aggregate, with its contacts loaded, to <see cref="ClientDto"/>.</summary>
     /// <param name="client">The client aggregate to map; its contacts must be loaded.</param>
+    /// <param name="group">The group the client belongs to, null when it has none.</param>
     /// <param name="email">The email from the Identity user.</param>
     /// <param name="twoFactorEnabled">Whether TOTP 2FA is enabled for the user.</param>
     /// <param name="language">The account's chosen UI language, null where the provider holds none.</param>
     /// <returns>The mapped DTO.</returns>
-    public static ClientDto ToDto(this Client client, string email, bool twoFactorEnabled, string? language) =>
+    public static ClientDto ToDto(this Client client, ClientGroup? group, string email, bool twoFactorEnabled, string? language) =>
         new(
             client.Id,
             client.UserId,
@@ -41,7 +42,10 @@ public static class ClientMappingExtensions
             client.ExternalAccountProvider is null || client.ExternalAccountId is null
                 ? null
                 : new ExternalAccountDto(client.ExternalAccountProvider, client.ExternalAccountId),
-            client.CreditBalance);
+            client.CreditBalance,
+            group?.Id,
+            group?.Name,
+            group?.Color);
 
     /// <summary>
     /// Maps a <see cref="Client"/> aggregate, with its contacts loaded, to the client's own

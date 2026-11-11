@@ -441,6 +441,18 @@
         "component": "AnnouncementFormView.vue"
       },
       {
+        "path": "support/email-campaigns",
+        "component": "EmailCampaignsListView.vue"
+      },
+      {
+        "path": "support/email-campaigns/new",
+        "component": "EmailCampaignFormView.vue"
+      },
+      {
+        "path": "support/email-campaigns/:id",
+        "component": "EmailCampaignFormView.vue"
+      },
+      {
         "path": "support/downloads",
         "component": "DownloadsView.vue"
       },

@@ -31,6 +31,8 @@ public static class StatusMapping
             "QUOTA_EXCEEDED" or "LIMIT_EXCEEDED" => new(402, "Payment Required"),
             // Exact row: the first invoice must be paid before the client may set the service up.
             "SERVICE_FIRST_INVOICE_UNPAID" => new(402, "Payment Required"),
+            // Exact row: the proration invoice of an upgrade must be paid before the plan changes.
+            "SERVICE_CHANGE_INVOICE_UNPAID" => new(402, "Payment Required"),
             "PAYLOAD_TOO_LARGE" => new(413, "Content Too Large"),
             "CONTENT_REJECTED" => new(422, "Unprocessable Content"),
             "CONFIRMATION_REQUIRED" => new(409, "Conflict"),
@@ -50,9 +52,16 @@ public static class StatusMapping
             // Exact rows: the stored service or product is not ready to provision, a state conflict
             // rather than a malformed request, and neither name carries a CONFLICT token.
             "SERVICE_HOSTING_DETAILS_MISSING" or "CPANEL_USERNAME_INVALID" or "CPANEL_DOMAIN_INVALID" or "PRODUCT_PACKAGE_MISSING" or "PRODUCT_SERVER_GROUP_REQUIRED" => new(409, "Conflict"),
+            // Exact rows: the campaign's or the recipient's state stands in the way of the action, a state conflict (409),
+            // and none of the names carries a CONFLICT / ALREADY token for the generic arms.
+            "CAMPAIGN_NOT_DRAFT" or "CAMPAIGN_NOT_SCHEDULED" or "CAMPAIGN_NOT_SENDING" or "CAMPAIGN_RECIPIENT_NOT_PENDING"
+                => new(409, "Conflict"),
             // Exact row: only a terminated service has a termination date to correct, so the stored
             // status stands in the way (a state conflict), and the name carries no CONFLICT token.
             "SERVICE_NOT_TERMINATED" => new(409, "Conflict"),
+            // Exact row: the plan change request is in a status that refuses the move, or the service left its plan since it was
+            // made, a state conflict whose name carries no CONFLICT / ALREADY token for the generic arms.
+            "SERVICE_CHANGE_INVALID_STATE" => new(409, "Conflict"),
             // A plugin shipped with the build: the request is well-formed, the target's state refuses it.
             "PLUGIN_BUILT_IN" => new(409, "Conflict"),
             // Exact row: a package whose assembly file name another plugin ships is a bad upload, a 400 like the host
@@ -163,9 +172,9 @@ public static class StatusMapping
             // CONFLICT / ALREADY token for the generic arms.
             "SERVER_IN_USE" or "SERVER_GROUP_IN_USE" or "USER_CANNOT_DELETE_SELF" or "USER_LAST_ADMIN"
                 => new(409, "Conflict"),
-            // Exact rows: a category that still holds sub-categories or records, a state conflict whose
+            // Exact rows: a category or client group that still holds sub-categories or records, a state conflict whose
             // names carry no CONFLICT / ALREADY token for the generic arms.
-            "KBCATEGORY_IN_USE" or "DOWNLOAD_CATEGORY_IN_USE" or "PREDEFINED_REPLY_CATEGORY_IN_USE"
+            "KBCATEGORY_IN_USE" or "DOWNLOAD_CATEGORY_IN_USE" or "PREDEFINED_REPLY_CATEGORY_IN_USE" or "CLIENT_GROUP_IN_USE"
                 => new(409, "Conflict"),
             // Exact rows: the rate source is down (a dependency, so 503 with Retry-After), or it
             // quotes nothing against the configured base (the deployment's state, a conflict).

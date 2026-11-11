@@ -11,6 +11,7 @@
 import { translate, translateOrRaw } from '@/lib/translate'
 import { UiTone } from '@/utils/ui/tone'
 import { ClientStatus } from '@/types/client'
+import { CampaignStatus } from '@/types/emailcampaign'
 import { ContactType } from '@/types/contact'
 import { DomainStatus } from '@/types/domain'
 import { GatewayLogResult } from '@/types/gatewaylog'
@@ -301,6 +302,14 @@ export const ticketPriorityTone: Record<TicketPriority, UiTone> = {
   [TicketPriority.Low]: UiTone.Neutral,
   [TicketPriority.Medium]: UiTone.Warning,
   [TicketPriority.High]: UiTone.Danger,
+}
+
+/** Badge tone of each email campaign status. */
+export const campaignStatusTone: Record<CampaignStatus, UiTone> = {
+  [CampaignStatus.Draft]: UiTone.Neutral,
+  [CampaignStatus.Scheduled]: UiTone.Primary,
+  [CampaignStatus.Sending]: UiTone.Warning,
+  [CampaignStatus.Sent]: UiTone.Success,
 }
 
 /** Badge tone of each network issue priority. */

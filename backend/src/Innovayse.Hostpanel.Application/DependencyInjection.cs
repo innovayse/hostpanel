@@ -2,6 +2,7 @@ using FluentValidation;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Campaigns.Common;
 using Innovayse.Hostpanel.Application.Clients.Commands.AcceptInvitation;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Plugins.Common;
@@ -43,6 +44,9 @@ public static class DependencyInjection
         // One pass of the fulfilment dispatch, run by the scheduled chain and by the pass kicked after a payment.
         services.AddScoped<FulfilmentDispatcher>();
 
+        // Resolves which clients a campaign's segments reach, for the audience count and for fixing the recipients.
+        services.AddScoped<CampaignAudience>();
+
         // Asks the enabled fulfilment plugins to cap a refund before any money moves.
         services.AddScoped<RefundAdviser>();
         services.AddScoped<GatewayPaymentCanceller>();
@@ -73,6 +77,11 @@ public static class DependencyInjection
 
         // The SSH half of the plugin host API: issues and revokes a plugin's identities for the call's client (#758).
         services.AddScoped<PluginSshAccessService>();
+
+        // Which plans a service can move to and what each move costs, shared by the client's option list and the request itself.
+        services.AddScoped<ServicePlanChangeQuoter>();
+        services.AddScoped<ServicePlanChangeSettingsReader>();
+        services.AddScoped<BillingSettingSource>();
 
         // This installation's identity towards the plugin registry: where it is kept, and the enrolment that registers and verifies it.
         services.AddScoped<RegistryInstanceStore>();

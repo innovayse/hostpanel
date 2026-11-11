@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
@@ -434,5 +435,34 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         var response = await factory.CreateClient().PostAsJsonAsync(RouteOf(ServicesTestSeeds.NoSuchServiceId), new { toProductId = 1 });
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    /// <summary>
+    /// When the save that links the proration invoice to the request fails, the invoice is cancelled and the request taken
+    /// back, so no payable invoice is left next to a request that is never applied and the service's slot is free again.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Upgrade_WhenTheLinkingSaveFails_CancelsTheInvoiceAndRemovesTheRequest()
+    {
+        var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-crash");
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, clientId, 10m, 20m);
+        using var host = FailingSaveHost.Create(
+            factory,
+            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            tracker => tracker.Entries<ServiceChangeRequest>().Any(e => e.State == EntityState.Modified && e.Entity.InvoiceId is not null));
+        using var crashing = host.CreateClient();
+        crashing.DefaultRequestHeaders.Authorization = owner.DefaultRequestHeaders.Authorization;
+
+        var response = await crashing.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
+
+        // The simulated failure is an InvalidOperationException, which the exception middleware answers with 400: that the
+        // caller still sees it proves the cleanup did not replace the original error.
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.ServiceChangeRequests.AsNoTracking().AnyAsync(r => r.ServiceId == seeded.ServiceId)).Should().BeFalse();
+        var invoices = await context.Invoices.AsNoTracking().Where(i => i.ClientId == clientId).ToListAsync();
+        invoices.Should().ContainSingle().Which.Status.Should().Be(InvoiceStatus.Cancelled);
     }
 }

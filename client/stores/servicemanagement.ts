@@ -117,13 +117,16 @@ export const useServiceManagementStore = defineStore('serviceManagement', () => 
    * Reads one service.
    *
    * @param serviceId - Service id.
+   * @param keepCurrent - Keep the service on screen while it is read again, for a refresh after a change.
    * @returns The service; null when it could not be read ({@link serviceError} holds the sentence).
    */
-  const loadService = async (serviceId: string): Promise<ClientService | null> => {
+  const loadService = async (serviceId: string, keepCurrent = false): Promise<ClientService | null> => {
     serviceLoading.value = true
     serviceError.value = ''
     serviceNotFound.value = false
-    service.value = null
+    if (!keepCurrent) {
+      service.value = null
+    }
     try {
       service.value = await api.fetchService(serviceId)
     } catch (e: unknown) {

@@ -28,6 +28,8 @@ export enum CreditMovement {
   CreditNoteIssued = 'CreditNoteIssued',
   /** A credit note issued as account credit was voided and its value came off the balance. */
   CreditNoteVoided = 'CreditNoteVoided',
+  /** The prorated difference of a downgrade was put on the balance. */
+  PlanChangeCredit = 'PlanChangeCredit',
 }
 
 /** Which way staff move a client's credit balance by hand, as `CreditAdjustment` serialises. */

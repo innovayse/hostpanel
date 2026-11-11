@@ -68,6 +68,10 @@
         "component": "CancellationRequestsView.vue"
       },
       {
+        "path": "clients/plan-changes",
+        "component": "ServiceChangeRequestsView.vue"
+      },
+      {
         "path": "clients/affiliates",
         "component": "ManageAffiliatesView.vue"
       },

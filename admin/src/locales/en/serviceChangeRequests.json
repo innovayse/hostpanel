@@ -1,0 +1,36 @@
+{
+  "title": "Plan Changes",
+  "subtitle": "Review upgrade and downgrade requests and see the plan change history of a service",
+  "filterStatus": "Filter by status",
+  "allStatuses": "All statuses",
+  "serviceFilter": "Service #{id}",
+  "clearServiceFilter": "Show all services",
+  "history": "Plan change history",
+  "viewHistory": "Plan changes",
+  "service": "Service",
+  "plans": "Plan change",
+  "proration": "Proration",
+  "invoice": "Invoice #{id}",
+  "note": "Note",
+  "totalCount": "Requests: {totalCount}",
+  "empty": "No plan change requests found",
+  "approve": "Approve",
+  "reject": "Reject",
+  "approveTitle": "Approve plan change",
+  "approveMessage": "Approve this plan change and apply it to the service?",
+  "rejectTitle": "Reject plan change",
+  "rejectMessage": "Reject this plan change? The service stays on its current plan.",
+  "notePlaceholder": "Optional note",
+  "approved": "Plan change approved.",
+  "rejected": "Plan change rejected.",
+  "type": {
+    "Upgrade": "Upgrade",
+    "Downgrade": "Downgrade"
+  },
+  "status": {
+    "Pending": "Pending",
+    "Approved": "Approved",
+    "Completed": "Completed",
+    "Rejected": "Rejected"
+  }
+}

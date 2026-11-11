@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Audit.Common;
+using Innovayse.Hostpanel.Application.Billing.Commands.CancelInvoice;
 using Innovayse.Hostpanel.Application.Billing.Commands.CreateInvoice;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
@@ -11,6 +12,7 @@ using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlanChange;
@@ -23,8 +25,10 @@ namespace Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlan
 /// <para>
 /// An upgrade is approved at once. The prorated charge becomes an invoice through the one invoice creation use case, the
 /// request keeps the invoice id, and the plan changes when that invoice is paid (<c>ServiceChangeInvoicePaidHandler</c>);
-/// an upgrade with nothing left to prorate has no invoice and is applied now. The request is saved before the invoice is
-/// raised and approved with it, so only the request that wins the unique index on open requests ever raises one. A downgrade is approved at once only when
+/// an upgrade with nothing left to prorate has no invoice and is applied now. When the save that links the invoice to
+/// the request fails, the invoice is cancelled and the request taken back, so no payable invoice is left for a change that
+/// is never applied. The request is saved before the invoice is raised and approved with it, so only the request that
+/// wins the unique index on open requests ever raises one. A downgrade is approved at once only when
 /// the <c>billing.plan_change.auto_approve_downgrades</c> setting is on, otherwise it waits as Pending for staff. An approved
 /// change is applied by <see cref="CompleteServiceChangeCommand"/>, the same use case staff approval ends in.
 /// </para>
@@ -62,6 +66,9 @@ public sealed class RequestMyServicePlanChangeHandler
     /// <summary>Wolverine bus, used to raise the invoice and to apply the change through their own use cases.</summary>
     private readonly IMessageBus _bus;
 
+    /// <summary>Reports an invoice or a request that could not be withdrawn.</summary>
+    private readonly ILogger<RequestMyServicePlanChangeHandler> _logger;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="ownership">The rule that says a client may only touch their own services.</param>
     /// <param name="context">The module's data context.</param>
@@ -70,6 +77,7 @@ public sealed class RequestMyServicePlanChangeHandler
     /// <param name="clock">The clock the moment of the request is read from.</param>
     /// <param name="activity">Records the activity log line for this action, saved with the change it describes.</param>
     /// <param name="bus">Wolverine bus, used to raise the invoice and to apply the change through their own use cases.</param>
+    /// <param name="logger">Reports an invoice or a request that could not be withdrawn.</param>
     public RequestMyServicePlanChangeHandler(
         IServiceOwnership ownership,
         IHostpanelDbContext context,
@@ -77,7 +85,8 @@ public sealed class RequestMyServicePlanChangeHandler
         ServicePlanChangeSettingsReader settings,
         IClock clock,
         IActivityLogger activity,
-        IMessageBus bus)
+        IMessageBus bus,
+        ILogger<RequestMyServicePlanChangeHandler> logger)
     {
         _ownership = ownership;
         _context = context;
@@ -86,6 +95,7 @@ public sealed class RequestMyServicePlanChangeHandler
         _clock = clock;
         _activity = activity;
         _bus = bus;
+        _logger = logger;
     }
 
     /// <summary>Handles the command.</summary>
@@ -98,6 +108,7 @@ public sealed class RequestMyServicePlanChangeHandler
     /// applying an approved change; the request stays Approved for staff to retry in that last case.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
+    /// <exception cref="Exception">The failure of the save that records the request, rethrown after its invoice was withdrawn.</exception>
     public async Task<Result<ServicePlanChangeResultDto>> HandleAsync(RequestMyServicePlanChangeCommand cmd, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(cmd);
@@ -176,8 +187,7 @@ public sealed class RequestMyServicePlanChangeHandler
             if (invoice.IsFailure)
             {
                 // The request holds the service's one open slot and waits for an invoice that does not exist: take it back.
-                _context.ServiceChangeRequests.Remove(request);
-                await _context.SaveChangesAsync(ct);
+                await RemoveRequestAsync(request);
                 return Result<ServicePlanChangeResultDto>.FailureCode(invoice.ErrorCode!);
             }
 
@@ -185,12 +195,32 @@ public sealed class RequestMyServicePlanChangeHandler
             request.AttachInvoice(invoice.Value);
         }
 
-        await _activity.RecordAsync(
-            new ActivityLogEntry(
-                service.ClientId,
-                $"Requested {option.Type} - Service ID: {service.Id}, Request ID: {request.Id}, New Product ID: {option.ProductId}"),
-            ct);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            await _activity.RecordAsync(
+                new ActivityLogEntry(
+                    service.ClientId,
+                    $"Requested {option.Type} - Service ID: {service.Id}, Request ID: {request.Id}, New Product ID: {option.ProductId}"),
+                ct);
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (Exception) when (request.InvoiceId is not null)
+        {
+            // The invoice is payable but the request that would apply it was not saved as linked to it: withdraw both. Not the
+            // request's token, since a cancelled request is exactly when the invoice must still be withdrawn. The original
+            // failure is what the caller sees.
+            var invoiceId = request.InvoiceId.Value;
+            var cancelled = await _bus.InvokeAsync<Result>(new CancelInvoiceCommand(invoiceId), CancellationToken.None);
+            if (cancelled.IsFailure)
+            {
+                _logger.LogCritical(
+                    "Plan change save failed and its invoice {InvoiceId} could not be cancelled: {Code}. Cancel it by hand.",
+                    invoiceId, cancelled.ErrorCode);
+            }
+
+            await TryRemoveRequestAsync(request);
+            throw;
+        }
 
         // An approved change with no invoice to wait for is applied now. A failure leaves the request Approved for staff.
         if (approvedAtOnce && !needsInvoice)
@@ -209,6 +239,33 @@ public sealed class RequestMyServicePlanChangeHandler
             .FirstAsync(ct);
         return Result<ServicePlanChangeResultDto>.Success(new ServicePlanChangeResultDto(
             request.Id, option.Type, status, option.ProrationAmount, option.CurrencyCode, request.InvoiceId));
+    }
+
+    /// <summary>Takes a saved request back so the service's one open slot is free again.</summary>
+    /// <param name="request">The saved request.</param>
+    /// <returns>A task that completes once the request is deleted.</returns>
+    private async Task RemoveRequestAsync(ServiceChangeRequest request)
+    {
+        // The context may still hold the change set that failed: discard it so only the delete is saved, and ignore the
+        // request's token for the same reason as the invoice cancellation.
+        _context.DiscardPendingChanges();
+        _context.ServiceChangeRequests.Remove(request);
+        await _context.SaveChangesAsync(CancellationToken.None);
+    }
+
+    /// <summary>Takes a saved request back after another failure, without letting a failure here hide the original one.</summary>
+    /// <param name="request">The saved request.</param>
+    /// <returns>A task that completes once the request is deleted or the failure to delete it is logged.</returns>
+    private async Task TryRemoveRequestAsync(ServiceChangeRequest request)
+    {
+        try
+        {
+            await RemoveRequestAsync(request);
+        }
+        catch (Exception removal)
+        {
+            _logger.LogCritical(removal, "Plan change request {RequestId} could not be removed after its save failed. Remove it by hand.", request.Id);
+        }
     }
 
     /// <summary>Raises the invoice of the prorated charge through the one invoice creation use case.</summary>

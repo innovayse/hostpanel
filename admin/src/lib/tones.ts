@@ -24,6 +24,7 @@ import { NetworkIssuePriority, NetworkIssueStatus } from '@/types/networkissue'
 import { OrderItemFulfilmentState, OrderItemStatus, OrderStatus } from '@/types/order'
 import { QuoteStage } from '@/types/quote'
 import { CancellationStatus, CancellationType, ServiceStatus } from '@/types/service'
+import { ServiceChangeStatus, ServiceChangeType } from '@/types/servicechangerequest'
 import { TicketPriority, TicketStatus } from '@/types/ticket'
 
 /**
@@ -432,3 +433,51 @@ export const integrationConnectionTone: Record<IntegrationConnectionState, UiTon
   [IntegrationConnectionState.Unavailable]: UiTone.Danger,
   [IntegrationConnectionState.Inactive]: UiTone.Neutral,
 }
+
+/** Badge tone of each plan change type. */
+const SERVICE_CHANGE_TYPE_TONES: Record<ServiceChangeType, UiTone> = {
+  [ServiceChangeType.Upgrade]: UiTone.Success,
+  [ServiceChangeType.Downgrade]: UiTone.Primary,
+}
+
+/** Badge tone of each plan change request status. */
+const SERVICE_CHANGE_STATUS_TONES: Record<ServiceChangeStatus, UiTone> = {
+  [ServiceChangeStatus.Pending]: UiTone.Warning,
+  [ServiceChangeStatus.Approved]: UiTone.Primary,
+  [ServiceChangeStatus.Completed]: UiTone.Success,
+  [ServiceChangeStatus.Rejected]: UiTone.Danger,
+}
+
+/**
+ * Tone of a plan change type badge.
+ *
+ * @param type - Plan change type as sent by the API.
+ * @returns The kit tone.
+ */
+export const serviceChangeTypeTone = (type: ServiceChangeType): UiTone => toneOf(SERVICE_CHANGE_TYPE_TONES, type)
+
+/**
+ * Tone of a plan change request status badge.
+ *
+ * @param status - Plan change status as sent by the API.
+ * @returns The kit tone.
+ */
+export const serviceChangeStatusTone = (status: ServiceChangeStatus): UiTone => toneOf(SERVICE_CHANGE_STATUS_TONES, status)
+
+/**
+ * Translated name of a plan change type; a type the API adds later is shown as received.
+ *
+ * @param type - Plan change type as sent by the API.
+ * @returns The label to show.
+ */
+export const serviceChangeTypeLabel = (type: ServiceChangeType): string =>
+  translateOrRaw(`serviceChangeRequests.type.${type}`, type)
+
+/**
+ * Translated name of a plan change request status; a status the API adds later is shown as received.
+ *
+ * @param status - Plan change status as sent by the API.
+ * @returns The label to show.
+ */
+export const serviceChangeStatusLabel = (status: ServiceChangeStatus): string =>
+  translateOrRaw(`serviceChangeRequests.status.${status}`, status)

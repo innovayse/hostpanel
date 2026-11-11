@@ -20,6 +20,7 @@ import {
   orderPath,
   pluginPagePath,
   pluginPath,
+  servicePlanChangesPath,
   quoteAddPath,
   quotePath,
   reportPagePath,
@@ -60,6 +61,7 @@ describe('route builders', () => {
     expect(clientSectionPath(5, ClientSection.BillableItems)).toBe('/clients/5/billable-items')
     expect(clientItemPath(5, ClientSection.Services, 9)).toBe('/clients/5/services/9')
     expect(clientTicketNewPath(5)).toBe('/clients/5/tickets/new')
+    expect(servicePlanChangesPath(9)).toBe('/clients/plan-changes?serviceId=9')
   })
 
   it('builds the billing, order and support paths', () => {

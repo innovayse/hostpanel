@@ -109,6 +109,12 @@ describe('ClientServiceDetailView', () => {
     expect(wrapper.text()).toContain('Server said no')
   })
 
+  it('links to the plan change history of the service', async () => {
+    const { wrapper } = await mountLoaded()
+
+    expect(wrapper.get('[data-testid="client-service-plan-changes"]').attributes('href')).toBe('/clients/plan-changes?serviceId=9')
+  })
+
   it('lists the plugin widgets of the service in its slot', async () => {
     const { wrapper } = await mountLoaded(detail, undefined, {
       'GET /api/admin/plugins/slots/admin.service.panels?serviceId=9': () =>

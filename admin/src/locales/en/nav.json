@@ -8,6 +8,7 @@
     "addons": "Service Addons",
     "domainRegistrations": "Domain Registrations",
     "cancellations": "Cancellation Requests",
+    "planChanges": "Plan Changes",
     "affiliates": "Manage Affiliates"
   },
   "billing": "Billing",

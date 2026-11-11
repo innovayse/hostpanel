@@ -50,6 +50,7 @@ Click a service to open it. The **Overview** tab shows your plan, billing detail
 - **Change Password**: enter a new password and click **Change Password**. Requires the **View & Modify Product Passwords** permission.
 - **Login to Control Panel**: opens your hosting control panel directly.
 - **Request Cancellation**: choose **Immediate** (cancels straight away) or **End of Billing Period** (runs until the end of the current period), enter a reason and click **Submit Cancellation Request**. Requires the **Place New Orders/Upgrades/Cancellations** permission.
+- **Change Plan**: the **Change Plan** tab lists the other plans of the same product group with the prorated amount for the rest of the current billing period. An upgrade raises an invoice and the plan changes once you pay it. A downgrade credits the amount to your balance, at once or after staff approve it, depending on how your provider has set it up.
 
 ## SSH keys
 

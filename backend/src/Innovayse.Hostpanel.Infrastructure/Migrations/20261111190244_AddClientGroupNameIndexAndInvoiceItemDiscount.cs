@@ -18,11 +18,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                 defaultValue: 0m);
 
             // The unique index below refuses duplicate names, so groups that already share one are told apart first:
-            // the lowest Id keeps its name and the others get " (2)", " (3)" and so on, cut short so the whole name
-            // still fits the 100 character column.
+            // the lowest Id keeps its name and every other one gets " (<Id>)" after it, cut short so the whole name
+            // still fits the 100 character column. An Id is unique, so the suffixed names differ from each other.
             migrationBuilder.Sql("""
                 UPDATE "ClientGroups" g
-                   SET "Name" = LEFT(g."Name", 100 - LENGTH(' (' || d."Position" || ')')) || ' (' || d."Position" || ')'
+                   SET "Name" = LEFT(g."Name", 100 - LENGTH(' (' || g."Id" || ')')) || ' (' || g."Id" || ')'
                   FROM (
                         SELECT "Id", ROW_NUMBER() OVER (PARTITION BY "Name" ORDER BY "Id") AS "Position"
                           FROM "ClientGroups"

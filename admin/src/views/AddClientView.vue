@@ -456,7 +456,12 @@ onMounted(() => {
                 </UiField>
                 <UiField :label="t('clients.clientGroups.group')">
                   <template #default="{ id }">
-                    <ClientGroupSelect :id="id" v-model="clientGroupId" :empty-label="t('clients.clientGroups.defaultGroup')" data-testid="add-client-group" />
+                    <ClientGroupSelect
+                      :id="id"
+                      v-model="clientGroupId"
+                      :empty-label="t('clients.clientGroups.defaultGroup')"
+                      data-testid="add-client-group"
+                    />
                   </template>
                 </UiField>
               </UiGrid>

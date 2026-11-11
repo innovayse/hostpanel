@@ -91,7 +91,9 @@ describe('invoice page', () => {
   })
 
   it('notes the client group discount on a discounted line only', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice({ items: [{ id: 1, description: 'Hosting', amount: 90, discountPercent: 10 }] }))
+    billingApi.fetchInvoice.mockResolvedValue(
+      invoice({ items: [{ id: 1, description: 'Hosting', amount: 90, discountPercent: 10 }] }),
+    )
     const discounted = await mountPage(InvoicePage)
     billingApi.fetchInvoice.mockResolvedValue(invoice())
     const plain = await mountPage(InvoicePage)

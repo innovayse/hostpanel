@@ -66,7 +66,8 @@ describe('AddClientView', () => {
   it('puts the client in the picked group', async () => {
     const wrapper = await mountClientView(AddClientView)
     const mock = stubFetch(json(9))
-    wrapper.findAllComponents(UiSelect).find(c => c.attributes('data-testid') === 'add-client-group')?.vm.$emit('update:modelValue', 3)
+    const picker = wrapper.findAllComponents(UiSelect).find(c => c.attributes('data-testid') === 'add-client-group')
+    picker?.vm.$emit('update:modelValue', 3)
     await flushPromises()
 
     await wrapper.find('[data-testid="add-client-submit"]').trigger('click')

@@ -72,7 +72,13 @@
           <UiTableRow v-for="item in invoice.items" :key="item.id">
             <UiTableTd>
               <UiText as="span" size="sm" tone="muted">{{ item.description }}</UiText>
-              <UiText v-if="item.discountPercent > 0" as="span" size="xs" tone="muted" data-testid="invoice-item-discount">
+              <UiText
+                v-if="item.discountPercent > 0"
+                as="span"
+                size="xs"
+                tone="muted"
+                data-testid="invoice-item-discount"
+              >
                 {{ $t('client.invoices.groupDiscount', { percent: item.discountPercent }) }}
               </UiText>
             </UiTableTd>

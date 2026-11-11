@@ -12,7 +12,15 @@ import { createTestI18n } from '../helpers/i18n'
 import { callsOf, json, problem, stubFetch } from '../helpers/fetch'
 
 /** One group as the list endpoint answers it. */
-const GROUP = { id: 1, name: 'VIP', description: null, discountPercent: 10, color: '#112233', isDefault: true, clientCount: 2 }
+const GROUP = {
+  id: 1,
+  name: 'VIP',
+  description: null,
+  discountPercent: 10,
+  color: '#112233',
+  isDefault: true,
+  clientCount: 2,
+}
 
 /**
  * Mounts the view against scripted answers and waits for the first load.
@@ -91,7 +99,12 @@ describe('ClientGroupsView', () => {
     const { wrapper } = await mountView(json([]), problem('Name is taken.', 409))
 
     await wrapper.get('[data-testid="client-groups-add"]').trigger('click')
-    wrapper.getComponent(ClientGroupFormDialog).vm.$emit('save', { name: 'VIP', description: null, discountPercent: 0, color: '#112233' })
+    wrapper.getComponent(ClientGroupFormDialog).vm.$emit('save', {
+      name: 'VIP',
+      description: null,
+      discountPercent: 0,
+      color: '#112233',
+    })
     await flushPromises()
 
     expect(wrapper.getComponent(ClientGroupFormDialog).props('open')).toBe(true)

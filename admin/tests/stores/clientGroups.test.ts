@@ -14,7 +14,15 @@ import { installStoreHooks } from '../helpers/storeHooks'
 const payload: ClientGroupPayload = { name: 'VIP', description: null, discountPercent: 10, color: '#112233' }
 
 /** One group as the list answers it. */
-const group = { id: 1, name: 'VIP', description: null, discountPercent: 10, color: '#112233', isDefault: false, clientCount: 0 }
+const group = {
+  id: 1,
+  name: 'VIP',
+  description: null,
+  discountPercent: 10,
+  color: '#112233',
+  isDefault: false,
+  clientCount: 0,
+}
 
 describe('useClientGroupsStore', () => {
   installStoreHooks()
@@ -30,7 +38,7 @@ describe('useClientGroupsStore', () => {
     expect(store.error).toBeNull()
   })
 
-  it('a refused load keeps the API sentence in error and the groups it had; offline it writes the no-answer sentence', async () => {
+  it('keeps the groups it had after a refused or unanswered load, with the matching sentence', async () => {
     const store = useClientGroupsStore()
     stubFetch(json([group]))
     await store.fetchAll()

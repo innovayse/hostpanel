@@ -19,7 +19,8 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
     /// <summary>The snapshot the hosting line of the first test is sold as.</summary>
-    private static readonly ProductSnapshot Snapshot = new(7, BillingCycle.Monthly, IsDigital: false, Sku: "STARTER", Metadata: null);
+    private static readonly ProductSnapshot Snapshot =
+        new(7, BillingCycle.Monthly, IsDigital: false, Sku: "STARTER", Metadata: null);
 
     /// <summary>The invoice is unpaid, in the order's currency, with one line per order line, due in a week.</summary>
     /// <returns>A task that completes when the test has run.</returns>

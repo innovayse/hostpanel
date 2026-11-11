@@ -402,7 +402,7 @@ public sealed class PlaceOrderHandler
             .Select(line => line.Item.DomainAction is null
                 ? line with
                 {
-                    Price = InvoiceItem.PriceAfterDiscount(line.Price, discountPercent, currencyCode),
+                    Price = PriceDiscount.Apply(line.Price, discountPercent, currencyCode),
                     DiscountPercent = discountPercent,
                 }
                 : line)

@@ -51,7 +51,10 @@ export const useClientGroupsApi = () => {
    * @returns Nothing.
    */
   const setDefaultGroup = (id: number, isDefault: boolean): Promise<void> =>
-    request<void>(`${ApiPath.AdminClientGroups}/${id}/default`, { method: HttpMethod.Put, body: JSON.stringify({ isDefault }) })
+    request<void>(`${ApiPath.AdminClientGroups}/${id}/default`, {
+      method: HttpMethod.Put,
+      body: JSON.stringify({ isDefault }),
+    })
 
   /**
    * Deletes a group that has no clients.

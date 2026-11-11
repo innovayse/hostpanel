@@ -29,7 +29,15 @@ const GROUPED_CLIENT = {
 }
 
 /** The group of that client, as the admin list answers it. */
-const GROUP = { id: 4, name: 'VIP', description: null, discountPercent: 10, color: '#112233', isDefault: false, clientCount: 1 }
+const GROUP = {
+  id: 4,
+  name: 'VIP',
+  description: null,
+  discountPercent: 10,
+  color: '#112233',
+  isDefault: false,
+  clientCount: 1,
+}
 
 /**
  * Mounts the list over a client in a group.
@@ -41,10 +49,15 @@ const mountGrouped = async () => {
     { path: '/api/clients', body: { items: [GROUPED_CLIENT], totalCount: 1 } },
     { path: '/api/admin/client-groups', body: [GROUP] },
   ])
-  const router = createRouter({ history: createMemoryHistory(), routes: [{ path: '/:pathMatch(.*)*', component: { render: () => null } }] })
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: '/:pathMatch(.*)*', component: { render: () => null } }],
+  })
   await router.push('/clients')
   await router.isReady()
-  const wrapper = mount(ClientsListView, { global: { plugins: [createTestI18n(), createPinia(), router], stubs: { teleport: true } } })
+  const wrapper = mount(ClientsListView, {
+    global: { plugins: [createTestI18n(), createPinia(), router], stubs: { teleport: true } },
+  })
   await flushPromises()
   return { wrapper, fetchMock }
 }
@@ -90,7 +103,10 @@ describe('ClientsListView', () => {
 
   it('sends the picked group as the clientGroupId filter', async () => {
     const { wrapper, fetchMock } = await mountGrouped()
-    wrapper.findAllComponents(UiSelect).find(c => c.attributes('data-testid') === 'clients-list-filter-group')?.vm.$emit('update:modelValue', 4)
+    const picker = wrapper
+      .findAllComponents(UiSelect)
+      .find(c => c.attributes('data-testid') === 'clients-list-filter-group')
+    picker?.vm.$emit('update:modelValue', 4)
     await flushPromises()
 
     await wrapper.get('[data-testid="clients-list-search"]').trigger('click')

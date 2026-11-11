@@ -173,7 +173,10 @@ describe('ClientProfileView', () => {
   it('sends the group picked in the form, and null when it is cleared', async () => {
     const { wrapper, fetchMock } = await mountProfile({ ...detail, clientGroupId: 4 })
     const picker = wrapper.findAllComponents(UiSelect).find(c => c.attributes('data-testid') === 'client-profile-group')
-    expect((picker?.props() as { options: unknown[] } | undefined)?.options).toEqual([{ value: null, label: 'No group' }, { value: 4, label: 'VIP' }])
+    expect((picker?.props() as { options: unknown[] } | undefined)?.options).toEqual([
+      { value: null, label: 'No group' },
+      { value: 4, label: 'VIP' },
+    ])
 
     picker?.vm.$emit('update:modelValue', null)
     await flushPromises()

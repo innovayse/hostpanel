@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.SharedKernel.Domain;
 using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
 
@@ -20,9 +21,6 @@ public sealed class ClientGroup : BaseEntity, IAggregateRoot
     /// <summary>Length of a colour written as <c>#RRGGBB</c>; the <c>ClientGroups.Color</c> column is this wide.</summary>
     public const int ColorLength = 7;
 
-    /// <summary>The largest discount a group can give, in percent.</summary>
-    public const decimal MaxDiscountPercent = 100m;
-
     /// <summary>Digits the <c>ClientGroups.DiscountPercent</c> column holds in all, before and after the decimal point.</summary>
     public const int DiscountPercentPrecision = 5;
 
@@ -38,7 +36,9 @@ public sealed class ClientGroup : BaseEntity, IAggregateRoot
     /// <summary>Gets the free-text description, or <see langword="null"/> when there is none.</summary>
     public string? Description { get; private set; }
 
-    /// <summary>Gets the discount members are due, in percent, from 0 to <see cref="MaxDiscountPercent"/>.</summary>
+    /// <summary>
+    /// Gets the discount members are due, in percent, from 0 to <see cref="PriceDiscount.MaxPercent"/>.
+    /// </summary>
     public decimal DiscountPercent { get; private set; }
 
     /// <summary>Gets the colour the admin panel shows the group in, as upper-case <c>#RRGGBB</c>.</summary>
@@ -53,7 +53,7 @@ public sealed class ClientGroup : BaseEntity, IAggregateRoot
     /// <summary>Creates a group that is not the default.</summary>
     /// <param name="name">The display name; not blank, at most <see cref="NameMaxLength"/> characters.</param>
     /// <param name="description">The optional description, at most <see cref="DescriptionMaxLength"/> characters.</param>
-    /// <param name="discountPercent">The discount in percent, from 0 to <see cref="MaxDiscountPercent"/>.</param>
+    /// <param name="discountPercent">The discount in percent, from 0 to <see cref="PriceDiscount.MaxPercent"/>.</param>
     /// <param name="color">The colour as <c>#RRGGBB</c>.</param>
     /// <returns>A new, unpersisted <see cref="ClientGroup"/>.</returns>
     /// <exception cref="ArgumentException">The name is blank or a text is longer than its column.</exception>
@@ -68,7 +68,7 @@ public sealed class ClientGroup : BaseEntity, IAggregateRoot
     /// <summary>Replaces the group's name, description, discount and colour.</summary>
     /// <param name="name">The display name; not blank, at most <see cref="NameMaxLength"/> characters.</param>
     /// <param name="description">The optional description, at most <see cref="DescriptionMaxLength"/> characters.</param>
-    /// <param name="discountPercent">The discount in percent, from 0 to <see cref="MaxDiscountPercent"/>.</param>
+    /// <param name="discountPercent">The discount in percent, from 0 to <see cref="PriceDiscount.MaxPercent"/>.</param>
     /// <param name="color">The colour as <c>#RRGGBB</c>.</param>
     /// <exception cref="ArgumentException">The name is blank or a text is longer than its column.</exception>
     /// <exception cref="DomainRuleException">The discount is out of range or the colour is not <c>#RRGGBB</c>.</exception>
@@ -85,7 +85,7 @@ public sealed class ClientGroup : BaseEntity, IAggregateRoot
             throw new ArgumentException($"A client group's description is at most {DescriptionMaxLength} characters.", nameof(description));
         }
 
-        if (discountPercent is < 0m or > MaxDiscountPercent)
+        if (!PriceDiscount.IsValidPercent(discountPercent))
         {
             throw new DomainRuleException(ClientsErrors.ClientGroupDiscountInvalid, "A discount is between 0 and 100 percent.");
         }

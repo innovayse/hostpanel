@@ -133,7 +133,11 @@ watch(
         </template>
       </UiField>
       <UiField :label="t('clients.clientGroups.color')" :error="fieldErrors.color">
-        <UiColorField v-model="color" :placeholder="t('clients.clientGroups.colorPlaceholder')" data-testid="client-group-form-color" />
+        <UiColorField
+          v-model="color"
+          :placeholder="t('clients.clientGroups.colorPlaceholder')"
+          data-testid="client-group-form-color"
+        />
       </UiField>
     </UiStack>
     <template #footer>

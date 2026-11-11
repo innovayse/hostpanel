@@ -1425,6 +1425,15 @@ renewal invoices per client), `SendRenewalRemindersCron` 06:00, `CheckOverdueInv
 (`Manual`, `Overdue`, `DomainExpired`, `Other`): payment lifts only `Overdue`, and `DomainRenewedHandler` lifts only
 `DomainExpired`. Renewal alerts go to `Notifications:AdminEmail`, falling back to `Notifications:ContactEmail`.
 
+**A client group's discount is taken once, when the order is placed, and renewals keep that price.** `PlaceOrderHandler`
+reads the discount of the ordering client's group (the default group for a client the order creates) and takes it off
+every product line through `PriceDiscount.Apply`, so the order line, the invoice line and the service's recurring amount
+all carry the discounted price; a domain line keeps its registry price. `InvoiceItem.DiscountPercent` snapshots the
+percent on the invoice line and is cleared only when staff edit the unit price. Renewal invoices bill the service's
+recurring amount, which already is the discounted price, and never read the group again, so moving a client to another
+group or changing a group's discount touches no existing invoice and no existing service, and a renewal is not
+discounted a second time.
+
 **A manual bank transfer wait is bounded and never loses a card session's money.** `Invoice.RequestBankTransfer` leaves the hosted
 session on the invoice (the choice is refused only inside `GatewaySessionWindow`). While the transfer waits
 (`IsBankTransferPending`), `ReconcileGatewayPaymentsCronHandler` asks the gateway about that session like an open invoice's, without the

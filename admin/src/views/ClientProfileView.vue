@@ -475,7 +475,12 @@ onBeforeUnmount(() => {
             </UiField>
             <UiField :label="t('clients.clientGroups.group')">
               <template #default="{ id }">
-                <ClientGroupSelect :id="id" v-model="clientGroupId" :empty-label="t('clients.clientGroups.noGroup')" data-testid="client-profile-group" />
+                <ClientGroupSelect
+                  :id="id"
+                  v-model="clientGroupId"
+                  :empty-label="t('clients.clientGroups.noGroup')"
+                  data-testid="client-profile-group"
+                />
               </template>
             </UiField>
           </UiStack>

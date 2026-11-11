@@ -8,9 +8,6 @@ namespace Innovayse.Hostpanel.Domain.Billing;
 /// </summary>
 public sealed class InvoiceItem : BaseEntity
 {
-    /// <summary>The largest discount a line can carry, in percent.</summary>
-    public const decimal MaxDiscountPercent = 100m;
-
     /// <summary>Gets the FK to the parent <see cref="Invoice"/> (set by EF after save).</summary>
     public int InvoiceId { get; private set; }
 
@@ -91,9 +88,9 @@ public sealed class InvoiceItem : BaseEntity
 
     /// <summary>
     /// Gets the discount in percent that was already taken off the list price to reach <see cref="UnitPrice"/>, as the
-    /// client's group gave it when the line was billed; 0 for a line without one. Set once when the line is created and
-    /// never changed after, so a later change of the client's group or of the group's discount leaves the invoice as
-    /// billed.
+    /// client's group gave it when the line was billed; 0 for a line without one. Set once when the line is created,
+    /// so a later change of the client's group or of the group's discount leaves the invoice as billed. It is cleared
+    /// only when the unit price is edited, because the percent then no longer describes how the price was reached.
     /// </summary>
     public decimal DiscountPercent { get; private set; }
 
@@ -153,7 +150,7 @@ public sealed class InvoiceItem : BaseEntity
             throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be >= 1.");
         }
 
-        if (discountPercent is < 0m or > MaxDiscountPercent)
+        if (!PriceDiscount.IsValidPercent(discountPercent))
         {
             throw new ArgumentOutOfRangeException(
                 nameof(discountPercent), "Discount must be between 0 and 100 percent.");
@@ -169,25 +166,6 @@ public sealed class InvoiceItem : BaseEntity
             ClientServiceId = clientServiceId,
             ProductSnapshot = productSnapshot,
         };
-    }
-
-    /// <summary>
-    /// Takes a discount off a list price, rounded to the currency's minor unit. The one place a discount becomes an
-    /// amount, so an order line and its invoice line always agree.
-    /// </summary>
-    /// <param name="listPrice">The price before the discount, in <paramref name="currency"/>.</param>
-    /// <param name="discountPercent">The discount in percent, from 0 to <see cref="MaxDiscountPercent"/>.</param>
-    /// <param name="currency">ISO 4217 alpha code the price is in.</param>
-    /// <returns>The price after the discount.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// The discount is outside 0 to <see cref="MaxDiscountPercent"/>.
-    /// </exception>
-    public static decimal PriceAfterDiscount(decimal listPrice, decimal discountPercent, string currency)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(discountPercent);
-        ArgumentOutOfRangeException.ThrowIfGreaterThan(discountPercent, MaxDiscountPercent);
-
-        return CurrencyCode.RoundToMinorUnits(listPrice * (1m - (discountPercent / MaxDiscountPercent)), currency);
     }
 
     /// <summary>Creates a renewal line for exactly one service or one domain over one period.</summary>
@@ -279,8 +257,9 @@ public sealed class InvoiceItem : BaseEntity
     /// Updates the line item properties and recalculates <see cref="Amount"/>.
     /// </summary>
     /// <remarks>
-    /// Deliberately leaves <see cref="ClientServiceId"/>, <see cref="ProductSnapshot"/> and
-    /// <see cref="DiscountPercent"/> alone.
+    /// Deliberately leaves <see cref="ClientServiceId"/> and <see cref="ProductSnapshot"/> alone, and
+    /// <see cref="DiscountPercent"/> too unless the unit price changes: a price typed in by hand is no longer the list
+    /// price less that percent, so the percent is cleared rather than shown beside a price it does not explain.
     /// Re-wording a description or correcting a price does not change which service the money was
     /// for or what was sold, and an edit path that silently cleared either would make a charge stop
     /// showing on the service it belongs to, or change what a fulfilment plugin delivers for it.
@@ -299,6 +278,11 @@ public sealed class InvoiceItem : BaseEntity
         if (quantity < 1)
         {
             throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be >= 1.");
+        }
+
+        if (unitPrice != UnitPrice)
+        {
+            DiscountPercent = 0m;
         }
 
         Description = description;

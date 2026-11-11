@@ -44,7 +44,9 @@ describe('ClientGroupFormDialog', () => {
     await wrapper.get('[data-testid="client-group-form-name"]').setValue('  Resellers ')
     await wrapper.get('[data-testid="client-group-form-save"]').trigger('click')
 
-    expect(wrapper.emitted('save')).toEqual([[{ name: 'Resellers', description: null, discountPercent: 0, color: '#3B82F6' }]])
+    expect(wrapper.emitted('save')).toEqual([
+      [{ name: 'Resellers', description: null, discountPercent: 0, color: '#3B82F6' }],
+    ])
   })
 
   it('starts from the group being edited', async () => {
@@ -52,7 +54,9 @@ describe('ClientGroupFormDialog', () => {
 
     await wrapper.get('[data-testid="client-group-form-save"]').trigger('click')
 
-    expect(wrapper.emitted('save')).toEqual([[{ name: 'VIP', description: 'Top clients', discountPercent: 12.5, color: '#112233' }]])
+    expect(wrapper.emitted('save')).toEqual([
+      [{ name: 'VIP', description: 'Top clients', discountPercent: 12.5, color: '#112233' }],
+    ])
   })
 
   it('shows the refusal sentence and the field message', () => {

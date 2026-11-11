@@ -5,6 +5,11 @@
  * A Tailwind class cannot carry a colour the operator typed and an inline `style` is not allowed,
  * so the dot is an SVG whose `fill` attribute takes the value. It is decorative: the text beside
  * it names the thing, so it is hidden from assistive technology.
+ *
+ * Why not `UiColorSwatch`: the swatch draws a rectangle, never a circle (its corners are rounded only
+ * when it carries a label), its height is fixed at `h-8` and its width is the full row or sized to
+ * its label. It cannot be a 10px round marker inside a badge, and overriding its size with extra
+ * classes would fight the ones it sets.
  */
 
 /** Props for UiColorDot. */

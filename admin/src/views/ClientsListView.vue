@@ -103,7 +103,8 @@ const hasFilters = computed(() =>
 
 /** Number of active filters. */
 const activeFilterCount = computed(() =>
-  [nameFilter.value, emailFilter.value, phoneFilter.value, statusFilter.value, groupFilter.value].filter(value => value !== '' && value !== null).length,
+  [nameFilter.value, emailFilter.value, phoneFilter.value, statusFilter.value, groupFilter.value]
+    .filter(value => value !== '' && value !== null).length,
 )
 
 /**
@@ -226,7 +227,12 @@ onMounted(() => store.fetchAll())
           </UiField>
           <UiField :label="t('clients.clientGroups.group')">
             <template #default="{ id }">
-              <ClientGroupSelect :id="id" v-model="groupFilter" :empty-label="t('shared.any')" data-testid="clients-list-filter-group" />
+              <ClientGroupSelect
+                :id="id"
+                v-model="groupFilter"
+                :empty-label="t('shared.any')"
+                data-testid="clients-list-filter-group"
+              />
             </template>
           </UiField>
         </UiGrid>
@@ -308,7 +314,11 @@ onMounted(() => store.fetchAll())
               <UiBadge v-else :tone="clientStatusTone(client.status)" small>{{ client.status }}</UiBadge>
             </UiTableCell>
             <UiTableCell>
-              <ClientGroupBadge v-if="client.clientGroupName && client.clientGroupColor" :name="client.clientGroupName" :color="client.clientGroupColor" />
+              <ClientGroupBadge
+                v-if="client.clientGroupName && client.clientGroupColor"
+                :name="client.clientGroupName"
+                :color="client.clientGroupColor"
+              />
               <template v-else>—</template>
             </UiTableCell>
             <UiTableCell>

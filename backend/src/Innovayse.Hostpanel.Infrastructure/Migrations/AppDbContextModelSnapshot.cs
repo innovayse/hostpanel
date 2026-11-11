@@ -3647,6 +3647,87 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("ClientServices");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Services.ServiceChangeRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ClientId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int>("FromProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("InvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("NewRecurringAmount")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<decimal>("ProrationAmount")
+                        .HasColumnType("numeric(18,4)");
+
+                    b.Property<DateTimeOffset?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ServiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("ToProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClientId");
+
+                    b.HasIndex("FromProductId");
+
+                    b.HasIndex("InvoiceId");
+
+                    b.HasIndex("ServiceId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("ToProductId");
+
+                    b.HasIndex(new[] { "ServiceId" }, "IX_ServiceChangeRequests_ServiceId_Open")
+                        .IsUnique()
+                        .HasFilter("\"Status\" IN ('Pending', 'Approved')");
+
+                    b.ToTable("ServiceChangeRequests");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Settings.Setting", b =>
                 {
                     b.Property<int>("Id")
@@ -5238,6 +5319,33 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasOne("Innovayse.Hostpanel.Domain.Products.Product", null)
                         .WithMany()
                         .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.Services.ServiceChangeRequest", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.Clients.Client", null)
+                        .WithMany()
+                        .HasForeignKey("ClientId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Innovayse.Hostpanel.Domain.Products.Product", null)
+                        .WithMany()
+                        .HasForeignKey("FromProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Innovayse.Hostpanel.Domain.Services.ClientService", null)
+                        .WithMany()
+                        .HasForeignKey("ServiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Innovayse.Hostpanel.Domain.Products.Product", null)
+                        .WithMany()
+                        .HasForeignKey("ToProductId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

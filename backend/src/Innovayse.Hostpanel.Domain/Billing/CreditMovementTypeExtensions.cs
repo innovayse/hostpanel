@@ -10,6 +10,7 @@ public static class CreditMovementTypeExtensions
     /// start and cannot see coming are announced; moving credit between the balance and an invoice is
     /// the client's own action or the renewal sweep's, and the invoice already says it.
     /// A credit note is mailed as the note itself, which already says what it put on the balance, so it sends no second mail.
+    /// A plan change credit is announced: a downgrade that waits for staff puts the money on the balance long after the client asked.
     /// </summary>
     /// <param name="movement">The movement.</param>
     /// <returns><see langword="true"/> when the client is mailed the new balance.</returns>
@@ -19,5 +20,6 @@ public static class CreditMovementTypeExtensions
             or CreditMovementType.RefundToCredit
             or CreditMovementType.TopUp
             or CreditMovementType.TopUpRefunded
-            or CreditMovementType.PaymentSurplus;
+            or CreditMovementType.PaymentSurplus
+            or CreditMovementType.PlanChangeCredit;
 }

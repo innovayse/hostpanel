@@ -31,6 +31,8 @@ public static class StatusMapping
             "QUOTA_EXCEEDED" or "LIMIT_EXCEEDED" => new(402, "Payment Required"),
             // Exact row: the first invoice must be paid before the client may set the service up.
             "SERVICE_FIRST_INVOICE_UNPAID" => new(402, "Payment Required"),
+            // Exact row: the proration invoice of an upgrade must be paid before the plan changes.
+            "SERVICE_CHANGE_INVOICE_UNPAID" => new(402, "Payment Required"),
             "PAYLOAD_TOO_LARGE" => new(413, "Content Too Large"),
             "CONTENT_REJECTED" => new(422, "Unprocessable Content"),
             "CONFIRMATION_REQUIRED" => new(409, "Conflict"),
@@ -53,6 +55,9 @@ public static class StatusMapping
             // Exact row: only a terminated service has a termination date to correct, so the stored
             // status stands in the way (a state conflict), and the name carries no CONFLICT token.
             "SERVICE_NOT_TERMINATED" => new(409, "Conflict"),
+            // Exact row: the plan change request is in a status that refuses the move, or the service left its plan since it was
+            // made, a state conflict whose name carries no CONFLICT / ALREADY token for the generic arms.
+            "SERVICE_CHANGE_INVALID_STATE" => new(409, "Conflict"),
             // A plugin shipped with the build: the request is well-formed, the target's state refuses it.
             "PLUGIN_BUILT_IN" => new(409, "Conflict"),
             // Exact row: a package whose assembly file name another plugin ships is a bad upload, a 400 like the host

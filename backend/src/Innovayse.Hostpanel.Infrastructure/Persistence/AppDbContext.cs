@@ -119,6 +119,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the cancellation requests table.</summary>
     public DbSet<CancellationRequest> CancellationRequests => Set<CancellationRequest>();
 
+    /// <summary>Gets the plan change requests table.</summary>
+    public DbSet<ServiceChangeRequest> ServiceChangeRequests => Set<ServiceChangeRequest>();
+
     /// <summary>Gets the domains table.</summary>
     public DbSet<RegisteredDomain> Domains => Set<RegisteredDomain>();
 
@@ -357,7 +360,7 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// delivery claimed the same email first (the unique delivery key of an email log row was violated), or another
     /// call wrote the first value of the same plugin store key, or another call opened the same plugin store scope, or
     /// another call created the service of the same order line first, or another attempt recorded the renewal of the same
-    /// order line first.
+    /// order line first, or another call opened a plan change request for the same service first.
     /// </exception>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -484,6 +487,17 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             // RenewDomainHandler answers it by finding the renewal the winner recorded, so the line counts as renewed.
             throw new ConcurrencyConflictException(
                 "Another attempt recorded the renewal of the same order line concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: ServiceChangeRequestConfiguration.OpenRequestIndex,
+        })
+        {
+            // Two requests to change the plan of one service were raised at once: the same lost race as a concurrent save.
+            // RequestMyServicePlanChangeHandler answers it as the request that is already open.
+            throw new ConcurrencyConflictException(
+                "Another call opened a plan change request for the same service concurrently.", ex);
         }
     }
 

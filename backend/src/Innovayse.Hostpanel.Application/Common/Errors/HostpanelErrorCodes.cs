@@ -617,6 +617,30 @@ public static class HostpanelErrorCodes
     /// <summary>The id names no cancellation request (404).</summary>
     public const string CANCELLATION_REQUEST_NOT_FOUND = "CANCELLATION_REQUEST_NOT_FOUND";
 
+    /// <summary>The id names no plan change request (404).</summary>
+    public const string SERVICE_CHANGE_REQUEST_NOT_FOUND = "SERVICE_CHANGE_REQUEST_NOT_FOUND";
+
+    /// <summary>An open plan change request already exists for the service (409).</summary>
+    public const string SERVICE_CHANGE_ALREADY_PENDING = "SERVICE_CHANGE_ALREADY_PENDING";
+
+    /// <summary>The plan asked for is the plan the service already runs on (400).</summary>
+    public const string SERVICE_CHANGE_SAME_PRODUCT = "SERVICE_CHANGE_SAME_PRODUCT";
+
+    /// <summary>The plan asked for costs the same as the current one, so there is nothing to change or prorate (400).</summary>
+    public const string SERVICE_CHANGE_SAME_PRICE = "SERVICE_CHANGE_SAME_PRICE";
+
+    /// <summary>The plan asked for is not active, or belongs to another product group than the service (400).</summary>
+    public const string SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE = "SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE";
+
+    /// <summary>The plan asked for has no price for the service's billing cycle in the client's currency (400).</summary>
+    public const string SERVICE_CHANGE_PRICE_UNAVAILABLE = "SERVICE_CHANGE_PRICE_UNAVAILABLE";
+
+    /// <summary>The proration invoice of an upgrade is not paid yet, so the plan cannot change (402).</summary>
+    public const string SERVICE_CHANGE_INVOICE_UNPAID = "SERVICE_CHANGE_INVOICE_UNPAID";
+
+    /// <summary>The service has no renewal date, so the rest of its billing cycle cannot be prorated (400).</summary>
+    public const string SERVICE_CHANGE_NO_RENEWAL_DATE = "SERVICE_CHANGE_NO_RENEWAL_DATE";
+
     /// <summary>The id names no product (404).</summary>
     public const string PRODUCT_NOT_FOUND = "PRODUCT_NOT_FOUND";
 
@@ -1580,6 +1604,9 @@ public static class HostpanelErrorCodes
 
     /// <summary>The service is not terminated, so it has no termination date to correct (409), from <see cref="Domain.Services.ClientService.CorrectTerminationDate"/>.</summary>
     public const string SERVICE_NOT_TERMINATED = Domain.Services.ServicesErrors.ServiceNotTerminated;
+
+    /// <summary>The plan change request is not in the status the move needs, or the service moved off its plan since the request (409): <see cref="Domain.Services.ServiceChangeRequest"/>.</summary>
+    public const string SERVICE_CHANGE_INVALID_STATE = Domain.Services.ServicesErrors.ServiceChangeInvalidState;
 
     /// <summary>A closed ticket does not accept new replies (400): <see cref="Domain.Support.Ticket.AddReply"/>.</summary>
     public const string TICKET_REPLY_NOT_ALLOWED = Domain.Support.SupportErrors.TicketReplyNotAllowed;

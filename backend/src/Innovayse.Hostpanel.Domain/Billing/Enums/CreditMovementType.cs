@@ -42,4 +42,7 @@ public enum CreditMovementType
 
     /// <summary>A credit note issued as account credit was voided, and its value came off the balance again.</summary>
     CreditNoteVoided = 11,
+
+    /// <summary>The prorated difference of a downgrade, for the rest of the billing cycle, was put on the balance.</summary>
+    PlanChangeCredit = 12,
 }

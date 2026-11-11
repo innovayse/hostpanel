@@ -1354,4 +1354,31 @@
   <data name="CLIENT_GROUP_COLOR_INVALID" xml:space="preserve">
     <value>A colour must be written as #RRGGBB.</value>
   </data>
+  <data name="SERVICE_CHANGE_REQUEST_NOT_FOUND" xml:space="preserve">
+    <value>No such plan change request.</value>
+  </data>
+  <data name="SERVICE_CHANGE_ALREADY_PENDING" xml:space="preserve">
+    <value>A plan change is already pending for this service.</value>
+  </data>
+  <data name="SERVICE_CHANGE_SAME_PRODUCT" xml:space="preserve">
+    <value>The service already runs on this plan.</value>
+  </data>
+  <data name="SERVICE_CHANGE_SAME_PRICE" xml:space="preserve">
+    <value>This plan costs the same as the current one, so there is nothing to change.</value>
+  </data>
+  <data name="SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE" xml:space="preserve">
+    <value>This plan is not available for the service.</value>
+  </data>
+  <data name="SERVICE_CHANGE_PRICE_UNAVAILABLE" xml:space="preserve">
+    <value>This plan has no price for the service's billing cycle in your currency.</value>
+  </data>
+  <data name="SERVICE_CHANGE_NO_RENEWAL_DATE" xml:space="preserve">
+    <value>The service has no renewal date, so the plan cannot be changed in the middle of a billing cycle.</value>
+  </data>
+  <data name="SERVICE_CHANGE_INVALID_STATE" xml:space="preserve">
+    <value>The plan change request is not in a state that allows this action.</value>
+  </data>
+  <data name="SERVICE_CHANGE_INVOICE_UNPAID" xml:space="preserve">
+    <value>The invoice for the plan change must be paid before the plan changes.</value>
+  </data>
 </root>

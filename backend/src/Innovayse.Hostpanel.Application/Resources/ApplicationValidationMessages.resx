@@ -1528,4 +1528,13 @@
   <data name="ClientGroupColorInvalid" xml:space="preserve">
     <value>A colour must be written as #RRGGBB.</value>
   </data>
+  <data name="ServiceChangeRequestIdInvalid" xml:space="preserve">
+    <value>Provide a valid plan change request.</value>
+  </data>
+  <data name="ServiceChangeNoteTooLong" xml:space="preserve">
+    <value>Keep the note within {0} characters.</value>
+  </data>
+  <data name="ServiceChangeStatusInvalid" xml:space="preserve">
+    <value>Choose a valid plan change status.</value>
+  </data>
 </root>

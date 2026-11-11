@@ -85,6 +85,9 @@ public interface IHostpanelDbContext
     /// <summary>Gets the cancellation requests table.</summary>
     public DbSet<CancellationRequest> CancellationRequests { get; }
 
+    /// <summary>Gets the plan change requests table.</summary>
+    public DbSet<ServiceChangeRequest> ServiceChangeRequests { get; }
+
     /// <summary>Gets the domains table.</summary>
     public DbSet<RegisteredDomain> Domains { get; }
 

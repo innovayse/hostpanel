@@ -7,11 +7,13 @@ using Innovayse.Hostpanel.Application.Provisioning.Queries.GetMyServiceControlPa
 using Innovayse.Hostpanel.Application.Services.Commands.AddMySshKey;
 using Innovayse.Hostpanel.Application.Services.Commands.CancelMyService;
 using Innovayse.Hostpanel.Application.Services.Commands.OrderMyService;
+using Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlanChange;
 using Innovayse.Hostpanel.Application.Services.Commands.RevokeMySshKey;
 using Innovayse.Hostpanel.Application.Services.Commands.SetupMyService;
 using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Application.Services.Queries.GetMyServiceCancellationStatus;
 using Innovayse.Hostpanel.Application.Services.Queries.GetMyServiceHostingInfo;
+using Innovayse.Hostpanel.Application.Services.Queries.GetMyServicePlanChangeOptions;
 using Innovayse.Hostpanel.Application.Services.Queries.GetMyServices;
 using Innovayse.Hostpanel.Application.Services.Queries.GetMySshAccess;
 using Innovayse.Hostpanel.Application.Services.Queries.ListMySshKeys;
@@ -437,6 +439,70 @@ public sealed class MyServicesController : BaseApiController
     public async Task<IActionResult> RevokeSshKeyAsync(int id, Guid keyId, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(new RevokeMySshKeyCommand(id, keyId), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Lists the plans one of the caller's services can move to, each with the prorated amount the client is shown
+    /// before confirming.
+    /// </summary>
+    /// <param name="id">Client service primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the plans (an empty list when there is nowhere to move); 400 with <c>VALIDATION_ERROR</c> for a
+    /// non-positive id, or with <c>SERVICE_NOT_ACTIVE</c> / <c>SERVICE_CHANGE_NO_RENEWAL_DATE</c> for a service whose plan
+    /// cannot change; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks
+    /// <c>ViewProductsServices</c>; 404 with <c>SERVICE_NOT_FOUND</c> when the service is not the caller's;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("{id:int}/plan-change-options")]
+    [Authorize(Policy = Policies.Client)]
+    [RequiresClientPermission(ClientPermission.ViewProductsServices)]
+    [ProducesResponseType(typeof(IReadOnlyList<ServicePlanChangeOptionDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetPlanChangeOptionsAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<ServicePlanChangeOptionDto>>>(
+            new GetMyServicePlanChangeOptionsQuery(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Moves a client service to another plan of its product group. An upgrade raises the invoice of the prorated
+    /// charge and changes the plan when it is paid; a downgrade credits the prorated amount to the balance, at once or once
+    /// staff approve it, as the billing setting says.
+    /// </summary>
+    /// <param name="id">Client service primary key; wins over any id in the body.</param>
+    /// <param name="command">The plan to move to.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with where the request stands; 400 with <c>VALIDATION_ERROR</c> for a malformed body, or with
+    /// <c>SERVICE_NOT_ACTIVE</c>, <c>SERVICE_CHANGE_NO_RENEWAL_DATE</c>, <c>SERVICE_CHANGE_SAME_PRODUCT</c>,
+    /// <c>SERVICE_CHANGE_SAME_PRICE</c>, <c>SERVICE_CHANGE_PRODUCT_NOT_AVAILABLE</c> or <c>SERVICE_CHANGE_PRICE_UNAVAILABLE</c>
+    /// when the move is refused; 401 without a session; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user lacks
+    /// <c>PlaceNewOrders</c>, or <c>CLIENT_SUSPENDED</c> / <c>CLIENT_CLOSED</c>; 404 with <c>SERVICE_NOT_FOUND</c> when the
+    /// service is not the caller's, or <c>PRODUCT_NOT_FOUND</c>; 409 with <c>SERVICE_CHANGE_ALREADY_PENDING</c> when a request
+    /// is already open, or <c>PRODUCT_PACKAGE_MISSING</c> when the new plan names no hosting package;
+    /// 502 with <c>SERVICE_PACKAGE_UPSTREAM_FAILED</c> when the hosting panel refuses the new package (the request stays
+    /// Approved for staff to retry); 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/plan-change")]
+    [Authorize(Policy = Policies.Client)]
+    [RequiresClientPermission(ClientPermission.PlaceNewOrders)]
+    [ProducesResponseType(typeof(ServicePlanChangeResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status502BadGateway)]
+    public async Task<IActionResult> RequestPlanChangeAsync(
+        int id, [FromBody] RequestMyServicePlanChangeCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<ServicePlanChangeResultDto>>(command with { ServiceId = id }, ct);
         return HandleResult(outcome);
     }
 }

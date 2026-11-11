@@ -41,4 +41,10 @@ public static class ServicesErrors
 
     /// <summary>The service is not Terminated (409), from <see cref="ClientService.CorrectTerminationDate"/>.</summary>
     public const string ServiceNotTerminated = "SERVICE_NOT_TERMINATED";
+
+    /// <summary>
+    /// The plan change request is not in the status the move needs (409), from the transitions of
+    /// <see cref="ServiceChangeRequest"/>.
+    /// </summary>
+    public const string ServiceChangeInvalidState = "SERVICE_CHANGE_INVALID_STATE";
 }

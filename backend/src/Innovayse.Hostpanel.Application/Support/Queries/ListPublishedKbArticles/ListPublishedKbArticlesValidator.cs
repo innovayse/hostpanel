@@ -2,7 +2,6 @@ using FluentValidation;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
-using Innovayse.Hostpanel.Domain.Support;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Support.Queries.ListPublishedKbArticles;
@@ -19,12 +18,15 @@ public sealed class ListPublishedKbArticlesValidator : LocalizedValidator<ListPu
     /// <summary>Longest search text the public listing accepts; a longer one cannot be something a person typed to find an article.</summary>
     private const int SearchMaxLength = 200;
 
+    /// <summary>Longest a category filter may be: a category name (255) or a slug (150).</summary>
+    private const int CategoryFilterMaxLength = 255;
+
     /// <summary>Initializes validator with localization service.</summary>
     /// <param name="localizer">String localizer for validation messages.</param>
     public ListPublishedKbArticlesValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        RuleFor(x => x.Category).MaximumLength(KbArticle.CategoryMaxLength).WithMessage(L["KbArticleCategoryTooLong", KbArticle.CategoryMaxLength]);
+        RuleFor(x => x.Category).MaximumLength(CategoryFilterMaxLength).WithMessage(L["KbArticleCategoryTooLong", CategoryFilterMaxLength]);
         RuleFor(x => x.Search).MaximumLength(SearchMaxLength).WithMessage(L["KbArticleSearchTooLong", SearchMaxLength]);
         RuleFor(x => x.Page).MustBePage(L["KbArticlePageRequired"]);
         RuleFor(x => x.PageSize).MustBePageSize(MaxPageSize, L["KbArticlePageSizeRange"]);

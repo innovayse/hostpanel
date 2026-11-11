@@ -11,6 +11,12 @@ public sealed class KbCategory : BaseEntity
     /// <summary>Gets the display name of this category.</summary>
     public string Name { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Gets the category's address segment: unique without regard to case, fixed once the category is created so
+    /// links to it keep working even when it is renamed. See <see cref="KbSlugRules"/>.
+    /// </summary>
+    public string Slug { get; private set; } = string.Empty;
+
     /// <summary>Gets the description of this category.</summary>
     public string Description { get; private set; } = string.Empty;
 
@@ -27,17 +33,23 @@ public sealed class KbCategory : BaseEntity
     /// Creates a new <see cref="KbCategory"/> with the provided details.
     /// </summary>
     /// <param name="name">The category display name.</param>
+    /// <param name="slug">The category's slug, already unique: see <see cref="KbSlugRules.IsValidCategorySlug"/>.</param>
     /// <param name="description">The category description.</param>
     /// <param name="isHidden">Whether the category should be hidden from clients.</param>
     /// <param name="parentCategoryId">Optional parent category ID for nesting.</param>
     /// <returns>A new <see cref="KbCategory"/> instance.</returns>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="name"/> is null or whitespace.</exception>
-    public static KbCategory Create(string name, string description, bool isHidden, int? parentCategoryId = null)
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="name"/> is null or whitespace, or <paramref name="slug"/> is not a valid category slug.
+    /// </exception>
+    public static KbCategory Create(string name, string slug, string description, bool isHidden, int? parentCategoryId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        KbSlugRules.EnsureValidCategorySlug(slug);
+
         return new KbCategory
         {
             Name = name,
+            Slug = slug,
             Description = description ?? string.Empty,
             IsHidden = isHidden,
             ParentCategoryId = parentCategoryId,

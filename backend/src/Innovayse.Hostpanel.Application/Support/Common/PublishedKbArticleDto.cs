@@ -1,15 +1,10 @@
 namespace Innovayse.Hostpanel.Application.Support.Common;
 
-/// <summary>
-/// The knowledge base article projection a client is allowed to see.
-/// </summary>
-/// <remarks>
-/// Deliberately not <see cref="KbArticleDto"/>. That record carries <c>IsPublished</c>, an
-/// editorial fact about the row rather than help for a reader. Only published rows reach this
-/// type, so the flag has nothing left to say and is left out rather than pinned to a constant.
-/// </remarks>
-/// <param name="Id">Article primary key.</param>
-/// <param name="Title">The article title.</param>
-/// <param name="Content">The full article body content.</param>
-/// <param name="Category">The category this article belongs to.</param>
-public sealed record PublishedKbArticleDto(int Id, string Title, string Content, string Category);
+/// <summary>A published article as a reader sees it, in the reader's language.</summary>
+/// <param name="Id">The article id.</param>
+/// <param name="Title">The title in the reader's language.</param>
+/// <param name="Content">The body in the reader's language.</param>
+/// <param name="Category">The name of the article's category.</param>
+/// <param name="Slug">The article's address segment.</param>
+/// <param name="CategorySlug">The address segment of the article's category.</param>
+public sealed record PublishedKbArticleDto(int Id, string Title, string Content, string Category, string Slug, string CategorySlug);

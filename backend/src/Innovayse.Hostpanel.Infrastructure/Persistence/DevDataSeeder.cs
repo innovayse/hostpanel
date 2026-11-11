@@ -1,4 +1,6 @@
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Support.Common;
 using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
@@ -20,6 +22,7 @@ using Innovayse.Hostpanel.Domain.Support.Enums;
 using Innovayse.Hostpanel.Infrastructure.Auth;
 using Innovayse.Hostpanel.Infrastructure.Demo;
 using Innovayse.Hostpanel.Infrastructure.Persistence.Settings;
+using Innovayse.Hostpanel.Shared.Constants;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -689,7 +692,7 @@ public sealed class DevDataSeeder
         var kbCategories = new List<KbCategory>();
         foreach (var (name, desc) in kbCatDefs)
         {
-            var cat = KbCategory.Create(name, desc, false);
+            var cat = KbCategory.Create(name, SlugGenerator.FromText(name, KbSlugAllocator.CategoryFallback, KbSlugRules.MaxLength), desc, false);
             db.KbCategories.Add(cat);
             kbCategories.Add(cat);
         }
@@ -732,7 +735,9 @@ public sealed class DevDataSeeder
 
         foreach (var (title, content, category) in articleDefs)
         {
-            var article = KbArticle.Create(title, content, category);
+            var article = KbArticle.Create(
+                kbCategories.First(c => c.Name == category).Id, SlugGenerator.FromText(title, KbSlugAllocator.ArticleFallback, KbSlugRules.MaxLength));
+            article.SetTranslation(SupportedLanguages.Default, title, content);
             article.Publish();
             db.KbArticles.Add(article);
         }

@@ -1,11 +1,12 @@
 /**
  * Support content flows: publishing an announcement posts its title, body and flag and returns to
- * the list, and adding a knowledgebase category posts it and shows it in the category grid.
+ * the list, adding a knowledgebase category posts it and shows it in the category grid, and a knowledgebase
+ * article is written in several languages and edited later.
  */
 import { HttpMethod } from '../src/types/http'
 import { expect, test } from '@playwright/test'
 import type { Announcement } from '../src/types/announcement'
-import type { KbCategory } from '../src/types/kbarticle'
+import type { KbArticle, KbCategory } from '../src/types/kbarticle'
 import { fieldOf } from './support/locators'
 import { json, stubApi } from './support/stubApi'
 
@@ -61,7 +62,7 @@ test('adding a knowledgebase category posts it and shows it in the grid', async 
         path: '/api/admin/knowledgebase/categories',
         respond: (call) => {
           const sent = call.body as { name: string; description: string; isHidden: boolean }
-          stored.push({ id: 5, parentCategoryId: null, articleCount: 0, ...sent })
+          stored.push({ id: 5, parentCategoryId: null, articleCount: 0, slug: 'getting-started', ...sent })
           return { body: 5 }
         },
       },
@@ -96,4 +97,73 @@ test('a refused announcement save shows the API sentence and stays on the form',
 
   await expect(page.getByTestId('announcement-form-error')).toContainText(sentence)
   expect(new URL(page.url()).pathname).toBe('/support/announcements/new')
+})
+
+test('a knowledgebase article is written in two languages, listed, and edited to add a third', async ({ page }) => {
+  const categories: KbCategory[] = [
+    { id: 3, name: 'Billing', description: '', isHidden: false, parentCategoryId: null, articleCount: 0, slug: 'billing' },
+  ]
+  const articles: KbArticle[] = []
+
+  const api = await stubApi(page, {
+    signedIn: true,
+    routes: [
+      { method: HttpMethod.Get, path: '/api/admin/knowledgebase/categories', respond: () => ({ body: categories }) },
+      { method: HttpMethod.Get, path: '/api/admin/knowledgebase', respond: () => ({ body: articles }) },
+      {
+        method: HttpMethod.Post,
+        path: '/api/admin/knowledgebase',
+        respond: (call) => {
+          const sent = call.body as Pick<KbArticle, 'translations' | 'isPublished'> & { categoryId: number }
+          articles.push({ id: 11, slug: 'how-to-pay', categoryName: 'Billing', ...sent })
+          return { body: 11, status: 201 }
+        },
+      },
+      {
+        method: HttpMethod.Put,
+        path: '/api/admin/knowledgebase/11',
+        respond: (call) => {
+          const sent = call.body as Pick<KbArticle, 'translations'> & { categoryId: number }
+          const stored = articles.find((article) => article.id === 11)
+          if (stored === undefined) {
+            throw new Error('The edit reached the stub before the article was created.')
+          }
+          Object.assign(stored, sent)
+          return { status: 204 }
+        },
+      },
+    ],
+  })
+
+  await page.goto('/support/knowledgebase')
+  await page.getByTestId('knowledgebase-tab-article').click()
+  await page.getByTestId('knowledgebase-article-category').getByTestId('ui-select-trigger').click()
+  await page.getByTestId('ui-select-option').filter({ hasText: 'Billing' }).click()
+  await fieldOf(page, 'knowledgebase-article-title').fill('How to pay')
+  await fieldOf(page, 'knowledgebase-article-content').fill('Use a card')
+  await page.getByTestId('knowledgebase-article-locale-ru').click()
+  await fieldOf(page, 'knowledgebase-article-title').fill('Как оплатить')
+  await fieldOf(page, 'knowledgebase-article-content').fill('Картой')
+  await page.getByTestId('knowledgebase-article-save').click()
+
+  await expect(page.getByTestId('knowledgebase-article-11')).toContainText('How to pay')
+  await expect(page.getByTestId('knowledgebase-article-11')).toContainText('how-to-pay')
+  expect(api.callsTo(HttpMethod.Post, '/api/admin/knowledgebase')[0]?.body).toEqual({
+    categoryId: 3,
+    translations: { en: { title: 'How to pay', content: 'Use a card' }, ru: { title: 'Как оплатить', content: 'Картой' } },
+    isPublished: false,
+  })
+
+  await page.getByTestId('knowledgebase-article-11-edit').click()
+  await expect(fieldOf(page, 'knowledgebase-article-title')).toHaveValue('How to pay')
+  await page.getByTestId('knowledgebase-article-locale-hy').click()
+  await fieldOf(page, 'knowledgebase-article-title').fill('Ինչպես վճարել')
+  await fieldOf(page, 'knowledgebase-article-content').fill('Քարտով')
+  await page.getByTestId('knowledgebase-article-save').click()
+
+  await expect(page.getByTestId('knowledgebase-feedback')).toContainText('Article saved.')
+  expect(api.callsTo(HttpMethod.Put, '/api/admin/knowledgebase/11')[0]?.body).toMatchObject({
+    categoryId: 3,
+    translations: { hy: { title: 'Ինչպես վճարել', content: 'Քարտով' } },
+  })
 })

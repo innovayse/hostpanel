@@ -7,6 +7,7 @@ using Innovayse.Hostpanel.Application.Clients.Commands.AcceptInvitation;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Application.Services.Common;
+using Innovayse.Hostpanel.Application.Support.Common;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Application;
@@ -70,6 +71,10 @@ public static class DependencyInjection
         // cases and the plugin SSH access.
         services.AddScoped<SshKeyInstaller>();
         services.AddScoped<SshKeyRevocation>();
+
+        // Gives a new knowledge base article or category a slug nobody else has.
+        services.AddScoped<KbSlugAllocator>();
+        services.AddScoped<KbSlugSaver>();
 
         // The SSH half of the plugin host API: issues and revokes a plugin's identities for the call's client (#758).
         services.AddScoped<PluginSshAccessService>();

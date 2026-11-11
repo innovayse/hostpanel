@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Support;
@@ -18,13 +17,7 @@ public sealed class PublishKbArticleTests(IntegrationTestFactory factory) : ICla
     public async Task AdminCanPublishAKbArticleAsync()
     {
         var client = await SupportTestSeeds.AdminClientAsync(factory);
-        var createResponse = await client.PostAsJsonAsync("/api/admin/knowledgebase", new
-        {
-            title = $"Article-{Guid.NewGuid():N}",
-            content = "Body text.",
-            category = "General",
-        });
-        var id = int.Parse((await createResponse.Content.ReadAsStringAsync()).Trim());
+        var id = await KbTestSeeds.CreateArticleAsync(client, await KbTestSeeds.CreateCategoryAsync(client));
 
         var response = await client.PutAsync($"/api/admin/knowledgebase/{id}/publish", content: null);
 

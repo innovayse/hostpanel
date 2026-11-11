@@ -12,6 +12,23 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class DeleteKbCategoryTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>A category that still holds an article cannot be deleted: 409 <c>KBCATEGORY_IN_USE</c>, and it is deletable once empty.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task DeleteRefusesACategoryThatHoldsArticlesAsync()
+    {
+        var client = await SupportTestSeeds.AdminClientAsync(factory);
+        var categoryId = await KbTestSeeds.CreateCategoryAsync(client);
+        var articleId = await KbTestSeeds.CreateArticleAsync(client, categoryId);
+
+        var refused = await client.DeleteAsync($"/api/admin/knowledgebase/categories/{categoryId}");
+
+        refused.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await SupportTestSeeds.AssertCodeAsync(refused, HostpanelErrorCodes.KBCATEGORY_IN_USE);
+        (await client.DeleteAsync($"/api/admin/knowledgebase/{articleId}")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+        (await client.DeleteAsync($"/api/admin/knowledgebase/categories/{categoryId}")).StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
     /// <summary>An admin can create and delete a knowledge base category.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

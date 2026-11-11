@@ -1,9 +1,16 @@
 namespace Innovayse.Hostpanel.Application.Support.Common;
 
-/// <summary>DTO representing a knowledge base article.</summary>
-/// <param name="Id">Article primary key.</param>
-/// <param name="Title">The article title.</param>
-/// <param name="Content">The full article body content.</param>
-/// <param name="Category">The category this article belongs to.</param>
+/// <summary>A knowledge base article as the admin sees it: every translation, with the category it belongs to.</summary>
+/// <param name="Id">The article id.</param>
+/// <param name="Slug">The article's address segment; fixed once the article exists.</param>
+/// <param name="CategoryId">The id of the category the article belongs to.</param>
+/// <param name="CategoryName">The name of that category.</param>
 /// <param name="IsPublished">Whether the article is visible to clients.</param>
-public record KbArticleDto(int Id, string Title, string Content, string Category, bool IsPublished);
+/// <param name="Translations">The title and body in each locale, keyed by locale code.</param>
+public sealed record KbArticleDto(
+    int Id,
+    string Slug,
+    int CategoryId,
+    string CategoryName,
+    bool IsPublished,
+    Dictionary<string, KbArticleTranslationDto> Translations);

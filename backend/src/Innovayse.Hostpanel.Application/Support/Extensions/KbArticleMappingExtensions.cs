@@ -1,60 +1,107 @@
+using Innovayse.Hostpanel.Application.Common.Extensions;
 using Innovayse.Hostpanel.Application.Support.Common;
 using Innovayse.Hostpanel.Domain.Support;
 
 namespace Innovayse.Hostpanel.Application.Support.Extensions;
 
-/// <summary>
-/// Maps <see cref="KbArticle"/> to <see cref="KbArticleDto"/>, <see cref="PublishedKbArticleDto"/> and
-/// <see cref="KbArticleSummaryDto"/>. Every
-/// query that returns one of these DTOs projects through this one mapping, so a field added to a DTO is
-/// added once rather than in several handlers that quietly drift apart.
-/// </summary>
+/// <summary>Reads knowledge base articles with their category and translations, and shapes the responses.</summary>
 public static class KbArticleMappingExtensions
 {
-    /// <summary>Projects the query to <see cref="KbArticleDto"/> rows, translated into the SQL select list.</summary>
-    /// <param name="source">The query to project.</param>
-    /// <returns>The query projected to <see cref="KbArticleDto"/>.</returns>
-    public static IQueryable<KbArticleDto> SelectDto(this IQueryable<KbArticle> source)
-    {
-        ArgumentNullException.ThrowIfNull(source);
+    /// <summary>Reads articles with their category and every translation in full.</summary>
+    /// <param name="articles">The articles to read.</param>
+    /// <param name="categories">The categories to join them with.</param>
+    /// <returns>One row per article, the translations carrying their whole body.</returns>
+    public static IQueryable<KbArticleRow> SelectRows(this IQueryable<KbArticle> articles, IQueryable<KbCategory> categories) =>
+        Rows(articles, categories, fullBody: true);
 
-        return source.Select(a => new KbArticleDto(a.Id, a.Title, a.Content, a.Category, a.IsPublished));
+    /// <summary>Reads articles for a list: every translation, each body cut to the first characters an excerpt needs.</summary>
+    /// <param name="articles">The articles to read.</param>
+    /// <param name="categories">The categories to join them with.</param>
+    /// <returns>One row per article, the translations carrying only the start of their body.</returns>
+    public static IQueryable<KbArticleRow> SelectLeadRows(this IQueryable<KbArticle> articles, IQueryable<KbCategory> categories) =>
+        Rows(articles, categories, fullBody: false);
+
+    /// <summary>Shapes a row for the admin: every translation, keyed by locale.</summary>
+    /// <param name="row">The article row.</param>
+    /// <returns>The admin view of the article.</returns>
+    public static KbArticleDto ToAdminDto(this KbArticleRow row)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+
+        return new KbArticleDto(
+            row.Id,
+            row.Slug,
+            row.CategoryId,
+            row.CategoryName,
+            row.IsPublished,
+            row.Translations.ToDictionary(t => t.Locale, t => new KbArticleTranslationDto(t.Title, t.Content)));
     }
 
-    /// <summary>
-    /// Projects the query to <see cref="PublishedKbArticleDto"/> rows, translated into the SQL select list.
-    /// The caller filters to published rows first.
-    /// </summary>
-    /// <param name="source">The query to project.</param>
-    /// <returns>The query projected to <see cref="PublishedKbArticleDto"/>.</returns>
-    public static IQueryable<PublishedKbArticleDto> SelectPublishedDto(this IQueryable<KbArticle> source)
+    /// <summary>Shapes a row for a reader: the translation in the reader's language, else the fallback, else the first.</summary>
+    /// <param name="row">The article row, read with full bodies.</param>
+    /// <param name="requested">The language the reader asked for.</param>
+    /// <param name="fallback">The language to fall back on.</param>
+    /// <returns>The reader's view of the article, or null when it has no translation at all.</returns>
+    public static PublishedKbArticleDto? ToPublishedDto(this KbArticleRow row, string requested, string fallback)
     {
-        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(row);
 
-        return source.Select(a => new PublishedKbArticleDto(a.Id, a.Title, a.Content, a.Category));
+        var text = row.Translations.ForLocale(t => t.Locale, requested, fallback);
+
+        return text is null
+            ? null
+            : new PublishedKbArticleDto(row.Id, text.Title, text.Content, row.CategoryName, row.Slug, row.CategorySlug);
     }
 
-    /// <summary>
-    /// Projects the query to <see cref="KbArticleSummarySource"/> rows. The database cuts the body to its
-    /// opening (<c>SUBSTRING</c>), so the rest of a long body never leaves the server.
-    /// </summary>
-    /// <param name="source">The query to project.</param>
-    /// <returns>The query projected to <see cref="KbArticleSummarySource"/>.</returns>
-    public static IQueryable<KbArticleSummarySource> SelectSummarySource(this IQueryable<KbArticle> source)
+    /// <summary>Shapes a row for a list: the title in the reader's language with a plain text excerpt of the body.</summary>
+    /// <param name="row">The article row, read with body leads.</param>
+    /// <param name="requested">The language the reader asked for.</param>
+    /// <param name="fallback">The language to fall back on.</param>
+    /// <returns>The list item, or null when the article has no translation at all.</returns>
+    public static KbArticleSummaryDto? ToSummaryDto(this KbArticleRow row, string requested, string fallback)
     {
-        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(row);
 
-        return source.Select(a => new KbArticleSummarySource(
-            a.Id, a.Title, a.Content.Substring(0, KbArticleExcerpt.SourceLength), a.Category));
+        var text = row.Translations.ForLocale(t => t.Locale, requested, fallback);
+
+        return text is null
+            ? null
+            : new KbArticleSummaryDto(row.Id, text.Title, KbArticleExcerpt.From(text.Content), row.CategoryName, row.Slug, row.CategorySlug);
     }
 
-    /// <summary>Builds the listing row, with its plain-text excerpt, from what the database returned.</summary>
-    /// <param name="source">The row as read.</param>
-    /// <returns>The summary DTO.</returns>
-    public static KbArticleSummaryDto ToSummaryDto(this KbArticleSummarySource source)
+    /// <summary>Converts the translations a command carries into the domain's input.</summary>
+    /// <param name="translations">The translations as sent, keyed by locale code.</param>
+    /// <returns>The same text as <see cref="KbArticleTranslationContent"/>.</returns>
+    public static IReadOnlyDictionary<string, KbArticleTranslationContent> ToContent(
+        this IReadOnlyDictionary<string, KbArticleTranslationDto> translations)
     {
-        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(translations);
 
-        return new KbArticleSummaryDto(source.Id, source.Title, KbArticleExcerpt.From(source.Lead), source.Category);
+        return translations.ToDictionary(t => t.Key, t => new KbArticleTranslationContent(t.Value.Title, t.Value.Content));
+    }
+
+    /// <summary>The join of an article with its category and translations that both readers above share.</summary>
+    /// <param name="articles">The articles to read.</param>
+    /// <param name="categories">The categories to join them with.</param>
+    /// <param name="fullBody">Whether each translation carries its whole body, or only the start an excerpt needs.</param>
+    /// <returns>One row per article.</returns>
+    private static IQueryable<KbArticleRow> Rows(IQueryable<KbArticle> articles, IQueryable<KbCategory> categories, bool fullBody)
+    {
+        ArgumentNullException.ThrowIfNull(articles);
+        ArgumentNullException.ThrowIfNull(categories);
+
+        return from a in articles
+               join c in categories on a.CategoryId equals c.Id
+               select new KbArticleRow(
+                   a.Id,
+                   a.Slug,
+                   a.IsPublished,
+                   c.Id,
+                   c.Name,
+                   c.Slug,
+                   a.Translations
+                       .Select(t => new KbTranslationRow(
+                           t.Locale, t.Title, fullBody ? t.Content : t.Content.Substring(0, KbArticleExcerpt.SourceLength)))
+                       .ToList());
     }
 }

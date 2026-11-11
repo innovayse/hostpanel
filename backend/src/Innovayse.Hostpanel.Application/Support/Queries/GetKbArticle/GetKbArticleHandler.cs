@@ -28,14 +28,14 @@ public sealed class GetKbArticleHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var article = await _context.KbArticles
+        var row = await _context.KbArticles
             .AsNoTracking()
             .Where(a => a.Id == query.Id)
-            .SelectDto()
+            .SelectRows(_context.KbCategories.AsNoTracking())
             .FirstOrDefaultAsync(ct);
 
-        return article is null
+        return row is null
             ? Result<KbArticleDto>.FailureCode(HostpanelErrorCodes.KBARTICLE_NOT_FOUND)
-            : Result.Success(article);
+            : Result.Success(row.ToAdminDto());
     }
 }

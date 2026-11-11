@@ -400,8 +400,11 @@
   <data name="KbArticleContentRequired" xml:space="preserve">
     <value>Содержимое обязательно.</value>
   </data>
-  <data name="KbArticleCategoryRequired" xml:space="preserve">
-    <value>Категория обязательна.</value>
+  <data name="KbArticleTitleTooLong" xml:space="preserve">
+    <value>Заголовок может содержать не более {0} символов.</value>
+  </data>
+  <data name="KbArticleSlugInvalid" xml:space="preserve">
+    <value>Адрес статьи недопустим.</value>
   </data>
   <data name="KbArticleCategoryTooLong" xml:space="preserve">
     <value>Категория не должна превышать {0} символов.</value>

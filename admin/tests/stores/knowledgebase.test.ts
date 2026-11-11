@@ -13,6 +13,9 @@ import { json, problem, stubFetch, stubOffline, callOf, invalid } from '../helpe
 /** A valid category body. */
 const category = { name: 'Billing', description: 'Invoices', isHidden: false }
 
+/** A valid article body: a category id, one English translation, published. */
+const article = { categoryId: 3, translations: { en: { title: 'How to pay', content: 'Use a card' } }, isPublished: true }
+
 describe('knowledgebaseStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -32,6 +35,7 @@ describe('knowledgebaseStore', () => {
     expect(await store.fetchArticles()).toBe(true)
     expect(store.articles).toEqual([{ id: 2 }])
     expect(store.loading).toBe(false)
+    expect(store.articlesLoading).toBe(false)
   })
 
   it('a refused load reports the API sentence, the no-answer sentence offline', async () => {
@@ -78,15 +82,62 @@ describe('knowledgebaseStore', () => {
     expect(refused).toHaveBeenCalledTimes(1)
   })
 
-  it('createArticle returns the id and deleteArticle reports the outcome', async () => {
+  it('createArticle sends the category id and translations, returns the id and reloads the articles', async () => {
     const store = useKnowledgebaseStore()
-    const article = { title: 'How to pay', content: 'Use a card', category: 'Billing', isPublished: true }
+    const mock = stubFetch(json(11), json([{ id: 11, slug: 'how-to-pay' }]))
 
-    stubFetch(json(11))
     expect(await store.createArticle(article)).toBe(11)
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/knowledgebase', method: 'POST', body: article })
+    expect(callOf(mock, 1).url).toBe('/api/admin/knowledgebase')
+    expect(store.articles).toEqual([{ id: 11, slug: 'how-to-pay' }])
+  })
+
+  it('createArticle returns null with the field messages and does not reload', async () => {
+    const store = useKnowledgebaseStore()
+    const mock = stubFetch(invalid('Check the form.', { Translations: ['English is required.'] }))
+
+    expect(await store.createArticle({ ...article, translations: {} })).toBeNull()
+    expect(store.fieldErrors).toEqual({ translations: 'English is required.' })
+    expect(mock).toHaveBeenCalledTimes(1)
+  })
+
+  it('updateArticle puts the category and translations and reloads on success only', async () => {
+    const store = useKnowledgebaseStore()
+    const update = { categoryId: article.categoryId, translations: article.translations }
+    const mock = stubFetch(json({}), json([{ id: 11 }]))
+
+    expect(await store.updateArticle(11, update)).toBe(true)
+    expect(callOf(mock, 0)).toMatchObject({ url: '/api/admin/knowledgebase/11', method: 'PUT', body: update })
+    expect(store.articles).toEqual([{ id: 11 }])
+
+    const refused = stubFetch(problem('No such category.', 404))
+    expect(await store.updateArticle(11, update)).toBe(false)
+    expect(store.error).toBe('No such category.')
+    expect(refused).toHaveBeenCalledTimes(1)
+  })
+
+  it('deleteArticle reports the outcome', async () => {
+    const store = useKnowledgebaseStore()
 
     stubFetch(problem('No such article.', 404))
     expect(await store.deleteArticle(11)).toBe(false)
     expect(store.error).toBe('No such article.')
+  })
+
+  it('the articles have their own loading flag: a slow articles load does not mark the categories as loading', async () => {
+    const store = useKnowledgebaseStore()
+    let release: () => void = () => undefined
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    vi.stubGlobal('fetch', vi.fn(() => gate.then(() => json([{ id: 2 }]))))
+
+    const pending = store.fetchArticles()
+
+    expect(store.articlesLoading).toBe(true)
+    expect(store.loading).toBe(false)
+    release()
+    await pending
+    expect(store.articlesLoading).toBe(false)
   })
 })

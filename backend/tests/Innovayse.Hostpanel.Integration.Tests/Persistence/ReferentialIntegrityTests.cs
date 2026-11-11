@@ -52,6 +52,8 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
         { typeof(Slide), nameof(Slide.ProductId), typeof(Product), DeleteBehavior.SetNull },
         { typeof(MigrationLog), nameof(MigrationLog.JobId), typeof(MigrationJob), DeleteBehavior.Cascade },
         { typeof(KbCategory), nameof(KbCategory.ParentCategoryId), typeof(KbCategory), DeleteBehavior.Restrict },
+        { typeof(KbArticle), nameof(KbArticle.CategoryId), typeof(KbCategory), DeleteBehavior.Restrict },
+        { typeof(KbArticleTranslation), nameof(KbArticleTranslation.ArticleId), typeof(KbArticle), DeleteBehavior.Cascade },
         { typeof(DownloadCategory), nameof(DownloadCategory.ParentCategoryId), typeof(DownloadCategory), DeleteBehavior.Restrict },
         { typeof(PredefinedReplyCategory), nameof(PredefinedReplyCategory.ParentCategoryId), typeof(PredefinedReplyCategory), DeleteBehavior.Restrict },
         { typeof(PredefinedReply), nameof(PredefinedReply.CategoryId), typeof(PredefinedReplyCategory), DeleteBehavior.Restrict },

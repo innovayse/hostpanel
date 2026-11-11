@@ -7,10 +7,12 @@ namespace Innovayse.Hostpanel.Application.Support.Common;
 /// <param name="IsHidden">Whether the category is hidden from clients.</param>
 /// <param name="ParentCategoryId">FK to parent category, or null if top-level.</param>
 /// <param name="ArticleCount">Number of articles in this category.</param>
+/// <param name="Slug">The category's address segment; fixed once the category exists.</param>
 public record KbCategoryDto(
     int Id,
     string Name,
     string Description,
     bool IsHidden,
     int? ParentCategoryId,
-    int ArticleCount);
+    int ArticleCount,
+    string Slug);

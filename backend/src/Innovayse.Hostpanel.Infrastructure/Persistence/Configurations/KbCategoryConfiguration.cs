@@ -24,8 +24,8 @@ public sealed class KbCategoryConfiguration : IEntityTypeConfiguration<KbCategor
         // Same slug rules as articles, without the reserved words: no route takes a category slug as a segment.
         builder.ToTable(table =>
         {
-            table.HasCheckConstraint("CK_KbCategories_SlugShape", $"\"Slug\" ~ '{KbSlugRules.Pattern}'");
-            table.HasCheckConstraint("CK_KbCategories_SlugNotNumeric", $"\"Slug\" !~ '{KbSlugRules.NumericPattern}'");
+            table.HasCheckConstraint("CK_KbCategories_SlugShape", $"\"Slug\" ~ '{KbSlugRules.DatabasePattern}'");
+            table.HasCheckConstraint("CK_KbCategories_SlugNotNumeric", $"\"Slug\" !~ '{KbSlugRules.DatabaseNumericPattern}'");
         });
 
         // A category with sub-categories cannot be deleted; the delete use case refuses it first.

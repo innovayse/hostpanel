@@ -42,7 +42,7 @@ public sealed class KbArticle : BaseEntity
     public static KbArticle Create(int categoryId, string slug)
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(categoryId);
-        EnsureValidSlug(slug);
+        KbSlugRules.EnsureValidArticleSlug(slug);
 
         return new KbArticle { CategoryId = categoryId, Slug = slug, IsPublished = false };
     }
@@ -74,17 +74,6 @@ public sealed class KbArticle : BaseEntity
         }
     }
 
-    /// <summary>Removes the text of one locale; nothing happens when the article has none.</summary>
-    /// <param name="locale">The locale code.</param>
-    public void RemoveTranslation(string locale)
-    {
-        var existing = _translations.FirstOrDefault(t => t.Locale == locale);
-        if (existing is not null)
-        {
-            _translations.Remove(existing);
-        }
-    }
-
     /// <summary>
     /// Makes the article's translations exactly the given set: a locale not in it is removed, the others are
     /// added or updated.
@@ -111,15 +100,4 @@ public sealed class KbArticle : BaseEntity
     /// Unpublishes this article, hiding it from clients.
     /// </summary>
     public void Unpublish() => IsPublished = false;
-
-    /// <summary>Refuses a slug the rules do not allow.</summary>
-    /// <param name="slug">The slug to check.</param>
-    /// <exception cref="ArgumentException">Thrown when the slug is not a valid article slug.</exception>
-    private static void EnsureValidSlug(string slug)
-    {
-        if (!KbSlugRules.IsValidArticleSlug(slug))
-        {
-            throw new ArgumentException($"'{slug}' is not a valid article slug.", nameof(slug));
-        }
-    }
 }

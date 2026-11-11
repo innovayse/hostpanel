@@ -10,19 +10,16 @@ namespace Innovayse.Hostpanel.Application.Support.Commands.CreateKbCategory;
 /// <summary>Creates a knowledge base category: gives it a slug from its name and saves it.</summary>
 public sealed class CreateKbCategoryHandler
 {
-    /// <summary>How many times the save is tried when another request takes the slug first.</summary>
-    private const int MaxSlugAttempts = 3;
-
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
-    /// <summary>Allocates a slug nobody else has.</summary>
-    private readonly KbSlugAllocator _slugs;
+    /// <summary>Saves the category under a slug nobody else has.</summary>
+    private readonly KbSlugSaver _slugs;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
-    /// <param name="slugs">Allocates a slug nobody else has.</param>
-    public CreateKbCategoryHandler(IHostpanelDbContext context, KbSlugAllocator slugs)
+    /// <param name="slugs">Saves the category under a slug nobody else has.</param>
+    public CreateKbCategoryHandler(IHostpanelDbContext context, KbSlugSaver slugs)
     {
         _context = context;
         _slugs = slugs;
@@ -42,39 +39,11 @@ public sealed class CreateKbCategoryHandler
             return Result<int>.FailureCode(HostpanelErrorCodes.KBCATEGORY_NOT_FOUND);
         }
 
-        for (var attempt = 1; ; attempt++)
-        {
-            var category = KbCategory.Create(
-                command.Name,
-                await _slugs.AllocateForCategoryAsync(command.Name, ct),
-                command.Description,
-                command.IsHidden,
-                command.ParentCategoryId);
+        var category = await _slugs.SaveCategoryAsync(
+            command.Name,
+            slug => KbCategory.Create(command.Name, slug, command.Description, command.IsHidden, command.ParentCategoryId),
+            ct);
 
-            _context.KbCategories.Add(category);
-            try
-            {
-                await _context.SaveChangesAsync(ct);
-                return Result<int>.Success(category.Id);
-            }
-            catch (DbUpdateException)
-            {
-                // Another request may have taken the slug between the allocation and the save: allocate again.
-                // Any other failure, or the last attempt, is not ours to hide.
-                if (attempt >= MaxSlugAttempts || !await SlugTakenAsync(category.Slug, ct))
-                {
-                    throw;
-                }
-
-                _context.KbCategories.Remove(category);
-            }
-        }
+        return Result<int>.Success(category.Id);
     }
-
-    /// <summary>Whether a stored category already has the slug.</summary>
-    /// <param name="slug">The slug.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>True when the slug is taken.</returns>
-    private Task<bool> SlugTakenAsync(string slug, CancellationToken ct) =>
-        _context.KbCategories.AsNoTracking().AnyAsync(c => c.Slug == slug, ct);
 }

@@ -24,16 +24,16 @@ public sealed class KnowledgebaseImporter : IMigrationEntityImporter
     /// <summary>Pages through each record dataset and records each record's outcome.</summary>
     private readonly MigrationRecordRunner _runner;
 
-    /// <summary>Gives each new category a slug nobody else has.</summary>
-    private readonly KbSlugAllocator _slugs;
+    /// <summary>Saves each new category and article under a slug nobody else has, trying again when another request takes it.</summary>
+    private readonly KbSlugSaver _slugs;
 
     /// <summary>Initializes a new instance of the <see cref="KnowledgebaseImporter"/> class.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="pager">Pages through the source plugin's knowledge-base datasets.</param>
     /// <param name="runner">Pages through each record dataset and records each record's outcome.</param>
-    /// <param name="slugs">Gives each new category and article a slug nobody else has.</param>
+    /// <param name="slugs">Saves each new category and article under a slug nobody else has.</param>
     public KnowledgebaseImporter(
-        IHostpanelDbContext context, MigrationRecordPager pager, MigrationRecordRunner runner, KbSlugAllocator slugs)
+        IHostpanelDbContext context, MigrationRecordPager pager, MigrationRecordRunner runner, KbSlugSaver slugs)
     {
         _context = context;
         _pager = pager;
@@ -64,10 +64,8 @@ public sealed class KnowledgebaseImporter : IMigrationEntityImporter
                 }
                 else
                 {
-                    var newCat = KbCategory.Create(
-                        cat.Name, await _slugs.AllocateForCategoryAsync(cat.Name, ct), cat.Description, false, null);
-                    _context.KbCategories.Add(newCat);
-                    await _context.SaveChangesAsync(ct);
+                    var newCat = await _slugs.SaveCategoryAsync(
+                        cat.Name, slug => KbCategory.Create(cat.Name, slug, cat.Description, false, null), ct);
                     catIdMap[cat.Id] = newCat.Id;
                 }
             }
@@ -90,15 +88,18 @@ public sealed class KnowledgebaseImporter : IMigrationEntityImporter
                 ? mapped
                 : await DefaultCategoryIdAsync(ct);
 
-            var article = KbArticle.Create(categoryId, await _slugs.AllocateForArticleAsync(rec.Title, ct));
-            // The source does not say which language an article is written in: it is stored under the platform's
-            // default language, which every article must have, and the admin can add the others.
-            article.SetTranslation(SupportedLanguages.Default, rec.Title, rec.Content);
-
-            article.Publish();
-
-            _context.KbArticles.Add(article);
-            await _context.SaveChangesAsync(ct);
+            await _slugs.SaveArticleAsync(
+                rec.Title,
+                slug =>
+                {
+                    var article = KbArticle.Create(categoryId, slug);
+                    // The source does not say which language an article is written in: it is stored under the platform's
+                    // default language, which every article must have, and the admin can add the others.
+                    article.SetTranslation(SupportedLanguages.Default, rec.Title, rec.Content);
+                    article.Publish();
+                    return article;
+                },
+                ct);
             return RecordImportResult.Imported;
         }
     }
@@ -119,13 +120,10 @@ public sealed class KnowledgebaseImporter : IMigrationEntityImporter
             return id;
         }
 
-        var category = KbCategory.Create(
+        var category = await _slugs.SaveCategoryAsync(
             MigrationDefaults.KnowledgebaseCategoryName,
-            await _slugs.AllocateForCategoryAsync(MigrationDefaults.KnowledgebaseCategoryName, ct),
-            string.Empty,
-            false);
-        _context.KbCategories.Add(category);
-        await _context.SaveChangesAsync(ct);
+            slug => KbCategory.Create(MigrationDefaults.KnowledgebaseCategoryName, slug, string.Empty, false),
+            ct);
 
         return category.Id;
     }

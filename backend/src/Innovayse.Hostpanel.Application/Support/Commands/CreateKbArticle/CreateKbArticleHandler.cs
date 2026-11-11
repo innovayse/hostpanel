@@ -12,19 +12,16 @@ namespace Innovayse.Hostpanel.Application.Support.Commands.CreateKbArticle;
 /// <summary>Creates a new knowledge base article: gives it a slug from its default language title and saves it.</summary>
 public sealed class CreateKbArticleHandler
 {
-    /// <summary>How many times the save is tried when another request takes the slug first.</summary>
-    private const int MaxSlugAttempts = 3;
-
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
-    /// <summary>Allocates a slug nobody else has.</summary>
-    private readonly KbSlugAllocator _slugs;
+    /// <summary>Saves the article under a slug nobody else has.</summary>
+    private readonly KbSlugSaver _slugs;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
-    /// <param name="slugs">Allocates a slug nobody else has.</param>
-    public CreateKbArticleHandler(IHostpanelDbContext context, KbSlugAllocator slugs)
+    /// <param name="slugs">Saves the article under a slug nobody else has.</param>
+    public CreateKbArticleHandler(IHostpanelDbContext context, KbSlugSaver slugs)
     {
         _context = context;
         _slugs = slugs;
@@ -44,39 +41,21 @@ public sealed class CreateKbArticleHandler
         }
 
         var title = cmd.Translations[SupportedLanguages.Default].Title;
-        for (var attempt = 1; ; attempt++)
-        {
-            var article = KbArticle.Create(cmd.CategoryId, await _slugs.AllocateForArticleAsync(title, ct));
-            article.ReplaceTranslations(cmd.Translations.ToContent());
-            if (cmd.IsPublished)
+        var article = await _slugs.SaveArticleAsync(
+            title,
+            slug =>
             {
-                article.Publish();
-            }
-
-            _context.KbArticles.Add(article);
-            try
-            {
-                await _context.SaveChangesAsync(ct);
-                return Result.Success(article.Id);
-            }
-            catch (DbUpdateException)
-            {
-                // Another request may have taken the slug between the allocation and the save: allocate again.
-                // Any other failure, or the last attempt, is not ours to hide.
-                if (attempt >= MaxSlugAttempts || !await SlugTakenAsync(article.Slug, ct))
+                var created = KbArticle.Create(cmd.CategoryId, slug);
+                created.ReplaceTranslations(cmd.Translations.ToContent());
+                if (cmd.IsPublished)
                 {
-                    throw;
+                    created.Publish();
                 }
 
-                _context.KbArticles.Remove(article);
-            }
-        }
-    }
+                return created;
+            },
+            ct);
 
-    /// <summary>Whether a stored article already has the slug.</summary>
-    /// <param name="slug">The slug.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>True when the slug is taken.</returns>
-    private Task<bool> SlugTakenAsync(string slug, CancellationToken ct) =>
-        _context.KbArticles.AsNoTracking().AnyAsync(a => a.Slug == slug, ct);
+        return Result.Success(article.Id);
+    }
 }

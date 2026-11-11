@@ -38,23 +38,29 @@ public sealed class ListPublishedKbArticlesHandler
     /// <returns>
     /// Success with the page of published articles, oldest first, each in the reader's language (else the
     /// fallback, else the first language it has). The category filter matches a category name without regard to
-    /// case, or its slug; the search term matches the title or body of any language. This use case answers no
-    /// refusal code.
+    /// case, or its slug (a slug wins when a name equals another category's slug); the search term matches the title or
+    /// body of any language. A hidden category (<c>KbCategory.IsHidden</c>) is not left out: the public feeds never looked at
+    /// that flag and still do not. This use case answers no refusal code.
     /// </returns>
     public async Task<Result<PaginatedList<KbArticleSummaryDto>>> HandleAsync(ListPublishedKbArticlesQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
 
+        // An article with no translation at all has nothing to show: it is left out here, before the page is cut,
+        // so a page never comes back shorter than asked for. (Every article has English, so this is a guard.)
         var articles = _context.KbArticles
             .AsNoTracking()
-            .Where(a => a.IsPublished);
+            .Where(a => a.IsPublished && a.Translations.Any());
 
+        // The category is given as a slug or as a name. A slug wins: it is exact and never changes, so when one
+        // category's name equals another category's slug, the text means the category that has it as its slug.
         var category = query.Category?.Trim().ToLower(CultureInfo.InvariantCulture);
         if (!string.IsNullOrEmpty(category))
         {
             var inCategory = _context.KbCategories
                 .AsNoTracking()
-                .Where(c => c.Name.ToLower() == category || c.Slug == category)
+                .Where(c => c.Slug == category
+                    || (c.Name.ToLower() == category && !_context.KbCategories.Any(other => other.Slug == category)))
                 .Select(c => c.Id);
             articles = articles.Where(a => inCategory.Contains(a.CategoryId));
         }

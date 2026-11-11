@@ -44,10 +44,7 @@ public sealed class KbCategory : BaseEntity
     public static KbCategory Create(string name, string slug, string description, bool isHidden, int? parentCategoryId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        if (!KbSlugRules.IsValidCategorySlug(slug))
-        {
-            throw new ArgumentException($"'{slug}' is not a valid category slug.", nameof(slug));
-        }
+        KbSlugRules.EnsureValidCategorySlug(slug);
 
         return new KbCategory
         {

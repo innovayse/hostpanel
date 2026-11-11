@@ -74,6 +74,7 @@ public static class DependencyInjection
 
         // Gives a new knowledge base article or category a slug nobody else has.
         services.AddScoped<KbSlugAllocator>();
+        services.AddScoped<KbSlugSaver>();
 
         // The SSH half of the plugin host API: issues and revokes a plugin's identities for the call's client (#758).
         services.AddScoped<PluginSshAccessService>();

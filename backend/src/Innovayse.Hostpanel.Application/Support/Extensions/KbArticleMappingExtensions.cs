@@ -11,45 +11,15 @@ public static class KbArticleMappingExtensions
     /// <param name="articles">The articles to read.</param>
     /// <param name="categories">The categories to join them with.</param>
     /// <returns>One row per article, the translations carrying their whole body.</returns>
-    public static IQueryable<KbArticleRow> SelectRows(this IQueryable<KbArticle> articles, IQueryable<KbCategory> categories)
-    {
-        ArgumentNullException.ThrowIfNull(articles);
-        ArgumentNullException.ThrowIfNull(categories);
-
-        return from a in articles
-               join c in categories on a.CategoryId equals c.Id
-               select new KbArticleRow(
-                   a.Id,
-                   a.Slug,
-                   a.IsPublished,
-                   c.Id,
-                   c.Name,
-                   c.Slug,
-                   a.Translations.Select(t => new KbTranslationRow(t.Locale, t.Title, t.Content)).ToList());
-    }
+    public static IQueryable<KbArticleRow> SelectRows(this IQueryable<KbArticle> articles, IQueryable<KbCategory> categories) =>
+        Rows(articles, categories, fullBody: true);
 
     /// <summary>Reads articles for a list: every translation, each body cut to the first characters an excerpt needs.</summary>
     /// <param name="articles">The articles to read.</param>
     /// <param name="categories">The categories to join them with.</param>
     /// <returns>One row per article, the translations carrying only the start of their body.</returns>
-    public static IQueryable<KbArticleRow> SelectLeadRows(this IQueryable<KbArticle> articles, IQueryable<KbCategory> categories)
-    {
-        ArgumentNullException.ThrowIfNull(articles);
-        ArgumentNullException.ThrowIfNull(categories);
-
-        return from a in articles
-               join c in categories on a.CategoryId equals c.Id
-               select new KbArticleRow(
-                   a.Id,
-                   a.Slug,
-                   a.IsPublished,
-                   c.Id,
-                   c.Name,
-                   c.Slug,
-                   a.Translations
-                       .Select(t => new KbTranslationRow(t.Locale, t.Title, t.Content.Substring(0, KbArticleExcerpt.SourceLength)))
-                       .ToList());
-    }
+    public static IQueryable<KbArticleRow> SelectLeadRows(this IQueryable<KbArticle> articles, IQueryable<KbCategory> categories) =>
+        Rows(articles, categories, fullBody: false);
 
     /// <summary>Shapes a row for the admin: every translation, keyed by locale.</summary>
     /// <param name="row">The article row.</param>
@@ -108,5 +78,30 @@ public static class KbArticleMappingExtensions
         ArgumentNullException.ThrowIfNull(translations);
 
         return translations.ToDictionary(t => t.Key, t => new KbArticleTranslationContent(t.Value.Title, t.Value.Content));
+    }
+
+    /// <summary>The join of an article with its category and translations that both readers above share.</summary>
+    /// <param name="articles">The articles to read.</param>
+    /// <param name="categories">The categories to join them with.</param>
+    /// <param name="fullBody">Whether each translation carries its whole body, or only the start an excerpt needs.</param>
+    /// <returns>One row per article.</returns>
+    private static IQueryable<KbArticleRow> Rows(IQueryable<KbArticle> articles, IQueryable<KbCategory> categories, bool fullBody)
+    {
+        ArgumentNullException.ThrowIfNull(articles);
+        ArgumentNullException.ThrowIfNull(categories);
+
+        return from a in articles
+               join c in categories on a.CategoryId equals c.Id
+               select new KbArticleRow(
+                   a.Id,
+                   a.Slug,
+                   a.IsPublished,
+                   c.Id,
+                   c.Name,
+                   c.Slug,
+                   a.Translations
+                       .Select(t => new KbTranslationRow(
+                           t.Locale, t.Title, fullBody ? t.Content : t.Content.Substring(0, KbArticleExcerpt.SourceLength)))
+                       .ToList());
     }
 }

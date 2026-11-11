@@ -90,7 +90,7 @@ public sealed class KnowledgeBaseController : BaseApiController
     /// <remarks>
     /// Route matching ignores case, so the literal segments <c>articles</c> and <c>categories</c> (in any letter case) are
     /// served by their own actions, not by this one. A purely numeric segment never reaches this action: the route
-    /// pattern refuses it (a negative look-ahead), so it is read as an id by <c>{id:int}</c>, and a number too large for
+    /// pattern refuses it (a negative look-ahead; the pattern is anchored with <c>\A</c> and <c>\z</c>, so a trailing newline does not slip through), so it is read as an id by <c>{id:int}</c>, and a number too large for
     /// an <see cref="int"/> matches no route at all and is answered 404 by routing. Without that look-ahead a number
     /// would match both routes and the request would fail as ambiguous. The slug is matched without regard to case.
     /// </remarks>
@@ -101,7 +101,7 @@ public sealed class KnowledgeBaseController : BaseApiController
     /// article has the slug (an unpublished draft is answered like a missing one); 400 when the request is refused;
     /// 429 when the rate limit is hit.
     /// </returns>
-    [HttpGet("{slug:regex(^(?![[0-9]]+$)[[a-zA-Z0-9]]+(-[[a-zA-Z0-9]]+)*$)}")]
+    [HttpGet("{slug:regex(\\A(?![[0-9]]+\\z)[[a-zA-Z0-9]]+(-[[a-zA-Z0-9]]+)*\\z)}")]
     [ProducesResponseType(typeof(PublishedKbArticleDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]

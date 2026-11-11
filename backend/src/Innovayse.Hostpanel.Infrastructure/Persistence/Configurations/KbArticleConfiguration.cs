@@ -27,8 +27,8 @@ public sealed class KbArticleConfiguration : IEntityTypeConfiguration<KbArticle>
         // KbSlugRules.ReservedArticleSlugs.
         builder.ToTable(table =>
         {
-            table.HasCheckConstraint("CK_KbArticles_SlugShape", $"\"Slug\" ~ '{KbSlugRules.Pattern}'");
-            table.HasCheckConstraint("CK_KbArticles_SlugNotNumeric", $"\"Slug\" !~ '{KbSlugRules.NumericPattern}'");
+            table.HasCheckConstraint("CK_KbArticles_SlugShape", $"\"Slug\" ~ '{KbSlugRules.DatabasePattern}'");
+            table.HasCheckConstraint("CK_KbArticles_SlugNotNumeric", $"\"Slug\" !~ '{KbSlugRules.DatabaseNumericPattern}'");
             table.HasCheckConstraint(
                 "CK_KbArticles_SlugNotReserved",
                 $"\"Slug\" NOT IN ({string.Join(", ", KbSlugRules.ReservedArticleSlugs.Select(word => $"'{word}'"))})");

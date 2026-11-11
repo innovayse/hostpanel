@@ -26,8 +26,9 @@ public sealed class ListPublishedKbCategoriesHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success with one entry per category that holds a published article, ordered by name, with its slug and
-    /// the number of published articles. A category holding only drafts does not appear. This use case answers
-    /// no refusal code.
+    /// the number of published articles. A category holding only drafts does not appear. A hidden category
+    /// (<c>KbCategory.IsHidden</c>) is listed all the same: the public feeds never looked at that flag and still do not.
+    /// This use case answers no refusal code.
     /// </returns>
     public async Task<Result<IReadOnlyList<PublishedKbCategoryDto>>> HandleAsync(
         ListPublishedKbCategoriesQuery query, CancellationToken ct)

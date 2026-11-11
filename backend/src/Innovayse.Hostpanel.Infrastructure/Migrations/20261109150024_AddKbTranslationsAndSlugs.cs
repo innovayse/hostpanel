@@ -16,7 +16,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
     /// <item>every article gets the lowest-id category that matches its text; a blank text means <c>General</c>;</item>
     /// <item>slugs are assigned one row at a time in id order, each checked against the slugs already given
     /// (the stored ones are lower case, so the check ignores case) and the words the article routes reserve, so a
-    /// clash like <c>Foo</c>, <c>Foo</c>, <c>Foo-2</c> cannot leave a duplicate;</item>
+    /// clash like <c>Foo</c>, <c>Foo</c>, <c>Foo-2</c> cannot leave a duplicate. One function builds the slug of a
+    /// text, for categories and articles alike, and cuts it to 140 characters before it asks whether it is empty or numeric;</item>
     /// <item>each article's title and body become one translation, in the language its own text is written in: Armenian
     /// letters mean <c>hy</c>, otherwise Cyrillic means <c>ru</c>, otherwise <c>en</c>. The deployment's
     /// <c>DefaultLocale</c> lives in configuration, which SQL cannot read, so it is not guessed;</item>
@@ -24,7 +25,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
     /// </list>
     /// <c>Down</c> is not exact: it restores <c>Category</c> as the category's name (the original spelling of a merged
     /// variant is gone), <c>Title</c> and <c>Content</c> from the <c>en</c> translation or else the first locale in
-    /// order, and it loses the other languages and the slugs.
+    /// order, and it loses the other languages and the slugs. The categories that <c>Up</c> created for article texts
+    /// no category row named are kept: going down does not delete a row, and running <c>Up</c> again finds them by name.
     /// </remarks>
     public partial class AddKbTranslationsAndSlugs : Migration
     {
@@ -106,8 +108,34 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     LIMIT 1);
                 """);
 
-            // 3. Slugs, one row at a time in id order, each checked against the ones already given. A title with no Latin
-            //    letters becomes <kind>-<id>; a purely numeric one is prefixed; the reserved words count as taken.
+            // 3. Slugs, one row at a time in id order, each checked against the ones already given. The slug of a text is built
+            //    by one function (below) for categories and articles alike: accents are dropped the way the application's
+            //    SlugGenerator does (the letters that decompose into a base letter and accents, taken from the Unicode
+            //    tables, plus the few that do not: sharp s, ae, oe, o with stroke, d with stroke, l with stroke), the text is cut
+            //    to 140 characters and only then checked for being empty or purely numeric. One difference is kept on purpose:
+            //    a text with no Latin letters is named by its id here (article-12), while the application names it article and
+            //    then article-2, article-3 and so on, because here the id is at hand and makes the name stable.
+            migrationBuilder.Sql("""
+                CREATE FUNCTION pg_temp."KbSlugBase"(source text, fallback text, rowid integer) RETURNS text AS $fn$
+                DECLARE
+                    t text;
+                BEGIN
+                    t := replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(source,
+                        'ẞ', 'ss'), 'ß', 'ss'), 'Æ', 'ae'), 'æ', 'ae'), 'Œ', 'oe'), 'œ', 'oe'),
+                        'Ø', 'o'), 'ø', 'o'), 'Đ', 'd'), 'đ', 'd'), 'Ł', 'l'), 'ł', 'l');
+                    t := lower(translate(t, 'ÀÁÂÃÄÅÇÈÉÊËÌÍÎÏÑÒÓÔÕÖÙÚÛÜÝàáâãäåçèéêëìíîïñòóôõöùúûüýÿĀāĂăĄąĆćĈĉĊċČčĎďĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĨĩĪīĬĭĮįİĴĵĶķĹĺĻļĽľŃńŅņŇňŌōŎŏŐőŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽžƠơƯưǍǎǏǐǑǒǓǔǕǖǗǘǙǚǛǜǞǟǠǡǦǧǨǩǪǫǬǭǰǴǵǸǹǺǻȀȁȂȃȄȅȆȇȈȉȊȋȌȍȎȏȐȑȒȓȔȕȖȗȘșȚțȞȟȦȧȨȩȪȫȬȭȮȯȰȱȲȳḀḁḂḃḄḅḆḇḈḉḊḋḌḍḎḏḐḑḒḓḔḕḖḗḘḙḚḛḜḝḞḟḠḡḢḣḤḥḦḧḨḩḪḫḬḭḮḯḰḱḲḳḴḵḶḷḸḹḺḻḼḽḾḿṀṁṂṃṄṅṆṇṈṉṊṋṌṍṎṏṐṑṒṓṔṕṖṗṘṙṚṛṜṝṞṟṠṡṢṣṤṥṦṧṨṩṪṫṬṭṮṯṰṱṲṳṴṵṶṷṸṹṺṻṼṽṾṿẀẁẂẃẄẅẆẇẈẉẊẋẌẍẎẏẐẑẒẓẔẕẖẗẘẙẠạẢảẤấẦầẨẩẪẫẬậẮắẰằẲẳẴẵẶặẸẹẺẻẼẽẾếỀềỂểỄễỆệỈỉỊịỌọỎỏỐốỒồỔổỖỗỘộỚớỜờỞởỠỡỢợỤụỦủỨứỪừỬửỮữỰựỲỳỴỵỶỷỸỹ', 'aaaaaaceeeeiiiinooooouuuuyaaaaaaceeeeiiiinooooouuuuyyaaaaaaccccccccddeeeeeeeeeegggggggghhiiiiiiiiijjkkllllllnnnnnnoooooorrrrrrssssssssttttuuuuuuuuuuuuwwyyyzzzzzzoouuaaiioouuuuuuuuuuaaaaggkkoooojggnnaaaaaaeeeeiiiioooorrrruuuusstthhaaeeooooooooyyaabbbbbbccddddddddddeeeeeeeeeeffgghhhhhhhhhhiiiikkkkkkllllllllmmmmmmnnnnnnnnoooooooopppprrrrrrrrssssssssssttttttttuuuuuuuuuuvvvvwwwwwwwwwwxxxxyyzzzzzzhtwyaaaaaaaaaaaaaaaaaaaaaaaaeeeeeeeeeeeeeeeeiiiioooooooooooooooooooooooouuuuuuuuuuuuuuyyyyyyyy'));
+                    t := btrim(regexp_replace(t, '[^a-z0-9]+', '-', 'g'), '-');
+                    t := btrim(left(t, 140), '-');
+                    IF t = '' THEN
+                        t := fallback || '-' || rowid;
+                    ELSIF t ~ '^[0-9]+$' THEN
+                        t := fallback || '-' || t;
+                    END IF;
+                    RETURN t;
+                END
+                $fn$ LANGUAGE plpgsql;
+                """);
+
             migrationBuilder.Sql("""
                 DO $$
                 DECLARE
@@ -117,13 +145,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     n integer;
                 BEGIN
                     FOR r IN SELECT "Id", "Name" FROM "KbCategories" ORDER BY "Id" LOOP
-                        t := lower(r."Name");
-                        t := replace(replace(replace(replace(replace(t, 'ß', 'ss'), 'æ', 'ae'), 'œ', 'oe'), 'ø', 'o'), 'đ', 'd');
-                        t := replace(t, 'ł', 'l');
-                        t := translate(t, 'àáâãäåāăąçćčďèéêëēėęěìíîïīįñńňòóôõöōőŕřśšşťùúûüūůűųýÿźžż', 'aaaaaaaaacccdeeeeeeeeiiiiiinnnooooooorrssstuuuuuuuuyyzzz');
-                        t := btrim(regexp_replace(t, '[^a-z0-9]+', '-', 'g'), '-');
-                        IF t = '' THEN t := 'category-' || r."Id"; ELSIF t ~ '^[0-9]+$' THEN t := 'category-' || t; END IF;
-                        t := btrim(left(t, 140), '-');
+                        t := pg_temp."KbSlugBase"(r."Name", 'category', r."Id");
                         candidate := t;
                         n := 1;
                         WHILE EXISTS (SELECT 1 FROM "KbCategories" WHERE "Slug" = candidate) LOOP
@@ -134,13 +156,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     END LOOP;
 
                     FOR r IN SELECT "Id", "Title" FROM "KbArticles" ORDER BY "Id" LOOP
-                        t := lower(r."Title");
-                        t := replace(replace(replace(replace(replace(t, 'ß', 'ss'), 'æ', 'ae'), 'œ', 'oe'), 'ø', 'o'), 'đ', 'd');
-                        t := replace(t, 'ł', 'l');
-                        t := translate(t, 'àáâãäåāăąçćčďèéêëēėęěìíîïīįñńňòóôõöōőŕřśšşťùúûüūůűųýÿźžż', 'aaaaaaaaacccdeeeeeeeeiiiiiinnnooooooorrssstuuuuuuuuyyzzz');
-                        t := btrim(regexp_replace(t, '[^a-z0-9]+', '-', 'g'), '-');
-                        IF t = '' THEN t := 'article-' || r."Id"; ELSIF t ~ '^[0-9]+$' THEN t := 'article-' || t; END IF;
-                        t := btrim(left(t, 140), '-');
+                        t := pg_temp."KbSlugBase"(r."Title", 'article', r."Id");
                         candidate := t;
                         n := 1;
                         WHILE candidate IN ('articles', 'categories')
@@ -152,6 +168,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     END LOOP;
                 END $$;
                 """);
+
+            migrationBuilder.Sql("""DROP FUNCTION pg_temp."KbSlugBase"(text, text, integer);""");
 
             // 4. One translation per article, in the language its own text is written in.
             migrationBuilder.Sql("""
@@ -167,9 +185,36 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                 """);
 
             // The columns only needed a value to be added; the model has none.
-            migrationBuilder.Sql("""ALTER TABLE "KbCategories" ALTER COLUMN "Slug" DROP DEFAULT;""");
-            migrationBuilder.Sql("""ALTER TABLE "KbArticles" ALTER COLUMN "Slug" DROP DEFAULT;""");
-            migrationBuilder.Sql("""ALTER TABLE "KbArticles" ALTER COLUMN "CategoryId" DROP DEFAULT;""");
+            migrationBuilder.AlterColumn<string>(
+                name: "Slug",
+                table: "KbCategories",
+                type: "character varying(150)",
+                maxLength: 150,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "character varying(150)",
+                oldMaxLength: 150,
+                oldDefaultValue: "");
+
+            migrationBuilder.AlterColumn<string>(
+                name: "Slug",
+                table: "KbArticles",
+                type: "character varying(150)",
+                maxLength: 150,
+                nullable: false,
+                oldClrType: typeof(string),
+                oldType: "character varying(150)",
+                oldMaxLength: 150,
+                oldDefaultValue: "");
+
+            migrationBuilder.AlterColumn<int>(
+                name: "CategoryId",
+                table: "KbArticles",
+                type: "integer",
+                nullable: false,
+                oldClrType: typeof(int),
+                oldType: "integer",
+                oldDefaultValue: 0);
 
             migrationBuilder.DropIndex(
                 name: "IX_KbArticles_Category",

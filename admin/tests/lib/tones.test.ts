@@ -5,6 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import {
+  campaignStatusTone,
   cancellationStatusLabel,
   cancellationStatusTone,
   cancellationTypeLabel,
@@ -31,6 +32,7 @@ import {
   ticketStatusTone,
   transactionTypeTone,
 } from '@/lib/tones'
+import { CampaignStatus } from '@/types/emailcampaign'
 import { ClientStatus } from '@/types/client'
 import { ContactType } from '@/types/contact'
 import { DomainStatus } from '@/types/domain'
@@ -196,6 +198,17 @@ describe('support tones', () => {
     expect(ticketPriorityTone[TicketPriority.High]).toBe(UiTone.Danger)
     expect(networkIssuePriorityTone[NetworkIssuePriority.Critical]).toBe(UiTone.Danger)
     expect(networkIssueStatusTone[NetworkIssueStatus.Resolved]).toBe(UiTone.Success)
+  })
+})
+
+describe('email campaign tones', () => {
+  it('covers every campaign status and marks the extremes', () => {
+    for (const status of Object.values(CampaignStatus)) {
+      expect(campaignStatusTone[status]).toBeDefined()
+    }
+    expect(campaignStatusTone[CampaignStatus.Draft]).toBe(UiTone.Neutral)
+    expect(campaignStatusTone[CampaignStatus.Sending]).toBe(UiTone.Warning)
+    expect(campaignStatusTone[CampaignStatus.Sent]).toBe(UiTone.Success)
   })
 })
 

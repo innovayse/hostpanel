@@ -1537,4 +1537,40 @@
   <data name="ServiceChangeStatusInvalid" xml:space="preserve">
     <value>Choose a valid plan change status.</value>
   </data>
+  <data name="CampaignIdInvalid" xml:space="preserve">
+    <value>Provide a valid campaign.</value>
+  </data>
+  <data name="CampaignSubjectRequired" xml:space="preserve">
+    <value>Enter a subject for the email.</value>
+  </data>
+  <data name="CampaignSubjectTooLong" xml:space="preserve">
+    <value>The subject can be at most {0} characters.</value>
+  </data>
+  <data name="CampaignBodyRequired" xml:space="preserve">
+    <value>Write the body of the email.</value>
+  </data>
+  <data name="CampaignBodyTooLong" xml:space="preserve">
+    <value>The body can be at most {0} characters.</value>
+  </data>
+  <data name="CampaignSegmentsRequired" xml:space="preserve">
+    <value>Provide the list of segments, which may be empty.</value>
+  </data>
+  <data name="CampaignSegmentsTooMany" xml:space="preserve">
+    <value>A campaign can have at most {0} segments.</value>
+  </data>
+  <data name="CampaignSegmentFilterInvalid" xml:space="preserve">
+    <value>Choose a known filter for every segment.</value>
+  </data>
+  <data name="CampaignSegmentValueInvalid" xml:space="preserve">
+    <value>The value does not fit the filter: a product needs a product id, a country a two-letter code, an expiry a number of days from 1 to 365, and all active clients takes no value.</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenRequired" xml:space="preserve">
+    <value>The unsubscribe link carries no token.</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenInvalid" xml:space="preserve">
+    <value>This unsubscribe link is not valid.</value>
+  </data>
+  <data name="EmailDeliveryKeyRequired" xml:space="preserve">
+    <value>The key of the email is required.</value>
+  </data>
 </root>

@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Net;
 using System.Reflection;
 using System.Text;
 
@@ -111,6 +112,30 @@ public static class SecretMembers
         }
 
         return written;
+    }
+
+    /// <summary>
+    /// Replaces every secret text a value carries, wherever it appears in a piece of text derived from it, with <see cref="Mask"/>. For
+    /// output built from the value that must be kept but must not show the secret, such as the stored copy of a rendered mail. A secret
+    /// is matched as it is and as an HTML template engine writes it (<see cref="WebUtility.HtmlEncode(string)"/>).
+    /// </summary>
+    /// <param name="text">The text built from <paramref name="instance"/>.</param>
+    /// <param name="instance">The value whose secret members to remove from <paramref name="text"/>.</param>
+    /// <returns><paramref name="text"/> with each secret text replaced by <see cref="Mask"/>.</returns>
+    public static string Conceal(string text, object instance)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        ArgumentNullException.ThrowIfNull(instance);
+
+        foreach (var (property, secret) in PrintableMembers.GetOrAdd(instance.GetType(), Classify))
+        {
+            if (secret && property.GetValue(instance) is string { Length: > 0 } value)
+            {
+                text = text.Replace(value, Mask, StringComparison.Ordinal).Replace(WebUtility.HtmlEncode(value), Mask, StringComparison.Ordinal);
+            }
+        }
+
+        return text;
     }
 
     /// <summary>

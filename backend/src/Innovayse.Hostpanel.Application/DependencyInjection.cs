@@ -2,6 +2,7 @@ using FluentValidation;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Campaigns.Common;
 using Innovayse.Hostpanel.Application.Clients.Commands.AcceptInvitation;
 using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Application.Plugins.Common;
@@ -41,6 +42,9 @@ public static class DependencyInjection
 
         // One pass of the fulfilment dispatch, run by the scheduled chain and by the pass kicked after a payment.
         services.AddScoped<FulfilmentDispatcher>();
+
+        // Resolves which clients a campaign's segments reach, for the audience count and for fixing the recipients.
+        services.AddScoped<CampaignAudience>();
 
         // Asks the enabled fulfilment plugins to cap a refund before any money moves.
         services.AddScoped<RefundAdviser>();

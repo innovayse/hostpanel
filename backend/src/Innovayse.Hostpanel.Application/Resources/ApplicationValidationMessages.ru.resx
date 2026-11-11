@@ -1537,4 +1537,40 @@
   <data name="ServiceChangeStatusInvalid" xml:space="preserve">
     <value>Выберите корректный статус запроса на смену тарифа.</value>
   </data>
+  <data name="CampaignIdInvalid" xml:space="preserve">
+    <value>Укажите корректную рассылку.</value>
+  </data>
+  <data name="CampaignSubjectRequired" xml:space="preserve">
+    <value>Введите тему письма.</value>
+  </data>
+  <data name="CampaignSubjectTooLong" xml:space="preserve">
+    <value>Тема может содержать не более {0} символов.</value>
+  </data>
+  <data name="CampaignBodyRequired" xml:space="preserve">
+    <value>Напишите текст письма.</value>
+  </data>
+  <data name="CampaignBodyTooLong" xml:space="preserve">
+    <value>Текст письма может содержать не более {0} символов.</value>
+  </data>
+  <data name="CampaignSegmentsRequired" xml:space="preserve">
+    <value>Передайте список сегментов, он может быть пустым.</value>
+  </data>
+  <data name="CampaignSegmentsTooMany" xml:space="preserve">
+    <value>В рассылке может быть не более {0} сегментов.</value>
+  </data>
+  <data name="CampaignSegmentFilterInvalid" xml:space="preserve">
+    <value>Выберите известный фильтр для каждого сегмента.</value>
+  </data>
+  <data name="CampaignSegmentValueInvalid" xml:space="preserve">
+    <value>Значение не подходит к фильтру: для продукта нужен id продукта, для страны двухбуквенный код, для окончания срока число дней от 1 до 365, а фильтр всех активных клиентов значения не принимает.</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenRequired" xml:space="preserve">
+    <value>В ссылке для отписки нет токена.</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenInvalid" xml:space="preserve">
+    <value>Эта ссылка для отписки недействительна.</value>
+  </data>
+  <data name="EmailDeliveryKeyRequired" xml:space="preserve">
+    <value>Ключ письма обязателен.</value>
+  </data>
 </root>

@@ -1381,4 +1381,31 @@
   <data name="SERVICE_CHANGE_INVOICE_UNPAID" xml:space="preserve">
     <value>Счёт за смену тарифа нужно оплатить до смены тарифа.</value>
   </data>
+  <data name="CAMPAIGN_NOT_FOUND" xml:space="preserve">
+    <value>Такой email-рассылки не существует.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_DRAFT" xml:space="preserve">
+    <value>Изменять, планировать и удалять можно только черновик рассылки.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SCHEDULED" xml:space="preserve">
+    <value>Эта рассылка не запланирована.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SENDING" xml:space="preserve">
+    <value>Эта рассылка сейчас не отправляется.</value>
+  </data>
+  <data name="CAMPAIGN_NO_SEGMENT" xml:space="preserve">
+    <value>Добавьте хотя бы один сегмент получателей, прежде чем планировать рассылку.</value>
+  </data>
+  <data name="CAMPAIGN_SCHEDULE_IN_PAST" xml:space="preserve">
+    <value>Выберите время отправки в будущем.</value>
+  </data>
+  <data name="CAMPAIGN_SEGMENT_VALUE_INVALID" xml:space="preserve">
+    <value>Значение сегмента получателей не подходит к его фильтру.</value>
+  </data>
+  <data name="CAMPAIGN_RECIPIENT_NOT_PENDING" xml:space="preserve">
+    <value>Этот получатель больше не ожидает доставки.</value>
+  </data>
+  <data name="CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND" xml:space="preserve">
+    <value>Эта ссылка для отписки недействительна.</value>
+  </data>
 </root>

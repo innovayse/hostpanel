@@ -1537,4 +1537,40 @@
   <data name="ServiceChangeStatusInvalid" xml:space="preserve">
     <value>Ընտրեք պլանի փոփոխության հայտի վավեր կարգավիճակ։</value>
   </data>
+  <data name="CampaignIdInvalid" xml:space="preserve">
+    <value>Նշեք ճիշտ քարոզարշավ։</value>
+  </data>
+  <data name="CampaignSubjectRequired" xml:space="preserve">
+    <value>Մուտքագրեք նամակի թեման։</value>
+  </data>
+  <data name="CampaignSubjectTooLong" xml:space="preserve">
+    <value>Թեման կարող է լինել առավելագույնը {0} նիշ։</value>
+  </data>
+  <data name="CampaignBodyRequired" xml:space="preserve">
+    <value>Գրեք նամակի տեքստը։</value>
+  </data>
+  <data name="CampaignBodyTooLong" xml:space="preserve">
+    <value>Նամակի տեքստը կարող է լինել առավելագույնը {0} նիշ։</value>
+  </data>
+  <data name="CampaignSegmentsRequired" xml:space="preserve">
+    <value>Ուղարկեք սեգմենտների ցանկը, այն կարող է դատարկ լինել։</value>
+  </data>
+  <data name="CampaignSegmentsTooMany" xml:space="preserve">
+    <value>Քարոզարշավը կարող է ունենալ առավելագույնը {0} սեգմենտ։</value>
+  </data>
+  <data name="CampaignSegmentFilterInvalid" xml:space="preserve">
+    <value>Ընտրեք հայտնի զտիչ յուրաքանչյուր սեգմենտի համար։</value>
+  </data>
+  <data name="CampaignSegmentValueInvalid" xml:space="preserve">
+    <value>Արժեքը չի համապատասխանում զտիչին. արտադրանքի համար պետք է արտադրանքի id, երկրի համար՝ երկտառ կոդ, ժամկետի ավարտի համար՝ օրերի քանակ 1-ից 365, իսկ բոլոր ակտիվ հաճախորդների զտիչը արժեք չի ընդունում։</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenRequired" xml:space="preserve">
+    <value>Ապաբաժանորդագրվելու հղումը տոկեն չի պարունակում։</value>
+  </data>
+  <data name="CampaignUnsubscribeTokenInvalid" xml:space="preserve">
+    <value>Ապաբաժանորդագրվելու այս հղումը վավեր չէ։</value>
+  </data>
+  <data name="EmailDeliveryKeyRequired" xml:space="preserve">
+    <value>Նամակի բանալին պարտադիր է։</value>
+  </data>
 </root>

@@ -1,5 +1,7 @@
+using System.Text;
 using Innovayse.Hostpanel.Application.Notifications.Common;
 using Innovayse.Hostpanel.Application.Notifications.Common.TemplateModels;
+using Innovayse.Hostpanel.SharedKernel.Domain;
 
 namespace Innovayse.Hostpanel.Application.Notifications.Commands.SendEmail;
 
@@ -17,10 +19,24 @@ namespace Innovayse.Hostpanel.Application.Notifications.Commands.SendEmail;
 /// with the same key sends each recipient at most once. Null for a synchronous request whose caller
 /// waits for the answer and sends a fresh mail on every request.
 /// </param>
+/// <param name="UnsubscribeUrl">
+/// For marketing mail, the page that unsubscribes the recipient; the mail then carries the header a mail client turns into
+/// an unsubscribe link. Null for every other mail. Personal to the recipient, so it is never printed.
+/// </param>
 public sealed record SendEmailCommand(
     string To,
     string? Language,
     string TemplateSlug,
     EmailTemplateModel TemplateData,
     ContactCopy? Copy = null,
-    string? IdempotencyKey = null);
+    string? IdempotencyKey = null,
+    [property: SecretMember] string? UnsubscribeUrl = null)
+{
+    /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
+    /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>
+    /// <returns><see langword="true"/> when at least one member was written.</returns>
+    private bool PrintMembers(StringBuilder builder)
+    {
+        return SecretMembers.Print(this, builder);
+    }
+}

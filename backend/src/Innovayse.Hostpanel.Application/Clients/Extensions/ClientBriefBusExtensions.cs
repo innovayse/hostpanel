@@ -95,10 +95,22 @@ public static class ClientBriefBusExtensions
     /// <param name="clientIds">The client record ids; duplicates are answered once.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The known records keyed by id; an unknown id is absent.</returns>
-    public static async Task<IReadOnlyDictionary<int, ClientBriefDto>> GetClientBriefsByIdAsync(
+    public static Task<IReadOnlyDictionary<int, ClientBriefDto>> GetClientBriefsByIdAsync(
         this IMessageBus bus, IReadOnlyList<int> clientIds, CancellationToken ct)
     {
-        var briefs = await SendAsync(bus, new GetClientBriefsQuery(ClientIds: clientIds), ct);
+        return bus.GetClientBriefsByIdAsync(clientIds, withEmail: false, ct);
+    }
+
+    /// <summary>Many client records by id, for a caller that mails them and so needs the sign-in address and language.</summary>
+    /// <param name="bus">The Wolverine bus to dispatch the query through.</param>
+    /// <param name="clientIds">The client record ids; duplicates are answered once.</param>
+    /// <param name="withEmail">Whether the sign-in address and language are read from the identity provider too.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The known records keyed by id; an unknown id is absent.</returns>
+    public static async Task<IReadOnlyDictionary<int, ClientBriefDto>> GetClientBriefsByIdAsync(
+        this IMessageBus bus, IReadOnlyList<int> clientIds, bool withEmail, CancellationToken ct)
+    {
+        var briefs = await SendAsync(bus, new GetClientBriefsQuery(ClientIds: clientIds, WithEmail: withEmail), ct);
 
         return briefs.ToDictionary(b => b.Id);
     }

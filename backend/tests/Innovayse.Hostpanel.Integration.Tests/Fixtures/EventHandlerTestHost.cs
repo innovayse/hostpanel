@@ -29,7 +29,7 @@ public static class EventHandlerTestHost
     /// <param name="contactEmail">The contact-form inbox to configure, or <c>null</c> to leave it unset.</param>
     /// <returns>The isolated host.</returns>
     public static WebApplicationFactory<Program> WithFakeRelay(
-        IntegrationTestFactory factory, FakeEmailSender emailSender, string? adminEmail = null, string? contactEmail = null) =>
+        IntegrationTestFactory factory, IEmailSender emailSender, string? adminEmail = null, string? contactEmail = null) =>
         factory.WithWebHostBuilder(builder =>
         {
             if (adminEmail is not null)

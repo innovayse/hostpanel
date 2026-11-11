@@ -463,6 +463,7 @@
       "colHash": "#",
       "colDate": "Ամսաթիվ",
       "colDueDate": "Վճարման ժամկետ",
+      "groupDiscount": "Խմբային զեղչ {percent}% կիրառված է",
       "colAmount": "Գումար",
       "colStatus": "Կարգավիճակ",
       "view": "Դիտել",

@@ -41,7 +41,8 @@ public sealed class CreateOrderInvoiceHandler
         var invoice = Invoice.Create(cmd.ClientId, now.Add(_orderOptions.Value.InvoicePaymentTerm), cmd.Currency, now);
         foreach (var item in cmd.Items)
         {
-            invoice.AddItem(item.Description, item.UnitPrice, item.Quantity, productSnapshot: item.ProductSnapshot);
+            invoice.AddItem(
+                item.Description, item.UnitPrice, item.Quantity, productSnapshot: item.ProductSnapshot, discountPercent: item.DiscountPercent);
         }
 
         _context.Invoices.Add(invoice);

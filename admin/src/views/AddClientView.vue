@@ -18,6 +18,7 @@ import { CLIENT_STATUS_OPTIONS, LANGUAGE_OPTIONS } from '@/lib/constants'
 import { ClientStatus } from '@/types/client'
 import { restrictsAccount, type RestrictiveClientStatus } from '@/lib/clientStatus'
 import { useGeoOptions } from '@/composables/useGeoOptions'
+import ClientGroupSelect from '@/components/clients/ClientGroupSelect.vue'
 import ClientStatusConfirmDialog from '@/components/clients/ClientStatusConfirmDialog.vue'
 import ClientUserPicker from '@/components/clients/ClientUserPicker.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
@@ -116,6 +117,9 @@ const country = ref('')
 
 /** Selected currency code. */
 const currency = ref('')
+
+/** Selected client group id; null lets the API put the client in the default group. */
+const clientGroupId = ref<number | null>(null)
 
 /** Payment method. */
 const paymentMethod = ref('')
@@ -243,6 +247,7 @@ const createClient = async (): Promise<void> => {
       adminNotes: adminNotes.value.trim() || undefined,
     },
     status: status.value,
+    clientGroupId: clientGroupId.value,
     notifications: { ...notify },
     settings: { ...settings },
   }
@@ -448,6 +453,11 @@ onMounted(() => {
                 </UiField>
                 <UiField :label="t('shared.status')">
                   <UiSelect data-testid="add-client-status" v-model="status" :options="statusOptions" :placeholder="t('shared.status')" />
+                </UiField>
+                <UiField :label="t('clients.clientGroups.group')">
+                  <template #default="{ id }">
+                    <ClientGroupSelect :id="id" v-model="clientGroupId" :empty-label="t('clients.clientGroups.defaultGroup')" data-testid="add-client-group" />
+                  </template>
                 </UiField>
               </UiGrid>
             </UiStack>

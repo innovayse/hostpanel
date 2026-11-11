@@ -4,6 +4,7 @@
   "clientsChildren": {
     "view": "View/Search Clients",
     "users": "Manage Users",
+    "groups": "Client Groups",
     "sharedHostings": "Shared Hostings",
     "addons": "Service Addons",
     "domainRegistrations": "Domain Registrations",

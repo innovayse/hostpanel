@@ -32,6 +32,12 @@ export interface ClientListItem {
   twoFactorEnabled: boolean
   /** ISO 8601 creation timestamp. */
   createdAt: string
+  /** The client group the client belongs to; null or absent when it has none. */
+  clientGroupId?: number | null
+  /** Name of that group; null or absent when the client has none. */
+  clientGroupName?: string | null
+  /** Colour of that group as `#RRGGBB`; null or absent when the client has none. */
+  clientGroupColor?: string | null
 }
 
 /** Language, billing currency and payment preferences of a client, with the internal notes. */
@@ -86,8 +92,6 @@ export interface ClientDetail extends ClientListItem {
   externalAccount?: ClientExternalAccount | null
   /** Credit held on the account in its billing currency; while it is not zero the currency cannot be changed. */
   creditBalance?: number
-  /** The client group the client belongs to; null or absent when it has none. */
-  clientGroupId?: number | null
 }
 
 /** Invoice count and total per status for one client. */
@@ -174,6 +178,8 @@ export interface ClientFilters {
   phone?: string
   /** Status filter. */
   status?: ClientStatus
+  /** Only the clients that belong to this client group. */
+  clientGroupId?: number
 }
 
 /** Currency row of the admin currency configuration, as the client pickers read it. */

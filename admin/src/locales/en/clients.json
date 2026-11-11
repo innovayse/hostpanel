@@ -616,5 +616,27 @@
       "CreditNoteVoided": "Credit note voided",
       "PlanChangeCredit": "Downgrade credit"
     }
+  },
+  "clientGroups": {
+    "title": "Client Groups",
+    "subtitle": "Segment clients with a discount and a colour.",
+    "add": "Add group",
+    "createTitle": "Add client group",
+    "editTitle": "Edit client group",
+    "empty": "No client groups yet.",
+    "namePlaceholder": "For example Resellers",
+    "descriptionPlaceholder": "What this group is for",
+    "discount": "Discount (%)",
+    "discountPlaceholder": "0",
+    "color": "Colour",
+    "colorPlaceholder": "#3B82F6",
+    "clients": "Clients",
+    "setDefault": "Make default",
+    "clearDefault": "Remove default",
+    "deleteTitle": "Delete client group",
+    "deleteMessage": "Delete the group {name}? This cannot be undone.",
+    "group": "Client group",
+    "noGroup": "No group",
+    "defaultGroup": "Default group"
   }
 }

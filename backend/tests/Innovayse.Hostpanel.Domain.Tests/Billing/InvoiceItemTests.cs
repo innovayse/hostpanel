@@ -92,4 +92,68 @@ public sealed class InvoiceItemTests
         Assert.Equal(new int?[] { 42, 43, null }, invoice.Items.Select(i => i.ClientServiceId));
         Assert.Equal(5750m, invoice.SubTotal);
     }
+
+    /// <summary>A line billed without a discount carries 0 as the discount it was given.</summary>
+    [Fact]
+    public void AddItem_WithoutADiscount_RecordsNone()
+    {
+        var invoice = Invoice.Create(clientId: 1, DueDate, "USD", Now);
+
+        invoice.AddItem("Starter Hosting", 40m, 1);
+
+        Assert.Equal(0m, invoice.Items.Single().DiscountPercent);
+    }
+
+    /// <summary>The line keeps the discount it was billed with, next to the discounted price it was billed at.</summary>
+    [Fact]
+    public void AddItem_WithADiscount_KeepsItAsTheSnapshot()
+    {
+        var invoice = Invoice.Create(clientId: 1, DueDate, "USD", Now);
+
+        invoice.AddItem("Starter Hosting", 30m, 1, discountPercent: 25m);
+
+        var item = invoice.Items.Single();
+        Assert.Equal(25m, item.DiscountPercent);
+        Assert.Equal(30m, item.Amount);
+        Assert.Equal(30m, invoice.SubTotal);
+    }
+
+    /// <summary>A discount outside 0 to 100 percent cannot be recorded on a line.</summary>
+    /// <param name="discountPercent">A discount outside the range.</param>
+    [Theory]
+    [InlineData(-0.01)]
+    [InlineData(100.01)]
+    public void AddItem_WithADiscountOutsideTheRange_IsRefused(double discountPercent)
+    {
+        var invoice = Invoice.Create(clientId: 1, DueDate, "USD", Now);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            invoice.AddItem("Starter Hosting", 30m, 1, discountPercent: (decimal)discountPercent));
+    }
+
+    /// <summary>Editing a line's price or wording leaves the discount it was billed with as it was.</summary>
+    [Fact]
+    public void UpdateItem_LeavesTheDiscountAlone()
+    {
+        var invoice = Invoice.Create(clientId: 1, DueDate, "USD", Now);
+        invoice.AddItem("Starter Hosting", 30m, 1, discountPercent: 25m);
+
+        invoice.UpdateItem(invoice.Items.Single().Id, "Starter Hosting, annual", 50m, 1);
+
+        Assert.Equal(25m, invoice.Items.Single().DiscountPercent);
+    }
+
+    /// <summary>A duplicate is the same charges billed again, so each line keeps its discount and is not discounted twice.</summary>
+    [Fact]
+    public void Duplicate_CarriesTheDiscountAcrossWithoutDiscountingAgain()
+    {
+        var invoice = Invoice.Create(clientId: 1, DueDate, "USD", Now);
+        invoice.AddItem("Starter Hosting", 30m, 1, discountPercent: 25m);
+
+        var copy = invoice.Duplicate(Now);
+
+        var item = copy.Items.Single();
+        Assert.Equal(25m, item.DiscountPercent);
+        Assert.Equal(30m, item.UnitPrice);
+    }
 }

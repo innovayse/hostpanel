@@ -657,6 +657,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<decimal>("DiscountPercent")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m);
+
                     b.Property<int>("InvoiceId")
                         .HasColumnType("integer");
 
@@ -1413,6 +1418,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasIndex("IsDefault")
                         .IsUnique()
                         .HasFilter("\"IsDefault\"");
+
+                    b.HasIndex(new[] { "Name" }, "IX_ClientGroups_Name")
+                        .IsUnique();
 
                     b.ToTable("ClientGroups", t =>
                         {
@@ -5336,7 +5344,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasOne("Innovayse.Hostpanel.Domain.Clients.ClientGroup", null)
                         .WithMany()
                         .HasForeignKey("ClientGroupId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("FK_Clients_ClientGroups_ClientGroupId");
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Clients.ClientUser", b =>

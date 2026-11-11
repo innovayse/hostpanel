@@ -85,4 +85,36 @@ public sealed class UpdateClientGroupTests(IntegrationTestFactory factory) : ICl
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    /// <summary>Renaming a group to a name another group has is refused with 409 and the code, and the group keeps its name.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Update_RefusesANameAnotherGroupHas()
+    {
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        var taken = $"Taken {Guid.NewGuid():N}";
+        await ClientGroupTestSeeds.CreateAsync(admin, taken);
+        var own = $"Own {Guid.NewGuid():N}";
+        var id = await ClientGroupTestSeeds.CreateAsync(admin, own);
+
+        var response = await admin.PutAsJsonAsync($"{ClientGroupTestSeeds.Route}/{id}", ClientGroupTestSeeds.Body(taken));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        await ClientsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.CLIENT_GROUP_NAME_ALREADY_EXISTS);
+        (await ClientGroupTestSeeds.GetAsync(admin, id)).GetProperty("name").GetString().Should().Be(own);
+    }
+
+    /// <summary>Saving a group again under its own name is not a clash with itself.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Update_KeepingTheOwnNameIsAccepted()
+    {
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        var name = $"Own {Guid.NewGuid():N}";
+        var id = await ClientGroupTestSeeds.CreateAsync(admin, name);
+
+        var response = await admin.PutAsJsonAsync($"{ClientGroupTestSeeds.Route}/{id}", ClientGroupTestSeeds.Body(name, discountPercent: 7m));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
 }

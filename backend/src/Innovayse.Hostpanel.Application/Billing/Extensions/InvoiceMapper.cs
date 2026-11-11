@@ -65,5 +65,5 @@ public static class InvoiceMapper
     /// <param name="item">The invoice line.</param>
     /// <returns>The mapped DTO.</returns>
     private static InvoiceItemDto ToItemDto(InvoiceItem item) =>
-        new(item.Id, item.Description, item.UnitPrice, item.Quantity, item.Amount, item.ProductSnapshot?.Sku);
+        new(item.Id, item.Description, item.UnitPrice, item.Quantity, item.Amount, item.DiscountPercent, item.ProductSnapshot?.Sku);
 }

@@ -33,7 +33,7 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
         {
             var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
             result = await bus.InvokeAsync<Result<int>>(new CreateOrderInvoiceCommand(
-                clientId, "USD", [new OrderInvoiceItemDto("Starter Hosting", 10m, 1, Snapshot), new OrderInvoiceItemDto("example.test", 5m, 1, null)]));
+                clientId, "USD", [new OrderInvoiceItemDto("Starter Hosting", 10m, 1, Snapshot, 0m), new OrderInvoiceItemDto("example.test", 5m, 1, null, 0m)]));
         }
 
         result.IsSuccess.Should().BeTrue();
@@ -64,7 +64,7 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
         {
             var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
             result = await bus.InvokeAsync<Result<int>>(new CreateOrderInvoiceCommand(
-                clientId, "USD", [new OrderInvoiceItemDto("Starter Hosting", 10m, 1, null)]));
+                clientId, "USD", [new OrderInvoiceItemDto("Starter Hosting", 10m, 1, null, 0m)]));
         }
 
         result.IsSuccess.Should().BeTrue();
@@ -72,5 +72,29 @@ public sealed class CreateOrderInvoiceTests(IntegrationTestFactory factory) : IC
         var context = check.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var invoice = await context.Invoices.AsNoTracking().SingleAsync(i => i.Id == result.Value);
         invoice.DueDate.Should().BeCloseTo(DateTimeOffset.UtcNow.AddDays(30), TimeSpan.FromMinutes(5));
+    }
+
+    /// <summary>A line billed at a discounted price keeps the discount it was given, and the invoice totals the discounted price.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task HandleAsync_DiscountedLine_SnapshotsTheDiscountOnTheInvoiceItemAsync()
+    {
+        var clientId = await BillingTestSeeds.SeedClientAsync(factory);
+
+        Result<int> result;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+            result = await bus.InvokeAsync<Result<int>>(new CreateOrderInvoiceCommand(
+                clientId, "USD", [new OrderInvoiceItemDto("Starter Hosting", 7.5m, 1, Snapshot, 25m), new OrderInvoiceItemDto("example.test", 5m, 1, null, 0m)]));
+        }
+
+        result.IsSuccess.Should().BeTrue();
+        using var check = factory.Services.CreateScope();
+        var context = check.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var invoice = await context.Invoices.AsNoTracking().Include(i => i.Items).SingleAsync(i => i.Id == result.Value);
+        invoice.Total.Should().Be(12.5m);
+        invoice.Items.Single(i => i.Description == "Starter Hosting").DiscountPercent.Should().Be(25m);
+        invoice.Items.Single(i => i.Description == "example.test").DiscountPercent.Should().Be(0m);
     }
 }

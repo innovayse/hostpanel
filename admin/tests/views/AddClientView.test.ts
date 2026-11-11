@@ -53,6 +53,28 @@ describe('AddClientView', () => {
     expect(callOf(mock).body).toMatchObject({ status: ClientStatus.Active })
   })
 
+  it('leaves the group empty so the API chooses the default one', async () => {
+    const wrapper = await mountClientView(AddClientView)
+    const mock = stubFetch(json(9))
+
+    await wrapper.find('[data-testid="add-client-submit"]').trigger('click')
+    await flushPromises()
+
+    expect(callOf(mock).body).toMatchObject({ clientGroupId: null })
+  })
+
+  it('puts the client in the picked group', async () => {
+    const wrapper = await mountClientView(AddClientView)
+    const mock = stubFetch(json(9))
+    wrapper.findAllComponents(UiSelect).find(c => c.attributes('data-testid') === 'add-client-group')?.vm.$emit('update:modelValue', 3)
+    await flushPromises()
+
+    await wrapper.find('[data-testid="add-client-submit"]').trigger('click')
+    await flushPromises()
+
+    expect(callOf(mock).body).toMatchObject({ clientGroupId: 3 })
+  })
+
   it.each([
     [ClientStatus.Suspended, 'cannot place orders'],
     [ClientStatus.Closed, 'Closing is permanent'],

@@ -254,6 +254,11 @@ public sealed class PlaceOrderHandler
             await _roles.AddAsync(orderer, Role.Client, ct);
         }
 
+        // The client is known now, a new one with the default group it was just placed in, so the discount of its group
+        // can be taken off before the lines become the order's and the invoice's: the order, its invoice and the
+        // service the order creates then all carry the one discounted price.
+        lines = await ApplyClientGroupDiscountAsync(lines, clientId.Value, currency.Value!, ct);
+
         // Taken from a database sequence, not derived from the stored maximum: reading the maximum
         // and claiming max + 1 are two steps, so two concurrent orders claimed the same number and
         // the second hit the unique index. A sequence also never frees a number for reuse, so a
@@ -278,7 +283,7 @@ public sealed class PlaceOrderHandler
 
         // Raised before the order is saved: an invoice whose order then fails to save is cancelled
         // below, while an order saved without its invoice was a Pending order nobody could pay.
-        var invoiceItems = lines.Select(line => new OrderInvoiceItemDto(DescribeLine(line), line.Price, 1, line.Snapshot)).ToList();
+        var invoiceItems = lines.Select(line => new OrderInvoiceItemDto(DescribeLine(line), line.Price, 1, line.Snapshot, line.DiscountPercent)).ToList();
         var invoice = await _bus.InvokeAsync<Result<int>>(
             new CreateOrderInvoiceCommand(clientId.Value, currency.Value!, invoiceItems), ct);
         if (invoice.IsFailure)
@@ -366,6 +371,35 @@ public sealed class PlaceOrderHandler
         }
 
         return Result<IReadOnlyList<PricedOrderLine>>.Success(lines);
+    }
+
+    /// <summary>
+    /// Takes the discount of the ordering client's group off every product line. A domain line keeps its price: a
+    /// domain is not a catalogue product, and its price is the registry's rate for the extension.
+    /// </summary>
+    /// <param name="lines">The priced lines at list price.</param>
+    /// <param name="clientId">The ordering client.</param>
+    /// <param name="currencyCode">ISO 4217 alpha code the order bills in.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The lines unchanged when the client's group gives no discount; otherwise the product lines at their discounted price, carrying the percent.</returns>
+    private async Task<IReadOnlyList<PricedOrderLine>> ApplyClientGroupDiscountAsync(
+        IReadOnlyList<PricedOrderLine> lines, int clientId, string currencyCode, CancellationToken ct)
+    {
+        var discountPercent = await _context.FindClientGroupDiscountPercentAsync(clientId, ct);
+        if (discountPercent == 0m)
+        {
+            return lines;
+        }
+
+        return lines
+            .Select(line => line.Item.DomainAction is null
+                ? line with
+                {
+                    Price = ClientGroup.PriceAfterDiscount(line.Price, discountPercent, currencyCode),
+                    DiscountPercent = discountPercent,
+                }
+                : line)
+            .ToList();
     }
 
     /// <summary>

@@ -1348,6 +1348,9 @@
   <data name="CLIENT_GROUP_IN_USE" xml:space="preserve">
     <value>В этой группе ещё есть клиенты. Сначала переведите их в другую группу.</value>
   </data>
+  <data name="CLIENT_GROUP_NAME_ALREADY_EXISTS" xml:space="preserve">
+    <value>Группа клиентов с таким названием уже существует.</value>
+  </data>
   <data name="CLIENT_GROUP_DISCOUNT_INVALID" xml:space="preserve">
     <value>Скидка должна быть от 0 до 100 процентов.</value>
   </data>

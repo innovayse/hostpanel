@@ -32,4 +32,6 @@ export interface AdminCreateClientPayload {
   notifications: ContactNotifications
   /** The account switches staff set on the client. */
   settings: ClientSettings
+  /** The client group to put the client in; null or absent puts it in the default group, when one is set. */
+  clientGroupId?: number | null
 }

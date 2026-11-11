@@ -1348,6 +1348,9 @@
   <data name="CLIENT_GROUP_IN_USE" xml:space="preserve">
     <value>This client group still has clients. Move them to another group first.</value>
   </data>
+  <data name="CLIENT_GROUP_NAME_ALREADY_EXISTS" xml:space="preserve">
+    <value>Another client group already has this name.</value>
+  </data>
   <data name="CLIENT_GROUP_DISCOUNT_INVALID" xml:space="preserve">
     <value>A discount must be between 0 and 100 percent.</value>
   </data>

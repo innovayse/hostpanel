@@ -32,6 +32,10 @@ public sealed class KbSlugRulesTests
     [InlineData("привет")]
     [InlineData("2024")]
     [InlineData("99999999999")]
+    [InlineData("foo\n")]
+    [InlineData("foo\r\n")]
+    [InlineData("\nfoo")]
+    [InlineData("12\n")]
     public void MalformedUpperCaseOrNumericSlug_IsRefused(string? slug)
     {
         Assert.False(KbSlugRules.IsValidArticleSlug(slug));

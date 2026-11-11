@@ -1,7 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain.Support;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Support;
 
@@ -98,6 +102,8 @@ public sealed class GetPublishedKbArticleBySlugTests(IntegrationTestFactory fact
     [InlineData("99999999999", HttpStatusCode.NotFound, false, false)]
     [InlineData("0", HttpStatusCode.BadRequest, false, false)]
     [InlineData("bad_slug", HttpStatusCode.NotFound, false, false)]
+    [InlineData("foo%0A", HttpStatusCode.NotFound, false, false)]
+    [InlineData("foo%0D%0A", HttpStatusCode.NotFound, false, false)]
     [InlineData("-leading-hyphen", HttpStatusCode.NotFound, false, false)]
     [InlineData("trailing-hyphen-", HttpStatusCode.NotFound, false, false)]
     [InlineData("double--hyphen", HttpStatusCode.NotFound, false, false)]
@@ -117,5 +123,45 @@ public sealed class GetPublishedKbArticleBySlugTests(IntegrationTestFactory fact
                 body.TryGetProperty("items", out _).Should().BeTrue("the literal 'articles' is the list, not an article called articles");
             }
         }
+    }
+
+    /// <summary>
+    /// The slug shape is written in three places (the domain, the database constraint and this route). The route's
+    /// pattern must accept and refuse the same values as <see cref="KbSlugRules"/>; the one difference is on purpose: a slug
+    /// typed in capitals reaches the handler, which lower cases it.
+    /// </summary>
+    [Fact]
+    public void RoutePattern_AcceptsAndRefusesWhatTheSlugRulesDo()
+    {
+        var route = RouteSlugRegex();
+        string[] values =
+        [
+            "a", "foo", "foo-bar", "2fa", "a-1", "1-2-3", "foo\n", "foo\r\n", "\nfoo", "-a", "a-", "a--b", "12", "123456", "99999999999",
+            "foo_bar", "foo bar", "привет", "foo/bar", string.Empty,
+        ];
+
+        foreach (var value in values)
+        {
+            route.IsMatch(value).Should().Be(KbSlugRules.IsValidCategorySlug(value), $"the route and the rules must agree on '{value.Replace("\n", "\\n").Replace("\r", "\\r")}'");
+        }
+
+        route.IsMatch("Foo-Bar").Should().BeTrue("a slug typed in capitals reaches the handler, which lower cases it");
+        KbSlugRules.IsValidCategorySlug("Foo-Bar").Should().BeFalse("a stored slug is lower case");
+    }
+
+    /// <summary>Builds the regular expression ASP.NET Core applies to the <c>slug</c> segment of this route.</summary>
+    /// <returns>The route constraint's regular expression, as the framework builds it: anchored and case insensitive.</returns>
+    private Regex RouteSlugRegex()
+    {
+        var endpoint = factory.Services.GetRequiredService<EndpointDataSource>().Endpoints
+            .OfType<RouteEndpoint>()
+            .Single(e => e.RoutePattern.RawText is { } raw && raw.Contains("{slug:regex(", StringComparison.Ordinal));
+        var content = endpoint.RoutePattern.GetParameter("slug")!.ParameterPolicies.Single().Content!;
+        var pattern = content[(content.IndexOf('(', StringComparison.Ordinal) + 1)..content.LastIndexOf(')')]
+            .Replace("[[", "[", StringComparison.Ordinal)
+            .Replace("]]", "]", StringComparison.Ordinal);
+
+        // ASP.NET Core wraps the pattern in ^(...)$ and matches without regard to case.
+        return new Regex($"^({pattern})$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     }
 }

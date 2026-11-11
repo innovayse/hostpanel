@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Common;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
@@ -42,9 +43,9 @@ public sealed class AddKbTranslationsAndSlugsMigrationTests
 
             // Categories: the two Hosting rows stay, case variants of Billing become one new category, and a blank text is General.
             var categories = await RowsAsync(connectionString, """SELECT "Id", "Name", "Slug" FROM "KbCategories" ORDER BY "Id" """);
-            categories.Select(c => (string)c["Name"]!).Should().Contain(["Hosting", "HOSTING", "Billing", "General"]);
+            categories.Select(c => (string)c["Name"]!).Should().Contain(["Hosting", "HOSTING", "billing", "General"]);
             categories.Count(c => string.Equals((string)c["Name"]!, "billing", StringComparison.OrdinalIgnoreCase)).Should().Be(1, "spellings that differ by case or edge spaces are one category");
-            (await ScalarAsync<string>(connectionString, """SELECT "Name" FROM "KbCategories" WHERE lower("Name") = 'billing' """)).Should().Be("Billing", "the most used spelling names it");
+            (await ScalarAsync<string>(connectionString, """SELECT "Name" FROM "KbCategories" WHERE lower("Name") = 'billing' """)).Should().Be("billing", "the most used spelling names it: it is used twice, the others once");
 
             var hostingId = (int)categories.First(c => (string)c["Name"]! == "Hosting")["Id"]!;
             (await ScalarAsync<int>(connectionString, $"""SELECT "CategoryId" FROM "KbArticles" WHERE "Id" = {seeded.HostingArticleId}""")).Should().Be(hostingId, "an article joins the lowest-id category that matches its text");
@@ -56,6 +57,10 @@ public sealed class AddKbTranslationsAndSlugsMigrationTests
             slugs.Select(s => s.ToLowerInvariant()).Should().OnlyHaveUniqueItems();
             slugs.Should().NotContain(["articles", "categories"]).And.NotContain(s => s.All(char.IsAsciiDigit));
             categories.Select(c => (string)c["Slug"]!).Should().OnlyHaveUniqueItems();
+            var categorySlugs = categories.ToDictionary(c => (string)c["Name"]!, c => (string)c["Slug"]!);
+            categorySlugs["Hosting"].Should().Be("hosting");
+            categorySlugs["HOSTING"].Should().Be("hosting-2", "the second name that builds the same slug is numbered");
+            (categorySlugs["billing"], categorySlugs["General"], categorySlugs["Docs"]).Should().Be(("billing", "general", "docs"));
 
             var clashing = await SlugsOfAsync(connectionString, seeded.ClashingIds);
             clashing.Should().Equal("foo", "foo-2", "foo-2-2", "foo-3", "foo-2-3");
@@ -98,7 +103,7 @@ public sealed class AddKbTranslationsAndSlugsMigrationTests
             (await ScalarAsync<string>(connectionString, $"""SELECT "Title" FROM "KbArticles" WHERE "Id" = {seeded.EnglishId}""")).Should().Be("English title");
             (await ScalarAsync<string>(connectionString, $"""SELECT "Content" FROM "KbArticles" WHERE "Id" = {seeded.EnglishId}""")).Should().Be("An English body.");
             (await ScalarAsync<string>(connectionString, $"""SELECT "Title" FROM "KbArticles" WHERE "Id" = {seeded.CyrillicId}""")).Should().Be("Привет", "an article with one language gets that language back");
-            (await ScalarAsync<string>(connectionString, $"""SELECT "Category" FROM "KbArticles" WHERE "Id" = {seeded.BillingLowerId}""")).Should().Be("Billing", "the category comes back as its name: the original spelling of a merged variant is not kept");
+            (await ScalarAsync<string>(connectionString, $"""SELECT "Category" FROM "KbArticles" WHERE "Id" = {seeded.BillingLowerId}""")).Should().Be("billing", "the category comes back as its name: the original spelling of a merged variant is not kept");
             (await ScalarAsync<string>(connectionString, $"""SELECT "Category" FROM "KbArticles" WHERE "Id" = {seeded.EmptyId}""")).Should().Be("General");
             (await ScalarAsync<long>(connectionString, """SELECT count(*) FROM information_schema.tables WHERE table_name = 'KbArticleTranslations' """)).Should().Be(0);
             (await ScalarAsync<long>(connectionString, """SELECT count(*) FROM information_schema.columns WHERE table_name = 'KbArticles' AND column_name IN ('Slug', 'CategoryId') """)).Should().Be(0);
@@ -125,6 +130,72 @@ public sealed class AddKbTranslationsAndSlugsMigrationTests
         });
     }
 
+    /// <summary>The slug SQL builds for a title is the one the application's <see cref="SlugGenerator"/> builds, accents and all.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Up_BuildsTheSameSlugAsTheApplicationsSlugGeneratorAsync()
+    {
+        string[] titles = ["Doğru", "Café Crème", "Straße", "Łódź Ørsted", "Hello, World!", "  --Trim--  ", "Ünïcödé Tëst", "Ångström Æble"];
+        await WithDatabaseAsync(async (connectionString, options) =>
+        {
+            await MigrateAsync(options, PreviousMigration);
+            var ids = new List<int>();
+            foreach (var title in titles)
+            {
+                ids.Add(await InsertAsync(
+                    connectionString,
+                    """INSERT INTO "KbArticles" ("Title", "Content", "Category", "IsPublished") VALUES (@t, 'Body.', 'Docs', true) RETURNING "Id" """,
+                    ("t", title)));
+            }
+
+            await MigrateAsync(options, TargetMigration);
+
+            (await SlugsOfAsync(connectionString, ids))
+                .Should().Equal(titles.Select(title => SlugGenerator.FromText(title, "article", 140)));
+        });
+    }
+
+    /// <summary>A long numeric title is cut first and then found to be numeric, so it gets the prefix and never ends up a bare number.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Up_CutsALongNumericTitleBeforeCheckingWhetherItIsNumericAsync()
+    {
+        await WithDatabaseAsync(async (connectionString, options) =>
+        {
+            await MigrateAsync(options, PreviousMigration);
+            var id = await InsertAsync(
+                connectionString,
+                """INSERT INTO "KbArticles" ("Title", "Content", "Category", "IsPublished") VALUES (@t, 'Body.', 'Docs', true) RETURNING "Id" """,
+                ("t", new string('1', 150)));
+
+            await MigrateAsync(options, TargetMigration);
+
+            (await SlugOfAsync(connectionString, id)).Should().Be("article-" + new string('1', 140));
+        });
+    }
+
+    /// <summary>Going down with two non English translations takes the first of them in order, here Armenian before Russian.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Down_WithTwoNonEnglishTranslations_TakesTheFirstInOrderAsync()
+    {
+        await WithDatabaseAsync(async (connectionString, options) =>
+        {
+            await MigrateAsync(options, PreviousMigration);
+            var id = await InsertAsync(
+                connectionString,
+                """INSERT INTO "KbArticles" ("Title", "Content", "Category", "IsPublished") VALUES ('Plain', 'Plain body.', 'Docs', true) RETURNING "Id" """);
+            await MigrateAsync(options, TargetMigration);
+            await ExecuteAsync(connectionString, $"""DELETE FROM "KbArticleTranslations" WHERE "ArticleId" = {id}""");
+            await ExecuteAsync(connectionString, $"""INSERT INTO "KbArticleTranslations" ("ArticleId", "Locale", "Title", "Content") VALUES ({id}, 'ru', 'Русский', 'Русский текст.') """);
+            await ExecuteAsync(connectionString, $"""INSERT INTO "KbArticleTranslations" ("ArticleId", "Locale", "Title", "Content") VALUES ({id}, 'hy', 'Հայերեն', 'Հայերեն տեքստ.') """);
+
+            await MigrateAsync(options, PreviousMigration);
+
+            (await ScalarAsync<string>(connectionString, $"""SELECT "Title" FROM "KbArticles" WHERE "Id" = {id}""")).Should().Be("Հայերեն");
+        });
+    }
+
     /// <summary>The check constraints and the unique index refuse a slug the rules do not allow.</summary>
     /// <param name="slug">The slug an insert tries.</param>
     /// <param name="sqlState">The Postgres error code expected.</param>
@@ -137,6 +208,8 @@ public sealed class AddKbTranslationsAndSlugsMigrationTests
     [InlineData("two  spaces", "23514")]
     [InlineData("-lead", "23514")]
     [InlineData("under_score", "23514")]
+    [InlineData("foo\n", "23514")]
+    [InlineData("foo\r\n", "23514")]
     [InlineData("taken", "23505")]
     public async Task ArticleSlugConstraints_RefuseWhatTheRulesForbidAsync(string slug, string sqlState)
     {
@@ -230,6 +303,8 @@ public sealed class AddKbTranslationsAndSlugsMigrationTests
         await InsertAsync(connectionString, """INSERT INTO "KbCategories" ("Name", "Description", "IsHidden") VALUES ('HOSTING', 'd', false) RETURNING "Id" """);
 
         var ids = new List<int>();
+
+        // Saves one article the way the old code did and remembers its id.
         async Task<int> Article(string title, string content, string category, bool published)
         {
             var id = await InsertAsync(
@@ -249,6 +324,7 @@ public sealed class AddKbTranslationsAndSlugsMigrationTests
         var hosting = await Article("Plans", "About plans.", "hosting ", true);
         await Article("Billing one", "Pay.", "Billing", true);
         var billingLower = await Article("Billing two", "Pay.", "billing", false);
+        await Article("Billing four", "Pay.", "billing", true);
         await Article("Billing three", "Pay.", " BILLING ", true);
         var numeric = await Article("2024", "A number.", "Docs", true);
         var reserved = await Article("Articles", "A word.", "Docs", false);

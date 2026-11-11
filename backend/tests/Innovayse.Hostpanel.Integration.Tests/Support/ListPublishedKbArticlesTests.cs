@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Support.Common;
+using Innovayse.Hostpanel.Domain.Support;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -83,7 +84,6 @@ public sealed class ListPublishedKbArticlesTests(IntegrationTestFactory factory)
         var marker = Guid.NewGuid().ToString("N");
         var id = await KbTestSeeds.CreateArticleAsync(admin, KbTestSeeds.ArticleBody(
             categoryId, [("en", "English title", "English body."), ("ru", $"Русский {marker}", "Русский текст.")], isPublished: true));
-        (await admin.PutAsync($"/api/admin/knowledgebase/{id}/publish", content: null)).StatusCode.Should().Be(HttpStatusCode.NoContent);
 
         var page = await GetPageAsync($"/api/knowledgebase/articles?category={category}&search={marker}", "en");
 
@@ -128,14 +128,34 @@ public sealed class ListPublishedKbArticlesTests(IntegrationTestFactory factory)
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var article = await context.KbArticles.FirstAsync(a => a.Id == id);
-            article.SetTranslation("ru", "Только русский", "Текст.");
-            article.RemoveTranslation("en");
+            article.ReplaceTranslations(new Dictionary<string, KbArticleTranslationContent> { ["ru"] = new("Только русский", "Текст.") });
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
         var page = await GetPageAsync($"/api/knowledgebase/articles?category={category}", "en");
 
         page.GetProperty("items").EnumerateArray().Single().GetProperty("title").GetString().Should().Be("Только русский");
+    }
+
+    /// <summary>When one category's name equals another category's slug, the filter means the category that has it as its slug.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CategoryFilter_PrefersASlugOverANameThatLooksLikeOneAsync()
+    {
+        var admin = await SupportTestSeeds.AdminClientAsync(factory);
+        var marker = Guid.NewGuid().ToString("N")[..10];
+        var owner = await KbTestSeeds.CreateCategoryAsync(admin, $"Pay Here {marker}");
+        var lookalike = await KbTestSeeds.CreateCategoryAsync(admin, $"pay-here-{marker}");
+        var inOwner = await KbTestSeeds.CreateArticleAsync(admin, owner, "Owner article", "Body.", publish: true);
+        var inLookalike = await KbTestSeeds.CreateArticleAsync(admin, lookalike, "Lookalike article", "Body.", publish: true);
+
+        var bySlug = await GetPageAsync($"/api/knowledgebase/articles?category=pay-here-{marker}");
+        var byName = await GetPageAsync($"/api/knowledgebase/articles?category=Pay%20Here%20{marker}");
+        var byOtherSlug = await GetPageAsync($"/api/knowledgebase/articles?category=pay-here-{marker}-2");
+
+        Ids(bySlug).Should().Equal(inOwner);
+        Ids(byName).Should().Equal(inOwner);
+        Ids(byOtherSlug).Should().Equal(inLookalike);
     }
 
     /// <summary>Paging returns the requested slice.</summary>

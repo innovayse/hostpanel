@@ -72,6 +72,18 @@ public sealed class KbArticleTests
         Assert.Equal("New body", only.Content);
     }
 
+    /// <summary>A blank locale is refused.</summary>
+    /// <param name="locale">The locale.</param>
+    [Theory]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void SetTranslation_WithBlankLocale_Throws(string locale)
+    {
+        var article = NewArticle();
+
+        Assert.Throws<ArgumentException>(() => article.SetTranslation(locale, "Title", "Body"));
+    }
+
     /// <summary>A blank title or body is refused.</summary>
     /// <param name="title">The title.</param>
     /// <param name="content">The body.</param>
@@ -83,20 +95,6 @@ public sealed class KbArticleTests
         var article = NewArticle();
 
         Assert.Throws<ArgumentException>(() => article.SetTranslation("en", title, content));
-    }
-
-    /// <summary>RemoveTranslation drops a locale and ignores one the article does not have.</summary>
-    [Fact]
-    public void RemoveTranslation_DropsTheLocale_AndIgnoresAMissingOne()
-    {
-        var article = NewArticle();
-        article.SetTranslation("en", "T", "B");
-        article.SetTranslation("ru", "Т", "Б");
-
-        article.RemoveTranslation("ru");
-        article.RemoveTranslation("hy");
-
-        Assert.Equal("en", Assert.Single(article.Translations).Locale);
     }
 
     /// <summary>ReplaceTranslations makes the translations exactly the given set.</summary>

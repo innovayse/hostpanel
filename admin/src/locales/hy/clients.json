@@ -613,7 +613,8 @@
       "PaymentSurplus": "Հաշվից ավել վճարում",
       "TransactionReversed": "Մատյանի գրառումը չեղարկվեց",
       "CreditNoteIssued": "Կրեդիտ-նոտան տրվեց հաճախորդի մնացորդին",
-      "CreditNoteVoided": "Կրեդիտ-նոտան չեղարկվեց"
+      "CreditNoteVoided": "Կրեդիտ-նոտան չեղարկվեց",
+      "PlanChangeCredit": "Կրեդիտ ավելի էժան սակագնին անցնելու համար"
     }
   }
 }

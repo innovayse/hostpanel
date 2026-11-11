@@ -61,6 +61,7 @@
           </UiStack>
 
           <ClientServicesServicePasswordForm v-else-if="activeTab === ServiceTab.Password" :service-id="serviceId" />
+          <ClientServicesServicePlanChange v-else-if="activeTab === ServiceTab.PlanChange" :service-id="serviceId" />
           <ClientServicesServiceCancelForm v-else-if="activeTab === ServiceTab.Cancel" :service-id="serviceId" />
           <ClientServicesServiceSshKeys v-else-if="activeTab === ServiceTab.Ssh" :service-id="serviceId" />
           <UiCard v-else-if="activePluginWidget" :title="activePluginWidget.title ?? undefined">
@@ -81,7 +82,7 @@
 <script setup lang="ts">
 /**
  * Service detail: header and notices, a side menu and the panel it selects (overview with
- * the suspension reason, details, server and usage, and invoices; change password; request cancellation). Every
+ * the suspension reason, details, server and usage, and invoices; change password; change plan; request cancellation). Every
  * in-flight flag and refusal sentence belongs to the service management store; the panels read
  * them there. A service that has no control-panel account yet is sent to its setup wizard. The
  * tabs plugins add follow the host's own, each an isolated widget.

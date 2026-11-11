@@ -20,6 +20,9 @@ const applied: ClientCreditEntry = { id: 12, date: '2026-10-02T09:00:00Z', movem
 /** A movement tied to no invoice. */
 const adjusted: ClientCreditEntry = { id: 13, date: '2026-10-03T09:00:00Z', movement: CreditMovement.AdminAdd, change: 5, balanceAfter: 29.5, invoiceId: null }
 
+/** The prorated credit of a plan downgrade. */
+const downgraded: ClientCreditEntry = { id: 14, date: '2026-10-04T09:00:00Z', movement: CreditMovement.PlanChangeCredit, change: 6.25, balanceAfter: 35.75, invoiceId: null }
+
 describe('ClientCreditHistoryTable', () => {
   it('says nothing has moved the balance when there are no lines', () => {
     const wrapper = mountClient(HistoryTable, { props: { entries: [], currency: 'USD' } })
@@ -44,6 +47,12 @@ describe('ClientCreditHistoryTable', () => {
     expect(wrapper.get('[data-testid="credit-entry-type-11"]').text()).toBe('client.credit.movement.TopUp')
     expect(wrapper.get('[data-testid="credit-entry-type-12"]').text()).toBe('client.credit.movement.InvoiceApplied')
     expect(wrapper.get('[data-testid="credit-entry-type-13"]').text()).toBe('client.credit.movement.AdminAdd')
+  })
+
+  it('names a plan change credit by its own sentence key', () => {
+    const wrapper = mountClient(HistoryTable, { props: { entries: [downgraded], currency: 'USD' } })
+
+    expect(wrapper.get('[data-testid="credit-entry-type-14"]').text()).toBe('client.credit.movement.PlanChangeCredit')
   })
 
   it('shows an addition with a plus and a deduction with its minus, and the balance each left', () => {

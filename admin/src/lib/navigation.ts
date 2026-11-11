@@ -88,6 +88,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           { to: AppRoute.ClientsAddons, labelKey: 'nav.clientsChildren.addons' },
           { to: AppRoute.ClientsDomainRegistrations, labelKey: 'nav.clientsChildren.domainRegistrations' },
           { to: AppRoute.ClientsCancellations, labelKey: 'nav.clientsChildren.cancellations' },
+          { to: AppRoute.ClientsPlanChanges, labelKey: 'nav.clientsChildren.planChanges' },
           { to: AppRoute.ClientsAffiliates, labelKey: 'nav.clientsChildren.affiliates' },
         ],
       },

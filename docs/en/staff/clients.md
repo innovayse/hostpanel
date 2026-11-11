@@ -132,3 +132,7 @@ Go to **Clients → Manage Users** to see every user across all client accounts.
 | Close | Active, Inactive, or Suspended | `CLIENT_CLOSE_NOT_ALLOWED` |
 
 A closed account cannot be reopened through the admin panel (`CLIENT_ACTIVATE_NOT_ALLOWED`).
+
+## Plan changes
+
+Open **Clients, Plan Changes** to review the plan change requests of clients. Filter by status, then **Approve** or **Reject** a pending request, with an optional note. Approving applies the new plan (a provisioned service is changed on the hosting panel first); rejecting an upgrade cancels its unpaid invoice. A downgrade waits here only when the setting `billing.plan_change.auto_approve_downgrades` is off, which is the default. The **Plan changes** link on a client's service page shows the history of that service. A downgrade credit appears in the client's credit history as `PlanChangeCredit`.

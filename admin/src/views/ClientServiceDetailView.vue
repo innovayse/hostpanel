@@ -45,7 +45,7 @@ import { UiSize } from '@/utils/ui/size'
 import { UiLabelVariant, UiTextTone } from '@/utils/ui/text'
 import { UiTone } from '@/utils/ui/tone'
 import { UiDialogVariant } from '@/utils/ui/dialog'
-import { ClientSection, clientItemPath, clientSectionPath } from '@/lib/routes'
+import { ClientSection, clientItemPath, clientSectionPath, servicePlanChangesPath } from '@/lib/routes'
 
 const { t } = useI18n()
 
@@ -795,6 +795,13 @@ onMounted(() => {
               <UiIcon :markup="PANEL_ICON" :size="UiSize.Sm" />
               {{ ssoLoading ? t('shared.loading') : t('clients.clientServiceDetail.loginToControlPanel') }}
             </UiButton>
+            <UiLink
+              :to="servicePlanChangesPath(serviceId)"
+              :variant="UiButtonVariant.Secondary"
+              data-testid="client-service-plan-changes"
+            >
+              {{ t('serviceChangeRequests.viewHistory') }}
+            </UiLink>
             <UiButton
               type="button"
               :variant="UiButtonVariant.Secondary"

@@ -89,6 +89,7 @@ const router = createRouter({
         { path: 'clients/addons', component: lazy('views/ServiceAddonsView.vue') },
         { path: 'clients/domain-registrations', component: lazy('views/DomainRegistrationsView.vue') },
         { path: 'clients/cancellations', component: lazy('views/CancellationRequestsView.vue') },
+        { path: 'clients/plan-changes', component: lazy('views/ServiceChangeRequestsView.vue') },
         { path: 'clients/affiliates', component: lazy('views/ManageAffiliatesView.vue') },
         {
           path: 'clients/:id',

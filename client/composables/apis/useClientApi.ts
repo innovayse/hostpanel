@@ -29,6 +29,8 @@ import type { ClientTicket } from '~/types/clientticket'
 import type { CancellationStatus } from '~/types/cancellationstatus'
 import type { CancellationType } from '~/types/cancellationtype'
 import type { HostingInfo } from '~/types/hostinginfo'
+import type { ServicePlanChangeOption } from '~/types/serviceplanchangeoption'
+import type { ServicePlanChangeResult } from '~/types/serviceplanchangeresult'
 import { HttpMethod } from '~/types/httpmethod'
 
 /**
@@ -326,6 +328,27 @@ export const useClientApi = () => {
     apiFetch(`/api/portal/client/services/${id}/cancel`, { method: HttpMethod.Post, body })
 
   /**
+   * Lists the plans one hosting service can move to, each with its prorated amount.
+   *
+   * @param id - Service id.
+   * @returns The plans; empty when there is nowhere to move.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const fetchPlanChangeOptions = (id: string): Promise<ServicePlanChangeOption[]> =>
+    apiFetch<ServicePlanChangeOption[]>(`/api/portal/client/services/${id}/plan-change-options`)
+
+  /**
+   * Requests a move of one hosting service to another plan.
+   *
+   * @param id - Service id.
+   * @param toProductId - The product of the plan to move to.
+   * @returns Where the request stands: an invoice to pay, waiting for staff, or done.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const requestPlanChange = (id: string, toProductId: number): Promise<ServicePlanChangeResult> =>
+    apiFetch<ServicePlanChangeResult>(`/api/portal/client/services/${id}/plan-change`, { method: HttpMethod.Post, body: { toProductId } })
+
+  /**
    * Mints a single-sign-on URL into the service's control panel.
    *
    * @param id - Service id.
@@ -372,6 +395,8 @@ export const useClientApi = () => {
     fetchServiceInvoices,
     changeServicePassword,
     cancelService,
+    fetchPlanChangeOptions,
+    requestPlanChange,
     fetchCpanelSsoUrl,
     setUpService,
     fetchSshAccess,

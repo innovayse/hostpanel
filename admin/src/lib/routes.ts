@@ -49,6 +49,8 @@ export enum AppRoute {
   ClientsCancellations = '/clients/cancellations',
   /** The `/clients/domain-registrations` screen. */
   ClientsDomainRegistrations = '/clients/domain-registrations',
+  /** The `/clients/plan-changes` screen. */
+  ClientsPlanChanges = '/clients/plan-changes',
   /** The `/clients/shared-hostings` screen. */
   ClientsSharedHostings = '/clients/shared-hostings',
   /** The `/clients/users` screen. */
@@ -343,3 +345,11 @@ export const reportPagePath = (slug: string): string => `${AppRoute.Reports}/${s
  */
 export const pluginPagePath = (pluginId: string, path: string): string =>
   path === '' ? `${AppRoute.Apps}/${encodeURIComponent(pluginId)}` : `${AppRoute.Apps}/${encodeURIComponent(pluginId)}/${path}`
+
+/**
+ * Path of the plan change requests screen filtered to one service's history.
+ *
+ * @param serviceId - Service ID.
+ * @returns `/clients/plan-changes?serviceId=<id>`.
+ */
+export const servicePlanChangesPath = (serviceId: RouteId): string => `${AppRoute.ClientsPlanChanges}?serviceId=${serviceId}`

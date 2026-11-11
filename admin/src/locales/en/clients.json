@@ -613,7 +613,8 @@
       "PaymentSurplus": "Payment beyond an invoice",
       "TransactionReversed": "Ledger entry reversed",
       "CreditNoteIssued": "Credit note issued as account credit",
-      "CreditNoteVoided": "Credit note voided"
+      "CreditNoteVoided": "Credit note voided",
+      "PlanChangeCredit": "Downgrade credit"
     }
   }
 }

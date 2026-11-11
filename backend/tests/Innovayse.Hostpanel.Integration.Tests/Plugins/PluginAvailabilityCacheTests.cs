@@ -24,6 +24,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 /// </summary>
 public sealed class PluginAvailabilityCacheTests : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>The admin area index.</summary>
     private const string AdminIndexUrl = "/api/admin/plugins/ui";
 
@@ -45,7 +48,7 @@ public sealed class PluginAvailabilityCacheTests : IClassFixture<IntegrationTest
     [Fact]
     public async Task GetOrCompute_WithinLifetime_ComputesOnce_AndAgainAfterExpiry()
     {
-        var time = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var time = new ManualTimeProvider(SeededAt);
         using var cache = new PluginAvailabilityCache(new SystemClock(time));
         var passes = 0;
 
@@ -72,7 +75,7 @@ public sealed class PluginAvailabilityCacheTests : IClassFixture<IntegrationTest
     [Fact]
     public async Task Invalidate_DropsAFreshSet()
     {
-        using var cache = new PluginAvailabilityCache(new SystemClock(new ManualTimeProvider(DateTimeOffset.UtcNow)));
+        using var cache = new PluginAvailabilityCache(new SystemClock(new ManualTimeProvider(SeededAt)));
         var passes = 0;
 
         Task<IReadOnlySet<string>> Compute(CancellationToken ct)
@@ -96,7 +99,7 @@ public sealed class PluginAvailabilityCacheTests : IClassFixture<IntegrationTest
     [Fact]
     public async Task Invalidate_DuringAPass_KeepsThatPassFromBeingRemembered()
     {
-        using var cache = new PluginAvailabilityCache(new SystemClock(new ManualTimeProvider(DateTimeOffset.UtcNow)));
+        using var cache = new PluginAvailabilityCache(new SystemClock(new ManualTimeProvider(SeededAt)));
         var passes = 0;
 
         Task<IReadOnlySet<string>> Compute(CancellationToken ct)
@@ -126,7 +129,7 @@ public sealed class PluginAvailabilityCacheTests : IClassFixture<IntegrationTest
     public async Task EnablingThroughTheAdminApi_ShowsThePageAtOnce()
     {
         var pluginId = PluginActivationTestSeeds.NewId("avail-api");
-        using var host = HostWith(pluginId, new ManualTimeProvider(DateTimeOffset.UtcNow));
+        using var host = HostWith(pluginId, new ManualTimeProvider(SeededAt));
         using var admin = await AdminClientAsync(host);
 
         (await AdminPageKeysAsync(admin)).Should().NotContain($"{pluginId}/{AdminPage}");
@@ -148,7 +151,7 @@ public sealed class PluginAvailabilityCacheTests : IClassFixture<IntegrationTest
     public async Task SwitchWrittenBehindTheUseCases_ShowsOnlyAfterTheLifetime()
     {
         var pluginId = PluginActivationTestSeeds.NewId("avail-ttl");
-        var time = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var time = new ManualTimeProvider(SeededAt);
         using var host = HostWith(pluginId, time);
         using var admin = await AdminClientAsync(host);
 

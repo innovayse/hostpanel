@@ -21,6 +21,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class PluginSlotProductBindingPurgeTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>How long a purge may take to settle; generous because the first delivery compiles the handler chains.</summary>
     private static readonly TimeSpan SettleTimeout = TimeSpan.FromSeconds(60);
 
@@ -37,9 +40,8 @@ public sealed class PluginSlotProductBindingPurgeTests(IntegrationTestFactory fa
     {
         var pluginId = $"purge-bind-{Guid.NewGuid():N}"[..40];
         var otherPluginId = $"keep-bind-{Guid.NewGuid():N}"[..40];
-        // Whole microseconds, the precision of the column, so the equal stamp survives the round trip.
-        var now = DateTimeOffset.UtcNow;
-        var moment = new DateTimeOffset(now.Ticks - (now.Ticks % 10), TimeSpan.Zero);
+        // A whole second, so the equal stamp survives the round trip at the precision of the column.
+        var moment = SeededAt;
         await BindAsync(pluginId, "before", 1, moment.AddSeconds(-1));
         await BindAsync(pluginId, "equal", 2, moment);
         await BindAsync(pluginId, "after", 3, moment.AddSeconds(1));

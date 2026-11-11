@@ -27,6 +27,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 /// </remarks>
 public sealed class FulfilmentClientRefTests : IClassFixture<AppPluginFixture>
 {
+    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>The host, the database and the app plugins.</summary>
     private readonly AppPluginFixture _fixture;
 
@@ -102,7 +105,7 @@ public sealed class FulfilmentClientRefTests : IClassFixture<AppPluginFixture>
     {
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var now = DateTimeOffset.UtcNow;
+        var now = SeededAt;
         var invoice = FulfilmentInvoiceSeeds.Build(clientId, now);
         db.Invoices.Add(invoice);
         await db.SaveChangesAsync(CancellationToken.None);

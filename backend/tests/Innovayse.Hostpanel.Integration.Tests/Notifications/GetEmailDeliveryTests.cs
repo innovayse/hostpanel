@@ -60,6 +60,7 @@ public sealed class GetEmailDeliveryTests(IntegrationTestFactory factory) : ICla
 
         result.Value!.State.Should().Be(EmailDeliveryState.Sent);
         result.Value.Failure.Should().BeNull();
+        result.Value.MayResend.Should().BeFalse();
     }
 
     /// <summary>A refused mail reads as failed, with the classified reason.</summary>
@@ -74,6 +75,7 @@ public sealed class GetEmailDeliveryTests(IntegrationTestFactory factory) : ICla
 
         result.Value!.State.Should().Be(EmailDeliveryState.Failed);
         result.Value.Failure.Should().Be(EmailSendFailure.Timeout);
+        result.Value.MayResend.Should().BeTrue();
     }
 
     /// <summary>A key nothing was logged under is refused with <c>EMAIL_LOG_NOT_FOUND</c>.</summary>

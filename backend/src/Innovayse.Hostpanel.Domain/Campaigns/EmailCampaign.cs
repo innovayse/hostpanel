@@ -145,14 +145,13 @@ public sealed class EmailCampaign : BaseEntity, IAggregateRoot
 
     /// <summary>
     /// Fixes a client as a recipient while the campaign is being sent, with the address and language the client has now.
-    /// One mail goes to one address: a client already among the recipients, or another client with the same address (compared
-    /// without regard to case or surrounding spaces), is not added again, so fixing the recipients can be repeated safely and
-    /// an address shared by several clients is mailed once.
+    /// Who is a recipient, and that an address shared by several clients is mailed once, is decided by the audience the caller
+    /// reads; the table's unique (campaign, client) index is the last guard against a client fixed twice.
     /// </summary>
     /// <param name="clientId">The client to deliver to; the caller has already checked the client's marketing consent.</param>
     /// <param name="email">The client's email address now.</param>
     /// <param name="language">The client's language now, or <see langword="null"/>.</param>
-    /// <returns>The new recipient, or the existing one that already stands for this client or this address.</returns>
+    /// <returns>The new recipient.</returns>
     /// <exception cref="ArgumentException">The address is blank or longer than its column, or the language is longer than its column.</exception>
     /// <exception cref="DomainRuleException">The campaign is not being sent.</exception>
     public EmailCampaignRecipient AddRecipient(int clientId, string email, string? language)
@@ -160,13 +159,6 @@ public sealed class EmailCampaign : BaseEntity, IAggregateRoot
         EnsureStatus(CampaignStatus.Sending, CampaignErrors.NotSending);
 
         var recipient = EmailCampaignRecipient.Create(clientId, email, language);
-        var existing = _recipients.FirstOrDefault(r =>
-            r.ClientId == clientId || string.Equals(r.Email, recipient.Email, StringComparison.OrdinalIgnoreCase));
-        if (existing is not null)
-        {
-            return existing;
-        }
-
         _recipients.Add(recipient);
         return recipient;
     }

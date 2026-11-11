@@ -198,6 +198,47 @@ public sealed class DeliverEmailCampaignTests(IntegrationTestFactory factory) : 
     }
 
     /// <summary>
+    /// A crash lost the outcome of a mail the relay had already accepted. The resumed pass finds the delivered log line, marks the
+    /// recipient sent and sends nothing, and the token hash stays the one of the mail in the mailbox, so its link still works.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Deliver_ResumedAfterTheMailWasAccepted_KeepsTheOriginalTokenValid()
+    {
+        var sender = new FakeEmailSender();
+        using var host = EventHandlerTestHost.WithFakeRelay(factory, sender);
+        using var seedScope = host.Services.CreateScope();
+        var seeded = await CampaignTestSeeds.SeedSendingRecipientAsync(seedScope.ServiceProvider);
+        using (var first = host.Services.CreateScope())
+        {
+            await DeliverAsync(first.ServiceProvider, seeded.CampaignId);
+        }
+
+        var token = TokenOf(sender.Sent.Single(m => m.To == seeded.Email));
+        using (var crash = host.Services.CreateScope())
+        {
+            var db = crash.ServiceProvider.GetRequiredService<AppDbContext>();
+            await db.Database.ExecuteSqlInterpolatedAsync(
+                $"UPDATE \"EmailCampaignRecipients\" SET \"Status\" = 'Pending', \"Attempts\" = 0, \"SentAt\" = NULL WHERE \"CampaignId\" = {seeded.CampaignId}");
+            await db.Database.ExecuteSqlInterpolatedAsync($"UPDATE \"EmailCampaigns\" SET \"Status\" = 'Sending', \"SentAt\" = NULL WHERE \"Id\" = {seeded.CampaignId}");
+        }
+
+        using (var resume = host.Services.CreateScope())
+        {
+            (await DeliverAsync(resume.ServiceProvider, seeded.CampaignId)).IsSuccess.Should().BeTrue();
+        }
+
+        sender.Sent.Where(m => m.To == seeded.Email).Should().ContainSingle();
+        using var check = host.Services.CreateScope();
+        var recipient = await check.ServiceProvider.GetRequiredService<IHostpanelDbContext>().EmailCampaignRecipients.AsNoTracking()
+            .SingleAsync(r => r.CampaignId == seeded.CampaignId);
+        recipient.Status.Should().Be(CampaignRecipientStatus.Sent);
+        recipient.UnsubscribeTokenHash.Should().Be(EmailCampaignRecipient.HashToken(token));
+        (await check.ServiceProvider.GetRequiredService<IMessageBus>()
+            .InvokeAsync<Result>(new UnsubscribeFromEmailCampaignsCommand(token), CancellationToken.None)).IsSuccess.Should().BeTrue();
+    }
+
+    /// <summary>
     /// A reader follows the unsubscribe link while the mail is leaving. The unsubscribe is saved first, so the sender's save of
     /// the same recipient conflicts: nothing fails, the recipient stays unsubscribed, the consent is withdrawn, and the next
     /// pass finishes the campaign.

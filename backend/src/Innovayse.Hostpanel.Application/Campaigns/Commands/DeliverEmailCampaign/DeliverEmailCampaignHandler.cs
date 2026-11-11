@@ -122,34 +122,52 @@ public sealed class DeliverEmailCampaignHandler
     /// <param name="campaign">The campaign being delivered.</param>
     /// <param name="recipient">The pending recipient.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>A task that completes once the outcome is staged on the recipient; the caller saves it. The recipient's token hash is saved before the mail is sent.</returns>
+    /// <returns>A task that completes once the outcome is staged on the recipient; the caller saves it. A new token hash is saved only before a mail that will really be sent.</returns>
     private async Task DeliverAsync(EmailCampaign campaign, EmailCampaignRecipient recipient, CancellationToken ct)
     {
+        // One key per campaign and recipient: a replay after a crash finds the log line and sends nothing twice.
+        var key = EmailIdempotencyKey.ForParts(
+            EmailCampaignTemplateSeeder.Slug, campaign.Id.ToString(CultureInfo.InvariantCulture),
+            recipient.Id.ToString(CultureInfo.InvariantCulture));
+        var logKey = EmailIdempotencyKey.ForRecipient(key, recipient.Email);
+
+        // A mail already accepted, or held by a claim still in flight, has a link in a mailbox or about to be. A new token would
+        // overwrite the hash that link depends on, so the earlier log line decides the outcome and nothing is sent again.
+        var earlier = (await _bus.InvokeAsync<Result<EmailDeliveryDto>>(new GetEmailDeliveryQuery(logKey), ct)).Value;
+        if (earlier is { MayResend: false })
+        {
+            Record(recipient, earlier);
+            return;
+        }
+
         // The token exists in the mail alone; the recipient keeps its hash, and that is saved before the mail leaves so the link
         // works the moment the reader sees it.
         var link = CampaignUnsubscribeLink.For(_portal.Value.BaseUrl, recipient.IssueUnsubscribeToken());
         await _context.SaveChangesAsync(ct);
 
-        // One key per campaign and recipient: a replay after a crash finds the log line and sends nothing twice.
-        var key = EmailIdempotencyKey.ForParts(
-            EmailCampaignTemplateSeeder.Slug, campaign.Id.ToString(CultureInfo.InvariantCulture),
-            recipient.Id.ToString(CultureInfo.InvariantCulture));
         var model = new EmailCampaignTemplateModel(campaign.Subject, campaign.Body, link);
 
         await _bus.InvokeAsync(
             new SendEmailCommand(
                 recipient.Email, recipient.Language, EmailCampaignTemplateSeeder.Slug, model, IdempotencyKey: key, UnsubscribeUrl: link), ct);
 
-        var delivery = await _bus.InvokeAsync<Result<EmailDeliveryDto>>(
-            new GetEmailDeliveryQuery(EmailIdempotencyKey.ForRecipient(key, recipient.Email)), ct);
-        switch (delivery.Value?.State)
+        var delivery = await _bus.InvokeAsync<Result<EmailDeliveryDto>>(new GetEmailDeliveryQuery(logKey), ct);
+        Record(recipient, delivery.Value);
+    }
+
+    /// <summary>Stages on the recipient how its mail ended, as the email log shows it.</summary>
+    /// <param name="recipient">The pending recipient.</param>
+    /// <param name="delivery">The log line of its mail, or <see langword="null"/> when the mail left none.</param>
+    private void Record(EmailCampaignRecipient recipient, EmailDeliveryDto? delivery)
+    {
+        switch (delivery?.State)
         {
             case EmailDeliveryState.Sent:
                 recipient.MarkSent(_clock.UtcNow);
                 break;
 
             case EmailDeliveryState.Failed:
-                recipient.RecordFailure((delivery.Value.Failure ?? EmailSendFailure.Unknown).ToString());
+                recipient.RecordFailure((delivery.Failure ?? EmailSendFailure.Unknown).ToString());
                 break;
 
             case EmailDeliveryState.Sending:

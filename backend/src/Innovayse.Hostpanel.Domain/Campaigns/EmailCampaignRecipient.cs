@@ -110,8 +110,9 @@ public sealed class EmailCampaignRecipient : BaseEntity
     }
 
     /// <summary>
-    /// Issues the secret for the unsubscribe link of the mail that is about to be sent and keeps its hash. Each attempt gets a
-    /// fresh token, so the mail that is sent after a crash carries a token that works.
+    /// Issues the secret for the unsubscribe link of the mail that is about to be sent and keeps its hash, replacing the hash of
+    /// any earlier token. The caller issues it only for a mail that will really go out: a mail already in a mailbox keeps the
+    /// token it was sent with.
     /// </summary>
     /// <returns>The token to put in the mail; it is kept nowhere else.</returns>
     /// <exception cref="DomainRuleException">The recipient is not pending.</exception>

@@ -299,50 +299,6 @@ public sealed class EmailCampaignTests
         Assert.Equal(0, recipient.Attempts);
     }
 
-    /// <summary>Adding the same client again returns the existing recipient, so fixing the recipients can be repeated.</summary>
-    [Fact]
-    public void AddRecipient_ForTheSameClientTwice_KeepsOneRecipient()
-    {
-        var campaign = NewSending();
-        var first = campaign.AddRecipient(5, "client@example.com", null);
-
-        var second = campaign.AddRecipient(5, "other@example.com", "ru");
-
-        Assert.Same(first, second);
-        Assert.Single(campaign.Recipients);
-        Assert.Equal("client@example.com", second.Email);
-    }
-
-    /// <summary>Another client with the same address is not added: one address gets one mail, whatever case or spaces it is written in.</summary>
-    /// <param name="second">The second client's spelling of the address.</param>
-    [Theory]
-    [InlineData("client@example.com")]
-    [InlineData("CLIENT@Example.COM")]
-    [InlineData("  client@example.com  ")]
-    public void AddRecipient_ForADifferentClientWithTheSameAddress_KeepsOneRecipient(string second)
-    {
-        var campaign = NewSending();
-        var first = campaign.AddRecipient(5, "client@example.com", "en");
-
-        var again = campaign.AddRecipient(6, second, "ru");
-
-        Assert.Same(first, again);
-        Assert.Single(campaign.Recipients);
-        Assert.Equal(5, again.ClientId);
-    }
-
-    /// <summary>Clients with different addresses each get a recipient.</summary>
-    [Fact]
-    public void AddRecipient_ForDifferentAddresses_AddsEach()
-    {
-        var campaign = NewSending();
-
-        campaign.AddRecipient(5, "one@example.com", null);
-        campaign.AddRecipient(6, "two@example.com", null);
-
-        Assert.Equal(2, campaign.Recipients.Count);
-    }
-
     /// <summary>Recipients are fixed only once sending has started.</summary>
     [Fact]
     public void AddRecipient_WhenNotSending_ThrowsNotSending()

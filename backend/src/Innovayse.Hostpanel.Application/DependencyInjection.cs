@@ -73,6 +73,7 @@ public static class DependencyInjection
         // Which plans a service can move to and what each move costs, shared by the client's option list and the request itself.
         services.AddScoped<ServicePlanChangeQuoter>();
         services.AddScoped<ServicePlanChangeSettingsReader>();
+        services.AddScoped<BillingSettingSource>();
 
         // This installation's identity towards the plugin registry: where it is kept, and the enrolment that registers and verifies it.
         services.AddScoped<RegistryInstanceStore>();

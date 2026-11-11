@@ -23,14 +23,17 @@ namespace Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlan
 /// <para>
 /// An upgrade is approved at once. The prorated charge becomes an invoice through the one invoice creation use case, the
 /// request keeps the invoice id, and the plan changes when that invoice is paid (<c>ServiceChangeInvoicePaidHandler</c>);
-/// an upgrade with nothing left to prorate has no invoice and is applied now. A downgrade is approved at once only when
+/// an upgrade with nothing left to prorate has no invoice and is applied now. The request is saved before the invoice is
+/// raised and approved with it, so only the request that wins the unique index on open requests ever raises one. A downgrade is approved at once only when
 /// the <c>billing.plan_change.auto_approve_downgrades</c> setting is on, otherwise it waits as Pending for staff. An approved
 /// change is applied by <see cref="CompleteServiceChangeCommand"/>, the same use case staff approval ends in.
 /// </para>
 /// <para>
 /// Ownership is settled before anything else, so a stranger's id never reaches a query that would answer differently for
-/// an id that exists. The invoice is raised before the request is saved: a failed save leaves an unpaid invoice a client
-/// can cancel or ignore, never a request that waits for an invoice that does not exist.
+/// an id that exists. A failed invoice takes the saved request back, so the
+/// service is never left holding an open request that waits for an invoice that does not exist. Known limits: the proration
+/// is worked out from list prices, a downgrade quoted earlier keeps its amount until staff decide it, and a request whose
+/// invoice is cancelled stays Approved until staff reject it.
 /// </para>
 /// </remarks>
 public sealed class RequestMyServicePlanChangeHandler
@@ -145,21 +148,13 @@ public sealed class RequestMyServicePlanChangeHandler
             _clock.UtcNow);
 
         var approvedAtOnce = option.Type is ServiceChangeType.Upgrade || await _settings.AutoApproveDowngradesAsync(ct);
-        if (approvedAtOnce)
+        var needsInvoice = approvedAtOnce && option.Type is ServiceChangeType.Upgrade && option.ProrationAmount > 0m;
+
+        // A request that waits for an invoice is saved Pending first: the unique index on open requests settles a race before
+        // any invoice exists, so the loser never raises one.
+        if (approvedAtOnce && !needsInvoice)
         {
             request.Approve();
-        }
-
-        var needsInvoice = approvedAtOnce && option.Type is ServiceChangeType.Upgrade && option.ProrationAmount > 0m;
-        if (needsInvoice)
-        {
-            var invoice = await RaiseInvoiceAsync(service, option, ct);
-            if (invoice.IsFailure)
-            {
-                return Result<ServicePlanChangeResultDto>.FailureCode(invoice.ErrorCode!);
-            }
-
-            request.AttachInvoice(invoice.Value);
         }
 
         _context.ServiceChangeRequests.Add(request);
@@ -173,6 +168,21 @@ public sealed class RequestMyServicePlanChangeHandler
             // refused this one, which is the open request the check above looks for.
             _context.DetachAll();
             return Result<ServicePlanChangeResultDto>.FailureCode(HostpanelErrorCodes.SERVICE_CHANGE_ALREADY_PENDING);
+        }
+
+        if (needsInvoice)
+        {
+            var invoice = await RaiseInvoiceAsync(service, option, ct);
+            if (invoice.IsFailure)
+            {
+                // The request holds the service's one open slot and waits for an invoice that does not exist: take it back.
+                _context.ServiceChangeRequests.Remove(request);
+                await _context.SaveChangesAsync(ct);
+                return Result<ServicePlanChangeResultDto>.FailureCode(invoice.ErrorCode!);
+            }
+
+            request.Approve();
+            request.AttachInvoice(invoice.Value);
         }
 
         await _activity.RecordAsync(
@@ -208,6 +218,8 @@ public sealed class RequestMyServicePlanChangeHandler
     /// <returns>The new invoice's id, or the invoice use case's failure.</returns>
     private async Task<Result<int>> RaiseInvoiceAsync(ClientService service, ServicePlanChangeOptionDto option, CancellationToken ct)
     {
+        // An invoice line is a stored record of what was sold, not a screen: like every other line the billing flows write,
+        // it is one fixed sentence around the product name rather than a resource looked up per language.
         var item = new CreateInvoiceItemDto($"Upgrade to {option.Name} (prorated for the rest of the billing period)", option.ProrationAmount, 1);
         return await _bus.InvokeAsync<Result<int>>(
             new CreateInvoiceCommand(service.ClientId, _clock.UtcNow.AddDays(InvoiceDueInDays), [item]), ct);

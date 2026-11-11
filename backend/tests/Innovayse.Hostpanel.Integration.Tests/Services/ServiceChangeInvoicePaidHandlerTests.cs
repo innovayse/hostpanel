@@ -52,4 +52,22 @@ public sealed class ServiceChangeInvoicePaidHandlerTests(IntegrationTestFactory 
         (await ServiceChangeTestSeeds.ReadRequestAsync(factory, pendingId)).Status.Should().Be(ServiceChangeStatus.Approved);
         (await ServiceChangeTestSeeds.ReadServiceAsync(factory, seeded.ServiceId)).ProductId.Should().Be(seeded.FromProductId);
     }
+
+    /// <summary>A payment that leaves the proration invoice part paid applies nothing: the request keeps waiting for the rest.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task APartPayment_LeavesTheUpgradeApproved()
+    {
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, null, 10m, 20m);
+        var invoiceId = await ServiceChangeTestSeeds.SeedInvoiceAsync(factory, seeded.ClientId, 5m);
+        var requestId = await ServiceChangeTestSeeds.SeedRequestAsync(factory, seeded, ServiceChangeStatus.Approved, invoiceId);
+
+        await factory.Services.PublishAndWaitAsync(new PaymentReceivedEvent(invoiceId, seeded.ClientId, 2m, "tx-part")
+        {
+            OccurredAt = DateTimeOffset.UtcNow,
+        });
+
+        (await ServiceChangeTestSeeds.ReadRequestAsync(factory, requestId)).Status.Should().Be(ServiceChangeStatus.Approved);
+        (await ServiceChangeTestSeeds.ReadServiceAsync(factory, seeded.ServiceId)).ProductId.Should().Be(seeded.FromProductId);
+    }
 }

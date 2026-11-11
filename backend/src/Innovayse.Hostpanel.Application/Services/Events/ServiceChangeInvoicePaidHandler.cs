@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.CompleteServiceChange;
 using Innovayse.Hostpanel.Domain.Billing.Events;
@@ -13,7 +14,8 @@ namespace Innovayse.Hostpanel.Application.Services.Events;
 /// Applies an upgrade when its proration invoice is paid: dispatches <see cref="CompleteServiceChangeCommand"/> for the
 /// approved request that waits for the invoice. A non-notification handler of <see cref="PaymentReceivedEvent"/>, and safe
 /// as one: events are published after the save and dropped on failure, and the command is idempotent, so a request whose
-/// change could not be applied (the hosting panel refused) stays Approved for staff to approve again.
+/// change could not be applied (the hosting panel refused) stays Approved for staff to approve again. A payment that leaves the invoice
+/// part paid is no failure and logs nothing: the request keeps waiting for the payment that settles it.
 /// </summary>
 public sealed class ServiceChangeInvoicePaidHandler
 {
@@ -56,7 +58,9 @@ public sealed class ServiceChangeInvoicePaidHandler
             }
 
             var outcome = await _bus.InvokeAsync<Result>(new CompleteServiceChangeCommand(requestId.Value), ct);
-            if (outcome.IsFailure)
+
+            // A part payment is expected: the request keeps waiting, and the payment that settles the invoice applies it.
+            if (outcome.IsFailure && outcome.ErrorCode != HostpanelErrorCodes.SERVICE_CHANGE_INVOICE_UNPAID)
             {
                 _logger.LogWarning(
                     "Applying the plan change of paid invoice {InvoiceId} was refused with {ErrorCode}; staff can approve it again.",

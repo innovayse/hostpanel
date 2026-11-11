@@ -79,6 +79,30 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         request.InvoiceId.Should().Be(invoiceId);
     }
 
+    /// <summary>
+    /// Two upgrades requested for one service at the same moment leave exactly one request and one invoice: the loser is
+    /// refused with <c>SERVICE_CHANGE_ALREADY_PENDING</c> and never raises an invoice a client could pay for a change that
+    /// does not happen.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task TwoSimultaneousUpgrades_LeaveOneRequestAndOneInvoice()
+    {
+        var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-race");
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, clientId, 10m, 20m);
+
+        var responses = await Task.WhenAll(
+            owner.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId }),
+            owner.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId }));
+
+        responses.Select(r => r.StatusCode).Should().BeEquivalentTo([HttpStatusCode.OK, HttpStatusCode.Conflict]);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var requests = await context.ServiceChangeRequests.AsNoTracking().Where(r => r.ServiceId == seeded.ServiceId).ToListAsync();
+        requests.Should().ContainSingle().Which.InvoiceId.Should().NotBeNull();
+        (await context.Invoices.AsNoTracking().CountAsync(i => i.ClientId == clientId)).Should().Be(1);
+    }
+
     /// <summary>An upgrade requested when no time is left in the cycle has nothing to charge and is applied at once.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

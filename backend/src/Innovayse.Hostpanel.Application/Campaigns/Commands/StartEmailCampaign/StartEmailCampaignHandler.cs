@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Campaigns.Common;
+using Innovayse.Hostpanel.Application.Campaigns.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Shared.Models;
@@ -49,8 +50,7 @@ public sealed class StartEmailCampaignHandler
 
         campaign.StartSending();
 
-        var segments = campaign.Segments.Select(s => s.ToDefinition()).ToList();
-        foreach (var client in await _audience.ReachAsync(segments, _clock.UtcNow, ct))
+        foreach (var client in await _audience.ReachAsync(campaign.Segments.ToDtos(), _clock.UtcNow, ct))
         {
             // ReachAsync only returns clients that have an address.
             campaign.AddRecipient(client.Id, client.Email!, client.Language);

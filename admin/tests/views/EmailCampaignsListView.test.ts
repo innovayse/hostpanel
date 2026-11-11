@@ -11,7 +11,7 @@ import { callOf, json, problem, stubFetch } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 
 /** The delivery counters of a campaign nothing has been sent for. */
-const untouched = { total: 0, pending: 0, sent: 0, failed: 0, unsubscribed: 0 }
+const untouched = { total: 0, pending: 0, sent: 0, failed: 0, unsubscribed: 0, opened: 0, uniqueOpened: 0, clicked: 0, uniqueClicked: 0, openRate: 0, clickRate: 0 }
 
 /** A draft as the list endpoint returns it. */
 const draft = {
@@ -32,7 +32,7 @@ const sent = {
   scheduledAt: '2026-10-02T08:00:00Z',
   sentAt: '2026-10-02T08:05:00Z',
   createdAt: '2026-10-01T11:00:00Z',
-  stats: { total: 40, pending: 0, sent: 36, failed: 1, unsubscribed: 3 },
+  stats: { total: 40, pending: 0, sent: 36, failed: 1, unsubscribed: 3, opened: 20, uniqueOpened: 15, clicked: 9, uniqueClicked: 6, openRate: 0.4167, clickRate: 0.1667 },
 }
 
 afterEach(() => {

@@ -5,13 +5,13 @@
  * not succeed.
  */
 import { CampaignFilterType } from '@/types/emailcampaign'
-import type { EmailCampaignSegment, EmailCampaignSegmentDraft } from '@/types/emailcampaign'
+import type { CampaignDaysRange, EmailCampaignSegment, EmailCampaignSegmentDraft } from '@/types/emailcampaign'
 
-/** Fewest days ahead a service expiry rule looks. */
-export const EXPIRING_DAYS_MIN = 1
-
-/** Most days ahead a service expiry rule looks. */
-export const EXPIRING_DAYS_MAX = 365
+/** The days each days-based rule accepts: how far ahead a service expiry looks, how long ago a sign-in may be. */
+const DAYS_RANGES: Readonly<Partial<Record<CampaignFilterType, CampaignDaysRange>>> = {
+  [CampaignFilterType.ServiceExpiringInDays]: { min: 1, max: 365 },
+  [CampaignFilterType.NotSignedInForDays]: { min: 1, max: 3650 },
+}
 
 /** Longest subject the API accepts. */
 export const CAMPAIGN_SUBJECT_MAX_LENGTH = 200
@@ -31,7 +31,27 @@ export const CAMPAIGN_FILTER_TYPES: readonly CampaignFilterType[] = [
   CampaignFilterType.Product,
   CampaignFilterType.Country,
   CampaignFilterType.ServiceExpiringInDays,
+  CampaignFilterType.ClientGroup,
+  CampaignFilterType.NotSignedInForDays,
 ]
+
+/**
+ * The filter types an operator can pick, left without the sign-in rule where the deployment does not
+ * know when a client signed in (the API refuses that rule there).
+ *
+ * @param signInKnown - Whether the deployment owns its accounts and so tracks the last sign-in.
+ * @returns The types the form offers, in order.
+ */
+export const offeredFilterTypes = (signInKnown: boolean): readonly CampaignFilterType[] =>
+  signInKnown ? CAMPAIGN_FILTER_TYPES : CAMPAIGN_FILTER_TYPES.filter((type) => type !== CampaignFilterType.NotSignedInForDays)
+
+/**
+ * The days a rule accepts, for the rules whose value is a number of days.
+ *
+ * @param filterType - The filter type.
+ * @returns The range, or null for a rule whose value is not a number of days.
+ */
+export const daysRangeOf = (filterType: CampaignFilterType): CampaignDaysRange | null => DAYS_RANGES[filterType] ?? null
 
 /**
  * Whether a filter type needs a value to be picked or typed.
@@ -54,11 +74,15 @@ export const isFilterValueValid = (filterType: CampaignFilterType, value: string
     case CampaignFilterType.AllActive:
       return trimmed === ''
     case CampaignFilterType.Product:
+    case CampaignFilterType.ClientGroup:
       return POSITIVE_INTEGER.test(trimmed)
     case CampaignFilterType.Country:
       return COUNTRY_CODE.test(trimmed)
     case CampaignFilterType.ServiceExpiringInDays:
-      return POSITIVE_INTEGER.test(trimmed) && Number(trimmed) >= EXPIRING_DAYS_MIN && Number(trimmed) <= EXPIRING_DAYS_MAX
+    case CampaignFilterType.NotSignedInForDays: {
+      const range = daysRangeOf(filterType)
+      return range !== null && POSITIVE_INTEGER.test(trimmed) && Number(trimmed) >= range.min && Number(trimmed) <= range.max
+    }
     default:
       return false
   }

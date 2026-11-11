@@ -214,6 +214,49 @@ public abstract class BaseApiController : ControllerBase
         return File(content, contentType, null, new Microsoft.Net.Http.Headers.EntityTagHeaderValue(eTag));
     }
 
+    /// <summary>An image whose every load must reach the server (a tracking pixel), or the mapped refusal.</summary>
+    /// <remarks>
+    /// <c>Cache-Control: no-store</c>, so neither the browser nor a proxy answers a later load from its copy and the load that
+    /// the use case counts is never swallowed.
+    /// </remarks>
+    /// <param name="result">The handler's outcome.</param>
+    /// <param name="content">The image bytes.</param>
+    /// <param name="contentType">The media type of the bytes.</param>
+    /// <returns>The image response.</returns>
+    protected IActionResult HandleUncachedImage(Result result, byte[] content, string contentType)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        ArgumentNullException.ThrowIfNull(content);
+
+        if (result.IsFailure)
+        {
+            return MapFailure(result);
+        }
+
+        Response.Headers.CacheControl = "no-store";
+        return File(content, contentType);
+    }
+
+    /// <summary>302 to the address the handler produced, or the mapped refusal.</summary>
+    /// <remarks>
+    /// <c>Cache-Control: no-store</c>, so a click is counted every time. The address must come from stored data, never from the
+    /// request, or the action becomes an open redirect; the handler owns that guarantee, this method only sends the reader on.
+    /// </remarks>
+    /// <param name="result">The handler's outcome, holding the absolute address.</param>
+    /// <returns>The redirect response.</returns>
+    protected IActionResult HandleRedirect(Result<string> result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        if (result.IsFailure)
+        {
+            return MapFailure(result);
+        }
+
+        Response.Headers.CacheControl = "no-store";
+        return Redirect(result.Value!);
+    }
+
     /// <summary>202 with no body for queued work, or the mapped refusal.</summary>
     /// <param name="result">The handler's outcome.</param>
     /// <returns>The response.</returns>

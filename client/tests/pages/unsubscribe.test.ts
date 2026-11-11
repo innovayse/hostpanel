@@ -32,25 +32,48 @@ beforeEach(() => {
   vi.stubGlobal('useSeoMeta', useSeoMeta)
 })
 
+/**
+ * Mounts the page and presses the confirm button, as the reader does.
+ *
+ * @returns The wrapper after the request has settled.
+ */
+const mountAndConfirm = async () => {
+  const wrapper = await mountAuthPage(UnsubscribePage)
+  await wrapper.find('[data-testid="unsubscribe-confirm-button"]').trigger('click')
+  await flushPromises()
+  return wrapper
+}
+
 describe('unsubscribe page', () => {
-  it('sends the token of the link and confirms the unsubscribe', async () => {
+  it('sends nothing when it opens, only asks for confirmation', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
-    unsubscribe.mockResolvedValue('')
 
     const wrapper = await mountAuthPage(UnsubscribePage)
     await flushPromises()
 
+    expect(unsubscribe).not.toHaveBeenCalled()
+    expect(wrapper.find('[data-testid="unsubscribe-confirm"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="unsubscribe-done"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="unsubscribe-failed"]').exists()).toBe(false)
+  })
+
+  it('sends the token of the link once the reader confirms, then shows the done panel', async () => {
+    stubAuthRuntime({ query: { token: 'tok' } })
+    unsubscribe.mockResolvedValue('')
+
+    const wrapper = await mountAndConfirm()
+
+    expect(unsubscribe).toHaveBeenCalledTimes(1)
     expect(unsubscribe).toHaveBeenCalledWith('tok')
     expect(wrapper.find('[data-testid="unsubscribe-done"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="unsubscribe-failed"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="unsubscribe-confirm"]').exists()).toBe(false)
   })
 
   it('shows the API sentence when the link is refused', async () => {
     stubAuthRuntime({ query: { token: 'bad' } })
     unsubscribe.mockRejectedValue({ data: { detail: 'This link is not valid.' } })
 
-    const wrapper = await mountAuthPage(UnsubscribePage)
-    await flushPromises()
+    const wrapper = await mountAndConfirm()
 
     expect(wrapper.find('[data-testid="unsubscribe-failed"]').text()).toContain('This link is not valid.')
     expect(wrapper.find('[data-testid="unsubscribe-done"]').exists()).toBe(false)
@@ -60,20 +83,22 @@ describe('unsubscribe page', () => {
     stubAuthRuntime({ query: {} })
     unsubscribe.mockRejectedValue({ data: { detail: 'A token is required.' } })
 
-    const wrapper = await mountAuthPage(UnsubscribePage)
-    await flushPromises()
+    const wrapper = await mountAndConfirm()
 
     expect(unsubscribe).toHaveBeenCalledWith('')
     expect(wrapper.find('[data-testid="unsubscribe-failed"]').text()).toContain('A token is required.')
   })
 
-  it('shows the working line while the request is open', async () => {
+  it('disables the button and shows the working line while the request is open', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
     unsubscribe.mockReturnValue(new Promise(() => undefined))
 
     const wrapper = await mountAuthPage(UnsubscribePage)
+    await wrapper.find('[data-testid="unsubscribe-confirm-button"]').trigger('click')
 
-    expect(wrapper.find('[data-testid="unsubscribe-pending"]').exists()).toBe(true)
+    const button = wrapper.find('[data-testid="unsubscribe-confirm-button"]')
+    expect(button.attributes('disabled')).toBeDefined()
+    expect(button.text()).toContain('client.unsubscribe.working')
   })
 
   it('keeps itself out of search results', async () => {

@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Campaigns.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Campaigns;
@@ -33,7 +34,7 @@ public sealed class UpdateEmailCampaignHandler
             return Result.FailureCode(HostpanelErrorCodes.CAMPAIGN_NOT_FOUND);
         }
 
-        campaign.Update(cmd.Subject, cmd.Body, cmd.Segments);
+        campaign.Update(cmd.Subject, cmd.Body, cmd.Segments.ToDefinitions());
 
         await _context.SaveChangesAsync(ct);
         return Result.Success();

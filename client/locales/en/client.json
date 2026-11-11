@@ -798,6 +798,8 @@
       "backToRegister": "Back to register"
     },
     "unsubscribe": {
+      "prompt": "Confirm that you no longer want to receive campaign emails at this address.",
+      "confirm": "Unsubscribe",
       "working": "Unsubscribing you...",
       "doneTitle": "You are unsubscribed",
       "doneMessage": "You will no longer receive campaign emails at this address.",

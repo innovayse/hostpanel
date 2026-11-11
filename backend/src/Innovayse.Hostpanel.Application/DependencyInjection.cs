@@ -1,4 +1,5 @@
 using FluentValidation;
+using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Application.Admin.Integrations.Common;
 using Innovayse.Hostpanel.Application.Admin.Plugins.Common;
 using Innovayse.Hostpanel.Application.Billing.Common;
@@ -47,6 +48,9 @@ public static class DependencyInjection
         // Resolves which clients a campaign's segments reach, for the audience count and for fixing the recipients.
         services.AddScoped<CampaignAudience>();
 
+        // How many campaign mails the send rate still allows, read by the sender before every batch.
+        services.AddScoped<CampaignSendThrottle>();
+
         // Asks the enabled fulfilment plugins to cap a refund before any money moves.
         services.AddScoped<RefundAdviser>();
         services.AddScoped<GatewayPaymentCanceller>();
@@ -82,7 +86,7 @@ public static class DependencyInjection
         // Which plans a service can move to and what each move costs, shared by the client's option list and the request itself.
         services.AddScoped<ServicePlanChangeQuoter>();
         services.AddScoped<ServicePlanChangeSettingsReader>();
-        services.AddScoped<BillingSettingSource>();
+        services.AddScoped<SettingSource>();
 
         // This installation's identity towards the plugin registry: where it is kept, and the enrolment that registers and verifies it.
         services.AddScoped<RegistryInstanceStore>();

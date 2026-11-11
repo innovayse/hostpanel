@@ -29,10 +29,10 @@ describe('useUnsubscribeStore', () => {
     unsubscribeMock.mockReset()
   })
 
-  it('starts pending with no sentence', () => {
+  it('starts idle with no sentence', () => {
     const store = useUnsubscribeStore()
 
-    expect(store.status).toBe(UnsubscribeStatus.Pending)
+    expect(store.status).toBe(UnsubscribeStatus.Idle)
     expect(store.error).toBe('')
   })
 

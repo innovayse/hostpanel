@@ -1,4 +1,4 @@
-using Innovayse.Hostpanel.Domain.Campaigns;
+using Innovayse.Hostpanel.Application.Campaigns.Common;
 
 namespace Innovayse.Hostpanel.Application.Campaigns.Commands.UpdateEmailCampaign;
 
@@ -10,4 +10,4 @@ namespace Innovayse.Hostpanel.Application.Campaigns.Commands.UpdateEmailCampaign
 /// <param name="Subject">The subject line of the email.</param>
 /// <param name="Body">The HTML body of the email.</param>
 /// <param name="Segments">The complete set of segments; the current ones of the campaign are replaced by it.</param>
-public sealed record UpdateEmailCampaignCommand(int Id, string Subject, string Body, IReadOnlyList<CampaignSegmentDefinition> Segments);
+public sealed record UpdateEmailCampaignCommand(int Id, string Subject, string Body, IReadOnlyList<CampaignSegmentDto> Segments);

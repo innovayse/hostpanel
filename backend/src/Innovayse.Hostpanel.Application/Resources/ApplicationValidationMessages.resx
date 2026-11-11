@@ -1565,13 +1565,19 @@
     <value>Choose a known filter for every segment.</value>
   </data>
   <data name="CampaignSegmentValueInvalid" xml:space="preserve">
-    <value>The value does not fit the filter: a product needs a product id, a country a two-letter code, an expiry a number of days from 1 to 365, and all active clients takes no value.</value>
+    <value>The value does not fit the filter: a product needs a product id, a country a two-letter code, an expiry a number of days from 1 to 365, a client group a group id, a sign-in filter a number of days from 1 to 3650, and all active clients takes no value.</value>
+  </data>
+  <data name="CampaignSegmentSignInUnavailable" xml:space="preserve">
+    <value>Filtering on the last sign-in is not available here: this deployment signs people in through a sign-on provider, which does not tell this product when they last signed in.</value>
   </data>
   <data name="CampaignUnsubscribeTokenRequired" xml:space="preserve">
     <value>The unsubscribe link carries no token.</value>
   </data>
   <data name="CampaignUnsubscribeTokenInvalid" xml:space="preserve">
     <value>This unsubscribe link is not valid.</value>
+  </data>
+  <data name="CampaignMailLinkInvalid" xml:space="preserve">
+    <value>This link is not valid.</value>
   </data>
   <data name="EmailDeliveryKeyRequired" xml:space="preserve">
     <value>The key of the email is required.</value>

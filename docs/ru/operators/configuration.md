@@ -263,6 +263,8 @@ MaxFailedAttempts принимает значения от 1 до 100, LockoutMi
   { name: 'NGINX_HTTPS_PORT', type: 'string', default: '443', description: 'HTTPS-порт хоста для встроенного nginx. Уровни: prod.' },
 ]" />
 
+Письма рассылок несут личный токен в адресе пикселя открытия, отслеживаемых ссылок и ссылки отписки. Встроенный nginx пишет журнал доступа с заменой этого токена на `***`. Встроенный Caddy не пишет журнал доступа, пока вы его не включите, а собственный прокси перед панелью должен сам скрывать в своём журнале пути `/api/public/campaign-mail/` и параметр запроса `token` у `/unsubscribe` и `/api/public/unsubscribe/`.
+
 ## Образы и версии {#images-and-versions}
 
 <SettingTable :settings="[

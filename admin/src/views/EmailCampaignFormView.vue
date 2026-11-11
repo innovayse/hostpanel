@@ -15,7 +15,7 @@ import { useI18n } from 'vue-i18n'
 import EmailCampaignPreviewDialog from '@/components/campaigns/EmailCampaignPreviewDialog.vue'
 import EmailCampaignScheduleDialog from '@/components/campaigns/EmailCampaignScheduleDialog.vue'
 import EmailCampaignSegmentRow from '@/components/campaigns/EmailCampaignSegmentRow.vue'
-import type { CampaignProductOption } from '@/components/campaigns/EmailCampaignSegmentRow.vue'
+import type { CampaignOption } from '@/components/campaigns/EmailCampaignSegmentRow.vue'
 import EmailCampaignStats from '@/components/campaigns/EmailCampaignStats.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -39,14 +39,18 @@ import {
   CAMPAIGN_SUBJECT_MAX_LENGTH,
   draftsFromSegments,
   newSegmentDraft,
+  offeredFilterTypes,
   segmentsFromDrafts,
 } from '@/lib/emailCampaigns'
 import { formatDateTimeCompact } from '@/lib/format'
 import { SEARCH_DEBOUNCE_MS } from '@/lib/limits'
 import { AppRoute, emailCampaignPath } from '@/lib/routes'
 import { campaignStatusTone } from '@/lib/tones'
+import { useAuthStore } from '@/stores/auth'
+import { useClientGroupsStore } from '@/stores/clientGroups'
 import { useEmailCampaignsStore } from '@/stores/emailCampaigns'
 import { useSettingsStore } from '@/stores/settings'
+import { AuthMode } from '@/types/auth'
 import { CampaignFilterType, CampaignStatus } from '@/types/emailcampaign'
 import type { EmailCampaignSegment, EmailCampaignSegmentDraft } from '@/types/emailcampaign'
 import { UiButtonVariant } from '@/utils/ui/button'
@@ -58,6 +62,8 @@ const route = useRoute()
 const router = useRouter()
 const store = useEmailCampaignsStore()
 const settings = useSettingsStore()
+const clientGroups = useClientGroupsStore()
+const auth = useAuthStore()
 
 /** The campaign ID of the address, null for a new campaign. */
 const campaignId = computed<number | null>(() => (route.params.id ? Number(route.params.id) : null))
@@ -123,9 +129,17 @@ const cancelOpen = ref(false)
 const previewOpen = ref(false)
 
 /** The products the product rule offers, from the settings store. */
-const productOptions = computed<CampaignProductOption[]>(() =>
+const productOptions = computed<CampaignOption[]>(() =>
   settings.products.map((product) => ({ value: String(product.id), label: product.name })),
 )
+
+/** The client groups the group rule offers, from the client groups store. */
+const groupOptions = computed<CampaignOption[]>(() =>
+  clientGroups.groups.map((group) => ({ value: String(group.id), label: group.name })),
+)
+
+/** The kinds of rule on offer: the sign-in rule only where the deployment owns its accounts and so knows the last sign-in. */
+const filterTypes = computed(() => offeredFilterTypes(auth.mode === AuthMode.Local))
 
 /** Whether every audience rule is filled in and there is at least one. */
 const rulesComplete = computed<boolean>(() => areSegmentsComplete(segments.value))
@@ -143,15 +157,16 @@ const sendNowMessage = computed<string>(() =>
 )
 
 /**
- * Describes one rule of a read-only campaign in a sentence, naming a product instead of its id.
+ * Describes one rule of a read-only campaign in a sentence, naming a product or a client group instead of its id.
  *
  * @param segment - The rule.
  * @returns For example "Clients with a service of Basic".
  */
 const describeSegment = (segment: EmailCampaignSegment): string => {
   const raw = segment.filterValue ?? ''
-  const value = segment.filterType === CampaignFilterType.Product
-    ? (productOptions.value.find((option) => option.value === raw)?.label ?? raw)
+  const named = segment.filterType === CampaignFilterType.ClientGroup ? groupOptions.value : productOptions.value
+  const value = segment.filterType === CampaignFilterType.Product || segment.filterType === CampaignFilterType.ClientGroup
+    ? (named.find((option) => option.value === raw)?.label ?? raw)
     : raw
   return t(`emailCampaigns.segmentSummary.${segment.filterType}`, { value })
 }
@@ -370,9 +385,10 @@ watch(campaignId, () => {
 /** Recounts the audience whenever the rules, the stage of the campaign or the loading state change. */
 watch([segments, readOnly, loading], scheduleCount, { deep: true, immediate: true })
 
-/** Loads the products the product rule offers. */
+/** Loads the products and the client groups the rules offer. */
 onMounted(() => {
   void settings.fetchProducts()
+  void clientGroups.fetchAll()
 })
 
 onBeforeUnmount(cancelCount)
@@ -476,6 +492,8 @@ onBeforeUnmount(cancelCount)
                 :key="segment.key"
                 :model-value="segment"
                 :products="productOptions"
+                :groups="groupOptions"
+                :filter-types="filterTypes"
                 @update:model-value="replaceSegment(index, $event)"
                 @remove="removeSegment(index)"
               />

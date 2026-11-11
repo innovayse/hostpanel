@@ -1565,13 +1565,19 @@
     <value>Выберите известный фильтр для каждого сегмента.</value>
   </data>
   <data name="CampaignSegmentValueInvalid" xml:space="preserve">
-    <value>Значение не подходит к фильтру: для продукта нужен id продукта, для страны двухбуквенный код, для окончания срока число дней от 1 до 365, а фильтр всех активных клиентов значения не принимает.</value>
+    <value>Значение не подходит к фильтру: для продукта нужен id продукта, для страны двухбуквенный код, для окончания срока число дней от 1 до 365, для группы клиентов id группы, для фильтра по входу число дней от 1 до 3650, а фильтр всех активных клиентов значения не принимает.</value>
+  </data>
+  <data name="CampaignSegmentSignInUnavailable" xml:space="preserve">
+    <value>Фильтр по последнему входу здесь недоступен: эта установка входит через провайдер единого входа, который не сообщает продукту, когда клиент входил в последний раз.</value>
   </data>
   <data name="CampaignUnsubscribeTokenRequired" xml:space="preserve">
     <value>В ссылке для отписки нет токена.</value>
   </data>
   <data name="CampaignUnsubscribeTokenInvalid" xml:space="preserve">
     <value>Эта ссылка для отписки недействительна.</value>
+  </data>
+  <data name="CampaignMailLinkInvalid" xml:space="preserve">
+    <value>Эта ссылка недействительна.</value>
   </data>
   <data name="EmailDeliveryKeyRequired" xml:space="preserve">
     <value>Ключ письма обязателен.</value>

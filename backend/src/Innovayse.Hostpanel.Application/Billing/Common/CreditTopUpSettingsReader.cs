@@ -1,4 +1,5 @@
 using System.Globalization;
+using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 using Microsoft.Extensions.Logging;
 
@@ -7,12 +8,12 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <summary>
 /// Reads the top-up limits (least, most, and how many may be open) of <see cref="BillingSettingKeys"/> into <see cref="CreditTopUpSettings"/>. A missing,
 /// unparsable or contradictory pair (a minimum above the maximum) falls back to the seeded defaults with a warning: a typo
-/// in System Settings must not let a client add funds without any limit. The rows are read through <see cref="BillingSettingSource"/>.
+/// in System Settings must not let a client add funds without any limit. The rows are read through <see cref="SettingSource"/>.
 /// </summary>
 public sealed class CreditTopUpSettingsReader
 {
     /// <summary>Reads the rows and falls back to the defaults.</summary>
-    private readonly BillingSettingSource _source;
+    private readonly SettingSource _source;
 
     /// <summary>Warns about a contradictory pair.</summary>
     private readonly ILogger<CreditTopUpSettingsReader> _logger;
@@ -20,7 +21,7 @@ public sealed class CreditTopUpSettingsReader
     /// <summary>Initializes the reader.</summary>
     /// <param name="source">Reads the rows and falls back to the defaults.</param>
     /// <param name="logger">Warns about a contradictory pair.</param>
-    public CreditTopUpSettingsReader(BillingSettingSource source, ILogger<CreditTopUpSettingsReader> logger)
+    public CreditTopUpSettingsReader(SettingSource source, ILogger<CreditTopUpSettingsReader> logger)
     {
         _source = source;
         _logger = logger;
@@ -54,7 +55,7 @@ public sealed class CreditTopUpSettingsReader
     /// <param name="key">A top-up limit key.</param>
     /// <returns>Its default amount.</returns>
     private static decimal Default(string key) =>
-        decimal.Parse(BillingSettingSource.Default(key), CultureInfo.InvariantCulture);
+        decimal.Parse(SettingSource.Default(key), CultureInfo.InvariantCulture);
 
     /// <summary>Reads a stored amount, or the default with a warning when it is missing or does not match its pattern.</summary>
     /// <param name="rows">The stored rows.</param>

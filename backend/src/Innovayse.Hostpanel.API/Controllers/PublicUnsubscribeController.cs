@@ -16,12 +16,13 @@ namespace Innovayse.Hostpanel.API.Controllers;
 /// <c>[Authorize]</c> says otherwise.
 /// </summary>
 /// <remarks>
-/// Rate limited with <see cref="RateLimitPolicies.Strict"/>: the token is 256 random bits, so guessing one is out of reach,
-/// and the budget only keeps the endpoint from being used as a free write path.
+/// The page endpoint is rate limited with <see cref="RateLimitPolicies.Strict"/>: the token is 256 random bits, so guessing one
+/// is out of reach, and the budget only keeps the endpoint from being used as a free write path. The one-click action is held
+/// to the global limit only, like the tracking routes: mail providers post the one-click requests of all their users from a few
+/// shared addresses, so a small per-address budget would drop real unsubscribes.
 /// </remarks>
 [Route("api/public/unsubscribe")]
 [AllowAnonymous]
-[EnableRateLimiting(RateLimitPolicies.Strict)]
 [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status429TooManyRequests)]
 public sealed class PublicUnsubscribeController : BaseApiController
 {
@@ -44,10 +45,30 @@ public sealed class PublicUnsubscribeController : BaseApiController
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost]
+    [EnableRateLimiting(RateLimitPolicies.Strict)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> UnsubscribeAsync([FromBody] UnsubscribeFromEmailCampaignsCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// The address in the <c>List-Unsubscribe</c> header of a campaign mail (RFC 8058): the mail client posts to it, with the
+    /// body <c>List-Unsubscribe=One-Click</c>, when the reader presses its own unsubscribe button. The token rides in the query
+    /// because the address is fixed in the mail; the body carries nothing the outcome depends on, so it is not read. No session
+    /// cookie is involved, so there is nothing for a cross-site page to ride on and no custom header is asked for.
+    /// </summary>
+    /// <param name="command">The token from the address.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The same outcomes as <see cref="UnsubscribeAsync"/>, with the global rate limit instead of the strict one.</returns>
+    [HttpPost("one-click")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UnsubscribeOneClickAsync([FromQuery] UnsubscribeFromEmailCampaignsCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(command, ct);
         return HandleResult(outcome);

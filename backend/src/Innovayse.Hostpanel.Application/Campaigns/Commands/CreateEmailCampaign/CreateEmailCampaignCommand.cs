@@ -1,4 +1,4 @@
-using Innovayse.Hostpanel.Domain.Campaigns;
+using Innovayse.Hostpanel.Application.Campaigns.Common;
 
 namespace Innovayse.Hostpanel.Application.Campaigns.Commands.CreateEmailCampaign;
 
@@ -6,4 +6,4 @@ namespace Innovayse.Hostpanel.Application.Campaigns.Commands.CreateEmailCampaign
 /// <param name="Subject">The subject line of the email.</param>
 /// <param name="Body">The HTML body of the email.</param>
 /// <param name="Segments">The rules that pick the recipients; may be empty while the draft is being written.</param>
-public sealed record CreateEmailCampaignCommand(string Subject, string Body, IReadOnlyList<CampaignSegmentDefinition> Segments);
+public sealed record CreateEmailCampaignCommand(string Subject, string Body, IReadOnlyList<CampaignSegmentDto> Segments);

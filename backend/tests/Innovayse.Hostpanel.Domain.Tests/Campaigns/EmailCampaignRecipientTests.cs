@@ -265,4 +265,98 @@ public sealed class EmailCampaignRecipientTests
         Assert.Equal(CampaignErrors.RecipientNotPending, Assert.Throws<DomainRuleException>(() => unsubscribed.MarkSent(Now)).Code);
         Assert.Equal(CampaignErrors.RecipientNotPending, Assert.Throws<DomainRuleException>(() => unsubscribed.RecordFailure("A")).Code);
     }
+
+    /// <summary>
+    /// The tracking token is a secret of its own: it has the shape of an unsubscribe token, only its hash is kept, and it is
+    /// neither the unsubscribe token nor its hash, so a pixel address cannot unsubscribe the reader.
+    /// </summary>
+    [Fact]
+    public void IssueTrackingToken_IsASeparateSecretFromTheUnsubscribeToken()
+    {
+        var recipient = NewRecipient();
+
+        var unsubscribe = recipient.IssueUnsubscribeToken();
+        var tracking = recipient.IssueTrackingToken();
+
+        Assert.Equal(EmailCampaignRecipient.TrackingTokenLength, tracking.Length);
+        Assert.NotEqual(unsubscribe, tracking);
+        Assert.Equal(EmailCampaignRecipient.HashToken(tracking), recipient.TrackingTokenHash);
+        Assert.Equal(EmailCampaignRecipient.HashToken(unsubscribe), recipient.UnsubscribeTokenHash);
+        Assert.NotEqual(recipient.UnsubscribeTokenHash, recipient.TrackingTokenHash);
+    }
+
+    /// <summary>Issuing again replaces the earlier tracking hash, and a recipient whose delivery ended cannot be given a new token.</summary>
+    [Fact]
+    public void IssueTrackingToken_ReplacesTheHash_AndIsRefusedOnceTheDeliveryEnded()
+    {
+        var recipient = NewRecipient();
+        var first = recipient.IssueTrackingToken();
+        var second = recipient.IssueTrackingToken();
+        var sent = NewRecipient();
+        sent.MarkSent(Now);
+
+        Assert.NotEqual(first, second);
+        Assert.Equal(EmailCampaignRecipient.HashToken(second), recipient.TrackingTokenHash);
+        Assert.Equal(CampaignErrors.RecipientNotPending, Assert.Throws<DomainRuleException>(() => sent.IssueTrackingToken()).Code);
+    }
+
+    /// <summary>A new recipient has no open and no click.</summary>
+    [Fact]
+    public void New_HasNoOpensAndNoClicks()
+    {
+        var recipient = NewRecipient();
+
+        Assert.Equal(0, recipient.OpenCount);
+        Assert.Null(recipient.FirstOpenedAt);
+        Assert.Equal(0, recipient.ClickCount);
+        Assert.Null(recipient.FirstClickedAt);
+    }
+
+    /// <summary>The first open stamps its moment, and every open counts while the first moment stays.</summary>
+    [Fact]
+    public void RecordOpen_CountsEveryOpen_AndKeepsTheFirstMoment()
+    {
+        var recipient = NewRecipient();
+
+        recipient.RecordOpen(Now);
+        recipient.RecordOpen(Now.AddHours(2));
+
+        Assert.Equal(2, recipient.OpenCount);
+        Assert.Equal(Now, recipient.FirstOpenedAt);
+        Assert.Equal(0, recipient.ClickCount);
+    }
+
+    /// <summary>The first click stamps its moment, and every click counts while the first moment stays.</summary>
+    [Fact]
+    public void RecordClick_CountsEveryClick_AndKeepsTheFirstMoment()
+    {
+        var recipient = NewRecipient();
+
+        recipient.RecordClick(Now);
+        recipient.RecordClick(Now.AddMinutes(5));
+        recipient.RecordClick(Now.AddMinutes(9));
+
+        Assert.Equal(3, recipient.ClickCount);
+        Assert.Equal(Now, recipient.FirstClickedAt);
+        Assert.Equal(0, recipient.OpenCount);
+    }
+
+    /// <summary>An open and a click are recorded in every status: a mail is read after it was delivered, and after its reader unsubscribed.</summary>
+    [Fact]
+    public void RecordOpenAndClick_AfterTheDeliveryEnded_AreAllowed()
+    {
+        var sent = NewRecipient();
+        sent.MarkSent(Now);
+        var unsubscribed = NewRecipient();
+        unsubscribed.MarkSent(Now);
+        unsubscribed.MarkUnsubscribed();
+
+        sent.RecordOpen(Now.AddHours(1));
+        unsubscribed.RecordClick(Now.AddHours(1));
+
+        Assert.Equal(1, sent.OpenCount);
+        Assert.Equal(CampaignRecipientStatus.Sent, sent.Status);
+        Assert.Equal(1, unsubscribed.ClickCount);
+        Assert.Equal(CampaignRecipientStatus.Unsubscribed, unsubscribed.Status);
+    }
 }

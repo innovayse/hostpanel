@@ -23,26 +23,37 @@
     "AllActive": "Բոլոր ակտիվ հաճախորդները",
     "Product": "Արտադրանքի ծառայություն ունեցող հաճախորդներ",
     "Country": "Երկրից հաճախորդներ",
-    "ServiceExpiringInDays": "Ծառայությունը շուտով ավարտվող հաճախորդներ"
+    "ServiceExpiringInDays": "Ծառայությունը շուտով ավարտվող հաճախորդներ",
+    "ClientGroup": "Հաճախորդների խմբի հաճախորդներ",
+    "NotSignedInForDays": "Հաճախորդներ, որոնք վաղուց չեն մուտք գործել"
   },
   "segmentSummary": {
     "AllActive": "Բոլոր ակտիվ հաճախորդները",
     "Product": "{value} արտադրանքի ծառայություն ունեցող հաճախորդներ",
     "Country": "{value} երկրից հաճախորդներ",
-    "ServiceExpiringInDays": "Ծառայությունն ավարտվում է {value} օրվա ընթացքում"
+    "ServiceExpiringInDays": "Ծառայությունն ավարտվում է {value} օրվա ընթացքում",
+    "ClientGroup": "{value} խմբի հաճախորդներ",
+    "NotSignedInForDays": "Հաճախորդներ, որոնք {value} օր կամ ավելի չեն մուտք գործել"
   },
   "filterTypePlaceholder": "Ընտրեք, թե ով կստանա նամակը",
   "productPlaceholder": "Ընտրեք արտադրանք",
   "countryPlaceholder": "Ընտրեք երկիր",
+  "groupPlaceholder": "Ընտրեք հաճախորդների խումբ",
   "daysPlaceholder": "Օրեր",
   "daysSuffix": "օր առաջ",
+  "daysAgoSuffix": "օր կամ ավելի",
   "removeSegment": "Հեռացնել",
   "stats": {
     "total": "Ստացողներ",
     "pending": "Սպասվում են",
     "sent": "Ուղարկված",
     "failed": "Ձախողված",
-    "unsubscribed": "Հրաժարվել են"
+    "unsubscribed": "Հրաժարվել են",
+    "opened": "Բացումներ",
+    "openRate": "Բացումների մասնաբաժին",
+    "clicked": "Սեղմումներ",
+    "clickRate": "Սեղմումների մասնաբաժին",
+    "uniqueHint": "եզակի՝ {count}"
   },
   "previewFrameTitle": "Նամակի նախադիտում",
   "scheduleTitle": "Նշանակել ուղարկումը",

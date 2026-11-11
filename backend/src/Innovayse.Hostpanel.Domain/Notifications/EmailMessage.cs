@@ -9,9 +9,9 @@ namespace Innovayse.Hostpanel.Domain.Notifications;
 /// <param name="Body">The email body content.</param>
 /// <param name="IsHtml">Whether the body is HTML. Defaults to <see langword="true"/>.</param>
 /// <param name="UnsubscribeUrl">
-/// The page that unsubscribes the recipient from this kind of mail, or <see langword="null"/> for a message that is not marketing.
-/// When set, the relay adapter marks the message so a mail client can offer an unsubscribe link of its own. It names one
-/// recipient by a secret, so it never reaches a log line.
+/// The one-click endpoint (RFC 8058) that unsubscribes the recipient from this kind of mail on a bare POST, or
+/// <see langword="null"/> for a message that is not marketing. When set, the relay adapter marks the message so a mail client
+/// can offer an unsubscribe button of its own. It names one recipient by a secret, so it never reaches a log line.
 /// </param>
 public sealed record EmailMessage(string To, string Subject, string Body, bool IsHtml = true, [property: SecretMember] string? UnsubscribeUrl = null)
 {

@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Campaigns.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Campaigns;
 using Innovayse.Hostpanel.Shared.Models;
@@ -31,7 +32,7 @@ public sealed class CreateEmailCampaignHandler
     {
         ArgumentNullException.ThrowIfNull(cmd);
 
-        var campaign = EmailCampaign.Create(cmd.Subject, cmd.Body, _caller.RequireUserId(), cmd.Segments);
+        var campaign = EmailCampaign.Create(cmd.Subject, cmd.Body, _caller.RequireUserId(), cmd.Segments.ToDefinitions());
 
         _context.EmailCampaigns.Add(campaign);
         await _context.SaveChangesAsync(ct);

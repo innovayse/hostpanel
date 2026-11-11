@@ -267,6 +267,52 @@ public sealed class UpdateSettingTests(IntegrationTestFactory factory) : IClassF
         await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = "7,3,1" });
     }
 
+    /// <summary>A campaign key in the catalogue updates with a value inside its range and is restored afterwards.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CampaignKey_SendRate_UpdatesAsync()
+    {
+        var client = await AdminTestSeeds.AdminClientAsync(factory);
+        var id = await AdminTestSeeds.FindSettingIdAsync(client, CampaignSettingKeys.SendRatePerMinute);
+        var original = (await client.GetFromJsonAsync<JsonElement>($"/api/admin/settings/{id}")).GetProperty("value").GetString();
+
+        try
+        {
+            (await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = " 120 " })).StatusCode
+                .Should().Be(HttpStatusCode.NoContent);
+            var read = await client.GetFromJsonAsync<JsonElement>($"/api/admin/settings/{id}");
+            read.GetProperty("value").GetString().Should().Be("120");
+        }
+        finally
+        {
+            await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value = original });
+        }
+    }
+
+    /// <summary>The send rate refuses a value outside 1 to 600, an empty value and text with INVALID_SETTING_VALUE, and keeps the stored value.</summary>
+    /// <param name="value">The value written.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("0")]
+    [InlineData("601")]
+    [InlineData("abc")]
+    [InlineData("")]
+    public async Task CampaignKey_SendRate_BadValue_IsRefusedAsync(string value)
+    {
+        var client = await AdminTestSeeds.AdminClientAsync(factory);
+        var id = await AdminTestSeeds.FindSettingIdAsync(client, CampaignSettingKeys.SendRatePerMinute);
+        var before = (await client.GetFromJsonAsync<JsonElement>($"/api/admin/settings/{id}")).GetProperty("value").GetString();
+
+        var response = await client.PutAsJsonAsync($"/api/admin/settings/{id}", new { value });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        body.RootElement.GetProperty("type").GetString().Should().Be(HostpanelErrorCodes.INVALID_SETTING_VALUE);
+        body.RootElement.GetProperty("errors").GetProperty(CampaignSettingKeys.SendRatePerMinute)[0].GetString()
+            .Should().Contain("from 1 to 600");
+        (await client.GetFromJsonAsync<JsonElement>($"/api/admin/settings/{id}")).GetProperty("value").GetString().Should().Be(before);
+    }
+
     /// <summary>Updating an unknown id answers 404 with <c>SETTING_NOT_FOUND</c>.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

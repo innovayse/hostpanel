@@ -1,4 +1,4 @@
-using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 
 namespace Innovayse.Hostpanel.Application.Services.Common;
@@ -6,16 +6,16 @@ namespace Innovayse.Hostpanel.Application.Services.Common;
 /// <summary>
 /// Reads the plan change switch of <see cref="BillingSettingKeys"/>. A missing or unparsable row falls back to the
 /// seeded default with a warning: a typo in System Settings must not approve downgrades nobody meant to approve.
-/// The row is read through <see cref="BillingSettingSource"/>.
+/// The row is read through <see cref="SettingSource"/>.
 /// </summary>
 public sealed class ServicePlanChangeSettingsReader
 {
     /// <summary>Reads the row and falls back to the default.</summary>
-    private readonly BillingSettingSource _source;
+    private readonly SettingSource _source;
 
     /// <summary>Initializes the reader.</summary>
     /// <param name="source">Reads the row and falls back to the default.</param>
-    public ServicePlanChangeSettingsReader(BillingSettingSource source)
+    public ServicePlanChangeSettingsReader(SettingSource source)
     {
         _source = source;
     }

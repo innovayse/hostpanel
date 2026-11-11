@@ -20,6 +20,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Email;
 /// </summary>
 public sealed class SmtpEmailSender : IEmailSender
 {
+    /// <summary>The value of <c>List-Unsubscribe-Post</c> that RFC 8058 fixes: the mail client posts this body to the unsubscribe address.</summary>
+    private const string OneClickPostValue = "List-Unsubscribe=One-Click";
+
     /// <summary>Resolved SMTP configuration.</summary>
     private readonly SmtpOptions _settings;
 
@@ -60,8 +63,8 @@ public sealed class SmtpEmailSender : IEmailSender
 
     /// <summary>
     /// Builds the MIME message. A marketing message (one that carries an unsubscribe address) is marked with <c>List-Unsubscribe</c>
-    /// (RFC 2369), which lets a mail client show its own unsubscribe link. <c>List-Unsubscribe-Post</c> (RFC 8058) is not sent: it
-    /// promises an endpoint that unsubscribes on a bare POST from the mail provider, and the address given here is the portal page.
+    /// (RFC 2369) and <c>List-Unsubscribe-Post</c> (RFC 8058), which lets a mail client show its own unsubscribe button and post
+    /// to the address without opening a page. The address is therefore an endpoint that unsubscribes on a bare POST.
     /// </summary>
     /// <param name="message">The email message to send.</param>
     /// <returns>The message as it goes to the relay.</returns>
@@ -78,6 +81,7 @@ public sealed class SmtpEmailSender : IEmailSender
         if (message.UnsubscribeUrl is { } unsubscribeUrl)
         {
             mime.Headers.Add(HeaderId.ListUnsubscribe, $"<{unsubscribeUrl}>");
+            mime.Headers.Add(HeaderId.ListUnsubscribePost, OneClickPostValue);
         }
 
         return mime;

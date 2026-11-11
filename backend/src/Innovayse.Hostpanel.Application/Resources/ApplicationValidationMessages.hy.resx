@@ -1565,13 +1565,19 @@
     <value>Ընտրեք հայտնի զտիչ յուրաքանչյուր սեգմենտի համար։</value>
   </data>
   <data name="CampaignSegmentValueInvalid" xml:space="preserve">
-    <value>Արժեքը չի համապատասխանում զտիչին. արտադրանքի համար պետք է արտադրանքի id, երկրի համար՝ երկտառ կոդ, ժամկետի ավարտի համար՝ օրերի քանակ 1-ից 365, իսկ բոլոր ակտիվ հաճախորդների զտիչը արժեք չի ընդունում։</value>
+    <value>Արժեքը չի համապատասխանում զտիչին. արտադրանքի համար պետք է արտադրանքի id, երկրի համար՝ երկտառ կոդ, ժամկետի ավարտի համար՝ օրերի քանակ 1-ից 365, հաճախորդների խմբի համար՝ խմբի id, մուտքի զտիչի համար՝ օրերի քանակ 1-ից 3650, իսկ բոլոր ակտիվ հաճախորդների զտիչը արժեք չի ընդունում։</value>
+  </data>
+  <data name="CampaignSegmentSignInUnavailable" xml:space="preserve">
+    <value>Վերջին մուտքով զտումն այստեղ հասանելի չէ. այս տեղադրումը մուտք է գործում միասնական մուտքի մատակարարի միջոցով, որը արտադրանքին չի հայտնում, թե հաճախորդը երբ է վերջին անգամ մուտք գործել։</value>
   </data>
   <data name="CampaignUnsubscribeTokenRequired" xml:space="preserve">
     <value>Ապաբաժանորդագրվելու հղումը տոկեն չի պարունակում։</value>
   </data>
   <data name="CampaignUnsubscribeTokenInvalid" xml:space="preserve">
     <value>Ապաբաժանորդագրվելու այս հղումը վավեր չէ։</value>
+  </data>
+  <data name="CampaignMailLinkInvalid" xml:space="preserve">
+    <value>Այս հղումը վավեր չէ։</value>
   </data>
   <data name="EmailDeliveryKeyRequired" xml:space="preserve">
     <value>Նամակի բանալին պարտադիր է։</value>

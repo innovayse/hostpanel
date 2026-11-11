@@ -26,7 +26,7 @@ public static class EmailCampaignExtensions
             campaign.SentAt,
             campaign.CreatedAt,
             campaign.CreatedBy,
-            campaign.Segments.Select(segment => segment.ToDefinition()).ToList(),
+            campaign.Segments.ToDtos(),
             stats);
     }
 
@@ -44,7 +44,8 @@ public static class EmailCampaignExtensions
     }
 
     /// <summary>
-    /// Counts the recipients of the given campaigns by delivery status in one grouped query, without loading a recipient row.
+    /// Counts the recipients of the given campaigns by delivery status, and sums how the readers responded, in one grouped query,
+    /// without loading a recipient row.
     /// </summary>
     /// <param name="recipients">The recipients set to count over.</param>
     /// <param name="campaignIds">The campaigns to count for.</param>
@@ -56,28 +57,56 @@ public static class EmailCampaignExtensions
         ArgumentNullException.ThrowIfNull(recipients);
         ArgumentNullException.ThrowIfNull(campaignIds);
 
-        var counts = await recipients
+        var rows = await recipients
             .Where(r => campaignIds.Contains(r.CampaignId))
-            .GroupBy(r => new { r.CampaignId, r.Status })
-            .Select(g => new { g.Key.CampaignId, g.Key.Status, Count = g.Count() })
+            .GroupBy(r => r.CampaignId)
+            .Select(g => new
+            {
+                CampaignId = g.Key,
+                Total = g.Count(),
+                Pending = g.Count(r => r.Status == CampaignRecipientStatus.Pending),
+                Sent = g.Count(r => r.Status == CampaignRecipientStatus.Sent),
+                Failed = g.Count(r => r.Status == CampaignRecipientStatus.Failed),
+                Unsubscribed = g.Count(r => r.Status == CampaignRecipientStatus.Unsubscribed),
+
+                // A reader who unsubscribed after the mail arrived was delivered to, so the rates are taken over every
+                // recipient that has a delivery moment, not over the Sent status alone.
+                Delivered = g.Count(r => r.SentAt != null),
+                Opened = g.Sum(r => r.OpenCount),
+
+                // Only a delivered mail counts as a reader, so a rate over the delivered mails cannot pass 1: a mail can be
+                // opened without a delivery moment, since the sender saves the delivery after the mail has left.
+                UniqueOpened = g.Count(r => r.SentAt != null && r.FirstOpenedAt != null),
+                Clicked = g.Sum(r => r.ClickCount),
+                UniqueClicked = g.Count(r => r.SentAt != null && r.FirstClickedAt != null),
+            })
             .ToListAsync(ct);
 
-        var byCampaign = counts.ToLookup(c => c.CampaignId);
+        var byCampaign = rows.ToDictionary(row => row.CampaignId);
         return campaignIds.Distinct().ToDictionary(
             id => id,
-            id => ToStats(byCampaign[id].ToDictionary(c => c.Status, c => c.Count)));
+            id => byCampaign.TryGetValue(id, out var row)
+                ? new EmailCampaignStatsDto(
+                    row.Total,
+                    row.Pending,
+                    row.Sent,
+                    row.Failed,
+                    row.Unsubscribed,
+                    row.Opened,
+                    row.UniqueOpened,
+                    row.Clicked,
+                    row.UniqueClicked,
+                    Rate(row.UniqueOpened, row.Delivered),
+                    Rate(row.UniqueClicked, row.Delivered))
+                : new EmailCampaignStatsDto(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0));
     }
 
-    /// <summary>Builds the stats from the per-status counts of one campaign.</summary>
-    /// <param name="byStatus">The count of recipients per delivery status; a status with none is absent.</param>
-    /// <returns>The stats, with the total over every status.</returns>
-    private static EmailCampaignStatsDto ToStats(IReadOnlyDictionary<CampaignRecipientStatus, int> byStatus)
+    /// <summary>Turns a count into a share of a whole, rounded to four decimals.</summary>
+    /// <param name="part">The recipients that did the thing.</param>
+    /// <param name="whole">The recipients that could have.</param>
+    /// <returns>The share from 0 to 1; 0 when there is no whole.</returns>
+    private static double Rate(int part, int whole)
     {
-        return new EmailCampaignStatsDto(
-            byStatus.Values.Sum(),
-            byStatus.GetValueOrDefault(CampaignRecipientStatus.Pending),
-            byStatus.GetValueOrDefault(CampaignRecipientStatus.Sent),
-            byStatus.GetValueOrDefault(CampaignRecipientStatus.Failed),
-            byStatus.GetValueOrDefault(CampaignRecipientStatus.Unsubscribed));
+        return whole == 0 ? 0 : Math.Round((double)part / whole, 4);
     }
 }

@@ -204,6 +204,32 @@ internal static class CampaignTestSeeds
     }
 
     /// <summary>
+    /// Sets when a client last signed in, as the identity store holds it, and optionally moves the client's creation back in time,
+    /// so a client can be made to have been away for a while without waiting.
+    /// </summary>
+    /// <param name="services">The service provider of the host the test drives.</param>
+    /// <param name="client">The client whose account is changed.</param>
+    /// <param name="lastSignInDaysAgo">How many days ago the client last signed in, or <see langword="null"/> for never.</param>
+    /// <param name="createdDaysAgo">How many days ago the client record was created, or <see langword="null"/> to leave it as it is.</param>
+    /// <returns>A task that completes once both are saved.</returns>
+    public static async Task SetSignInHistoryAsync(IServiceProvider services, Client client, int? lastSignInDaysAgo, int? createdDaysAgo = null)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var identity = services.GetRequiredService<AppDbContext>();
+        var user = await identity.Users.SingleAsync(u => u.Id == client.UserId);
+        user.LastLoginAt = lastSignInDaysAgo is null ? null : now.AddDays(-lastSignInDaysAgo.Value);
+        await identity.SaveChangesAsync(CancellationToken.None);
+
+        if (createdDaysAgo is not null)
+        {
+            var context = services.GetRequiredService<IHostpanelDbContext>();
+            var tracked = await context.Clients.SingleAsync(c => c.Id == client.Id);
+            tracked.Backdate(now.AddDays(-createdDaysAgo.Value));
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+    }
+
+    /// <summary>
     /// Gives a client an active monthly service, of a new product unless one is named. The billing period starts the given
     /// number of days ago, so the service renews about a month after that moment.
     /// </summary>

@@ -19,6 +19,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class DeleteServerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>Creating then deleting a server removes it from the list; deleting again answers 404.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -86,18 +89,18 @@ public sealed class DeleteServerTests(IntegrationTestFactory factory) : IClassFi
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var owner = Client.Create($"server-use-{Guid.NewGuid():N}", "Server", "User", $"server-use-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var owner = Client.Create($"server-use-{Guid.NewGuid():N}", "Server", "User", $"server-use-{Guid.NewGuid():N}@example.test", SeededAt);
         var group = ProductGroup.Create($"server-use-{Guid.NewGuid():N}", null);
         context.Clients.Add(owner);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, $"Plan {Guid.NewGuid():N}", null, null, null, "plan", ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, $"Plan {Guid.NewGuid():N}", null, null, null, "plan", ProductType.SharedHosting, 0m, 0m, SeededAt);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var service = ClientService.Create(owner.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, $"ref-{Guid.NewGuid():N}", DateTimeOffset.UtcNow, serverId);
+        var service = ClientService.Create(owner.Id, product.Id, BillingCycle.Monthly, SeededAt);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, $"ref-{Guid.NewGuid():N}", SeededAt, serverId);
         await context.SaveChangesAsync(CancellationToken.None);
     }
 }

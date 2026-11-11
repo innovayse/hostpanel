@@ -13,6 +13,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class UpdateNetworkIssueTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>An admin can update an existing network issue.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -25,7 +28,7 @@ public sealed class UpdateNetworkIssueTests(IntegrationTestFactory factory) : IC
             type = "Server",
             server = "web-01",
             priority = nameof(NetworkIssuePriority.High),
-            startDate = DateTimeOffset.UtcNow,
+            startDate = SeededAt,
             description = "Something is down.",
         });
         var id = int.Parse((await createResponse.Content.ReadAsStringAsync()).Trim());
@@ -37,7 +40,7 @@ public sealed class UpdateNetworkIssueTests(IntegrationTestFactory factory) : IC
             server = "web-02",
             priority = nameof(NetworkIssuePriority.Low),
             status = "Investigating",
-            startDate = DateTimeOffset.UtcNow,
+            startDate = SeededAt,
             endDate = (DateTimeOffset?)null,
             description = "Updated.",
         });
@@ -59,7 +62,7 @@ public sealed class UpdateNetworkIssueTests(IntegrationTestFactory factory) : IC
             server = (string?)null,
             priority = nameof(NetworkIssuePriority.High),
             status = "Reported",
-            startDate = DateTimeOffset.UtcNow,
+            startDate = SeededAt,
             endDate = (DateTimeOffset?)null,
             description = "Anything.",
         });
@@ -80,7 +83,7 @@ public sealed class UpdateNetworkIssueTests(IntegrationTestFactory factory) : IC
             server = (string?)null,
             priority = nameof(NetworkIssuePriority.High),
             status = "Reported",
-            startDate = DateTimeOffset.UtcNow,
+            startDate = SeededAt,
             endDate = (DateTimeOffset?)null,
             description = "Anything.",
         });

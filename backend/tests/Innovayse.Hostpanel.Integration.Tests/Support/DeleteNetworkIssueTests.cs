@@ -13,6 +13,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class DeleteNetworkIssueTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>An admin can delete a network issue.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -25,7 +28,7 @@ public sealed class DeleteNetworkIssueTests(IntegrationTestFactory factory) : IC
             type = "Server",
             server = "web-01",
             priority = nameof(NetworkIssuePriority.High),
-            startDate = DateTimeOffset.UtcNow,
+            startDate = SeededAt,
             description = "Something is down.",
         });
         var id = int.Parse((await createResponse.Content.ReadAsStringAsync()).Trim());

@@ -20,6 +20,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetDashboardStatsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>Dashboard stats answer 200 with every counter present.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -56,13 +59,13 @@ public sealed class GetDashboardStatsTests(IntegrationTestFactory factory) : ICl
 
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var client = Client.Create($"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", SeededAt);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
         var departmentId = await SupportTestSeeds.SeedDepartmentAsync(context);
-        var openTicket = Ticket.Create(client.Id, "Open one", "Help", departmentId, TicketPriority.Medium, DateTimeOffset.UtcNow);
-        var closedTicket = Ticket.Create(client.Id, "Closed one", "Help", departmentId, TicketPriority.Medium, DateTimeOffset.UtcNow);
-        closedTicket.Close(DateTimeOffset.UtcNow);
+        var openTicket = Ticket.Create(client.Id, "Open one", "Help", departmentId, TicketPriority.Medium, SeededAt);
+        var closedTicket = Ticket.Create(client.Id, "Closed one", "Help", departmentId, TicketPriority.Medium, SeededAt);
+        closedTicket.Close(SeededAt);
         context.Tickets.Add(openTicket);
         context.Tickets.Add(closedTicket);
         await context.SaveChangesAsync(CancellationToken.None);

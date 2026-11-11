@@ -14,6 +14,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Plugins;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class RegistryInstanceEnrollmentTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>Runs the enrolment in a scope of a host.</summary>
     /// <param name="host">The host.</param>
     /// <param name="force">Whether to ignore the back-off.</param>
@@ -29,7 +32,7 @@ public sealed class RegistryInstanceEnrollmentTests(IntegrationTestFactory facto
     [Fact]
     public async Task AFailedAttempt_WaitsItsBackoff_ThenTriesAgainAsync()
     {
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(SeededAt);
         var registry = new FakeRegistryServer();
         using var host = new RegistryTestHost(factory, registry, clock: clock);
         var healthy = false;
@@ -60,7 +63,7 @@ public sealed class RegistryInstanceEnrollmentTests(IntegrationTestFactory facto
     [Fact]
     public async Task EachFailureInARow_WaitsLongerAsync()
     {
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(SeededAt);
         var registry = new FakeRegistryServer();
         using var host = new RegistryTestHost(factory, registry, clock: clock);
         registry.Intercept = call => call.Target == "/v1/instances" ? new HttpResponseMessage(System.Net.HttpStatusCode.ServiceUnavailable) : null;
@@ -80,7 +83,7 @@ public sealed class RegistryInstanceEnrollmentTests(IntegrationTestFactory facto
     [Fact]
     public async Task AForcedRun_IgnoresTheBackoffAsync()
     {
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(SeededAt);
         var registry = new FakeRegistryServer();
         using var host = new RegistryTestHost(factory, registry, clock: clock);
         var healthy = false;

@@ -16,6 +16,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class DeleteServerGroupTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>Creating then deleting a group removes it; deleting again answers 404.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -48,7 +51,7 @@ public sealed class DeleteServerGroupTests(IntegrationTestFactory factory) : ICl
             await context.SaveChangesAsync(CancellationToken.None);
             context.Products.Add(Product.Create(
                 productGroup.Id, $"Plan {Guid.NewGuid():N}", null, null, null, "plan", ProductType.SharedHosting, 0m, 0m,
-                DateTimeOffset.UtcNow, serverGroupId: groupId));
+                SeededAt, serverGroupId: groupId));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

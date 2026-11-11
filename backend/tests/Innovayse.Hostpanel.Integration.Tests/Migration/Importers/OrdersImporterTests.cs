@@ -20,6 +20,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class OrdersImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>An order with no line items for a known client is imported.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -188,7 +191,7 @@ public sealed class OrdersImporterTests(IntegrationTestFactory factory) : IClass
         var group = ProductGroup.Create($"group-{Guid.NewGuid():N}", null);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
-        var product = Product.Create(group.Id, name, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, name, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, SeededAt);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
         return product;

@@ -13,6 +13,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ServiceProvisionedHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>A provisioned service notifies the owning client exactly once.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -26,7 +29,7 @@ public sealed class ServiceProvisionedHandlerTests(IntegrationTestFactory factor
         var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "notification-event");
         var serviceId = await NotificationsTestSeeds.SeedClientServiceAsync(context, client.Id);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceProvisionedEvent(serviceId, client.Id, "provisioning-ref-1", DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceProvisionedEvent(serviceId, client.Id, "provisioning-ref-1", SeededAt));
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);

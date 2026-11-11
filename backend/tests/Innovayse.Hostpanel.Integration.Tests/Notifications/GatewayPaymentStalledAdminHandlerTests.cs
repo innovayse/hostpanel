@@ -14,6 +14,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GatewayPaymentStalledAdminHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>The staff address configured on the test host.</summary>
     private const string AdminEmail = "ops@example.test";
 
@@ -28,7 +31,7 @@ public sealed class GatewayPaymentStalledAdminHandlerTests(IntegrationTestFactor
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
 
-        await bus.PublishAsync(new GatewayPaymentStalledEvent(515151, 7, "bank-gateway", 26) { OccurredAt = DateTimeOffset.UtcNow });
+        await bus.PublishAsync(new GatewayPaymentStalledEvent(515151, 7, "bank-gateway", 26) { OccurredAt = SeededAt });
 
         for (var i = 0; i < 50 && !sender.Sent.Any(m => m.To == AdminEmail); i++)
         {
@@ -51,7 +54,7 @@ public sealed class GatewayPaymentStalledAdminHandlerTests(IntegrationTestFactor
         var host = EventHandlerTestHost.WithFakeRelay(factory, sender);
         using var scope = host.Services.CreateScope();
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new GatewayPaymentStalledEvent(1, 1, "bank-gateway", 24) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new GatewayPaymentStalledEvent(1, 1, "bank-gateway", 24) { OccurredAt = SeededAt });
 
         sender.Sent.Should().BeEmpty();
     }

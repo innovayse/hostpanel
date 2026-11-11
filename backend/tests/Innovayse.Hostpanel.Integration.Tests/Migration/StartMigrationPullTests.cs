@@ -28,6 +28,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class StartMigrationPullTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>Starting a pending job launches it and answers with the job's (still pending) state.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -58,7 +61,7 @@ public sealed class StartMigrationPullTests(IntegrationTestFactory factory) : IC
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var job = await context.MigrationJobs.FirstAsync(j => j.Id == id);
-            job.Queue(DateTimeOffset.UtcNow);
+            job.Queue(SeededAt);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

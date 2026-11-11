@@ -14,6 +14,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ServiceTerminationFailedAdminHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>The staff address configured on the test host.</summary>
     private const string AdminEmail = "ops@example.test";
 
@@ -29,7 +32,7 @@ public sealed class ServiceTerminationFailedAdminHandlerTests(IntegrationTestFac
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         const int serviceId = 424242;
 
-        await bus.PublishAsync(new ServiceTerminationFailedEvent(serviceId, "SERVICE_TERMINATE_UPSTREAM_FAILED") { OccurredAt = DateTimeOffset.UtcNow });
+        await bus.PublishAsync(new ServiceTerminationFailedEvent(serviceId, "SERVICE_TERMINATE_UPSTREAM_FAILED") { OccurredAt = SeededAt });
 
         for (var i = 0; i < 50 && !sender.Sent.Any(m => m.To == AdminEmail); i++)
         {
@@ -52,7 +55,7 @@ public sealed class ServiceTerminationFailedAdminHandlerTests(IntegrationTestFac
         var host = EventHandlerTestHost.WithFakeRelay(factory, sender);
         using var scope = host.Services.CreateScope();
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceTerminationFailedEvent(1, "x") { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceTerminationFailedEvent(1, "x") { OccurredAt = SeededAt });
 
         sender.Sent.Should().BeEmpty();
     }

@@ -17,6 +17,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetEmailDeliveryTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>Writes a log line under a fresh key.</summary>
     /// <param name="services">The host's service provider.</param>
     /// <param name="failure">The relay's refusal, or <see langword="null"/> for a delivered mail.</param>
@@ -24,7 +27,7 @@ public sealed class GetEmailDeliveryTests(IntegrationTestFactory factory) : ICla
     private static async Task<string> LogAsync(IServiceProvider services, EmailSendFailure? failure)
     {
         var key = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
-        var now = DateTimeOffset.UtcNow;
+        var now = SeededAt;
         var log = EmailLog.Claim("someone@example.com", "Subject", "Body", key, now);
         if (failure is { } refused)
         {

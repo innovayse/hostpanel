@@ -13,6 +13,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Notifications;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class DomainRegistrationFailedClientHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>
     /// The same failed domain registration also notifies the owning client exactly once, through a second,
     /// independent handler for the one event.
@@ -31,7 +34,7 @@ public sealed class DomainRegistrationFailedClientHandlerTests(IntegrationTestFa
         await NotificationsTestSeeds.EnsureTemplateAsync(context, "domain-registration-failed", "Your domain registration failed");
 
         await scope.ServiceProvider.PublishAndWaitAsync(
-            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = DateTimeOffset.UtcNow });
+            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = SeededAt });
 
         var toClient = Assert.Single(emailSender.Sent, m => m.To == email);
         Assert.NotNull(toClient);

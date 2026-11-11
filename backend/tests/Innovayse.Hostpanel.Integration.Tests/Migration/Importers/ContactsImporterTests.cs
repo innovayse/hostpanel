@@ -17,6 +17,9 @@ namespace Innovayse.Hostpanel.Integration.Tests.Migration.Importers;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ContactsImporterTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
+    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
+    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
+
     /// <summary>A contact for a known client is added.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -60,7 +63,7 @@ public sealed class ContactsImporterTests(IntegrationTestFactory factory) : ICla
         var email = await MigrationTestSeeds.SeedClientAsync(scope.ServiceProvider, context);
         var userId = await MigrationTestSeeds.UserIdForEmailAsync(scope.ServiceProvider, email);
         var seeded = await context.Clients.FirstAsync(c => c.UserId == userId);
-        seeded.Close(DateTimeOffset.UtcNow);
+        seeded.Close(SeededAt);
         await context.SaveChangesAsync(CancellationToken.None);
         var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Contacts);
         var contactEmail = $"contact-{Guid.NewGuid():N}@example.test";

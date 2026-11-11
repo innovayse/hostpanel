@@ -35,6 +35,7 @@ describe('knowledgebaseStore', () => {
     expect(await store.fetchArticles()).toBe(true)
     expect(store.articles).toEqual([{ id: 2 }])
     expect(store.loading).toBe(false)
+    expect(store.articlesLoading).toBe(false)
   })
 
   it('a refused load reports the API sentence, the no-answer sentence offline', async () => {
@@ -121,5 +122,22 @@ describe('knowledgebaseStore', () => {
     stubFetch(problem('No such article.', 404))
     expect(await store.deleteArticle(11)).toBe(false)
     expect(store.error).toBe('No such article.')
+  })
+
+  it('the articles have their own loading flag: a slow articles load does not mark the categories as loading', async () => {
+    const store = useKnowledgebaseStore()
+    let release: () => void = () => undefined
+    const gate = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    vi.stubGlobal('fetch', vi.fn(() => gate.then(() => json([{ id: 2 }]))))
+
+    const pending = store.fetchArticles()
+
+    expect(store.articlesLoading).toBe(true)
+    expect(store.loading).toBe(false)
+    release()
+    await pending
+    expect(store.articlesLoading).toBe(false)
   })
 })

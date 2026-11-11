@@ -20,8 +20,11 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
   /** List of KB articles. */
   const articles = ref<KbArticle[]>([])
 
-  /** True while a load or create request is in flight. */
+  /** True while the categories load or one of them is being created. */
   const loading = ref(false)
+
+  /** True while the articles load; apart from `loading`, so a slow list never hides the other. */
+  const articlesLoading = ref(false)
 
   /** Sentence for the last failed call, null when none. */
   const error = ref<string | null>(null)
@@ -96,9 +99,9 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
    * @returns True when loaded; false when refused (see `error`).
    */
   const fetchArticles = async (): Promise<boolean> => {
-    loading.value = true
+    articlesLoading.value = true
     const result = await runAction(error, () => api.listArticles())
-    loading.value = false
+    articlesLoading.value = false
     if (result.ok) {
       articles.value = result.value
     }
@@ -112,9 +115,7 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
    * @returns The new article's id, or null when refused (see `error` and `fieldErrors`).
    */
   const createArticle = async (payload: KbArticlePayload): Promise<number | null> => {
-    loading.value = true
     const result = await runAction(error, () => api.createArticle(payload), fieldErrors)
-    loading.value = false
     if (!result.ok) {
       return null
     }
@@ -150,6 +151,7 @@ export const useKnowledgebaseStore = defineStore('knowledgebase', () => {
     categories,
     articles,
     loading,
+    articlesLoading,
     error,
     fieldErrors,
     fetchCategories,

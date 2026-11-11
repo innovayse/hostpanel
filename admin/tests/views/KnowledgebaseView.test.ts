@@ -6,7 +6,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import KnowledgebaseView from '@/views/KnowledgebaseView.vue'
-import { json, problem, stubFetch, callOf } from '../helpers/fetch'
+import { callsOf, findCall, json, problem, stubFetch } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { stubPathRoutes, stubRoutes } from '../helpers/routes'
 import { pickOption } from '../helpers/select'
@@ -51,7 +51,7 @@ describe('KnowledgebaseView', () => {
     await wrapper.get('[data-testid="knowledgebase-category-add"]').trigger('click')
     await flushPromises()
 
-    const post = mock.mock.calls.map((_, index) => callOf(mock, index)).find((call) => call.method === 'POST')
+    const post = findCall(mock, 'POST', '/api/admin/knowledgebase/categories')
     expect(post).toMatchObject({ url: '/api/admin/knowledgebase/categories', body: { name: 'Hosting', description: '', isHidden: false } })
   })
 
@@ -75,7 +75,7 @@ describe('KnowledgebaseView', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    const sent = mock.mock.calls.map((_, index) => callOf(mock, index))
+    const sent = callsOf(mock)
     expect(sent).toContainEqual(expect.objectContaining({ url: '/api/admin/knowledgebase/categories/1', method: 'DELETE' }))
   })
 
@@ -162,21 +162,6 @@ const STORED_ARTICLE = {
 }
 
 /**
- * Returns the body of the first request with a method and a path.
- *
- * @param mock - The fetch mock.
- * @param method - The HTTP verb.
- * @param path - The request path.
- * @returns The parsed JSON body, or undefined when no such request was made.
- */
-const bodyOf = (mock: ReturnType<typeof vi.fn>, method: string, path: string): unknown => {
-  const call = mock.mock.calls
-    .map((_, index) => callOf(mock, index))
-    .find((candidate) => candidate.method === method && candidate.url === path)
-  return call?.body
-}
-
-/**
  * Mounts the view on the article tab with the categories and the given stored articles.
  *
  * @param articles - The stored articles the list returns.
@@ -198,6 +183,7 @@ const mountArticles = async (articles: unknown[] = []) => {
  * Fills the English tab of the article form and picks the category.
  *
  * @param wrapper - The mounted view.
+ * @returns Resolves once the title, the body and the category are set.
  */
 const fillEnglish = async (wrapper: Awaited<ReturnType<typeof mountArticles>>['wrapper']): Promise<void> => {
   await wrapper.get('[data-testid="knowledgebase-article-title"]').setValue('How to pay')
@@ -214,7 +200,7 @@ describe('KnowledgebaseView article form', () => {
     await wrapper.get('[data-testid="knowledgebase-article-save"]').trigger('click')
     await flushPromises()
 
-    expect(bodyOf(mock, 'POST', '/api/admin/knowledgebase')).toEqual({
+    expect(findCall(mock, 'POST', '/api/admin/knowledgebase')?.body).toEqual({
       categoryId: 3,
       translations: { en: { title: 'How to pay', content: 'Use a card' } },
       isPublished: true,
@@ -228,7 +214,7 @@ describe('KnowledgebaseView article form', () => {
     await wrapper.get('[data-testid="knowledgebase-article-save"]').trigger('click')
     await flushPromises()
 
-    expect(bodyOf(mock, 'POST', '/api/admin/knowledgebase')).toMatchObject({ isPublished: false })
+    expect(findCall(mock, 'POST', '/api/admin/knowledgebase')?.body).toMatchObject({ isPublished: false })
   })
 
   it('carries the text of each language in its own tab and sends every language that has text', async () => {
@@ -245,7 +231,7 @@ describe('KnowledgebaseView article form', () => {
     await wrapper.get('[data-testid="knowledgebase-article-save"]').trigger('click')
     await flushPromises()
 
-    expect(bodyOf(mock, 'POST', '/api/admin/knowledgebase')).toMatchObject({
+    expect(findCall(mock, 'POST', '/api/admin/knowledgebase')?.body).toMatchObject({
       translations: { en: { title: 'How to pay', content: 'Use a card' }, ru: { title: 'Как оплатить', content: 'Картой' } },
     })
   })
@@ -260,7 +246,7 @@ describe('KnowledgebaseView article form', () => {
     expect(wrapper.get('[data-testid="knowledgebase-article-save"]').attributes('disabled')).toBeDefined()
   })
 
-  it('shows the field message of a refused save and keeps the form', async () => {
+  it('shows the sentence of a refused save and keeps the form', async () => {
     const mock = stubRoutes({
       'GET /api/admin/knowledgebase/categories': () => json(CATEGORIES),
       'GET /api/admin/knowledgebase': () => json([]),
@@ -276,6 +262,49 @@ describe('KnowledgebaseView article form', () => {
     expect(wrapper.get('[data-testid="knowledgebase-feedback"]').text()).toBe('Check the form.')
     expect((wrapper.get('[data-testid="knowledgebase-article-title"]').element as HTMLInputElement).value).toBe('How to pay')
     expect(mock).toHaveBeenCalled()
+  })
+})
+
+describe('KnowledgebaseView article list loading', () => {
+  it('shows an error with Retry when the articles are refused, not the empty state, and reloads them', async () => {
+    let refuse = true
+    stubRoutes({
+      'GET /api/admin/knowledgebase/categories': () => json(CATEGORIES),
+      'GET /api/admin/knowledgebase': () => (refuse ? problem('Not allowed.', 403) : json([STORED_ARTICLE])),
+    })
+    const wrapper = await mountView(KnowledgebaseView)
+    await wrapper.get('[data-testid="knowledgebase-tab-article"]').trigger('click')
+
+    expect(wrapper.get('[data-testid="knowledgebase-articles-error"]').text()).toContain('Not allowed.')
+    expect(wrapper.find('[data-testid="knowledgebase-articles-empty"]').exists()).toBe(false)
+
+    refuse = false
+    await wrapper.get('[data-testid="knowledgebase-articles-error-retry"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="knowledgebase-articles-error"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="knowledgebase-article-11"]').exists()).toBe(true)
+  })
+
+  it('keeps the category list when only the articles are refused', async () => {
+    stubRoutes({
+      'GET /api/admin/knowledgebase/categories': () => json(CATEGORIES),
+      'GET /api/admin/knowledgebase': () => problem('Not allowed.', 403),
+    })
+
+    const wrapper = await mountView(KnowledgebaseView)
+
+    expect(wrapper.find('[data-testid="knowledgebase-error"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="knowledgebase-category-3"]').exists()).toBe(true)
+  })
+
+  it('labels the save button Save Article for a new article and Save Changes while editing', async () => {
+    const { wrapper } = await mountArticles([STORED_ARTICLE])
+    expect(wrapper.get('[data-testid="knowledgebase-article-save"]').text()).toBe('Save Article')
+
+    await wrapper.get('[data-testid="knowledgebase-article-11-edit"]').trigger('click')
+
+    expect(wrapper.get('[data-testid="knowledgebase-article-save"]').text()).toBe('Save Changes')
   })
 })
 
@@ -326,7 +355,7 @@ describe('KnowledgebaseView article list and editing', () => {
     await wrapper.get('[data-testid="knowledgebase-article-save"]').trigger('click')
     await flushPromises()
 
-    expect(bodyOf(mock, 'PUT', '/api/admin/knowledgebase/11')).toEqual({
+    expect(findCall(mock, 'PUT', '/api/admin/knowledgebase/11')?.body).toEqual({
       categoryId: 3,
       translations: {
         en: { title: 'How to pay', content: 'Use a card' },

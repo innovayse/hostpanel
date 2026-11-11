@@ -124,7 +124,11 @@ test('a knowledgebase article is written in two languages, listed, and edited to
         path: '/api/admin/knowledgebase/11',
         respond: (call) => {
           const sent = call.body as Pick<KbArticle, 'translations'> & { categoryId: number }
-          articles[0] = { ...articles[0]!, ...sent }
+          const stored = articles.find((article) => article.id === 11)
+          if (stored === undefined) {
+            throw new Error('The edit reached the stub before the article was created.')
+          }
+          Object.assign(stored, sent)
           return { status: 204 }
         },
       },

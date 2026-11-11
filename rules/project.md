@@ -1839,7 +1839,7 @@ translations, managed in the admin under **Storefront content**. The public endp
 client hides any section that is empty, so an empty table is a valid state, not an error. Production runs a
 one-time import of the previous static content; the demo does not, because its seed is fixed.
 
-## Knowledge base — category by id, slug, text per language
+## Knowledge base: category by id, slug, text per language
 
 An article belongs to a category by `CategoryId` (a foreign key, `Restrict`: a category that holds articles, or sub-categories,
 is refused with `KBCATEGORY_IN_USE`). Its title and body are `KbArticleTranslations` rows, one per language, written like the
@@ -1854,8 +1854,11 @@ FAQ: the default language `SupportedLanguages.Default` (`en`) is required, `en/r
   `categories`, the literal segments of the same route. The rules live in `KbSlugRules` and again as check constraints and
   unique indexes, so no writer can store a slug that breaks them. A slug is built once, from the English title or the category
   name, and never changes, so a link to a renamed article keeps working. `SlugGenerator` only builds the candidate;
-  `KbSlugAllocator` makes it unique by trying `-2`, `-3`, ... until a value is free, and the create use cases ask again when the
-  unique index refuses the save because another request took the value.
+  `KbSlugAllocator` makes it unique by trying `-2`, `-3` and so on until a value is free, and `KbSlugSaver` is the one place
+  that saves a new article or category and asks the allocator again when the unique index refuses the save because another
+  request took the value (the create use cases and the importer all go through it). The shape is written for two engines: .NET
+  patterns anchor with `\A` and `\z` (its `$` also matches before a trailing newline), the database check constraints use
+  `^` and `$` (PostgreSQL's `$` only matches at the end), and a test pins that both refuse `foo\n`.
 - **Routes.** `GET /api/knowledgebase/{id:int}` and `GET /api/knowledgebase/{slug}` share one segment. ASP.NET Core matches
   literals and `regex` constraints without regard to case, so `Articles` is the list and `CATEGORIES` the categories; the slug
   route's pattern refuses a purely numeric segment (otherwise a number matches both routes and the request fails as

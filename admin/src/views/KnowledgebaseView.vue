@@ -106,6 +106,9 @@ const articleSaving = ref(false)
 /** The sentence of the last refused load, shown with Retry; null when the categories loaded. */
 const loadError = ref<string | null>(null)
 
+/** The sentence of the last refused articles load, shown with Retry; null when the articles loaded. */
+const articlesLoadError = ref<string | null>(null)
+
 /** The outcome line of the last change. */
 const feedback = useResultBanner()
 
@@ -133,6 +136,15 @@ const report = (ok: boolean, successKey: string): void => {
  */
 const load = async (): Promise<void> => {
   loadError.value = (await store.fetchCategories()) ? null : store.error
+}
+
+/**
+ * Loads the articles and records whether the load was refused.
+ *
+ * @returns Resolves when the articles have settled.
+ */
+const loadArticles = async (): Promise<void> => {
+  articlesLoadError.value = (await store.fetchArticles()) ? null : store.error
 }
 
 /** Category options for select dropdowns. */
@@ -257,6 +269,14 @@ const dismissDeleteCategory = (): void => {
   }
 }
 
+/** The label of the save button: saving while a request runs, otherwise create or save changes. */
+const articleSaveLabel = computed<string>(() => {
+  if (articleSaving.value) {
+    return t('shared.saving')
+  }
+  return editingArticleId.value === null ? t('support.knowledgebase.saveArticle') : t('shared.saveChanges')
+})
+
 /**
  * Collects the translations worth sending: the trimmed texts of the languages that have any.
  *
@@ -348,7 +368,7 @@ const articleActions = (article: KbArticle): UiRowAction[] => {
 /** Loads the categories and the articles. */
 onMounted(() => {
   void load()
-  void store.fetchArticles()
+  void loadArticles()
 })
 </script>
 
@@ -555,7 +575,7 @@ onMounted(() => {
               data-testid="knowledgebase-article-save"
               @click="saveArticle"
             >
-              {{ articleSaving ? t('shared.saving') : editingArticleId === null ? t('support.knowledgebase.saveArticle') : t('shared.saveChanges') }}
+              {{ articleSaveLabel }}
             </UiButton>
             <UiButton
               v-if="editingArticleId !== null"
@@ -571,7 +591,15 @@ onMounted(() => {
 
       <UiHeading :level="2" variant="card">{{ t('support.knowledgebase.articles') }}</UiHeading>
 
-      <UiSkeleton v-if="store.loading" :lines="3" data-testid="knowledgebase-articles-loading" />
+      <UiErrorState
+        v-if="articlesLoadError !== null"
+        :message="articlesLoadError"
+        :loading="store.articlesLoading"
+        testid="knowledgebase-articles-error"
+        @retry="loadArticles"
+      />
+
+      <UiSkeleton v-else-if="store.articlesLoading" :lines="3" data-testid="knowledgebase-articles-loading" />
 
       <UiCard v-else-if="store.articles.length > 0" data-testid="knowledgebase-articles">
         <UiTable :density="UiTableDensity.Comfortable">

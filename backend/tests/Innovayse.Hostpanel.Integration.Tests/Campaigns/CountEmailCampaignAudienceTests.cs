@@ -142,6 +142,91 @@ public sealed class CountEmailCampaignAudienceTests(IntegrationTestFactory facto
         after.Should().Be(before + 1);
     }
 
+    /// <summary>A client group segment counts the opted-in members of that group only.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Count_ClientGroupSegment_CountsOnlyOptedInMembers()
+    {
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        using var scope = factory.Services.CreateScope();
+        var groupId = await ClientGroupTestSeeds.CreateAsync(admin);
+        var member = await CampaignTestSeeds.SeedAudienceClientAsync(scope.ServiceProvider);
+        var optedOutMember = await CampaignTestSeeds.SeedAudienceClientAsync(scope.ServiceProvider, optedIn: false);
+        await CampaignTestSeeds.SeedAudienceClientAsync(scope.ServiceProvider);
+        await ClientGroupTestSeeds.AssignAsync(factory, member.Client.Id, groupId);
+        await ClientGroupTestSeeds.AssignAsync(factory, optedOutMember.Client.Id, groupId);
+
+        var count = await CountAsync(admin, Segment("ClientGroup", groupId.ToString()));
+
+        count.Should().Be(1);
+    }
+
+    /// <summary>
+    /// A sign-in segment counts a client whose last sign-in is old enough, and one that never signed in only once its record is that
+    /// old; a client who signed in recently, or whose record is new, is not counted.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Count_NotSignedInSegment_CountsClientsAwayForTheDays()
+    {
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        using var scope = factory.Services.CreateScope();
+        var before = await CountAsync(admin, Segment("NotSignedInForDays", "30"));
+        var longAgo = await CampaignTestSeeds.SeedAudienceClientAsync(scope.ServiceProvider);
+        var recently = await CampaignTestSeeds.SeedAudienceClientAsync(scope.ServiceProvider);
+        var neverOld = await CampaignTestSeeds.SeedAudienceClientAsync(scope.ServiceProvider);
+        var neverNew = await CampaignTestSeeds.SeedAudienceClientAsync(scope.ServiceProvider);
+        await CampaignTestSeeds.SetSignInHistoryAsync(scope.ServiceProvider, longAgo.Client, lastSignInDaysAgo: 40, createdDaysAgo: 100);
+        await CampaignTestSeeds.SetSignInHistoryAsync(scope.ServiceProvider, recently.Client, lastSignInDaysAgo: 1, createdDaysAgo: 100);
+        await CampaignTestSeeds.SetSignInHistoryAsync(scope.ServiceProvider, neverOld.Client, lastSignInDaysAgo: null, createdDaysAgo: 60);
+        await CampaignTestSeeds.SetSignInHistoryAsync(scope.ServiceProvider, neverNew.Client, lastSignInDaysAgo: null);
+
+        var after = await CountAsync(admin, Segment("NotSignedInForDays", "30"));
+
+        after.Should().Be(before + 2);
+    }
+
+    /// <summary>
+    /// A client whose record is younger than the days has not existed long enough to have been away that long, so the segment
+    /// leaves it out whatever the identity store says; the database drops it before the identity provider is asked.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Count_NotSignedInSegment_LeavesOutAClientCreatedWithinTheDays()
+    {
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        using var scope = factory.Services.CreateScope();
+        var before = await CountAsync(admin, Segment("NotSignedInForDays", "30"));
+        var young = await CampaignTestSeeds.SeedAudienceClientAsync(scope.ServiceProvider);
+        await CampaignTestSeeds.SetSignInHistoryAsync(scope.ServiceProvider, young.Client, lastSignInDaysAgo: 40, createdDaysAgo: 5);
+
+        var after = await CountAsync(admin, Segment("NotSignedInForDays", "30"));
+
+        after.Should().Be(before);
+    }
+
+    /// <summary>A client matched by a sign-in segment and by a database segment is counted once.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Count_SignInAndGroupSegmentsMatchingTheSameClient_CountItOnce()
+    {
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        using var scope = factory.Services.CreateScope();
+        var groupId = await ClientGroupTestSeeds.CreateAsync(admin);
+        var away = await CampaignTestSeeds.SeedAudienceClientAsync(scope.ServiceProvider);
+
+        // The history is written first: the group assignment is saved by another context and would leave this one's copy stale.
+        await CampaignTestSeeds.SetSignInHistoryAsync(scope.ServiceProvider, away.Client, lastSignInDaysAgo: 90, createdDaysAgo: 120);
+        await ClientGroupTestSeeds.AssignAsync(factory, away.Client.Id, groupId);
+
+        // The shared database holds other clients away for the days, so the sign-in segment alone is the baseline: adding the
+        // group segment, which only the one client matches and the sign-in segment matches too, must not move it.
+        var signedInOnly = await CountAsync(admin, Segment("NotSignedInForDays", "30"));
+        var count = await CountAsync(admin, Segment("ClientGroup", groupId.ToString()), Segment("NotSignedInForDays", "30"));
+
+        count.Should().Be(signedInOnly);
+    }
+
     /// <summary>The all-active segment reaches every opted-in client, and no segments reach nobody.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -167,6 +252,24 @@ public sealed class CountEmailCampaignAudienceTests(IntegrationTestFactory facto
         var admin = await ClientsTestSeeds.AdminClientAsync(factory);
 
         var response = await admin.PostAsJsonAsync(Route, Segments(Segment("Country", "ARMENIA")));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    /// <summary>A group id or a day count that does not fit its filter is refused with 400.</summary>
+    /// <param name="filterType">The filter name.</param>
+    /// <param name="filterValue">The value that does not fit it.</param>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Theory]
+    [InlineData("ClientGroup", "0")]
+    [InlineData("ClientGroup", null)]
+    [InlineData("NotSignedInForDays", "0")]
+    [InlineData("NotSignedInForDays", "3651")]
+    public async Task Count_InvalidGroupOrSignInValue_RefusesValidation(string filterType, string? filterValue)
+    {
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+
+        var response = await admin.PostAsJsonAsync(Route, Segments(Segment(filterType, filterValue)));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }

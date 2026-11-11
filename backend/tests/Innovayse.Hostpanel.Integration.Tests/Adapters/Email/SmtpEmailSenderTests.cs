@@ -52,15 +52,15 @@ public sealed class SmtpEmailSenderTests
         Assert.Equal(EmailSendFailure.RecipientRejected, result.Failure);
     }
 
-    /// <summary>A marketing message is marked with the <c>List-Unsubscribe</c> header holding its unsubscribe page, and no one-click post header.</summary>
+    /// <summary>A marketing message is marked with the <c>List-Unsubscribe</c> header holding its one-click address and the RFC 8058 <c>List-Unsubscribe-Post</c> header.</summary>
     [Fact]
-    public void Compose_MessageWithUnsubscribeUrl_CarriesTheListUnsubscribeHeader()
+    public void Compose_MessageWithUnsubscribeUrl_CarriesTheOneClickListHeaders()
     {
         var mime = CreateAgainstClosedPort().Compose(
-            new EmailMessage("someone@example.test", "Subject", "<p>Body</p>", UnsubscribeUrl: "https://portal.example/unsubscribe?token=abc"));
+            new EmailMessage("someone@example.test", "Subject", "<p>Body</p>", UnsubscribeUrl: "https://portal.example/api/public/unsubscribe/one-click?token=abc"));
 
-        Assert.Equal("<https://portal.example/unsubscribe?token=abc>", mime.Headers["List-Unsubscribe"]);
-        Assert.Null(mime.Headers["List-Unsubscribe-Post"]);
+        Assert.Equal("<https://portal.example/api/public/unsubscribe/one-click?token=abc>", mime.Headers["List-Unsubscribe"]);
+        Assert.Equal("List-Unsubscribe=One-Click", mime.Headers["List-Unsubscribe-Post"]);
     }
 
     /// <summary>A message that is not marketing carries no list headers.</summary>
@@ -70,5 +70,6 @@ public sealed class SmtpEmailSenderTests
         var mime = CreateAgainstClosedPort().Compose(new EmailMessage("someone@example.test", "Subject", "<p>Body</p>"));
 
         Assert.Null(mime.Headers["List-Unsubscribe"]);
+        Assert.Null(mime.Headers["List-Unsubscribe-Post"]);
     }
 }

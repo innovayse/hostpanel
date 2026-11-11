@@ -25,16 +25,27 @@ public sealed class EmailCampaignRecipientConfiguration : IEntityTypeConfigurati
         builder.Property(x => x.Attempts).IsRequired();
         builder.Property(x => x.FailureReason).HasMaxLength(EmailCampaignRecipient.FailureReasonMaxLength);
         builder.Property(x => x.UnsubscribeTokenHash).HasMaxLength(EmailCampaignRecipient.UnsubscribeTokenHashLength);
+        builder.Property(x => x.TrackingTokenHash).HasMaxLength(EmailCampaignRecipient.TrackingTokenHashLength);
+        builder.Property(x => x.OpenCount).IsRequired();
+        builder.Property(x => x.ClickCount).IsRequired();
 
         // The public unsubscribe link names its recipient by the hash of its token alone, so the lookup is unique and indexed;
         // a recipient not yet mailed has none, and PostgreSQL lets any number of rows hold null in a unique index.
         builder.HasIndex(x => x.UnsubscribeTokenHash).IsUnique();
+
+        // The open pixel and the tracked links name their recipient by the hash of the tracking token alone, so that lookup is
+        // unique and indexed too; a recipient not yet mailed has none.
+        builder.HasIndex(x => x.TrackingTokenHash).IsUnique();
 
         // One client receives a campaign once.
         builder.HasIndex(x => new { x.CampaignId, x.ClientId }).IsUnique();
 
         // The sender takes the next pending recipients of one campaign in id order; the index serves that query without a sort.
         builder.HasIndex(x => new { x.CampaignId, x.Status, x.Id });
+
+        // The send throttle counts the mails delivered in the last minute over every campaign on each pass; the index
+        // keeps that count off a scan of the whole table.
+        builder.HasIndex(x => x.SentAt);
 
         // A recipient has no meaning without its client; deleting the client removes the row.
         builder.HasOne<Client>()

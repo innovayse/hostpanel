@@ -1102,6 +1102,9 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<int>("CampaignId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("ClickCount")
+                        .HasColumnType("integer");
+
                     b.Property<int>("ClientId")
                         .HasColumnType("integer");
 
@@ -1114,9 +1117,18 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<DateTimeOffset?>("FirstClickedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("FirstOpenedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Language")
                         .HasMaxLength(10)
                         .HasColumnType("character varying(10)");
+
+                    b.Property<int>("OpenCount")
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset?>("SentAt")
                         .HasColumnType("timestamp with time zone");
@@ -1125,6 +1137,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<string>("TrackingTokenHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("UnsubscribeTokenHash")
                         .HasMaxLength(64)
@@ -1139,6 +1155,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("ClientId");
+
+                    b.HasIndex("SentAt");
+
+                    b.HasIndex("TrackingTokenHash")
+                        .IsUnique();
 
                     b.HasIndex("UnsubscribeTokenHash")
                         .IsUnique();

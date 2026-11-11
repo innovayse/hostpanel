@@ -20,8 +20,9 @@ namespace Innovayse.Hostpanel.Application.Notifications.Commands.SendEmail;
 /// waits for the answer and sends a fresh mail on every request.
 /// </param>
 /// <param name="UnsubscribeUrl">
-/// For marketing mail, the page that unsubscribes the recipient; the mail then carries the header a mail client turns into
-/// an unsubscribe link. Null for every other mail. Personal to the recipient, so it is never printed.
+/// For marketing mail, the one-click endpoint (RFC 8058) that unsubscribes the recipient on a bare POST; the mail then carries
+/// the headers a mail client turns into an unsubscribe button. Null for every other mail. Personal to the recipient, so it is
+/// never printed.
 /// </param>
 public sealed record SendEmailCommand(
     string To,

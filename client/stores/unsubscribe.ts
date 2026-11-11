@@ -20,10 +20,10 @@ import { UnsubscribeStatus } from '~/types/unsubscribestatus'
 export const useUnsubscribeStore = defineStore('unsubscribe', () => {
   const api = useUnsubscribeApi()
 
-  /** Where the attempt stands; drives the landing page's three panels. */
-  const status = ref<UnsubscribeStatus>(UnsubscribeStatus.Pending)
+  /** Where the attempt stands; drives the landing page's panels. Idle until the reader confirms. */
+  const status = ref<UnsubscribeStatus>(UnsubscribeStatus.Idle)
 
-  /** The sentence for a refused link; empty while pending or on success. */
+  /** The sentence for a refused link; empty until the API refuses one. */
   const error = ref('')
 
   /**

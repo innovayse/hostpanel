@@ -1,6 +1,7 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Campaigns.Common;
 using Innovayse.Hostpanel.Application.Campaigns.Extensions;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
 using Microsoft.Extensions.Localization;
@@ -12,11 +13,12 @@ public sealed class CountEmailCampaignAudienceValidator : LocalizedValidator<Cou
 {
     /// <summary>Initializes the validator.</summary>
     /// <param name="localizer">String localizer for validation messages.</param>
-    public CountEmailCampaignAudienceValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
+    /// <param name="authMode">Tells whether the last sign-in of a client is known, which a segment on it needs.</param>
+    public CountEmailCampaignAudienceValidator(IStringLocalizer<ApplicationValidationMessages> localizer, IAuthModeProvider authMode)
         : base(localizer)
     {
         RuleFor(x => x.Segments).MustBeCampaignSegmentList(
             L["CampaignSegmentsRequired"], L["CampaignSegmentsTooMany", CampaignLimits.MaxSegments], L["CampaignSegmentFilterInvalid"]);
-        RuleForEach(x => x.Segments).SetValidator(new EmailCampaignSegmentValidator(localizer)).When(x => x.Segments is not null);
+        RuleForEach(x => x.Segments).SetValidator(new EmailCampaignSegmentValidator(localizer, authMode)).When(x => x.Segments is not null);
     }
 }

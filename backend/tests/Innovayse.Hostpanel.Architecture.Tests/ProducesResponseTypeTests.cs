@@ -61,12 +61,15 @@ public sealed class ProducesResponseTypeTests
             || action.Controller.IsDefined(typeof(AllowAnonymousAttribute), true);
     }
 
-    /// <summary>Whether a status is a success.</summary>
+    /// <summary>
+    /// Whether a status is a success: 2xx, or a redirect that sends the caller on (a tracked link answers 302 to its target).
+    /// A 304 is not one: it answers a conditional request with no body and sends the caller nowhere.
+    /// </summary>
     /// <param name="status">The HTTP status.</param>
-    /// <returns><c>true</c> for 2xx.</returns>
+    /// <returns><c>true</c> for 200 to 299 and for the redirects 301, 302, 303, 307 and 308.</returns>
     private static bool IsSuccess(int status)
     {
-        return status is >= 200 and < 300;
+        return status is >= 200 and < 300 or 301 or 302 or 303 or 307 or 308;
     }
 
     /// <summary>Whether a status is an error: 4xx or 5xx. A 304 answers with no body at all, so it carries no error body.</summary>
@@ -84,7 +87,7 @@ public sealed class ProducesResponseTypeTests
         AllActions().Should().HaveCountGreaterThan(100);
     }
 
-    /// <summary>Every action declares at least one 2xx status.</summary>
+    /// <summary>Every action declares at least one success status: a 2xx, or a redirect that sends the caller on.</summary>
     [Fact]
     public void EveryAction_DeclaresASuccessStatus()
     {

@@ -19,6 +19,14 @@ public sealed class AnonymousWriteRateLimitTests
     /// </summary>
     private static readonly Type[] KeyGatedControllers = [typeof(BackchannelLogoutController)];
 
+    /// <summary>
+    /// Actions that are held to the global limiter alone on purpose. The one-click unsubscribe is posted by mail providers on
+    /// behalf of all their users from a few shared addresses, so any per-address budget would drop real unsubscribes; what it
+    /// writes is gated by a 256-bit personal token and is idempotent.
+    /// </summary>
+    private static readonly (Type Controller, string Action)[] GlobalLimitOnlyActions =
+        [(typeof(PublicUnsubscribeController), nameof(PublicUnsubscribeController.UnsubscribeOneClickAsync))];
+
     /// <summary>Whether an action is reachable without authentication.</summary>
     /// <param name="action">The controller and action.</param>
     /// <returns><c>true</c> when the action or its controller is <c>[AllowAnonymous]</c>.</returns>
@@ -64,6 +72,7 @@ public sealed class AnonymousWriteRateLimitTests
             .Where(IsAnonymous)
             .Where(IsWrite)
             .Where(a => !KeyGatedControllers.Contains(a.Controller))
+            .Where(a => !GlobalLimitOnlyActions.Contains((a.Controller, a.Action.Name)))
             .Where(a => !IsRateLimited(a))
             .Select(a => $"{a.Controller.Name}.{a.Action.Name}")
             .ToList();

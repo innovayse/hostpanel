@@ -1408,4 +1408,7 @@
   <data name="CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND" xml:space="preserve">
     <value>Эта ссылка для отписки недействительна.</value>
   </data>
+  <data name="CAMPAIGN_MAIL_LINK_NOT_FOUND" xml:space="preserve">
+    <value>Эта ссылка недействительна.</value>
+  </data>
 </root>

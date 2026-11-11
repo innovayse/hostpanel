@@ -263,6 +263,8 @@ The edge layer (Caddy on hub, nginx on prod) terminates TLS and routes to the AP
   { name: 'NGINX_HTTPS_PORT', type: 'string', default: '443', description: 'Host HTTPS port for the bundled nginx. Tiers: prod.' },
 ]" />
 
+Campaign mails carry a personal token in the address of the open pixel, the tracked links and the unsubscribe link. The bundled nginx edge writes its access log with that token replaced by `***`. The bundled Caddy edge writes no access log unless you turn it on, and a proxy of your own in front of the panel must mask the paths `/api/public/campaign-mail/` and the `token` query parameter of `/unsubscribe` and `/api/public/unsubscribe/` in its own log.
+
 ## Images and versions
 
 <SettingTable :settings="[

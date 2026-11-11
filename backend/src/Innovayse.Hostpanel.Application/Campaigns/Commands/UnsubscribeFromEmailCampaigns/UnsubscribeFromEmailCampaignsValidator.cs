@@ -1,7 +1,6 @@
-using FluentValidation;
+using Innovayse.Hostpanel.Application.Campaigns.Extensions;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
-using Innovayse.Hostpanel.Domain.Campaigns;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Campaigns.Commands.UnsubscribeFromEmailCampaigns;
@@ -17,8 +16,6 @@ public sealed class UnsubscribeFromEmailCampaignsValidator : LocalizedValidator<
     public UnsubscribeFromEmailCampaignsValidator(IStringLocalizer<ApplicationValidationMessages> localizer)
         : base(localizer)
     {
-        RuleFor(x => x.Token)
-            .NotEmpty().WithMessage(L["CampaignUnsubscribeTokenRequired"])
-            .MaximumLength(EmailCampaignRecipient.UnsubscribeTokenLength).WithMessage(L["CampaignUnsubscribeTokenInvalid"]);
+        RuleFor(x => x.Token).MustBeCampaignMailToken(L["CampaignUnsubscribeTokenRequired"], L["CampaignUnsubscribeTokenInvalid"]);
     }
 }

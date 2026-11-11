@@ -23,26 +23,37 @@
     "AllActive": "All active clients",
     "Product": "Clients with a service of a product",
     "Country": "Clients from a country",
-    "ServiceExpiringInDays": "Clients with a service expiring soon"
+    "ServiceExpiringInDays": "Clients with a service expiring soon",
+    "ClientGroup": "Clients in a client group",
+    "NotSignedInForDays": "Clients who have not signed in for a while"
   },
   "segmentSummary": {
     "AllActive": "All active clients",
     "Product": "Clients with a service of {value}",
     "Country": "Clients from {value}",
-    "ServiceExpiringInDays": "Clients with a service expiring within {value} days"
+    "ServiceExpiringInDays": "Clients with a service expiring within {value} days",
+    "ClientGroup": "Clients in the group {value}",
+    "NotSignedInForDays": "Clients who have not signed in for {value} days"
   },
   "filterTypePlaceholder": "Choose who receives the mail",
   "productPlaceholder": "Choose a product",
   "countryPlaceholder": "Choose a country",
+  "groupPlaceholder": "Choose a client group",
   "daysPlaceholder": "Days",
   "daysSuffix": "days ahead",
+  "daysAgoSuffix": "days or more",
   "removeSegment": "Remove",
   "stats": {
     "total": "Recipients",
     "pending": "Pending",
     "sent": "Sent",
     "failed": "Failed",
-    "unsubscribed": "Unsubscribed"
+    "unsubscribed": "Unsubscribed",
+    "opened": "Opens",
+    "openRate": "Open rate",
+    "clicked": "Clicks",
+    "clickRate": "Click rate",
+    "uniqueHint": "{count} unique"
   },
   "previewFrameTitle": "Preview of the mail",
   "scheduleTitle": "Schedule the campaign",

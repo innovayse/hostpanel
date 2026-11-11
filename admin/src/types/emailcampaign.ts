@@ -25,13 +25,25 @@ export enum CampaignFilterType {
   Country = 'Country',
   /** Clients with a service expiring within a number of days; the value is 1 to 365. */
   ServiceExpiringInDays = 'ServiceExpiringInDays',
+  /** Clients who belong to one client group; the value is the group id. */
+  ClientGroup = 'ClientGroup',
+  /** Clients who have not signed in for a number of days; the value is 1 to 3650. */
+  NotSignedInForDays = 'NotSignedInForDays',
+}
+
+/** The range of days a days-based audience rule accepts, both ends included. */
+export interface CampaignDaysRange {
+  /** Fewest days the rule accepts. */
+  min: number
+  /** Most days the rule accepts. */
+  max: number
 }
 
 /** One rule that picks the clients of a campaign; a client matched by any segment is a recipient. */
 export interface EmailCampaignSegment {
   /** Kind of rule. */
   filterType: CampaignFilterType
-  /** What the rule needs (product id, country code or days as text); null for `AllActive`. */
+  /** What the rule needs (product id, country code, client group id or days as text); null for `AllActive`. */
   filterValue: string | null
 }
 
@@ -47,6 +59,18 @@ export interface EmailCampaignStats {
   failed: number
   /** Recipients who unsubscribed. */
   unsubscribed: number
+  /** Every load of a mail's tracking pixel, repeated opens by one reader included. */
+  opened: number
+  /** Delivered recipients who opened their mail at least once. */
+  uniqueOpened: number
+  /** Every follow of a tracked link, repeated clicks by one reader included. */
+  clicked: number
+  /** Delivered recipients who followed a tracked link at least once. */
+  uniqueClicked: number
+  /** Share of the delivered mails opened at least once, from 0 to 1. */
+  openRate: number
+  /** Share of the delivered mails with at least one clicked link, from 0 to 1. */
+  clickRate: number
 }
 
 /** A campaign as the list endpoint returns it. */

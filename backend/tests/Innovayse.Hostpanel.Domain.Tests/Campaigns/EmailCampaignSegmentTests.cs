@@ -40,6 +40,11 @@ public sealed class EmailCampaignSegmentTests
     [InlineData(CampaignFilterType.Country, "ARM", false)]
     [InlineData(CampaignFilterType.ServiceExpiringInDays, "30", true)]
     [InlineData(CampaignFilterType.ServiceExpiringInDays, "366", false)]
+    [InlineData(CampaignFilterType.ClientGroup, "4", true)]
+    [InlineData(CampaignFilterType.ClientGroup, "0", false)]
+    [InlineData(CampaignFilterType.ClientGroup, null, false)]
+    [InlineData(CampaignFilterType.NotSignedInForDays, "90", true)]
+    [InlineData(CampaignFilterType.NotSignedInForDays, "3651", false)]
     [InlineData((CampaignFilterType)99, null, false)]
     public void Accepts_AgreesWithTheCampaign(CampaignFilterType filterType, string? value, bool expected)
     {
@@ -132,6 +137,50 @@ public sealed class EmailCampaignSegmentTests
         AssertRefused(CampaignFilterType.ServiceExpiringInDays, value);
     }
 
+    /// <summary>A client group filter stores the group id.</summary>
+    [Fact]
+    public void ClientGroup_WithId_StoresIt()
+    {
+        Assert.Equal("4", Segment(CampaignFilterType.ClientGroup, " 4 ").FilterValue);
+    }
+
+    /// <summary>A client group filter refuses a missing, non-numeric, zero or negative id.</summary>
+    /// <param name="value">The segment value as given.</param>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("vip")]
+    [InlineData("0")]
+    [InlineData("-2")]
+    public void ClientGroup_WithInvalidId_Throws(string? value)
+    {
+        AssertRefused(CampaignFilterType.ClientGroup, value);
+    }
+
+    /// <summary>A sign-in filter stores the number of days, including the largest allowed.</summary>
+    /// <param name="value">The segment value as given.</param>
+    [Theory]
+    [InlineData("1")]
+    [InlineData("90")]
+    [InlineData("3650")]
+    public void NotSignedInForDays_WithDays_StoresThem(string value)
+    {
+        Assert.Equal(value, Segment(CampaignFilterType.NotSignedInForDays, value).FilterValue);
+    }
+
+    /// <summary>A sign-in filter refuses a missing, zero, negative, oversized or non-numeric count.</summary>
+    /// <param name="value">The segment value as given.</param>
+    [Theory]
+    [InlineData(null)]
+    [InlineData("0")]
+    [InlineData("-1")]
+    [InlineData("3651")]
+    [InlineData("long ago")]
+    public void NotSignedInForDays_WithInvalidDays_Throws(string? value)
+    {
+        AssertRefused(CampaignFilterType.NotSignedInForDays, value);
+    }
+
     /// <summary>A filter type the enum does not name is refused.</summary>
     [Fact]
     public void UnknownFilterType_Throws()
@@ -148,6 +197,8 @@ public sealed class EmailCampaignSegmentTests
     [InlineData(CampaignFilterType.Product, " 12 ", "12")]
     [InlineData(CampaignFilterType.Country, " am ", "AM")]
     [InlineData(CampaignFilterType.ServiceExpiringInDays, "30", "30")]
+    [InlineData(CampaignFilterType.ClientGroup, " 4 ", "4")]
+    [InlineData(CampaignFilterType.NotSignedInForDays, "90", "90")]
     public void Normalize_PutsTheValueInItsStoredShape(CampaignFilterType filterType, string? value, string? expected)
     {
         Assert.Equal(expected, EmailCampaignSegment.Normalize(filterType, value));

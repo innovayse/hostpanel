@@ -142,6 +142,10 @@ try
         await DomainTemplatesSeeder.EnsureSeededAsync(
             scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>(), CancellationToken.None);
 
+        // The frame of marketing campaign mails, seeded here and nowhere else: the preview and every campaign send read it.
+        await EmailCampaignTemplateSeeder.EnsureSeededAsync(
+            scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>(), CancellationToken.None);
+
         // Dev seed: populate test data in Development. Local mode only: the seeder
         // creates its people through Identity's UserManager, which an provider-owned
         // deployment does not register, and there would be nowhere local to put them

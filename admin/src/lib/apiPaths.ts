@@ -11,6 +11,8 @@ export enum ApiPath {
   AdminCurrencies = '/admin/currencies',
   /** `/admin/dashboard` collection and its members. */
   AdminDashboard = '/admin/dashboard',
+  /** `/admin/email-campaigns` collection and its members. */
+  AdminEmailCampaigns = '/admin/email-campaigns',
   /** `/admin/email-logs` collection and its members. */
   AdminEmailLogs = '/admin/email-logs',
   /** `/admin/email-templates` collection and its members. */

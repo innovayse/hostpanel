@@ -1617,6 +1617,33 @@ public static class HostpanelErrorCodes
     /// <summary>The sort order of a question is negative (400).</summary>
     public const string FAQ_SORT_ORDER_NEGATIVE = Domain.Faqs.FaqErrors.SortOrderNegative;
 
+    /// <summary>No email campaign with that id exists (404).</summary>
+    public const string CAMPAIGN_NOT_FOUND = "CAMPAIGN_NOT_FOUND";
+
+    /// <summary>The campaign is not a draft, so it cannot be edited, scheduled or deleted (409): <see cref="Domain.Campaigns.EmailCampaign"/>.</summary>
+    public const string CAMPAIGN_NOT_DRAFT = Domain.Campaigns.CampaignErrors.NotDraft;
+
+    /// <summary>The campaign is not scheduled, so its schedule cannot be cancelled and it cannot start sending (409).</summary>
+    public const string CAMPAIGN_NOT_SCHEDULED = Domain.Campaigns.CampaignErrors.NotScheduled;
+
+    /// <summary>The campaign is not being sent, so it cannot gain recipients or be finished (409).</summary>
+    public const string CAMPAIGN_NOT_SENDING = Domain.Campaigns.CampaignErrors.NotSending;
+
+    /// <summary>The campaign has no segment, so it cannot be scheduled (400).</summary>
+    public const string CAMPAIGN_NO_SEGMENT = Domain.Campaigns.CampaignErrors.NoSegment;
+
+    /// <summary>The moment to send a campaign at is not in the future (400).</summary>
+    public const string CAMPAIGN_SCHEDULE_IN_PAST = Domain.Campaigns.CampaignErrors.ScheduleInPast;
+
+    /// <summary>A campaign segment's value does not fit its filter (400).</summary>
+    public const string CAMPAIGN_SEGMENT_VALUE_INVALID = Domain.Campaigns.CampaignErrors.SegmentValueInvalid;
+
+    /// <summary>The campaign recipient is not waiting for delivery, so its outcome cannot be recorded again (409).</summary>
+    public const string CAMPAIGN_RECIPIENT_NOT_PENDING = Domain.Campaigns.CampaignErrors.RecipientNotPending;
+
+    /// <summary>The token of an unsubscribe link names no campaign recipient (404).</summary>
+    public const string CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND = "CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND";
+
     /// <summary>The sort order of a partner is negative (400).</summary>
     public const string PARTNER_SORT_ORDER_NEGATIVE = Domain.Partners.PartnerErrors.SortOrderNegative;
 

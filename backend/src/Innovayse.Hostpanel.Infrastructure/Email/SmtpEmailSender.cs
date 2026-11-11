@@ -58,6 +58,31 @@ public sealed class SmtpEmailSender : IEmailSender
         }
     }
 
+    /// <summary>
+    /// Builds the MIME message. A marketing message (one that carries an unsubscribe address) is marked with <c>List-Unsubscribe</c>
+    /// (RFC 2369), which lets a mail client show its own unsubscribe link. <c>List-Unsubscribe-Post</c> (RFC 8058) is not sent: it
+    /// promises an endpoint that unsubscribes on a bare POST from the mail provider, and the address given here is the portal page.
+    /// </summary>
+    /// <param name="message">The email message to send.</param>
+    /// <returns>The message as it goes to the relay.</returns>
+    public MimeMessage Compose(EmailMessage message)
+    {
+        var mime = new MimeMessage();
+        mime.From.Add(new MailboxAddress(_settings.From.Name, _settings.From.Address));
+        mime.To.Add(MailboxAddress.Parse(message.To));
+        mime.Subject = message.Subject;
+        var textPart = new TextPart(message.IsHtml ? "html" : "plain") { Text = message.Body };
+        textPart.ContentTransferEncoding = MimeKit.ContentEncoding.Base64;
+        mime.Body = textPart;
+
+        if (message.UnsubscribeUrl is { } unsubscribeUrl)
+        {
+            mime.Headers.Add(HeaderId.ListUnsubscribe, $"<{unsubscribeUrl}>");
+        }
+
+        return mime;
+    }
+
     /// <summary>Maps what the mail library threw to the closed set of reasons callers understand.</summary>
     /// <param name="ex">The exception the send ended with.</param>
     /// <returns>The reason.</returns>
@@ -80,13 +105,7 @@ public sealed class SmtpEmailSender : IEmailSender
     /// <returns>A task that completes when the server accepted the message; it throws otherwise.</returns>
     private async Task DeliverAsync(EmailMessage message, CancellationToken ct)
     {
-        var mime = new MimeMessage();
-        mime.From.Add(new MailboxAddress(_settings.From.Name, _settings.From.Address));
-        mime.To.Add(MailboxAddress.Parse(message.To));
-        mime.Subject = message.Subject;
-        var textPart = new TextPart(message.IsHtml ? "html" : "plain") { Text = message.Body };
-        textPart.ContentTransferEncoding = MimeKit.ContentEncoding.Base64;
-        mime.Body = textPart;
+        var mime = Compose(message);
 
         using var client = new SmtpClient();
 

@@ -102,6 +102,14 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     public int DispatchFulfilmentIntervalSeconds { get; init; } = 30;
 
     /// <summary>
+    /// Seconds between the end of one email campaign dispatch pass and the start of the next. A pass starts the campaigns whose
+    /// send time has come and sends one batch of mails of every campaign that is sending, so this is also how soon a campaign
+    /// sent "now" begins and how fast a large one goes out.
+    /// </summary>
+    [Range(1, 3600)]
+    public int DispatchEmailCampaignsIntervalSeconds { get; init; } = 30;
+
+    /// <summary>
     /// How many fulfilment deliveries one dispatch pass makes at most. A pass stops there and the next
     /// one carries on, so a backlog never keeps one pass (and the job it holds) running without end.
     /// </summary>
@@ -204,6 +212,10 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     /// <summary>Gets the schedule of the fulfilment dispatch.</summary>
     public JobSchedule DispatchFulfilment =>
         JobSchedule.Every(TimeSpan.FromSeconds(DispatchFulfilmentIntervalSeconds));
+
+    /// <summary>Gets the schedule of the email campaign dispatch.</summary>
+    public JobSchedule DispatchEmailCampaigns =>
+        JobSchedule.Every(TimeSpan.FromSeconds(DispatchEmailCampaignsIntervalSeconds));
 
     /// <summary>Gets how long a fulfilment plugin has to answer one delivery, as a span.</summary>
     public TimeSpan FulfilmentCallTimeout => TimeSpan.FromSeconds(FulfilmentCallTimeoutSeconds);

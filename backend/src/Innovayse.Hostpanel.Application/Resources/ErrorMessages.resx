@@ -1381,4 +1381,31 @@
   <data name="SERVICE_CHANGE_INVOICE_UNPAID" xml:space="preserve">
     <value>The invoice for the plan change must be paid before the plan changes.</value>
   </data>
+  <data name="CAMPAIGN_NOT_FOUND" xml:space="preserve">
+    <value>This email campaign does not exist.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_DRAFT" xml:space="preserve">
+    <value>Only a draft campaign can be edited, scheduled or deleted.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SCHEDULED" xml:space="preserve">
+    <value>This campaign is not scheduled.</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SENDING" xml:space="preserve">
+    <value>This campaign is not being sent.</value>
+  </data>
+  <data name="CAMPAIGN_NO_SEGMENT" xml:space="preserve">
+    <value>Add at least one recipient segment before scheduling the campaign.</value>
+  </data>
+  <data name="CAMPAIGN_SCHEDULE_IN_PAST" xml:space="preserve">
+    <value>Choose a send time in the future.</value>
+  </data>
+  <data name="CAMPAIGN_SEGMENT_VALUE_INVALID" xml:space="preserve">
+    <value>The value of a recipient segment does not fit its filter.</value>
+  </data>
+  <data name="CAMPAIGN_RECIPIENT_NOT_PENDING" xml:space="preserve">
+    <value>This recipient is no longer waiting for delivery.</value>
+  </data>
+  <data name="CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND" xml:space="preserve">
+    <value>This unsubscribe link is not valid.</value>
+  </data>
 </root>

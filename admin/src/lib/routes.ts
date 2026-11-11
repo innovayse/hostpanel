@@ -111,6 +111,10 @@ export enum AppRoute {
   SupportAnnouncements = '/support/announcements',
   /** The `/support/announcements/new` screen. */
   SupportAnnouncementsNew = '/support/announcements/new',
+  /** The `/support/email-campaigns` screen. */
+  SupportEmailCampaigns = '/support/email-campaigns',
+  /** The `/support/email-campaigns/new` screen. */
+  SupportEmailCampaignsNew = '/support/email-campaigns/new',
   /** The `/support/downloads` screen. */
   SupportDownloads = '/support/downloads',
   /** The `/support/knowledgebase` screen. */
@@ -297,6 +301,14 @@ export const orderPath = (id: RouteId): string => `${AppRoute.Orders}/${id}`
  * @returns `/support/tickets/<id>`.
  */
 export const supportTicketPath = (id: RouteId): string => `${AppRoute.SupportTickets}/${id}`
+
+/**
+ * Path of one email campaign (its form while a draft, its delivery view afterwards).
+ *
+ * @param id - Campaign ID.
+ * @returns `/support/email-campaigns/<id>`.
+ */
+export const emailCampaignPath = (id: RouteId): string => `${AppRoute.SupportEmailCampaigns}/${id}`
 
 /**
  * Path of an integration category page.

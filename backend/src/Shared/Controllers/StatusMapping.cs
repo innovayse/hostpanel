@@ -52,6 +52,10 @@ public static class StatusMapping
             // Exact rows: the stored service or product is not ready to provision, a state conflict
             // rather than a malformed request, and neither name carries a CONFLICT token.
             "SERVICE_HOSTING_DETAILS_MISSING" or "CPANEL_USERNAME_INVALID" or "CPANEL_DOMAIN_INVALID" or "PRODUCT_PACKAGE_MISSING" or "PRODUCT_SERVER_GROUP_REQUIRED" => new(409, "Conflict"),
+            // Exact rows: the campaign's or the recipient's state stands in the way of the action, a state conflict (409),
+            // and none of the names carries a CONFLICT / ALREADY token for the generic arms.
+            "CAMPAIGN_NOT_DRAFT" or "CAMPAIGN_NOT_SCHEDULED" or "CAMPAIGN_NOT_SENDING" or "CAMPAIGN_RECIPIENT_NOT_PENDING"
+                => new(409, "Conflict"),
             // Exact row: only a terminated service has a termination date to correct, so the stored
             // status stands in the way (a state conflict), and the name carries no CONFLICT token.
             "SERVICE_NOT_TERMINATED" => new(409, "Conflict"),

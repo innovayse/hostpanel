@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Domain.Admin;
 using Innovayse.Hostpanel.Domain.Audit;
 using Innovayse.Hostpanel.Domain.Auth;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Campaigns;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Faqs;
@@ -319,6 +320,15 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
 
     /// <summary>Gets the per-locale translations of the storefront frequently asked questions.</summary>
     public DbSet<FaqTranslation> FaqTranslations => Set<FaqTranslation>();
+
+    /// <summary>Gets the marketing email campaigns an admin writes and sends.</summary>
+    public DbSet<EmailCampaign> EmailCampaigns => Set<EmailCampaign>();
+
+    /// <summary>Gets the rules that pick the recipients of each campaign.</summary>
+    public DbSet<EmailCampaignSegment> EmailCampaignSegments => Set<EmailCampaignSegment>();
+
+    /// <summary>Gets the clients each campaign is delivered to, with the outcome of every delivery.</summary>
+    public DbSet<EmailCampaignRecipient> EmailCampaignRecipients => Set<EmailCampaignRecipient>();
 
     /// <summary>
     /// Gets the values plugins keep in their host-kept store, one row per plugin, opaque client reference (or none, for a

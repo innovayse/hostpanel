@@ -1381,4 +1381,31 @@
   <data name="SERVICE_CHANGE_INVOICE_UNPAID" xml:space="preserve">
     <value>Պլանի փոփոխության հաշիվը պետք է վճարվի մինչև պլանը փոխվելը։</value>
   </data>
+  <data name="CAMPAIGN_NOT_FOUND" xml:space="preserve">
+    <value>Այս էլ. փոստի քարոզարշավը գոյություն չունի։</value>
+  </data>
+  <data name="CAMPAIGN_NOT_DRAFT" xml:space="preserve">
+    <value>Խմբագրել, պլանավորել և ջնջել կարելի է միայն քարոզարշավի սևագիրը։</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SCHEDULED" xml:space="preserve">
+    <value>Այս քարոզարշավը պլանավորված չէ։</value>
+  </data>
+  <data name="CAMPAIGN_NOT_SENDING" xml:space="preserve">
+    <value>Այս քարոզարշավն այս պահին չի ուղարկվում։</value>
+  </data>
+  <data name="CAMPAIGN_NO_SEGMENT" xml:space="preserve">
+    <value>Քարոզարշավը պլանավորելուց առաջ ավելացրեք ստացողների առնվազն մեկ սեգմենտ։</value>
+  </data>
+  <data name="CAMPAIGN_SCHEDULE_IN_PAST" xml:space="preserve">
+    <value>Ընտրեք ուղարկման ժամանակը ապագայում։</value>
+  </data>
+  <data name="CAMPAIGN_SEGMENT_VALUE_INVALID" xml:space="preserve">
+    <value>Ստացողների սեգմենտի արժեքը չի համապատասխանում իր ֆիլտրին։</value>
+  </data>
+  <data name="CAMPAIGN_RECIPIENT_NOT_PENDING" xml:space="preserve">
+    <value>Այս ստացողն այլևս չի սպասում առաքման։</value>
+  </data>
+  <data name="CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND" xml:space="preserve">
+    <value>Ապաբաժանորդագրվելու այս հղումը վավեր չէ։</value>
+  </data>
 </root>

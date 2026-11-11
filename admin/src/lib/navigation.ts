@@ -125,6 +125,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
           { to: AppRoute.SupportTicketsNew, labelKey: 'nav.supportChildren.newTicket' },
           { to: AppRoute.SupportPredefinedReplies, labelKey: 'nav.supportChildren.predefinedReplies' },
           { to: AppRoute.SupportAnnouncements, labelKey: 'nav.supportChildren.announcements' },
+          { to: AppRoute.SupportEmailCampaigns, labelKey: 'nav.supportChildren.emailCampaigns' },
           { to: AppRoute.SupportDownloads, labelKey: 'nav.supportChildren.downloads' },
           { to: AppRoute.SupportKnowledgebase, labelKey: 'nav.supportChildren.knowledgebase' },
           { to: AppRoute.SupportNetworkIssues, labelKey: 'nav.supportChildren.networkIssues' },

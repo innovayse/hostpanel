@@ -78,6 +78,12 @@ interface Props {
 /** The props of the component. */
 const props = defineProps<Props>()
 
+/** Events of ServicePlanChange. */
+const emit = defineEmits<{
+  /** The service now runs on the new plan, so the page should read it again. */
+  changed: []
+}>()
+
 /** Translates a key into the active locale. */
 const { t } = useI18n()
 
@@ -134,6 +140,9 @@ const submit = async (): Promise<void> => {
     return
   }
   await store.submit(props.serviceId, selectedProductId.value)
+  if (result.value?.status === ServiceChangeStatus.Completed) {
+    emit('changed')
+  }
 }
 
 store.reset()

@@ -61,7 +61,11 @@
           </UiStack>
 
           <ClientServicesServicePasswordForm v-else-if="activeTab === ServiceTab.Password" :service-id="serviceId" />
-          <ClientServicesServicePlanChange v-else-if="activeTab === ServiceTab.PlanChange" :service-id="serviceId" />
+          <ClientServicesServicePlanChange
+            v-else-if="activeTab === ServiceTab.PlanChange"
+            :service-id="serviceId"
+            @changed="mgmt.loadService(serviceId, true)"
+          />
           <ClientServicesServiceCancelForm v-else-if="activeTab === ServiceTab.Cancel" :service-id="serviceId" />
           <ClientServicesServiceSshKeys v-else-if="activeTab === ServiceTab.Ssh" :service-id="serviceId" />
           <UiCard v-else-if="activePluginWidget" :title="activePluginWidget.title ?? undefined">

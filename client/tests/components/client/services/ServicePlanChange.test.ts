@@ -117,5 +117,16 @@ describe('ServicePlanChange', () => {
     await submitPro(wrapper)
 
     await vi.waitFor(() => expect(wrapper.find('[data-testid="service-plan-change-success"]').text()).toContain('client.services.planChangeDone'))
+    expect(wrapper.emitted('changed')).toHaveLength(1)
+  })
+
+  it('does not ask the page to read the service again while the change still waits', async () => {
+    api.requestPlanChange.mockResolvedValue({ requestId: 2, type: ServiceChangeType.Upgrade, status: ServiceChangeStatus.Approved, prorationAmount: 5, currencyCode: 'USD', invoiceId: 11 })
+    const wrapper = await mountPanel()
+
+    await submitPro(wrapper)
+
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="service-plan-change-success"]').exists()).toBe(true))
+    expect(wrapper.emitted('changed')).toBeUndefined()
   })
 })

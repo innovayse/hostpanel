@@ -27,8 +27,8 @@ namespace Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlan
 /// request keeps the invoice id, and the plan changes when that invoice is paid (<c>ServiceChangeInvoicePaidHandler</c>);
 /// an upgrade with nothing left to prorate has no invoice and is applied now. When the save that links the invoice to
 /// the request fails, the invoice is cancelled and the request taken back, so no payable invoice is left for a change that
-/// is never applied. The request is saved before the invoice is
-/// raised and approved with it, so only the request that wins the unique index on open requests ever raises one. A downgrade is approved at once only when
+/// is never applied. The request is saved before the invoice is raised and approved with it, so only the request that
+/// wins the unique index on open requests ever raises one. A downgrade is approved at once only when
 /// the <c>billing.plan_change.auto_approve_downgrades</c> setting is on, otherwise it waits as Pending for staff. An approved
 /// change is applied by <see cref="CompleteServiceChangeCommand"/>, the same use case staff approval ends in.
 /// </para>
@@ -108,6 +108,7 @@ public sealed class RequestMyServicePlanChangeHandler
     /// applying an approved change; the request stays Approved for staff to retry in that last case.
     /// </returns>
     /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject.</exception>
+    /// <exception cref="Exception">The failure of the save that records the request, rethrown after its invoice was withdrawn.</exception>
     public async Task<Result<ServicePlanChangeResultDto>> HandleAsync(RequestMyServicePlanChangeCommand cmd, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(cmd);

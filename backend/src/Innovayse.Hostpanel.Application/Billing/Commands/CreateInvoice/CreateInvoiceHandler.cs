@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Application.Audit.Common;
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -26,21 +27,26 @@ public sealed class CreateInvoiceHandler
     /// <summary>Wolverine bus the owning modules' existence queries are dispatched through.</summary>
     private readonly IMessageBus _bus;
 
+    /// <summary>Fixes the tax rate the invoice is raised at.</summary>
+    private readonly ClientTaxRateResolver _taxRates;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="activity">Records the activity log line for this action, saved with the change it describes.</param>
     /// <param name="payerCurrency">The currency the invoiced client is billed in, stamped on the invoice.</param>
     /// <param name="clock">The clock the issue moment is read from.</param>
     /// <param name="bus">Wolverine bus the owning modules' existence queries are dispatched through.</param>
+    /// <param name="taxRates">Fixes the tax rate the invoice is raised at.</param>
     public CreateInvoiceHandler(
         IHostpanelDbContext context, IActivityLogger activity, IPayerCurrencyResolver payerCurrency, IClock clock,
-        IMessageBus bus)
+        IMessageBus bus, ClientTaxRateResolver taxRates)
     {
         _context = context;
         _activity = activity;
         _payerCurrency = payerCurrency;
         _clock = clock;
         _bus = bus;
+        _taxRates = taxRates;
     }
 
     /// <summary>Handles the command.</summary>
@@ -62,6 +68,12 @@ public sealed class CreateInvoiceHandler
         foreach (var item in cmd.Items)
         {
             invoice.AddItem(item.Description, item.UnitPrice, item.Quantity);
+        }
+
+        var taxed = await _taxRates.ApplyToAsync(invoice, ct);
+        if (taxed.IsFailure)
+        {
+            return Result<int>.FailureCode(taxed.ErrorCode!);
         }
 
         _context.Invoices.Add(invoice);

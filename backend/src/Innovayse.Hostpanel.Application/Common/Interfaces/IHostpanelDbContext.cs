@@ -89,6 +89,9 @@ public interface IHostpanelDbContext
     /// <summary>Gets the currencies table: one base row plus every rated currency.</summary>
     public DbSet<Currency> Currencies { get; }
 
+    /// <summary>Gets the tax rules table: the rate staff set per country, and per region of a country.</summary>
+    public DbSet<TaxRule> TaxRules { get; }
+
     /// <summary>Gets the client services table.</summary>
     public DbSet<ClientService> ClientServices { get; }
 
@@ -250,6 +253,9 @@ public interface IHostpanelDbContext
 
     /// <summary>Gets the timeline entries of the status page incidents.</summary>
     public DbSet<StatusIncidentUpdate> StatusIncidentUpdates { get; }
+
+    /// <summary>Gets the records of the automatic checks of the status page components.</summary>
+    public DbSet<StatusCheck> StatusChecks { get; }
 
     /// <summary>Gets the storefront partners table.</summary>
     public DbSet<Partner> Partners { get; }

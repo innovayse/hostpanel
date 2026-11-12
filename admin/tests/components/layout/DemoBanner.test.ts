@@ -7,16 +7,14 @@ import { createPinia, setActivePinia } from 'pinia'
 import { mount } from '@vue/test-utils'
 import DemoBanner from '@/components/layout/DemoBanner.vue'
 import { useDemoStore } from '@/stores/demo'
+import { json } from '../../helpers/fetch'
 import { createTestI18n } from '../../helpers/i18n'
-
-vi.mock('@/lib/runtimeConfig', () => ({
-  getRuntimeConfig: vi.fn(),
-}))
-
-import { getRuntimeConfig } from '@/lib/runtimeConfig'
+import { requestsOf, stubRoutes } from '../../helpers/routes'
+import { stubDocsUrl } from '../../helpers/runtimeConfig'
 
 afterEach(() => {
   vi.useRealTimers()
+  vi.unstubAllGlobals()
 })
 
 /**
@@ -24,11 +22,11 @@ afterEach(() => {
  *
  * @param enabled - Whether demo mode is on.
  * @param nextResetAt - The next reset timestamp, or null.
- * @param docsUrl - The docs URL to inject via getRuntimeConfig.
+ * @param docsUrl - The docs address the deployment injects through `config.js`.
  * @returns The wrapper.
  */
 const mountBanner = (enabled: boolean, nextResetAt: string | null, docsUrl = '') => {
-  vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl, basePath: '/', clientBaseUrl: '' })
+  stubDocsUrl(docsUrl)
   const pinia = createPinia()
   setActivePinia(pinia)
   const store = useDemoStore()
@@ -62,11 +60,16 @@ describe('DemoBanner', () => {
   it('reloads the demo description when the countdown reaches zero', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2030-01-01T00:00:00Z'))
+    const mock = stubRoutes({
+      'GET /api/public/demo': () => json({ enabled: true, nextResetAt: '2030-01-02T00:00:00Z', accounts: [] }),
+    })
     const wrapper = mountBanner(true, '2030-01-01T00:01:00Z')
-    const load = vi.spyOn(useDemoStore(), 'load').mockResolvedValue()
+    // A load already happened, so only a forced reload reaches the network.
+    useDemoStore().loaded = true
 
     await vi.advanceTimersByTimeAsync(60_000)
-    expect(load).toHaveBeenCalledWith(true)
+    expect(requestsOf(mock)).toEqual(['GET /public/demo'])
+    expect(useDemoStore().nextResetAt).toBe('2030-01-02T00:00:00Z')
     wrapper.unmount()
   })
 

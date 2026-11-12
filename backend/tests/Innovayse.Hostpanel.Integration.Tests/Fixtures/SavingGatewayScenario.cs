@@ -3,9 +3,11 @@ using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
@@ -13,13 +15,13 @@ namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
 /// <summary>
 /// One host wired for a payment that saves the payer's method: a <see cref="SavingStoredCredentialPlugin"/> registered
 /// under <see cref="Module"/> as the payment plugin and, unless the scenario is built without the capability, as the
-/// stored credential plugin too. The helpers seed a client with an invoice and walk the start and the completion of its
+/// stored credential plugin too (without it the host sees a plain gateway). The helpers seed a client with an invoice and walk the start and the completion of its
 /// gateway payment over HTTP.
 /// </summary>
 public sealed class SavingGatewayScenario : IDisposable
 {
     /// <summary>The wording version every start in a scenario ticks unless a test says otherwise.</summary>
-    public const string ConsentTextVersion = "2026-11";
+    public const string ConsentTextVersion = ConsentTextVersionWire.CheckoutAgreement;
 
     /// <summary>The shared API + PostgreSQL host the scenario builds on.</summary>
     private readonly IntegrationTestFactory _factory;
@@ -27,12 +29,17 @@ public sealed class SavingGatewayScenario : IDisposable
     /// <summary>Creates the scenario and its host.</summary>
     /// <param name="factory">The shared API + PostgreSQL host.</param>
     /// <param name="storedCredentials">Whether the module also offers stored credentials; <see langword="false"/> makes it a plain gateway.</param>
-    public SavingGatewayScenario(IntegrationTestFactory factory, bool storedCredentials = true)
+    /// <param name="saveInterceptor">
+    /// An interceptor every data context of the host is built with, so a test can run a competing write at a chosen save;
+    /// <see langword="null"/> adds none.
+    /// </param>
+    public SavingGatewayScenario(
+        IntegrationTestFactory factory, bool storedCredentials = true, IInterceptor? saveInterceptor = null)
     {
         _factory = factory;
         Plugin = new SavingStoredCredentialPlugin();
         var payments = new FakePaymentPluginResolver();
-        payments.Register(Module, Plugin);
+        payments.Register(Module, storedCredentials ? Plugin : new PaymentOnlyPlugin(Plugin));
         var stored = new FakeStoredCredentialPluginResolver();
         if (storedCredentials)
         {
@@ -44,6 +51,10 @@ public sealed class SavingGatewayScenario : IDisposable
             {
                 services.AddSingleton<IPaymentPluginResolver>(payments);
                 services.AddSingleton<IStoredCredentialPluginResolver>(stored);
+                if (saveInterceptor is not null)
+                {
+                    services.ConfigureDbContext<AppDbContext>(options => options.AddInterceptors(saveInterceptor));
+                }
             }));
     }
 

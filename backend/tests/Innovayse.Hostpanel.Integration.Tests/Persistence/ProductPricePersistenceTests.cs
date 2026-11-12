@@ -42,7 +42,7 @@ public sealed class ProductPricePersistenceTests(IntegrationTestFactory factory)
             db.ProductGroups.Add(group);
             await db.SaveChangesAsync();
 
-            var product = Product.Create(group.Id, "Priced", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            var product = Product.Create(group.Id, "Priced", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
             product.SetPrice("usd", BillingCycle.Monthly, 2.99m);
             product.SetPrice("AMD", BillingCycle.Annual, 12000m);
             db.Products.Add(product);
@@ -76,7 +76,7 @@ public sealed class ProductPricePersistenceTests(IntegrationTestFactory factory)
             db.ProductGroups.Add(group);
             await db.SaveChangesAsync();
 
-            var product = Product.Create(group.Id, "Repriced", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            var product = Product.Create(group.Id, "Repriced", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
             product.SetPrice("USD", BillingCycle.Monthly, 2.99m);
             db.Products.Add(product);
             await db.SaveChangesAsync();

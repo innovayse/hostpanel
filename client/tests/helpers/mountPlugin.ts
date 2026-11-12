@@ -62,6 +62,8 @@ export interface PluginMountContext {
   externalOrigins?: string[]
   /** The exact origins a preview block may frame. */
   frameOrigins?: string[]
+  /** Whether the view is embedded in a host page, as a slot widget is. */
+  embedded?: boolean
   /** Further mount options. */
   options?: MountWithKitOptions
 }
@@ -82,6 +84,7 @@ export const mountBlocks = (blocks: PluginBlock[], context: PluginMountContext =
       values: context.values ?? { siteId: '7' },
       externalOrigins: context.externalOrigins ?? ['https://*.sites.example.test'],
       frameOrigins: context.frameOrigins ?? [],
+      embedded: context.embedded ?? false,
     },
     components: { ...PLUGIN_COMPONENTS, ...context.options?.components },
   })

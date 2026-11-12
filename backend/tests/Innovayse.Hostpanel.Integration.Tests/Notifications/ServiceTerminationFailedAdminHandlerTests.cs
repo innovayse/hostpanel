@@ -29,7 +29,7 @@ public sealed class ServiceTerminationFailedAdminHandlerTests(IntegrationTestFac
         var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
         const int serviceId = 424242;
 
-        await bus.PublishAsync(new ServiceTerminationFailedEvent(serviceId, "SERVICE_TERMINATE_UPSTREAM_FAILED") { OccurredAt = DateTimeOffset.UtcNow });
+        await bus.PublishAsync(new ServiceTerminationFailedEvent(serviceId, "SERVICE_TERMINATE_UPSTREAM_FAILED") { OccurredAt = TestMoments.Seeded });
 
         for (var i = 0; i < 50 && !sender.Sent.Any(m => m.To == AdminEmail); i++)
         {
@@ -52,7 +52,7 @@ public sealed class ServiceTerminationFailedAdminHandlerTests(IntegrationTestFac
         var host = EventHandlerTestHost.WithFakeRelay(factory, sender);
         using var scope = host.Services.CreateScope();
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceTerminationFailedEvent(1, "x") { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceTerminationFailedEvent(1, "x") { OccurredAt = TestMoments.Seeded });
 
         sender.Sent.Should().BeEmpty();
     }

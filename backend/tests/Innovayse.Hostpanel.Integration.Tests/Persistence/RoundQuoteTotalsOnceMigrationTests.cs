@@ -92,7 +92,7 @@ public sealed class RoundQuoteTotalsOnceMigrationTests
             RETURNING "Id"
             """,
             ("user", Guid.NewGuid().ToString()),
-            ("now", DateTimeOffset.UtcNow));
+            ("now", TestMoments.Seeded));
 
     /// <summary>Inserts a quote with the given stored total and its lines.</summary>
     /// <param name="connectionString">The connection string of the database.</param>

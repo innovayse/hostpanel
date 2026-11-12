@@ -38,7 +38,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
         var productName = $"product-{Guid.NewGuid():N}";
-        var product = Product.Create(group.Id, productName, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, productName, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
         var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Services);
@@ -75,7 +75,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
         var productName = $"product-{Guid.NewGuid():N}";
-        var product = Product.Create(group.Id, productName, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, productName, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
         var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Services);
@@ -345,14 +345,14 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
         var productName = $"product-{Guid.NewGuid():N}";
-        var product = Product.Create(group.Id, productName, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, productName, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
         if (legacyDomain is not null)
         {
             context.ClientServices.Add(ClientService.Import(new ServiceImport(
-                clientId, product.Id, BillingCycle.Monthly, ServiceStatus.Active, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow,
+                clientId, product.Id, BillingCycle.Monthly, ServiceStatus.Active, TestMoments.Seeded, TestMoments.Seeded,
                 SuspensionSource.Other, new ServiceHostingAccount(null, legacyDomain, null, null, null, null))));
             await context.SaveChangesAsync(CancellationToken.None);
         }
@@ -391,7 +391,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
         var productName = $"product-{Guid.NewGuid():N}";
-        context.Products.Add(Product.Create(group.Id, productName, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, DateTimeOffset.UtcNow));
+        context.Products.Add(Product.Create(group.Id, productName, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, TestMoments.Seeded));
         await context.SaveChangesAsync(CancellationToken.None);
         source.SetDatasetJson("services", "[" + record.Replace("{email}", email).Replace("{product}", productName) + "]");
 
@@ -421,7 +421,7 @@ public sealed class ServicesImporterTests(IntegrationTestFactory factory) : ICla
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
         var productName = $"product-{Guid.NewGuid():N}";
-        var product = Product.Create(group.Id, productName, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, productName, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
         var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Services);

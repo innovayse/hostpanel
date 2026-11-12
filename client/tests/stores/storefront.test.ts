@@ -1,5 +1,6 @@
 /**
- * Tests for `stores/storefront.ts`.
+ * Tests for `stores/storefront.ts`, through the real API composable and transport against a stub
+ * server.
  *
  * The store, not the sections, owns the lists, the loading flag and the failure sentence, so these
  * assertions pin the contract the sections render from, including that an empty list is a valid
@@ -8,39 +9,54 @@
  * @module tests/stores/storefront.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { faqFixture, locationFixture, partnerFixture, projectFixture, testimonialFixture } from '../helpers/storefrontFixtures'
+import { startTransport } from '../helpers/stubTransport'
+import { routeTable } from '../helpers/stubRoutes'
+import type { StubRouteTable } from '../helpers/stubRoutes'
+import type { StubServer } from '../helpers/stubServer'
+import { useStorefrontStore } from '~/stores/storefront'
 import { FaqCategory } from '~/types/faqcategory'
 import { StorefrontSection } from '~/types/storefrontsection'
 
-/** The mocked storefront endpoints, re-created for every test. */
-const api = {
-  fetchTestimonials: vi.fn(),
-  fetchPartners: vi.fn(),
-  fetchLocations: vi.fn(),
-  fetchProjects: vi.fn(),
-  fetchFaqs: vi.fn()
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test, by `METHOD /path`. */
+let table: StubRouteTable
+
+/** The BFF path of each list the store reads. */
+const PATH = {
+  testimonials: '/api/portal/public/testimonials',
+  partners: '/api/portal/public/partners',
+  locations: '/api/portal/public/locations',
+  projects: '/api/portal/public/projects',
+  faqs: '/api/portal/public/faqs'
+} as const
+
+/** An API refusal as the BFF answers it. */
+const refusal = { status: 404, body: { detail: 'Content unavailable.' } }
+
+/**
+ * Scripts the answer of one list.
+ *
+ * @param path - The BFF path of the list.
+ * @param reply - What the stub answers.
+ */
+const answer = (path: string, reply: StubRouteTable[string]): void => {
+  table[`GET ${path}`] = reply
 }
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api
-}))
-
-const { useStorefrontStore } = await import('~/stores/storefront')
-
-/** An API refusal as `apiErrorMessage` reads it. */
-const refusal = { data: { detail: 'Content unavailable.' } }
-
 describe('useStorefrontStore', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     setActivePinia(createPinia())
-    Object.values(api).forEach(fn => fn.mockReset())
+    table = {}
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('starts with nothing, which is a valid state', () => {
@@ -56,17 +72,18 @@ describe('useStorefrontStore', () => {
   })
 
   it('keeps the testimonials', async () => {
-    api.fetchTestimonials.mockResolvedValue([testimonialFixture(1)])
+    answer(PATH.testimonials, { body: [testimonialFixture(1)] })
     const store = useStorefrontStore()
 
     const list = await store.loadTestimonials()
 
     expect(list).toHaveLength(1)
     expect(store.testimonials[0]?.name).toBe('Example Person 1')
+    expect(stub.requests[0]).toMatchObject({ method: 'GET', url: PATH.testimonials })
   })
 
   it('keeps the partners', async () => {
-    api.fetchPartners.mockResolvedValue([partnerFixture(1), partnerFixture(2)])
+    answer(PATH.partners, { body: [partnerFixture(1), partnerFixture(2)] })
     const store = useStorefrontStore()
 
     await store.loadPartners()
@@ -75,7 +92,7 @@ describe('useStorefrontStore', () => {
   })
 
   it('keeps the server locations', async () => {
-    api.fetchLocations.mockResolvedValue([locationFixture(1), locationFixture(2)])
+    answer(PATH.locations, { body: [locationFixture(1), locationFixture(2)] })
     const store = useStorefrontStore()
 
     await store.loadLocations()
@@ -84,7 +101,7 @@ describe('useStorefrontStore', () => {
   })
 
   it('keeps the projects', async () => {
-    api.fetchProjects.mockResolvedValue([projectFixture(1)])
+    answer(PATH.projects, { body: [projectFixture(1)] })
     const store = useStorefrontStore()
 
     await store.loadProjects()
@@ -93,11 +110,13 @@ describe('useStorefrontStore', () => {
   })
 
   it('keeps the questions and picks those of one topic', async () => {
-    api.fetchFaqs.mockResolvedValue([
-      faqFixture(1),
-      faqFixture(2, { category: FaqCategory.Products }),
-      faqFixture(3, { category: FaqCategory.Products })
-    ])
+    answer(PATH.faqs, {
+      body: [
+        faqFixture(1),
+        faqFixture(2, { category: FaqCategory.Products }),
+        faqFixture(3, { category: FaqCategory.Products })
+      ]
+    })
     const store = useStorefrontStore()
 
     await store.loadFaqs()
@@ -108,13 +127,13 @@ describe('useStorefrontStore', () => {
   })
 
   it.each([
-    ['loadTestimonials', 'fetchTestimonials', 'testimonials', StorefrontSection.Testimonials],
-    ['loadPartners', 'fetchPartners', 'partners', StorefrontSection.Partners],
-    ['loadLocations', 'fetchLocations', 'locations', StorefrontSection.Locations],
-    ['loadProjects', 'fetchProjects', 'projects', StorefrontSection.Projects],
-    ['loadFaqs', 'fetchFaqs', 'faqs', StorefrontSection.Faqs]
-  ] as const)('%s keeps the API sentence and an empty list when refused', async (load, fetcher, state, section) => {
-    api[fetcher].mockRejectedValue(refusal)
+    ['loadTestimonials', PATH.testimonials, 'testimonials', StorefrontSection.Testimonials],
+    ['loadPartners', PATH.partners, 'partners', StorefrontSection.Partners],
+    ['loadLocations', PATH.locations, 'locations', StorefrontSection.Locations],
+    ['loadProjects', PATH.projects, 'projects', StorefrontSection.Projects],
+    ['loadFaqs', PATH.faqs, 'faqs', StorefrontSection.Faqs]
+  ] as const)('%s keeps the API sentence and an empty list when refused', async (load, path, state, section) => {
+    answer(path, refusal)
     const store = useStorefrontStore()
 
     const list = await store[load]()
@@ -126,17 +145,19 @@ describe('useStorefrontStore', () => {
   })
 
   it('drops stale rows when a later read is refused', async () => {
-    api.fetchPartners.mockResolvedValueOnce([partnerFixture(1)]).mockRejectedValueOnce(refusal)
+    answer(PATH.partners, { body: [partnerFixture(1)] })
     const store = useStorefrontStore()
-
     await store.loadPartners()
+    expect(store.partners).toHaveLength(1)
+
+    answer(PATH.partners, refusal)
     await store.loadPartners()
 
     expect(store.partners).toEqual([])
   })
 
   it('flags loading while a read is in flight', async () => {
-    api.fetchFaqs.mockResolvedValue([])
+    answer(PATH.faqs, { body: [] })
     const store = useStorefrontStore()
 
     const pending = store.loadFaqs()
@@ -147,19 +168,20 @@ describe('useStorefrontStore', () => {
   })
 
   it('clears the failure sentence when the next read succeeds', async () => {
-    api.fetchFaqs.mockRejectedValueOnce(refusal).mockResolvedValueOnce([faqFixture(1)])
+    answer(PATH.faqs, refusal)
     const store = useStorefrontStore()
 
     await store.loadFaqs()
     expect(store.errors[StorefrontSection.Faqs]).toBe('Content unavailable.')
+    answer(PATH.faqs, { body: [faqFixture(1)] })
     await store.loadFaqs()
 
     expect(store.errors[StorefrontSection.Faqs]).toBe('')
   })
 
   it('keeps the failure of one section when another section loads successfully', async () => {
-    api.fetchFaqs.mockRejectedValue(refusal)
-    api.fetchPartners.mockResolvedValue([partnerFixture(1)])
+    answer(PATH.faqs, refusal)
+    answer(PATH.partners, { body: [partnerFixture(1)] })
     const store = useStorefrontStore()
 
     await Promise.all([store.loadFaqs(), store.loadPartners()])

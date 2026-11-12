@@ -35,7 +35,7 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
 
         await PublishAndWaitAsync(host, new GatewayPaymentCreditedEvent(616161, 7, "bank-gateway", "ref-credited-1", 4.5m, "USD", Credited: true)
         {
-            OccurredAt = DateTimeOffset.UtcNow,
+            OccurredAt = TestMoments.Seeded,
         });
 
         var mail = sender.Sent.Should().ContainSingle(m => m.To == AdminEmail).Which;
@@ -56,7 +56,7 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
 
         await PublishAndWaitAsync(host, new GatewayPaymentCreditedEvent(626262, 7, "bank-gateway", "ref-held-1", 10m, "EUR", Credited: false)
         {
-            OccurredAt = DateTimeOffset.UtcNow,
+            OccurredAt = TestMoments.Seeded,
         });
 
         var mail = sender.Sent.Should().ContainSingle(m => m.To == AdminEmail).Which;
@@ -74,7 +74,7 @@ public sealed class GatewayPaymentCreditedAdminHandlerTests(IntegrationTestFacto
 
         await PublishAndWaitAsync(
             host,
-            new GatewayPaymentCreditedEvent(1, 1, "bank-gateway", "ref-none", 1m, "USD", Credited: true) { OccurredAt = DateTimeOffset.UtcNow });
+            new GatewayPaymentCreditedEvent(1, 1, "bank-gateway", "ref-none", 1m, "USD", Credited: true) { OccurredAt = TestMoments.Seeded });
 
         sender.Sent.Should().BeEmpty();
     }

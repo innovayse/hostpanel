@@ -15,6 +15,8 @@ internal static class ClientSettingsSeeds
     /// <param name="clientId">The client to change.</param>
     /// <param name="overdueNotices">The new payment reminder switch, or null to keep it.</param>
     /// <param name="taxExempt">The new tax exemption, or null to keep it.</param>
+    /// <param name="taxId">The new tax id, or null to keep it.</param>
+    /// <param name="taxExemptionReason">The new tax exemption reason, or null to keep it.</param>
     /// <param name="disableCcProcessing">The new card processing switch, or null to keep it.</param>
     /// <param name="allowSso">The new panel single sign-on switch, or null to keep it.</param>
     /// <returns>A task that completes once the switches are saved.</returns>
@@ -23,6 +25,8 @@ internal static class ClientSettingsSeeds
         int clientId,
         bool? overdueNotices = null,
         bool? taxExempt = null,
+        string? taxId = null,
+        string? taxExemptionReason = null,
         bool? disableCcProcessing = null,
         bool? allowSso = null)
     {
@@ -33,6 +37,8 @@ internal static class ClientSettingsSeeds
         client.UpdateSettings(
             overdueNotices ?? client.OverdueNotices,
             taxExempt ?? client.TaxExempt,
+            taxId ?? client.TaxId,
+            taxExemptionReason ?? client.TaxExemptionReason,
             client.SeparateInvoices,
             disableCcProcessing ?? client.DisableCcProcessing,
             client.MarketingOptIn,

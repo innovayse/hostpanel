@@ -52,7 +52,7 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     /// <returns>The seeded client's id.</returns>
     private static async Task<int> SeedClientAsync(AppDbContext db)
     {
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(client);
         await db.SaveChangesAsync(CancellationToken.None);
 
@@ -68,7 +68,7 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
         db.ProductGroups.Add(group);
         await db.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, TestMoments.Seeded);
         db.Products.Add(product);
         await db.SaveChangesAsync(CancellationToken.None);
 
@@ -188,12 +188,12 @@ public sealed class AutoTerminateSuspendedCronTests(IntegrationTestFactory facto
     {
         using var scope = factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"subject-{Guid.NewGuid():N}", "Ada", "Lovelace", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         db.Clients.Add(client);
         var group = ProductGroup.Create($"auto-terminate-active-{Guid.NewGuid():N}", null);
         db.ProductGroups.Add(group);
         await db.SaveChangesAsync(CancellationToken.None);
-        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "Starter", null, null, null, null, ProductType.SharedHosting, 5m, 50m, TestMoments.Seeded);
         db.Products.Add(product);
         await db.SaveChangesAsync(CancellationToken.None);
         var service = ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);

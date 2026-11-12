@@ -4,7 +4,7 @@
  * upper-cases the first letter.
  */
 import { describe, expect, it } from 'vitest'
-import { capitalize, formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatElapsed, formatRelativeFromNow, formatShare, toDateInputValue } from '@/lib/format'
+import { capitalize, formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatElapsed, formatRelativeFromNow, formatShare, formatTime, toDateInputValue } from '@/lib/format'
 
 describe('format', () => {
   it('formats a date as day/month/year', () => {
@@ -121,6 +121,17 @@ describe('formatClock', () => {
 
   it('answers an empty string for an unreadable timestamp', () => {
     expect(formatClock('not a date', 'en-GB')).toBe('')
+  })
+})
+
+describe('formatTime', () => {
+  it('writes the time of day without seconds in the viewer zone', () => {
+    expect(formatTime(new Date(2026, 9, 5, 8, 7, 9).getTime(), 'en-GB')).toBe('08:07')
+  })
+
+  it('answers an empty string for a missing or unreadable moment', () => {
+    expect(formatTime(undefined, 'en-GB')).toBe('')
+    expect(formatTime(Number.NaN, 'en-GB')).toBe('')
   })
 })
 

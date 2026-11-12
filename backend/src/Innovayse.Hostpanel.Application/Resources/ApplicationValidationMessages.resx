@@ -587,7 +587,7 @@
     <value>Select a payment gateway.</value>
   </data>
   <data name="ConsentTextVersionInvalid" xml:space="preserve">
-    <value>The consent text version is required and at most {0} characters.</value>
+    <value>The consent text version is required and must be one of the published versions.</value>
   </data>
   <data name="ReturnUrlRequired" xml:space="preserve">
     <value>A return URL is required.</value>
@@ -1573,6 +1573,21 @@
   <data name="StatusStateInvalid" xml:space="preserve">
     <value>Choose a valid state.</value>
   </data>
+  <data name="StatusCheckUrlRequired" xml:space="preserve">
+    <value>Enter the address to check.</value>
+  </data>
+  <data name="StatusCheckUrlInvalid" xml:space="preserve">
+    <value>Enter a full web address starting with http:// or https://.</value>
+  </data>
+  <data name="StatusCheckUrlTooLong" xml:space="preserve">
+    <value>The address may not be longer than {0} characters.</value>
+  </data>
+  <data name="StatusFailureThresholdInvalid" xml:space="preserve">
+    <value>Choose a number of failed checks from 1 to {0}.</value>
+  </data>
+  <data name="StatusUptimeWindowInvalid" xml:space="preserve">
+    <value>Choose 30, 60 or 90 days.</value>
+  </data>
   <data name="StatusDaysInvalid" xml:space="preserve">
     <value>Choose a number of days from 1 to {0}.</value>
   </data>
@@ -1641,5 +1656,26 @@
   </data>
   <data name="EmailDeliveryKeyRequired" xml:space="preserve">
     <value>The key of the email is required.</value>
+  </data>
+  <data name="ClientTaxIdInvalid" xml:space="preserve">
+    <value>Tax ID must not exceed 50 characters.</value>
+  </data>
+  <data name="ClientTaxExemptionReasonInvalid" xml:space="preserve">
+    <value>Tax exemption reason must not exceed 500 characters.</value>
+  </data>
+  <data name="TaxRuleNameInvalid" xml:space="preserve">
+    <value>Provide a name of up to 100 characters.</value>
+  </data>
+  <data name="TaxRuleCountryInvalid" xml:space="preserve">
+    <value>Provide a two-letter country code.</value>
+  </data>
+  <data name="TaxRuleRegionInvalid" xml:space="preserve">
+    <value>Region must not exceed 100 characters.</value>
+  </data>
+  <data name="TaxRuleRateInvalid" xml:space="preserve">
+    <value>A tax rate must be between 0 and 100 percent.</value>
+  </data>
+  <data name="TaxRuleRateDecimalsInvalid" xml:space="preserve">
+    <value>A tax rate can have at most three decimal places.</value>
   </data>
 </root>

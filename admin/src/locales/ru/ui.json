@@ -75,5 +75,9 @@
   },
   "errorState": {
     "retry": "Повторить"
+  },
+  "rating": {
+    "label": "Оценка {average} из 5 по {count} отзыву | Оценка {average} из 5 по {count} отзывам | Оценка {average} из 5 по {count} отзывам",
+    "summary": "{average} ({count})"
   }
 }

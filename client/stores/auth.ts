@@ -35,6 +35,7 @@ import { translate } from '~/utils/translate'
 import { asClientUser } from '~/utils/asClientUser'
 import { AuthMode } from '~/types/authmode'
 import { SessionCookie } from '~/constants/sessionCookie'
+import { clearPluginChatDrafts } from '~/composables/usePluginChatDraft'
 
 /**
  * Central store for the signed-in identity.
@@ -383,6 +384,9 @@ export const useAuthStore = defineStore('auth', () => {
     const config = useRuntimeConfig()
     const authMode = config.public.authMode as string
 
+    // First, so the SSO sign-out below, which leaves the page, cannot skip it: the drafts carry no account.
+    clearPluginChatDrafts()
+
     if (authMode === AuthMode.Sso) {
       // SSO logout: clears cookies and redirects to SSO endsession
       await api.ssoLogout()
@@ -419,6 +423,8 @@ export const useAuthStore = defineStore('auth', () => {
     useClientStore().reset()
     usePluginsStore().reset()
     useCartStore().clear()
+    // An ended session takes the half-written chat messages with it: the drafts carry no account.
+    clearPluginChatDrafts()
   }
 
   /**

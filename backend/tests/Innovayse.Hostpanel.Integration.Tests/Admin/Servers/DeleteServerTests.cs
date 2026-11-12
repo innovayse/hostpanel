@@ -86,18 +86,18 @@ public sealed class DeleteServerTests(IntegrationTestFactory factory) : IClassFi
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var owner = Client.Create($"server-use-{Guid.NewGuid():N}", "Server", "User", $"server-use-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var owner = Client.Create($"server-use-{Guid.NewGuid():N}", "Server", "User", $"server-use-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         var group = ProductGroup.Create($"server-use-{Guid.NewGuid():N}", null);
         context.Clients.Add(owner);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var product = Product.Create(group.Id, $"Plan {Guid.NewGuid():N}", null, null, null, "plan", ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, $"Plan {Guid.NewGuid():N}", null, null, null, "plan", ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        var service = ClientService.Create(owner.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow);
-        await ServicesTestSeeds.AddActivatedAsync(context, service, $"ref-{Guid.NewGuid():N}", DateTimeOffset.UtcNow, serverId);
+        var service = ClientService.Create(owner.Id, product.Id, BillingCycle.Monthly, TestMoments.Seeded);
+        await ServicesTestSeeds.AddActivatedAsync(context, service, $"ref-{Guid.NewGuid():N}", TestMoments.Seeded, serverId);
         await context.SaveChangesAsync(CancellationToken.None);
     }
 }

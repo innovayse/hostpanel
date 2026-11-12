@@ -172,4 +172,18 @@ public sealed class CardChargeConsent : BaseEntity, IAggregateRoot
         RevokedAt ??= now;
         IsDefault = false;
     }
+
+    /// <summary>
+    /// Revokes the consent when it covers no method yet, which is how a consent ends whose payment was declined,
+    /// replaced by a new attempt, or settled another way, so the evidence of a payment that stored nothing never stays open.
+    /// A consent that already covers a method is the client's to revoke and is left alone.
+    /// </summary>
+    /// <param name="now">The current moment (UTC).</param>
+    public void RevokeUnbound(DateTimeOffset now)
+    {
+        if (MethodRef is null)
+        {
+            Revoke(now);
+        }
+    }
 }

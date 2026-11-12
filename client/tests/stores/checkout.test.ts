@@ -1,99 +1,77 @@
 /**
- * Tests for `stores/checkout.ts`.
+ * Tests for `stores/checkout.ts`, through the real billing API composable, auth, currency, catalogue and cart stores and the transport against a stub server.
  *
  * Both checkout templates place their order through this store, so these assertions pin the
  * whole flow once: the request body, the guest sign-in, the three ways of settling an order and
- * where the payer is sent afterwards, plus how a refusal is kept as state.
+ * where the payer is sent afterwards, plus how a refusal is kept as state. Nothing of our own is
+ * replaced: the stub plays the BFF, so "the API was called with X" is an assertion on the request that reached it.
  *
  * @module tests/stores/checkout.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
+import { makeClientUser } from '../helpers/clientUser'
+import { bodyOf } from '../helpers/requestBody'
+import { refusal, requestsTo, routeTable } from '../helpers/stubRoutes'
+import type { StubRouteTable } from '../helpers/stubRoutes'
+import type { StubServer } from '../helpers/stubServer'
+import { startTransport } from '../helpers/stubTransport'
+import { useOrderPaymentToken } from '~/composables/useOrderPaymentToken'
+import { useAuthStore } from '~/stores/auth'
+import { useCartStore } from '~/stores/cart'
+import { useCheckoutStore } from '~/stores/checkout'
+import { useCurrencyStore } from '~/stores/currency'
 import type { CartItem } from '~/types/cartitem'
+import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
+import { ConsentTextVersion } from '~/types/consenttextversion'
+import type { BillingCurrency } from '~/types/currency'
 import type { PlaceOrderInput } from '~/types/placeorderinput'
 import { PricingCycle } from '~/types/pricingcycle'
 import { ProductType } from '~/types/producttype'
 
-/** The mocked order endpoints, re-created for every test. */
-const billing = {
-  fetchGatewayMethods: vi.fn(),
-  createOrder: vi.fn(),
-  startOrderGatewayPayment: vi.fn(),
-  selectBankTransfer: vi.fn()
-}
+/** The stub playing the BFF. */
+let stub: StubServer
 
-/** The auth store stand-in: whether somebody is signed in, and the sign-in call a guest order makes. */
-const auth = { isLoggedIn: false, login: vi.fn() }
+/** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
+let table: StubRouteTable
 
-/** The payer the currency store stand-in reports. */
-const payer = { code: 'USD' as string | null }
+/** The read of the gateways an order may be paid through. */
+const METHODS_ROUTE = 'GET /api/portal/order/payment-methods'
 
-/** Records the payment tokens the hosted-gateway path stores before leaving for the bank. */
-const rememberToken = vi.fn()
+/** The placing of an order. */
+const CREATE_ROUTE = 'POST /api/portal/order/create'
 
-/** The chosen-currency calls the currency store stand-in receives. */
-const selectCurrency = vi.fn()
+/** The path of the start of a hosted-gateway payment for the placed order. */
+const START_PATH = '/api/portal/order/42/gateway-payment/start'
 
-/** The catalogue read the price refresh makes. */
-const loadProducts = vi.fn()
+/** The start of a hosted-gateway payment for the placed order. */
+const START_ROUTE = `POST ${START_PATH}`
 
-vi.mock('~/stores/catalog', () => ({
-  /**
-   * Stands in for the catalogue store.
-   *
-   * @returns The catalogue read the checkout store uses to re-price the cart.
-   */
-  useCatalogStore: () => ({ loadProducts })
-}))
+/** The choice of a bank transfer on the placed order's invoice. */
+const TRANSFER_ROUTE = 'POST /api/portal/client/invoices/77/bank-transfer'
 
-vi.mock('~/composables/apis/useBillingApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useBillingApi: () => billing
-}))
+/** The guest's sign-in after the order. */
+const LOGIN_ROUTE = 'POST /api/portal/auth/login'
 
-vi.mock('~/composables/useOrderPaymentToken', () => ({
-  /**
-   * Stands in for the token storage, which is a no-op outside a browser.
-   *
-   * @returns The remember function only.
-   */
-  useOrderPaymentToken: () => ({ remember: rememberToken })
-}))
+/** The path of the guest's sign-in. */
+const LOGIN_PATH = '/api/portal/auth/login'
 
-vi.mock('~/stores/auth', () => ({
-  /**
-   * Stands in for the auth store.
-   *
-   * @returns The shared stand-in.
-   */
-  useAuthStore: () => auth
-}))
+/** The path of the placing of an order. */
+const CREATE_PATH = '/api/portal/order/create'
 
-vi.mock('~/stores/currency', () => ({
-  /**
-   * Stands in for the currency store.
-   *
-   * @returns A payer code, a money shape and the select call.
-   */
-  useCurrencyStore: () => ({
-    get payerCode() {
-      return payer.code
-    },
-    moneyCurrencyFor: () => ({ code: 'USD', prefix: '$', suffix: '', decimals: 2 }),
-    select: selectCurrency
-  })
-}))
+/** The read of the catalogue the price refresh makes. */
+const PRODUCTS_ROUTE = 'GET /api/portal/public/products'
 
-const { useCheckoutStore } = await import('~/stores/checkout')
-const { useCartStore } = await import('~/stores/cart')
-const { ConsentTextVersion } = await import('~/types/consenttextversion')
-const { CheckoutDestinationKind } = await import('~/types/checkoutdestinationkind')
+/** The path of the catalogue read. */
+const PRODUCTS_PATH = '/api/portal/public/products'
+
+/** The currencies the operator bills in: dollars are the base, so they are the payer's. */
+const CURRENCIES: BillingCurrency[] = [
+  { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true },
+  { code: 'AMD', numeric: '051', prefix: '', suffix: ' ֏', decimals: 0, isBase: false }
+]
 
 /** A hosting item priced in dollars. */
 const hosting: CartItem = { pid: 5, name: 'Pro', billingcycle: PricingCycle.Monthly, cycleLabel: 'Monthly', amount: 12, currency: 'USD' }
@@ -103,6 +81,30 @@ const guest = { firstname: 'Ada', lastname: 'L', email: 'ada@example.com', passw
 
 /** The order the API answers a placed order with. */
 const placed = { orderId: 42, orderNumber: 'A 42', invoiceId: 77, paymentToken: 'tok', total: 12, currency: 'USD' }
+
+/** The bank's address the payment start answers with. */
+const BANK_URL = 'https://bank.example/pay'
+
+/** The refusal the payment start answers with while the gateway is down. */
+const GATEWAY_DOWN = refusal('The gateway is unavailable.')
+
+/**
+ * Loads the operator's currencies into the active store, as the app does once it has read them.
+ *
+ * @returns Nothing.
+ */
+const loadCurrencies = (): void => {
+  useCurrencyStore().currencies = CURRENCIES
+}
+
+/**
+ * Signs a client in on the real auth store.
+ *
+ * @returns Nothing.
+ */
+const signIn = (): void => {
+  useAuthStore().user = makeClientUser()
+}
 
 /**
  * Builds the input a checkout page hands the store.
@@ -133,16 +135,42 @@ const arrange = (method: string, items: CartItem[] = [hosting]) => {
   return store
 }
 
-describe('useCheckoutStore.loadPaymentMethods', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    Object.values(billing).forEach(fn => fn.mockReset())
-    auth.isLoggedIn = false
-    payer.code = 'USD'
-  })
+/**
+ * The body of the payment start the stub received.
+ *
+ * @returns The parsed body.
+ */
+const startBody = (): Record<string, unknown> => bodyOf(requestsTo(stub.requests, START_PATH)[0]) as Record<string, unknown>
 
+/**
+ * The keys the browser holds in session storage.
+ *
+ * @returns The keys, in storage order.
+ */
+const sessionKeys = (): string[] =>
+  Array.from({ length: window.sessionStorage.length }, (_, index) => window.sessionStorage.key(index) ?? '')
+
+beforeEach(async () => {
+  setActivePinia(createPinia())
+  window.localStorage.clear()
+  window.sessionStorage.clear()
+  loadCurrencies()
+  table = {
+    [CREATE_ROUTE]: { body: placed },
+    [LOGIN_ROUTE]: { body: { success: true } },
+    [TRANSFER_ROUTE]: { body: { invoiceId: 77, reference: 'INV-77' } }
+  }
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  vi.restoreAllMocks()
+  await stub.close()
+})
+
+describe('useCheckoutStore.loadPaymentMethods', () => {
   it('keeps the gateways and preselects the first one', async () => {
-    billing.fetchGatewayMethods.mockResolvedValue([{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }, { module: 'bank_transfer', displayName: 'Bank', supportsStoredCredentials: false }])
+    table[METHODS_ROUTE] = { body: [{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }, { module: 'bank_transfer', displayName: 'Bank', supportsStoredCredentials: false }] }
     const store = useCheckoutStore()
 
     await store.loadPaymentMethods()
@@ -153,7 +181,7 @@ describe('useCheckoutStore.loadPaymentMethods', () => {
   })
 
   it('does not override a method the payer already chose', async () => {
-    billing.fetchGatewayMethods.mockResolvedValue([{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }])
+    table[METHODS_ROUTE] = { body: [{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }] }
     const store = useCheckoutStore()
     store.selectedMethod = 'bank_transfer'
 
@@ -163,7 +191,7 @@ describe('useCheckoutStore.loadPaymentMethods', () => {
   })
 
   it('keeps the API sentence and an empty list when the gateways cannot be read', async () => {
-    billing.fetchGatewayMethods.mockRejectedValue({ data: { detail: 'Gateways unavailable.' } })
+    table[METHODS_ROUTE] = refusal('Gateways unavailable.')
     const store = useCheckoutStore()
 
     await store.loadPaymentMethods()
@@ -174,21 +202,11 @@ describe('useCheckoutStore.loadPaymentMethods', () => {
 })
 
 describe('useCheckoutStore.placeOrder', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    Object.values(billing).forEach(fn => fn.mockReset())
-    auth.isLoggedIn = false
-    auth.login = vi.fn().mockResolvedValue({})
-    rememberToken.mockReset()
-    payer.code = 'USD'
-    billing.createOrder.mockResolvedValue(placed)
-  })
-
   it('does nothing without a chosen method', async () => {
     const store = useCheckoutStore()
 
     expect(await store.placeOrder(input())).toBeNull()
-    expect(billing.createOrder).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, CREATE_PATH)).toHaveLength(0)
   })
 
   it('sends the cart in the payer currency with the guest details and signs the guest in', async () => {
@@ -196,51 +214,53 @@ describe('useCheckoutStore.placeOrder', () => {
 
     await store.placeOrder(input())
 
-    const body = billing.createOrder.mock.calls[0]?.[0] as Record<string, unknown>
+    const body = bodyOf(requestsTo(stub.requests, CREATE_PATH)[0]) as Record<string, unknown>
     expect((body.items as unknown[]).length).toBe(1)
     expect(body).toMatchObject({ paymentmethod: 'bank_transfer', currency: 'USD', ...guest })
-    expect(auth.login).toHaveBeenCalledWith('ada@example.com', 'pw-123456')
+    expect(bodyOf(requestsTo(stub.requests, LOGIN_PATH)[0])).toEqual({ email: 'ada@example.com', password: 'pw-123456' })
   })
 
   it('sends no guest details and no sign-in for a signed-in client', async () => {
-    auth.isLoggedIn = true
+    signIn()
     const store = arrange('bank_transfer')
 
     await store.placeOrder(input())
 
-    const body = billing.createOrder.mock.calls[0]?.[0] as Record<string, unknown>
+    const body = bodyOf(requestsTo(stub.requests, CREATE_PATH)[0]) as Record<string, unknown>
     expect(body.email).toBeUndefined()
-    expect(auth.login).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, LOGIN_PATH)).toHaveLength(0)
   })
 
   it('still reports the order as placed when the guest sign-in is refused', async () => {
-    auth.login = vi.fn().mockRejectedValue(new Error('no'))
+    table[LOGIN_ROUTE] = { status: 401, body: { detail: 'no' } }
     const store = arrange('bank_transfer')
 
     const destination = await store.placeOrder(input())
 
+    expect(requestsTo(stub.requests, LOGIN_PATH)).toHaveLength(1)
     expect(destination).toMatchObject({ kind: CheckoutDestinationKind.Route })
     expect(store.error).toBe('')
   })
 
   it('hands a hosted gateway the localised return address, remembers the token and leaves the site', async () => {
-    billing.startOrderGatewayPayment.mockResolvedValue({ redirectUrl: 'https://bank.example/pay' })
+    table[START_ROUTE] = { body: { redirectUrl: BANK_URL } }
     const store = arrange('hosted_gateway')
 
     const destination = await store.placeOrder(input())
 
-    expect(rememberToken).toHaveBeenCalledWith(42, 'tok', 77)
-    const returnUrl = billing.startOrderGatewayPayment.mock.calls[0]?.[2] as string
+    expect(useOrderPaymentToken().recall(42)).toBe('tok')
+    expect(useOrderPaymentToken().recallInvoiceId(42)).toBe(77)
+    const returnUrl = startBody().returnUrl as string
     expect(new URL(returnUrl).pathname).toBe('/en/payment/result')
     expect(new URL(returnUrl).search).toBe('?order=42')
-    expect(destination).toEqual({ kind: CheckoutDestinationKind.External, target: 'https://bank.example/pay' })
+    expect(destination).toEqual({ kind: CheckoutDestinationKind.External, target: BANK_URL })
     // Kept until the result page sees the payment confirmed.
     expect(useCartStore().items).toHaveLength(1)
     expect(store.submitting).toBe(true)
   })
 
   it('refuses a gateway address that is not secure and lets the payer try again', async () => {
-    billing.startOrderGatewayPayment.mockResolvedValue({ redirectUrl: 'javascript:alert(1)' })
+    table[START_ROUTE] = { body: { redirectUrl: 'javascript:alert(1)' } }
     const store = arrange('hosted_gateway')
 
     const destination = await store.placeOrder(input())
@@ -252,15 +272,11 @@ describe('useCheckoutStore.placeOrder', () => {
   })
 
   it('places one order for two concurrent submits and one only', async () => {
-    billing.createOrder.mockImplementation(async () => {
-      await Promise.resolve()
-      return placed
-    })
     const store = arrange('bank_transfer')
 
     const [first, second] = await Promise.all([store.placeOrder(input()), store.placeOrder(input())])
 
-    expect(billing.createOrder).toHaveBeenCalledTimes(1)
+    expect(requestsTo(stub.requests, CREATE_PATH)).toHaveLength(1)
     expect([first, second].filter(destination => destination !== null)).toHaveLength(1)
   })
 
@@ -268,7 +284,7 @@ describe('useCheckoutStore.placeOrder', () => {
     const store = arrange('bank_transfer', [])
 
     expect(await store.placeOrder(input())).toBeNull()
-    expect(billing.createOrder).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, CREATE_PATH)).toHaveLength(0)
     expect(store.submitting).toBe(false)
   })
 
@@ -287,23 +303,24 @@ describe('useCheckoutStore.placeOrder', () => {
     expect(withInvoice).toEqual({ kind: CheckoutDestinationKind.Route, target: '/en/client/invoices/77/pay' })
 
     setActivePinia(createPinia())
-    billing.createOrder.mockResolvedValue({ ...placed, invoiceId: 0 })
+    loadCurrencies()
+    table[CREATE_ROUTE] = { body: { ...placed, invoiceId: 0 } }
     const withoutInvoice = await arrange('bank_transfer').placeOrder(input())
     expect(withoutInvoice).toEqual({ kind: CheckoutDestinationKind.Route, target: '/en/client/invoices' })
   })
 
   it('moves the invoice to waiting for the transfer before sending the payer to it', async () => {
-    billing.selectBankTransfer.mockResolvedValue({ invoiceId: 77, reference: 'INV-77' })
     const store = arrange('bank_transfer')
 
     const destination = await store.placeOrder(input())
 
-    expect(billing.selectBankTransfer).toHaveBeenCalledWith(77)
+    expect(requestsTo(stub.requests, '/api/portal/client/invoices/77/bank-transfer')).toHaveLength(1)
+    expect(bodyOf(requestsTo(stub.requests, '/api/portal/client/invoices/77/bank-transfer')[0])).toEqual({})
     expect(destination).toEqual({ kind: CheckoutDestinationKind.Route, target: '/en/client/invoices/77/pay' })
   })
 
   it('still sends the payer to the invoice when choosing the transfer fails, where the page offers it again', async () => {
-    billing.selectBankTransfer.mockRejectedValue(new Error('refused'))
+    table[TRANSFER_ROUTE] = refusal('refused')
     const store = arrange('bank_transfer')
 
     const destination = await store.placeOrder(input())
@@ -313,20 +330,20 @@ describe('useCheckoutStore.placeOrder', () => {
   })
 
   it('does not choose a transfer for an order that has no invoice', async () => {
-    billing.createOrder.mockResolvedValue({ ...placed, invoiceId: 0 })
+    table[CREATE_ROUTE] = { body: { ...placed, invoiceId: 0 } }
 
     await arrange('bank_transfer').placeOrder(input())
 
-    expect(billing.selectBankTransfer).not.toHaveBeenCalled()
+    expect(stub.requests.filter(request => request.url.includes('bank-transfer'))).toHaveLength(0)
   })
 
   it('sends a free order straight to the success page, whatever the method, without paying', async () => {
-    billing.createOrder.mockResolvedValue({ ...placed, total: 0 })
+    table[CREATE_ROUTE] = { body: { ...placed, total: 0 } }
     const store = arrange('hosted_gateway')
 
     const destination = await store.placeOrder(input())
 
-    expect(billing.startOrderGatewayPayment).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, START_PATH)).toHaveLength(0)
     expect(destination).toEqual({
       kind: CheckoutDestinationKind.Route,
       target: '/en/client/order-success?order=A+42&invoice=77'
@@ -335,7 +352,7 @@ describe('useCheckoutStore.placeOrder', () => {
   })
 
   it('marks the success link digital when the order held digital goods only', async () => {
-    billing.createOrder.mockResolvedValue({ ...placed, total: 0 })
+    table[CREATE_ROUTE] = { body: { ...placed, total: 0 } }
     const digital: CartItem = { ...hosting, productType: ProductType.Digital }
     const store = arrange('hosted_gateway', [digital])
 
@@ -348,7 +365,7 @@ describe('useCheckoutStore.placeOrder', () => {
   })
 
   it('does not mark the success link digital when the order also held a hosting line', async () => {
-    billing.createOrder.mockResolvedValue({ ...placed, total: 0 })
+    table[CREATE_ROUTE] = { body: { ...placed, total: 0 } }
     const digital: CartItem = { ...hosting, pid: 99, productType: ProductType.Digital }
     const store = arrange('hosted_gateway', [digital, hosting])
 
@@ -361,9 +378,10 @@ describe('useCheckoutStore.placeOrder', () => {
   })
 
   it('keeps the API sentence and the field messages when the order is refused, and keeps the cart', async () => {
-    billing.createOrder.mockRejectedValue({
-      data: { detail: 'Fix the form.', type: 'VALIDATION_ERROR', errors: { email: ['Email is required.'] } }
-    })
+    table[CREATE_ROUTE] = {
+      status: 400,
+      body: { detail: 'Fix the form.', type: 'VALIDATION_ERROR', errors: { email: ['Email is required.'] } }
+    }
     const store = arrange('bank_transfer')
 
     const destination = await store.placeOrder(input())
@@ -378,30 +396,31 @@ describe('useCheckoutStore.placeOrder', () => {
   it('shows the refusal sentence when starting the gateway payment fails, and a generic one when it gave none', async () => {
     const store = arrange('hosted_gateway')
 
-    billing.startOrderGatewayPayment.mockRejectedValueOnce({ data: { detail: 'The gateway is unavailable.' } })
+    table[START_ROUTE] = GATEWAY_DOWN
     await store.placeOrder(input())
     expect(store.error).toBe('The gateway is unavailable.')
 
-    billing.startOrderGatewayPayment.mockRejectedValueOnce(new Error(''))
+    // A reply that carries no address to send the payer to says nothing the payer could read.
+    table[START_ROUTE] = { body: {} }
     await store.placeOrder(input())
     expect(store.error).toBe('checkout.errors.generic')
   })
 
   it('pays the same order again on a retry after a failed payment start', async () => {
-    billing.startOrderGatewayPayment.mockRejectedValueOnce({ data: { detail: 'The gateway is unavailable.' } })
-    billing.startOrderGatewayPayment.mockResolvedValueOnce({ redirectUrl: 'https://bank.example/pay' })
+    table[START_ROUTE] = GATEWAY_DOWN
     const store = arrange('hosted_gateway')
 
     await store.placeOrder(input())
+    table[START_ROUTE] = { body: { redirectUrl: BANK_URL } }
     const destination = await store.placeOrder(input())
 
-    expect(billing.createOrder).toHaveBeenCalledTimes(1)
-    expect(auth.login).toHaveBeenCalledTimes(1)
+    expect(requestsTo(stub.requests, CREATE_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, LOGIN_PATH)).toHaveLength(1)
     expect(destination).toMatchObject({ kind: CheckoutDestinationKind.External })
   })
 
   it('places a new order when the cart changed after a failed payment start', async () => {
-    billing.startOrderGatewayPayment.mockRejectedValueOnce({ data: { detail: 'The gateway is unavailable.' } })
+    table[START_ROUTE] = GATEWAY_DOWN
     const store = arrange('hosted_gateway')
 
     await store.placeOrder(input())
@@ -410,18 +429,18 @@ describe('useCheckoutStore.placeOrder', () => {
 
     expect(store.pendingOrder).toBeNull()
     await store.placeOrder(input())
-    expect(billing.createOrder).toHaveBeenCalledTimes(2)
+    expect(requestsTo(stub.requests, CREATE_PATH)).toHaveLength(2)
   })
 
   it('skips the payment and the total confirmation for an order the backend settled as free', async () => {
-    billing.createOrder.mockResolvedValue({ ...placed, total: 0 })
+    table[CREATE_ROUTE] = { body: { ...placed, total: 0 } }
     const confirmTotalChange = vi.fn(() => false)
     const store = arrange('card_gateway')
 
     const destination = await store.placeOrder(input(confirmTotalChange))
 
     expect(confirmTotalChange).not.toHaveBeenCalled()
-    expect(billing.startOrderGatewayPayment).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, START_PATH)).toHaveLength(0)
     expect(destination).toEqual({
       kind: CheckoutDestinationKind.Route,
       target: '/en/client/order-success?order=A+42&invoice=77'
@@ -451,15 +470,8 @@ describe('useCheckoutStore save for renewals', () => {
   }
 
   beforeEach(() => {
-    setActivePinia(createPinia())
-    Object.values(billing).forEach(fn => fn.mockReset())
-    auth.isLoggedIn = true
-    auth.login = vi.fn().mockResolvedValue({})
-    rememberToken.mockReset()
-    window.sessionStorage.clear()
-    payer.code = 'USD'
-    billing.createOrder.mockResolvedValue(placed)
-    billing.startOrderGatewayPayment.mockResolvedValue({ redirectUrl: 'https://bank.example/pay' })
+    signIn()
+    table[START_ROUTE] = { body: { redirectUrl: BANK_URL } }
   })
 
   it('is off by default', () => {
@@ -480,7 +492,7 @@ describe('useCheckoutStore save for renewals', () => {
   })
 
   it('is not offered to a guest', () => {
-    auth.isLoggedIn = false
+    useAuthStore().user = null
     const store = arrangeWithGateways('hosted_gateway')
 
     expect(store.canSaveForRenewals).toBe(false)
@@ -492,16 +504,15 @@ describe('useCheckoutStore save for renewals', () => {
 
     const destination = await store.placeOrder(input())
 
-    expect(destination).toEqual({ kind: CheckoutDestinationKind.External, target: 'https://bank.example/pay' })
-    expect(billing.startOrderGatewayPayment).toHaveBeenCalledTimes(1)
-    expect(billing.startOrderGatewayPayment).toHaveBeenCalledWith(
-      42,
-      'hosted_gateway',
-      expect.any(String),
-      'tok',
-      true,
-      ConsentTextVersion.CheckoutAgreement
-    )
+    expect(destination).toEqual({ kind: CheckoutDestinationKind.External, target: BANK_URL })
+    expect(requestsTo(stub.requests, START_PATH)).toHaveLength(1)
+    expect(startBody()).toEqual({
+      module: 'hosted_gateway',
+      returnUrl: expect.any(String),
+      paymentToken: 'tok',
+      savePaymentMethod: true,
+      consentTextVersion: ConsentTextVersion.CheckoutAgreement
+    })
   })
 
   it('sends no save choice and no consent version when the box was left off', async () => {
@@ -509,7 +520,7 @@ describe('useCheckoutStore save for renewals', () => {
 
     await store.placeOrder(input())
 
-    expect(billing.startOrderGatewayPayment).toHaveBeenCalledWith(42, 'hosted_gateway', expect.any(String), 'tok', false, undefined)
+    expect(startBody()).toEqual({ module: 'hosted_gateway', returnUrl: expect.any(String), paymentToken: 'tok', savePaymentMethod: false })
   })
 
   it('clears the choice when the method changes to one that cannot save, and does not send it', async () => {
@@ -520,7 +531,7 @@ describe('useCheckoutStore save for renewals', () => {
 
     expect(store.saveForRenewals).toBe(false)
     await store.placeOrder(input())
-    expect(billing.startOrderGatewayPayment).toHaveBeenCalledWith(42, 'plain_gateway', expect.any(String), 'tok', false, undefined)
+    expect(startBody()).toEqual({ module: 'plain_gateway', returnUrl: expect.any(String), paymentToken: 'tok', savePaymentMethod: false })
   })
 
   it('keeps the choice while the method changes to another one that can save', () => {
@@ -539,17 +550,15 @@ describe('useCheckoutStore save for renewals', () => {
 
     await store.placeOrder(input())
 
-    expect(window.sessionStorage.length).toBe(0)
+    // The only thing kept for the return page is the order's payment token, never the choice.
+    expect(sessionKeys()).toEqual(['order-payment-token:42'])
+    expect(window.sessionStorage.getItem('order-payment-token:42')).not.toContain('save')
   })
 })
 
 describe('useCheckoutStore billed total', () => {
   beforeEach(() => {
-    setActivePinia(createPinia())
-    Object.values(billing).forEach(fn => fn.mockReset())
-    auth.isLoggedIn = true
-    payer.code = 'USD'
-    billing.createOrder.mockResolvedValue(placed)
+    signIn()
   })
 
   it('pays without asking when the billed total is the one the cart showed', async () => {
@@ -561,7 +570,7 @@ describe('useCheckoutStore billed total', () => {
   })
 
   it('asks with both amounts when the billed total differs, and goes on when the payer agrees', async () => {
-    billing.createOrder.mockResolvedValue({ ...placed, total: 15 })
+    table[CREATE_ROUTE] = { body: { ...placed, total: 15 } }
     const confirmTotalChange = vi.fn(() => true)
 
     const destination = await arrange('bank_transfer').placeOrder(input(confirmTotalChange))
@@ -571,7 +580,7 @@ describe('useCheckoutStore billed total', () => {
   })
 
   it('asks when the billed currency differs from the payer currency', async () => {
-    billing.createOrder.mockResolvedValue({ ...placed, currency: 'EUR' })
+    table[CREATE_ROUTE] = { body: { ...placed, currency: 'EUR' } }
     const confirmTotalChange = vi.fn(() => false)
 
     await arrange('bank_transfer').placeOrder(input(confirmTotalChange))
@@ -580,27 +589,27 @@ describe('useCheckoutStore billed total', () => {
   })
 
   it('takes no payment and keeps the cart when the payer declines the billed total, and asks again on a retry', async () => {
-    billing.createOrder.mockResolvedValue({ ...placed, total: 15 })
-    billing.startOrderGatewayPayment.mockResolvedValue({ redirectUrl: 'https://bank.example/pay' })
+    table[CREATE_ROUTE] = { body: { ...placed, total: 15 } }
+    table[START_ROUTE] = { body: { redirectUrl: BANK_URL } }
     const confirmTotalChange = vi.fn().mockReturnValueOnce(false).mockReturnValueOnce(true)
     const store = arrange('hosted_gateway')
 
     expect(await store.placeOrder(input(confirmTotalChange))).toBeNull()
     expect(store.error).toBe('checkout.errors.totalNotAccepted')
     expect(store.submitting).toBe(false)
-    expect(billing.startOrderGatewayPayment).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, START_PATH)).toHaveLength(0)
     expect(useCartStore().items).toHaveLength(1)
 
     await store.placeOrder(input(confirmTotalChange))
 
     expect(confirmTotalChange).toHaveBeenCalledTimes(2)
-    expect(billing.createOrder).toHaveBeenCalledTimes(1)
-    expect(billing.startOrderGatewayPayment).toHaveBeenCalled()
+    expect(requestsTo(stub.requests, CREATE_PATH)).toHaveLength(1)
+    expect(requestsTo(stub.requests, START_PATH)).toHaveLength(1)
   })
 
   it('does not ask again for an order whose changed total the payer already accepted', async () => {
-    billing.createOrder.mockResolvedValue({ ...placed, total: 15 })
-    billing.startOrderGatewayPayment.mockRejectedValueOnce({ data: { detail: 'Try again shortly.' } })
+    table[CREATE_ROUTE] = { body: { ...placed, total: 15 } }
+    table[START_ROUTE] = refusal('Try again shortly.')
     const confirmTotalChange = vi.fn(() => true)
     const store = arrange('hosted_gateway')
 
@@ -612,37 +621,26 @@ describe('useCheckoutStore billed total', () => {
 })
 
 describe('useCheckoutStore.refreshCartPrices', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    loadProducts.mockReset()
-    payer.code = 'USD'
-  })
-
   it('re-prices the cart from the catalogue', async () => {
-    loadProducts.mockResolvedValue([{ id: 5, groupId: 1, name: 'Pro', pricing: { monthly: 14, annual: 140 } }])
+    table[PRODUCTS_ROUTE] = { body: [{ id: 5, groupId: 1, name: 'Pro', pricing: { monthly: 14, annual: 140 } }] }
     const store = arrange('card_gateway')
 
     await store.refreshCartPrices()
 
     expect(useCartStore().items[0]?.amount).toBe(14)
+    expect(requestsTo(stub.requests, PRODUCTS_PATH)).toHaveLength(1)
   })
 
   it('reads nothing for an empty cart or an unknown payer currency', async () => {
     await useCheckoutStore().refreshCartPrices()
-    payer.code = null
+    useCurrencyStore().currencies = []
     await arrange('card_gateway').refreshCartPrices()
 
-    expect(loadProducts).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, PRODUCTS_PATH)).toHaveLength(0)
   })
 })
 
 describe('useCheckoutStore cart helpers', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    selectCurrency.mockReset()
-    payer.code = 'USD'
-  })
-
   it('totals only items in the payer currency and flags the others', () => {
     const store = arrange('card_gateway', [hosting, { ...hosting, pid: 6, currency: 'AMD', amount: 5000 }])
 
@@ -679,14 +677,15 @@ describe('useCheckoutStore cart helpers', () => {
 
   it('changes the guest currency only once the visitor accepts an emptied cart', () => {
     const store = arrange('card_gateway')
+    const currency = useCurrencyStore()
 
     expect(store.changeGuestCurrency('USD', () => true)).toBe(false)
     expect(store.changeGuestCurrency('AMD', () => false)).toBe(false)
-    expect(selectCurrency).not.toHaveBeenCalled()
+    expect(currency.selectedCode).toBeNull()
     expect(useCartStore().items).toHaveLength(1)
 
     expect(store.changeGuestCurrency('AMD', () => true)).toBe(true)
-    expect(selectCurrency).toHaveBeenCalledWith('AMD')
+    expect(currency.selectedCode).toBe('AMD')
     expect(useCartStore().items).toEqual([])
   })
 

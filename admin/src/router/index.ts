@@ -201,6 +201,7 @@ const router = createRouter({
         // under Integrations, so a bookmark to the old address goes there.
         { path: 'settings/gateways', redirect: AppRoute.IntegrationsPayments },
         { path: 'settings/currencies', component: lazy('views/CurrenciesView.vue') },
+        { path: 'settings/tax-rules', component: lazy('views/TaxRulesView.vue') },
         { path: 'storefront/testimonials', component: lazy('views/TestimonialsView.vue') },
         { path: 'storefront/testimonials/create', component: lazy('views/TestimonialFormView.vue') },
         { path: 'storefront/testimonials/:id/edit', component: lazy('views/TestimonialFormView.vue') },

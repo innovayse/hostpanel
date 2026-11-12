@@ -115,7 +115,7 @@ public sealed class TerminatedServiceActionsTests(IntegrationTestFactory factory
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var old = await context.ClientServices.AsNoTracking().SingleAsync(s => s.Id == former.ServiceId);
             var newOwner = Client.Create(
-                $"subject-{Guid.NewGuid():N}", "Grace", "Hopper", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+                $"subject-{Guid.NewGuid():N}", "Grace", "Hopper", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
             context.Clients.Add(newOwner);
             await context.SaveChangesAsync(CancellationToken.None);
 

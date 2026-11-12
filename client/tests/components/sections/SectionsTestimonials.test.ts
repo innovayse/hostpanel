@@ -3,10 +3,16 @@
  * with its author, the readable light-mode card, and the section hiding itself when there are
  * none. The carousel library is stood in for.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { Component } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { testimonialFixture } from '~/tests/helpers/storefrontFixtures'
+import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import type { Testimonial } from '~/types/testimonial'
 import SectionsTestimonials from '~/components/sections/SectionsTestimonials.vue'
 import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
 
@@ -22,44 +28,46 @@ vi.mock('swiper/vue', async () => {
 vi.mock('swiper/modules', () => ({ Autoplay: {} }))
 vi.mock('swiper/css', () => ({}))
 
-/** The mocked storefront endpoints, re-created for every test. */
-const api = { fetchPartners: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** What the stub answers, by route; the tests below change the testimonials it serves. */
+const replies: StubRouteTable = {}
+
+/**
+ * Makes the stub serve these testimonials.
+ *
+ * @param testimonials The testimonials the public read answers with.
+ */
+const serve = (testimonials: Testimonial[]): void => {
+  replies[readOf(StorefrontPath.Testimonials)] = { body: testimonials }
+}
 
 /**
  * Mounts the section and lets the testimonials load.
  *
+ * @param stubs Extra stubs for this mount.
  * @returns The wrapper.
  */
-const mountSection = async () => {
-  const wrapper = mountWithKit(SectionsTestimonials, { components: CLASSIC_COMPONENTS })
-  await flushPromises()
-  return wrapper
-}
+const mountSection = (stubs: Record<string, Component | boolean> = {}) =>
+  mountAfterReads(stub, [StorefrontPath.Testimonials], () => mountWithKit(SectionsTestimonials, { components: CLASSIC_COMPONENTS, stubs }))
 
 describe('SectionsTestimonials', () => {
-  beforeEach(() => {
-    api.fetchTestimonials.mockReset()
-    api.fetchTestimonials.mockResolvedValue([
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    serve([
       testimonialFixture(1),
       testimonialFixture(2, { role: null, company: null, rating: 3 }),
     ])
   })
 
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
+  })
+
   it('carries every quote in the server-render fallback, where the browser-only carousel is absent', async () => {
-    const wrapper = mountWithKit(SectionsTestimonials, {
-      components: CLASSIC_COMPONENTS,
-      stubs: { ClientOnly: { template: '<div><slot name="fallback" /></div>' } },
-    })
-    await flushPromises()
+    const wrapper = await mountSection({ ClientOnly: { template: '<div><slot name="fallback" /></div>' } })
 
     const items = wrapper.find('[data-testid="testimonials-fallback"]').findAll('li')
     expect(items).toHaveLength(2)
@@ -124,7 +132,7 @@ describe('SectionsTestimonials', () => {
   })
 
   it('renders nothing when there are no testimonials', async () => {
-    api.fetchTestimonials.mockResolvedValue([])
+    serve([])
 
     const wrapper = await mountSection()
 

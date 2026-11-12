@@ -55,3 +55,33 @@ export const settle = async (turns = 50): Promise<void> => {
     await turn()
   }
 }
+
+/** How many consecutive event-loop turns a snapshot must stay unchanged for {@link untilStable} to call it settled. */
+const STEADY_TURNS = 3
+
+/**
+ * Waits, without moving the faked clock, until what a snapshot reads stops changing.
+ *
+ * Replies that cross a real socket land in turns the test cannot count, and a render that follows
+ * them lands in later ones. Instead of a guessed number of turns, this returns once the snapshot
+ * (the rendered HTML, a store's state) has read the same for several turns in a row.
+ *
+ * @param snapshot - Reads the state that must settle, as a string that changes when the state does.
+ * @param what - Named in the failure, so a timeout says what never settled.
+ * @returns Resolves once the snapshot has stopped changing.
+ * @throws When it is still changing after {@link MAX_TURNS} turns.
+ */
+export const untilStable = async (snapshot: () => string, what: string): Promise<void> => {
+  let previous: string | undefined
+  let steady = 0
+  for (let i = 0; i < MAX_TURNS; i += 1) {
+    const current = snapshot()
+    steady = current === previous ? steady + 1 : 0
+    previous = current
+    if (steady >= STEADY_TURNS) {
+      return
+    }
+    await turn()
+  }
+  throw new Error(`Never settled: ${what}`)
+}

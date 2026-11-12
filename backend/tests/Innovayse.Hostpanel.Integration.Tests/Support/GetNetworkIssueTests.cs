@@ -25,7 +25,7 @@ public sealed class GetNetworkIssueTests(IntegrationTestFactory factory) : IClas
             type = "Server",
             server = "web-01",
             priority = nameof(NetworkIssuePriority.High),
-            startDate = DateTimeOffset.UtcNow,
+            startDate = TestMoments.Seeded,
             description = "Something is down.",
         });
         var id = int.Parse((await createResponse.Content.ReadAsStringAsync()).Trim());

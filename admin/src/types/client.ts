@@ -58,8 +58,12 @@ export interface ClientPreferences {
 export interface ClientSettings {
   /** Whether overdue notices are sent for this client. */
   overdueNotices: boolean
-  /** Whether the client is exempt from taxes. */
+  /** Whether the client is exempt from taxes: no tax is added to their invoices. */
   taxExempt: boolean
+  /** The client's tax identification number (for example a VAT number), or null or absent when none is recorded. */
+  taxId?: string | null
+  /** Why the client is tax exempt, or null or absent when no reason is recorded. */
+  taxExemptionReason?: string | null
   /** Whether invoices are generated separately per product. */
   separateInvoices: boolean
   /** Whether credit card processing is disabled for this client. */
@@ -71,6 +75,11 @@ export interface ClientSettings {
   /** Whether the client may use single sign-on. */
   allowSso: boolean
 }
+
+/** The names of the on or off switches among the account settings, the ones a toggle drives. */
+export type ClientSettingSwitch = {
+  [K in keyof ClientSettings]-?: ClientSettings[K] extends boolean ? K : never
+}[keyof ClientSettings]
 
 /** Full client DTO returned by the detail endpoint. */
 export interface ClientDetail extends ClientListItem {

@@ -24,13 +24,13 @@ public sealed class ClientRecordStoreTests(IntegrationTestFactory factory) : ICl
         using (var first = factory.Services.CreateScope())
         {
             var saved = await first.ServiceProvider.GetRequiredService<IClientRecordStore>()
-                .AddOrGetAsync(Client.Create(userId, "Grace", "Hopper", $"{userId}@example.test", DateTimeOffset.UtcNow), CancellationToken.None);
+                .AddOrGetAsync(Client.Create(userId, "Grace", "Hopper", $"{userId}@example.test", TestMoments.Seeded), CancellationToken.None);
             saved.Created.Should().BeTrue();
         }
 
         // Act: the second writer lost the race, so its insert hits the unique index on the user.
         using var second = factory.Services.CreateScope();
-        var loser = Client.Create(userId, "Grace", "Hopper", $"{userId}@example.test", DateTimeOffset.UtcNow);
+        var loser = Client.Create(userId, "Grace", "Hopper", $"{userId}@example.test", TestMoments.Seeded);
         var outcome = await second.ServiceProvider.GetRequiredService<IClientRecordStore>()
             .AddOrGetAsync(loser, CancellationToken.None);
 
@@ -55,7 +55,7 @@ public sealed class ClientRecordStoreTests(IntegrationTestFactory factory) : ICl
 
         // Act
         var outcome = await scope.ServiceProvider.GetRequiredService<IClientRecordStore>()
-            .AddOrGetAsync(Client.Create(userId, "Ada", "Lovelace", $"{userId}@example.test", DateTimeOffset.UtcNow), CancellationToken.None);
+            .AddOrGetAsync(Client.Create(userId, "Ada", "Lovelace", $"{userId}@example.test", TestMoments.Seeded), CancellationToken.None);
 
         // Assert
         outcome.Created.Should().BeTrue();

@@ -8,7 +8,7 @@
  * @module types/pluginblock
  */
 
-import type { PluginBlockKind } from '~/types/pluginblockkind'
+import type { PluginBlockGroupKind, PluginBlockKind } from '~/types/pluginblockkind'
 import type { PluginBlockTone } from '~/types/pluginblocktone'
 import type { PluginFieldType } from '~/types/pluginfieldtype'
 import type { PluginFollowUp } from '~/types/pluginfollowup'
@@ -251,12 +251,12 @@ export interface PluginTabsBlock extends PluginBlockBase {
   actions?: PluginActionBlock[]
 }
 
-/** A ready-made message a chat offers before the first one is written. */
+/** A ready-made message a chat offers before the first one is written; pressing it sends the message. */
 export interface PluginChatSuggestion {
   /** The button text. */
   label: string
-  /** The message it puts in the message field. */
-  text: string
+  /** The message a press sends; the label when absent. */
+  text?: string
 }
 
 /** A chat streamed from a route. */
@@ -360,3 +360,21 @@ export type PluginBlock =
   | PluginProgressBlock
   | PluginSplitBlock
   | PluginPreviewBlock
+
+/** A block of a group with the key it is rendered under. */
+export interface PluginKeyedBlock {
+  /** The block's id, else its kind, and always its place, which a view document never reorders. */
+  key: string
+  /** The block. */
+  block: PluginBlock
+}
+
+/** A run of blocks laid out together. */
+export interface PluginBlockGroup {
+  /** The key of the group: the key of its first block. */
+  key: string
+  /** How the group is laid out. */
+  kind: PluginBlockGroupKind
+  /** The blocks of the group, in document order. */
+  blocks: PluginKeyedBlock[]
+}

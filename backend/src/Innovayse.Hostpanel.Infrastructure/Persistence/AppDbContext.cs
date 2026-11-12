@@ -123,6 +123,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the currencies table: one base row plus every rated currency.</summary>
     public DbSet<Domain.Billing.Currency> Currencies => Set<Domain.Billing.Currency>();
 
+    /// <summary>Gets the tax rules table: the rate staff set per country, and per region of a country.</summary>
+    public DbSet<Domain.Billing.TaxRule> TaxRules => Set<Domain.Billing.TaxRule>();
+
     /// <summary>Gets the client services table.</summary>
     public DbSet<ClientService> ClientServices => Set<ClientService>();
 
@@ -308,6 +311,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
 
     /// <summary>Gets the timeline entries of the status page incidents.</summary>
     public DbSet<StatusIncidentUpdate> StatusIncidentUpdates => Set<StatusIncidentUpdate>();
+
+    /// <summary>Gets the records of the automatic checks of the status page components.</summary>
+    public DbSet<StatusCheck> StatusChecks => Set<StatusCheck>();
 
     /// <summary>Gets the storefront partners table.</summary>
     public DbSet<Partner> Partners => Set<Partner>();

@@ -1,5 +1,5 @@
 <template>
-  <UiSection v-if="installer.categories.length" padding="lg" :contained="false" class="relative border-t border-line" data-testid="aurora-apps">
+  <UiSection padding="lg" :contained="false" class="relative border-t border-line" data-testid="aurora-apps">
     <UiText tone="inherit" size="inherit" :class="[EYEBROW_CLASS, 'text-ac1']">{{ t('aurora.apps.eyebrow') }}</UiText>
     <UiHeading :level="2" size="bare" :class="[SECTION_TITLE_CLASS, 'mt-3']">
       {{ t('aurora.apps.title') }}

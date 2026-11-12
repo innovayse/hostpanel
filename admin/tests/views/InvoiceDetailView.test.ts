@@ -7,20 +7,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import InvoiceDetailView from '@/views/InvoiceDetailView.vue'
-import { saveBlob } from '@/utils/saveBlob'
 import { fulfilmentFixture, invoiceFixture } from '../helpers/billingFixtures'
+import { captureDownloads } from '../helpers/captureDownloads'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
-
-vi.mock('@/utils/saveBlob', () => ({ saveBlob: vi.fn() }))
 
 /** Route pattern of the screen, with the optional mode segment. */
 const PATTERN = '/billing/:id/:action?'
 
 afterEach(() => {
   vi.unstubAllGlobals()
-  vi.mocked(saveBlob).mockClear()
+  vi.restoreAllMocks()
 })
 
 describe('InvoiceDetailView', () => {
@@ -163,6 +161,7 @@ describe('InvoiceDetailView', () => {
   })
 
   it('downloads the PDF as a blob under the name the API gives', async () => {
+    const saved = captureDownloads()
     stubRoutes({
       'GET /api/billing/1/pdf': () =>
         new Response('%PDF', {
@@ -179,12 +178,13 @@ describe('InvoiceDetailView', () => {
     await flushPromises()
 
     expect(button.text()).toContain('Download PDF')
-    expect(saveBlob).toHaveBeenCalledTimes(1)
-    expect(vi.mocked(saveBlob).mock.calls[0]?.[1]).toBe('invoice-1.pdf')
+    expect(saved).toHaveLength(1)
+    expect(saved[0]?.fileName).toBe('invoice-1.pdf')
     expect(wrapper.get('[data-testid="billing-invoice-download-feedback"]').text()).toBe('')
   })
 
   it('falls back to a default file name when the API sends none', async () => {
+    const saved = captureDownloads()
     stubRoutes({
       'GET /api/billing/1/pdf': () => new Response('%PDF', { status: 200 }),
       'GET /api/billing/1': () => json(invoiceFixture()),
@@ -195,10 +195,12 @@ describe('InvoiceDetailView', () => {
     await wrapper.get('[data-testid="billing-invoice-download"]').trigger('click')
     await flushPromises()
 
-    expect(vi.mocked(saveBlob).mock.calls[0]?.[1]).toBe('invoice-1.pdf')
+    expect(saved).toHaveLength(1)
+    expect(saved[0]?.fileName).toBe('invoice-1.pdf')
   })
 
   it('shows a refused PDF download beside its button only, and saves nothing', async () => {
+    const saved = captureDownloads()
     stubRoutes({
       'GET /api/billing/1/pdf': () => problem('The invoice has too many lines for a PDF.', 409),
       'GET /api/billing/1': () => json(invoiceFixture()),
@@ -211,7 +213,7 @@ describe('InvoiceDetailView', () => {
 
     expect(wrapper.get('[data-testid="billing-invoice-download-feedback"]').text())
       .toBe('The invoice has too many lines for a PDF.')
-    expect(saveBlob).not.toHaveBeenCalled()
+    expect(saved).toHaveLength(0)
     expect(wrapper.find('[data-testid="billing-invoice-error"]').exists()).toBe(false)
   })
 

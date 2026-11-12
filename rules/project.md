@@ -70,7 +70,7 @@ repositories. What is specific to this project is short:
 - **Recurring jobs and background handlers return `Task`, not `Result`.** The crons
   (`CheckOverdueInvoicesCron`, `ProcessBillableItemsCron`, `ProcessRenewalsCron`,
   `ReconcileGatewayPaymentsCron`, `SendRenewalRemindersCron`, `SuspendOverdueServicesCron`,
-  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`) and `ResetDemoData`,
+  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`, `CheckStatusComponentsCron`) and `ResetDemoData`,
   `CheckDomainExpiries` and `SyncPendingDomainStatuses` are scheduled messages, not dispatched by a
   caller, so nothing would receive a `Result`. So are `RunMigrationPull` (published by
   `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended; when two
@@ -295,10 +295,24 @@ docker/                              compose set (shared·dev·prod·platform), 
   (`ClientAccessExtensions.EnsureCallerHoldsAsync`, because the order route is open to guests and never meets the permission
   filter: `CLIENT_PERMISSION_DENIED`; paying without saving needs no permission), and a payment that saves is refused
   with `CLIENT_CARD_PAYMENT_DISABLED` when card processing is disabled for the client, with `STORED_CREDENTIALS_NOT_SUPPORTED` at a
-  module without the capability and with 401 for a guest. The gateway customer is ensured before the payment is registered
-  (`GatewayCustomerEnsurer`, shared with `BeginSaveStoredMethod`), the payment is registered with
-  `PaymentInstruction.SavePaymentMethod`, and the consent (keyed by the gateway order, with the wording version and the
-  request's own address and browser, never the body's) is saved with the session. `CompleteGatewayPayment`, from the return page and from
+  module without the capability (read off the plugin the payment is registered with, not looked up again) and with a failed
+  result `UNAUTHORIZED` (401) for a guest, never an exception. The `ConsentTextVersion` must be the wire value of a published
+  wording (`ConsentTextVersion` in Domain, `ConsentTextVersionExtensions` in Application; the values are the portal's own,
+  `client/types/consenttextversion.ts`); a new wording is a new member of both. The gateway customer is ensured before the payment
+  is registered but only staged (`GatewayCustomerEnsurer`, shared with `BeginSaveStoredMethod`): the payment is registered with
+  `PaymentInstruction.SavePaymentMethod`, and the customer row, the consent (keyed by the gateway order, with the wording
+  version and the request's own address and browser, never the body's) and the session are saved in one save
+  (`GatewayCustomerEnsurer.SaveAsync`, which also settles two first requests racing on the customer's unique key by dropping
+  only the customer row and saving once more). A consent whose payment never stores a method is revoked
+  (`UnboundConsentRevoker`, `CardChargeConsent.RevokeUnbound`, never touching one that already covers a method): by the
+  attempt that replaces the session, in its save; by `CompleteGatewayPayment` when the gateway declined the session (a lost
+  save drops only the revoked consents); by `CancelInvoice`, `BulkInvoiceAction` and `ReleaseDomainRenewalInvoices` in the save
+  that cancels the invoice (`UnboundConsentRevoker.RevokeOfAsync`, which takes the session from the invoice); and by
+  `EndSessionConsentOnPaymentReceivedHandler` when the invoice turns paid, whichever path paid it (`Invoice.ApplyPaid` is the one
+  place and raises `PaymentReceivedEvent`; the session's own payment bound its method in that same save, so it is untouched; an event that arrives late for an invoice marked unpaid since is ignored). One case stays open: a session
+  that expires at the gateway on its own, with the payer gone and no new attempt, keeps its consent open until the invoice is paid or
+  cancelled (or the reconciliation job sees the gateway decline it). A consent with no method is not active, so it can charge nothing.
+  `CompleteGatewayPayment`, from the return page and from
   `ReconcileGatewayPaymentsCron` alike, binds the method in `GatewayPaymentStatus.SavedMethod` to that consent through
   `StoredMethodBinder` (shared with `CompleteSaveStoredMethod`) in the very save that settles the invoice. A missing or
   conflicting method never fails the payment: no `SavedMethod`, no active consent, a consent already covering another
@@ -578,6 +592,11 @@ docker/                              compose set (shared·dev·prod·platform), 
       panel's: a header's `compact`, `titleSource`, `subtitleSource` and any block kind in its `actions`; an action's
       `labelSource`; a table's `display: "cards"`; a tabs block's `actions`; a preview's `note` (an object of sentences by
       source id). A chat `result` event may carry `details` (lines behind a switch), and an action `{ label, resend: true }`.
+    - **The chat members `assistant`, `intro`, `suggestions` and `maxLength` are not validated at install.** They are the
+      panel's own presentation members (`PluginViewDocumentReader` does not read them), so a wrong shape is not refused:
+      the panel draws what is written, as text only, and the plugin author finds out on the page. A check at install
+      would be a rule added after plugins were installed, which follows the decision under "View state": refused at
+      install and only warned at load. Add it as an advisory, never as a violation, when it is wanted.
     - **Sandbox decision.** `allow-scripts allow-forms`, **never `allow-same-origin`**: a client chooses a service's
       domain, so it could name the panel's own host, and that pair is an escape from the sandbox on a shared origin. The
       opaque origin also means a framed site's session can never be driven from the panel. Accepted cost: a page that
@@ -1414,7 +1433,9 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   handlers only send notifications, with these exceptions: `Billing/Events/RenewalPaymentReceivedHandler` dispatches
   `ApplyPaidRenewalsCommand`. It is safe because it only triggers an idempotent command (the line's
   `RenewalAppliedAt` marker decides) that the daily renewal sweep also runs, so a dropped event is
-  applied within a day. The second exception is `Services/Events/ClientServiceTerminatedHandler`, which dispatches
+  applied within a day. `Billing/Events/EndSessionConsentOnPaymentReceivedHandler` revokes the method-less consent of the paid invoice's
+  hosted session on `PaymentReceivedEvent` (see "A method can also be saved within a payment"); it is idempotent, ignores an invoice that
+  is not settled any more, and a retry repeats it. The second exception is `Services/Events/ClientServiceTerminatedHandler`, which dispatches
   `RetireTerminatedServiceCommand` (closes the service's open cancellation requests and revokes its SSH keys on
   the server each key is pinned to, leaving a key the agent does not confirm removed marked as a failed revoke for
   staff); it is idempotent, and a failure is logged for staff. `Services/Events/SuspendSshKeysOnServiceSuspendedHandler`
@@ -1610,11 +1631,18 @@ every query), not a policy change.
 The switches an admin sets on a client are enforced where the feature exists, and a switch whose
 feature does not exist is not kept. The decisions:
 
-- **`TaxExempt`.** No tax is added to an invoice automatically (there is no tax engine, only the
-  rate an admin types on the invoice options), so the switch is enforced there:
-  `UpdateInvoiceOptions` refuses a new or higher rate on a tax-exempt client's invoice with 409
-  `CLIENT_TAX_EXEMPT`. A rate the invoice already carries may stay. New and renewal invoices carry no
-  tax to remove.
+- **`TaxExempt`, `TaxId`, `TaxExemptionReason`.** A new invoice is taxed by the tax rules
+  (`TaxRules`, one rule per country and optional region, admin CRUD at `/api/admin/tax-rules`) at the
+  rate `ClientTaxRateResolver` (`Billing/Common`) answers: 0 when the setting `billing.tax.enabled` is
+  off, when the client is tax exempt, when the client has no country or when no enabled rule matches;
+  otherwise the enabled rule of the client's region, else the enabled country-wide rule. Every use case
+  that raises an invoice from lines (`CreateOrderInvoice`, `RaiseClientRenewalInvoices`,
+  `InvoiceClientBillableItems`, `InvoiceSelectedItems`, `ConvertQuoteToInvoice`, `CreateInvoice`)
+  fixes the answer on the invoice with `Invoice.ApplyTaxRate` after the lines and before any credit,
+  so a later change of a rule never alters an issued invoice. A credit top-up invoice stays untaxed.
+  The exempt switch is also enforced on the manual rate: `UpdateInvoiceOptions` refuses a new or higher
+  rate on a tax-exempt client's invoice with 409 `CLIENT_TAX_EXEMPT`. A rate the invoice already
+  carries may stay.
 - **`OverdueNotices`.** The payment reminder mail for an unpaid renewal invoice
   (`SendRenewalReminder`) goes only to a client with both `NotifyInvoice` and `OverdueNotices` on. The
   reminder threshold is still recorded when nobody is mailed, so it is not retried every day. No other
@@ -2252,10 +2280,22 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
     address. `server/middleware/plugin-frame-csp.ts` writes the document's `frame-src`, read from the page of that address,
     so the document's scope is the exact page: `pluginDocumentLoaded` compares the navigation entry's path with the page on
     screen, and any router move onto a preview, inside one plugin too, loads it once in full (one session flag per page
-    keeps it from looping). `ChatBlock` renders `step`, `result` (`UiToneCard`) and `issue` inside the reply, and Stop
-    aborts the fetch. A reply's own text goes through `UiMarkdownText` (`utils/ui/markdownText.ts`): the Markdown subset
-    becomes known tags through the same node tree and `renderRichNode` as `UiRichText`, never `v-html`, and a Markdown link
-    stays text, because an address renders only through `pluginLinkTarget`.
+    keeps it from looping).
+  - **The chat block (#778, #786, #788).** `ChatBlock` only orchestrates: it sends, streams, stops and retries, and the
+    screen is its parts. `ChatMessage` is the reader's bubble, or a reply beside `UiChatAvatar` (its Markdown, the
+    `UiTypingDots` before its first words, the `status` line, `ChatSteps`, issues, `ChatResultCard`s, a copy button and a
+    time shown for a message this session wrote); `ChatEmpty` is the `intro` and the `suggestions`, and pressing
+    one sends it; `ChatComposer` is `UiChatInput` with Send inside it, which is one button that turns into Stop while a reply streams (Enter sends,
+    Shift+Enter writes a new line, the field keeps the focus after a send). The log is a `role="log"` that scrolls by itself
+    and offers "Jump to latest" once the reader scrolled up. Four composables hold the rules, the same in both apps (see
+    the admin entry): `usePluginChatMessages` turns events into messages (the cap, the link rule, malformed parts dropped),
+    `usePluginChatTurn` runs a turn (send, stream, Stop, Retry, refresh), `usePluginChatScroll` follows the newest message, and `usePluginChatDraft` keeps the unsent text in the tab's
+    `sessionStorage`, keyed by plugin, send path and the view's values, until a reply arrives; signing out forgets every draft in the tab. A restart of the conversation (a reset action) clears the stored copy only of a send that was in flight, never the text the reader is typing. A send that got no reply
+    gives its text back to the field and is not left shown as sent (one that carried a selection stays shown, and Stop before its first word forgets the stored copy, since only leaving the page keeps it for the next visit); a failed turn that wrote a reply offers Retry, which
+    replaces that turn. Stop aborts the fetch. A reply's own text goes through `UiMarkdownText`
+    (`utils/ui/markdownText.ts`): the Markdown subset becomes known tags through the same node tree and `renderRichNode` as
+    `UiRichText`, never `v-html`; its code blocks carry a copy button and a reply still written ends in a caret. A Markdown
+    link stays text, because an address renders only through `pluginLinkTarget`, which the `link` event goes through.
 - **The kit is `components/ui/` (`Ui*`), and screens are composed from it.** `pages/**`, `layouts/**`
   and `templates/*/{pages,sections,layout}/**` carry no raw tag at all; an area's own components
   (`components/<area>/`) compose the kit and may not hold a card-styled `div` or an interactive
@@ -2350,20 +2390,35 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   `/api/admin/plugins/{id}/ext/{path}`) → `useApi` (`request`, and `stream`, the one server-sent event reader,
   `fetch` with the CSRF and language headers, never `EventSource`). `components/plugins/view/` renders the
   schema 1 blocks with the admin kit, mirroring the client's design (header, text, stat, table, form, action,
-  link, badge, empty, alert, tabs, chat with steps, cards and issues, progress, split), with `visibleWhen`,
+  link, badge, empty, alert, tabs, chat, progress, split), with `visibleWhen`,
   `resetOnSuccess`, `followUp` and the shared reads of `composables/usePluginView.ts`; `preview` and an
   action's `bodySource` are a client page's alone (refused on an admin page at install) and draw nothing. Pure
   rules live in `lib/pluginView.ts`: the path filling, the link rule (`pluginLinkTarget`: host-relative, never
   `/api`, or https on the page's `externalOrigins`), the chat event readers and the follow-up bounds (the host's).
   A reply's Markdown goes through `UiMarkdown` with `links` off, so an address renders only through the link
-  rule. The sidebar adds an Add-ons section before System from the index's menu items (`withAddons` in
+  rule; its `copyLabel` gives code blocks a copy button and `caret` ends a reply still written. The sidebar adds an
+  Add-ons section before System from the index's menu items (`withAddons` in
   `lib/navigation.ts`, a plugin entry carries its API label instead of an i18n key and a built-in icon by name),
   hidden while no plugin declares one, and reads the index again on a language switch.
+  - **The chat block is the client's, part for part** (see "The chat block" under the client): `PluginChatBlock`
+    orchestrates `PluginChatMessage`, `PluginChatEmpty`, `PluginChatComposer`, `PluginChatSteps` and `PluginChatResultCard`
+    over `usePluginChatMessages`, `usePluginChatTurn`, `usePluginChatScroll` and `usePluginChatDraft`, with the same behaviour (suggestions
+    send, Send becomes Stop, Jump to latest, the draft kept in the tab, Retry), drawn with the admin kit (`UiChatInput`,
+    `UiChatAvatar`, `UiTypingDots`, `UiCopyButton`; a result card keeps `UiAlert`'s tone). The admin has no element
+    selection, so nothing of it is carried. The four composables are copies of the client's files that cannot be
+    imported across the repository: they differ only in their import lines, and
+    `client/tests/composables/pluginChat.shared.test.ts` fails on any other difference. Change the client file first, then
+    the admin one.
 - **Tests mirror the source.** `tests/` mirrors `src/` (components, views, layouts, stores,
   composables, `composables/apis`, lib, middleware, utils), with a real kit, real Pinia and the API
   stubbed at the network level (`tests/helpers/{fetch,routes,mount}.ts`), never a mocked store or
   `useApi`. `tests/coverage-shape.test.ts` fails when a component, layout, view, store, composable,
   lib module or guard has no test importing it. `tests/lint/strictRules.test.ts` pins the lint rules.
+  `tests/lint/noOwnMocks.test.ts` (admin) and `tests/config/noOwnMocks.test.ts` (client, one guard per
+  app because an app's container cannot read the other's files) fail on a `vi.mock` or `vi.doMock` of
+  any module of ours; the client one also fails on a test that fakes a composable or store of ours with
+  `vi.stubGlobal` (a Nuxt or Vue framework global may be stubbed), and its `KNOWN_REMAINDER` list of
+  tests that still do so may only shrink.
   On this laptop vitest needs `--maxWorkers=2`.
 - **e2e.** `admin/e2e/`: Playwright, one spec per flow, `data-testid` selectors only (`fieldOf` for
   inputs), against `vite preview` of a production build with the API replaced by `page.route`

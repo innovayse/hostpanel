@@ -97,6 +97,17 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     [Range(1, 1440)]
     public int SyncPendingDomainStatusesIntervalMinutes { get; init; } = 15;
 
+    /// <summary>Minutes between the end of one check of the monitored status page components and the start of the next.</summary>
+    [Range(1, 60)]
+    public int CheckStatusComponentsIntervalMinutes { get; init; } = 5;
+
+    /// <summary>
+    /// Days a status page check record is kept before the check job deletes it. At least 90, the widest window
+    /// the uptime figures are reported over, and a little more by default so the oldest day of that window is whole.
+    /// </summary>
+    [Range(90, 3650)]
+    public int StatusCheckRetentionDays { get; init; } = 100;
+
     /// <summary>Seconds between the end of one fulfilment dispatch pass and the start of the next.</summary>
     [Range(1, 3600)]
     public int DispatchFulfilmentIntervalSeconds { get; init; } = 30;
@@ -208,6 +219,13 @@ public sealed class ScheduledJobsOptions : IValidatableObject
     /// <summary>Gets the schedule of the pending domain status sync.</summary>
     public JobSchedule SyncPendingDomainStatuses =>
         JobSchedule.Every(TimeSpan.FromMinutes(SyncPendingDomainStatusesIntervalMinutes));
+
+    /// <summary>Gets the schedule of the status page component checks.</summary>
+    public JobSchedule CheckStatusComponents =>
+        JobSchedule.Every(TimeSpan.FromMinutes(CheckStatusComponentsIntervalMinutes));
+
+    /// <summary>Gets how long a status page check record is kept, as a span.</summary>
+    public TimeSpan StatusCheckRetention => TimeSpan.FromDays(StatusCheckRetentionDays);
 
     /// <summary>Gets the schedule of the fulfilment dispatch.</summary>
     public JobSchedule DispatchFulfilment =>

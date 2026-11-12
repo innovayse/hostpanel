@@ -785,13 +785,28 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
         // follows the same rule as the lines.
         if (taxRate != TaxRate)
         {
-            EnsureEditable();
-            EnsureChargeCoversPayments(SubTotal, taxRate);
+            ApplyTaxRate(taxRate);
         }
 
         InvoiceDate = invoiceDate;
         DueDate = dueDate;
         PaymentMethod = paymentMethod;
+        RecalculateTotals();
+    }
+
+    /// <summary>
+    /// Fixes the tax percentage of the invoice and recomputes its totals. The new-invoice handlers call it once the lines are added,
+    /// with the rate the client's country is due at that moment, so the rate stays on the invoice when the rules change later.
+    /// </summary>
+    /// <param name="taxRate">Tax percentage applied to the subtotal.</param>
+    /// <exception cref="DomainRuleException">
+    /// The invoice is no longer editable, or the rate would make it charge less than the payments it already took.
+    /// </exception>
+    public void ApplyTaxRate(decimal taxRate)
+    {
+        EnsureEditable();
+        EnsureChargeCoversPayments(SubTotal, taxRate);
+
         TaxRate = taxRate;
         RecalculateTotals();
     }

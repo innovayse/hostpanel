@@ -142,6 +142,7 @@ onBeforeUnmount(stopDeadline)
     :view="view.view"
     :values="context"
     :external-origins="view.externalOrigins"
+    embedded
     :track="track"
     :data-testid="`plugin-slot-widget-${testid}`"
   />

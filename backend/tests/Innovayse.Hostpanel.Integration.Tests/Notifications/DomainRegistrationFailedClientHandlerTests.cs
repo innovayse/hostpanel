@@ -31,7 +31,7 @@ public sealed class DomainRegistrationFailedClientHandlerTests(IntegrationTestFa
         await NotificationsTestSeeds.EnsureTemplateAsync(context, "domain-registration-failed", "Your domain registration failed");
 
         await scope.ServiceProvider.PublishAndWaitAsync(
-            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = DateTimeOffset.UtcNow });
+            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = TestMoments.Seeded });
 
         var toClient = Assert.Single(emailSender.Sent, m => m.To == email);
         Assert.NotNull(toClient);

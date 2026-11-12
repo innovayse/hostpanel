@@ -7,7 +7,7 @@
  * @module tests/composables/usePluginSlot.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createSSRApp, defineComponent, h, ref } from 'vue'
 import type { Ref } from 'vue'
 import { renderToString } from 'vue/server-renderer'
@@ -19,6 +19,7 @@ import { heldReply, queryOf } from '~/tests/helpers/stubRoutes'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { PluginSlotId } from '~/types/pluginslotid'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -57,11 +58,11 @@ describe('usePluginSlot', () => {
     const serviceId = ref('4')
     mountClient(hostFor(serviceId))
 
-    await vi.waitFor(() => expect(seen).toEqual(['tab']))
+    await waitUntil(() => expect(seen).toEqual(['tab']))
     expect(stub.requests[0]?.url).toBe('/api/portal/client/plugins/slots/client.service.tabs?serviceId=4')
 
     serviceId.value = '5'
-    await vi.waitFor(() => expect(stub.requests).toHaveLength(2))
+    await waitUntil(() => expect(stub.requests).toHaveLength(2))
     expect(stub.requests[1]?.url).toBe('/api/portal/client/plugins/slots/client.service.tabs?serviceId=5')
   })
 
@@ -74,10 +75,10 @@ describe('usePluginSlot', () => {
         return () => h('div')
       },
     }))
-    await vi.waitFor(() => expect(stub.requests).toHaveLength(1))
+    await waitUntil(() => expect(stub.requests).toHaveLength(1))
 
     slotId.value = PluginSlotId.DashboardCards
-    await vi.waitFor(() => expect(stub.requests).toHaveLength(2))
+    await waitUntil(() => expect(stub.requests).toHaveLength(2))
 
     expect(stub.requests[1]?.url).toBe('/api/portal/client/plugins/slots/client.dashboard.cards?serviceId=4')
   })
@@ -88,12 +89,12 @@ describe('usePluginSlot', () => {
     /** The service the slot is read for; held back while its first reply is pending. */
     const serviceId = ref('4')
     mountClient(hostFor(serviceId))
-    await vi.waitFor(() => expect(held.waiting()).toBe(1))
+    await waitUntil(() => expect(held.waiting()).toBe(1))
 
     serviceId.value = '5'
-    await vi.waitFor(() => expect(seen).toEqual(['five']))
+    await waitUntil(() => expect(seen).toEqual(['five']))
     held.release({ body: slotIndex(PluginSlotId.ServiceTabs, ['four']) })
-    await vi.waitFor(() => expect(stub.requests).toHaveLength(2))
+    await waitUntil(() => expect(stub.requests).toHaveLength(2))
     await new Promise(resolve => setTimeout(resolve, 50))
 
     expect(seen).toEqual(['five'])
@@ -103,12 +104,12 @@ describe('usePluginSlot', () => {
     /** The service the slot is read for; changed while a reply is still pending. */
     const serviceId = ref('4')
     mountClient(hostFor(serviceId))
-    await vi.waitFor(() => expect(seen).toEqual(['tab']))
+    await waitUntil(() => expect(seen).toEqual(['tab']))
     const held = heldReply()
     stub.respondWith(held.reply)
 
     serviceId.value = '5'
-    await vi.waitFor(() => expect(held.waiting()).toBe(1))
+    await waitUntil(() => expect(held.waiting()).toBe(1))
 
     expect(seen).toEqual([])
     held.release({ body: slotIndex(PluginSlotId.ServiceTabs, ['tab']) })
@@ -118,7 +119,7 @@ describe('usePluginSlot', () => {
     stub.respondWith(() => SERVICE_NOT_FOUND)
     mountClient(hostFor(ref('9')))
 
-    await vi.waitFor(() => expect(stub.requests).toHaveLength(1))
+    await waitUntil(() => expect(stub.requests).toHaveLength(1))
     expect(seen).toEqual([])
   })
 

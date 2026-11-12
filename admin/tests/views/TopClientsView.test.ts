@@ -4,6 +4,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import TopClientsView from '@/views/TopClientsView.vue'
+import { captureDownloads } from '../helpers/captureDownloads'
 import { json } from '../helpers/fetch'
 import { mountView } from '../helpers/mount'
 import { runReportCase } from '../helpers/reportViews'
@@ -36,14 +37,11 @@ describe('TopClientsView actions', () => {
       ]),
     })
     const wrapper = await mountView(TopClientsView)
-    // Replaced after mounting, so the router and the transport keep the real URL class.
-    const create = vi.fn(() => 'blob:top')
-    vi.stubGlobal('URL', { createObjectURL: create, revokeObjectURL: vi.fn() })
-    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    const saved = captureDownloads()
 
     await wrapper.get('[data-testid="report-export"]').trigger('click')
 
-    expect(create).toHaveBeenCalledTimes(1)
-    expect(click).toHaveBeenCalledTimes(1)
+    expect(saved).toHaveLength(1)
+    expect(saved[0]?.fileName).toMatch(/\.csv$/)
   })
 })

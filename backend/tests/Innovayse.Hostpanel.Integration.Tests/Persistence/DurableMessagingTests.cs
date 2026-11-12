@@ -110,7 +110,7 @@ public sealed class DurableMessagingTests(IntegrationTestFactory factory) : ICla
         {
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await using var transaction = await context.Database.BeginTransactionAsync();
-            context.Clients.Add(Client.Create($"subject-{Guid.NewGuid():N}", "Edsger", "Dijkstra", rolledBackEmail, DateTimeOffset.UtcNow));
+            context.Clients.Add(Client.Create($"subject-{Guid.NewGuid():N}", "Edsger", "Dijkstra", rolledBackEmail, TestMoments.Seeded));
             await context.SaveChangesAsync(CancellationToken.None);
             await transaction.RollbackAsync();
         }
@@ -119,7 +119,7 @@ public sealed class DurableMessagingTests(IntegrationTestFactory factory) : ICla
         {
             var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             await using var transaction = await context.Database.BeginTransactionAsync();
-            context.Clients.Add(Client.Create($"subject-{Guid.NewGuid():N}", "Barbara", "Liskov", committedEmail, DateTimeOffset.UtcNow));
+            context.Clients.Add(Client.Create($"subject-{Guid.NewGuid():N}", "Barbara", "Liskov", committedEmail, TestMoments.Seeded));
             await context.SaveChangesAsync(CancellationToken.None);
             await transaction.CommitAsync();
         }

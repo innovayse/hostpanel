@@ -59,6 +59,7 @@ public static class DependencyInjection
         // shared by the save session and by the payment that saves its method.
         services.AddScoped<GatewayCustomerEnsurer>();
         services.AddScoped<StoredMethodBinder>();
+        services.AddScoped<UnboundConsentRevoker>();
 
         // The connection state of plugin integrations (IPluginStatus), cached and worded for the Integrations page.
         services.AddScoped<PluginConnectionReader>();
@@ -92,6 +93,9 @@ public static class DependencyInjection
         services.AddScoped<ServicePlanChangeQuoter>();
         services.AddScoped<ServicePlanChangeSettingsReader>();
         services.AddScoped<SettingSource>();
+
+        // The rate a new invoice is raised at: the one answer every invoice-creating use case asks.
+        services.AddScoped<ClientTaxRateResolver>();
 
         // This installation's identity towards the plugin registry: where it is kept, and the enrolment that registers and verifies it.
         services.AddScoped<RegistryInstanceStore>();

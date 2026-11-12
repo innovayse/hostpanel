@@ -317,8 +317,7 @@ public sealed class GetClientPluginSlotWidgetTests : IClassFixture<AppPluginFixt
         {
             var db = scope.ServiceProvider.GetRequiredService<Infrastructure.Persistence.AppDbContext>();
             var row = await db.ClientServices.SingleAsync(s => s.Id == service);
-            var now = DateTimeOffset.UtcNow;
-            row.Activate("ref", now, now);
+            row.Activate("ref", TestMoments.Seeded, TestMoments.Seeded);
             product = row.ProductId;
             await db.SaveChangesAsync(CancellationToken.None);
         }
@@ -365,8 +364,7 @@ public sealed class GetClientPluginSlotWidgetTests : IClassFixture<AppPluginFixt
         {
             var db = scope.ServiceProvider.GetRequiredService<Infrastructure.Persistence.AppDbContext>();
             var row = await db.ClientServices.SingleAsync(s => s.Id == service);
-            var now = DateTimeOffset.UtcNow;
-            row.Activate("ref", now, now);
+            row.Activate("ref", TestMoments.Seeded, TestMoments.Seeded);
             product = row.ProductId;
             db.PluginSlotProductBindings.Add(Domain.Plugins.PluginSlotProductBinding.Create(pluginId, tabs, "tab", product));
             await db.SaveChangesAsync(CancellationToken.None);

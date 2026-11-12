@@ -24,15 +24,14 @@ public sealed class GetEmailDeliveryTests(IntegrationTestFactory factory) : ICla
     private static async Task<string> LogAsync(IServiceProvider services, EmailSendFailure? failure)
     {
         var key = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
-        var now = DateTimeOffset.UtcNow;
-        var log = EmailLog.Claim("someone@example.com", "Subject", "Body", key, now);
+        var log = EmailLog.Claim("someone@example.com", "Subject", "Body", key, TestMoments.Seeded);
         if (failure is { } refused)
         {
-            log.MarkUndelivered(refused, now);
+            log.MarkUndelivered(refused, TestMoments.Seeded);
         }
         else
         {
-            log.MarkDelivered(now);
+            log.MarkDelivered(TestMoments.Seeded);
         }
 
         var context = services.GetRequiredService<IHostpanelDbContext>();

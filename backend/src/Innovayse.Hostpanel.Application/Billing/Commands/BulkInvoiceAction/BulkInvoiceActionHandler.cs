@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
@@ -24,15 +25,21 @@ public sealed class BulkInvoiceActionHandler
     /// <summary>The clock every moment in this handler is read from.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Ends the consent recorded for the session of each invoice cancelled.</summary>
+    private readonly UnboundConsentRevoker _consents;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="clientCredit">Returns cancelled invoices' credit to their clients' balances in the same save.</param>
     /// <param name="clock">The clock the current moment is read from.</param>
-    public BulkInvoiceActionHandler(IHostpanelDbContext context, IClientCredit clientCredit, IClock clock)
+    /// <param name="consents">Ends the consent recorded for the session of each invoice cancelled.</param>
+    public BulkInvoiceActionHandler(
+        IHostpanelDbContext context, IClientCredit clientCredit, IClock clock, UnboundConsentRevoker consents)
     {
         _context = context;
         _clientCredit = clientCredit;
         _clock = clock;
+        _consents = consents;
     }
 
     /// <summary>Handles <see cref="BulkInvoiceActionCommand"/>.</summary>
@@ -146,6 +153,8 @@ public sealed class BulkInvoiceActionHandler
             invoice.Cancel(_clock.UtcNow);
         }
 
+        // One query for the sessions of every invoice cancelled, staged in the caller's save.
+        await _consents.RevokeOfAsync(cancellable, ct);
         return Result<int>.Success(cancellable.Count);
     }
 

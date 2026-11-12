@@ -6,6 +6,7 @@
  * @module tests/helpers/stubRoutes
  */
 
+import { HttpMethod } from '~/types/httpmethod'
 import type { StubHandler, StubReply, StubRequest } from './stubServer'
 
 /** Replies by `METHOD /path` (path without its query string). */
@@ -13,6 +14,22 @@ export type StubRouteTable = Record<string, StubReply | ((request: StubRequest) 
 
 /** What an unscripted request is answered with: the BFF's own not found. */
 const NOT_SCRIPTED: StubReply = { status: 404, body: { type: 'NOT_FOUND', title: 'Not Found', status: 404, detail: 'Not found.' } }
+
+/**
+ * The key of a read in a stub route table.
+ *
+ * @param path - The path of the read.
+ * @returns The `GET` key for the route table.
+ */
+export const readOf = (path: string): string => `${HttpMethod.Get} ${path}`
+
+/**
+ * The reply of a backend that refuses a request with a sentence the screen shows.
+ *
+ * @param detail - The sentence.
+ * @returns The failure reply.
+ */
+export const refusal = (detail: string): StubReply => ({ status: 422, body: { detail } })
 
 /**
  * The path of a request without its query string.

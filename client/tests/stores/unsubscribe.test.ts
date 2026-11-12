@@ -1,32 +1,39 @@
 /**
- * Tests for `stores/unsubscribe.ts`: an accepted link ends Done, a refused one ends Failed with the
- * API's sentence, and the token goes to the API as it is, empty included.
+ * Tests for `stores/unsubscribe.ts`, through the real API composable and transport against a stub
+ * server: an accepted link ends Done, a refused one ends Failed with the API's sentence, and the
+ * token goes to the API as it is, empty included.
  *
  * @module tests/stores/unsubscribe.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { startTransport } from '../helpers/stubTransport'
+import type { StubServer } from '../helpers/stubServer'
+import { useUnsubscribeStore } from '~/stores/unsubscribe'
 import { UnsubscribeStatus } from '~/types/unsubscribestatus'
 
-/** The mocked unsubscribe call, re-created for every test. */
-const unsubscribeMock = vi.fn()
+/** The path the unsubscribe call goes to. */
+const UNSUBSCRIBE_PATH = '/api/portal/public/unsubscribe'
 
-vi.mock('~/composables/apis/useUnsubscribeApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns Only the endpoint the store reaches.
-   */
-  useUnsubscribeApi: () => ({ unsubscribe: unsubscribeMock })
-}))
+/** The stub playing the BFF. */
+let stub: StubServer
 
-const { useUnsubscribeStore } = await import('~/stores/unsubscribe')
+/**
+ * The tokens the stub received, oldest first.
+ *
+ * @returns The `token` of each request body.
+ */
+const sentTokens = (): unknown[] => stub.requests.map(request => (JSON.parse(request.body) as { token: unknown }).token)
 
 describe('useUnsubscribeStore', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     setActivePinia(createPinia())
-    unsubscribeMock.mockReset()
+    stub = await startTransport(() => ({ status: 204 }))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('starts idle with no sentence', () => {
@@ -37,19 +44,20 @@ describe('useUnsubscribeStore', () => {
   })
 
   it('reports Done when the API accepts the token', async () => {
-    unsubscribeMock.mockResolvedValue('')
     const store = useUnsubscribeStore()
 
     const status = await store.unsubscribe('tok')
 
-    expect(unsubscribeMock).toHaveBeenCalledWith('tok')
+    expect(stub.requests).toHaveLength(1)
+    expect(stub.requests[0]).toMatchObject({ method: 'POST', url: UNSUBSCRIBE_PATH })
+    expect(sentTokens()).toEqual(['tok'])
     expect(status).toBe(UnsubscribeStatus.Done)
     expect(store.status).toBe(UnsubscribeStatus.Done)
     expect(store.error).toBe('')
   })
 
   it('keeps the API sentence and reports Failed when the token is refused', async () => {
-    unsubscribeMock.mockRejectedValue({ data: { detail: 'This link is not valid.' } })
+    stub.respondWith(() => ({ status: 400, body: { detail: 'This link is not valid.' } }))
     const store = useUnsubscribeStore()
 
     const status = await store.unsubscribe('bad')
@@ -59,20 +67,22 @@ describe('useUnsubscribeStore', () => {
   })
 
   it('sends an empty token to the API instead of refusing it itself', async () => {
-    unsubscribeMock.mockRejectedValue({ data: { detail: 'A token is required.' } })
+    stub.respondWith(() => ({ status: 400, body: { detail: 'A token is required.' } }))
     const store = useUnsubscribeStore()
 
     await store.unsubscribe('')
 
-    expect(unsubscribeMock).toHaveBeenCalledWith('')
+    expect(sentTokens()).toEqual([''])
     expect(store.error).toBe('A token is required.')
   })
 
   it('clears an earlier refusal when it is tried again', async () => {
-    unsubscribeMock.mockRejectedValueOnce({ data: { detail: 'Expired.' } }).mockResolvedValueOnce('')
+    stub.respondWith(() => ({ status: 400, body: { detail: 'Expired.' } }))
     const store = useUnsubscribeStore()
-
     await store.unsubscribe('tok')
+    expect(store.error).toBe('Expired.')
+
+    stub.respondWith(() => ({ status: 204 }))
     await store.unsubscribe('tok')
 
     expect(store.status).toBe(UnsubscribeStatus.Done)

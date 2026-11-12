@@ -142,7 +142,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
         context.Invoices.Add(invoice);
         await context.SaveChangesAsync(CancellationToken.None);
         var ledgerRow = Transaction.Create(
-            clientId, DateTimeOffset.UtcNow, "Payment", $"tx-{Guid.NewGuid():N}", invoice.Id, "manual", 10m, 0m, 0m, false, TestCurrencies.Base, TransactionSource.Manual);
+            clientId, TestMoments.Seeded, "Payment", $"tx-{Guid.NewGuid():N}", invoice.Id, "manual", 10m, 0m, 0m, false, TestCurrencies.Base, TransactionSource.Manual);
         context.Transactions.Add(ledgerRow);
         await context.SaveChangesAsync(CancellationToken.None);
 
@@ -222,7 +222,7 @@ public sealed class ReferentialIntegrityTests(IntegrationTestFactory factory) : 
         var department = Department.Create($"Dept {Guid.NewGuid():N}", $"{Guid.NewGuid():N}@example.test");
         context.Departments.Add(department);
         await context.SaveChangesAsync(CancellationToken.None);
-        var ticket = Ticket.Create(clientId, "Help", "Please help", department.Id, TicketPriority.Medium, DateTimeOffset.UtcNow);
+        var ticket = Ticket.Create(clientId, "Help", "Please help", department.Id, TicketPriority.Medium, TestMoments.Seeded);
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
 

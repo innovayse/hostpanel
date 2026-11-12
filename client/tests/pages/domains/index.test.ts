@@ -1,70 +1,41 @@
 /**
- * Unit tests for the public domains page: it hands the template's component the price table, the
- * lookup state and the cart, adds a registration to the cart only when it can be sold in the
- * payer's currency, and sets the head and the structured data.
+ * Unit tests for the public domains page against the real catalogue, currency, cart and domains
+ * stores, API composables and transport, with a stub BFF answering on a real socket (nothing of ours
+ * is mocked): it hands the template's component the price table, the lookup state and the cart, adds
+ * a registration to the cart only when it can be sold in the payer's currency, and sets the head and
+ * the structured data.
+ *
+ * @module tests/pages/domains/index.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { defineComponent, h, ref } from 'vue'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import { until } from '~/tests/helpers/settle'
 import DomainsPage from '~/pages/domains/index.vue'
 import { useCartStore } from '~/stores/cart'
 import { useDomainsStore } from '~/stores/domains'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
-import type { BillingCurrency } from '~/types/currency'
+import { DomainResultStatus } from '~/templates/aurora/types/domainresultstatus'
 import type { TldPricing } from '~/types/tldpricing'
 import { CartItemType } from '~/types/cartitemtype'
 import { DomainOrderAction } from '~/types/domainorderaction'
 import { DOMAIN_SEARCH_QUERY_PARAM } from '~/constants/domainSearchQuery'
 import { TemplateName } from '~/types/templatename'
 
-/** The mocked catalogue endpoints, re-created for every test. */
-const catalogApi = { fetchProducts: vi.fn(), fetchTldPricing: vi.fn(), checkDomain: vi.fn() }
-
-/** The currency the stood-in currency endpoint answers with. */
-const usd: BillingCurrency = { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true }
-
-vi.mock('~/composables/apis/useCatalogApi', () => ({
-  /**
-   * Stands in for the catalogue API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useCatalogApi: () => catalogApi,
-}))
-vi.mock('~/composables/apis/useCurrencyApi', () => ({
-  /**
-   * Stands in for the currency API composable.
-   *
-   * @returns Only the endpoint the page's store reaches for.
-   */
-  useCurrencyApi: () => ({ loadBillingCurrencies: () => Promise.resolve([usd]) }),
-}))
-vi.mock('~/composables/apis/useDomainsApi', () => ({
-  /**
-   * Stands in for the domains API composable, which the page never reaches.
-   *
-   * @returns No endpoints.
-   */
-  useDomainsApi: () => ({}),
-}))
-vi.mock('~/composables/apis/useBillingApi', () => ({
-  /**
-   * Stands in for the billing API composable, which the page never reaches.
-   *
-   * @returns No endpoints.
-   */
-  useBillingApi: () => ({}),
-}))
-vi.mock('~/composables/apis/useClientApi', () => ({
-  /**
-   * Stands in for the client API composable, which the page never reaches.
-   *
-   * @returns No endpoints.
-   */
-  useClientApi: () => ({}),
-}))
+/** The public reads of the domains page that no catalogue helper names. */
+const DomainPath = {
+  TldPricing: '/api/portal/public/tld-pricing',
+  DomainCheck: '/api/portal/public/domain-check',
+} as const
 
 /**
  * Builds a TLD price table with one extension.
@@ -101,8 +72,21 @@ const TemplateDomains = defineComponent({
 /** What the stood-in runtime recorded for the current test. */
 let spies: PublicPageSpies
 
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
+
 /**
- * Mounts the page and lets the price table, the catalogue and the currencies load.
+ * The domain checks the stub has received.
+ *
+ * @returns The requests, oldest first.
+ */
+const domainChecks = () => requestsTo(stub.requests, DomainPath.DomainCheck)
+
+/**
+ * Mounts the page and waits until the price table, the catalogue and the currencies have been read.
  *
  * @param template Template the stood-in `useTemplate` reports.
  * @returns The wrapper.
@@ -110,19 +94,26 @@ let spies: PublicPageSpies
 const mountDomains = async (template: TemplateName = TemplateName.Aurora) => {
   vi.stubGlobal('useTemplate', () => ({ slot: () => TemplateDomains, name: ref(template) }))
   const wrapper = await mountPage(DomainsPage)
-  await flushPromises()
+  await awaitCatalogue()
   return wrapper
 }
 
 describe('domains page', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     spies = stubPublicPageRuntime()
     vi.stubGlobal('useTemplate', () => ({ slot: () => TemplateDomains }))
-    catalogApi.fetchProducts.mockReset()
-    catalogApi.fetchProducts.mockResolvedValue([{ id: 7, groupId: 2, name: 'Domain Registration' }])
-    catalogApi.fetchTldPricing.mockReset()
-    catalogApi.fetchTldPricing.mockResolvedValue(pricing('USD'))
     window.localStorage.clear()
+    table = {
+      [`GET ${CatalogPath.Products}`]: { body: [{ id: 7, groupId: 2, name: 'Domain Registration' }] },
+      [`GET ${DomainPath.TldPricing}`]: { body: pricing('USD') },
+      [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
+      [`POST ${DomainPath.DomainCheck}`]: { body: { domain: 'example.com', available: true } },
+    }
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('hands the template the price rows, the categories and the all-categories filter', async () => {
@@ -167,9 +158,9 @@ describe('domains page', () => {
   })
 
   it('adds an extension that sells in another currency, at the payer-currency amount the API converted', async () => {
-    catalogApi.fetchTldPricing.mockResolvedValue(pricing('AMD'))
+    table[`GET ${DomainPath.TldPricing}`] = { body: pricing('AMD') }
     const wrapper = await mountDomains()
-    useDomainsStore().lookupResults = [{ name: 'example.com', status: 'available' }] as never
+    useDomainsStore().lookupResults = [{ name: 'example.com', price: '$10.00', status: DomainResultStatus.Available }]
     await flushPromises()
 
     wrapper.findComponent(TemplateDomains).vm.$emit('add', 'example.com')
@@ -181,7 +172,7 @@ describe('domains page', () => {
   })
 
   it('adds nothing when the operator has no domain product', async () => {
-    catalogApi.fetchProducts.mockResolvedValue([])
+    table[`GET ${CatalogPath.Products}`] = { body: [] }
     const wrapper = await mountDomains()
 
     wrapper.findComponent(TemplateDomains).vm.$emit('add', 'example.com')
@@ -192,22 +183,21 @@ describe('domains page', () => {
 
   it('looks the typed name up at once when the address carries it', async () => {
     spies = stubPublicPageRuntime({ query: { [DOMAIN_SEARCH_QUERY_PARAM]: 'example.com' } })
-    catalogApi.checkDomain.mockReset()
-    catalogApi.checkDomain.mockResolvedValue({ available: true })
 
     await mountDomains()
+    await until(() => domainChecks().length > 0, 'the typed name to be checked')
 
-    expect(catalogApi.checkDomain).toHaveBeenCalledWith('example.com')
+    expect(domainChecks()).toHaveLength(1)
+    expect(bodyOf(domainChecks()[0])).toEqual({ domain: 'example.com' })
   })
 
   it('looks nothing up without a name, and leaves the search to the classic template', async () => {
-    catalogApi.checkDomain.mockReset()
     await mountDomains()
-    expect(catalogApi.checkDomain).not.toHaveBeenCalled()
+    expect(domainChecks()).toHaveLength(0)
 
     spies = stubPublicPageRuntime({ query: { [DOMAIN_SEARCH_QUERY_PARAM]: 'example.com' } })
     await mountDomains(TemplateName.Classic)
-    expect(catalogApi.checkDomain).not.toHaveBeenCalled()
+    expect(domainChecks()).toHaveLength(0)
   })
 
   it('sets the canonical head and publishes the collection page schema', async () => {

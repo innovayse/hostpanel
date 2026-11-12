@@ -1,40 +1,24 @@
 /**
- * Unit tests for the configure page: it shows the product named by the address with its cycles and
- * totals, and on Continue puts it in the cart in the chosen cycle and moves on to checkout.
+ * Unit tests for the configure page against the real catalogue, currency and cart stores, API
+ * composables and transport, with a stub BFF answering on a real socket (nothing of ours is mocked):
+ * it shows the product named by the address with its cycles and totals, and on Continue puts it in
+ * the cart in the chosen cycle and moves on to checkout.
+ *
+ * @module tests/pages/configure/[pid].test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
+import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import ConfigurePage from '~/pages/configure/[pid].vue'
 import CatalogConfigure from '~/components/catalog/Configure.vue'
 import { useCartStore } from '~/stores/cart'
-import type { BillingCurrency } from '~/types/currency'
 import type { PortalProduct } from '~/types/portalproduct'
 import { ProductType } from '~/types/producttype'
-
-/** The mocked catalogue endpoints, re-created for every test. */
-const api = { fetchProducts: vi.fn(), fetchProductGroups: vi.fn() }
-
-/** The currency the stood-in currency endpoint answers with. */
-const usd: BillingCurrency = { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true }
-
-vi.mock('~/composables/apis/useCatalogApi', () => ({
-  /**
-   * Stands in for the catalogue API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useCatalogApi: () => api,
-}))
-
-vi.mock('~/composables/apis/useCurrencyApi', () => ({
-  /**
-   * Stands in for the currency API composable.
-   *
-   * @returns Only the endpoint the page's store reaches for.
-   */
-  useCurrencyApi: () => ({ loadBillingCurrencies: () => Promise.resolve([usd]) }),
-}))
 
 /** The product the address names. */
 const starter: PortalProduct = {
@@ -44,8 +28,14 @@ const starter: PortalProduct = {
 /** The `navigateTo` spy of the current test. */
 let navigate: ReturnType<typeof vi.fn>
 
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
+
 /**
- * Mounts the page for one product id.
+ * Mounts the page for one product id and waits until the catalogue has been read in the payer currency.
  *
  * @param pid The `pid` route parameter.
  * @returns The wrapper.
@@ -53,25 +43,33 @@ let navigate: ReturnType<typeof vi.fn>
 const mountConfigure = async (pid = '2') => {
   stubPublicPageRuntime({ params: { pid } })
   const wrapper = await mountPage(ConfigurePage, { components: { CatalogConfigure } })
-  await flushPromises()
+  await awaitCatalogue()
   return wrapper
 }
 
 describe('configure page', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     navigate = vi.fn()
     vi.stubGlobal('navigateTo', navigate)
-    api.fetchProducts.mockReset()
-    api.fetchProducts.mockResolvedValue([starter])
-    api.fetchProductGroups.mockReset()
-    api.fetchProductGroups.mockResolvedValue([{ id: 1, name: 'Web Hosting', productCount: 1 }])
     window.localStorage.clear()
+    table = {
+      [`GET ${CatalogPath.Products}`]: { body: [starter] },
+      [`GET ${CatalogPath.ProductGroups}`]: { body: [{ id: 1, name: 'Web Hosting', productCount: 1 }] },
+      [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
+    }
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('reads the product by its id', async () => {
     await mountConfigure()
 
-    expect(api.fetchProducts).toHaveBeenCalledWith(expect.objectContaining({ pid: 2 }))
+    const reads = requestsTo(stub.requests, CatalogPath.Products)
+    expect(reads.length).toBeGreaterThan(0)
+    expect(reads.map(queryOf)).toEqual(reads.map(() => expect.objectContaining({ pid: '2' })))
   })
 
   it('shows the product, its family and its features', async () => {
@@ -92,7 +90,7 @@ describe('configure page', () => {
   })
 
   it('keeps the product type on the cart line, so the order of a digital good offers no hosting setup', async () => {
-    api.fetchProducts.mockResolvedValue([{ ...starter, type: ProductType.Digital }])
+    table[`GET ${CatalogPath.Products}`] = { body: [{ ...starter, type: ProductType.Digital }] }
     const wrapper = await mountConfigure()
 
     await wrapper.find('[data-testid="configure-continue"]').trigger('click')
@@ -111,7 +109,7 @@ describe('configure page', () => {
   })
 
   it('answers an unknown product with a notice and does not add anything', async () => {
-    api.fetchProducts.mockResolvedValue([])
+    table[`GET ${CatalogPath.Products}`] = { body: [] }
     const wrapper = await mountConfigure('999')
 
     expect(wrapper.find('[data-testid="configure-missing"]').exists()).toBe(true)

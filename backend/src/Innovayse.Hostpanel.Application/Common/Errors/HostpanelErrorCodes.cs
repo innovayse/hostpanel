@@ -1478,6 +1478,15 @@ public static class HostpanelErrorCodes
     /// <summary>The colour of a client group is not <c>#RRGGBB</c> (400).</summary>
     public const string CLIENT_GROUP_COLOR_INVALID = Domain.Clients.ClientsErrors.ClientGroupColorInvalid;
 
+    /// <summary>The id names no tax rule (404).</summary>
+    public const string TAX_RULE_NOT_FOUND = "TAX_RULE_NOT_FOUND";
+
+    /// <summary>A tax rule for the same country and region exists already (409, the <c>ALREADY</c> arm of <c>StatusMapping</c>).</summary>
+    public const string TAX_RULE_ALREADY_EXISTS = "TAX_RULE_ALREADY_EXISTS";
+
+    /// <summary>The rate of a tax rule is outside 0 to 100 percent (400).</summary>
+    public const string TAX_RULE_RATE_INVALID = Domain.Billing.BillingErrors.TaxRuleRateInvalid;
+
     /// <summary>
     /// The account owner cannot be removed as an additional user (409, an exact <c>StatusMapping</c> row):
     /// <see cref="Domain.Clients.Client.RemoveUser"/>.
@@ -1754,6 +1763,12 @@ public static class HostpanelErrorCodes
 
     /// <summary>The status page incident is resolved and takes no more updates (409).</summary>
     public const string STATUS_INCIDENT_ALREADY_RESOLVED = Domain.StatusPage.StatusPageErrors.IncidentAlreadyResolved;
+
+    /// <summary>A status page component is monitored without an address to check (400).</summary>
+    public const string STATUS_CHECK_URL_REQUIRED = Domain.StatusPage.StatusPageErrors.CheckUrlRequired;
+
+    /// <summary>A status page component's failure threshold is out of range (400).</summary>
+    public const string STATUS_FAILURE_THRESHOLD_INVALID = Domain.StatusPage.StatusPageErrors.FailureThresholdInvalid;
 
     /// <summary>The refund is more than what was paid and not yet refunded (400): <see cref="Domain.Billing.Invoice.AddRefund"/>.</summary>
     public const string INVOICE_REFUND_EXCEEDS_PAID = Domain.Billing.BillingErrors.InvoiceRefundExceedsPaid;

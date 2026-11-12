@@ -15,10 +15,9 @@ import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
  * Stands in for `useInstallerApps`.
  *
  * @param count The app count line; empty hides it.
- * @param categories The categories to list.
  */
-const stubApps = (count: string, categories: InstallerAppCategory[] = Object.values(InstallerAppCategory)): void => {
-  vi.stubGlobal('useInstallerApps', () => computed(() => ({ count, categories })))
+const stubApps = (count: string): void => {
+  vi.stubGlobal('useInstallerApps', () => computed(() => ({ count, categories: Object.values(InstallerAppCategory) })))
 }
 
 describe('NovaApps', () => {
@@ -46,12 +45,5 @@ describe('NovaApps', () => {
 
     expect(wrapper.find('[data-testid="nova-apps-count"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="nova-apps-grid"]').exists()).toBe(true)
-  })
-
-  it('renders nothing without categories', () => {
-    stubTemplateGlobals()
-    stubApps('', [])
-
-    expect(mountWithKit(NovaApps).find('[data-testid="nova-apps"]').exists()).toBe(false)
   })
 })

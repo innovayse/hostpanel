@@ -354,6 +354,16 @@ export interface PluginRegistryItemDto {
   downloads?: number | null
   /** Release notes of the latest version as Markdown; null or absent when the registry sends none. */
   latestChangelog?: string | null
+  /** What reviewers think of it; null or absent when nobody has rated it. */
+  rating?: PluginRegistryRatingDto | null
+}
+
+/** What reviewers think of a registry listing; the `rating` of the listing on the wire. */
+export interface PluginRegistryRatingDto {
+  /** Average score from 1 to 5; the server drops any other value. */
+  average: number
+  /** How many reviews the average comes from. */
+  count: number
 }
 
 /** One page of registry listings. */

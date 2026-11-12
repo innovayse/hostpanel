@@ -4,24 +4,32 @@
  * its rating, avatar or initials, role, company and localised date, and the section hides itself
  * when there are no quotes.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { testimonialFixture } from '~/tests/helpers/storefrontFixtures'
+import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import type { Testimonial } from '~/types/testimonial'
 import AuroraTestimonials from '~/templates/aurora/sections/AuroraTestimonials.vue'
 import { stubAuroraGlobals } from '../auroraGlobals'
 
-/** The mocked storefront endpoints, re-created for every test. */
-const api = { fetchPartners: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** What the stub answers, by route; the tests below change the quotes it serves. */
+const replies: StubRouteTable = {}
+
+/**
+ * Makes the stub serve these quotes.
+ *
+ * @param testimonials The quotes the public read answers with.
+ */
+const serve = (testimonials: Testimonial[]): void => {
+  replies[readOf(StorefrontPath.Testimonials)] = { body: testimonials }
+}
 
 /**
  * Mounts the section and lets the quotes load.
@@ -30,9 +38,7 @@ vi.mock('~/composables/apis/useStorefrontApi', () => ({
  */
 const mountSection = async () => {
   stubAuroraGlobals()
-  const wrapper = mountWithKit(AuroraTestimonials)
-  await flushPromises()
-  return wrapper
+  return mountAfterReads(stub, [StorefrontPath.Testimonials], () => mountWithKit(AuroraTestimonials))
 }
 
 /**
@@ -45,12 +51,17 @@ const visibleCard = (wrapper: Awaited<ReturnType<typeof mountSection>>) =>
   wrapper.findAll('[data-testid="testimonial-card"]').find(card => !card.classes().includes('hidden'))!
 
 describe('AuroraTestimonials', () => {
-  beforeEach(() => {
-    api.fetchTestimonials.mockReset()
-    api.fetchTestimonials.mockResolvedValue([
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    serve([
       testimonialFixture(1, { quote: 'First quote', name: 'Ann Lee', role: 'CEO', company: 'Example Co', rating: 4, publishedAt: '2026-03-10T00:00:00+00:00' }),
       testimonialFixture(2, { quote: 'Second quote', name: 'Bob', role: null, company: null, avatarUrl: '/uploads/bob.png', publishedAt: '2026-05-02T00:00:00+00:00' }),
     ])
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('shows the first quote with its author, role and company', async () => {
@@ -107,14 +118,14 @@ describe('AuroraTestimonials', () => {
     const two = await mountSection()
     expect(two.find('[data-testid="testimonials-arrows"]').classes()).toContain('sm:hidden')
 
-    api.fetchTestimonials.mockResolvedValue([1, 2, 3, 4].map(id => testimonialFixture(id, { quote: `Q${id}` })))
+    serve([1, 2, 3, 4].map(id => testimonialFixture(id, { quote: `Q${id}` })))
     const four = await mountSection()
     expect(four.find('[data-testid="testimonials-arrows"]').classes()).not.toContain('sm:hidden')
     expect(four.find('[data-testid="testimonials-arrows"]').classes()).not.toContain('lg:hidden')
   })
 
   it('has no controls for a single quote', async () => {
-    api.fetchTestimonials.mockResolvedValue([testimonialFixture(1, { quote: 'Only' })])
+    serve([testimonialFixture(1, { quote: 'Only' })])
 
     const wrapper = await mountSection()
 
@@ -177,7 +188,7 @@ describe('AuroraTestimonials', () => {
   })
 
   it('renders nothing, arrows included, when there are no quotes', async () => {
-    api.fetchTestimonials.mockResolvedValue([])
+    serve([])
 
     const wrapper = await mountSection()
 

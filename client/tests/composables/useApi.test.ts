@@ -20,6 +20,7 @@ import { ofetch } from 'ofetch'
 import { startStubServer } from '../helpers/stubServer'
 import type { StubServer } from '../helpers/stubServer'
 import { HttpMethod } from '~/types/httpmethod'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The active locale the stubbed i18n instance reports; tests change it to simulate a switch. */
 const locale = ref('en')
@@ -297,7 +298,7 @@ describe('apiStream', () => {
       controller.abort()
 
       await expect(reader.read()).rejects.toThrow()
-      await vi.waitFor(() => expect(closed).toBe(true))
+      await waitUntil(() => expect(closed).toBe(true))
     } finally {
       server.closeAllConnections()
       await new Promise<void>(resolve => server.close(() => resolve()))

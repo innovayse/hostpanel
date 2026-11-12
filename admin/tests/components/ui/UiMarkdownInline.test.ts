@@ -58,6 +58,19 @@ describe('UiMarkdownInline', () => {
   })
 })
 
+describe('UiMarkdownInline caret', () => {
+  it('ends the run with a hidden caret only when asked', () => {
+    const nodes = [piece(1, MarkdownInlineKind.Text, 'Writing')]
+
+    const plain = mount(UiMarkdownInline, { props: { nodes } })
+    const writing = mount(UiMarkdownInline, { props: { nodes, caret: true } })
+
+    expect(plain.find('[data-testid="markdown-caret"]').exists()).toBe(false)
+    expect(writing.get('[data-testid="markdown-caret"]').attributes('aria-hidden')).toBe('true')
+    expect(writing.get('[data-testid="markdown-caret"]').classes()).toContain('motion-reduce:animate-none')
+  })
+})
+
 describe('UiMarkdownInline without links', () => {
   it('draws a link as its text when links are off', () => {
     const wrapper = mount(UiMarkdownInline, {

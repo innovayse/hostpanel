@@ -1,5 +1,5 @@
 <template>
-  <UiSection v-if="channels.length" padding="lg" class="border-b border-nova-border" data-testid="nova-support">
+  <UiSection padding="lg" class="border-b border-nova-border" data-testid="nova-support">
     <NovaSectionHeader
       :eyebrow="t('nova.support.eyebrow')"
       :title="t('nova.support.title')"

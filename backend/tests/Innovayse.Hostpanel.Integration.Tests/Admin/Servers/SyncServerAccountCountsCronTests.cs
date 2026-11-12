@@ -53,7 +53,7 @@ public sealed class SyncServerAccountCountsCronTests(IntegrationTestFactory fact
             MonthlyCost: 0m,
             Datacenter: null,
             ServerStatusAddress: null,
-            NameServers: ServerNameServers.None), DateTimeOffset.UtcNow);
+            NameServers: ServerNameServers.None), TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);
         return server;
@@ -126,7 +126,7 @@ public sealed class SyncServerAccountCountsCronTests(IntegrationTestFactory fact
         var poisonedId = 0;
         using var failingHost = FailingSaveHost.Create(
             factory,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            new ManualTimeProvider(TestMoments.Seeded),
             tracker => tracker.Entries<Server>().Any(e => e.State == EntityState.Modified && e.Entity.Id == poisonedId));
         using var host = failingHost.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IServerConnectionTester>(tester)));

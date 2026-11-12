@@ -187,6 +187,35 @@ describe('ClientProfileView', () => {
     expect(JSON.parse(String((put?.[1] as RequestInit | undefined)?.body))).toMatchObject({ clientGroupId: null })
   })
 
+  it('fills the tax id and the tax exemption reason from the client and sends them back trimmed', async () => {
+    const taxed: ClientDetail = { ...detail, settings: { ...detail.settings, taxExempt: true, taxId: 'DE123456789', taxExemptionReason: 'Charity' } }
+    const { wrapper, fetchMock } = await mountProfile(taxed)
+
+    expect((wrapper.get('[data-testid="client-profile-tax-id"]').element as HTMLInputElement).value).toBe('DE123456789')
+    await wrapper.get('[data-testid="client-profile-tax-exemption-reason"]').setValue('  Registered charity  ')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    const put = fetchMock.mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === 'PUT')
+    expect(JSON.parse(String((put?.[1] as RequestInit | undefined)?.body))).toMatchObject({
+      settings: { taxExempt: true, taxId: 'DE123456789', taxExemptionReason: 'Registered charity' },
+    })
+  })
+
+  it('sends a blank tax id as null', async () => {
+    const taxed: ClientDetail = { ...detail, settings: { ...detail.settings, taxId: 'DE123456789' } }
+    const { wrapper, fetchMock } = await mountProfile(taxed)
+
+    await wrapper.get('[data-testid="client-profile-tax-id"]').setValue('   ')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    const put = fetchMock.mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === 'PUT')
+    expect(JSON.parse(String((put?.[1] as RequestInit | undefined)?.body))).toMatchObject({
+      settings: { taxId: null, taxExemptionReason: null },
+    })
+  })
+
   it('does not save when the operator backs out of the prompt', async () => {
     const { wrapper, fetchMock } = await mountProfile()
     await chooseStatus(wrapper, ClientStatus.Suspended)

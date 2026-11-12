@@ -1,27 +1,23 @@
 /**
- * Tests for `stores/demo.ts`: the status is read once, the published customer account is picked
- * by role, and a failed read leaves the demo off instead of throwing.
+ * Tests for `stores/demo.ts`, through the real API composable and transport against a stub server:
+ * the status is read once, the published customer account is picked by role, and a failed read
+ * leaves the demo off instead of throwing.
  *
  * @module tests/stores/demo.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { startTransport } from '../helpers/stubTransport'
+import type { StubServer } from '../helpers/stubServer'
+import { useDemoStore } from '~/stores/demo'
 import { DemoAccountRole } from '~/types/demoaccountrole'
 
-/** The mocked status call, re-created for every test. */
-const fetchDemo = vi.fn()
+/** The path the demo status is read from. */
+const DEMO_PATH = '/api/portal/demo'
 
-vi.mock('~/composables/apis/useDemoApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns Only the endpoint the store reaches.
-   */
-  useDemoApi: () => ({ fetchDemo })
-}))
-
-const { useDemoStore } = await import('~/stores/demo')
+/** The stub playing the BFF. */
+let stub: StubServer
 
 /** A demo status with both published accounts. */
 const STATUS = {
@@ -34,9 +30,13 @@ const STATUS = {
 }
 
 describe('useDemoStore', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     setActivePinia(createPinia())
-    fetchDemo.mockReset()
+    stub = await startTransport(() => ({ body: STATUS }))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('starts as not a demo', () => {
@@ -47,7 +47,6 @@ describe('useDemoStore', () => {
   })
 
   it('stores the status and exposes the client account', async () => {
-    fetchDemo.mockResolvedValue(STATUS)
     const store = useDemoStore()
 
     await store.load()
@@ -58,17 +57,17 @@ describe('useDemoStore', () => {
   })
 
   it('reads the status only once', async () => {
-    fetchDemo.mockResolvedValue(STATUS)
     const store = useDemoStore()
 
     await store.load()
     await store.load()
 
-    expect(fetchDemo).toHaveBeenCalledTimes(1)
+    expect(stub.requests).toHaveLength(1)
+    expect(stub.requests[0]).toMatchObject({ method: 'GET', url: DEMO_PATH })
   })
 
   it('stays off and does not throw when the read fails', async () => {
-    fetchDemo.mockRejectedValue(new Error('down'))
+    stub.respondWith(() => ({ status: 404, body: { detail: 'Not found.' } }))
     const store = useDemoStore()
 
     await expect(store.load()).resolves.toBeUndefined()

@@ -1,48 +1,31 @@
 /**
- * Unit tests for the product detail page: it finds the family named by the address and names the page
- * after the family, shows its plans (description, features, price) in the payer's currency, adds a plan
- * to the cart in the chosen cycle, links the external order page only when the deployment has one,
- * compares the plans when their specifications allow it, publishes the family as structured data,
- * and answers a missing product with a notice.
+ * Unit tests for the product detail page against the real catalogue, currency and cart stores, the
+ * real API composables and the real transport, with a stub BFF answering on a real socket: it finds
+ * the family named by the address and names the page after the family, shows its plans (description,
+ * features, price) in the payer's currency, adds a plan to the cart in the chosen cycle, links the
+ * external order page only when the deployment has one, compares the plans when their specifications
+ * allow it, publishes the family as structured data, and answers a missing product with a notice.
+ *
+ * @module tests/pages/products/[product].test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
+import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import ProductPage from '~/pages/products/[product].vue'
 import CatalogProductDetail from '~/components/catalog/ProductDetail.vue'
 import CatalogProductPlanCard from '~/components/catalog/ProductPlanCard.vue'
 import CatalogProductPlansTable from '~/components/catalog/ProductPlansTable.vue'
 import CatalogProductSectionHeader from '~/components/catalog/ProductSectionHeader.vue'
 import { useCartStore } from '~/stores/cart'
-import type { BillingCurrency } from '~/types/currency'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import type { ProductFeature } from '~/types/productfeature'
 import { ProductType } from '~/types/producttype'
-
-/** The mocked catalogue endpoints, re-created for every test. */
-const api = { fetchProducts: vi.fn(), fetchProductGroups: vi.fn(), fetchProductFeatures: vi.fn() }
-
-/** The currency the stood-in currency endpoint answers with. */
-const usd: BillingCurrency = { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true }
-
-vi.mock('~/composables/apis/useCatalogApi', () => ({
-  /**
-   * Stands in for the catalogue API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useCatalogApi: () => api,
-}))
-
-vi.mock('~/composables/apis/useCurrencyApi', () => ({
-  /**
-   * Stands in for the currency API composable.
-   *
-   * @returns Only the endpoint the page's store reaches for.
-   */
-  useCurrencyApi: () => ({ loadBillingCurrencies: () => Promise.resolve([usd]) }),
-}))
 
 /** The family's group. */
 const groups: PortalProductGroup[] = [{ id: 3, name: 'Alpha Suite', description: 'The family description', productCount: 3 }]
@@ -65,8 +48,14 @@ const specifications: ProductFeature[] = [
 /** The spies of the latest mount, so a test reads the SEO tags the page published. */
 let spies: ReturnType<typeof stubPublicPageRuntime>
 
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
+
 /**
- * Mounts the page for one product address.
+ * Mounts the page for one product address and waits until the catalogue has been read in the payer currency.
  *
  * @param product The `product` route parameter.
  * @returns The wrapper.
@@ -74,21 +63,26 @@ let spies: ReturnType<typeof stubPublicPageRuntime>
 const mountProduct = async (product = 'alpha-suite') => {
   spies = stubPublicPageRuntime({ params: { product } })
   const wrapper = await mountPage(ProductPage, { components: { CatalogProductDetail, CatalogProductPlanCard, CatalogProductPlansTable, CatalogProductSectionHeader }, stubs: { 'i18n-t': true, SectionsFAQ: true } })
-  await flushPromises()
+  await awaitCatalogue()
   return wrapper
 }
 
 describe('product detail page', () => {
-  beforeEach(() => {
-    api.fetchProducts.mockReset()
-    api.fetchProducts.mockResolvedValue(catalogue)
-    api.fetchProductGroups.mockReset()
-    api.fetchProductGroups.mockResolvedValue(groups)
-    api.fetchProductFeatures.mockReset()
-    api.fetchProductFeatures.mockResolvedValue([])
+  beforeEach(async () => {
     window.localStorage.clear()
     vi.stubGlobal('open', vi.fn())
     vi.stubGlobal('useRuntimeConfig', () => ({ public: { baseUrl: 'https://panel.test' } }))
+    table = {
+      [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
+      [`GET ${CatalogPath.ProductGroups}`]: { body: groups },
+      [`GET ${CatalogPath.Products}`]: { body: catalogue },
+      [`GET ${CatalogPath.ProductFeatures}`]: { body: [] },
+    }
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('builds its absolute SEO URLs from the configured site URL', async () => {
@@ -137,10 +131,10 @@ describe('product detail page', () => {
   })
 
   it('compares the plans when their specification lines overlap', async () => {
-    api.fetchProductFeatures.mockResolvedValue(specifications)
+    table[`GET ${CatalogPath.ProductFeatures}`] = { body: specifications }
     const wrapper = await mountProduct()
 
-    expect(api.fetchProductFeatures).toHaveBeenCalledWith(3)
+    expect(requestsTo(stub.requests, CatalogPath.ProductFeatures).map(queryOf)).toContainEqual({ gid: '3' })
     expect(wrapper.find('[data-testid="product-compare"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="product-compare-row-Disk"]').text()).toContain('20 GB')
   })
@@ -174,7 +168,7 @@ describe('product detail page', () => {
   })
 
   it('keeps the type of a digital plan on its cart line, and none for a plan without one', async () => {
-    api.fetchProducts.mockResolvedValue(catalogue.map((entry) => (entry.id === 11 ? { ...entry, type: ProductType.Digital } : entry)))
+    table[`GET ${CatalogPath.Products}`] = { body: catalogue.map((entry) => (entry.id === 11 ? { ...entry, type: ProductType.Digital } : entry)) }
     const wrapper = await mountProduct()
 
     await wrapper.find('[data-testid="product-add-11"]').trigger('click')

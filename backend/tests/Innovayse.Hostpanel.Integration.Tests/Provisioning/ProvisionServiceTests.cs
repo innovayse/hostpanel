@@ -154,7 +154,7 @@ public sealed class ProvisionServiceTests(IntegrationTestFactory factory) : ICla
         var group = ProductGroup.Create($"no-package-{Guid.NewGuid():N}", null);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
-        var product = Product.Create(group.Id, "No package", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, "No package", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
 

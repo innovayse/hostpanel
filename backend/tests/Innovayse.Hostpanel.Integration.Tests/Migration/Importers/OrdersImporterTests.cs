@@ -188,7 +188,7 @@ public sealed class OrdersImporterTests(IntegrationTestFactory factory) : IClass
         var group = ProductGroup.Create($"group-{Guid.NewGuid():N}", null);
         context.ProductGroups.Add(group);
         await context.SaveChangesAsync(CancellationToken.None);
-        var product = Product.Create(group.Id, name, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, DateTimeOffset.UtcNow);
+        var product = Product.Create(group.Id, name, null, null, null, null, ProductType.SharedHosting, 9.99m, 99.99m, TestMoments.Seeded);
         context.Products.Add(product);
         await context.SaveChangesAsync(CancellationToken.None);
         return product;

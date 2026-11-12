@@ -83,7 +83,7 @@ public sealed class UpperCaseBillableItemCurrencyMigrationTests
             RETURNING "Id"
             """,
             ("user", Guid.NewGuid().ToString()),
-            ("now", DateTimeOffset.UtcNow));
+            ("now", TestMoments.Seeded));
 
     /// <summary>Inserts an uninvoiced billable item with the given stored currency code.</summary>
     /// <param name="connectionString">The connection string of the database.</param>

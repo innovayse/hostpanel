@@ -87,7 +87,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
             "2.0.0",
             new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero),
             "https://github.com/innovayse/hostpanel/releases/tag/v2.0.0",
-            DateTimeOffset.UtcNow));
+            TestMoments.Seeded));
         await context.SaveChangesAsync(CancellationToken.None);
 
         var client = await AdminTestSeeds.AdminClientAsync(factory);
@@ -114,7 +114,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
             InstalledVersion,
             new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
             "https://github.com/innovayse/hostpanel/releases/tag/v1.0.0",
-            DateTimeOffset.UtcNow));
+            TestMoments.Seeded));
         await context.SaveChangesAsync(CancellationToken.None);
 
         var client = await AdminTestSeeds.AdminClientAsync(factory);
@@ -138,7 +138,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
             "0.9.0",
             new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero),
             "https://github.com/innovayse/hostpanel/releases/tag/v0.9.0",
-            DateTimeOffset.UtcNow));
+            TestMoments.Seeded));
         await context.SaveChangesAsync(CancellationToken.None);
 
         var client = await AdminTestSeeds.AdminClientAsync(factory);
@@ -163,7 +163,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
             "not-a-version",
             new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
             "https://github.com/innovayse/hostpanel/releases/tag/v0.0.0",
-            DateTimeOffset.UtcNow));
+            TestMoments.Seeded));
         await context.SaveChangesAsync(CancellationToken.None);
 
         var client = await AdminTestSeeds.AdminClientAsync(factory);
@@ -190,7 +190,7 @@ public sealed class GetReleaseStatusTests(IntegrationTestFactory factory)
             "99.0.0",
             new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero),
             "https://github.com/innovayse/hostpanel/releases/tag/v99.0.0",
-            DateTimeOffset.UtcNow));
+            TestMoments.Seeded));
         await context.SaveChangesAsync(CancellationToken.None);
 
         var client = await AdminTestSeeds.AdminClientAsync(factory);

@@ -7,6 +7,7 @@ import {
   DEFAULT_PLUGIN_ICON,
   fillPluginPath,
   formatPluginValue,
+  groupPluginBlocks,
   parsePluginChatResult,
   parsePluginChatStep,
   pluginAlertTone,
@@ -23,7 +24,7 @@ import {
   readPluginField,
 } from '@/lib/pluginView'
 import { HttpMethod } from '@/types/http'
-import { PluginBlockKind, PluginBlockTone, PluginChatStepState, PluginValueFormat } from '@/types/pluginview'
+import { PluginBlockGroupKind, PluginBlockKind, PluginBlockTone, PluginChatStepState, PluginValueFormat } from '@/types/pluginview'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 
@@ -177,5 +178,45 @@ describe('the Add-ons menu', () => {
     expect(pluginIconPath('https://evil.test/x.svg')).toBe(DEFAULT_PLUGIN_ICON)
     expect(pluginIconPath('__proto__')).toBe(DEFAULT_PLUGIN_ICON)
     expect(pluginIconPath(null)).toBe(DEFAULT_PLUGIN_ICON)
+  })
+})
+
+describe('groupPluginBlocks', () => {
+  it('groups consecutive stats and consecutive links and leaves every other block alone', () => {
+    const groups = groupPluginBlocks([
+      { kind: PluginBlockKind.Stat, label: 'A' },
+      { kind: PluginBlockKind.Stat, label: 'B' },
+      { kind: PluginBlockKind.Text, text: 't' },
+      { kind: PluginBlockKind.Link, label: 'L1' },
+      { kind: PluginBlockKind.Link, label: 'L2' },
+      { kind: PluginBlockKind.Stat, label: 'C' },
+    ])
+
+    expect(groups.map((group) => [group.kind, group.blocks.length])).toEqual([
+      [PluginBlockGroupKind.Stats, 2],
+      [PluginBlockGroupKind.Single, 1],
+      [PluginBlockGroupKind.Links, 2],
+      [PluginBlockGroupKind.Stats, 1],
+    ])
+  })
+
+  it('never groups two blocks of a kind that stands alone', () => {
+    const groups = groupPluginBlocks([{ kind: PluginBlockKind.Text, text: 'a' }, { kind: PluginBlockKind.Text, text: 'b' }])
+
+    expect(groups.map((group) => group.kind)).toEqual([PluginBlockGroupKind.Single, PluginBlockGroupKind.Single])
+  })
+
+  it('keys each block by its id or kind and its place, under the scope, so a repeated id stays unique', () => {
+    const groups = groupPluginBlocks([
+      { kind: PluginBlockKind.Stat, id: 'a', label: 'A' },
+      { kind: PluginBlockKind.Stat, id: 'a', label: 'B' },
+    ], 'tab:')
+
+    expect(groups[0]?.key).toBe('tab:a-0')
+    expect(groups[0]?.blocks.map((entry) => entry.key)).toEqual(['tab:a-0', 'tab:a-1'])
+  })
+
+  it('returns no group for no blocks', () => {
+    expect(groupPluginBlocks([])).toEqual([])
   })
 })

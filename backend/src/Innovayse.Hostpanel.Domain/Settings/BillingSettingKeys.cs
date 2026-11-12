@@ -36,6 +36,9 @@ public static class BillingSettingKeys
     /// <summary>Whether a client's downgrade is approved at once; when off, staff approve it and the credit is paid out then.</summary>
     public const string AutoApproveDowngrades = "billing.plan_change.auto_approve_downgrades";
 
+    /// <summary>Whether tax is added to new invoices from the tax rules; when off, no invoice is taxed automatically.</summary>
+    public const string TaxEnabled = "billing.tax.enabled";
+
     /// <summary>
     /// The largest day count any of these settings accepts (the day-count and reminder patterns
     /// stop at 90). A reader that must look as far ahead as any setting can reach uses this instead
@@ -102,6 +105,7 @@ public static class BillingSettingKeys
             [CreditTopUpMaxOpen] = OpenCount,
             [AutoApplyCredit] = TrueOrFalse,
             [AutoApproveDowngrades] = TrueOrFalse,
+            [TaxEnabled] = TrueOrFalse,
         };
 
     /// <summary>Every key with its seeded value and the description shown in System Settings.</summary>
@@ -116,6 +120,7 @@ public static class BillingSettingKeys
         new(CreditTopUpMaximum, "1000", "Most a client can add to their credit balance in one top-up, in the client's billing currency."),
         new(CreditTopUpMaxOpen, "3", "Most unpaid top-up invoices a client can hold at once; they pay or cancel one before raising another."),
         new(AutoApproveDowngrades, "false", "Approve a client's downgrade to a cheaper plan at once and credit the rest of the billing cycle to their balance (true/false). When off, staff approve each downgrade."),
+        new(TaxEnabled, "true", "Add tax to new invoices from the tax rules of the client's country (true/false). When off, no invoice is taxed automatically."),
     ];
 
     /// <summary>Keys that may be saved empty although they seed with a value.</summary>

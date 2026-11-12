@@ -142,7 +142,7 @@ public sealed class GatewayPaymentReferenceTests(IntegrationTestFactory factory)
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         context.Transactions.Add(Transaction.Create(
-            clientId, DateTimeOffset.UtcNow, "Payment", reference, null, paymentMethod, 10m, 0m, 0m, false, TestCurrencies.Base, source));
+            clientId, TestMoments.Seeded, "Payment", reference, null, paymentMethod, 10m, 0m, 0m, false, TestCurrencies.Base, source));
         await context.SaveChangesAsync(CancellationToken.None);
     }
 

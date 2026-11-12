@@ -28,7 +28,7 @@ public sealed class DomainRegistrationFailedAdminHandlerTests(IntegrationTestFac
         await NotificationsTestSeeds.EnsureTemplateAsync(context, "domain-registration-failed", "Your domain registration failed");
 
         await scope.ServiceProvider.PublishAndWaitAsync(
-            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = DateTimeOffset.UtcNow });
+            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = TestMoments.Seeded });
 
         var toAdmin = Assert.Single(emailSender.Sent, m => m.To == NotificationsTestSeeds.AdminEmail);
         Assert.NotNull(toAdmin);
@@ -52,7 +52,7 @@ public sealed class DomainRegistrationFailedAdminHandlerTests(IntegrationTestFac
         await NotificationsTestSeeds.EnsureTemplateAsync(context, "domain-registration-failed", "Your domain registration failed");
 
         await scope.ServiceProvider.PublishAndWaitAsync(
-            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = DateTimeOffset.UtcNow });
+            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = TestMoments.Seeded });
 
         var only = Assert.Single(emailSender.Sent);
         Assert.Equal(email, only.To);
@@ -74,7 +74,7 @@ public sealed class DomainRegistrationFailedAdminHandlerTests(IntegrationTestFac
         await NotificationsTestSeeds.EnsureTemplateAsync(context, "domain-registration-failed", "Your domain registration failed");
 
         await scope.ServiceProvider.PublishAndWaitAsync(
-            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = DateTimeOffset.UtcNow });
+            new DomainRegistrationFailedEvent(client.Id, "example.test", 1, "registrar rejected") { OccurredAt = TestMoments.Seeded });
 
         Assert.Single(emailSender.Sent, m => m.To == contactEmail);
     }

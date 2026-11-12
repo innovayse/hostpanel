@@ -64,6 +64,9 @@ public sealed class RaiseClientRenewalInvoicesHandler
     /// <summary>Lead time and credit switch.</summary>
     private readonly RenewalSettingsReader _settings;
 
+    /// <summary>The tax rate the client's renewal invoices are raised at.</summary>
+    private readonly ClientTaxRateResolver _taxRates;
+
     /// <summary>Reads the client's brief, the due services, domains, products, renew orders and TLD prices from their modules, and alerts staff about unpriceable domains.</summary>
     private readonly IMessageBus _bus;
 
@@ -81,19 +84,21 @@ public sealed class RaiseClientRenewalInvoicesHandler
     /// <param name="clientCredit">Takes applied credit off the client's balance in the same save as the invoice.</param>
     /// <param name="payerCurrency">The client's billing currency.</param>
     /// <param name="settings">Lead time and credit switch.</param>
+    /// <param name="taxRates">The tax rate the client's renewal invoices are raised at.</param>
     /// <param name="bus">Reads the client's brief, the due services, domains, products, renew orders and TLD prices from their modules, and alerts staff about unpriceable domains.</param>
     /// <param name="logger">Structured logger.</param>
     /// <param name="clock">The clock the current moment is read from.</param>
     /// <param name="activity">Records the activity log line of a staff-requested run, saved with the invoices it raised.</param>
     public RaiseClientRenewalInvoicesHandler(
         IHostpanelDbContext context, IClientCredit clientCredit, IPayerCurrencyResolver payerCurrency, RenewalSettingsReader settings,
-        IMessageBus bus, ILogger<RaiseClientRenewalInvoicesHandler> logger,
+        ClientTaxRateResolver taxRates, IMessageBus bus, ILogger<RaiseClientRenewalInvoicesHandler> logger,
         IClock clock, IActivityLogger activity)
     {
         _context = context;
         _clientCredit = clientCredit;
         _payerCurrency = payerCurrency;
         _settings = settings;
+        _taxRates = taxRates;
         _bus = bus;
         _logger = logger;
         _clock = clock;
@@ -147,6 +152,7 @@ public sealed class RaiseClientRenewalInvoicesHandler
         var now = _clock.UtcNow;
         var horizon = now.AddDays(settings.InvoiceDaysBefore);
         var payer = await _payerCurrency.ForClientAsync(client.Id, ct);
+        var taxRate = await _taxRates.ForClientAsync(client, ct);
 
         var lines = new List<PendingLine>();
         lines.AddRange(await DueServiceLinesAsync(client.Id, now, horizon, ct));
@@ -169,6 +175,9 @@ public sealed class RaiseClientRenewalInvoicesHandler
             {
                 line.AddTo(invoice);
             }
+
+            // After the lines and before the credit below: the credit is taken off the taxed total.
+            invoice.ApplyTaxRate(taxRate);
 
             Transaction? creditLine = null;
             if (settings.AutoApplyCredit && credit > 0 && invoice.Total > 0)

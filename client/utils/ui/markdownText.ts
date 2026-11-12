@@ -26,7 +26,18 @@ export const MARKDOWN_TAG_CLASSES: Readonly<Record<string, string>> = {
   ol: 'mb-2 list-decimal space-y-1 pl-5 last:mb-0',
   code: 'rounded bg-gray-100 px-1 font-mono text-xs dark:bg-white/10',
   pre: 'mb-2 overflow-x-auto whitespace-pre rounded-lg bg-gray-100 p-2 font-mono text-xs last:mb-0 dark:bg-white/5',
+  // The blinking caret `appendCaret` puts at the end of a reply that is still being written.
+  span: 'ml-0.5 inline-block h-4 w-0.5 translate-y-0.5 animate-pulse bg-current motion-reduce:animate-none',
 }
+
+/** The classes of a code block that carries a copy button: the margin moves to the wrapper and the button gets room. */
+export const MARKDOWN_COPYABLE_TAG_CLASSES: Readonly<Record<string, string>> = {
+  ...MARKDOWN_TAG_CLASSES,
+  pre: 'overflow-x-auto whitespace-pre rounded-lg bg-gray-100 p-2 pr-10 font-mono text-xs dark:bg-white/5',
+}
+
+/** The wrapper of a code block that carries a copy button, which anchors the button in the block's corner. */
+export const MARKDOWN_COPYABLE_WRAPPER_CLASSES = 'relative mb-2 last:mb-0'
 
 /** How deep emphasis may nest; past it the markers are shown as text, so recursion stays bounded. */
 const MAX_INLINE_DEPTH = 4
@@ -217,5 +228,24 @@ export const parseMarkdownText = (text: string): RichNode[] => {
     paragraph.push(line)
   }
   closeOpenBlocks()
+  return blocks
+}
+
+/**
+ * Puts the caret of a reply that is still being written at the end of its last line: inside the last paragraph, heading
+ * or list item, and on a line of its own after a code block or an empty reply.
+ *
+ * @param blocks - The parsed reply; changed in place.
+ * @returns The same blocks, for chaining.
+ */
+export const appendCaret = (blocks: RichNode[]): RichNode[] => {
+  const caret = element('span', [], { 'aria-hidden': 'true' })
+  const last = blocks.at(-1)
+  const target = last?.type === UiRichNodeType.Element && (last.tag === 'ul' || last.tag === 'ol') ? last.children.at(-1) : last
+  if (target?.type === UiRichNodeType.Element && target.tag !== 'pre') {
+    target.children.push(caret)
+  } else {
+    blocks.push(element('p', [caret]))
+  }
   return blocks
 }

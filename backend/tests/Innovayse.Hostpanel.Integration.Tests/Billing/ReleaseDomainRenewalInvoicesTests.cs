@@ -62,6 +62,66 @@ public sealed class ReleaseDomainRenewalInvoicesTests(IntegrationTestFactory fac
         (await BillingTestSeeds.CreditBalanceOfAsync(factory, seeded.ClientId)).Should().Be(8m);
     }
 
+    /// <summary>
+    /// An invoice cancelled by the release ends the consent recorded for its hosted session, in the same save; a session
+    /// the consent was bound to a method for is not touched.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task HandleAsync_CancelledInvoiceWithASession_RevokesTheUnboundConsentAsync()
+    {
+        var seeded = await SeedClientWithDomainsAsync();
+        var module = $"release-{Guid.NewGuid():N}";
+        var orderId = $"order-{Guid.NewGuid():N}";
+        var invoiceId = await SeedInvoiceAsync(
+            seeded.ClientId,
+            i =>
+            {
+                AddRenewal(i, seeded.DomainId);
+                i.SetGatewaySession(module, orderId, DateTimeOffset.UtcNow);
+            });
+        var unbound = await SeedConsentAsync(seeded.ClientId, module, orderId, methodRef: null);
+        var bound = await SeedConsentAsync(seeded.ClientId, module, $"{orderId}-other", methodRef: "pm-1");
+
+        var result = await ReleaseAsync(seeded.DomainId);
+
+        result.IsSuccess.Should().BeTrue();
+        (await LoadInvoiceAsync(invoiceId)).Status.Should().Be(InvoiceStatus.Cancelled);
+        (await LoadConsentAsync(unbound)).IsRevoked.Should().BeTrue();
+        (await LoadConsentAsync(bound)).IsRevoked.Should().BeFalse();
+    }
+
+    /// <summary>Records a consent for a gateway session, with or without a method.</summary>
+    /// <param name="clientId">The client who consents.</param>
+    /// <param name="module">The payment plugin id.</param>
+    /// <param name="sessionId">The gateway order the consent is keyed by.</param>
+    /// <param name="methodRef">The method the consent covers, or <see langword="null"/> for none yet.</param>
+    /// <returns>The consent's id.</returns>
+    private async Task<int> SeedConsentAsync(int clientId, string module, string sessionId, string? methodRef)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var consent = CardChargeConsent.Grant(clientId, module, sessionId, DateTimeOffset.UtcNow);
+        if (methodRef is not null)
+        {
+            consent.AttachMethod(methodRef);
+        }
+
+        context.CardChargeConsents.Add(consent);
+        await context.SaveChangesAsync(CancellationToken.None);
+        return consent.Id;
+    }
+
+    /// <summary>Reloads a consent, untracked, from a fresh scope.</summary>
+    /// <param name="id">The consent id.</param>
+    /// <returns>The consent as stored.</returns>
+    private async Task<CardChargeConsent> LoadConsentAsync(int id)
+    {
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        return await context.CardChargeConsents.AsNoTracking().FirstAsync(c => c.Id == id, CancellationToken.None);
+    }
+
     /// <summary>A PaymentPending invoice refuses the release with <c>RENEWAL_INVOICE_OPEN</c> and is left as it was.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

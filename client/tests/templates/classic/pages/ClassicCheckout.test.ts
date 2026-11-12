@@ -1,11 +1,26 @@
 /**
- * Unit tests for ClassicCheckout: the empty cart, the order summary, the account step in both
- * states, the payment-method choice and the card form, placing an order and a refused order.
+ * Tests for ClassicCheckout against the real cart, currency, checkout, auth and client stores, the
+ * real billing and auth API composables and the real transport, with a stub BFF answering on a real
+ * socket (nothing of ours is mocked): the empty cart, the order summary, the account step in both
+ * states, the payment-method choice, placing an order and a refused order.
+ *
+ * @module tests/templates/classic/pages/ClassicCheckout.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { flushPromises } from '@vue/test-utils'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { bankTransferPath, BillingEndpoint } from '~/tests/helpers/billingPaths'
+import { awaitCheckoutLoaded, cartLine, checkoutReplies, writeOf } from '~/tests/helpers/checkoutFlow'
+import { makeClientUser } from '~/tests/helpers/clientUser'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { until } from '~/tests/helpers/settle'
+import { readOf, refusal, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 import ClassicCheckout from '~/templates/classic/pages/ClassicCheckout.vue'
 import GatewayOption from '~/components/checkout/GatewayOption.vue'
 import SaveOption from '~/components/checkout/SaveOption.vue'
@@ -14,66 +29,22 @@ import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
 import { useCheckoutStore } from '~/stores/checkout'
 import { useClientStore } from '~/stores/client'
-import type { BillingCurrency } from '~/types/currency'
 import type { CartItem } from '~/types/cartitem'
-import { makeClientUser } from '~/tests/helpers/clientUser'
+import type { GatewayMethod } from '~/types/gatewaymethod'
 import { Permission } from '~/types/permission'
 import { PaymentModule } from '~/types/paymentmodule'
-import { PricingCycle } from '~/types/pricingcycle'
 
-/** The mocked billing endpoints, re-created for every test. */
-const billing = { fetchGatewayMethods: vi.fn(), createOrder: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-/** The mocked sign-in call, used for the guest's automatic sign-in after an order. */
-const loginMock = vi.fn()
+/** The replies of the current test; a test changes them before it mounts or acts. */
+let table: StubRouteTable
 
-/** The currency the stood-in currency endpoint answers with. */
-const usd: BillingCurrency = { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true }
-
-vi.mock('~/composables/apis/useBillingApi', () => ({
-  /**
-   * Stands in for the billing API composable so the stores run without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useBillingApi: () => billing
-}))
-
-vi.mock('~/composables/apis/useAuthApi', () => ({
-  /**
-   * Stands in for the auth API composable.
-   *
-   * @returns Only the endpoint the checkout reaches for.
-   */
-  useAuthApi: () => ({ login: loginMock, logout: vi.fn() })
-}))
-
-vi.mock('~/composables/apis/useCurrencyApi', () => ({
-  /**
-   * Stands in for the currency API composable.
-   *
-   * @returns Only the endpoint the currency store reaches for.
-   */
-  useCurrencyApi: () => ({ loadBillingCurrencies: () => Promise.resolve([usd]) })
-}))
-
-vi.mock('~/composables/apis/useClientApi', () => ({
-  /**
-   * Stands in for the client API composable; the checkout calls none of its endpoints.
-   *
-   * @returns An empty set of endpoints.
-   */
-  useClientApi: () => ({})
-}))
-
-vi.mock('~/composables/useOrderPaymentToken', () => ({
-  /**
-   * Stands in for the payment-token memory, which needs the cookie plugin.
-   *
-   * @returns A remember function that does nothing.
-   */
-  useOrderPaymentToken: () => ({ remember: vi.fn(), recall: vi.fn(), forget: vi.fn() })
-}))
+/** The gateways the stub offers unless a test says otherwise: the bank transfer first, then a card gateway that can keep a method. */
+const DEFAULT_METHODS: GatewayMethod[] = [
+  { module: PaymentModule.BankTransfer, displayName: 'Bank transfer', supportsStoredCredentials: false },
+  { module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: true },
+]
 
 /** Stand-in for the phone field, which keeps its country picker out of this test. */
 const PhoneInputStub = defineComponent({
@@ -91,32 +62,16 @@ const PhoneInputStub = defineComponent({
 const client = makeClientUser()
 
 /**
- * Builds a hosting cart line.
- *
- * @param pid Product id.
- * @param amount Price of the line.
- * @param currency Currency the line is priced in.
- * @returns The line.
- */
-const line = (pid: number, amount: number, currency = 'USD'): CartItem => ({
-  pid,
-  name: `Plan ${pid}`,
-  billingcycle: PricingCycle.Monthly,
-  cycleLabel: 'Monthly',
-  amount,
-  currency,
-})
-
-/**
- * Mounts the checkout, fills the cart and lets the currencies and gateways load.
+ * Mounts the checkout, waits for the currencies and gateways to load and fills the cart.
  *
  * @param items Lines to put in the cart.
  * @returns The wrapper.
  */
-const mountCheckout = async (items: CartItem[] = [line(1, 5), line(2, 7)]) => {
+const mountCheckout = async (items: CartItem[] = [cartLine(1, 5), cartLine(2, 7)]) => {
   const wrapper = await mountPage(ClassicCheckout, {
     components: { CheckoutGatewayOption: GatewayOption, CheckoutSaveOption: SaveOption, CheckoutSubmitHint: SubmitHint, UiPhoneInput: PhoneInputStub },
   })
+  await awaitCheckoutLoaded()
   useCartStore().items = items
   await flushPromises()
   return wrapper
@@ -136,19 +91,16 @@ const fillGuestForm = async (wrapper: Awaited<ReturnType<typeof mountCheckout>>)
 }
 
 describe('ClassicCheckout', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     stubPublicPageRuntime()
-    billing.fetchGatewayMethods.mockReset()
-    billing.fetchGatewayMethods.mockResolvedValue([
-      { module: PaymentModule.BankTransfer, displayName: 'Bank transfer', supportsStoredCredentials: false },
-      { module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: true },
-    ])
-    billing.createOrder.mockReset()
-    billing.createOrder.mockResolvedValue({ orderId: 7, invoiceId: 12, paymentToken: 'token', total: 12, currency: 'USD' })
-    loginMock.mockReset()
-    loginMock.mockResolvedValue(client)
     vi.mocked(navigateTo).mockClear()
     window.localStorage.clear()
+    table = checkoutReplies(DEFAULT_METHODS)
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('shows the empty state with a way to the hosting plans when the cart is empty', async () => {
@@ -169,7 +121,7 @@ describe('ClassicCheckout', () => {
   })
 
   it('warns about lines left in another currency and leaves them out', async () => {
-    const wrapper = await mountCheckout([line(1, 5), line(2, 2000, 'AMD')])
+    const wrapper = await mountCheckout([cartLine(1, 5), cartLine(2, 2000, 'AMD')])
 
     expect(wrapper.find('[data-testid="checkout-stale"]').exists()).toBe(true)
     expect(wrapper.findAll('[data-testid="checkout-item"]')).toHaveLength(1)
@@ -220,7 +172,7 @@ describe('ClassicCheckout', () => {
   })
 
   it('says so when no gateway is on, and cannot be submitted', async () => {
-    billing.fetchGatewayMethods.mockResolvedValue([])
+    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [] }
     const wrapper = await mountCheckout()
 
     expect(wrapper.find('[data-testid="checkout-no-methods"]').exists()).toBe(true)
@@ -295,9 +247,9 @@ describe('ClassicCheckout', () => {
     await fillGuestForm(wrapper)
 
     await wrapper.find('[data-testid="checkout-submit"]').trigger('click')
-    await flushPromises()
+    await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith('/en/client/invoices/12/pay'))
 
-    expect(billing.createOrder).toHaveBeenCalledWith(expect.objectContaining({
+    expect(bodyOf(requestsTo(stub.requests, BillingEndpoint.OrderCreate)[0])).toEqual(expect.objectContaining({
       paymentmethod: PaymentModule.BankTransfer,
       currency: 'USD',
       firstname: 'Ada',
@@ -310,19 +262,21 @@ describe('ClassicCheckout', () => {
         expect.objectContaining({ productId: 2, billingcycle: 'monthly' }),
       ],
     }))
-    expect(navigateTo).toHaveBeenCalledWith('/en/client/invoices/12/pay')
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.Login)[0])).toEqual({ email: 'ada@example.test', password: 's3cret-pass' })
+    expect(requestsTo(stub.requests, bankTransferPath(12)).map(request => request.method)).toEqual(['POST'])
     expect(useCartStore().items).toEqual([])
   })
 
   it('keeps the busy label short and explains the bank hand-off in a polite line under the button', async () => {
-    billing.fetchGatewayMethods.mockResolvedValue([{ module: 'hosted_gateway', displayName: 'Bank card', supportsStoredCredentials: false }])
+    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [{ module: 'hosted_gateway', displayName: 'Bank card', supportsStoredCredentials: false }] }
     // An order that never settles keeps the page in its busy state.
-    billing.createOrder.mockReturnValue(new Promise(() => undefined))
+    table[writeOf(BillingEndpoint.OrderCreate)] = { hold: true }
     const wrapper = await mountCheckout()
     await fillGuestForm(wrapper)
     expect(wrapper.find('[data-testid="checkout-submit-hint"]').text()).toBe('')
 
     await wrapper.find('[data-testid="checkout-submit"]').trigger('click')
+    await until(() => requestsTo(stub.requests, BillingEndpoint.OrderCreate).length === 1, 'the order to reach the backend')
     await flushPromises()
 
     const button = wrapper.find('[data-testid="checkout-submit"]')
@@ -335,14 +289,13 @@ describe('ClassicCheckout', () => {
   })
 
   it('shows the refusal sentence and stays on the page when the order is refused', async () => {
-    billing.createOrder.mockRejectedValue({ data: { detail: 'Email already registered.' } })
+    table[writeOf(BillingEndpoint.OrderCreate)] = refusal('Email already registered.')
     const wrapper = await mountCheckout()
     await fillGuestForm(wrapper)
 
     await wrapper.find('[data-testid="checkout-submit"]').trigger('click')
-    await flushPromises()
+    await waitUntil(() => expect(wrapper.find('[data-testid="checkout-error"]').text()).toBe('Email already registered.'))
 
-    expect(wrapper.find('[data-testid="checkout-error"]').text()).toBe('Email already registered.')
     expect(navigateTo).not.toHaveBeenCalled()
     expect(useCartStore().items).toHaveLength(2)
   })

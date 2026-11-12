@@ -1,29 +1,46 @@
 /**
- * Unit tests for TeamMembersList: states, the owner row and the confirmed removal.
+ * Unit tests for TeamMembersList: states, the owner row and the confirmed removal. The account
+ * store, the client API composable and the transport run for real against a stub BFF.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
 import { mountAccount } from '~/tests/helpers/mountAccount'
 import TeamMembersList from '~/components/account/TeamMembersList.vue'
+import { userPath } from '~/tests/helpers/accountPaths'
+import { routeTable, refusal } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import { makeTeamMember } from '~/tests/helpers/teamMember'
 import { useAccountStore } from '~/stores/account'
-import { ActionOutcome } from '~/types/actionoutcome'
+import { HttpMethod } from '~/types/httpmethod'
 import type { TeamMember } from '~/types/teammember'
-
-vi.mock('~/composables/apis/useClientApi', () => ({ useClientApi: () => ({}) }))
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => ({}) }))
-vi.mock('~/composables/apis/useAuthApi', () => ({ useAuthApi: () => ({}) }))
-vi.mock('qrcode', () => ({ default: { toDataURL: async (): Promise<string> => '' } }))
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** An owner and one removable member. */
 const users: TeamMember[] = [
-  {
+  makeTeamMember({
     userId: '1', firstName: 'Olive', lastName: 'Owner', email: 'owner@example.com', isOwner: true,
     permissions: 8191, lastLoginAt: '2026-01-01T00:00:00Z', createdAt: '2025-01-01T00:00:00Z'
-  },
-  {
-    userId: '2', firstName: 'Hal', lastName: 'Helper', email: 'helper@example.com', isOwner: false,
-    permissions: 4, lastLoginAt: null, createdAt: '2025-06-01T00:00:00Z'
-  }
+  }),
+  makeTeamMember()
 ]
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
+let table: StubRouteTable
+
+beforeEach(async () => {
+  table = {}
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  vi.unstubAllGlobals()
+  await stub.close()
+})
 
 describe('TeamMembersList', () => {
   it('shows a skeleton while loading', () => {
@@ -47,27 +64,30 @@ describe('TeamMembersList', () => {
   })
 
   it('removes a member only after confirmation, then asks for a fresh list', async () => {
+    table[`${HttpMethod.Delete} ${userPath('2')}`] = { body: {} }
     const wrapper = mountAccount(TeamMembersList, { props: { users, loading: false } })
-    const remove = vi.spyOn(useAccountStore(), 'removeUser').mockResolvedValue(ActionOutcome.Succeeded)
 
     await wrapper.find('[data-testid="account-team-remove-2"]').trigger('click')
-    expect(remove).not.toHaveBeenCalled()
+    expect(stub.requests).toHaveLength(0)
 
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
-    await Promise.resolve()
 
-    expect(remove).toHaveBeenCalledWith('2')
-    expect(wrapper.emitted('changed')).toHaveLength(1)
+    await waitUntil(() => expect(wrapper.emitted('changed')).toHaveLength(1))
+    expect(stub.requests).toHaveLength(1)
+    expect(stub.requests[0]?.method).toBe(HttpMethod.Delete)
+    expect(stub.requests[0]?.url).toBe(userPath('2'))
   })
 
   it('does not ask for a fresh list when the removal is refused', async () => {
+    table[`${HttpMethod.Delete} ${userPath('2')}`] = refusal('Cannot remove.')
     const wrapper = mountAccount(TeamMembersList, { props: { users, loading: false } })
-    vi.spyOn(useAccountStore(), 'removeUser').mockResolvedValue(ActionOutcome.Failed)
 
     await wrapper.find('[data-testid="account-team-remove-2"]').trigger('click')
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
-    await Promise.resolve()
 
+    await waitUntil(() => expect(useAccountStore().inviteError).toBe('Cannot remove.'))
+    await flushPromises()
+    expect(stub.requests).toHaveLength(1)
     expect(wrapper.emitted('changed')).toBeUndefined()
   })
 })

@@ -42,13 +42,13 @@ public sealed class GetServiceUsageReportTests(IntegrationTestFactory factory) :
             var group = ProductGroup.Create($"Group-{Guid.NewGuid():N}", null);
             context.ProductGroups.Add(group);
             await context.SaveChangesAsync(CancellationToken.None);
-            var product = Product.Create(group.Id, name, null, null, null, null, ProductType.SharedHosting, 5m, 50m, DateTimeOffset.UtcNow);
-            var client = Client.Create($"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            var product = Product.Create(group.Id, name, null, null, null, null, ProductType.SharedHosting, 5m, 50m, TestMoments.Seeded);
+            var client = Client.Create($"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
             context.Products.Add(product);
             context.Clients.Add(client);
             await context.SaveChangesAsync(CancellationToken.None);
-            context.ClientServices.Add(ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow));
-            context.ClientServices.Add(ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, DateTimeOffset.UtcNow));
+            context.ClientServices.Add(ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, TestMoments.Seeded));
+            context.ClientServices.Add(ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, TestMoments.Seeded));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

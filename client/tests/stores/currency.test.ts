@@ -7,41 +7,35 @@
  * wrong here is how a stale guest selection overrides a signed-in client's fixed currency, or
  * an invalid leftover selection silently wins over the base.
  *
+ * The real client store holds the signed-in client; no endpoint is reached, so no transport is needed.
+ *
  * @module tests/stores/currency.test
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { makeClientUser } from '../helpers/clientUser'
+import { useClientStore } from '~/stores/client'
+import { useCurrencyStore } from '~/stores/currency'
 
-/** The mocked signed-in client, reset before each test. */
-let mockUser: { currency?: string | null } | null = null
-
-vi.mock('~/stores/client', () => ({
-  /**
-   * Stands in for the real client store so `payerCode` can be exercised without the rest of
-   * the client-area state.
-   *
-   * @returns An object exposing only the `user` field {@link payerCode} reads.
-   */
-  useClientStore: () => ({ user: mockUser }),
-}))
-
-vi.mock('~/composables/apis/useCurrencyApi', () => ({
-  useCurrencyApi: () => ({ loadBillingCurrencies: vi.fn() }),
-}))
-
-const { useCurrencyStore } = await import('~/stores/currency')
-
-/** The currency catalogue the stubbed endpoint answers with. */
+/** The currency catalogue the store holds. */
 const CURRENCIES = [
   { code: 'AMD', numeric: '051', prefix: '', suffix: ' ֏', decimals: 0, isBase: true },
   { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: false },
 ]
 
+/**
+ * Signs a client in on the real client store, with the given currency on record.
+ *
+ * @param currency - The currency recorded for the client, or null for none.
+ */
+const signIn = (currency: string | null): void => {
+  useClientStore().user = makeClientUser({ currency })
+}
+
 describe('useCurrencyStore.payerCode', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    mockUser = null
   })
 
   it('falls back to the base currency when nothing else is known', () => {
@@ -68,7 +62,7 @@ describe('useCurrencyStore.payerCode', () => {
   })
 
   it('prefers the signed-in client\'s own currency over any guest selection', () => {
-    mockUser = { currency: 'USD' }
+    signIn('USD')
     const store = useCurrencyStore()
     store.currencies = CURRENCIES
     store.selectedCode = 'AMD'
@@ -77,7 +71,7 @@ describe('useCurrencyStore.payerCode', () => {
   })
 
   it('falls through to the guest selection when the signed-in client has no currency set', () => {
-    mockUser = { currency: null }
+    signIn(null)
     const store = useCurrencyStore()
     store.currencies = CURRENCIES
     store.selectedCode = 'USD'
@@ -90,7 +84,6 @@ describe('useCurrencyStore.payerCode', () => {
 describe('useCurrencyStore.isFixed and select', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    mockUser = null
     localStorage.clear()
   })
 
@@ -99,13 +92,13 @@ describe('useCurrencyStore.isFixed and select', () => {
   })
 
   it('is not fixed for a signed-in client with no currency on record', () => {
-    mockUser = { currency: null }
+    signIn(null)
 
     expect(useCurrencyStore().isFixed).toBe(false)
   })
 
   it('is fixed once the signed-in client has a currency on record', () => {
-    mockUser = { currency: 'AMD' }
+    signIn('AMD')
 
     expect(useCurrencyStore().isFixed).toBe(true)
   })
@@ -145,7 +138,7 @@ describe('useCurrencyStore.isFixed and select', () => {
   })
 
   it('ignores a selection for a signed-in client whose currency is fixed', () => {
-    mockUser = { currency: 'AMD' }
+    signIn('AMD')
     const store = useCurrencyStore()
     store.currencies = CURRENCIES
     store.select('USD')

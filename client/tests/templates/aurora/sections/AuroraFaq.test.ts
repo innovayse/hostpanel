@@ -4,26 +4,34 @@
  * hides itself when there are no questions. The list is cut to the home limit, and the link to the
  * full FAQ page shows only when questions were left out.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { faqFixture } from '~/tests/helpers/storefrontFixtures'
+import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import { HOME_FAQ_LIMIT } from '~/constants/faq'
+import type { FAQ } from '~/types/faq'
 import AuroraFaq from '~/templates/aurora/sections/AuroraFaq.vue'
 import { stubAuroraGlobals } from '../auroraGlobals'
 
-/** The mocked storefront endpoints, re-created for every test. */
-const api = { fetchPartners: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** What the stub answers, by route; the tests below change the questions it serves. */
+const replies: StubRouteTable = {}
+
+/**
+ * Makes the stub serve these questions.
+ *
+ * @param faqs The questions the public read answers with.
+ */
+const serve = (faqs: FAQ[]): void => {
+  replies[readOf(StorefrontPath.Faqs)] = { body: faqs }
+}
 
 /**
  * Mounts the section and lets the questions load.
@@ -32,19 +40,22 @@ vi.mock('~/composables/apis/useStorefrontApi', () => ({
  */
 const mountSection = async () => {
   stubAuroraGlobals()
-  const wrapper = mountWithKit(AuroraFaq)
-  await flushPromises()
-  return wrapper
+  return mountAfterReads(stub, [StorefrontPath.Faqs], () => mountWithKit(AuroraFaq))
 }
 
 describe('AuroraFaq', () => {
-  beforeEach(() => {
-    api.fetchFaqs.mockReset()
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
     vi.stubGlobal('useContactDetails', () => ({ email: ref(''), phone: ref(''), phoneLink: ref('') }))
-    api.fetchFaqs.mockResolvedValue([
+    serve([
       faqFixture(1, { question: 'How fast?', answer: 'Very fast.' }),
       faqFixture(2, { question: 'Is it safe?', answer: 'Yes, safe.' }),
     ])
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('renders every question and keeps every answer in the markup', async () => {
@@ -73,7 +84,7 @@ describe('AuroraFaq', () => {
   })
 
   it('lists at most the home limit and links to the full FAQ page when more exist', async () => {
-    api.fetchFaqs.mockResolvedValue(Array.from({ length: HOME_FAQ_LIMIT + 3 }, (_, index) => faqFixture(index + 1)))
+    serve(Array.from({ length: HOME_FAQ_LIMIT + 3 }, (_, index) => faqFixture(index + 1)))
 
     const wrapper = await mountSection()
 
@@ -83,7 +94,7 @@ describe('AuroraFaq', () => {
   })
 
   it('has no view-all link when every question fits the limit', async () => {
-    api.fetchFaqs.mockResolvedValue(Array.from({ length: HOME_FAQ_LIMIT }, (_, index) => faqFixture(index + 1)))
+    serve(Array.from({ length: HOME_FAQ_LIMIT }, (_, index) => faqFixture(index + 1)))
 
     const wrapper = await mountSection()
 
@@ -92,7 +103,7 @@ describe('AuroraFaq', () => {
   })
 
   it('renders nothing when there are no questions', async () => {
-    api.fetchFaqs.mockResolvedValue([])
+    serve([])
 
     const wrapper = await mountSection()
 

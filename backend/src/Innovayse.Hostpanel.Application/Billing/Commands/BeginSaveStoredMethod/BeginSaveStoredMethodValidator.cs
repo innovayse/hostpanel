@@ -1,7 +1,6 @@
 using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
-using Innovayse.Hostpanel.Domain.Billing;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Billing.Commands.BeginSaveStoredMethod;
@@ -21,7 +20,7 @@ public sealed class BeginSaveStoredMethodValidator : LocalizedValidator<BeginSav
         RuleFor(x => x.GatewayModuleId).NotEmpty().WithMessage(L["GatewayModuleRequired"]);
         RuleFor(x => x.ConsentAccepted).Equal(true).WithMessage(L["CardConsentRequired"]);
         RuleFor(x => x.ConsentTextVersion)
-            .MustBeConsentTextVersion(L["ConsentTextVersionInvalid", CardChargeConsent.MaxTextVersionLength]);
+            .MustBeConsentTextVersion(L["ConsentTextVersionInvalid"]);
         RuleFor(x => x.ReturnUrl).NotEmpty().WithMessage(L["ReturnUrlRequired"])
             .MustBeAbsoluteWebUrl(L["ReturnUrlInvalid"]);
     }

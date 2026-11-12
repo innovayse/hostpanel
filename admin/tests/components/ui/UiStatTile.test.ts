@@ -37,4 +37,11 @@ describe('UiStatTile', () => {
     expect(wrapper.find('[data-testid="icon"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="trend"]').exists()).toBe(true)
   })
+
+  it('draws the value slot in place of the plain value', () => {
+    const wrapper = mount(UiStatTile, { props: { label: 'a', value: 1 }, slots: { value: '<b data-testid="custom">Live</b>' } })
+
+    expect(wrapper.get('p.font-display [data-testid="custom"]').text()).toBe('Live')
+    expect(wrapper.get('p.font-display').text()).toBe('Live')
+  })
 })

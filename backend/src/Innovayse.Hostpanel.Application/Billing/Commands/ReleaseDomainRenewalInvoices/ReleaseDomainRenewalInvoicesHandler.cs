@@ -40,18 +40,27 @@ public sealed class ReleaseDomainRenewalInvoicesHandler
     /// <summary>The clock the moment of a cancellation is read from.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Ends the consent recorded for the session of each invoice cancelled.</summary>
+    private readonly UnboundConsentRevoker _consents;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="clientCredit">Returns released invoices' credit to the client's balance in the same save.</param>
     /// <param name="logger">Structured logger.</param>
     /// <param name="clock">The clock the moment of a cancellation is read from.</param>
+    /// <param name="consents">Ends the consent recorded for the session of each invoice cancelled.</param>
     public ReleaseDomainRenewalInvoicesHandler(
-        IHostpanelDbContext context, IClientCredit clientCredit, ILogger<ReleaseDomainRenewalInvoicesHandler> logger, IClock clock)
+        IHostpanelDbContext context,
+        IClientCredit clientCredit,
+        ILogger<ReleaseDomainRenewalInvoicesHandler> logger,
+        IClock clock,
+        UnboundConsentRevoker consents)
     {
         _context = context;
         _clientCredit = clientCredit;
         _logger = logger;
         _clock = clock;
+        _consents = consents;
     }
 
     /// <summary>Handles the command.</summary>
@@ -111,6 +120,7 @@ public sealed class ReleaseDomainRenewalInvoicesHandler
         }
 
         // Credit goes back to the balance of the client each invoice was raised for.
+        List<Invoice> cancelled = [];
         foreach (var open in openRenewals)
         {
             if (open.Items.All(IsThisDomainsRenewal))
@@ -127,6 +137,7 @@ public sealed class ReleaseDomainRenewalInvoicesHandler
                 }
 
                 open.Cancel(_clock.UtcNow);
+                cancelled.Add(open);
                 continue;
             }
 
@@ -146,6 +157,8 @@ public sealed class ReleaseDomainRenewalInvoicesHandler
             }
         }
 
+        // One query for the sessions of every invoice cancelled, staged in the same save.
+        await _consents.RevokeOfAsync(cancelled, ct);
         await _context.SaveChangesAsync(ct);
         return Result.Success();
     }

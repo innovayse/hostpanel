@@ -26,6 +26,7 @@ import { PluginSlotId } from '~/types/pluginslotid'
 import { SERVICE_NOT_FOUND, slotIndex, slotPath, slotWidgetPath, WIDGET_NOT_FOUND, workingView } from '~/tests/helpers/pluginSlotFixture'
 import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -155,7 +156,7 @@ describe('stores/plugins: a page', () => {
       const store = usePluginsStore()
       const first = store.loadPage('acme-sites', ['sites', 'old'])
       const second = store.loadPage('acme-sites', ['sites', 'new'])
-      await vi.waitFor(() => expect(server.held).toHaveLength(2))
+      await waitUntil(() => expect(server.held).toHaveLength(2))
 
       server.held[1]?.answer({ ...SITE_PAGE, title: 'New' })
       await second
@@ -410,7 +411,7 @@ describe('stores/plugins: streams', () => {
 
       expect(result).toMatchObject({ ok: true, error: '' })
       expect(events).toEqual([{ type: 'delta', data: { text: 'a' } }])
-      await vi.waitFor(() => expect(closed).toBe(true))
+      await waitUntil(() => expect(closed).toBe(true))
     } finally {
       server.closeAllConnections()
       await new Promise<void>(resolve => server.close(() => resolve()))

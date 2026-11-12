@@ -100,7 +100,7 @@ public sealed class StoredCredentialsImportIdsAndRefundClaimsMigrationTests
             RETURNING "Id"
             """;
         command.Parameters.AddWithValue("user", $"subject-{Guid.NewGuid():N}");
-        command.Parameters.AddWithValue("now", DateTimeOffset.UtcNow);
+        command.Parameters.AddWithValue("now", TestMoments.Seeded);
         command.Parameters.AddWithValue("card", (object?)cardCustomerId ?? DBNull.Value);
         return (int)(await command.ExecuteScalarAsync())!;
     }

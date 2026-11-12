@@ -123,6 +123,6 @@ public static class ClientMappingExtensions
     /// <returns>The account switches staff set on the client.</returns>
     public static ClientSettingsDto ToSettings(this Client client) =>
         new(
-            client.OverdueNotices, client.TaxExempt, client.SeparateInvoices, client.DisableCcProcessing,
+            client.OverdueNotices, client.TaxExempt, client.TaxId, client.TaxExemptionReason, client.SeparateInvoices, client.DisableCcProcessing,
             client.MarketingOptIn, client.StatusUpdate, client.AllowSso);
 }

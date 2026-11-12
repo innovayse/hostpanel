@@ -130,6 +130,24 @@ public sealed class HttpResilienceOptions
     };
 
     /// <summary>
+    /// The status page's component checks: one GET to an address an operator entered. Registered with no retry stage and no breaker.
+    /// </summary>
+    /// <remarks>
+    /// <b>No retries and no breaker.</b> The check is the measurement: a retry would hide the very failure the
+    /// consecutive-failure threshold counts, and a breaker would answer for a component it never asked. <b>10 seconds
+    /// an attempt, 12 in total:</b> a component that needs longer than that to answer is not healthy, and the job runs
+    /// the checks of a batch side by side, so one slow address holds up nothing but its own result.
+    /// </remarks>
+    public ResilienceProfileOptions StatusProbe { get; set; } = new()
+    {
+        AttemptTimeout = TimeSpan.FromSeconds(10),
+        TotalTimeout = TimeSpan.FromSeconds(12),
+        MaxRetryAttempts = 0,
+        RetryDelay = TimeSpan.Zero,
+        CircuitBreakerEnabled = false,
+    };
+
+    /// <summary>
     /// CWP control panels. Registered with no retry stage and no breaker.
     /// </summary>
     /// <remarks>
@@ -417,6 +435,7 @@ public sealed class HttpResilienceOptions
         yield return new NamedResilienceProfile(nameof(SsoRead), SsoRead);
         yield return new NamedResilienceProfile(nameof(SsoTwoFactor), SsoTwoFactor);
         yield return new NamedResilienceProfile(nameof(Telegram), Telegram);
+        yield return new NamedResilienceProfile(nameof(StatusProbe), StatusProbe);
         yield return new NamedResilienceProfile(nameof(Cwp), Cwp);
         yield return new NamedResilienceProfile(nameof(Cwp7), Cwp7);
         yield return new NamedResilienceProfile(nameof(Plesk), Plesk);

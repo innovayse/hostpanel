@@ -58,7 +58,7 @@ public sealed class StartMigrationPullTests(IntegrationTestFactory factory) : IC
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
             var job = await context.MigrationJobs.FirstAsync(j => j.Id == id);
-            job.Queue(DateTimeOffset.UtcNow);
+            job.Queue(TestMoments.Seeded);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

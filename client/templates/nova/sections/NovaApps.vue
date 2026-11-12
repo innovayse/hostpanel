@@ -1,5 +1,5 @@
 <template>
-  <UiSection v-if="installer.categories.length" padding="lg" class="border-b border-nova-border" data-testid="nova-apps">
+  <UiSection padding="lg" class="border-b border-nova-border" data-testid="nova-apps">
     <NovaSectionHeader
       :eyebrow="t('nova.apps.eyebrow')"
       :title="t('nova.apps.title')"

@@ -60,7 +60,7 @@ public sealed class ContactsImporterTests(IntegrationTestFactory factory) : ICla
         var email = await MigrationTestSeeds.SeedClientAsync(scope.ServiceProvider, context);
         var userId = await MigrationTestSeeds.UserIdForEmailAsync(scope.ServiceProvider, email);
         var seeded = await context.Clients.FirstAsync(c => c.UserId == userId);
-        seeded.Close(DateTimeOffset.UtcNow);
+        seeded.Close(TestMoments.Seeded);
         await context.SaveChangesAsync(CancellationToken.None);
         var job = await MigrationTestSeeds.SeedJobSelectingOnlyAsync(context, MigrationEntityType.Contacts);
         var contactEmail = $"contact-{Guid.NewGuid():N}@example.test";

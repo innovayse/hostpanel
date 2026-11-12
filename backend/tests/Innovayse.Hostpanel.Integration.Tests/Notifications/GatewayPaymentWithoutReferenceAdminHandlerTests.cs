@@ -34,7 +34,7 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
 
         await PublishAndWaitAsync(host, new GatewayPaymentWithoutReferenceEvent(717171, 7, "bank-gateway", 12.5m, "USD")
         {
-            OccurredAt = DateTimeOffset.UtcNow,
+            OccurredAt = TestMoments.Seeded,
         });
 
         var mail = sender.Sent.Should().ContainSingle(m => m.To == AdminEmail).Which;
@@ -54,7 +54,7 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
 
         await PublishAndWaitAsync(host, new GatewayPaymentWithoutReferenceEvent(727272, 7, "bank-gateway", null, "USD")
         {
-            OccurredAt = DateTimeOffset.UtcNow,
+            OccurredAt = TestMoments.Seeded,
         });
 
         var mail = sender.Sent.Should().ContainSingle(m => m.To == AdminEmail).Which;
@@ -72,7 +72,7 @@ public sealed class GatewayPaymentWithoutReferenceAdminHandlerTests(IntegrationT
 
         await PublishAndWaitAsync(
             host,
-            new GatewayPaymentWithoutReferenceEvent(1, 1, "bank-gateway", 1m, "USD") { OccurredAt = DateTimeOffset.UtcNow });
+            new GatewayPaymentWithoutReferenceEvent(1, 1, "bank-gateway", 1m, "USD") { OccurredAt = TestMoments.Seeded });
 
         sender.Sent.Should().BeEmpty();
     }

@@ -1,5 +1,5 @@
 <template>
-  <section v-if="channels.length" class="py-14 md:py-20 bg-classic-page" data-testid="sections-support">
+  <section class="py-14 md:py-20 bg-classic-page" data-testid="sections-support">
     <UiContainer>
       <ClassicSectionHeader
         class="mb-12"

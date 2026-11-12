@@ -166,7 +166,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     {
         var (owner, keyId) = await IssuedAsync("plugin-ssh-inactive-revoke");
         await SshTestSeeds.ChangeServiceQuietlyAsync(
-            fixture.Factory, owner.ServiceId, s => s.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
+            fixture.Factory, owner.ServiceId, s => s.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
 
         await fixture.AsPluginAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), async api =>
         {

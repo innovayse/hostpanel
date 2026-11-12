@@ -1,36 +1,68 @@
 /**
- * Unit tests for the payment result page: it verifies a hosted-gateway payment from the address and
- * shows the paid, pending, declined, missing or unknown outcome, never asserting money moved unless
- * the bank said so.
+ * Tests for the payment result page against the real invoice payment store, billing API composable,
+ * order payment token memory and transport, with a stub BFF answering on a real socket (nothing of
+ * ours is mocked; the token lives in the browser's own session storage): it verifies a
+ * hosted-gateway payment from the address and shows the paid, pending, declined, missing or unknown
+ * outcome, never asserting money moved unless the bank said so.
+ *
+ * @module tests/pages/payment/result.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import type { Pinia } from 'pinia'
+import { invoicePaymentCompletePath, orderPaymentCompletePath } from '~/tests/helpers/billingPaths'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import { makeBackendUnreachable } from '~/tests/helpers/unreachableTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 import ResultPage from '~/pages/payment/result.vue'
+import { useOrderPaymentToken } from '~/composables/useOrderPaymentToken'
 import { useCartStore } from '~/stores/cart'
-import { PricingCycle } from '~/types/pricingcycle'
 import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
+import { HttpMethod } from '~/types/httpmethod'
+import { PricingCycle } from '~/types/pricingcycle'
 import { ProductType } from '~/types/producttype'
 
-/** The mocked billing endpoints, re-created for every test. */
-const billing = { completeGatewayPayment: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useBillingApi', () => ({
-  /**
-   * Stands in for the billing API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useBillingApi: () => billing,
-}))
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
 
-/** The order payment token helpers of the current test. */
-const tokens = { recall: vi.fn(), recallInvoiceId: vi.fn(), forget: vi.fn() }
+/** The order the payer is sent back for, and the invoice it was billed on. */
+const ORDER = { id: 5, invoiceId: 77, token: 'token-1' } as const
 
 /**
- * Mounts the page for one address query and lets the check finish.
+ * The key of the stub reply to an order's payment check.
+ *
+ * @param orderId - The order id.
+ * @returns The route table key.
+ */
+const orderCheck = (orderId: number): string => `${HttpMethod.Post} ${orderPaymentCompletePath(orderId)}`
+
+/**
+ * The key of the stub reply to an invoice's payment check.
+ *
+ * @param invoiceId - The invoice id.
+ * @returns The route table key.
+ */
+const invoiceCheck = (invoiceId: number): string => `${HttpMethod.Post} ${invoicePaymentCompletePath(invoiceId)}`
+
+/**
+ * Puts the payment token of the order in the browser, as checkout does before it leaves for the bank.
+ *
+ * @returns Nothing.
+ */
+const rememberOrder = (): void => {
+  useOrderPaymentToken().remember(ORDER.id, ORDER.token, ORDER.invoiceId)
+}
+
+/**
+ * Mounts the page for one address query and waits until the check has ended in an outcome.
  *
  * @param query The address query string.
  * @param pinia A Pinia the test filled before mounting; a fresh one when omitted.
@@ -39,20 +71,28 @@ const tokens = { recall: vi.fn(), recallInvoiceId: vi.fn(), forget: vi.fn() }
 const mountResult = async (query: Record<string, string | string[]> = {}, pinia?: Pinia) => {
   stubPublicPageRuntime({ query })
   const wrapper = await mountPage(ResultPage, { pinia })
-  await flushPromises()
+  await waitUntil(() => expect(wrapper.find('[data-testid="payment-title"]').exists()).toBe(true))
   return wrapper
 }
 
+/**
+ * How many payment checks reached the stub, for either target.
+ *
+ * @returns The count.
+ */
+const checks = (): number => stub.requests.filter(request => request.url.endsWith('/gateway-payment/complete')).length
+
 describe('payment result page', () => {
-  beforeEach(() => {
-    billing.completeGatewayPayment.mockReset()
-    tokens.recall.mockReset()
-    tokens.recall.mockReturnValue('token-1')
-    tokens.recallInvoiceId.mockReset()
-    tokens.recallInvoiceId.mockReturnValue(77)
-    tokens.forget.mockReset()
+  beforeEach(async () => {
     window.sessionStorage.clear()
-    vi.stubGlobal('useOrderPaymentToken', () => tokens)
+    vi.stubGlobal('useOrderPaymentToken', useOrderPaymentToken)
+    rememberOrder()
+    table = {}
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('says there is nothing to check, and does not call the backend, when the address names no payment', async () => {
@@ -60,45 +100,45 @@ describe('payment result page', () => {
 
     expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.missingTitle')
     expect(wrapper.find('[data-testid="payment-invoices"]').attributes('href')).toBe('/en/client/invoices')
-    expect(billing.completeGatewayPayment).not.toHaveBeenCalled()
+    expect(checks()).toBe(0)
   })
 
   it('verifies an order with its payment token and offers the order page once paid', async () => {
-    billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Paid, orderNumber: 'INV-77' })
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Paid, orderNumber: 'INV-77' } }
 
     const wrapper = await mountResult({ order: '5' })
 
-    expect(billing.completeGatewayPayment).toHaveBeenCalledWith('order', '5', 'token-1')
+    expect(bodyOf(requestsTo(stub.requests, orderPaymentCompletePath(ORDER.id))[0])).toEqual({ paymentToken: ORDER.token })
     expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.successTitle')
     expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe('/en/client/order-success?order=INV-77')
-    expect(tokens.forget).toHaveBeenCalledWith('5')
+    expect(useOrderPaymentToken().recall(ORDER.id)).toBeUndefined()
   })
 
   it('verifies an invoice without a token and offers the invoice once paid', async () => {
-    billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Paid })
+    table[invoiceCheck(9)] = { body: { state: GatewayPaymentState.Paid } }
 
     const wrapper = await mountResult({ invoice: '9' })
 
-    expect(billing.completeGatewayPayment).toHaveBeenCalledWith('invoice', '9', undefined)
+    expect(bodyOf(requestsTo(stub.requests, invoicePaymentCompletePath(9))[0])).toEqual({})
     expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe('/en/client/invoices/9')
   })
 
   it('keeps the token and lets the payer check again while the bank has not settled', async () => {
-    billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Pending })
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Pending } }
     const wrapper = await mountResult({ order: '5' })
     expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.pendingTitle')
-    expect(tokens.forget).not.toHaveBeenCalled()
+    expect(useOrderPaymentToken().recall(ORDER.id)).toBe(ORDER.token)
 
-    billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Paid })
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Paid } }
     await wrapper.find('[data-testid="payment-retry"]').trigger('click')
-    await flushPromises()
+    await waitUntil(() => expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.successTitle'))
 
-    expect(billing.completeGatewayPayment).toHaveBeenCalledTimes(2)
-    expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.successTitle')
+    expect(requestsTo(stub.requests, orderPaymentCompletePath(ORDER.id))).toHaveLength(2)
   })
 
   it('sends a declined payer to pay the same invoice again, never to a fresh cart', async () => {
-    billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Declined })
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Declined } }
+    table[invoiceCheck(9)] = { body: { state: GatewayPaymentState.Declined } }
 
     const order = await mountResult({ order: '5' })
     expect(order.find('[data-testid="payment-try-again"]').attributes('href')).toBe('/en/client/invoices/77/pay')
@@ -108,8 +148,8 @@ describe('payment result page', () => {
   })
 
   it('sends a declined order payer to the invoice list when the billed invoice is not remembered', async () => {
-    billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Declined })
-    tokens.recallInvoiceId.mockReturnValue(undefined)
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Declined } }
+    useOrderPaymentToken().forget(ORDER.id)
 
     const order = await mountResult({ order: '5' })
 
@@ -131,12 +171,13 @@ describe('payment result page', () => {
       return pinia
     }
 
-    billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Declined })
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Declined } }
     const declinedPinia = filledPinia()
     await mountResult({ order: '5' }, declinedPinia)
     expect(useCartStore(declinedPinia).items).toHaveLength(1)
 
-    billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' })
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' } }
+    rememberOrder()
     const paidPinia = filledPinia()
     await mountResult({ order: '5' }, paidPinia)
     expect(useCartStore(paidPinia).items).toEqual([])
@@ -146,7 +187,7 @@ describe('payment result page', () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     useCartStore().items = [{ pid: 1, name: 'Credits', billingcycle: PricingCycle.Monthly, cycleLabel: 'Monthly', amount: 5, currency: 'USD', productType: ProductType.Digital }]
-    billing.completeGatewayPayment.mockResolvedValue({ state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' })
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' } }
 
     const wrapper = await mountResult({ order: '5' }, pinia)
 
@@ -161,16 +202,16 @@ describe('payment result page', () => {
 
       expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.missingTitle')
     }
-    expect(billing.completeGatewayPayment).not.toHaveBeenCalled()
+    expect(checks()).toBe(0)
   })
 
   it('does not assert an outcome when the backend cannot be reached, and keeps the token', async () => {
-    billing.completeGatewayPayment.mockRejectedValue(new Error('offline'))
+    await makeBackendUnreachable()
 
     const wrapper = await mountResult({ order: '5' })
 
     expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.unknownTitle')
     expect(wrapper.find('[data-testid="payment-status"]').exists()).toBe(true)
-    expect(tokens.forget).not.toHaveBeenCalled()
+    expect(useOrderPaymentToken().recall(ORDER.id)).toBe(ORDER.token)
   })
 })

@@ -1,30 +1,32 @@
 /**
- * Tests for `pages/client/reset-password.vue` against the real auth store: the invalid-link
- * state, the mismatch check, the API call and its outcomes. Only the API composable is replaced.
+ * Tests for `pages/client/reset-password.vue` against the real auth store, API composable and
+ * transport, with a stub BFF answering on a real socket (nothing of ours is mocked): the
+ * invalid-link state, the mismatch check, the request that reaches the API and its outcomes.
  *
  * @module tests/pages/client/reset-password.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import ResetPasswordPage from '~/pages/client/reset-password.vue'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** The mocked password-reset call, re-created for every test. */
-const resetPassword = vi.fn()
-
-vi.mock('~/composables/apis/useAuthApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns Only the endpoint this page reaches through the store.
-   */
-  useAuthApi: () => ({ resetPassword })
-}))
-
-const { default: ResetPasswordPage } = await import('~/pages/client/reset-password.vue')
+/** The BFF path the page posts the new password to. */
+const RESET_PATH = '/api/portal/auth/reset-password'
 
 /** A valid reset link's query. */
 const LINK = { token: 'tok', email: 'ada@example.com' }
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
 
 /**
  * Types both password fields and submits.
@@ -37,11 +39,15 @@ const submit = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>, first:
   await wrapper.find('[data-testid="reset-new-password"]').setValue(first)
   await wrapper.find('[data-testid="reset-confirm-password"]').setValue(second)
   await wrapper.find('form').trigger('submit')
-  await flushPromises()
 }
 
-beforeEach(() => {
-  resetPassword.mockReset()
+beforeEach(async () => {
+  table = {}
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  await stub.close()
 })
 
 describe('client reset-password page', () => {
@@ -74,28 +80,30 @@ describe('client reset-password page', () => {
 
     await submit(wrapper, 'one-password', 'another-password')
 
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
     expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('client.resetPassword.errorMismatch')
-    expect(resetPassword).not.toHaveBeenCalled()
+    expect(stub.requests).toHaveLength(0)
   })
 
   it('sends the address, token and new password and shows the success state', async () => {
     stubAuthRuntime({ query: LINK })
-    resetPassword.mockResolvedValue({})
+    table[`POST ${RESET_PATH}`] = { body: {} }
     const wrapper = await mountAuthPage(ResetPasswordPage)
 
     await submit(wrapper, 'new-password-1', 'new-password-1')
+    await waitUntil(() => expect(wrapper.find('[data-testid="reset-success"]').exists()).toBe(true))
 
-    expect(resetPassword).toHaveBeenCalledWith('ada@example.com', 'tok', 'new-password-1')
-    expect(wrapper.find('[data-testid="reset-success"]').exists()).toBe(true)
+    expect(bodyOf(requestsTo(stub.requests, RESET_PATH)[0])).toEqual({ email: 'ada@example.com', token: 'tok', newPassword: 'new-password-1' })
     expect(wrapper.find('[data-testid="reset-success-signin"]').attributes('href')).toBe('/client/login')
   })
 
   it('shows the API sentence and keeps the form when the reset is refused', async () => {
     stubAuthRuntime({ query: LINK })
-    resetPassword.mockRejectedValue({ data: { detail: 'This link has expired.' } })
+    table[`POST ${RESET_PATH}`] = { status: 400, body: { detail: 'This link has expired.' } }
     const wrapper = await mountAuthPage(ResetPasswordPage)
 
     await submit(wrapper, 'new-password-1', 'new-password-1')
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('This link has expired.')
     expect(wrapper.find('[data-testid="reset-success"]').exists()).toBe(false)

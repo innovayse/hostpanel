@@ -1,16 +1,40 @@
 /**
- * Unit tests for TeamTab: it shows the stored team and re-reads it after a change.
+ * Unit tests for TeamTab: it shows the stored team and re-reads it after a change. The account
+ * store, the client API composable and the transport run for real against a stub BFF.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountAccount } from '~/tests/helpers/mountAccount'
 import TeamTab from '~/components/account/TeamTab.vue'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { grantPermissions } from '~/tests/helpers/grantPermissions'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import { makeTeamMember } from '~/tests/helpers/teamMember'
 import { useAccountStore } from '~/stores/account'
-import { ActionOutcome } from '~/types/actionoutcome'
+import { HttpMethod } from '~/types/httpmethod'
+import { Permission } from '~/types/permission'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
-vi.mock('~/composables/apis/useClientApi', () => ({ useClientApi: () => ({}) }))
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => ({}) }))
-vi.mock('~/composables/apis/useAuthApi', () => ({ useAuthApi: () => ({}) }))
-vi.mock('qrcode', () => ({ default: { toDataURL: async (): Promise<string> => '' } }))
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
+let table: StubRouteTable
+
+beforeEach(async () => {
+  table = {
+    [`${HttpMethod.Get} ${AccountEndpoint.Users}`]: { body: [makeTeamMember({ firstName: 'Helper', lastName: 'Member' })] },
+    [`${HttpMethod.Post} ${AccountEndpoint.InviteUser}`]: { body: {} }
+  }
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  vi.unstubAllGlobals()
+  await stub.close()
+})
 
 describe('TeamTab', () => {
   it('renders the list and the invitation form', () => {
@@ -20,23 +44,27 @@ describe('TeamTab', () => {
     expect(wrapper.find('[data-testid="account-invite-card"]').exists()).toBe(true)
   })
 
-  it('lists the members held by the store', async () => {
+  it('lists the members the API returned', async () => {
     const wrapper = mountAccount(TeamTab)
-    useAccountStore().users = [{ userId: '2', firstName: 'Helper', lastName: 'Member', email: 'helper@example.com', isOwner: false, permissions: 8191, lastLoginAt: null, createdAt: '2029-03-01T00:00:00Z' }]
+    await grantPermissions(Permission.All)
+
+    await useAccountStore().loadUsers()
     await wrapper.vm.$nextTick()
 
+    expect(stub.requests.map(request => `${request.method} ${request.url}`)).toEqual([`${HttpMethod.Get} ${AccountEndpoint.Users}`])
     expect(wrapper.find('[data-testid="account-team-member-2"]').exists()).toBe(true)
   })
 
   it('reads the team again after an invitation went out', async () => {
     const wrapper = mountAccount(TeamTab)
-    const store = useAccountStore()
-    const reload = vi.spyOn(store, 'loadUsers').mockResolvedValue()
-    vi.spyOn(store, 'inviteUser').mockResolvedValue(ActionOutcome.Succeeded)
+    await grantPermissions(Permission.All)
 
     await wrapper.find('form').trigger('submit')
-    await Promise.resolve()
 
-    expect(reload).toHaveBeenCalled()
+    await waitUntil(() => expect(wrapper.find('[data-testid="account-team-member-2"]').exists()).toBe(true))
+    expect(stub.requests.map(request => `${request.method} ${request.url}`)).toEqual([
+      `${HttpMethod.Post} ${AccountEndpoint.InviteUser}`,
+      `${HttpMethod.Get} ${AccountEndpoint.Users}`
+    ])
   })
 })

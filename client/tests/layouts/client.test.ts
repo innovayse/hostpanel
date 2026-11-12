@@ -21,6 +21,7 @@ import { makeClientUser } from '~/tests/helpers/clientUser'
 import { startStubServer } from '~/tests/helpers/stubServer'
 import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { settle } from '~/tests/helpers/settle'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path of the signed-in person's identity. */
 const ME_URL = '/api/portal/client/me'
@@ -442,12 +443,12 @@ describe('client layout', () => {
     vi.stubGlobal('$fetch', ofetch.create({ baseURL: `http://127.0.0.1:${(held.address() as AddressInfo).port}` }))
     try {
       const wrapper = mountClient(ClientLayout, { slots: { default: 'page content' }, stubs: STUBS, components: { LayoutDemoBanner } })
-      await vi.waitFor(() => expect(asked).toBe(true))
+      await waitUntil(() => expect(asked).toBe(true))
       wrapper.unmount()
       vi.useFakeTimers()
       release()
       // `vi.waitFor` polls on the real timers, so it still runs while the fake ones are installed.
-      await vi.waitFor(() => expect(useClientStore().user).not.toBeNull())
+      await waitUntil(() => expect(useClientStore().user).not.toBeNull())
 
       expect(vi.getTimerCount()).toBe(0)
     } finally {

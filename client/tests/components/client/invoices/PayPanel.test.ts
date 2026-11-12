@@ -1,17 +1,27 @@
 /**
  * Unit tests for PayPanel: the gateway button the panel offers, the unavailable state and the
- * refusal sentence.
+ * refusal sentence. The invoice payment store, the billing API composable and the transport run for
+ * real against a stub BFF.
  */
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountClient, stubClientRuntime } from '~/tests/helpers/mountClient'
 import PayPanel from '~/components/client/invoices/PayPanel.vue'
+import { bankTransferPath, invoicePaymentStartPath } from '~/tests/helpers/billingPaths'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
+import { HttpMethod } from '~/types/httpmethod'
 
-/** The mocked billing endpoints the store reaches. */
-const billingApi = vi.hoisted(() => ({ startInvoiceGatewayPayment: vi.fn(), selectBankTransfer: vi.fn() }))
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => billingApi }))
+/** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
+let table: StubRouteTable
 
 /**
  * Mounts the panel after filling the store the page would have filled.
@@ -27,10 +37,15 @@ const mountPanel = (state: Record<string, unknown> = {}) => {
 }
 
 describe('PayPanel', () => {
-  beforeEach(() => {
-    billingApi.startInvoiceGatewayPayment.mockReset()
-    billingApi.selectBankTransfer.mockReset()
+  beforeEach(async () => {
+    table = {}
+    stub = await startTransport(routeTable(table))
     stubClientRuntime()
+  })
+
+  afterEach(async () => {
+    vi.unstubAllGlobals()
+    await stub.close()
   })
 
   it('says online payment is unavailable when there is no gateway', () => {
@@ -56,12 +71,15 @@ describe('PayPanel', () => {
   })
 
   it('starts the gateway payment for the invoice through the store', async () => {
-    billingApi.startInvoiceGatewayPayment.mockResolvedValue({ redirectUrl: 'javascript:alert(1)' })
+    table[`${HttpMethod.Post} ${invoicePaymentStartPath('9')}`] = { body: { redirectUrl: 'javascript:alert(1)' } }
     const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }] })
 
     await wrapper.find('[data-testid="invoice-pay-hosted"]').trigger('click')
 
-    await vi.waitFor(() => expect(billingApi.startInvoiceGatewayPayment).toHaveBeenCalledWith('9', 'hostedbank', expect.stringContaining('/payment/result?invoice=9')))
+    await waitUntil(() => expect(requestsTo(stub.requests, invoicePaymentStartPath('9'))).toHaveLength(1))
+    const [start] = requestsTo(stub.requests, invoicePaymentStartPath('9'))
+    expect(start?.method).toBe(HttpMethod.Post)
+    expect(bodyOf(start)).toEqual({ module: 'hostedbank', returnUrl: expect.stringContaining('/payment/result?invoice=9') })
   })
 
   it('disables the gateway button while a payment is being started', () => {
@@ -87,7 +105,9 @@ describe('PayPanel', () => {
   })
 
   it('chooses the bank transfer through the store and then shows the bank details', async () => {
-    billingApi.selectBankTransfer.mockResolvedValue({ invoiceId: 9, reference: 'INV-9', amountDue: 10, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null })
+    table[`${HttpMethod.Post} ${bankTransferPath('9')}`] = {
+      body: { invoiceId: 9, reference: 'INV-9', amountDue: 10, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null }
+    }
     const wrapper = mountPanel({
       gatewayMethods: [{ module: 'bank_transfer', displayName: 'Transfer', supportsStoredCredentials: false }],
       invoice: { id: 9, status: 'Unpaid' }
@@ -95,8 +115,9 @@ describe('PayPanel', () => {
 
     await wrapper.find('[data-testid="invoice-pay-bank-transfer"]').trigger('click')
 
-    await vi.waitFor(() => expect(billingApi.selectBankTransfer).toHaveBeenCalledWith('9'))
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true))
+    const choices = requestsTo(stub.requests, bankTransferPath('9'))
+    expect(choices.map(choice => choice.method)).toEqual([HttpMethod.Post])
     expect(wrapper.find('[data-testid="bank-transfer-reference"]').text()).toBe('INV-9')
     expect(wrapper.find('[data-testid="invoice-pay-bank-transfer"]').exists()).toBe(false)
   })

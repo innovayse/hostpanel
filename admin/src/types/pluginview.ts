@@ -396,12 +396,12 @@ export interface PluginTabsBlock extends PluginBlockBase {
   actions?: PluginActionBlock[]
 }
 
-/** A ready-made message a chat offers before the first one is written. */
+/** A ready-made message a chat offers before the first one is written; pressing it sends the message. */
 export interface PluginChatSuggestion {
   /** The button text. */
   label: string
-  /** The message it puts in the message field. */
-  text: string
+  /** The message a press sends; the label when absent. */
+  text?: string
 }
 
 /** What an empty chat shows before the first message. */
@@ -469,6 +469,16 @@ export interface PluginSplitBlock extends PluginBlockBase {
 export interface PluginPreviewBlock extends PluginBlockBase {
   /** The kind. */
   kind: PluginBlockKind.Preview
+}
+
+/** How a run of blocks is laid out (`groupPluginBlocks`). */
+export enum PluginBlockGroupKind {
+  /** One block, drawn on its own line. */
+  Single = 'single',
+  /** A run of consecutive `stat` blocks, drawn as a grid of tiles. */
+  Stats = 'stats',
+  /** A run of consecutive `link` blocks, drawn as a wrapping row of buttons. */
+  Links = 'links',
 }
 
 /** One block of a plugin view. */
@@ -601,4 +611,26 @@ export interface PluginChatMessage {
   results: PluginChatResult[]
   /** The plugin's own failures during the reply. */
   issues: PluginChatIssue[]
+  /** What the plugin says it is doing now while the reply is written; empty when nothing. */
+  status: string
+  /** When this session wrote the message, in milliseconds since the epoch; absent for a message read from the history. */
+  sentAt?: number
+}
+
+/** A block of a group with the key it is rendered under. */
+export interface PluginKeyedBlock {
+  /** The block's id, else its kind, and always its place, which a view document never reorders. */
+  key: string
+  /** The block. */
+  block: PluginBlock
+}
+
+/** A run of blocks laid out together. */
+export interface PluginBlockGroup {
+  /** The key of the group: the key of its first block. */
+  key: string
+  /** How the group is laid out. */
+  kind: PluginBlockGroupKind
+  /** The blocks of the group, in document order. */
+  blocks: PluginKeyedBlock[]
 }

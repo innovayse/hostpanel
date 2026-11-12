@@ -273,6 +273,30 @@ public sealed class PluginRegistryClientTests(IntegrationTestFactory factory) : 
         result.Value!.Select(p => p.LatestChangelog).Should().Equal("New flow.", null);
     }
 
+    /// <summary>The reviews summary is read from the listing: an average between 1 and 5 with at least one review is kept, a value out of range, a zero count, a missing member or an absent summary becomes null.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Search_ReadsTheRatingAndDropsAnUnusableOneAsync()
+    {
+        var handler = ScriptedHttpMessageHandler.Json($$"""
+            {"items":[
+              {{EntryJson("rated", ",\"rating\":{\"average\":4.5,\"count\":12}")}},
+              {{EntryJson("lowest", ",\"rating\":{\"average\":1,\"count\":1}")}},
+              {{EntryJson("too-high", ",\"rating\":{\"average\":5.1,\"count\":3}")}},
+              {{EntryJson("too-low", ",\"rating\":{\"average\":0.5,\"count\":3}")}},
+              {{EntryJson("no-reviews", ",\"rating\":{\"average\":4,\"count\":0}")}},
+              {{EntryJson("half", ",\"rating\":{\"average\":4}")}},
+              {{EntryJson("null-rating", ",\"rating\":null")}},
+              {{EntryJson("absent")}}],"total":8}
+            """);
+
+        var items = (await Client(handler).SearchAsync(new RegistryPluginSearch(null, null, 1, 20), CancellationToken.None)).Value!.Items;
+
+        items[0].Rating.Should().Be(new RegistryPluginRatingDto(4.5, 12));
+        items[1].Rating.Should().Be(new RegistryPluginRatingDto(1, 1));
+        items.Skip(2).Select(p => p.Rating).Should().AllBeEquivalentTo((RegistryPluginRatingDto?)null);
+    }
+
     /// <summary>A release is resolved, a relative package address is made absolute on the registry's host, the checksum is lower-cased.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

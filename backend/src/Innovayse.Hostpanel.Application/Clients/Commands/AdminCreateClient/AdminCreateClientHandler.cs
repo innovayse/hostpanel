@@ -227,7 +227,7 @@ public sealed class AdminCreateClientHandler
         if (cmd.Settings is { } settings)
         {
             client.UpdateSettings(
-                settings.OverdueNotices, settings.TaxExempt, settings.SeparateInvoices,
+                settings.OverdueNotices, settings.TaxExempt, settings.TaxId, settings.TaxExemptionReason, settings.SeparateInvoices,
                 settings.DisableCcProcessing, settings.MarketingOptIn, settings.StatusUpdate, settings.AllowSso);
         }
 

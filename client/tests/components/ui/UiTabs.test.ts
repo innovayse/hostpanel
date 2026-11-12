@@ -54,4 +54,11 @@ describe('UiTabs', () => {
     expect(without.text()).not.toContain('Panel body')
     expect(withPanel.text()).toContain('Panel body')
   })
+
+  it('scrolls the bar sideways and keeps every tab at its natural width when the tabs do not fit', () => {
+    const wrapper = mountWithKit(UiTabs, { props: { tabs: TABS, modelValue: 'overview' } })
+
+    expect(wrapper.find('[role="tablist"]').classes()).toContain('overflow-x-auto')
+    expect(wrapper.find('[data-testid="ui-tab-billing"]').classes()).toContain('shrink-0')
+  })
 })

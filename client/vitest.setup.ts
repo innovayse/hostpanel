@@ -150,3 +150,25 @@ beforeEach(() => {
   sharedState.clear()
   installAutoImports()
 })
+
+/**
+ * Observer that never reports a size change, because jsdom never lays anything out.
+ *
+ * jsdom has no `ResizeObserver`; a component that watches an element's size gets this one, and a test about
+ * resizing stubs its own with `vi.stubGlobal`.
+ */
+class NoLayoutResizeObserver {
+  /** Accepts the element and never reports on it. */
+  observe = (): void => {}
+
+  /** Nothing is watched, so there is nothing to stop. */
+  unobserve = (): void => {}
+
+  /** Nothing is watched, so there is nothing to stop. */
+  disconnect = (): void => {}
+}
+
+if (typeof globalThis.ResizeObserver === 'undefined') {
+  // Assigned, not stubbed: a test's `vi.unstubAllGlobals()` must not take the file-wide observer away.
+  globalThis.ResizeObserver = NoLayoutResizeObserver
+}

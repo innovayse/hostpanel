@@ -6,7 +6,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { parseMarkdownText } from '~/utils/ui/markdownText'
+import { appendCaret, parseMarkdownText } from '~/utils/ui/markdownText'
 import type { RichNode } from '~/utils/ui/richText'
 import { UiRichNodeType } from '~/utils/ui/enums'
 
@@ -98,5 +98,23 @@ describe('parseMarkdownText', () => {
 
   it('still trims a heading and reads its text', () => {
     expect(shape(parseMarkdownText('## Title   '))).toBe('h4(Title)')
+  })
+})
+
+describe('appendCaret', () => {
+  it.each([
+    ['text so far', 'p(text so farspan())'],
+    ['# Plan', 'h4(Planspan())'],
+    ['- one\n- two', 'ul(li(one)li(twospan()))'],
+    ['```\ncode\n```', 'pre(code)p(span())'],
+    ['', 'p(span())'],
+  ])('puts the caret at the end of %j', (text, expected) => {
+    expect(shape(appendCaret(parseMarkdownText(text)))).toBe(expected)
+  })
+
+  it('marks the caret hidden from assistive technology', () => {
+    const caret = appendCaret(parseMarkdownText('x'))[0]
+
+    expect(caret?.type === UiRichNodeType.Element && caret.children.at(-1)).toMatchObject({ tag: 'span', attrs: { 'aria-hidden': 'true' } })
   })
 })

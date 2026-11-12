@@ -2,46 +2,56 @@
  * Unit tests for NovaTestimonials: nothing without quotes, one card per quote read from the
  * storefront store with them.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { testimonialFixture } from '~/tests/helpers/storefrontFixtures'
+import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import NovaTestimonials from '~/templates/nova/sections/NovaTestimonials.vue'
+import type { Testimonial } from '~/types/testimonial'
 
-/** The mocked storefront endpoints, re-created for every test. */
-const api = { fetchPartners: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** What the stub answers, by route; the tests below change the quotes it serves. */
+const replies: StubRouteTable = {}
+
+/**
+ * Makes the stub serve these quotes.
+ *
+ * @param testimonials The testimonials the public read answers with.
+ */
+const serve = (testimonials: Testimonial[]): void => {
+  replies[readOf(StorefrontPath.Testimonials)] = { body: testimonials }
+}
 
 /**
  * Mounts the section and lets the quotes load.
  *
  * @returns The wrapper.
  */
-const mountSection = async () => {
-  const wrapper = mountWithKit(NovaTestimonials)
-  await flushPromises()
-  return wrapper
-}
+const mountSection = () =>
+  mountAfterReads(stub, [StorefrontPath.Testimonials], () => mountWithKit(NovaTestimonials))
 
 describe('NovaTestimonials', () => {
-  beforeEach(() => {
-    api.fetchTestimonials.mockReset()
-    api.fetchTestimonials.mockResolvedValue([
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    serve([
       testimonialFixture(1, { name: 'Ada', role: 'CTO', company: 'Example Co', quote: 'Fast.' }),
       testimonialFixture(2, { name: 'Bo', role: null, company: null, quote: 'Solid.' }),
     ])
   })
 
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
+  })
+
   it('renders no section while there are no quotes', async () => {
-    api.fetchTestimonials.mockResolvedValue([])
+    serve([])
 
     const wrapper = await mountSection()
 

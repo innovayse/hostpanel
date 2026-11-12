@@ -1,59 +1,34 @@
 /**
- * Tests for `stores/account.ts`.
+ * Tests for `stores/account.ts`, through the real client, auth and billing API composables, the client and auth stores and the transport against a stub server.
  *
  * The store, not the account page, owns every loading flag and refusal sentence, so these
- * assertions pin the contract the page renders from.
+ * assertions pin the contract the page renders from. Nothing of our own is replaced: the stub plays the BFF, "the API was
+ * called with X" is an assertion on the request that reached it, and only the QR renderer (a third-party package) is faked.
  *
  * @module tests/stores/account.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { ref } from 'vue'
-import { makeContactInput } from '~/tests/helpers/accountContact'
+import { AccountEndpoint, contactPath, userPath } from '../helpers/accountPaths'
+import { makeContactInput } from '../helpers/accountContact'
+import { makeClientUser } from '../helpers/clientUser'
+import { bodyOf } from '../helpers/requestBody'
+import { readOf, refusal, requestsTo, routeTable } from '../helpers/stubRoutes'
+import type { StubRouteTable } from '../helpers/stubRoutes'
+import type { StubServer } from '../helpers/stubServer'
+import { startTransport } from '../helpers/stubTransport'
+import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
+import { useAccountStore } from '~/stores/account'
+import { useClientStore } from '~/stores/client'
+import { ActionOutcome } from '~/types/actionoutcome'
+import { ContactSaveOutcome } from '~/types/contactsaveoutcome'
+import { EmailConfirmationStatus } from '~/types/emailconfirmationstatus'
+import { HttpMethod } from '~/types/httpmethod'
 import { InvitePermissionMode } from '~/types/invitepermissionmode'
 import type { InviteUserPayload } from '~/types/inviteuserpayload'
-
-/** Mocked client endpoints, re-created for every test. */
-const clientApi = {
-  updateMe: vi.fn(),
-  startEmailChange: vi.fn(),
-  confirmEmailChange: vi.fn(),
-  inviteUser: vi.fn(),
-  removeUser: vi.fn(),
-  createContact: vi.fn(),
-  updateContact: vi.fn(),
-  removeContact: vi.fn(),
-  fetchUsers: vi.fn(),
-  fetchContacts: vi.fn(),
-  fetchEmails: vi.fn()
-}
-
-/** Mocked billing endpoints. */
-const billingApi = {
-  fetchGatewayMethods: vi.fn()
-}
-
-/** Mocked two-factor endpoints. */
-const authApi = {
-  setupTwoFactor: vi.fn(),
-  enableTwoFactor: vi.fn(),
-  disableTwoFactor: vi.fn()
-}
-
-/** Mocked profile reload on the client store. */
-const fetchUser = vi.fn()
-
-/** Mocked sign-out on the auth store, which ends the session and leaves for the sign-in page. */
-const signOut = vi.fn()
-
-/** Mocked local session end on the auth store, which keeps the page. */
-const endLocalSession = vi.fn()
-
-/** Mocked permission check on the client store; every permission is held unless a test says otherwise. */
-const mayDo = vi.fn()
-
-vi.stubGlobal('ref', ref)
+import { Permission } from '~/types/permission'
+import { TwoFactorMode } from '~/types/twofactormode'
 
 vi.mock('qrcode', () => ({
   default: {
@@ -66,139 +41,107 @@ vi.mock('qrcode', () => ({
   }
 }))
 
-vi.mock('~/composables/apis/useClientApi', () => ({
-  /**
-   * Stands in for the client API composable.
-   *
-   * @returns The mocked endpoints.
-   */
-  useClientApi: () => clientApi
-}))
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useBillingApi', () => ({
-  /**
-   * Stands in for the billing API composable.
-   *
-   * @returns The mocked endpoints.
-   */
-  useBillingApi: () => billingApi
-}))
+/** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
+let table: StubRouteTable
 
-vi.mock('~/composables/apis/useAuthApi', () => ({
-  /**
-   * Stands in for the auth API composable.
-   *
-   * @returns The mocked endpoints.
-   */
-  useAuthApi: () => authApi
-}))
+/**
+ * The key of a write in a stub route table.
+ *
+ * @param method - The verb of the write.
+ * @param path - The path, without query.
+ * @returns The `METHOD /path` key.
+ */
+const writeOf = (method: HttpMethod, path: string): string => `${method} ${path}`
 
-vi.mock('~/stores/client', () => ({
-  /**
-   * Stands in for the client store.
-   *
-   * @returns A store exposing only the profile reload and the permission check.
-   */
-  useClientStore: () => ({ fetchUser, mayDo })
-}))
-
-vi.mock('~/stores/auth', () => ({
-  /**
-   * Stands in for the auth store.
-   *
-   * @returns A store exposing only the two ways of ending the session.
-   */
-  useAuthStore: () => ({ signOut, endLocalSession })
-}))
-
-vi.mock('~/utils/translate', () => ({
-  /**
-   * Stands in for the out-of-component translator.
-   *
-   * @param key - The message key.
-   * @returns The key itself.
-   */
-  translate: (key: string): string => key
-}))
-
-const { useAccountStore } = await import('~/stores/account')
-const { EmailConfirmationStatus } = await import('~/types/emailconfirmationstatus')
-const { ActionOutcome } = await import('~/types/actionoutcome')
-const { ContactSaveOutcome } = await import('~/types/contactsaveoutcome')
-const { TwoFactorMode } = await import('~/types/twofactormode')
-
-/** A refusal shaped like the API's problem body. */
-const refused = { data: { detail: 'Refused.' } }
+/** The refusal the API answers with. */
+const REFUSED = refusal('Refused.')
 
 /** A complete invitation granting every permission. */
 const invite: InviteUserPayload = { email: 'a@b.c', firstName: 'A', lastName: 'B', permissionMode: InvitePermissionMode.All, permissions: [] }
 
-beforeEach(() => {
+/** The navigation helper the sign-out ends in, a Nuxt global the test replaces with a spy. */
+const navigate = vi.fn()
+
+/**
+ * The methods of the requests that reached a path, oldest first.
+ *
+ * @param path - The path, without query.
+ * @returns The methods.
+ */
+const methodsTo = (path: string): string[] => requestsTo(stub.requests, path).map(request => request.method)
+
+beforeEach(async () => {
   setActivePinia(createPinia())
-  for (const api of [clientApi, billingApi, authApi]) {
-    for (const fn of Object.values(api)) {
-      fn.mockReset()
-    }
-  }
-  fetchUser.mockReset()
-  signOut.mockReset()
-  endLocalSession.mockReset()
-  mayDo.mockReset()
-  mayDo.mockReturnValue(true)
+  navigate.mockReset()
+  vi.stubGlobal('navigateTo', navigate)
+  vi.stubGlobal('useRuntimeConfig', () => ({ public: { authMode: 'local' } }))
+  table = {}
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  vi.unstubAllGlobals()
+  await stub.close()
 })
 
 describe('useAccountStore.saveProfile', () => {
   it('saves, reloads the profile and reports Succeeded', async () => {
-    clientApi.updateMe.mockResolvedValue({})
+    table[writeOf(HttpMethod.Patch, AccountEndpoint.Me)] = { body: {} }
+    table[readOf(AccountEndpoint.Me)] = { body: makeClientUser() }
     const store = useAccountStore()
 
     const outcome = await store.saveProfile({ firstName: 'Ada' })
 
     expect(outcome).toBe(ActionOutcome.Succeeded)
-    expect(fetchUser).toHaveBeenCalledWith(true)
+    expect(methodsTo(AccountEndpoint.Me)).toEqual([HttpMethod.Patch, HttpMethod.Get])
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.Me)[0])).toEqual({ firstName: 'Ada' })
     expect(store.saveError).toBe('')
     expect(store.saving).toBe(false)
   })
 
   it('keeps the API sentence and reports Failed', async () => {
-    clientApi.updateMe.mockRejectedValue(refused)
+    table[writeOf(HttpMethod.Patch, AccountEndpoint.Me)] = REFUSED
     const store = useAccountStore()
 
     const outcome = await store.saveProfile({})
 
     expect(outcome).toBe(ActionOutcome.Failed)
     expect(store.saveError).toBe('Refused.')
-    expect(fetchUser).not.toHaveBeenCalled()
+    expect(methodsTo(AccountEndpoint.Me)).toEqual([HttpMethod.Patch])
     expect(store.saving).toBe(false)
   })
 })
 
 describe('useAccountStore field errors', () => {
   it('keeps the field messages of a refused profile save and clears them when the next save starts', async () => {
-    clientApi.updateMe.mockRejectedValueOnce({ data: { type: 'VALIDATION_ERROR', errors: { phone: ['Phone is invalid.'] } } })
+    table[writeOf(HttpMethod.Patch, AccountEndpoint.Me)] = { status: 400, body: { type: 'VALIDATION_ERROR', errors: { phone: ['Phone is invalid.'] } } }
+    table[readOf(AccountEndpoint.Me)] = { body: makeClientUser() }
     const store = useAccountStore()
 
     expect(await store.saveProfile({})).toBe(ActionOutcome.Failed)
     expect(store.fieldErrors).toEqual({ phone: 'Phone is invalid.' })
 
-    clientApi.updateMe.mockResolvedValueOnce({})
+    table[writeOf(HttpMethod.Patch, AccountEndpoint.Me)] = { body: {} }
     await store.saveProfile({})
     expect(store.fieldErrors).toEqual({})
   })
-
 })
 
 describe('useAccountStore team members', () => {
   it('reports Succeeded for an invitation', async () => {
-    clientApi.inviteUser.mockResolvedValue({})
+    table[writeOf(HttpMethod.Post, AccountEndpoint.InviteUser)] = { body: {} }
     const store = useAccountStore()
 
     expect(await store.inviteUser(invite)).toBe(ActionOutcome.Succeeded)
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.InviteUser)[0])).toEqual(invite)
     expect(store.inviting).toBe(false)
   })
 
   it('keeps the sentence when an invitation is refused', async () => {
-    clientApi.inviteUser.mockRejectedValue(refused)
+    table[writeOf(HttpMethod.Post, AccountEndpoint.InviteUser)] = REFUSED
     const store = useAccountStore()
 
     expect(await store.inviteUser(invite)).toBe(ActionOutcome.Failed)
@@ -206,10 +149,11 @@ describe('useAccountStore team members', () => {
   })
 
   it('keeps the sentence when a removal is refused and clears the in-flight id', async () => {
-    clientApi.removeUser.mockRejectedValue(refused)
+    table[writeOf(HttpMethod.Delete, userPath('7'))] = REFUSED
     const store = useAccountStore()
 
     expect(await store.removeUser('7')).toBe(ActionOutcome.Failed)
+    expect(methodsTo(userPath('7'))).toEqual([HttpMethod.Delete])
     expect(store.inviteError).toBe('Refused.')
     expect(store.removingUserId).toBeNull()
   })
@@ -220,25 +164,27 @@ describe('useAccountStore contacts', () => {
     const store = useAccountStore()
 
     expect(await store.saveContact(null, makeContactInput({ firstName: '' }))).toBe(ContactSaveOutcome.Invalid)
-    expect(clientApi.createContact).not.toHaveBeenCalled()
+    expect(stub.requests).toHaveLength(0)
   })
 
   it('creates when the id is null and updates when it is set', async () => {
-    clientApi.createContact.mockResolvedValue(5)
-    clientApi.updateContact.mockResolvedValue({})
+    table[writeOf(HttpMethod.Post, AccountEndpoint.Contacts)] = { body: 5 }
+    table[writeOf(HttpMethod.Put, contactPath(5))] = { body: {} }
     const store = useAccountStore()
     const body = makeContactInput({ firstName: 'A', lastName: 'L' })
 
     expect(await store.saveContact(null, body)).toBe(ContactSaveOutcome.Saved)
     expect(await store.saveContact(5, body)).toBe(ContactSaveOutcome.Saved)
 
-    expect(clientApi.createContact).toHaveBeenCalledWith(body)
-    expect(clientApi.updateContact).toHaveBeenCalledWith(5, body)
+    expect(methodsTo(AccountEndpoint.Contacts)).toEqual([HttpMethod.Post])
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.Contacts)[0])).toEqual(body)
+    expect(methodsTo(contactPath(5))).toEqual([HttpMethod.Put])
+    expect(bodyOf(requestsTo(stub.requests, contactPath(5))[0])).toEqual(body)
     expect(store.contactSaving).toBe(false)
   })
 
   it('keeps the sentence when saving is refused', async () => {
-    clientApi.createContact.mockRejectedValue(refused)
+    table[writeOf(HttpMethod.Post, AccountEndpoint.Contacts)] = REFUSED
     const store = useAccountStore()
 
     expect(await store.saveContact(null, makeContactInput({ firstName: 'A', lastName: 'L' }))).toBe(ContactSaveOutcome.Failed)
@@ -246,16 +192,17 @@ describe('useAccountStore contacts', () => {
   })
 
   it('reports Failed for a refused removal', async () => {
-    clientApi.removeContact.mockRejectedValue(refused)
+    table[writeOf(HttpMethod.Delete, contactPath(5))] = REFUSED
     const store = useAccountStore()
 
     expect(await store.removeContact(5)).toBe(ActionOutcome.Failed)
+    expect(methodsTo(contactPath(5))).toEqual([HttpMethod.Delete])
   })
 })
 
 describe('useAccountStore two-factor', () => {
   it('returns the setup with a locally rendered QR code', async () => {
-    authApi.setupTwoFactor.mockResolvedValue({ secret: 'S', qrCodeUri: 'otpauth://x' })
+    table[writeOf(HttpMethod.Post, AccountEndpoint.TwoFactorSetup)] = { body: { secret: 'S', qrCodeUri: 'otpauth://x' } }
     const store = useAccountStore()
 
     const setup = await store.startTwoFactorSetup()
@@ -265,7 +212,7 @@ describe('useAccountStore two-factor', () => {
   })
 
   it('returns null and keeps the sentence when enrolment cannot start', async () => {
-    authApi.setupTwoFactor.mockRejectedValue(refused)
+    table[writeOf(HttpMethod.Post, AccountEndpoint.TwoFactorSetup)] = REFUSED
     const store = useAccountStore()
 
     expect(await store.startTwoFactorSetup()).toBeNull()
@@ -273,39 +220,42 @@ describe('useAccountStore two-factor', () => {
   })
 
   it('enables with the code and reloads the profile', async () => {
-    authApi.enableTwoFactor.mockResolvedValue({})
+    table[writeOf(HttpMethod.Post, AccountEndpoint.TwoFactorEnable)] = { body: {} }
+    table[readOf(AccountEndpoint.Me)] = { body: makeClientUser({ twoFactorEnabled: true }) }
     const store = useAccountStore()
 
     expect(await store.submitTwoFactor(TwoFactorMode.Enable, '123456')).toBe(ActionOutcome.Succeeded)
 
-    expect(authApi.enableTwoFactor).toHaveBeenCalledWith('123456')
-    expect(fetchUser).toHaveBeenCalledTimes(1)
-    expect(signOut).not.toHaveBeenCalled()
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.TwoFactorEnable)[0])).toEqual({ code: '123456' })
+    expect(methodsTo(AccountEndpoint.Me)).toEqual([HttpMethod.Get])
+    expect(requestsTo(stub.requests, AccountEndpoint.Logout)).toHaveLength(0)
   })
 
   it('disables with the code and the password, then signs this browser out', async () => {
-    authApi.disableTwoFactor.mockResolvedValue({})
+    table[writeOf(HttpMethod.Post, AccountEndpoint.TwoFactorDisable)] = { body: {} }
+    table[writeOf(HttpMethod.Post, AccountEndpoint.Logout)] = { body: {} }
     const store = useAccountStore()
 
     expect(await store.submitTwoFactor(TwoFactorMode.Disable, '654321', 'secret-pw')).toBe(ActionOutcome.Succeeded)
 
-    expect(authApi.disableTwoFactor).toHaveBeenCalledWith('654321', 'secret-pw')
-    expect(signOut).toHaveBeenCalledTimes(1)
-    expect(fetchUser).not.toHaveBeenCalled()
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.TwoFactorDisable)[0])).toEqual({ code: '654321', currentPassword: 'secret-pw' })
+    expect(requestsTo(stub.requests, AccountEndpoint.Logout)).toHaveLength(1)
+    expect(navigate).toHaveBeenCalledWith(CLIENT_LOGIN_PATH)
+    expect(requestsTo(stub.requests, AccountEndpoint.Me)).toHaveLength(0)
   })
 
   it('stays signed in when switching off is refused', async () => {
-    authApi.disableTwoFactor.mockRejectedValue(refused)
+    table[writeOf(HttpMethod.Post, AccountEndpoint.TwoFactorDisable)] = REFUSED
     const store = useAccountStore()
 
     expect(await store.submitTwoFactor(TwoFactorMode.Disable, '654321', 'wrong')).toBe(ActionOutcome.Failed)
 
     expect(store.tfaModalError).toBe('Refused.')
-    expect(signOut).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, AccountEndpoint.Logout)).toHaveLength(0)
   })
 
   it('keeps the sentence when a code is refused', async () => {
-    authApi.enableTwoFactor.mockRejectedValue(refused)
+    table[writeOf(HttpMethod.Post, AccountEndpoint.TwoFactorEnable)] = REFUSED
     const store = useAccountStore()
 
     expect(await store.submitTwoFactor(TwoFactorMode.Enable, 'x')).toBe(ActionOutcome.Failed)
@@ -316,19 +266,19 @@ describe('useAccountStore two-factor', () => {
 
 describe('useAccountStore sign-in address', () => {
   it('asks for the change and remembers where the link went', async () => {
-    clientApi.startEmailChange.mockResolvedValue(undefined)
+    table[writeOf(HttpMethod.Post, AccountEndpoint.EmailChange)] = { body: {} }
     const store = useAccountStore()
 
     const outcome = await store.startEmailChange({ newEmail: 'new@example.com', currentPassword: 'pw' })
 
     expect(outcome).toBe(ActionOutcome.Succeeded)
-    expect(clientApi.startEmailChange).toHaveBeenCalledWith({ newEmail: 'new@example.com', currentPassword: 'pw' })
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.EmailChange)[0])).toEqual({ newEmail: 'new@example.com', currentPassword: 'pw' })
     expect(store.emailChangeSentTo).toBe('new@example.com')
     expect(store.emailChangeSaving).toBe(false)
   })
 
   it('keeps the sentence and sends nobody to an inbox when the change is refused', async () => {
-    clientApi.startEmailChange.mockRejectedValue(refused)
+    table[writeOf(HttpMethod.Post, AccountEndpoint.EmailChange)] = REFUSED
     const store = useAccountStore()
 
     const outcome = await store.startEmailChange({ newEmail: 'new@example.com', currentPassword: 'wrong' })
@@ -339,14 +289,15 @@ describe('useAccountStore sign-in address', () => {
   })
 
   it('confirms the change and ends this browser session', async () => {
-    clientApi.confirmEmailChange.mockResolvedValue(undefined)
+    table[writeOf(HttpMethod.Post, `${AccountEndpoint.EmailChange}/confirm`)] = { body: {} }
+    table[writeOf(HttpMethod.Post, AccountEndpoint.Logout)] = { body: {} }
     const store = useAccountStore()
 
     const status = await store.confirmEmailChange('new@example.com', 'tok')
 
     expect(status).toBe(EmailConfirmationStatus.Confirmed)
-    expect(clientApi.confirmEmailChange).toHaveBeenCalledWith('new@example.com', 'tok')
-    expect(endLocalSession).toHaveBeenCalledTimes(1)
+    expect(bodyOf(requestsTo(stub.requests, `${AccountEndpoint.EmailChange}/confirm`)[0])).toEqual({ email: 'new@example.com', token: 'tok' })
+    expect(requestsTo(stub.requests, AccountEndpoint.Logout)).toHaveLength(1)
   })
 
   it('refuses a link with nothing in it without a request', async () => {
@@ -356,39 +307,34 @@ describe('useAccountStore sign-in address', () => {
 
     expect(status).toBe(EmailConfirmationStatus.Failed)
     expect(store.emailChangeConfirmError).toBe('client.confirmEmail.invalidLink')
-    expect(clientApi.confirmEmailChange).not.toHaveBeenCalled()
+    expect(stub.requests).toHaveLength(0)
   })
 
   it('keeps the sentence and the session when the token is refused', async () => {
-    clientApi.confirmEmailChange.mockRejectedValue(refused)
+    table[writeOf(HttpMethod.Post, `${AccountEndpoint.EmailChange}/confirm`)] = REFUSED
     const store = useAccountStore()
 
     const status = await store.confirmEmailChange('new@example.com', 'bad')
 
     expect(status).toBe(EmailConfirmationStatus.Failed)
     expect(store.emailChangeConfirmError).toBe('Refused.')
-    expect(endLocalSession).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, AccountEndpoint.Logout)).toHaveLength(0)
   })
 })
 
 describe('useAccountStore reads', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    Object.values(clientApi).forEach(fn => fn.mockReset())
-    Object.values(billingApi).forEach(fn => fn.mockReset())
-  })
-
   it.each([
-    ['loadUsers', 'fetchUsers', 'users', 'usersLoading'],
-    ['loadContacts', 'fetchContacts', 'contacts', 'contactsLoading']
-  ] as const)('%s keeps the list, and empties it when the read fails', async (action, endpoint, state, flag) => {
-    clientApi[endpoint].mockResolvedValueOnce([{ id: '1' }]).mockRejectedValueOnce(new Error('down'))
+    ['loadUsers', AccountEndpoint.Users, 'users', 'usersLoading'],
+    ['loadContacts', AccountEndpoint.Contacts, 'contacts', 'contactsLoading']
+  ] as const)('%s keeps the list, and empties it when the read fails', async (action, path, state, flag) => {
+    table[readOf(path)] = { body: [{ id: '1' }] }
     const store = useAccountStore()
 
     await store[action]()
     expect(store[state]).toEqual([{ id: '1' }])
     expect(store[flag]).toBe(false)
 
+    table[readOf(path)] = refusal('down')
     await store[action]()
     expect(store[state]).toEqual([])
     expect(store[flag]).toBe(false)
@@ -396,27 +342,27 @@ describe('useAccountStore reads', () => {
 
   it('keeps the rows of the sent-mail page, and empties them when the read fails', async () => {
     const row = { id: 1, to: 'a@b.test', subject: 'Invoice', sentAt: '2026-02-03T00:00:00Z', success: true }
-    clientApi.fetchEmails
-      .mockResolvedValueOnce({ items: [row], pageNumber: 1, pageSize: 100, totalCount: 1, totalPages: 1 })
-      .mockRejectedValueOnce(new Error('down'))
+    table[readOf(AccountEndpoint.Emails)] = { body: { items: [row], pageNumber: 1, pageSize: 100, totalCount: 1, totalPages: 1 } }
     const store = useAccountStore()
 
     await store.loadEmails()
     expect(store.emails).toEqual([row])
     expect(store.emailsLoading).toBe(false)
 
+    table[readOf(AccountEndpoint.Emails)] = refusal('down')
     await store.loadEmails()
     expect(store.emails).toEqual([])
     expect(store.emailsLoading).toBe(false)
   })
 
   it('keeps the gateways the profile can default to, and none when the read fails', async () => {
-    billingApi.fetchGatewayMethods.mockResolvedValueOnce([{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }]).mockRejectedValueOnce(new Error('down'))
+    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }] }
     const store = useAccountStore()
 
     await store.loadGatewayMethods()
     expect(store.gatewayMethods).toHaveLength(1)
 
+    table[readOf(AccountEndpoint.PaymentMethods)] = refusal('down')
     await store.loadGatewayMethods()
     expect(store.gatewayMethods).toEqual([])
   })
@@ -424,7 +370,7 @@ describe('useAccountStore reads', () => {
 
 describe('useAccountStore modal errors', () => {
   it('clears every modal error on request', async () => {
-    clientApi.updateMe.mockRejectedValue(refused)
+    table[writeOf(HttpMethod.Patch, AccountEndpoint.Me)] = REFUSED
     const store = useAccountStore()
     await store.saveProfile({})
 
@@ -436,16 +382,16 @@ describe('useAccountStore modal errors', () => {
 
 describe('useAccountStore reads without the permission', () => {
   it.each([
-    ['loadUsers', 'fetchUsers', 'users'],
-    ['loadContacts', 'fetchContacts', 'contacts'],
-    ['loadEmails', 'fetchEmails', 'emails'],
-  ] as const)('%s sends no request and leaves the list empty', async (action, endpoint, list) => {
-    mayDo.mockReturnValue(false)
+    ['loadUsers', 'users'],
+    ['loadContacts', 'contacts'],
+    ['loadEmails', 'emails'],
+  ] as const)('%s sends no request and leaves the list empty', async (action, list) => {
+    useClientStore().user = makeClientUser({ permissions: Permission.None })
     const store = useAccountStore()
 
     await store[action]()
 
-    expect(clientApi[endpoint]).not.toHaveBeenCalled()
+    expect(stub.requests).toHaveLength(0)
     expect(store[list]).toEqual([])
   })
 })

@@ -1,6 +1,6 @@
 /**
- * The block kinds of plugin view schema 1 (`PluginViews.BlockKinds` in the SDK). The host renders each with its own
- * component; a kind it does not know is skipped.
+ * The block kinds of plugin view schema 1 (`PluginViews.BlockKinds` in the SDK) and how a run of blocks is laid out. The host
+ * renders each kind with its own component; a kind it does not know is skipped.
  *
  * @module types/pluginblockkind
  */
@@ -37,4 +37,14 @@ export enum PluginBlockKind {
   Split = 'split',
   /** One address of the plugin's or the client's own site in a sandboxed frame. */
   Preview = 'preview'
+}
+
+/** How a run of plugin blocks is laid out (`groupPluginBlocks`). */
+export enum PluginBlockGroupKind {
+  /** One block, drawn on its own line. */
+  Single = 'single',
+  /** A run of consecutive `stat` blocks, drawn as a grid of tiles. */
+  Stats = 'stats',
+  /** A run of consecutive `link` blocks, drawn as a wrapping row of buttons. */
+  Links = 'links',
 }

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Products;
 
@@ -57,8 +58,8 @@ public sealed class UpdateProductOptionGroupTests(IntegrationTestFactory factory
     {
         var client = await ProductsTestSeeds.AdminClientAsync(factory);
         var productId = await ProductsTestSeeds.CreateProductAsync(client);
-        var id = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, "Quantity", 0, 1, 3);
-        var other = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, "Dropdown", 1);
+        var id = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, ProductOptionType.Quantity, 0, 1, 3);
+        var other = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, ProductOptionType.Dropdown, 1);
 
         var response = await client.PutAsJsonAsync($"/api/product-option-groups/{id}", new
         {
@@ -69,7 +70,7 @@ public sealed class UpdateProductOptionGroupTests(IntegrationTestFactory factory
         var list = await client.GetFromJsonAsync<JsonElement[]>($"/api/product-option-groups?productId={productId}");
         var changed = list!.Single(g => g.GetProperty("id").GetInt32() == id);
         changed.GetProperty("name").GetString().Should().Be("Renamed");
-        changed.GetProperty("type").GetString().Should().Be("Quantity");
+        changed.GetProperty("type").GetString().Should().Be(nameof(ProductOptionType.Quantity));
         changed.GetProperty("isRequired").GetBoolean().Should().BeTrue();
         changed.GetProperty("displayOrder").GetInt32().Should().Be(5);
         changed.GetProperty("minQuantity").GetInt32().Should().Be(2);
@@ -84,7 +85,7 @@ public sealed class UpdateProductOptionGroupTests(IntegrationTestFactory factory
     {
         var client = await ProductsTestSeeds.AdminClientAsync(factory);
         var productId = await ProductsTestSeeds.CreateProductAsync(client);
-        var id = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, "Quantity", 0, 1, 3);
+        var id = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, ProductOptionType.Quantity, 0, 1, 3);
 
         var response = await client.PutAsJsonAsync($"/api/product-option-groups/{id}", new
         {

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Products;
 
@@ -73,7 +74,7 @@ public sealed class DeleteProductOptionTests(IntegrationTestFactory factory) : I
     {
         var client = await ProductsTestSeeds.AdminClientAsync(factory);
         var productId = await ProductsTestSeeds.CreateProductAsync(client);
-        var groupId = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, "Checkbox");
+        var groupId = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, ProductOptionType.Checkbox);
         var only = await ProductsTestSeeds.AddOptionAsync(client, groupId, "Daily");
 
         (await client.DeleteAsync($"/api/product-options/{only}")).StatusCode.Should().Be(HttpStatusCode.NoContent);

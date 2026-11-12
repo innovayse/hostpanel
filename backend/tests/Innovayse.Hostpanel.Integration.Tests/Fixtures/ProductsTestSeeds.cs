@@ -127,7 +127,7 @@ public static class ProductsTestSeeds
     /// <summary>Creates a product option group through the API and returns its id.</summary>
     /// <param name="client">An authenticated admin client.</param>
     /// <param name="productId">The product the group configures.</param>
-    /// <param name="type">The group type as the wire spells it, such as <c>Dropdown</c>.</param>
+    /// <param name="type">The group type; sent as its name, the way the wire spells it.</param>
     /// <param name="displayOrder">Position within the product.</param>
     /// <param name="minQuantity">Least amount, for a quantity group.</param>
     /// <param name="maxQuantity">Most amount, for a quantity group.</param>
@@ -135,7 +135,7 @@ public static class ProductsTestSeeds
     public static async Task<int> CreateOptionGroupAsync(
         HttpClient client,
         int productId,
-        string type = "Dropdown",
+        ProductOptionType type = ProductOptionType.Dropdown,
         int displayOrder = 0,
         int? minQuantity = null,
         int? maxQuantity = null)
@@ -144,7 +144,7 @@ public static class ProductsTestSeeds
         {
             productId,
             name = $"group-{Guid.NewGuid():N}",
-            type,
+            type = type.ToString(),
             isRequired = false,
             displayOrder,
             minQuantity,
@@ -169,7 +169,7 @@ public static class ProductsTestSeeds
             groupId,
             name,
             priceModifier,
-            priceType = "Fixed",
+            priceType = nameof(ProductOptionPriceType.Fixed),
             setupFeeModifier = 0m,
             displayOrder,
         });

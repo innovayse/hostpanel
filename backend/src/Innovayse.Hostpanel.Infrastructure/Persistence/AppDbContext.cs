@@ -117,9 +117,6 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the product option groups table.</summary>
     public DbSet<ProductOptionGroup> ProductOptionGroups => Set<ProductOptionGroup>();
 
-    /// <summary>Gets the product options table.</summary>
-    public DbSet<ProductOption> ProductOptions => Set<ProductOption>();
-
     /// <summary>Gets the per-currency product prices table.</summary>
     public DbSet<ProductPrice> ProductPrices => Set<ProductPrice>();
 

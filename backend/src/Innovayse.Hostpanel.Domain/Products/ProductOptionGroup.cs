@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.SharedKernel.Domain;
+using Innovayse.Hostpanel.SharedKernel.Domain.Interfaces;
 
 namespace Innovayse.Hostpanel.Domain.Products;
 
@@ -27,7 +28,7 @@ namespace Innovayse.Hostpanel.Domain.Products;
 /// offered to a client only once it holds an option; the orderable query leaves the empty ones out.
 /// </para>
 /// </remarks>
-public sealed class ProductOptionGroup : BaseEntity
+public sealed class ProductOptionGroup : BaseEntity, IAggregateRoot
 {
     /// <summary>The longest group name, matching the <c>ProductOptionGroups.Name</c> column.</summary>
     public const int NameMaxLength = 120;

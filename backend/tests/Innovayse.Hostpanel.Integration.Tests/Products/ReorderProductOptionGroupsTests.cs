@@ -98,6 +98,20 @@ public sealed class ReorderProductOptionGroupsTests(IntegrationTestFactory facto
         (await GroupOrderAsync(client, foreignProductId)).Should().Equal(foreign);
     }
 
+    /// <summary>A product that does not exist has no groups, so any list of ids is a mismatch and is answered as one.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UnknownProduct_RefusesWithMismatchCode()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+
+        var response = await client.PutAsJsonAsync(
+            "/api/product-option-groups/order", new { productId = 999_999, groupIds = new[] { 1 } });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await ProductsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PRODUCT_OPTION_GROUP_ORDER_MISMATCH);
+    }
+
     /// <summary>An empty list, a non-positive id and a missing product are refused by validation.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

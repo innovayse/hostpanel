@@ -27,7 +27,8 @@ public sealed class ReorderProductOptionGroupsHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// Success, or <c>PRODUCT_OPTION_GROUP_ORDER_MISMATCH</c> when the ids are not exactly the product's
-    /// groups, each once. Nothing is changed on a mismatch.
+    /// groups, each once. Nothing is changed on a mismatch. A product that does not exist has no groups,
+    /// so any list of ids mismatches and it is answered the same way, not as <c>PRODUCT_NOT_FOUND</c>.
     /// </returns>
     public async Task<Result> HandleAsync(ReorderProductOptionGroupsCommand cmd, CancellationToken ct)
     {

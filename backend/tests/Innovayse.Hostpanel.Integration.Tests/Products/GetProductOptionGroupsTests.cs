@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Products;
 
@@ -45,6 +47,19 @@ public sealed class GetProductOptionGroupsTests(IntegrationTestFactory factory) 
         await ProductsTestSeeds.AssertFieldRefusedAsync(response, "productId");
     }
 
+    /// <summary>A product that does not exist answers 404 with <c>PRODUCT_NOT_FOUND</c>, as creating a group does.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task UnknownProduct_RefusesNotFound()
+    {
+        var client = await ProductsTestSeeds.AdminClientAsync(factory);
+
+        var response = await client.GetAsync("/api/product-option-groups?productId=999999");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        await ProductsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PRODUCT_NOT_FOUND);
+    }
+
     /// <summary>A product with no groups reads as an empty list, not as a refusal.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -71,7 +86,7 @@ public sealed class GetProductOptionGroupsTests(IntegrationTestFactory factory) 
         var otherProductId = await ProductsTestSeeds.CreateProductAsync(client);
         var last = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, displayOrder: 5);
         var first = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, displayOrder: 1);
-        var empty = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, "Text", displayOrder: 3);
+        var empty = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, ProductOptionType.Text, displayOrder: 3);
         await ProductsTestSeeds.CreateOptionGroupAsync(client, otherProductId);
         var second = await ProductsTestSeeds.AddOptionAsync(client, first, "B", 0m, 2);
         var firstOption = await ProductsTestSeeds.AddOptionAsync(client, first, "A", 0m, 1);

@@ -1,4 +1,3 @@
-using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
 using Innovayse.Hostpanel.Domain.Products;
@@ -20,9 +19,10 @@ public sealed class UpdateProductOptionGroupValidator : LocalizedValidator<Updat
         : base(localizer)
     {
         RuleFor(x => x.Id).MustBePositiveId(L["ProductOptionGroupIdInvalid"]);
-        RuleFor(x => x.Name).NotEmpty().WithMessage(L["ProductOptionGroupNameRequired"])
-            .MaximumLength(ProductOptionGroup.NameMaxLength)
-            .WithMessage(L["ProductOptionGroupNameTooLong", ProductOptionGroup.NameMaxLength]);
-        RuleFor(x => x.DisplayOrder).GreaterThanOrEqualTo(0).WithMessage(L["ProductOptionDisplayOrderInvalid"]);
+        RuleFor(x => x.Name).MustBeName(
+            ProductOptionGroup.NameMaxLength,
+            L["ProductOptionGroupNameRequired"],
+            L["ProductOptionGroupNameTooLong", ProductOptionGroup.NameMaxLength]);
+        RuleFor(x => x.DisplayOrder).MustBeNonNegative(L["ProductOptionDisplayOrderInvalid"]);
     }
 }

@@ -1,7 +1,9 @@
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Extensions;
 using Innovayse.Hostpanel.Shared.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Innovayse.Hostpanel.Application.Products.Queries.GetProductOptionGroups;
 
@@ -25,11 +27,20 @@ public sealed class GetProductOptionGroupsHandler
     /// </summary>
     /// <param name="query">The product to read.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The groups ordered by display order, each with its options. Never refuses.</returns>
+    /// <returns>
+    /// The groups ordered by display order, each with its options (an empty list for a product that has
+    /// none), or <c>PRODUCT_NOT_FOUND</c> when the product does not exist, as creating a group answers.
+    /// </returns>
     public async Task<Result<IReadOnlyList<ProductOptionGroupDto>>> HandleAsync(
         GetProductOptionGroupsQuery query, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(query);
+
+        var productExists = await _context.Products.AnyAsync(p => p.Id == query.ProductId, ct);
+        if (!productExists)
+        {
+            return Result<IReadOnlyList<ProductOptionGroupDto>>.FailureCode(HostpanelErrorCodes.PRODUCT_NOT_FOUND);
+        }
 
         var groups = await _context.ReadProductOptionGroupsAsync(query.ProductId, ct);
         return Result<IReadOnlyList<ProductOptionGroupDto>>.Success(groups);

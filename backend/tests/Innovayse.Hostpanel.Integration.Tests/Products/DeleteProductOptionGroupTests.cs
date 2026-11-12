@@ -68,7 +68,7 @@ public sealed class DeleteProductOptionGroupTests(IntegrationTestFactory factory
         list!.Select(g => g.GetProperty("id").GetInt32()).Should().Equal(sibling);
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        (await context.ProductOptions.AnyAsync(o => o.Id == optionId)).Should().BeFalse();
+        (await context.ProductOptionGroups.SelectMany(g => g.Options).AnyAsync(o => o.Id == optionId)).Should().BeFalse();
     }
 
     /// <summary>Removing a product removes its groups and their options, which describe nothing without it.</summary>
@@ -89,6 +89,6 @@ public sealed class DeleteProductOptionGroupTests(IntegrationTestFactory factory
         using var verify = factory.Services.CreateScope();
         var fresh = verify.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         (await fresh.ProductOptionGroups.AnyAsync(g => g.Id == groupId)).Should().BeFalse();
-        (await fresh.ProductOptions.AnyAsync(o => o.Id == optionId)).Should().BeFalse();
+        (await fresh.ProductOptionGroups.SelectMany(g => g.Options).AnyAsync(o => o.Id == optionId)).Should().BeFalse();
     }
 }

@@ -17,6 +17,6 @@ public sealed class ReorderProductOptionGroupsValidator : LocalizedValidator<Reo
     {
         RuleFor(x => x.ProductId).MustBePositiveId(L["ProductIdInvalid"]);
         RuleFor(x => x.GroupIds).NotEmpty().WithMessage(L["ProductOptionGroupIdsRequired"]);
-        RuleForEach(x => x.GroupIds).GreaterThan(0).WithMessage(L["ProductOptionGroupIdInvalid"]);
+        RuleForEach(x => x.GroupIds).MustBePositiveId(L["ProductOptionGroupIdInvalid"]);
     }
 }

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Domain.Products.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Products;
 
@@ -18,7 +19,7 @@ public sealed class AddProductOptionTests(IntegrationTestFactory factory) : ICla
     public async Task RefusesAnonymous()
     {
         var response = await factory.CreateClient().PostAsJsonAsync(
-            "/api/product-options", new { groupId = 1, name = "Linux", priceType = "Fixed" });
+            "/api/product-options", new { groupId = 1, name = "Linux", priceType = nameof(ProductOptionPriceType.Fixed) });
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -31,7 +32,7 @@ public sealed class AddProductOptionTests(IntegrationTestFactory factory) : ICla
         var client = await AdminTestSeeds.ClientRoleClientAsync(factory, "option-add");
 
         var response = await client.PostAsJsonAsync(
-            "/api/product-options", new { groupId = 1, name = "Linux", priceType = "Fixed" });
+            "/api/product-options", new { groupId = 1, name = "Linux", priceType = nameof(ProductOptionPriceType.Fixed) });
 
         response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -44,7 +45,7 @@ public sealed class AddProductOptionTests(IntegrationTestFactory factory) : ICla
         var client = await ProductsTestSeeds.AdminClientAsync(factory);
 
         var response = await client.PostAsJsonAsync(
-            "/api/product-options", new { groupId = 999_999, name = "Linux", priceType = "Fixed" });
+            "/api/product-options", new { groupId = 999_999, name = "Linux", priceType = nameof(ProductOptionPriceType.Fixed) });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         await ProductsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PRODUCT_OPTION_GROUP_NOT_FOUND);
@@ -64,7 +65,7 @@ public sealed class AddProductOptionTests(IntegrationTestFactory factory) : ICla
             groupId,
             name = "  Windows  ",
             priceModifier = 12.5m,
-            priceType = "Percentage",
+            priceType = nameof(ProductOptionPriceType.Percentage),
             setupFeeModifier = 3m,
             displayOrder = 2,
         });
@@ -77,7 +78,7 @@ public sealed class AddProductOptionTests(IntegrationTestFactory factory) : ICla
         options.Select(o => o.GetProperty("id").GetInt32()).Should().Equal(linux, windowsId);
         options[1].GetProperty("name").GetString().Should().Be("Windows");
         options[1].GetProperty("priceModifier").GetDecimal().Should().Be(12.5m);
-        options[1].GetProperty("priceType").GetString().Should().Be("Percentage");
+        options[1].GetProperty("priceType").GetString().Should().Be(nameof(ProductOptionPriceType.Percentage));
         options[1].GetProperty("setupFeeModifier").GetDecimal().Should().Be(3m);
         options[1].GetProperty("displayOrder").GetInt32().Should().Be(2);
     }
@@ -89,11 +90,11 @@ public sealed class AddProductOptionTests(IntegrationTestFactory factory) : ICla
     {
         var client = await ProductsTestSeeds.AdminClientAsync(factory);
         var productId = await ProductsTestSeeds.CreateProductAsync(client);
-        var groupId = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, "Checkbox");
+        var groupId = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, ProductOptionType.Checkbox);
         await ProductsTestSeeds.AddOptionAsync(client, groupId, "Backups", 3m);
 
         var response = await client.PostAsJsonAsync(
-            "/api/product-options", new { groupId, name = "Daily backups", priceType = "Fixed" });
+            "/api/product-options", new { groupId, name = "Daily backups", priceType = nameof(ProductOptionPriceType.Fixed) });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await ProductsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PRODUCT_OPTION_COUNT_NOT_ALLOWED);
@@ -106,10 +107,10 @@ public sealed class AddProductOptionTests(IntegrationTestFactory factory) : ICla
     {
         var client = await ProductsTestSeeds.AdminClientAsync(factory);
         var productId = await ProductsTestSeeds.CreateProductAsync(client);
-        var groupId = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, "Text");
+        var groupId = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId, ProductOptionType.Text);
 
         var response = await client.PostAsJsonAsync(
-            "/api/product-options", new { groupId, name = "Note", priceModifier = 1m, priceType = "Fixed" });
+            "/api/product-options", new { groupId, name = "Note", priceModifier = 1m, priceType = nameof(ProductOptionPriceType.Fixed) });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await ProductsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PRODUCT_OPTION_PRICE_NOT_ALLOWED);
@@ -125,7 +126,7 @@ public sealed class AddProductOptionTests(IntegrationTestFactory factory) : ICla
         var groupId = await ProductsTestSeeds.CreateOptionGroupAsync(client, productId);
 
         var response = await client.PostAsJsonAsync(
-            "/api/product-options", new { groupId, name = "Big", priceModifier = 100.5m, priceType = "Percentage" });
+            "/api/product-options", new { groupId, name = "Big", priceModifier = 100.5m, priceType = nameof(ProductOptionPriceType.Percentage) });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         await ProductsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PRODUCT_OPTION_PRICE_OUT_OF_RANGE);
@@ -139,15 +140,15 @@ public sealed class AddProductOptionTests(IntegrationTestFactory factory) : ICla
         var client = await ProductsTestSeeds.AdminClientAsync(factory);
 
         var blankName = await client.PostAsJsonAsync(
-            "/api/product-options", new { groupId = 1, name = " ", priceType = "Fixed" });
+            "/api/product-options", new { groupId = 1, name = " ", priceType = nameof(ProductOptionPriceType.Fixed) });
         var negativePrice = await client.PostAsJsonAsync(
-            "/api/product-options", new { groupId = 1, name = "Linux", priceModifier = -1m, priceType = "Fixed" });
+            "/api/product-options", new { groupId = 1, name = "Linux", priceModifier = -1m, priceType = nameof(ProductOptionPriceType.Fixed) });
         var negativeSetup = await client.PostAsJsonAsync(
-            "/api/product-options", new { groupId = 1, name = "Linux", setupFeeModifier = -1m, priceType = "Fixed" });
+            "/api/product-options", new { groupId = 1, name = "Linux", setupFeeModifier = -1m, priceType = nameof(ProductOptionPriceType.Fixed) });
         var badType = await client.PostAsJsonAsync(
             "/api/product-options", new { groupId = 1, name = "Linux", priceType = 99 });
         var negativeOrder = await client.PostAsJsonAsync(
-            "/api/product-options", new { groupId = 1, name = "Linux", priceType = "Fixed", displayOrder = -1 });
+            "/api/product-options", new { groupId = 1, name = "Linux", priceType = nameof(ProductOptionPriceType.Fixed), displayOrder = -1 });
 
         await ProductsTestSeeds.AssertFieldRefusedAsync(blankName, "name");
         await ProductsTestSeeds.AssertFieldRefusedAsync(negativePrice, "priceModifier");

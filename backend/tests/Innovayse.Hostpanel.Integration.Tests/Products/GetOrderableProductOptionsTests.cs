@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Innovayse.Hostpanel.Integration.Tests.Products;
 
 /// <summary>
-/// <c>GET /api/product-option-groups/orderable</c> against Postgres: the public read the order screen
+/// <c>GET /api/public/products/{id}/options</c> against Postgres: the public read the order screen
 /// uses, which answers only for an active product and leaves out groups that offer nothing to choose.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
@@ -26,7 +26,7 @@ public sealed class GetOrderableProductOptionsTests(IntegrationTestFactory facto
         var optionId = await ProductsTestSeeds.AddOptionAsync(admin, groupId, "Linux", 2m);
 
         var list = await factory.CreateClient()
-            .GetFromJsonAsync<JsonElement[]>($"/api/product-option-groups/orderable?productId={productId}");
+            .GetFromJsonAsync<JsonElement[]>($"/api/public/products/{productId}/options");
 
         var group = list!.Single();
         group.GetProperty("id").GetInt32().Should().Be(groupId);
@@ -48,7 +48,7 @@ public sealed class GetOrderableProductOptionsTests(IntegrationTestFactory facto
         await ProductsTestSeeds.AddOptionAsync(admin, earlier);
 
         var list = await factory.CreateClient()
-            .GetFromJsonAsync<JsonElement[]>($"/api/product-option-groups/orderable?productId={productId}");
+            .GetFromJsonAsync<JsonElement[]>($"/api/public/products/{productId}/options");
 
         list!.Select(g => g.GetProperty("id").GetInt32()).Should().Equal(earlier, later);
     }
@@ -58,7 +58,7 @@ public sealed class GetOrderableProductOptionsTests(IntegrationTestFactory facto
     [Fact]
     public async Task UnknownProduct_RefusesNotFound()
     {
-        var response = await factory.CreateClient().GetAsync("/api/product-option-groups/orderable?productId=999999");
+        var response = await factory.CreateClient().GetAsync("/api/public/products/999999/options");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         await ProductsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PRODUCT_NOT_FOUND);
@@ -81,7 +81,7 @@ public sealed class GetOrderableProductOptionsTests(IntegrationTestFactory facto
         }
 
         var response = await factory.CreateClient()
-            .GetAsync($"/api/product-option-groups/orderable?productId={productId}");
+            .GetAsync($"/api/public/products/{productId}/options");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         await ProductsTestSeeds.AssertCodeAsync(response, HostpanelErrorCodes.PRODUCT_NOT_FOUND);
@@ -92,7 +92,7 @@ public sealed class GetOrderableProductOptionsTests(IntegrationTestFactory facto
     [Fact]
     public async Task InvalidProductId_IsRefusedByField()
     {
-        var response = await factory.CreateClient().GetAsync("/api/product-option-groups/orderable?productId=0");
+        var response = await factory.CreateClient().GetAsync("/api/public/products/0/options");
 
         await ProductsTestSeeds.AssertFieldRefusedAsync(response, "productId");
     }

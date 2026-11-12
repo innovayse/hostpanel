@@ -27,8 +27,10 @@ public sealed class ProductOptionConfiguration : IEntityTypeConfiguration<Produc
         builder.Property(x => x.PriceType).IsRequired().HasConversion<string>().HasMaxLength(PriceTypeLength);
         builder.Property(x => x.DisplayOrder).IsRequired();
 
+        // Named here because no DbSet exposes the entity: options are reached only through their group,
+        // and the table name would otherwise fall back to the singular type name.
         // The database backs up the aggregate's rules, so a row written around it is still refused.
-        builder.ToTable(table =>
+        builder.ToTable("ProductOptions", table =>
         {
             table.HasCheckConstraint("CK_ProductOptions_DisplayOrderNotNegative", "\"DisplayOrder\" >= 0");
             table.HasCheckConstraint(

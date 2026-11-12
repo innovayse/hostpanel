@@ -9,7 +9,7 @@ namespace Innovayse.Hostpanel.Application.Products.Extensions;
 /// Reads about a product's option groups. Shared by the admin and the orderable queries and by the
 /// option handlers, so the ordering and the one mapping to <see cref="ProductOptionGroupDto"/> live once.
 /// </summary>
-public static class ProductOptionGroupQueries
+public static class ProductOptionGroupExtensions
 {
     /// <summary>Reads a product's option groups with their options, both in display order.</summary>
     /// <param name="context">The module's data context.</param>

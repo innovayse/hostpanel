@@ -1,4 +1,3 @@
-using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
 using Innovayse.Hostpanel.Domain.Products;
@@ -20,12 +19,13 @@ public sealed class AddProductOptionValidator : LocalizedValidator<AddProductOpt
         : base(localizer)
     {
         RuleFor(x => x.GroupId).MustBePositiveId(L["ProductOptionGroupIdInvalid"]);
-        RuleFor(x => x.Name).NotEmpty().WithMessage(L["ProductOptionNameRequired"])
-            .MaximumLength(ProductOption.NameMaxLength)
-            .WithMessage(L["ProductOptionNameTooLong", ProductOption.NameMaxLength]);
-        RuleFor(x => x.PriceModifier).GreaterThanOrEqualTo(0m).WithMessage(L["ProductOptionPriceInvalid"]);
-        RuleFor(x => x.PriceType).IsInEnum().WithMessage(L["ProductOptionPriceTypeInvalid"]);
-        RuleFor(x => x.SetupFeeModifier).GreaterThanOrEqualTo(0m).WithMessage(L["ProductOptionPriceInvalid"]);
-        RuleFor(x => x.DisplayOrder).GreaterThanOrEqualTo(0).WithMessage(L["ProductOptionDisplayOrderInvalid"]);
+        RuleFor(x => x.Name).MustBeName(
+            ProductOption.NameMaxLength,
+            L["ProductOptionNameRequired"],
+            L["ProductOptionNameTooLong", ProductOption.NameMaxLength]);
+        RuleFor(x => x.PriceModifier).MustBeNonNegative(L["ProductOptionPriceInvalid"]);
+        RuleFor(x => x.PriceType).MustBeDefinedEnum(L["ProductOptionPriceTypeInvalid"]);
+        RuleFor(x => x.SetupFeeModifier).MustBeNonNegative(L["ProductOptionPriceInvalid"]);
+        RuleFor(x => x.DisplayOrder).MustBeNonNegative(L["ProductOptionDisplayOrderInvalid"]);
     }
 }

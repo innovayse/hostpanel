@@ -55,6 +55,8 @@ repositories. What is specific to this project is short:
   `/api/public/demo` before them) are `[AllowAnonymous]` read-only queries: the storefront renders them before anyone has
   signed in, so they cannot carry the usual `[Authorize]` on every action. They stay on `BaseApiController`, dispatch one
   query, return only active, already-localised records and never expose an admin field; writes remain behind `Policies.Admin`.
+  `GET /api/public/products/{id}/options` (the order screen's option groups, see "Product options") is one of them, and is the only
+  anonymous read of option data: it lives under `/api/public/` like the rest, never beside the admin routes.
 - **Handler and validator naming is `<UseCase>Handler` / `<UseCase>Validator`.** Use-case names are unique across modules (`ProvisionService` in Provisioning,
   `SetupService` in Services), one use case per state transition (`SuspendService`, `UnsuspendService`,
   `TerminateService`: every route, cron and status change dispatches them, and each checks the state
@@ -1435,6 +1437,38 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   a line whose target is gone simply bills a name it keeps in its own `Description`. The renewal markers on the line
   decide what is applied, never the existence of the target, and the sweeps read the target through its module's
   query, which answers "not found" for a removed row.
+
+### Product options
+
+A product can carry configurable options a client chooses when ordering it, such as an operating system or extra IP
+addresses. Module `Products`; this slice stores and serves the options and does not yet price or bill them.
+
+- **Two tables, one aggregate.** `ProductOptionGroups` (`ProductOptionGroup`, an `IAggregateRoot`) belongs to a product
+  (`ProductId`, cascade delete) and owns `ProductOptions` (`ProductOption`, cascade delete). An option is created, changed and
+  removed only through its group (`AddOption`, `UpdateOption`, `RemoveOption`), which judges what the group's type allows; the
+  option has no public constructor and `IHostpanelDbContext` exposes only `ProductOptionGroups`, so options are read through the
+  group's `Options`. Because no `DbSet` names the option table, `ProductOptionConfiguration` names it `ProductOptions` itself.
+- **Group types** (`ProductOptionType`, stored as text): `Dropdown` and `Radio` hold any number of options; `Checkbox`,
+  `Quantity` and `Text` hold at most one; a `Text` option carries no price; a `Quantity` group carries `MinQuantity` (0 or more)
+  and `MaxQuantity` (1 or more, at least the minimum) and no other type may. The type is fixed when the group is created.
+  A group with no option yet is allowed while an admin builds it.
+- **Price types** (`ProductOptionPriceType`, stored as text): `Fixed` is money in the platform's base currency, `Percentage` is a
+  share of the product's own price in whatever currency the order is billed in, capped at 100. `PriceModifier` and
+  `SetupFeeModifier` are `numeric(18,4)` like a product price and never negative. The shared name and price checks are
+  `ProductOptionRules` (Domain, internal); the same rules are backed by `CK_ProductOptionGroups_*` and `CK_ProductOptions_*`
+  check constraints and pinned by `ProductOptionConstraintTests`.
+- **Admin routes** (`Policies.Admin`): `GET /api/product-option-groups?productId=` (every group with its options, empty ones
+  included; 404 `PRODUCT_NOT_FOUND` for an unknown product), `POST` (create, 404 `PRODUCT_NOT_FOUND`), `PUT {id}`,
+  `PUT order` (the product's group ids in the wanted order; anything but exactly its groups, including any list for a product that
+  does not exist, is `PRODUCT_OPTION_GROUP_ORDER_MISMATCH`), `DELETE {id}`; and `/api/product-options` for `POST`, `PUT {id}` and
+  `DELETE {id}` on options.
+- **The one anonymous route** is `GET /api/public/products/{id}/options` (`ProductsController`, `GetOrderableProductOptions`):
+  the groups of an *active* product, in the admin's shape, with the groups that hold no option left out. An unknown and an
+  inactive product are the same 404 `PRODUCT_NOT_FOUND`, so an inactive product's options are not offered.
+- **Reads and mapping live once** in `Products/Extensions/ProductOptionGroupExtensions` (`ReadProductOptionGroupsAsync`, the one
+  projection to `ProductOptionGroupDto`; `FindGroupOfOptionAsync`, the tracked load for a change). The field rules every option and
+  group validator repeats are the shared `MustBeName`, `MustBeNonNegative` and `MustBeDefinedEnum` in
+  `Common/Validators/ValidationRuleExtensions`.
 
 ### Recurring billing
 

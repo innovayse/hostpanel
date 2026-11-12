@@ -3,7 +3,6 @@ using Innovayse.Hostpanel.Application.Products.Commands.DeleteProductOptionGroup
 using Innovayse.Hostpanel.Application.Products.Commands.ReorderProductOptionGroups;
 using Innovayse.Hostpanel.Application.Products.Commands.UpdateProductOptionGroup;
 using Innovayse.Hostpanel.Application.Products.Common;
-using Innovayse.Hostpanel.Application.Products.Queries.GetOrderableProductOptions;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProductOptionGroups;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
@@ -33,35 +32,18 @@ public sealed class ProductOptionGroupsController : BaseApiController
     /// <param name="query">The product to read.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 200 with the groups in display order; 400 when the query fails validation; 401 without a session;
-    /// 403 for a caller who is not an admin; 429 when the rate limit is hit.
+    /// 200 with the groups in display order; 400 when the query fails validation; 404 with
+    /// <c>PRODUCT_NOT_FOUND</c>; 401 without a session; 403 for a caller who is not an admin; 429 when the
+    /// rate limit is hit.
     /// </returns>
     [HttpGet]
     [Authorize(Policy = Policies.Admin)]
     [ProducesResponseType(typeof(IReadOnlyList<ProductOptionGroupDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> ListAsync([FromQuery] GetProductOptionGroupsQuery query, CancellationToken ct)
-    {
-        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<ProductOptionGroupDto>>>(query, ct);
-        return HandleResult(outcome);
-    }
-
-    /// <summary>The groups a client is offered when ordering an active product; groups with no option are left out.</summary>
-    /// <param name="query">The product being ordered.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>
-    /// 200 with the groups in display order; 400 when the query fails validation; 404 with
-    /// <c>PRODUCT_NOT_FOUND</c> when the product does not exist or is not active; 429 when the rate limit is hit.
-    /// </returns>
-    [HttpGet("orderable")]
-    [AllowAnonymous]
-    [ProducesResponseType(typeof(IReadOnlyList<ProductOptionGroupDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> ListOrderableAsync(
-        [FromQuery] GetOrderableProductOptionsQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<ProductOptionGroupDto>>>(query, ct);
         return HandleResult(outcome);
@@ -116,7 +98,8 @@ public sealed class ProductOptionGroupsController : BaseApiController
     /// <param name="command">The product and all of its group ids in the wanted order.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// 204 on success; 400 with a field refusal or <c>PRODUCT_OPTION_GROUP_ORDER_MISMATCH</c>; 401 without a
+    /// 204 on success; 400 with a field refusal or <c>PRODUCT_OPTION_GROUP_ORDER_MISMATCH</c>, which is also
+    /// the answer for a product that does not exist (it has no groups for the ids to match); 401 without a
     /// session; 403 for a caller who is not an admin; 429 when the rate limit is hit.
     /// </returns>
     [HttpPut("order")]

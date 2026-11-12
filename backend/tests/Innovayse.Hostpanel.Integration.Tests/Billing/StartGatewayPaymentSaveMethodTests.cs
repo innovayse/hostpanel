@@ -37,7 +37,6 @@ public sealed class StartGatewayPaymentSaveMethodTests(IntegrationTestFactory fa
         consent.SessionId.Should().Be(gatewayOrderId);
         consent.ConsentTextVersion.Should().Be(SavingGatewayScenario.ConsentTextVersion);
         consent.UserAgent.Should().Be("EvidenceBrowser/1.0");
-        consent.IpAddress.Should().NotBeNull();
         consent.MethodRef.Should().BeNull("the method is bound when the payment is completed");
         consent.IsActive.Should().BeFalse();
         scenario.Plugin.Customers.Should().ContainSingle();

@@ -141,7 +141,7 @@ describe('ClassicCheckout', () => {
     billing.fetchGatewayMethods.mockReset()
     billing.fetchGatewayMethods.mockResolvedValue([
       { module: PaymentModule.BankTransfer, displayName: 'Bank transfer', supportsStoredCredentials: false },
-      { module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false },
+      { module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: true },
     ])
     billing.createOrder.mockReset()
     billing.createOrder.mockResolvedValue({ orderId: 7, invoiceId: 12, paymentToken: 'token', total: 12, currency: 'USD' })

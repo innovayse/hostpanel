@@ -1030,6 +1030,155 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         (await StoredClientOfOrderAsync(response)).ClientGroupId.Should().Be(defaultGroup);
     }
 
+    /// <summary>
+    /// An existing client in a group with a discount is billed the discounted price: the order line, the invoice
+    /// line, the total the checkout answers and the recurring amount of the service all carry it, and the invoice
+    /// line keeps the percent.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ClientInAGroupWithADiscountIsBilledTheDiscountedPrice()
+    {
+        await EnableBankTransferAsync();
+        var productId = await SeedProductAsync(usdMonthly: 40m);
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ClientGroupTestSeeds.CreateAsync(admin, discountPercent: 25m);
+        var (caller, clientId) = await ClientsTestSeeds.RegisterClientAsync(factory, "group-discount");
+        await ClientGroupTestSeeds.AssignAsync(factory, clientId, groupId);
+
+        var response = await caller.PostAsJsonAsync("/api/orders", new
+        {
+            paymentMethod = "bank_transfer",
+            items = new[] { new { productId, billingCycle = nameof(BillingCycle.Monthly) } },
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        body.RootElement.GetProperty("total").GetDecimal().Should().Be(30m);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var order = await db.Orders.AsNoTracking().Include(o => o.Items)
+            .SingleAsync(o => o.Id == body.RootElement.GetProperty("orderId").GetInt32());
+        var orderItem = order.Items.Should().ContainSingle().Subject;
+        orderItem.FirstPaymentAmount.Should().Be(30m);
+        orderItem.RecurringAmount.Should().Be(30m);
+        var invoice = await db.Invoices.AsNoTracking().Include(i => i.Items)
+            .SingleAsync(i => i.Id == body.RootElement.GetProperty("invoiceId").GetInt32());
+        invoice.Items.Single().UnitPrice.Should().Be(30m);
+        invoice.Items.Single().DiscountPercent.Should().Be(25m);
+    }
+
+    /// <summary>
+    /// Changing a group's discount leaves the invoice already raised as it was billed: the discount is a snapshot on
+    /// the
+    /// invoice line.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task ChangingTheGroupDiscountLeavesTheRaisedInvoiceAsBilled()
+    {
+        await EnableBankTransferAsync();
+        var productId = await SeedProductAsync(usdMonthly: 40m);
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ClientGroupTestSeeds.CreateAsync(admin, discountPercent: 25m);
+        var (caller, clientId) = await ClientsTestSeeds.RegisterClientAsync(factory, "group-discount-snapshot");
+        await ClientGroupTestSeeds.AssignAsync(factory, clientId, groupId);
+        var response = await caller.PostAsJsonAsync("/api/orders", new
+        {
+            paymentMethod = "bank_transfer",
+            items = new[] { new { productId, billingCycle = nameof(BillingCycle.Monthly) } },
+        });
+        response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var invoiceId = body.RootElement.GetProperty("invoiceId").GetInt32();
+
+        var changed = await admin.PutAsJsonAsync(
+            $"{ClientGroupTestSeeds.Route}/{groupId}", ClientGroupTestSeeds.Body(discountPercent: 60m));
+
+        changed.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var invoice = await db.Invoices.AsNoTracking().Include(i => i.Items).SingleAsync(i => i.Id == invoiceId);
+        invoice.Items.Single().UnitPrice.Should().Be(30m);
+        invoice.Items.Single().DiscountPercent.Should().Be(25m);
+        invoice.Total.Should().Be(30m);
+    }
+
+    /// <summary>
+    /// The discount of a client group is for products: a domain line in the same order keeps its price while the
+    /// hosting line is discounted, and the invoice records the discount on the hosting line only.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task DomainLineKeepsItsPriceWhileTheProductLineIsDiscounted()
+    {
+        await EnableBankTransferAsync();
+        var productId = await SeedProductAsync(usdMonthly: 40m);
+        var domainProductId = await SeedDomainProductAsync();
+        var tld = $"x{Guid.NewGuid():N}"[..9];
+        await SeedUsdTldAndRatesAsync(tld, 10m);
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ClientGroupTestSeeds.CreateAsync(admin, discountPercent: 50m);
+        var (caller, clientId) = await ClientsTestSeeds.RegisterClientAsync(factory, "group-discount-domain");
+        await ClientGroupTestSeeds.AssignAsync(factory, clientId, groupId);
+
+        var response = await caller.PostAsJsonAsync("/api/orders", new
+        {
+            paymentMethod = "bank_transfer",
+            currency = "USD",
+            items = new[]
+            {
+                new
+                {
+                    productId,
+                    billingCycle = nameof(BillingCycle.Monthly),
+                    domain = (string?)null,
+                    domainAction = (string?)null,
+                    years = (int?)null,
+                },
+                new
+                {
+                    productId = domainProductId,
+                    billingCycle = nameof(BillingCycle.Annual),
+                    domain = (string?)$"example.{tld}",
+                    domainAction = (string?)nameof(DomainAction.Register),
+                    years = (int?)1,
+                },
+            },
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        body.RootElement.GetProperty("total").GetDecimal().Should().Be(30m);
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var invoice = await db.Invoices.AsNoTracking().Include(i => i.Items)
+            .SingleAsync(i => i.Id == body.RootElement.GetProperty("invoiceId").GetInt32());
+        var product = invoice.Items.Single(i => i.ProductSnapshot is not null);
+        var domain = invoice.Items.Single(i => i.ProductSnapshot is null);
+        (product.UnitPrice, product.DiscountPercent).Should().Be((20m, 50m));
+        (domain.UnitPrice, domain.DiscountPercent).Should().Be((10m, 0m));
+    }
+
+    /// <summary>A guest's new client joins the default group, whose discount is already on their first order.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task GuestCheckoutIsBilledTheDefaultGroupsDiscount()
+    {
+        await EnableBankTransferAsync();
+        var productId = await SeedProductAsync(usdMonthly: 40m);
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        var defaultGroup = await ClientGroupTestSeeds.CreateAsync(admin, discountPercent: 50m);
+        await ClientGroupTestSeeds.SetDefaultAsync(admin, defaultGroup, true);
+
+        var response = await factory.CreateClient().PostAsJsonAsync("/api/orders", GuestOrder(productId));
+
+        await ClientGroupTestSeeds.SetDefaultAsync(admin, defaultGroup, false);
+        response.StatusCode.Should().Be(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        body.RootElement.GetProperty("total").GetDecimal().Should().Be(20m);
+    }
+
     /// <summary>The client record an order was placed for, read straight from the database.</summary>
     /// <param name="created">The answer to the order request.</param>
     /// <returns>The stored client.</returns>

@@ -1,4 +1,3 @@
-using Innovayse.Hostpanel.Domain.Campaigns;
 using Innovayse.Hostpanel.Domain.Campaigns.Enums;
 
 namespace Innovayse.Hostpanel.Application.Campaigns.Common;
@@ -23,5 +22,5 @@ public sealed record EmailCampaignDto(
     DateTimeOffset? SentAt,
     DateTimeOffset CreatedAt,
     string CreatedBy,
-    IReadOnlyList<CampaignSegmentDefinition> Segments,
+    IReadOnlyList<CampaignSegmentDto> Segments,
     EmailCampaignStatsDto Stats);

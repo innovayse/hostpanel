@@ -1441,6 +1441,15 @@ renewal invoices per client), `SendRenewalRemindersCron` 06:00, `CheckOverdueInv
 (`Manual`, `Overdue`, `DomainExpired`, `Other`): payment lifts only `Overdue`, and `DomainRenewedHandler` lifts only
 `DomainExpired`. Renewal alerts go to `Notifications:AdminEmail`, falling back to `Notifications:ContactEmail`.
 
+**A client group's discount is taken once, when the order is placed, and renewals keep that price.** `PlaceOrderHandler`
+reads the discount of the ordering client's group (the default group for a client the order creates) and takes it off
+every product line through `PriceDiscount.Apply`, so the order line, the invoice line and the service's recurring amount
+all carry the discounted price; a domain line keeps its registry price. `InvoiceItem.DiscountPercent` snapshots the
+percent on the invoice line and is cleared only when staff edit the unit price. Renewal invoices bill the service's
+recurring amount, which already is the discounted price, and never read the group again, so moving a client to another
+group or changing a group's discount touches no existing invoice and no existing service, and a renewal is not
+discounted a second time.
+
 **A manual bank transfer wait is bounded and never loses a card session's money.** `Invoice.RequestBankTransfer` leaves the hosted
 session on the invoice (the choice is refused only inside `GatewaySessionWindow`). While the transfer waits
 (`IsBankTransferPending`), `ReconcileGatewayPaymentsCronHandler` asks the gateway about that session like an open invoice's, without the
@@ -1615,12 +1624,23 @@ feature does not exist is not kept. The decisions:
 ### Email campaigns
 
 A campaign (`Campaigns` module, tables `EmailCampaigns`, `EmailCampaignSegments`, `EmailCampaignRecipients`) is a subject, an HTML body and
-segments: every active client, owners of a product, clients in a country, or clients with a service that renews within 1 to 365 days.
+segments: every active client, owners of a product, clients in a country, clients with a service that renews within 1 to 365 days,
+members of a client group (the value is the group id), or clients who have not signed in for 1 to 3650 days.
 `CampaignAudience` is the one place a segment becomes a query, so the count an admin sees (`POST /api/admin/email-campaigns/audience-count`)
 and the recipients fixed at the start of sending never disagree; it is on the cross-module read allow-list for that reason. A client is
 in the audience only when it is active and `MarketingOptIn` is true, and a client matched by several segments counts once. One address is mailed once:
 the audience is resolved to sign-in addresses (clients with none are not reached) and clients that share an address, compared without case or
 surrounding spaces, make one recipient, the one with the lowest client id; the count is the number of those mails.
+
+- **Segment shapes.** The segment as the admin API sends and answers with it is one DTO, `CampaignSegmentDto` (`Campaigns/Common/`), used by
+  the create and update commands, the audience count query, `EmailCampaignDto` and `CampaignAudience`. `CampaignSegmentDefinition` in Domain is
+  only the input `EmailCampaign.Create` and `Update` take and check; `CampaignSegmentExtensions` (`Campaigns/Extensions/`) is the one place the
+  two meet (`ToDefinitions` going in, `ToDtos` coming out of the stored `EmailCampaignSegment`). Domain never learns the wire shape.
+- **Last sign-in.** A client record stores no sign-in time. It lives in the identity store (`IdentityAccount.LastLoginAt`, read through
+  `IIdentityProvider`), so the "not signed in for N days" segment is answered by `CampaignAudience` in batches from the identity accounts of the
+  opted-in active clients, not in SQL: the last sign-in, or the creation of the client record for one who never signed in, is at least N days old.
+  A sign-on provider tracks sign-ins to itself and not to this product, so where the deployment does not own its accounts the time is unknown and
+  `EmailCampaignSegmentValidator` refuses the segment with `CampaignSegmentSignInUnavailable` (400); the admin form does not offer it there.
 
 - **Sending.** `DispatchEmailCampaignsCron` (every `ScheduledJobs:DispatchEmailCampaignsIntervalSeconds`, 30 by default) starts the
   scheduled campaigns that are due (`StartEmailCampaign` fixes the recipients, one per mailbox) and sends one batch of pending recipients of every sending campaign (`DeliverEmailCampaign`). "Send now" is a
@@ -1638,6 +1658,23 @@ surrounding spaces, make one recipient, the one with the lowest client id; the c
   `MarketingOptIn` is set to false (`WithdrawClientMarketingConsent`) so every later campaign skips it, and the recipient is marked
   Unsubscribed. When the sender saved the recipient first, the recipient is read and marked again (three attempts), and the answer is 204 even if
   every attempt loses, because the consent is already withdrawn. Following the link again answers the same 204; a token that names nobody answers 404 `CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND`.
+- **Open and click tracking.** The mail built for one recipient (`DeliverEmailCampaign`, through `CampaignTrackingLinks.Track`) carries
+  a one-pixel image and every trackable link of the campaign body rewritten to `{ClientBaseUrl}/api/public/campaign-mail/click/{token}/{index}`;
+  the token is the recipient's tracking token, a secret of its own (`TrackingTokenHash`, unique, issued by `IssueTrackingToken` beside the
+  unsubscribe token in the same pre-send save and under the same pending-only rule), never the unsubscribe token: a pixel address travels
+  further (image proxies, logs, forwarded mail) and must not be enough to unsubscribe the reader. The email log masks it in the tracked
+  addresses (`EmailCampaignTemplateModel.RecipientToken`). The anonymous `PublicCampaignTrackingController` is held to the global rate
+  limit only, not the strict tier, because image proxies of large mail providers fetch from few addresses. It serves `GET .../open/{token}` (a no-store 1x1 GIF, 404
+  `CAMPAIGN_MAIL_LINK_NOT_FOUND` for an unknown token) and `GET .../click/{token}/{index}` (302, no-store). **No open redirect:** the
+  destination is never read from the request. `RecordEmailCampaignClick` re-reads the stored body of the recipient's campaign (immutable
+  once it leaves draft) and takes the link at `index` from `CampaignBodyLinks.Extract`, the same reader the mail was rewritten with, so
+  the index always names the link it replaced and only absolute http or https links the admin wrote are ever an answer; mail, tel,
+  script, data, relative and scheme-relative links are neither rewritten nor redirected to, and an index past the last link is a 404.
+  The recipient counts opens and clicks (`OpenCount`, `FirstOpenedAt`, `ClickCount`, `FirstClickedAt`, written by `RecordOpen` and
+  `RecordClick` through `CampaignMailTracker`, which re-reads and repeats a save that loses to the sender or the unsubscribe page).
+  `EmailCampaignStatsDto` adds `Opened`, `UniqueOpened`, `Clicked`, `UniqueClicked` and the rates `OpenRate` and `ClickRate` (unique
+  readers over the mails delivered, that is recipients with a `SentAt`, from 0 to 1). The pixel counts a mail client that loads images
+  on its own (image proxies, prefetch) as an open, so opens are an upper bound.
 - **Preview.** `GET /api/admin/email-campaigns/{id}/preview` renders the stored template in the default language with a sample link.
 
 ## Demo mode

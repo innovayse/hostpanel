@@ -16,6 +16,11 @@ export interface ClientInvoiceItem {
   quantity: number
   /** Line total (`unitPrice` × `quantity`). */
   amount: number
+  /**
+   * Client group discount in percent already taken off the list price to reach `unitPrice`;
+   * `0` for a line without one.
+   */
+  discountPercent: number
   /** SKU of the product the line was sold from, from its product snapshot; `null` for a line without one (a domain, a manual line). */
   sku: string | null
 }

@@ -6,8 +6,9 @@ namespace Innovayse.Hostpanel.Application.Clients.Extensions;
 
 /// <summary>
 /// Lookups over the client groups that more than one use case needs: whether the group an id points at
-/// exists, and which group new clients join. A handler that stores a group id checks it here before saving, so a
-/// missing group is refused with <c>CLIENT_GROUP_NOT_FOUND</c> instead of surfacing as a failed save.
+/// exists, which group new clients join, and the discount a client's group gives. A handler that stores a group id
+/// checks it here before saving, so a missing group is refused with <c>CLIENT_GROUP_NOT_FOUND</c> instead of
+/// surfacing as a failed save.
 /// </summary>
 public static class ClientGroupLookupExtensions
 {
@@ -35,6 +36,23 @@ public static class ClientGroupLookupExtensions
             .Where(g => g.IsDefault)
             .Select(g => (int?)g.Id)
             .FirstOrDefaultAsync(ct);
+    }
+
+    /// <summary>The discount the group a client belongs to gives, in percent.</summary>
+    /// <param name="context">The module's data context.</param>
+    /// <param name="clientId">The client whose group's discount to read.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The group's discount, or 0 when the client has no group.</returns>
+    public static async Task<decimal> FindClientGroupDiscountPercentAsync(
+        this IHostpanelDbContext context, int clientId, CancellationToken ct)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        var discount = await context.Clients.AsNoTracking()
+            .Where(c => c.Id == clientId)
+            .Join(context.ClientGroups, c => c.ClientGroupId, g => g.Id, (_, g) => (decimal?)g.DiscountPercent)
+            .FirstOrDefaultAsync(ct);
+        return discount ?? 0m;
     }
 
     /// <summary>

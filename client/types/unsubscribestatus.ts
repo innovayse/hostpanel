@@ -2,7 +2,9 @@
  * Where an unsubscribe attempt stands, held by `stores/unsubscribe.ts` for the landing page.
  */
 export enum UnsubscribeStatus {
-  /** The request has not finished (or has not started). */
+  /** Nothing has been sent yet: the page waits for the reader to confirm. */
+  Idle = 'idle',
+  /** The request is on its way and has not finished. */
   Pending = 'pending',
   /** The address no longer receives campaign mail. */
   Done = 'done',

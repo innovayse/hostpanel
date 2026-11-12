@@ -1,4 +1,5 @@
 using System.Globalization;
+using Innovayse.Hostpanel.Application.Admin.Common;
 using Innovayse.Hostpanel.Domain.Settings;
 
 namespace Innovayse.Hostpanel.Application.Billing.Common;
@@ -7,16 +8,16 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// Reads <see cref="BillingSettingKeys"/> into <see cref="RenewalSettings"/>. A missing or
 /// unparsable row falls back to its default with a warning: a typo in System Settings must not stop
 /// billing, and handlers never parse setting strings themselves. The rows are read through
-/// <see cref="BillingSettingSource"/>.
+/// <see cref="SettingSource"/>.
 /// </summary>
 public sealed class RenewalSettingsReader
 {
     /// <summary>Reads the rows and falls back to the defaults.</summary>
-    private readonly BillingSettingSource _source;
+    private readonly SettingSource _source;
 
     /// <summary>Initializes the reader.</summary>
     /// <param name="source">Reads the rows and falls back to the defaults.</param>
-    public RenewalSettingsReader(BillingSettingSource source)
+    public RenewalSettingsReader(SettingSource source)
     {
         _source = source;
     }

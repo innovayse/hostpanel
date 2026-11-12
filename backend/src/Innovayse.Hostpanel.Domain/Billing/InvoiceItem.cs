@@ -86,7 +86,15 @@ public sealed class InvoiceItem : BaseEntity
     /// <summary>Gets the human-readable description of the charge.</summary>
     public string Description { get; private set; } = string.Empty;
 
-    /// <summary>Gets the price per unit.</summary>
+    /// <summary>
+    /// Gets the discount in percent that was already taken off the list price to reach <see cref="UnitPrice"/>, as the
+    /// client's group gave it when the line was billed; 0 for a line without one. Set once when the line is created,
+    /// so a later change of the client's group or of the group's discount leaves the invoice as billed. It is cleared
+    /// only when the unit price is edited, because the percent then no longer describes how the price was reached.
+    /// </summary>
+    public decimal DiscountPercent { get; private set; }
+
+    /// <summary>Gets the price per unit, after any <see cref="DiscountPercent"/>.</summary>
     public decimal UnitPrice { get; private set; }
 
     /// <summary>Gets the number of units.</summary>
@@ -115,10 +123,22 @@ public sealed class InvoiceItem : BaseEntity
     /// product's charge. Optional for the same reason as <paramref name="clientServiceId"/>: only a caller
     /// that read the product passes it, and nothing may reconstruct it from the description.
     /// </param>
+    /// <param name="discountPercent">
+    /// The discount in percent already taken off the list price to reach <paramref name="unitPrice"/>, kept as the
+    /// snapshot of what was given; 0 when the price is not discounted.
+    /// </param>
     /// <returns>A new <see cref="InvoiceItem"/>.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when <paramref name="unitPrice"/> is negative or <paramref name="quantity"/> is less than 1.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="unitPrice"/> is negative, <paramref name="quantity"/> is less than 1, or
+    /// <paramref name="discountPercent"/> is outside 0 to 100.
+    /// </exception>
     public static InvoiceItem Create(
-        string description, decimal unitPrice, int quantity, int? clientServiceId = null, ProductSnapshot? productSnapshot = null)
+        string description,
+        decimal unitPrice,
+        int quantity,
+        int? clientServiceId = null,
+        ProductSnapshot? productSnapshot = null,
+        decimal discountPercent = 0m)
     {
         if (unitPrice < 0)
         {
@@ -130,9 +150,16 @@ public sealed class InvoiceItem : BaseEntity
             throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be >= 1.");
         }
 
+        if (!PriceDiscount.IsValidPercent(discountPercent))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(discountPercent), "Discount must be between 0 and 100 percent.");
+        }
+
         return new()
         {
             Description = description,
+            DiscountPercent = discountPercent,
             UnitPrice = unitPrice,
             Quantity = quantity,
             Amount = unitPrice * quantity,
@@ -230,7 +257,9 @@ public sealed class InvoiceItem : BaseEntity
     /// Updates the line item properties and recalculates <see cref="Amount"/>.
     /// </summary>
     /// <remarks>
-    /// Deliberately leaves <see cref="ClientServiceId"/> and <see cref="ProductSnapshot"/> alone.
+    /// Deliberately leaves <see cref="ClientServiceId"/> and <see cref="ProductSnapshot"/> alone, and
+    /// <see cref="DiscountPercent"/> too unless the unit price changes: a price typed in by hand is no longer the list
+    /// price less that percent, so the percent is cleared rather than shown beside a price it does not explain.
     /// Re-wording a description or correcting a price does not change which service the money was
     /// for or what was sold, and an edit path that silently cleared either would make a charge stop
     /// showing on the service it belongs to, or change what a fulfilment plugin delivers for it.
@@ -249,6 +278,11 @@ public sealed class InvoiceItem : BaseEntity
         if (quantity < 1)
         {
             throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity must be >= 1.");
+        }
+
+        if (unitPrice != UnitPrice)
+        {
+            DiscountPercent = 0m;
         }
 
         Description = description;

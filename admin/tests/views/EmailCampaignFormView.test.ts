@@ -8,6 +8,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import EmailCampaignFormView from '@/views/EmailCampaignFormView.vue'
+import { useAuthStore } from '@/stores/auth'
+import { AuthMode } from '@/types/auth'
 import { CampaignFilterType, CampaignStatus } from '@/types/emailcampaign'
 import { callOf, json, problem } from '../helpers/fetch'
 import type { RecordedCall } from '../helpers/fetch'
@@ -35,7 +37,7 @@ vi.mock('@vuepic/vue-datepicker', async () => {
 const PATTERN = '/support/email-campaigns/:id?'
 
 /** The delivery counters of a campaign nothing has been sent for. */
-const untouched = { total: 0, pending: 0, sent: 0, failed: 0, unsubscribed: 0 }
+const untouched = { total: 0, pending: 0, sent: 0, failed: 0, unsubscribed: 0, opened: 0, uniqueOpened: 0, clicked: 0, uniqueClicked: 0, openRate: 0, clickRate: 0 }
 
 /**
  * A campaign as the detail endpoint returns it.
@@ -101,6 +103,7 @@ const fill = async (wrapper: VueWrapper): Promise<void> => {
 const common = {
   'POST /api/admin/email-campaigns/audience-count': () => json({ count: 12 }),
   'GET /api/products': () => json([{ id: 3, name: 'Basic hosting' }, { id: 4, name: 'Business hosting' }]),
+  'GET /api/admin/client-groups': () => json([{ id: 2, name: 'Wholesale' }, { id: 5, name: 'VIP' }]),
 }
 
 afterEach(() => {
@@ -146,6 +149,43 @@ describe('EmailCampaignFormView, a new campaign', () => {
     await flushPromises()
     expect(callsTo(mock, 'POST', '/api/admin/email-campaigns/audience-count')[1]?.body)
       .toEqual({ segments: [{ filterType: CampaignFilterType.Product, filterValue: '4' }] })
+  })
+
+  it('counts the members of a client group picked by name', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    const mock = stubRoutes(common)
+    const wrapper = await open('/support/email-campaigns')
+
+    await pickOption(wrapper, 'email-campaign-segment-1-type', 'Clients in a client group')
+    await pickOption(wrapper, 'email-campaign-segment-1-value', 'VIP')
+    await vi.advanceTimersByTimeAsync(300)
+    await flushPromises()
+
+    expect(callsTo(mock, 'POST', '/api/admin/email-campaigns/audience-count').at(-1)?.body)
+      .toEqual({ segments: [{ filterType: CampaignFilterType.ClientGroup, filterValue: '5' }] })
+  })
+
+  it('leaves the sign-in rule out of the kinds on offer until the deployment is known to own its accounts', async () => {
+    stubRoutes(common)
+    const wrapper = await open('/support/email-campaigns')
+
+    await wrapper.get('[data-testid="email-campaign-segment-1-type"] button').trigger('click')
+    const labels = wrapper.findAll('[data-testid="email-campaign-segment-1-type"] [role="option"]').map((option) => option.text())
+
+    expect(labels).toContain('Clients in a client group')
+    expect(labels).not.toContain('Clients who have not signed in for a while')
+  })
+
+  it('offers the sign-in rule where the deployment owns its accounts', async () => {
+    stubRoutes(common)
+    const wrapper = await open('/support/email-campaigns')
+    useAuthStore().mode = AuthMode.Local
+    await flushPromises()
+
+    await wrapper.get('[data-testid="email-campaign-segment-1-type"] button').trigger('click')
+    const labels = wrapper.findAll('[data-testid="email-campaign-segment-1-type"] [role="option"]').map((option) => option.text())
+
+    expect(labels).toContain('Clients who have not signed in for a while')
   })
 
   it('adds and removes rules', async () => {
@@ -346,8 +386,10 @@ describe('EmailCampaignFormView, past the draft stage', () => {
         segments: [
           { filterType: CampaignFilterType.Product, filterValue: '4' },
           { filterType: CampaignFilterType.ServiceExpiringInDays, filterValue: '30' },
+          { filterType: CampaignFilterType.ClientGroup, filterValue: '5' },
+          { filterType: CampaignFilterType.NotSignedInForDays, filterValue: '90' },
         ],
-        stats: { total: 40, pending: 0, sent: 36, failed: 1, unsubscribed: 3 },
+        stats: { total: 40, pending: 0, sent: 36, failed: 1, unsubscribed: 3, opened: 20, uniqueOpened: 15, clicked: 9, uniqueClicked: 6, openRate: 0.4167, clickRate: 0.1667 },
       })),
     })
     const wrapper = await open('/support/email-campaigns/7')
@@ -361,6 +403,8 @@ describe('EmailCampaignFormView, past the draft stage', () => {
     expect(wrapper.get('[data-testid="email-campaign-body"]').attributes('readonly')).toBeDefined()
     expect(wrapper.get('[data-testid="email-campaign-segment-summary-0"]').text()).toBe('Clients with a service of Business hosting')
     expect(wrapper.get('[data-testid="email-campaign-segment-summary-1"]').text()).toBe('Clients with a service expiring within 30 days')
+    expect(wrapper.get('[data-testid="email-campaign-segment-summary-2"]').text()).toBe('Clients in the group VIP')
+    expect(wrapper.get('[data-testid="email-campaign-segment-summary-3"]').text()).toBe('Clients who have not signed in for 90 days')
     expect(wrapper.find('[data-testid="email-campaign-save"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="email-campaign-send-now"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="email-campaign-cancel-schedule"]').exists()).toBe(false)

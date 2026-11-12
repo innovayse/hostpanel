@@ -61,10 +61,11 @@ export default defineNuxtConfig({
     '/ru/payment/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     '/hy/payment/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
     // The unsubscribe landing page opened from a campaign mail: its address carries a personal token and the
-    // request is made on mount, so there is nothing to server-render and nothing to index.
-    '/unsubscribe/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
-    '/ru/unsubscribe/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
-    '/hy/unsubscribe/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } },
+    // request is made on a click, so there is nothing to server-render and nothing to index. The token stays in the
+    // address, so no page or request it leads to may be told where the reader came from: no-referrer.
+    '/unsubscribe/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } },
+    '/ru/unsubscribe/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } },
+    '/hy/unsubscribe/**': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } },
     // The live-chat SDK (plugins/live-chat.ts) draws its launcher bubble in *this* page and
     // points the inbox icon at a root-relative `/brand-assets/` path, which would 404 into the
     // Vue Router. When the operator names a chat server (NUXT_PUBLIC_PORTAL_CHAT_BASE_URL) the

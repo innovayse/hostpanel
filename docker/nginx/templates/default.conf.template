@@ -27,6 +27,19 @@ map $http_x_forwarded_proto $panel_forwarded_proto {
     default $http_x_forwarded_proto;
 }
 
+# The address a request is logged under. A campaign mail's tracking token sits in the path of the open and
+# click routes and its unsubscribe token in the query of the unsubscribe page and the one click route; each
+# is a credential for one recipient, so the access log keeps the route and drops the token.
+map $request_uri $logged_uri {
+    default $request_uri;
+    "~^(?<track_head>/api/public/campaign-mail/(?:open|click)/)[^/?]+(?<track_tail>.*)$" "$track_head***$track_tail";
+    "~^(?<unsub_head>/[^?]*unsubscribe[^?]*[?](?:[^#]*&)?token=)[^&#]*(?<unsub_tail>.*)$" "$unsub_head***$unsub_tail";
+}
+
+# The default combined format with $logged_uri in place of the raw request line.
+log_format masked '$remote_addr - $remote_user [$time_local] "$request_method $logged_uri $server_protocol" '
+                  '$status $body_bytes_sent "$http_referer" "$http_user_agent"';
+
 # X-Forwarded-For is replaced with the connecting address, never appended to: a value the visitor
 # sent must not reach the client or the API, which trust the first entry from a known proxy.
 
@@ -34,6 +47,8 @@ map $http_x_forwarded_proto $panel_forwarded_proto {
 server {
     listen 80;
     server_name ${DOMAIN};
+
+    access_log /var/log/nginx/access.log masked;
 
     client_max_body_size ${EDGE_MAX_BODY_SIZE};
 

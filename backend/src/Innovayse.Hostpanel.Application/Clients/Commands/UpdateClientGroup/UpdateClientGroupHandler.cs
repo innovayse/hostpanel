@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,7 +22,10 @@ public sealed class UpdateClientGroupHandler
     /// <summary>Handles the command.</summary>
     /// <param name="cmd">The group to update and its new fields.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Success, or <c>CLIENT_GROUP_NOT_FOUND</c> when the id names no group.</returns>
+    /// <returns>
+    /// Success, <c>CLIENT_GROUP_NOT_FOUND</c> when the id names no group, or <c>CLIENT_GROUP_NAME_ALREADY_EXISTS</c>
+    /// when another group has the name.
+    /// </returns>
     public async Task<Result> HandleAsync(UpdateClientGroupCommand cmd, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(cmd);
@@ -33,7 +37,15 @@ public sealed class UpdateClientGroupHandler
         }
 
         group.Update(cmd.Name, cmd.Description, cmd.DiscountPercent, cmd.Color);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            // The unique index on the name refused the new name: another group already has it.
+            return Result.FailureCode(HostpanelErrorCodes.CLIENT_GROUP_NAME_ALREADY_EXISTS);
+        }
 
         return Result.Success();
     }

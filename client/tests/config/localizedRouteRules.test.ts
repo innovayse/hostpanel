@@ -13,10 +13,21 @@ import { describe, expect, it } from 'vitest'
 const config = readFileSync(resolve(__dirname, '../../nuxt.config.ts'), 'utf8')
 
 describe('browser-only page rules', () => {
-  it.each(['client', 'cart', 'checkout', 'payment', 'unsubscribe'].flatMap(area => ['', '/ru', '/hy'].map(prefix => `${prefix}/${area}/**`)))(
+  it.each(['client', 'cart', 'checkout', 'payment'].flatMap(area => ['', '/ru', '/hy'].map(prefix => `${prefix}/${area}/**`)))(
     '%s renders in the browser and is not indexed',
     (rule) => {
       expect(config).toContain(`'${rule}': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow' } }`)
+    },
+  )
+})
+
+describe('unsubscribe page rule', () => {
+  it.each(['', '/ru', '/hy'].map(prefix => `${prefix}/unsubscribe/**`))(
+    '%s renders in the browser, is not indexed and sends no referrer, because its address carries a token',
+    (rule) => {
+      expect(config).toContain(
+        `'${rule}': { ssr: false, headers: { 'X-Robots-Tag': 'noindex, nofollow', 'Referrer-Policy': 'no-referrer' } }`,
+      )
     },
   )
 })

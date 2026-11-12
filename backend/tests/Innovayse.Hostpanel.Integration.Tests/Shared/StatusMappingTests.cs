@@ -48,6 +48,7 @@ public sealed class StatusMappingTests
     [InlineData(HostpanelErrorCodes.PREDEFINED_REPLY_CATEGORY_IN_USE, 409)]
     [InlineData(HostpanelErrorCodes.CLIENT_GROUP_IN_USE, 409)]
     [InlineData(HostpanelErrorCodes.CLIENT_GROUP_NOT_FOUND, 404)]
+    [InlineData(HostpanelErrorCodes.CLIENT_GROUP_NAME_ALREADY_EXISTS, 409)]
     [InlineData(HostpanelErrorCodes.USER_NOT_FOUND, 404)]
     [InlineData(HostpanelErrorCodes.CAMPAIGN_NOT_FOUND, 404)]
     [InlineData(HostpanelErrorCodes.CAMPAIGN_NOT_DRAFT, 409)]

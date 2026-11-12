@@ -142,6 +142,11 @@ public static class HostpanelErrorCodes
     /// <summary>The client group still has clients, so it cannot be deleted (409).</summary>
     public const string CLIENT_GROUP_IN_USE = "CLIENT_GROUP_IN_USE";
 
+    /// <summary>
+    /// Another client group already has this name (409, by the generic <c>ALREADY</c> arm of <c>StatusMapping</c>).
+    /// </summary>
+    public const string CLIENT_GROUP_NAME_ALREADY_EXISTS = "CLIENT_GROUP_NAME_ALREADY_EXISTS";
+
     /// <summary>The requested bulk action name is not one this endpoint knows (400).</summary>
     public const string BULK_INVOICE_ACTION_UNKNOWN = "BULK_INVOICE_ACTION_UNKNOWN";
 
@@ -1643,6 +1648,9 @@ public static class HostpanelErrorCodes
 
     /// <summary>The token of an unsubscribe link names no campaign recipient (404).</summary>
     public const string CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND = "CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND";
+
+    /// <summary>The token of a campaign mail's open pixel or tracked link names no recipient, or the body has no link at the index (404).</summary>
+    public const string CAMPAIGN_MAIL_LINK_NOT_FOUND = "CAMPAIGN_MAIL_LINK_NOT_FOUND";
 
     /// <summary>The sort order of a partner is negative (400).</summary>
     public const string PARTNER_SORT_ORDER_NEGATIVE = Domain.Partners.PartnerErrors.SortOrderNegative;

@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.API;
 using Innovayse.Hostpanel.API.Auth;
 using Innovayse.Hostpanel.API.Authorization;
 using Innovayse.Hostpanel.API.Extensions;
+using Innovayse.Hostpanel.API.Logging;
 using Innovayse.Hostpanel.Application;
 using Innovayse.Hostpanel.Application.Admin.Seeding;
 using Innovayse.Hostpanel.Application.Auth.Seeding;
@@ -44,7 +45,9 @@ try
         builder.Host.UseSerilog((ctx, services, config) =>
             config.ReadFrom.Configuration(ctx.Configuration)
                   .ReadFrom.Services(services)
-                  .Enrich.FromLogContext());
+                  .Enrich.FromLogContext()
+                  // A campaign mail's tracking token is a credential: request logging writes the path, so it is masked there.
+                  .Enrich.With<CampaignTokenPathEnricher>());
     }
 
     // The layers, each registering itself. Application first (validators), then Infrastructure

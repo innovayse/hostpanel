@@ -84,6 +84,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         children: [
           { to: AppRoute.Clients, labelKey: 'nav.clientsChildren.view' },
           { to: AppRoute.ClientsUsers, labelKey: 'nav.clientsChildren.users' },
+          { to: AppRoute.ClientsGroups, labelKey: 'nav.clientsChildren.groups' },
           { to: AppRoute.ClientsSharedHostings, labelKey: 'nav.clientsChildren.sharedHostings' },
           { to: AppRoute.ClientsAddons, labelKey: 'nav.clientsChildren.addons' },
           { to: AppRoute.ClientsDomainRegistrations, labelKey: 'nav.clientsChildren.domainRegistrations' },

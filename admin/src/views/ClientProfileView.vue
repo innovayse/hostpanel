@@ -16,6 +16,7 @@ import { useGeoOptions } from '@/composables/useGeoOptions'
 import { restrictsAccount, type RestrictiveClientStatus } from '@/lib/clientStatus'
 import { ClientStatus, type ClientSettings } from '@/types/client'
 import type { ContactNotifications } from '@/types/contactnotifications'
+import ClientGroupSelect from '@/components/clients/ClientGroupSelect.vue'
 import ClientStatusConfirmDialog from '@/components/clients/ClientStatusConfirmDialog.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
@@ -95,8 +96,8 @@ const id = ref(0)
 const createdAt = ref('')
 
 /**
- * The client group the client belongs to, kept from the loaded client and sent back on save:
- * the update replaces the whole record, so leaving it out would take the client out of its group.
+ * The client group the client belongs to, chosen in the form and sent on save: the update replaces
+ * the whole record, so a null takes the client out of its group.
  */
 const clientGroupId = ref<number | null>(null)
 
@@ -471,6 +472,16 @@ onBeforeUnmount(() => {
               <UiText v-if="chosenRestrictiveStatus" :tone="UiTextTone.Muted" :size="UiTextSize.Sm" data-testid="client-profile-status-effects">
                 {{ t(`clients.clientProfile.statusEffects.${chosenRestrictiveStatus}`) }}
               </UiText>
+            </UiField>
+            <UiField :label="t('clients.clientGroups.group')">
+              <template #default="{ id }">
+                <ClientGroupSelect
+                  :id="id"
+                  v-model="clientGroupId"
+                  :empty-label="t('clients.clientGroups.noGroup')"
+                  data-testid="client-profile-group"
+                />
+              </template>
             </UiField>
           </UiStack>
         </UiCard>

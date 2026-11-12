@@ -6,10 +6,12 @@ import { describe, expect, it } from 'vitest'
 import {
   areSegmentsComplete,
   CAMPAIGN_FILTER_TYPES,
+  daysRangeOf,
   draftsFromSegments,
   filterTakesValue,
   isFilterValueValid,
   newSegmentDraft,
+  offeredFilterTypes,
   segmentsFromDrafts,
 } from '@/lib/emailCampaigns'
 import { CampaignFilterType } from '@/types/emailcampaign'
@@ -20,12 +22,36 @@ describe('CAMPAIGN_FILTER_TYPES', () => {
   })
 })
 
+describe('offeredFilterTypes', () => {
+  it('offers every type where the last sign-in is known', () => {
+    expect(offeredFilterTypes(true)).toEqual(CAMPAIGN_FILTER_TYPES)
+  })
+
+  it('leaves out the sign-in rule where the last sign-in is not known', () => {
+    const offered = offeredFilterTypes(false)
+
+    expect(offered).not.toContain(CampaignFilterType.NotSignedInForDays)
+    expect(offered).toHaveLength(CAMPAIGN_FILTER_TYPES.length - 1)
+  })
+})
+
+describe('daysRangeOf', () => {
+  it('gives the days of the two days-based rules and nothing for the others', () => {
+    expect(daysRangeOf(CampaignFilterType.ServiceExpiringInDays)).toEqual({ min: 1, max: 365 })
+    expect(daysRangeOf(CampaignFilterType.NotSignedInForDays)).toEqual({ min: 1, max: 3650 })
+    expect(daysRangeOf(CampaignFilterType.ClientGroup)).toBeNull()
+    expect(daysRangeOf(CampaignFilterType.AllActive)).toBeNull()
+  })
+})
+
 describe('filterTakesValue', () => {
   it('is false only for all active clients', () => {
     expect(filterTakesValue(CampaignFilterType.AllActive)).toBe(false)
     expect(filterTakesValue(CampaignFilterType.Product)).toBe(true)
     expect(filterTakesValue(CampaignFilterType.Country)).toBe(true)
     expect(filterTakesValue(CampaignFilterType.ServiceExpiringInDays)).toBe(true)
+    expect(filterTakesValue(CampaignFilterType.ClientGroup)).toBe(true)
+    expect(filterTakesValue(CampaignFilterType.NotSignedInForDays)).toBe(true)
   })
 })
 
@@ -57,6 +83,21 @@ describe('isFilterValueValid', () => {
     expect(isFilterValueValid(CampaignFilterType.ServiceExpiringInDays, '0')).toBe(false)
     expect(isFilterValueValid(CampaignFilterType.ServiceExpiringInDays, '366')).toBe(false)
     expect(isFilterValueValid(CampaignFilterType.ServiceExpiringInDays, 'x')).toBe(false)
+  })
+
+  it('takes a positive client group id', () => {
+    expect(isFilterValueValid(CampaignFilterType.ClientGroup, '4')).toBe(true)
+    expect(isFilterValueValid(CampaignFilterType.ClientGroup, '0')).toBe(false)
+    expect(isFilterValueValid(CampaignFilterType.ClientGroup, 'vip')).toBe(false)
+    expect(isFilterValueValid(CampaignFilterType.ClientGroup, '')).toBe(false)
+  })
+
+  it('takes 1 to 3650 days without a sign-in', () => {
+    expect(isFilterValueValid(CampaignFilterType.NotSignedInForDays, '1')).toBe(true)
+    expect(isFilterValueValid(CampaignFilterType.NotSignedInForDays, '3650')).toBe(true)
+    expect(isFilterValueValid(CampaignFilterType.NotSignedInForDays, '0')).toBe(false)
+    expect(isFilterValueValid(CampaignFilterType.NotSignedInForDays, '3651')).toBe(false)
+    expect(isFilterValueValid(CampaignFilterType.NotSignedInForDays, 'x')).toBe(false)
   })
 
   it('refuses a filter type this build does not know', () => {

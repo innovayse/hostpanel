@@ -17,6 +17,9 @@ public sealed class EmailCampaignSegment : BaseEntity
     /// <summary>Most days ahead a service expiry filter looks.</summary>
     public const int MaxExpiringDays = 365;
 
+    /// <summary>Most days without a sign-in a filter on inactive clients can ask for (ten years).</summary>
+    public const int MaxInactiveDays = 3650;
+
     /// <summary>Length of a country code.</summary>
     private const int CountryCodeLength = 2;
 
@@ -29,7 +32,8 @@ public sealed class EmailCampaignSegment : BaseEntity
     /// <summary>
     /// Gets the value the rule needs: a product id for <see cref="CampaignFilterType.Product"/>, a two-letter upper-case
     /// country code for <see cref="CampaignFilterType.Country"/>, a number of days for
-    /// <see cref="CampaignFilterType.ServiceExpiringInDays"/>; <see langword="null"/> for <see cref="CampaignFilterType.AllActive"/>.
+    /// <see cref="CampaignFilterType.ServiceExpiringInDays"/>, a client group id for <see cref="CampaignFilterType.ClientGroup"/>,
+    /// a number of days for <see cref="CampaignFilterType.NotSignedInForDays"/>; <see langword="null"/> for <see cref="CampaignFilterType.AllActive"/>.
     /// </summary>
     public string? FilterValue { get; private set; }
 
@@ -50,13 +54,6 @@ public sealed class EmailCampaignSegment : BaseEntity
             FilterType = definition.FilterType,
             FilterValue = Normalize(definition.FilterType, definition.FilterValue),
         };
-    }
-
-    /// <summary>Describes the segment the way a caller writes one, so it can be read out or matched against clients.</summary>
-    /// <returns>The segment's filter and value.</returns>
-    public CampaignSegmentDefinition ToDefinition()
-    {
-        return new CampaignSegmentDefinition(FilterType, FilterValue);
     }
 
     /// <summary>Tells whether a value fits a filter, so a caller can refuse it before it builds a campaign.</summary>
@@ -114,6 +111,12 @@ public sealed class EmailCampaignSegment : BaseEntity
 
             case CampaignFilterType.ServiceExpiringInDays:
                 return CheckPositiveNumber(trimmed, MaxExpiringDays, $"An expiry filter needs a number of days from 1 to {MaxExpiringDays}.", out normalized);
+
+            case CampaignFilterType.ClientGroup:
+                return CheckPositiveNumber(trimmed, int.MaxValue, "A client group filter needs a positive client group id.", out normalized);
+
+            case CampaignFilterType.NotSignedInForDays:
+                return CheckPositiveNumber(trimmed, MaxInactiveDays, $"A sign-in filter needs a number of days from 1 to {MaxInactiveDays}.", out normalized);
 
             default:
                 return "Unknown filter type.";

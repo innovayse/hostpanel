@@ -216,3 +216,15 @@ export const formatRelativeFromNow = (iso: string, locale: string, now: number =
   }
   return formatter.format(-Math.floor(hours / HOURS_PER_DAY), 'day')
 }
+
+/**
+ * Formats a share of a whole as a percentage in the given locale, with at most one decimal
+ * ("0.5" becomes "50%", "0.1234" becomes "12.3%"). Built on `Intl.NumberFormat`, so the sign
+ * placement and digits come from the locale.
+ *
+ * @param share - The share, from 0 to 1.
+ * @param locale - Locale code the number is written in.
+ * @returns The percentage text.
+ */
+export const formatShare = (share: number, locale: string): string =>
+  new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(share)

@@ -1348,6 +1348,9 @@
   <data name="CLIENT_GROUP_IN_USE" xml:space="preserve">
     <value>Այս խմբում դեռ հաճախորդներ կան։ Նախ տեղափոխեք նրանց մեկ այլ խումբ։</value>
   </data>
+  <data name="CLIENT_GROUP_NAME_ALREADY_EXISTS" xml:space="preserve">
+    <value>Այս անունով հաճախորդների խումբ արդեն կա։</value>
+  </data>
   <data name="CLIENT_GROUP_DISCOUNT_INVALID" xml:space="preserve">
     <value>Զեղչը պետք է լինի 0-ից 100 տոկոս։</value>
   </data>
@@ -1407,5 +1410,8 @@
   </data>
   <data name="CAMPAIGN_UNSUBSCRIBE_LINK_NOT_FOUND" xml:space="preserve">
     <value>Ապաբաժանորդագրվելու այս հղումը վավեր չէ։</value>
+  </data>
+  <data name="CAMPAIGN_MAIL_LINK_NOT_FOUND" xml:space="preserve">
+    <value>Այս հղումը վավեր չէ։</value>
   </data>
 </root>

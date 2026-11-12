@@ -52,6 +52,10 @@
         "component": "ManageUsersView.vue"
       },
       {
+        "path": "clients/groups",
+        "component": "ClientGroupsView.vue"
+      },
+      {
         "path": "clients/shared-hostings",
         "component": "ServicesListView.vue"
       },

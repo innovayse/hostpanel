@@ -13,5 +13,11 @@ public enum CampaignFilterType
     Country = 2,
 
     /// <summary>Clients with a service that expires within a number of days; the value is the number of days.</summary>
-    ServiceExpiringInDays = 3
+    ServiceExpiringInDays = 3,
+
+    /// <summary>Clients who belong to one client group; the value is the group id.</summary>
+    ClientGroup = 4,
+
+    /// <summary>Clients who have not signed in for a number of days; the value is the number of days.</summary>
+    NotSignedInForDays = 5
 }

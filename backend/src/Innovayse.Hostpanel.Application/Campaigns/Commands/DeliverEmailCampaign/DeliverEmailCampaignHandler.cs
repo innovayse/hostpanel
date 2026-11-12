@@ -22,7 +22,8 @@ namespace Innovayse.Hostpanel.Application.Campaigns.Commands.DeliverEmailCampaig
 
 /// <summary>
 /// Sends the next batch of pending recipients through the email pipeline, one keyed mail each, and records how each ended on
-/// the recipient. A recipient is saved after its own mail, so the counters an admin watches move as the batch goes, and a
+/// the recipient. The batch is as large as the campaign send rate still allows (<see cref="CampaignSendThrottle"/>); the
+/// recipients beyond it stay pending for a later pass. A recipient is saved after its own mail, so the counters an admin watches move as the batch goes, and a
 /// crash replays only the mails whose log line says they were not delivered. When nobody is waiting any more the campaign
 /// is marked sent. The campaign template is seeded at startup; a missing or switched-off one is recorded as a failed attempt
 /// here, not repaired here.
@@ -38,23 +39,29 @@ public sealed class DeliverEmailCampaignHandler
     /// <summary>The bus the mails are sent, the clients' consent read and each outcome looked up through.</summary>
     private readonly IMessageBus _bus;
 
-    /// <summary>The client portal's address, which the unsubscribe links point at.</summary>
+    /// <summary>The client portal's address, which the unsubscribe links point at; the API answers on the same host, so the one-click link is built from it too.</summary>
     private readonly IOptions<ClientPortalOptions> _portal;
 
     /// <summary>The clock the delivery and finish moments are read from.</summary>
     private readonly IClock _clock;
+
+    /// <summary>Tells how many mails the send rate still allows.</summary>
+    private readonly CampaignSendThrottle _throttle;
 
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="bus">The bus the mails are sent, the clients' consent read and each outcome looked up through.</param>
     /// <param name="portal">The client portal's address.</param>
     /// <param name="clock">The clock the delivery and finish moments are read from.</param>
-    public DeliverEmailCampaignHandler(IHostpanelDbContext context, IMessageBus bus, IOptions<ClientPortalOptions> portal, IClock clock)
+    /// <param name="throttle">Tells how many mails the send rate still allows.</param>
+    public DeliverEmailCampaignHandler(
+        IHostpanelDbContext context, IMessageBus bus, IOptions<ClientPortalOptions> portal, IClock clock, CampaignSendThrottle throttle)
     {
         _context = context;
         _bus = bus;
         _portal = portal;
         _clock = clock;
+        _throttle = throttle;
     }
 
     /// <summary>Handles the command.</summary>
@@ -76,10 +83,18 @@ public sealed class DeliverEmailCampaignHandler
             return Result.Success();
         }
 
+        // The minute's allowance is read before the batch, so a pass that finds it used up reads and mails nothing: the
+        // recipients stay pending and the next pass, with the window moved on, carries on from the same place.
+        var allowed = await _throttle.RemainingAsync(ct);
+        if (allowed == 0)
+        {
+            return Result.Success();
+        }
+
         var batch = await _context.EmailCampaignRecipients
             .Where(r => r.CampaignId == campaign.Id && r.Status == CampaignRecipientStatus.Pending)
             .OrderBy(r => r.Id)
-            .Take(JobBatch.Size)
+            .Take(allowed)
             .ToListAsync(ct);
 
         // The consent is read again right before the send: a client may have unsubscribed through another campaign's
@@ -140,16 +155,23 @@ public sealed class DeliverEmailCampaignHandler
             return;
         }
 
-        // The token exists in the mail alone; the recipient keeps its hash, and that is saved before the mail leaves so the link
-        // works the moment the reader sees it.
-        var link = CampaignUnsubscribeLink.For(_portal.Value.BaseUrl, recipient.IssueUnsubscribeToken());
+        // The tokens exist in the mail alone; the recipient keeps their hashes, and that is saved before the mail leaves so the links
+        // work the moment the reader sees them. The tracking token is a second secret: a pixel address travels further than the
+        // unsubscribe link and must not be enough to unsubscribe the reader.
+        var token = recipient.IssueUnsubscribeToken();
+        var trackingToken = recipient.IssueTrackingToken();
+        var link = CampaignUnsubscribeLink.For(_portal.Value.BaseUrl, token);
+        var oneClickLink = CampaignUnsubscribeLink.OneClickFor(_portal.Value.BaseUrl, token);
         await _context.SaveChangesAsync(ct);
 
-        var model = new EmailCampaignTemplateModel(campaign.Subject, campaign.Body, link);
+        // Each recipient's mail carries its own tracked links and open pixel, built from the tracking token;
+        // the stored body stays as the admin wrote it, because a click is answered from it.
+        var body = CampaignTrackingLinks.Track(campaign.Body, _portal.Value.BaseUrl, trackingToken);
+        var model = new EmailCampaignTemplateModel(campaign.Subject, body, link, trackingToken);
 
         await _bus.InvokeAsync(
             new SendEmailCommand(
-                recipient.Email, recipient.Language, EmailCampaignTemplateSeeder.Slug, model, IdempotencyKey: key, UnsubscribeUrl: link), ct);
+                recipient.Email, recipient.Language, EmailCampaignTemplateSeeder.Slug, model, IdempotencyKey: key, UnsubscribeUrl: oneClickLink), ct);
 
         var delivery = await _bus.InvokeAsync<Result<EmailDeliveryDto>>(new GetEmailDeliveryQuery(logKey), ct);
         Record(recipient, delivery.Value);

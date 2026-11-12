@@ -53,8 +53,8 @@ public static class CampaignValidationExtensions
     /// <param name="tooManyMessage">The localized sentence reported when the list is longer than <see cref="CampaignLimits.MaxSegments"/>.</param>
     /// <param name="emptyEntryMessage">The localized sentence reported when an entry of the list is missing.</param>
     /// <returns>The rule builder, for chaining.</returns>
-    public static IRuleBuilderOptions<T, IReadOnlyList<CampaignSegmentDefinition>> MustBeCampaignSegmentList<T>(
-        this IRuleBuilder<T, IReadOnlyList<CampaignSegmentDefinition>> rule, string requiredMessage, string tooManyMessage, string emptyEntryMessage)
+    public static IRuleBuilderOptions<T, IReadOnlyList<CampaignSegmentDto>> MustBeCampaignSegmentList<T>(
+        this IRuleBuilder<T, IReadOnlyList<CampaignSegmentDto>> rule, string requiredMessage, string tooManyMessage, string emptyEntryMessage)
     {
         ArgumentNullException.ThrowIfNull(rule);
 

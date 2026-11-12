@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Innovayse.Hostpanel.Application.Campaigns.Commands.DeliverEmailCampaign;
 using Innovayse.Hostpanel.Application.Campaigns.Commands.UnsubscribeFromEmailCampaigns;
+using Innovayse.Hostpanel.Application.Campaigns.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Campaigns;
@@ -121,7 +122,7 @@ public sealed class DeliverEmailCampaignTests(IntegrationTestFactory factory) : 
         (await context.EmailCampaigns.AsNoTracking().SingleAsync(c => c.Id == seeded.CampaignId)).Status.Should().Be(CampaignStatus.Sent);
     }
 
-    /// <summary>The mail is handed to the relay with the unsubscribe page as its list-unsubscribe address, so a mail client can offer a link of its own.</summary>
+    /// <summary>The mail is handed to the relay with the one-click endpoint as its list-unsubscribe address, so a mail client can unsubscribe the reader with a single POST.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task Deliver_Mail_CarriesTheUnsubscribeAddressForTheRelay()
@@ -133,7 +134,7 @@ public sealed class DeliverEmailCampaignTests(IntegrationTestFactory factory) : 
         await DeliverAsync(scope.ServiceProvider, seeded.CampaignId);
 
         var mail = sender.Sent.Where(m => m.To == seeded.Email).Should().ContainSingle().Which;
-        mail.UnsubscribeUrl.Should().EndWith($"/unsubscribe?token={TokenOf(mail)}");
+        mail.UnsubscribeUrl.Should().EndWith($"{CampaignUnsubscribeLink.OneClickPath}?token={TokenOf(mail)}");
     }
 
     /// <summary>The email log keeps the mail without the personal token, so nobody who reads the log can follow a client's link.</summary>

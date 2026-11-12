@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -41,7 +42,15 @@ public sealed class DeleteClientGroupHandler
         }
 
         _context.ClientGroups.Remove(group);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            // A client joined the group between the check above and the save: the foreign key refused the delete.
+            return Result.FailureCode(HostpanelErrorCodes.CLIENT_GROUP_IN_USE);
+        }
 
         return Result.Success();
     }

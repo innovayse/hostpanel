@@ -4,7 +4,7 @@
  * upper-cases the first letter.
  */
 import { describe, expect, it } from 'vitest'
-import { capitalize, formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatElapsed, formatRelativeFromNow, toDateInputValue } from '@/lib/format'
+import { capitalize, formatDate, formatDateTime, formatClock, formatDateTimeCompact, formatElapsed, formatRelativeFromNow, formatShare, toDateInputValue } from '@/lib/format'
 
 describe('format', () => {
   it('formats a date as day/month/year', () => {
@@ -121,5 +121,18 @@ describe('formatClock', () => {
 
   it('answers an empty string for an unreadable timestamp', () => {
     expect(formatClock('not a date', 'en-GB')).toBe('')
+  })
+})
+
+describe('formatShare', () => {
+  it('writes a share as a percentage', () => {
+    expect(formatShare(0.5, 'en')).toBe('50%')
+    expect(formatShare(0, 'en')).toBe('0%')
+    expect(formatShare(1, 'en')).toBe('100%')
+  })
+
+  it('keeps at most one decimal', () => {
+    expect(formatShare(0.1234, 'en')).toBe('12.3%')
+    expect(formatShare(0.12349, 'en')).toBe('12.3%')
   })
 })

@@ -39,6 +39,26 @@ public sealed class CreateEmailCampaignTests(IntegrationTestFactory factory) : I
         segment.GetProperty("filterValue").GetString().Should().Be("AM");
     }
 
+    /// <summary>The client group and sign-in filters are stored and read back with their values.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Create_StoresTheGroupAndSignInSegments()
+    {
+        var client = await ClientsTestSeeds.AdminClientAsync(factory);
+        var groupId = await ClientGroupTestSeeds.CreateAsync(client);
+
+        var id = await CampaignTestSeeds.CreateAsync(client, segments:
+        [
+            new { filterType = "ClientGroup", filterValue = groupId.ToString() },
+            new { filterType = "NotSignedInForDays", filterValue = "90" },
+        ]);
+
+        var stored = await client.GetFromJsonAsync<JsonElement>($"{CampaignTestSeeds.Route}/{id}");
+        var segments = stored.GetProperty("segments").EnumerateArray().ToList();
+        segments.Select(s => s.GetProperty("filterType").GetString()).Should().BeEquivalentTo("ClientGroup", "NotSignedInForDays");
+        segments.Select(s => s.GetProperty("filterValue").GetString()).Should().BeEquivalentTo(groupId.ToString(), "90");
+    }
+
     /// <summary>A draft can be written before its audience is chosen.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]

@@ -7,6 +7,8 @@
 export enum ApiPath {
   /** `/admin/cancellation-requests` collection and its members. */
   AdminCancellationRequests = '/admin/cancellation-requests',
+  /** `/admin/client-groups` collection and its members. */
+  AdminClientGroups = '/admin/client-groups',
   /** `/admin/currencies` collection and its members. */
   AdminCurrencies = '/admin/currencies',
   /** `/admin/service-change-requests` collection and its members. */

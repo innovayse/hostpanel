@@ -23,26 +23,37 @@
     "AllActive": "Все активные клиенты",
     "Product": "Клиенты с услугой продукта",
     "Country": "Клиенты из страны",
-    "ServiceExpiringInDays": "Клиенты, у которых скоро истекает услуга"
+    "ServiceExpiringInDays": "Клиенты, у которых скоро истекает услуга",
+    "ClientGroup": "Клиенты из группы клиентов",
+    "NotSignedInForDays": "Клиенты, давно не входившие в систему"
   },
   "segmentSummary": {
     "AllActive": "Все активные клиенты",
     "Product": "Клиенты с услугой продукта {value}",
     "Country": "Клиенты из страны {value}",
-    "ServiceExpiringInDays": "Клиенты, у которых услуга истекает в течение {value} дн."
+    "ServiceExpiringInDays": "Клиенты, у которых услуга истекает в течение {value} дн.",
+    "ClientGroup": "Клиенты из группы {value}",
+    "NotSignedInForDays": "Клиенты, не входившие в систему {value} дн. и дольше"
   },
   "filterTypePlaceholder": "Выберите, кто получит письмо",
   "productPlaceholder": "Выберите продукт",
   "countryPlaceholder": "Выберите страну",
+  "groupPlaceholder": "Выберите группу клиентов",
   "daysPlaceholder": "Дней",
   "daysSuffix": "дн. вперёд",
+  "daysAgoSuffix": "дн. и более",
   "removeSegment": "Удалить",
   "stats": {
     "total": "Получатели",
     "pending": "Ожидают",
     "sent": "Отправлено",
     "failed": "Ошибки",
-    "unsubscribed": "Отписались"
+    "unsubscribed": "Отписались",
+    "opened": "Открытия",
+    "openRate": "Доля открытий",
+    "clicked": "Клики",
+    "clickRate": "Доля кликов",
+    "uniqueHint": "уникальных: {count}"
   },
   "previewFrameTitle": "Предпросмотр письма",
   "scheduleTitle": "Запланировать рассылку",

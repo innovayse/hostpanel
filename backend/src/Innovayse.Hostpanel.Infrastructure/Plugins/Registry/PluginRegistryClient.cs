@@ -701,7 +701,8 @@ public sealed partial class PluginRegistryClient : IPluginRegistryClient
 
     /// <summary>
     /// Checks the registry's reviews summary. Only an average between 1 and 5 (a star scale) with at least one review is
-    /// kept: anything else is dropped rather than shown, so a rating is never invented.
+    /// kept: any other number is dropped rather than shown, so a rating is never invented. A member of the wrong
+    /// type fails the whole reply like every other entry member.
     /// </summary>
     /// <param name="rating">The summary as sent; <see langword="null"/> when the plugin has no reviews.</param>
     /// <returns>The summary, or <see langword="null"/> when it is absent or out of range.</returns>

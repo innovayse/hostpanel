@@ -360,7 +360,7 @@ export interface PluginRegistryItemDto {
 
 /** What reviewers think of a registry listing; the `rating` of the listing on the wire. */
 export interface PluginRegistryRatingDto {
-  /** Average score from 0 to 5. */
+  /** Average score from 1 to 5; the server drops any other value. */
   average: number
   /** How many reviews the average comes from. */
   count: number

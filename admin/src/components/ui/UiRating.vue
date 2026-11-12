@@ -18,7 +18,7 @@ const STAR_COUNT = 5
 
 /** Props for UiRating. */
 const props = defineProps<{
-  /** Average score from 0 to 5. */
+  /** Average score, expected from 1 to 5; the stars are clamped to the row anyway. */
   average: number
   /** How many reviews the average comes from. */
   count: number

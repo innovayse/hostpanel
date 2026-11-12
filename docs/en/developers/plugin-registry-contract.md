@@ -93,7 +93,7 @@ Reply:
 }
 ```
 
-`total` is the number of plugins that match the filter across all pages. A negative value is read as 0. `page` and `pageSize` are not needed: Hostpanel uses the ones it asked for. Members Hostpanel does not use (rating, downloads and so on) may be present.
+`total` is the number of plugins that match the filter across all pages. A negative value is read as 0. `page` and `pageSize` are not needed: Hostpanel uses the ones it asked for. Members Hostpanel does not use (for example the publisher logo address) may be present.
 
 ### Latest versions of installed plugins
 
@@ -226,6 +226,7 @@ Hostpanel checks every entry, and one entry that is not a plugin (bad id, no nam
 | `name` | Required, not empty once control characters and surrounding space are removed. Kept to 200 characters. |
 | `latestVersion` | A strict `major.minor.patch` version, or `null` for a plugin with nothing published. An entry with a missing, `null` or malformed value is left out of the page; the other entries are kept. |
 | `latestChangelog` | Optional, Markdown, at most 20000 characters. The release notes of the newest version, shown on the card in the catalogue. |
+| `rating` | Optional or `null`: `{ "average": 4.5, "count": 12 }`. The mean of the visible reviews, from 1 to 5, and how many reviews it is the mean of, at least 1. Shown as stars on the card in the catalogue. Leave it out or send `null` when the plugin has no review; a value outside these ranges is dropped, never shown. |
 | `pricing` | Required. `Free`, `Paid` or `Private`, read case-insensitively. |
 | `category` | Optional. An unknown or missing value is shown as `Other`. |
 | `description` | Optional, kept to 2000 characters. |

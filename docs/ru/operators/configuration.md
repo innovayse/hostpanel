@@ -81,6 +81,7 @@ Orders__NumberPrefix (override)   → Orders__NumberPrefix (no rename)
   { name: 'ASPNETCORE_ENVIRONMENT', type: 'string', default: 'Development', description: 'Режим работы: Production или Development. В режиме Development дополнительно запускается DevDataSeeder, который при каждом перезапуске заново заполняет тестовыми данными. Сервер должен работать в режиме Production. Обязательна в hub и prod. Уровни: hub, prod, dev.' },
   { name: 'AUTH_APP_NAME', type: 'string', default: 'hostpanel', description: 'Имя приложения, зарегистрированное в слое аутентификации (имена cookie и клиента). Уровни: hub, prod, dev.' },
   { name: 'DISABLE_RELEASE_UPDATE_CHECKS', type: 'flag', default: 'false', description: 'Значение true отключает ежедневную проверку наличия нового релиза на GitHub. Отключайте, если у установки нет выхода в интернет. Соответствует ScheduledJobs__DisableReleaseUpdateChecks. Уровни: hub, prod.' },
+  { name: 'DISABLE_EXCHANGE_RATE_UPDATES', type: 'flag', default: 'false', description: 'Значение true отключает ежедневное обновление курсов валют (03:00 UTC). Отключайте, если у установки нет выхода в интернет; тогда курсы меняются только вручную или кнопкой «Обновить курсы обмена». Соответствует ScheduledJobs__DisableExchangeRateUpdates. Уровни: hub, prod.' },
 ]" />
 
 ## Режимы входа {#sign-in-modes}

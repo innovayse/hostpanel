@@ -81,6 +81,7 @@ A server left on <code>Development</code> runs the DevDataSeeder and re-seeds te
   { name: 'ASPNETCORE_ENVIRONMENT', type: 'string', default: 'Development', description: 'Runtime mode: Production or Development. Development also runs DevDataSeeder, which re-seeds test data on every restart. A server must use Production. Required in hub and prod. Tiers: hub, prod, dev.' },
   { name: 'AUTH_APP_NAME', type: 'string', default: 'hostpanel', description: 'Application name registered with the auth layer (cookie and client naming). Tiers: hub, prod, dev.' },
   { name: 'DISABLE_RELEASE_UPDATE_CHECKS', type: 'flag', default: 'false', description: 'Set to true to disable the daily check for a newer release on GitHub. Disable when the installation has no outbound internet access. Maps to ScheduledJobs__DisableReleaseUpdateChecks. Tiers: hub, prod.' },
+  { name: 'DISABLE_EXCHANGE_RATE_UPDATES', type: 'flag', default: 'false', description: 'Set to true to disable the daily update of the currency exchange rates (03:00 UTC). Disable when the installation has no outbound internet access; the rates then change only by hand or with the Update Exchange Rates button. Maps to ScheduledJobs__DisableExchangeRateUpdates. Tiers: hub, prod.' },
 ]" />
 
 ## Sign-in modes

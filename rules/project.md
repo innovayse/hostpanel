@@ -70,7 +70,7 @@ repositories. What is specific to this project is short:
 - **Recurring jobs and background handlers return `Task`, not `Result`.** The crons
   (`CheckOverdueInvoicesCron`, `ProcessBillableItemsCron`, `ProcessRenewalsCron`,
   `ReconcileGatewayPaymentsCron`, `SendRenewalRemindersCron`, `SuspendOverdueServicesCron`,
-  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`, `CheckStatusComponentsCron`) and `ResetDemoData`,
+  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`, `CheckStatusComponentsCron`, `UpdateExchangeRatesCron`) and `ResetDemoData`,
   `CheckDomainExpiries` and `SyncPendingDomainStatuses` are scheduled messages, not dispatched by a
   caller, so nothing would receive a `Result`. So are `RunMigrationPull` (published by
   `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended; when two
@@ -1494,6 +1494,8 @@ addresses. Module `Products`; this slice stores and serves the options and does 
   `Common/Validators/ValidationRuleExtensions`.
 
 ### Recurring billing
+
+`UpdateExchangeRatesCron` (03:00 UTC, `ScheduledJobsOptions.UpdateExchangeRatesHour`) refreshes the currency rates by running the same `UpdateExchangeRatesCommand` as the admin button, so the update has one implementation. A refusal (source down, no base currency) is logged and the next run is scheduled all the same; `ScheduledJobs:DisableExchangeRateUpdates` turns the outbound call off. It changes rates only: product prices are recomputed by `UpdateProductPricesCommand`, an operator's decision.
 
 Renewal invoicing, payment and suspension run as four crons (UTC, the default hours of `ScheduledJobsOptions`):
 `ProcessRenewalsCron` 05:00 (applies paid but

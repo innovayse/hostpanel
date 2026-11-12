@@ -20,7 +20,7 @@ public sealed class CardChargeConsentConfiguration : IEntityTypeConfiguration<Ca
         builder.Property(x => x.ClientId).IsRequired();
         builder.Property(x => x.GatewayModuleId).IsRequired().HasMaxLength(GatewayCustomer.MaxLength);
         builder.Property(x => x.SessionId).IsRequired().HasMaxLength(InvoicePaymentClaim.MaxLength);
-        builder.Property(x => x.MethodRef).HasMaxLength(InvoicePaymentClaim.MaxLength);
+        builder.Property(x => x.MethodRef).HasMaxLength(CardChargeConsent.MaxMethodRefLength);
         builder.Property(x => x.ConsentTextVersion).HasMaxLength(CardChargeConsent.MaxTextVersionLength);
         builder.Property(x => x.IpAddress).HasMaxLength(CardChargeConsent.MaxIpAddressLength);
         builder.Property(x => x.UserAgent).HasMaxLength(CardChargeConsent.MaxUserAgentLength);

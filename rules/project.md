@@ -242,9 +242,10 @@ docker/                              compose set (shared·dev·prod·platform), 
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
-- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.2.0, which keeps what 2.1.0 added, the `Ui`
-  view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, and adds the plugin
-  packaging package, `Hostpanel.Sdk.Packaging`).** Every SDK type lives in
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.5.0, which keeps what 2.1.0 added, the `Ui`
+  view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, adds the plugin
+  packaging package, `Hostpanel.Sdk.Packaging`, and with 3.5.0 `PaymentInstruction.SavePaymentMethod` and
+  `GatewayPaymentStatus.SavedMethod`, see "Stored credentials are an optional payment capability").** Every SDK type lives in
   `Plugins/<Area>/` and its namespace equals the folder: `Payment`, `Provisioning`, `Registrar`, `HostingPanel`, `Hosting`,
   `Fulfilment`, `Identity`, `StoredCredentials`, `Manifest`, `Api`, `Endpoints`, `Host`, `Store`,
   `Lifecycle`, `Slots`, `Ui`, `Enums`. Each interface sits next to the records it uses; there is no
@@ -286,6 +287,21 @@ docker/                              compose set (shared·dev·prod·platform), 
   an unknown capability, one declared twice and `storedCredentials` outside a payment plugin
   (`PLUGIN_CAPABILITY_NOT_ALLOWED`); `docs/en/developers/write-a-plugin.md` documents both.
 - **Stored credentials are an optional payment capability.** `IStoredCredentialPlugin` (SDK) is implemented by a payment plugin on top of `IPaymentPlugin`; `IStoredCredentialPluginResolver` resolves it on top of `IPaymentPluginResolver` and answers nothing when the chosen plugin does not implement it. It is not a seventh plugin type and has no manifest type of its own.
+  **A method can also be saved within a payment (#915, SDK 3.5.0).** `StartGatewayPayment` (and `StartMyGatewayPayment`,
+  `StartOrderGatewayPayment`, which hand their command to it) takes `SavePaymentMethod` and the `ConsentTextVersion` the payer
+  ticked. Only the invoice's own signed-in client can ask, a user linked to the account only with `ViewPayInvoices`
+  (`ClientAccessExtensions.EnsureCallerHoldsAsync`, because the order route is open to guests and never meets the permission
+  filter: `CLIENT_PERMISSION_DENIED`; paying without saving needs no permission), and a payment that saves is refused
+  with `CLIENT_CARD_PAYMENT_DISABLED` when card processing is disabled for the client, with `STORED_CREDENTIALS_NOT_SUPPORTED` at a
+  module without the capability and with 401 for a guest. The gateway customer is ensured before the payment is registered
+  (`GatewayCustomerEnsurer`, shared with `BeginSaveStoredMethod`), the payment is registered with
+  `PaymentInstruction.SavePaymentMethod`, and the consent (keyed by the gateway order, with the wording version and the
+  request's own address and browser, never the body's) is saved with the session. `CompleteGatewayPayment`, from the return page and from
+  `ReconcileGatewayPaymentsCron` alike, binds the method in `GatewayPaymentStatus.SavedMethod` to that consent through
+  `StoredMethodBinder` (shared with `CompleteSaveStoredMethod`) in the very save that settles the invoice. A missing or
+  conflicting method never fails the payment: no `SavedMethod`, no active consent, a consent already covering another
+  method, or a reference over `CardChargeConsent.MaxMethodRefLength` (200) is logged and binds nothing. A save that lost to a
+  concurrent completion drops the binding with the rest, because the winner bound it in its own save.
 - **What the three newer plugin types promise.** *Fulfilment* (`IFulfilmentPlugin`): the host writes a
   `FulfilmentRecords` row in the payment's own transaction and `DispatchFulfilmentCron` delivers it, so delivery is
   **at least once** with back-off; every method must be idempotent on `InvoiceId` (the same paid invoice can arrive
@@ -1551,7 +1567,9 @@ feature does not exist is not kept. The decisions:
   `ChargeInvoiceStoredMethod` (charging one). The check is
   `ClientSettingsExtensions.EnsureClientMayPayByCardAsync`, beside the status guard
   `EnsureClientMayTransactAsync`. Hosted gateway sessions (`StartGatewayPayment`) and staff-entered
-  payments are not card processing and are not refused.
+  payments are not card processing and are not refused, except a `StartGatewayPayment` with `SavePaymentMethod`, which keeps
+  a method for later charges and is refused with the same code (and, for a user linked to the account without `ViewPayInvoices`,
+  with `CLIENT_PERMISSION_DENIED`).
 - **`AllowSso`.** It means single sign-on into the hosting panel of the client's own services (the
   product has no per-client external sign-on for the client sign-in itself, which is the same for every
   account). `GetMyServiceControlPanelSsoUrl` refuses an account with it off, with 403
@@ -1638,7 +1656,11 @@ surrounding spaces, make one recipient, the one with the lowest client id; the c
   The demo accounts' own credentials are protected by one rule, `IDemoAccountGuard` (Application port, `Infrastructure/Demo/DemoAccountGuard`):
   with demo on, the email and password of `Demo__AdminEmail` / `Demo__ClientEmail` cannot change; password
   reset (`ResetPasswordCommand`) and `UpdateClientHandler`'s email change ask it and answer 403 `DEMO_ACTION_DISABLED`. Local sign-in (`UserService`) asks it too: wrong passwords are not counted against those two accounts, so no visitor can lock them.
-- **Demo stored charges.** The demo payment plugin implements `IStoredCredentialPlugin` in memory; the last two digits of the amount in minor units pick the outcome: 02 declined, 03 action required, 04 pending, 05 money taken and then `TimeoutException`, 06 `TimeoutException` before anything is taken, anything else succeeded. The first result per idempotency key is final: a repeat answers it and never throws (a 06 key records nothing, so it throws again). The book is `DemoStoredCredentialState`, a singleton shared by every resolve and cleared by the demo reset.
+- **Demo stored charges.** The demo payment plugin implements `IStoredCredentialPlugin` in memory; the last two digits of the amount in minor units pick the outcome: 02 declined, 03 action required, 04 pending, 05 money taken and then `TimeoutException`, 06 `TimeoutException` before anything is taken, anything else succeeded. The first result per idempotency key is final: a repeat answers it and never throws (a 06 key records nothing, so it throws again). The book is `DemoStoredCredentialState`, a singleton shared by every resolve and cleared by the demo reset. A demo payment registered with `SavePaymentMethod` reports a demo Visa ending in 4242 in
+  `GatewayPaymentStatus.SavedMethod` once it reads as paid, the same card on every read (the reference is derived from the gateway
+  order), so the choice to save can be walked end to end and the host binds it to the consent. A payment request names no
+  customer, so the demo does not add that card to a customer's list: `ListMethodsAsync` does not return it, and the saved method
+  lists without brand and last four digits (`detailsAvailable` false).
 - **Currency.** The demo payment plugin accepts every currency stored (`IPaymentPlugin.AcceptsCurrency`), not only USD.
 - **Data.** `IDemoDataManager` resets (wipes and reseeds) at startup instead of running `DevDataSeeder`, so every deploy shows the current seed, and
   `ResetDemoDataCommand` truncates every table except the identity roles and reseeds in one

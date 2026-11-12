@@ -411,7 +411,7 @@ describe('useAccountStore reads', () => {
   })
 
   it('keeps the gateways the profile can default to, and none when the read fails', async () => {
-    billingApi.fetchGatewayMethods.mockResolvedValueOnce([{ module: 'card_gateway', displayName: 'Card' }]).mockRejectedValueOnce(new Error('down'))
+    billingApi.fetchGatewayMethods.mockResolvedValueOnce([{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }]).mockRejectedValueOnce(new Error('down'))
     const store = useAccountStore()
 
     await store.loadGatewayMethods()

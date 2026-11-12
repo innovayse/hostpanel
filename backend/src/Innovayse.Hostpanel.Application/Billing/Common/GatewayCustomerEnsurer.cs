@@ -79,8 +79,9 @@ public sealed class GatewayCustomerEnsurer
         {
             // Another request recorded the customer first. The plugin answers the same customer for the same client
             // reference, so the row that won holds the reference this request would have stored.
+            // A conflict means the winner's row exists, so a missing row here is a real error and not an absent client.
             _context.Detach(row);
-            return await FindRefAsync(clientId, module, ct);
+            return await CustomerRefs(clientId, module).FirstAsync(ct);
         }
     }
 
@@ -90,11 +91,17 @@ public sealed class GatewayCustomerEnsurer
     /// <param name="ct">Cancellation token.</param>
     /// <returns>The reference, or <see langword="null"/> when none is recorded yet.</returns>
     private Task<string?> FindRefAsync(int clientId, string module, CancellationToken ct) =>
+        CustomerRefs(clientId, module).FirstOrDefaultAsync(ct);
+
+    /// <summary>The customer references recorded for a client at a module, read without tracking.</summary>
+    /// <param name="clientId">The client.</param>
+    /// <param name="module">The payment plugin id.</param>
+    /// <returns>The query over the recorded references.</returns>
+    private IQueryable<string> CustomerRefs(int clientId, string module) =>
         _context.GatewayCustomers
             .AsNoTracking()
             .Where(c => c.ClientId == clientId && c.GatewayModuleId == module)
-            .Select(c => c.CustomerRef)
-            .FirstOrDefaultAsync(ct);
+            .Select(c => c.CustomerRef);
 
     /// <summary>The host's stable reference for a client, opaque to the plugin.</summary>
     /// <param name="clientId">The client.</param>

@@ -28,7 +28,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Demo;
 /// A payment registered with <see cref="PaymentInstruction.SavePaymentMethod"/> reports that card in
 /// <see cref="GatewayPaymentStatus.SavedMethod"/> once it is read as paid, the same card on every read, so the
 /// payer's choice to keep the method can be walked end to end. The payment request names no customer, so that card is
-/// not added to a customer's list of methods.
+/// not added to a customer's list of methods, and the host lists the method it bound without brand and last four digits.
 /// </remarks>
 internal sealed class DemoPaymentPlugin : IPaymentPlugin, IStoredCredentialPlugin
 {

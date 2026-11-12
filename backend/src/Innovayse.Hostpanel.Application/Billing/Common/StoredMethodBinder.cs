@@ -27,6 +27,15 @@ public sealed class StoredMethodBinder
     }
 
     /// <summary>
+    /// Whether the host can keep a stored method under this reference: it is not blank and fits the column of the consent
+    /// (<see cref="CardChargeConsent.MaxMethodRefLength"/>). A reference that does not is never bound.
+    /// </summary>
+    /// <param name="methodRef">The stored method the plugin reported.</param>
+    /// <returns><see langword="true"/> when <see cref="TryBindAsync"/> can bind the reference.</returns>
+    public static bool CanKeep(string? methodRef) =>
+        !string.IsNullOrWhiteSpace(methodRef) && methodRef.Length <= CardChargeConsent.MaxMethodRefLength;
+
+    /// <summary>
     /// Binds the method to the consent and revokes the client's earlier active consents for the same method at the same
     /// module, so the method is covered by the consent that was just completed alone. The newest evidence stays; an
     /// older consent's default flag moves over. Binding the method a consent already covers changes nothing.

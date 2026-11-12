@@ -203,7 +203,6 @@ const check = async (): Promise<void> => {
     forgetPaymentToken(id)
   }
   checking.value = false
-  }
 }
 
 onMounted(() => {

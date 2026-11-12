@@ -2,6 +2,14 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Hostpanel.Sdk.Plugins.StoredCredentials;
+using Innovayse.Hostpanel.Application.Billing.Commands.CompleteGatewayPayment;
+using Innovayse.Hostpanel.Application.Billing.Commands.ReconcileGatewayPaymentsCron;
+using Innovayse.Hostpanel.Application.Billing.Common.Enums;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Domain.Billing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Wolverine;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -185,5 +193,110 @@ public sealed class CompleteGatewayPaymentSaveMethodTests(IntegrationTestFactory
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         (await scenario.InvoiceAsync(invoiceId)).IsPaid.Should().BeTrue();
         (await scenario.ConsentsOfAsync(signedIn.ClientId)).Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// A payment the reconciliation job confirms (the payer never came back to the return page) binds the stored method to
+    /// the consent of the session in the save that settles the invoice, as the return page's completion does.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Reconcile_PaidWithASavedMethod_BindsItToTheConsent()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("save-reconcile");
+        var started = await StartSavingAsync(scenario, signedIn, invoiceId);
+        await scenario.BackdateSessionAsync(invoiceId, DateTimeOffset.UtcNow.AddHours(-1));
+        scenario.Plugin.MethodOnStatus = StoredMethod;
+
+        using var scope = scenario.Host.Services.CreateScope();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        await bus.InvokeAsync(new ReconcileGatewayPaymentsCronCommand(), CancellationToken.None);
+
+        (await scenario.InvoiceAsync(invoiceId)).IsPaid.Should().BeTrue();
+        var consent = (await scenario.ConsentsOfAsync(signedIn.ClientId)).Single(c => c.Id == started.Id);
+        consent.MethodRef.Should().Be(StoredMethod.MethodRef);
+        consent.IsActive.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// A completion that loses the race to a completion of the same payment, which already settled the invoice and bound
+    /// the method in its own save, binds nothing more and still answers Paid: the method is bound once and the payment is
+    /// on the ledger once.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Complete_WhenAConcurrentCompletionAlreadyBoundTheMethod_StandsDownAndAnswersPaid()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("save-race");
+        var started = await StartSavingAsync(scenario, signedIn, invoiceId);
+        scenario.Plugin.MethodOnStatus = StoredMethod;
+
+        // The loser's context holds the unpaid row before the winner saves, or its save would meet no newer version.
+        using var loserScope = scenario.Host.Services.CreateScope();
+        var loserLog = new CapturingLogger<CompleteGatewayPaymentHandler>();
+        var loser = ActivatorUtilities.CreateInstance<CompleteGatewayPaymentHandler>(loserScope.ServiceProvider, loserLog);
+        var loserContext = loserScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        _ = await loserContext.Invoices.FirstAsync(i => i.Id == invoiceId);
+
+        using (var winnerScope = scenario.Host.Services.CreateScope())
+        {
+            var winner = ActivatorUtilities.CreateInstance<CompleteGatewayPaymentHandler>(winnerScope.ServiceProvider);
+            var won = await winner.HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
+            won.IsSuccess.Should().BeTrue();
+        }
+
+        var result = await loser.HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
+
+        result.IsSuccess.Should().BeTrue();
+        result.Value!.State.Should().Be(GatewayCompletionState.Paid);
+        loserLog.Messages.Should().Contain(m => m.Contains("already marked paid by a concurrent completion", StringComparison.Ordinal));
+        var invoice = await scenario.InvoiceAsync(invoiceId);
+        invoice.IsPaid.Should().BeTrue();
+        invoice.Transactions.Should().ContainSingle("the payment is on the ledger once");
+        var consent = (await scenario.ConsentsOfAsync(signedIn.ClientId)).Should().ContainSingle().Subject;
+        consent.Id.Should().Be(started.Id);
+        consent.MethodRef.Should().Be(StoredMethod.MethodRef);
+        consent.IsActive.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// A stored method whose reference is longer than the consent can hold does not fail the payment and binds nothing: the
+    /// invoice is paid and the consent stays without a method.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Complete_WithAMethodReferenceLongerThanTheConsentTakes_BindsNothingAndStillSettles()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("save-toolong");
+        await StartSavingAsync(scenario, signedIn, invoiceId);
+        scenario.Plugin.MethodOnStatus = new SavedMethod(new string('m', CardChargeConsent.MaxMethodRefLength + 1), "visa", "4242", 12, 2031, false);
+
+        var response = await SavingGatewayScenario.CompleteAsync(signedIn.Client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await scenario.InvoiceAsync(invoiceId)).IsPaid.Should().BeTrue();
+        var consent = (await scenario.ConsentsOfAsync(signedIn.ClientId)).Should().ContainSingle().Subject;
+        consent.MethodRef.Should().BeNull("a reference the column cannot hold is never bound");
+        consent.IsActive.Should().BeFalse();
+    }
+
+    /// <summary>A reference exactly as long as the consent can hold is bound: the limit is inclusive.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Complete_WithAMethodReferenceOfTheLongestLength_BindsIt()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("save-longest");
+        await StartSavingAsync(scenario, signedIn, invoiceId);
+        var longest = new string('m', CardChargeConsent.MaxMethodRefLength);
+        scenario.Plugin.MethodOnStatus = new SavedMethod(longest, "visa", "4242", 12, 2031, false);
+
+        var response = await SavingGatewayScenario.CompleteAsync(signedIn.Client, invoiceId);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await scenario.ConsentsOfAsync(signedIn.ClientId)).Should().ContainSingle().Which.MethodRef.Should().Be(longest);
     }
 }

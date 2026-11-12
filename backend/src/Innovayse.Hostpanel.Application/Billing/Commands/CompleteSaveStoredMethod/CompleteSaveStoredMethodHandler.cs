@@ -67,7 +67,7 @@ public sealed class CompleteSaveStoredMethodHandler
     /// <c>CARD_CONSENT_NOT_FOUND</c> when the session is not one the caller opened;
     /// <c>CARD_CONSENT_REQUIRED</c> when the consent was revoked meanwhile;
     /// <c>STORED_CREDENTIALS_NOT_SUPPORTED</c> when the module is off or offers no stored credentials;
-    /// <c>STORED_METHOD_NOT_SAVED</c> when the payer abandoned the session;
+    /// <c>STORED_METHOD_NOT_SAVED</c> when the payer abandoned the session or the plugin's method reference is too long to keep;
     /// <c>CARD_CONSENT_ALREADY_ATTACHED</c> when the consent already covers a different method; or
     /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the plugin could not be reached (the same session may be completed again).
     /// </returns>
@@ -114,6 +114,15 @@ public sealed class CompleteSaveStoredMethodHandler
 
         if (!saved.Saved || saved.Method is null)
         {
+            return Result<StoredMethodDto>.FailureCode(HostpanelErrorCodes.STORED_METHOD_NOT_SAVED);
+        }
+
+        // A reference the consent's column cannot hold is not bound: the payer sees the method as not saved instead of a database error.
+        if (!StoredMethodBinder.CanKeep(saved.Method.MethodRef))
+        {
+            _logger.LogWarning(
+                "Payment plugin {Module} stored a method with a reference the host cannot keep for client {ClientId}; nothing is bound.",
+                cmd.GatewayModuleId, clientId.Value);
             return Result<StoredMethodDto>.FailureCode(HostpanelErrorCodes.STORED_METHOD_NOT_SAVED);
         }
 

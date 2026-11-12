@@ -74,7 +74,8 @@ to the consent of that payment in the save that settles the invoice, and it appe
 
 - Return `SavedMethod` only with the `Paid` state, and the same method on every read of the same payment.
 - A plugin that does not support the flag ignores it and returns no method. The host treats that as "not saved", never as a failure of the payment.
-- Only the signed-in owner of an invoice can ask to save a method. A guest checkout pays as before, without the option.
+- The client of the invoice can ask to save a method when signed in, and a user linked to the account only with the permission to view and pay invoices. A guest checkout pays as before, without the option.
+- Return the saved method from `ListMethodsAsync` for the customer as well: the host reads the brand, the last four digits and the expiry from that list, and shows a bound method the list does not return as unavailable.
 
 ### Reading settings
 

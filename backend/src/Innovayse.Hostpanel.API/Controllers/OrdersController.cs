@@ -275,6 +275,8 @@ public sealed class OrdersController : BaseApiController
     /// <c>INVOICE_NOT_PAYABLE</c>, <c>RETURN_URL_NOT_ALLOWED</c> or <c>GATEWAY_CURRENCY_MISMATCH</c>;
     /// 401 when a guest asks to keep the payment method, which only the signed-in owner of the invoice may;
     /// 403 with <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the order's account may not pay;
+    /// 403 with <c>CLIENT_PERMISSION_DENIED</c> when a signed-in linked user without <c>ViewPayInvoices</c> asks to keep the
+    /// payment method (paying without keeping it needs no permission);
     /// 404 with <c>ORDER_NOT_FOUND</c> when the id and token do not match an order,
     /// <c>INVOICE_NOT_FOUND</c> (also when the signed-in caller asking to keep the method is not the invoice's client),
     /// <c>CLIENT_PROFILE_NOT_FOUND</c> (the same caller has no client record) or <c>CURRENCY_NOT_FOUND</c>; 409 with

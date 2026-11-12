@@ -6,7 +6,8 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.StartGatewayPayment;
 /// </summary>
 /// <remarks>
 /// With <paramref name="SavePaymentMethod"/> the payment also asks the gateway to keep the payer's method, which is
-/// only for the invoice's own client and records that client's consent to later charges together with the evidence of it.
+/// only for the invoice's own client (a linked user needs <c>ViewPayInvoices</c>) and records that client's consent to later
+/// charges together with the evidence of it.
 /// The address and browser are the request's own, set by the controller from the connection and the headers; whatever a
 /// body says for them is overwritten, so a client cannot write its own evidence.
 /// </remarks>

@@ -262,7 +262,7 @@ public sealed class CompleteGatewayPaymentHandler
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(saved.MethodRef) || saved.MethodRef.Length > InvoicePaymentClaim.MaxLength)
+        if (!StoredMethodBinder.CanKeep(saved.MethodRef))
         {
             _logger.LogWarning(
                 "Invoice {InvoiceId} gateway session through {Module} stored a method with a reference the host cannot keep; nothing is bound.",

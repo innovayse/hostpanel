@@ -28,6 +28,9 @@ public sealed class SavingStoredCredentialPlugin : IPaymentPlugin, IStoredCreden
     /// <summary>Gets or sets the method the gateway reports as stored on a paid payment; <see langword="null"/> reports none.</summary>
     public SavedMethod? MethodOnStatus { get; set; }
 
+    /// <summary>What completing a save session answers; completing one without setting it is a test mistake.</summary>
+    public SavedMethodResult? SaveSessionResult { get; set; }
+
     /// <summary>Gets or sets an exception <see cref="EnsureCustomerAsync"/> throws instead of answering, as a gateway outage would, when set.</summary>
     public Exception? EnsureCustomerThrows { get; set; }
 
@@ -63,11 +66,14 @@ public sealed class SavingStoredCredentialPlugin : IPaymentPlugin, IStoredCreden
 
     /// <inheritdoc/>
     public Task<SaveMethodSession> BeginSaveMethodAsync(SaveMethodContext context, CancellationToken ct) =>
-        throw new NotSupportedException();
+        Task.FromResult(new SaveMethodSession(
+            string.Create(CultureInfo.InvariantCulture, $"saving-session-{Guid.NewGuid():N}"), SaveMethodMode.Redirect, null, context.ReturnUrl));
 
     /// <inheritdoc/>
     public Task<SavedMethodResult> CompleteSaveMethodAsync(string sessionId, CancellationToken ct) =>
-        throw new NotSupportedException();
+        SaveSessionResult is { } result
+            ? Task.FromResult(result)
+            : throw new NotSupportedException("Set SaveSessionResult before a save session is completed.");
 
     /// <inheritdoc/>
     public Task<StoredChargeResult> ChargeAsync(StoredChargeInstruction instruction, CancellationToken ct) =>

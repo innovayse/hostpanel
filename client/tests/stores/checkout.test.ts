@@ -142,7 +142,7 @@ describe('useCheckoutStore.loadPaymentMethods', () => {
   })
 
   it('keeps the gateways and preselects the first one', async () => {
-    billing.fetchGatewayMethods.mockResolvedValue([{ module: 'card_gateway', displayName: 'Card' }, { module: 'bank_transfer', displayName: 'Bank' }])
+    billing.fetchGatewayMethods.mockResolvedValue([{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }, { module: 'bank_transfer', displayName: 'Bank', supportsStoredCredentials: false }])
     const store = useCheckoutStore()
 
     await store.loadPaymentMethods()
@@ -153,7 +153,7 @@ describe('useCheckoutStore.loadPaymentMethods', () => {
   })
 
   it('does not override a method the payer already chose', async () => {
-    billing.fetchGatewayMethods.mockResolvedValue([{ module: 'card_gateway', displayName: 'Card' }])
+    billing.fetchGatewayMethods.mockResolvedValue([{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }])
     const store = useCheckoutStore()
     store.selectedMethod = 'bank_transfer'
 

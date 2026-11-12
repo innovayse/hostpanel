@@ -19,6 +19,9 @@ public sealed class CardChargeConsent : BaseEntity, IAggregateRoot
     /// <summary>The longest consent wording version the table holds, in characters.</summary>
     public const int MaxTextVersionLength = 50;
 
+    /// <summary>The longest stored method reference the table holds, in characters; a gateway reference longer than this cannot be bound.</summary>
+    public const int MaxMethodRefLength = 200;
+
     /// <summary>The longest IP address the table holds, in characters (an IPv6 address with a scope is 45 or fewer).</summary>
     public const int MaxIpAddressLength = 45;
 

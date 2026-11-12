@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 
@@ -270,5 +271,81 @@ public sealed class StartGatewayPaymentSaveMethodTests(IntegrationTestFactory fa
         scenario.Plugin.Instructions.Should().BeEmpty();
         (await scenario.ConsentsOfAsync(stranger.ClientId)).Should().BeEmpty();
         (await scenario.InvoiceAsync(invoiceId)).GatewayOrderId.Should().BeNull();
+    }
+
+    /// <summary>Starts the gateway payment of an order's invoice through the route that is open to guests, as the given caller.</summary>
+    /// <param name="caller">The caller's HTTP client, served by the scenario's host.</param>
+    /// <param name="scenario">The scenario whose module to pay at.</param>
+    /// <param name="order">The seeded order, its payment token and its invoice.</param>
+    /// <param name="savePaymentMethod">Whether the caller asks to keep the method they pay with.</param>
+    /// <returns>The response.</returns>
+    private static Task<HttpResponseMessage> StartOrderPaymentAsync(
+        HttpClient caller, SavingGatewayScenario scenario, SeededInvoicedOrder order, bool savePaymentMethod) =>
+        caller.PostAsJsonAsync(
+            $"/api/orders/{order.OrderId}/gateway-payment/start",
+            new
+            {
+                module = scenario.Module,
+                returnUrl = BillingTestSeeds.AllowedReturnUrl,
+                paymentToken = order.PaymentToken,
+                savePaymentMethod,
+                consentTextVersion = savePaymentMethod ? SavingGatewayScenario.ConsentTextVersion : null,
+            });
+
+    /// <summary>
+    /// A user linked to the account without the permission to view and pay invoices cannot keep a method for the account
+    /// through the route that is open to guests: refused before the customer or the payment exist.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Start_WithSaveByALinkedUserWithoutViewPayInvoices_IsForbidden()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var order = await OrdersTestSeeds.SeedOrderWithInvoiceAsync(factory);
+        var clientId = (await scenario.InvoiceAsync(order.InvoiceId)).ClientId;
+        var linked = await scenario.SignInLinkedUserAsync("save-noperm", clientId, ClientPermission.ViewEmails);
+
+        var response = await StartOrderPaymentAsync(linked, scenario, order, savePaymentMethod: true);
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.CLIENT_PERMISSION_DENIED);
+        scenario.Plugin.Instructions.Should().BeEmpty();
+        scenario.Plugin.Customers.Should().BeEmpty();
+        (await scenario.ConsentsOfAsync(clientId)).Should().BeEmpty();
+        (await scenario.InvoiceAsync(order.InvoiceId)).GatewayOrderId.Should().BeNull();
+    }
+
+    /// <summary>The same linked user still pays through the route when they do not ask to keep the method: the permission guards the saving only.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Start_WithoutSaveByALinkedUserWithoutViewPayInvoices_StillRegistersThePayment()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var order = await OrdersTestSeeds.SeedOrderWithInvoiceAsync(factory);
+        var clientId = (await scenario.InvoiceAsync(order.InvoiceId)).ClientId;
+        var linked = await scenario.SignInLinkedUserAsync("save-noperm-pay", clientId, ClientPermission.ViewEmails);
+
+        var response = await StartOrderPaymentAsync(linked, scenario, order, savePaymentMethod: false);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        scenario.Plugin.Instructions.Should().ContainSingle().Which.SavePaymentMethod.Should().BeFalse();
+        (await scenario.ConsentsOfAsync(clientId)).Should().BeEmpty();
+    }
+
+    /// <summary>A user linked to the account with the permission to view and pay invoices keeps the method for the account, the consent recorded for the account.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Start_WithSaveByALinkedUserWithViewPayInvoices_RecordsTheConsentForTheAccount()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var order = await OrdersTestSeeds.SeedOrderWithInvoiceAsync(factory);
+        var clientId = (await scenario.InvoiceAsync(order.InvoiceId)).ClientId;
+        var linked = await scenario.SignInLinkedUserAsync("save-withperm", clientId, ClientPermission.ViewPayInvoices);
+
+        var response = await StartOrderPaymentAsync(linked, scenario, order, savePaymentMethod: true);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        scenario.Plugin.Instructions.Should().ContainSingle().Which.SavePaymentMethod.Should().BeTrue();
+        (await scenario.ConsentsOfAsync(clientId)).Should().ContainSingle();
     }
 }

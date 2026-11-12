@@ -32,7 +32,7 @@ const domain = (overrides: Partial<DomainDetail> = {}): DomainDetail => ({
 } as DomainDetail)
 
 /** A gateway the panel offers. */
-const card = { module: 'card_gateway', displayName: 'Card gateway' }
+const card = { module: 'card_gateway', displayName: 'Card gateway', supportsStoredCredentials: false }
 
 /**
  * Mounts the panel and waits for the payment methods to arrive.

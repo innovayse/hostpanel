@@ -1,6 +1,8 @@
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Clients.Enums;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
@@ -155,6 +157,37 @@ public sealed class SavingGatewayScenario : IDisposable
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var consent = await context.CardChargeConsents.SingleAsync(c => c.Id == consentId, CancellationToken.None);
         consent.AttachMethod(methodRef);
+        await context.SaveChangesAsync(CancellationToken.None);
+    }
+
+    /// <summary>Signs in a user who owns no client and is linked to a client account with the given permissions, on the scenario's host.</summary>
+    /// <param name="label">Distinguishes the created address between callers in the same test.</param>
+    /// <param name="clientId">The account to link to.</param>
+    /// <param name="permissions">The permissions the link grants.</param>
+    /// <returns>The linked user's authenticated client, served by <see cref="Host"/>.</returns>
+    public async Task<HttpClient> SignInLinkedUserAsync(string label, int clientId, ClientPermission permissions)
+    {
+        var subject = await ClientsTestSeeds.CreateUnlinkedSubjectAsync(_factory, label);
+        var linked = Host.CreateClient();
+        var token = await _factory.GetClientTokenAsync(subject.Email, ClientsTestSeeds.TestPassword);
+        linked.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        await ClientsTestSeeds.LinkUserAsync(_factory, linked, subject.Email, clientId, permissions);
+        return linked;
+    }
+
+    /// <summary>
+    /// Moves the start of an invoice's gateway session into the past, past the margin the reconciliation job leaves a payer
+    /// on the payment page, so the job picks the invoice up.
+    /// </summary>
+    /// <param name="invoiceId">The invoice whose session was started.</param>
+    /// <param name="startedAt">The moment the session is made to have started.</param>
+    /// <returns>A task that completes once the new start is saved.</returns>
+    public async Task BackdateSessionAsync(int invoiceId, DateTimeOffset startedAt)
+    {
+        using var scope = Host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var invoice = await context.Invoices.SingleAsync(i => i.Id == invoiceId, CancellationToken.None);
+        invoice.SetGatewaySession(invoice.GatewayModule!, invoice.GatewayOrderId!, startedAt);
         await context.SaveChangesAsync(CancellationToken.None);
     }
 

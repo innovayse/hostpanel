@@ -445,6 +445,7 @@ native_db() {
         migrate)
             info "Running EF Core migrations..."
             cd "$BACKEND"
+            dotnet tool restore
             dotnet ef database update
             success "Migrations applied"
             ;;
@@ -453,6 +454,7 @@ native_db() {
             read -rp "Are you sure? [y/N] " confirm
             if [[ "$confirm" =~ ^[Yy]$ ]]; then
                 cd "$BACKEND"
+                dotnet tool restore
                 dotnet ef database drop --force
                 dotnet ef database update
                 success "Database reset complete"

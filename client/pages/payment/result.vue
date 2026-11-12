@@ -69,8 +69,9 @@
 /**
  * Landing page for hosted-gateway returnUrl redirects.
  * Reads ?order=<id> (checkout flow, anonymous) or ?invoice=<id> (invoice pay flow,
- * authenticated) and verifies the payment against the backend, which pulls the
- * authoritative status from the bank.
+ * authenticated) and verifies the payment against the backend. The other query parameters of the
+ * return request go along: the backend hands them to a plugin that completes a payment from them
+ * (a browser step) and then pulls the authoritative status from the bank.
  */
 import { CLIENT_INVOICES_PATH, clientInvoicePayPath, clientOrderSuccessPath } from '~/constants/clientRoutes'
 import { AlertTriangle, CheckCircle2, Clock, Loader2, XCircle } from 'lucide-vue-next'
@@ -79,6 +80,7 @@ import { useCurrencyStore } from '~/stores/currency'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
 import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
 import { PaymentTarget } from '~/types/paymenttarget'
+import { returnParametersOf } from '~/utils/paymentReturn'
 import { queryId } from '~/utils/queryId'
 
 /** The current route. */
@@ -187,7 +189,9 @@ const check = async (): Promise<void> => {
   }
 
   checking.value = true
-  const result = await paymentStore.verifyGatewayPayment(target, id, paymentToken)
+  // What the gateway returned the payer with goes along: a plugin that finishes a payment from it (a browser step) is
+  // handed the parameters before the backend reads the status. The retry button sends the same ones, which a plugin answers idempotently.
+  const result = await paymentStore.verifyGatewayPayment(target, id, paymentToken, returnParametersOf(route.query))
   state.value = result
   if (target === PaymentTarget.Order && result === GatewayPaymentState.Paid) {
     // The cart was kept while the payer was at the bank so a declined payment loses nothing; it is

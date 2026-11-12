@@ -32,13 +32,13 @@ public sealed class SdkContractTests
 {
     /// <summary>
     /// The plugin types keep their order and their numbers (the first six were never numbered explicitly, so 0 is a
-    /// real kind there), and the app type is appended with the explicit value 6.
+    /// real kind there), the app type is appended with the explicit value 6 and the tax type (SDK 3.6.0, not served by this host yet) with 7.
     /// </summary>
     [Fact]
-    public void PluginType_CarriesTheSevenKindsWithStableValues()
+    public void PluginType_CarriesItsKindsWithStableValues()
     {
         Enum.GetNames<PluginType>().Should().Equal(
-            "Provisioning", "Payment", "Registrar", "Identity", "Fulfilment", "Hosted", "App");
+            "Provisioning", "Payment", "Registrar", "Identity", "Fulfilment", "Hosted", "App", "Tax");
         ((int)PluginType.Provisioning).Should().Be(0);
         ((int)PluginType.Payment).Should().Be(1);
         ((int)PluginType.Registrar).Should().Be(2);
@@ -46,6 +46,7 @@ public sealed class SdkContractTests
         ((int)PluginType.Fulfilment).Should().Be(4);
         ((int)PluginType.Hosted).Should().Be(5);
         ((int)PluginType.App).Should().Be(6);
+        ((int)PluginType.Tax).Should().Be(7);
     }
 
     /// <summary>The endpoint contract answers one call with one reply and carries no web framework type.</summary>
@@ -69,9 +70,9 @@ public sealed class SdkContractTests
         typeof(PluginCaller).GetProperties().Select(p => p.Name).Should().NotContain(
             name => name.Contains("Token", StringComparison.OrdinalIgnoreCase) || name.Contains("Claims", StringComparison.OrdinalIgnoreCase));
         typeof(PluginReply).GetMethods().Where(m => m.IsStatic && m.DeclaringType == typeof(PluginReply)).Select(m => m.Name)
-            .Should().BeEquivalentTo("Json", "NoContent", "Problem", "Stream", "Raw");
+            .Should().BeEquivalentTo("Json", "NoContent", "Problem", "Stream", "Raw", "Redirect");
         typeof(PluginReply).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
-            "Kind", "Status", "Body", "Code", "Detail", "Events", "RawBody", "ContentType");
+            "Kind", "Status", "Body", "Code", "Detail", "Events", "RawBody", "ContentType", "Location");
         typeof(PluginEvent).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Data", "Name", "Id");
     }
 
@@ -79,8 +80,8 @@ public sealed class SdkContractTests
     [Fact]
     public void PluginAppEnums_KeepTheirValuesAndStartAtOne()
     {
-        Enum.GetNames<PluginReplyKind>().Should().Equal("Json", "NoContent", "Problem", "Stream", "Raw");
-        Enum.GetValues<PluginReplyKind>().Select(v => (int)v).Should().Equal(1, 2, 3, 4, 5);
+        Enum.GetNames<PluginReplyKind>().Should().Equal("Json", "NoContent", "Problem", "Stream", "Raw", "Redirect");
+        Enum.GetValues<PluginReplyKind>().Select(v => (int)v).Should().Equal(1, 2, 3, 4, 5, 6);
         Enum.GetNames<PluginArea>().Should().Equal("Client", "Admin", "Callback");
         Enum.GetValues<PluginArea>().Select(v => (int)v).Should().Equal(1, 2, 3);
         Enum.GetNames<PluginHealth>().Should().Equal("Healthy", "Degraded", "Unavailable");
@@ -598,8 +599,9 @@ public sealed class SdkContractTests
     {
         // SDK 3.5.0 added PaymentInstruction.SavePaymentMethod and GatewayPaymentStatus.SavedMethod.
         typeof(PaymentInstruction).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
-            "OrderNumber", "AmountMinor", "ReturnUrl", "Description", "Language", "SavePaymentMethod");
-        typeof(PaymentSession).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("GatewayOrderId", "RedirectUrl");
+            "OrderNumber", "AmountMinor", "ReturnUrl", "Description", "Language", "SavePaymentMethod", "CustomerRef", "PayerEmail");
+        // SDK 3.7.0 added PaymentSession.FormPost and PaymentSession.Kind.
+        typeof(PaymentSession).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("GatewayOrderId", "RedirectUrl", "FormPost", "Kind");
         typeof(GatewayPaymentStatus).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
             "State", "TransactionId", "RawStatus", "AmountMinor", "Currency", "SavedMethod");
         typeof(PluginSlot).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Id", "Area", "ContextKeys");

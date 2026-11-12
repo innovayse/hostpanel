@@ -58,7 +58,7 @@ public sealed class CompleteOrderGatewayPaymentHandler
         var order = payable.Value!;
 
         var completion = await _bus.InvokeAsync<Result<GatewayCompletionDto>>(
-            new CompleteGatewayPaymentCommand(order.InvoiceId!.Value), ct);
+            new CompleteGatewayPaymentCommand(order.InvoiceId!.Value, cmd.ReturnParameters), ct);
         if (completion.IsFailure)
         {
             return Result<OrderGatewayCompletionDto>.FailureCode(completion.ErrorCode!);

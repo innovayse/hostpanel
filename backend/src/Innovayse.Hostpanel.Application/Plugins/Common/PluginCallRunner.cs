@@ -295,7 +295,7 @@ public sealed class PluginCallRunner
                 return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_TIMEOUT);
             }
 
-            return Map(pluginId, target.Area, route, reply, limit, owned);
+            return Map(pluginId, target, reply, limit, owned);
         }
         catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
         {
@@ -387,13 +387,12 @@ public sealed class PluginCallRunner
 
     /// <summary>Turns what the plugin answered into the host's reply.</summary>
     /// <param name="pluginId">The plugin that answered.</param>
-    /// <param name="area">The area the call came through; only a callback may answer with a raw body.</param>
-    /// <param name="route">The route that was called; only a route that declares <c>streaming</c> may answer with a stream.</param>
+    /// <param name="target">The matched route: its area (only a callback may answer with a raw body), its route (only a route that declares <c>streaming</c> may answer with a stream) and the manifest of the plugin that answered.</param>
     /// <param name="reply">The plugin's reply; a plugin that returns none broke its contract.</param>
     /// <param name="limit">The call's time limit; on a stream it is the longest silence between events.</param>
     /// <param name="owner">The scope a streaming route's call owns, handed to an accepted stream; otherwise <see langword="null"/>.</param>
     /// <returns>The reply, or the failure for a reply the host cannot forward.</returns>
-    private Result<PluginReplyDto> Map(string pluginId, PluginArea area, PluginRoute route, PluginReply? reply, TimeSpan limit, IPluginCallScope? owner)
+    private Result<PluginReplyDto> Map(string pluginId, PluginTarget target, PluginReply? reply, TimeSpan limit, IPluginCallScope? owner)
     {
         // The SDK factories refuse a status outside the contract, but the host does not rely on that: a reply built another
         // way (a reflected or subclassed type, a plugin compiled against a different SDK) is checked again here, because
@@ -413,16 +412,16 @@ public sealed class PluginCallRunner
             case PluginReplyKind.Problem:
                 return MapProblem(pluginId, reply);
             case PluginReplyKind.Stream:
-                return MapStream(pluginId, route, reply, limit, owner);
+                return MapStream(pluginId, target.Match.Route, reply, limit, owner);
             case PluginReplyKind.Raw:
-                return MapRaw(pluginId, area, reply);
+                return MapRaw(pluginId, target, reply);
             default:
                 _logger.LogError("Plugin {PluginId} returned {Reply}, which is not a reply.", pluginId, reply?.Kind.ToString() ?? "no reply");
                 return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_FAILED);
         }
     }
 
-    /// <summary>The media types a raw callback reply may carry; anything else, markup and script included, is refused.</summary>
+    /// <summary>The media types a raw callback reply may carry as an inert answer; script and other markup are refused.</summary>
     private static readonly HashSet<string> AllowedRawMediaTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         "text/plain",
@@ -432,29 +431,44 @@ public sealed class PluginCallRunner
     };
 
     /// <summary>
+    /// The one markup media type a callback may answer, so a gateway can serve its checkout page. It is written under a strict
+    /// policy of its own (see <see cref="PluginPageOrigins"/>), never as an inert answer.
+    /// </summary>
+    private const string HtmlMediaType = "text/html";
+
+    /// <summary>
     /// Turns a plugin's raw reply into the host's. A raw body carries a media type the plugin chose, so it is accepted only
-    /// on a callback, whose answer goes to an outside system; on a panel route it could serve markup from the API's own origin
-    /// to a signed-in browser. The media type is parsed again here and must be one of <see cref="AllowedRawMediaTypes"/>
-    /// (a gateway acknowledgement is plain text, JSON, XML or a form, never markup or script), and the body is held to the request body cap.
+    /// on a callback, whose answer goes to an outside system or to the payer's browser; on a panel route it could serve markup
+    /// from the API's own origin to a signed-in browser. The media type is parsed again here and must be one of
+    /// <see cref="AllowedRawMediaTypes"/> (a gateway acknowledgement is plain text, JSON, XML or a form) or HTML. An HTML page
+    /// is answered with the origins its plugin's manifest declares as the only ones it may reach, and the body is held to the
+    /// request body cap.
     /// </summary>
     /// <param name="pluginId">The plugin that answered.</param>
-    /// <param name="area">The area the call came through.</param>
+    /// <param name="target">The matched route: the area the call came through and the manifest of the plugin that answered.</param>
     /// <param name="reply">The plugin's raw reply.</param>
     /// <returns>The reply carrying the bytes and the media type, or <c>PLUGIN_FAILED</c> when the area, the media type or the size is not allowed.</returns>
-    private Result<PluginReplyDto> MapRaw(string pluginId, PluginArea area, PluginReply reply)
+    private Result<PluginReplyDto> MapRaw(string pluginId, PluginTarget target, PluginReply reply)
     {
-        if (area != PluginArea.Callback
+        if (target.Area != PluginArea.Callback
             || string.IsNullOrWhiteSpace(reply.ContentType)
             || !MediaTypeHeaderValue.TryParse(reply.ContentType, out var mediaType)
             || mediaType.MediaType is null
-            || !AllowedRawMediaTypes.Contains(mediaType.MediaType)
             || reply.RawBody.Length > _options.Value.MaxBodyBytes)
         {
-            _logger.LogError("Plugin {PluginId} returned a raw reply that is not allowed here: not a callback, a media type outside the allowed list or a body over the cap.", pluginId);
+            _logger.LogError("Plugin {PluginId} returned a raw reply that is not allowed here: not a callback, a media type that does not parse or a body over the cap.", pluginId);
             return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_FAILED);
         }
 
-        return Result<PluginReplyDto>.Success(new PluginReplyDto(reply.Status, null, null, null, null, reply.RawBody, reply.ContentType));
+        var isPage = string.Equals(mediaType.MediaType, HtmlMediaType, StringComparison.OrdinalIgnoreCase);
+        if (!isPage && !AllowedRawMediaTypes.Contains(mediaType.MediaType))
+        {
+            _logger.LogError("Plugin {PluginId} returned a raw reply with a media type outside the allowed list.", pluginId);
+            return Result<PluginReplyDto>.FailureCode(HostpanelErrorCodes.PLUGIN_FAILED);
+        }
+
+        var origins = isPage ? PluginPageOrigins.From(target.Manifest) : null;
+        return Result<PluginReplyDto>.Success(new PluginReplyDto(reply.Status, null, null, null, null, reply.RawBody, reply.ContentType, origins));
     }
 
     /// <summary>Turns a plugin's stream into the host's, when the route declared one.</summary>

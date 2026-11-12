@@ -96,7 +96,7 @@ public sealed class SavingGatewayScenario : IDisposable
     /// <param name="invoiceId">The invoice.</param>
     /// <returns>The response.</returns>
     public static Task<HttpResponseMessage> CompleteAsync(HttpClient caller, int invoiceId) =>
-        caller.PostAsync($"/api/me/invoices/{invoiceId}/gateway-payment/complete", content: null);
+        caller.PostAsJsonAsync($"/api/me/invoices/{invoiceId}/gateway-payment/complete", new { });
 
     /// <summary>Reads an invoice.</summary>
     /// <param name="invoiceId">The invoice.</param>

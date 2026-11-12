@@ -28,4 +28,10 @@ public interface IForwardedReply
 
     /// <summary>The media type of <see cref="RawBody"/>; <see langword="null"/> for every other reply.</summary>
     public string? ContentType { get; }
+
+    /// <summary>
+    /// The origins an HTML page of a raw reply may load from and talk to; <see langword="null"/> when the raw reply is not an HTML
+    /// page (it is then written inert), and for every other reply.
+    /// </summary>
+    public IReadOnlyList<string>? PageOrigins { get; }
 }

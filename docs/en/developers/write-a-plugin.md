@@ -49,13 +49,31 @@ Inherit `PaymentGatewayBase` and implement `IPaymentPlugin` from `Hostpanel.Sdk.
 
 **`PaymentInstruction`** properties: `OrderNumber`, `AmountMinor`, `ReturnUrl`, `Description`, `Language`, `SavePaymentMethod` (SDK 3.5.0 or later, `false` by default).
 
-**`PaymentSession`** properties: `GatewayOrderId`, `RedirectUrl`.
+**`PaymentSession`** properties: `GatewayOrderId`, `RedirectUrl`, `FormPost` and `Kind` (`PaymentSessionKind`; SDK 3.7.0 or later, `Redirect` by default). See [Choosing the session kind](#session-kinds).
 
 **`GatewayPaymentStatus`** properties: `State` (`GatewayPaymentState`), `TransactionId`, `RawStatus`, `AmountMinor`, `Currency` (ISO 4217 numeric), `SavedMethod` (SDK 3.5.0 or later, `null` by default).
 
 `AcceptsCurrency(string currencyNumeric)` has a default implementation that compares against `CurrencyCode`; override it only when the gateway accepts currencies other than its settlement currency.
 
 **`GatewayPaymentState`** enum: `Pending` (0), `Paid` (1), `Declined` (2).
+
+### Choosing the session kind {#session-kinds}
+
+`CreatePaymentAsync` answers a `PaymentSession`, and a session is exactly one `PaymentSessionKind` (SDK 3.7.0 or later for the form post and the browser step):
+
+| Kind | When | What the plugin fills | What the host does |
+|------|------|-----------------------|--------------------|
+| `Redirect` | the gateway has a hosted page opened with a plain GET (the default) | `RedirectUrl` | sends the payer to the address; reads the status when the payer comes back |
+| `FormPost` | the hosted page is opened with a POST that carries a token or other fields | `FormPost` (action and fields) | renders the form and submits it for the payer |
+| `BrowserStep` | the payer finishes a step in the browser (a card field that produces a nonce) before the payment can be charged | `RedirectUrl` (the page of the step) and `Kind` | sends the payer to the page, waits for the return request, hands its parameters to the plugin and only then reads the status |
+
+Choose the redirect whenever the gateway offers one. For a **form post** the plugin only describes the form: the host applies the rules of `PaymentFormPost` and `PaymentFormPostLimits` (an absolute `https` action without user info or line breaks, at most 64 fields, names up to 128 and values up to 8192 characters, an action up to 2048), builds the form with names and values as properties, never as markup, and submits it. A form that breaks a rule is a failed payment: nothing is stored on the invoice and, when the plugin implements `IPaymentCancelPlugin`, the order it just registered is cancelled.
+
+### Completing a payment from the return request {#payment-return}
+
+A plugin that answers `BrowserStep`, or that needs a value only the payer's browser has when it comes back (a payer id in the return address), implements `IPaymentReturnPlugin` beside `IPaymentPlugin` and lists `paymentReturn` in `capabilities`. A `BrowserStep` session from a plugin without the interface is a failed payment.
+
+The payer returns to the panel's result page, which posts the other query parameters of the return request to the host. The host then calls `CompleteAsync(gatewayOrderId, returnParameters, ct)` and, after it, `GetStatusAsync`; the status decides what the payer is told, never the value `CompleteAsync` answered. The host chooses which names reach the plugin and keeps within `PaymentReturnLimits`: names are compared ordinally, the first value of a repeated name wins, and a set with more than 32 parameters, a name over 64 characters or a value over 2048 characters is not passed in part, the plugin gets none. Credentials, cookies and headers are never passed. The values come from the payer's browser, so check them against the gateway and never trust them for the amount or the order. `CompleteAsync` is called again when the payer returns twice, so it must be idempotent. It is not called for an invoice that is already paid, nor by the reconciliation job, which only reads the status. A plugin that throws leaves the status unread and the payer is told the gateway is unavailable; the reconciliation job settles the payment later if the gateway took it.
 
 ### Keeping the payer's method with a payment {#save-payment-method}
 
@@ -84,6 +102,10 @@ Call `GetConfig(key)` (from `PaymentGatewayBase`) to read a setting. Settings ar
 ```csharp
 public string? GetBaseUrl() => GetConfig("gateway_url");
 ```
+
+### Redirects on the plugin's HTTP client {#http-redirects}
+
+The host does not follow redirects on any HTTP client it hands to a plugin: the client named after the plugin id and the factory's unnamed client. A 3xx reply reaches the plugin as it is, with its `Location` header, because a client that followed it would resend the plugin's authorization header, and for some handlers its body, to whatever address the reply names. Decide for yourself: send a key or a token only to the host you built the address for, and when a reply names a new address check its scheme, host and port (and that it is `https`) before you send a request to it, with the credential again only if they are the same. This is the rule of SDK 3.7.0; `PluginHttpContract.AssertRedirectIsNotFollowedAsync` checks it in the plugin's own tests.
 
 ### Keeping data between calls
 
@@ -236,7 +258,7 @@ The fields above cover manifest version 1. A manifest without `manifestVersion` 
 <SettingTable :settings="[
   { name: 'manifestVersion', type: 'number', default: '1', description: 'Set to 2 to use the members below.' },
   { name: 'settings', type: 'array', default: '[]', description: 'Typed settings an administrator fills in. Supersedes fields; when settings is empty the host converts fields into settings.' },
-  { name: 'capabilities', type: 'string[]', default: '[]', description: 'What the plugin can do, shown without activating it. Known names: storedCredentials (a payment plugin that also implements IStoredCredentialPlugin) and endpoints (the plugin class implements IPluginEndpoints; for a plugin that is not an App plugin the host serves its public callbacks only, see Callbacks from outside; an App plugin is served without declaring it). It must agree with the interfaces the class really implements.' },
+  { name: 'capabilities', type: 'string[]', default: '[]', description: 'What the plugin can do, shown without activating it. Known names: storedCredentials (a payment plugin that also implements IStoredCredentialPlugin), paymentReturn (a payment plugin that also implements IPaymentReturnPlugin, SDK 3.7.0 or later) and endpoints (the plugin class implements IPluginEndpoints; for a plugin that is not an App plugin the host serves its public callbacks only, see Callbacks from outside; an App plugin is served without declaring it). It must agree with the interfaces the class really implements.' },
   { name: 'hostAccess', type: 'string[]', default: '[]', description: 'Kinds of access to a client hosting the plugin asks the host for. The only kind today is ssh. The admin Plugins page shows each one a plugin declares.' },
   { name: 'locales', type: 'object', default: '{}', description: 'Texts by language code, then by key, for example the language en with the key menu.chat and the text Chat. A text key has at least two dot-separated parts, such as menu.chat. The en texts must define every key the manifest uses.' },
   { name: 'api', type: 'object', default: '{}', description: 'Routes the host forwards to the plugin: api.client and api.admin, each a list of routes.' },
@@ -358,7 +380,8 @@ What the host does:
 - It answers only a declared callback of an installed and enabled plugin. An unknown plugin, a switched-off or unconfigured one, an undeclared path and a wrong method all answer the same `404 PLUGIN_ROUTE_NOT_FOUND`, so the door never tells what is installed. The routes of `api.client` and `api.admin` are not reachable through it.
 - There is no sign-in and no CSRF header. The plugin gets `call.Area == PluginArea.Callback`, no client reference, no permissions, a fixed caller reference `callback` and the plugin-wide store.
 - The body is passed on byte for byte, never parsed or re-serialised, so a signature over it still verifies. `call.Headers` holds an allow-list of the request headers, exactly as received (see below), and `call.Query` the query string.
-- A callback may answer with `PluginReply.Raw(status, body, contentType)`, for gateways that expect a plain answer such as `OK` as `text/plain`: the bytes, status and media type are written as given, with `X-Content-Type-Options: nosniff`. A raw reply is accepted on a callback only (on a client or admin route it is a plugin fault, `PLUGIN_FAILED`), its media type must be `text/plain`, `application/json`, `application/xml` or `application/x-www-form-urlencoded` (anything else, markup and script included, is `PLUGIN_FAILED`), and its body is held to `PluginApi__MaxBodyBytes`. Every raw reply also carries `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`.
+- A callback may answer with `PluginReply.Raw(status, body, contentType)`, for gateways that expect a plain answer such as `OK` as `text/plain`: the bytes, status and media type are written as given, with `X-Content-Type-Options: nosniff`. A raw reply is accepted on a callback only (on a client or admin route it is a plugin fault, `PLUGIN_FAILED`), its media type must be `text/plain`, `application/json`, `application/xml`, `application/x-www-form-urlencoded` or `text/html` (anything else, script included, is `PLUGIN_FAILED`), and its body is held to `PluginApi__MaxBodyBytes`. Every raw reply that is not HTML also carries `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'`.
+- A callback may answer an HTML page with `PluginReply.Raw(200, bytes, "text/html; charset=utf-8")`, so a gateway can serve its checkout page (a browser step, for example). The page is written under a strict policy the plugin cannot change: nothing loads, connects, posts a form or opens a frame except to the exact `https` origins its manifest lists in `externalOrigins` (a wildcard or an `http` origin names none), the page cannot be framed, has no base address and runs sandboxed (scripts and forms allowed, without the origin of the panel, so it cannot reach the panel's session or storage). It is never cached and sends no referrer, because its address can carry a payment token. Its inline script and style run; a script it loads must come from a listed origin.
 - Only these request headers reach `call.Headers`: `Content-Type`, `Content-Length`, `User-Agent`, `Signature`, `Digest`, `Content-Digest`, `Date`, `Idempotency-Key`, `Webhook-Id`, `Webhook-Timestamp`, `Webhook-Signature`, and any `X-*` header except `X-Forwarded-*`, `X-Real-IP` and the host's own (`X-Language`, `X-Requested-With`, `X-Logout-Key`, `X-Service-Key`, `X-Renewed-Access-Token`). `Cookie`, `Authorization`, `Proxy-Authorization` and `Host` are never passed on. If your gateway signs a header that is not on this list, send it as an `X-*` header or put it in the body.
 - The body is capped by `PluginApi__MaxBodyBytes` (413 `PLUGIN_REQUEST_TOO_LARGE` above it) and every request to the door is counted per caller address against `RateLimit__PluginCallback` (429 above it).
 - A failure is logged with the plugin id only, never with a header, a query or a body.

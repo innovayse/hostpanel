@@ -15,6 +15,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
+import { GatewaySessionKind } from '~/types/gatewaysessionkind'
 import { HttpMethod } from '~/types/httpmethod'
 
 /** The stub playing the BFF. */
@@ -80,6 +81,29 @@ describe('PayPanel', () => {
     const [start] = requestsTo(stub.requests, invoicePaymentStartPath('9'))
     expect(start?.method).toBe(HttpMethod.Post)
     expect(bodyOf(start)).toEqual({ module: 'hostedbank', returnUrl: expect.stringContaining('/payment/result?invoice=9') })
+  })
+
+  it('submits the form of a form post session to the gateway instead of opening an address', async () => {
+    const submitted: HTMLFormElement[] = []
+    vi.spyOn(HTMLFormElement.prototype, 'submit').mockImplementation(function (this: HTMLFormElement) {
+      submitted.push(this)
+    })
+    table[`${HttpMethod.Post} ${invoicePaymentStartPath('9')}`] = {
+      body: {
+        redirectUrl: 'https://bank.example/hosted',
+        kind: GatewaySessionKind.FormPost,
+        formPost: { action: 'https://bank.example/hosted', fields: [{ name: 'token', value: 't1' }] }
+      }
+    }
+    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }] })
+
+    await wrapper.find('[data-testid="invoice-pay-hosted"]').trigger('click')
+
+    await waitUntil(() => expect(submitted).toHaveLength(1))
+    expect(submitted[0]?.action).toBe('https://bank.example/hosted')
+    expect(submitted[0]?.method).toBe('post')
+    expect(submitted[0]?.querySelector('input[name="token"]')?.getAttribute('value')).toBe('t1')
+    vi.restoreAllMocks()
   })
 
   it('disables the gateway button while a payment is being started', () => {

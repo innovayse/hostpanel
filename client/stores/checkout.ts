@@ -30,7 +30,7 @@ import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
 import type { GatewayMethod } from '~/types/gatewaymethod'
 import type { PlaceOrderInput } from '~/types/placeorderinput'
 import type { PlaceOrderResult } from '~/types/placeorderresult'
-import { isSafeRedirectUrl } from '~/utils/externalRedirect'
+import { isSafeGatewayStart } from '~/utils/externalRedirect'
 import { formatMoney } from '~/utils/formatMoney'
 import { isHostedGatewayModule } from '~/utils/paymentModules'
 import { translate } from '~/utils/translate'
@@ -388,7 +388,7 @@ export const useCheckoutStore = defineStore('checkout', () => {
         rememberPaymentToken(result.orderId, result.paymentToken, result.invoiceId)
         // The box rides this request: the server records the consent from it and the gateway saves the
         // method within the same payment, so the payer enters the card once and nothing follows the return.
-        const { redirectUrl } = await billing.startOrderGatewayPayment(
+        const start = await billing.startOrderGatewayPayment(
           result.orderId,
           method,
           returnUrl,
@@ -396,12 +396,12 @@ export const useCheckoutStore = defineStore('checkout', () => {
           saveForRenewals.value,
           saveForRenewals.value ? ConsentTextVersion.CheckoutAgreement : undefined
         )
-        if (!isSafeRedirectUrl(redirectUrl)) {
+        if (!isSafeGatewayStart(start)) {
           throw new Error(translate('checkout.errors.generic'))
         }
         // The cart is kept: the result page empties it once the bank confirms the payment, so a
         // declined or abandoned payment leaves the payer's choices where they were.
-        return { kind: CheckoutDestinationKind.External, target: redirectUrl }
+        return { kind: CheckoutDestinationKind.Gateway, start }
       }
 
       // Bank transfer: the invoice is moved to waiting for the transfer, and the payer is sent to it, where the bank

@@ -17,11 +17,13 @@ import { saveBlob } from '~/utils/saveBlob'
 import type { BankTransferDetails } from '~/types/banktransferdetails'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import type { GatewayMethod } from '~/types/gatewaymethod'
+import type { GatewayStart } from '~/types/gatewaystart'
 import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
 import { InvoiceStatus } from '~/types/invoicestatus'
 import { PaymentModule } from '~/types/paymentmodule'
 import type { PaymentTarget } from '~/types/paymenttarget'
-import { isSafeRedirectUrl } from '~/utils/externalRedirect'
+import type { PaymentReturnParameter } from '~/types/paymentreturnparameter'
+import { isSafeGatewayStart } from '~/utils/externalRedirect'
 import { isHostedGatewayModule } from '~/utils/paymentModules'
 import { translate } from '~/utils/translate'
 
@@ -140,15 +142,18 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
    * @param target - Whether the payment was raised against an order or an invoice.
    * @param id - The order or invoice id.
    * @param paymentToken - The order's payment token; ignored for an invoice.
+   * @param returnParameters - What the gateway returned the payer with; the backend hands it to a plugin that completes a
+   * payment from the return request before it reads the status.
    * @returns What the bank said, or `Unknown` when no answer could be had.
    */
   const verifyGatewayPayment = async (
     target: PaymentTarget,
     id: string,
-    paymentToken?: string
+    paymentToken?: string,
+    returnParameters: PaymentReturnParameter[] = []
   ): Promise<GatewayPaymentState> => {
     try {
-      const { state, orderNumber } = await billing.completeGatewayPayment(target, id, paymentToken)
+      const { state, orderNumber } = await billing.completeGatewayPayment(target, id, paymentToken, returnParameters)
       verifiedOrderNumber.value = orderNumber ?? ''
       return state
     } catch {
@@ -182,7 +187,8 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
   }
 
   /**
-   * Starts a hosted-gateway payment and returns where the browser must go next.
+   * Starts a hosted-gateway payment and returns where and how the browser must go next: a redirect, an auto
+   * submitted form or a browser step.
    *
    * On success {@link submitting} stays true: the page navigates away, and re-enabling the
    * buttons for that moment would invite a second payment.
@@ -190,25 +196,25 @@ export const useInvoicePaymentStore = defineStore('invoicePayment', () => {
    * @param invoiceId - Invoice to pay.
    * @param module - Gateway plugin module id.
    * @param returnUrl - Absolute URL the gateway sends the customer back to.
-   * @returns The gateway address to navigate to, or null when the attempt failed
+   * @returns What to hand the browser to (see `redirectToGateway`), or null when the attempt failed
    * ({@link error} holds the sentence to show).
    */
   const startGatewayPayment = async (
     invoiceId: string,
     module: string,
     returnUrl: string
-  ): Promise<string | null> => {
+  ): Promise<GatewayStart | null> => {
     error.value = ''
     submitting.value = true
     try {
-      const { redirectUrl } = await billing.startInvoiceGatewayPayment(invoiceId, module, returnUrl)
-      if (!isSafeRedirectUrl(redirectUrl)) {
+      const start = await billing.startInvoiceGatewayPayment(invoiceId, module, returnUrl)
+      if (!isSafeGatewayStart(start)) {
         // An address the browser must not follow is a failed start, not a destination.
         error.value = translate('checkout.errors.generic')
         submitting.value = false
         return null
       }
-      return redirectUrl
+      return start
     } catch (e: unknown) {
       error.value = apiErrorMessage(e)
       submitting.value = false

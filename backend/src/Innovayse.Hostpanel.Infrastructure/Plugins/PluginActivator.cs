@@ -1,5 +1,6 @@
 using Hostpanel.Sdk.Plugins.Endpoints;
 using Hostpanel.Sdk.Plugins.Manifest;
+using Hostpanel.Sdk.Plugins.Payment;
 using Hostpanel.Sdk.Plugins.Store;
 using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -44,6 +45,7 @@ public sealed class PluginActivator
         new Dictionary<string, Type>(StringComparer.Ordinal)
         {
             [PluginCapabilities.StoredCredentials] = typeof(IStoredCredentialPlugin),
+            [PluginCapabilities.PaymentReturn] = typeof(IPaymentReturnPlugin),
             [PluginCapabilities.Endpoints] = typeof(IPluginEndpoints),
         };
 

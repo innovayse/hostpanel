@@ -166,7 +166,8 @@ describe('AuroraCheckout', () => {
 
   it('places the order and follows the destination the store returns', async () => {
     table[readOf(AccountEndpoint.PaymentMethods)] = { body: [{ module: PaymentModule.BankTransfer, displayName: 'Bank transfer', supportsStoredCredentials: false }] }
-    const wrapper = await mountCheckout()
+    // The cart's total is the placed order's total, so the payer is not asked to accept a changed total.
+    const wrapper = await mountCheckout([{ ...ITEM, amount: 12 }])
 
     await wrapper.find('[data-testid="checkout-place-order"]').trigger('click')
     await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith('/en/client/invoices/12/pay'))

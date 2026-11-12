@@ -192,11 +192,12 @@ describe('useCheckoutPage', () => {
 
   it('hands the templates the renewal-save choice, off by default, and whether to offer it', async () => {
     signIn(makeClientUser())
+    table[`GET ${PATHS.methods}`] = { body: [{ module: HOSTED_GATEWAY, displayName: HOSTED_GATEWAY, supportsStoredCredentials: true }] }
 
     const page = await runInPage()
 
     expect(page.saveForRenewals.value).toBe(false)
-    expect(page.canSaveForRenewals.value).toBe(true)
+    await waitUntil(() => expect(page.canSaveForRenewals.value).toBe(true))
   })
 
   it('asks the visitor before the store changes the currency', async () => {

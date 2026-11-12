@@ -7,7 +7,8 @@ namespace Innovayse.Hostpanel.Application.StatusPage.Queries.GetStatusUptime;
 
 /// <summary>
 /// Counts the checks of the requested window per component and per UTC day, and turns the counts into uptime
-/// percentages: the share of checks that succeeded.
+/// percentages: the share of checks that succeeded. Every failed check counts as downtime, including the failures
+/// below the component's failure threshold that have not opened an incident yet.
 /// </summary>
 public sealed class GetStatusUptimeHandler
 {

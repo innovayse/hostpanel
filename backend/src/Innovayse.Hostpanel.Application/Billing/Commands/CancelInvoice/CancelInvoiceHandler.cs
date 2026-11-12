@@ -28,18 +28,23 @@ public sealed class CancelInvoiceHandler
     /// <summary>Voids the gateway order of the invoice's unpaid hosted session.</summary>
     private readonly GatewayPaymentCanceller _canceller;
 
+    /// <summary>The clock the moment of the cancellation is read from.</summary>
+    private readonly IClock _clock;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="activity">Records the activity log line for this action, saved with the change it describes.</param>
     /// <param name="clientCredit">Returns the invoice's credit to the client's balance in the same save.</param>
     /// <param name="canceller">Voids the gateway order of the invoice's unpaid hosted session.</param>
+    /// <param name="clock">The clock the moment of the cancellation is read from.</param>
     public CancelInvoiceHandler(
-        IHostpanelDbContext context, IActivityLogger activity, IClientCredit clientCredit, GatewayPaymentCanceller canceller)
+        IHostpanelDbContext context, IActivityLogger activity, IClientCredit clientCredit, GatewayPaymentCanceller canceller, IClock clock)
     {
         _context = context;
         _activity = activity;
         _clientCredit = clientCredit;
         _canceller = canceller;
+        _clock = clock;
     }
 
     /// <summary>Handles the command.</summary>
@@ -84,7 +89,7 @@ public sealed class CancelInvoiceHandler
             }
         }
 
-        invoice.Cancel();
+        invoice.Cancel(_clock.UtcNow);
         await _activity.RecordAsync(
             new ActivityLogEntry(invoice.ClientId, $"Cancelled Invoice - Invoice ID: {invoice.Id}"), ct);
         await _context.SaveChangesAsync(ct);

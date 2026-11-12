@@ -1401,6 +1401,8 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   queue (handlers are separated, see "Durable messaging"), so one of them failing never re-runs the others.
   `Plugins/Events/PurgeRemovedPluginDataHandler` deletes a removed plugin's store rows written up to the operator's purge request on
   `PluginDataPurgeRequestedEvent`; it is idempotent and writes only the Plugins module's own tables (see the plugin store under "Plugin routes").
+  `Services/Events/ServiceChangeInvoiceCancelledHandler` dispatches `RejectServiceChangeRequestCommand` on `InvoiceCancelledEvent` for the
+  approved plan change request that waits for the cancelled invoice (see "A plan change is one request"); it is idempotent, and a refusal is logged for staff.
   The remaining three react to `ClientClosedEvent` and are described under "Client account status" below.
 
 - **`InvoiceItems.ClientServiceId` and `InvoiceItems.RegisteredDomainId` carry no foreign key, on purpose.** An
@@ -1486,7 +1488,11 @@ staff approval and the payment event alike: it asks the panel for the new packag
 service holding a hosting account), and only then stages the plan, the price, the `PlanChangeCredit` of a downgrade, the
 Completed status and the activity line in one save. A refusal by the panel therefore changes and credits nothing and leaves
 the request Approved, and approving it again repeats the call; the request's `xmin` token stops two runs crediting twice.
-Rejecting an approved upgrade cancels its unpaid invoice first. The Services handlers never touch the `Invoices` table:
+Rejecting an approved upgrade cancels its unpaid invoice first, and the other way round: `Invoice.Cancel` raises
+`InvoiceCancelledEvent`, and `Services/Events/ServiceChangeInvoiceCancelledHandler` rejects the approved request that waits
+for that invoice (through `RejectServiceChangeRequestCommand`, idempotent), so a cancelled invoice never leaves the service
+holding an open request. The proration invoice falls due after `Orders:InvoicePaymentTermDays`, the same term as an order's
+invoice. The Services handlers never touch the `Invoices` table:
 they raise, read and cancel invoices through the Billing use cases.
 
 ### Client account status

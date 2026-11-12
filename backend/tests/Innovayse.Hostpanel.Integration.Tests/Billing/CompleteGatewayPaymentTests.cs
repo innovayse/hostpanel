@@ -542,7 +542,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         using (var adminScope = factory.Services.CreateScope())
         {
             var adminContext = adminScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            (await adminContext.Invoices.FirstAsync(i => i.Id == invoiceId)).Cancel();
+            (await adminContext.Invoices.FirstAsync(i => i.Id == invoiceId)).Cancel(DateTimeOffset.UtcNow);
             await adminContext.SaveChangesAsync(CancellationToken.None);
         }
 
@@ -1183,7 +1183,7 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
     {
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        (await context.Invoices.FirstAsync(i => i.Id == invoiceId)).Cancel();
+        (await context.Invoices.FirstAsync(i => i.Id == invoiceId)).Cancel(DateTimeOffset.UtcNow);
         await context.SaveChangesAsync(CancellationToken.None);
     }
 

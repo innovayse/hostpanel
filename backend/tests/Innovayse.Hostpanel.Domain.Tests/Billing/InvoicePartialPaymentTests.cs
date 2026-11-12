@@ -127,7 +127,7 @@ public sealed class InvoicePartialPaymentTests
     {
         var invoice = OpenInvoice();
 
-        invoice.Cancel();
+        invoice.Cancel(Today);
 
         invoice.AmountDue.Should().Be(0m);
     }

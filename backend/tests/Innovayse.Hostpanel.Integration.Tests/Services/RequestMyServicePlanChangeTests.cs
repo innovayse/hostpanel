@@ -3,13 +3,19 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlanChange;
+using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Shared.Infrastructure;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Services;
 
@@ -41,6 +47,26 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
 
         return service;
     }
+
+    /// <summary>Tells whether a pending change set is the save that links the proration invoice to its request.</summary>
+    /// <param name="tracker">The change tracker of the save.</param>
+    /// <returns><see langword="true"/> when a request is being saved with an invoice id.</returns>
+    private static bool LinksTheInvoice(ChangeTracker tracker) =>
+        tracker.Entries<ServiceChangeRequest>().Any(e => e.State == EntityState.Modified && e.Entity.InvoiceId is not null);
+
+    /// <summary>
+    /// Builds a host where the save that links the invoice to the request fails, as does every save that <paramref name="alsoRefuses"/>
+    /// names, and whose handler logs into <paramref name="logger"/>.
+    /// </summary>
+    /// <param name="logger">The logger that stands in for the handler's own.</param>
+    /// <param name="alsoRefuses">Tells whether a later save of the clean-up must fail too.</param>
+    /// <returns>The isolated host; the caller disposes it.</returns>
+    private WebApplicationFactory<Program> CrashingHost(
+        CapturingLogger<RequestMyServicePlanChangeHandler> logger, Func<ChangeTracker, bool> alsoRefuses) =>
+        FailingSaveHost
+            .Create(factory, new ManualTimeProvider(DateTimeOffset.UtcNow), tracker => LinksTheInvoice(tracker) || alsoRefuses(tracker))
+            .WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+                services.AddSingleton<ILogger<RequestMyServicePlanChangeHandler>>(logger)));
 
     /// <summary>An upgrade is approved at once, raises the invoice of the prorated charge, and moves the service when that invoice is paid.</summary>
     /// <returns>A task that completes when the test has run.</returns>
@@ -447,10 +473,7 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
     {
         var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-crash");
         var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, clientId, 10m, 20m);
-        using var host = FailingSaveHost.Create(
-            factory,
-            new ManualTimeProvider(DateTimeOffset.UtcNow),
-            tracker => tracker.Entries<ServiceChangeRequest>().Any(e => e.State == EntityState.Modified && e.Entity.InvoiceId is not null));
+        using var host = FailingSaveHost.Create(factory, new ManualTimeProvider(DateTimeOffset.UtcNow), LinksTheInvoice);
         using var crashing = host.CreateClient();
         crashing.DefaultRequestHeaders.Authorization = owner.DefaultRequestHeaders.Authorization;
 
@@ -464,5 +487,79 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         (await context.ServiceChangeRequests.AsNoTracking().AnyAsync(r => r.ServiceId == seeded.ServiceId)).Should().BeFalse();
         var invoices = await context.Invoices.AsNoTracking().Where(i => i.ClientId == clientId).ToListAsync();
         invoices.Should().ContainSingle().Which.Status.Should().Be(InvoiceStatus.Cancelled);
+    }
+
+    /// <summary>
+    /// When the invoice cannot be withdrawn after the linking save failed, it is logged as critical for staff, the request is
+    /// still taken back, and the caller still sees the original error, not the failure of the clean-up.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Upgrade_WhenTheInvoiceCannotBeCancelled_LogsItAndKeepsTheOriginalError()
+    {
+        var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-nocancel");
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, clientId, 10m, 20m);
+        var logger = new CapturingLogger<RequestMyServicePlanChangeHandler>();
+        using var host = CrashingHost(
+            logger, tracker => tracker.Entries<Invoice>().Any(e => e.State == EntityState.Modified && e.Entity.Status == InvoiceStatus.Cancelled));
+        using var crashing = host.CreateClient();
+        crashing.DefaultRequestHeaders.Authorization = owner.DefaultRequestHeaders.Authorization;
+
+        var response = await crashing.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        logger.Entries.Should().ContainSingle(e => e.Level == LogLevel.Critical).Which.Message.Should().Contain("could not be cancelled");
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.ServiceChangeRequests.AsNoTracking().AnyAsync(r => r.ServiceId == seeded.ServiceId)).Should().BeFalse();
+        var invoices = await context.Invoices.AsNoTracking().Where(i => i.ClientId == clientId).ToListAsync();
+        invoices.Should().ContainSingle().Which.Status.Should().Be(InvoiceStatus.Unpaid);
+    }
+
+    /// <summary>
+    /// When the request cannot be removed after the linking save failed, the invoice is still cancelled, the failure is logged as
+    /// critical for staff, and the caller still sees the original error.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Upgrade_WhenTheRequestCannotBeRemoved_LogsItAndKeepsTheOriginalError()
+    {
+        var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-noremove");
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, clientId, 10m, 20m);
+        var logger = new CapturingLogger<RequestMyServicePlanChangeHandler>();
+        using var host = CrashingHost(logger, tracker => tracker.Entries<ServiceChangeRequest>().Any(e => e.State == EntityState.Deleted));
+        using var crashing = host.CreateClient();
+        crashing.DefaultRequestHeaders.Authorization = owner.DefaultRequestHeaders.Authorization;
+
+        var response = await crashing.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        logger.Entries.Should().ContainSingle(e => e.Level == LogLevel.Critical).Which.Message.Should().Contain("could not be removed");
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.ServiceChangeRequests.AsNoTracking().AnyAsync(r => r.ServiceId == seeded.ServiceId)).Should().BeTrue();
+        var invoices = await context.Invoices.AsNoTracking().Where(i => i.ClientId == clientId).ToListAsync();
+        invoices.Should().ContainSingle().Which.Status.Should().Be(InvoiceStatus.Cancelled);
+    }
+
+    /// <summary>The proration invoice falls due after the configured payment term, not after a number fixed in the handler.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Upgrade_InvoiceFallsDueAfterTheConfiguredPaymentTerm()
+    {
+        var (owner, clientId) = await ServicesTestSeeds.RegisterOwnerAsync(factory, "plan-up-term");
+        var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, clientId, 10m, 20m);
+        using var host = factory.WithWebHostBuilder(builder => builder.UseSetting("Orders:InvoicePaymentTermDays", "21"));
+        using var configured = host.CreateClient();
+        configured.DefaultRequestHeaders.Authorization = owner.DefaultRequestHeaders.Authorization;
+
+        var response = await configured.PostAsJsonAsync(RouteOf(seeded.ServiceId), new { toProductId = seeded.ToProductId });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var invoiceId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("invoiceId").GetInt32();
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var invoice = await context.Invoices.AsNoTracking().FirstAsync(i => i.Id == invoiceId);
+        (invoice.DueDate - invoice.InvoiceDate).Days.Should().Be(21);
     }
 }

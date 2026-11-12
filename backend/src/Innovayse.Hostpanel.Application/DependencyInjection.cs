@@ -51,6 +51,11 @@ public static class DependencyInjection
         services.AddScoped<RefundAdviser>();
         services.AddScoped<GatewayPaymentCanceller>();
 
+        // Finds or creates a client's customer at a stored credential gateway, and binds a stored method to its consent: each is
+        // shared by the save session and by the payment that saves its method.
+        services.AddScoped<GatewayCustomerEnsurer>();
+        services.AddScoped<StoredMethodBinder>();
+
         // The connection state of plugin integrations (IPluginStatus), cached and worded for the Integrations page.
         services.AddScoped<PluginConnectionReader>();
 

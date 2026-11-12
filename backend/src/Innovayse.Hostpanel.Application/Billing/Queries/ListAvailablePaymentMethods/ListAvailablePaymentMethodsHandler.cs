@@ -1,4 +1,5 @@
 using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Manifest;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Constants;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
@@ -12,7 +13,8 @@ namespace Innovayse.Hostpanel.Application.Billing.Queries.ListAvailablePaymentMe
 /// <summary>
 /// Lists the payment gateways a payer can actually use: the built-in methods that are
 /// switched on by the admin, plus every loaded payment plugin whose integration
-/// is enabled and fully configured, and whose currency is the one this payer is billed in.
+/// is enabled and fully configured, and whose currency is the one this payer is billed in. A plugin that declares the
+/// stored credentials capability in its manifest is marked, so checkout can offer to keep the payer's method.
 /// Nothing is listed that would fail when the payer picks it, and <c>PlaceOrderHandler</c>
 /// refuses any module this list does not contain, so listing and ordering can never disagree.
 /// </summary>
@@ -90,7 +92,7 @@ public sealed class ListAvailablePaymentMethodsHandler
         var bankTransfer = await _bus.LoadBankTransferSettingsAsync(ct);
         if (bankTransfer is { IsEnabled: true, HasPayerDetails: true })
         {
-            methods.Add(new(BuiltInPaymentModules.BankTransfer, PaymentMethodNames.BankTransfer));
+            methods.Add(new(BuiltInPaymentModules.BankTransfer, PaymentMethodNames.BankTransfer, SupportsStoredCredentials: false));
         }
 
         // A hosted gateway charges in one fixed currency, and StartGatewayPaymentHandler refuses
@@ -116,7 +118,10 @@ public sealed class ListAvailablePaymentMethodsHandler
                 continue;
             }
 
-            methods.Add(new(manifest.Id, $"Bank Card ({manifest.Name})"));
+            methods.Add(new(
+                manifest.Id,
+                $"Bank Card ({manifest.Name})",
+                manifest.Capabilities.Contains(PluginCapabilities.StoredCredentials, StringComparer.Ordinal)));
         }
 
         return Result.Success<IReadOnlyList<AvailablePaymentMethodDto>>(methods);

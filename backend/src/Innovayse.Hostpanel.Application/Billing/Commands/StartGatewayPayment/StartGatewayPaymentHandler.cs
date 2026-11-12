@@ -1,5 +1,6 @@
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.Payment;
+using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
@@ -21,6 +22,14 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.StartGatewayPayment;
 /// reused ones), stores the session on the invoice, and returns the redirect URL. The gateway order of
 /// a session the new one replaces is cancelled through its plugin when the plugin can (<see cref="GatewayPaymentCanceller"/>).
 /// </summary>
+/// <remarks>
+/// When the payer asked to keep the payment method (<see cref="StartGatewayPaymentCommand.SavePaymentMethod"/>) the
+/// payment is registered with that request and the client's consent to later charges is recorded in the very save that
+/// records the session, so a consent only exists for a payment the gateway registered. Only the invoice's own client
+/// can ask for it, at a module that offers stored credentials, and the gateway customer the later charges need is
+/// ensured before the payment is registered. Completing the payment binds the method to that consent
+/// (<c>CompleteGatewayPaymentHandler</c>).
+/// </remarks>
 public sealed class StartGatewayPaymentHandler
 {
     /// <summary>The module's data context.</summary>
@@ -47,6 +56,15 @@ public sealed class StartGatewayPaymentHandler
     /// <summary>Voids the gateway order of the session this attempt replaces.</summary>
     private readonly GatewayPaymentCanceller _canceller;
 
+    /// <summary>Resolves the stored credential capability of a payment gateway module, for a payment that saves its method.</summary>
+    private readonly IStoredCredentialPluginResolver _storedPlugins;
+
+    /// <summary>Resolves which client the caller acts for, for a payment that saves its method.</summary>
+    private readonly IClientAccess _access;
+
+    /// <summary>Finds or creates the client's customer at the gateway module before a payment that saves its method is registered.</summary>
+    private readonly GatewayCustomerEnsurer _customers;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="pluginResolver">Resolves the configured payment plugin for a module id.</param>
@@ -55,6 +73,9 @@ public sealed class StartGatewayPaymentHandler
     /// <param name="clock">The clock the current moment is read from.</param>
     /// <param name="bus">Wolverine bus, used to ask the Clients module whether the invoice's account may pay.</param>
     /// <param name="canceller">Voids the gateway order of the session this attempt replaces.</param>
+    /// <param name="storedPlugins">Resolves the stored credential capability of a payment gateway module.</param>
+    /// <param name="access">Resolves which client the caller acts for.</param>
+    /// <param name="customers">Finds or creates the client's customer at the gateway module.</param>
     public StartGatewayPaymentHandler(
         IHostpanelDbContext context,
         IPaymentPluginResolver pluginResolver,
@@ -62,7 +83,10 @@ public sealed class StartGatewayPaymentHandler
         ILogger<StartGatewayPaymentHandler> logger,
         IClock clock,
         IMessageBus bus,
-        GatewayPaymentCanceller canceller)
+        GatewayPaymentCanceller canceller,
+        IStoredCredentialPluginResolver storedPlugins,
+        IClientAccess access,
+        GatewayCustomerEnsurer customers)
     {
         _context = context;
         _pluginResolver = pluginResolver;
@@ -71,6 +95,9 @@ public sealed class StartGatewayPaymentHandler
         _clock = clock;
         _bus = bus;
         _canceller = canceller;
+        _storedPlugins = storedPlugins;
+        _access = access;
+        _customers = customers;
     }
 
     /// <summary>Handles the command.</summary>
@@ -82,7 +109,11 @@ public sealed class StartGatewayPaymentHandler
     /// stored card charge claim of the invoice blocks it, <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c>, <c>RETURN_URL_NOT_ALLOWED</c>,
     /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, <c>GATEWAY_SESSION_ALREADY_STARTED</c>,
     /// <c>CURRENCY_NOT_FOUND</c>, <c>GATEWAY_CURRENCY_MISMATCH</c> or
-    /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the plugin fails to register the payment.
+    /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the plugin fails to register the payment. A payment that saves
+    /// the method is also refused with <c>STORED_CREDENTIALS_NOT_SUPPORTED</c> when the module offers no stored
+    /// credentials, with the caller's own failure (<c>CLIENT_PROFILE_NOT_FOUND</c>, <c>IDENTITY_PLUGIN_UNAVAILABLE</c>)
+    /// when the caller acts for no account, with <c>INVOICE_NOT_FOUND</c> when the invoice is another client's, and with
+    /// <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the account may not pay by card.
     /// </returns>
     public async Task<Result<RedirectDto>> HandleAsync(StartGatewayPaymentCommand cmd, CancellationToken ct)
     {
@@ -145,6 +176,20 @@ public sealed class StartGatewayPaymentHandler
             return Result<RedirectDto>.FailureCode(HostpanelErrorCodes.GATEWAY_CURRENCY_MISMATCH);
         }
 
+        // The checks and the customer come before the payment is registered: a payment the gateway registered for a
+        // method nobody may save would be money taken with no consent, and later charges need the customer.
+        int? consentingClientId = null;
+        if (cmd.SavePaymentMethod)
+        {
+            var saving = await PrepareSavingAsync(cmd.Module, invoice, ct);
+            if (saving.IsFailure)
+            {
+                return Result<RedirectDto>.FailureCode(saving.ErrorCode!);
+            }
+
+            consentingClientId = saving.Value;
+        }
+
         // Unique per attempt (gateway errorCode 1 on reuse); ≤ 25 chars fits int ids + unix seconds.
         var orderNumber = $"INV{invoice.Id}-{now.ToUnixTimeSeconds()}";
 
@@ -155,7 +200,7 @@ public sealed class StartGatewayPaymentHandler
         try
         {
             session = await plugin.CreatePaymentAsync(
-                new PaymentInstruction(orderNumber, amountMinor, cmd.ReturnUrl, $"Invoice #{invoice.Id}", null),
+                new PaymentInstruction(orderNumber, amountMinor, cmd.ReturnUrl, $"Invoice #{invoice.Id}", null, cmd.SavePaymentMethod),
                 ct);
         }
         catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
@@ -178,6 +223,16 @@ public sealed class StartGatewayPaymentHandler
                 : ((string Module, string OrderId)?)null;
 
         invoice.SetGatewaySession(cmd.Module, session.GatewayOrderId, now);
+
+        // The consent is keyed by the gateway order and saved with the session, so it exists exactly when the gateway
+        // registered the payment that will carry the method.
+        if (consentingClientId is { } consentClient)
+        {
+            _context.CardChargeConsents.Add(
+                CardChargeConsent.Grant(
+                    consentClient, cmd.Module, session.GatewayOrderId, now, cmd.ConsentTextVersion, cmd.IpAddress, cmd.UserAgent));
+        }
+
         await _context.SaveChangesAsync(ct);
 
         // After the new session is saved, so a plugin that cannot cancel never costs the payer the new attempt.
@@ -187,6 +242,64 @@ public sealed class StartGatewayPaymentHandler
         }
 
         return Result.Success(new RedirectDto(session.RedirectUrl));
+    }
+
+    /// <summary>
+    /// Settles everything a payment that saves its method needs before the gateway is asked: the module offers stored
+    /// credentials, the caller is the invoice's own client, the account may pay by card, and the client's customer at
+    /// the module exists.
+    /// </summary>
+    /// <param name="module">The payment plugin id.</param>
+    /// <param name="invoice">The invoice being paid.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The client who consents, or the code of the refusal: <c>STORED_CREDENTIALS_NOT_SUPPORTED</c>; the caller's own
+    /// failure when they act for no account; <c>INVOICE_NOT_FOUND</c> when the invoice is not theirs (not told apart
+    /// from a missing one); the card refusal of the account; <c>CLIENT_PROFILE_NOT_FOUND</c> when no customer can be built
+    /// from the client; or <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the plugin could not create the customer.
+    /// </returns>
+    /// <exception cref="UnauthorizedAccessException">Thrown when the request carries no subject, a guest asking to save.</exception>
+    private async Task<Result<int>> PrepareSavingAsync(string module, Invoice invoice, CancellationToken ct)
+    {
+        var storedPlugin = await _storedPlugins.ResolveAsync(module, ct);
+        if (storedPlugin is null)
+        {
+            return Result<int>.FailureCode(HostpanelErrorCodes.STORED_CREDENTIALS_NOT_SUPPORTED);
+        }
+
+        var clientId = await _access.RequireClientIdAsync(ct);
+        if (clientId.IsFailure)
+        {
+            return Result<int>.FailureCode(clientId.ErrorCode!);
+        }
+
+        // Only the invoice's own client can consent to charges on their method; a user of another account is told the
+        // invoice is not found, the way every other client route does.
+        if (clientId.Value != invoice.ClientId)
+        {
+            return Result<int>.FailureCode(HostpanelErrorCodes.INVOICE_NOT_FOUND);
+        }
+
+        var mayPayByCard = await _bus.EnsureClientMayPayByCardAsync(clientId.Value, ct);
+        if (mayPayByCard.IsFailure)
+        {
+            return Result<int>.FailureCode(mayPayByCard.ErrorCode!);
+        }
+
+        try
+        {
+            var customerRef = await _customers.EnsureAsync(storedPlugin, clientId.Value, module, ct);
+            return customerRef is null
+                ? Result<int>.FailureCode(HostpanelErrorCodes.CLIENT_PROFILE_NOT_FOUND)
+                : Result.Success(clientId.Value);
+        }
+        catch (Exception ex) when (JobFailure.IsFailure(ex, ct) && ex is not ConcurrencyConflictException)
+        {
+            // The plugin's own exceptions cannot be told apart from an outage; the gateway's text stays in the log.
+            _logger.LogWarning(
+                ex, "Payment plugin {Module} could not create the customer of client {ClientId}.", module, clientId.Value);
+            return Result<int>.FailureCode(HostpanelErrorCodes.PAYMENT_GATEWAY_SERVICE_UNAVAILABLE);
+        }
     }
 
     /// <summary>

@@ -15,6 +15,10 @@
 export enum ConsentTextVersion {
   /** The consent line on the account's saved-methods card (`client.storedMethods.consent*`). */
   AccountCard = 'account-card-2026-11',
-  /** The agreement under the checkout box (`checkout.saveForRenewalsAgreement`). */
-  CheckoutAgreement = 'checkout-agreement-2026-11'
+  /**
+   * The agreement under the checkout box (`checkout.saveForRenewalsAgreement`), which describes saving the
+   * method within the payment itself. The value changed with that wording; the earlier one
+   * (`checkout-agreement-2026-11`) belongs to the two-step wording that no longer exists.
+   */
+  CheckoutAgreement = 'checkout-agreement-2026-11-b'
 }

@@ -2,7 +2,6 @@ using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
-using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +19,8 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.CompleteSaveStoredMet
 /// A consent that already covers a different method is not rebound: the answer is a failure. When the client already
 /// holds an active consent for the same method (saved again in a new session), the older one is revoked in the same
 /// save, so one method is covered by one consent; it hands its default flag to the new one. The method itself stays at
-/// the gateway, because it is the very method the new consent covers.
+/// the gateway, because it is the very method the new consent covers. Binding is <see cref="StoredMethodBinder"/>'s,
+/// shared with a payment that saves its method.
 /// </remarks>
 public sealed class CompleteSaveStoredMethodHandler
 {
@@ -33,8 +33,8 @@ public sealed class CompleteSaveStoredMethodHandler
     /// <summary>Resolves the stored credential capability of a payment gateway module.</summary>
     private readonly IStoredCredentialPluginResolver _plugins;
 
-    /// <summary>The clock the revocation of a superseded consent is stamped from.</summary>
-    private readonly IClock _clock;
+    /// <summary>Binds the stored method to the consent and retires the consents it supersedes.</summary>
+    private readonly StoredMethodBinder _binder;
 
     /// <summary>Structured logger.</summary>
     private readonly ILogger<CompleteSaveStoredMethodHandler> _logger;
@@ -43,19 +43,19 @@ public sealed class CompleteSaveStoredMethodHandler
     /// <param name="context">The module's data context.</param>
     /// <param name="access">Resolves which client the caller acts for.</param>
     /// <param name="plugins">Resolves the stored credential capability of a payment gateway module.</param>
-    /// <param name="clock">The clock the revocation of a superseded consent is stamped from.</param>
+    /// <param name="binder">Binds the stored method to the consent and retires the consents it supersedes.</param>
     /// <param name="logger">Structured logger.</param>
     public CompleteSaveStoredMethodHandler(
         IHostpanelDbContext context,
         IClientAccess access,
         IStoredCredentialPluginResolver plugins,
-        IClock clock,
+        StoredMethodBinder binder,
         ILogger<CompleteSaveStoredMethodHandler> logger)
     {
         _context = context;
         _access = access;
         _plugins = plugins;
-        _clock = clock;
+        _binder = binder;
         _logger = logger;
     }
 
@@ -117,48 +117,15 @@ public sealed class CompleteSaveStoredMethodHandler
             return Result<StoredMethodDto>.FailureCode(HostpanelErrorCodes.STORED_METHOD_NOT_SAVED);
         }
 
-        if (!consent.CanAttach(saved.Method.MethodRef))
+        if (!await _binder.TryBindAsync(consent, saved.Method.MethodRef, ct))
         {
             return Result<StoredMethodDto>.FailureCode(HostpanelErrorCodes.CARD_CONSENT_ALREADY_ATTACHED);
         }
 
-        consent.AttachMethod(saved.Method.MethodRef);
-        await RevokeOlderConsentsOfTheMethodAsync(consent, ct);
         await _context.SaveChangesAsync(ct);
 
         var method = saved.Method;
         return Result.Success(new StoredMethodDto(
             consent.Id, consent.GatewayModuleId, method.MethodRef, method.Brand, method.Last4, method.ExpiryMonth, method.ExpiryYear, consent.IsDefault));
-    }
-
-    /// <summary>
-    /// Revokes the client's earlier active consents for the same method at the same module, so the method is covered by
-    /// the consent that was just completed alone. The newest evidence stays; an older consent's default flag moves over.
-    /// </summary>
-    /// <param name="consent">The consent that now covers the method.</param>
-    /// <param name="ct">Cancellation token.</param>
-    /// <returns>A task that completes once the older consents are marked; the caller saves.</returns>
-    private async Task RevokeOlderConsentsOfTheMethodAsync(CardChargeConsent consent, CancellationToken ct)
-    {
-        var methodRef = consent.MethodRef;
-        var older = await _context.CardChargeConsents
-            .Where(c => c.ClientId == consent.ClientId && c.GatewayModuleId == consent.GatewayModuleId
-                && c.MethodRef == methodRef && c.RevokedAt == null && c.GrantedAt < consent.GrantedAt)
-            .ToListAsync(ct);
-        if (older.Count == 0)
-        {
-            return;
-        }
-
-        var wasDefault = older.Any(c => c.IsDefault);
-        foreach (var other in older)
-        {
-            other.Revoke(_clock.UtcNow);
-        }
-
-        if (wasDefault)
-        {
-            consent.SetDefault(older);
-        }
     }
 }

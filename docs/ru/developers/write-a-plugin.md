@@ -47,15 +47,34 @@ keywords: "написание плагина, hostpanel sdk, платёжный 
 
 ### Типы {#types}
 
-Свойства **`PaymentInstruction`**: `OrderNumber`, `AmountMinor`, `ReturnUrl`, `Description`, `Language`.
+Свойства **`PaymentInstruction`**: `OrderNumber`, `AmountMinor`, `ReturnUrl`, `Description`, `Language`, `SavePaymentMethod` (SDK 3.5.0 или новее, по умолчанию `false`).
 
 Свойства **`PaymentSession`**: `GatewayOrderId`, `RedirectUrl`.
 
-Свойства **`GatewayPaymentStatus`**: `State` (`GatewayPaymentState`), `TransactionId`, `RawStatus`, `AmountMinor`, `Currency` (числовой код ISO 4217).
+Свойства **`GatewayPaymentStatus`**: `State` (`GatewayPaymentState`), `TransactionId`, `RawStatus`, `AmountMinor`, `Currency` (числовой код ISO 4217), `SavedMethod` (SDK 3.5.0 или новее, по умолчанию `null`).
 
 У `AcceptsCurrency(string currencyNumeric)` есть реализация по умолчанию, которая сравнивает с `CurrencyCode`; переопределяйте её, только когда шлюз принимает валюты, отличные от валюты расчётов.
 
 Перечисление **`GatewayPaymentState`**: `Pending` (0), `Paid` (1), `Declined` (2).
+
+### Сохранение способа оплаты плательщика вместе с платежом {#save-payment-method}
+
+Платёжный плагин, который реализует `IStoredCredentialPlugin` и объявляет возможность `storedCredentials`, может
+сохранить способ оплаты, которым платит клиент, чтобы хост мог списывать с него позже. Нужен SDK 3.5.0 или новее.
+
+Оформление заказа показывает такой плагин с `supportsStoredCredentials`, равным `true`, и предлагает вошедшему клиенту
+флажок «сохранить карту» с текстом согласия. Когда клиент ставит флажок, хост сначала убеждается, что клиент шлюза
+существует (`EnsureCustomerAsync`), затем регистрирует платёж с `PaymentInstruction.SavePaymentMethod`, равным `true`, и
+записывает согласие клиента на этот платёж вместе с версией текста, адресом и браузером запроса. Плагин отправляет вместе
+с платежом собственный запрос шлюза «сохранить этот способ».
+
+Когда `GetStatusAsync` читает платёж как `Paid`, он возвращает сохранённый способ в `GatewayPaymentStatus.SavedMethod`. Это
+тот же `SavedMethod`, который возвращает `ListMethodsAsync`, поэтому позже способ списывается так же. Хост привязывает его
+к согласию этого платежа в том же сохранении, которое проводит счёт, и способ появляется среди сохранённых способов клиента.
+
+- Возвращайте `SavedMethod` только в состоянии `Paid` и один и тот же способ при каждом чтении одного платежа.
+- Плагин, не поддерживающий флаг, игнорирует его и не возвращает способ. Хост считает это «не сохранено», а не ошибкой платежа.
+- Просить сохранить способ может только вошедший владелец счёта. Гостевое оформление оплачивается как раньше, без этой возможности.
 
 ### Чтение настроек {#reading-settings}
 

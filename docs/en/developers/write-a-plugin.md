@@ -47,15 +47,34 @@ Inherit `PaymentGatewayBase` and implement `IPaymentPlugin` from `Hostpanel.Sdk.
 
 ### Types
 
-**`PaymentInstruction`** properties: `OrderNumber`, `AmountMinor`, `ReturnUrl`, `Description`, `Language`.
+**`PaymentInstruction`** properties: `OrderNumber`, `AmountMinor`, `ReturnUrl`, `Description`, `Language`, `SavePaymentMethod` (SDK 3.5.0 or later, `false` by default).
 
 **`PaymentSession`** properties: `GatewayOrderId`, `RedirectUrl`.
 
-**`GatewayPaymentStatus`** properties: `State` (`GatewayPaymentState`), `TransactionId`, `RawStatus`, `AmountMinor`, `Currency` (ISO 4217 numeric).
+**`GatewayPaymentStatus`** properties: `State` (`GatewayPaymentState`), `TransactionId`, `RawStatus`, `AmountMinor`, `Currency` (ISO 4217 numeric), `SavedMethod` (SDK 3.5.0 or later, `null` by default).
 
 `AcceptsCurrency(string currencyNumeric)` has a default implementation that compares against `CurrencyCode`; override it only when the gateway accepts currencies other than its settlement currency.
 
 **`GatewayPaymentState`** enum: `Pending` (0), `Paid` (1), `Declined` (2).
+
+### Keeping the payer's method with a payment {#save-payment-method}
+
+A payment plugin that implements `IStoredCredentialPlugin` and declares the `storedCredentials` capability can keep the
+method the payer pays with, so the host can charge it later. This needs SDK 3.5.0 or later.
+
+Checkout lists such a plugin with `supportsStoredCredentials` set to `true` and offers the signed-in client a box to save
+the card, with the consent wording. When the client ticks it, the host first makes sure the gateway customer exists
+(`EnsureCustomerAsync`), then registers the payment with `PaymentInstruction.SavePaymentMethod` set to `true`, and records
+the client's consent for that payment together with the wording version, the address and the browser of the request. The
+plugin sends the gateway's own "store this method" request with the payment.
+
+When `GetStatusAsync` reads the payment as `Paid`, it returns the stored method in `GatewayPaymentStatus.SavedMethod`. This
+is the same `SavedMethod` that `ListMethodsAsync` returns, so the method is charged the same way later. The host binds it
+to the consent of that payment in the save that settles the invoice, and it appears among the client's saved methods.
+
+- Return `SavedMethod` only with the `Paid` state, and the same method on every read of the same payment.
+- A plugin that does not support the flag ignores it and returns no method. The host treats that as "not saved", never as a failure of the payment.
+- Only the signed-in owner of an invoice can ask to save a method. A guest checkout pays as before, without the option.
 
 ### Reading settings
 

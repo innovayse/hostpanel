@@ -37,6 +37,14 @@ describe('POST /api/portal/order/:id/gateway-payment/start', () => {
     expect(JSON.parse(backend.requests[0]?.body ?? '{}')).toEqual({ value: 'x' })
   })
 
+  it('forwards the save choice and the consent version untouched', async () => {
+    const body = { module: 'card_gateway', returnUrl: 'https://x/return', paymentToken: 'tok', savePaymentMethod: true, consentTextVersion: 'checkout-agreement-2026-11-b' }
+
+    await route.default(makeEvent({ params: { id: '7' }, body, cookies: await signedIn('jwt') }))
+
+    expect(JSON.parse(backend.requests[0]?.body ?? '{}')).toEqual(body)
+  })
+
   it('forwards the reader language to the backend', async () => {
     const event = makeEvent({ params: { id: '7' }, body: { value: 'x' }, headers: { 'x-language': 'hy' }, cookies: await signedIn('jwt') })
 

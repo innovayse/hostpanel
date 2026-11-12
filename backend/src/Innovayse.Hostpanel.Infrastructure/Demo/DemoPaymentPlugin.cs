@@ -25,6 +25,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Demo;
 /// </list>
 /// The first result for an idempotency key is final: a repeated charge with the same key answers the recorded
 /// result, never charges again and never throws. Saving a method stores a demo Visa ending in 4242.
+/// A payment registered with <see cref="PaymentInstruction.SavePaymentMethod"/> reports that card in
+/// <see cref="GatewayPaymentStatus.SavedMethod"/> once it is read as paid, the same card on every read, so the
+/// payer's choice to keep the method can be walked end to end. The payment request names no customer, so that card is
+/// not added to a customer's list of methods.
 /// </remarks>
 internal sealed class DemoPaymentPlugin : IPaymentPlugin, IStoredCredentialPlugin
 {
@@ -74,6 +78,10 @@ internal sealed class DemoPaymentPlugin : IPaymentPlugin, IStoredCredentialPlugi
     {
         var separator = instruction.ReturnUrl.Contains('?', StringComparison.Ordinal) ? '&' : '?';
         var gatewayOrderId = string.Create(CultureInfo.InvariantCulture, $"demo-{instruction.OrderNumber}-{instruction.AmountMinor}");
+        if (instruction.SavePaymentMethod)
+        {
+            _state.RequestPaymentSave(gatewayOrderId);
+        }
 
         return Task.FromResult(new PaymentSession(gatewayOrderId, $"{instruction.ReturnUrl}{separator}demo=1"));
     }
@@ -89,7 +97,7 @@ internal sealed class DemoPaymentPlugin : IPaymentPlugin, IStoredCredentialPlugi
             ? parsed
             : null;
         return Task.FromResult(new GatewayPaymentStatus(
-            GatewayPaymentState.Paid, $"demo-txn-{gatewayOrderId}", "demo:paid", amountMinor));
+            GatewayPaymentState.Paid, $"demo-txn-{gatewayOrderId}", "demo:paid", amountMinor, SavedMethod: _state.PaymentSavedMethod(gatewayOrderId)));
     }
 
     /// <inheritdoc/>

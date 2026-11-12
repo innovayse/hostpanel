@@ -59,7 +59,7 @@ describe('ProfileTab', () => {
     const wrapper = mountAccount(ProfileTab)
     useClientStore().user = user
     useClientStore().userLoading = false
-    useAccountStore().gatewayMethods = [{ module: 'card_gateway', displayName: 'Credit card' }]
+    useAccountStore().gatewayMethods = [{ module: 'card_gateway', displayName: 'Credit card', supportsStoredCredentials: false }]
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('[data-testid="account-profile-view"]').exists()).toBe(true)

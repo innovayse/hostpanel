@@ -102,6 +102,12 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the product groups table.</summary>
     public DbSet<ProductGroup> ProductGroups => Set<ProductGroup>();
 
+    /// <summary>Gets the product bundles table.</summary>
+    public DbSet<ProductBundle> ProductBundles => Set<ProductBundle>();
+
+    /// <summary>Gets the product bundle components table.</summary>
+    public DbSet<ProductBundleItem> ProductBundleItems => Set<ProductBundleItem>();
+
     /// <summary>Gets the products table.</summary>
     public DbSet<Product> Products => Set<Product>();
 

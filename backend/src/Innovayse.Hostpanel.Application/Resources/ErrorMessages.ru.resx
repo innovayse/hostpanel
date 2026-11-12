@@ -417,6 +417,30 @@
 <data name="PRODUCT_FEATURE_LABEL_DUPLICATE" xml:space="preserve">
     <value>У этого продукта уже есть строка характеристик с такой меткой. Отредактируйте существующую строку.</value>
   </data>
+  <data name="PRODUCT_BUNDLE_NOT_FOUND" xml:space="preserve">
+    <value>Такого набора продуктов нет.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_PRODUCT_NOT_FOUND" xml:space="preserve">
+    <value>Один из продуктов набора не существует.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_DOMAIN_PRODUCT_NOT_ALLOWED" xml:space="preserve">
+    <value>Доменный продукт нельзя включить в набор. Включите опцию домена в наборе.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_DOMAIN_TERM_INVALID" xml:space="preserve">
+    <value>Набор с доменом требует срока регистрации от 1 до 10 лет, а набор без домена срок указывать не должен.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_DISCOUNT_INVALID" xml:space="preserve">
+    <value>Скидка не подходит к своему типу: процент от 0 до 100, фиксированная сумма не отрицательна и требует валюту, а при отсутствии скидки нет ни суммы, ни валюты.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_ITEMS_REQUIRED" xml:space="preserve">
+    <value>В наборе должен быть хотя бы один продукт.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_ITEM_DUPLICATE" xml:space="preserve">
+    <value>Продукт может входить в набор только один раз.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_PRIMARY_INVALID" xml:space="preserve">
+    <value>В наборе должен быть ровно один основной продукт.</value>
+  </data>
 <data name="SLIDE_NOT_FOUND" xml:space="preserve">
     <value>Такой слайд не найден.</value>
   </data>

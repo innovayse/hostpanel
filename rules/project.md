@@ -51,7 +51,7 @@ repositories. What is specific to this project is short:
   and still returns the token in the body for scripted callers, and `logout` clears the cookie
   through `HandleSessionEnded`. `HealthController` derives from `BaseApiController` with
   `[AllowAnonymous]` like the rest.
-- **Anonymous public storefront feeds.** `/api/public/{faqs,locations,partners,product-groups,products,projects,status,testimonials}` (like `/api/public/slides` and
+- **Anonymous public storefront feeds.** `/api/public/{faqs,locations,partners,product-bundles,product-groups,products,projects,status,testimonials}` (like `/api/public/slides` and
   `/api/public/demo` before them) are `[AllowAnonymous]` read-only queries: the storefront renders them before anyone has
   signed in, so they cannot carry the usual `[Authorize]` on every action. They stay on `BaseApiController`, dispatch one
   query, return only active, already-localised records and never expose an admin field; writes remain behind `Policies.Admin`.

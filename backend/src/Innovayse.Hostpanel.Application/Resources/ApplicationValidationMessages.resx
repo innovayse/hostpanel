@@ -907,6 +907,33 @@
   <data name="ProductGroupDescriptionTooLong" xml:space="preserve">
     <value>Keep the description within {0} characters.</value>
   </data>
+  <data name="ProductBundleIdInvalid" xml:space="preserve">
+    <value>Provide a valid product bundle id.</value>
+  </data>
+  <data name="ProductBundleNameRequired" xml:space="preserve">
+    <value>A product bundle needs a name.</value>
+  </data>
+  <data name="ProductBundleNameTooLong" xml:space="preserve">
+    <value>Keep the bundle name within {0} characters.</value>
+  </data>
+  <data name="ProductBundleDescriptionTooLong" xml:space="preserve">
+    <value>Keep the description within {0} characters.</value>
+  </data>
+  <data name="ProductBundleSortOrderInvalid" xml:space="preserve">
+    <value>The sort position cannot be negative.</value>
+  </data>
+  <data name="ProductBundleDomainTermInvalid" xml:space="preserve">
+    <value>A bundle with a domain needs 1 to {0} years of registration, and a bundle without one must leave the years empty.</value>
+  </data>
+  <data name="ProductBundleDiscountInvalid" xml:space="preserve">
+    <value>The discount does not fit its type: a percentage is from 0 to {0}, a fixed amount is not negative and needs a currency code, and no discount needs neither.</value>
+  </data>
+  <data name="ProductBundleItemsRequired" xml:space="preserve">
+    <value>Add at least one product to the bundle.</value>
+  </data>
+  <data name="ProductBundleItemProductInvalid" xml:space="preserve">
+    <value>Provide a valid product id for every bundle item.</value>
+  </data>
   <data name="ProductIdInvalid" xml:space="preserve">
     <value>Provide a valid product id.</value>
   </data>

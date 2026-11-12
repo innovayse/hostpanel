@@ -417,6 +417,30 @@
 <data name="PRODUCT_FEATURE_LABEL_DUPLICATE" xml:space="preserve">
     <value>This product already has a specification line under that label. Edit that one instead.</value>
   </data>
+  <data name="PRODUCT_BUNDLE_NOT_FOUND" xml:space="preserve">
+    <value>No such product bundle.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_PRODUCT_NOT_FOUND" xml:space="preserve">
+    <value>One of the products in the bundle does not exist.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_DOMAIN_PRODUCT_NOT_ALLOWED" xml:space="preserve">
+    <value>A domain product cannot be part of a bundle. Turn on the included domain instead.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_DOMAIN_TERM_INVALID" xml:space="preserve">
+    <value>A bundle with a domain needs a registration period of 1 to 10 years, and a bundle without one must not name a period.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_DISCOUNT_INVALID" xml:space="preserve">
+    <value>The discount does not fit its type: a percentage is from 0 to 100, a fixed amount is not negative and needs a currency, and no discount needs neither.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_ITEMS_REQUIRED" xml:space="preserve">
+    <value>A bundle needs at least one product.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_ITEM_DUPLICATE" xml:space="preserve">
+    <value>A product can appear in a bundle only once.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_PRIMARY_INVALID" xml:space="preserve">
+    <value>A bundle needs exactly one primary product.</value>
+  </data>
 <data name="SLIDE_NOT_FOUND" xml:space="preserve">
     <value>No such slide.</value>
   </data>

@@ -907,6 +907,33 @@
   <data name="ProductGroupDescriptionTooLong" xml:space="preserve">
     <value>Описание не должно превышать {0} символов.</value>
   </data>
+  <data name="ProductBundleIdInvalid" xml:space="preserve">
+    <value>Укажите корректный идентификатор набора продуктов.</value>
+  </data>
+  <data name="ProductBundleNameRequired" xml:space="preserve">
+    <value>У набора продуктов должно быть название.</value>
+  </data>
+  <data name="ProductBundleNameTooLong" xml:space="preserve">
+    <value>Название набора не должно превышать {0} символов.</value>
+  </data>
+  <data name="ProductBundleDescriptionTooLong" xml:space="preserve">
+    <value>Описание не должно превышать {0} символов.</value>
+  </data>
+  <data name="ProductBundleSortOrderInvalid" xml:space="preserve">
+    <value>Позиция сортировки не может быть отрицательной.</value>
+  </data>
+  <data name="ProductBundleDomainTermInvalid" xml:space="preserve">
+    <value>Набору с доменом нужен срок регистрации от 1 до {0} лет, а набор без домена должен оставить срок пустым.</value>
+  </data>
+  <data name="ProductBundleDiscountInvalid" xml:space="preserve">
+    <value>Скидка не подходит к своему типу: процент от 0 до {0}, фиксированная сумма не отрицательна и требует код валюты, а при отсутствии скидки нет ни суммы, ни валюты.</value>
+  </data>
+  <data name="ProductBundleItemsRequired" xml:space="preserve">
+    <value>Добавьте в набор хотя бы один продукт.</value>
+  </data>
+  <data name="ProductBundleItemProductInvalid" xml:space="preserve">
+    <value>Укажите корректный идентификатор продукта для каждой позиции набора.</value>
+  </data>
   <data name="ProductIdInvalid" xml:space="preserve">
     <value>Укажите корректный идентификатор продукта.</value>
   </data>

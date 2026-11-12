@@ -31,4 +31,25 @@ public static class ProductsErrors
     /// <see cref="Product.MaxGracePeriodDays"/> days (400): <see cref="Product.SetGracePeriodDays"/>.
     /// </summary>
     public const string ProductGracePeriodOutOfRange = "PRODUCT_GRACE_PERIOD_OUT_OF_RANGE";
+
+    /// <summary>
+    /// A bundle with a domain names no 1 to 10 year period, or one without a domain names a period (400):
+    /// <see cref="ProductBundle.Update"/>.
+    /// </summary>
+    public const string ProductBundleDomainTermInvalid = "PRODUCT_BUNDLE_DOMAIN_TERM_INVALID";
+
+    /// <summary>
+    /// The discount type, amount and currency do not agree: a percentage is from 0 to 100, a fixed amount
+    /// is not negative and carries a currency, no discount carries neither (400): <see cref="ProductBundle.Update"/>.
+    /// </summary>
+    public const string ProductBundleDiscountInvalid = "PRODUCT_BUNDLE_DISCOUNT_INVALID";
+
+    /// <summary>The bundle has no product in it (400): <see cref="ProductBundle.Update"/>.</summary>
+    public const string ProductBundleItemsRequired = "PRODUCT_BUNDLE_ITEMS_REQUIRED";
+
+    /// <summary>The same product is listed in the bundle more than once (400): <see cref="ProductBundle.Update"/>.</summary>
+    public const string ProductBundleItemDuplicate = "PRODUCT_BUNDLE_ITEM_DUPLICATE";
+
+    /// <summary>The bundle does not have exactly one primary product (400): <see cref="ProductBundle.Update"/>.</summary>
+    public const string ProductBundlePrimaryInvalid = "PRODUCT_BUNDLE_PRIMARY_INVALID";
 }

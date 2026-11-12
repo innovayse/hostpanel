@@ -309,7 +309,10 @@ docker/                              compose set (shared·dev·prod·platform), 
   save drops only the revoked consents); by `CancelInvoice`, `BulkInvoiceAction` and `ReleaseDomainRenewalInvoices` in the save
   that cancels the invoice (`UnboundConsentRevoker.RevokeOfAsync`, which takes the session from the invoice); and by
   `EndSessionConsentOnPaymentReceivedHandler` when the invoice turns paid, whichever path paid it (`Invoice.ApplyPaid` is the one
-  place and raises `PaymentReceivedEvent`; the session's own payment bound its method in that same save, so it is untouched). `CompleteGatewayPayment`, from the return page and from
+  place and raises `PaymentReceivedEvent`; the session's own payment bound its method in that same save, so it is untouched; an event that arrives late for an invoice marked unpaid since is ignored). One case stays open: a session
+  that expires at the gateway on its own, with the payer gone and no new attempt, keeps its consent open until the invoice is paid or
+  cancelled (or the reconciliation job sees the gateway decline it). A consent with no method is not active, so it can charge nothing.
+  `CompleteGatewayPayment`, from the return page and from
   `ReconcileGatewayPaymentsCron` alike, binds the method in `GatewayPaymentStatus.SavedMethod` to that consent through
   `StoredMethodBinder` (shared with `CompleteSaveStoredMethod`) in the very save that settles the invoice. A missing or
   conflicting method never fails the payment: no `SavedMethod`, no active consent, a consent already covering another
@@ -1425,7 +1428,9 @@ folder per use case under `Application/<Feature>/{Commands,Queries}/<UseCase>/`.
   handlers only send notifications, with these exceptions: `Billing/Events/RenewalPaymentReceivedHandler` dispatches
   `ApplyPaidRenewalsCommand`. It is safe because it only triggers an idempotent command (the line's
   `RenewalAppliedAt` marker decides) that the daily renewal sweep also runs, so a dropped event is
-  applied within a day. The second exception is `Services/Events/ClientServiceTerminatedHandler`, which dispatches
+  applied within a day. `Billing/Events/EndSessionConsentOnPaymentReceivedHandler` revokes the method-less consent of the paid invoice's
+  hosted session on `PaymentReceivedEvent` (see "A method can also be saved within a payment"); it is idempotent, ignores an invoice that
+  is not settled any more, and a retry repeats it. The second exception is `Services/Events/ClientServiceTerminatedHandler`, which dispatches
   `RetireTerminatedServiceCommand` (closes the service's open cancellation requests and revokes its SSH keys on
   the server each key is pinned to, leaving a key the agent does not confirm removed marked as a failed revoke for
   staff); it is idempotent, and a failure is logged for staff. `Services/Events/SuspendSshKeysOnServiceSuspendedHandler`

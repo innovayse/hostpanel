@@ -10,8 +10,9 @@ namespace Innovayse.Hostpanel.Application.Billing.Events;
 /// staff payment, credit, a bank transfer, a stored charge or the session itself): <c>Invoice.ApplyPaid</c> is the one
 /// place an invoice turns paid and it raises <see cref="PaymentReceivedEvent"/> in the same save, so this is the one
 /// place the consent of a session that did not carry the payment is closed (<see cref="UnboundConsentRevoker"/>). A consent
-/// the session's own payment bound to a method was bound in that same save and is not touched. A non-notification
-/// handler, and safe as one: revoking is idempotent, and a failure is retried by the queue.
+/// the session's own payment bound to a method was bound in that same save and is not touched. An event that arrives late
+/// (a retry) for an invoice marked unpaid since is ignored, so a new session keeps its consent. A non-notification handler,
+/// and safe as one: revoking is idempotent, and a failure is retried by the queue.
 /// </summary>
 public sealed class EndSessionConsentOnPaymentReceivedHandler
 {
@@ -39,7 +40,10 @@ public sealed class EndSessionConsentOnPaymentReceivedHandler
         ArgumentNullException.ThrowIfNull(evt);
 
         var invoice = await _context.Invoices.AsNoTracking().FirstOrDefaultAsync(i => i.Id == evt.InvoiceId, ct);
-        if (invoice is null)
+
+        // The event may reach this handler late, on a retry: an invoice marked unpaid since, with a new session, is not settled
+        // and its live session keeps its consent.
+        if (invoice is not { IsSettled: true })
         {
             return;
         }

@@ -128,13 +128,14 @@ public sealed class MyBillingController : BaseApiController
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 OK with the redirect URL; 401 without a session; 404 with <c>INVOICE_NOT_FOUND</c> when it is not the caller's,
-    /// or <c>CURRENCY_NOT_FOUND</c>; 400 with <c>VALIDATION_ERROR</c> (a method to keep without the consent wording
+    /// <c>CLIENT_PROFILE_NOT_FOUND</c> when the caller acts for no account, or <c>CURRENCY_NOT_FOUND</c>; 400 with <c>VALIDATION_ERROR</c> (a method to keep without the consent wording
     /// version), <c>INVOICE_NOT_PAYABLE</c>, <c>RETURN_URL_NOT_ALLOWED</c> or
     /// <c>GATEWAY_CURRENCY_MISMATCH</c>; 409 with <c>GATEWAY_SESSION_ALREADY_STARTED</c>, <c>INVOICE_STORED_CHARGE_UNRESOLVED</c>,
     /// <c>INVOICE_STORED_CHARGE_HELD</c> or <c>STORED_CREDENTIALS_NOT_SUPPORTED</c> (a method to keep at a module that cannot keep one); 503 with
     /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, or with <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the
-    /// gateway fails to register the payment; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user
-    /// lacks <c>ViewPayInvoices</c>, or with <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or
+    /// gateway fails to register the payment or to create the customer of a method to keep, or with
+    /// <c>IDENTITY_PLUGIN_UNAVAILABLE</c> when the identity plugin cannot say which account the caller acts for; 403 with
+    /// <c>CLIENT_PERMISSION_DENIED</c> when the user lacks <c>ViewPayInvoices</c>, or with <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or
     /// <c>CLIENT_CARD_PAYMENT_DISABLED</c> when the account may not pay;
     /// 429 when the rate limit is hit.
     /// </returns>

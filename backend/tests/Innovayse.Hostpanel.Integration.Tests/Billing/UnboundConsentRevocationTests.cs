@@ -38,6 +38,24 @@ public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory
     private static async Task<CardChargeConsent> ConsentAsync(SavingGatewayScenario scenario, int clientId, int consentId) =>
         (await scenario.ConsentsOfAsync(clientId)).Single(c => c.Id == consentId);
 
+    /// <summary>Waits for the handler of the real payment event to revoke a consent, reading it again until it is, for at most thirty seconds.</summary>
+    /// <param name="scenario">The scenario whose module the consent belongs to.</param>
+    /// <param name="clientId">The consent's client.</param>
+    /// <param name="consentId">The consent.</param>
+    /// <returns>The consent as last read.</returns>
+    private static async Task<CardChargeConsent> WaitForRevocationAsync(SavingGatewayScenario scenario, int clientId, int consentId)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(30);
+        var consent = await ConsentAsync(scenario, clientId, consentId);
+        while (!consent.IsRevoked && DateTimeOffset.UtcNow < deadline)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            consent = await ConsentAsync(scenario, clientId, consentId);
+        }
+
+        return consent;
+    }
+
     /// <summary>A session the gateway declined will never store the method, so the consent recorded for it is revoked and the invoice stays unpaid.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -74,8 +92,9 @@ public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory
     }
 
     /// <summary>
-    /// An invoice a staff payment settled while the session was open: the payment event closes the consent recorded for the
-    /// session at settle time, without anyone polling the session, and the method the session stored is never bound.
+    /// An invoice a staff payment settled while the session was open: the payment event the settling save raised closes the
+    /// consent recorded for the session at settle time, without anyone polling the session, and the method the session
+    /// stored is never bound. The test waits for that real event to be handled.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -85,13 +104,29 @@ public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory
         var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("revoke-settled");
         var consent = await StartSavingAsync(scenario, signedIn, invoiceId);
         var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+
         await BillingTestSeeds.MarkPaidAsync(admin, invoiceId, 10m);
+
+        var stored = await WaitForRevocationAsync(scenario, signedIn.ClientId, consent.Id);
+        stored.IsRevoked.Should().BeTrue("the payment event closes the consent of a session that did not carry the payment");
+        stored.MethodRef.Should().BeNull();
+    }
+
+    /// <summary>
+    /// An event that reaches the handler late, for an invoice that is not settled any more (marked unpaid since, with a new
+    /// session), leaves the consent of the live session alone.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task PaymentReceived_ForAnInvoiceThatIsNotSettled_KeepsTheConsent()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("revoke-stale");
+        var consent = await StartSavingAsync(scenario, signedIn, invoiceId);
 
         await PublishPaymentReceivedAsync(scenario, invoiceId, signedIn.ClientId);
 
-        var stored = await ConsentAsync(scenario, signedIn.ClientId, consent.Id);
-        stored.IsRevoked.Should().BeTrue();
-        stored.MethodRef.Should().BeNull();
+        (await ConsentAsync(scenario, signedIn.ClientId, consent.Id)).IsRevoked.Should().BeFalse();
     }
 
     /// <summary>The payment of the session itself bound the method in the settling save, so the payment event leaves that consent as it is.</summary>

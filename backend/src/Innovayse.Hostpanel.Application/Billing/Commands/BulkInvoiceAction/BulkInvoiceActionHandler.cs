@@ -151,9 +151,10 @@ public sealed class BulkInvoiceActionHandler
             }
 
             invoice.Cancel(_clock.UtcNow);
-            await _consents.RevokeOfAsync(invoice, ct);
         }
 
+        // One query for the sessions of every invoice cancelled, staged in the caller's save.
+        await _consents.RevokeOfAsync(cancellable, ct);
         return Result<int>.Success(cancellable.Count);
     }
 

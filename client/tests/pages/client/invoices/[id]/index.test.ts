@@ -115,12 +115,12 @@ describe('invoice page', () => {
   })
 
   it('notes the client group discount on a discounted line only', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(
-      invoice({ items: [{ id: 1, description: 'Hosting', amount: 90, discountPercent: 10 }] }),
-    )
+    table[`GET ${PATHS.invoice}`] = { body: invoice({ items: [{ id: 1, description: 'Hosting', amount: 90, discountPercent: 10 }] }) }
     const discounted = await mountPage(InvoicePage)
-    billingApi.fetchInvoice.mockResolvedValue(invoice())
+    await waitUntil(() => expect(discounted.find('[data-testid="invoice-items"]').exists()).toBe(true))
+    table[`GET ${PATHS.invoice}`] = { body: invoice() }
     const plain = await mountPage(InvoicePage)
+    await waitUntil(() => expect(plain.find('[data-testid="invoice-items"]').exists()).toBe(true))
 
     expect(discounted.find('[data-testid="invoice-item-discount"]').exists()).toBe(true)
     expect(plain.find('[data-testid="invoice-item-discount"]').exists()).toBe(false)

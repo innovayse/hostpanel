@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Services.Commands.RejectServiceChangeRequest;
 using Innovayse.Hostpanel.Domain.Billing.Events;
@@ -56,7 +57,13 @@ public sealed class ServiceChangeInvoiceCancelledHandler
         }
 
         var outcome = await _bus.InvokeAsync<Result>(new RejectServiceChangeRequestCommand(requestId.Value, null), ct);
-        if (outcome.IsFailure)
+        if (outcome.ErrorCode == HostpanelErrorCodes.SERVICE_CHANGE_INVALID_STATE)
+        {
+            // Staff rejected or completed the request between the read and the command: nothing is left to do.
+            _logger.LogInformation(
+                "The plan change of cancelled invoice {InvoiceId} was settled before this handler rejected it.", evt.InvoiceId);
+        }
+        else if (outcome.IsFailure)
         {
             _logger.LogWarning(
                 "Rejecting the plan change of cancelled invoice {InvoiceId} was refused with {ErrorCode}; staff can reject it.",

@@ -82,7 +82,7 @@ public sealed class ServiceChangeInvoiceCancelledHandlerTests(IntegrationTestFac
         again.GetProperty("invoiceId").GetInt32().Should().NotBe(body.GetProperty("invoiceId").GetInt32());
     }
 
-    /// <summary>The cancellation of an invoice no plan change waits for changes nothing and does not fail the other handlers.</summary>
+    /// <summary>The cancellation of an invoice no plan change waits for leaves the request that waits for another invoice Approved.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
     public async Task ACancellationNoPlanChangeWaitsFor_ChangesNothing()

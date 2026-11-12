@@ -117,6 +117,8 @@ public sealed class RejectServiceChangeRequestHandler
         }
 
         request.AmendRejectionNote(cmd.Note);
+        await _activity.RecordAsync(
+            new ActivityLogEntry(request.ClientId, $"Added a note to rejected {request.Type} - Service ID: {request.ServiceId}, Request ID: {request.Id}"), ct);
         await _context.SaveChangesAsync(ct);
         return Result.Success();
     }

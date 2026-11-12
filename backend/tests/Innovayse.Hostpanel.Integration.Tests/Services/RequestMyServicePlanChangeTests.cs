@@ -56,6 +56,34 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         tracker.Entries<ServiceChangeRequest>().Any(e => e.State == EntityState.Modified && e.Entity.InvoiceId is not null);
 
     /// <summary>
+    /// Refuses the save that links the invoice to its request, and just before it removes the client's invoice on a connection of its
+    /// own, as if another process had deleted it, so the clean-up asks Billing to cancel an invoice it cannot find, which Billing
+    /// answers as a failure, not as an exception.
+    /// </summary>
+    /// <param name="tracker">The change tracker of the save.</param>
+    /// <param name="clientId">The client whose invoice disappears.</param>
+    /// <returns><see langword="true"/> for the linking save, which must fail.</returns>
+    private static bool LinksAfterTheInvoiceIsGone(ChangeTracker tracker, int clientId)
+    {
+        if (!LinksTheInvoice(tracker))
+        {
+            return false;
+        }
+
+        using var connection = new NpgsqlConnection(tracker.Context.Database.GetConnectionString());
+        connection.Open();
+        using var delete = new NpgsqlCommand(
+            """
+            DELETE FROM "InvoiceItems" WHERE "InvoiceId" IN (SELECT "Id" FROM "Invoices" WHERE "ClientId" = @client);
+            DELETE FROM "Invoices" WHERE "ClientId" = @client;
+            """,
+            connection);
+        delete.Parameters.AddWithValue("client", clientId);
+        delete.ExecuteNonQuery();
+        return true;
+    }
+
+    /// <summary>
     /// Builds a host where the save that links the invoice to the request fails, as does every save that <paramref name="alsoRefuses"/>
     /// names, and whose handler logs into <paramref name="logger"/>.
     /// </summary>
@@ -529,30 +557,8 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         var seeded = await ServiceChangeTestSeeds.SeedServiceAsync(factory, clientId, 10m, 20m);
         var logger = new CapturingLogger<RequestMyServicePlanChangeHandler>();
 
-        // The save that links the invoice fails, and just before it the invoice disappears (as if another process removed it),
-        // so the clean-up asks Billing to cancel an invoice it cannot find, which it answers as a failure, not a throw.
-        bool LinksAfterTheInvoiceIsGone(ChangeTracker tracker)
-        {
-            if (!LinksTheInvoice(tracker))
-            {
-                return false;
-            }
-
-            using var connection = new NpgsqlConnection(tracker.Context.Database.GetConnectionString());
-            connection.Open();
-            using var delete = new NpgsqlCommand(
-                """
-                DELETE FROM "InvoiceItems" WHERE "InvoiceId" IN (SELECT "Id" FROM "Invoices" WHERE "ClientId" = @client);
-                DELETE FROM "Invoices" WHERE "ClientId" = @client;
-                """,
-                connection);
-            delete.Parameters.AddWithValue("client", clientId);
-            delete.ExecuteNonQuery();
-            return true;
-        }
-
         using var host = FailingSaveHost
-            .Create(factory, new ManualTimeProvider(DateTimeOffset.UtcNow), LinksAfterTheInvoiceIsGone)
+            .Create(factory, new ManualTimeProvider(DateTimeOffset.UtcNow), tracker => LinksAfterTheInvoiceIsGone(tracker, clientId))
             .WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
                 services.AddSingleton<ILogger<RequestMyServicePlanChangeHandler>>(logger)));
         using var crashing = host.CreateClient();

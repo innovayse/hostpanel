@@ -1,35 +1,42 @@
 /**
- * Tests for `pages/unsubscribe.vue` against the real unsubscribe store: the panels the attempt
- * walks through. Only the API composable is replaced.
+ * Tests for `pages/unsubscribe.vue` against the real unsubscribe store, the real API composable and
+ * the real transport, with a stub BFF answering on a real socket: the panels the attempt walks through.
  *
  * @module tests/pages/unsubscribe.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
-
-/** The mocked unsubscribe call, re-created for every test. */
-const unsubscribe = vi.fn()
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 
 /** The `useSeoMeta` spy, to read the robots tag the page sets. */
 const useSeoMeta = vi.fn()
 
-vi.mock('~/composables/apis/useUnsubscribeApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns Only the endpoint this page reaches through the store.
-   */
-  useUnsubscribeApi: () => ({ unsubscribe })
-}))
-
 const { default: UnsubscribePage } = await import('~/pages/unsubscribe.vue')
 
-beforeEach(() => {
-  unsubscribe.mockReset()
+/** The endpoint the page unsubscribes through. */
+const UNSUBSCRIBE_PATH = '/api/portal/public/unsubscribe'
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
+
+beforeEach(async () => {
   useSeoMeta.mockReset()
   vi.stubGlobal('useSeoMeta', useSeoMeta)
+  table = { [`POST ${UNSUBSCRIBE_PATH}`]: { status: 204 } }
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  await stub.close()
 })
 
 /**
@@ -51,7 +58,7 @@ describe('unsubscribe page', () => {
     const wrapper = await mountAuthPage(UnsubscribePage)
     await flushPromises()
 
-    expect(unsubscribe).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, UNSUBSCRIBE_PATH)).toHaveLength(0)
     expect(wrapper.find('[data-testid="unsubscribe-confirm"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="unsubscribe-done"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="unsubscribe-failed"]').exists()).toBe(false)
@@ -59,19 +66,20 @@ describe('unsubscribe page', () => {
 
   it('sends the token of the link once the reader confirms, then shows the done panel', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
-    unsubscribe.mockResolvedValue('')
 
     const wrapper = await mountAndConfirm()
 
-    expect(unsubscribe).toHaveBeenCalledTimes(1)
-    expect(unsubscribe).toHaveBeenCalledWith('tok')
+    const sent = requestsTo(stub.requests, UNSUBSCRIBE_PATH)
+    expect(sent).toHaveLength(1)
+    expect(sent[0]?.method).toBe('POST')
+    expect(bodyOf(sent[0])).toEqual({ token: 'tok' })
     expect(wrapper.find('[data-testid="unsubscribe-done"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="unsubscribe-confirm"]').exists()).toBe(false)
   })
 
   it('shows the API sentence when the link is refused', async () => {
     stubAuthRuntime({ query: { token: 'bad' } })
-    unsubscribe.mockRejectedValue({ data: { detail: 'This link is not valid.' } })
+    table[`POST ${UNSUBSCRIBE_PATH}`] = { status: 400, body: { detail: 'This link is not valid.' } }
 
     const wrapper = await mountAndConfirm()
 
@@ -81,20 +89,22 @@ describe('unsubscribe page', () => {
 
   it('asks the API about a link without a token, so its sentence is the one shown', async () => {
     stubAuthRuntime({ query: {} })
-    unsubscribe.mockRejectedValue({ data: { detail: 'A token is required.' } })
+    table[`POST ${UNSUBSCRIBE_PATH}`] = { status: 400, body: { detail: 'A token is required.' } }
 
     const wrapper = await mountAndConfirm()
 
-    expect(unsubscribe).toHaveBeenCalledWith('')
+    const [sent] = requestsTo(stub.requests, UNSUBSCRIBE_PATH)
+    expect(bodyOf(sent)).toEqual({ token: '' })
     expect(wrapper.find('[data-testid="unsubscribe-failed"]').text()).toContain('A token is required.')
   })
 
   it('disables the button and shows the working line while the request is open', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
-    unsubscribe.mockReturnValue(new Promise(() => undefined))
+    table[`POST ${UNSUBSCRIBE_PATH}`] = { hold: true }
 
     const wrapper = await mountAuthPage(UnsubscribePage)
     await wrapper.find('[data-testid="unsubscribe-confirm-button"]').trigger('click')
+    await vi.waitFor(() => expect(requestsTo(stub.requests, UNSUBSCRIBE_PATH)).toHaveLength(1))
 
     const button = wrapper.find('[data-testid="unsubscribe-confirm-button"]')
     expect(button.attributes('disabled')).toBeDefined()
@@ -103,7 +113,6 @@ describe('unsubscribe page', () => {
 
   it('keeps itself out of search results', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
-    unsubscribe.mockResolvedValue('')
 
     await mountAuthPage(UnsubscribePage)
 

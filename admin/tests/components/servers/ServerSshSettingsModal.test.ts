@@ -11,13 +11,8 @@ import ServerSshSettingsModal from '@/components/servers/ServerSshSettingsModal.
 import { SshAgentProfile, SshProviderFailure } from '@/types/sshenums'
 import { callOf, invalid, json, problem, stubFetch } from '../../helpers/fetch'
 import { mountWithApp } from '../../helpers/mount'
+import { stubDocsUrl } from '../../helpers/runtimeConfig'
 import { serverSshSettingsDto, serverSshSetupDto } from '../../helpers/serverFixtures'
-
-vi.mock('@/lib/runtimeConfig', () => ({
-  getRuntimeConfig: vi.fn(),
-}))
-
-import { getRuntimeConfig } from '@/lib/runtimeConfig'
 
 /** Settings as the API answers them. */
 const SETTINGS = serverSshSettingsDto({ serverId: 4 })
@@ -36,11 +31,11 @@ const SETUP_WITH_KEY = serverSshSetupDto({
 /**
  * Mounts the dialog for server 4 and waits for its two loads.
  *
- * @param docsUrl - Docs URL to inject (default empty).
+ * @param docsUrl - Docs address the deployment injects through `config.js` (default empty).
  * @returns The mounted dialog.
  */
 const mountDialog = async (docsUrl = ''): Promise<ReturnType<typeof mountWithApp>> => {
-  vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl, basePath: '/', clientBaseUrl: '' })
+  stubDocsUrl(docsUrl)
   const wrapper = mountWithApp(ServerSshSettingsModal, { props: { serverId: 4, serverName: 'host1' } })
   await flushPromises()
   return wrapper

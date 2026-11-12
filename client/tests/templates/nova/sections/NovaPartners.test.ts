@@ -1,43 +1,53 @@
 /**
  * Unit tests for NovaPartners: the partners come from the storefront store, show a logo or the name, link only with a website, and the section hides when there are none.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { partnerFixture } from '~/tests/helpers/storefrontFixtures'
+import { mountAfterReads, readOf, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import NovaPartners from '~/templates/nova/sections/NovaPartners.vue'
+import type { Partner } from '~/types/partner'
 import { balancedColumns } from '~/utils/balancedGrid'
 
-/** The mocked storefront endpoints, re-created for every test. */
-const api = { fetchPartners: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** What the stub answers, by route; the tests below change the partners it serves. */
+const replies: StubRouteTable = {}
+
+/**
+ * Makes the stub serve these partners.
+ *
+ * @param partners The partners the public read answers with.
+ */
+const serve = (partners: Partner[]): void => {
+  replies[readOf(StorefrontPath.Partners)] = { body: partners }
+}
 
 /**
  * Mounts the section and lets the content load.
  *
  * @returns The wrapper.
  */
-const mountSection = async () => {
-  const wrapper = mountWithKit(NovaPartners)
-  await flushPromises()
-  return wrapper
-}
+const mountSection = () =>
+  mountAfterReads(stub, [StorefrontPath.Partners], () => mountWithKit(NovaPartners))
 
 describe('NovaPartners', () => {
-  beforeEach(() => {
-    api.fetchPartners.mockReset()
-    api.fetchPartners.mockResolvedValue([
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    serve([
       partnerFixture(1, { name: 'Alpha', logoUrl: 'https://cdn.example.test/a.png', url: 'https://alpha.example.test' }),
       partnerFixture(2, { name: 'Beta', logoUrl: null, url: null }),
     ])
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('renders the logo when a partner has one and the name otherwise', async () => {
@@ -57,7 +67,7 @@ describe('NovaPartners', () => {
   })
 
   it('renders nothing while there are no partners', async () => {
-    api.fetchPartners.mockResolvedValue([])
+    serve([])
 
     const wrapper = await mountSection()
 
@@ -66,7 +76,7 @@ describe('NovaPartners', () => {
   })
 
   it('lays the cards out in the shared balanced grid, so no card is left alone on a row', async () => {
-    api.fetchPartners.mockResolvedValue(Array.from({ length: 5 }, (_, index) => partnerFixture(index + 1)))
+    serve(Array.from({ length: 5 },(_, index) => partnerFixture(index + 1)))
 
     const wrapper = await mountSection()
 
@@ -77,7 +87,7 @@ describe('NovaPartners', () => {
   })
 
   it('runs the logos as a looping marquee once the list is long', async () => {
-    api.fetchPartners.mockResolvedValue(Array.from({ length: 8 }, (_, index) => partnerFixture(index + 1)))
+    serve(Array.from({ length: 8 },(_, index) => partnerFixture(index + 1)))
 
     const wrapper = await mountSection()
 

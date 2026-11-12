@@ -1,12 +1,22 @@
 /**
- * Unit tests for the products page: it reads the family groups in the payer's currency, builds the
- * families with the domains card first, feeds the catalogue and comparison blocks, and sets the head.
+ * Unit tests for the products page against the real catalogue, currency and storefront stores, the
+ * real API composables and the real transport, with a stub BFF answering on a real socket: it reads
+ * the family groups in the payer's currency, builds the families with the domains card first, feeds
+ * the catalogue and comparison blocks, and sets the head.
+ *
+ * @module tests/pages/products/index.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
 import { testimonialFixture } from '~/tests/helpers/storefrontFixtures'
+import { StorefrontPath, readOf } from '~/tests/helpers/storefrontSection'
+import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import ProductsPage from '~/pages/products/index.vue'
 import CatalogProductsHero from '~/components/catalog/ProductsHero.vue'
 import CatalogProductFamilyGrid from '~/components/catalog/ProductFamilyGrid.vue'
@@ -16,46 +26,9 @@ import CatalogProductsBenefits from '~/components/catalog/ProductsBenefits.vue'
 import CatalogProductsTestimonials from '~/components/catalog/ProductsTestimonials.vue'
 import MarketingSectionHeader from '~/components/marketing/MarketingSectionHeader.vue'
 import SectionsCTA from '~/components/sections/SectionsCTA.vue'
-import type { BillingCurrency } from '~/types/currency'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { ProductType } from '~/types/producttype'
-
-/** The mocked catalogue endpoints, re-created for every test. */
-const api = { fetchProducts: vi.fn(), fetchProductGroups: vi.fn(), fetchProductFeatures: vi.fn() }
-
-/** The currency the stood-in currency endpoint answers with. */
-const usd: BillingCurrency = { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true }
-
-vi.mock('~/composables/apis/useCatalogApi', () => ({
-  /**
-   * Stands in for the catalogue API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useCatalogApi: () => api,
-}))
-
-/** The mocked storefront endpoints, so the testimonials block has quotes to show. */
-const storefrontApi = { fetchPartners: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn() }
-
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => storefrontApi,
-}))
-
-vi.mock('~/composables/apis/useCurrencyApi', () => ({
-  /**
-   * Stands in for the currency API composable.
-   *
-   * @returns Only the endpoint the page's store reaches for.
-   */
-  useCurrencyApi: () => ({ loadBillingCurrencies: () => Promise.resolve([usd]) }),
-}))
 
 /** The groups: one family with products and one that is empty. */
 const groups: PortalProductGroup[] = [
@@ -74,6 +47,12 @@ const catalogue: PortalProduct[] = [
 
 /** What the stood-in runtime recorded for the current test. */
 let spies: PublicPageSpies
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
 
 /**
  * Mounts the page and lets the catalogue and the currencies load.
@@ -94,28 +73,35 @@ const mountProducts = async () => {
     },
     stubs: { 'i18n-t': true },
   })
-  await flushPromises()
+  await awaitCatalogue()
   return wrapper
 }
 
 describe('products page', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     spies = stubPublicPageRuntime()
-    api.fetchProducts.mockReset()
-    api.fetchProducts.mockResolvedValue(catalogue)
-    api.fetchProductGroups.mockReset()
-    api.fetchProductGroups.mockResolvedValue(groups)
-    api.fetchProductFeatures.mockReset()
-    api.fetchProductFeatures.mockResolvedValue([])
-    storefrontApi.fetchTestimonials.mockReset()
-    storefrontApi.fetchTestimonials.mockResolvedValue([1, 2, 3].map(id => testimonialFixture(id)))
     window.localStorage.clear()
+    table = {
+      [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
+      [`GET ${CatalogPath.ProductGroups}`]: { body: groups },
+      [`GET ${CatalogPath.Products}`]: { body: catalogue },
+      [`GET ${CatalogPath.ProductFeatures}`]: { body: [] },
+      [readOf(StorefrontPath.Testimonials)]: { body: [1, 2, 3].map(id => testimonialFixture(id)) },
+    }
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('reads the products of the family groups only, and again in the payer currency once it resolves', async () => {
     await mountProducts()
 
-    expect(api.fetchProducts).toHaveBeenCalledWith(expect.objectContaining({ gids: '3,6' }))
+    const queries = requestsTo(stub.requests, CatalogPath.Products).map(queryOf)
+    expect(queries).toContainEqual(expect.objectContaining({ gids: '3,6' }))
+    expect(queries.at(-1)).toEqual(expect.objectContaining({ gids: '3,6', currency: 'USD' }))
   })
 
   it('puts the static domains card first, then one card per catalogue family', async () => {
@@ -140,12 +126,14 @@ describe('products page', () => {
   })
 
   it('compares the real plans of a family with shared specification lines, in the payer currency', async () => {
-    api.fetchProductFeatures.mockResolvedValue([
-      { id: 1, productId: 11, label: 'Disk', value: '10 GB', sortOrder: 0 },
-      { id: 2, productId: 12, label: 'Disk', value: '50 GB', sortOrder: 0 },
-      { id: 3, productId: 11, label: 'Mail', value: '1', sortOrder: 1 },
-      { id: 4, productId: 12, label: 'Mail', value: '10', sortOrder: 1 },
-    ])
+    table[`GET ${CatalogPath.ProductFeatures}`] = {
+      body: [
+        { id: 1, productId: 11, label: 'Disk', value: '10 GB', sortOrder: 0 },
+        { id: 2, productId: 12, label: 'Disk', value: '50 GB', sortOrder: 0 },
+        { id: 3, productId: 11, label: 'Mail', value: '1', sortOrder: 1 },
+        { id: 4, productId: 12, label: 'Mail', value: '10', sortOrder: 1 },
+      ],
+    }
     const wrapper = await mountProducts()
 
     expect(wrapper.find('[data-testid="comparison-plan-11"]').text()).toContain('Starter')
@@ -162,10 +150,11 @@ describe('products page', () => {
 
   it('renders the hero, the benefits and the testimonials around the catalogue', async () => {
     const wrapper = await mountProducts()
+    // The testimonials block reads its quotes without the page awaiting them.
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="products-testimonials"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="products-hero"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="products-benefits"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="products-testimonials"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="sections-cta"]').exists()).toBe(true)
   })
 

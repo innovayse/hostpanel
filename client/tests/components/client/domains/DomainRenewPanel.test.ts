@@ -1,24 +1,30 @@
 /**
  * Unit tests for DomainRenewPanel: the standing badge, the order summary, the payment method
- * choice, the order and the success state.
+ * choice, the order and the success state. The store, the API composables and the transport run for
+ * real against a stub BFF.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import DomainRenewPanel from '~/components/client/domains/DomainRenewPanel.vue'
 import type { DomainDetail } from '~/types/domaindetail'
 import { DomainStatus } from '~/types/domainstatus'
+import { HttpMethod } from '~/types/httpmethod'
+import { DOMAIN_ID, DomainAction, domainPath } from '~/tests/helpers/domainPanelPaths'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { requestsTo, routeTable, refusal } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 
-/** The mocked endpoints the store reaches. */
-const domainsApi = vi.hoisted(() => ({ createRenewOrder: vi.fn() }))
+/** A gateway the panel offers. */
+const card = { module: 'card_gateway', displayName: 'Card gateway' }
 
-/** The mocked billing endpoints the store reaches. */
-const billingApi = vi.hoisted(() => ({ fetchGatewayMethods: vi.fn() }))
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useDomainsApi', () => ({ useDomainsApi: () => domainsApi }))
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => billingApi }))
-vi.mock('~/composables/apis/useClientApi', () => ({ useClientApi: () => ({}) }))
-vi.mock('~/composables/apis/useCatalogApi', () => ({ useCatalogApi: () => ({}) }))
-vi.mock('~/composables/apis/useCurrencyApi', () => ({ useCurrencyApi: () => ({}) }))
+/** The replies of the current test; a test changes them before it submits. */
+let table: StubRouteTable
 
 /**
  * Builds a domain with the fields the panel reads.
@@ -31,9 +37,6 @@ const domain = (overrides: Partial<DomainDetail> = {}): DomainDetail => ({
   ...overrides
 } as DomainDetail)
 
-/** A gateway the panel offers. */
-const card = { module: 'card_gateway', displayName: 'Card gateway' }
-
 /**
  * Mounts the panel and waits for the payment methods to arrive.
  *
@@ -41,18 +44,21 @@ const card = { module: 'card_gateway', displayName: 'Card gateway' }
  * @returns The wrapper.
  */
 const mountPanel = async (overrides: Partial<DomainDetail> = {}) => {
-  const wrapper = mountClient(DomainRenewPanel, { props: { domain: domain(overrides), domainId: '7', fullName: 'example.com' } })
+  const wrapper = mountClient(DomainRenewPanel, { props: { domain: domain(overrides), domainId: DOMAIN_ID, fullName: 'example.com' } })
   await vi.waitFor(() => expect(wrapper.find('[data-testid="domain-renew-payment"]').exists()).toBe(true))
   return wrapper
 }
 
-describe('DomainRenewPanel', () => {
-  beforeEach(() => {
-    domainsApi.createRenewOrder.mockReset()
-    billingApi.fetchGatewayMethods.mockReset()
-    billingApi.fetchGatewayMethods.mockResolvedValue([card])
-  })
+beforeEach(async () => {
+  table = { [`GET ${AccountEndpoint.PaymentMethods}`]: { body: [card] } }
+  stub = await startTransport(request => routeTable(table)(request))
+})
 
+afterEach(async () => {
+  await stub.close()
+})
+
+describe('DomainRenewPanel', () => {
   it.each([
     [{}, 'client.domains.renewActive'],
     [{ status: DomainStatus.Expired }, 'client.domains.renewPastPeriod'],
@@ -76,18 +82,21 @@ describe('DomainRenewPanel', () => {
   })
 
   it('places the order for this domain and shows the invoice link', async () => {
-    domainsApi.createRenewOrder.mockResolvedValue({ orderId: 3, invoiceId: 90 })
+    table[`POST ${domainPath(DomainAction.RenewOrder)}`] = { body: { orderId: 3, invoiceId: 90 } }
     const wrapper = await mountPanel()
 
     await wrapper.find('form').trigger('submit')
 
     await vi.waitFor(() => expect(wrapper.find('[data-testid="domain-renew-pay"]').exists()).toBe(true))
-    expect(domainsApi.createRenewOrder).toHaveBeenCalledWith('7', 1, 'card_gateway')
+    const orders = requestsTo(stub.requests, domainPath(DomainAction.RenewOrder))
+    expect(orders).toHaveLength(1)
+    expect(orders[0]?.method).toBe(HttpMethod.Post)
+    expect(bodyOf(orders[0])).toEqual({ years: 1, paymentmethod: 'card_gateway' })
     expect(wrapper.find('[data-testid="domain-renew-pay"]').attributes('href')).toBe('/client/invoices/90')
   })
 
   it('keeps the form and shows the refusal when the order fails', async () => {
-    domainsApi.createRenewOrder.mockRejectedValue({ data: { detail: 'Cannot renew yet.' } })
+    table[`POST ${domainPath(DomainAction.RenewOrder)}`] = refusal('Cannot renew yet.')
     const wrapper = await mountPanel()
 
     await wrapper.find('form').trigger('submit')

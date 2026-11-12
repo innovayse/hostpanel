@@ -1,27 +1,28 @@
 /**
- * Tests for `pages/client/register.vue` against the real auth store: the registration form, its
- * refusals and the redirect to sign-in. Only the API composable is replaced.
+ * Tests for `pages/client/register.vue` against the real auth store, API composable and transport,
+ * with a stub BFF answering on a real socket (nothing of ours is mocked): the registration form,
+ * its refusals and the redirect to sign-in.
  *
  * @module tests/pages/client/register.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import RegisterPage from '~/pages/client/register.vue'
 
-/** The mocked registration call, re-created for every test. */
-const register = vi.fn()
+/** The BFF path the page posts the registration to. */
+const REGISTER_PATH = '/api/portal/auth/register'
 
-vi.mock('~/composables/apis/useAuthApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns Only the endpoint this page reaches through the store.
-   */
-  useAuthApi: () => ({ register })
-}))
+/** The stub playing the BFF. */
+let stub: StubServer
 
-const { default: RegisterPage } = await import('~/pages/client/register.vue')
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
 
 /**
  * Fills every field and submits the form.
@@ -34,12 +35,16 @@ const submit = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>): Promi
   await wrapper.find('[data-testid="register-email"]').setValue('ada@example.com')
   await wrapper.find('[data-testid="register-password"]').setValue('long-enough-pw')
   await wrapper.find('form').trigger('submit')
-  await flushPromises()
 }
 
-beforeEach(() => {
-  register.mockReset()
+beforeEach(async () => {
   stubAuthRuntime()
+  table = {}
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  await stub.close()
 })
 
 describe('client register page', () => {
@@ -52,20 +57,22 @@ describe('client register page', () => {
   })
 
   it('sends the typed fields to the API', async () => {
-    register.mockResolvedValue({})
+    table[`POST ${REGISTER_PATH}`] = { body: {} }
     const wrapper = await mountAuthPage(RegisterPage)
 
     await submit(wrapper)
+    await vi.waitFor(() => expect(requestsTo(stub.requests, REGISTER_PATH)).toHaveLength(1))
 
-    expect(register).toHaveBeenCalledWith({ firstname: 'Ada', lastname: 'Lovelace', email: 'ada@example.com', password: 'long-enough-pw' })
+    expect(bodyOf(requestsTo(stub.requests, REGISTER_PATH)[0])).toEqual({ firstname: 'Ada', lastname: 'Lovelace', email: 'ada@example.com', password: 'long-enough-pw' })
   })
 
   it('shows the success banner and schedules the redirect to sign-in', async () => {
-    register.mockResolvedValue({})
+    table[`POST ${REGISTER_PATH}`] = { body: {} }
     const timer = vi.spyOn(globalThis, 'setTimeout')
     const wrapper = await mountAuthPage(RegisterPage)
 
     await submit(wrapper)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-success"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="ui-form-success"]').text()).toBe('client.register.success')
     expect(timer).toHaveBeenCalledWith(expect.any(Function), 1500)
@@ -73,22 +80,22 @@ describe('client register page', () => {
   })
 
   it('shows the API sentence and no success banner when registration is refused', async () => {
-    register.mockRejectedValue({ data: { detail: 'That email is taken.' } })
+    table[`POST ${REGISTER_PATH}`] = { status: 409, body: { detail: 'That email is taken.' } }
     const wrapper = await mountAuthPage(RegisterPage)
 
     await submit(wrapper)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('That email is taken.')
     expect(wrapper.find('[data-testid="ui-form-success"]').exists()).toBe(false)
   })
 
   it('shows a field message under its field', async () => {
-    register.mockRejectedValue({ data: { errors: { password: ['Too short.'] } } })
+    table[`POST ${REGISTER_PATH}`] = { status: 400, body: { errors: { password: ['Too short.'] } } }
     const wrapper = await mountAuthPage(RegisterPage)
 
     await submit(wrapper)
-
-    expect(wrapper.find('[data-testid="register-password"]').element.closest('div.w-full')?.textContent).toContain('Too short.')
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="register-password"]').element.closest('div.w-full')?.textContent).toContain('Too short.'))
   })
 
   it('links back to sign-in', async () => {

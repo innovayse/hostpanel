@@ -1,18 +1,22 @@
 /**
- * Tests for `plugins/demo-mode.ts`: the demo status is loaded through the demo store when the
- * plugin's setup runs, and the plugin is named so others can depend on it.
+ * Tests for `plugins/demo-mode.ts`: the demo status is loaded through the real demo store, API
+ * composable and transport (against a stub server) when the plugin's setup runs, and the plugin is
+ * named so others can depend on it.
  *
  * @module tests/plugins/demo-mode.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 
-/** The stubbed store `load` action. */
-const loadMock = vi.fn()
+/** Path of the endpoint that reports the demo status. */
+const DEMO_PATH = '/api/portal/demo'
 
-vi.mock('~/stores/demo', () => ({
-  useDemoStore: () => ({ load: loadMock })
-}))
+/** The stub playing the BFF. */
+let stub: StubServer
 
 /** The plugin definition. */
 interface PluginDefinition {
@@ -32,10 +36,15 @@ const loadPlugin = async (): Promise<PluginDefinition> => {
   return (await import('~/plugins/demo-mode')).default as unknown as PluginDefinition
 }
 
-beforeEach(() => {
-  loadMock.mockReset()
-  loadMock.mockResolvedValue(undefined)
+beforeEach(async () => {
+  setActivePinia(createPinia())
+  stub = await startTransport(routeTable({ [`GET ${DEMO_PATH}`]: { body: { enabled: true, nextResetAt: null, accounts: [] } } }))
   vi.resetModules()
+})
+
+afterEach(async () => {
+  await stub.close()
+  vi.unstubAllGlobals()
 })
 
 describe('demo-mode plugin', () => {
@@ -50,6 +59,6 @@ describe('demo-mode plugin', () => {
 
     await plugin.setup()
 
-    expect(loadMock).toHaveBeenCalledTimes(1)
+    expect(requestsTo(stub.requests, DEMO_PATH)).toHaveLength(1)
   })
 })

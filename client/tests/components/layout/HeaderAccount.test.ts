@@ -1,26 +1,25 @@
 /**
  * Unit tests for LayoutHeaderAccount: the avatar trigger, the panel with the client's name and
  * links, and sign-out through the auth store.
+ *
+ * The real auth store, API composable and transport run against a stub server playing the BFF.
  */
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import LayoutHeaderAccount from '~/components/layout/HeaderAccount.vue'
 import { useAuthStore } from '~/stores/auth'
 import { makeClientUser } from '~/tests/helpers/clientUser'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 
-/** The mocked sign-out call of the auth API. */
-const logoutMock = vi.fn()
+/** Path of the endpoint that ends the session. */
+const LOGOUT_PATH = '/api/portal/auth/logout'
 
-vi.mock('~/composables/apis/useAuthApi', () => ({
-  /**
-   * Stands in for the auth API composable so the store runs without transport.
-   *
-   * @returns Only the endpoints the account menu reaches for.
-   */
-  useAuthApi: () => ({ logout: logoutMock, ssoLogout: logoutMock, fetchUser: vi.fn() }),
-}))
+/** The stub playing the BFF. */
+let stub: StubServer
 
 /** A signed-in client. */
 const client = makeClientUser()
@@ -39,9 +38,13 @@ const mountAccount = () => {
 }
 
 describe('LayoutHeaderAccount', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     stubTemplateGlobals()
-    logoutMock.mockReset()
+    stub = await startTransport(routeTable({ [`POST ${LOGOUT_PATH}`]: { body: {} } }))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('names the trigger after the client and keeps the panel closed', async () => {
@@ -94,12 +97,12 @@ describe('LayoutHeaderAccount', () => {
   it('signs the client out through the store', async () => {
     const wrapper = mountAccount()
     const store = useAuthStore()
-    store.signOut = vi.fn().mockResolvedValue(undefined)
     await wrapper.find('[data-testid="header-account-trigger"]').trigger('click')
 
     await wrapper.find('[data-testid="header-account-sign-out"]').trigger('click')
 
-    expect(store.signOut).toHaveBeenCalledTimes(1)
+    await vi.waitFor(() => expect(requestsTo(stub.requests, LOGOUT_PATH)).toHaveLength(1))
+    await vi.waitFor(() => expect(store.user).toBeNull())
     expect(wrapper.find('[data-testid="header-account-panel"]').exists()).toBe(false)
   })
 

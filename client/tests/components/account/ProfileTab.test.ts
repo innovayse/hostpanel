@@ -1,26 +1,41 @@
 /**
  * Unit tests for ProfileTab: loading, failure, the view, the edit switch and the sign-in address card.
+ * The real stores and the real `useAuthMode` run; the deployment is a local-accounts one, so the
+ * language and the sign-in address are offered.
  */
-import { describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountAccount } from '~/tests/helpers/mountAccount'
+import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
 import { Permission } from '~/types/permission'
+import { AuthMode } from '~/types/authmode'
 import ProfileTab from '~/components/account/ProfileTab.vue'
+import { useAuthMode } from '~/composables/useAuthMode'
 import { useAccountStore } from '~/stores/account'
 import { useClientStore } from '~/stores/client'
 import type { ClientUser } from '~/types/clientuser'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 
-vi.mock('~/composables/apis/useClientApi', () => ({ useClientApi: () => ({}) }))
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => ({}) }))
-vi.mock('~/composables/apis/useAuthApi', () => ({ useAuthApi: () => ({}) }))
-vi.mock('qrcode', () => ({ default: { toDataURL: async (): Promise<string> => '' } }))
-vi.mock('~/stores/catalog', async () => {
-  const { ref: vueRef } = await import('vue')
-  return { useCatalogStore: () => ({ countries: vueRef([]) }) }
+vi.mock('qrcode', () => ({
+  default: {
+    /**
+     * Stands in for the QR renderer, a third-party package the account store imports.
+     *
+     * @returns An empty data URL.
+     */
+    toDataURL: async (): Promise<string> => ''
+  }
+}))
+
+beforeEach(() => {
+  // Nuxt auto-imports the composable; the unit environment registers the real one under that name.
+  vi.stubGlobal('useAuthMode', useAuthMode)
+  vi.stubGlobal('useRuntimeConfig', () => ({ public: { authMode: AuthMode.Local } }))
+  stubLocalePath()
 })
 
-vi.stubGlobal('useAuthMode', () => ({ isSso: ref(false) }))
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 /** A signed-in profile with a default gateway and a language. */
 const user: ClientUser = makeClientUser({

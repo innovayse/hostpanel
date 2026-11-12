@@ -1,33 +1,37 @@
 /**
  * Unit tests for ClientDashboardServicesCard: the service list, its states and the
- * control-panel shortcut, against a real client store and a replaced management API.
+ * control-panel shortcut, against the real client and service management stores, API composables and
+ * transport, with a stub server playing the BFF.
  *
  * @module tests/components/client/dashboard/ServicesCard.test
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
+import ServicesCard from '~/components/client/dashboard/ServicesCard.vue'
+import { useClientStore } from '~/stores/client'
 import { Permission } from '~/types/permission'
 import { makeClientService } from '~/tests/helpers/clientServiceFixture'
 import { grantPermissions } from '~/tests/helpers/grantPermissions'
 import { mountClient } from '~/tests/helpers/mountClient'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import { ServiceStatus } from '~/types/servicestatus'
+import { controlPanelUrl } from '~/utils/controlPanel'
 
-/** The mocked open-control-panel action, re-created for every test. */
-const openControlPanel = vi.fn()
+/** The BFF path that answers the single sign-on address of the control panel of service 1. */
+const SSO_PATH = '/api/portal/client/services/1/cpanel-sso'
 
-vi.mock('~/stores/servicemanagement', () => ({
-  /**
-   * Stands in for the service-management store, whose transport is not under test here.
-   *
-   * @returns Only the action the card calls.
-   */
-  useServiceManagementStore: () => ({ openControlPanel })
-}))
+/** The single sign-on address the BFF hands out. */
+const SSO_URL = 'https://srv.test:2083/sso-session'
 
-const { default: ServicesCard } = await import('~/components/client/dashboard/ServicesCard.vue')
-const { useClientStore } = await import('~/stores/client')
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it acts. */
+let table: StubRouteTable
 
 /** A provisioned active service on a known host. */
 const ACTIVE = makeClientService({ id: 1, productName: 'Starter', domain: 'a.test', username: 'ada', server: { name: 'srv', hostname: 'srv.test', ipAddress: null } })
@@ -35,12 +39,14 @@ const ACTIVE = makeClientService({ id: 1, productName: 'Starter', domain: 'a.tes
 /** A paid service that is not provisioned yet. */
 const PENDING = makeClientService({ id: 2, productName: 'Pro', domain: null, username: null, status: ServiceStatus.Pending, server: null })
 
-beforeEach(() => {
-  openControlPanel.mockReset()
+beforeEach(async () => {
+  table = { [`GET ${SSO_PATH}`]: { body: { url: SSO_URL } } }
+  stub = await startTransport(routeTable(table))
 })
 
-afterEach(() => {
+afterEach(async () => {
   vi.restoreAllMocks()
+  await stub.close()
 })
 
 describe('ClientDashboardServicesCard', () => {
@@ -123,15 +129,27 @@ describe('ClientDashboardServicesCard', () => {
     expect(wrapper.find('[data-testid="dashboard-service-cpanel-1"]').exists()).toBe(true)
   })
 
-  it('asks the store to open the control panel of the clicked service with its host', async () => {
-    openControlPanel.mockResolvedValue(undefined)
+  it('signs the clicked service in through the BFF and opens the panel it answers with', async () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null)
     const wrapper = mountClient(ServicesCard)
     useClientStore().services = [ACTIVE]
     await nextTick()
 
     await wrapper.find('[data-testid="dashboard-service-cpanel-1"]').trigger('click')
-    await flushPromises()
 
-    expect(openControlPanel).toHaveBeenCalledWith('1', 'srv.test')
+    await vi.waitFor(() => expect(open).toHaveBeenCalledWith(SSO_URL, '_blank', 'noopener'))
+    expect(requestsTo(stub.requests, SSO_PATH)).toHaveLength(1)
+  })
+
+  it('falls back to the plain sign-in page of the service host when single sign-on is refused', async () => {
+    table[`GET ${SSO_PATH}`] = { status: 502, body: { detail: 'The panel is unreachable.' } }
+    const open = vi.spyOn(window, 'open').mockReturnValue(null)
+    const wrapper = mountClient(ServicesCard)
+    useClientStore().services = [ACTIVE]
+    await nextTick()
+
+    await wrapper.find('[data-testid="dashboard-service-cpanel-1"]').trigger('click')
+
+    await vi.waitFor(() => expect(open).toHaveBeenCalledWith(controlPanelUrl('srv.test'), '_blank', 'noopener'))
   })
 })

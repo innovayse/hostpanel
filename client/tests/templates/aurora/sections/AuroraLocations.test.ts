@@ -1,25 +1,32 @@
 /**
  * Unit tests for AuroraLocations: the locations come from the storefront store, optional lines show only when set, and the section hides when there are none.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { mountAfterReads, readOf, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import AuroraLocations from '~/templates/aurora/sections/AuroraLocations.vue'
 import type { ServerLocation } from '~/types/serverlocation'
 import { stubAuroraGlobals } from '../auroraGlobals'
 import { balancedColumns } from '~/utils/balancedGrid'
 
-/** The mocked storefront endpoints, re-created for every test. */
-const api = { fetchPartners: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn(), fetchLocations: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** What the stub answers, by route; the tests below change the locations it serves. */
+const replies: StubRouteTable = {}
+
+/**
+ * Makes the stub serve these locations.
+ *
+ * @param locations The locations the public read answers with.
+ */
+const serve = (locations: ServerLocation[]): void => {
+  replies[readOf(StorefrontPath.Locations)] = { body: locations }
+}
 
 /**
  * Builds a location.
@@ -44,15 +51,18 @@ const location = (id: number, overrides: Partial<ServerLocation> = {}): ServerLo
  */
 const mountSection = async () => {
   stubAuroraGlobals()
-  const wrapper = mountWithKit(AuroraLocations)
-  await flushPromises()
-  return wrapper
+  return mountAfterReads(stub, [StorefrontPath.Locations], () => mountWithKit(AuroraLocations))
 }
 
 describe('AuroraLocations', () => {
-  beforeEach(() => {
-    api.fetchLocations.mockReset()
-    api.fetchLocations.mockResolvedValue([location(1, { city: 'Frankfurt', latencyNote: '20 ms to Europe' }), location(2)])
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    serve([location(1, { city: 'Frankfurt', latencyNote: '20 ms to Europe' }), location(2)])
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('shows the country code, name, city and latency note of a location', async () => {
@@ -72,7 +82,7 @@ describe('AuroraLocations', () => {
   })
 
   it('renders nothing while there are no locations', async () => {
-    api.fetchLocations.mockResolvedValue([])
+    serve([])
 
     const wrapper = await mountSection()
 

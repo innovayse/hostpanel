@@ -1,32 +1,40 @@
 /**
- * Unit tests for DomainLockPanel: both switches move only when the API accepts the change.
+ * Unit tests for DomainLockPanel: both switches move only when the API accepts the change. The
+ * store, the API composables and the transport run for real against a stub BFF.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import DomainLockPanel from '~/components/client/domains/DomainLockPanel.vue'
+import { HttpMethod } from '~/types/httpmethod'
+import { DOMAIN_ID, DomainAction, domainPath } from '~/tests/helpers/domainPanelPaths'
+import { refusal } from '~/tests/helpers/stubRoutes'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 
-/** The mocked domains endpoints the store reaches. */
-const domainsApi = vi.hoisted(() => ({ setLock: vi.fn(), setIdProtect: vi.fn() }))
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useDomainsApi', () => ({ useDomainsApi: () => domainsApi }))
-vi.mock('~/composables/apis/useClientApi', () => ({ useClientApi: () => ({}) }))
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => ({}) }))
-vi.mock('~/composables/apis/useCatalogApi', () => ({ useCatalogApi: () => ({}) }))
-vi.mock('~/composables/apis/useCurrencyApi', () => ({ useCurrencyApi: () => ({}) }))
+/** What the stub answers the switch change with; a test changes it before it clicks. */
+let reply: StubReply
 
 /**
  * Mounts the panel with both switches off.
  *
  * @returns The wrapper.
  */
-const mountPanel = () => mountClient(DomainLockPanel, { props: { domainId: '7', lockEnabled: false, idProtectEnabled: false } })
+const mountPanel = () => mountClient(DomainLockPanel, { props: { domainId: DOMAIN_ID, lockEnabled: false, idProtectEnabled: false } })
+
+beforeEach(async () => {
+  reply = { body: {} }
+  stub = await startTransport(() => reply)
+})
+
+afterEach(async () => {
+  await stub.close()
+})
 
 describe('DomainLockPanel', () => {
-  beforeEach(() => {
-    domainsApi.setLock.mockReset()
-    domainsApi.setIdProtect.mockReset()
-  })
-
   it('shows the lock, the ID protection and the EPP card', () => {
     const wrapper = mountPanel()
 
@@ -36,27 +44,31 @@ describe('DomainLockPanel', () => {
   })
 
   it('turns the lock on when the API accepts', async () => {
-    domainsApi.setLock.mockResolvedValue({})
     const wrapper = mountPanel()
 
     await wrapper.find('[data-testid="domain-lock-row-toggle"]').trigger('click')
 
     await vi.waitFor(() => expect(wrapper.emitted('update:lockEnabled')).toEqual([[true]]))
-    expect(domainsApi.setLock).toHaveBeenCalledWith('7', true)
+    expect(stub.requests).toHaveLength(1)
+    expect(stub.requests[0]?.method).toBe(HttpMethod.Put)
+    expect(stub.requests[0]?.url).toBe(domainPath(DomainAction.Lock))
+    expect(bodyOf(stub.requests[0])).toEqual({ value: true })
   })
 
   it('turns ID protection on when the API accepts', async () => {
-    domainsApi.setIdProtect.mockResolvedValue({})
     const wrapper = mountPanel()
 
     await wrapper.find('[data-testid="domain-idprotect-row-toggle"]').trigger('click')
 
     await vi.waitFor(() => expect(wrapper.emitted('update:idProtectEnabled')).toEqual([[true]]))
-    expect(domainsApi.setIdProtect).toHaveBeenCalledWith('7', true)
+    expect(stub.requests).toHaveLength(1)
+    expect(stub.requests[0]?.method).toBe(HttpMethod.Put)
+    expect(stub.requests[0]?.url).toBe(domainPath(DomainAction.IdProtect))
+    expect(bodyOf(stub.requests[0])).toEqual({ value: true })
   })
 
   it('leaves the lock off and shows the refusal when the API refuses', async () => {
-    domainsApi.setLock.mockRejectedValue({ data: { detail: 'Registrar refused.' } })
+    reply = refusal('Registrar refused.')
     const wrapper = mountPanel()
 
     await wrapper.find('[data-testid="domain-lock-row-toggle"]').trigger('click')

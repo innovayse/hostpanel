@@ -1,5 +1,5 @@
 <template>
-  <UiSection v-if="channels.length" padding="lg" :contained="false" class="relative border-t border-line" data-testid="aurora-support">
+  <UiSection padding="lg" :contained="false" class="relative border-t border-line" data-testid="aurora-support">
     <UiText tone="inherit" size="inherit" :class="[EYEBROW_CLASS, 'text-ac3']">{{ t('aurora.support.eyebrow') }}</UiText>
     <UiHeading :level="2" size="bare" :class="[SECTION_TITLE_CLASS, 'mt-3']">
       {{ t('aurora.support.title') }}

@@ -1,42 +1,27 @@
 /**
- * Unit tests for the hosting plan page: it finds the plan named by the address, prices it in the
- * payer's currency for the chosen cycle, adds it to the cart (a free plan at no charge) and answers
- * an unknown plan with a notice.
+ * Unit tests for the hosting plan page against the real catalogue, currency and cart stores, the
+ * real API composables and the real transport, with a stub BFF answering on a real socket: it finds
+ * the plan named by the address, prices it in the payer's currency for the chosen cycle, adds it to
+ * the cart (a free plan at no charge) and answers an unknown plan with a notice.
+ *
+ * @module tests/pages/hosting/[plan].test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import HostingPlanPage from '~/pages/hosting/[plan].vue'
 import CatalogHostingPlanHero from '~/components/catalog/HostingPlanHero.vue'
 import CatalogHostingPlanDetails from '~/components/catalog/HostingPlanDetails.vue'
 import { useCartStore } from '~/stores/cart'
-import type { BillingCurrency } from '~/types/currency'
 import type { PortalProduct } from '~/types/portalproduct'
 import { PricingCycle } from '~/types/pricingcycle'
 
-/** The mocked catalogue endpoints, re-created for every test. */
-const api = { fetchProducts: vi.fn() }
-
-/** The currency the stood-in currency endpoint answers with. */
-const usd: BillingCurrency = { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true }
-
-vi.mock('~/composables/apis/useCatalogApi', () => ({
-  /**
-   * Stands in for the catalogue API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useCatalogApi: () => api,
-}))
-
-vi.mock('~/composables/apis/useCurrencyApi', () => ({
-  /**
-   * Stands in for the currency API composable.
-   *
-   * @returns Only the endpoint the page's store reaches for.
-   */
-  useCurrencyApi: () => ({ loadBillingCurrencies: () => Promise.resolve([usd]) }),
-}))
+/** The stub playing the BFF. */
+let stub: StubServer
 
 /** The hosting plans the catalogue answers with. */
 const plans: PortalProduct[] = [
@@ -52,7 +37,7 @@ const plans: PortalProduct[] = [
 const useHeadSpy = vi.fn()
 
 /**
- * Mounts the page for one plan address.
+ * Mounts the page for one plan address and waits until the catalogue has been read in the payer currency.
  *
  * @param plan The `plan` route parameter.
  * @returns The wrapper.
@@ -62,15 +47,21 @@ const mountPlan = async (plan = 'starter') => {
   vi.stubGlobal('useHead', useHeadSpy)
   vi.stubGlobal('useRuntimeConfig', () => ({ public: { baseUrl: 'https://panel.test' } }))
   const wrapper = await mountPage(HostingPlanPage, { components: { CatalogHostingPlanHero, CatalogHostingPlanDetails } })
-  await flushPromises()
+  await awaitCatalogue()
   return wrapper
 }
 
 describe('hosting plan page', () => {
-  beforeEach(() => {
-    api.fetchProducts.mockReset()
-    api.fetchProducts.mockResolvedValue(plans)
+  beforeEach(async () => {
     window.localStorage.clear()
+    stub = await startTransport(routeTable({
+      [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
+      [`GET ${CatalogPath.Products}`]: { body: plans },
+    }))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('builds the canonical link from the configured site URL', async () => {

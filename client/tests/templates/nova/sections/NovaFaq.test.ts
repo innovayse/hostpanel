@@ -3,42 +3,52 @@
  * nothing at all when there are no questions. The list is cut to the home limit, and the link to the
  * full FAQ page shows only when questions were left out.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
 import { faqFixture } from '~/tests/helpers/storefrontFixtures'
+import { mountAfterReads, readOf, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import { HOME_FAQ_LIMIT } from '~/constants/faq'
 import NovaFaq from '~/templates/nova/sections/NovaFaq.vue'
+import type { FAQ } from '~/types/faq'
 
-/** The mocked storefront endpoints, re-created for every test. */
-const api = { fetchPartners: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** What the stub answers, by route; the tests below change the questions it serves. */
+const replies: StubRouteTable = {}
+
+/**
+ * Makes the stub serve these questions.
+ *
+ * @param faqs The questions the public read answers with.
+ */
+const serve = (faqs: FAQ[]): void => {
+  replies[readOf(StorefrontPath.Faqs)] = { body: faqs }
+}
 
 /**
  * Mounts the section and lets the questions load.
  *
  * @returns The wrapper.
  */
-const mountSection = async () => {
-  const wrapper = mountWithKit(NovaFaq)
-  await flushPromises()
-  return wrapper
-}
+const mountSection = () =>
+  mountAfterReads(stub, [StorefrontPath.Faqs], () => mountWithKit(NovaFaq))
 
 describe('NovaFaq', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
     stubLocalePath()
-    api.fetchFaqs.mockReset()
-    api.fetchFaqs.mockResolvedValue([faqFixture(1), faqFixture(2)])
+    serve([faqFixture(1), faqFixture(2)])
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('renders a details element per question with its question and answer', async () => {
@@ -56,7 +66,7 @@ describe('NovaFaq', () => {
   })
 
   it('lists at most the home limit and links to the full FAQ page when more exist', async () => {
-    api.fetchFaqs.mockResolvedValue(Array.from({ length: HOME_FAQ_LIMIT + 2 }, (_, index) => faqFixture(index + 1)))
+    serve(Array.from({ length: HOME_FAQ_LIMIT + 2 }, (_, index) => faqFixture(index + 1)))
 
     const wrapper = await mountSection()
 
@@ -72,7 +82,7 @@ describe('NovaFaq', () => {
   })
 
   it('renders no section while there are no questions', async () => {
-    api.fetchFaqs.mockResolvedValue([])
+    serve([])
 
     const wrapper = await mountSection()
 

@@ -1,28 +1,40 @@
 /**
- * Tests for `pages/client/invoices/[id]/index.vue`: the header, the pay button of an owing invoice, the
- * totals, the PDF download and the not-found state.
+ * Tests for `pages/client/invoices/[id]/index.vue` against the real invoice payment and credit
+ * stores, the real API composable and transport, with a stub BFF answering on a real socket
+ * (nothing of ours is mocked; the file a download hands to the browser is read at the browser's own
+ * primitives): the header, the pay button of an owing invoice, the totals, the PDF download and the
+ * not-found state.
+ *
+ * @module tests/pages/client/invoices/[id]/index.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import { captureDownloads, PDF_REPLY } from '~/tests/helpers/captureDownloads'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { settle } from '~/tests/helpers/settle'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import InvoicePage from '~/pages/client/invoices/[id]/index.vue'
 import { InvoiceStatus } from '~/types/invoicestatus'
 import { InvoiceTransactionType } from '~/types/invoicetransactiontype'
 
-/** The mocked billing endpoints the store reaches. */
-const billingApi = vi.hoisted(() => ({
-  fetchInvoice: vi.fn(),
-  fetchInvoicePdf: vi.fn(),
-  fetchBankTransfer: vi.fn(),
-  fetchCredit: vi.fn(),
-  applyInvoiceCredit: vi.fn(),
-}))
+/** The BFF paths the page reads and writes for invoice 41. */
+const PATHS = {
+  invoice: '/api/portal/client/invoices/41',
+  bankTransfer: '/api/portal/client/invoices/41/bank-transfer',
+  pdf: '/api/portal/client/invoices/41/pdf',
+  applyCredit: '/api/portal/client/invoices/41/credit',
+  credit: '/api/portal/client/credit',
+} as const
 
-/** The mocked browser save. */
-const saveBlob = vi.hoisted(() => vi.fn())
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => billingApi }))
-vi.mock('~/utils/saveBlob', () => ({ saveBlob }))
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
 
 /**
  * Builds an invoice.
@@ -48,44 +60,55 @@ const credit = (balance: number) => ({
   entries: { items: [], pageNumber: 1, pageSize: 10, totalCount: 0, totalPages: 0 }
 })
 
-describe('invoice page', () => {
-  beforeEach(() => {
-    billingApi.fetchInvoice.mockReset()
-    billingApi.fetchInvoicePdf.mockReset()
-    billingApi.fetchBankTransfer.mockReset()
-    billingApi.fetchCredit.mockReset()
-    billingApi.applyInvoiceCredit.mockReset()
-    billingApi.fetchCredit.mockResolvedValue(credit(0))
-    saveBlob.mockReset()
-    stubClientRuntime({ params: { id: '41' } })
-  })
+/**
+ * How many times the credit was read; the card under the invoice reads it when it appears.
+ *
+ * @returns The count.
+ */
+const creditReads = (): number => requestsTo(stub.requests, PATHS.credit).length
 
+beforeEach(async () => {
+  stubClientRuntime({ params: { id: '41' } })
+  table = {
+    [`GET ${PATHS.credit}`]: { body: credit(0) },
+  }
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  vi.restoreAllMocks()
+  await stub.close()
+})
+
+describe('invoice page', () => {
   it('shows the bank details of an invoice that waits for a transfer and no pay button', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice({ status: InvoiceStatus.PaymentPending, isBankTransferPending: true }))
-    billingApi.fetchBankTransfer.mockResolvedValue({ invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null })
+    table[`GET ${PATHS.invoice}`] = { body: invoice({ status: InvoiceStatus.PaymentPending, isBankTransferPending: true }) }
+    table[`GET ${PATHS.bankTransfer}`] = { body: { invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null } }
 
     const wrapper = await mountPage(InvoicePage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true))
 
-    expect(billingApi.fetchBankTransfer).toHaveBeenCalledWith('41')
-    expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true)
+    expect(requestsTo(stub.requests, PATHS.bankTransfer).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(false)
   })
 
   it('shows no bank details for an invoice that owes money and waits for nothing', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice())
+    table[`GET ${PATHS.invoice}`] = { body: invoice() }
 
     const wrapper = await mountPage(InvoicePage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(true))
 
-    expect(billingApi.fetchBankTransfer).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, PATHS.bankTransfer)).toHaveLength(0)
     expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(false)
   })
 
   it('reads this invoice and shows its heading and line items', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice())
+    table[`GET ${PATHS.invoice}`] = { body: invoice() }
 
     const wrapper = await mountPage(InvoicePage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-heading"]').exists()).toBe(true))
 
-    expect(billingApi.fetchInvoice).toHaveBeenCalledWith('41')
+    expect(requestsTo(stub.requests, PATHS.invoice).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="invoice-heading"]').text()).toContain('client.invoices.heading')
     expect(wrapper.find('[data-testid="invoice-items"]').text()).toContain('Hosting')
   })
@@ -103,10 +126,12 @@ describe('invoice page', () => {
   })
 
   it('shows the amounts in the invoice currency, with tax only when there is some', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice())
+    table[`GET ${PATHS.invoice}`] = { body: invoice() }
     const taxed = await mountPage(InvoicePage)
-    billingApi.fetchInvoice.mockResolvedValue(invoice({ tax: 0, total: 90, amountDue: 90 }))
+    await vi.waitFor(() => expect(taxed.find('[data-testid="invoice-items"]').exists()).toBe(true))
+    table[`GET ${PATHS.invoice}`] = { body: invoice({ tax: 0, total: 90, amountDue: 90 }) }
     const untaxed = await mountPage(InvoicePage)
+    await vi.waitFor(() => expect(untaxed.find('[data-testid="invoice-items"]').exists()).toBe(true))
 
     expect(taxed.find('[data-testid="invoice-items"]').text()).toContain('$100.00')
     expect(taxed.find('[data-testid="invoice-items"]').text()).toContain('client.invoices.tax')
@@ -114,62 +139,69 @@ describe('invoice page', () => {
   })
 
   it('offers payment for an owing invoice', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice())
+    table[`GET ${PATHS.invoice}`] = { body: invoice() }
 
     const wrapper = await mountPage(InvoicePage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-pay-now"]').attributes('href')).toBe('/client/invoices/41/pay')
     expect(wrapper.find('[data-testid="invoice-unpaid-banner"]').exists()).toBe(true)
   })
 
   it('puts what is still owed on the pay button of a part-paid invoice, not the whole total', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice({ amountDue: 60, transactions: [{ id: 1, amount: 40, type: InvoiceTransactionType.Payment }] }))
+    table[`GET ${PATHS.invoice}`] = { body: invoice({ amountDue: 60, transactions: [{ id: 1, amount: 40, type: InvoiceTransactionType.Payment }] }) }
 
     const wrapper = await mountPage(InvoicePage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-amount"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-pay-amount"]').text()).toContain('$60.00')
   })
 
   it('offers to pay with credit when the client has some, and reads the invoice again once it is applied', async () => {
-    billingApi.fetchCredit.mockResolvedValue(credit(30))
-    billingApi.applyInvoiceCredit.mockResolvedValue(undefined)
-    billingApi.fetchInvoice.mockResolvedValueOnce(invoice()).mockResolvedValueOnce(invoice({ credit: 30, total: 70, amountDue: 70 }))
+    table[`GET ${PATHS.credit}`] = { body: credit(30) }
+    table[`POST ${PATHS.applyCredit}`] = { body: {} }
+    // The first read is the invoice as it was; every read after the credit was applied is the invoice as it is now.
+    table[`GET ${PATHS.invoice}`] = () => ({
+      body: requestsTo(stub.requests, PATHS.invoice).length <= 1 ? invoice() : invoice({ credit: 30, total: 70, amountDue: 70 })
+    })
     const wrapper = await mountPage(InvoicePage)
-    await flushPromises()
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="apply-credit-amount"]').exists()).toBe(true))
 
     await wrapper.get('[data-testid="apply-credit-amount"]').setValue('30')
     await wrapper.get('[data-testid="apply-credit-card"] form').trigger('submit')
-    await flushPromises()
+    await vi.waitFor(() => expect(wrapper.get('[data-testid="invoice-pay-amount"]').text()).toContain('$70.00'))
 
-    expect(billingApi.applyInvoiceCredit).toHaveBeenCalledWith(41, 30)
-    expect(billingApi.fetchInvoice).toHaveBeenCalledTimes(2)
-    expect(wrapper.get('[data-testid="invoice-pay-amount"]').text()).toContain('$70.00')
+    expect(bodyOf(requestsTo(stub.requests, PATHS.applyCredit)[0])).toEqual({ amount: 30 })
+    expect(requestsTo(stub.requests, PATHS.invoice)).toHaveLength(2)
   })
 
   it('offers no credit payment when the client has no credit', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice())
+    table[`GET ${PATHS.invoice}`] = { body: invoice() }
 
     const wrapper = await mountPage(InvoicePage)
-    await flushPromises()
+    await vi.waitFor(() => expect(creditReads()).toBe(1))
+    await settle()
 
     expect(wrapper.find('[data-testid="apply-credit-card"]').exists()).toBe(false)
   })
 
   it('marks a credit top-up invoice and offers no credit for it', async () => {
-    billingApi.fetchCredit.mockResolvedValue(credit(30))
-    billingApi.fetchInvoice.mockResolvedValue(invoice({ isCreditTopUp: true }))
+    table[`GET ${PATHS.credit}`] = { body: credit(30) }
+    table[`GET ${PATHS.invoice}`] = { body: invoice({ isCreditTopUp: true }) }
 
     const wrapper = await mountPage(InvoicePage)
-    await flushPromises()
+    await vi.waitFor(() => expect(creditReads()).toBe(1))
+    await settle()
 
     expect(wrapper.find('[data-testid="invoice-top-up-badge"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="apply-credit-card"]').exists()).toBe(false)
   })
 
   it('offers no payment for a paid invoice', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice({ status: InvoiceStatus.Paid, paidAt: '2026-01-05T10:00:00Z' }))
+    table[`GET ${PATHS.invoice}`] = { body: invoice({ status: InvoiceStatus.Paid, paidAt: '2026-01-05T10:00:00Z' }) }
 
     const wrapper = await mountPage(InvoicePage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-header"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-unpaid-banner"]').exists()).toBe(false)
@@ -177,48 +209,54 @@ describe('invoice page', () => {
   })
 
   it('says the invoice was not found when the read fails', async () => {
-    billingApi.fetchInvoice.mockRejectedValue({ data: { detail: 'No such invoice.' } })
+    table[`GET ${PATHS.invoice}`] = { status: 404, body: { detail: 'No such invoice.' } }
 
     const wrapper = await mountPage(InvoicePage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="ui-empty-state"]').text()).toContain('client.invoices.notFound')
   })
 
   it('downloads the invoice PDF and saves it under the invoice number', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice())
-    const pdf = new Blob(['%PDF'], { type: 'application/pdf' })
-    billingApi.fetchInvoicePdf.mockResolvedValue(pdf)
+    table[`GET ${PATHS.invoice}`] = { body: invoice() }
+    table[`GET ${PATHS.pdf}`] = PDF_REPLY
+    const downloads = captureDownloads()
 
     const wrapper = await mountPage(InvoicePage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-download"]').exists()).toBe(true))
     const button = wrapper.find('[data-testid="invoice-download"]')
     await button.trigger('click')
+    await vi.waitFor(() => expect(downloads).toHaveLength(1))
     await flushPromises()
 
     expect(button.text()).toContain('client.invoices.downloadPdf')
-    expect(billingApi.fetchInvoicePdf).toHaveBeenCalledWith('41')
-    expect(saveBlob).toHaveBeenCalledWith(pdf, 'invoice-41.pdf')
+    expect(requestsTo(stub.requests, PATHS.pdf).map(request => request.method)).toEqual(['GET'])
+    expect(downloads[0]?.fileName).toBe('invoice-41.pdf')
+    expect(await downloads[0]?.blob.text()).toBe('%PDF-')
     expect(wrapper.find('[data-testid="invoice-download-error"]').exists()).toBe(false)
   })
 
   it('shows the API sentence in an alert when the download fails', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice())
-    billingApi.fetchInvoicePdf.mockRejectedValue({ data: { detail: 'This invoice has too many lines to download as a PDF.' } })
+    table[`GET ${PATHS.invoice}`] = { body: invoice() }
+    table[`GET ${PATHS.pdf}`] = { status: 400, body: { detail: 'This invoice has too many lines to download as a PDF.' } }
+    const downloads = captureDownloads()
 
     const wrapper = await mountPage(InvoicePage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-download"]').exists()).toBe(true))
     await wrapper.find('[data-testid="invoice-download"]').trigger('click')
-    await flushPromises()
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-download-error"]').exists()).toBe(true))
 
-    expect(saveBlob).not.toHaveBeenCalled()
+    expect(downloads).toHaveLength(0)
     expect(wrapper.find('[data-testid="invoice-download-error"]').text())
       .toContain('This invoice has too many lines to download as a PDF.')
   })
 
   it('offers no PDF download for a draft', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice({ status: InvoiceStatus.Draft }))
+    table[`GET ${PATHS.invoice}`] = { body: invoice({ status: InvoiceStatus.Draft }) }
 
     const wrapper = await mountPage(InvoicePage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-header"]').exists()).toBe(true))
 
-    expect(wrapper.find('[data-testid="invoice-header"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="invoice-download"]').exists()).toBe(false)
   })
 })

@@ -1,41 +1,47 @@
 /**
- * Unit tests for the cart page: it shows the visitor's lines in the currency each was added in,
- * totals those in the payer's currency, flags the others, and removes or clears lines.
+ * Unit tests for the cart page against the real cart and currency stores, API composable and
+ * transport, with a stub BFF answering on a real socket (nothing of ours is mocked): it shows the
+ * visitor's lines in the currency each was added in, totals those in the payer's currency, flags the
+ * others, and removes or clears lines.
+ *
+ * @module tests/pages/cart/index.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { USD_CURRENCY } from '~/tests/helpers/payerCatalogue'
+import { until } from '~/tests/helpers/settle'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import CartPage from '~/pages/cart/index.vue'
 import CartHero from '~/components/cart/CartHero.vue'
 import CartContent from '~/components/cart/CartContent.vue'
 import { useCartStore } from '~/stores/cart'
+import { useCurrencyStore } from '~/stores/currency'
 import type { BillingCurrency } from '~/types/currency'
 import { PricingCycle } from '~/types/pricingcycle'
 
-/** The currencies the stood-in currency endpoint answers with. */
+/** The currencies the stub BFF answers with. */
 const currencies: BillingCurrency[] = [
-  { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true },
+  USD_CURRENCY,
   { code: 'AMD', numeric: '051', prefix: '', suffix: ' AMD', decimals: 0, isBase: false },
 ]
 
-vi.mock('~/composables/apis/useCurrencyApi', () => ({
-  /**
-   * Stands in for the currency API composable.
-   *
-   * @returns Only the endpoint the page's store reaches for.
-   */
-  useCurrencyApi: () => ({ loadBillingCurrencies: () => Promise.resolve(currencies) }),
-}))
+/** The stub playing the BFF. */
+let stub: StubServer
 
 /**
- * Mounts the page and lets the currencies load.
+ * Mounts the page and waits until its currencies have been read from the stub.
  *
  * @returns The wrapper.
  */
 const mountCart = async () => {
   stubPublicPageRuntime()
   const wrapper = await mountPage(CartPage, { components: { CartHero, CartContent } })
+  await until(() => useCurrencyStore().loaded, 'the billing currencies to be read')
   await flushPromises()
   return wrapper
 }
@@ -54,8 +60,13 @@ const addLine = async (pid: number, name: string, amount: number, currency: stri
 }
 
 describe('cart page', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     window.localStorage.clear()
+    stub = await startTransport(routeTable({ [`GET ${CatalogPath.BillingCurrencies}`]: { body: currencies } }))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('shows the empty notice before anything is added', async () => {

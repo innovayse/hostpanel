@@ -6,6 +6,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import type { VueWrapper } from '@vue/test-utils'
 import OrderDetailView from '@/views/OrderDetailView.vue'
 import { OrderItemFulfilmentState, OrderItemStatus, OrderStatus } from '@/types/order'
 import { BillingCycle } from '@/types/service'
@@ -13,26 +14,8 @@ import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 import { json, problem } from '../helpers/fetch'
 
-/** Records every sentence the result banner is asked to show. */
-const shown = vi.hoisted(() => [] as string[])
-
-vi.mock('@/composables/useResultBanner', async (importOriginal) => {
-  const original = await importOriginal<typeof import('@/composables/useResultBanner')>()
-  return {
-    ...original,
-    useResultBanner: () => {
-      const banner = original.useResultBanner()
-      const show = banner.show
-      return {
-        ...banner,
-        show: (text: string, failed: boolean) => {
-          shown.push(text)
-          show(text, failed)
-        },
-      }
-    },
-  }
-})
+/** Test id of the region that shows the outcome of an order action. */
+const FEEDBACK = '[data-testid="order-action-feedback"]'
 
 /** The states a line may be closed as refunded by hand from, as the API decides `canClose`. */
 const CLOSABLE: readonly OrderItemFulfilmentState[] = [
@@ -113,10 +96,33 @@ const mountDetail = async () => {
   return wrapper
 }
 
+/**
+ * Reads the sentence the outcome region shows now.
+ *
+ * @param wrapper - The mounted detail.
+ * @returns The text on show, empty while the region is hidden.
+ */
+const feedbackText = (wrapper: VueWrapper): string => wrapper.get(FEEDBACK).text()
+
+/**
+ * Starts recording every text the outcome region takes, so a sentence shown only for a moment is
+ * caught as well as the one that stays.
+ *
+ * @param wrapper - The mounted detail.
+ * @returns The texts the region took, in order; it fills as the page changes.
+ */
+const recordFeedback = (wrapper: VueWrapper): string[] => {
+  const region = wrapper.get(FEEDBACK).element
+  const seen: string[] = []
+  new MutationObserver(() => {
+    seen.push(region.textContent ?? '')
+  }).observe(region, { childList: true, characterData: true, subtree: true })
+  return seen
+}
+
 describe('OrderDetailView line retry', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
-    shown.length = 0
   })
 
   it('offers a retry only where the API says the line may be retried, whatever the attempt time', async () => {
@@ -163,7 +169,7 @@ describe('OrderDetailView line retry', () => {
     await flushPromises()
 
     expect(closeCalls).toEqual(['close'])
-    expect(shown).toContain('Line closed as refunded.')
+    expect(feedbackText(wrapper)).toBe('Line closed as refunded.')
     expect(wrapper.find('[data-testid="order-item-close-refund-1"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="order-status"]').text()).toContain('Active')
   })
@@ -200,7 +206,7 @@ describe('OrderDetailView line retry', () => {
     await wrapper.get('[data-testid="dialog-confirm"]').trigger('click')
     await flushPromises()
 
-    expect(shown.at(-1)).toContain('cannot be refunded now')
+    expect(feedbackText(wrapper)).toContain('cannot be refunded now')
   })
 
   it('offers the close button on a failed and a stuck refunding line, with no partial refund note, but not on a refunded one', async () => {
@@ -320,11 +326,12 @@ describe('OrderDetailView line retry', () => {
       'GET /api/orders/8': () => json(orderWith([line(1, OrderItemFulfilmentState.Failed, 5)])),
     })
     const wrapper = await mountDetail()
+    const seen = recordFeedback(wrapper)
 
     await wrapper.get('[data-testid="order-item-retry-1"]').trigger('click')
     await flushPromises()
 
-    expect(shown).not.toContain('Line retried and fulfilled.')
-    expect(shown.at(-1)).toContain('could not be fulfilled again')
+    expect(seen).not.toContain('Line retried and fulfilled.')
+    expect(feedbackText(wrapper)).toContain('could not be fulfilled again')
   })
 })

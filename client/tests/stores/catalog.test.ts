@@ -1,78 +1,93 @@
 /**
- * Tests for `stores/catalog.ts`.
+ * Tests for `stores/catalog.ts`, through the real catalogue API composable, the real currency store and the
+ * transport against a stub server.
  *
  * The store, not the public pages, owns the product lists, the loading flag and the failure
  * sentence, and it always asks for prices in the payer's own currency, so these assertions pin
- * the contract the pages render from.
+ * the contract the pages render from. The payer is whoever the currency store says it is: the base
+ * currency of the loaded list, or the guest's selection among them.
  *
  * @module tests/stores/catalog.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { queryOf, requestsTo, routeTable } from '../helpers/stubRoutes'
+import type { StubRouteTable } from '../helpers/stubRoutes'
+import type { StubServer } from '../helpers/stubServer'
+import { startTransport } from '../helpers/stubTransport'
+import { useCatalogStore } from '~/stores/catalog'
+import { useCurrencyStore } from '~/stores/currency'
+import { HttpMethod } from '~/types/httpmethod'
+import type { BillingCurrency } from '~/types/currency'
 import { balancedColumns, lastRowSize } from '~/utils/balancedGrid'
+import { formatMoney } from '~/utils/formatMoney'
 
-/** The mocked catalogue endpoints, re-created for every test. */
-const api = {
-  fetchProducts: vi.fn(),
-  fetchProductGroups: vi.fn(),
-  fetchProductFeatures: vi.fn(),
-  fetchSlides: vi.fn(),
-  fetchCountries: vi.fn(),
-  fetchTldPricing: vi.fn(),
-  fetchCurrencies: vi.fn(),
-  checkDomain: vi.fn()
-}
+/** The stub playing the BFF. */
+let stub: StubServer
 
-/** The payer the currency store stand-in reports; tests change it to simulate a currency switch. */
-const payer = { code: 'USD' as string | null }
+/** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
+let table: StubRouteTable
 
-vi.mock('~/composables/apis/useCatalogApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useCatalogApi: () => api
-}))
+/** The product list read. */
+const PRODUCTS_PATH = '/api/portal/public/products'
 
-vi.mock('~/stores/currency', () => ({
-  /**
-   * Stands in for the currency store: a payer code and the money shape for formatting.
-   *
-   * @returns The two members the catalogue store reads.
-   */
-  useCurrencyStore: () => ({
-    get payerCode() {
-      return payer.code
-    },
-    moneyCurrencyFor: () => ({ code: 'USD', prefix: '$', suffix: '', decimals: 2 })
-  })
-}))
+/** The product list read, as a table key. */
+const PRODUCTS_ROUTE = `${HttpMethod.Get} ${PRODUCTS_PATH}`
 
-const { useCatalogStore } = await import('~/stores/catalog')
-const { formatMoney } = await import('~/utils/formatMoney')
+/** The product group list read. */
+const GROUPS_PATH = '/api/portal/public/product-groups'
+
+/** The product group list read, as a table key. */
+const GROUPS_ROUTE = `${HttpMethod.Get} ${GROUPS_PATH}`
 
 /** An API refusal as `apiErrorMessage` reads it. */
-const refusal = { data: { detail: 'Catalogue unavailable.' } }
+const refusal = { status: 400, body: { detail: 'Catalogue unavailable.' } }
 
-/** The money shape the currency stand-in returns. */
-const usd = { code: 'USD', prefix: '$', suffix: '', decimals: 2 }
+/** The base currency of the operator, whose prices the plan cards are formatted in. */
+const usd: BillingCurrency = { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true }
+
+/** A second currency a guest can switch to. */
+const amd: BillingCurrency = { code: 'AMD', numeric: '051', prefix: '', suffix: ' AMD', decimals: 0, isBase: false }
+
+/**
+ * Makes the payer the guest of an operator that bills in {@link usd} and {@link amd}: the currency store holds the
+ * list and the payer pays in the base currency until a test selects another.
+ */
+const seedCurrencies = (): void => {
+  useCurrencyStore().currencies = [usd, amd]
+}
+
+/**
+ * The query string of the first request the stub received for a path.
+ *
+ * @param path - The path, without query.
+ * @returns The query parameters; empty when the path was never requested.
+ */
+const firstQueryTo = (path: string): Record<string, string> => {
+  const first = requestsTo(stub.requests, path)[0]
+  return first === undefined ? {} : queryOf(first)
+}
+
+beforeEach(async () => {
+  setActivePinia(createPinia())
+  seedCurrencies()
+  table = {}
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  await stub.close()
+})
 
 describe('useCatalogStore.loadProducts', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    payer.code = 'USD'
-    Object.values(api).forEach(fn => fn.mockReset())
-  })
-
   it('asks for the filter in the payer currency and keeps the list', async () => {
-    api.fetchProducts.mockResolvedValue([{ id: 1, name: 'Starter' }])
+    table[PRODUCTS_ROUTE] = { body: [{ id: 1, name: 'Starter' }] }
     const store = useCatalogStore()
 
     const list = await store.loadProducts({ gid: 1 })
 
-    expect(api.fetchProducts).toHaveBeenCalledWith({ gid: 1, currency: 'USD' })
+    expect(firstQueryTo(PRODUCTS_PATH)).toEqual({ gid: '1', currency: 'USD' })
     expect(list).toEqual([{ id: 1, name: 'Starter' }])
     expect(store.productsFor({ gid: 1 })).toEqual(list)
     expect(store.loading).toBe(false)
@@ -80,30 +95,37 @@ describe('useCatalogStore.loadProducts', () => {
   })
 
   it('omits the currency while the payer currency is not known yet', async () => {
-    payer.code = null
-    api.fetchProducts.mockResolvedValue([])
+    useCurrencyStore().currencies = []
+    table[PRODUCTS_ROUTE] = { body: [] }
     const store = useCatalogStore()
 
     await store.loadProducts({ gids: '1,3' })
 
-    expect(api.fetchProducts).toHaveBeenCalledWith({ gids: '1,3', currency: undefined })
+    expect(firstQueryTo(PRODUCTS_PATH)).toEqual({ gids: '1,3' })
   })
 
   it('keeps one list per filter and per currency', async () => {
-    api.fetchProducts.mockResolvedValueOnce([{ id: 1 }]).mockResolvedValueOnce([{ id: 2 }])
+    /**
+     * Answers each currency its own list, as the backend prices per currency.
+     *
+     * @param request - The product read.
+     * @returns The reply.
+     */
+    table[PRODUCTS_ROUTE] = request => ({ body: queryOf(request).currency === 'AMD' ? [{ id: 2 }] : [{ id: 1 }] })
     const store = useCatalogStore()
+    const currencies = useCurrencyStore()
 
     await store.loadProducts({ gid: 1 })
-    payer.code = 'AMD'
+    currencies.selectedCode = 'AMD'
     await store.loadProducts({ gid: 1 })
 
     expect(store.productsFor({ gid: 1 })).toEqual([{ id: 2 }])
-    payer.code = 'USD'
+    currencies.selectedCode = 'USD'
     expect(store.productsFor({ gid: 1 })).toEqual([{ id: 1 }])
   })
 
   it('keeps the API sentence and an empty list when the read is refused', async () => {
-    api.fetchProducts.mockRejectedValue(refusal)
+    table[PRODUCTS_ROUTE] = refusal
     const store = useCatalogStore()
 
     const list = await store.loadProducts({ gid: 1 })
@@ -114,17 +136,18 @@ describe('useCatalogStore.loadProducts', () => {
   })
 
   it('clears the previous sentence when the next read succeeds', async () => {
-    api.fetchProducts.mockRejectedValueOnce(refusal).mockResolvedValueOnce([])
+    table[PRODUCTS_ROUTE] = refusal
     const store = useCatalogStore()
 
     await store.loadProducts()
+    table[PRODUCTS_ROUTE] = { body: [] }
     await store.loadProducts()
 
     expect(store.error).toBe('')
   })
 
   it('finds the domain product by name in the whole catalogue', async () => {
-    api.fetchProducts.mockResolvedValue([{ id: 4, name: 'Hosting' }, { id: 9, name: 'Domain Registration' }])
+    table[PRODUCTS_ROUTE] = { body: [{ id: 4, name: 'Hosting' }, { id: 9, name: 'Domain Registration' }] }
     const store = useCatalogStore()
     expect(store.domainProductId).toBeNull()
 
@@ -142,14 +165,8 @@ describe('useCatalogStore product families', () => {
     { id: 1, name: 'Web Hosting', productCount: 3 },
   ]
 
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    payer.code = 'USD'
-    Object.values(api).forEach(fn => fn.mockReset())
-  })
-
   it('keeps the groups and leaves the sentence empty when the read succeeds', async () => {
-    api.fetchProductGroups.mockResolvedValue(groups)
+    table[GROUPS_ROUTE] = { body: groups }
     const store = useCatalogStore()
 
     await store.loadProductGroups()
@@ -159,7 +176,7 @@ describe('useCatalogStore product families', () => {
   })
 
   it('shows only active, non-empty groups as families, with hosting first', async () => {
-    api.fetchProductGroups.mockResolvedValue(groups)
+    table[GROUPS_ROUTE] = { body: groups }
     const store = useCatalogStore()
 
     await store.loadProductGroups()
@@ -168,41 +185,41 @@ describe('useCatalogStore product families', () => {
   })
 
   it('reads the products of the family groups in the payer currency and keeps them', async () => {
-    api.fetchProductGroups.mockResolvedValue(groups)
-    api.fetchProducts.mockResolvedValue([{ id: 10, groupId: 3, name: 'Alpha Suite' }])
+    table[GROUPS_ROUTE] = { body: groups }
+    table[PRODUCTS_ROUTE] = { body: [{ id: 10, groupId: 3, name: 'Alpha Suite' }] }
     const store = useCatalogStore()
 
     const products = await store.loadFamilies()
 
-    expect(api.fetchProducts).toHaveBeenCalledWith({ gids: '1,3', currency: 'USD' })
+    expect(firstQueryTo(PRODUCTS_PATH)).toEqual({ gids: '1,3', currency: 'USD' })
     expect(products).toHaveLength(1)
     expect(store.familyProducts).toEqual(products)
   })
 
   it('asks for no products while there is no family, so the endpoint is not asked for everything', async () => {
-    api.fetchProductGroups.mockResolvedValue([groups[1]])
+    table[GROUPS_ROUTE] = { body: [groups[1]] }
     const store = useCatalogStore()
 
     expect(await store.loadFamilies()).toEqual([])
-    expect(api.fetchProducts).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, PRODUCTS_PATH)).toHaveLength(0)
     expect(store.familyProducts).toEqual([])
   })
 
   it('shares one read between callers that ask while it is in flight, and reads again afterwards', async () => {
-    api.fetchProductGroups.mockResolvedValue([groups[1]])
+    table[GROUPS_ROUTE] = { body: [groups[1]] }
     const store = useCatalogStore()
 
     const [first, second] = await Promise.all([store.loadFamilies(), store.loadFamilies()])
 
     expect(first).toBe(second)
-    expect(api.fetchProductGroups).toHaveBeenCalledTimes(1)
+    expect(requestsTo(stub.requests, GROUPS_PATH)).toHaveLength(1)
 
     await store.loadFamilies()
-    expect(api.fetchProductGroups).toHaveBeenCalledTimes(2)
+    expect(requestsTo(stub.requests, GROUPS_PATH)).toHaveLength(2)
   })
 
   it('keeps the API sentence and no families when the groups cannot be read', async () => {
-    api.fetchProductGroups.mockRejectedValue(refusal)
+    table[GROUPS_ROUTE] = refusal
     const store = useCatalogStore()
 
     expect(await store.loadFamilies()).toEqual([])
@@ -212,18 +229,14 @@ describe('useCatalogStore product families', () => {
 })
 
 describe('useCatalogStore.planCards', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    payer.code = 'USD'
-    Object.values(api).forEach(fn => fn.mockReset())
-  })
-
   it('maps hosting plans to priced cards with the page-supplied link', async () => {
-    api.fetchProducts.mockResolvedValue([
-      { id: 5, name: 'Pro', description: 'Fast hosting', pricing: { monthly: 12, annual: 120 } },
-      { id: 6, name: 'Free', description: '', pricing: { monthly: 0, annual: 0 } },
-      { id: 7, name: 'Quote', description: '', pricing: null }
-    ])
+    table[PRODUCTS_ROUTE] = {
+      body: [
+        { id: 5, name: 'Pro', description: 'Fast hosting', pricing: { monthly: 12, annual: 120 } },
+        { id: 6, name: 'Free', description: '', pricing: { monthly: 0, annual: 0 } },
+        { id: 7, name: 'Quote', description: '', pricing: null }
+      ]
+    }
     const store = useCatalogStore()
     await store.loadHostingPlans()
 
@@ -243,9 +256,11 @@ describe('useCatalogStore.planCards', () => {
   })
 
   it('prices a card per month on every cycle the product is sold on and leaves the others out', async () => {
-    api.fetchProducts.mockResolvedValue([
-      { id: 5, name: 'Pro', description: '', pricing: { monthly: 12, quarterly: 30, semiAnnual: 54, annual: null, biennial: 192 } }
-    ])
+    table[PRODUCTS_ROUTE] = {
+      body: [
+        { id: 5, name: 'Pro', description: '', pricing: { monthly: 12, quarterly: 30, semiAnnual: 54, annual: null, biennial: 192 } }
+      ]
+    }
     const store = useCatalogStore()
     await store.loadHostingPlans()
 
@@ -261,7 +276,7 @@ describe('useCatalogStore.planCards', () => {
   })
 
   it('gives a product with no pricing no cycle prices', async () => {
-    api.fetchProducts.mockResolvedValue([{ id: 7, name: 'Quote', description: '', pricing: null }])
+    table[PRODUCTS_ROUTE] = { body: [{ id: 7, name: 'Quote', description: '', pricing: null }] }
     const store = useCatalogStore()
     await store.loadHostingPlans()
 
@@ -269,10 +284,12 @@ describe('useCatalogStore.planCards', () => {
   })
 
   it('lists a plan\'s own specification lines when its description carries no feature lines', async () => {
-    api.fetchProducts.mockResolvedValue([
-      { id: 5, name: 'Pro', description: 'Fast hosting', pricing: { monthly: 12, annual: 120 } },
-      { id: 6, name: 'Plus', description: 'Faster', pricing: { monthly: 20, annual: 200 } }
-    ])
+    table[PRODUCTS_ROUTE] = {
+      body: [
+        { id: 5, name: 'Pro', description: 'Fast hosting', pricing: { monthly: 12, annual: 120 } },
+        { id: 6, name: 'Plus', description: 'Faster', pricing: { monthly: 20, annual: 200 } }
+      ]
+    }
     const store = useCatalogStore()
     await store.loadHostingPlans()
 
@@ -285,12 +302,14 @@ describe('useCatalogStore.planCards', () => {
   })
 
   it('orders plans by price, cheapest first, when the API gives no sort order', async () => {
-    api.fetchProducts.mockResolvedValue([
-      { id: 1, name: 'Business', pricing: { monthly: 9.99, annual: 99 } },
-      { id: 2, name: 'Starter', pricing: { monthly: 4.99, annual: 49 } },
-      { id: 3, name: 'Pro', pricing: { monthly: 19.99, annual: 199 } },
-      { id: 4, name: 'Quote', pricing: null }
-    ])
+    table[PRODUCTS_ROUTE] = {
+      body: [
+        { id: 1, name: 'Business', pricing: { monthly: 9.99, annual: 99 } },
+        { id: 2, name: 'Starter', pricing: { monthly: 4.99, annual: 49 } },
+        { id: 3, name: 'Pro', pricing: { monthly: 19.99, annual: 199 } },
+        { id: 4, name: 'Quote', pricing: null }
+      ]
+    }
     const store = useCatalogStore()
     await store.loadHostingPlans()
 
@@ -298,11 +317,13 @@ describe('useCatalogStore.planCards', () => {
   })
 
   it('lets an explicit sort order win over price', async () => {
-    api.fetchProducts.mockResolvedValue([
-      { id: 1, name: 'Cheap', sortOrder: 2, pricing: { monthly: 1, annual: 10 } },
-      { id: 2, name: 'Dear', sortOrder: 1, pricing: { monthly: 50, annual: 500 } },
-      { id: 3, name: 'Unordered', pricing: { monthly: 0.5, annual: 5 } }
-    ])
+    table[PRODUCTS_ROUTE] = {
+      body: [
+        { id: 1, name: 'Cheap', sortOrder: 2, pricing: { monthly: 1, annual: 10 } },
+        { id: 2, name: 'Dear', sortOrder: 1, pricing: { monthly: 50, annual: 500 } },
+        { id: 3, name: 'Unordered', pricing: { monthly: 0.5, annual: 5 } }
+      ]
+    }
     const store = useCatalogStore()
     await store.loadHostingPlans()
 
@@ -310,12 +331,14 @@ describe('useCatalogStore.planCards', () => {
   })
 
   it('marks only the first featured paid plan, in display order, as recommended', async () => {
-    api.fetchProducts.mockResolvedValue([
-      { id: 1, name: 'Free', isFeatured: true, sortOrder: 0, pricing: { monthly: 0, annual: 0 } },
-      { id: 2, name: 'Late', isFeatured: true, sortOrder: 5, pricing: { monthly: 9, annual: 90 } },
-      { id: 3, name: 'Early', isFeatured: true, sortOrder: 2, pricing: { monthly: 19, annual: 190 } },
-      { id: 4, name: 'Plain', sortOrder: 3, pricing: { monthly: 29, annual: 290 } }
-    ])
+    table[PRODUCTS_ROUTE] = {
+      body: [
+        { id: 1, name: 'Free', isFeatured: true, sortOrder: 0, pricing: { monthly: 0, annual: 0 } },
+        { id: 2, name: 'Late', isFeatured: true, sortOrder: 5, pricing: { monthly: 9, annual: 90 } },
+        { id: 3, name: 'Early', isFeatured: true, sortOrder: 2, pricing: { monthly: 19, annual: 190 } },
+        { id: 4, name: 'Plain', sortOrder: 3, pricing: { monthly: 29, annual: 290 } }
+      ]
+    }
     const store = useCatalogStore()
     await store.loadHostingPlans()
 
@@ -325,10 +348,12 @@ describe('useCatalogStore.planCards', () => {
   })
 
   it('marks no plan when none is featured', async () => {
-    api.fetchProducts.mockResolvedValue([
-      { id: 1, name: 'A', pricing: { monthly: 5, annual: 50 } },
-      { id: 2, name: 'B', isFeatured: false, pricing: { monthly: 9, annual: 90 } }
-    ])
+    table[PRODUCTS_ROUTE] = {
+      body: [
+        { id: 1, name: 'A', pricing: { monthly: 5, annual: 50 } },
+        { id: 2, name: 'B', isFeatured: false, pricing: { monthly: 9, annual: 90 } }
+      ]
+    }
     const store = useCatalogStore()
     await store.loadHostingPlans()
 
@@ -337,14 +362,16 @@ describe('useCatalogStore.planCards', () => {
 
   it('shows prod-shaped plans (no featured flag, default sort order) without a badge, ordered by price, in a balanced grid', async () => {
     // Real operator plans: every sortOrder is the default 0, nothing is featured, the API order is arbitrary.
-    api.fetchProducts.mockResolvedValue([
-      { id: 14, name: 'Business', sortOrder: 0, pricing: { monthly: 15, annual: 150 } },
-      { id: 11, name: 'Free', sortOrder: 0, pricing: { monthly: 0, annual: 0 } },
-      { id: 16, name: 'Agency', sortOrder: 0, pricing: { monthly: 40, annual: 400 } },
-      { id: 12, name: 'Starter', sortOrder: 0, pricing: { monthly: 5, annual: 50 } },
-      { id: 15, name: 'Pro', sortOrder: 0, pricing: { monthly: 25, annual: 250 } },
-      { id: 13, name: 'Webmaster', sortOrder: 0, pricing: { monthly: 9, annual: 90 } }
-    ])
+    table[PRODUCTS_ROUTE] = {
+      body: [
+        { id: 14, name: 'Business', sortOrder: 0, pricing: { monthly: 15, annual: 150 } },
+        { id: 11, name: 'Free', sortOrder: 0, pricing: { monthly: 0, annual: 0 } },
+        { id: 16, name: 'Agency', sortOrder: 0, pricing: { monthly: 40, annual: 400 } },
+        { id: 12, name: 'Starter', sortOrder: 0, pricing: { monthly: 5, annual: 50 } },
+        { id: 15, name: 'Pro', sortOrder: 0, pricing: { monthly: 25, annual: 250 } },
+        { id: 13, name: 'Webmaster', sortOrder: 0, pricing: { monthly: 9, annual: 90 } }
+      ]
+    }
     const store = useCatalogStore()
     await store.loadHostingPlans()
 
@@ -362,73 +389,65 @@ describe('useCatalogStore.planCards', () => {
 })
 
 describe('useCatalogStore reference data', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    payer.code = 'USD'
-    Object.values(api).forEach(fn => fn.mockReset())
-  })
-
   it('keeps specification lines per product group', async () => {
-    api.fetchProductFeatures.mockResolvedValue([{ id: 1, productId: 5, label: 'Disk', value: '10 GB', sortOrder: 0 }])
+    table[`${HttpMethod.Get} /api/portal/public/product-features`] = { body: [{ id: 1, productId: 5, label: 'Disk', value: '10 GB', sortOrder: 0 }] }
     const store = useCatalogStore()
 
     await store.loadProductFeatures(1)
 
-    expect(api.fetchProductFeatures).toHaveBeenCalledWith(1)
+    expect(firstQueryTo('/api/portal/public/product-features')).toEqual({ gid: '1' })
     expect(store.featuresFor(1)).toHaveLength(1)
     expect(store.featuresFor(2)).toEqual([])
   })
 
   it('reads the slides in the given language', async () => {
-    api.fetchSlides.mockResolvedValue([{ id: 1, title: 'Hello' }])
+    table[`${HttpMethod.Get} /api/portal/public/slides`] = { body: [{ id: 1, title: 'Hello' }] }
     const store = useCatalogStore()
 
     await store.loadSlides('hy')
 
-    expect(api.fetchSlides).toHaveBeenCalledWith('hy')
+    expect(firstQueryTo('/api/portal/public/slides')).toEqual({ lang: 'hy' })
     expect(store.slides).toEqual([{ id: 1, title: 'Hello' }])
   })
 
   it('reads the countries and empties the list when the read is refused', async () => {
-    api.fetchCountries.mockResolvedValueOnce([{ value: 'AM', label: 'Armenia' }]).mockRejectedValueOnce(refusal)
+    const countriesRoute = `${HttpMethod.Get} /api/portal/public/countries`
+    table[countriesRoute] = { body: [{ value: 'AM', label: 'Armenia' }] }
     const store = useCatalogStore()
 
     await store.loadCountries()
     expect(store.countries).toEqual([{ value: 'AM', label: 'Armenia' }])
 
+    table[countriesRoute] = refusal
     await store.loadCountries()
     expect(store.countries).toEqual([])
     expect(store.error).toBe('Catalogue unavailable.')
   })
 
   it('reads the TLD price table in the payer currency and nulls it on a refusal', async () => {
-    api.fetchTldPricing.mockResolvedValueOnce({ currency: { code: 'USD', prefix: '$' }, pricing: {} }).mockRejectedValueOnce(refusal)
+    const tldRoute = `${HttpMethod.Get} /api/portal/public/tld-pricing`
+    table[tldRoute] = { body: { currency: { code: 'USD', prefix: '$' }, pricing: {} } }
     const store = useCatalogStore()
 
     await store.loadTldPricing()
-    expect(api.fetchTldPricing).toHaveBeenCalledWith('USD')
+    expect(firstQueryTo('/api/portal/public/tld-pricing')).toEqual({ currency: 'USD' })
     expect(store.tldPricing).toMatchObject({ currency: { code: 'USD' } })
 
+    table[tldRoute] = refusal
     await store.loadTldPricing()
     expect(store.tldPricing).toBeNull()
   })
 })
 
 describe('useCatalogStore keeps what it read when a refresh fails', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    payer.code = 'USD'
-    Object.values(api).forEach(fn => fn.mockReset())
-  })
-
   it('keeps the groups and the family products after a refused refresh', async () => {
-    api.fetchProductGroups.mockResolvedValueOnce([{ id: 1, name: 'Web Hosting', productCount: 1 }])
-    api.fetchProducts.mockResolvedValueOnce([{ id: 10, groupId: 1, name: 'Plan' }])
+    table[GROUPS_ROUTE] = { body: [{ id: 1, name: 'Web Hosting', productCount: 1 }] }
+    table[PRODUCTS_ROUTE] = { body: [{ id: 10, groupId: 1, name: 'Plan' }] }
     const store = useCatalogStore()
     await store.loadFamilies()
 
-    api.fetchProductGroups.mockRejectedValue(new Error('down'))
-    api.fetchProducts.mockRejectedValue(new Error('down'))
+    table[GROUPS_ROUTE] = { status: 400 }
+    table[PRODUCTS_ROUTE] = { status: 400 }
     const again = await store.loadFamilies()
 
     expect(store.familyGroups).toHaveLength(1)
@@ -438,18 +457,18 @@ describe('useCatalogStore keeps what it read when a refresh fails', () => {
   })
 
   it('does not hand a caller the read that was started for another currency', async () => {
-    api.fetchProductGroups.mockResolvedValue([{ id: 1, name: 'Web Hosting', productCount: 1 }])
-    api.fetchProducts.mockResolvedValue([])
+    table[GROUPS_ROUTE] = { body: [{ id: 1, name: 'Web Hosting', productCount: 1 }] }
+    table[PRODUCTS_ROUTE] = { body: [] }
     const store = useCatalogStore()
 
-    const usd = store.loadFamilies()
-    payer.code = 'AMD'
-    const amd = store.loadFamilies()
-    await Promise.all([usd, amd])
+    const forUsd = store.loadFamilies()
+    useCurrencyStore().selectedCode = 'AMD'
+    const forAmd = store.loadFamilies()
+    await Promise.all([forUsd, forAmd])
 
     // Two reads ran: the second caller was not given the first one's promise.
-    expect(api.fetchProductGroups).toHaveBeenCalledTimes(2)
-    expect(api.fetchProducts).toHaveBeenCalledTimes(2)
+    expect(requestsTo(stub.requests, GROUPS_PATH)).toHaveLength(2)
+    expect(requestsTo(stub.requests, PRODUCTS_PATH)).toHaveLength(2)
     expect(store.familyProducts).toEqual([])
   })
 })

@@ -1,46 +1,46 @@
 /**
- * Tests for `pages/client/order-success.vue` against the real client store: the order summary
- * read from the link and the refresh before opening the services page. Only the API composable
- * is replaced.
+ * Tests for `pages/client/order-success.vue` against the real client and invoice payment stores,
+ * the real API composables and the real transport, with a stub BFF answering on a real socket
+ * (nothing of ours is mocked): the order summary read from the link and the refresh before opening
+ * the services page.
  *
  * @module tests/pages/client/order-success.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
+import { makeClientUser } from '~/tests/helpers/clientUser'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import OrderSuccessPage from '~/pages/client/order-success.vue'
+import { Permission } from '~/types/permission'
 
-/** The mocked services call, re-created for every test. */
-const fetchServices = vi.fn()
+/** The BFF paths the page reads. */
+const PATHS = {
+  me: '/api/portal/client/me',
+  services: '/api/portal/client/services',
+  invoice: '/api/portal/client/invoices/7',
+} as const
 
-vi.mock('~/composables/apis/useClientApi', () => ({
-  /**
-   * Stands in for the real API composable so the client store runs without transport.
-   *
-   * @returns Only the endpoint this page reaches through the store.
-   */
-  useClientApi: () => ({ fetchServices })
-}))
+/** The stub playing the BFF. */
+let stub: StubServer
 
-/** The mocked invoice read, re-created for every test. */
-const fetchInvoice = vi.fn()
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
 
-vi.mock('~/composables/apis/useBillingApi', () => ({
-  /**
-   * Stands in for the billing API so the invoice store runs without transport.
-   *
-   * @returns Only the invoice read this page reaches through the store.
-   */
-  useBillingApi: () => ({ fetchInvoice })
-}))
+beforeEach(async () => {
+  table = {
+    [`GET ${PATHS.me}`]: { body: makeClientUser({ permissions: Permission.All }) },
+    [`GET ${PATHS.services}`]: { body: [] },
+    [`GET ${PATHS.invoice}`]: { body: { id: 7, total: 25, currency: 'USD' } },
+  }
+  stub = await startTransport(routeTable(table))
+})
 
-const { default: OrderSuccessPage } = await import('~/pages/client/order-success.vue')
-
-beforeEach(() => {
-  fetchServices.mockReset()
-  fetchServices.mockResolvedValue([])
-  fetchInvoice.mockReset()
-  fetchInvoice.mockResolvedValue({ id: 7, total: 25, currency: 'USD' })
+afterEach(async () => {
+  await stub.close()
 })
 
 describe('client order-success page', () => {
@@ -48,20 +48,18 @@ describe('client order-success page', () => {
     stubAuthRuntime({ query: { order: 'A-1001', invoice: '7' } })
 
     const wrapper = await mountAuthPage(OrderSuccessPage)
-    await flushPromises()
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="order-success-amount"]').text()).toContain('$25.00'))
 
-    expect(fetchInvoice).toHaveBeenCalledWith('7')
+    expect(requestsTo(stub.requests, PATHS.invoice).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="order-success-number"]').text()).toContain('A-1001')
-    expect(wrapper.find('[data-testid="order-success-amount"]').text()).toContain('$25.00')
   })
 
   it('shows dashes and reads no invoice when the link carries neither an order nor an invoice', async () => {
     stubAuthRuntime({ query: { amount: '$9.00' } })
 
     const wrapper = await mountAuthPage(OrderSuccessPage)
-    await flushPromises()
 
-    expect(fetchInvoice).not.toHaveBeenCalled()
+    expect(stub.requests).toHaveLength(0)
     expect(wrapper.find('[data-testid="order-success-number"]').text()).toContain('—')
     expect(wrapper.find('[data-testid="order-success-amount"]').text()).toContain('—')
   })
@@ -124,9 +122,8 @@ describe('client order-success page', () => {
     const wrapper = await mountAuthPage(OrderSuccessPage)
 
     await wrapper.find('[data-testid="order-success-setup-service"]').trigger('click')
-    await flushPromises()
+    await vi.waitFor(() => expect(navigateTo).toHaveBeenCalledWith('/client/services'))
 
-    expect(fetchServices).toHaveBeenCalledTimes(1)
-    expect(navigateTo).toHaveBeenCalledWith('/client/services')
+    expect(requestsTo(stub.requests, PATHS.services).map(request => request.method)).toEqual(['GET'])
   })
 })

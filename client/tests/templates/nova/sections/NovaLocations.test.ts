@@ -4,24 +4,31 @@
  *
  * @module tests/templates/nova/sections/NovaLocations.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { mountAfterReads, readOf, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import NovaLocations from '~/templates/nova/sections/NovaLocations.vue'
 import type { ServerLocation } from '~/types/serverlocation'
 import { balancedColumns } from '~/utils/balancedGrid'
 
-/** The mocked storefront endpoints, re-created for every test. */
-const api = { fetchPartners: vi.fn(), fetchLocations: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** What the stub answers, by route; the tests below change the locations it serves. */
+const replies: StubRouteTable = {}
+
+/**
+ * Makes the stub serve these locations.
+ *
+ * @param locations The locations the public read answers with.
+ */
+const serve = (locations: ServerLocation[]): void => {
+  replies[readOf(StorefrontPath.Locations)] = { body: locations }
+}
 
 /**
  * Builds a location.
@@ -44,19 +51,21 @@ const locationFixture = (id: number, overrides: Partial<ServerLocation> = {}): S
  *
  * @returns The wrapper.
  */
-const mountSection = async () => {
-  const wrapper = mountWithKit(NovaLocations)
-  await flushPromises()
-  return wrapper
-}
+const mountSection = () =>
+  mountAfterReads(stub, [StorefrontPath.Locations], () => mountWithKit(NovaLocations))
 
 describe('NovaLocations', () => {
-  beforeEach(() => {
-    api.fetchLocations.mockReset()
-    api.fetchLocations.mockResolvedValue([
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    serve([
       locationFixture(1, { countryCode: 'FR', name: 'Alpha', city: 'Paris', latencyNote: 'Under 20 ms in Europe' }),
       locationFixture(2, { name: 'Beta' }),
     ])
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('shows the code, name, city and latency note of a location', async () => {
@@ -82,7 +91,7 @@ describe('NovaLocations', () => {
   })
 
   it('renders nothing while there are no locations', async () => {
-    api.fetchLocations.mockResolvedValue([])
+    serve([])
 
     expect((await mountSection()).find('[data-testid="nova-locations"]').exists()).toBe(false)
   })

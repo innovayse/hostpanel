@@ -3,9 +3,15 @@
  * catalogue families, featured first) in a grid that keeps three column card widths, each painted
  * in its own colour, with a learn-more call to action and a link to every plan.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import type { ProductFeature } from '~/types/productfeature'
 import SectionsProducts from '~/components/sections/SectionsProducts.vue'
 import ProductFamilyCard from '~/components/catalog/ProductFamilyCard.vue'
 import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
@@ -16,26 +22,32 @@ import { HomeSectionId } from '~/types/homesectionid'
 import { HOME_PRODUCT_FAMILY_LIMIT } from '~/constants/homeProducts'
 import { ProductType } from '~/types/producttype'
 
-/** The mocked catalogue endpoints, re-created for every test. */
-const api = { fetchProducts: vi.fn(), fetchProductGroups: vi.fn(), fetchProductFeatures: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useCatalogApi', () => ({
-  /**
-   * Stands in for the catalogue API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useCatalogApi: () => api,
-}))
+/** What the stub answers, by route; the tests below change what it serves. */
+const replies: StubRouteTable = {}
 
-vi.mock('~/composables/apis/useCurrencyApi', () => ({
-  /**
-   * Stands in for the currency API composable.
-   *
-   * @returns Only the endpoint the page's store reaches for.
-   */
-  useCurrencyApi: () => ({ loadBillingCurrencies: () => Promise.resolve([]) }),
-}))
+/**
+ * Makes the stub serve these products and groups.
+ *
+ * @param products The products the public read answers with.
+ * @param productGroups The groups the public read answers with.
+ */
+const serve = (products: PortalProduct[], productGroups: PortalProductGroup[]): void => {
+  replies[`GET ${CatalogPath.Products}`] = { body: products }
+  replies[`GET ${CatalogPath.ProductGroups}`] = { body: productGroups }
+}
+
+/**
+ * The specification lines of one group the stub serves; every other group has none.
+ *
+ * @param groupId The group whose lines are served.
+ * @param lines The specification lines.
+ */
+const serveFeatures = (groupId: number, lines: ProductFeature[]): void => {
+  replies[`GET ${CatalogPath.ProductFeatures}`] = (request) => ({ body: queryOf(request).gid === String(groupId) ? lines : [] })
+}
 
 /** One hosting plan and one SaaS family with its parent. */
 const catalogue: PortalProduct[] = [
@@ -61,6 +73,8 @@ const groups: PortalProductGroup[] = [
  */
 const mountSection = async () => {
   const wrapper = await mountPage(SectionsProducts, { components: { ...CLASSIC_COMPONENTS, CatalogProductFamilyCard: ProductFamilyCard } })
+  // The catalogue crosses a real socket, and the section renders nothing until its reads are done.
+  await vi.waitFor(() => expect(wrapper.find('[data-testid="sections-products"]').exists()).toBe(true))
   await flushPromises()
   return wrapper
 }
@@ -72,20 +86,22 @@ const mountSection = async () => {
  * @param groupId The group to leave out.
  */
 const withoutGroup = (groupId: number): void => {
-  api.fetchProducts.mockResolvedValue(catalogue.filter((item) => item.groupId !== groupId))
-  api.fetchProductGroups.mockResolvedValue(groups.filter((item) => item.id !== groupId))
+  serve(catalogue.filter((item) => item.groupId !== groupId), groups.filter((item) => item.id !== groupId))
 }
 
 describe('SectionsProducts', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
     stubPublicPageRuntime()
-    api.fetchProducts.mockReset()
-    api.fetchProducts.mockResolvedValue(catalogue)
-    api.fetchProductGroups.mockReset()
-    api.fetchProductGroups.mockResolvedValue(groups)
-    api.fetchProductFeatures.mockReset()
-    api.fetchProductFeatures.mockResolvedValue([])
+    serve(catalogue, groups)
+    replies[`GET ${CatalogPath.ProductFeatures}`] = { body: [] }
+    replies[`GET ${CatalogPath.BillingCurrencies}`] = { body: [] }
     window.localStorage.clear()
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('carries the services anchor the header links to, with room above it', async () => {
@@ -113,7 +129,7 @@ describe('SectionsProducts', () => {
   })
 
   it('puts a featured family first and keeps the grid at three column widths', async () => {
-    api.fetchProducts.mockResolvedValue(catalogue.map((item) => (item.id === 30 ? { ...item, isFeatured: true } : item)))
+    serve(catalogue.map((item) => (item.id === 30 ? { ...item, isFeatured: true } : item)), groups)
     const wrapper = await mountSection()
 
     const ids = wrapper.findAll('[data-testid^="product-card-"]').map((card) => card.attributes('data-testid'))
@@ -123,7 +139,7 @@ describe('SectionsProducts', () => {
   })
 
   it('keeps a single card at a column width instead of stretching it', async () => {
-    api.fetchProductGroups.mockResolvedValue([])
+    serve(catalogue, [])
     const wrapper = await mountSection()
 
     const grid = wrapper.find('[data-testid="home-products-grid"]')
@@ -135,26 +151,27 @@ describe('SectionsProducts', () => {
   it('reads specification lines only for the families it shows', async () => {
     await mountSection()
 
-    const asked = api.fetchProductFeatures.mock.calls.map((call) => call[0]).sort()
+    const asked = requestsTo(stub.requests, CatalogPath.ProductFeatures).map((request) => Number(queryOf(request).gid)).sort()
     expect(asked).toEqual([1, 3])
   })
 
   it('puts hosting before the other families and asks only for the family groups products', async () => {
-    api.fetchProducts.mockResolvedValue(catalogue.filter((item) => item.groupId !== 6 && item.groupId !== 7))
-    api.fetchProductGroups.mockResolvedValue(groups.filter((item) => item.id !== 6 && item.id !== 7))
+    serve(catalogue.filter((item) => item.groupId !== 6 && item.groupId !== 7), groups.filter((item) => item.id !== 6 && item.id !== 7))
     const wrapper = await mountSection()
 
     const ids = wrapper.findAll('[data-testid^="product-card-"]').map((card) => card.attributes('data-testid') ?? '')
     const cards = ids.filter((id) => ['domains', 'web-hosting', 'alpha-suite'].includes(id.replace('product-card-', '')))
     expect(cards).toEqual(['product-card-domains', 'product-card-web-hosting', 'product-card-alpha-suite'])
-    expect(api.fetchProducts).toHaveBeenCalledWith(expect.objectContaining({ gids: '1,3' }))
+    const reads = requestsTo(stub.requests, CatalogPath.Products)
+    expect(reads).toHaveLength(1)
+    expect(queryOf(reads[0]!).gids).toBe('1,3')
   })
 
   it('reads no products and shows only the domains card when the catalogue has no family', async () => {
-    api.fetchProductGroups.mockResolvedValue([])
+    serve(catalogue, [])
     const wrapper = await mountSection()
 
-    expect(api.fetchProducts).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, CatalogPath.Products)).toHaveLength(0)
     expect(wrapper.find('[data-testid="product-card-domains"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="product-card-web-hosting"]').exists()).toBe(false)
   })
@@ -194,8 +211,7 @@ describe('SectionsProducts', () => {
 
   it('uses the specification lines when a description lists no features', async () => {
     withoutGroup(3)
-    api.fetchProductFeatures.mockImplementation((groupId: number) =>
-      Promise.resolve(groupId === 7 ? [{ id: 1, productId: 30, label: 'Disk', value: '10 GB', sortOrder: 1 }] : []))
+    serveFeatures(7, [{ id: 1, productId: 30, label: 'Disk', value: '10 GB', sortOrder: 1 }])
     const wrapper = await mountSection()
 
     expect(wrapper.find('[data-testid="product-card-plain-plan"]').text()).toContain('Disk: 10 GB')

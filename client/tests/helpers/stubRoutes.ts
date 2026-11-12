@@ -15,6 +15,14 @@ export type StubRouteTable = Record<string, StubReply | ((request: StubRequest) 
 const NOT_SCRIPTED: StubReply = { status: 404, body: { type: 'NOT_FOUND', title: 'Not Found', status: 404, detail: 'Not found.' } }
 
 /**
+ * The reply of a backend that refuses a request with a sentence the screen shows.
+ *
+ * @param detail - The sentence.
+ * @returns The failure reply.
+ */
+export const refusal = (detail: string): StubReply => ({ status: 422, body: { detail } })
+
+/**
  * The path of a request without its query string.
  *
  * @param request - The request the stub received.

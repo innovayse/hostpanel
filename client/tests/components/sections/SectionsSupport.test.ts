@@ -1,6 +1,6 @@
 /**
  * Unit tests for SectionsSupport: one card per channel, the reply time and link only when the
- * channel carries them, and no section without channels.
+ * channel carries them.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
@@ -46,14 +46,6 @@ describe('SectionsSupport', () => {
     expect(link.attributes('href')).toBe('mailto:help@example.test')
     expect(link.text()).toBe('help@example.test')
     expect(wrapper.find('[data-testid="support-link-chat"]').exists()).toBe(false)
-  })
-
-  it('renders nothing without channels', () => {
-    channels.value = []
-
-    const wrapper = mountWithKit(SectionsSupport, { components: CLASSIC_COMPONENTS })
-
-    expect(wrapper.find('[data-testid="sections-support"]').exists()).toBe(false)
   })
 
   it('draws every icon on a flat brand tile with no accent glow', () => {

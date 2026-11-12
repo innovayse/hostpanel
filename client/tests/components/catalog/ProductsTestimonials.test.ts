@@ -2,40 +2,51 @@
  * Unit tests for ProductsTestimonials: three testimonials read from the storefront store, each
  * with its author, quotes cut to 120 characters, and the block hiding itself when there are none.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { testimonialFixture } from '~/tests/helpers/storefrontFixtures'
+import { mountAfterReads, readOf, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import ProductsTestimonials from '~/components/catalog/ProductsTestimonials.vue'
 import MarketingSectionHeader from '~/components/marketing/MarketingSectionHeader.vue'
+import type { Testimonial } from '~/types/testimonial'
 
-/** The mocked storefront endpoints, re-created for every test. */
-const api = { fetchPartners: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** What the stub answers, by route; the tests below change the testimonials it serves. */
+const replies: StubRouteTable = {}
+
+/**
+ * Makes the stub serve these testimonials.
+ *
+ * @param testimonials The testimonials the public read answers with.
+ */
+const serve = (testimonials: Testimonial[]): void => {
+  replies[readOf(StorefrontPath.Testimonials)] = { body: testimonials }
+}
 
 /**
  * Mounts the block with the translation component stood in for, and lets the testimonials load.
  *
  * @returns The wrapper.
  */
-const mountBlock = async () => {
-  const wrapper = mountWithKit(ProductsTestimonials, { components: { MarketingSectionHeader }, stubs: { 'i18n-t': true } })
-  await flushPromises()
-  return wrapper
-}
+const mountBlock = () =>
+  mountAfterReads(stub, [StorefrontPath.Testimonials], () =>
+    mountWithKit(ProductsTestimonials, { components: { MarketingSectionHeader }, stubs: { 'i18n-t': true } }))
 
 describe('ProductsTestimonials', () => {
-  beforeEach(() => {
-    api.fetchTestimonials.mockReset()
-    api.fetchTestimonials.mockResolvedValue([1, 2, 3, 4].map(id => testimonialFixture(id)))
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    serve([1, 2, 3, 4].map(id => testimonialFixture(id)))
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('shows the first three testimonials with their author and company', async () => {
@@ -48,7 +59,7 @@ describe('ProductsTestimonials', () => {
   })
 
   it('cuts a long quote to 120 characters and an ellipsis', async () => {
-    api.fetchTestimonials.mockResolvedValue([testimonialFixture(1, { quote: 'x'.repeat(200) })])
+    serve([testimonialFixture(1, { quote: 'x'.repeat(200) })])
 
     const wrapper = await mountBlock()
 
@@ -64,7 +75,7 @@ describe('ProductsTestimonials', () => {
   })
 
   it('renders nothing when there are no testimonials', async () => {
-    api.fetchTestimonials.mockResolvedValue([])
+    serve([])
 
     const wrapper = await mountBlock()
 

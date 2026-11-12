@@ -2,25 +2,31 @@
  * Unit tests for SectionsLocations: one card per location with a country code badge, optional
  * city and latency lines, and no section at all when there are no locations.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
-import { reactive } from 'vue'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
+import { mountAfterReads, readOf, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import SectionsLocations from '~/components/sections/SectionsLocations.vue'
 import type { ServerLocation } from '~/types/serverlocation'
 
-/** The fake storefront store the section reads. */
-const store = reactive({ locations: [] as ServerLocation[], loadLocations: vi.fn() })
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/stores/storefront', () => ({
-  /**
-   * Stands in for the storefront store so the section runs without transport.
-   *
-   * @returns The fake store.
-   */
-  useStorefrontStore: () => store,
-}))
+/** What the stub answers, by route; the tests below change the locations it serves. */
+const replies: StubRouteTable = {}
+
+/**
+ * Makes the stub serve these locations.
+ *
+ * @param locations The locations the public read answers with.
+ */
+const serve = (locations: ServerLocation[]): void => {
+  replies[readOf(StorefrontPath.Locations)] = { body: locations }
+}
 
 /**
  * Builds a location.
@@ -43,22 +49,24 @@ const locationFixture = (id: number, overrides: Partial<ServerLocation> = {}): S
  *
  * @returns The wrapper.
  */
-const mountSection = async () => {
-  const wrapper = mountWithKit(SectionsLocations, { components: CLASSIC_COMPONENTS })
-  await flushPromises()
-  return wrapper
-}
+const mountSection = () =>
+  mountAfterReads(stub, [StorefrontPath.Locations], () => mountWithKit(SectionsLocations, { components: CLASSIC_COMPONENTS }))
 
 describe('SectionsLocations', () => {
-  beforeEach(() => {
-    store.loadLocations.mockReset()
-    store.locations = [locationFixture(1), locationFixture(2, { countryCode: 'US', city: null, latencyNote: null })]
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    serve([locationFixture(1), locationFixture(2, { countryCode: 'US', city: null, latencyNote: null })])
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('asks the store for the locations', async () => {
     await mountSection()
 
-    expect(store.loadLocations).toHaveBeenCalled()
+    expect(requestsTo(stub.requests, StorefrontPath.Locations)).toHaveLength(1)
   })
 
   it('shows the heading labels', async () => {
@@ -90,7 +98,7 @@ describe('SectionsLocations', () => {
   })
 
   it('renders nothing when there are no locations', async () => {
-    store.locations = []
+    serve([])
 
     const wrapper = await mountSection()
 
@@ -99,7 +107,7 @@ describe('SectionsLocations', () => {
 
   it('never caps the grid width: the shared container sets it for any number of locations', async () => {
     for (const count of [1, 2, 3]) {
-      store.locations = Array.from({ length: count }, (_, index) => locationFixture(index + 1))
+      serve(Array.from({ length: count }, (_, index) => locationFixture(index + 1)))
       const wrapper = await mountSection()
       const classes = wrapper.find('[data-testid="sections-locations-grid"]').classes()
 

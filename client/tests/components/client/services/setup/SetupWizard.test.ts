@@ -1,20 +1,34 @@
 /**
  * Unit tests for SetupWizard: the step flow, the checks that gate it and the provisioning call.
+ *
+ * The real service management store, API composable and transport run against a stub server
+ * playing the BFF; the assertions are on the request that reached it.
+ *
+ * @module tests/components/client/services/setup/SetupWizard.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountClient, stubClientRuntime } from '~/tests/helpers/mountClient'
 import SetupWizard from '~/components/client/services/setup/SetupWizard.vue'
 import { makeClientService } from '~/tests/helpers/clientServiceFixture'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import type { ClientService } from '~/types/clientservice'
 import { ServiceStatus } from '~/types/servicestatus'
 
-/** The mocked client endpoints the store reaches. */
-const api = vi.hoisted(() => ({ setUpService: vi.fn() }))
-
-vi.mock('~/composables/apis/useClientApi', () => ({ useClientApi: () => api }))
+/** The BFF path that takes the first-time setup of service 4. */
+const SETUP_PATH = '/api/portal/client/services/4/setup'
 
 /** Stands in for Nuxt's `navigateTo`, so a test can see where the wizard went. */
 const navigate = vi.fn()
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
 
 /** A service waiting for setup. */
 const service = makeClientService({ domain: null, status: ServiceStatus.Pending, username: null })
@@ -29,11 +43,16 @@ const mountWizard = (overrides: Partial<ClientService> = {}) =>
   mountClient(SetupWizard, { props: { service: { ...service, ...overrides }, serviceId: '4' } })
 
 describe('SetupWizard', () => {
-  beforeEach(() => {
-    api.setUpService.mockReset()
+  beforeEach(async () => {
     navigate.mockReset()
     vi.stubGlobal('navigateTo', navigate)
     stubClientRuntime()
+    table = { [`POST ${SETUP_PATH}`]: { body: {} } }
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('starts on the domain step and cannot continue without a domain', () => {
@@ -60,7 +79,6 @@ describe('SetupWizard', () => {
   })
 
   it('walks the three steps and provisions with what was typed', async () => {
-    api.setUpService.mockResolvedValue({})
     const wrapper = mountWizard()
 
     await wrapper.find('[data-testid="setup-domain"]').setValue('example.com')
@@ -70,7 +88,8 @@ describe('SetupWizard', () => {
     await wrapper.find('[data-testid="setup-credentials-next"]').trigger('click')
     await wrapper.find('[data-testid="setup-build"]').trigger('click')
 
-    await vi.waitFor(() => expect(api.setUpService).toHaveBeenCalledWith('4', { domain: 'example.com', username: 'webmstr', password: 'longenough' }))
+    await vi.waitFor(() => expect(requestsTo(stub.requests, SETUP_PATH)).toHaveLength(1))
+    expect(bodyOf(requestsTo(stub.requests, SETUP_PATH)[0])).toEqual({ domain: 'example.com', username: 'webmstr', password: 'longenough' })
     await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('/client/services/4'))
   })
 
@@ -85,7 +104,7 @@ describe('SetupWizard', () => {
   })
 
   it('stays on the review step and shows the refusal when provisioning fails', async () => {
-    api.setUpService.mockRejectedValue({ data: { detail: 'Username taken.' } })
+    table[`POST ${SETUP_PATH}`] = { status: 409, body: { detail: 'Username taken.' } }
     const wrapper = mountWizard({ domain: 'example.com' })
 
     await wrapper.find('[data-testid="setup-domain-next"]').trigger('click')

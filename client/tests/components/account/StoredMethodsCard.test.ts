@@ -1,31 +1,27 @@
 /**
  * Unit tests for StoredMethodsCard: the list, the consent gate, completing on return, making default and revoking.
+ * The card, the stored-methods store, its API composable and the transport run for real against a stub BFF that
+ * keeps the client's stored methods, so a change is visible in the next read as it is in production.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { mountAccount } from '~/tests/helpers/mountAccount'
 import type { MountWithKitOptions } from '~/tests/helpers/mountWithKit'
+import { AccountEndpoint, completeSessionPath, consentPath, defaultConsentPath } from '~/tests/helpers/accountPaths'
+import { bodyOf } from '~/tests/helpers/requestBody'
 import { stubLocalePath, stubRoute } from '~/tests/helpers/runtimeStubs'
+import { requestsTo, routeTable, refusal } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import StoredMethodsCard from '~/components/account/StoredMethodsCard.vue'
 import { useAccountStore } from '~/stores/account'
+import { useStoredMethodsStore } from '~/stores/storedmethods'
+import type { GatewayMethod } from '~/types/gatewaymethod'
+import { HttpMethod } from '~/types/httpmethod'
 import { PaymentModule } from '~/types/paymentmodule'
 import type { StoredMethod } from '~/types/storedmethod'
 import { readPendingStoredSession, writePendingStoredSession } from '~/utils/pendingStoredSession'
-
-/** The stored-method API the store calls; a test sets what each call answers. */
-const api = vi.hoisted(() => ({
-  fetchStoredMethods: vi.fn(),
-  beginSave: vi.fn(),
-  completeSave: vi.fn(),
-  revokeConsent: vi.fn(),
-  setDefault: vi.fn()
-}))
-
-vi.mock('~/composables/apis/useStoredMethodsApi', () => ({ useStoredMethodsApi: () => api }))
-vi.mock('~/composables/apis/useClientApi', () => ({ useClientApi: () => ({}) }))
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => ({}) }))
-vi.mock('~/composables/apis/useAuthApi', () => ({ useAuthApi: () => ({}) }))
-vi.mock('qrcode', () => ({ default: { toDataURL: async (): Promise<string> => '' } }))
 
 /** One stored card, not the default. */
 const stored: StoredMethod = {
@@ -39,44 +35,70 @@ const unavailable: StoredMethod = {
   expiryMonth: 0, expiryYear: 0, isDefault: true
 }
 
-beforeEach(() => {
-  Object.values(api).forEach(mock => mock.mockReset())
-  api.fetchStoredMethods.mockResolvedValue([])
+/** The built-in transfer, which no method can be stored at. */
+const transfer: GatewayMethod = { module: PaymentModule.BankTransfer, displayName: 'Bank transfer' }
+
+/** Two gateways, one of them the built-in transfer. */
+const gateways: GatewayMethod[] = [transfer, { module: 'card_gateway', displayName: 'Card gateway' }]
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies the stub gives, by `METHOD /path`; each test adds or replaces the ones it needs. */
+let table: StubRouteTable
+
+/** The stored methods the BFF holds; a default change or a revoke edits them. */
+let held: StoredMethod[]
+
+beforeEach(async () => {
+  held = []
+  table = { [`${HttpMethod.Get} ${AccountEndpoint.StoredMethods}`]: () => ({ body: held }) }
+  stub = await startTransport(routeTable(table))
   stubLocalePath('/en')
   stubRoute()
 })
 
-afterEach(() => {
+afterEach(async () => {
   vi.unstubAllGlobals()
   window.sessionStorage.clear()
+  await stub.close()
 })
 
 /**
- * Mounts the card with two gateways loaded, one of them the built-in transfer, and lets the first read settle.
+ * Mounts the card with the given gateways loaded and lets everything it does on mount settle.
  *
  * @param options - Mount options as for `mountAccount`.
+ * @param offered - The gateways the account store holds.
  * @returns The wrapper.
  */
-const mountCard = async (options: MountWithKitOptions = {}) => {
+const mountCard = async (options: MountWithKitOptions = {}, offered: GatewayMethod[] = gateways) => {
   const wrapper = mountAccount(StoredMethodsCard, options)
-  useAccountStore().gatewayMethods = [
-    { module: PaymentModule.BankTransfer, displayName: 'Bank transfer' },
-    { module: 'card_gateway', displayName: 'Card gateway' }
-  ]
+  useAccountStore().gatewayMethods = offered
+  // The first turn decides whether a pending session is completed or the list is read; the store's flags then say when it is done.
+  await flushPromises()
+  const store = useStoredMethodsStore()
+  await vi.waitFor(() => expect(store.loading || store.completing).toBe(false))
   await flushPromises()
   return wrapper
 }
+
+/**
+ * The reads of the stored-method list the stub received.
+ *
+ * @returns The list requests, oldest first.
+ */
+const listReads = () => requestsTo(stub.requests, AccountEndpoint.StoredMethods)
 
 describe('StoredMethodsCard', () => {
   it('reads the list on mount and shows the empty line when there is none', async () => {
     const wrapper = await mountCard()
 
-    expect(api.fetchStoredMethods).toHaveBeenCalledTimes(1)
+    expect(listReads()).toHaveLength(1)
     expect(wrapper.find('[data-testid="stored-methods-empty"]').exists()).toBe(true)
   })
 
   it('shows the sentence when the list cannot be read', async () => {
-    api.fetchStoredMethods.mockRejectedValue({ data: { detail: 'Unreachable.' } })
+    table[`${HttpMethod.Get} ${AccountEndpoint.StoredMethods}`] = refusal('Unreachable.')
 
     const wrapper = await mountCard()
 
@@ -91,7 +113,7 @@ describe('StoredMethodsCard', () => {
   })
 
   it('lists a method with its brand, last digits and expiry', async () => {
-    api.fetchStoredMethods.mockResolvedValue([stored])
+    held = [stored]
 
     const wrapper = await mountCard()
 
@@ -104,7 +126,7 @@ describe('StoredMethodsCard', () => {
   })
 
   it('shows the unavailable line and the default badge, without a make-default action, for the default method', async () => {
-    api.fetchStoredMethods.mockResolvedValue([unavailable])
+    held = [unavailable]
 
     const wrapper = await mountCard()
 
@@ -114,57 +136,67 @@ describe('StoredMethodsCard', () => {
   })
 
   it('makes a method the default and reads the list again', async () => {
-    api.fetchStoredMethods.mockResolvedValueOnce([stored]).mockResolvedValueOnce([{ ...stored, isDefault: true }])
-    api.setDefault.mockResolvedValue(undefined)
+    held = [stored]
+    table[`${HttpMethod.Post} ${defaultConsentPath(5)}`] = () => {
+      held = held.map(method => ({ ...method, isDefault: true }))
+      return { body: {} }
+    }
     const wrapper = await mountCard()
 
     await wrapper.find('[data-testid="stored-method-default-5"]').trigger('click')
-    await flushPromises()
 
-    expect(api.setDefault).toHaveBeenCalledWith(5)
-    expect(api.fetchStoredMethods).toHaveBeenCalledTimes(2)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="stored-methods-success"]').exists()).toBe(true))
+    const changes = requestsTo(stub.requests, defaultConsentPath(5))
+    expect(changes).toHaveLength(1)
+    expect(changes[0]?.method).toBe(HttpMethod.Post)
+    expect(listReads()).toHaveLength(2)
     expect(wrapper.find('[data-testid="stored-method-default-badge-5"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="stored-methods-success"]').exists()).toBe(true)
   })
 
   it('asks for confirmation before revoking, then revokes and reads the list again', async () => {
-    api.fetchStoredMethods.mockResolvedValueOnce([stored]).mockResolvedValueOnce([])
-    api.revokeConsent.mockResolvedValue(undefined)
+    held = [stored]
+    table[`${HttpMethod.Delete} ${consentPath(5)}`] = () => {
+      held = []
+      return { body: {} }
+    }
     const wrapper = await mountCard()
 
     await wrapper.find('[data-testid="stored-method-revoke-5"]').trigger('click')
-    expect(api.revokeConsent).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, consentPath(5))).toHaveLength(0)
 
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
-    await flushPromises()
 
-    expect(api.revokeConsent).toHaveBeenCalledWith(5)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="stored-methods-success"]').exists()).toBe(true))
+    const revocations = requestsTo(stub.requests, consentPath(5))
+    expect(revocations).toHaveLength(1)
+    expect(revocations[0]?.method).toBe(HttpMethod.Delete)
     expect(wrapper.find('[data-testid="stored-method-5"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="stored-methods-success"]').exists()).toBe(true)
   })
 
   it('shows the API sentence when a revoke is refused', async () => {
-    api.fetchStoredMethods.mockResolvedValue([stored])
-    api.revokeConsent.mockRejectedValue({ data: { detail: 'Refused.' } })
+    held = [stored]
+    table[`${HttpMethod.Delete} ${consentPath(5)}`] = refusal('Refused.')
     const wrapper = await mountCard()
 
     await wrapper.find('[data-testid="stored-method-revoke-5"]').trigger('click')
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
-    await flushPromises()
 
-    expect(wrapper.find('[data-testid="stored-methods-error"]').text()).toBe('Refused.')
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="stored-methods-error"]').text()).toBe('Refused.'))
     expect(wrapper.find('[data-testid="stored-method-5"]').exists()).toBe(true)
   })
 
   it('completes the pending session when the payer returns and shows the refreshed list', async () => {
     writePendingStoredSession({ gatewayModuleId: 'card_gateway', sessionId: 's1' })
-    api.completeSave.mockResolvedValue(stored)
-    api.fetchStoredMethods.mockResolvedValue([stored])
+    held = [stored]
+    table[`${HttpMethod.Post} ${completeSessionPath('s1')}`] = { body: stored }
     stubRoute({ query: { tab: 'payment', storedReturn: '1' } })
 
     const wrapper = await mountCard()
 
-    expect(api.completeSave).toHaveBeenCalledWith('card_gateway', 's1')
+    const completions = requestsTo(stub.requests, completeSessionPath('s1'))
+    expect(completions).toHaveLength(1)
+    expect(completions[0]?.method).toBe(HttpMethod.Post)
+    expect(bodyOf(completions[0])).toEqual({ gatewayModuleId: 'card_gateway' })
     expect(wrapper.find('[data-testid="stored-method-5"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="stored-methods-success"]').exists()).toBe(true)
   })
@@ -174,14 +206,14 @@ describe('StoredMethodsCard', () => {
 
     const wrapper = await mountCard()
 
-    expect(api.completeSave).not.toHaveBeenCalled()
-    expect(api.fetchStoredMethods).toHaveBeenCalledTimes(1)
+    expect(stub.requests.filter(request => request.method === HttpMethod.Post)).toHaveLength(0)
+    expect(listReads()).toHaveLength(1)
     expect(wrapper.find('[data-testid="stored-methods-empty"]').exists()).toBe(true)
   })
 
   it('forgets the pending session when completing it is refused', async () => {
     writePendingStoredSession({ gatewayModuleId: 'card_gateway', sessionId: 's1' })
-    api.completeSave.mockRejectedValue({ data: { detail: 'Expired.' } })
+    table[`${HttpMethod.Post} ${completeSessionPath('s1')}`] = refusal('Expired.')
     stubRoute({ query: { tab: 'payment', storedReturn: '1' } })
 
     const wrapper = await mountCard()
@@ -191,7 +223,7 @@ describe('StoredMethodsCard', () => {
   })
 
   it('labels the row buttons with the brand and last digits', async () => {
-    api.fetchStoredMethods.mockResolvedValue([stored])
+    held = [stored]
 
     // The default `$t` echoes the key only; this one also echoes the method parameter the label carries.
     const wrapper = await mountCard({
@@ -203,9 +235,7 @@ describe('StoredMethodsCard', () => {
   })
 
   it('explains when no gateway can store a method instead of showing an empty select', async () => {
-    const wrapper = mountAccount(StoredMethodsCard)
-    useAccountStore().gatewayMethods = [{ module: PaymentModule.BankTransfer, displayName: 'Bank transfer' }]
-    await flushPromises()
+    const wrapper = await mountCard({}, [transfer])
 
     expect(wrapper.find('[data-testid="stored-methods-no-gateways"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="stored-methods-gateway"]').exists()).toBe(false)
@@ -217,6 +247,6 @@ describe('StoredMethodsCard', () => {
 
     await mountCard()
 
-    expect(api.completeSave).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, completeSessionPath('s1'))).toHaveLength(0)
   })
 })

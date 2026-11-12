@@ -1,137 +1,160 @@
 /**
- * Tests for `pages/client/invoices/[id]/pay.vue`: the layout, the already-paid and not-found
- * states and the gateway payment button.
+ * Tests for `pages/client/invoices/[id]/pay.vue` against the real invoice payment store, API
+ * composable and transport, with a stub BFF answering on a real socket (nothing of ours is mocked):
+ * the layout, the already-paid and not-found states and the gateway payment button.
+ *
+ * @module tests/pages/client/invoices/[id]/pay.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import PayPage from '~/pages/client/invoices/[id]/pay.vue'
 import { InvoiceStatus } from '~/types/invoicestatus'
 
-/** The mocked billing endpoints the store reaches. */
-const billingApi = vi.hoisted(() => ({
-  fetchInvoice: vi.fn(), fetchGatewayMethods: vi.fn(), fetchBankTransfer: vi.fn()
-}))
+/** The BFF paths the page reads for invoice 41. */
+const PATHS = {
+  invoice: '/api/portal/client/invoices/41',
+  gateways: '/api/portal/order/payment-methods',
+  bankTransfer: '/api/portal/client/invoices/41/bank-transfer',
+} as const
 
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => billingApi }))
+/** One enabled hosted gateway. */
+const HOSTED_GATEWAY = { module: 'hostedbank', displayName: 'Bank' }
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
 
 /**
  * Builds an invoice.
  *
  * @param status - Invoice status.
+ * @param isBankTransferPending - Whether a bank transfer waits on the invoice.
  * @returns The invoice.
  */
 const invoice = (status: InvoiceStatus, isBankTransferPending = status === InvoiceStatus.PaymentPending) => ({
   id: 41, status, isBankTransferPending, currency: 'USD', subTotal: 100, credit: 0, total: 100, amountDue: 100, items: [{ id: 1, description: 'Hosting', amount: 100 }], transactions: []
 })
 
-describe('invoice payment page', () => {
-  beforeEach(() => {
-    Object.values(billingApi).forEach((fn) => fn.mockReset())
-    billingApi.fetchGatewayMethods.mockResolvedValue([])
-    stubClientRuntime({ params: { id: '41' } })
-  })
+beforeEach(async () => {
+  stubClientRuntime({ params: { id: '41' } })
+  table = {
+    [`GET ${PATHS.gateways}`]: { body: [] },
+  }
+  stub = await startTransport(routeTable(table))
+})
 
+afterEach(async () => {
+  await stub.close()
+})
+
+describe('invoice payment page', () => {
   it('shows the payment panel beside the invoice summary and the security notice with a hosted gateway', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.Unpaid))
-    billingApi.fetchGatewayMethods.mockResolvedValue([{ module: 'hostedbank', displayName: 'Bank' }])
+    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
+    table[`GET ${PATHS.gateways}`] = { body: [HOSTED_GATEWAY] }
 
     const wrapper = await mountPage(PayPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(true))
 
-    expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="pay-summary"]').text()).toContain('Hosting')
     expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(true)
   })
 
   it('says online payment is unavailable and hides the security notice when no gateway exists', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.Unpaid))
+    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
 
     const wrapper = await mountPage(PayPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-unavailable"]').exists()).toBe(true))
 
-    expect(wrapper.find('[data-testid="invoice-pay-unavailable"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-pay-options-error"]').exists()).toBe(false)
   })
 
   it('shows an error with a retry when the gateway list cannot be read, and recovers on retry', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.Unpaid))
-    billingApi.fetchGatewayMethods.mockRejectedValueOnce({ data: { detail: 'Gateways down.' } })
+    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
+    table[`GET ${PATHS.gateways}`] = { status: 503, body: { detail: 'Gateways down.' } }
     const wrapper = await mountPage(PayPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-options-error"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-pay-options-error"]').text()).toContain('Gateways down.')
     expect(wrapper.find('[data-testid="invoice-pay-unavailable"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(false)
 
-    billingApi.fetchGatewayMethods.mockResolvedValue([{ module: 'hostedbank', displayName: 'Bank' }])
+    table[`GET ${PATHS.gateways}`] = { body: [HOSTED_GATEWAY] }
     await wrapper.find('[data-testid="invoice-pay-options-retry"]').trigger('click')
-    await flushPromises()
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-pay-options-error"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true)
   })
 
   it('says an already paid invoice has been paid and offers no payment', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.Paid))
+    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Paid) }
 
     const wrapper = await mountPage(PayPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-already-paid"]').exists()).toBe(true))
 
-    expect(wrapper.find('[data-testid="invoice-already-paid"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(false)
   })
 
   it('treats a partially refunded invoice as already paid and offers no payment', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.PartiallyRefunded))
+    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.PartiallyRefunded) }
 
     const wrapper = await mountPage(PayPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-already-paid"]').exists()).toBe(true))
 
-    expect(wrapper.find('[data-testid="invoice-already-paid"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(false)
   })
 
   it('says the invoice was not found when the read fails', async () => {
-    billingApi.fetchInvoice.mockRejectedValue({ data: { detail: 'No such invoice.' } })
+    table[`GET ${PATHS.invoice}`] = { status: 404, body: { detail: 'No such invoice.' } }
 
     const wrapper = await mountPage(PayPage)
+    await vi.waitFor(() => expect(wrapper.text()).toContain('client.invoices.notFound'))
 
-    expect(wrapper.text()).toContain('client.invoices.notFound')
     expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(false)
   })
 
   it('offers the gateway payment button when a gateway is enabled', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.Unpaid))
-    billingApi.fetchGatewayMethods.mockResolvedValue([{ module: 'hostedbank', displayName: 'Bank' }])
+    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
+    table[`GET ${PATHS.gateways}`] = { body: [HOSTED_GATEWAY] }
     const wrapper = await mountPage(PayPage)
 
-    expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true))
   })
 
   it('shows the bank details of an invoice that waits for a transfer, with no payment choices or gateway notice', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.PaymentPending))
-    billingApi.fetchGatewayMethods.mockResolvedValue([{ module: 'hostedbank', displayName: 'Bank' }])
-    billingApi.fetchBankTransfer.mockResolvedValue({ invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null })
+    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.PaymentPending) }
+    table[`GET ${PATHS.gateways}`] = { body: [HOSTED_GATEWAY] }
+    table[`GET ${PATHS.bankTransfer}`] = { body: { invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null } }
 
     const wrapper = await mountPage(PayPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true))
 
-    expect(billingApi.fetchBankTransfer).toHaveBeenCalledWith('41')
-    expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true)
+    expect(requestsTo(stub.requests, PATHS.bankTransfer).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="bank-transfer-reference"]').text()).toBe('INV-41')
     expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(false)
   })
 
   it('does not read bank details for an invoice that does not wait for a transfer', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.Unpaid))
+    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
 
-    await mountPage(PayPage)
+    const wrapper = await mountPage(PayPage)
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(true))
 
-    expect(billingApi.fetchBankTransfer).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, PATHS.bankTransfer)).toHaveLength(0)
   })
 
   it('links the breadcrumb back to the invoice', async () => {
-    billingApi.fetchInvoice.mockResolvedValue(invoice(InvoiceStatus.Unpaid))
+    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
 
     const wrapper = await mountPage(PayPage)
 
-    expect(wrapper.find('nav a[href="/client/invoices/41"]').exists()).toBe(true)
+    await vi.waitFor(() => expect(wrapper.find('nav a[href="/client/invoices/41"]').exists()).toBe(true))
   })
 })

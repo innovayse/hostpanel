@@ -1,84 +1,95 @@
 /**
- * Tests for `stores/invoicepayment.ts`.
+ * Tests for `stores/invoicepayment.ts`, through the real billing API composable and transport against a stub server.
  *
  * The store, not the payment page, owns the in-flight flag and the refusal
- * sentence, so these assertions pin the contract the page renders from.
+ * sentence, so these assertions pin the contract the page renders from. Nothing of our own is
+ * replaced: the stub plays the BFF, and the file a download hands to the browser is read at the
+ * browser's own primitives.
  *
  * @module tests/stores/invoicepayment.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { ref } from 'vue'
+import { captureDownloads, PDF_REPLY } from '../helpers/captureDownloads'
+import { requestsTo, routeTable } from '../helpers/stubRoutes'
+import type { StubRouteTable } from '../helpers/stubRoutes'
+import type { StubServer } from '../helpers/stubServer'
+import { bodyOf } from '../helpers/requestBody'
+import { startTransport } from '../helpers/stubTransport'
+import { useInvoicePaymentStore } from '~/stores/invoicepayment'
 import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
+import { HttpMethod } from '~/types/httpmethod'
+import { InvoiceStatus } from '~/types/invoicestatus'
+import { PaymentModule } from '~/types/paymentmodule'
 import { PaymentTarget } from '~/types/paymenttarget'
 
-/** The mocked hosted-gateway start call, re-created for every test. */
-const startGatewayMock = vi.fn()
+/** The stub playing the BFF. */
+let stub: StubServer
 
-/** The mocked invoice read. */
-const fetchInvoiceMock = vi.fn()
+/** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
+let table: StubRouteTable
 
-/** The mocked gateway-list read. */
-const fetchGatewayMethodsMock = vi.fn()
+/** The read of the gateway list. */
+const GATEWAYS_ROUTE = `${HttpMethod.Get} /api/portal/order/payment-methods`
 
-/** The mocked gateway settlement call. */
-const completeGatewayMock = vi.fn()
+/** The hosted-gateway start of invoice 7. */
+const START_ROUTE = `${HttpMethod.Post} /api/portal/client/invoices/7/gateway-payment/start`
 
-/** The mocked PDF read. */
-const fetchInvoicePdfMock = vi.fn()
+/** The read of invoice 7. */
+const INVOICE_7_ROUTE = `${HttpMethod.Get} /api/portal/client/invoices/7`
 
-/** The mocked bank transfer choice. */
-const selectBankTransferMock = vi.fn()
+/** The read of invoice 8. */
+const INVOICE_8_ROUTE = `${HttpMethod.Get} /api/portal/client/invoices/8`
 
-/** The mocked bank transfer details read. */
-const fetchBankTransferMock = vi.fn()
+/** The read of invoice 41. */
+const INVOICE_41_ROUTE = `${HttpMethod.Get} /api/portal/client/invoices/41`
 
-/** The mocked browser save, so no test touches the DOM. */
-const saveBlobMock = vi.fn()
+/** The read of invoice 42. */
+const INVOICE_42_ROUTE = `${HttpMethod.Get} /api/portal/client/invoices/42`
 
-vi.stubGlobal('ref', ref)
+/** The read of the PDF of invoice 41. */
+const PDF_ROUTE = `${HttpMethod.Get} /api/portal/client/invoices/41/pdf`
 
-vi.mock('~/composables/apis/useBillingApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns Only the endpoints the tests reach for.
-   */
-  useBillingApi: () => ({
-    startInvoiceGatewayPayment: startGatewayMock,
-    fetchInvoice: fetchInvoiceMock,
-    fetchGatewayMethods: fetchGatewayMethodsMock,
-    completeGatewayPayment: completeGatewayMock,
-    fetchInvoicePdf: fetchInvoicePdfMock,
-    selectBankTransfer: selectBankTransferMock,
-    fetchBankTransfer: fetchBankTransferMock
-  })
-}))
+/** The path of the bank transfer of invoice 41. */
+const BANK_TRANSFER_PATH = '/api/portal/client/invoices/41/bank-transfer'
 
-vi.mock('~/utils/saveBlob', () => ({ saveBlob: saveBlobMock }))
+/** The choice of the bank transfer of invoice 41. */
+const SELECT_TRANSFER_ROUTE = `${HttpMethod.Post} ${BANK_TRANSFER_PATH}`
 
-const { useInvoicePaymentStore } = await import('~/stores/invoicepayment')
+/** The read of the bank transfer details of invoice 41. */
+const READ_TRANSFER_ROUTE = `${HttpMethod.Get} ${BANK_TRANSFER_PATH}`
+
+/** The bank details the endpoints answer with. */
+const details = { invoiceId: 41, reference: 'INV-41', amountDue: 50, currency: 'USD', accountName: 'Example LLC', iban: 'AM00', swift: null, bankName: null, instructions: null }
+
+beforeEach(async () => {
+  setActivePinia(createPinia())
+  table = {}
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  vi.restoreAllMocks()
+  await stub.close()
+})
 
 describe('useInvoicePaymentStore.startGatewayPayment', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    startGatewayMock.mockReset()
-  })
-
   it('returns the gateway address and stays in flight while the browser leaves', async () => {
-    startGatewayMock.mockResolvedValue({ redirectUrl: 'https://bank.example/pay' })
+    table[START_ROUTE] = { body: { redirectUrl: 'https://bank.example/pay' } }
     const store = useInvoicePaymentStore()
 
     const url = await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
 
     expect(url).toBe('https://bank.example/pay')
-    expect(startGatewayMock).toHaveBeenCalledWith('7', 'gw', 'https://app.example/result')
+    expect(stub.requests).toHaveLength(1)
+    expect(`${stub.requests[0]?.method} ${stub.requests[0]?.url}`).toBe(START_ROUTE)
+    expect(bodyOf(stub.requests[0])).toEqual({ module: 'gw', returnUrl: 'https://app.example/result' })
     expect(store.submitting).toBe(true)
   })
 
   it('refuses a gateway address the browser must not follow and releases the flag', async () => {
-    startGatewayMock.mockResolvedValue({ redirectUrl: 'javascript:alert(1)' })
+    table[START_ROUTE] = { body: { redirectUrl: 'javascript:alert(1)' } }
     const store = useInvoicePaymentStore()
 
     const url = await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
@@ -89,7 +100,7 @@ describe('useInvoicePaymentStore.startGatewayPayment', () => {
   })
 
   it('returns null, keeps the sentence and releases the flag on failure', async () => {
-    startGatewayMock.mockRejectedValue(new Error('down'))
+    table[START_ROUTE] = { status: 500 }
     const store = useInvoicePaymentStore()
 
     const url = await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
@@ -100,7 +111,7 @@ describe('useInvoicePaymentStore.startGatewayPayment', () => {
   })
 
   it('reset clears the flag and the sentence', async () => {
-    startGatewayMock.mockRejectedValue(new Error('down'))
+    table[START_ROUTE] = { status: 500 }
     const store = useInvoicePaymentStore()
     await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
 
@@ -112,15 +123,9 @@ describe('useInvoicePaymentStore.startGatewayPayment', () => {
 })
 
 describe('useInvoicePaymentStore reads', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    fetchInvoiceMock.mockReset()
-    fetchGatewayMethodsMock.mockReset()
-    completeGatewayMock.mockReset()
-  })
-
   it('keeps the invoice, and the API sentence with no invoice when the read is refused', async () => {
-    fetchInvoiceMock.mockResolvedValueOnce({ id: 7, total: '10.00' }).mockRejectedValueOnce({ data: { detail: 'No such invoice.' } })
+    table[INVOICE_7_ROUTE] = { body: { id: 7, total: '10.00' } }
+    table[INVOICE_8_ROUTE] = { status: 404, body: { detail: 'No such invoice.' } }
     const store = useInvoicePaymentStore()
 
     expect(await store.loadInvoice('7')).toMatchObject({ id: 7 })
@@ -133,11 +138,13 @@ describe('useInvoicePaymentStore reads', () => {
   })
 
   it('reads the gateways and picks the first plugin-backed gateway', async () => {
-    fetchGatewayMethodsMock.mockResolvedValue([
-      { module: 'bank_transfer', displayName: 'Bank' },
-      { module: 'hosted_gateway', displayName: 'Hosted gateway' },
-      { module: 'card_gateway', displayName: 'Card' }
-    ])
+    table[GATEWAYS_ROUTE] = {
+      body: [
+        { module: PaymentModule.BankTransfer, displayName: 'Bank' },
+        { module: 'hosted_gateway', displayName: 'Hosted gateway' },
+        { module: 'card_gateway', displayName: 'Card' }
+      ]
+    }
     const store = useInvoicePaymentStore()
 
     await store.loadPaymentOptions()
@@ -147,7 +154,7 @@ describe('useInvoicePaymentStore reads', () => {
   })
 
   it('has no hosted gateway when only the bank transfer is offered', async () => {
-    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'bank_transfer', displayName: 'Bank' }])
+    table[GATEWAYS_ROUTE] = { body: [{ module: PaymentModule.BankTransfer, displayName: 'Bank' }] }
     const store = useInvoicePaymentStore()
 
     await store.loadPaymentOptions()
@@ -156,7 +163,7 @@ describe('useInvoicePaymentStore reads', () => {
   })
 
   it('leaves the gateway list empty and keeps a sentence when its read fails, then clears it on a good read', async () => {
-    fetchGatewayMethodsMock.mockRejectedValueOnce({ data: { detail: 'down' } })
+    table[GATEWAYS_ROUTE] = { status: 400, body: { detail: 'down' } }
     const store = useInvoicePaymentStore()
 
     await store.loadPaymentOptions()
@@ -165,7 +172,7 @@ describe('useInvoicePaymentStore reads', () => {
     expect(store.hostedGatewayModule).toBeNull()
     expect(store.optionsError).toBe('down')
 
-    fetchGatewayMethodsMock.mockResolvedValue([])
+    table[GATEWAYS_ROUTE] = { body: [] }
     await store.loadPaymentOptions()
 
     expect(store.optionsError).toBe('')
@@ -173,26 +180,22 @@ describe('useInvoicePaymentStore reads', () => {
 })
 
 describe('useInvoicePaymentStore.verifyGatewayPayment', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    completeGatewayMock.mockReset()
-  })
-
   it.each([
     [GatewayPaymentState.Paid],
     [GatewayPaymentState.Pending],
     [GatewayPaymentState.Declined]
   ])('returns the backend state %s as it is', async (word) => {
-    completeGatewayMock.mockResolvedValue({ state: word })
+    table[`${HttpMethod.Post} /api/portal/order/42/gateway-payment/complete`] = { body: { state: word } }
 
     const state = await useInvoicePaymentStore().verifyGatewayPayment(PaymentTarget.Order, '42', 'tok')
 
     expect(state).toBe(word)
-    expect(completeGatewayMock).toHaveBeenCalledWith('order', '42', 'tok')
+    expect(stub.requests).toHaveLength(1)
+    expect(bodyOf(stub.requests[0])).toEqual({ paymentToken: 'tok' })
   })
 
   it('keeps the order number the backend answered with', async () => {
-    completeGatewayMock.mockResolvedValue({ state: GatewayPaymentState.Paid, orderNumber: 'ORD-0042' })
+    table[`${HttpMethod.Post} /api/portal/order/42/gateway-payment/complete`] = { body: { state: GatewayPaymentState.Paid, orderNumber: 'ORD-0042' } }
     const store = useInvoicePaymentStore()
 
     await store.verifyGatewayPayment(PaymentTarget.Order, '42', 'tok')
@@ -201,7 +204,7 @@ describe('useInvoicePaymentStore.verifyGatewayPayment', () => {
   })
 
   it('reports Unknown, never Declined, when no answer could be had', async () => {
-    completeGatewayMock.mockRejectedValue(new Error('timeout'))
+    table[`${HttpMethod.Post} /api/portal/client/invoices/7/gateway-payment/complete`] = { status: 504 }
 
     const state = await useInvoicePaymentStore().verifyGatewayPayment(PaymentTarget.Invoice, '7')
 
@@ -210,127 +213,74 @@ describe('useInvoicePaymentStore.verifyGatewayPayment', () => {
 })
 
 describe('useInvoicePaymentStore.downloadInvoicePdf', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    fetchInvoicePdfMock.mockReset()
-    saveBlobMock.mockReset()
-  })
-
   it('saves the PDF under the invoice number and releases the in-flight flag', async () => {
-    const pdf = new Blob(['%PDF'], { type: 'application/pdf' })
-    fetchInvoicePdfMock.mockResolvedValue(pdf)
+    table[PDF_ROUTE] = PDF_REPLY
+    const downloads = captureDownloads()
     const store = useInvoicePaymentStore()
 
     const pending = store.downloadInvoicePdf('41')
     expect(store.pdfDownloading).toBe(true)
     await pending
 
-    expect(fetchInvoicePdfMock).toHaveBeenCalledWith('41')
-    expect(saveBlobMock).toHaveBeenCalledWith(pdf, 'invoice-41.pdf')
+    expect(stub.requests.map(request => `${request.method} ${request.url}`)).toEqual([PDF_ROUTE])
+    expect(downloads).toHaveLength(1)
+    expect(downloads[0]?.fileName).toBe('invoice-41.pdf')
+    expect(await downloads[0]?.blob.text()).toBe('%PDF-')
     expect(store.pdfDownloading).toBe(false)
     expect(store.pdfError).toBe('')
   })
 
   it('keeps the API sentence when the download is refused, and clears it on the next try', async () => {
-    fetchInvoicePdfMock.mockRejectedValueOnce({ data: { detail: 'This invoice has too many lines to download as a PDF.' } })
+    table[PDF_ROUTE] = { status: 400, body: { detail: 'This invoice has too many lines to download as a PDF.' } }
+    const downloads = captureDownloads()
     const store = useInvoicePaymentStore()
 
     await store.downloadInvoicePdf('41')
 
-    expect(saveBlobMock).not.toHaveBeenCalled()
+    expect(downloads).toHaveLength(0)
     expect(store.pdfError).toBe('This invoice has too many lines to download as a PDF.')
     expect(store.pdfDownloading).toBe(false)
 
-    fetchInvoicePdfMock.mockResolvedValueOnce(new Blob(['%PDF']))
+    table[PDF_ROUTE] = PDF_REPLY
     await store.downloadInvoicePdf('41')
 
     expect(store.pdfError).toBe('')
   })
 })
-
-describe('useInvoicePaymentStore.downloadInvoicePdf', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    fetchInvoicePdfMock.mockReset()
-    saveBlobMock.mockReset()
-  })
-
-  it('saves the PDF under the invoice number and releases the in-flight flag', async () => {
-    const pdf = new Blob(['%PDF'], { type: 'application/pdf' })
-    fetchInvoicePdfMock.mockResolvedValue(pdf)
-    const store = useInvoicePaymentStore()
-
-    const pending = store.downloadInvoicePdf('41')
-    expect(store.pdfDownloading).toBe(true)
-    await pending
-
-    expect(fetchInvoicePdfMock).toHaveBeenCalledWith('41')
-    expect(saveBlobMock).toHaveBeenCalledWith(pdf, 'invoice-41.pdf')
-    expect(store.pdfDownloading).toBe(false)
-    expect(store.pdfError).toBe('')
-  })
-
-  it('keeps the API sentence when the download is refused, and clears it on the next try', async () => {
-    fetchInvoicePdfMock.mockRejectedValueOnce({ data: { detail: 'This invoice has too many lines to download as a PDF.' } })
-    const store = useInvoicePaymentStore()
-
-    await store.downloadInvoicePdf('41')
-
-    expect(saveBlobMock).not.toHaveBeenCalled()
-    expect(store.pdfError).toBe('This invoice has too many lines to download as a PDF.')
-    expect(store.pdfDownloading).toBe(false)
-
-    fetchInvoicePdfMock.mockResolvedValueOnce(new Blob(['%PDF']))
-    await store.downloadInvoicePdf('41')
-
-    expect(store.pdfError).toBe('')
-  })
-})
-
-/** The bank details the endpoints answer with. */
-const details = { invoiceId: 41, reference: 'INV-41', amountDue: 50, currency: 'USD', accountName: 'Example LLC', iban: 'AM00', swift: null, bankName: null, instructions: null }
 
 describe('useInvoicePaymentStore bank transfer', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    selectBankTransferMock.mockReset()
-    fetchBankTransferMock.mockReset()
-    fetchInvoiceMock.mockReset()
-    fetchGatewayMethodsMock.mockReset()
-  })
-
   it('offers the transfer only when the gateway list holds the bank transfer module', async () => {
     const store = useInvoicePaymentStore()
     expect(store.bankTransferOffered).toBe(false)
 
-    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'hosted', displayName: 'Card' }])
+    table[GATEWAYS_ROUTE] = { body: [{ module: 'hosted', displayName: 'Card' }] }
     await store.loadPaymentOptions()
     expect(store.bankTransferOffered).toBe(false)
 
-    fetchGatewayMethodsMock.mockResolvedValue([{ module: 'hosted', displayName: 'Card' }, { module: 'bank_transfer', displayName: 'Bank' }])
+    table[GATEWAYS_ROUTE] = { body: [{ module: 'hosted', displayName: 'Card' }, { module: PaymentModule.BankTransfer, displayName: 'Bank' }] }
     await store.loadPaymentOptions()
     expect(store.bankTransferOffered).toBe(true)
   })
 
   it('choosing the transfer keeps the details, moves the invoice to waiting and releases the flag', async () => {
-    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'Unpaid' })
-    selectBankTransferMock.mockResolvedValue(details)
+    table[INVOICE_41_ROUTE] = { body: { id: 41, status: InvoiceStatus.Unpaid } }
+    table[SELECT_TRANSFER_ROUTE] = { body: details }
     const store = useInvoicePaymentStore()
     await store.loadInvoice('41')
 
     const chosen = await store.selectBankTransfer('41')
 
     expect(chosen).toBe(true)
-    expect(selectBankTransferMock).toHaveBeenCalledWith('41')
+    expect(requestsTo(stub.requests, BANK_TRANSFER_PATH).map(request => request.method)).toEqual([HttpMethod.Post])
     expect(store.bankTransfer).toEqual(details)
-    expect(store.invoice?.status).toBe('PaymentPending')
+    expect(store.invoice?.status).toBe(InvoiceStatus.PaymentPending)
     expect(store.submitting).toBe(false)
     expect(store.error).toBe('')
   })
 
   it('keeps the API sentence when choosing the transfer is refused', async () => {
-    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'Unpaid' })
-    selectBankTransferMock.mockRejectedValue({ data: { detail: 'Bank transfer is not available right now.' } })
+    table[INVOICE_41_ROUTE] = { body: { id: 41, status: InvoiceStatus.Unpaid } }
+    table[SELECT_TRANSFER_ROUTE] = { status: 400, body: { detail: 'Bank transfer is not available right now.' } }
     const store = useInvoicePaymentStore()
     await store.loadInvoice('41')
 
@@ -339,42 +289,42 @@ describe('useInvoicePaymentStore bank transfer', () => {
     expect(chosen).toBe(false)
     expect(store.error).toBe('Bank transfer is not available right now.')
     expect(store.bankTransfer).toBeNull()
-    expect(store.invoice?.status).toBe('Unpaid')
+    expect(store.invoice?.status).toBe(InvoiceStatus.Unpaid)
     expect(store.submitting).toBe(false)
   })
 
   it('reads the details only for an invoice that waits for a transfer', async () => {
-    fetchBankTransferMock.mockResolvedValue(details)
+    table[READ_TRANSFER_ROUTE] = { body: details }
     const store = useInvoicePaymentStore()
 
-    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'Unpaid' })
+    table[INVOICE_41_ROUTE] = { body: { id: 41, status: InvoiceStatus.Unpaid } }
     await store.loadInvoice('41')
     await store.loadBankTransfer('41')
-    expect(fetchBankTransferMock).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, BANK_TRANSFER_PATH)).toHaveLength(0)
     expect(store.bankTransfer).toBeNull()
 
-    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'PaymentPending', isBankTransferPending: true })
+    table[INVOICE_41_ROUTE] = { body: { id: 41, status: InvoiceStatus.PaymentPending, isBankTransferPending: true } }
     await store.loadInvoice('41')
     await store.loadBankTransfer('41')
-    expect(fetchBankTransferMock).toHaveBeenCalledWith('41')
+    expect(requestsTo(stub.requests, BANK_TRANSFER_PATH)).toHaveLength(1)
     expect(store.bankTransfer).toEqual(details)
   })
 
   it('does not read details for a pending invoice that is not a bank transfer', async () => {
-    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'PaymentPending', isBankTransferPending: false })
+    table[INVOICE_41_ROUTE] = { body: { id: 41, status: InvoiceStatus.PaymentPending, isBankTransferPending: false } }
     const store = useInvoicePaymentStore()
     await store.loadInvoice('41')
 
     await store.loadBankTransfer('41')
 
-    expect(fetchBankTransferMock).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, BANK_TRANSFER_PATH)).toHaveLength(0)
     expect(store.bankTransfer).toBeNull()
     expect(store.bankTransferError).toBe('')
   })
 
   it('keeps the sentence of a refused details read and no details', async () => {
-    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'PaymentPending', isBankTransferPending: true })
-    fetchBankTransferMock.mockRejectedValue({ data: { detail: 'No bank transfer is waiting on this invoice.' } })
+    table[INVOICE_41_ROUTE] = { body: { id: 41, status: InvoiceStatus.PaymentPending, isBankTransferPending: true } }
+    table[READ_TRANSFER_ROUTE] = { status: 404, body: { detail: 'No bank transfer is waiting on this invoice.' } }
     const store = useInvoicePaymentStore()
     await store.loadInvoice('41')
 
@@ -385,8 +335,9 @@ describe('useInvoicePaymentStore bank transfer', () => {
   })
 
   it('forgets the details of the previous invoice when another one is read', async () => {
-    fetchInvoiceMock.mockResolvedValue({ id: 41, status: 'Unpaid' })
-    selectBankTransferMock.mockResolvedValue(details)
+    table[INVOICE_41_ROUTE] = { body: { id: 41, status: InvoiceStatus.Unpaid } }
+    table[INVOICE_42_ROUTE] = { body: { id: 42, status: InvoiceStatus.Unpaid } }
+    table[SELECT_TRANSFER_ROUTE] = { body: details }
     const store = useInvoicePaymentStore()
     await store.loadInvoice('41')
     await store.selectBankTransfer('41')

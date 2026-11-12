@@ -10,8 +10,8 @@ import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
 
-// The chart needs a canvas the test environment does not have; TransactionChart has its own test.
-vi.mock('@/components/billing/TransactionChart.vue', () => ({ default: { name: 'TransactionChart', render: () => null } }))
+// The chart library needs a canvas the test environment does not have; TransactionChart has its own test.
+vi.mock('chart.js', async () => (await import('../helpers/chartJsMock')).chartJsMock)
 
 /** The ledger endpoint answer: two transactions and the ledger totals. */
 const ledger = () =>

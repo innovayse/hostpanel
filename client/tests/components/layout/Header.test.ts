@@ -1,18 +1,30 @@
 /**
  * Unit tests for the classic LayoutHeader: the logo lockup, the catalogue-driven navigation, the
  * shared controls, the signed-out and signed-in states, the drawer and the scroll shadow.
+ *
+ * The real catalogue and auth stores, API composables and transport run against a stub server
+ * playing the BFF; only the two pickers are stood in for.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h, nextTick, ref } from 'vue'
-import { flushPromises } from '@vue/test-utils'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import LayoutHeader from '~/components/layout/Header.vue'
 import { useAuthStore } from '~/stores/auth'
+import { useCatalogStore } from '~/stores/catalog'
 import { makeClientUser } from '~/tests/helpers/clientUser'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { ProductType } from '~/types/producttype'
+
+/** Path of the endpoint that lists the product groups. */
+const GROUPS_PATH = '/api/portal/public/product-groups'
+
+/** Path of the endpoint that lists the products. */
+const PRODUCTS_PATH = '/api/portal/public/products'
 
 /** Groups the stubbed catalogue API returns: hosting and a VPS group. */
 const GROUPS: PortalProductGroup[] = [
@@ -26,29 +38,11 @@ const PRODUCTS = [
   { id: 90, groupId: 9, type: ProductType.Vps },
 ] as PortalProduct[]
 
-/** The mocked catalogue reads. */
-const catalogApi = {
-  fetchProductGroups: vi.fn(),
-  fetchProducts: vi.fn(),
-}
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useCatalogApi', () => ({
-  /**
-   * Stands in for the catalogue API composable so the store runs without transport.
-   *
-   * @returns The two reads the header triggers.
-   */
-  useCatalogApi: () => catalogApi,
-}))
-
-vi.mock('~/composables/apis/useAuthApi', () => ({
-  /**
-   * Stands in for the auth API composable so the store runs without transport.
-   *
-   * @returns Inert endpoints.
-   */
-  useAuthApi: () => ({ logout: vi.fn(), ssoLogout: vi.fn(), fetchUser: vi.fn() }),
-}))
+/** What the stub answers the product groups read with; a test changes it before it mounts. */
+let groupsReply: StubReply = { body: GROUPS }
 
 /** Stand-in for the language switcher, which needs the i18n runtime. */
 const LanguageSwitcherStub = defineComponent({
@@ -56,7 +50,7 @@ const LanguageSwitcherStub = defineComponent({
   setup: () => () => h('div', { 'data-testid': 'language-switcher-stub' }),
 })
 
-/** Stand-in for the currency switcher, which needs the currency store's transport. */
+/** Stand-in for the currency switcher, which has its own test. */
 const CurrencySwitcherStub = defineComponent({
   name: 'UiCurrencySwitcher',
   setup: () => () => h('div', { 'data-testid': 'currency-switcher-stub' }),
@@ -66,7 +60,7 @@ const CurrencySwitcherStub = defineComponent({
 const client = makeClientUser()
 
 /**
- * Mounts the header with the pickers stood in for and lets the catalogue read settle.
+ * Mounts the header with the pickers stood in for and waits until the catalogue read has settled.
  *
  * @returns The wrapper.
  */
@@ -75,7 +69,8 @@ const mountHeader = async () => {
     components: { UiLanguageSwitcher: LanguageSwitcherStub, UiCurrencySwitcher: CurrencySwitcherStub },
     attachToBody: true,
   })
-  await flushPromises()
+  await vi.waitFor(() => expect(requestsTo(stub.requests, GROUPS_PATH).length).toBeGreaterThan(0))
+  await vi.waitFor(() => expect(useCatalogStore().loading).toBe(false))
   return wrapper
 }
 
@@ -89,15 +84,19 @@ const desktopLinkKeys = (wrapper: Awaited<ReturnType<typeof mountHeader>>): (str
   wrapper.find('[data-testid="layout-desktop-nav"]').findAll('a').map((link) => link.attributes('data-testid'))
 
 describe('LayoutHeader', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     stubTemplateGlobals()
     vi.stubGlobal('useRuntimeConfig', () => ({ public: {} }))
-    catalogApi.fetchProductGroups.mockReset().mockResolvedValue(GROUPS)
-    catalogApi.fetchProducts.mockReset().mockResolvedValue(PRODUCTS)
+    groupsReply = { body: GROUPS }
+    stub = await startTransport(routeTable({
+      [`GET ${GROUPS_PATH}`]: () => groupsReply,
+      [`GET ${PRODUCTS_PATH}`]: { body: PRODUCTS },
+    }))
     window.localStorage.clear()
   })
 
-  afterEach(() => {
+  afterEach(async () => {
+    await stub.close()
     // Put back the setup's empty route, which the active-state tests replace.
     vi.stubGlobal('useRoute', () => ({ params: {}, query: {}, path: '/', fullPath: '/', meta: {} }))
     document.body.classList.remove('overflow-hidden')
@@ -136,7 +135,7 @@ describe('LayoutHeader', () => {
   })
 
   it('keeps Hosting a plain link when the catalogue read fails', async () => {
-    catalogApi.fetchProductGroups.mockRejectedValue(new Error('offline'))
+    groupsReply = { status: 503, body: { type: 'UNAVAILABLE', detail: 'Offline.' } }
     const wrapper = await mountHeader()
 
     expect(desktopLinkKeys(wrapper)).toEqual(['header-nav-hosting', 'header-nav-domains', 'header-nav-products'])
@@ -226,7 +225,7 @@ describe('LayoutHeader', () => {
   it('loads the catalogue families once, during setup, not after mount', async () => {
     await mountHeader()
 
-    expect(catalogApi.fetchProductGroups).toHaveBeenCalledTimes(1)
+    expect(requestsTo(stub.requests, GROUPS_PATH)).toHaveLength(1)
   })
 
   it('renders the widget mounts instead of the local account part when the widget is served', async () => {

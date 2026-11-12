@@ -1,11 +1,16 @@
 /**
- * Tests for `stores/storedmethods.ts`: the sentences, flags and list the stored-method card renders from.
+ * Tests for `stores/storedmethods.ts`, through the real API composable and transport against a stub
+ * server: the sentences, flags and list the stored-method card renders from.
  *
  * @module tests/stores/storedmethods.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { startTransport } from '../helpers/stubTransport'
+import { requestsTo, routeTable } from '../helpers/stubRoutes'
+import type { StubRouteTable } from '../helpers/stubRoutes'
+import type { StubRequest, StubServer } from '../helpers/stubServer'
 import { useStoredMethodsStore } from '~/stores/storedmethods'
 import { ActionOutcome } from '~/types/actionoutcome'
 import { ConsentTextVersion } from '~/types/consenttextversion'
@@ -13,16 +18,14 @@ import { SaveMethodMode } from '~/types/savemethodmode'
 import type { StoredMethod } from '~/types/storedmethod'
 import { readPendingStoredSession, writePendingStoredSession } from '~/utils/pendingStoredSession'
 
-/** Mocked stored-method endpoints. */
-const api = vi.hoisted(() => ({
-  fetchStoredMethods: vi.fn(),
-  beginSave: vi.fn(),
-  completeSave: vi.fn(),
-  revokeConsent: vi.fn(),
-  setDefault: vi.fn()
-}))
+/** The BFF path of the stored-method list. */
+const BASE = '/api/portal/client/stored-payment-methods'
 
-vi.mock('~/composables/apis/useStoredMethodsApi', () => ({ useStoredMethodsApi: () => api }))
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test, by `METHOD /path`; the list answers empty unless a test says otherwise. */
+let table: StubRouteTable
 
 /** One stored card. */
 const stored: StoredMethod = {
@@ -30,22 +33,30 @@ const stored: StoredMethod = {
   expiryMonth: 9, expiryYear: 2029, isDefault: false
 }
 
-/** A refusal as `apiFetch` throws it. */
-const refusal = { data: { detail: 'Refused.' } }
+/** A refusal as the BFF answers it. */
+const refusal = { status: 400, body: { detail: 'Refused.' } }
 
-beforeEach(() => {
+/**
+ * The list reads the stub received.
+ *
+ * @returns The requests to the list path, oldest first.
+ */
+const listReads = (): StubRequest[] => requestsTo(stub.requests, BASE)
+
+beforeEach(async () => {
   setActivePinia(createPinia())
-  Object.values(api).forEach(mock => mock.mockReset())
-  api.fetchStoredMethods.mockResolvedValue([])
+  table = { [`GET ${BASE}`]: { body: [] } }
+  stub = await startTransport(routeTable(table))
 })
 
-afterEach(() => {
+afterEach(async () => {
   window.sessionStorage.clear()
+  await stub.close()
 })
 
 describe('stored methods store', () => {
   it('loads the list', async () => {
-    api.fetchStoredMethods.mockResolvedValue([stored])
+    table[`GET ${BASE}`] = { body: [stored] }
     const store = useStoredMethodsStore()
 
     await store.load()
@@ -56,10 +67,11 @@ describe('stored methods store', () => {
   })
 
   it('keeps the current list and the sentence when the read fails', async () => {
-    api.fetchStoredMethods.mockResolvedValueOnce([stored]).mockRejectedValueOnce(refusal)
+    table[`GET ${BASE}`] = { body: [stored] }
     const store = useStoredMethodsStore()
     await store.load()
 
+    table[`GET ${BASE}`] = refusal
     await store.load()
 
     expect(store.loadError).toBe('Refused.')
@@ -67,19 +79,26 @@ describe('stored methods store', () => {
   })
 
   it('opens a redirect session, remembers it and returns the address', async () => {
-    api.beginSave.mockResolvedValue({ sessionId: 's1', mode: SaveMethodMode.Redirect, clientToken: null, redirectUrl: 'https://pay.example/s1' })
+    table[`POST ${BASE}/sessions`] = { body: { sessionId: 's1', mode: SaveMethodMode.Redirect, clientToken: null, redirectUrl: 'https://pay.example/s1' } }
     const store = useStoredMethodsStore()
 
     const url = await store.beginSave('card_gateway', true, ConsentTextVersion.AccountCard, 'https://x/return')
 
     expect(url).toBe('https://pay.example/s1')
-    expect(api.beginSave).toHaveBeenCalledWith('card_gateway', true, ConsentTextVersion.AccountCard, 'https://x/return')
+    const [sent] = requestsTo(stub.requests, `${BASE}/sessions`)
+    expect(sent?.method).toBe('POST')
+    expect(JSON.parse(sent?.body ?? '')).toEqual({
+      gatewayModuleId: 'card_gateway',
+      consentAccepted: true,
+      consentTextVersion: ConsentTextVersion.AccountCard,
+      returnUrl: 'https://x/return'
+    })
     expect(readPendingStoredSession()).toEqual({ gatewayModuleId: 'card_gateway', sessionId: 's1' })
     expect(store.starting).toBe(false)
   })
 
   it('refuses an embedded session, which this portal cannot show', async () => {
-    api.beginSave.mockResolvedValue({ sessionId: 's1', mode: SaveMethodMode.EmbeddedToken, clientToken: 'tok', redirectUrl: null })
+    table[`POST ${BASE}/sessions`] = { body: { sessionId: 's1', mode: SaveMethodMode.EmbeddedToken, clientToken: 'tok', redirectUrl: null } }
     const store = useStoredMethodsStore()
 
     expect(await store.beginSave('card_gateway', true, ConsentTextVersion.AccountCard, 'https://x/return')).toBeNull()
@@ -88,7 +107,7 @@ describe('stored methods store', () => {
   })
 
   it('keeps the API sentence when opening the session is refused', async () => {
-    api.beginSave.mockRejectedValue(refusal)
+    table[`POST ${BASE}/sessions`] = refusal
     const store = useStoredMethodsStore()
 
     expect(await store.beginSave('card_gateway', false, ConsentTextVersion.AccountCard, 'https://x/return')).toBeNull()
@@ -100,24 +119,26 @@ describe('stored methods store', () => {
     const store = useStoredMethodsStore()
 
     expect(await store.completePending()).toBeNull()
-    expect(api.completeSave).not.toHaveBeenCalled()
+    expect(stub.requests).toHaveLength(0)
   })
 
   it('completes the pending session, re-reads the list and forgets the session', async () => {
     writePendingStoredSession({ gatewayModuleId: 'card_gateway', sessionId: 's1' })
-    api.completeSave.mockResolvedValue(stored)
-    api.fetchStoredMethods.mockResolvedValue([stored])
+    table[`POST ${BASE}/sessions/s1/complete`] = { body: stored }
+    table[`GET ${BASE}`] = { body: [stored] }
     const store = useStoredMethodsStore()
 
     expect(await store.completePending()).toBe(ActionOutcome.Succeeded)
-    expect(api.completeSave).toHaveBeenCalledWith('card_gateway', 's1')
+    const [sent] = requestsTo(stub.requests, `${BASE}/sessions/s1/complete`)
+    expect(sent?.method).toBe('POST')
+    expect(JSON.parse(sent?.body ?? '')).toEqual({ gatewayModuleId: 'card_gateway' })
     expect(store.methods).toEqual([stored])
     expect(readPendingStoredSession()).toBeNull()
   })
 
   it('forgets the session when completing is refused, as a refused session cannot succeed on a retry', async () => {
     writePendingStoredSession({ gatewayModuleId: 'card_gateway', sessionId: 's1' })
-    api.completeSave.mockRejectedValue(refusal)
+    table[`POST ${BASE}/sessions/s1/complete`] = refusal
     const store = useStoredMethodsStore()
 
     expect(await store.completePending()).toBe(ActionOutcome.Failed)
@@ -127,37 +148,37 @@ describe('stored methods store', () => {
   })
 
   it('re-reads the list after a revoke', async () => {
-    api.revokeConsent.mockResolvedValue(undefined)
+    table[`DELETE ${BASE}/consents/5`] = { status: 204 }
     const store = useStoredMethodsStore()
 
     expect(await store.revoke(5)).toBe(ActionOutcome.Succeeded)
-    expect(api.revokeConsent).toHaveBeenCalledWith(5)
-    expect(api.fetchStoredMethods).toHaveBeenCalledTimes(1)
+    expect(requestsTo(stub.requests, `${BASE}/consents/5`).map(request => request.method)).toEqual(['DELETE'])
+    expect(listReads()).toHaveLength(1)
     expect(store.revokingId).toBeNull()
   })
 
   it('keeps the sentence and does not re-read when the revoke is refused', async () => {
-    api.revokeConsent.mockRejectedValue(refusal)
+    table[`DELETE ${BASE}/consents/5`] = refusal
     const store = useStoredMethodsStore()
 
     expect(await store.revoke(5)).toBe(ActionOutcome.Failed)
     expect(store.error).toBe('Refused.')
-    expect(api.fetchStoredMethods).not.toHaveBeenCalled()
+    expect(listReads()).toHaveLength(0)
   })
 
   it('makes a method the default and re-reads the list', async () => {
-    api.setDefault.mockResolvedValue(undefined)
-    api.fetchStoredMethods.mockResolvedValue([{ ...stored, isDefault: true }])
+    table[`POST ${BASE}/consents/5/default`] = { status: 204 }
+    table[`GET ${BASE}`] = { body: [{ ...stored, isDefault: true }] }
     const store = useStoredMethodsStore()
 
     expect(await store.makeDefault(5)).toBe(ActionOutcome.Succeeded)
-    expect(api.setDefault).toHaveBeenCalledWith(5)
+    expect(requestsTo(stub.requests, `${BASE}/consents/5/default`).map(request => request.method)).toEqual(['POST'])
     expect(store.methods[0]?.isDefault).toBe(true)
     expect(store.settingDefaultId).toBeNull()
   })
 
   it('keeps the sentence when the default change is refused', async () => {
-    api.setDefault.mockRejectedValue(refusal)
+    table[`POST ${BASE}/consents/5/default`] = refusal
     const store = useStoredMethodsStore()
 
     expect(await store.makeDefault(5)).toBe(ActionOutcome.Failed)

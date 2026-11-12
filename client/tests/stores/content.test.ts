@@ -1,5 +1,5 @@
 /**
- * Tests for `stores/content.ts`.
+ * Tests for `stores/content.ts`, through the real API composable and transport against a stub server.
  *
  * The store, not the announcement and knowledgebase pages, owns the lists, the loading flags and
  * the failure sentence, so these assertions pin the contract the pages render from.
@@ -7,41 +7,48 @@
  * @module tests/stores/content.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { startTransport } from '../helpers/stubTransport'
+import { queryOf, requestsTo, routeTable } from '../helpers/stubRoutes'
+import type { StubRouteTable } from '../helpers/stubRoutes'
+import type { StubReply, StubServer } from '../helpers/stubServer'
+import { useContentStore } from '~/stores/content'
 
-/** The mocked content endpoints, re-created for every test. */
-const api = {
-  fetchAnnouncements: vi.fn(),
-  fetchRecentAnnouncements: vi.fn(),
-  fetchAnnouncement: vi.fn(),
-  fetchKbCategories: vi.fn(),
-  fetchKbArticles: vi.fn(),
-  fetchKbArticle: vi.fn()
-}
+/** The BFF path of the signed-in announcement list. */
+const ANNOUNCEMENTS_PATH = '/api/portal/client/announcements'
 
-vi.mock('~/composables/apis/useContentApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useContentApi: () => api
-}))
+/** The BFF path of the public announcement list. */
+const PUBLIC_ANNOUNCEMENTS_PATH = '/api/portal/public/announcements'
 
-const { useContentStore } = await import('~/stores/content')
+/** The BFF path of the knowledgebase categories. */
+const KB_CATEGORIES_PATH = '/api/portal/knowledgebase/categories'
 
-/** An API refusal as `apiErrorMessage` reads it. */
-const refusal = { data: { detail: 'Content unavailable.' } }
+/** The BFF path of the knowledgebase article list. */
+const KB_ARTICLES_PATH = '/api/portal/knowledgebase/articles'
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test, by `METHOD /path`. */
+let table: StubRouteTable
+
+/** An API refusal as the BFF answers it. */
+const refusal: StubReply = { status: 404, body: { detail: 'Content unavailable.' } }
+
+beforeEach(async () => {
+  setActivePinia(createPinia())
+  table = {}
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  await stub.close()
+})
 
 describe('useContentStore', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    Object.values(api).forEach(fn => fn.mockReset())
-  })
-
   it('keeps the announcement list', async () => {
-    api.fetchAnnouncements.mockResolvedValue({ items: [{ id: 3, title: 'A', content: '', publishedAt: '2026-01-01' }, { id: 4, title: 'B', content: '', publishedAt: '2026-02-01' }] })
+    table[`GET ${ANNOUNCEMENTS_PATH}`] = { body: { items: [{ id: 3, title: 'A', content: '', publishedAt: '2026-01-01' }, { id: 4, title: 'B', content: '', publishedAt: '2026-02-01' }] } }
     const store = useContentStore()
 
     await store.loadAnnouncements()
@@ -51,20 +58,20 @@ describe('useContentStore', () => {
   })
 
   it('reads one announcement by id from the detail endpoint, whatever page the list is on', async () => {
-    api.fetchAnnouncement.mockResolvedValue({ id: 104, title: 'Old news', content: '<p>x</p>', publishedAt: '2024-01-01' })
+    table[`GET ${PUBLIC_ANNOUNCEMENTS_PATH}/104`] = { body: { id: 104, title: 'Old news', content: '<p>x</p>', publishedAt: '2024-01-01' } }
     const store = useContentStore()
 
     const loaded = await store.loadAnnouncement('104')
 
-    expect(api.fetchAnnouncement).toHaveBeenCalledWith('104')
-    expect(api.fetchAnnouncements).not.toHaveBeenCalled()
+    expect(stub.requests.map(request => request.url)).toEqual([`${PUBLIC_ANNOUNCEMENTS_PATH}/104`])
+    expect(requestsTo(stub.requests, ANNOUNCEMENTS_PATH)).toHaveLength(0)
     expect(loaded).toMatchObject({ title: 'Old news' })
     expect(store.announcementFor('104')).toMatchObject({ title: 'Old news' })
     expect(store.announcementFor('99')).toBeNull()
   })
 
   it('keeps the API sentence and no announcement when the detail is refused', async () => {
-    api.fetchAnnouncement.mockRejectedValue(refusal)
+    table[`GET ${PUBLIC_ANNOUNCEMENTS_PATH}/9`] = refusal
     const store = useContentStore()
 
     expect(await store.loadAnnouncement('9')).toBeNull()
@@ -73,19 +80,20 @@ describe('useContentStore', () => {
   })
 
   it('keeps the failure status of a refused read and clears it on the next good one', async () => {
-    api.fetchAnnouncement.mockRejectedValueOnce({ statusCode: 503, data: { detail: 'Unavailable.' } })
-    api.fetchAnnouncement.mockResolvedValueOnce({ id: 9, title: 'Back', content: '', publishedAt: '2026-03-01' })
+    // A 503 on a read is retried once by the transport, so the stub answers it for both attempts.
+    table[`GET ${PUBLIC_ANNOUNCEMENTS_PATH}/9`] = { status: 503, body: { detail: 'Unavailable.' } }
     const store = useContentStore()
 
     await store.loadAnnouncement('9')
     expect(store.errorStatus).toBe(503)
 
+    table[`GET ${PUBLIC_ANNOUNCEMENTS_PATH}/9`] = { body: { id: 9, title: 'Back', content: '', publishedAt: '2026-03-01' } }
     await store.loadAnnouncement('9')
     expect(store.errorStatus).toBeNull()
   })
 
   it('records 502 when a read got no answer', async () => {
-    api.fetchAnnouncement.mockRejectedValue(new TypeError('fetch failed'))
+    table[`GET ${PUBLIC_ANNOUNCEMENTS_PATH}/9`] = { status: 502 }
     const store = useContentStore()
 
     await store.loadAnnouncement('9')
@@ -94,7 +102,7 @@ describe('useContentStore', () => {
   })
 
   it('keeps the API sentence and an empty list when the announcements are refused', async () => {
-    api.fetchAnnouncements.mockRejectedValue(refusal)
+    table[`GET ${ANNOUNCEMENTS_PATH}`] = refusal
     const store = useContentStore()
 
     const list = await store.loadAnnouncements()
@@ -104,7 +112,7 @@ describe('useContentStore', () => {
   })
 
   it('keeps the dashboard news', async () => {
-    api.fetchRecentAnnouncements.mockResolvedValue({ items: [{ id: 1, title: 'News', content: '', publishedAt: '2026-03-01' }] })
+    table[`GET ${PUBLIC_ANNOUNCEMENTS_PATH}`] = { body: { items: [{ id: 1, title: 'News', content: '', publishedAt: '2026-03-01' }] } }
     const store = useContentStore()
 
     await store.loadRecentNews()
@@ -113,24 +121,24 @@ describe('useContentStore', () => {
   })
 
   it('keeps the first page of articles in the order the backend sent them', async () => {
-    api.fetchKbArticles.mockResolvedValue({ items: [{ id: 2, title: 'b', excerpt: '', category: 'x' }, { id: 1, title: 'a', excerpt: '', category: 'x' }, { id: 3, title: 'c', excerpt: '', category: 'x' }] })
+    table[`GET ${KB_ARTICLES_PATH}`] = { body: { items: [{ id: 2, title: 'b', excerpt: '', category: 'x' }, { id: 1, title: 'a', excerpt: '', category: 'x' }, { id: 3, title: 'c', excerpt: '', category: 'x' }] } }
     const store = useContentStore()
 
     await store.loadLandingArticles()
 
-    expect(api.fetchKbArticles).toHaveBeenCalledWith({ pageSize: 10 })
+    expect(queryOf(requestsTo(stub.requests, KB_ARTICLES_PATH)[0]!)).toEqual({ pageSize: '10' })
     expect(store.landingArticles.map(a => a.id)).toEqual([2, 1, 3])
   })
 
   it('keeps articles per category and names the category from the loaded list', async () => {
-    api.fetchKbCategories.mockResolvedValue([{ name: 'Billing', articleCount: 1 }])
-    api.fetchKbArticles.mockResolvedValue({ items: [{ id: 1, title: 'a' }] })
+    table[`GET ${KB_CATEGORIES_PATH}`] = { body: [{ name: 'Billing', articleCount: 1 }] }
+    table[`GET ${KB_ARTICLES_PATH}`] = { body: { items: [{ id: 1, title: 'a' }] } }
     const store = useContentStore()
 
     await store.loadKbCategories()
     await store.loadCategoryArticles('Billing')
 
-    expect(api.fetchKbArticles).toHaveBeenCalledWith({ category: 'Billing', pageSize: 100 })
+    expect(queryOf(requestsTo(stub.requests, KB_ARTICLES_PATH)[0]!)).toEqual({ category: 'Billing', pageSize: '100' })
     expect(store.articlesFor('Billing')).toHaveLength(1)
     expect(store.articlesFor('Domains')).toEqual([])
     expect(store.categoryBySlug('billing')?.name).toBe('Billing')
@@ -138,7 +146,7 @@ describe('useContentStore', () => {
   })
 
   it('finds a category by its slug whatever the case', async () => {
-    api.fetchKbCategories.mockResolvedValue([{ name: 'Billing & Payments', articleCount: 3 }])
+    table[`GET ${KB_CATEGORIES_PATH}`] = { body: [{ name: 'Billing & Payments', articleCount: 3 }] }
     const store = useContentStore()
 
     await store.loadKbCategories()
@@ -149,7 +157,8 @@ describe('useContentStore', () => {
   })
 
   it('keeps one article in full, and null when it cannot be read', async () => {
-    api.fetchKbArticle.mockResolvedValueOnce({ id: 5, title: 'T', body: '<p>x</p>' }).mockRejectedValueOnce(refusal)
+    table['GET /api/portal/knowledgebase/5'] = { body: { id: 5, title: 'T', body: '<p>x</p>' } }
+    table['GET /api/portal/knowledgebase/6'] = refusal
     const store = useContentStore()
 
     expect(await store.loadArticle('5')).toMatchObject({ title: 'T' })
@@ -161,14 +170,14 @@ describe('useContentStore', () => {
   })
 
   it('searches the knowledgebase, flags the search while it runs and can clear it', async () => {
-    api.fetchKbArticles.mockResolvedValue({ items: [{ id: 1, title: 'match' }] })
+    table[`GET ${KB_ARTICLES_PATH}`] = { body: { items: [{ id: 1, title: 'match' }] } }
     const store = useContentStore()
 
     const pending = store.searchArticles('vps')
     expect(store.searching).toBe(true)
     await pending
 
-    expect(api.fetchKbArticles).toHaveBeenCalledWith({ search: 'vps', pageSize: 50 })
+    expect(queryOf(requestsTo(stub.requests, KB_ARTICLES_PATH)[0]!)).toEqual({ search: 'vps', pageSize: '50' })
     expect(store.searchResults).toHaveLength(1)
     expect(store.searching).toBe(false)
 

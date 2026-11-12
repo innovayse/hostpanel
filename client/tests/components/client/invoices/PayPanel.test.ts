@@ -1,17 +1,34 @@
 /**
  * Unit tests for PayPanel: the gateway button the panel offers, the unavailable state and the
  * refusal sentence.
+ *
+ * The real invoice payment store, billing API composable and transport run against a stub server
+ * playing the BFF; the assertions are on the requests that reached it.
+ *
+ * @module tests/components/client/invoices/PayPanel.test
  */
 import { createPinia, setActivePinia } from 'pinia'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountClient, stubClientRuntime } from '~/tests/helpers/mountClient'
 import PayPanel from '~/components/client/invoices/PayPanel.vue'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 
-/** The mocked billing endpoints the store reaches. */
-const billingApi = vi.hoisted(() => ({ startInvoiceGatewayPayment: vi.fn(), selectBankTransfer: vi.fn() }))
+/** The BFF path that starts the hosted-gateway payment of invoice 9. */
+const GATEWAY_START_PATH = '/api/portal/client/invoices/9/gateway-payment/start'
 
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => billingApi }))
+/** The BFF path that chooses the bank transfer for invoice 9. */
+const BANK_TRANSFER_PATH = '/api/portal/client/invoices/9/bank-transfer'
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it acts. */
+let table: StubRouteTable
 
 /**
  * Mounts the panel after filling the store the page would have filled.
@@ -27,10 +44,14 @@ const mountPanel = (state: Record<string, unknown> = {}) => {
 }
 
 describe('PayPanel', () => {
-  beforeEach(() => {
-    billingApi.startInvoiceGatewayPayment.mockReset()
-    billingApi.selectBankTransfer.mockReset()
+  beforeEach(async () => {
     stubClientRuntime()
+    table = {}
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('says online payment is unavailable when there is no gateway', () => {
@@ -56,12 +77,15 @@ describe('PayPanel', () => {
   })
 
   it('starts the gateway payment for the invoice through the store', async () => {
-    billingApi.startInvoiceGatewayPayment.mockResolvedValue({ redirectUrl: 'javascript:alert(1)' })
+    table[`POST ${GATEWAY_START_PATH}`] = { body: { redirectUrl: 'javascript:alert(1)' } }
     const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }] })
 
     await wrapper.find('[data-testid="invoice-pay-hosted"]').trigger('click')
 
-    await vi.waitFor(() => expect(billingApi.startInvoiceGatewayPayment).toHaveBeenCalledWith('9', 'hostedbank', expect.stringContaining('/payment/result?invoice=9')))
+    await vi.waitFor(() => expect(requestsTo(stub.requests, GATEWAY_START_PATH)).toHaveLength(1))
+    const sent = bodyOf(requestsTo(stub.requests, GATEWAY_START_PATH)[0]) as { module: string, returnUrl: string }
+    expect(sent.module).toBe('hostedbank')
+    expect(sent.returnUrl).toContain('/payment/result?invoice=9')
   })
 
   it('disables the gateway button while a payment is being started', () => {
@@ -87,7 +111,7 @@ describe('PayPanel', () => {
   })
 
   it('chooses the bank transfer through the store and then shows the bank details', async () => {
-    billingApi.selectBankTransfer.mockResolvedValue({ invoiceId: 9, reference: 'INV-9', amountDue: 10, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null })
+    table[`POST ${BANK_TRANSFER_PATH}`] = { body: { invoiceId: 9, reference: 'INV-9', amountDue: 10, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null } }
     const wrapper = mountPanel({
       gatewayMethods: [{ module: 'bank_transfer', displayName: 'Transfer' }],
       invoice: { id: 9, status: 'Unpaid' }
@@ -95,7 +119,7 @@ describe('PayPanel', () => {
 
     await wrapper.find('[data-testid="invoice-pay-bank-transfer"]').trigger('click')
 
-    await vi.waitFor(() => expect(billingApi.selectBankTransfer).toHaveBeenCalledWith('9'))
+    await vi.waitFor(() => expect(requestsTo(stub.requests, BANK_TRANSFER_PATH)).toHaveLength(1))
     await vi.waitFor(() => expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true))
     expect(wrapper.find('[data-testid="bank-transfer-reference"]').text()).toBe('INV-9')
     expect(wrapper.find('[data-testid="invoice-pay-bank-transfer"]').exists()).toBe(false)

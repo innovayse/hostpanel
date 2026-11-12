@@ -1,122 +1,192 @@
 /**
- * Tests for `composables/useCheckoutPage.ts` with the cart, currency, checkout and auth stores
- * replaced by minimal fakes: the guest form, the signed-in line, the currency options and the
- * place-order flow that both checkout templates share.
+ * Tests for `composables/useCheckoutPage.ts` against the real cart, currency, checkout, auth, client
+ * and catalogue stores, the real API composables and the real transport, with a stub BFF answering on
+ * a real socket: the guest form, the signed-in line, the currency options and the place-order flow
+ * that both checkout templates share. Nothing of ours is replaced.
  *
  * @module tests/composables/useCheckoutPage.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Suspense, defineComponent, h, reactive, ref } from 'vue'
-import { flushPromises, mount } from '@vue/test-utils'
-import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
-import { Permission } from '~/types/permission'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { defineComponent, h } from 'vue'
+import { createPinia, setActivePinia } from 'pinia'
+import type { Pinia } from 'pinia'
+import { mountAsyncPage } from '~/tests/helpers/mountWithKit'
+import { makeClientUser } from '~/tests/helpers/clientUser'
+import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
+import { settle } from '~/tests/helpers/settle'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import { useCheckoutPage } from '~/composables/useCheckoutPage'
+import { useAuthStore } from '~/stores/auth'
+import { useCartStore } from '~/stores/cart'
+import { useCheckoutStore } from '~/stores/checkout'
+import { useClientStore } from '~/stores/client'
+import { useCurrencyStore } from '~/stores/currency'
+import type { CartItem } from '~/types/cartitem'
+import type { ClientUser } from '~/types/clientuser'
+import { PaymentModule } from '~/types/paymentmodule'
+import { Permission } from '~/types/permission'
+import { PricingCycle } from '~/types/pricingcycle'
 
-/** The fake stores and their spies, shared with the module mocks below. */
-const fakes = vi.hoisted(() => ({
-  cart: null as null | Record<string, unknown>,
-  currency: null as null | Record<string, unknown>,
-  checkout: null as null | Record<string, unknown>,
-  auth: null as null | Record<string, unknown>,
-  /** The permissions the signed-in person holds; `null` stands for a person who acts for no account. */
-  held: null as number | null,
-}))
+/** The BFF paths the checkout page reads and writes. */
+const PATHS = {
+  currencies: '/api/portal/public/billing-currencies',
+  products: '/api/portal/public/products',
+  methods: '/api/portal/order/payment-methods',
+  create: '/api/portal/order/create',
+  gatewayStart: '/api/portal/order/42/gateway-payment/start',
+  bankTransfer: '/api/portal/client/invoices/77/bank-transfer',
+} as const
 
-vi.mock('~/stores/cart', () => ({ useCartStore: () => fakes.cart }))
-vi.mock('~/stores/currency', () => ({ useCurrencyStore: () => fakes.currency }))
-vi.mock('~/stores/checkout', () => ({ useCheckoutStore: () => fakes.checkout }))
-vi.mock('~/stores/auth', () => ({ useAuthStore: () => fakes.auth }))
-// The client store's own decision (`mayPerform`) is covered by its tests; here only the wiring is.
-vi.mock('~/stores/client', () => ({
-  useClientStore: () => ({ mayDo: (flag: number) => fakes.held === null || (fakes.held & flag) === flag }),
-}))
+/** The hosted gateway module the stub offers. */
+const HOSTED_GATEWAY = 'card_gateway'
+
+/** Where the payer lands after a bank-transfer order: the invoice's payment page. */
+const INVOICE_PAYMENT_PATH = '/client/invoices/77/pay'
+
+/** localStorage key the cart persists under, which the page restores when it opens. */
+const CART_STORAGE_KEY = 'innovayse_cart'
+
+/** A hosting line priced in dollars. */
+const HOSTING: CartItem = { pid: 5, name: 'Pro', billingcycle: PricingCycle.Monthly, cycleLabel: 'Monthly', amount: 12, currency: 'USD' }
+
+/** The result of the page composable, as a template receives it. */
+type CheckoutPage = Awaited<ReturnType<typeof useCheckoutPage>>
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
+
+/** The Pinia every store of the current test lives in. */
+let pinia: Pinia
 
 /**
- * Builds the four fake stores.
+ * Builds the order the BFF answers a placed order with.
  *
- * @param destination What the checkout store's order action answers with.
- * @returns The spies a test asserts on.
+ * @param total - What the backend billed.
+ * @returns The reply.
  */
-const buildStores = (destination: { kind: CheckoutDestinationKind, target: string } | null) => {
-  const placeOrder = vi.fn(async () => destination)
-  const changeGuestCurrency = vi.fn()
-  const resetFlow = vi.fn()
-  const refreshCartPrices = vi.fn(async () => undefined)
-  fakes.cart = reactive({ init: vi.fn() })
-  fakes.currency = reactive({ currencies: [{ code: 'USD' }, { code: 'EUR' }], init: vi.fn(), load: vi.fn() })
-  fakes.checkout = {
-    staleItems: ref([]),
-    totalLabel: ref(''),
-    submittingLabel: ref(''),
-    submittingHint: ref(''),
-    paymentMethods: ref([]),
-    selectedMethod: ref(''),
-    saveForRenewals: ref(false),
-    canSaveForRenewals: ref(true),
-    submitting: ref(false),
-    error: ref(''),
-    itemPrice: () => '',
-    changeGuestCurrency,
-    resetFlow,
-    refreshCartPrices,
-    loadPaymentMethods: vi.fn(async () => undefined),
-    placeOrder,
-  }
-  fakes.auth = { user: ref({ email: 'ann@acme.test' }), isLoggedIn: ref(true), fetchUser: vi.fn(), logout: vi.fn() }
-  return { placeOrder, changeGuestCurrency, resetFlow, refreshCartPrices }
+const placedOrder = (total: number): { body: Record<string, unknown> } => ({
+  body: { orderId: 42, orderNumber: 'A 42', invoiceId: 77, paymentToken: 'tok', total, currency: 'USD' },
+})
+
+/**
+ * Makes the stub offer these gateways, the first one being preselected.
+ *
+ * @param modules - The gateway modules, in the order they are offered.
+ */
+const offer = (modules: string[]): void => {
+  table[`GET ${PATHS.methods}`] = { body: modules.map(module => ({ module, displayName: module })) }
+}
+
+/**
+ * Signs a person in: the auth store holds the account, the client store the same record whose
+ * permissions decide what they may do.
+ *
+ * @param user - The account.
+ */
+const signIn = (user: ClientUser): void => {
+  useAuthStore().user = user
+  useClientStore().user = user
+}
+
+/**
+ * Reads the configured currencies into the currency store, as an earlier page of the visit would have.
+ *
+ * @returns Resolves once they are loaded.
+ */
+const preloadCurrencies = async (): Promise<void> => {
+  await useCurrencyStore().load()
 }
 
 /**
  * Runs the composable the way a page does: inside a component's setup, under `Suspense`, so the
- * lifecycle hook it registers has an instance to belong to and fires on mount.
+ * lifecycle hook it registers has an instance to belong to and fires on mount. The page's reads go
+ * over a real socket, so this waits until the composable has settled and the catalogue read the
+ * mount starts (when there is a cart and a known payer currency) has been answered.
  *
  * @returns What the composable returned.
  */
-const runInPage = async () => {
+const runInPage = async (): Promise<CheckoutPage> => {
   /** The composable's result, captured from inside the host's setup. */
-  let page: Awaited<ReturnType<typeof useCheckoutPage>> | undefined
+  let page: CheckoutPage | undefined
   const Host = defineComponent({
     async setup() {
       page = await useCheckoutPage()
       return () => h('div')
     },
   })
-  mount(defineComponent({ render: () => h(Suspense, null, { default: () => h(Host) }) }))
-  await flushPromises()
+  await mountAsyncPage(Host, { pinia })
+  await vi.waitFor(() => expect(page).toBeDefined())
+  if (useCurrencyStore().payerCode !== null && !useCartStore().isEmpty) {
+    await vi.waitFor(() => expect(requestsTo(stub.requests, PATHS.products)).toHaveLength(1))
+  }
+  await settle(5)
   if (!page) {
     throw new Error('the composable did not settle')
   }
   return page
 }
 
-describe('useCheckoutPage', () => {
-  beforeEach(() => {
-    fakes.held = Permission.All
-    vi.stubGlobal('useHead', vi.fn())
-    vi.stubGlobal('useLocalePath', () => (path: string) => path)
-  })
+beforeEach(async () => {
+  pinia = createPinia()
+  setActivePinia(pinia)
+  window.localStorage.clear()
+  window.sessionStorage.clear()
+  vi.stubGlobal('useHead', vi.fn())
+  stubLocalePath()
+  table = {
+    [`GET ${PATHS.currencies}`]: { body: [
+      { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true },
+      { code: 'EUR', numeric: '978', prefix: '', suffix: ' EUR', decimals: 2, isBase: false },
+    ] },
+    [`GET ${PATHS.products}`]: { body: [] },
+    [`POST ${PATHS.create}`]: placedOrder(12),
+    [`POST ${PATHS.bankTransfer}`]: { body: { invoiceId: 77, reference: 'INV-77' } },
+  }
+  offer([HOSTED_GATEWAY, PaymentModule.BankTransfer])
+  stub = await startTransport(routeTable(table))
+  vi.mocked(navigateTo).mockClear()
+})
 
+afterEach(async () => {
+  await stub.close()
+  vi.unstubAllGlobals()
+})
+
+describe('useCheckoutPage', () => {
   it('offers the currencies as select options and the signed-in e-mail', async () => {
-    buildStores(null)
+    signIn(makeClientUser({ email: 'ann@acme.test' }))
+    window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify([HOSTING]))
+
     const page = await runInPage()
 
-    expect(page.currencyOptions.value).toEqual([{ value: 'USD', label: 'USD' }, { value: 'EUR', label: 'EUR' }])
+    await vi.waitFor(() => expect(page.currencyOptions.value).toEqual([{ value: 'USD', label: 'USD' }, { value: 'EUR', label: 'EUR' }]))
     expect(page.userEmail.value).toBe('ann@acme.test')
-    expect(fakes.cart?.init).toHaveBeenCalled()
-    expect(fakes.currency?.load).toHaveBeenCalled()
+    expect(page.cart.items).toEqual([HOSTING])
+    expect(requestsTo(stub.requests, PATHS.currencies)).toHaveLength(1)
   })
 
   it('releases the submit button and re-prices the cart from the catalogue when the page opens', async () => {
-    const { resetFlow, refreshCartPrices } = buildStores(null)
-    await runInPage()
+    await preloadCurrencies()
+    useCartStore().items = [{ ...HOSTING }]
+    useCheckoutStore().submitting = true
+    table[`GET ${PATHS.products}`] = { body: [{ id: 5, groupId: 1, name: 'Pro', pricing: { monthly: 15 } }] }
 
-    expect(resetFlow).toHaveBeenCalled()
-    expect(refreshCartPrices).toHaveBeenCalled()
+    const page = await runInPage()
+
+    expect(page.submitting.value).toBe(false)
+    await vi.waitFor(() => expect(page.cart.items[0]?.amount).toBe(15))
   })
 
   it('hands the templates the renewal-save choice, off by default, and whether to offer it', async () => {
-    buildStores(null)
+    signIn(makeClientUser())
+
     const page = await runInPage()
 
     expect(page.saveForRenewals.value).toBe(false)
@@ -124,100 +194,116 @@ describe('useCheckoutPage', () => {
   })
 
   it('asks the visitor before the store changes the currency', async () => {
-    const { changeGuestCurrency } = buildStores(null)
+    await preloadCurrencies()
+    useCartStore().items = [{ ...HOSTING }]
+    const confirmSpy = vi.fn(() => false)
+    vi.stubGlobal('confirm', confirmSpy)
     const page = await runInPage()
 
     page.changeGuestCurrency('EUR')
 
-    expect(changeGuestCurrency).toHaveBeenCalledWith('EUR', expect.any(Function))
+    expect(confirmSpy).toHaveBeenCalledWith('cart.currency.changeConfirm')
+    expect(page.currencyStore.selectedCode).toBeNull()
+    expect(page.cart.items).toHaveLength(1)
+
+    confirmSpy.mockReturnValue(true)
+    page.changeGuestCurrency('EUR')
+
+    expect(page.currencyStore.selectedCode).toBe('EUR')
+    expect(page.cart.items).toHaveLength(0)
   })
 
   it('sends the guest form with the order and goes to the route the store names', async () => {
-    const { placeOrder } = buildStores({ kind: CheckoutDestinationKind.Route, target: '/client/order-success' })
+    await preloadCurrencies()
+    offer([PaymentModule.BankTransfer])
+    useCartStore().items = [{ ...HOSTING }]
     const page = await runInPage()
     page.form.email = 'guest@acme.test'
 
     await page.submitOrder()
 
-    expect(placeOrder).toHaveBeenCalledWith(expect.objectContaining({ guest: expect.objectContaining({ email: 'guest@acme.test' }) }))
-    expect(navigateTo).toHaveBeenCalledWith('/client/order-success')
+    const [sent] = requestsTo(stub.requests, PATHS.create)
+    expect(JSON.parse(sent?.body ?? '')).toEqual(expect.objectContaining({ email: 'guest@acme.test' }))
+    expect(navigateTo).toHaveBeenCalledWith(INVOICE_PAYMENT_PATH)
   })
 
   it('offers the store a confirmation for a total that changed, and asks the visitor with both amounts', async () => {
-    const { placeOrder } = buildStores({ kind: CheckoutDestinationKind.Route, target: '/client/order-success' })
+    await preloadCurrencies()
+    offer([PaymentModule.BankTransfer])
+    useCartStore().items = [{ ...HOSTING }]
+    table[`POST ${PATHS.create}`] = placedOrder(14)
     const confirmSpy = vi.fn(() => true)
     vi.stubGlobal('confirm', confirmSpy)
     const page = await runInPage()
 
     await page.submitOrder()
-    /** The arguments the page passed to placeOrder, holding the total change confirmation. */
-    const input = (placeOrder.mock.calls[0] as unknown as [{ confirmTotalChange: (shown: string, charged: string) => boolean }])[0]
 
-    expect(input.confirmTotalChange('$10.00', '$12.00')).toBe(true)
     expect(confirmSpy).toHaveBeenCalledWith('checkout.totalChangedConfirm')
+    expect(navigateTo).toHaveBeenCalledWith(INVOICE_PAYMENT_PATH)
   })
 
   it('does not follow an external destination that is not a secure address', async () => {
-    buildStores({ kind: CheckoutDestinationKind.External, target: 'javascript:alert(1)' })
-    vi.mocked(navigateTo).mockClear()
+    await preloadCurrencies()
+    useCartStore().items = [{ ...HOSTING }]
+    table[`POST ${PATHS.gatewayStart}`] = { body: { redirectUrl: 'javascript:alert(1)' } }
     const before = window.location.href
     const page = await runInPage()
 
     await page.submitOrder()
 
+    expect(requestsTo(stub.requests, PATHS.gatewayStart)).toHaveLength(1)
     expect(window.location.href).toBe(before)
     expect(navigateTo).not.toHaveBeenCalled()
   })
 
   it('stays put when the store refuses the order', async () => {
-    buildStores(null)
-    vi.mocked(navigateTo).mockClear()
+    await preloadCurrencies()
+    useCartStore().items = [{ ...HOSTING }]
+    table[`POST ${PATHS.create}`] = { status: 400, body: { type: 'ORDER_REFUSED', detail: 'Refused.' } }
     const page = await runInPage()
 
     await page.submitOrder()
 
+    expect(page.orderError.value).toBe('Refused.')
     expect(navigateTo).not.toHaveBeenCalled()
   })
 })
 
 describe('useCheckoutPage permissions', () => {
-  beforeEach(() => {
-    vi.stubGlobal('useHead', vi.fn())
-    vi.stubGlobal('useLocalePath', () => (path: string) => path)
-    vi.mocked(navigateTo).mockClear()
+  beforeEach(async () => {
+    await preloadCurrencies()
+    offer([PaymentModule.BankTransfer])
+    useCartStore().items = [{ ...HOSTING }]
   })
 
   it('lets a person who may place orders order', async () => {
-    fakes.held = Permission.PlaceNewOrders
-    const { placeOrder } = buildStores({ kind: CheckoutDestinationKind.Route, target: '/client/order-success' })
+    signIn(makeClientUser({ permissions: Permission.PlaceNewOrders }))
     const page = await runInPage()
 
     await page.submitOrder()
 
     expect(page.mayPlaceOrders.value).toBe(true)
-    expect(placeOrder).toHaveBeenCalled()
+    expect(requestsTo(stub.requests, PATHS.create)).toHaveLength(1)
   })
 
   it('sends nothing when a member of the account lacks the permission to place orders', async () => {
-    fakes.held = Permission.ViewPayInvoices
-    const { placeOrder } = buildStores({ kind: CheckoutDestinationKind.Route, target: '/client/order-success' })
+    signIn(makeClientUser({ permissions: Permission.ViewPayInvoices }))
     const page = await runInPage()
 
     await page.submitOrder()
 
     expect(page.mayPlaceOrders.value).toBe(false)
-    expect(placeOrder).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, PATHS.create)).toHaveLength(0)
     expect(navigateTo).not.toHaveBeenCalled()
   })
 
   it('lets a signed-in first-time buyer, who acts for no account, order', async () => {
-    fakes.held = null
-    const { placeOrder } = buildStores({ kind: CheckoutDestinationKind.Route, target: '/client/order-success' })
+    signIn(makeClientUser({ permissions: 0, actsForAccount: false }))
     const page = await runInPage()
 
     await page.submitOrder()
 
     expect(page.mayPlaceOrders.value).toBe(true)
-    expect(placeOrder).toHaveBeenCalled()
+    expect(requestsTo(stub.requests, PATHS.create)).toHaveLength(1)
   })
 })

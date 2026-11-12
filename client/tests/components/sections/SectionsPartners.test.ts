@@ -2,43 +2,53 @@
  * Unit tests for SectionsPartners: a short list centred, a long one as the doubled marquee, read
  * from the storefront store, and the section hiding itself when there are none.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { partnerFixture } from '~/tests/helpers/storefrontFixtures'
+import { mountAfterReads, readOf, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import SectionsPartners from '~/components/sections/SectionsPartners.vue'
+import type { Partner } from '~/types/partner'
 import { balancedColumns } from '~/utils/balancedGrid'
 
-/** The mocked storefront endpoints, re-created for every test. */
-const api = { fetchPartners: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** What the stub answers, by route; the tests below change the partners it serves. */
+const replies: StubRouteTable = {}
+
+/**
+ * Makes the stub serve these partners.
+ *
+ * @param partners The partners the public read answers with.
+ */
+const serve = (partners: Partner[]): void => {
+  replies[readOf(StorefrontPath.Partners)] = { body: partners }
+}
 
 /**
  * Mounts the section and lets the partners load.
  *
  * @returns The wrapper.
  */
-const mountSection = async () => {
-  const wrapper = mountWithKit(SectionsPartners)
-  await flushPromises()
-  return wrapper
-}
+const mountSection = () =>
+  mountAfterReads(stub, [StorefrontPath.Partners], () => mountWithKit(SectionsPartners))
 
 describe('SectionsPartners', () => {
-  beforeEach(() => {
-    api.fetchPartners.mockReset()
-    api.fetchPartners.mockResolvedValue([
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    serve([
       partnerFixture(1),
       partnerFixture(2, { logoUrl: 'https://example.test/logo.png' }),
     ])
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('shows the heading and its lead line', async () => {
@@ -57,7 +67,7 @@ describe('SectionsPartners', () => {
   })
 
   it('lists every partner twice once the strip is full, so the marquee loops without a gap', async () => {
-    api.fetchPartners.mockResolvedValue([1, 2, 3, 4, 5, 6].map((id) => partnerFixture(id)))
+    serve([1, 2, 3, 4, 5, 6].map((id) => partnerFixture(id)))
     const wrapper = await mountSection()
 
     const cards = wrapper.findAll('[data-testid="partner-1"]')
@@ -73,14 +83,14 @@ describe('SectionsPartners', () => {
   })
 
   it('pauses the marquee on hover', async () => {
-    api.fetchPartners.mockResolvedValue([1, 2, 3, 4, 5, 6].map((id) => partnerFixture(id)))
+    serve([1, 2, 3, 4, 5, 6].map((id) => partnerFixture(id)))
     const wrapper = await mountSection()
 
     expect(wrapper.find('.animate-marquee').classes()).toContain('hover:[animation-play-state:paused]')
   })
 
   it('renders nothing when there are no partners', async () => {
-    api.fetchPartners.mockResolvedValue([])
+    serve([])
 
     const wrapper = await mountSection()
 
@@ -88,7 +98,7 @@ describe('SectionsPartners', () => {
   })
 
   it('renders nothing when the partners cannot be read', async () => {
-    api.fetchPartners.mockRejectedValue({ data: { detail: 'Unavailable.' } })
+    replies[readOf(StorefrontPath.Partners)] = { status: 503, body: { type: 'UNAVAILABLE', title: 'Unavailable', status: 503, detail: 'Unavailable.' } }
 
     const wrapper = await mountSection()
 
@@ -96,7 +106,7 @@ describe('SectionsPartners', () => {
   })
 
   it('lays the cards out in the shared balanced grid, so no card is left alone on a row', async () => {
-    api.fetchPartners.mockResolvedValue(Array.from({ length: 3 }, (_, index) => partnerFixture(index + 1)))
+    serve(Array.from({ length: 3 }, (_, index) => partnerFixture(index + 1)))
 
     const wrapper = await mountSection()
 

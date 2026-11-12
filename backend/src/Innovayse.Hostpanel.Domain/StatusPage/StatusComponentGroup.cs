@@ -34,9 +34,40 @@ public sealed class StatusComponentGroup : BaseEntity, IAggregateRoot
     /// <exception cref="DomainRuleException">The name is empty or the display order is negative.</exception>
     public static StatusComponentGroup Create(string name, int displayOrder)
     {
-        EnsureValid(name, displayOrder);
+        StatusPageRules.EnsureName(name);
+        StatusPageRules.EnsureDisplayOrder(displayOrder);
 
         return new StatusComponentGroup { Name = name, DisplayOrder = displayOrder };
+    }
+
+    /// <summary>Renames the group.</summary>
+    /// <param name="name">The new display name.</param>
+    /// <exception cref="DomainRuleException">The name is empty.</exception>
+    public void Rename(string name)
+    {
+        StatusPageRules.EnsureName(name);
+
+        Name = name;
+    }
+
+    /// <summary>Moves the group to a position among the groups.</summary>
+    /// <param name="displayOrder">The new position (ascending).</param>
+    /// <exception cref="DomainRuleException">The display order is negative.</exception>
+    public void Reorder(int displayOrder)
+    {
+        StatusPageRules.EnsureDisplayOrder(displayOrder);
+
+        DisplayOrder = displayOrder;
+    }
+
+    /// <summary>Refuses the removal of a group that still lists components, so none is lost with it.</summary>
+    /// <exception cref="DomainRuleException">The group still has components.</exception>
+    public void EnsureRemovable()
+    {
+        if (_components.Count > 0)
+        {
+            throw new DomainRuleException(StatusPageErrors.GroupNotEmpty, "The group still has components.");
+        }
     }
 
     /// <summary>Adds an operational component to the group.</summary>
@@ -47,27 +78,11 @@ public sealed class StatusComponentGroup : BaseEntity, IAggregateRoot
     /// <exception cref="DomainRuleException">The name is empty or the display order is negative.</exception>
     public StatusComponent AddComponent(string name, string? description, int displayOrder)
     {
-        EnsureValid(name, displayOrder);
+        StatusPageRules.EnsureName(name);
+        StatusPageRules.EnsureDisplayOrder(displayOrder);
 
         var component = StatusComponent.Create(name, description, displayOrder);
         _components.Add(component);
         return component;
-    }
-
-    /// <summary>Refuses input that breaks an invariant shared by groups and components.</summary>
-    /// <param name="name">The display name to check.</param>
-    /// <param name="displayOrder">The display order to check.</param>
-    /// <exception cref="DomainRuleException">The name is empty or the display order is negative.</exception>
-    private static void EnsureValid(string name, int displayOrder)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new DomainRuleException(StatusPageErrors.NameRequired, "A name is required.");
-        }
-
-        if (displayOrder < 0)
-        {
-            throw new DomainRuleException(StatusPageErrors.DisplayOrderNegative, "A display order cannot be negative.");
-        }
     }
 }

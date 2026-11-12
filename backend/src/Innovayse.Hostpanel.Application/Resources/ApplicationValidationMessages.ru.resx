@@ -1591,6 +1591,18 @@
   <data name="StatusDaysInvalid" xml:space="preserve">
     <value>Выберите число дней от 1 до {0}.</value>
   </data>
+  <data name="StatusIdsRequired" xml:space="preserve">
+    <value>Перечислите идентификаторы в нужном порядке.</value>
+  </data>
+  <data name="StatusMaintenanceTitleRequired" xml:space="preserve">
+    <value>Укажите название работ.</value>
+  </data>
+  <data name="StatusMaintenanceWindowInvalid" xml:space="preserve">
+    <value>Окончание должно быть позже начала.</value>
+  </data>
+  <data name="StatusMaintenanceComponentsRequired" xml:space="preserve">
+    <value>Выберите хотя бы один затронутый компонент.</value>
+  </data>
   <data name="ClientGroupNameInvalid" xml:space="preserve">
     <value>Название группы обязательно, не более 100 символов.</value>
   </data>

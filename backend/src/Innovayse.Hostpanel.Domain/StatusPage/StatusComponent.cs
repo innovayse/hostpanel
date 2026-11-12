@@ -86,6 +86,39 @@ public sealed class StatusComponent : BaseEntity
         };
     }
 
+    /// <summary>Changes what the component is called and what it covers.</summary>
+    /// <param name="name">The display name.</param>
+    /// <param name="description">A short explanation of what the component covers, or <c>null</c>.</param>
+    /// <exception cref="DomainRuleException">The name is empty.</exception>
+    public void Update(string name, string? description)
+    {
+        StatusPageRules.EnsureName(name);
+
+        Name = name;
+        Description = description;
+    }
+
+    /// <summary>Moves the component to a position within its group.</summary>
+    /// <param name="displayOrder">The new position (ascending).</param>
+    /// <exception cref="DomainRuleException">The display order is negative.</exception>
+    public void Reorder(int displayOrder)
+    {
+        StatusPageRules.EnsureDisplayOrder(displayOrder);
+
+        DisplayOrder = displayOrder;
+    }
+
+    /// <summary>
+    /// Works out the state the page shows while a maintenance window may be under way: an operator's override still
+    /// wins, otherwise the window makes it <see cref="StatusComponentState.Maintenance"/>, and without one it is <see cref="CurrentState"/>.
+    /// </summary>
+    /// <param name="underMaintenance">Whether a maintenance window that affects the component is under way.</param>
+    /// <returns>The state the page shows.</returns>
+    public StatusComponentState StateWhen(bool underMaintenance)
+    {
+        return underMaintenance && StateOverride is null ? StatusComponentState.Maintenance : CurrentState;
+    }
+
     /// <summary>
     /// Forces a state onto the status page whatever the automatic checks find, or hands the state back to them.
     /// </summary>

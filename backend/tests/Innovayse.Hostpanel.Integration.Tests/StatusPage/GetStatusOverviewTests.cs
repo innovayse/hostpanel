@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Json;
 
 namespace Innovayse.Hostpanel.Integration.Tests.StatusPage;
 
@@ -51,5 +52,32 @@ public sealed class GetStatusOverviewTests(IntegrationTestFactory factory) : ICl
         var group = StatusPageTestSeeds.GroupOf(await StatusPageTestSeeds.GetOverviewAsync(factory), groupId);
 
         group.GetProperty("components").EnumerateArray().Select(c => c.GetProperty("name").GetString()).Should().Equal("First", "Second");
+    }
+
+    /// <summary>
+    /// A component a maintenance window that is under way affects shows as under maintenance, unless an operator forced a
+    /// state onto it; a component of a window still to come is untouched.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Overview_ShowsMaintenance_ForAComponentOfAWindowUnderWay()
+    {
+        var client = await StorefrontContentTestSeeds.AdminClientAsync(factory);
+        var (groupId, underWay) = await StatusPageTestSeeds.CreateComponentAsync(client);
+        var forced = await StorefrontContentTestSeeds.CreateAsync(
+            client, $"{StatusPageTestSeeds.AdminRoute}/components", new { groupId, name = "Forced", description = (string?)null, displayOrder = 1 });
+        var upcoming = await StorefrontContentTestSeeds.CreateAsync(
+            client, $"{StatusPageTestSeeds.AdminRoute}/components", new { groupId, name = "Upcoming", description = (string?)null, displayOrder = 2 });
+        await client.PutAsJsonAsync($"{StatusPageTestSeeds.AdminRoute}/components/{forced}/override", new { state = "Degraded" });
+        await StatusPageTestSeeds.CreateMaintenanceAsync(client, [underWay, forced], DateTimeOffset.UtcNow.AddHours(-1), DateTimeOffset.UtcNow.AddHours(1));
+        await StatusPageTestSeeds.CreateMaintenanceAsync(client, [upcoming], DateTimeOffset.UtcNow.AddDays(1), DateTimeOffset.UtcNow.AddDays(2));
+
+        var components = StatusPageTestSeeds.GroupOf(await StatusPageTestSeeds.GetOverviewAsync(factory), groupId)
+            .GetProperty("components").EnumerateArray()
+            .ToDictionary(c => c.GetProperty("id").GetInt32(), c => c.GetProperty("state").GetString());
+
+        components[underWay].Should().Be("Maintenance");
+        components[forced].Should().Be("Degraded");
+        components[upcoming].Should().Be("Operational");
     }
 }

@@ -42,14 +42,23 @@ public sealed class StatusIncident : BaseEntity, IAggregateRoot
     /// <exception cref="DomainRuleException">The title or the message is empty.</exception>
     public static StatusIncident Open(string title, string message, DateTimeOffset startedAt)
     {
+        var incident = new StatusIncident { State = StatusIncidentState.Investigating, StartedAt = startedAt };
+        incident.Retitle(title);
+        incident.PostUpdate(StatusIncidentState.Investigating, message, startedAt);
+        return incident;
+    }
+
+    /// <summary>Changes the headline visitors see.</summary>
+    /// <param name="title">The new headline.</param>
+    /// <exception cref="DomainRuleException">The title is empty.</exception>
+    public void Retitle(string title)
+    {
         if (string.IsNullOrWhiteSpace(title))
         {
             throw new DomainRuleException(StatusPageErrors.IncidentTitleRequired, "An incident needs a title.");
         }
 
-        var incident = new StatusIncident { Title = title, State = StatusIncidentState.Investigating, StartedAt = startedAt };
-        incident.PostUpdate(StatusIncidentState.Investigating, message, startedAt);
-        return incident;
+        Title = title;
     }
 
     /// <summary>

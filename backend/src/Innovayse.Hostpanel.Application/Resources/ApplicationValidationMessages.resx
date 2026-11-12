@@ -1591,6 +1591,18 @@
   <data name="StatusDaysInvalid" xml:space="preserve">
     <value>Choose a number of days from 1 to {0}.</value>
   </data>
+  <data name="StatusIdsRequired" xml:space="preserve">
+    <value>List the ids in the order they should appear.</value>
+  </data>
+  <data name="StatusMaintenanceTitleRequired" xml:space="preserve">
+    <value>Enter the maintenance title.</value>
+  </data>
+  <data name="StatusMaintenanceWindowInvalid" xml:space="preserve">
+    <value>The end must be after the start.</value>
+  </data>
+  <data name="StatusMaintenanceComponentsRequired" xml:space="preserve">
+    <value>Choose at least one affected component.</value>
+  </data>
   <data name="ClientGroupNameInvalid" xml:space="preserve">
     <value>A group name is required and can have at most 100 characters.</value>
   </data>

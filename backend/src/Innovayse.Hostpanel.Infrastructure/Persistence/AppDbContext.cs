@@ -315,6 +315,12 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// <summary>Gets the records of the automatic checks of the status page components.</summary>
     public DbSet<StatusCheck> StatusChecks => Set<StatusCheck>();
 
+    /// <summary>Gets the maintenance windows announced on the public status page.</summary>
+    public DbSet<StatusMaintenance> StatusMaintenances => Set<StatusMaintenance>();
+
+    /// <summary>Gets the components each status page maintenance window affects.</summary>
+    public DbSet<StatusMaintenanceComponent> StatusMaintenanceComponents => Set<StatusMaintenanceComponent>();
+
     /// <summary>Gets the storefront partners table.</summary>
     public DbSet<Partner> Partners => Set<Partner>();
 

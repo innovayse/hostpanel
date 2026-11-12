@@ -257,6 +257,12 @@ public interface IHostpanelDbContext
     /// <summary>Gets the records of the automatic checks of the status page components.</summary>
     public DbSet<StatusCheck> StatusChecks { get; }
 
+    /// <summary>Gets the maintenance windows announced on the public status page.</summary>
+    public DbSet<StatusMaintenance> StatusMaintenances { get; }
+
+    /// <summary>Gets the components each status page maintenance window affects.</summary>
+    public DbSet<StatusMaintenanceComponent> StatusMaintenanceComponents { get; }
+
     /// <summary>Gets the storefront partners table.</summary>
     public DbSet<Partner> Partners { get; }
 

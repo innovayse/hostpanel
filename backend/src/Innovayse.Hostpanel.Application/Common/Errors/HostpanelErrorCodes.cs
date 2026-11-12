@@ -1146,6 +1146,12 @@ public static class HostpanelErrorCodes
     /// <summary>The id names no status page incident (404).</summary>
     public const string STATUS_INCIDENT_NOT_FOUND = "STATUS_INCIDENT_NOT_FOUND";
 
+    /// <summary>The id names no status page maintenance window (404).</summary>
+    public const string STATUS_MAINTENANCE_NOT_FOUND = "STATUS_MAINTENANCE_NOT_FOUND";
+
+    /// <summary>A reorder list is not exactly the groups or the components it orders, each once (400).</summary>
+    public const string STATUS_ORDER_MISMATCH = "STATUS_ORDER_MISMATCH";
+
     /// <summary>The id names no partner (404).</summary>
     public const string PARTNER_NOT_FOUND = "PARTNER_NOT_FOUND";
 
@@ -1769,6 +1775,18 @@ public static class HostpanelErrorCodes
 
     /// <summary>A status page component's failure threshold is out of range (400).</summary>
     public const string STATUS_FAILURE_THRESHOLD_INVALID = Domain.StatusPage.StatusPageErrors.FailureThresholdInvalid;
+
+    /// <summary>A status page maintenance window has no title (400).</summary>
+    public const string STATUS_MAINTENANCE_TITLE_REQUIRED = Domain.StatusPage.StatusPageErrors.MaintenanceTitleRequired;
+
+    /// <summary>A status page maintenance window does not end after it starts (400).</summary>
+    public const string STATUS_MAINTENANCE_WINDOW_INVALID = Domain.StatusPage.StatusPageErrors.MaintenanceWindowInvalid;
+
+    /// <summary>The status page maintenance window already ended or was cancelled (409).</summary>
+    public const string STATUS_MAINTENANCE_ALREADY_CLOSED = Domain.StatusPage.StatusPageErrors.MaintenanceAlreadyClosed;
+
+    /// <summary>The status page group still has components and cannot be removed (409).</summary>
+    public const string STATUS_COMPONENT_GROUP_NOT_EMPTY = Domain.StatusPage.StatusPageErrors.GroupNotEmpty;
 
     /// <summary>The refund is more than what was paid and not yet refunded (400): <see cref="Domain.Billing.Invoice.AddRefund"/>.</summary>
     public const string INVOICE_REFUND_EXCEEDS_PAID = Domain.Billing.BillingErrors.InvoiceRefundExceedsPaid;

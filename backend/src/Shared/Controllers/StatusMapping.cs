@@ -59,6 +59,9 @@ public static class StatusMapping
             // Exact row: only a terminated service has a termination date to correct, so the stored
             // status stands in the way (a state conflict), and the name carries no CONFLICT token.
             "SERVICE_NOT_TERMINATED" => new(409, "Conflict"),
+            // Exact row: a status page group that still lists components cannot be removed, a state conflict whose name
+            // carries no CONFLICT / ALREADY token for the generic arms.
+            "STATUS_COMPONENT_GROUP_NOT_EMPTY" => new(409, "Conflict"),
             // Exact row: the plan change request is in a status that refuses the move, or the service left its plan since it was
             // made, a state conflict whose name carries no CONFLICT / ALREADY token for the generic arms.
             "SERVICE_CHANGE_INVALID_STATE" => new(409, "Conflict"),

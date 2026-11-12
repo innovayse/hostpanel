@@ -1,9 +1,17 @@
 using Innovayse.Hostpanel.Application.StatusPage.Commands.ConfigureStatusComponentMonitoring;
 using Innovayse.Hostpanel.Application.StatusPage.Commands.CreateStatusComponent;
 using Innovayse.Hostpanel.Application.StatusPage.Commands.CreateStatusComponentGroup;
+using Innovayse.Hostpanel.Application.StatusPage.Commands.DeleteStatusComponent;
+using Innovayse.Hostpanel.Application.StatusPage.Commands.DeleteStatusComponentGroup;
+using Innovayse.Hostpanel.Application.StatusPage.Commands.DeleteStatusIncident;
 using Innovayse.Hostpanel.Application.StatusPage.Commands.OpenStatusIncident;
 using Innovayse.Hostpanel.Application.StatusPage.Commands.PostStatusIncidentUpdate;
+using Innovayse.Hostpanel.Application.StatusPage.Commands.ReorderStatusComponentGroups;
+using Innovayse.Hostpanel.Application.StatusPage.Commands.ReorderStatusComponents;
 using Innovayse.Hostpanel.Application.StatusPage.Commands.SetStatusComponentOverride;
+using Innovayse.Hostpanel.Application.StatusPage.Commands.UpdateStatusComponent;
+using Innovayse.Hostpanel.Application.StatusPage.Commands.UpdateStatusComponentGroup;
+using Innovayse.Hostpanel.Application.StatusPage.Commands.UpdateStatusIncident;
 using Innovayse.Hostpanel.Application.StatusPage.Common;
 using Innovayse.Hostpanel.Application.StatusPage.Queries.GetStatusOverview;
 using Innovayse.Hostpanel.Application.StatusPage.Queries.GetStatusUptime;
@@ -150,6 +158,157 @@ public sealed class StatusPageController : BaseApiController
     public async Task<IActionResult> PostIncidentUpdateAsync(int id, [FromBody] PostStatusIncidentUpdateCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(command with { Id = id }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Renames a group.</summary>
+    /// <param name="id">The group identifier; wins over any id in the body.</param>
+    /// <param name="command">The group's new name.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 on success; 400 when a value is refused; 404 when the id names no group;
+    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPut("groups/{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UpdateGroupAsync(int id, [FromBody] UpdateStatusComponentGroupCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command with { Id = id }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Removes a group that has no components.</summary>
+    /// <param name="id">The group identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 on success; 404 when the id names no group; 409 when the group still has components;
+    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpDelete("groups/{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DeleteGroupAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new DeleteStatusComponentGroupCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Puts the groups in a new order.</summary>
+    /// <param name="command">Every group id, once each, in the order the groups should appear.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 on success; 400 when a value is refused or the ids are not exactly the groups;
+    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPut("groups/order")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ReorderGroupsAsync([FromBody] ReorderStatusComponentGroupsCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Renames a component and changes what it covers.</summary>
+    /// <param name="id">The component identifier; wins over any id in the body.</param>
+    /// <param name="command">The component's new name and description.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 on success; 400 when a value is refused; 404 when the id names no component;
+    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPut("components/{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UpdateComponentAsync(int id, [FromBody] UpdateStatusComponentCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command with { Id = id }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Removes a component with its check records.</summary>
+    /// <param name="id">The component identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 on success; 404 when the id names no component;
+    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpDelete("components/{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DeleteComponentAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new DeleteStatusComponentCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Puts the components of one group in a new order.</summary>
+    /// <param name="command">The group and every one of its component ids, once each, in the order the components should appear.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 on success; 400 when a value is refused or the ids are not exactly the group's components;
+    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPut("components/order")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ReorderComponentsAsync([FromBody] ReorderStatusComponentsCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Changes the headline of an incident.</summary>
+    /// <param name="id">The incident identifier; wins over any id in the body.</param>
+    /// <param name="command">The incident's new headline.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 on success; 400 when a value is refused; 404 when the id names no incident;
+    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPut("incidents/{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UpdateIncidentAsync(int id, [FromBody] UpdateStatusIncidentCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command with { Id = id }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Removes an incident with its timeline.</summary>
+    /// <param name="id">The incident identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 on success; 404 when the id names no incident;
+    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpDelete("incidents/{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> DeleteIncidentAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new DeleteStatusIncidentCommand(id), ct);
         return HandleResult(outcome);
     }
 

@@ -85,4 +85,18 @@ public sealed class StatusIncidentTests
         Assert.Equal(StatusIncidentState.Investigating, incident.State);
         Assert.Single(incident.Updates);
     }
+
+    /// <summary>Retitle changes the headline, whatever the state, and refuses an empty one.</summary>
+    [Fact]
+    public void Retitle_ChangesTheTitle_AndRefusesAnEmptyOne()
+    {
+        var incident = StatusIncident.Open("Slow panel", "Looking into it.", Start);
+        incident.PostUpdate(StatusIncidentState.Resolved, "All good.", Start.AddHours(1));
+
+        incident.Retitle("Panel latency");
+
+        Assert.Equal("Panel latency", incident.Title);
+        Assert.Equal(StatusPageErrors.IncidentTitleRequired, Assert.Throws<DomainRuleException>(() => incident.Retitle(" ")).Code);
+        Assert.Equal("Panel latency", incident.Title);
+    }
 }

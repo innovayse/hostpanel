@@ -1591,6 +1591,18 @@
   <data name="StatusDaysInvalid" xml:space="preserve">
     <value>Ընտրեք օրերի քանակ 1-ից մինչև {0}։</value>
   </data>
+  <data name="StatusIdsRequired" xml:space="preserve">
+    <value>Թվարկեք նույնացուցիչները ցանկալի հերթականությամբ։</value>
+  </data>
+  <data name="StatusMaintenanceTitleRequired" xml:space="preserve">
+    <value>Նշեք աշխատանքների վերնագիրը։</value>
+  </data>
+  <data name="StatusMaintenanceWindowInvalid" xml:space="preserve">
+    <value>Ավարտը պետք է լինի սկզբից հետո։</value>
+  </data>
+  <data name="StatusMaintenanceComponentsRequired" xml:space="preserve">
+    <value>Ընտրեք առնվազն մեկ ազդակիր բաղադրիչ։</value>
+  </data>
   <data name="ClientGroupNameInvalid" xml:space="preserve">
     <value>Խմբի անվանումը պարտադիր է և կարող է ունենալ առավելագույնը 100 նիշ։</value>
   </data>

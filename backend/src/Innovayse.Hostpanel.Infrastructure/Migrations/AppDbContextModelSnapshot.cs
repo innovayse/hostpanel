@@ -4572,6 +4572,69 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("StatusIncidentUpdates");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusMaintenance", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTimeOffset>("ScheduledEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ScheduledStart")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ScheduledEnd");
+
+                    b.ToTable("StatusMaintenances");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusMaintenanceComponent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ComponentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaintenanceId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ComponentId");
+
+                    b.HasIndex("MaintenanceId", "ComponentId")
+                        .IsUnique();
+
+                    b.ToTable("StatusMaintenanceComponents");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.Announcement", b =>
                 {
                     b.Property<int>("Id")
@@ -5967,6 +6030,21 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusMaintenanceComponent", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.StatusPage.StatusComponent", null)
+                        .WithMany()
+                        .HasForeignKey("ComponentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Innovayse.Hostpanel.Domain.StatusPage.StatusMaintenance", null)
+                        .WithMany("Components")
+                        .HasForeignKey("MaintenanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.Download", b =>
                 {
                     b.HasOne("Innovayse.Hostpanel.Domain.Support.DownloadCategory", null)
@@ -6227,6 +6305,11 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusIncident", b =>
                 {
                     b.Navigation("Updates");
+                });
+
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusMaintenance", b =>
+                {
+                    b.Navigation("Components");
                 });
 
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.Support.KbArticle", b =>

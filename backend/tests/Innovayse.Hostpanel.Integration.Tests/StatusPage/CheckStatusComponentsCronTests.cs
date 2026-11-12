@@ -297,4 +297,37 @@ public sealed class CheckStatusComponentsCronTests(IntegrationTestFactory factor
         remaining.Should().HaveCount(2);
         remaining.Should().NotContain(at => at < now.AddDays(-100));
     }
+
+    /// <summary>
+    /// A component a maintenance window that is under way affects is not requested and gets no incident, however long it
+    /// would have been failing; once the window is over the next pass checks it again.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Pass_LeavesAComponentUnderMaintenanceAlone_UntilTheWindowEnds()
+    {
+        var probe = new FakeStatusProbe();
+        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var host = HostWith(probe, clock);
+        var url = $"https://{Guid.NewGuid():N}.example.test/health";
+        var id = await SeedComponentAsync(host, url, 1, enabled: true);
+        probe.Fail(url);
+        using (var scope = host.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            context.StatusMaintenances.Add(StatusMaintenance.Schedule("Upgrade", null, clock.GetUtcNow().AddHours(-1), clock.GetUtcNow().AddHours(1), [id]));
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        await RunPassAsync(host);
+
+        probe.Requested.Should().NotContain(url);
+        (await ReadComponentAsync(host, id)).ActiveIncidentId.Should().BeNull();
+
+        clock.Advance(TimeSpan.FromHours(2));
+        await RunPassAsync(host);
+
+        probe.Requested.Should().Contain(url);
+        (await ReadComponentAsync(host, id)).ActiveIncidentId.Should().NotBeNull();
+    }
 }

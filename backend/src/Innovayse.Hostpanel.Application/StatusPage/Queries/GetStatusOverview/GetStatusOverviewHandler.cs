@@ -9,18 +9,24 @@ namespace Innovayse.Hostpanel.Application.StatusPage.Queries.GetStatusOverview;
 
 /// <summary>
 /// Loads the groups with their components and the incidents that are not resolved yet, and works out the
-/// overall state from the components.
+/// overall state from the components. A component a maintenance window that is under way affects shows as under
+/// maintenance, unless an operator forced a state onto it.
 /// </summary>
 public sealed class GetStatusOverviewHandler
 {
     /// <summary>The module's data context.</summary>
     private readonly IHostpanelDbContext _context;
 
+    /// <summary>The clock the maintenance windows are judged by.</summary>
+    private readonly IClock _clock;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
-    public GetStatusOverviewHandler(IHostpanelDbContext context)
+    /// <param name="clock">The clock the maintenance windows are judged by.</param>
+    public GetStatusOverviewHandler(IHostpanelDbContext context, IClock clock)
     {
         _context = context;
+        _clock = clock;
     }
 
     /// <summary>Handles the query.</summary>
@@ -44,7 +50,8 @@ public sealed class GetStatusOverviewHandler
             .ThenByDescending(i => i.Id)
             .ToListAsync(ct);
 
-        var groupDtos = groups.Select(g => g.ToDto()).ToList();
+        var underMaintenance = await _context.StatusComponentIdsUnderMaintenanceAsync(_clock.UtcNow, ct);
+        var groupDtos = groups.Select(g => g.ToDto(underMaintenance)).ToList();
         var overall = groupDtos
             .SelectMany(g => g.Components)
             .Select(c => c.State)

@@ -63,4 +63,42 @@ public sealed class StatusComponentGroupTests
         Assert.Equal(StatusPageErrors.DisplayOrderNegative, Assert.Throws<DomainRuleException>(() => group.AddComponent("Edge", null, -1)).Code);
         Assert.Empty(group.Components);
     }
+
+    /// <summary>Rename changes the name and refuses an empty one.</summary>
+    [Fact]
+    public void Rename_ChangesTheName_AndRefusesAnEmptyOne()
+    {
+        var group = StatusComponentGroup.Create("Hosting servers", 0);
+
+        group.Rename("Core network");
+
+        Assert.Equal("Core network", group.Name);
+        Assert.Equal(StatusPageErrors.NameRequired, Assert.Throws<DomainRuleException>(() => group.Rename(" ")).Code);
+        Assert.Equal("Core network", group.Name);
+    }
+
+    /// <summary>Reorder moves the group, and a negative position is refused.</summary>
+    [Fact]
+    public void Reorder_MovesTheGroup_AndRefusesANegativePosition()
+    {
+        var group = StatusComponentGroup.Create("Network", 0);
+
+        group.Reorder(4);
+
+        Assert.Equal(4, group.DisplayOrder);
+        Assert.Equal(StatusPageErrors.DisplayOrderNegative, Assert.Throws<DomainRuleException>(() => group.Reorder(-1)).Code);
+    }
+
+    /// <summary>A group with components cannot be removed; an empty one can.</summary>
+    [Fact]
+    public void EnsureRemovable_RefusesAGroupWithComponents()
+    {
+        var group = StatusComponentGroup.Create("Network", 0);
+        group.EnsureRemovable();
+        group.AddComponent("Core router", null, 0);
+
+        var ex = Assert.Throws<DomainRuleException>(group.EnsureRemovable);
+
+        Assert.Equal(StatusPageErrors.GroupNotEmpty, ex.Code);
+    }
 }

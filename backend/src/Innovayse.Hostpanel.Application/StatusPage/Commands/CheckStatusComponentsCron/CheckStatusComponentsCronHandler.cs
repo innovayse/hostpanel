@@ -3,6 +3,7 @@ using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.StatusPage.Commands.OpenStatusIncident;
 using Innovayse.Hostpanel.Application.StatusPage.Commands.PostStatusIncidentUpdate;
 using Innovayse.Hostpanel.Application.StatusPage.Common;
+using Innovayse.Hostpanel.Application.StatusPage.Extensions;
 using Innovayse.Hostpanel.Domain.StatusPage;
 using Innovayse.Hostpanel.Domain.StatusPage.Enums;
 using Innovayse.Hostpanel.Shared.Infrastructure;
@@ -18,7 +19,9 @@ namespace Innovayse.Hostpanel.Application.StatusPage.Commands.CheckStatusCompone
 /// records the outcome, which moves the component's state (unless an operator overrides it). A component that has
 /// failed as many checks in a row as its threshold gets an incident through <see cref="OpenStatusIncidentCommand"/>;
 /// when it answers again the incident is closed through <see cref="PostStatusIncidentUpdateCommand"/>. Records
-/// older than the retention are deleted at the end of the pass. Re-schedules itself at the configured interval.
+/// older than the retention are deleted at the end of the pass. A component a maintenance window that is under way
+/// affects is left alone for the pass: it is not requested, so its planned downtime counts as neither a failed check nor
+/// a reason for an incident. Re-schedules itself at the configured interval.
 /// </summary>
 public sealed class CheckStatusComponentsCronHandler
 {
@@ -85,13 +88,16 @@ public sealed class CheckStatusComponentsCronHandler
     {
         var checkedCount = 0;
         var lastId = 0;
+
+        // Read once per pass: a window that starts or ends mid-pass is taken into account by the next one.
+        var underMaintenance = await _context.StatusComponentIdsUnderMaintenanceAsync(_clock.UtcNow, ct);
         while (true)
         {
             // Tracked: each component is mutated and saved below. A component whose monitoring was switched off
             // while it still holds an incident of ours is read too, so that incident is closed. Keyset batches,
             // so a long list is never loaded at once and a component that fails is not read again this pass.
             var components = await _context.StatusComponents
-                .Where(c => c.Id > lastId && (c.MonitoringEnabled || c.ActiveIncidentId != null))
+                .Where(c => c.Id > lastId && !underMaintenance.Contains(c.Id) && (c.MonitoringEnabled || c.ActiveIncidentId != null))
                 .OrderBy(c => c.Id)
                 .Take(JobBatch.Size)
                 .ToListAsync(ct);

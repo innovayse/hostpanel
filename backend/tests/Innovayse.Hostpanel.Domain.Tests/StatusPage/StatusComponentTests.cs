@@ -174,4 +174,43 @@ public sealed class StatusComponentTests
         component.ReleaseIncident();
         Assert.Null(component.ActiveIncidentId);
     }
+
+    /// <summary>Update changes the name and description, and refuses an empty name.</summary>
+    [Fact]
+    public void Update_ChangesNameAndDescription_AndRefusesAnEmptyName()
+    {
+        var component = StatusComponentGroup.Create("Network", 0).AddComponent("Core router", null, 0);
+
+        component.Update("Edge router", "Customer facing");
+
+        Assert.Equal("Edge router", component.Name);
+        Assert.Equal("Customer facing", component.Description);
+        Assert.Equal(StatusPageErrors.NameRequired, Assert.Throws<DomainRuleException>(() => component.Update("", null)).Code);
+    }
+
+    /// <summary>Reorder moves the component, and a negative position is refused.</summary>
+    [Fact]
+    public void Reorder_MovesTheComponent_AndRefusesANegativePosition()
+    {
+        var component = StatusComponentGroup.Create("Network", 0).AddComponent("Core router", null, 0);
+
+        component.Reorder(3);
+
+        Assert.Equal(3, component.DisplayOrder);
+        Assert.Equal(StatusPageErrors.DisplayOrderNegative, Assert.Throws<DomainRuleException>(() => component.Reorder(-1)).Code);
+    }
+
+    /// <summary>A window under way makes the page show maintenance, but never over an operator's forced state.</summary>
+    [Fact]
+    public void StateWhen_Maintenance_ShowsMaintenance_ExceptOverAnOverride()
+    {
+        var component = StatusComponentGroup.Create("Network", 0).AddComponent("Core router", null, 0);
+
+        Assert.Equal(StatusComponentState.Operational, component.StateWhen(underMaintenance: false));
+        Assert.Equal(StatusComponentState.Maintenance, component.StateWhen(underMaintenance: true));
+
+        component.OverrideState(StatusComponentState.Degraded);
+
+        Assert.Equal(StatusComponentState.Degraded, component.StateWhen(underMaintenance: true));
+    }
 }

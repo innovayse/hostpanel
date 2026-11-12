@@ -32,9 +32,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Demo;
 public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
     : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>The amounts the seed produces; they are fixed, so a change here is a deliberate change of the demo.</summary>
     private static readonly Counts Expected = new(
         Currencies: 2, ProductGroups: 8, Products: 32, Prices: 128, Features: 164, Tlds: 19,
@@ -115,7 +112,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
         {
             using var suppression = scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var stray = Client.Create($"stray-{Guid.NewGuid():N}", "Stray", "Visitor", $"{Guid.NewGuid():N}@example.test", SeededAt);
+            var stray = Client.Create($"stray-{Guid.NewGuid():N}", "Stray", "Visitor", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
             db.Clients.Add(stray);
             await db.SaveChangesAsync();
         }

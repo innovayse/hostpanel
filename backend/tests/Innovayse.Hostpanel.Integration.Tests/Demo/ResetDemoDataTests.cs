@@ -18,15 +18,12 @@ namespace Innovayse.Hostpanel.Integration.Tests.Demo;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ResetDemoDataTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>Adds a client the sample data does not contain, standing in for a visitor's work.</summary>
     /// <param name="context">The data context to add through.</param>
     /// <returns>The stray client's id.</returns>
     private static async Task<int> AddStrayClientAsync(IHostpanelDbContext context)
     {
-        var stray = Client.Create($"stray-{Guid.NewGuid():N}", "Stray", "Visitor", $"{Guid.NewGuid():N}@example.test", SeededAt);
+        var stray = Client.Create($"stray-{Guid.NewGuid():N}", "Stray", "Visitor", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(stray);
         await context.SaveChangesAsync(CancellationToken.None);
         return stray.Id;

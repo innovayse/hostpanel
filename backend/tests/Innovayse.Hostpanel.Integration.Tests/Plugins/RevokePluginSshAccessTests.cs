@@ -18,9 +18,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 /// <param name="fixture">The host with the SSH and the plain plugin.</param>
 public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClassFixture<PluginSshFixture>
 {
-    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>The plugin revokes its own key: it leaves the account, the record is revoked and the revoke is audited.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -169,7 +166,7 @@ public sealed class RevokePluginSshAccessTests(PluginSshFixture fixture) : IClas
     {
         var (owner, keyId) = await IssuedAsync("plugin-ssh-inactive-revoke");
         await SshTestSeeds.ChangeServiceQuietlyAsync(
-            fixture.Factory, owner.ServiceId, s => s.Suspend(SeededAt, hostingAlreadyUpdated: true));
+            fixture.Factory, owner.ServiceId, s => s.Suspend(TestMoments.Seeded, hostingAlreadyUpdated: true));
 
         await fixture.AsPluginAsync(PluginSshFixture.ClientCall(fixture.SshPluginId, owner.ClientId), async api =>
         {

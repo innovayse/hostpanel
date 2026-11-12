@@ -27,9 +27,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Plugins;
 /// </remarks>
 public sealed class FulfilmentClientRefTests : IClassFixture<AppPluginFixture>
 {
-    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>The host, the database and the app plugins.</summary>
     private readonly AppPluginFixture _fixture;
 
@@ -105,13 +102,12 @@ public sealed class FulfilmentClientRefTests : IClassFixture<AppPluginFixture>
     {
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var now = SeededAt;
-        var invoice = FulfilmentInvoiceSeeds.Build(clientId, now);
+        var invoice = FulfilmentInvoiceSeeds.Build(clientId, TestMoments.Seeded);
         db.Invoices.Add(invoice);
         await db.SaveChangesAsync(CancellationToken.None);
 
-        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, _fixture.PluginId, FulfilmentKind.Paid, now));
-        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, _fixture.OtherPluginId, FulfilmentKind.Paid, now));
+        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, _fixture.PluginId, FulfilmentKind.Paid, TestMoments.Seeded));
+        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, _fixture.OtherPluginId, FulfilmentKind.Paid, TestMoments.Seeded));
         await db.SaveChangesAsync(CancellationToken.None);
     }
 }

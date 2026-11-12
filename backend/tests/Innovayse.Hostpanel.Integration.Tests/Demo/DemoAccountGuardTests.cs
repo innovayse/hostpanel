@@ -23,9 +23,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Demo;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>The password a reset sets in the tests that expect it to land.</summary>
     private const string ChangedPassword = "Changed-Pass-9!";
 
@@ -71,7 +68,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
         (await users.CreateAsync(user, DemoTestHost.ClientPassword)).Succeeded.Should().BeTrue();
 
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        db.Clients.Add(Client.Create(user.Id, "Plain", "Customer", DemoTestHost.ClientEmail, SeededAt));
+        db.Clients.Add(Client.Create(user.Id, "Plain", "Customer", DemoTestHost.ClientEmail, TestMoments.Seeded));
         await db.SaveChangesAsync();
     }
 

@@ -22,6 +22,6 @@ public sealed class QuoteItemEntryValidator : LocalizedValidator<QuoteItemEntry>
             .WithMessage(L["QuoteItemDescriptionInvalid", DescriptionMaxLength]);
         RuleFor(x => x.UnitPrice).GreaterThanOrEqualTo(0).WithMessage(L["QuoteItemUnitPriceInvalid"]);
         RuleFor(x => x.Quantity).GreaterThan(0).WithMessage(L["QuoteItemQuantityInvalid"]);
-        RuleFor(x => x.DiscountPercent).InclusiveBetween(0, 100).WithMessage(L["QuoteItemDiscountInvalid"]);
+        RuleFor(x => x.DiscountPercent).MustBeDiscountPercentRange(L["QuoteItemDiscountInvalid"]);
     }
 }

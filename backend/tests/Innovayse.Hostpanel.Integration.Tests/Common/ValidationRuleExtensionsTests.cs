@@ -15,6 +15,9 @@ public sealed class ValidationRuleExtensionsTests
     /// <summary>Message the probe reports for a bad page size.</summary>
     internal const string PageSizeMessage = "size";
 
+    /// <summary>Message the probe reports for a bad discount.</summary>
+    internal const string DiscountMessage = "discount";
+
     /// <summary>A valid id, page and size pass.</summary>
     [Fact]
     public void ValidValues_Pass()
@@ -53,5 +56,28 @@ public sealed class ValidationRuleExtensionsTests
         var result = new PagingProbeValidator().Validate(new PagingProbe(1, 1, pageSize));
 
         result.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Be(PageSizeMessage);
+    }
+
+    /// <summary>The ends of 0 to 100 percent and a value between them pass.</summary>
+    /// <param name="percent">A discount within the range.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(12.5)]
+    [InlineData(100)]
+    public void DiscountWithinRange_Passes(double percent)
+    {
+        new PagingProbeValidator().Validate(new PagingProbe(1, 1, 10, (decimal)percent)).IsValid.Should().BeTrue();
+    }
+
+    /// <summary>A discount below 0 or above 100 percent is refused with the supplied message.</summary>
+    /// <param name="percent">A discount outside the range.</param>
+    [Theory]
+    [InlineData(-0.01)]
+    [InlineData(100.01)]
+    public void DiscountOutOfRange_IsRefused(double percent)
+    {
+        var result = new PagingProbeValidator().Validate(new PagingProbe(1, 1, 10, (decimal)percent));
+
+        result.Errors.Should().ContainSingle().Which.ErrorMessage.Should().Be(DiscountMessage);
     }
 }

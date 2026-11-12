@@ -612,6 +612,6 @@ public sealed class RequestMyServicePlanChangeTests(IntegrationTestFactory facto
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var invoice = await context.Invoices.AsNoTracking().FirstAsync(i => i.Id == invoiceId);
-        (invoice.DueDate - invoice.InvoiceDate).Days.Should().Be(21);
+        invoice.DueDate.Should().BeCloseTo(DateTimeOffset.UtcNow.AddDays(21), TimeSpan.FromMinutes(10));
     }
 }

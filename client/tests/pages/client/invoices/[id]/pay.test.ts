@@ -5,7 +5,7 @@
  *
  * @module tests/pages/client/invoices/[id]/pay.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
@@ -13,6 +13,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import PayPage from '~/pages/client/invoices/[id]/pay.vue'
 import { InvoiceStatus } from '~/types/invoicestatus'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the page reads for invoice 41. */
 const PATHS = {
@@ -59,7 +60,7 @@ describe('invoice payment page', () => {
     table[`GET ${PATHS.gateways}`] = { body: [HOSTED_GATEWAY] }
 
     const wrapper = await mountPage(PayPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="pay-summary"]').text()).toContain('Hosting')
     expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(true)
@@ -69,7 +70,7 @@ describe('invoice payment page', () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
 
     const wrapper = await mountPage(PayPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-unavailable"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-unavailable"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-pay-options-error"]').exists()).toBe(false)
@@ -79,7 +80,7 @@ describe('invoice payment page', () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
     table[`GET ${PATHS.gateways}`] = { status: 503, body: { detail: 'Gateways down.' } }
     const wrapper = await mountPage(PayPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-options-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-options-error"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-pay-options-error"]').text()).toContain('Gateways down.')
     expect(wrapper.find('[data-testid="invoice-pay-unavailable"]').exists()).toBe(false)
@@ -87,7 +88,7 @@ describe('invoice payment page', () => {
 
     table[`GET ${PATHS.gateways}`] = { body: [HOSTED_GATEWAY] }
     await wrapper.find('[data-testid="invoice-pay-options-retry"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-pay-options-error"]').exists()).toBe(false)
   })
@@ -96,7 +97,7 @@ describe('invoice payment page', () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Paid) }
 
     const wrapper = await mountPage(PayPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-already-paid"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-already-paid"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(false)
   })
@@ -105,7 +106,7 @@ describe('invoice payment page', () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.PartiallyRefunded) }
 
     const wrapper = await mountPage(PayPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-already-paid"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-already-paid"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(false)
   })
@@ -114,7 +115,7 @@ describe('invoice payment page', () => {
     table[`GET ${PATHS.invoice}`] = { status: 404, body: { detail: 'No such invoice.' } }
 
     const wrapper = await mountPage(PayPage)
-    await vi.waitFor(() => expect(wrapper.text()).toContain('client.invoices.notFound'))
+    await waitUntil(() => expect(wrapper.text()).toContain('client.invoices.notFound'))
 
     expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(false)
   })
@@ -124,7 +125,7 @@ describe('invoice payment page', () => {
     table[`GET ${PATHS.gateways}`] = { body: [HOSTED_GATEWAY] }
     const wrapper = await mountPage(PayPage)
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true))
   })
 
   it('shows the bank details of an invoice that waits for a transfer, with no payment choices or gateway notice', async () => {
@@ -133,7 +134,7 @@ describe('invoice payment page', () => {
     table[`GET ${PATHS.bankTransfer}`] = { body: { invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null } }
 
     const wrapper = await mountPage(PayPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true))
 
     expect(requestsTo(stub.requests, PATHS.bankTransfer).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="bank-transfer-reference"]').text()).toBe('INV-41')
@@ -145,7 +146,7 @@ describe('invoice payment page', () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
 
     const wrapper = await mountPage(PayPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(true))
 
     expect(requestsTo(stub.requests, PATHS.bankTransfer)).toHaveLength(0)
   })
@@ -155,6 +156,6 @@ describe('invoice payment page', () => {
 
     const wrapper = await mountPage(PayPage)
 
-    await vi.waitFor(() => expect(wrapper.find('nav a[href="/client/invoices/41"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('nav a[href="/client/invoices/41"]').exists()).toBe(true))
   })
 })

@@ -7,7 +7,7 @@
  * @module tests/components/plugin/Slot.test
  */
 
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it } from 'vitest'
 import { createSSRApp, h } from 'vue'
 import { renderToString } from 'vue/server-renderer'
 import { createPinia } from 'pinia'
@@ -19,6 +19,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { PluginSlotId } from '~/types/pluginslotid'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -42,7 +43,7 @@ describe('PluginSlot', () => {
     stub = await startTransport(() => ({ body: slotIndex(PluginSlotId.DashboardCards, []) }))
     const slot = mountSlot()
 
-    await vi.waitFor(() => expect(stub.requests).toHaveLength(1))
+    await waitUntil(() => expect(stub.requests).toHaveLength(1))
     expect(slot.html()).toBe('<!--v-if-->')
   })
 
@@ -51,7 +52,7 @@ describe('PluginSlot', () => {
     stub = await startTransport(() => ({ status: 404, body: { type: 'PLUGIN_SLOT_NOT_FOUND', title: 'x', status: 404, detail: 'x' } }))
     const slot = mountSlot()
 
-    await vi.waitFor(() => expect(stub.requests).toHaveLength(1))
+    await waitUntil(() => expect(stub.requests).toHaveLength(1))
     expect(slot.html()).toBe('<!--v-if-->')
   })
 
@@ -62,7 +63,7 @@ describe('PluginSlot', () => {
     }))
     const slot = mountSlot()
 
-    await vi.waitFor(() => expect(slot.text()).toContain('Site is live'))
+    await waitUntil(() => expect(slot.text()).toContain('Site is live'))
     expect(slot.find('[data-testid="plugin-slot-client.dashboard.cards"]').exists()).toBe(true)
     expect(slot.text()).toContain('Widget ok')
   })
@@ -75,8 +76,8 @@ describe('PluginSlot', () => {
     }))
     const slot = mountSlot()
 
-    await vi.waitFor(() => expect(slot.find('[data-testid="plugin-slot-unavailable-acme-sites-broken"]').exists()).toBe(true))
-    await vi.waitFor(() => expect(slot.get('[data-testid="plugin-slot-widget-acme-sites-ok"]').text()).toBe('Site is live'))
+    await waitUntil(() => expect(slot.find('[data-testid="plugin-slot-unavailable-acme-sites-broken"]').exists()).toBe(true))
+    await waitUntil(() => expect(slot.get('[data-testid="plugin-slot-widget-acme-sites-ok"]').text()).toBe('Site is live'))
   })
 
   it('reads the index and each widget with the slot\'s context', async () => {
@@ -86,7 +87,7 @@ describe('PluginSlot', () => {
     }))
     const slot = mountSlot(PluginSlotId.ServiceTabs, { serviceId: '4' })
 
-    await vi.waitFor(() => expect(slot.text()).toContain('Site is live'))
+    await waitUntil(() => expect(slot.text()).toContain('Site is live'))
     expect(requestsTo(stub.requests, slotPath(PluginSlotId.ServiceTabs)).map(queryOf)).toEqual([{ serviceId: '4' }])
     expect(requestsTo(stub.requests, slotWidgetPath(PluginSlotId.ServiceTabs, 'ok')).map(queryOf)).toEqual([{ serviceId: '4' }])
   })
@@ -98,12 +99,12 @@ describe('PluginSlot', () => {
       [`GET ${slotWidgetPath(PluginSlotId.ServiceTabs, 'other')}`]: { body: workingView() },
     }))
     const slot = mountSlot(PluginSlotId.ServiceTabs, { serviceId: '4' })
-    await vi.waitFor(() => expect(requestsTo(stub.requests, slotWidgetPath(PluginSlotId.ServiceTabs, 'other'))).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, slotWidgetPath(PluginSlotId.ServiceTabs, 'other'))).toHaveLength(1))
 
     await slot.setProps({ context: { serviceId: '5' } })
 
     for (const id of ['ok', 'other']) {
-      await vi.waitFor(() => expect(requestsTo(stub.requests, slotWidgetPath(PluginSlotId.ServiceTabs, id)).map(queryOf))
+      await waitUntil(() => expect(requestsTo(stub.requests, slotWidgetPath(PluginSlotId.ServiceTabs, id)).map(queryOf))
         .toEqual([{ serviceId: '4' }, { serviceId: '5' }]))
     }
   })

@@ -14,6 +14,7 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import RegisterPage from '~/pages/client/register.vue'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path the page posts the registration to. */
 const REGISTER_PATH = '/api/portal/auth/register'
@@ -61,7 +62,7 @@ describe('client register page', () => {
     const wrapper = await mountAuthPage(RegisterPage)
 
     await submit(wrapper)
-    await vi.waitFor(() => expect(requestsTo(stub.requests, REGISTER_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, REGISTER_PATH)).toHaveLength(1))
 
     expect(bodyOf(requestsTo(stub.requests, REGISTER_PATH)[0])).toEqual({ firstname: 'Ada', lastname: 'Lovelace', email: 'ada@example.com', password: 'long-enough-pw' })
   })
@@ -72,7 +73,7 @@ describe('client register page', () => {
     const wrapper = await mountAuthPage(RegisterPage)
 
     await submit(wrapper)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-success"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-success"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="ui-form-success"]').text()).toBe('client.register.success')
     expect(timer).toHaveBeenCalledWith(expect.any(Function), 1500)
@@ -84,7 +85,7 @@ describe('client register page', () => {
     const wrapper = await mountAuthPage(RegisterPage)
 
     await submit(wrapper)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('That email is taken.')
     expect(wrapper.find('[data-testid="ui-form-success"]').exists()).toBe(false)
@@ -95,7 +96,7 @@ describe('client register page', () => {
     const wrapper = await mountAuthPage(RegisterPage)
 
     await submit(wrapper)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="register-password"]').element.closest('div.w-full')?.textContent).toContain('Too short.'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="register-password"]').element.closest('div.w-full')?.textContent).toContain('Too short.'))
   })
 
   it('links back to sign-in', async () => {

@@ -2294,10 +2294,11 @@ that once scoped the rules is deleted, and `strictRules` in `eslint.config.ts` a
   stubbed at the network level (`tests/helpers/{fetch,routes,mount}.ts`), never a mocked store or
   `useApi`. `tests/coverage-shape.test.ts` fails when a component, layout, view, store, composable,
   lib module or guard has no test importing it. `tests/lint/strictRules.test.ts` pins the lint rules.
-  `tests/lint/noOwnMocks.test.ts` reads the tests of both apps and fails on a `vi.mock` or `vi.doMock`
-  of any module of ours, and on a client test that fakes a composable or store of ours with
-  `vi.stubGlobal` (a Nuxt or Vue framework global may be stubbed); its `KNOWN_REMAINDER` list of
-  client tests that still do the latter may only shrink.
+  `tests/lint/noOwnMocks.test.ts` (admin) and `tests/config/noOwnMocks.test.ts` (client, one guard per
+  app because an app's container cannot read the other's files) fail on a `vi.mock` or `vi.doMock` of
+  any module of ours; the client one also fails on a test that fakes a composable or store of ours with
+  `vi.stubGlobal` (a Nuxt or Vue framework global may be stubbed), and its `KNOWN_REMAINDER` list of
+  tests that still do so may only shrink.
   On this laptop vitest needs `--maxWorkers=2`.
 - **e2e.** `admin/e2e/`: Playwright, one spec per flow, `data-testid` selectors only (`fieldOf` for
   inputs), against `vite preview` of a production build with the API replaced by `page.route`

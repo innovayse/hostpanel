@@ -22,6 +22,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import { DomainStatus } from '~/types/domainstatus'
 import { PluginSlotId } from '~/types/pluginslotid'
 import { settle } from '~/tests/helpers/settle'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 const { default: DashboardPage } = await import('~/pages/client/dashboard.vue')
 
@@ -33,7 +34,7 @@ const { default: DashboardPage } = await import('~/pages/client/dashboard.vue')
  */
 const mountDashboard = async (): Promise<Awaited<ReturnType<typeof mountAuthPage>>> => {
   const wrapper = await mountAuthPage(DashboardPage, PLUGIN_COMPONENTS)
-  await vi.waitFor(() => expect(wrapper.find('[data-testid="dashboard-title"]').exists()).toBe(true))
+  await waitUntil(() => expect(wrapper.find('[data-testid="dashboard-title"]').exists()).toBe(true))
   return wrapper
 }
 const { useDashboardSummary } = await import('~/composables/useDashboardSummary')
@@ -154,7 +155,7 @@ describe('client dashboard page', () => {
     const wrapper = await mountDashboard()
 
     await wrapper.find('[data-testid="dashboard-refresh"]').trigger('click')
-    await vi.waitFor(() => expect(reads(PATHS.tickets)).toBe(2))
+    await waitUntil(() => expect(reads(PATHS.tickets)).toBe(2))
 
     expect(reads(PATHS.services)).toBe(2)
     expect(reads(PATHS.invoices)).toBe(2)
@@ -193,7 +194,7 @@ describe('client dashboard page permissions', () => {
 describe('client dashboard plugin cards', () => {
   it('reads the dashboard slot without context and adds nothing without plugins', async () => {
     const wrapper = await mountDashboard()
-    await vi.waitFor(() => expect(reads(slotPath(PluginSlotId.DashboardCards))).toBe(1))
+    await waitUntil(() => expect(reads(slotPath(PluginSlotId.DashboardCards))).toBe(1))
 
     expect(stub.requests.find(request => request.url.startsWith(slotPath(PluginSlotId.DashboardCards)))?.url)
       .toBe(slotPath(PluginSlotId.DashboardCards))
@@ -208,8 +209,8 @@ describe('client dashboard plugin cards', () => {
 
     const wrapper = await mountDashboard()
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="plugin-slot-unavailable-acme-sites-broken"]').exists()).toBe(true))
-    await vi.waitFor(() => expect(wrapper.get('[data-testid="plugin-slot-widget-acme-sites-ok"]').text()).toBe('Site is live'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="plugin-slot-unavailable-acme-sites-broken"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.get('[data-testid="plugin-slot-widget-acme-sites-ok"]').text()).toBe('Site is live'))
     expect(wrapper.find('[data-testid="dashboard-service-1"]').text()).toContain('Starter')
   })
 
@@ -218,7 +219,7 @@ describe('client dashboard plugin cards', () => {
 
     const wrapper = await mountDashboard()
     // The transport retries a GET once on a 5xx, so a refused slot read is two requests.
-    await vi.waitFor(() => expect(reads(slotPath(PluginSlotId.DashboardCards))).toBe(2))
+    await waitUntil(() => expect(reads(slotPath(PluginSlotId.DashboardCards))).toBe(2))
     await settle()
 
     expect(wrapper.find('[data-testid="plugin-slot-client.dashboard.cards"]').exists()).toBe(false)

@@ -7,7 +7,7 @@
  *
  * @module tests/components/client/services/ServicePasswordForm.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import ServicePasswordForm from '~/components/client/services/ServicePasswordForm.vue'
 import { useServiceManagementStore } from '~/stores/servicemanagement'
@@ -16,6 +16,7 @@ import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path that takes the new control-panel password of service 4. */
 const PASSWORD_PATH = '/api/portal/client/services/4/change-password'
@@ -71,7 +72,7 @@ describe('ServicePasswordForm', () => {
     const wrapper = mountClient(ServicePasswordForm, { props: { serviceId: '4' } })
 
     await submitWith(wrapper, 'longenough1', 'longenough1')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="service-password-success"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="service-password-success"]').exists()).toBe(true))
 
     expect(requestsTo(stub.requests, PASSWORD_PATH)).toHaveLength(1)
     expect(bodyOf(requestsTo(stub.requests, PASSWORD_PATH)[0])).toEqual({ password: 'longenough1' })
@@ -82,7 +83,7 @@ describe('ServicePasswordForm', () => {
     const wrapper = mountClient(ServicePasswordForm, { props: { serviceId: '4' } })
 
     await submitWith(wrapper, 'longenough1', 'longenough1')
-    await vi.waitFor(() => expect(useServiceManagementStore().passwordError).toBe('Password too common.'))
+    await waitUntil(() => expect(useServiceManagementStore().passwordError).toBe('Password too common.'))
     await wrapper.vm.$nextTick()
 
     expect(wrapper.find('[data-testid="ui-form-error"]').text()).toContain('Password too common.')

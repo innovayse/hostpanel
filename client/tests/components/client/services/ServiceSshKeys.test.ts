@@ -7,7 +7,7 @@
  *
  * @module tests/components/client/services/ServiceSshKeys.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import ServiceSshKeys from '~/components/client/services/ServiceSshKeys.vue'
 import { useSshKeysStore } from '~/stores/sshkeys'
@@ -19,6 +19,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import { HttpMethod } from '~/types/httpmethod'
 import { SshAccessState } from '~/types/sshaccessstate'
 import { SshKeySyncState } from '~/types/sshkeysyncstate'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path of the SSH access of service 6. */
 const ACCESS_PATH = '/api/portal/client/services/6/ssh'
@@ -72,8 +73,8 @@ const additions = () => requestsTo(stub.requests, KEYS_PATH).filter((request) =>
  */
 const mountLoaded = async (): Promise<ReturnType<typeof mountClient>> => {
   const wrapper = mountClient(ServiceSshKeys, { props: { serviceId: '6' } })
-  await vi.waitFor(() => expect(requestsTo(stub.requests, ACCESS_PATH)).toHaveLength(1))
-  await vi.waitFor(() => expect(useSshKeysStore().loading).toBe(false))
+  await waitUntil(() => expect(requestsTo(stub.requests, ACCESS_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(useSshKeysStore().loading).toBe(false))
   await wrapper.vm.$nextTick()
   return wrapper
 }
@@ -168,7 +169,7 @@ describe('ServiceSshKeys', () => {
     table[`GET ${ACCESS_PATH}`] = { status: 404, body: { detail: 'No such client service.' } }
     const wrapper = mountClient(ServiceSshKeys, { props: { serviceId: '6' } })
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="service-ssh-load-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="service-ssh-load-error"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="service-ssh-load-error"]').text()).toContain('No such client service.')
     expect(wrapper.find('[data-testid="service-ssh-retry"]').exists()).toBe(true)
@@ -204,7 +205,7 @@ describe('ServiceSshKeys', () => {
     expect((wrapper.find('[data-testid="service-ssh-label"]').element as HTMLInputElement).value).toBe('me@host')
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.findAll('[data-testid="service-ssh-key"]')).toHaveLength(1))
+    await waitUntil(() => expect(wrapper.findAll('[data-testid="service-ssh-key"]')).toHaveLength(1))
     expect(additions()).toHaveLength(1)
     expect(bodyOf(additions()[0])).toEqual({ label: 'me@host', publicKey: KEY })
   })
@@ -216,7 +217,7 @@ describe('ServiceSshKeys', () => {
     await wrapper.find('[data-testid="service-ssh-public-key"]').setValue(KEY)
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toContain('already installed'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toContain('already installed'))
   })
 
   it('revokes only after confirmation', async () => {
@@ -228,8 +229,8 @@ describe('ServiceSshKeys', () => {
     expect(wrapper.find('[data-testid="ui-confirm-dialog"]').text()).toContain('client.services.ssh.revokeConfirmTitle')
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
 
-    await vi.waitFor(() => expect(requestsTo(stub.requests, KEY_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, KEY_PATH)).toHaveLength(1))
     expect(requestsTo(stub.requests, KEY_PATH)[0]?.method).toBe(HttpMethod.Delete)
-    await vi.waitFor(() => expect(wrapper.findAll('[data-testid="service-ssh-key"]')).toHaveLength(0))
+    await waitUntil(() => expect(wrapper.findAll('[data-testid="service-ssh-key"]')).toHaveLength(0))
   })
 })

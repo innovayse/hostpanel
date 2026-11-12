@@ -5,7 +5,7 @@
  * The real auth store, API composable and transport run against a stub server playing the BFF.
  */
 import { createPinia, setActivePinia } from 'pinia'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import LayoutHeaderAccount from '~/components/layout/HeaderAccount.vue'
@@ -14,6 +14,7 @@ import { makeClientUser } from '~/tests/helpers/clientUser'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** Path of the endpoint that ends the session. */
 const LOGOUT_PATH = '/api/portal/auth/logout'
@@ -101,8 +102,8 @@ describe('LayoutHeaderAccount', () => {
 
     await wrapper.find('[data-testid="header-account-sign-out"]').trigger('click')
 
-    await vi.waitFor(() => expect(requestsTo(stub.requests, LOGOUT_PATH)).toHaveLength(1))
-    await vi.waitFor(() => expect(store.user).toBeNull())
+    await waitUntil(() => expect(requestsTo(stub.requests, LOGOUT_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(store.user).toBeNull())
     expect(wrapper.find('[data-testid="header-account-panel"]').exists()).toBe(false)
   })
 

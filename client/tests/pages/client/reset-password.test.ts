@@ -6,7 +6,7 @@
  * @module tests/pages/client/reset-password.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -14,6 +14,7 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import ResetPasswordPage from '~/pages/client/reset-password.vue'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path the page posts the new password to. */
 const RESET_PATH = '/api/portal/auth/reset-password'
@@ -79,7 +80,7 @@ describe('client reset-password page', () => {
 
     await submit(wrapper, 'one-password', 'another-password')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
     expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('client.resetPassword.errorMismatch')
     expect(stub.requests).toHaveLength(0)
   })
@@ -90,7 +91,7 @@ describe('client reset-password page', () => {
     const wrapper = await mountAuthPage(ResetPasswordPage)
 
     await submit(wrapper, 'new-password-1', 'new-password-1')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="reset-success"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="reset-success"]').exists()).toBe(true))
 
     expect(bodyOf(requestsTo(stub.requests, RESET_PATH)[0])).toEqual({ email: 'ada@example.com', token: 'tok', newPassword: 'new-password-1' })
     expect(wrapper.find('[data-testid="reset-success-signin"]').attributes('href')).toBe('/client/login')
@@ -102,7 +103,7 @@ describe('client reset-password page', () => {
     const wrapper = await mountAuthPage(ResetPasswordPage)
 
     await submit(wrapper, 'new-password-1', 'new-password-1')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('This link has expired.')
     expect(wrapper.find('[data-testid="reset-success"]').exists()).toBe(false)

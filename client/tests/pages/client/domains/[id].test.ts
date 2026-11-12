@@ -5,7 +5,7 @@
  *
  * @module tests/pages/client/domains/[id].test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -14,6 +14,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import DomainPage from '~/pages/client/domains/[id].vue'
 import { DomainStatus } from '~/types/domainstatus'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the page reads and writes for domain 7. */
 const PATHS = {
@@ -56,7 +57,7 @@ afterEach(async () => {
 describe('domain page', () => {
   it('reads this domain and opens on the overview', async () => {
     const wrapper = await mountPage(DomainPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="domain-overview"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-overview"]').exists()).toBe(true))
 
     expect(requestsTo(stub.requests, PATHS.domain).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="domain-header"] h1').text()).toBe('example.com')
@@ -70,7 +71,7 @@ describe('domain page', () => {
     ['renew', 'domain-renew'],
   ])('opens the %s panel from the menu', async (tab, panel) => {
     const wrapper = await mountPage(DomainPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="domain-overview"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-overview"]').exists()).toBe(true))
 
     await wrapper.find(`[data-testid="domain-tab-${tab}"], [data-testid="domain-action-${tab}"]`).trigger('click')
 
@@ -82,7 +83,7 @@ describe('domain page', () => {
     table[`GET ${PATHS.domain}`] = { body: domain({ status: DomainStatus.PendingRegistration }) }
 
     const wrapper = await mountPage(DomainPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="domain-pending"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-pending"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="domain-pending"]').text()).toContain('client.domains.pendingRegistrationDesc')
     expect(wrapper.find('[data-testid="domain-tab-lock"]').attributes('disabled')).toBeDefined()
@@ -92,7 +93,7 @@ describe('domain page', () => {
     table[`GET ${PATHS.domain}`] = { body: domain({ status: DomainStatus.PendingTransfer }) }
 
     const wrapper = await mountPage(DomainPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="domain-pending"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-pending"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="domain-pending"]').text()).toContain('client.domains.pendingTransferDesc')
   })
@@ -101,14 +102,14 @@ describe('domain page', () => {
     table[`GET ${PATHS.domain}`] = { body: domain({ isLocked: false }) }
     table[`PUT ${PATHS.lock}`] = { body: {} }
     const wrapper = await mountPage(DomainPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="domain-unlock-warning"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-unlock-warning"]').exists()).toBe(true))
 
     await wrapper.find('[data-testid="domain-tab-lock"]').trigger('click')
     await wrapper.find('[data-testid="domain-lock-row-toggle"]').trigger('click')
-    await vi.waitFor(() => expect(bodyOf(requestsTo(stub.requests, PATHS.lock)[0])).toEqual({ value: true }))
+    await waitUntil(() => expect(bodyOf(requestsTo(stub.requests, PATHS.lock)[0])).toEqual({ value: true }))
     await wrapper.find('[data-testid="domain-tab-overview"]').trigger('click')
     // The switch only moves once the API has answered, so the warning goes when the reply has been read.
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="domain-unlock-warning"]').exists()).toBe(false))
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-unlock-warning"]').exists()).toBe(false))
 
     expect(wrapper.find('[data-testid="domain-overview"]').exists()).toBe(true)
   })
@@ -117,7 +118,7 @@ describe('domain page', () => {
     table[`GET ${PATHS.domain}`] = { status: 404, body: { detail: 'No such domain.' } }
 
     const wrapper = await mountPage(DomainPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="ui-empty-state"]').text()).toContain('client.domains.notFound')
   })

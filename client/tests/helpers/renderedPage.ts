@@ -10,11 +10,12 @@
  */
 
 import type { VueWrapper } from '@vue/test-utils'
-import { expect, vi } from 'vitest'
+import { expect } from 'vitest'
 import type { Component } from 'vue'
 import type { MountWithKitOptions } from '~/tests/helpers/mountWithKit'
 import { mountPage as mountClientPage } from '~/tests/helpers/mountClient'
 import { mountPage as mountPublicPage } from '~/tests/helpers/publicPage'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /**
  * Mounts a page with the given mounter and waits until the element with the given test id has rendered.
@@ -33,7 +34,7 @@ const mountUntilRendered = async <Options>(
   options: Options
 ): Promise<VueWrapper> => {
   const wrapper = await mount(page, options)
-  await vi.waitFor(() => expect(wrapper.find(`[data-testid="${markerTestId}"]`).exists()).toBe(true))
+  await waitUntil(() => expect(wrapper.find(`[data-testid="${markerTestId}"]`).exists()).toBe(true))
   return wrapper
 }
 

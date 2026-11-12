@@ -3,7 +3,7 @@
  * choice, the order and the success state. The store, the API composables and the transport run for
  * real against a stub BFF.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import DomainRenewPanel from '~/components/client/domains/DomainRenewPanel.vue'
 import type { DomainDetail } from '~/types/domaindetail'
@@ -16,6 +16,7 @@ import { requestsTo, routeTable, refusal } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** A gateway the panel offers. */
 const card = { module: 'card_gateway', displayName: 'Card gateway' }
@@ -45,7 +46,7 @@ const domain = (overrides: Partial<DomainDetail> = {}): DomainDetail => ({
  */
 const mountPanel = async (overrides: Partial<DomainDetail> = {}) => {
   const wrapper = mountClient(DomainRenewPanel, { props: { domain: domain(overrides), domainId: DOMAIN_ID, fullName: 'example.com' } })
-  await vi.waitFor(() => expect(wrapper.find('[data-testid="domain-renew-payment"]').exists()).toBe(true))
+  await waitUntil(() => expect(wrapper.find('[data-testid="domain-renew-payment"]').exists()).toBe(true))
   return wrapper
 }
 
@@ -87,7 +88,7 @@ describe('DomainRenewPanel', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="domain-renew-pay"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-renew-pay"]').exists()).toBe(true))
     const orders = requestsTo(stub.requests, domainPath(DomainAction.RenewOrder))
     expect(orders).toHaveLength(1)
     expect(orders[0]?.method).toBe(HttpMethod.Post)
@@ -101,7 +102,7 @@ describe('DomainRenewPanel', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toContain('Cannot renew yet.'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toContain('Cannot renew yet.'))
     expect(wrapper.find('[data-testid="domain-renew-pay"]').exists()).toBe(false)
   })
 })

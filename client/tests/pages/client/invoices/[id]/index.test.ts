@@ -20,6 +20,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import InvoicePage from '~/pages/client/invoices/[id]/index.vue'
 import { InvoiceStatus } from '~/types/invoicestatus'
 import { InvoiceTransactionType } from '~/types/invoicetransactiontype'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the page reads and writes for invoice 41. */
 const PATHS = {
@@ -86,7 +87,7 @@ describe('invoice page', () => {
     table[`GET ${PATHS.bankTransfer}`] = { body: { invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null } }
 
     const wrapper = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true))
 
     expect(requestsTo(stub.requests, PATHS.bankTransfer).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(false)
@@ -96,7 +97,7 @@ describe('invoice page', () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice() }
 
     const wrapper = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(true))
 
     expect(requestsTo(stub.requests, PATHS.bankTransfer)).toHaveLength(0)
     expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(false)
@@ -106,7 +107,7 @@ describe('invoice page', () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice() }
 
     const wrapper = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-heading"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-heading"]').exists()).toBe(true))
 
     expect(requestsTo(stub.requests, PATHS.invoice).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="invoice-heading"]').text()).toContain('client.invoices.heading')
@@ -128,10 +129,10 @@ describe('invoice page', () => {
   it('shows the amounts in the invoice currency, with tax only when there is some', async () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice() }
     const taxed = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(taxed.find('[data-testid="invoice-items"]').exists()).toBe(true))
+    await waitUntil(() => expect(taxed.find('[data-testid="invoice-items"]').exists()).toBe(true))
     table[`GET ${PATHS.invoice}`] = { body: invoice({ tax: 0, total: 90, amountDue: 90 }) }
     const untaxed = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(untaxed.find('[data-testid="invoice-items"]').exists()).toBe(true))
+    await waitUntil(() => expect(untaxed.find('[data-testid="invoice-items"]').exists()).toBe(true))
 
     expect(taxed.find('[data-testid="invoice-items"]').text()).toContain('$100.00')
     expect(taxed.find('[data-testid="invoice-items"]').text()).toContain('client.invoices.tax')
@@ -142,7 +143,7 @@ describe('invoice page', () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice() }
 
     const wrapper = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-pay-now"]').attributes('href')).toBe('/client/invoices/41/pay')
     expect(wrapper.find('[data-testid="invoice-unpaid-banner"]').exists()).toBe(true)
@@ -152,7 +153,7 @@ describe('invoice page', () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice({ amountDue: 60, transactions: [{ id: 1, amount: 40, type: InvoiceTransactionType.Payment }] }) }
 
     const wrapper = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-pay-amount"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-amount"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-pay-amount"]').text()).toContain('$60.00')
   })
@@ -165,11 +166,11 @@ describe('invoice page', () => {
       body: requestsTo(stub.requests, PATHS.invoice).length <= 1 ? invoice() : invoice({ credit: 30, total: 70, amountDue: 70 })
     })
     const wrapper = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="apply-credit-amount"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="apply-credit-amount"]').exists()).toBe(true))
 
     await wrapper.get('[data-testid="apply-credit-amount"]').setValue('30')
     await wrapper.get('[data-testid="apply-credit-card"] form').trigger('submit')
-    await vi.waitFor(() => expect(wrapper.get('[data-testid="invoice-pay-amount"]').text()).toContain('$70.00'))
+    await waitUntil(() => expect(wrapper.get('[data-testid="invoice-pay-amount"]').text()).toContain('$70.00'))
 
     expect(bodyOf(requestsTo(stub.requests, PATHS.applyCredit)[0])).toEqual({ amount: 30 })
     expect(requestsTo(stub.requests, PATHS.invoice)).toHaveLength(2)
@@ -179,7 +180,7 @@ describe('invoice page', () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice() }
 
     const wrapper = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(creditReads()).toBe(1))
+    await waitUntil(() => expect(creditReads()).toBe(1))
     await settle()
 
     expect(wrapper.find('[data-testid="apply-credit-card"]').exists()).toBe(false)
@@ -190,7 +191,7 @@ describe('invoice page', () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice({ isCreditTopUp: true }) }
 
     const wrapper = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(creditReads()).toBe(1))
+    await waitUntil(() => expect(creditReads()).toBe(1))
     await settle()
 
     expect(wrapper.find('[data-testid="invoice-top-up-badge"]').exists()).toBe(true)
@@ -201,7 +202,7 @@ describe('invoice page', () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice({ status: InvoiceStatus.Paid, paidAt: '2026-01-05T10:00:00Z' }) }
 
     const wrapper = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-header"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-header"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-pay-now"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-unpaid-banner"]').exists()).toBe(false)
@@ -212,7 +213,7 @@ describe('invoice page', () => {
     table[`GET ${PATHS.invoice}`] = { status: 404, body: { detail: 'No such invoice.' } }
 
     const wrapper = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="ui-empty-state"]').text()).toContain('client.invoices.notFound')
   })
@@ -223,10 +224,10 @@ describe('invoice page', () => {
     const downloads = captureDownloads()
 
     const wrapper = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-download"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-download"]').exists()).toBe(true))
     const button = wrapper.find('[data-testid="invoice-download"]')
     await button.trigger('click')
-    await vi.waitFor(() => expect(downloads).toHaveLength(1))
+    await waitUntil(() => expect(downloads).toHaveLength(1))
     await flushPromises()
 
     expect(button.text()).toContain('client.invoices.downloadPdf')
@@ -242,9 +243,9 @@ describe('invoice page', () => {
     const downloads = captureDownloads()
 
     const wrapper = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-download"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-download"]').exists()).toBe(true))
     await wrapper.find('[data-testid="invoice-download"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-download-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-download-error"]').exists()).toBe(true))
 
     expect(downloads).toHaveLength(0)
     expect(wrapper.find('[data-testid="invoice-download-error"]').text())
@@ -255,7 +256,7 @@ describe('invoice page', () => {
     table[`GET ${PATHS.invoice}`] = { body: invoice({ status: InvoiceStatus.Draft }) }
 
     const wrapper = await mountPage(InvoicePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoice-header"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-header"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoice-download"]').exists()).toBe(false)
   })

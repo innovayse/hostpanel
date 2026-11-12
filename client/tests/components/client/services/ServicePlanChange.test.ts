@@ -7,7 +7,7 @@
  *
  * @module tests/components/client/services/ServicePlanChange.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import ServicePlanChange from '~/components/client/services/ServicePlanChange.vue'
 import { useServicePlanChangeStore } from '~/stores/serviceplanchange'
@@ -18,6 +18,7 @@ import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { ServiceChangeStatus } from '~/types/servicechangestatus'
 import { ServiceChangeType } from '~/types/servicechangetype'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path that lists the plans service 4 can move to. */
 const OPTIONS_PATH = '/api/portal/client/services/4/plan-change-options'
@@ -53,8 +54,8 @@ const answerChange = (reply: StubReply): void => {
  */
 const mountPanel = async () => {
   const wrapper = mountClient(ServicePlanChange, { props: { serviceId: '4' } })
-  await vi.waitFor(() => expect(requestsTo(stub.requests, OPTIONS_PATH)).toHaveLength(1))
-  await vi.waitFor(() => expect(useServicePlanChangeStore().loading).toBe(false))
+  await waitUntil(() => expect(requestsTo(stub.requests, OPTIONS_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(useServicePlanChangeStore().loading).toBe(false))
   await wrapper.vm.$nextTick()
   return wrapper
 }
@@ -109,7 +110,7 @@ describe('ServicePlanChange', () => {
     table[`GET ${OPTIONS_PATH}`] = { status: 500, body: { detail: 'no' } }
     const wrapper = await mountPanel()
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="service-plan-change-load-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="service-plan-change-load-error"]').exists()).toBe(true))
   })
 
   it('sends the chosen product', async () => {
@@ -118,7 +119,7 @@ describe('ServicePlanChange', () => {
 
     await submitPro(wrapper)
 
-    await vi.waitFor(() => expect(requestsTo(stub.requests, CHANGE_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, CHANGE_PATH)).toHaveLength(1))
     expect(bodyOf(requestsTo(stub.requests, CHANGE_PATH)[0])).toEqual({ toProductId: 3 })
   })
 
@@ -128,7 +129,7 @@ describe('ServicePlanChange', () => {
 
     await submitPro(wrapper)
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="service-plan-change-pay"]').attributes('href')).toBe('/client/invoices/8/pay'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="service-plan-change-pay"]').attributes('href')).toBe('/client/invoices/8/pay'))
     expect(wrapper.find('[data-testid="service-plan-change-success"]').text()).toContain('client.services.planChangeInvoiced')
   })
 
@@ -138,7 +139,7 @@ describe('ServicePlanChange', () => {
 
     await submitPro(wrapper)
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="service-plan-change-success"]').text()).toContain('client.services.planChangePending'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="service-plan-change-success"]').text()).toContain('client.services.planChangePending'))
     expect(wrapper.find('[data-testid="service-plan-change-pay"]').exists()).toBe(false)
   })
 
@@ -148,7 +149,7 @@ describe('ServicePlanChange', () => {
 
     await submitPro(wrapper)
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="service-plan-change-success"]').text()).toContain('client.services.planChangeDone'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="service-plan-change-success"]').text()).toContain('client.services.planChangeDone'))
     expect(wrapper.emitted('changed')).toHaveLength(1)
   })
 
@@ -158,7 +159,7 @@ describe('ServicePlanChange', () => {
 
     await submitPro(wrapper)
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="service-plan-change-success"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="service-plan-change-success"]').exists()).toBe(true))
     expect(wrapper.emitted('changed')).toBeUndefined()
   })
 })

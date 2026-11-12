@@ -6,7 +6,7 @@
  * @module tests/pages/client/login.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { APP_LOGO_STUB, mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
@@ -21,6 +21,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import LoginPage from '~/pages/client/login.vue'
 import { useDemoStore } from '~/stores/demo'
 import { DemoAccountRole } from '~/types/demoaccountrole'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path of the password sign-in. */
 const LOGIN_PATH = '/api/portal/auth/login'
@@ -60,7 +61,7 @@ const signIn = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>, passwo
  */
 const reachCodeStep = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>): Promise<void> => {
   await signIn(wrapper)
-  await vi.waitFor(() => expect(wrapper.find('[data-testid="login-2fa-form"]').exists()).toBe(true))
+  await waitUntil(() => expect(wrapper.find('[data-testid="login-2fa-form"]').exists()).toBe(true))
 }
 
 /**
@@ -109,7 +110,7 @@ describe('client login page (local mode)', () => {
     const wrapper = await mountAuthPage(LoginPage)
 
     await signIn(wrapper)
-    await vi.waitFor(() => expect(push).toHaveBeenCalledWith('/client/dashboard'))
+    await waitUntil(() => expect(push).toHaveBeenCalledWith('/client/dashboard'))
 
     expect(bodyOf(requestsTo(stub.requests, LOGIN_PATH)[0])).toEqual({ email: 'ada@example.com', password: 'secret' })
   })
@@ -121,7 +122,7 @@ describe('client login page (local mode)', () => {
 
     await signIn(wrapper)
 
-    await vi.waitFor(() => expect(push).toHaveBeenCalledWith('/client/invoices/7'))
+    await waitUntil(() => expect(push).toHaveBeenCalledWith('/client/invoices/7'))
   })
 
   it('ignores a redirect that leaves the app and goes to the dashboard', async () => {
@@ -131,7 +132,7 @@ describe('client login page (local mode)', () => {
 
     await signIn(wrapper)
 
-    await vi.waitFor(() => expect(push).toHaveBeenCalledWith('/client/dashboard'))
+    await waitUntil(() => expect(push).toHaveBeenCalledWith('/client/dashboard'))
   })
 
   it('shows the API sentence and stays put when the credentials are refused', async () => {
@@ -140,7 +141,7 @@ describe('client login page (local mode)', () => {
     const wrapper = await mountAuthPage(LoginPage)
 
     await signIn(wrapper, 'nope')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="login-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="login-error"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="login-error"]').text()).toBe('Wrong email or password.')
     expect(push).not.toHaveBeenCalled()
@@ -153,7 +154,7 @@ describe('client login page (local mode)', () => {
 
     await signIn(wrapper)
 
-    await vi.waitFor(() => expect(wrapper.text()).toContain('Enter a valid email.'))
+    await waitUntil(() => expect(wrapper.text()).toContain('Enter a valid email.'))
   })
 
   it('swaps the password form for the code step when a second factor is required', async () => {
@@ -176,7 +177,7 @@ describe('client login page (local mode)', () => {
     await reachCodeStep(wrapper)
 
     await typeCode(wrapper, '123456')
-    await vi.waitFor(() => expect(push).toHaveBeenCalledTimes(1))
+    await waitUntil(() => expect(push).toHaveBeenCalledTimes(1))
 
     expect(bodyOf(requestsTo(stub.requests, TWO_FACTOR_PATH)[0])).toEqual({ pendingToken: 'p', code: '123456' })
   })
@@ -189,7 +190,7 @@ describe('client login page (local mode)', () => {
     await reachCodeStep(wrapper)
 
     await typeCode(wrapper, '000000')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="login-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="login-error"]').exists()).toBe(true))
     await flushPromises()
 
     expect(wrapper.find('[data-testid="login-error"]').text()).toBe('Invalid code.')
@@ -216,12 +217,12 @@ describe('client login page (local mode)', () => {
     const wrapper = await mountAuthPage(LoginPage)
     await reachCodeStep(wrapper)
     await typeCode(wrapper, '000000')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="login-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="login-error"]').exists()).toBe(true))
 
     await wrapper.find('[data-testid="login-2fa-cancel"]').trigger('click')
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(requestsTo(stub.requests, LOGIN_PATH)).toHaveLength(2))
+    await waitUntil(() => expect(requestsTo(stub.requests, LOGIN_PATH)).toHaveLength(2))
   })
 
   it('does not leave the sign-in button disabled when the step is left while a code is in flight', async () => {
@@ -232,7 +233,7 @@ describe('client login page (local mode)', () => {
     const wrapper = await mountAuthPage(LoginPage)
     await reachCodeStep(wrapper)
     await typeCode(wrapper, '000000')
-    await vi.waitFor(() => expect(held.waiting()).toBe(1))
+    await waitUntil(() => expect(held.waiting()).toBe(1))
 
     await wrapper.find('[data-testid="login-2fa-cancel"]').trigger('click')
     await flushPromises()

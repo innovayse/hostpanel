@@ -18,6 +18,7 @@ import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 vi.mock('qrcode', () => ({
   default: {
@@ -96,7 +97,7 @@ describe('ProfileForm', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(savedRequest()).toBeDefined())
+    await waitUntil(() => expect(savedRequest()).toBeDefined())
     expect(wrapper.find('[data-testid="account-email"]').exists()).toBe(false)
     expect(bodyOf(savedRequest())).not.toHaveProperty('email')
   })
@@ -115,7 +116,7 @@ describe('ProfileForm', () => {
     await wrapper.find('[data-testid="account-firstname"]').setValue('Janet')
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-success"]').text()).toBe('client.profile.saved'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-success"]').text()).toBe('client.profile.saved'))
     expect(bodyOf(savedRequest())).toMatchObject({
       firstName: 'Janet',
       notifications: { general: true, affiliate: true }
@@ -127,7 +128,7 @@ describe('ProfileForm', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(savedRequest()).toBeDefined())
+    await waitUntil(() => expect(savedRequest()).toBeDefined())
     expect(bodyOf(savedRequest())).not.toHaveProperty('language')
   })
 
@@ -137,7 +138,7 @@ describe('ProfileForm', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('Refused.'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('Refused.'))
     expect(wrapper.find('[data-testid="ui-form-success"]').exists()).toBe(false)
   })
 
@@ -150,7 +151,7 @@ describe('ProfileForm', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.text()).toContain('Enter your first name.'))
+    await waitUntil(() => expect(wrapper.text()).toContain('Enter your first name.'))
   })
 
   it('emits cancel from the cancel button', async () => {
@@ -167,6 +168,6 @@ describe('ProfileForm', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('Email taken'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('Email taken'))
   })
 })

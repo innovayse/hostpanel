@@ -10,7 +10,7 @@
  */
 
 import { flushPromises } from '@vue/test-utils'
-import { until } from '~/tests/helpers/settle'
+import { until, untilStable } from '~/tests/helpers/settle'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
 import type { BillingCurrency } from '~/types/currency'
@@ -21,9 +21,8 @@ export const USD_CURRENCY: BillingCurrency = { code: 'USD', numeric: '840', pref
 /**
  * Waits until the currencies are loaded and the catalogue is idle, in the active Pinia.
  *
- * Call it after the page has mounted. The re-read that follows the payer currency resolving starts in
- * the same turn the currencies land, so "loaded and not loading" can only be seen once that re-read has
- * finished too.
+ * Call it after the page has mounted. The re-read that follows the payer currency resolving can start
+ * after the currencies land, so once they are loaded the wait goes on until both stores stop changing.
  *
  * @returns Resolves once the page has rendered the catalogue in the payer's currency.
  */
@@ -31,5 +30,6 @@ export const awaitCatalogue = async (): Promise<void> => {
   const currencyStore = useCurrencyStore()
   const catalogStore = useCatalogStore()
   await until(() => currencyStore.loaded && !catalogStore.loading, 'the currencies and the catalogue to be read in the payer currency')
+  await untilStable(() => JSON.stringify([currencyStore.loaded, catalogStore.loading, catalogStore.$state]), 'the catalogue to stop changing')
   await flushPromises()
 }

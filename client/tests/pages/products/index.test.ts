@@ -12,8 +12,8 @@ import type { PublicPageSpies } from '~/tests/helpers/publicPage'
 import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
 import { testimonialFixture } from '~/tests/helpers/storefrontFixtures'
-import { StorefrontPath, readOf } from '~/tests/helpers/storefrontSection'
-import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { queryOf, requestsTo, routeTable, readOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -29,6 +29,7 @@ import SectionsCTA from '~/components/sections/SectionsCTA.vue'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { ProductType } from '~/types/producttype'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The groups: one family with products and one that is empty. */
 const groups: PortalProductGroup[] = [
@@ -151,7 +152,7 @@ describe('products page', () => {
   it('renders the hero, the benefits and the testimonials around the catalogue', async () => {
     const wrapper = await mountProducts()
     // The testimonials block reads its quotes without the page awaiting them.
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="products-testimonials"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="products-testimonials"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="products-hero"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="products-benefits"]').exists()).toBe(true)

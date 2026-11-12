@@ -8,7 +8,7 @@
  */
 
 import type { VueWrapper } from '@vue/test-utils'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import { settle } from '~/tests/helpers/settle'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -16,6 +16,7 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import VerifyEmailBanner from '~/components/client/VerifyEmailBanner.vue'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the banner uses. */
 const PATHS = {
@@ -36,7 +37,7 @@ let table: StubRouteTable
  */
 const mountBanner = async (): Promise<VueWrapper> => {
   const wrapper = mountClient(VerifyEmailBanner)
-  await vi.waitFor(() => expect(requestsTo(stub.requests, PATHS.status)).toHaveLength(1))
+  await waitUntil(() => expect(requestsTo(stub.requests, PATHS.status)).toHaveLength(1))
   await settle()
   return wrapper
 }
@@ -81,7 +82,7 @@ describe('ClientVerifyEmailBanner', () => {
     const wrapper = await mountBanner()
 
     await wrapper.find('[data-testid="verify-email-resend"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="verify-email-message"]').text()).toContain('client.verifyEmail.sent'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="verify-email-message"]').text()).toContain('client.verifyEmail.sent'))
 
     expect(requestsTo(stub.requests, PATHS.resend)).toHaveLength(1)
   })
@@ -92,6 +93,6 @@ describe('ClientVerifyEmailBanner', () => {
     const wrapper = await mountBanner()
 
     await wrapper.find('[data-testid="verify-email-resend"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="verify-email-message"]').text()).toBe('Too many requests.'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="verify-email-message"]').text()).toBe('Too many requests.'))
   })
 })

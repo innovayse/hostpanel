@@ -6,7 +6,7 @@
  * @module tests/pages/client/accept-invite.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -15,6 +15,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import AcceptInvitePage from '~/pages/client/accept-invite.vue'
 import { PortalErrorCode } from '~/constants/portalErrorCode'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path the page posts the invitation token to. */
 const ACCEPT_PATH = '/api/portal/auth/accept-invite'
@@ -44,7 +45,7 @@ const submit = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>): Promi
  */
 const submitUntilSignInRequired = async (wrapper: Awaited<ReturnType<typeof mountAuthPage>>): Promise<void> => {
   await submit(wrapper)
-  await vi.waitFor(() => expect(wrapper.find('[data-testid="invite-sign-in-required"]').exists()).toBe(true))
+  await waitUntil(() => expect(wrapper.find('[data-testid="invite-sign-in-required"]').exists()).toBe(true))
 }
 
 beforeEach(async () => {
@@ -82,7 +83,7 @@ describe('client accept-invite page', () => {
     const wrapper = await mountAuthPage(AcceptInvitePage)
 
     await submit(wrapper)
-    await vi.waitFor(() => expect(requestsTo(stub.requests, ACCEPT_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, ACCEPT_PATH)).toHaveLength(1))
 
     expect(bodyOf(requestsTo(stub.requests, ACCEPT_PATH)[0])).toEqual({ token: 'tok' })
   })
@@ -93,7 +94,7 @@ describe('client accept-invite page', () => {
     const wrapper = await mountAuthPage(AcceptInvitePage)
 
     await submit(wrapper)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('This invitation has expired.')
   })

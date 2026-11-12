@@ -2,7 +2,7 @@
  * Unit tests for DomainLockPanel: both switches move only when the API accepts the change. The
  * store, the API composables and the transport run for real against a stub BFF.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import DomainLockPanel from '~/components/client/domains/DomainLockPanel.vue'
 import { HttpMethod } from '~/types/httpmethod'
@@ -11,6 +11,7 @@ import { refusal } from '~/tests/helpers/stubRoutes'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -48,7 +49,7 @@ describe('DomainLockPanel', () => {
 
     await wrapper.find('[data-testid="domain-lock-row-toggle"]').trigger('click')
 
-    await vi.waitFor(() => expect(wrapper.emitted('update:lockEnabled')).toEqual([[true]]))
+    await waitUntil(() => expect(wrapper.emitted('update:lockEnabled')).toEqual([[true]]))
     expect(stub.requests).toHaveLength(1)
     expect(stub.requests[0]?.method).toBe(HttpMethod.Put)
     expect(stub.requests[0]?.url).toBe(domainPath(DomainAction.Lock))
@@ -60,7 +61,7 @@ describe('DomainLockPanel', () => {
 
     await wrapper.find('[data-testid="domain-idprotect-row-toggle"]').trigger('click')
 
-    await vi.waitFor(() => expect(wrapper.emitted('update:idProtectEnabled')).toEqual([[true]]))
+    await waitUntil(() => expect(wrapper.emitted('update:idProtectEnabled')).toEqual([[true]]))
     expect(stub.requests).toHaveLength(1)
     expect(stub.requests[0]?.method).toBe(HttpMethod.Put)
     expect(stub.requests[0]?.url).toBe(domainPath(DomainAction.IdProtect))
@@ -73,7 +74,7 @@ describe('DomainLockPanel', () => {
 
     await wrapper.find('[data-testid="domain-lock-row-toggle"]').trigger('click')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="domain-toggle-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-toggle-error"]').exists()).toBe(true))
     expect(wrapper.emitted('update:lockEnabled')).toBeUndefined()
   })
 })

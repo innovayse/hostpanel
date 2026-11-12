@@ -22,6 +22,7 @@ import { useServiceManagementStore } from '~/stores/servicemanagement'
 import { ActionOutcome } from '~/types/actionoutcome'
 import { CancellationType } from '~/types/cancellationtype'
 import { HttpMethod } from '~/types/httpmethod'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -246,7 +247,7 @@ describe('useServiceManagementStore reads', () => {
 
     const reading = store.loadService('3', true)
     expect(store.service).toMatchObject({ name: 'Pro' })
-    await vi.waitFor(() => {
+    await waitUntil(() => {
       expect(held.waiting()).toBe(1)
     })
     held.release({ body: { id: 3, name: 'Max' } })

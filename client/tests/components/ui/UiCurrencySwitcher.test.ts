@@ -17,6 +17,7 @@ import UiCurrencySwitcher from '~/components/ui/UiCurrencySwitcher.vue'
 import { useClientStore } from '~/stores/client'
 import type { BillingCurrency } from '~/types/currency'
 import { UiMenuAlign, UiPlacement } from '~/utils/ui/enums'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** Path of the endpoint that lists the enabled billing currencies. */
 const CURRENCIES_PATH = '/api/portal/public/billing-currencies'
@@ -50,7 +51,7 @@ const mountSwitcher = async (props: Record<string, unknown> = {}) => {
     useClientStore().user = makeClientUser({ currency: fixedCurrency })
   }
   const wrapper = mountWithKit(UiCurrencySwitcher, { props, pinia })
-  await vi.waitFor(() => expect(requestsTo(stub.requests, CURRENCIES_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(requestsTo(stub.requests, CURRENCIES_PATH)).toHaveLength(1))
   await settle(5)
   return wrapper
 }

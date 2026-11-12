@@ -2,7 +2,7 @@
  * Unit tests for DomainAutoRenewPanel: the switch moves only when the API accepts the change. The
  * store, the API composable and the transport run for real against a stub BFF.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import DomainAutoRenewPanel from '~/components/client/domains/DomainAutoRenewPanel.vue'
 import { useDomainsStore } from '~/stores/domains'
@@ -12,6 +12,7 @@ import { refusal } from '~/tests/helpers/stubRoutes'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -42,7 +43,7 @@ describe('DomainAutoRenewPanel', () => {
 
     await wrapper.find('[data-testid="domain-autorenew-row-toggle"]').trigger('click')
 
-    await vi.waitFor(() => expect(wrapper.emitted('update:enabled')).toEqual([[true]]))
+    await waitUntil(() => expect(wrapper.emitted('update:enabled')).toEqual([[true]]))
     expect(stub.requests).toHaveLength(1)
     expect(stub.requests[0]?.method).toBe(HttpMethod.Put)
     expect(stub.requests[0]?.url).toBe(domainPath(DomainAction.AutoRenew))
@@ -54,7 +55,7 @@ describe('DomainAutoRenewPanel', () => {
     const wrapper = mountClient(DomainAutoRenewPanel, { props: { enabled: false, domainId: DOMAIN_ID } })
 
     await wrapper.find('[data-testid="domain-autorenew-row-toggle"]').trigger('click')
-    await vi.waitFor(() => expect(useDomainsStore().toggleError).toBe('Registrar refused.'))
+    await waitUntil(() => expect(useDomainsStore().toggleError).toBe('Registrar refused.'))
     await wrapper.vm.$nextTick()
 
     expect(wrapper.emitted('update:enabled')).toBeUndefined()

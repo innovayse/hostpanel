@@ -5,7 +5,7 @@
  *
  * @module tests/pages/client/invoices/index.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
 import InvoicesPage from '~/pages/client/invoices/index.vue'
 import { makeClientUser } from '~/tests/helpers/clientUser'
@@ -16,6 +16,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import { InvoiceStatus } from '~/types/invoicestatus'
 import { Permission } from '~/types/permission'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the page reads. */
 const PATHS = {
@@ -65,7 +66,7 @@ describe('invoice list page', () => {
     table[`GET ${PATHS.invoices}`] = { body: [invoice(1, InvoiceStatus.Unpaid), invoice(2, InvoiceStatus.Paid)] }
 
     const wrapper = await mountPage(InvoicesPage)
-    await vi.waitFor(() => expect(rowIds(wrapper)).toEqual(['1', '2']))
+    await waitUntil(() => expect(rowIds(wrapper)).toEqual(['1', '2']))
 
     expect(wrapper.text()).toContain('$25.00')
     expect(wrapper.find('[data-testid="invoice-view-1"]').attributes('href')).toBe('/client/invoices/1')
@@ -75,7 +76,7 @@ describe('invoice list page', () => {
     table[`GET ${PATHS.invoices}`] = { body: [invoice(1, InvoiceStatus.Unpaid), invoice(2, InvoiceStatus.Overdue), invoice(3, InvoiceStatus.Paid)] }
 
     const wrapper = await mountPage(InvoicesPage)
-    await vi.waitFor(() => expect(rowIds(wrapper)).toHaveLength(3))
+    await waitUntil(() => expect(rowIds(wrapper)).toHaveLength(3))
     await wrapper.find('[data-testid="ui-tab-current"]').trigger('click')
 
     expect(rowIds(wrapper)).toEqual(['1', '2'])
@@ -93,7 +94,7 @@ describe('invoice list page', () => {
     }
 
     const wrapper = await mountPage(InvoicesPage)
-    await vi.waitFor(() => expect(rowIds(wrapper)).toHaveLength(5))
+    await waitUntil(() => expect(rowIds(wrapper)).toHaveLength(5))
     await wrapper.find('[data-testid="ui-tab-finished"]').trigger('click')
 
     expect(rowIds(wrapper)).toEqual(['2', '4'])
@@ -103,7 +104,7 @@ describe('invoice list page', () => {
     table[`GET ${PATHS.invoices}`] = { body: [] }
 
     const wrapper = await mountPage(InvoicesPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="ui-empty-state"]').text()).toContain('client.invoices.empty')
   })
@@ -112,7 +113,7 @@ describe('invoice list page', () => {
     table[`GET ${PATHS.invoices}`] = { status: 503, body: { detail: 'Billing is down.' } }
 
     const wrapper = await mountPage(InvoicesPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="invoices-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoices-error"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="invoices-error"]').text()).toBe('Billing is down.')
     expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(false)

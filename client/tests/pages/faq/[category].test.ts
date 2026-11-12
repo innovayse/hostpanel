@@ -20,6 +20,7 @@ import { faqFixture } from '~/tests/helpers/storefrontFixtures'
 import { FaqCategory } from '~/types/faqcategory'
 import { faqCategorySlug } from '~/utils/faqCategory'
 import Page from '~/pages/faq/[category].vue'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The root element of the page. */
 const ROOT = 'faq-category-page'
@@ -125,7 +126,7 @@ describe('pages/faq/[category]', () => {
     const errorHandler = vi.fn()
 
     const wrapper = await mountPage(Page, { errorHandler })
-    await vi.waitFor(() => expect(errorHandler).toHaveBeenCalled())
+    await waitUntil(() => expect(errorHandler).toHaveBeenCalled())
 
     expect(spies.createError).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }))
     expect(errorHandler).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }), expect.anything(), expect.anything())

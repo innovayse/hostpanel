@@ -19,6 +19,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { makeBackendUnreachable } from '~/tests/helpers/unreachableTransport'
 import { SeoPageType } from '~/types/seopagetype'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** An article whose body carries markup that must not survive. */
 const ARTICLE = {
@@ -129,7 +130,7 @@ describe('pages/knowledgebase/[id]', () => {
     const errorHandler = vi.fn()
 
     const wrapper = await mountPage(Page, { errorHandler })
-    await vi.waitFor(() => expect(errorHandler).toHaveBeenCalled())
+    await waitUntil(() => expect(errorHandler).toHaveBeenCalled())
 
     expect(spies.createError).toHaveBeenCalledWith(expect.objectContaining({ statusCode: status }))
     expect(errorHandler).toHaveBeenCalledWith(expect.objectContaining({ statusCode: status }), expect.anything(), expect.anything())

@@ -17,6 +17,7 @@ import { routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 vi.mock('qrcode', () => ({
   default: {
@@ -123,8 +124,8 @@ describe('ContactsTab', () => {
 
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
 
-    await vi.waitFor(() => expect(wire()).toEqual([`DELETE ${contactPath(7)}`, `GET ${AccountEndpoint.Contacts}`]))
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="account-contact-7"]').exists()).toBe(false))
+    await waitUntil(() => expect(wire()).toEqual([`DELETE ${contactPath(7)}`, `GET ${AccountEndpoint.Contacts}`]))
+    await waitUntil(() => expect(wrapper.find('[data-testid="account-contact-7"]').exists()).toBe(false))
   })
 
   it('keeps the list when the deletion fails', async () => {
@@ -136,7 +137,7 @@ describe('ContactsTab', () => {
     await wrapper.find('[data-testid="account-contact-delete-7"]').trigger('click')
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
 
-    await vi.waitFor(() => expect(wire()).toEqual([`DELETE ${contactPath(7)}`]))
+    await waitUntil(() => expect(wire()).toEqual([`DELETE ${contactPath(7)}`]))
     expect(wrapper.find('[data-testid="account-contact-7"]').exists()).toBe(true)
   })
 })

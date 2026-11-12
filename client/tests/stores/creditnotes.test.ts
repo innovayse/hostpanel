@@ -17,6 +17,7 @@ import type { StubServer } from '../helpers/stubServer'
 import { startTransport } from '../helpers/stubTransport'
 import { useCreditNotesStore } from '~/stores/creditnotes'
 import type { ClientCreditNote } from '~/types/clientcreditnote'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -120,7 +121,7 @@ describe('useCreditNotesStore.downloadPdf', () => {
 
     const pending = store.downloadPdf(note)
     expect(store.downloadingId).toBe(3)
-    await vi.waitFor(() => {
+    await waitUntil(() => {
       expect(held.waiting()).toBe(1)
     })
     held.release(PDF_REPLY)

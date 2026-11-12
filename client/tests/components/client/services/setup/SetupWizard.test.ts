@@ -17,6 +17,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import type { ClientService } from '~/types/clientservice'
 import { ServiceStatus } from '~/types/servicestatus'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path that takes the first-time setup of service 4. */
 const SETUP_PATH = '/api/portal/client/services/4/setup'
@@ -88,9 +89,9 @@ describe('SetupWizard', () => {
     await wrapper.find('[data-testid="setup-credentials-next"]').trigger('click')
     await wrapper.find('[data-testid="setup-build"]').trigger('click')
 
-    await vi.waitFor(() => expect(requestsTo(stub.requests, SETUP_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, SETUP_PATH)).toHaveLength(1))
     expect(bodyOf(requestsTo(stub.requests, SETUP_PATH)[0])).toEqual({ domain: 'example.com', username: 'webmstr', password: 'longenough' })
-    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('/client/services/4'))
+    await waitUntil(() => expect(navigate).toHaveBeenCalledWith('/client/services/4'))
   })
 
   it('goes back a step and keeps what was typed', async () => {
@@ -113,7 +114,7 @@ describe('SetupWizard', () => {
     await wrapper.find('[data-testid="setup-credentials-next"]').trigger('click')
     await wrapper.find('[data-testid="setup-build"]').trigger('click')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="setup-error"]').text()).toBe('Username taken.'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="setup-error"]').text()).toBe('Username taken.'))
     expect(navigate).not.toHaveBeenCalled()
   })
 })

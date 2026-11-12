@@ -15,6 +15,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import { HttpMethod } from '~/types/httpmethod'
 import { InvitePermissionMode } from '~/types/invitepermissionmode'
 import { TeamPermission } from '~/types/teampermission'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -68,7 +69,7 @@ describe('InviteUserForm', () => {
     await fill(wrapper)
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(requestsTo(stub.requests, AccountEndpoint.InviteUser)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, AccountEndpoint.InviteUser)).toHaveLength(1))
     const sent = stub.requests[0]
     expect(sent?.method).toBe(HttpMethod.Post)
     expect(bodyOf(sent)).toEqual({
@@ -85,7 +86,7 @@ describe('InviteUserForm', () => {
     await wrapper.find(`[data-testid="account-invite-perm-${TeamPermission.Invoices}"]`).trigger('click')
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(requestsTo(stub.requests, AccountEndpoint.InviteUser)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, AccountEndpoint.InviteUser)).toHaveLength(1))
     expect(bodyOf(stub.requests[0])).toMatchObject({
       permissionMode: InvitePermissionMode.Choose,
       permissions: [TeamPermission.Invoices, TeamPermission.Tickets]
@@ -98,7 +99,7 @@ describe('InviteUserForm', () => {
     await fill(wrapper)
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.emitted('invited')).toHaveLength(1))
+    await waitUntil(() => expect(wrapper.emitted('invited')).toHaveLength(1))
     await flushPromises()
     expect((wrapper.find('[data-testid="account-invite-email"]').element as HTMLInputElement).value).toBe('')
     expect(wrapper.find('[data-testid="ui-form-success"]').text()).toBe('client.users.inviteSent')
@@ -111,7 +112,7 @@ describe('InviteUserForm', () => {
     await fill(wrapper)
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('Already invited.'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('Already invited.'))
     expect((wrapper.find('[data-testid="account-invite-email"]').element as HTMLInputElement).value).toBe('jane@example.com')
     expect(wrapper.emitted('invited')).toBeUndefined()
   })

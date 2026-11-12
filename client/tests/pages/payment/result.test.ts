@@ -28,6 +28,7 @@ import { PricingCycle } from '~/types/pricingcycle'
 import { SaveMethodMode } from '~/types/savemethodmode'
 import { consumeCheckoutSave, rememberCheckoutSave } from '~/utils/pendingCheckoutSave'
 import { ProductType } from '~/types/producttype'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The path that settles the payment of order 5. */
 const ORDER_COMPLETE = '/api/portal/order/5/gateway-payment/complete'
@@ -92,7 +93,7 @@ const sessionRequests = () => requestsTo(stub.requests, SESSIONS_PATH)
 const mountResult = async (query: Record<string, string | string[]> = {}, pinia?: Pinia) => {
   stubPublicPageRuntime({ query })
   const wrapper = await mountPage(ResultPage, { pinia })
-  await vi.waitFor(() => expect(wrapper.find('[data-testid="payment-verifying"]').exists()).toBe(false))
+  await waitUntil(() => expect(wrapper.find('[data-testid="payment-verifying"]').exists()).toBe(false))
   await flushPromises()
   return wrapper
 }
@@ -166,7 +167,7 @@ describe('payment result page', () => {
 
     orderIs(GatewayPaymentState.Paid)
     await wrapper.find('[data-testid="payment-retry"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.successTitle'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.successTitle'))
 
     expect(requestsTo(stub.requests, ORDER_COMPLETE)).toHaveLength(2)
   })
@@ -260,13 +261,13 @@ describe('payment result page', () => {
       orderIs(GatewayPaymentState.Paid, 'ORD-5')
 
       const wrapper = await mountResult({ order: '5' }, signedInAs(ADA))
-      await vi.waitFor(() => expect(sessionRequests()).toHaveLength(1))
+      await waitUntil(() => expect(sessionRequests()).toHaveLength(1))
       await flushPromises()
 
       expect(bodyOf(sessionRequests()[0])).toMatchObject({ gatewayModuleId: 'card_gateway', consentAccepted: true, consentTextVersion: ConsentTextVersion.CheckoutAgreement })
       expect(wrapper.find('[data-testid="payment-save-starting"]').exists()).toBe(true)
       expect(wrapper.find('[data-testid="payment-save-failed"]').exists()).toBe(false)
-      await vi.waitFor(() => expect(browserLocation.href).toBe('https://gateway.example/save'))
+      await waitUntil(() => expect(browserLocation.href).toBe('https://gateway.example/save'))
     })
 
     it('starts nothing, and drops the choice, when another account opens the page on the same browser', async () => {
@@ -294,7 +295,7 @@ describe('payment result page', () => {
       orderIs(GatewayPaymentState.Paid, 'ORD-5')
 
       await mountResult({ order: '5' }, signedInAs(ADA))
-      await vi.waitFor(() => expect(sessionRequests()).toHaveLength(1))
+      await waitUntil(() => expect(sessionRequests()).toHaveLength(1))
       await mountResult({ order: '5' }, signedInAs(ADA))
 
       expect(sessionRequests()).toHaveLength(1)
@@ -344,7 +345,7 @@ describe('payment result page', () => {
       orderIs(GatewayPaymentState.Paid, 'ORD-5')
 
       const wrapper = await mountResult({ order: '5' }, signedInAs(ADA))
-      await vi.waitFor(() => expect(wrapper.find('[data-testid="payment-save-failed"]').exists()).toBe(true))
+      await waitUntil(() => expect(wrapper.find('[data-testid="payment-save-failed"]').exists()).toBe(true))
 
       expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.successTitle')
       expect(wrapper.find('[data-testid="payment-continue"]').exists()).toBe(true)

@@ -22,7 +22,7 @@ export const DomainAction = {
 } as const
 
 /** One of the {@link DomainAction} values, or an empty string for the domain itself. */
-export type DomainActionPath = typeof DomainAction[keyof typeof DomainAction] | ''
+type DomainActionPath = typeof DomainAction[keyof typeof DomainAction] | ''
 
 /**
  * The path of an action on the domain every panel test opens.

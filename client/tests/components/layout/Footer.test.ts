@@ -18,6 +18,7 @@ import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import LayoutFooter from '~/components/layout/Footer.vue'
 import { useCatalogStore } from '~/stores/catalog'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** Path of the endpoint that lists the product groups. */
 const GROUPS_PATH = '/api/portal/public/product-groups'
@@ -62,8 +63,8 @@ const mountFooter = async (groups: PortalProductGroup[] = []) => {
       SectionsDomainSearch: stubFor('SectionsDomainSearch', 'footer-domain-search'),
     },
   })
-  await vi.waitFor(() => expect(requestsTo(stub.requests, GROUPS_PATH)).toHaveLength(1))
-  await vi.waitFor(() => expect(useCatalogStore().loading).toBe(false))
+  await waitUntil(() => expect(requestsTo(stub.requests, GROUPS_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(useCatalogStore().loading).toBe(false))
   return wrapper
 }
 

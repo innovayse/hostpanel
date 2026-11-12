@@ -14,11 +14,12 @@
 import { createServer } from 'node:http'
 import type { IncomingMessage, Server, ServerResponse } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { makeEvent, refusal, setRuntimeConfig, signedIn, startBackend } from '../../../../../../../helpers/bffHarness'
 import type { RouteModule } from '../../../../../../../helpers/bffHarness'
 import type { StubServer } from '../../../../../../../helpers/stubServer'
 import { HttpMethod } from '~/types/httpmethod'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub the harness starts; the session store needs it as the sign-on service. */
 let backend: StubServer
@@ -183,7 +184,7 @@ describe('plugin stream route', () => {
 
     event.node.res.emit('close')
 
-    await vi.waitFor(() => expect(upstreamClosed).toBe(true))
+    await waitUntil(() => expect(upstreamClosed).toBe(true))
   })
 
   it('passes a refusal on with its code, sentence and Retry-After, and opens no stream', async () => {
@@ -269,11 +270,11 @@ describe('plugin stream route', () => {
     })
 
     const answering = route.default(event)
-    await vi.waitFor(() => expect(received).toBe(1))
+    await waitUntil(() => expect(received).toBe(1))
     event.node.res.emit('close')
 
     await expect(answering).resolves.toBeNull()
     expect(event.sentStream).toBeUndefined()
-    await vi.waitFor(() => expect(upstreamClosed).toBe(true))
+    await waitUntil(() => expect(upstreamClosed).toBe(true))
   })
 })

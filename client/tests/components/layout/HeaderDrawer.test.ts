@@ -5,7 +5,7 @@
  * The real auth store, API composable and transport run against a stub server playing the BFF;
  * only the two pickers are stood in for.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
@@ -16,6 +16,7 @@ import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import type { HeaderNavItem } from '~/types/headernavitem'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** Path of the endpoint that ends the session. */
 const LOGOUT_PATH = '/api/portal/auth/logout'
@@ -163,8 +164,8 @@ describe('LayoutHeaderDrawer', () => {
 
     await wrapper.find('[data-testid="header-drawer-sign-out"]').trigger('click')
 
-    await vi.waitFor(() => expect(requestsTo(stub.requests, LOGOUT_PATH)).toHaveLength(1))
-    await vi.waitFor(() => expect(store.user).toBeNull())
+    await waitUntil(() => expect(requestsTo(stub.requests, LOGOUT_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(store.user).toBeNull())
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false])
   })
 })

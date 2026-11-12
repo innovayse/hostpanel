@@ -33,6 +33,7 @@ import { makeClientUser } from '~/tests/helpers/clientUser'
 import { Permission } from '~/types/permission'
 import { PaymentModule } from '~/types/paymentmodule'
 import { PricingCycle } from '~/types/pricingcycle'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the checkout reads and writes. */
 const PATHS = {
@@ -285,7 +286,7 @@ describe('ClassicCheckout', () => {
     await fillGuestForm(wrapper)
 
     await wrapper.find('[data-testid="checkout-submit"]').trigger('click')
-    await vi.waitFor(() => expect(navigateTo).toHaveBeenCalled())
+    await waitUntil(() => expect(navigateTo).toHaveBeenCalled())
 
     const [placed] = requestsTo(stub.requests, PATHS.create)
     expect(placed?.method).toBe('POST')

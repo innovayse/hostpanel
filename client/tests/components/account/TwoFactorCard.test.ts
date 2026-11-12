@@ -13,6 +13,7 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { HttpMethod } from '~/types/httpmethod'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 vi.mock('qrcode', () => ({
   default: {
@@ -62,7 +63,7 @@ describe('TwoFactorCard', () => {
 
     await wrapper.find('[data-testid="account-2fa-enable"]').trigger('click')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="account-2fa-secret"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="account-2fa-secret"]').exists()).toBe(true))
     expect(requestsTo(stub.requests, AccountEndpoint.TwoFactorSetup)).toHaveLength(1)
     expect(wrapper.find('[data-testid="account-2fa-secret"]').text()).toContain('ABCD')
     expect(wrapper.find('[data-testid="account-2fa-qr"]').attributes('src')).toBe('data:image/png;base64,QR')
@@ -74,7 +75,7 @@ describe('TwoFactorCard', () => {
 
     await wrapper.find('[data-testid="account-2fa-enable"]').trigger('click')
 
-    await vi.waitFor(() => expect(requestsTo(stub.requests, AccountEndpoint.TwoFactorSetup)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, AccountEndpoint.TwoFactorSetup)).toHaveLength(1))
     await flushPromises()
     expect(wrapper.find('[data-testid="account-2fa-dialog"]').exists()).toBe(false)
   })

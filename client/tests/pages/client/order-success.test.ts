@@ -7,7 +7,7 @@
  * @module tests/pages/client/order-success.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -16,6 +16,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import OrderSuccessPage from '~/pages/client/order-success.vue'
 import { Permission } from '~/types/permission'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the page reads. */
 const PATHS = {
@@ -48,7 +49,7 @@ describe('client order-success page', () => {
     stubAuthRuntime({ query: { order: 'A-1001', invoice: '7' } })
 
     const wrapper = await mountAuthPage(OrderSuccessPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="order-success-amount"]').text()).toContain('$25.00'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="order-success-amount"]').text()).toContain('$25.00'))
 
     expect(requestsTo(stub.requests, PATHS.invoice).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="order-success-number"]').text()).toContain('A-1001')
@@ -122,7 +123,7 @@ describe('client order-success page', () => {
     const wrapper = await mountAuthPage(OrderSuccessPage)
 
     await wrapper.find('[data-testid="order-success-setup-service"]').trigger('click')
-    await vi.waitFor(() => expect(navigateTo).toHaveBeenCalledWith('/client/services'))
+    await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith('/client/services'))
 
     expect(requestsTo(stub.requests, PATHS.services).map(request => request.method)).toEqual(['GET'])
   })

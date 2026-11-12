@@ -14,6 +14,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import SectionsProductsSlide from '~/components/sections/SectionsProductsSlide.vue'
 import ProductsFullSlider from '~/components/sections/SectionsProductsFullSlider.vue'
 import type { SlidePublic } from '~/types/slidepublic'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The slide jumps the stand-in carousel was asked for. */
 const slideToLoop = vi.hoisted(() => vi.fn())
@@ -82,7 +83,7 @@ const mountSlider = async () => {
   // The hero is auto-imported by Nuxt, so the test registers a stand-in that keeps its test id.
   const wrapper = await mountPage(ProductsFullSlider, { stubs: { SectionsHero: { template: '<div data-testid="sections-hero" />' } } })
   // The slides cross a real socket, and nothing renders until they arrive: the slider, or the hero in its place.
-  await vi.waitFor(() => expect(wrapper.find('[data-testid="products-slider"], [data-testid="sections-hero"]').exists()).toBe(true))
+  await waitUntil(() => expect(wrapper.find('[data-testid="products-slider"], [data-testid="sections-hero"]').exists()).toBe(true))
   await flushPromises()
   return wrapper
 }

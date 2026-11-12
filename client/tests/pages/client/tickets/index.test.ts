@@ -6,7 +6,7 @@
  * @module tests/pages/client/tickets/index.test
  */
 import { createPinia } from 'pinia'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
 import TicketsPage from '~/pages/client/tickets/index.vue'
 import { useClientStore } from '~/stores/client'
@@ -20,6 +20,7 @@ import type { ClientTicket } from '~/types/clientticket'
 import { TicketPriority } from '~/types/ticketpriority'
 import { TicketStatus } from '~/types/ticketstatus'
 import type { Pinia } from 'pinia'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the page reads. */
 const PATHS = {
@@ -55,7 +56,7 @@ const ticket = (id: number, status: TicketStatus): ClientTicket =>
  */
 const mountTickets = async (pinia?: Pinia): Promise<Awaited<ReturnType<typeof mountPage>>> => {
   const wrapper = await mountPage(TicketsPage, { pinia })
-  await vi.waitFor(() => expect(wrapper.find('[data-testid="tickets-open-new"]').exists()).toBe(true))
+  await waitUntil(() => expect(wrapper.find('[data-testid="tickets-open-new"]').exists()).toBe(true))
   return wrapper
 }
 

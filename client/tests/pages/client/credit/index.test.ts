@@ -6,7 +6,7 @@
  * @module tests/pages/client/credit/index.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { stubClientRuntime } from '~/tests/helpers/mountClient'
 import { mountRenderedClientPage } from '~/tests/helpers/renderedPage'
 import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -16,6 +16,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import { PortalErrorCode } from '~/constants/portalErrorCode'
 import CreditPage from '~/pages/client/credit/index.vue'
 import { CreditMovement } from '~/types/creditmovement'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path the page reads. */
 const CREDIT_PATH = '/api/portal/client/credit'
@@ -109,7 +110,7 @@ describe('credit page', () => {
     const wrapper = await mountRenderedClientPage(CreditPage, PAGE_ROOT)
 
     await wrapper.get('[data-testid="ui-pagination-next"]').trigger('click')
-    await vi.waitFor(() => expect(reads()).toHaveLength(2))
+    await waitUntil(() => expect(reads()).toHaveLength(2))
 
     expect(queryOf(reads()[1]!)).toEqual({ page: '2', pageSize: '10' })
   })
@@ -123,11 +124,11 @@ describe('credit page', () => {
     const wrapper = await mountRenderedClientPage(CreditPage, PAGE_ROOT)
     refusePageTwo = true
     await wrapper.get('[data-testid="ui-pagination-next"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="credit-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="credit-error"]').exists()).toBe(true))
 
     refusePageTwo = false
     await wrapper.get('[data-testid="credit-error-retry"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="credit-error"]').exists()).toBe(false))
+    await waitUntil(() => expect(wrapper.find('[data-testid="credit-error"]').exists()).toBe(false))
 
     expect(queryOf(reads()[reads().length - 1]!)).toEqual({ page: '2', pageSize: '10' })
     expect(wrapper.find('[data-testid="credit-balance"]').exists()).toBe(true)

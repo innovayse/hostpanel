@@ -6,7 +6,7 @@
  * @module tests/components/client/ForgotPasswordPanel.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountWithLogo } from '~/tests/helpers/authScreens'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -14,6 +14,7 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import ForgotPasswordPanel from '~/components/client/ForgotPasswordPanel.vue'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path the reset mail is requested from. */
 const FORGOT_PATH = '/api/portal/auth/forgot-password'
@@ -56,7 +57,7 @@ describe('ClientForgotPasswordPanel', () => {
     const wrapper = mountWithLogo(ForgotPasswordPanel)
 
     await submitWith(wrapper, 'ada@example.com')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="outcome-panel"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="outcome-panel"]').exists()).toBe(true))
 
     expect(bodyOf(requestsTo(stub.requests, FORGOT_PATH)[0])).toEqual({ email: 'ada@example.com' })
     expect(wrapper.find('[data-testid="forgot-form"]').exists()).toBe(false)
@@ -68,7 +69,7 @@ describe('ClientForgotPasswordPanel', () => {
     const wrapper = mountWithLogo(ForgotPasswordPanel)
 
     await submitWith(wrapper, 'ada@example.com')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="forgot-form"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('Too many requests.')

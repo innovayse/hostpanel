@@ -15,6 +15,7 @@ import { makeTeamMember } from '~/tests/helpers/teamMember'
 import { useAccountStore } from '~/stores/account'
 import { HttpMethod } from '~/types/httpmethod'
 import type { TeamMember } from '~/types/teammember'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** An owner and one removable member. */
 const users: TeamMember[] = [
@@ -71,7 +72,7 @@ describe('TeamMembersList', () => {
 
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
 
-    await vi.waitFor(() => expect(wrapper.emitted('changed')).toHaveLength(1))
+    await waitUntil(() => expect(wrapper.emitted('changed')).toHaveLength(1))
     expect(stub.requests).toHaveLength(1)
     expect(stub.requests[0]?.method).toBe(HttpMethod.Delete)
     expect(stub.requests[0]?.url).toBe(userPath('2'))
@@ -84,7 +85,7 @@ describe('TeamMembersList', () => {
     await wrapper.find('[data-testid="account-team-remove-2"]').trigger('click')
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
 
-    await vi.waitFor(() => expect(useAccountStore().inviteError).toBe('Cannot remove.'))
+    await waitUntil(() => expect(useAccountStore().inviteError).toBe('Cannot remove.'))
     await flushPromises()
     expect(stub.requests).toHaveLength(1)
     expect(wrapper.emitted('changed')).toBeUndefined()

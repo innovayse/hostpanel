@@ -5,7 +5,7 @@
  *
  * @module tests/pages/client/services/index.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
 import ServicesPage from '~/pages/client/services/index.vue'
 import { makeClientService } from '~/tests/helpers/clientServiceFixture'
@@ -17,6 +17,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import { Permission } from '~/types/permission'
 import { ServiceStatus } from '~/types/servicestatus'
 import type { ClientService } from '~/types/clientservice'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the page reads. */
 const PATHS = {
@@ -57,7 +58,7 @@ describe('service list page', () => {
     table[`GET ${PATHS.services}`] = { body: [service(1), service(2)] }
 
     const wrapper = await mountPage(ServicesPage)
-    await vi.waitFor(() => expect(wrapper.findAll('[data-testid^="service-card-"]')).toHaveLength(2))
+    await waitUntil(() => expect(wrapper.findAll('[data-testid^="service-card-"]')).toHaveLength(2))
 
     expect(wrapper.find('[data-testid="services-setup-alert"]').exists()).toBe(false)
   })
@@ -66,7 +67,7 @@ describe('service list page', () => {
     table[`GET ${PATHS.services}`] = { body: [service(1), service(2, ServiceStatus.Pending), service(3, ServiceStatus.Pending)] }
 
     const wrapper = await mountPage(ServicesPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="services-setup-alert"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="services-setup-alert"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="services-setup-alert"]').text()).toContain('client.dashboard.setupAlertSubtitle')
     expect(wrapper.findAll('[data-testid="service-needs-setup"]')).toHaveLength(2)
@@ -76,7 +77,7 @@ describe('service list page', () => {
     table[`GET ${PATHS.services}`] = { body: [service(1), makeClientService({ id: 2, status: ServiceStatus.Pending, isDigital: true })] }
 
     const wrapper = await mountPage(ServicesPage)
-    await vi.waitFor(() => expect(wrapper.findAll('[data-testid^="service-card-"]')).toHaveLength(2))
+    await waitUntil(() => expect(wrapper.findAll('[data-testid^="service-card-"]')).toHaveLength(2))
 
     expect(wrapper.find('[data-testid="services-setup-alert"]').exists()).toBe(false)
     expect(wrapper.findAll('[data-testid="service-needs-setup"]')).toHaveLength(0)
@@ -86,7 +87,7 @@ describe('service list page', () => {
     table[`GET ${PATHS.services}`] = { body: [] }
 
     const wrapper = await mountPage(ServicesPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="services-browse-hosting"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="services-browse-hosting"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="services-browse-hosting"]').attributes('href')).toBe('/hosting')
   })
@@ -95,7 +96,7 @@ describe('service list page', () => {
     table[`GET ${PATHS.services}`] = { status: 503, body: { detail: 'Hosting is down.' } }
 
     const wrapper = await mountPage(ServicesPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="services-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="services-error"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="services-error"]').text()).toBe('Hosting is down.')
     expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(false)

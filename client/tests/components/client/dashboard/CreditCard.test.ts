@@ -8,7 +8,7 @@
  * @module tests/components/client/dashboard/CreditCard.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import CreditCard from '~/components/client/dashboard/CreditCard.vue'
 import { CREDIT_PAGE_SIZE, useCreditStore } from '~/stores/credit'
@@ -16,6 +16,7 @@ import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path that answers the credit balance and its history. */
 const CREDIT_PATH = '/api/portal/client/credit'
@@ -33,8 +34,8 @@ let table: StubRouteTable
  */
 const mountCard = async () => {
   const wrapper = mountClient(CreditCard)
-  await vi.waitFor(() => expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(1))
-  await vi.waitFor(() => expect(useCreditStore().loading).toBe(false))
+  await waitUntil(() => expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(useCreditStore().loading).toBe(false))
   await wrapper.vm.$nextTick()
   return wrapper
 }

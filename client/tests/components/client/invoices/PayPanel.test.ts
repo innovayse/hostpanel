@@ -8,7 +8,7 @@
  * @module tests/components/client/invoices/PayPanel.test
  */
 import { createPinia, setActivePinia } from 'pinia'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient, stubClientRuntime } from '~/tests/helpers/mountClient'
 import PayPanel from '~/components/client/invoices/PayPanel.vue'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
@@ -17,6 +17,7 @@ import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path that starts the hosted-gateway payment of invoice 9. */
 const GATEWAY_START_PATH = '/api/portal/client/invoices/9/gateway-payment/start'
@@ -82,7 +83,7 @@ describe('PayPanel', () => {
 
     await wrapper.find('[data-testid="invoice-pay-hosted"]').trigger('click')
 
-    await vi.waitFor(() => expect(requestsTo(stub.requests, GATEWAY_START_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, GATEWAY_START_PATH)).toHaveLength(1))
     const sent = bodyOf(requestsTo(stub.requests, GATEWAY_START_PATH)[0]) as { module: string, returnUrl: string }
     expect(sent.module).toBe('hostedbank')
     expect(sent.returnUrl).toContain('/payment/result?invoice=9')
@@ -119,8 +120,8 @@ describe('PayPanel', () => {
 
     await wrapper.find('[data-testid="invoice-pay-bank-transfer"]').trigger('click')
 
-    await vi.waitFor(() => expect(requestsTo(stub.requests, BANK_TRANSFER_PATH)).toHaveLength(1))
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true))
+    await waitUntil(() => expect(requestsTo(stub.requests, BANK_TRANSFER_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true))
     expect(wrapper.find('[data-testid="bank-transfer-reference"]').text()).toBe('INV-9')
     expect(wrapper.find('[data-testid="invoice-pay-bank-transfer"]').exists()).toBe(false)
   })

@@ -19,6 +19,7 @@ import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The root element of the page. */
 const ROOT = 'kb-page'
@@ -137,7 +138,7 @@ describe('pages/knowledgebase/index', () => {
     table[`GET ${ContentPath.KbArticles}`] = { body: { items: [{ id: 40, title: 'DNS basics' }] } }
 
     await submitSearch(wrapper, 'dns')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="kb-search-count"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="kb-search-count"]').exists()).toBe(true))
 
     expect(router.replace).toHaveBeenCalledWith({ query: { q: 'dns' } })
     expect(articleReads().map(queryOf).at(-1)).toMatchObject({ search: 'dns' })
@@ -152,7 +153,7 @@ describe('pages/knowledgebase/index', () => {
     table[`GET ${ContentPath.KbArticles}`] = { body: { items: [] } }
 
     await submitSearch(wrapper, 'zzz')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="kb-search-empty"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="kb-search-empty"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="kb-search-empty"]').text()).toContain('kb.noResults')
   })
@@ -161,7 +162,7 @@ describe('pages/knowledgebase/index', () => {
     answerWith()
     const wrapper = await mountRenderedPage(Page, ROOT)
     await submitSearch(wrapper, 'dns')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="kb-search-results"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="kb-search-results"]').exists()).toBe(true))
 
     await wrapper.find('[data-testid="kb-clear-search"]').trigger('click')
 
@@ -189,7 +190,7 @@ describe('pages/knowledgebase/index', () => {
     table[`GET ${ContentPath.KbArticles}`] = { body: { items: [{ id: 41, title: 'Install a certificate' }] } }
 
     const wrapper = await mountRenderedPage(Page, ROOT)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="kb-search-results"]').text()).toContain('Install a certificate'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="kb-search-results"]').text()).toContain('Install a certificate'))
 
     expect(articleReads().map(queryOf)).toContainEqual(expect.objectContaining({ search: 'ssl' }))
   })
@@ -215,7 +216,7 @@ describe('pages/knowledgebase/index', () => {
 
     answerWith()
     await wrapper.find('[data-testid="kb-retry"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="kb-categories"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="kb-categories"]').exists()).toBe(true))
 
     expect(requestsTo(stub.requests, ContentPath.KbCategories)).toHaveLength(2)
     expect(wrapper.find('[data-testid="kb-load-error"]').exists()).toBe(false)

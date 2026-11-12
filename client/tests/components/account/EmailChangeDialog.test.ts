@@ -10,6 +10,7 @@ import { bodyOf } from '~/tests/helpers/requestBody'
 import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { HttpMethod } from '~/types/httpmethod'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 vi.mock('qrcode', () => ({
   default: {
@@ -52,7 +53,7 @@ describe('EmailChangeDialog', () => {
     await wrapper.find('[data-testid="account-email-change-password"]').setValue('secret-pw')
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]))
+    await waitUntil(() => expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]))
     expect(stub.requests).toHaveLength(1)
     expect(stub.requests[0]?.method).toBe(HttpMethod.Post)
     expect(stub.requests[0]?.url).toBe(AccountEndpoint.EmailChange)
@@ -79,7 +80,7 @@ describe('EmailChangeDialog', () => {
     await wrapper.find('[data-testid="account-email-change-password"]').setValue('wrong')
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.text()).toContain('The current password is not correct.'))
+    await waitUntil(() => expect(wrapper.text()).toContain('The current password is not correct.'))
     expect(stub.requests).toHaveLength(1)
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
   })

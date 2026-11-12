@@ -7,7 +7,7 @@
  * @module tests/pages/client/confirm-email-change.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { settle } from '~/tests/helpers/settle'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { bodyOf } from '~/tests/helpers/requestBody'
@@ -16,6 +16,7 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import ConfirmEmailChangePage from '~/pages/client/confirm-email-change.vue'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the page uses: the confirmation, and the session clear it ends with. */
 const PATHS = {
@@ -46,7 +47,7 @@ describe('client confirm-email-change page', () => {
     stubAuthRuntime({ query: { email: 'new@example.com', token: 'tok' } })
 
     const wrapper = await mountAuthPage(ConfirmEmailChangePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="confirm-email-change-success"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="confirm-email-change-success"]').exists()).toBe(true))
 
     expect(bodyOf(requestsTo(stub.requests, PATHS.confirm)[0])).toEqual({ email: 'new@example.com', token: 'tok' })
     expect(requestsTo(stub.requests, PATHS.logout)).toHaveLength(1)
@@ -59,7 +60,7 @@ describe('client confirm-email-change page', () => {
     stubAuthRuntime({ query: { email: 'new@example.com', token: 'tok' } })
 
     const wrapper = await mountAuthPage(ConfirmEmailChangePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="confirm-email-change-failed"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="confirm-email-change-failed"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="confirm-email-change-failed"]').text()).toContain('This link has expired.')
     expect(wrapper.find('[data-testid="confirm-email-change-account"]').attributes('href')).toBe('/client/account')
@@ -70,7 +71,7 @@ describe('client confirm-email-change page', () => {
     stubAuthRuntime({ query: { email: 'new@example.com' } })
 
     const wrapper = await mountAuthPage(ConfirmEmailChangePage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="confirm-email-change-failed"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="confirm-email-change-failed"]').exists()).toBe(true))
     await settle()
 
     expect(stub.requests).toHaveLength(0)

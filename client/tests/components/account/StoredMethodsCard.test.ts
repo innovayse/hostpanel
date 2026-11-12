@@ -22,6 +22,7 @@ import { HttpMethod } from '~/types/httpmethod'
 import { PaymentModule } from '~/types/paymentmodule'
 import type { StoredMethod } from '~/types/storedmethod'
 import { readPendingStoredSession, writePendingStoredSession } from '~/utils/pendingStoredSession'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** One stored card, not the default. */
 const stored: StoredMethod = {
@@ -77,7 +78,7 @@ const mountCard = async (options: MountWithKitOptions = {}, offered: GatewayMeth
   // The first turn decides whether a pending session is completed or the list is read; the store's flags then say when it is done.
   await flushPromises()
   const store = useStoredMethodsStore()
-  await vi.waitFor(() => expect(store.loading || store.completing).toBe(false))
+  await waitUntil(() => expect(store.loading || store.completing).toBe(false))
   await flushPromises()
   return wrapper
 }
@@ -145,7 +146,7 @@ describe('StoredMethodsCard', () => {
 
     await wrapper.find('[data-testid="stored-method-default-5"]').trigger('click')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="stored-methods-success"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="stored-methods-success"]').exists()).toBe(true))
     const changes = requestsTo(stub.requests, defaultConsentPath(5))
     expect(changes).toHaveLength(1)
     expect(changes[0]?.method).toBe(HttpMethod.Post)
@@ -166,7 +167,7 @@ describe('StoredMethodsCard', () => {
 
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="stored-methods-success"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="stored-methods-success"]').exists()).toBe(true))
     const revocations = requestsTo(stub.requests, consentPath(5))
     expect(revocations).toHaveLength(1)
     expect(revocations[0]?.method).toBe(HttpMethod.Delete)
@@ -181,7 +182,7 @@ describe('StoredMethodsCard', () => {
     await wrapper.find('[data-testid="stored-method-revoke-5"]').trigger('click')
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="stored-methods-error"]').text()).toBe('Refused.'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="stored-methods-error"]').text()).toBe('Refused.'))
     expect(wrapper.find('[data-testid="stored-method-5"]').exists()).toBe(true)
   })
 

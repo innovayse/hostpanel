@@ -6,7 +6,7 @@
  * @module tests/pages/client/domains/transfer.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { stubClientRuntime } from '~/tests/helpers/mountClient'
 import { mountRenderedClientPage } from '~/tests/helpers/renderedPage'
 import { bodyOf } from '~/tests/helpers/requestBody'
@@ -15,6 +15,7 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import TransferPage from '~/pages/client/domains/transfer.vue'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the page uses. */
 const PATHS = {
@@ -80,7 +81,7 @@ describe('domain transfer page', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="transfer-success"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="transfer-success"]').exists()).toBe(true))
     expect(bodyOf(requestsTo(stub.requests, PATHS.transferOrder)[0])).toMatchObject({ domain: 'moving.org', eppcode: 'AUTH-1', years: 1, paymentmethod: 'card_gateway' })
     expect(wrapper.find('[data-testid="transfer-pay-invoice"]').attributes('href')).toBe('/client/invoices/90')
   })
@@ -91,7 +92,7 @@ describe('domain transfer page', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toContain('Domain is locked.'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toContain('Domain is locked.'))
     expect(wrapper.find('[data-testid="transfer-success"]').exists()).toBe(false)
   })
 })

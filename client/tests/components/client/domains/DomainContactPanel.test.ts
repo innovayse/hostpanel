@@ -3,7 +3,7 @@
  * profile or a contact, editing, cancelling and saving. The store, the API composables and the
  * transport run for real against a stub BFF.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import DomainContactPanel from '~/components/client/domains/DomainContactPanel.vue'
 import { ContactType } from '~/types/contacttype'
@@ -16,6 +16,7 @@ import { requestsTo, routeTable, refusal } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The registry record the API returns. */
 const whois = { registrar: 'Reg Ltd', registrant: 'Ada Lovelace', createdAt: '2026-01-01T00:00:00Z', expiresAt: '2027-01-01T00:00:00Z' }
@@ -78,7 +79,7 @@ const whoisSaves = () => requestsTo(stub.requests, domainPath(DomainAction.Whois
  */
 const mountPanel = async () => {
   const wrapper = mountClient(DomainContactPanel, { props: { domainId: DOMAIN_ID } })
-  await vi.waitFor(() => expect(field(wrapper, 'firstName')).toBe('Linus'))
+  await waitUntil(() => expect(field(wrapper, 'firstName')).toBe('Linus'))
   return wrapper
 }
 
@@ -117,7 +118,7 @@ describe('DomainContactPanel', () => {
     table[`GET ${domainPath(DomainAction.Contact)}`] = { body: registrant }
     const wrapper = mountClient(DomainContactPanel, { props: { domainId: DOMAIN_ID } })
 
-    await vi.waitFor(() => expect(field(wrapper, 'firstName')).toBe('Margaret'))
+    await waitUntil(() => expect(field(wrapper, 'firstName')).toBe('Margaret'))
     expect(field(wrapper, 'city')).toBe('Boston')
     expect(field(wrapper, 'postalCode')).toBe('02101')
     expect(requestsTo(stub.requests, domainPath(DomainAction.Contact))).toHaveLength(1)
@@ -127,8 +128,8 @@ describe('DomainContactPanel', () => {
     table[`GET ${domainPath(DomainAction.Whois)}`] = refusal('No record.')
     const wrapper = mountClient(DomainContactPanel, { props: { domainId: DOMAIN_ID } })
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="domain-whois-unavailable"]').exists()).toBe(true))
-    await vi.waitFor(() => expect(field(wrapper, 'firstName')).toBe('Linus'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-whois-unavailable"]').exists()).toBe(true))
+    await waitUntil(() => expect(field(wrapper, 'firstName')).toBe('Linus'))
   })
 
   it('locks the fields while an existing contact is selected and unlocks them for custom data', async () => {
@@ -157,9 +158,9 @@ describe('DomainContactPanel', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(whoisSaves()).toHaveLength(1))
+    await waitUntil(() => expect(whoisSaves()).toHaveLength(1))
     expect(bodyOf(whoisSaves()[0])).toMatchObject({ contact: { firstName: 'Linus', lastName: 'T', city: 'Helsinki', postalCode: '00100' } })
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-success"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-success"]').exists()).toBe(true))
   })
 
   it('shows the refusal when the save fails', async () => {
@@ -168,6 +169,6 @@ describe('DomainContactPanel', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toContain('Invalid phone.'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toContain('Invalid phone.'))
   })
 })

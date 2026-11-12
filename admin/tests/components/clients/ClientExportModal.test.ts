@@ -1,11 +1,12 @@
 /**
  * Mount tests for ClientExportModal: field selection and the download request.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import ClientExportModal from '@/components/clients/ClientExportModal.vue'
 import { createTestI18n } from '../../helpers/i18n'
+import { captureDownloads } from '../../helpers/captureDownloads'
 import { json, stubFetch } from '../../helpers/fetch'
 
 /**
@@ -22,9 +23,12 @@ const mountModal = () =>
 describe('ClientExportModal', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
-    vi.stubGlobal('URL', { createObjectURL: vi.fn(() => 'blob:x'), revokeObjectURL: vi.fn() })
-    // Clicking the download anchor would make happy-dom navigate to the blob URL; the click is all that is asserted.
-    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined)
+    // Clicking the download anchor would make happy-dom navigate to the blob URL; the helper records it instead.
+    captureDownloads()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('shows the client name with every field selected', () => {

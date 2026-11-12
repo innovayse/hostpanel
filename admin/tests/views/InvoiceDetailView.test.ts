@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import InvoiceDetailView from '@/views/InvoiceDetailView.vue'
 import { fulfilmentFixture, invoiceFixture } from '../helpers/billingFixtures'
-import { stubDownloads } from '../helpers/download'
+import { captureDownloads } from '../helpers/captureDownloads'
 import { json, problem } from '../helpers/fetch'
 import { mountRouted } from '../helpers/mount'
 import { stubRoutes } from '../helpers/routes'
@@ -161,7 +161,7 @@ describe('InvoiceDetailView', () => {
   })
 
   it('downloads the PDF as a blob under the name the API gives', async () => {
-    const saved = stubDownloads()
+    const saved = captureDownloads()
     stubRoutes({
       'GET /api/billing/1/pdf': () =>
         new Response('%PDF', {
@@ -184,7 +184,7 @@ describe('InvoiceDetailView', () => {
   })
 
   it('falls back to a default file name when the API sends none', async () => {
-    const saved = stubDownloads()
+    const saved = captureDownloads()
     stubRoutes({
       'GET /api/billing/1/pdf': () => new Response('%PDF', { status: 200 }),
       'GET /api/billing/1': () => json(invoiceFixture()),
@@ -200,7 +200,7 @@ describe('InvoiceDetailView', () => {
   })
 
   it('shows a refused PDF download beside its button only, and saves nothing', async () => {
-    const saved = stubDownloads()
+    const saved = captureDownloads()
     stubRoutes({
       'GET /api/billing/1/pdf': () => problem('The invoice has too many lines for a PDF.', 409),
       'GET /api/billing/1': () => json(invoiceFixture()),

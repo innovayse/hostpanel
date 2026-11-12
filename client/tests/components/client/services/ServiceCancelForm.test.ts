@@ -7,7 +7,7 @@
  *
  * @module tests/components/client/services/ServiceCancelForm.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import ServiceCancelForm from '~/components/client/services/ServiceCancelForm.vue'
 import { CancellationType } from '~/types/cancellationtype'
@@ -15,6 +15,7 @@ import { bodyOf } from '~/tests/helpers/requestBody'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path that takes the cancellation of service 4. */
 const CANCEL_PATH = '/api/portal/client/services/4/cancel'
@@ -62,7 +63,7 @@ describe('ServiceCancelForm', () => {
     await wrapper.find('form').trigger('submit')
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
 
-    await vi.waitFor(() => expect(cancellations()).toHaveLength(1))
+    await waitUntil(() => expect(cancellations()).toHaveLength(1))
     expect(bodyOf(cancellations()[0])).toEqual({ type: CancellationType.Immediate, reason: 'Moving away' })
   })
 
@@ -72,7 +73,7 @@ describe('ServiceCancelForm', () => {
     await wrapper.find('form').trigger('submit')
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="service-cancel-success"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="service-cancel-success"]').exists()).toBe(true))
   })
 
   it('cancels the confirmation without sending', async () => {

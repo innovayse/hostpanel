@@ -21,6 +21,7 @@ import { HOME_SECTION_SCROLL_MARGIN_CLASS } from '~/constants/homeSections'
 import { HomeSectionId } from '~/types/homesectionid'
 import { HOME_PRODUCT_FAMILY_LIMIT } from '~/constants/homeProducts'
 import { ProductType } from '~/types/producttype'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -74,7 +75,7 @@ const groups: PortalProductGroup[] = [
 const mountSection = async () => {
   const wrapper = await mountPage(SectionsProducts, { components: { ...CLASSIC_COMPONENTS, CatalogProductFamilyCard: ProductFamilyCard } })
   // The catalogue crosses a real socket, and the section renders nothing until its reads are done.
-  await vi.waitFor(() => expect(wrapper.find('[data-testid="sections-products"]').exists()).toBe(true))
+  await waitUntil(() => expect(wrapper.find('[data-testid="sections-products"]').exists()).toBe(true))
   await flushPromises()
   return wrapper
 }

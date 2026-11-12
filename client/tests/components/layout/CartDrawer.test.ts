@@ -18,6 +18,7 @@ import { useCurrencyStore } from '~/stores/currency'
 import type { CartItem } from '~/types/cartitem'
 import type { BillingCurrency } from '~/types/currency'
 import { PricingCycle } from '~/types/pricingcycle'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** Path of the endpoint that lists the enabled billing currencies. */
 const CURRENCIES_PATH = '/api/portal/public/billing-currencies'
@@ -62,8 +63,8 @@ const mountOpen = async (items: CartItem[] = []) => {
   const cart = useCartStore()
   cart.items = items
   cart.isOpen = true
-  await vi.waitFor(() => expect(requestsTo(stub.requests, CURRENCIES_PATH)).toHaveLength(1))
-  await vi.waitFor(() => expect(useCurrencyStore().loaded).toBe(true))
+  await waitUntil(() => expect(requestsTo(stub.requests, CURRENCIES_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(useCurrencyStore().loaded).toBe(true))
   await nextTick()
   return wrapper
 }

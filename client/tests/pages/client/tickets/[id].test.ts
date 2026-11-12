@@ -19,6 +19,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import { TicketPriority } from '~/types/ticketpriority'
 import { TicketStatus } from '~/types/ticketstatus'
 import type { TicketThread } from '~/types/ticketthread'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The path of the ticket the route names. */
 const TICKET_PATH = '/api/portal/client/tickets/12'
@@ -53,7 +54,7 @@ const thread = (status: TicketStatus): TicketThread => ({
  */
 const mountTicket = async (): Promise<Awaited<ReturnType<typeof mountPage>>> => {
   const wrapper = await mountPage(TicketPage)
-  await vi.waitFor(() => expect(wrapper.find('[data-testid="ticket-back"]').exists()).toBe(true))
+  await waitUntil(() => expect(wrapper.find('[data-testid="ticket-back"]').exists()).toBe(true))
   return wrapper
 }
 
@@ -115,9 +116,9 @@ describe('ticket page', () => {
     await wrapper.find('form').trigger('submit')
 
     // The backend requires the name the reply is posted under, so the page sends the person's own.
-    await vi.waitFor(() => expect(requestsTo(stub.requests, REPLY_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, REPLY_PATH)).toHaveLength(1))
     expect(bodyOf(requestsTo(stub.requests, REPLY_PATH)[0])).toEqual({ message: 'Thanks' })
-    await vi.waitFor(() => expect(requestsTo(stub.requests, TICKET_PATH)).toHaveLength(2))
+    await waitUntil(() => expect(requestsTo(stub.requests, TICKET_PATH)).toHaveLength(2))
   })
 
   it('does not send an empty reply', async () => {

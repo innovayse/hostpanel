@@ -13,6 +13,7 @@ import { AccountEndpoint, contactPath } from '~/tests/helpers/accountPaths'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 vi.mock('qrcode', () => ({
   default: {
@@ -74,7 +75,7 @@ describe('ContactDialog', () => {
     await wrapper.find('[data-testid="account-contact-lastname"]').setValue('Lee')
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.emitted('saved')).toHaveLength(1))
+    await waitUntil(() => expect(wrapper.emitted('saved')).toHaveLength(1))
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false])
     expect(stub.requests).toHaveLength(1)
     expect(stub.requests[0]?.method).toBe(HttpMethod.Post)
@@ -87,7 +88,7 @@ describe('ContactDialog', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(stub.requests).toHaveLength(1))
+    await waitUntil(() => expect(stub.requests).toHaveLength(1))
     expect(stub.requests[0]?.method).toBe(HttpMethod.Put)
     expect(stub.requests[0]?.url).toBe(contactPath(7))
     expect(bodyOf(stub.requests[0])).toMatchObject({

@@ -15,6 +15,7 @@ import { makeTeamMember } from '~/tests/helpers/teamMember'
 import { useAccountStore } from '~/stores/account'
 import { HttpMethod } from '~/types/httpmethod'
 import { Permission } from '~/types/permission'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -60,7 +61,7 @@ describe('TeamTab', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="account-team-member-2"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="account-team-member-2"]').exists()).toBe(true))
     expect(stub.requests.map(request => `${request.method} ${request.url}`)).toEqual([
       `${HttpMethod.Post} ${AccountEndpoint.InviteUser}`,
       `${HttpMethod.Get} ${AccountEndpoint.Users}`

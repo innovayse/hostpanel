@@ -20,6 +20,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { ServiceStatus } from '~/types/servicestatus'
 import { controlPanelUrl } from '~/utils/controlPanel'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path that answers the single sign-on address of the control panel of service 1. */
 const SSO_PATH = '/api/portal/client/services/1/cpanel-sso'
@@ -137,7 +138,7 @@ describe('ClientDashboardServicesCard', () => {
 
     await wrapper.find('[data-testid="dashboard-service-cpanel-1"]').trigger('click')
 
-    await vi.waitFor(() => expect(open).toHaveBeenCalledWith(SSO_URL, '_blank', 'noopener'))
+    await waitUntil(() => expect(open).toHaveBeenCalledWith(SSO_URL, '_blank', 'noopener'))
     expect(requestsTo(stub.requests, SSO_PATH)).toHaveLength(1)
   })
 
@@ -150,6 +151,6 @@ describe('ClientDashboardServicesCard', () => {
 
     await wrapper.find('[data-testid="dashboard-service-cpanel-1"]').trigger('click')
 
-    await vi.waitFor(() => expect(open).toHaveBeenCalledWith(controlPanelUrl('srv.test'), '_blank', 'noopener'))
+    await waitUntil(() => expect(open).toHaveBeenCalledWith(controlPanelUrl('srv.test'), '_blank', 'noopener'))
   })
 })

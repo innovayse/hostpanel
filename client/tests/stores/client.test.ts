@@ -12,7 +12,7 @@
  * @module tests/stores/client.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { heldReply, requestsTo, routeTable } from '../helpers/stubRoutes'
 import type { HeldReply, StubRouteTable } from '../helpers/stubRoutes'
@@ -23,6 +23,7 @@ import { useClientStore } from '~/stores/client'
 import { HttpMethod } from '~/types/httpmethod'
 import { Permission } from '~/types/permission'
 import { makeClientUser } from '~/tests/helpers/clientUser'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -62,7 +63,7 @@ const profile = makeClientUser({ email: 'ada@example.com', permissions: Permissi
  * @returns Resolves once one request waits on it.
  */
 const identityOnTheWire = (held: HeldReply): Promise<void> =>
-  vi.waitFor(() => {
+  waitUntil(() => {
     expect(held.waiting()).toBe(1)
   })
 

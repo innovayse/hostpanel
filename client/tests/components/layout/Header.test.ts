@@ -19,6 +19,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { ProductType } from '~/types/producttype'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** Path of the endpoint that lists the product groups. */
 const GROUPS_PATH = '/api/portal/public/product-groups'
@@ -69,8 +70,8 @@ const mountHeader = async () => {
     components: { UiLanguageSwitcher: LanguageSwitcherStub, UiCurrencySwitcher: CurrencySwitcherStub },
     attachToBody: true,
   })
-  await vi.waitFor(() => expect(requestsTo(stub.requests, GROUPS_PATH).length).toBeGreaterThan(0))
-  await vi.waitFor(() => expect(useCatalogStore().loading).toBe(false))
+  await waitUntil(() => expect(requestsTo(stub.requests, GROUPS_PATH).length).toBeGreaterThan(0))
+  await waitUntil(() => expect(useCatalogStore().loading).toBe(false))
   return wrapper
 }
 

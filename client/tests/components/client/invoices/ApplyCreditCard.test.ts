@@ -9,7 +9,7 @@
  * @module tests/components/client/invoices/ApplyCreditCard.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
 import ApplyCreditCard from '~/components/client/invoices/ApplyCreditCard.vue'
 import { useCreditStore } from '~/stores/credit'
@@ -21,6 +21,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import type { ClientCredit } from '~/types/clientcredit'
 import type { ClientInvoice } from '~/types/clientinvoice'
 import { InvoiceStatus } from '~/types/invoicestatus'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path that answers the credit balance and its history. */
 const CREDIT_PATH = '/api/portal/client/credit'
@@ -82,8 +83,8 @@ const invoice = (overrides: Record<string, unknown> = {}): ClientInvoice => ({
  */
 const mountCard = async (target: ClientInvoice) => {
   const wrapper = mountClient(ApplyCreditCard, { props: { invoice: target } })
-  await vi.waitFor(() => expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(1))
-  await vi.waitFor(() => expect(useCreditStore().loading).toBe(false))
+  await waitUntil(() => expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(useCreditStore().loading).toBe(false))
   await wrapper.vm.$nextTick()
   return wrapper
 }
@@ -172,7 +173,7 @@ describe('ClientInvoicesApplyCreditCard', () => {
     await wrapper.get('[data-testid="apply-credit-amount"]').setValue('20')
     await wrapper.get('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.emitted('applied')).toHaveLength(1))
+    await waitUntil(() => expect(wrapper.emitted('applied')).toHaveLength(1))
     expect(requestsTo(stub.requests, APPLY_PATH)).toHaveLength(1)
     expect(bodyOf(requestsTo(stub.requests, APPLY_PATH)[0])).toEqual({ amount: 20 })
     expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(2)
@@ -186,7 +187,7 @@ describe('ClientInvoicesApplyCreditCard', () => {
     await wrapper.get('[data-testid="apply-credit-amount"]').setValue('20')
     await wrapper.get('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toContain('The balance is short.'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toContain('The balance is short.'))
     expect(wrapper.emitted('applied')).toBeUndefined()
   })
 })

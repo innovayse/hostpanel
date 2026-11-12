@@ -16,6 +16,7 @@ import { startTransport } from '~/tests/helpers/stubTransport'
 import SetupPage from '~/pages/client/services/[id]/setup.vue'
 import type { ClientService } from '~/types/clientservice'
 import { ServiceStatus } from '~/types/servicestatus'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path the page reads for service 4. */
 const SERVICE_PATH = '/api/portal/client/services/4'
@@ -58,7 +59,7 @@ describe('hosting setup page', () => {
     const { useHead } = stubClientRuntime({ params: { id: '4' } })
 
     const wrapper = await mountPage(SetupPage)
-    await vi.waitFor(() => expect(wrapper.find(WIZARD).exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find(WIZARD).exists()).toBe(true))
 
     expect(requestsTo(stub.requests, SERVICE_PATH).map(request => request.method)).toEqual(['GET'])
     // The page hands `useHead` a computed title, which Nuxt unwraps; unwrap it the same way.
@@ -70,7 +71,7 @@ describe('hosting setup page', () => {
     stubClientRuntime({ params: { id: '4' } })
 
     const wrapper = await mountPage(SetupPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="setup-go-manage"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="setup-go-manage"]').exists()).toBe(true))
 
     expect(wrapper.find(WIZARD).exists()).toBe(false)
     expect(wrapper.find('[data-testid="setup-go-manage"]').attributes('href')).toBe('/client/services/4')
@@ -81,7 +82,7 @@ describe('hosting setup page', () => {
     stubClientRuntime({ params: { id: '4' } })
 
     const wrapper = await mountPage(SetupPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="setup-back-to-services"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="setup-back-to-services"]').exists()).toBe(true))
 
     expect(wrapper.find(WIZARD).exists()).toBe(false)
     expect(wrapper.find('[data-testid="setup-back-to-services"]').attributes('href')).toBe('/client/services')
@@ -93,7 +94,7 @@ describe('hosting setup page', () => {
 
     await mountPage(SetupPage)
 
-    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('/client/services/4', { replace: true }))
+    await waitUntil(() => expect(navigate).toHaveBeenCalledWith('/client/services/4', { replace: true }))
   })
 
   it('keeps the loading panel and never the wizard for a digital service while it is redirected', async () => {
@@ -101,7 +102,7 @@ describe('hosting setup page', () => {
     stubClientRuntime({ params: { id: '4' } })
 
     const wrapper = await mountPage(SetupPage)
-    await vi.waitFor(() => expect(wrapper.text()).toContain('client.setup.loading'))
+    await waitUntil(() => expect(wrapper.text()).toContain('client.setup.loading'))
 
     expect(wrapper.find(WIZARD).exists()).toBe(false)
   })

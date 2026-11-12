@@ -17,6 +17,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { PortalErrorCode } from '~/constants/portalErrorCode'
 import CreditNotesPage from '~/pages/client/credit-notes/index.vue'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the page reads. */
 const PATHS = {
@@ -104,7 +105,7 @@ describe('credit notes page', () => {
     const wrapper = await mountRenderedClientPage(CreditNotesPage, PAGE_ROOT)
 
     await wrapper.get('[data-testid="credit-note-download-3"]').trigger('click')
-    await vi.waitFor(() => expect(downloads).toHaveLength(1))
+    await waitUntil(() => expect(downloads).toHaveLength(1))
 
     expect(requestsTo(stub.requests, PATHS.pdf)).toHaveLength(1)
     expect(downloads[0]?.fileName).toBe('credit-note-CN-0003.pdf')
@@ -118,7 +119,7 @@ describe('credit notes page', () => {
     const wrapper = await mountRenderedClientPage(CreditNotesPage, PAGE_ROOT)
 
     await wrapper.get('[data-testid="credit-note-download-3"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="credit-notes-download-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="credit-notes-download-error"]').exists()).toBe(true))
 
     expect(wrapper.get('[data-testid="credit-notes-download-error"]').text()).toBe('The credit note was not found.')
     expect(wrapper.find('[data-testid="credit-notes-table"]').exists()).toBe(true)

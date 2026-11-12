@@ -62,6 +62,11 @@ describe('usePayerAsyncData', () => {
   })
 
   it('passes the handler and options through and returns the async data', () => {
+    /**
+     * The read the composable is handed and must pass on untouched.
+     *
+     * @returns A constant, since only the handler's identity is asserted.
+     */
     const handler = async (): Promise<number> => 1
     const options = { watch: [] }
 

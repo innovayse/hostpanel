@@ -19,6 +19,7 @@ import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The root element of the page. */
 const ROOT = 'kb-category-page'
@@ -109,7 +110,7 @@ describe('pages/knowledgebase/category/[id]', () => {
     const errorHandler = vi.fn()
 
     const wrapper = await mountPage(Page, { errorHandler })
-    await vi.waitFor(() => expect(errorHandler).toHaveBeenCalled())
+    await waitUntil(() => expect(errorHandler).toHaveBeenCalled())
 
     expect(spies.createError).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }))
     expect(errorHandler).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }), expect.anything(), expect.anything())
@@ -134,7 +135,7 @@ describe('pages/knowledgebase/category/[id]', () => {
 
     table[CATEGORIES_READ] = { body: BILLING }
     await wrapper.find('[data-testid="kb-category-retry"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="kb-category-articles"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="kb-category-articles"]').exists()).toBe(true))
 
     expect(requestsTo(stub.requests, ContentPath.KbCategories)).toHaveLength(2)
     expect(wrapper.find('[data-testid="kb-category-error"]').exists()).toBe(false)
@@ -150,7 +151,7 @@ describe('pages/knowledgebase/category/[id]', () => {
     const wrapper = await mountRenderedPage(Page, ROOT)
     table[CATEGORIES_READ] = { body: [] }
     await wrapper.find('[data-testid="kb-category-retry"]').trigger('click')
-    await vi.waitFor(() => expect(showError).toHaveBeenCalled())
+    await waitUntil(() => expect(showError).toHaveBeenCalled())
 
     expect(showError).toHaveBeenCalledWith(expect.objectContaining({ statusCode: 404 }))
     expect(articleReads()).toHaveLength(0)
@@ -166,7 +167,7 @@ describe('pages/knowledgebase/category/[id]', () => {
 
     table[ARTICLES_READ] = { body: { items: [{ id: 1, title: 'Invoices' }] } }
     await wrapper.find('[data-testid="kb-category-retry"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="kb-category-articles"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="kb-category-articles"]').exists()).toBe(true))
 
     expect(articleReads()).toHaveLength(2)
     expect(wrapper.find('[data-testid="kb-category-error"]').exists()).toBe(false)

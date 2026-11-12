@@ -15,6 +15,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { HttpMethod } from '~/types/httpmethod'
 import { Permission } from '~/types/permission'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF: the client holds no stored method. */
 let stub: StubServer
@@ -34,7 +35,7 @@ describe('PaymentMethodsTab', () => {
     const wrapper = mountAccount(PaymentMethodsTab)
     await grantPermissions(Permission.ViewPayInvoices)
 
-    await vi.waitFor(() => expect(requestsTo(stub.requests, AccountEndpoint.StoredMethods)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, AccountEndpoint.StoredMethods)).toHaveLength(1))
     await flushPromises()
     expect(wrapper.find('[data-testid="stored-methods-card"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="account-payment-denied"]').exists()).toBe(false)

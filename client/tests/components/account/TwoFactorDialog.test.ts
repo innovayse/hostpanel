@@ -14,6 +14,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { HttpMethod } from '~/types/httpmethod'
 import { TwoFactorMode } from '~/types/twofactormode'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -85,7 +86,7 @@ describe('TwoFactorDialog', () => {
     await wrapper.vm.$nextTick()
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]))
+    await waitUntil(() => expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([false]))
     const sent = requestsTo(stub.requests, AccountEndpoint.TwoFactorDisable)
     expect(sent).toHaveLength(1)
     expect(sent[0]?.method).toBe(HttpMethod.Post)
@@ -99,7 +100,7 @@ describe('TwoFactorDialog', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
     expect(requestsTo(stub.requests, AccountEndpoint.TwoFactorEnable)).toHaveLength(1)
     expect(wrapper.emitted('update:modelValue')).toBeUndefined()
   })
@@ -110,6 +111,6 @@ describe('TwoFactorDialog', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('Wrong code'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('Wrong code'))
   })
 })

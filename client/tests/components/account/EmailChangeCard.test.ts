@@ -10,6 +10,7 @@ import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 vi.mock('qrcode', () => ({
   default: {
@@ -57,7 +58,7 @@ describe('EmailChangeCard', () => {
     await wrapper.find('[data-testid="account-email-change-password"]').setValue('secret-pw')
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="account-email-change-sent"]').text()).toContain('client.emailChange.sentTitle'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="account-email-change-sent"]').text()).toContain('client.emailChange.sentTitle'))
     expect(stub.requests).toHaveLength(1)
     expect(stub.requests[0]?.url).toBe(AccountEndpoint.EmailChange)
     expect(bodyOf(stub.requests[0])).toEqual({ newEmail: 'new@example.com', currentPassword: 'secret-pw' })

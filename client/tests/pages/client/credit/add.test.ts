@@ -18,6 +18,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { PortalErrorCode } from '~/constants/portalErrorCode'
 import AddFundsPage from '~/pages/client/credit/add.vue'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the page uses. */
 const PATHS = {
@@ -79,7 +80,7 @@ describe('add funds page', () => {
 
     await wrapper.get('[data-testid="credit-add-amount"]').setValue('40')
     await wrapper.get('form').trigger('submit')
-    await vi.waitFor(() => expect(navigate).toHaveBeenCalledWith('/client/invoices/88/pay'))
+    await waitUntil(() => expect(navigate).toHaveBeenCalledWith('/client/invoices/88/pay'))
 
     expect(topUps()).toHaveLength(1)
     expect(bodyOf(topUps()[0])).toEqual({ amount: 40 })
@@ -102,7 +103,7 @@ describe('add funds page', () => {
 
     await wrapper.get('[data-testid="credit-add-amount"]').setValue('40')
     await wrapper.get('form').trigger('submit')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
 
     expect(wrapper.get('[data-testid="ui-form-error"]').text()).toContain('The amount is outside the limits.')
     expect(navigate).not.toHaveBeenCalled()

@@ -13,6 +13,7 @@ import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The `useSeoMeta` spy, to read the robots tag the page sets. */
 const useSeoMeta = vi.fn()
@@ -104,7 +105,7 @@ describe('unsubscribe page', () => {
 
     const wrapper = await mountAuthPage(UnsubscribePage)
     await wrapper.find('[data-testid="unsubscribe-confirm-button"]').trigger('click')
-    await vi.waitFor(() => expect(requestsTo(stub.requests, UNSUBSCRIBE_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, UNSUBSCRIBE_PATH)).toHaveLength(1))
 
     const button = wrapper.find('[data-testid="unsubscribe-confirm-button"]')
     expect(button.attributes('disabled')).toBeDefined()

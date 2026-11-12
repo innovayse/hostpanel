@@ -5,7 +5,7 @@
  *
  * @module tests/pages/client/tickets/new.test
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
 import NewTicketPage from '~/pages/client/tickets/new.vue'
 import { bodyOf } from '~/tests/helpers/requestBody'
@@ -14,6 +14,7 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { TicketPriority } from '~/types/ticketpriority'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The path that opens a ticket. */
 const TICKETS_PATH = '/api/portal/client/tickets'
@@ -61,7 +62,7 @@ describe('new ticket page', () => {
     await wrapper.find('[data-testid="ticket-priority-High"]').trigger('click')
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ticket-success"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ticket-success"]').exists()).toBe(true))
     expect(bodyOf(requestsTo(stub.requests, TICKETS_PATH)[0])).toMatchObject({ subject: 'Cannot log in', message: 'Please help', priority: TicketPriority.High })
     expect(wrapper.find('[data-testid="ticket-view-all"]').attributes('href')).toBe('/client/tickets')
   })
@@ -72,7 +73,7 @@ describe('new ticket page', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ticket-department"]').attributes('aria-invalid')).toBe('true'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ticket-department"]').attributes('aria-invalid')).toBe('true'))
     expect(bodyOf(requestsTo(stub.requests, TICKETS_PATH)[0])).toMatchObject({ departmentId: null })
     expect(wrapper.text()).toContain('Select a department.')
   })
@@ -83,7 +84,7 @@ describe('new ticket page', () => {
 
     await wrapper.find('form').trigger('submit')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toContain('Too many tickets.'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').text()).toContain('Too many tickets.'))
     expect(wrapper.find('[data-testid="ticket-success"]').exists()).toBe(false)
   })
 })

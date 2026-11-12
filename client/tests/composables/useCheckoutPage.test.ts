@@ -30,6 +30,7 @@ import type { ClientUser } from '~/types/clientuser'
 import { PaymentModule } from '~/types/paymentmodule'
 import { Permission } from '~/types/permission'
 import { PricingCycle } from '~/types/pricingcycle'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the checkout page reads and writes. */
 const PATHS = {
@@ -122,9 +123,9 @@ const runInPage = async (): Promise<CheckoutPage> => {
     },
   })
   await mountAsyncPage(Host, { pinia })
-  await vi.waitFor(() => expect(page).toBeDefined())
+  await waitUntil(() => expect(page).toBeDefined())
   if (useCurrencyStore().payerCode !== null && !useCartStore().isEmpty) {
-    await vi.waitFor(() => expect(requestsTo(stub.requests, PATHS.products)).toHaveLength(1))
+    await waitUntil(() => expect(requestsTo(stub.requests, PATHS.products)).toHaveLength(1))
   }
   await settle(5)
   if (!page) {
@@ -166,7 +167,7 @@ describe('useCheckoutPage', () => {
 
     const page = await runInPage()
 
-    await vi.waitFor(() => expect(page.currencyOptions.value).toEqual([{ value: 'USD', label: 'USD' }, { value: 'EUR', label: 'EUR' }]))
+    await waitUntil(() => expect(page.currencyOptions.value).toEqual([{ value: 'USD', label: 'USD' }, { value: 'EUR', label: 'EUR' }]))
     expect(page.userEmail.value).toBe('ann@acme.test')
     expect(page.cart.items).toEqual([HOSTING])
     expect(requestsTo(stub.requests, PATHS.currencies)).toHaveLength(1)
@@ -181,7 +182,7 @@ describe('useCheckoutPage', () => {
     const page = await runInPage()
 
     expect(page.submitting.value).toBe(false)
-    await vi.waitFor(() => expect(page.cart.items[0]?.amount).toBe(15))
+    await waitUntil(() => expect(page.cart.items[0]?.amount).toBe(15))
   })
 
   it('hands the templates the renewal-save choice, off by default, and whether to offer it', async () => {

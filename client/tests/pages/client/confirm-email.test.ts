@@ -6,7 +6,7 @@
  * @module tests/pages/client/confirm-email.test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { settle } from '~/tests/helpers/settle'
 import { mountAuthPage, stubAuthRuntime } from '~/tests/helpers/authScreens'
 import { bodyOf } from '~/tests/helpers/requestBody'
@@ -15,6 +15,7 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import ConfirmEmailPage from '~/pages/client/confirm-email.vue'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path the confirmation is posted to. */
 const CONFIRM_PATH = '/api/portal/auth/confirm-email'
@@ -39,7 +40,7 @@ describe('client confirm-email page', () => {
     stubAuthRuntime({ query: { email: 'ada@example.com', token: 'tok' } })
 
     const wrapper = await mountAuthPage(ConfirmEmailPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="confirm-success"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="confirm-success"]').exists()).toBe(true))
 
     expect(bodyOf(requestsTo(stub.requests, CONFIRM_PATH)[0])).toEqual({ email: 'ada@example.com', token: 'tok' })
     expect(wrapper.find('[data-testid="confirm-signin"]').attributes('href')).toBe('/client/login')
@@ -50,7 +51,7 @@ describe('client confirm-email page', () => {
     stubAuthRuntime({ query: { email: 'ada@example.com', token: 'tok' } })
 
     const wrapper = await mountAuthPage(ConfirmEmailPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="confirm-failed"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="confirm-failed"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="confirm-failed"]').text()).toContain('This link has expired.')
     expect(wrapper.find('[data-testid="confirm-register"]').attributes('href')).toBe('/client/register')
@@ -60,7 +61,7 @@ describe('client confirm-email page', () => {
     stubAuthRuntime({ query: { email: 'ada@example.com' } })
 
     const wrapper = await mountAuthPage(ConfirmEmailPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="confirm-failed"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="confirm-failed"]').exists()).toBe(true))
     await settle()
 
     expect(stub.requests).toHaveLength(0)
@@ -71,7 +72,7 @@ describe('client confirm-email page', () => {
     stubAuthRuntime({ query: { email: 'ada@example.com', token: 'tok' } })
 
     const wrapper = await mountAuthPage(ConfirmEmailPage)
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="confirm-success"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="confirm-success"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="auth-logo"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="auth-shell-title"]').exists()).toBe(false)

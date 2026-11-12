@@ -254,6 +254,9 @@ public interface IHostpanelDbContext
     /// <summary>Gets the timeline entries of the status page incidents.</summary>
     public DbSet<StatusIncidentUpdate> StatusIncidentUpdates { get; }
 
+    /// <summary>Gets the records of the automatic checks of the status page components.</summary>
+    public DbSet<StatusCheck> StatusChecks { get; }
+
     /// <summary>Gets the storefront partners table.</summary>
     public DbSet<Partner> Partners { get; }
 

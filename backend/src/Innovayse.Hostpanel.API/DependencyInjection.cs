@@ -242,6 +242,9 @@ public static class DependencyInjection
             // Email campaign dispatch: starts the campaigns whose send time has come and sends their mails in batches.
             services.AddHostedService<CampaignScheduledJobsStartup>();
 
+            // Status page monitoring: requests the address of every monitored component and records the outcome.
+            services.AddHostedService<StatusScheduledJobsStartup>();
+
             // Recurring recovery of migration jobs left queued or in progress with a stale heartbeat. Not in Testing:
             // the tests derive extra hosts over one database mid-test, and a recovery there would
             // fail the pull another host of the same test is running.

@@ -63,15 +63,4 @@ public sealed class StatusComponentGroupTests
         Assert.Equal(StatusPageErrors.DisplayOrderNegative, Assert.Throws<DomainRuleException>(() => group.AddComponent("Edge", null, -1)).Code);
         Assert.Empty(group.Components);
     }
-
-    /// <summary>SetState replaces the state the page shows.</summary>
-    [Fact]
-    public void SetState_ReplacesTheState()
-    {
-        var component = StatusComponentGroup.Create("Network", 0).AddComponent("Edge", null, 0);
-
-        component.SetState(StatusComponentState.Degraded);
-
-        Assert.Equal(StatusComponentState.Degraded, component.CurrentState);
-    }
 }

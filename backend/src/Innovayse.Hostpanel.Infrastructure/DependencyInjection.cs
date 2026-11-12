@@ -550,6 +550,16 @@ public static class DependencyInjection
         services.AddScoped<IHostingProbe, HostingProbe>();
         services.AddScoped<IDiskUsageService, DiskUsageService>();
 
+        // Status page monitoring: one GET per component to an address an admin entered. It dials through the shared
+        // OutboundConnector (the one table of refused ranges), follows no redirect, and has no retry stage: the check
+        // is the measurement, and a retry would hide the failure the consecutive-failure threshold counts.
+        services.AddHttpClient<IStatusProbe, HttpStatusProbe>(client =>
+        {
+            client.Timeout = HttpBackstopTimeouts.StatusProbe;
+        })
+            .AddOutboundAddressGuard(followRedirects: false)
+            .AddNoRetryResilience(o => o.StatusProbe);
+
         // Notifications
         // The Smtp section as a whole is deliberately not checked for completeness here, unlike
         // the integration options above. A deployment may fill it from several configuration

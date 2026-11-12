@@ -1764,6 +1764,12 @@ public static class HostpanelErrorCodes
     /// <summary>The status page incident is resolved and takes no more updates (409).</summary>
     public const string STATUS_INCIDENT_ALREADY_RESOLVED = Domain.StatusPage.StatusPageErrors.IncidentAlreadyResolved;
 
+    /// <summary>A status page component is monitored without an address to check (400).</summary>
+    public const string STATUS_CHECK_URL_REQUIRED = Domain.StatusPage.StatusPageErrors.CheckUrlRequired;
+
+    /// <summary>A status page component's failure threshold is out of range (400).</summary>
+    public const string STATUS_FAILURE_THRESHOLD_INVALID = Domain.StatusPage.StatusPageErrors.FailureThresholdInvalid;
+
     /// <summary>The refund is more than what was paid and not yet refunded (400): <see cref="Domain.Billing.Invoice.AddRefund"/>.</summary>
     public const string INVOICE_REFUND_EXCEEDS_PAID = Domain.Billing.BillingErrors.InvoiceRefundExceedsPaid;
 

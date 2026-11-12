@@ -24,4 +24,10 @@ public static class StatusPageErrors
 
     /// <summary>The incident is resolved and takes no more updates (409): <see cref="StatusIncident.PostUpdate"/>.</summary>
     public const string IncidentAlreadyResolved = "STATUS_INCIDENT_ALREADY_RESOLVED";
+
+    /// <summary>Monitoring is enabled without an address to check (400): <see cref="StatusComponent.ConfigureMonitoring"/>.</summary>
+    public const string CheckUrlRequired = "STATUS_CHECK_URL_REQUIRED";
+
+    /// <summary>The failure threshold is outside 1 to <see cref="StatusComponent.MaxFailureThreshold"/> (400): <see cref="StatusComponent.ConfigureMonitoring"/>.</summary>
+    public const string FailureThresholdInvalid = "STATUS_FAILURE_THRESHOLD_INVALID";
 }

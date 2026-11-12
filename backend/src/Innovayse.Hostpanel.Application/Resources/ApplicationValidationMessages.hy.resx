@@ -1573,6 +1573,21 @@
   <data name="StatusStateInvalid" xml:space="preserve">
     <value>Ընտրեք թույլատրելի վիճակ։</value>
   </data>
+  <data name="StatusCheckUrlRequired" xml:space="preserve">
+    <value>Մուտքագրեք ստուգման հասցեն։</value>
+  </data>
+  <data name="StatusCheckUrlInvalid" xml:space="preserve">
+    <value>Մուտքագրեք ամբողջական վեբ հասցե, որը սկսվում է http:// կամ https:// նախածանցով։</value>
+  </data>
+  <data name="StatusCheckUrlTooLong" xml:space="preserve">
+    <value>Հասցեն չի կարող {0} նիշից երկար լինել։</value>
+  </data>
+  <data name="StatusFailureThresholdInvalid" xml:space="preserve">
+    <value>Ընտրեք ձախողված ստուգումների քանակ 1-ից մինչև {0}։</value>
+  </data>
+  <data name="StatusUptimeWindowInvalid" xml:space="preserve">
+    <value>Ընտրեք 30, 60 կամ 90 օր։</value>
+  </data>
   <data name="StatusDaysInvalid" xml:space="preserve">
     <value>Ընտրեք օրերի քանակ 1-ից մինչև {0}։</value>
   </data>

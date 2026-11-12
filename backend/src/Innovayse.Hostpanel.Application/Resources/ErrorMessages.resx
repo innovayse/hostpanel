@@ -597,6 +597,9 @@
 <data name="PLUGIN_MANIFEST_CHANGELOG_TOO_LONG" xml:space="preserve">
     <value>The changelog in the manifest is too long: keep it to 4000 characters.</value>
   </data>
+<data name="PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID" xml:space="preserve">
+    <value>The server account id label in the manifest must be 1 to 60 characters with no control character.</value>
+  </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>This plugin names a view document that its package does not contain.</value>
   </data>

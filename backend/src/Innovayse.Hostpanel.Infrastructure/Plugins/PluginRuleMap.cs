@@ -46,6 +46,7 @@ internal static class PluginRuleMap
             PackageManifestRule.HostVersionInvalid => PluginManifestRule.HostVersionInvalid,
             PackageManifestRule.HostVersionRangeInverted => PluginManifestRule.HostVersionRangeInverted,
             PackageManifestRule.ChangelogTooLong => PluginManifestRule.ChangelogTooLong,
+            PackageManifestRule.AccountIdLabelInvalid => PluginManifestRule.AccountIdLabelInvalid,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "The host has no manifest rule for this package rule."),
         };
     }

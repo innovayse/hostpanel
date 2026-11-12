@@ -87,6 +87,7 @@ public static class PluginPackageErrors
             PluginManifestRule.HostVersionInvalid => HostpanelErrorCodes.PLUGIN_MANIFEST_HOST_VERSION_INVALID,
             PluginManifestRule.HostVersionRangeInverted => HostpanelErrorCodes.PLUGIN_MANIFEST_HOST_VERSION_RANGE_INVERTED,
             PluginManifestRule.ChangelogTooLong => HostpanelErrorCodes.PLUGIN_MANIFEST_CHANGELOG_TOO_LONG,
+            PluginManifestRule.AccountIdLabelInvalid => HostpanelErrorCodes.PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID,
             _ => throw new ArgumentOutOfRangeException(nameof(rule), rule, "Not a manifest rule."),
         };
     }

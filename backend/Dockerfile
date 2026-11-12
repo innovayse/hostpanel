@@ -1,13 +1,15 @@
 # Context: backend/ (compose: context ../backend). Targets: dev (dotnet watch), build, prod.
 FROM mcr.microsoft.com/dotnet/sdk:9.0.320@sha256:d7cfd59385751fc87897a138ba173fb1bbc2bf946ea78aecc91a119993676997 AS dev
 
-RUN dotnet tool install --global dotnet-ef
-ENV PATH="$PATH:/root/.dotnet/tools"
-
 WORKDIR /app
 
 # Without nuget.config the restore sees nuget.org only and fails NU1101 for Innovayse.Auth.
 COPY nuget.config ./nuget.config
+
+# dotnet-ef comes from the tool manifest, pinned to the EF Core version of Directory.Packages.props, so a build never
+# takes whatever the feed serves that day. `dotnet ef` resolves the manifest from /app, where compose mounts the sources.
+COPY .config/dotnet-tools.json ./.config/dotnet-tools.json
+RUN dotnet tool restore
 
 COPY Innovayse.Hostpanel.sln ./Innovayse.Hostpanel.sln
 COPY Directory.Build.props ./Directory.Build.props

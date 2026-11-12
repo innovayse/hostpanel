@@ -76,7 +76,8 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
     public async Task ExportProfileCarriesTheWholeProfile()
     {
         var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
-        await ClientSettingsSeeds.SetAsync(factory, clientId, taxExempt: true, disableCcProcessing: true, allowSso: false);
+        await ClientSettingsSeeds.SetAsync(
+            factory, clientId, taxExempt: true, taxId: "DE123456789", taxExemptionReason: "Charity", disableCcProcessing: true, allowSso: false);
         var admin = await ClientsTestSeeds.AdminClientAsync(factory);
 
         var response = await admin.GetAsync($"/api/clients/{clientId}/export?fields=profileData");
@@ -94,6 +95,8 @@ public sealed class ExportClientDataTests(IntegrationTestFactory factory) : ICla
         }
 
         profile.GetProperty("settings").GetProperty("taxExempt").GetBoolean().Should().BeTrue();
+        profile.GetProperty("settings").GetProperty("taxId").GetString().Should().Be("DE123456789");
+        profile.GetProperty("settings").GetProperty("taxExemptionReason").GetString().Should().Be("Charity");
         profile.GetProperty("settings").GetProperty("disableCcProcessing").GetBoolean().Should().BeTrue();
         profile.GetProperty("settings").GetProperty("allowSso").GetBoolean().Should().BeFalse();
         profile.GetProperty("notifications").GetProperty("invoice").GetBoolean().Should().BeTrue();

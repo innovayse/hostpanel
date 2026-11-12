@@ -1626,11 +1626,18 @@ every query), not a policy change.
 The switches an admin sets on a client are enforced where the feature exists, and a switch whose
 feature does not exist is not kept. The decisions:
 
-- **`TaxExempt`.** No tax is added to an invoice automatically (there is no tax engine, only the
-  rate an admin types on the invoice options), so the switch is enforced there:
-  `UpdateInvoiceOptions` refuses a new or higher rate on a tax-exempt client's invoice with 409
-  `CLIENT_TAX_EXEMPT`. A rate the invoice already carries may stay. New and renewal invoices carry no
-  tax to remove.
+- **`TaxExempt`, `TaxId`, `TaxExemptionReason`.** A new invoice is taxed by the tax rules
+  (`TaxRules`, one rule per country and optional region, admin CRUD at `/api/admin/tax-rules`) at the
+  rate `ClientTaxRateResolver` (`Billing/Common`) answers: 0 when the setting `billing.tax.enabled` is
+  off, when the client is tax exempt, when the client has no country or when no enabled rule matches;
+  otherwise the enabled rule of the client's region, else the enabled country-wide rule. Every use case
+  that raises an invoice from lines (`CreateOrderInvoice`, `RaiseClientRenewalInvoices`,
+  `InvoiceClientBillableItems`, `InvoiceSelectedItems`, `ConvertQuoteToInvoice`, `CreateInvoice`)
+  fixes the answer on the invoice with `Invoice.ApplyTaxRate` after the lines and before any credit,
+  so a later change of a rule never alters an issued invoice. A credit top-up invoice stays untaxed.
+  The exempt switch is also enforced on the manual rate: `UpdateInvoiceOptions` refuses a new or higher
+  rate on a tax-exempt client's invoice with 409 `CLIENT_TAX_EXEMPT`. A rate the invoice already
+  carries may stay.
 - **`OverdueNotices`.** The payment reminder mail for an unpaid renewal invoice
   (`SendRenewalReminder`) goes only to a client with both `NotifyInvoice` and `OverdueNotices` on. The
   reminder threshold is still recorded when nobody is mailed, so it is not retried every day. No other

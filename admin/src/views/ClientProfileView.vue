@@ -14,7 +14,7 @@ import { contactTypeTone } from '@/lib/tones'
 import { formatDate } from '@/lib/format'
 import { useGeoOptions } from '@/composables/useGeoOptions'
 import { restrictsAccount, type RestrictiveClientStatus } from '@/lib/clientStatus'
-import { ClientStatus, type ClientSettings } from '@/types/client'
+import { ClientStatus, type ClientSettings, type ClientSettingSwitch } from '@/types/client'
 import type { ContactNotifications } from '@/types/contactnotifications'
 import ClientGroupSelect from '@/components/clients/ClientGroupSelect.vue'
 import ClientStatusConfirmDialog from '@/components/clients/ClientStatusConfirmDialog.vue'
@@ -42,7 +42,7 @@ import UiToggle from '@/components/ui/UiToggle.vue'
 import { UiButtonVariant } from '@/utils/ui/button'
 import { UiAlignItems, UiJustify } from '@/utils/ui/layout'
 import { UiLabelVariant, UiTextSize, UiTextTone } from '@/utils/ui/text'
-import { NOTICE_VISIBLE_MS } from '@/lib/limits'
+import { CLIENT_TAX_EXEMPTION_REASON_MAX_LENGTH, CLIENT_TAX_ID_MAX_LENGTH, NOTICE_VISIBLE_MS } from '@/lib/limits'
 import { UiTableDensity } from '@/utils/ui/injection'
 
 const { t } = useI18n()
@@ -149,6 +149,8 @@ const notify = reactive<ContactNotifications>({
 const settings = reactive<ClientSettings>({
   overdueNotices: true,
   taxExempt: false,
+  taxId: null,
+  taxExemptionReason: null,
   separateInvoices: false,
   disableCcProcessing: false,
   marketingOptIn: false,
@@ -175,7 +177,7 @@ const notifyToggles = computed<ToggleDef<keyof typeof notify>[]>(() => [
 ])
 
 /** Account setting switches in display order. */
-const settingToggles = computed<ToggleDef<keyof typeof settings>[]>(() => [
+const settingToggles = computed<ToggleDef<ClientSettingSwitch>[]>(() => [
   { key: 'overdueNotices', label: t('shared.overdueNotices') },
   { key: 'taxExempt', label: t('shared.taxExempt') },
   { key: 'separateInvoices', label: t('shared.separateInvoices') },
@@ -346,7 +348,11 @@ const saveClient = async (): Promise<void> => {
     status: status.value,
     clientGroupId: clientGroupId.value,
     notifications: { ...notify },
-    settings: { ...settings },
+    settings: {
+      ...settings,
+      taxId: settings.taxId?.trim() || null,
+      taxExemptionReason: settings.taxExemptionReason?.trim() || null,
+    },
   })
   if (saved) {
     saveSuccess.value = true
@@ -604,6 +610,30 @@ onBeforeUnmount(() => {
               <UiToggle v-model="settings[toggle.key]" :data-testid="`client-profile-${toggle.key}`" />
               {{ toggle.label }}
             </UiLabel>
+            <UiField :label="t('shared.taxId')">
+              <template #default="{ id: fieldId }">
+                <UiInput
+                  :id="fieldId"
+                  v-model="settings.taxId"
+                  type="text"
+                  :maxlength="CLIENT_TAX_ID_MAX_LENGTH"
+                  :placeholder="t('shared.taxIdPlaceholder')"
+                  data-testid="client-profile-tax-id"
+                />
+              </template>
+            </UiField>
+            <UiField :label="t('shared.taxExemptionReason')">
+              <template #default="{ id: fieldId }">
+                <UiInput
+                  :id="fieldId"
+                  v-model="settings.taxExemptionReason"
+                  type="text"
+                  :maxlength="CLIENT_TAX_EXEMPTION_REASON_MAX_LENGTH"
+                  :placeholder="t('shared.taxExemptionReasonPlaceholder')"
+                  data-testid="client-profile-tax-exemption-reason"
+                />
+              </template>
+            </UiField>
           </UiStack>
         </UiCard>
 

@@ -55,6 +55,8 @@ export enum ApiPath {
   AdminSettings = '/admin/settings',
   /** `/admin/slides` collection and its members. */
   AdminSlides = '/admin/slides',
+  /** `/admin/tax-rules` collection and its members. */
+  AdminTaxRules = '/admin/tax-rules',
   /** `/admin/testimonials` collection and its members. */
   AdminTestimonials = '/admin/testimonials',
   /** `/admin/tld-configs` collection and its members. */

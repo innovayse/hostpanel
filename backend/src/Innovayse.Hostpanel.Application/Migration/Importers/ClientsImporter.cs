@@ -186,6 +186,8 @@ public sealed class ClientsImporter : IMigrationEntityImporter
             clientEntity.UpdateSettings(
                 overdueNotices: clientEntity.OverdueNotices,
                 taxExempt: true,
+                taxId: clientEntity.TaxId,
+                taxExemptionReason: clientEntity.TaxExemptionReason,
                 separateInvoices: clientEntity.SeparateInvoices,
                 disableCcProcessing: clientEntity.DisableCcProcessing,
                 marketingOptIn: clientEntity.MarketingOptIn,

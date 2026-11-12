@@ -67,6 +67,8 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(x => x.ClientGroupId);
         builder.Property(x => x.BillingContact).HasMaxLength(256);
+        builder.Property(x => x.TaxId).HasMaxLength(Client.TaxIdMaxLength);
+        builder.Property(x => x.TaxExemptionReason).HasMaxLength(Client.TaxExemptionReasonMaxLength);
         builder.Property(x => x.AdminNotes).HasMaxLength(2000);
 
         builder.Property(x => x.CreditBalance).HasColumnType("numeric(18,4)").HasDefaultValue(0m);

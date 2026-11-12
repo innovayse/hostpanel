@@ -15,6 +15,9 @@ public static class BillingErrors
     /// <summary>The base currency cannot be disabled (400): <see cref="Currency.Disable"/>.</summary>
     public const string CurrencyBaseDisableNotAllowed = "CURRENCY_BASE_DISABLE_NOT_ALLOWED";
 
+    /// <summary>The rate of a tax rule is outside 0 to 100 percent (400): <see cref="TaxRule.Create"/> and <see cref="TaxRule.Update"/>.</summary>
+    public const string TaxRuleRateInvalid = "TAX_RULE_RATE_INVALID";
+
     /// <summary>Only a Draft invoice may be published (400): <see cref="Invoice.Publish"/>.</summary>
     public const string InvoiceNotDraft = "INVOICE_NOT_DRAFT";
 

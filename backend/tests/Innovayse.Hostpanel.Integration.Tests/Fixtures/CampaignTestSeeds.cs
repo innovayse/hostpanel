@@ -117,7 +117,7 @@ internal static class CampaignTestSeeds
     {
         var context = services.GetRequiredService<IHostpanelDbContext>();
         var seeded = await EventHandlerTestHost.SeedIdentityClientAsync(services, context, "campaign");
-        seeded.Client.UpdateSettings(true, false, false, false, optedIn, true, true);
+        seeded.Client.UpdateSettings(true, false, null, null, false, false, optedIn, true, true);
         seeded.Client.UpdateAddress(null, null, null, null, null, country);
         await context.SaveChangesAsync(CancellationToken.None);
         return seeded;

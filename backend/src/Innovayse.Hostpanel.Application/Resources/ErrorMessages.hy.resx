@@ -1459,4 +1459,13 @@
   <data name="CAMPAIGN_MAIL_LINK_NOT_FOUND" xml:space="preserve">
     <value>Այս հղումը վավեր չէ։</value>
   </data>
+  <data name="TAX_RULE_NOT_FOUND" xml:space="preserve">
+    <value>Այդպիսի հարկային կանոն գոյություն չունի։</value>
+  </data>
+  <data name="TAX_RULE_ALREADY_EXISTS" xml:space="preserve">
+    <value>Այս երկրի և մարզի համար հարկային կանոն արդեն կա։</value>
+  </data>
+  <data name="TAX_RULE_RATE_INVALID" xml:space="preserve">
+    <value>Հարկի դրույքը պետք է լինի 0-ից 100 տոկոս։</value>
+  </data>
 </root>

@@ -45,7 +45,7 @@ public sealed class GetClientBriefsHandler
         var clients = await _context.Clients
             .AsNoTracking()
             .Where(c => ids.Contains(c.Id) || subjects.Contains(c.UserId))
-            .Select(c => new { c.Id, c.UserId, c.FirstName, c.LastName, c.CompanyName, c.Street, c.Address2, c.City, c.State, c.PostCode, c.Country, c.Currency, c.Status, c.NotifyInvoice, c.OverdueNotices, c.TaxExempt, c.SeparateInvoices, c.DisableCcProcessing, c.MarketingOptIn, c.StatusUpdate, c.AllowSso, c.CreditBalance, c.CreatedAt })
+            .Select(c => new { c.Id, c.UserId, c.FirstName, c.LastName, c.CompanyName, c.Street, c.Address2, c.City, c.State, c.PostCode, c.Country, c.Currency, c.Status, c.NotifyInvoice, c.OverdueNotices, c.TaxExempt, c.TaxId, c.TaxExemptionReason, c.SeparateInvoices, c.DisableCcProcessing, c.MarketingOptIn, c.StatusUpdate, c.AllowSso, c.CreditBalance, c.CreatedAt })
             .ToListAsync(ct);
 
         IReadOnlyDictionary<string, IdentityAccount> accounts = query.WithEmail && clients.Count > 0
@@ -66,7 +66,7 @@ public sealed class GetClientBriefsHandler
                 c.Status,
                 c.NotifyInvoice,
                 new ClientSettingsDto(
-                    c.OverdueNotices, c.TaxExempt, c.SeparateInvoices, c.DisableCcProcessing,
+                    c.OverdueNotices, c.TaxExempt, c.TaxId, c.TaxExemptionReason, c.SeparateInvoices, c.DisableCcProcessing,
                     c.MarketingOptIn, c.StatusUpdate, c.AllowSso),
                 c.CreditBalance,
                 c.CreatedAt))

@@ -54,6 +54,8 @@ Go to **Clients → Add New Client**.
 
 - **Overdue Notices** — send payment overdue emails
 - **Tax Exempt** — no tax rate can be set on their invoices
+- **Tax ID** — the client's tax or VAT number, optional text kept on the client record (it is not validated)
+- **Tax Exemption Reason** — optional note on why the client is tax exempt
 - **Separate Invoices** — one invoice per order line
 - **Disable CC Processing** — skip automatic card charges
 - **Marketing Emails Opt-in** — include in marketing campaigns

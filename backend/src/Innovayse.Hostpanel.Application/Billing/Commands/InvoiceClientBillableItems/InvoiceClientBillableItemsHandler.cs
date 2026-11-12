@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
@@ -29,6 +30,9 @@ public sealed class InvoiceClientBillableItemsHandler
     /// <summary>The currency the invoiced client is billed in, stamped on the invoice.</summary>
     private readonly IPayerCurrencyResolver _payerCurrency;
 
+    /// <summary>Fixes the tax rate the invoice is raised at.</summary>
+    private readonly ClientTaxRateResolver _taxRates;
+
     /// <summary>Structured logger.</summary>
     private readonly ILogger<InvoiceClientBillableItemsHandler> _logger;
 
@@ -38,16 +42,19 @@ public sealed class InvoiceClientBillableItemsHandler
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context, for the billable items due and the invoice created for them.</param>
     /// <param name="payerCurrency">The currency the invoiced client is billed in, stamped on the invoice.</param>
+    /// <param name="taxRates">Fixes the tax rate the invoice is raised at.</param>
     /// <param name="logger">Structured logger.</param>
     /// <param name="clock">The clock the invoice moment is read from.</param>
     public InvoiceClientBillableItemsHandler(
         IHostpanelDbContext context,
         IPayerCurrencyResolver payerCurrency,
+        ClientTaxRateResolver taxRates,
         ILogger<InvoiceClientBillableItemsHandler> logger,
         IClock clock)
     {
         _context = context;
         _payerCurrency = payerCurrency;
+        _taxRates = taxRates;
         _logger = logger;
         _clock = clock;
     }
@@ -55,7 +62,7 @@ public sealed class InvoiceClientBillableItemsHandler
     /// <summary>Invoices the client's due items of the requested type.</summary>
     /// <param name="cmd">The client and the item type.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>Success, including when nothing was due any more.</returns>
+    /// <returns>Success, including when nothing was due any more, or <c>CLIENT_NOT_FOUND</c> when the id names no client.</returns>
     public async Task<Result> HandleAsync(InvoiceClientBillableItemsCommand cmd, CancellationToken ct)
     {
         var now = _clock.UtcNow;
@@ -73,6 +80,12 @@ public sealed class InvoiceClientBillableItemsHandler
 
         var currency = (await _payerCurrency.ForClientAsync(cmd.ClientId, ct)).Code;
         var invoice = Invoice.CreateForBillableItems(cmd.ClientId, now.AddDays(PaymentTermDays), currency, items, now);
+        var taxed = await _taxRates.ApplyToAsync(invoice, ct);
+        if (taxed.IsFailure)
+        {
+            return taxed;
+        }
+
         _context.Invoices.Add(invoice);
 
         if (cmd.Type == BillableItemType.Recurring)

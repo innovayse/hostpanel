@@ -89,6 +89,9 @@ public interface IHostpanelDbContext
     /// <summary>Gets the currencies table: one base row plus every rated currency.</summary>
     public DbSet<Currency> Currencies { get; }
 
+    /// <summary>Gets the tax rules table: the rate staff set per country, and per region of a country.</summary>
+    public DbSet<TaxRule> TaxRules { get; }
+
     /// <summary>Gets the client services table.</summary>
     public DbSet<ClientService> ClientServices { get; }
 

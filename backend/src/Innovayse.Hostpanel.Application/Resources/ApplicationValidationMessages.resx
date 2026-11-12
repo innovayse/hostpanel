@@ -1642,4 +1642,25 @@
   <data name="EmailDeliveryKeyRequired" xml:space="preserve">
     <value>The key of the email is required.</value>
   </data>
+  <data name="ClientTaxIdInvalid" xml:space="preserve">
+    <value>Tax ID must not exceed 50 characters.</value>
+  </data>
+  <data name="ClientTaxExemptionReasonInvalid" xml:space="preserve">
+    <value>Tax exemption reason must not exceed 500 characters.</value>
+  </data>
+  <data name="TaxRuleNameInvalid" xml:space="preserve">
+    <value>Provide a name of up to 100 characters.</value>
+  </data>
+  <data name="TaxRuleCountryInvalid" xml:space="preserve">
+    <value>Provide a two-letter country code.</value>
+  </data>
+  <data name="TaxRuleRegionInvalid" xml:space="preserve">
+    <value>Region must not exceed 100 characters.</value>
+  </data>
+  <data name="TaxRuleRateInvalid" xml:space="preserve">
+    <value>A tax rate must be between 0 and 100 percent.</value>
+  </data>
+  <data name="TaxRuleRateDecimalsInvalid" xml:space="preserve">
+    <value>A tax rate can have at most three decimal places.</value>
+  </data>
 </root>

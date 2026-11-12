@@ -94,6 +94,9 @@ public static class DependencyInjection
         services.AddScoped<ServicePlanChangeSettingsReader>();
         services.AddScoped<SettingSource>();
 
+        // The rate a new invoice is raised at: the one answer every invoice-creating use case asks.
+        services.AddScoped<ClientTaxRateResolver>();
+
         // This installation's identity towards the plugin registry: where it is kept, and the enrolment that registers and verifies it.
         services.AddScoped<RegistryInstanceStore>();
         services.AddScoped<RegistryInstanceEnrollment>();

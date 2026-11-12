@@ -54,7 +54,8 @@
     "slides": "Սլայդներ",
     "emailTemplates": "Նամակների ձևանմուշներ",
     "gateways": "Վճարային համակարգեր",
-    "currencies": "Արժույթներ"
+    "currencies": "Արժույթներ",
+    "taxRules": "Հարկային կանոններ"
   },
   "storefront": "Հանրային կայքի բովանդակություն",
   "storefrontChildren": {

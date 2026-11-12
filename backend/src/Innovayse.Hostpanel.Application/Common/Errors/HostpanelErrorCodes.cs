@@ -1478,6 +1478,15 @@ public static class HostpanelErrorCodes
     /// <summary>The colour of a client group is not <c>#RRGGBB</c> (400).</summary>
     public const string CLIENT_GROUP_COLOR_INVALID = Domain.Clients.ClientsErrors.ClientGroupColorInvalid;
 
+    /// <summary>The id names no tax rule (404).</summary>
+    public const string TAX_RULE_NOT_FOUND = "TAX_RULE_NOT_FOUND";
+
+    /// <summary>A tax rule for the same country and region exists already (409, the <c>ALREADY</c> arm of <c>StatusMapping</c>).</summary>
+    public const string TAX_RULE_ALREADY_EXISTS = "TAX_RULE_ALREADY_EXISTS";
+
+    /// <summary>The rate of a tax rule is outside 0 to 100 percent (400).</summary>
+    public const string TAX_RULE_RATE_INVALID = Domain.Billing.BillingErrors.TaxRuleRateInvalid;
+
     /// <summary>
     /// The account owner cannot be removed as an additional user (409, an exact <c>StatusMapping</c> row):
     /// <see cref="Domain.Clients.Client.RemoveUser"/>.

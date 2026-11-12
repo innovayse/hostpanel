@@ -93,6 +93,8 @@ export enum AppRoute {
   SettingsProducts = '/settings/products',
   /** The `/settings/slides` screen. */
   SettingsSlides = '/settings/slides',
+  /** The `/settings/tax-rules` screen. */
+  SettingsTaxRules = '/settings/tax-rules',
   /** The `/settings/tld-pricing` screen. */
   SettingsTldPricing = '/settings/tld-pricing',
   /** The `/setup` screen. */

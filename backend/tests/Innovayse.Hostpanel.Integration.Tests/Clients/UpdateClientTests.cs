@@ -411,7 +411,7 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
             new PostalAddress(street, address2, city, state, postCode, country),
             new ClientPreferencesDto(language, currency, paymentMethod, billingContact, adminNotes),
             new ContactNotifications(true, true, true, true, true, true),
-            new ClientSettingsDto(true, true, false, false, false, true, true),
+            new ClientSettingsDto(true, true, null, null, false, false, false, true, true),
             status);
 
     /// <summary>Valid command should pass.</summary>
@@ -420,6 +420,18 @@ public sealed class UpdateClientTests(IntegrationTestFactory factory) : IClassFi
     {
         var cmd = MakeValidCommand();
         _validator.TestValidate(cmd).ShouldNotHaveAnyValidationErrors();
+    }
+
+    /// <summary>A tax id or an exemption reason longer than its column should fail.</summary>
+    [Fact]
+    public void TooLongTaxIdOrReason_ShouldFail()
+    {
+        var cmd = MakeValidCommand();
+
+        _validator.TestValidate(cmd with { Settings = cmd.Settings with { TaxId = new string('1', 51) } })
+            .ShouldHaveValidationErrorFor(x => x.Settings.TaxId);
+        _validator.TestValidate(cmd with { Settings = cmd.Settings with { TaxExemptionReason = new string('r', 501) } })
+            .ShouldHaveValidationErrorFor(x => x.Settings.TaxExemptionReason);
     }
 
     /// <summary>ClientId 0 should fail.</summary>

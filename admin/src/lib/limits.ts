@@ -66,3 +66,18 @@ export const POLL_INTERVAL_MS = 2 * MS_PER_SECOND
 
 /** How long a "copied" confirmation stays on screen, in milliseconds. */
 export const COPIED_VISIBLE_MS = 2 * MS_PER_SECOND
+
+/** Longest name a tax rule may have (the create and update validators' limit). */
+export const TAX_RULE_NAME_MAX_LENGTH = 100
+
+/** Longest region a tax rule may be limited to. */
+export const TAX_RULE_REGION_MAX_LENGTH = 100
+
+/** Smallest step of a tax rate, in percent: the rate is kept to three decimals. */
+export const TAX_RATE_STEP = 0.001
+
+/** Longest tax identification number a client may have. */
+export const CLIENT_TAX_ID_MAX_LENGTH = 50
+
+/** Longest reason a client's tax exemption may be given. */
+export const CLIENT_TAX_EXEMPTION_REASON_MAX_LENGTH = 500

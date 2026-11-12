@@ -201,6 +201,22 @@ variables:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"
 
+# Fetches only the commit being deployed into $DEPLOY_DIR, with no history, so the transfer stays small.
+# A long transfer can break on a flaky link, so the fetch is retried a bounded number of times.
+.fetch-target-commit:
+  script:
+    - |
+      attempt=1
+      until git -C "$DEPLOY_DIR" fetch --depth 1 "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"; do
+        if [ "$attempt" -ge 4 ]; then
+          echo "Fetching $CI_COMMIT_SHA failed after $attempt attempts" >&2
+          exit 1
+        fi
+        attempt=$((attempt + 1))
+        echo "Fetch failed, attempt $attempt of 4 in 10 seconds"
+        sleep 10
+      done
+
 .deploy-staging:
   extends: .nuget-credentials
   stage: deploy
@@ -625,7 +641,7 @@ deploy:demo:
     - test -n "$DEPLOY_DIR" || { echo "DEPLOY_DIR must be set as a CI/CD variable scoped to this environment" >&2; exit 1; }
     - test -n "$HEALTH_URL" || { echo "HEALTH_URL must be set as a CI/CD variable scoped to this environment" >&2; exit 1; }
     - test -d "$DEPLOY_DIR/.git" || git init "$DEPLOY_DIR"
-    - git -C "$DEPLOY_DIR" fetch "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"
+    - !reference [.fetch-target-commit, script]
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"
     - git -C "$DEPLOY_DIR" submodule sync --recursive
     - sh "$DEPLOY_DIR/scripts/clear-stale-submodule-dirs.sh" "$DEPLOY_DIR"
@@ -728,7 +744,7 @@ deploy:prod:
         echo "$svc hostpanel-rollback/$svc:previous" >> "$DEPLOY_DIR/.deploy/previous-images"
       done
       cat "$DEPLOY_DIR/.deploy/previous-images"
-    - git -C "$DEPLOY_DIR" fetch "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"
+    - !reference [.fetch-target-commit, script]
     - git -C "$DEPLOY_DIR" checkout -f "$CI_COMMIT_SHA"
     # The plugin SDK is a submodule: point it at the URL and commit this checkout records.
     - git -C "$DEPLOY_DIR" submodule sync --recursive

@@ -69,6 +69,18 @@ describe('auth-guard plugin', () => {
     expect(plugins.uiLoaded).toBe(false)
   })
 
+  it('forgets the unsent chat drafts of the person whose session ended, and nothing else', async () => {
+    window.sessionStorage.setItem('hostpanel.plugin-chat-draft:acme:/chat:[]', 'Half a thought')
+    window.sessionStorage.setItem('unrelated', 'kept')
+    const handle = await loadHandler('/client')
+
+    handle()
+
+    expect(window.sessionStorage.getItem('hostpanel.plugin-chat-draft:acme:/chat:[]')).toBeNull()
+    expect(window.sessionStorage.getItem('unrelated')).toBe('kept')
+    window.sessionStorage.clear()
+  })
+
   it('clears the client state and the cookie, then goes to sign-in carrying the current page', async () => {
     const client = signIn()
     const handle = await loadHandler('/client/invoices/7?tab=pay')

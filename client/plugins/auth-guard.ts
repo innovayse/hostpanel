@@ -19,6 +19,7 @@
 
 import { useClientStore } from '~/stores/client'
 import { usePluginsStore } from '~/stores/plugins'
+import { clearPluginChatDrafts } from '~/composables/usePluginChatDraft'
 import { isPrivateClientPath, loginPathWithReturn } from '~/utils/returnPath'
 import { SessionCookie } from '~/constants/sessionCookie'
 
@@ -41,6 +42,8 @@ export default defineNuxtPlugin(() => {
           store.reset()
           // The plugin index belongs to the person whose session ended; the next one reads their own.
           usePluginsStore().reset()
+          // So are the half-written chat messages: the drafts carry no account.
+          clearPluginChatDrafts()
         } catch {
           // Store may not be initialized
         }

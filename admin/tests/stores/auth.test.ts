@@ -243,6 +243,20 @@ describe('authStore.checkSession', () => {
     expect(store.isAuthenticated).toBe(false)
     expect(store.sessionChecked).toBe(true)
   })
+
+  it('forgets the unsent chat drafts on sign-out, and nothing else', async () => {
+    window.sessionStorage.setItem('hostpanel.plugin-chat-draft:acme:/chat:[]', 'Half a thought')
+    window.sessionStorage.setItem('unrelated', 'kept')
+    stubFetch(new Response(null, { status: 204 }))
+    const store = useAuthStore()
+    store.mode = AuthMode.Local
+
+    await store.logout()
+
+    expect(window.sessionStorage.getItem('hostpanel.plugin-chat-draft:acme:/chat:[]')).toBeNull()
+    expect(window.sessionStorage.getItem('unrelated')).toBe('kept')
+    window.sessionStorage.clear()
+  })
 })
 
 describe('auth store accountKey', () => {

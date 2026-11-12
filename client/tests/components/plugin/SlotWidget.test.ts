@@ -154,6 +154,16 @@ describe('PluginSlotWidget', () => {
       expect(page.text()).toContain('Site is live')
     })
 
+    it('draws a header block as a section title, not as the page title', async () => {
+      table[`GET ${slotWidgetPath(PluginSlotId.DashboardCards, 'ok')}`] = { body: slotView('ok', [{ kind: PluginBlockKind.Header, title: 'Site' }]) }
+
+      const page = mountPageWith(['ok'])
+
+      await vi.waitFor(() => expect(page.find('[data-testid="plugin-header-embedded"]').exists()).toBe(true))
+      expect(page.find('h2[data-testid="plugin-header"]').text()).toBe('Site')
+      expect(page.find('h1').exists()).toBe(false)
+    })
+
     it('reads its view with the slot\'s context and language, and fills its routes from it', async () => {
       table[`GET ${slotWidgetPath(PluginSlotId.ServiceTabs, 'slow')}`] = { body: readingView() }
 

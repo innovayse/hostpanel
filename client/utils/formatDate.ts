@@ -193,3 +193,18 @@ export const formatDateTime = (value: string | number | Date | null | undefined,
   // are deliberately dropped: nothing on these screens is decided at that resolution.
   return date ? format(date, 'PPp', { locale: dateLocale(locale) }) : EMPTY_DATE
 }
+
+/**
+ * Formats the time of day of a moment, such as when a chat message was written.
+ *
+ * Converted into the reader's own timezone like {@link formatDateTime}, without the day.
+ *
+ * @param value - The moment, as an epoch, a `Date` or an ISO string.
+ * @param locale - `@nuxtjs/i18n` locale code. Omit inside a component to use the request's.
+ * @returns The localised time, or {@link EMPTY_DATE} when there is none to show.
+ */
+export const formatTime = (value: string | number | Date | null | undefined, locale?: string): string => {
+  const date = toDate(value, false)
+  // `p` is date-fns' short localised time: "3:07 PM", "15:07".
+  return date ? format(date, 'p', { locale: dateLocale(locale) }) : EMPTY_DATE
+}

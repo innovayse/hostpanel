@@ -476,6 +476,34 @@ describe('useAuthStore cart on sign-out', () => {
   })
 })
 
+describe('useAuthStore chat drafts on sign-out', () => {
+  /** The stored key of an unsent chat message. */
+  const DRAFT_KEY = 'hostpanel.plugin-chat-draft:acme:/chat:[]'
+
+  beforeEach(() => {
+    vi.stubGlobal('useRuntimeConfig', () => ({ public: { authMode: 'local' } }))
+    window.sessionStorage.setItem(DRAFT_KEY, 'Half a thought')
+    window.sessionStorage.setItem('unrelated', 'kept')
+  })
+
+  afterEach(() => {
+    window.sessionStorage.clear()
+  })
+
+  it('forgets the unsent chat drafts when the client logs out, and nothing else', async () => {
+    await useAuthStore().logout()
+
+    expect(window.sessionStorage.getItem(DRAFT_KEY)).toBeNull()
+    expect(window.sessionStorage.getItem('unrelated')).toBe('kept')
+  })
+
+  it('forgets them when the local session ends', async () => {
+    await useAuthStore().endLocalSession()
+
+    expect(window.sessionStorage.getItem(DRAFT_KEY)).toBeNull()
+  })
+})
+
 describe('useAuthStore.endLocalSession', () => {
   it('clears the session cookies and the signed-in account without leaving the page', async () => {
     const store = useAuthStore()

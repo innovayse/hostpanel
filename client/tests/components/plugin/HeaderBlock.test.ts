@@ -54,6 +54,32 @@ describe('PluginHeaderBlock', () => {
   })
 })
 
+describe('PluginHeaderBlock embedded', () => {
+  it('draws a section title at the h2 level with its actions, not the page header', () => {
+    const wrapper = mountBlocks([{
+      kind: PluginBlockKind.Header,
+      title: 'Site',
+      actions: [{ kind: PluginBlockKind.Action, label: 'Publish', route: TEST_ROUTES.publish }],
+    }], { embedded: true })
+
+    expect(wrapper.find('h1').exists()).toBe(false)
+    const title = wrapper.get('[data-testid="plugin-header"]')
+    expect(title.element.tagName).toBe('H2')
+    expect(title.text()).toBe('Site')
+    expect(wrapper.get('[data-testid="plugin-header-embedded"]').find('[data-testid="plugin-action-button"]').text()).toBe('Publish')
+  })
+
+  it('draws the page header on a plugin page', () => {
+    const wrapper = mountBlocks([{ kind: PluginBlockKind.Header, title: 'Site' }])
+
+    // The block's own test id replaces the kit header's on its root element.
+    const header = wrapper.get('[data-testid="plugin-header"]')
+    expect(header.element.tagName).toBe('HEADER')
+    expect(header.get('h1').text()).toBe('Site')
+    expect(wrapper.find('[data-testid="plugin-header-embedded"]').exists()).toBe(false)
+  })
+})
+
 describe('PluginHeaderBlock action messages', () => {
   it('shows an action\'s sentence once below the row, not under its button', async () => {
     api = await startPluginApi({ [`POST ${ROUTES_URL}/sites/7/publish`]: { body: { message: 'Published.' } } })

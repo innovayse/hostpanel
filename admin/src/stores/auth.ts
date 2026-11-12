@@ -6,6 +6,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAuthApi } from '@/composables/apis/useAuthApi'
+import { clearPluginChatDrafts } from '@/composables/usePluginChatDraft'
 import { AuthMode } from '@/types/auth'
 import type { SignInResult } from '@/types/auth'
 import { errorSentence } from '@/lib/errorHandler'
@@ -364,6 +365,8 @@ export const useAuthStore = defineStore('auth', () => {
     // Signed out is now the known state: asking the server again would only earn a 401, or, when
     // the sign-out request below fails, revive the session the operator just ended.
     sessionChecked.value = true
+    // A half-written chat message belongs to the person who typed it: the drafts carry no account.
+    clearPluginChatDrafts()
 
     if (mode.value === AuthMode.Local) {
       // Failure is swallowed on purpose, and only here: the local state above is

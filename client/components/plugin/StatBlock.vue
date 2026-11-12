@@ -1,19 +1,20 @@
 <template>
-  <UiSkeleton v-if="loading" shape="block" class="h-16" />
-  <!-- A status word is drawn as a badge above its label; a failed read still shows the sentence as a plain value. -->
-  <UiStack v-else-if="badge" gap="sm" data-testid="plugin-stat">
-    <UiBadge size="sm" data-testid="plugin-stat-badge">{{ formatted }}</UiBadge>
-    <UiText as="p" size="sm" tone="muted">{{ block.label }}</UiText>
-  </UiStack>
-  <UiStat v-else :label="block.label" :value="error || formatted" data-testid="plugin-stat" />
+  <UiSkeleton v-if="loading" shape="block" class="h-20" />
+  <!-- A status word is drawn as a badge in the tile; a failed read still shows the sentence as a plain value. -->
+  <UiStatTile v-else :label="block.label" :value="error || formatted" data-testid="plugin-stat">
+    <template v-if="badge" #value>
+      <UiBadge :size="UiSize.Sm" data-testid="plugin-stat-badge">{{ formatted }}</UiBadge>
+    </template>
+  </UiStatTile>
 </template>
 
 <script setup lang="ts">
 /**
  * PluginStatBlock - a labelled value, written in the view or read from a GET route, formatted with the host's
- * locale formatters and shown as text. A failed read shows the store's sentence (the API's `detail`) in place of
+ * locale formatters and shown as text in a tile. A failed read shows the store's sentence (the API's `detail`) in place of
  * the value, so one failing block never hides the rest of the page. `format: badge` draws the word as a badge.
  */
+import { UiSize } from '~/utils/ui/enums'
 import { usePluginSource } from '~/composables/usePluginView'
 import type { PluginStatBlock } from '~/types/pluginblock'
 import { PluginValueFormat } from '~/types/pluginvalueformat'

@@ -32,6 +32,22 @@ describe('PluginLinkBlock', () => {
     expect(link.text()).toBe('<b>Preview</b>')
   })
 
+  it('draws an external link as an outline button with an external-link mark', () => {
+    const wrapper = mountBlocks([{ kind: PluginBlockKind.Link, label: 'Preview', href: 'https://blog.sites.example.test/' }])
+
+    const link = wrapper.get('[data-testid="plugin-link"]')
+    expect(link.classes()).toContain('ui-btn-outline')
+    expect(link.find('[data-testid="plugin-link-external"]').exists()).toBe(true)
+  })
+
+  it('draws a host-relative link as an outline button without the external-link mark', () => {
+    const wrapper = mountBlocks([{ kind: PluginBlockKind.Link, label: 'Services', href: '/client/services/7' }])
+
+    const link = wrapper.get('[data-testid="plugin-link"]')
+    expect(link.classes()).toContain('ui-btn-outline')
+    expect(link.find('[data-testid="plugin-link-external"]').exists()).toBe(false)
+  })
+
   it('links a host-relative path inside the panel', () => {
     const wrapper = mountBlocks([{ kind: PluginBlockKind.Link, label: 'Services', href: '/client/services/7' }])
 

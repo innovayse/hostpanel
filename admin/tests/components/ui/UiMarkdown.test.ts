@@ -2,8 +2,8 @@
  * Unit tests for UiMarkdown: Markdown drawn as ordinary elements, raw HTML kept as text, links only over
  * https and opened safely, and the empty text for a null or blank source.
  */
-import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
 import UiMarkdown from '@/components/ui/UiMarkdown.vue'
 
 describe('UiMarkdown', () => {
@@ -49,6 +49,59 @@ describe('UiMarkdown', () => {
     expect(mount(UiMarkdown, { props: { source: null, empty: 'No release notes.' } }).text()).toBe('No release notes.')
     expect(mount(UiMarkdown, { props: { source: '  \n', empty: 'No release notes.' } }).text()).toBe('No release notes.')
     expect(mount(UiMarkdown, { props: { source: null } }).text()).toBe('')
+  })
+})
+
+describe('UiMarkdown caret', () => {
+  it('ends the last paragraph, heading or list item of a reply that is still being written', () => {
+    const paragraph = mount(UiMarkdown, { props: { source: 'First\n\nSecond', caret: true } })
+    const list = mount(UiMarkdown, { props: { source: '- one\n- two', caret: true } })
+
+    expect(paragraph.findAll('[data-testid="markdown-caret"]')).toHaveLength(1)
+    expect(paragraph.findAll('p')[1]?.find('[data-testid="markdown-caret"]').exists()).toBe(true)
+    expect(list.findAll('li')[1]?.find('[data-testid="markdown-caret"]').exists()).toBe(true)
+    expect(list.findAll('li')[0]?.find('[data-testid="markdown-caret"]').exists()).toBe(false)
+  })
+
+  it('stands on its own line after a code block and for a reply with no text yet', () => {
+    const afterCode = mount(UiMarkdown, { props: { source: '```\nrun\n```', caret: true } })
+    const nothing = mount(UiMarkdown, { props: { source: '', caret: true } })
+
+    expect(afterCode.get('pre').find('[data-testid="markdown-caret"]').exists()).toBe(false)
+    expect(afterCode.findAll('[data-testid="markdown-caret"]')).toHaveLength(1)
+    expect(nothing.findAll('[data-testid="markdown-caret"]')).toHaveLength(1)
+  })
+
+  it('shows no caret by default', () => {
+    expect(mount(UiMarkdown, { props: { source: 'Done' } }).find('[data-testid="markdown-caret"]').exists()).toBe(false)
+  })
+})
+
+describe('UiMarkdown code copy', () => {
+  it('gives a code block a copy button that copies its code, once the caller names it', () => {
+    const wrapper = mount(UiMarkdown, { props: { source: '```\nnpm run build\n```', copyLabel: 'Copy code', copiedLabel: 'Copied' } })
+    const button = wrapper.get('[data-testid="markdown-copy"]')
+
+    expect(button.attributes('aria-label')).toBe('Copy code')
+    expect(wrapper.get('pre').classes()).toContain('pr-10')
+  })
+
+  it('names the copied state like the copy button when no copied label is given', async () => {
+    vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } })
+    const wrapper = mount(UiMarkdown, { props: { source: '```\nrun\n```', copyLabel: 'Copy code' } })
+
+    await wrapper.get('[data-testid="markdown-copy"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('[data-testid="markdown-copy"]').attributes('aria-label')).toBe('Copy code')
+    vi.unstubAllGlobals()
+  })
+
+  it('draws no button without a label', () => {
+    const wrapper = mount(UiMarkdown, { props: { source: '```\nrun\n```' } })
+
+    expect(wrapper.find('[data-testid="markdown-copy"]').exists()).toBe(false)
+    expect(wrapper.get('pre').classes()).not.toContain('pr-10')
   })
 })
 

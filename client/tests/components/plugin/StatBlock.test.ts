@@ -30,6 +30,14 @@ describe('PluginStatBlock', () => {
     expect(stat.find('b').exists()).toBe(false)
   })
 
+  it('draws the stat as a tile', () => {
+    const wrapper = mountBlocks([{ kind: PluginBlockKind.Stat, label: 'Pages', value: 3 }])
+
+    const tile = wrapper.get('[data-testid="plugin-stat"]')
+    expect(tile.classes()).toContain('rounded-2xl')
+    expect(tile.get('[data-testid="ui-stat-tile-value"]').text()).toBe('3')
+  })
+
   it('reads its value from the route, its parameters filled from the page', async () => {
     api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7`]: { body: { stats: { pages: 12 } } } })
     const wrapper = mountBlocks([{ kind: PluginBlockKind.Stat, label: 'Pages', source: { route: TEST_ROUTES.site, field: 'stats.pages' } }])

@@ -23,6 +23,12 @@ describe('PluginStatBlock', () => {
     expect(stat.text()).toContain('3')
   })
 
+  it('draws the stat as a tile', async () => {
+    const { wrapper } = await mountPluginView([{ kind: PluginBlockKind.Stat, label: 'Sites', value: 3 }])
+
+    expect(wrapper.get('[data-testid="plugin-stat"] p.font-display').text()).toBe('3')
+  })
+
   it('formats a money value read from the route', async () => {
     const { wrapper } = await mountPluginView([{ kind: PluginBlockKind.Stat, label: 'Spent', source: usage, format: PluginValueFormat.Money }], {
       routes: { [`GET ${ext('usage')}`]: () => json({ spent: { amount: 12.5, currency: 'USD' } }) },

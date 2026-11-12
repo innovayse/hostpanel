@@ -5,7 +5,7 @@
  * @module tests/components/ui/UiMarkdownText.test
  */
 
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import UiMarkdownText from '~/components/ui/UiMarkdownText.vue'
 
@@ -74,5 +74,44 @@ describe('UiMarkdownText', () => {
 
   it('shows an HTML attack as its own text', () => {
     expect(render('<img src=x onerror=alert(1)>').text()).toBe('<img src=x onerror=alert(1)>')
+  })
+})
+
+describe('UiMarkdownText code blocks and caret', () => {
+  /**
+   * Renders a text with the copy button named.
+   *
+   * @param text - The text as written.
+   * @param extra - Further props.
+   * @returns The mounted wrapper.
+   */
+  const renderCopyable = (text: string, extra: Record<string, unknown> = {}) =>
+    mountWithKit(UiMarkdownText, { props: { text, copyLabel: 'Copy code', copiedLabel: 'Copied', ...extra } })
+
+  it('gives a code block a copy button that copies its code, and none to other text', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', { clipboard: { writeText } })
+    const wrapper = renderCopyable('Run:\n```\nnpm install\nnpm test\n```')
+
+    expect(wrapper.findAll('[data-testid="ui-markdown-copy"]')).toHaveLength(1)
+    expect(wrapper.get('[data-testid="ui-markdown-copy"]').attributes('aria-label')).toBe('Copy code')
+    await wrapper.get('[data-testid="ui-markdown-copy"]').trigger('click')
+    expect(writeText).toHaveBeenCalledWith('npm install\nnpm test')
+    vi.unstubAllGlobals()
+  })
+
+  it('draws no copy button unless the caller names it', () => {
+    const wrapper = render('```\ncode\n```')
+
+    expect(wrapper.find('[data-testid="ui-markdown-copy"]').exists()).toBe(false)
+  })
+
+  it('ends the reply in a caret while it is being written and not after', async () => {
+    const wrapper = renderCopyable('Writing', { caret: true })
+    expect(wrapper.get('p span[aria-hidden="true"]').classes()).toContain('animate-pulse')
+
+    await wrapper.setProps({ caret: false })
+
+    expect(wrapper.find('span').exists()).toBe(false)
   })
 })

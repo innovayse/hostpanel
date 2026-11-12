@@ -3,7 +3,9 @@
  * and `apiStream`, keepalives ignored, the plugin's and the host's error events, Stop, leaving the page, a broken
  * connection and a refused stream; the introduction and ready-made messages of an empty chat, the reply's signature,
  * the length cap, the blocks read again after a turn, a restart when another block refreshes the chat by id, and
- * links in a reply under the link-block rule.
+ * links in a reply under the link-block rule; the chat layout (Enter and Shift+Enter, focus after a send, typing dots,
+ * caret, status inside the reply, copy, time, Jump to latest, the count near the limit), the unsent draft kept in the
+ * tab and given back when a send got no reply, and Retry after a failed turn.
  *
  * @module tests/components/plugin/ChatBlock.test
  */
@@ -21,6 +23,8 @@ afterEach(async () => {
   await api?.close()
   api = undefined
   vi.unstubAllGlobals()
+  // A kept draft belongs to the tab; the next test must start with a tab that has none.
+  window.sessionStorage.clear()
 })
 
 /** The chat of the worked example. */
@@ -236,13 +240,13 @@ describe('PluginChatBlock', () => {
     expect(wrapper.get('[data-testid="plugin-chat-send"]').attributes('disabled')).toBeDefined()
     expect(reply.calls).toHaveLength(0)
   })
-  it('shows the introduction and ready-made messages of an empty chat, which only fill the field', async () => {
+  it('shows the introduction and ready-made messages of an empty chat, a press sending the message', async () => {
     const reply = stubStream()
     api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7/history`]: { body: [] } })
     const wrapper = mountBlocks([{
       ...chat,
       intro: { title: 'What should change?', text: 'Say it <b>plainly</b>.' },
-      suggestions: [{ label: 'Gallery', text: 'Add a photo gallery.' }],
+      suggestions: [{ label: 'Gallery', text: 'Add a photo gallery.' }, { label: 'Blog' }],
     }])
     await settle()
 
@@ -251,9 +255,34 @@ describe('PluginChatBlock', () => {
     expect(wrapper.find('[data-testid="plugin-chat-intro"] b').exists()).toBe(false)
 
     await wrapper.get('[data-testid="plugin-chat-suggestion-0"]').trigger('click')
+    await settle()
 
-    expect((wrapper.get('[data-testid="plugin-chat-input"]').element as HTMLTextAreaElement).value).toBe('Add a photo gallery.')
-    expect(reply.calls).toHaveLength(0)
+    expect(JSON.parse(String(reply.calls[0]!.init.body))).toEqual({ message: 'Add a photo gallery.' })
+    expect(wrapper.get('[data-testid="plugin-chat-user"]').text()).toBe('Add a photo gallery.')
+    expect(wrapper.find('[data-testid="plugin-chat-intro"]').exists()).toBe(false)
+  })
+
+  it('sends the label of a ready-made message that has no text, and keeps what the reader typed', async () => {
+    const reply = stubStream()
+    api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7/history`]: { body: [] } })
+    const wrapper = mountBlocks([{ ...chat, suggestions: [{ label: 'Blog' }] }])
+    await settle()
+    await wrapper.get('[data-testid="plugin-chat-input"]').setValue('Half a thought')
+
+    await wrapper.get('[data-testid="plugin-chat-suggestion-0"]').trigger('click')
+    await settle()
+
+    expect(JSON.parse(String(reply.calls[0]!.init.body))).toEqual({ message: 'Blog' })
+    expect((wrapper.get('[data-testid="plugin-chat-input"]').element as HTMLTextAreaElement).value).toBe('Half a thought')
+  })
+
+  it('uses the block\'s placeholder as the sentence of an empty chat without an introduction', async () => {
+    api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7/history`]: { body: [] } })
+    const wrapper = mountBlocks([chat])
+    await settle()
+
+    expect(wrapper.find('[data-testid="plugin-chat-empty"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="plugin-chat-intro-text"]').text()).toBe('Describe a change')
   })
 
   it('hides the introduction once the chat has messages', async () => {
@@ -634,5 +663,270 @@ describe('PluginChatBlock', () => {
     expect(reply.calls).toHaveLength(2)
     expect((field.element as HTMLTextAreaElement).value).toBe('And a blog')
     expect(wrapper.text()).toContain('Add a page')
+  })
+
+  it('sends on Enter and writes a new line on Shift+Enter', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    const field = wrapper.get('[data-testid="plugin-chat-input"]')
+
+    await field.setValue('First line')
+    await field.trigger('keydown', { key: 'Enter', shiftKey: true })
+    await settle()
+    expect(reply.calls).toHaveLength(0)
+
+    await field.trigger('keydown', { key: 'Enter' })
+    await settle()
+    expect(JSON.parse(String(reply.calls[0]!.init.body))).toEqual({ message: 'First line' })
+    expect((field.element as HTMLTextAreaElement).value).toBe('')
+  })
+
+  it('puts the focus back in the field after a send', async () => {
+    stubStream()
+    api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7/history`]: { body: [] } })
+    const wrapper = mountBlocks([chat], { options: { attachToBody: true } })
+    await settle()
+
+    await sendMessage(wrapper, 'Add a page')
+
+    expect(document.activeElement).toBe(wrapper.get('[data-testid="plugin-chat-input"]').element)
+    wrapper.unmount()
+  })
+
+  it('shows the typing dots until the first text, then the text with a caret that ends with the reply', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, 'Add a page')
+    expect(wrapper.find('[data-testid="ui-typing-dots"]').exists()).toBe(true)
+
+    reply.send('delta', { text: 'Working' })
+    await settle()
+    expect(wrapper.find('[data-testid="ui-typing-dots"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="plugin-chat-reply"] span[aria-hidden="true"].animate-pulse').exists()).toBe(true)
+
+    reply.send('done', {})
+    reply.close()
+    await settle()
+    expect(wrapper.find('[data-testid="plugin-chat-reply"] span.animate-pulse').exists()).toBe(false)
+  })
+
+  it('shows what the plugin is doing inside the reply being written, with a spinner, until the reply ends', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, 'Add a page')
+
+    reply.send('status', { text: 'Building pages…' })
+    await settle()
+    const status = wrapper.get('[data-testid="plugin-chat-status"]')
+    expect(status.text()).toBe('Building pages…')
+    expect(wrapper.findAll('[data-testid="plugin-chat-reply"]').at(-1)!.find('.animate-spin').exists()).toBe(true)
+
+    reply.send('done', {})
+    reply.close()
+    await settle()
+    expect(wrapper.find('[data-testid="plugin-chat-status"]').exists()).toBe(false)
+  })
+
+  it('labels the log for assistive technology and marks it busy while a reply streams', async () => {
+    stubStream()
+    const wrapper = await mountChat()
+    const log = wrapper.get('[data-testid="plugin-chat-log"]')
+    expect(log.attributes('role')).toBe('log')
+    // Focusable, so a keyboard reader can scroll it.
+    expect(log.attributes('tabindex')).toBe('0')
+    expect(log.attributes('aria-live')).toBe('polite')
+    expect(log.attributes('aria-label')).toBe('plugins.chatLog')
+    expect(log.attributes('aria-busy')).toBe('false')
+
+    await sendMessage(wrapper, 'Add a page')
+    expect(log.attributes('aria-busy')).toBe('true')
+  })
+
+  it('shows the time of messages written in this session only', async () => {
+    stubStream()
+    const wrapper = await mountChat()
+    expect(wrapper.findAll('[data-testid="plugin-chat-time"]')).toHaveLength(0)
+
+    await sendMessage(wrapper, 'Add a page')
+
+    expect(wrapper.findAll('[data-testid="plugin-chat-time"]').length).toBeGreaterThan(0)
+  })
+
+  it('copies a finished reply', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    vi.stubGlobal('navigator', { clipboard: { writeText } })
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    // The history's reply already carries its own copy button.
+    const earlier = wrapper.findAll('[data-testid="plugin-chat-copy"]').length
+    await sendMessage(wrapper, 'Add a page')
+    reply.send('delta', { text: 'Done **now**' })
+    await settle()
+    expect(wrapper.findAll('[data-testid="plugin-chat-copy"]')).toHaveLength(earlier)
+    reply.send('done', {})
+    reply.close()
+    await settle()
+    expect(wrapper.findAll('[data-testid="plugin-chat-copy"]')).toHaveLength(earlier + 1)
+
+    await wrapper.findAll('[data-testid="plugin-chat-copy"]').at(-1)!.trigger('click')
+    await settle()
+
+    expect(writeText).toHaveBeenCalledWith('Done **now**')
+  })
+
+  it('offers a way back to the newest message once the reader scrolled up', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, 'Build')
+    const log = wrapper.get('[data-testid="plugin-chat-log"]')
+    const element = log.element as HTMLElement
+    Object.defineProperty(element, 'scrollHeight', { configurable: true, value: 1000 })
+    Object.defineProperty(element, 'clientHeight', { configurable: true, value: 200 })
+    expect(wrapper.find('[data-testid="plugin-chat-jump"]').exists()).toBe(false)
+
+    element.scrollTop = 100
+    await log.trigger('scroll')
+    reply.send('delta', { text: 'More' })
+    await settle()
+    expect(element.scrollTop).toBe(100)
+
+    await wrapper.get('[data-testid="plugin-chat-jump"]').trigger('click')
+    await settle()
+    expect(element.scrollTop).toBe(1000)
+    expect(wrapper.find('[data-testid="plugin-chat-jump"]').exists()).toBe(false)
+  })
+
+  it('shows the count only near the limit', async () => {
+    stubStream()
+    api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7/history`]: { body: [] } })
+    const wrapper = mountBlocks([{ ...chat, maxLength: 10 }])
+    await settle()
+    const field = wrapper.get('[data-testid="plugin-chat-input"]')
+
+    await field.setValue('abc')
+    expect(wrapper.find('[data-testid="ui-chat-input-count"]').exists()).toBe(false)
+
+    await field.setValue('abcdefghi')
+    expect(wrapper.get('[data-testid="ui-chat-input-count"]').text()).toBe('9/10')
+  })
+
+  describe('the unsent draft', () => {
+    /**
+     * The drafts kept in the tab.
+     *
+     * @returns The stored texts.
+     */
+    const stored = (): string[] =>
+      Object.keys(window.sessionStorage)
+        .filter(key => key.startsWith('hostpanel.plugin-chat-draft'))
+        .map(key => window.sessionStorage.getItem(key) ?? '')
+
+    it('is kept in the tab and restored when the chat is mounted again', async () => {
+      stubStream()
+      const first = await mountChat()
+      await first.get('[data-testid="plugin-chat-input"]').setValue('Half a thought')
+      expect(stored()).toEqual(['Half a thought'])
+      first.unmount()
+
+      const second = mountBlocks([chat])
+      await settle()
+
+      expect((second.get('[data-testid="plugin-chat-input"]').element as HTMLTextAreaElement).value).toBe('Half a thought')
+    })
+
+    it('stays kept while a send is out and is forgotten once a reply arrived', async () => {
+      const reply = stubStream()
+      const wrapper = await mountChat()
+
+      await sendMessage(wrapper, 'Add a page')
+      expect(stored()).toEqual(['Add a page'])
+
+      reply.send('delta', { text: 'On it' })
+      await settle()
+      expect(stored()).toEqual([])
+    })
+
+    it('goes back to the field when the send got no reply, and the message is not left shown as sent', async () => {
+      stubStream({ status: 429, body: { type: 'RATE_LIMITED', title: 'Too Many Requests', status: 429, detail: 'Too many requests.' } })
+      const wrapper = await mountChat()
+
+      await sendMessage(wrapper, 'Add a page')
+
+      expect((wrapper.get('[data-testid="plugin-chat-input"]').element as HTMLTextAreaElement).value).toBe('Add a page')
+      expect(stored()).toEqual(['Add a page'])
+      expect(wrapper.findAll('[data-testid="plugin-chat-user"]')).toHaveLength(1)
+      expect(wrapper.find('[data-testid="plugin-chat-error"]').exists()).toBe(true)
+      expect(wrapper.find('[data-testid="plugin-chat-retry"]').exists()).toBe(false)
+    })
+
+    it('stays kept when the page is left while the send is out', async () => {
+      const reply = stubStream()
+      const wrapper = await mountChat()
+      await sendMessage(wrapper, 'Add a page')
+
+      // Leaving ends the stream itself, so there is nothing left for the test to close.
+      wrapper.unmount()
+      await settle()
+
+      expect(reply.cancelled()).toBe(true)
+      expect(stored()).toEqual(['Add a page'])
+    })
+
+    it('goes back to the field when Stop comes before the first word', async () => {
+      stubStream()
+      const wrapper = await mountChat()
+      await sendMessage(wrapper, 'Add a page')
+
+      await wrapper.get('[data-testid="plugin-chat-stop"]').trigger('click')
+      await settle()
+
+      expect((wrapper.get('[data-testid="plugin-chat-input"]').element as HTMLTextAreaElement).value).toBe('Add a page')
+      expect(stored()).toEqual(['Add a page'])
+      expect(wrapper.findAll('[data-testid="plugin-chat-user"]')).toHaveLength(1)
+    })
+
+    it('goes back to the field when the send route is one the page cannot call', async () => {
+      stubStream()
+      api = await startPluginApi({ [`GET ${ROUTES_URL}/sites/7/history`]: { body: HISTORY } })
+      const wrapper = mountBlocks([{ ...chat, send: TEST_ROUTES.site }])
+      await settle()
+
+      await sendMessage(wrapper, 'Add a page')
+
+      expect((wrapper.get('[data-testid="plugin-chat-input"]').element as HTMLTextAreaElement).value).toBe('Add a page')
+      expect(wrapper.find('[data-testid="plugin-chat-error"]').exists()).toBe(false)
+    })
+
+    it('is kept apart for another page of the same plugin', async () => {
+      stubStream()
+      const first = await mountChat()
+      await first.get('[data-testid="plugin-chat-input"]').setValue('For site 7')
+      first.unmount()
+
+      const other = mountBlocks([chat], { values: { siteId: '8' } })
+      await settle()
+
+      expect((other.get('[data-testid="plugin-chat-input"]').element as HTMLTextAreaElement).value).toBe('')
+    })
+  })
+
+  it('offers Retry after a failed turn that wrote a reply, and sends the same message in place of the failed turn', async () => {
+    const reply = stubStream()
+    const wrapper = await mountChat()
+    await sendMessage(wrapper, 'Add a page')
+    reply.send('delta', { text: 'Part' })
+    reply.send('error', { text: 'The model is busy.' })
+    reply.send('done', {})
+    reply.close()
+    await settle()
+    expect(wrapper.findAll('[data-testid="plugin-chat-user"]')).toHaveLength(2)
+
+    await wrapper.get('[data-testid="plugin-chat-retry"]').trigger('click')
+    await settle()
+
+    expect(reply.calls).toHaveLength(2)
+    expect(JSON.parse(String(reply.calls[1]!.init.body))).toEqual({ message: 'Add a page' })
+    expect(wrapper.findAll('[data-testid="plugin-chat-user"]')).toHaveLength(2)
+    expect(wrapper.find('[data-testid="plugin-chat-error"]').exists()).toBe(false)
   })
 })

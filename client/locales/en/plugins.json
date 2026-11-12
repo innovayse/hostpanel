@@ -20,6 +20,15 @@
     "previewInsecure": "The preview needs a secure connection. Over plain http this browser hides what the panel checks before showing a site, so the preview stays off. Open the panel over https.",
     "chatStepStopped": "Stopped",
     "chatStepsCount": "{done} of {total} steps done",
-    "chatResultDetails": "See details"
+    "chatResultDetails": "See details",
+    "chatLog": "Conversation",
+    "chatEmpty": "Start the conversation.",
+    "chatJumpToLatest": "Jump to latest",
+    "chatHint": "Enter to send, Shift+Enter for a new line",
+    "chatCopy": "Copy reply",
+    "chatCopyCode": "Copy code",
+    "chatCopied": "Copied",
+    "chatRetry": "Retry",
+    "chatWriting": "Writing a reply"
   }
 }

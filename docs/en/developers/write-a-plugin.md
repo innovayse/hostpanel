@@ -397,6 +397,10 @@ Each entry in `fields`:
   { name: 'required', type: 'boolean', default: 'false', description: 'When true, the integration page shows Not configured until this field is filled.' }
 ]" />
 
+## Layout of blocks
+
+The panel lays blocks out by kind, with nothing to set in the view. Consecutive `stat` blocks form one grid of tiles, and a `stat` with `format: "badge"` shows its value as a badge. Consecutive `link` blocks form one wrapping row of outline buttons; a link that leaves the panel carries an external-link mark. A `header` block is the page title on a plugin page and a compact section title when the view is shown inside a widget on a host page. The tab bar of a `tabs` block scrolls sideways when the tabs do not fit.
+
 ## View state
 
 A page or slot view (`{ "schema": 1, "blocks": [...] }`) can react to its own data without a reload. Three optional
@@ -608,6 +612,8 @@ text, so a reader can see what happened without reading it out of a paragraph. T
 language. `error` and `done` stay the host's. The reply text itself (`delta`, `message`, an assistant row of `history`) may
 use a small Markdown subset: paragraphs, `#` headings, `-` and `1.` lists, fenced code, `**bold**`, `*italic*` and
 `` `code` ``. HTML and Markdown links in it stay plain text; send a link with the `link` event.
+
+The block itself takes `send` (a streaming `post` route) and, all optional, `history` (a `get` route answering rows of `{ "role": "user" | "assistant", "text", "links"? }`), `placeholder`, `maxLength` (the longest message), `assistant` (`{ "label" }`, the name that signs each reply), `intro` (`{ "title", "text" }`) and `suggestions` (`[{ "label", "text"? }]`): an empty chat shows the intro and the suggestions, and pressing a suggestion sends its `text`, or its `label` without one. `refresh` lists the ids of blocks the panel reads again when a turn has ended, successfully or not. Beside the events below, `status` (`{ "text" }`) says what you are doing now and shows inside the reply while it is written, and `link` (`{ "text", "url" }`) attaches a link to the reply under the rule of a link block: the `url` is either a host-relative path (one leading `/`, never `//`, never `/api` or anything below it, no backslash or control character) or an absolute `https` address without user info on one of the page's allowed origins (`externalOrigins`, and in the client panel the `https` origins of the reader's own bound services). Any other address (`http:`, `javascript:`, a protocol-relative or another origin) is checked when the event arrives and the link is left out, while the reply text stays. The panel keeps what the reader typed in the tab until a reply arrives, and gives the text back to the field when a send gets no reply.
 
 ```json
 { "event": "step", "data": { "id": "build", "label": "Building the site", "state": "running" } }

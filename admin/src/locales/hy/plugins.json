@@ -210,6 +210,15 @@
     "chatStop": "Կանգնեցնել",
     "chatResultDetails": "Մանրամասներ",
     "chatStepStopped": "կանգնեցված է",
-    "chatStepsCount": "Կատարված է {done}-ը {total}-ից"
+    "chatStepsCount": "Կատարված է {done}-ը {total}-ից",
+    "chatLog": "Զրույց",
+    "chatEmpty": "Սկսեք զրույցը։",
+    "chatJumpToLatest": "Անցնել վերջին հաղորդագրությանը",
+    "chatHint": "Enter՝ ուղարկելու, Shift+Enter՝ նոր տողի համար",
+    "chatCopy": "Պատճենել պատասխանը",
+    "chatCopyCode": "Պատճենել կոդը",
+    "chatCopied": "Պատճենվեց",
+    "chatRetry": "Կրկնել",
+    "chatWriting": "Պատասխանը գրվում է"
   }
 }

@@ -3,7 +3,7 @@
  * KPI tile: a caption, a large value and an optional hint.
  *
  * `tone` colours the value (e.g. red for an overdue total). The `icon` slot sits at the right of
- * the caption and the `trend` slot under the value.
+ * the caption and the `trend` slot under the value. The `value` slot replaces the plain value, for example with a badge.
  */
 import { computed } from 'vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -39,7 +39,7 @@ const valueClasses = computed<string>(() => toneTextClasses[props.tone])
       <slot name="icon" />
     </div>
     <p class="mt-2 font-display text-[1.6rem] font-bold leading-none tabular-nums" :class="valueClasses">
-      {{ value }}
+      <slot name="value">{{ value }}</slot>
     </p>
     <UiText v-if="hint" tone="secondary" size="sm" class="mt-1.5">
       {{ hint }}

@@ -36,6 +36,7 @@ describe('layout maps', () => {
   it('offers 1, 2, 3, 4 and 6 columns, widening from narrow screens', () => {
     expect(Object.keys(gridColumnClasses)).toEqual(['1', '2', '3', '4', '6'])
     expect(gridColumnClasses[1]).toBe('grid-cols-1')
+    expect(gridColumnClasses[3]).toBe('grid-cols-1 md:grid-cols-2 lg:grid-cols-3')
     expect(gridColumnClasses[6]).toContain('lg:grid-cols-6')
   })
 

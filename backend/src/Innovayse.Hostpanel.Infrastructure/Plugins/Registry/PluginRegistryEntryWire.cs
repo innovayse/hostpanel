@@ -22,6 +22,7 @@ namespace Innovayse.Hostpanel.Infrastructure.Plugins.Registry;
 /// <param name="Tags">The plugin's tags; absent from an older registry.</param>
 /// <param name="Downloads">Downloads of every version added up; absent from an older registry.</param>
 /// <param name="LatestChangelog">The release notes of the newest version, Markdown; absent from an older registry.</param>
+/// <param name="Rating">The reviews summary; <see langword="null"/> when the plugin has no reviews, and absent from an older registry.</param>
 internal sealed record PluginRegistryEntryWire(
     string? PluginId,
     string? Id,
@@ -39,4 +40,5 @@ internal sealed record PluginRegistryEntryWire(
     string? PublisherKind = null,
     List<string?>? Tags = null,
     long? Downloads = null,
-    string? LatestChangelog = null);
+    string? LatestChangelog = null,
+    PluginRegistryRatingWire? Rating = null);

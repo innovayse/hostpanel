@@ -53,6 +53,10 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                 maxLength: 50,
                 nullable: true);
 
+            // A component an operator had set by hand before the checks existed keeps that state: the manual state
+            // is now the override, so the first automatic pass does not turn it back to Operational.
+            migrationBuilder.Sql("UPDATE \"StatusComponents\" SET \"StateOverride\" = \"CurrentState\" WHERE \"CurrentState\" <> 'Operational';");
+
             migrationBuilder.CreateTable(
                 name: "StatusChecks",
                 columns: table => new

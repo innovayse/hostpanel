@@ -4379,6 +4379,35 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.ToTable("SslChecks");
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusCheck", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTimeOffset>("CheckedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ComponentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("LatencyMs")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("Succeeded")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CheckedAt");
+
+                    b.HasIndex("ComponentId", "CheckedAt");
+
+                    b.ToTable("StatusChecks");
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusComponent", b =>
                 {
                     b.Property<int>("Id")
@@ -4386,6 +4415,16 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("ActiveIncidentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CheckUrl")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("ConsecutiveFailures")
+                        .HasColumnType("integer");
 
                     b.Property<string>("CurrentState")
                         .IsRequired()
@@ -4399,13 +4438,25 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("integer");
 
+                    b.Property<int>("FailureThreshold")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(3);
+
                     b.Property<int>("GroupId")
                         .HasColumnType("integer");
+
+                    b.Property<bool>("MonitoringEnabled")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("StateOverride")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<uint>("xmin")
                         .IsConcurrencyToken()
@@ -4414,6 +4465,8 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .HasColumnName("xmin");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ActiveIncidentId");
 
                     b.HasIndex("GroupId", "DisplayOrder");
 
@@ -5882,8 +5935,22 @@ namespace Innovayse.Hostpanel.Infrastructure.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusCheck", b =>
+                {
+                    b.HasOne("Innovayse.Hostpanel.Domain.StatusPage.StatusComponent", null)
+                        .WithMany()
+                        .HasForeignKey("ComponentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Innovayse.Hostpanel.Domain.StatusPage.StatusComponent", b =>
                 {
+                    b.HasOne("Innovayse.Hostpanel.Domain.StatusPage.StatusIncident", null)
+                        .WithMany()
+                        .HasForeignKey("ActiveIncidentId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Innovayse.Hostpanel.Domain.StatusPage.StatusComponentGroup", null)
                         .WithMany("Components")
                         .HasForeignKey("GroupId")

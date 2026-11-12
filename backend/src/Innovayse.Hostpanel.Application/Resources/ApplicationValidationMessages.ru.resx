@@ -1573,6 +1573,21 @@
   <data name="StatusStateInvalid" xml:space="preserve">
     <value>Выберите допустимое состояние.</value>
   </data>
+  <data name="StatusCheckUrlRequired" xml:space="preserve">
+    <value>Укажите адрес для проверки.</value>
+  </data>
+  <data name="StatusCheckUrlInvalid" xml:space="preserve">
+    <value>Укажите полный веб-адрес, начинающийся с http:// или https://.</value>
+  </data>
+  <data name="StatusCheckUrlTooLong" xml:space="preserve">
+    <value>Адрес не может быть длиннее {0} символов.</value>
+  </data>
+  <data name="StatusFailureThresholdInvalid" xml:space="preserve">
+    <value>Выберите число неудачных проверок от 1 до {0}.</value>
+  </data>
+  <data name="StatusUptimeWindowInvalid" xml:space="preserve">
+    <value>Выберите 30, 60 или 90 дней.</value>
+  </data>
   <data name="StatusDaysInvalid" xml:space="preserve">
     <value>Выберите число дней от 1 до {0}.</value>
   </data>

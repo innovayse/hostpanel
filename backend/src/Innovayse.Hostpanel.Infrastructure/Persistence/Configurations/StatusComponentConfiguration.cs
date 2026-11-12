@@ -18,6 +18,17 @@ public sealed class StatusComponentConfiguration : IEntityTypeConfiguration<Stat
         builder.Property(x => x.Description).HasMaxLength(StatusComponent.DescriptionMaxLength);
         builder.Property(x => x.DisplayOrder).IsRequired();
         builder.Property(x => x.CurrentState).IsRequired().HasConversion<string>().HasMaxLength(50);
+        builder.Property(x => x.CheckUrl).HasMaxLength(StatusComponent.CheckUrlMaxLength);
+        builder.Property(x => x.MonitoringEnabled).IsRequired();
+        builder.Property(x => x.FailureThreshold).IsRequired().HasDefaultValue(StatusComponent.DefaultFailureThreshold);
+        builder.Property(x => x.ConsecutiveFailures).IsRequired();
+        builder.Property(x => x.StateOverride).HasConversion<string>().HasMaxLength(50);
         builder.HasIndex(x => new { x.GroupId, x.DisplayOrder });
+
+        // The incident the automatic checks opened; it outlives nothing, so a deleted incident only clears the link.
+        builder.HasOne<StatusIncident>()
+            .WithMany()
+            .HasForeignKey(x => x.ActiveIncidentId)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 }

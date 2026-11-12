@@ -14,6 +14,9 @@ public static class HttpBackstopTimeouts
     /// <summary>Telegram enquiry notifier; short because it sits between an enquiry and the visitor's answer.</summary>
     public static readonly TimeSpan Telegram = TimeSpan.FromSeconds(10);
 
+    /// <summary>The status page's component checks; above the profile's 12 seconds in total.</summary>
+    public static readonly TimeSpan StatusProbe = TimeSpan.FromSeconds(15);
+
     /// <summary>CWP control-panel clients, typed and named.</summary>
     public static readonly TimeSpan Cwp = TimeSpan.FromSeconds(15);
 

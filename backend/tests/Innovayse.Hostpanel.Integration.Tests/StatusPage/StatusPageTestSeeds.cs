@@ -19,6 +19,9 @@ internal static class StatusPageTestSeeds
     /// <summary>The public incident list route.</summary>
     public const string IncidentsRoute = "/api/public/status/incidents";
 
+    /// <summary>The public uptime route.</summary>
+    public const string UptimeRoute = "/api/public/status/uptime";
+
     /// <summary>Creates a group through the admin API.</summary>
     /// <param name="client">An authenticated admin client.</param>
     /// <returns>The new group's id.</returns>

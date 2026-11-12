@@ -417,6 +417,30 @@
 <data name="PRODUCT_FEATURE_LABEL_DUPLICATE" xml:space="preserve">
     <value>Այս ապրանքն արդեն ունի բնութագրի տող այս պիտակով։ Խմբագրեք գոյություն ունեցող տողը։</value>
   </data>
+  <data name="PRODUCT_BUNDLE_NOT_FOUND" xml:space="preserve">
+    <value>Այդպիսի արտադրանքների փաթեթ չկա։</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_PRODUCT_NOT_FOUND" xml:space="preserve">
+    <value>Փաթեթի արտադրանքներից մեկը գոյություն չունի։</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_DOMAIN_PRODUCT_NOT_ALLOWED" xml:space="preserve">
+    <value>Դոմենի արտադրանքը չի կարող լինել փաթեթի մաս։ Փոխարենը միացրեք փաթեթի դոմենը։</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_DOMAIN_TERM_INVALID" xml:space="preserve">
+    <value>Դոմենով փաթեթը պահանջում է 1-ից 10 տարի գրանցման ժամկետ, իսկ առանց դոմենի փաթեթը ժամկետ չպետք է նշի։</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_DISCOUNT_INVALID" xml:space="preserve">
+    <value>Զեղչը չի համապատասխանում իր տեսակին․ տոկոսը 0-ից 100 է, ֆիքսված գումարը բացասական չէ և պահանջում է արժույթ, իսկ առանց զեղչի ոչ գումար է պետք, ոչ արժույթ։</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_ITEMS_REQUIRED" xml:space="preserve">
+    <value>Փաթեթում պետք է լինի առնվազն մեկ արտադրանք։</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_ITEM_DUPLICATE" xml:space="preserve">
+    <value>Արտադրանքը կարող է փաթեթում լինել միայն մեկ անգամ։</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_PRIMARY_INVALID" xml:space="preserve">
+    <value>Փաթեթում պետք է լինի ճիշտ մեկ հիմնական արտադրանք։</value>
+  </data>
 <data name="SLIDE_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի սլայդ չի գտնվել։</value>
   </data>

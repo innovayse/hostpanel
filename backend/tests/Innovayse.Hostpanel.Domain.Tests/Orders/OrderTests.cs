@@ -891,6 +891,39 @@ public sealed class OrderTests
         }
     }
 
+    /// <summary>A new order belongs to no bundle until it is placed from one.</summary>
+    [Fact]
+    public void Create_HasNoBundle()
+    {
+        NewOrder().BundleId.Should().BeNull();
+    }
+
+    /// <summary>PlaceFromBundle records the bundle the order was placed from.</summary>
+    [Fact]
+    public void PlaceFromBundle_StampsTheBundle()
+    {
+        var order = NewOrder();
+
+        order.PlaceFromBundle(12);
+
+        order.BundleId.Should().Be(12);
+    }
+
+    /// <summary>A bundle id that is not positive is refused and nothing is recorded.</summary>
+    /// <param name="bundleId">The id under test.</param>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void PlaceFromBundle_RefusesAnIdThatIsNotPositive(int bundleId)
+    {
+        var order = NewOrder();
+
+        var act = () => order.PlaceFromBundle(bundleId);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+        order.BundleId.Should().BeNull();
+    }
+
     /// <summary>Builds a pending order to move through its statuses.</summary>
     /// <returns>A new pending order.</returns>
     private static Order NewOrder() =>

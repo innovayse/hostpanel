@@ -41,8 +41,9 @@ public static class ProductsTestSeeds
 
     /// <summary>Creates a product (in a fresh group) through the API and returns its id.</summary>
     /// <param name="client">An authenticated admin client.</param>
+    /// <param name="type">The product type; shared hosting unless a test needs another.</param>
     /// <returns>The new product's id.</returns>
-    public static async Task<int> CreateProductAsync(HttpClient client)
+    public static async Task<int> CreateProductAsync(HttpClient client, ProductType type = ProductType.SharedHosting)
     {
         var groupId = await CreateGroupAsync(client);
 
@@ -50,11 +51,44 @@ public static class ProductsTestSeeds
         {
             groupId,
             name = "Featured",
-            type = ProductType.SharedHosting,
+            type,
             monthlyPrice = 1m,
             annualPrice = 10m,
         });
         return await product.Content.ReadFromJsonAsync<int>();
+    }
+
+    /// <summary>
+    /// A valid create or update body for a product bundle with a domain and a 10 percent discount. The first
+    /// product is the primary component. A test overrides the keys it exercises.
+    /// </summary>
+    /// <param name="productIds">The component products; at least one.</param>
+    /// <returns>The body as a dictionary, serialised with the property names the API reads.</returns>
+    public static Dictionary<string, object?> BundleBody(params int[] productIds)
+    {
+        return new Dictionary<string, object?>
+        {
+            ["name"] = $"bundle-{Guid.NewGuid():N}",
+            ["description"] = "Hosting with a domain",
+            ["sortOrder"] = 0,
+            ["includesDomain"] = true,
+            ["domainYears"] = 1,
+            ["discountType"] = "Percentage",
+            ["discountAmount"] = 10m,
+            ["discountCurrency"] = null,
+            ["items"] = productIds.Select((id, index) => new { productId = id, isPrimary = index == 0 }).ToArray(),
+        };
+    }
+
+    /// <summary>Creates a product bundle through the API and returns its id.</summary>
+    /// <param name="client">An authenticated admin client.</param>
+    /// <param name="body">The create body, from <see cref="BundleBody"/>.</param>
+    /// <returns>The new bundle's id.</returns>
+    public static async Task<int> CreateBundleAsync(HttpClient client, Dictionary<string, object?> body)
+    {
+        var response = await client.PostAsJsonAsync("/api/products/bundles", body);
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        return await response.Content.ReadFromJsonAsync<int>();
     }
 
     /// <summary>Stores a product in a fresh group with exactly the given USD prices, one per cycle, and no others.</summary>

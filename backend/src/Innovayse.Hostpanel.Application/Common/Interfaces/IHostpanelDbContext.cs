@@ -68,6 +68,12 @@ public interface IHostpanelDbContext
     /// <summary>Gets the product groups table.</summary>
     public DbSet<ProductGroup> ProductGroups { get; }
 
+    /// <summary>Gets the product bundles table.</summary>
+    public DbSet<ProductBundle> ProductBundles { get; }
+
+    /// <summary>Gets the product bundle components table.</summary>
+    public DbSet<ProductBundleItem> ProductBundleItems { get; }
+
     /// <summary>Gets the products table.</summary>
     public DbSet<Product> Products { get; }
 

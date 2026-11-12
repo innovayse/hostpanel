@@ -1,50 +1,59 @@
 /**
- * Unit tests for ClientVerifyEmailBanner: it shows only for an explicitly unconfirmed address,
- * and its button asks the auth store to send the mail again, showing the sentence that results.
+ * Unit tests for ClientVerifyEmailBanner against the real auth store, the real auth API composable
+ * and the real transport, with a stub BFF answering on a real socket (nothing of ours is mocked): it
+ * shows only for an explicitly unconfirmed address, and its button asks the auth store to send the
+ * mail again, showing the sentence that results.
  *
  * @module tests/components/client/VerifyEmailBanner.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import type { VueWrapper } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
+import { settle } from '~/tests/helpers/settle'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import VerifyEmailBanner from '~/components/client/VerifyEmailBanner.vue'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** The mocked status read, re-created for every test. */
-const fetchEmailVerified = vi.fn()
+/** The BFF paths the banner uses. */
+const PATHS = {
+  status: '/api/portal/auth/email-verified',
+  resend: '/api/portal/auth/resend-verification',
+} as const
 
-/** The mocked resend call, re-created for every test. */
-const resendVerification = vi.fn()
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useAuthApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns Only the two endpoints the banner reaches.
-   */
-  useAuthApi: () => ({ fetchEmailVerified, resendVerification })
-}))
-
-const { default: VerifyEmailBanner } = await import('~/components/client/VerifyEmailBanner.vue')
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
 
 /**
- * Mounts the banner and waits for the status read.
+ * Mounts the banner and waits until the status read has been answered and handled.
  *
  * @returns The wrapper.
  */
-const mountBanner = async () => {
+const mountBanner = async (): Promise<VueWrapper> => {
   const wrapper = mountClient(VerifyEmailBanner)
-  await flushPromises()
+  await waitUntil(() => expect(requestsTo(stub.requests, PATHS.status)).toHaveLength(1))
+  await settle()
   return wrapper
 }
 
-describe('ClientVerifyEmailBanner', () => {
-  beforeEach(() => {
-    fetchEmailVerified.mockReset()
-    resendVerification.mockReset()
-  })
+beforeEach(async () => {
+  table = {}
+  stub = await startTransport(routeTable(table))
+})
 
+afterEach(async () => {
+  await stub.close()
+})
+
+describe('ClientVerifyEmailBanner', () => {
   it('is shown when the address is not confirmed', async () => {
-    fetchEmailVerified.mockResolvedValue({ verified: false })
+    table[`GET ${PATHS.status}`] = { body: { verified: false } }
 
     const wrapper = await mountBanner()
 
@@ -52,7 +61,7 @@ describe('ClientVerifyEmailBanner', () => {
   })
 
   it('is hidden when the address is confirmed', async () => {
-    fetchEmailVerified.mockResolvedValue({ verified: true })
+    table[`GET ${PATHS.status}`] = { body: { verified: true } }
 
     const wrapper = await mountBanner()
 
@@ -60,7 +69,7 @@ describe('ClientVerifyEmailBanner', () => {
   })
 
   it('is hidden when the answer is unknown, so a missing claim never nags', async () => {
-    fetchEmailVerified.mockResolvedValue({ verified: null })
+    table[`GET ${PATHS.status}`] = { body: { verified: null } }
 
     const wrapper = await mountBanner()
 
@@ -68,25 +77,22 @@ describe('ClientVerifyEmailBanner', () => {
   })
 
   it('asks for the mail again and confirms it was sent', async () => {
-    fetchEmailVerified.mockResolvedValue({ verified: false })
-    resendVerification.mockResolvedValue(undefined)
+    table[`GET ${PATHS.status}`] = { body: { verified: false } }
+    table[`POST ${PATHS.resend}`] = { body: {} }
     const wrapper = await mountBanner()
 
     await wrapper.find('[data-testid="verify-email-resend"]').trigger('click')
-    await flushPromises()
+    await waitUntil(() => expect(wrapper.find('[data-testid="verify-email-message"]').text()).toContain('client.verifyEmail.sent'))
 
-    expect(resendVerification).toHaveBeenCalledTimes(1)
-    expect(wrapper.find('[data-testid="verify-email-message"]').text()).toContain('client.verifyEmail.sent')
+    expect(requestsTo(stub.requests, PATHS.resend)).toHaveLength(1)
   })
 
   it('shows the backend sentence when the resend is refused', async () => {
-    fetchEmailVerified.mockResolvedValue({ verified: false })
-    resendVerification.mockRejectedValue({ data: { detail: 'Too many requests.' } })
+    table[`GET ${PATHS.status}`] = { body: { verified: false } }
+    table[`POST ${PATHS.resend}`] = { status: 429, body: { detail: 'Too many requests.' } }
     const wrapper = await mountBanner()
 
     await wrapper.find('[data-testid="verify-email-resend"]').trigger('click')
-    await flushPromises()
-
-    expect(wrapper.find('[data-testid="verify-email-message"]').text()).toBe('Too many requests.')
+    await waitUntil(() => expect(wrapper.find('[data-testid="verify-email-message"]').text()).toBe('Too many requests.'))
   })
 })

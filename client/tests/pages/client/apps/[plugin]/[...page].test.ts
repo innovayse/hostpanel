@@ -7,13 +7,15 @@
  * @module tests/pages/client/apps/[plugin]/[...page].test
  */
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import type { vi } from 'vitest'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import type { StubReply, StubRequest, StubServer } from '~/tests/helpers/stubServer'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
 import { PLUGIN_COMPONENTS } from '~/tests/helpers/mountPlugin'
 import PluginPage from '~/pages/client/apps/[plugin]/[...page].vue'
 import { PluginBlockKind } from '~/types/pluginblockkind'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -76,7 +78,7 @@ const SETTLED = '[data-testid="plugin-view"], [data-testid="plugin-page-not-foun
  */
 const mountPluginPage = async (): Promise<Awaited<ReturnType<typeof mountPage>>> => {
   const wrapper = await mountPage(PluginPage, { components: PLUGIN_COMPONENTS })
-  await vi.waitFor(() => expect(wrapper.find(SETTLED).exists()).toBe(true))
+  await waitUntil(() => expect(wrapper.find(SETTLED).exists()).toBe(true))
   return wrapper
 }
 
@@ -97,7 +99,7 @@ describe('plugin page', () => {
     const wrapper = await mountPluginPage()
 
     expect(stub.requests.some(isPageRead)).toBe(true)
-    await vi.waitFor(() => expect(wrapper.get('[data-testid="plugin-stat"]').text()).toContain('live'))
+    await waitUntil(() => expect(wrapper.get('[data-testid="plugin-stat"]').text()).toContain('live'))
     expect(stub.requests.some(request => request.url === '/api/portal/client/plugins/acme-sites/routes/sites/blog')).toBe(true)
     expect(wrapper.find('[data-testid="plugin-view"]').exists()).toBe(true)
   })
@@ -171,7 +173,7 @@ describe('plugin page', () => {
 
     await wrapper.get('[data-testid="plugin-page-retry"]').trigger('click')
 
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="plugin-view"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="plugin-view"]').exists()).toBe(true))
     expect(reads).toBe(3)
   })
 })

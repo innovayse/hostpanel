@@ -5,60 +5,68 @@
  *
  * @module tests/components/ui/UiCurrencySwitcher.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createPinia } from 'pinia'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { makeClientUser } from '~/tests/helpers/clientUser'
+import { settle } from '~/tests/helpers/settle'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import UiCurrencySwitcher from '~/components/ui/UiCurrencySwitcher.vue'
+import { useClientStore } from '~/stores/client'
+import type { BillingCurrency } from '~/types/currency'
 import { UiMenuAlign, UiPlacement } from '~/utils/ui/enums'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** The mocked signed-in client, reset before each test. */
-let mockUser: { currency?: string | null } | null = null
+/** Path of the endpoint that lists the enabled billing currencies. */
+const CURRENCIES_PATH = '/api/portal/public/billing-currencies'
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The currency a signed-in client is fixed to, or null for a guest; set per test. */
+let fixedCurrency: string | null = null
 
 /** The currencies the stubbed endpoint answers with, set per test. */
-let mockCurrencies: Array<Record<string, unknown>> = []
-
-vi.mock('~/stores/client', () => ({
-  /**
-   * Stands in for the client store so the fixed-currency case needs no client-area state.
-   *
-   * @returns An object exposing only the `user` field the currency store reads.
-   */
-  useClientStore: () => ({ user: mockUser }),
-}))
-
-vi.mock('~/composables/apis/useCurrencyApi', () => ({
-  /**
-   * Stands in for the currency API composable.
-   *
-   * @returns An object whose loader answers the per-test currency list.
-   */
-  useCurrencyApi: () => ({ loadBillingCurrencies: () => Promise.resolve(mockCurrencies) }),
-}))
+let currencies: BillingCurrency[] = []
 
 /** USD, the base currency. */
-const USD = { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true }
+const USD: BillingCurrency = { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true }
 
 /** AMD, an additional enabled currency. */
-const AMD = { code: 'AMD', numeric: '051', prefix: '', suffix: ' ֏', decimals: 0, isBase: false }
+const AMD: BillingCurrency = { code: 'AMD', numeric: '051', prefix: '', suffix: ' ֏', decimals: 0, isBase: false }
 
 /**
- * Mounts the switcher and waits for the mounted load to settle.
+ * Mounts the switcher in a Pinia that holds the signed-in client, if any, and waits for the mounted
+ * load to be answered by the stub and applied.
  *
  * @param props Props passed to the component.
  * @returns The wrapper, with the currency store filled.
  */
 const mountSwitcher = async (props: Record<string, unknown> = {}) => {
-  const wrapper = mountWithKit(UiCurrencySwitcher, { props, pinia: createPinia() })
-  await flushPromises()
+  const pinia = createPinia()
+  setActivePinia(pinia)
+  if (fixedCurrency !== null) {
+    useClientStore().user = makeClientUser({ currency: fixedCurrency })
+  }
+  const wrapper = mountWithKit(UiCurrencySwitcher, { props, pinia })
+  await waitUntil(() => expect(requestsTo(stub.requests, CURRENCIES_PATH)).toHaveLength(1))
+  await settle(5)
   return wrapper
 }
 
 describe('UiCurrencySwitcher', () => {
-  beforeEach(() => {
-    mockUser = null
-    mockCurrencies = [USD, AMD]
+  beforeEach(async () => {
+    fixedCurrency = null
+    currencies = [USD, AMD]
     localStorage.clear()
+    stub = await startTransport(routeTable({ [`GET ${CURRENCIES_PATH}`]: () => ({ body: currencies }) }))
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('shows the payer currency (the base one) on the trigger', async () => {
@@ -140,7 +148,7 @@ describe('UiCurrencySwitcher', () => {
   })
 
   it('renders nothing for a guest when only one currency is enabled', async () => {
-    mockCurrencies = [USD]
+    currencies = [USD]
 
     const wrapper = await mountSwitcher()
 
@@ -148,7 +156,7 @@ describe('UiCurrencySwitcher', () => {
   })
 
   it('renders nothing before any currency has loaded', async () => {
-    mockCurrencies = []
+    currencies = []
 
     const wrapper = await mountSwitcher()
 
@@ -156,7 +164,7 @@ describe('UiCurrencySwitcher', () => {
   })
 
   it('shows a signed-in client fixed currency read-only, with a hint and no menu', async () => {
-    mockUser = { currency: 'AMD' }
+    fixedCurrency = 'AMD'
 
     const wrapper = await mountSwitcher()
 
@@ -170,8 +178,8 @@ describe('UiCurrencySwitcher', () => {
   })
 
   it('shows a fixed currency even when only one currency is enabled', async () => {
-    mockUser = { currency: 'USD' }
-    mockCurrencies = [USD]
+    fixedCurrency = 'USD'
+    currencies = [USD]
 
     const wrapper = await mountSwitcher()
 

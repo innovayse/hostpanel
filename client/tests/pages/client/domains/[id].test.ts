@@ -1,20 +1,32 @@
 /**
- * Tests for `pages/client/domains/[id].vue`: the panels, the pending lock and the switch state
- * that survives switching panels.
+ * Tests for `pages/client/domains/[id].vue` against the real domains store, API composables and
+ * transport, with a stub BFF answering on a real socket (nothing of ours is mocked): the panels, the
+ * pending lock and the switch state that survives switching panels.
+ *
+ * @module tests/pages/client/domains/[id].test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import DomainPage from '~/pages/client/domains/[id].vue'
 import { DomainStatus } from '~/types/domainstatus'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** The mocked endpoints the store reaches. */
-const domainsApi = vi.hoisted(() => ({ fetchDomain: vi.fn(), setLock: vi.fn() }))
+/** The BFF paths the page reads and writes for domain 7. */
+const PATHS = {
+  domain: '/api/portal/client/domains/7',
+  lock: '/api/portal/client/domains/7/lock',
+} as const
 
-vi.mock('~/composables/apis/useDomainsApi', () => ({ useDomainsApi: () => domainsApi }))
-vi.mock('~/composables/apis/useClientApi', () => ({ useClientApi: () => ({}) }))
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => ({}) }))
-vi.mock('~/composables/apis/useCatalogApi', () => ({ useCatalogApi: () => ({}) }))
-vi.mock('~/composables/apis/useCurrencyApi', () => ({ useCurrencyApi: () => ({}) }))
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
 
 /**
  * Builds a domain.
@@ -30,19 +42,25 @@ const domain = (overrides: Record<string, unknown> = {}) => ({
   ...overrides
 })
 
-describe('domain page', () => {
-  beforeEach(() => {
-    Object.values(domainsApi).forEach((fn) => fn.mockReset())
-    domainsApi.fetchDomain.mockResolvedValue(domain())
-    stubClientRuntime({ params: { id: '7' } })
-  })
+beforeEach(async () => {
+  stubClientRuntime({ params: { id: '7' } })
+  table = {
+    [`GET ${PATHS.domain}`]: { body: domain() },
+  }
+  stub = await startTransport(routeTable(table))
+})
 
+afterEach(async () => {
+  await stub.close()
+})
+
+describe('domain page', () => {
   it('reads this domain and opens on the overview', async () => {
     const wrapper = await mountPage(DomainPage)
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-overview"]').exists()).toBe(true))
 
-    expect(domainsApi.fetchDomain).toHaveBeenCalledWith('7')
+    expect(requestsTo(stub.requests, PATHS.domain).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="domain-header"] h1').text()).toBe('example.com')
-    expect(wrapper.find('[data-testid="domain-overview"]').exists()).toBe(true)
   })
 
   it.each([
@@ -53,6 +71,7 @@ describe('domain page', () => {
     ['renew', 'domain-renew'],
   ])('opens the %s panel from the menu', async (tab, panel) => {
     const wrapper = await mountPage(DomainPage)
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-overview"]').exists()).toBe(true))
 
     await wrapper.find(`[data-testid="domain-tab-${tab}"], [data-testid="domain-action-${tab}"]`).trigger('click')
 
@@ -61,40 +80,45 @@ describe('domain page', () => {
   })
 
   it('explains a pending registration and locks the other panels', async () => {
-    domainsApi.fetchDomain.mockResolvedValue(domain({ status: DomainStatus.PendingRegistration }))
+    table[`GET ${PATHS.domain}`] = { body: domain({ status: DomainStatus.PendingRegistration }) }
 
     const wrapper = await mountPage(DomainPage)
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-pending"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="domain-pending"]').text()).toContain('client.domains.pendingRegistrationDesc')
     expect(wrapper.find('[data-testid="domain-tab-lock"]').attributes('disabled')).toBeDefined()
   })
 
   it('explains a pending transfer', async () => {
-    domainsApi.fetchDomain.mockResolvedValue(domain({ status: DomainStatus.PendingTransfer }))
+    table[`GET ${PATHS.domain}`] = { body: domain({ status: DomainStatus.PendingTransfer }) }
 
     const wrapper = await mountPage(DomainPage)
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-pending"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="domain-pending"]').text()).toContain('client.domains.pendingTransferDesc')
   })
 
   it('warns on the overview when the lock is off and the warning follows a change made on another panel', async () => {
-    domainsApi.fetchDomain.mockResolvedValue(domain({ isLocked: false }))
-    domainsApi.setLock.mockResolvedValue({})
+    table[`GET ${PATHS.domain}`] = { body: domain({ isLocked: false }) }
+    table[`PUT ${PATHS.lock}`] = { body: {} }
     const wrapper = await mountPage(DomainPage)
-    expect(wrapper.find('[data-testid="domain-unlock-warning"]').exists()).toBe(true)
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-unlock-warning"]').exists()).toBe(true))
 
     await wrapper.find('[data-testid="domain-tab-lock"]').trigger('click')
     await wrapper.find('[data-testid="domain-lock-row-toggle"]').trigger('click')
-    await vi.waitFor(() => expect(domainsApi.setLock).toHaveBeenCalledWith('7', true))
+    await waitUntil(() => expect(bodyOf(requestsTo(stub.requests, PATHS.lock)[0])).toEqual({ value: true }))
     await wrapper.find('[data-testid="domain-tab-overview"]').trigger('click')
+    // The switch only moves once the API has answered, so the warning goes when the reply has been read.
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-unlock-warning"]').exists()).toBe(false))
 
-    expect(wrapper.find('[data-testid="domain-unlock-warning"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="domain-overview"]').exists()).toBe(true)
   })
 
   it('says the domain was not found when the read fails', async () => {
-    domainsApi.fetchDomain.mockRejectedValue({ data: { detail: 'No such domain.' } })
+    table[`GET ${PATHS.domain}`] = { status: 404, body: { detail: 'No such domain.' } }
 
     const wrapper = await mountPage(DomainPage)
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-empty-state"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="ui-empty-state"]').text()).toContain('client.domains.notFound')
   })

@@ -1,7 +1,10 @@
 /**
- * Tests for the contact page: the form posts through the support store, the consent guard runs
- * before any request, the API's refusal and field messages are rendered as given, and the
- * contact details link to the right targets.
+ * Tests for the contact page against the real support store, the real support API composable and the
+ * real transport, with a stub BFF answering on a real socket: the form posts through the store, the
+ * consent guard runs before any request, the API's refusal and field messages are rendered as given,
+ * and the contact details link to the right targets.
+ *
+ * @module tests/pages/contact.test
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
@@ -9,28 +12,24 @@ import type { VueWrapper } from '@vue/test-utils'
 import { defineComponent, h, ref } from 'vue'
 import { mountPage, registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { until } from '~/tests/helpers/settle'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import UiDropdown from '~/components/ui/UiDropdown.vue'
 import { ContactService } from '~/types/contactservice'
 
-/** The mocked support endpoints, hoisted so the mocked module can reach them. */
-const api = vi.hoisted(() => ({
-  fetchTicket: vi.fn(),
-  fetchDepartments: vi.fn(),
-  createTicket: vi.fn(),
-  replyToTicket: vi.fn(),
-  sendContactMessage: vi.fn(),
-}))
-
-vi.mock('~/composables/apis/useSupportApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useSupportApi: () => api,
-}))
-
 const { default: Page } = await import('~/pages/contact.vue')
+
+/** The public contact endpoint the form posts to. */
+const CONTACT_PATH = '/api/contact'
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it submits. */
+let table: StubRouteTable
 
 /** Stands in for the FAQ preview section. */
 const SectionsFaqStub = defineComponent({
@@ -65,25 +64,31 @@ const tickConsent = async (wrapper: VueWrapper): Promise<void> => {
 }
 
 /**
- * Submits the form and waits for the store to finish.
+ * Submits the form and waits until it reports its outcome: the request crosses a real socket, so the
+ * store finishes after the page's own promise flush.
  *
  * @param wrapper - The mounted page.
  */
 const submit = async (wrapper: VueWrapper): Promise<void> => {
   await wrapper.find('[data-testid="contact-form"]').trigger('submit')
-  await flushPromises()
+  await until(
+    () => wrapper.find('[data-testid="contact-success"]').exists() || wrapper.find('[data-testid="contact-error"]').exists(),
+    'the form to report its outcome',
+  )
 }
 
 describe('pages/contact', () => {
-  beforeEach(() => {
-    api.sendContactMessage.mockReset()
+  beforeEach(async () => {
     spies = stubPublicPageRuntime()
     registerPageComponents({ SectionsFAQ: SectionsFaqStub })
+    table = { [`POST ${CONTACT_PATH}`]: { status: 204 } }
+    stub = await startTransport(routeTable(table))
   })
 
-  afterEach(() => {
+  afterEach(async () => {
     vi.useRealTimers()
     vi.unstubAllGlobals()
+    await stub.close()
   })
 
   it('sets the page tags and publishes the contact-page structured data', async () => {
@@ -178,19 +183,20 @@ describe('pages/contact', () => {
 
     await submit(wrapper)
 
-    expect(api.sendContactMessage).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, CONTACT_PATH)).toHaveLength(0)
     expect(wrapper.find('[data-testid="contact-error"]').text()).toContain('contact.form.error.consentRequired')
   })
 
   it('posts the enquiry, shows the success message and empties the form', async () => {
-    api.sendContactMessage.mockResolvedValue(undefined)
     const wrapper = await mountPage(Page)
     await fillForm(wrapper)
     await tickConsent(wrapper)
 
     await submit(wrapper)
 
-    expect(api.sendContactMessage).toHaveBeenCalledWith(expect.objectContaining({
+    const [sent] = requestsTo(stub.requests, CONTACT_PATH)
+    expect(sent?.method).toBe('POST')
+    expect(JSON.parse(sent?.body ?? '')).toEqual(expect.objectContaining({
       name: 'Ada Lovelace',
       email: 'ada@example.test',
       phone: '+10000000',
@@ -204,7 +210,6 @@ describe('pages/contact', () => {
 
   it('hides the success message after five seconds', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout'] })
-    api.sendContactMessage.mockResolvedValue(undefined)
     const wrapper = await mountPage(Page)
     await fillForm(wrapper)
     await tickConsent(wrapper)
@@ -218,7 +223,7 @@ describe('pages/contact', () => {
   })
 
   it('shows the API sentence when the message is refused and keeps what was typed', async () => {
-    api.sendContactMessage.mockRejectedValue({ data: { detail: 'The inbox is not configured.' } })
+    table[`POST ${CONTACT_PATH}`] = { status: 502, body: { detail: 'The inbox is not configured.' } }
     const wrapper = await mountPage(Page)
     await fillForm(wrapper)
     await tickConsent(wrapper)
@@ -231,7 +236,7 @@ describe('pages/contact', () => {
   })
 
   it('renders the API field message under its field', async () => {
-    api.sendContactMessage.mockRejectedValue({ data: { errors: { email: ['Enter a valid address.'] } } })
+    table[`POST ${CONTACT_PATH}`] = { status: 400, body: { errors: { email: ['Enter a valid address.'] } } }
     const wrapper = await mountPage(Page)
     await fillForm(wrapper)
     await tickConsent(wrapper)

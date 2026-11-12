@@ -1,26 +1,29 @@
 /**
- * Tests for the FAQ landing page: the hero with a link to every topic, the full list of
- * questions, and the structured data for search engines.
+ * Tests for the FAQ landing page against the real storefront store, API composable and transport,
+ * with a stub BFF answering on a real socket (nothing of ours is mocked): the hero with a link to
+ * every topic, the full list of questions, and the structured data for search engines.
+ *
+ * @module tests/pages/faq/index.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
-import { mountPage, registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { mountRenderedPage } from '~/tests/helpers/renderedPage'
+import { StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import FaqCategoryNav from '~/components/faq/FaqCategoryNav.vue'
 import { faqFixture } from '~/tests/helpers/storefrontFixtures'
 import Page from '~/pages/faq/index.vue'
 
-/** The mocked storefront endpoints, re-created for every test. */
-const api = { fetchPartners: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn() }
+/** The root element of the page. */
+const ROOT = 'faq-page'
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** The key of the questions read in a route table. */
+const FAQS_READ = `GET ${StorefrontPath.Faqs}`
 
 /** Two questions the API serves. */
 const FAQS = [faqFixture(1), faqFixture(2)]
@@ -44,16 +47,26 @@ const SectionsFaqStub = defineComponent({
 /** Spies of the stood-in runtime, renewed before each test. */
 let spies: PublicPageSpies
 
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test. */
+let table: StubRouteTable
+
 describe('pages/faq/index', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     spies = stubPublicPageRuntime()
-    api.fetchFaqs.mockReset()
-    api.fetchFaqs.mockResolvedValue(FAQS)
     registerPageComponents({ FaqCategoryNav, SectionsFAQ: SectionsFaqStub })
+    table = { [FAQS_READ]: { body: FAQS } }
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('shows the hero with the badge, the title and the subtitle', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, ROOT)
 
     expect(wrapper.find('h1').text()).toBe('faq.title')
     expect(wrapper.find('[data-testid="ui-page-hero-badge"]').text()).toBe('faq.badge')
@@ -61,7 +74,7 @@ describe('pages/faq/index', () => {
   })
 
   it('links to every topic page but has no "All" link', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, ROOT)
 
     for (const topic of ['general', 'products']) {
       expect(wrapper.find(`[data-testid="faq-category-${topic}"]`).attributes('href')).toBe(`/en/faq/${topic}`)
@@ -70,7 +83,7 @@ describe('pages/faq/index', () => {
   })
 
   it('lists every question without its own header or tabs', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountRenderedPage(Page, ROOT)
 
     const list = wrapper.find('[data-testid="sections-faq"]')
     expect(list.attributes('data-header')).toBe('false')
@@ -80,7 +93,7 @@ describe('pages/faq/index', () => {
   })
 
   it('publishes one structured-data question per FAQ item', async () => {
-    await mountPage(Page)
+    await mountRenderedPage(Page, ROOT)
 
     expect(spies.injectSchema).toHaveBeenCalledTimes(1)
     const schema = spies.injectSchema.mock.calls[0]?.[0] as { items: Array<{ question: string }> }
@@ -89,16 +102,16 @@ describe('pages/faq/index', () => {
   })
 
   it('publishes no questions in the structured data when there are none', async () => {
-    api.fetchFaqs.mockResolvedValue([])
+    table[FAQS_READ] = { body: [] }
 
-    await mountPage(Page)
+    await mountRenderedPage(Page, ROOT)
 
     const schema = spies.injectSchema.mock.calls[0]?.[0] as { items: unknown[] }
     expect(schema.items).toEqual([])
   })
 
   it('sets the page tags for /faq', async () => {
-    await mountPage(Page)
+    await mountRenderedPage(Page, ROOT)
 
     expect(spies.useSeo).toHaveBeenCalledWith(expect.objectContaining({ title: 'seo.faq.title', path: '/faq' }))
   })

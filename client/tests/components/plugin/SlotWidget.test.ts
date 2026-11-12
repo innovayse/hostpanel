@@ -29,6 +29,7 @@ import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { PluginBlockKind } from '~/types/pluginblockkind'
 import { PluginSlotId } from '~/types/pluginslotid'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -149,7 +150,7 @@ describe('PluginSlotWidget', () => {
       const page = mountPageWith(['ok'])
       expect(page.find(loading('ok')).exists()).toBe(true)
 
-      await vi.waitFor(() => expect(page.find(rendered('ok')).exists()).toBe(true))
+      await waitUntil(() => expect(page.find(rendered('ok')).exists()).toBe(true))
       expect(page.text()).toContain('Site is live')
     })
 
@@ -158,7 +159,7 @@ describe('PluginSlotWidget', () => {
 
       const page = mountPageWith(['slow'], { slotId: PluginSlotId.ServiceTabs, context: { serviceId: '4' } })
 
-      await vi.waitFor(() => expect(page.find(rendered('slow')).text()).toContain('live'))
+      await waitUntil(() => expect(page.find(rendered('slow')).text()).toContain('live'))
       const [read] = requestsTo(stub.requests, slotWidgetPath(PluginSlotId.ServiceTabs, 'slow'))
       expect(queryOf(read!)).toEqual({ serviceId: '4' })
       expect(read?.headers['x-language']).toBe('en')
@@ -168,8 +169,8 @@ describe('PluginSlotWidget', () => {
       const errors: unknown[] = []
       const page = mountPageWith(['broken', 'ok'], { errors })
 
-      await vi.waitFor(() => expect(page.find(note('broken')).exists()).toBe(true))
-      await vi.waitFor(() => expect(page.find(rendered('ok')).text()).toBe('Site is live'))
+      await waitUntil(() => expect(page.find(note('broken')).exists()).toBe(true))
+      await waitUntil(() => expect(page.find(rendered('ok')).text()).toBe('Site is live'))
       expect(page.find(note('broken')).text()).toBe('plugins.unavailable')
       expect(page.find(rendered('broken')).exists()).toBe(false)
       expect(page.get('[data-testid="host-content"]').text()).toBe('Host page')

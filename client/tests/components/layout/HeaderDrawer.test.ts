@@ -1,24 +1,28 @@
 /**
  * Unit tests for LayoutHeaderDrawer: every navigation entry, the signed-out and signed-in
  * footers, the preference pickers and closing.
+ *
+ * The real auth store, API composable and transport run against a stub server playing the BFF;
+ * only the two pickers are stood in for.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import LayoutHeaderDrawer from '~/components/layout/HeaderDrawer.vue'
 import { useAuthStore } from '~/stores/auth'
 import { makeClientUser } from '~/tests/helpers/clientUser'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import type { HeaderNavItem } from '~/types/headernavitem'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
-vi.mock('~/composables/apis/useAuthApi', () => ({
-  /**
-   * Stands in for the auth API composable so the store runs without transport.
-   *
-   * @returns Inert endpoints.
-   */
-  useAuthApi: () => ({ logout: vi.fn(), ssoLogout: vi.fn() }),
-}))
+/** Path of the endpoint that ends the session. */
+const LOGOUT_PATH = '/api/portal/auth/logout'
+
+/** The stub playing the BFF. */
+let stub: StubServer
 
 /** Stand-in for the language switcher, which needs the i18n runtime. */
 const LanguageSwitcherStub = defineComponent({
@@ -26,7 +30,7 @@ const LanguageSwitcherStub = defineComponent({
   setup: () => () => h('div', { 'data-testid': 'language-switcher-stub' }),
 })
 
-/** Stand-in for the currency switcher, which needs the currency store's transport. */
+/** Stand-in for the currency switcher, which has its own test. */
 const CurrencySwitcherStub = defineComponent({
   name: 'UiCurrencySwitcher',
   setup: () => () => h('div', { 'data-testid': 'currency-switcher-stub' }),
@@ -61,8 +65,13 @@ const mountDrawer = (path = '/en/') => mountWithKit(LayoutHeaderDrawer, {
 })
 
 describe('LayoutHeaderDrawer', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     stubTemplateGlobals()
+    stub = await startTransport(routeTable({ [`POST ${LOGOUT_PATH}`]: { body: {} } }))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('renders nothing while closed', () => {
@@ -151,12 +160,12 @@ describe('LayoutHeaderDrawer', () => {
     const wrapper = mountDrawer()
     const store = useAuthStore()
     store.user = client
-    store.signOut = vi.fn().mockResolvedValue(undefined)
     await wrapper.vm.$nextTick()
 
     await wrapper.find('[data-testid="header-drawer-sign-out"]').trigger('click')
 
-    expect(store.signOut).toHaveBeenCalledTimes(1)
+    await waitUntil(() => expect(requestsTo(stub.requests, LOGOUT_PATH)).toHaveLength(1))
+    await waitUntil(() => expect(store.user).toBeNull())
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false])
   })
 })

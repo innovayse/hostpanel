@@ -1,32 +1,36 @@
 /**
  * Unit tests for CartDrawer: closed and empty states, the listed lines and total, the notice for
  * lines left in another currency, removing, clearing and the way on to checkout.
+ *
+ * The real cart and currency stores, API composable and transport run against a stub server
+ * playing the BFF.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import { flushPromises } from '@vue/test-utils'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import CartDrawer from '~/components/layout/CartDrawer.vue'
 import { useCartStore } from '~/stores/cart'
+import { useCurrencyStore } from '~/stores/currency'
 import type { CartItem } from '~/types/cartitem'
 import type { BillingCurrency } from '~/types/currency'
 import { PricingCycle } from '~/types/pricingcycle'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** The currencies the stood-in currency endpoint answers with. */
+/** Path of the endpoint that lists the enabled billing currencies. */
+const CURRENCIES_PATH = '/api/portal/public/billing-currencies'
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The currencies the stub answers with. */
 const currencies: BillingCurrency[] = [
   { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true },
   { code: 'AMD', numeric: '051', prefix: '', suffix: ' AMD', decimals: 0, isBase: false },
 ]
-
-vi.mock('~/composables/apis/useCurrencyApi', () => ({
-  /**
-   * Stands in for the currency API composable so the store runs without transport.
-   *
-   * @returns Only the endpoint the drawer's store reaches for.
-   */
-  useCurrencyApi: () => ({ loadBillingCurrencies: () => Promise.resolve(currencies) })
-}))
 
 /** Router stand-in shared by the component and the assertions. */
 const router = { push: vi.fn(), replace: vi.fn(), back: vi.fn() }
@@ -59,17 +63,23 @@ const mountOpen = async (items: CartItem[] = []) => {
   const cart = useCartStore()
   cart.items = items
   cart.isOpen = true
-  await flushPromises()
+  await waitUntil(() => expect(requestsTo(stub.requests, CURRENCIES_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(useCurrencyStore().loaded).toBe(true))
   await nextTick()
   return wrapper
 }
 
 describe('CartDrawer', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     stubPublicPageRuntime()
     vi.stubGlobal('useRouter', () => router)
     router.push.mockClear()
     window.localStorage.clear()
+    stub = await startTransport(routeTable({ [`GET ${CURRENCIES_PATH}`]: { body: currencies } }))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('renders nothing while the cart is closed', () => {

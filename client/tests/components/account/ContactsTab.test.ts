@@ -1,21 +1,73 @@
 /**
- * Unit tests for ContactsTab: states, opening the dialog and the confirmed deletion.
+ * Unit tests for ContactsTab: states, opening the dialog and the confirmed deletion. The real
+ * account and client stores, API composable and transport run against a stub BFF.
  */
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountAccount } from '~/tests/helpers/mountAccount'
 import ContactsTab from '~/components/account/ContactsTab.vue'
 import { useAccountStore } from '~/stores/account'
-import { ActionOutcome } from '~/types/actionoutcome'
+import { useClientStore } from '~/stores/client'
+import { Permission } from '~/types/permission'
+import { HttpMethod } from '~/types/httpmethod'
 import type { AccountContact } from '~/types/accountcontact'
 import { makeContact } from '~/tests/helpers/accountContact'
+import { AccountEndpoint, contactPath } from '~/tests/helpers/accountPaths'
+import { makeClientUser } from '~/tests/helpers/clientUser'
+import { routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
-vi.mock('~/composables/apis/useClientApi', () => ({ useClientApi: () => ({}) }))
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => ({}) }))
-vi.mock('~/composables/apis/useAuthApi', () => ({ useAuthApi: () => ({}) }))
-vi.mock('qrcode', () => ({ default: { toDataURL: async (): Promise<string> => '' } }))
+vi.mock('qrcode', () => ({
+  default: {
+    /**
+     * Stands in for the QR renderer, a third-party package the account store imports.
+     *
+     * @returns An empty data URL.
+     */
+    toDataURL: async (): Promise<string> => ''
+  }
+}))
 
 /** One saved contact. */
 const contact: AccountContact = makeContact({ id: 7, companyName: 'Acme' })
+
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
+let table: StubRouteTable
+
+/** A refusal shaped like the API's problem body. */
+const refused: StubReply = { status: 400, body: { detail: 'Refused.' } }
+
+/**
+ * The requests that reached the stub, as `METHOD path` lines.
+ *
+ * @returns The lines, oldest first.
+ */
+const wire = (): string[] => stub.requests.map(request => `${request.method} ${request.url}`)
+
+/**
+ * Mounts the tab for a person who may view and manage contacts, so the list is read again after a deletion.
+ *
+ * @returns The wrapper.
+ */
+const mountTab = () => {
+  const wrapper = mountAccount(ContactsTab)
+  useClientStore().user = makeClientUser({ permissions: Permission.All })
+  return wrapper
+}
+
+beforeEach(async () => {
+  table = {}
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  await stub.close()
+})
 
 describe('ContactsTab', () => {
   it('shows a skeleton while loading', async () => {
@@ -61,35 +113,31 @@ describe('ContactsTab', () => {
   })
 
   it('deletes only after confirmation and then reads the list again', async () => {
-    const wrapper = mountAccount(ContactsTab)
-    const store = useAccountStore()
-    store.contacts = [contact]
-    const remove = vi.spyOn(store, 'removeContact').mockResolvedValue(ActionOutcome.Succeeded)
-    const reload = vi.spyOn(store, 'loadContacts').mockResolvedValue()
+    table[`${HttpMethod.Delete} ${contactPath(7)}`] = { body: {} }
+    table[`${HttpMethod.Get} ${AccountEndpoint.Contacts}`] = { body: [] }
+    const wrapper = mountTab()
+    useAccountStore().contacts = [contact]
     await wrapper.vm.$nextTick()
 
     await wrapper.find('[data-testid="account-contact-delete-7"]').trigger('click')
-    expect(remove).not.toHaveBeenCalled()
+    expect(stub.requests).toHaveLength(0)
 
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
-    await Promise.resolve()
 
-    expect(remove).toHaveBeenCalledWith(7)
-    expect(reload).toHaveBeenCalled()
+    await waitUntil(() => expect(wire()).toEqual([`DELETE ${contactPath(7)}`, `GET ${AccountEndpoint.Contacts}`]))
+    await waitUntil(() => expect(wrapper.find('[data-testid="account-contact-7"]').exists()).toBe(false))
   })
 
   it('keeps the list when the deletion fails', async () => {
-    const wrapper = mountAccount(ContactsTab)
-    const store = useAccountStore()
-    store.contacts = [contact]
-    vi.spyOn(store, 'removeContact').mockResolvedValue(ActionOutcome.Failed)
-    const reload = vi.spyOn(store, 'loadContacts').mockResolvedValue()
+    table[`${HttpMethod.Delete} ${contactPath(7)}`] = refused
+    const wrapper = mountTab()
+    useAccountStore().contacts = [contact]
     await wrapper.vm.$nextTick()
 
     await wrapper.find('[data-testid="account-contact-delete-7"]').trigger('click')
     await wrapper.find('[data-testid="ui-confirm-confirm"]').trigger('click')
-    await Promise.resolve()
 
-    expect(reload).not.toHaveBeenCalled()
+    await waitUntil(() => expect(wire()).toEqual([`DELETE ${contactPath(7)}`]))
+    expect(wrapper.find('[data-testid="account-contact-7"]').exists()).toBe(true)
   })
 })

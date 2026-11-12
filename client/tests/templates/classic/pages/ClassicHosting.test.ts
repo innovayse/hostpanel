@@ -1,42 +1,26 @@
 /**
- * Unit tests for ClassicHosting: the loading and error branches, the free, grid and agency
- * plans, the billing-cycle tabs, the cart actions and the comparison table.
+ * Unit tests for ClassicHosting against the real catalogue, currency and cart stores, the real API
+ * composables and the real transport, with a stub BFF answering on a real socket: the loading and
+ * error branches, the free, grid and agency plans, the billing-cycle tabs, the cart actions and the
+ * comparison table.
+ *
+ * @module tests/templates/classic/pages/ClassicHosting.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref, watch } from 'vue'
-import { flushPromises } from '@vue/test-utils'
 import { at } from '~/tests/helpers/at'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { USD_CURRENCY, awaitCatalogue } from '~/tests/helpers/payerCatalogue'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import { balancedColumns } from '~/utils/balancedGrid'
 import { HOSTING_GROUP_ID } from '~/constants/catalogGroup'
 import ClassicHosting from '~/templates/classic/pages/ClassicHosting.vue'
 import { useCartStore } from '~/stores/cart'
 import { useCurrencyStore } from '~/stores/currency'
-import type { BillingCurrency } from '~/types/currency'
-
-/** The mocked catalogue endpoints, re-created for every test. */
-const api = { fetchProducts: vi.fn() }
-
-/** The currency the stood-in currency endpoint answers with. */
-const usd: BillingCurrency = { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true }
-
-vi.mock('~/composables/apis/useCatalogApi', () => ({
-  /**
-   * Stands in for the catalogue API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useCatalogApi: () => api
-}))
-
-vi.mock('~/composables/apis/useCurrencyApi', () => ({
-  /**
-   * Stands in for the currency API composable.
-   *
-   * @returns Only the endpoint the page's store reaches for.
-   */
-  useCurrencyApi: () => ({ loadBillingCurrencies: () => Promise.resolve([usd]) })
-}))
 
 /** The plans the catalogue answers with. */
 const plans = [
@@ -63,31 +47,46 @@ const runAsyncData = async (key: string | (() => string), handler: () => Promise
   return { data: ref(null), error: ref(null), pending: ref(false), refresh: handler }
 }
 
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
+
 /**
- * Mounts the page and lets the currencies load.
+ * Mounts the page and waits until the currencies and the plans have been read in the payer currency.
  *
  * @param props The page's props: the plan cards and comparison rows.
  * @returns The wrapper.
  */
 const mountHosting = async (props: Record<string, unknown> = {}) => {
   const wrapper = await mountPage(ClassicHosting, { props })
-  await flushPromises()
+  await awaitCatalogue()
   return wrapper
 }
 
 describe('ClassicHosting', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     stubPublicPageRuntime()
     vi.stubGlobal('useAsyncData', runAsyncData)
-    api.fetchProducts.mockReset()
-    api.fetchProducts.mockResolvedValue(plans)
     window.localStorage.clear()
+    table = {
+      [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
+      [`GET ${CatalogPath.Products}`]: { body: plans },
+    }
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('reads the hosting group, and again in the payer currency once it resolves', async () => {
     await mountHosting()
 
-    expect(api.fetchProducts).toHaveBeenLastCalledWith(expect.objectContaining({ gid: HOSTING_GROUP_ID, currency: 'USD' }))
+    expect(requestsTo(stub.requests, CatalogPath.Products).map(queryOf).at(-1)).toEqual(
+      expect.objectContaining({ gid: String(HOSTING_GROUP_ID), currency: 'USD' })
+    )
   })
 
   it('renders the free plan in its own banner', async () => {
@@ -197,16 +196,16 @@ describe('ClassicHosting', () => {
   })
 
   it('shows the failure sentence with a retry that reads again', async () => {
-    api.fetchProducts.mockRejectedValue({ data: { detail: 'Catalogue unavailable.' } })
+    table[`GET ${CatalogPath.Products}`] = { status: 400, body: { detail: 'Catalogue unavailable.' } }
     const wrapper = await mountHosting()
     expect(wrapper.find('[data-testid="classic-hosting-error"]').exists()).toBe(true)
 
-    api.fetchProducts.mockResolvedValue(plans)
-    const before = api.fetchProducts.mock.calls.length
+    table[`GET ${CatalogPath.Products}`] = { body: plans }
+    const before = requestsTo(stub.requests, CatalogPath.Products).length
     await wrapper.find('[data-testid="classic-hosting-retry"]').trigger('click')
-    await flushPromises()
+    await awaitCatalogue()
 
-    expect(api.fetchProducts).toHaveBeenCalledTimes(before + 1)
+    expect(requestsTo(stub.requests, CatalogPath.Products)).toHaveLength(before + 1)
     expect(wrapper.find('[data-testid="classic-hosting-error"]').exists()).toBe(false)
   })
 
@@ -217,12 +216,14 @@ describe('ClassicHosting', () => {
   })
 
   it('lays the other plans out in a balanced grid, so four plans are 4 in a row and not 3 + 1', async () => {
-    api.fetchProducts.mockResolvedValue([
-      { id: 2, name: 'Starter', description: 'a', pricing: { monthly: 5, annual: 50 } },
-      { id: 3, name: 'Business', description: 'b', pricing: { monthly: 15, annual: 150 } },
-      { id: 5, name: 'Pro', description: 'c', pricing: { monthly: 25, annual: 250 } },
-      { id: 6, name: 'Plus', description: 'd', pricing: { monthly: 35, annual: 350 } },
-    ])
+    table[`GET ${CatalogPath.Products}`] = {
+      body: [
+        { id: 2, name: 'Starter', description: 'a', pricing: { monthly: 5, annual: 50 } },
+        { id: 3, name: 'Business', description: 'b', pricing: { monthly: 15, annual: 150 } },
+        { id: 5, name: 'Pro', description: 'c', pricing: { monthly: 25, annual: 250 } },
+        { id: 6, name: 'Plus', description: 'd', pricing: { monthly: 35, annual: 350 } },
+      ],
+    }
     const wrapper = await mountHosting()
 
     const grid = wrapper.find('[data-testid="classic-hosting-plans"]')

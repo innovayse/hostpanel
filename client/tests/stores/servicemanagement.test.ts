@@ -1,77 +1,68 @@
 /**
- * Tests for `stores/servicemanagement.ts`.
+ * Tests for `stores/servicemanagement.ts`, through the real client API composable, the real client store and the
+ * transport against a stub server.
  *
  * The store, not the service pages, owns the in-flight flags and refusal sentences, so these
- * assertions pin the contract the pages render from.
+ * assertions pin the contract the pages render from. Nothing of our own is replaced: the stub plays the BFF, and
+ * only the browser's `window.open` is observed.
  *
  * @module tests/stores/servicemanagement.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { ref } from 'vue'
+import { heldReply, requestsTo, routeTable } from '../helpers/stubRoutes'
+import type { StubRouteTable } from '../helpers/stubRoutes'
+import type { StubServer } from '../helpers/stubServer'
+import { bodyOf } from '../helpers/requestBody'
+import { startTransport } from '../helpers/stubTransport'
 import { PortalErrorCode } from '~/constants/portalErrorCode'
+import { useClientStore } from '~/stores/client'
+import { useServiceManagementStore } from '~/stores/servicemanagement'
+import { ActionOutcome } from '~/types/actionoutcome'
 import { CancellationType } from '~/types/cancellationtype'
+import { HttpMethod } from '~/types/httpmethod'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** The mocked client-area API composable, re-created for every test. */
-const api = {
-  changeServicePassword: vi.fn(),
-  cancelService: vi.fn(),
-  fetchServiceInvoices: vi.fn(),
-  fetchCpanelSsoUrl: vi.fn(),
-  setUpService: vi.fn(),
-  fetchService: vi.fn(),
-  fetchHostingInfo: vi.fn(),
-  fetchCancellationStatus: vi.fn()
-}
+/** The stub playing the BFF. */
+let stub: StubServer
 
-/** The client store stand-in, so setup can be seen invalidating the service list. */
-const clientStore = { servicesLoaded: true }
+/** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
+let table: StubRouteTable
 
-vi.stubGlobal('ref', ref)
+/** The base path of service 3. */
+const SERVICE_3 = '/api/portal/client/services/3'
 
-vi.mock('~/composables/apis/useClientApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useClientApi: () => api
-}))
+/** The reply of a request the BFF refuses without a sentence, the way an unreachable backend ends. */
+const REFUSED = { status: 403 }
 
-vi.mock('~/stores/client', () => ({
-  /**
-   * Stands in for the client store, which setup only marks stale.
-   *
-   * @returns The shared stand-in.
-   */
-  useClientStore: () => clientStore
-}))
+beforeEach(async () => {
+  setActivePinia(createPinia())
+  table = {}
+  stub = await startTransport(routeTable(table))
+})
 
-const { useServiceManagementStore } = await import('~/stores/servicemanagement')
-const { ActionOutcome } = await import('~/types/actionoutcome')
+afterEach(async () => {
+  vi.restoreAllMocks()
+  await stub.close()
+})
 
 describe('useServiceManagementStore', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    Object.values(api).forEach(fn => fn.mockReset())
-    clientStore.servicesLoaded = true
-  })
-
   it('changePassword reports Succeeded and sets the success flag', async () => {
-    api.changeServicePassword.mockResolvedValue({})
+    table[`${HttpMethod.Post} ${SERVICE_3}/change-password`] = { body: {} }
     const store = useServiceManagementStore()
 
     const outcome = await store.changePassword('3', 'longenough')
 
     expect(outcome).toBe(ActionOutcome.Succeeded)
-    expect(api.changeServicePassword).toHaveBeenCalledWith('3', 'longenough')
+    expect(requestsTo(stub.requests, `${SERVICE_3}/change-password`)).toHaveLength(1)
+    expect(bodyOf(stub.requests[0])).toEqual({ password: 'longenough' })
     expect(store.passwordSuccess).toBe(true)
     expect(store.passwordChanging).toBe(false)
   })
 
   it('changePassword reports Failed and keeps the sentence', async () => {
-    api.changeServicePassword.mockRejectedValue(new Error('no'))
+    table[`${HttpMethod.Post} ${SERVICE_3}/change-password`] = REFUSED
     const store = useServiceManagementStore()
 
     const outcome = await store.changePassword('3', 'longenough')
@@ -83,18 +74,19 @@ describe('useServiceManagementStore', () => {
   })
 
   it('cancelService sends type and reason and marks the request done', async () => {
-    api.cancelService.mockResolvedValue({})
+    table[`${HttpMethod.Post} ${SERVICE_3}/cancel`] = { body: {} }
     const store = useServiceManagementStore()
 
     const outcome = await store.cancelService('3', CancellationType.Immediate, 'moving')
 
     expect(outcome).toBe(ActionOutcome.Succeeded)
-    expect(api.cancelService).toHaveBeenCalledWith('3', { type: 'Immediate', reason: 'moving' })
+    expect(requestsTo(stub.requests, `${SERVICE_3}/cancel`)).toHaveLength(1)
+    expect(bodyOf(stub.requests[0])).toEqual({ type: CancellationType.Immediate, reason: 'moving' })
     expect(store.cancelDone).toBe(true)
   })
 
   it('cancelService reports Failed and keeps the sentence', async () => {
-    api.cancelService.mockRejectedValue(new Error('no'))
+    table[`${HttpMethod.Post} ${SERVICE_3}/cancel`] = REFUSED
     const store = useServiceManagementStore()
 
     const outcome = await store.cancelService('3', CancellationType.EndOfBillingPeriod, '')
@@ -106,13 +98,13 @@ describe('useServiceManagementStore', () => {
   })
 
   it('loadInvoices stores the list once and does not refetch', async () => {
-    api.fetchServiceInvoices.mockResolvedValue({ invoices: [{ id: 1 }], unattributedInvoiceCount: 2 })
+    table[`${HttpMethod.Get} ${SERVICE_3}/invoices`] = { body: { invoices: [{ id: 1 }], unattributedInvoiceCount: 2 } }
     const store = useServiceManagementStore()
 
     await store.loadInvoices('3')
     await store.loadInvoices('3')
 
-    expect(api.fetchServiceInvoices).toHaveBeenCalledTimes(1)
+    expect(requestsTo(stub.requests, `${SERVICE_3}/invoices`)).toHaveLength(1)
     expect(store.relatedInvoices).toHaveLength(1)
     expect(store.unattributedInvoices).toBe(2)
     expect(store.invoicesLoaded).toBe(true)
@@ -120,7 +112,7 @@ describe('useServiceManagementStore', () => {
   })
 
   it('loadInvoices keeps the failure instead of an empty list claim', async () => {
-    api.fetchServiceInvoices.mockRejectedValue(new Error('no'))
+    table[`${HttpMethod.Get} ${SERVICE_3}/invoices`] = REFUSED
     const store = useServiceManagementStore()
 
     await store.loadInvoices('3')
@@ -131,7 +123,7 @@ describe('useServiceManagementStore', () => {
   })
 
   it('fetchCpanelUrl returns the address on success', async () => {
-    api.fetchCpanelSsoUrl.mockResolvedValue({ url: 'https://panel.example/sso' })
+    table[`${HttpMethod.Get} ${SERVICE_3}/cpanel-sso`] = { body: { url: 'https://panel.example/sso' } }
     const store = useServiceManagementStore()
 
     const url = await store.fetchCpanelUrl('3')
@@ -142,7 +134,7 @@ describe('useServiceManagementStore', () => {
   })
 
   it('fetchCpanelUrl treats an empty address as a failure', async () => {
-    api.fetchCpanelSsoUrl.mockResolvedValue({ url: '' })
+    table[`${HttpMethod.Get} ${SERVICE_3}/cpanel-sso`] = { body: { url: '' } }
     const store = useServiceManagementStore()
 
     const url = await store.fetchCpanelUrl('3')
@@ -153,51 +145,53 @@ describe('useServiceManagementStore', () => {
 
   it('openControlPanel opens the single-sign-on address', async () => {
     const open = vi.spyOn(window, 'open').mockImplementation(() => null)
-    api.fetchCpanelSsoUrl.mockResolvedValue({ url: 'https://panel.example/sso' })
+    table[`${HttpMethod.Get} ${SERVICE_3}/cpanel-sso`] = { body: { url: 'https://panel.example/sso' } }
     const store = useServiceManagementStore()
 
     await store.openControlPanel('3', 'srv.test')
 
     expect(open).toHaveBeenCalledWith('https://panel.example/sso', '_blank', 'noopener')
-    open.mockRestore()
   })
 
   it('openControlPanel falls back to the plain panel login on the server host', async () => {
     const open = vi.spyOn(window, 'open').mockImplementation(() => null)
-    api.fetchCpanelSsoUrl.mockRejectedValue(new Error('no'))
+    table[`${HttpMethod.Get} ${SERVICE_3}/cpanel-sso`] = REFUSED
     const store = useServiceManagementStore()
 
     await store.openControlPanel('3', 'srv.test')
 
     expect(open).toHaveBeenCalledWith('https://srv.test:2083', '_blank', 'noopener')
     expect(store.ssoError).not.toBe('')
-    open.mockRestore()
   })
 
   it('openControlPanel opens nothing when sign-in fails and the host is unknown', async () => {
     const open = vi.spyOn(window, 'open').mockImplementation(() => null)
-    api.fetchCpanelSsoUrl.mockRejectedValue(new Error('no'))
+    table[`${HttpMethod.Get} ${SERVICE_3}/cpanel-sso`] = REFUSED
     const store = useServiceManagementStore()
 
     await store.openControlPanel('3', '')
 
     expect(open).not.toHaveBeenCalled()
-    open.mockRestore()
   })
 
   it('setUpService marks the service list stale on success', async () => {
-    api.setUpService.mockResolvedValue({})
+    table[`${HttpMethod.Post} ${SERVICE_3}/setup`] = { body: {} }
+    const clientStore = useClientStore()
+    clientStore.servicesLoaded = true
     const store = useServiceManagementStore()
 
     const outcome = await store.setUpService('3', { domain: 'example.com' })
 
     expect(outcome).toBe(ActionOutcome.Succeeded)
+    expect(bodyOf(stub.requests[0])).toEqual({ domain: 'example.com' })
     expect(clientStore.servicesLoaded).toBe(false)
     expect(store.setupSubmitting).toBe(false)
   })
 
   it('setUpService reports Failed, keeps the sentence and leaves the list cached', async () => {
-    api.setUpService.mockRejectedValue(new Error('no'))
+    table[`${HttpMethod.Post} ${SERVICE_3}/setup`] = REFUSED
+    const clientStore = useClientStore()
+    clientStore.servicesLoaded = true
     const store = useServiceManagementStore()
 
     const outcome = await store.setUpService('3', {})
@@ -208,7 +202,7 @@ describe('useServiceManagementStore', () => {
   })
 
   it('reset clears the state left by a previous service', async () => {
-    api.changeServicePassword.mockResolvedValue({})
+    table[`${HttpMethod.Post} ${SERVICE_3}/change-password`] = { body: {} }
     const store = useServiceManagementStore()
     await store.changePassword('3', 'longenough')
 
@@ -221,13 +215,9 @@ describe('useServiceManagementStore', () => {
 })
 
 describe('useServiceManagementStore reads', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    Object.values(api).forEach(fn => fn.mockReset())
-  })
-
   it('keeps the service, and the API sentence with no service when the read is refused', async () => {
-    api.fetchService.mockResolvedValueOnce({ id: 3, name: 'Pro' }).mockRejectedValueOnce({ data: { detail: 'Not yours.' } })
+    table[`${HttpMethod.Get} ${SERVICE_3}`] = { body: { id: 3, name: 'Pro' } }
+    table[`${HttpMethod.Get} /api/portal/client/services/4`] = { status: 404, body: { detail: 'Not yours.' } }
     const store = useServiceManagementStore()
 
     expect(await store.loadService('3')).toMatchObject({ name: 'Pro' })
@@ -241,19 +231,34 @@ describe('useServiceManagementStore reads', () => {
   })
 
   it('keeps the service on screen while it is read again when asked to', async () => {
-    api.fetchService.mockResolvedValueOnce({ id: 3, name: 'Pro' }).mockResolvedValueOnce({ id: 3, name: 'Max' })
+    const held = heldReply()
+    let reads = 0
+    /**
+     * Answers the first read at once and holds every later one until the test releases it.
+     *
+     * @returns The reply.
+     */
+    table[`${HttpMethod.Get} ${SERVICE_3}`] = () => {
+      reads += 1
+      return reads === 1 ? { body: { id: 3, name: 'Pro' } } : held.reply()
+    }
     const store = useServiceManagementStore()
     await store.loadService('3')
 
     const reading = store.loadService('3', true)
     expect(store.service).toMatchObject({ name: 'Pro' })
+    await waitUntil(() => {
+      expect(held.waiting()).toBe(1)
+    })
+    held.release({ body: { id: 3, name: 'Max' } })
     await reading
 
     expect(store.service).toMatchObject({ name: 'Max' })
   })
 
   it('marks a read refused as not found, and clears the mark on the next read', async () => {
-    api.fetchService.mockRejectedValueOnce({ data: { data: { code: PortalErrorCode.ServiceNotFound } } }).mockResolvedValueOnce({ id: 3, name: 'Pro' })
+    table[`${HttpMethod.Get} /api/portal/client/services/9`] = { status: 404, body: { data: { code: PortalErrorCode.ServiceNotFound } } }
+    table[`${HttpMethod.Get} ${SERVICE_3}`] = { body: { id: 3, name: 'Pro' } }
     const store = useServiceManagementStore()
 
     await store.loadService('9')
@@ -264,29 +269,31 @@ describe('useServiceManagementStore reads', () => {
   })
 
   it('keeps the hosting info and falls back to the empty default when it cannot be read', async () => {
-    api.fetchHostingInfo.mockResolvedValueOnce({ nameservers: ['ns1.a'], ssl: null }).mockRejectedValueOnce(new Error('down'))
+    table[`${HttpMethod.Get} ${SERVICE_3}/hosting-info`] = { body: { nameservers: ['ns1.a'], ssl: null } }
     const store = useServiceManagementStore()
 
     await store.loadHostingInfo('3')
     expect(store.hostingInfo.nameservers).toEqual(['ns1.a'])
 
+    table[`${HttpMethod.Get} ${SERVICE_3}/hosting-info`] = REFUSED
     await store.loadHostingInfo('3')
     expect(store.hostingInfo).toEqual({ nameservers: [], ssl: null })
   })
 
   it('keeps the cancellation status and falls back to not pending when it cannot be read', async () => {
-    api.fetchCancellationStatus.mockResolvedValueOnce({ pending: true, type: CancellationType.Immediate }).mockRejectedValueOnce(new Error('down'))
+    table[`${HttpMethod.Get} ${SERVICE_3}/cancellation-status`] = { body: { pending: true, type: CancellationType.Immediate } }
     const store = useServiceManagementStore()
 
     await store.loadCancellationStatus('3')
     expect(store.cancelStatus).toMatchObject({ pending: true, type: CancellationType.Immediate })
 
+    table[`${HttpMethod.Get} ${SERVICE_3}/cancellation-status`] = REFUSED
     await store.loadCancellationStatus('3')
     expect(store.cancelStatus).toEqual({ pending: false })
   })
 
   it('clears the previous service when a service page opens', async () => {
-    api.fetchService.mockResolvedValue({ id: 3 })
+    table[`${HttpMethod.Get} ${SERVICE_3}`] = { body: { id: 3 } }
     const store = useServiceManagementStore()
     await store.loadService('3')
 

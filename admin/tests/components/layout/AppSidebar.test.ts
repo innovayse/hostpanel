@@ -11,26 +11,21 @@ import { useNavigationStore } from '@/stores/navigation'
 import { useVersionStore } from '@/stores/version'
 import { json, problem } from '../../helpers/fetch'
 import { stubRoutes } from '../../helpers/routes'
+import { stubDocsUrl } from '../../helpers/runtimeConfig'
 import { mountScreen, mountView } from '../../helpers/mount'
 import { resetThemeDocument, stubSchemeQuery } from '../../helpers/theme'
 import { THEME_STORAGE_KEY } from '@/lib/themeBoot'
 import { AdminTheme } from '@/types/admintheme'
 
-vi.mock('@/lib/runtimeConfig', () => ({
-  getRuntimeConfig: vi.fn(),
-}))
-
-import { getRuntimeConfig } from '@/lib/runtimeConfig'
-
 /**
  * Mounts the sidebar at a path.
  *
  * @param path - The current route.
- * @param docsUrl - Docs URL to inject (default empty).
+ * @param docsUrl - Docs address the deployment injects through `config.js` (default empty).
  * @returns The wrapper.
  */
 const mountSidebar = async (path: string, docsUrl = '') => {
-  vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl, basePath: '/', clientBaseUrl: '' })
+  stubDocsUrl(docsUrl)
   stubRoutes({})
   return mountView(AppSidebar, { path })
 }
@@ -186,7 +181,7 @@ describe('AppSidebar', () => {
   })
 
   it('shows the installed version quietly in the footer', async () => {
-    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    stubDocsUrl('')
     stubRoutes({})
     const wrapper = await mountView(AppSidebar, { path: '/dashboard' })
     useVersionStore().version = '1.4.0'
@@ -196,7 +191,7 @@ describe('AppSidebar', () => {
   })
 
   it('shows no version line when the version cannot be loaded', async () => {
-    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    stubDocsUrl('')
     const mock = stubRoutes({ 'GET /api/admin/version': () => problem('No access.', 403) })
     const wrapper = await mountView(AppSidebar, { path: '/dashboard' })
     // The layout starts this load in the app; here the test starts it and waits for the refusal.
@@ -233,7 +228,7 @@ describe('AppSidebar', () => {
   it('offers the theme switch inside the menu drawer only, and applies the choice', async () => {
     resetThemeDocument()
     stubSchemeQuery(false)
-    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    stubDocsUrl('')
     stubRoutes({})
     const { wrapper: desktop } = await mountScreen(AppSidebar, {}, '/dashboard')
     expect(desktop.find('[data-testid="sidebar-theme"]').exists()).toBe(false)
@@ -254,7 +249,7 @@ describe('AppSidebar Add-ons', () => {
   })
 
   it('draws an Add-ons section before System from the menu items plugins declare', async () => {
-    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    stubDocsUrl('')
     stubRoutes({
       'GET /api/admin/plugins/ui': () => json({
         menus: [
@@ -282,7 +277,7 @@ describe('AppSidebar Add-ons', () => {
   })
 
   it('draws no Add-ons section while no plugin declares a menu item', async () => {
-    vi.mocked(getRuntimeConfig).mockReturnValue({ docsUrl: '', basePath: '/', clientBaseUrl: '' })
+    stubDocsUrl('')
     stubRoutes({ 'GET /api/admin/plugins/ui': () => json({ menus: [], pages: [] }) })
     const wrapper = await mountView(AppSidebar, { path: '/dashboard' })
 

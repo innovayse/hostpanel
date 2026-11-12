@@ -3,9 +3,13 @@
  */
 import { computed } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { partnerFixture } from '~/tests/helpers/storefrontFixtures'
+import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import NovaHome from '~/templates/nova/pages/NovaHome.vue'
 import { stubTemplateGlobals } from '~/tests/helpers/templateGlobals'
 import { HomeSection } from '~/constants/homeSection'
@@ -17,17 +21,11 @@ import { GuaranteeKey } from '~/constants/guaranteeKey'
 import { PerformanceStatKey } from '~/constants/performanceStatKey'
 import { SecurityFeatureKey } from '~/constants/securityFeatureKey'
 
-/** The mocked storefront endpoints; only the partners carry content. */
-const api = { fetchPartners: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn(), fetchLocations: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** What the stub answers, by route: every storefront read is empty except the partners. */
+const replies: StubRouteTable = {}
 
 /**
  * Stands in for the section composables the page's sections call, with every section on unless
@@ -57,16 +55,17 @@ const SECTION_TEST_IDS: Partial<Record<HomeSection, string>> = {
 }
 
 describe('NovaHome', () => {
-  beforeEach(() => {
-    for (const endpoint of Object.values(api)) {
-      endpoint.mockReset()
-      endpoint.mockResolvedValue([])
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    for (const path of Object.values(StorefrontPath)) {
+      replies[readOf(path)] = { body: [] }
     }
-    api.fetchPartners.mockResolvedValue([partnerFixture(1), partnerFixture(2)])
+    replies[readOf(StorefrontPath.Partners)] = { body: [partnerFixture(1), partnerFixture(2)] }
     stubSections()
   })
 
-  afterEach(() => {
+  afterEach(async () => {
+    await stub.close()
     vi.unstubAllGlobals()
   })
 
@@ -135,8 +134,8 @@ describe('NovaHome', () => {
     for (const [hidden, count] of cases) {
       stubTemplateGlobals()
       stubSections(hidden)
-      const wrapper = mountWithKit(NovaHome)
-      await flushPromises()
+      // With both switches off the partners section is never mounted, so no partners read is started.
+      const wrapper = await mountAfterReads(stub, count > 0 ? [StorefrontPath.Partners] : [], () => mountWithKit(NovaHome))
 
       expect(wrapper.findAll('[data-testid="nova-partners"]')).toHaveLength(count)
       expect(wrapper.find('[data-testid="nova-trusted"]').exists()).toBe(false)

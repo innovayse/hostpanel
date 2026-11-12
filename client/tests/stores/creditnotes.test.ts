@@ -1,37 +1,29 @@
 /**
- * Tests for `stores/creditnotes.ts`.
+ * Tests for `stores/creditnotes.ts`, through the real billing API composable and transport against a stub server.
  *
  * The store, not the credit notes page, owns the loaded notes, the in-flight flags and the refusal sentences, so these assertions pin
- * the contract the page renders from.
+ * the contract the page renders from. Nothing of our own is replaced: the stub plays the BFF, and the file a download hands to the
+ * browser is read at the browser's own primitives.
  *
  * @module tests/stores/creditnotes.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { captureDownloads, PDF_REPLY } from '../helpers/captureDownloads'
+import { heldReply, routeTable } from '../helpers/stubRoutes'
+import type { StubRouteTable } from '../helpers/stubRoutes'
+import type { StubServer } from '../helpers/stubServer'
+import { startTransport } from '../helpers/stubTransport'
+import { useCreditNotesStore } from '~/stores/creditnotes'
 import type { ClientCreditNote } from '~/types/clientcreditnote'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** The mocked credit notes read. */
-const fetchNotesMock = vi.fn()
+/** The stub playing the BFF. */
+let stub: StubServer
 
-/** The mocked PDF read. */
-const fetchPdfMock = vi.fn()
-
-/** The mocked file save. */
-const saveBlobMock = vi.fn()
-
-vi.mock('~/composables/apis/useBillingApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns Only the endpoints the credit notes store reaches for.
-   */
-  useBillingApi: () => ({ fetchCreditNotes: fetchNotesMock, fetchCreditNotePdf: fetchPdfMock })
-}))
-
-vi.mock('~/utils/saveBlob', () => ({ saveBlob: saveBlobMock }))
-
-const { useCreditNotesStore } = await import('~/stores/creditnotes')
+/** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
+let table: StubRouteTable
 
 /** A note. */
 const note: ClientCreditNote = {
@@ -50,14 +42,26 @@ const note: ClientCreditNote = {
   voidedAt: null
 }
 
-describe('useCreditNotesStore.load', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    fetchNotesMock.mockReset()
-  })
+/** The read of the notes. */
+const NOTES_ROUTE = 'GET /api/portal/client/credit-notes'
 
+/** The read of the PDF of {@link note}. */
+const PDF_ROUTE = 'GET /api/portal/client/credit-notes/3/pdf'
+
+beforeEach(async () => {
+  setActivePinia(createPinia())
+  table = {}
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  vi.restoreAllMocks()
+  await stub.close()
+})
+
+describe('useCreditNotesStore.load', () => {
   it('reads the notes and exposes them', async () => {
-    fetchNotesMock.mockResolvedValue([note])
+    table[NOTES_ROUTE] = { body: [note] }
     const store = useCreditNotesStore()
 
     const loaded = await store.load()
@@ -69,7 +73,7 @@ describe('useCreditNotesStore.load', () => {
   })
 
   it('leaves no notes and the sentence of the refusal when the read fails', async () => {
-    fetchNotesMock.mockRejectedValue({ data: { code: 'CLIENT_PROFILE_NOT_FOUND', message: 'No client profile.' }, statusMessage: 'No client profile.' })
+    table[NOTES_ROUTE] = { status: 404, body: { data: { code: 'CLIENT_PROFILE_NOT_FOUND', message: 'No client profile.' }, statusMessage: 'No client profile.' } }
     const store = useCreditNotesStore()
     store.notes = [note]
 
@@ -82,44 +86,45 @@ describe('useCreditNotesStore.load', () => {
 })
 
 describe('useCreditNotesStore.downloadPdf', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    fetchPdfMock.mockReset()
-    saveBlobMock.mockReset()
-  })
-
   it('saves the PDF under the number of the note', async () => {
-    const pdf = new Blob(['%PDF-'], { type: 'application/pdf' })
-    fetchPdfMock.mockResolvedValue(pdf)
+    table[PDF_ROUTE] = PDF_REPLY
+    const downloads = captureDownloads()
     const store = useCreditNotesStore()
 
     await store.downloadPdf(note)
 
-    expect(fetchPdfMock).toHaveBeenCalledWith(3)
-    expect(saveBlobMock).toHaveBeenCalledWith(pdf, 'credit-note-CN-0003.pdf')
+    expect(stub.requests.map(request => `${request.method} ${request.url}`)).toEqual([PDF_ROUTE])
+    expect(downloads).toHaveLength(1)
+    expect(downloads[0]?.fileName).toBe('credit-note-CN-0003.pdf')
+    expect(await downloads[0]?.blob.text()).toBe('%PDF-')
     expect(store.downloadingId).toBeNull()
     expect(store.downloadError).toBe('')
   })
 
   it('keeps the sentence of a refusal and saves nothing', async () => {
-    fetchPdfMock.mockRejectedValue({ data: { code: 'CREDIT_NOTE_NOT_FOUND', message: 'The credit note was not found.' }, statusMessage: 'The credit note was not found.' })
+    table[PDF_ROUTE] = { status: 404, body: { data: { code: 'CREDIT_NOTE_NOT_FOUND', message: 'The credit note was not found.' }, statusMessage: 'The credit note was not found.' } }
+    const downloads = captureDownloads()
     const store = useCreditNotesStore()
 
     await store.downloadPdf(note)
 
-    expect(saveBlobMock).not.toHaveBeenCalled()
+    expect(downloads).toHaveLength(0)
     expect(store.downloadError).not.toBe('')
     expect(store.downloadingId).toBeNull()
   })
 
   it('marks the note being downloaded while the request is in flight', async () => {
-    let release: (blob: Blob) => void = () => undefined
-    fetchPdfMock.mockReturnValue(new Promise<Blob>((resolve) => { release = resolve }))
+    const held = heldReply()
+    table[PDF_ROUTE] = held.reply
+    captureDownloads()
     const store = useCreditNotesStore()
 
     const pending = store.downloadPdf(note)
     expect(store.downloadingId).toBe(3)
-    release(new Blob(['%PDF-']))
+    await waitUntil(() => {
+      expect(held.waiting()).toBe(1)
+    })
+    held.release(PDF_REPLY)
     await pending
 
     expect(store.downloadingId).toBeNull()

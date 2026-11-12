@@ -7,10 +7,16 @@ import EmailsTab from '~/components/account/EmailsTab.vue'
 import { useAccountStore } from '~/stores/account'
 import type { ClientEmailSummary } from '~/types/clientemailsummary'
 
-vi.mock('~/composables/apis/useClientApi', () => ({ useClientApi: () => ({}) }))
-vi.mock('~/composables/apis/useBillingApi', () => ({ useBillingApi: () => ({}) }))
-vi.mock('~/composables/apis/useAuthApi', () => ({ useAuthApi: () => ({}) }))
-vi.mock('qrcode', () => ({ default: { toDataURL: async (): Promise<string> => '' } }))
+vi.mock('qrcode', () => ({
+  default: {
+    /**
+     * Stands in for the QR renderer, a third-party package the account store imports.
+     *
+     * @returns An empty data URL.
+     */
+    toDataURL: async (): Promise<string> => ''
+  }
+}))
 
 /**
  * Builds a list of sent emails.

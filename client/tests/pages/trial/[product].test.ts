@@ -1,38 +1,26 @@
 /**
- * Unit tests for the trial page: it takes the product's colour, icon and page from its catalogue group,
- * reads its feature lines from the catalogue, and falls back to a neutral look for an unknown slug.
+ * Unit tests for the trial page against the real catalogue and currency stores, the real API
+ * composables and the real transport, with a stub BFF answering on a real socket: it takes the
+ * product's colour, icon and page from its catalogue group, reads its feature lines from the
+ * catalogue, and falls back to a neutral look for an unknown slug.
+ *
+ * @module tests/pages/trial/[product].test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { awaitCatalogue } from '~/tests/helpers/payerCatalogue'
+import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import TrialPage from '~/pages/trial/[product].vue'
 import CatalogTrialHero from '~/components/catalog/TrialHero.vue'
 import CatalogTrialDetails from '~/components/catalog/TrialDetails.vue'
 import type { PortalProduct } from '~/types/portalproduct'
 import type { PortalProductGroup } from '~/types/portalproductgroup'
 import { familyColor } from '~/utils/catalogGroups'
-
-/** The mocked catalogue endpoints, re-created for every test. */
-const api = { fetchProducts: vi.fn(), fetchProductGroups: vi.fn() }
-
-vi.mock('~/composables/apis/useCatalogApi', () => ({
-  /**
-   * Stands in for the catalogue API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useCatalogApi: () => api,
-}))
-
-vi.mock('~/composables/apis/useCurrencyApi', () => ({
-  /**
-   * Stands in for the currency API composable.
-   *
-   * @returns Only the endpoint the page's store reaches for.
-   */
-  useCurrencyApi: () => ({ loadBillingCurrencies: () => Promise.resolve([]) }),
-}))
 
 /** The product's group. */
 const groups: PortalProductGroup[] = [{ id: 9, name: 'Gamma Tool', productCount: 1 }]
@@ -45,8 +33,14 @@ const catalogue: PortalProduct[] = [
 /** What the stood-in runtime recorded for the current test. */
 let spies: PublicPageSpies
 
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
+
 /**
- * Mounts the page for one product slug.
+ * Mounts the page for one product slug and waits until the catalogue has been read.
  *
  * @param product The `product` route parameter.
  * @returns The wrapper.
@@ -54,23 +48,29 @@ let spies: PublicPageSpies
 const mountTrial = async (product = 'gamma-tool') => {
   spies = stubPublicPageRuntime({ params: { product } })
   const wrapper = await mountPage(TrialPage, { components: { CatalogTrialHero, CatalogTrialDetails } })
-  await flushPromises()
+  await awaitCatalogue()
   return wrapper
 }
 
 describe('trial page', () => {
-  beforeEach(() => {
-    api.fetchProducts.mockReset()
-    api.fetchProducts.mockResolvedValue(catalogue)
-    api.fetchProductGroups.mockReset()
-    api.fetchProductGroups.mockResolvedValue(groups)
+  beforeEach(async () => {
     window.localStorage.clear()
+    table = {
+      [`GET ${CatalogPath.BillingCurrencies}`]: { body: [] },
+      [`GET ${CatalogPath.ProductGroups}`]: { body: groups },
+      [`GET ${CatalogPath.Products}`]: { body: catalogue },
+    }
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it("reads the products of the family groups", async () => {
     await mountTrial()
 
-    expect(api.fetchProducts).toHaveBeenCalledWith(expect.objectContaining({ gids: '9' }))
+    expect(requestsTo(stub.requests, CatalogPath.Products).map(queryOf)).toContainEqual(expect.objectContaining({ gids: '9' }))
   })
 
   it("paints the page in the product's colour and sends the trial to its page", async () => {
@@ -95,8 +95,8 @@ describe('trial page', () => {
   })
 
   it('falls back to a neutral look and the products list for an unknown slug', async () => {
-    api.fetchProductGroups.mockResolvedValue([])
-    api.fetchProducts.mockResolvedValue([])
+    table[`GET ${CatalogPath.ProductGroups}`] = { body: [] }
+    table[`GET ${CatalogPath.Products}`] = { body: [] }
     const wrapper = await mountTrial('mystery')
 
     const accent = wrapper.find('[data-testid="ui-accent"]').element as HTMLElement

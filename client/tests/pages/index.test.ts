@@ -1,65 +1,51 @@
 /**
- * Tests for the home page: it loads the catalog for the active currency, hands the active
- * template's home component everything it renders, and wires the template's events back.
+ * Tests for the home page against the real catalogue, currency and domains stores, the real API
+ * composables and the real transport, with a stub BFF answering on a real socket: it loads the catalog
+ * for the active currency, hands the active template's home component everything it renders, and wires
+ * the template's events back.
+ *
+ * @module tests/pages/index.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { defineComponent, h, ref } from 'vue'
-import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
+import { defineComponent, h } from 'vue'
+import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import type { PublicPageSpies } from '~/tests/helpers/publicPage'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
+import { USD_CURRENCY } from '~/tests/helpers/payerCatalogue'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { mountRenderedPage } from '~/tests/helpers/renderedPage'
+import { until } from '~/tests/helpers/settle'
+import { pathOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import { useCurrencyStore } from '~/stores/currency'
+import { useDomainsStore } from '~/stores/domains'
+import { DomainAvailabilityStatus } from '~/types/domainavailabilitystatus'
 import { PricingCycle } from '~/types/pricingcycle'
-
-/** The fake stores, hoisted so the mocked modules can reach them. */
-const stores = vi.hoisted(() => ({
-  catalog: {
-    loadTldPricing: vi.fn(),
-    loadHostingPlans: vi.fn(),
-    loadProductFeatures: vi.fn(),
-    planCards: vi.fn(),
-    featuresFor: vi.fn(),
-  },
-  currency: { payerCode: 'USD', init: vi.fn(), load: vi.fn() },
-  domains: {
-    searchOfferedTlds: vi.fn(),
-  },
-}))
-
-vi.mock('~/stores/catalog', () => ({
-  /**
-   * Stands in for the catalog store.
-   *
-   * @returns The fake catalog store.
-   */
-  useCatalogStore: () => stores.catalog,
-}))
-
-vi.mock('~/stores/currency', () => ({
-  /**
-   * Stands in for the currency store.
-   *
-   * @returns The fake currency store.
-   */
-  useCurrencyStore: () => stores.currency,
-}))
-
-vi.mock('~/stores/domains', async () => {
-  const { ref: makeRef } = await import('vue')
-  const state = {
-    lookupResults: makeRef([{ domain: 'a.com' }]),
-    lookupPending: makeRef(false),
-    offeredTlds: makeRef(['.com', '.net']),
-    searchOfferedTlds: stores.domains.searchOfferedTlds,
-  }
-  return {
-    /**
-     * Stands in for the domains store.
-     *
-     * @returns The fake domains store.
-     */
-    useDomainsStore: () => state,
-  }
-})
+import type { ProductFeature } from '~/types/productfeature'
+import { buildComparisonRows } from '~/utils/comparisonRows'
 
 const { default: Page } = await import('~/pages/index.vue')
+
+/** The currency store's storage key, which the guest's choice is kept under. */
+const CURRENCY_STORAGE_KEY = 'innovayse_currency'
+
+/** The one hosting plan the catalogue answers with. */
+const PLAN = { id: 7, groupId: 1, name: 'Starter', description: 'Small sites', pricing: { monthly: 5, annual: 50 } }
+
+/** The specification line of that plan, which the comparison rows are built from. */
+const FEATURE: ProductFeature = { id: 1, productId: 7, label: 'Disk', value: '10 GB', sortOrder: 1 }
+
+/** The extensions the operator offers, in the order the search box hints them. */
+const OFFERED_TLDS = ['com', 'net']
+
+/** The price table the catalogue answers with: one year of registration for each offered extension. */
+const TLD_PRICING = {
+  currency: { code: USD_CURRENCY.code, prefix: USD_CURRENCY.prefix },
+  pricing: OFFERED_TLDS.map(tld => ({ tld, sellCurrency: USD_CURRENCY.code, register: [{ years: 1, amount: 10 }] })),
+}
 
 /** Records the props the page hands to the template's home component. */
 const HomeStub = defineComponent({
@@ -80,24 +66,45 @@ const HomeStub = defineComponent({
 /** Spies of the stood-in runtime, renewed before each test. */
 let spies: PublicPageSpies
 
+/** The stub playing the BFF. */
+let stub: StubServer
+
+/** The replies of the current test; a test changes them before it mounts. */
+let table: StubRouteTable
+
+/**
+ * Mounts the page and waits until the template's home component is on screen, which is after the
+ * currencies, the TLD prices, the hosting plans and their features have been read.
+ *
+ * @returns The wrapper.
+ */
+const mountHome = () => mountRenderedPage(Page, 'home-stub')
+
 describe('pages/index', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     spies = stubPublicPageRuntime()
-    Object.values(stores.catalog).forEach(fn => fn.mockReset())
-    stores.currency.init.mockReset()
-    stores.currency.load.mockReset()
-    stores.catalog.planCards.mockImplementation((hrefFor: (id: string) => string) => [{ id: '7', href: hrefFor('7') }])
-    stores.catalog.featuresFor.mockReturnValue([{ name: 'Disk' }])
+    window.localStorage.clear()
     vi.stubGlobal('useTemplate', () => ({ name: 'aurora', slot: () => HomeStub }))
-    vi.stubGlobal('buildComparisonRows', vi.fn((features: unknown[], ids: string[]) => [{ features, ids }]))
-    vi.stubGlobal('useAsyncData', vi.fn(async (_key: string, handler: () => Promise<unknown>) => {
-      await handler()
-      return { pending: ref(false) }
-    }))
+    vi.stubGlobal('buildComparisonRows', buildComparisonRows)
+    table = {
+      [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
+      [`GET ${CatalogPath.TldPricing}`]: { body: TLD_PRICING },
+      [`GET ${CatalogPath.Products}`]: { body: [PLAN] },
+      [`GET ${CatalogPath.ProductFeatures}`]: { body: [FEATURE] },
+      [`POST ${CatalogPath.DomainCheck}`]: request => ({
+        body: { domain: (bodyOf(request) as { domain: string }).domain, available: true, status: DomainAvailabilityStatus.Available },
+      }),
+    }
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('sets the home tags and publishes organisation, business and site structured data', async () => {
-    await mountPage(Page)
+    await mountHome()
 
     expect(spies.useSeo).toHaveBeenCalledWith(expect.objectContaining({ title: 'seo.home.title', path: '/' }))
     const published = spies.injectSchema.mock.calls[0]?.[0] as Array<Record<string, unknown>>
@@ -105,59 +112,69 @@ describe('pages/index', () => {
   })
 
   it('reads the TLD prices, the hosting plans and the hosting features', async () => {
-    await mountPage(Page)
+    await mountHome()
 
-    expect(stores.catalog.loadTldPricing).toHaveBeenCalledTimes(1)
-    expect(stores.catalog.loadHostingPlans).toHaveBeenCalledTimes(1)
-    expect(stores.catalog.loadProductFeatures).toHaveBeenCalledTimes(1)
+    expect(requestsTo(stub.requests, CatalogPath.TldPricing)).toHaveLength(1)
+    expect(requestsTo(stub.requests, CatalogPath.Products)).toHaveLength(1)
+    expect(requestsTo(stub.requests, CatalogPath.ProductFeatures)).toHaveLength(1)
   })
 
   it('restores the guest currency once mounted', async () => {
-    await mountPage(Page)
+    window.localStorage.setItem(CURRENCY_STORAGE_KEY, USD_CURRENCY.code)
 
-    expect(stores.currency.init).toHaveBeenCalledTimes(1)
+    await mountHome()
+
+    expect(useCurrencyStore().selectedCode).toBe(USD_CURRENCY.code)
   })
 
   it('loads the billing currencies during the server render, before the plans', async () => {
-    await mountPage(Page)
+    await mountHome()
 
-    expect(stores.currency.load).toHaveBeenCalledTimes(1)
-    expect(stores.currency.load.mock.invocationCallOrder[0]).toBeLessThan(stores.catalog.loadHostingPlans.mock.invocationCallOrder[0]!)
+    expect(requestsTo(stub.requests, CatalogPath.BillingCurrencies)).toHaveLength(1)
+    const order = stub.requests.map(pathOf)
+    expect(order.indexOf(CatalogPath.BillingCurrencies)).toBeGreaterThanOrEqual(0)
+    expect(order.indexOf(CatalogPath.BillingCurrencies)).toBeLessThan(order.indexOf(CatalogPath.Products))
   })
 
   it('renders the template\'s home component with the domain lookup state', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountHome()
 
     const home = wrapper.findComponent(HomeStub)
     expect(home.exists()).toBe(true)
     expect(home.props('hasZones')).toBe(true)
-    expect(home.props('priceHints')).toEqual(['.com', '.net'])
-    expect(home.props('domainResults')).toEqual([{ domain: 'a.com' }])
+    expect((home.props('priceHints') as Array<{ tld: string }>).map(hint => hint.tld)).toEqual(['.com', '.net'])
+    expect(home.props('domainResults')).toEqual([])
     expect(home.props('domainPending')).toBe(false)
   })
 
   it('builds the plan cards with localised configure links', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountHome()
 
-    expect(wrapper.findComponent(HomeStub).props('plans')).toEqual([{ id: '7', href: '/en/configure/7' }])
+    const cards = wrapper.findComponent(HomeStub).props('plans') as Array<{ id: number, href: string }>
+    expect(cards.map(card => ({ id: card.id, href: card.href }))).toEqual([{ id: 7, href: '/en/configure/7' }])
   })
 
   it('assembles the comparison rows from the features and the plan ids', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountHome()
 
-    expect(wrapper.findComponent(HomeStub).props('comparisonRows')).toEqual([{ features: [{ name: 'Disk' }], ids: ['7'] }])
+    expect(wrapper.findComponent(HomeStub).props('comparisonRows')).toEqual([{ label: 'Disk', values: ['10 GB'] }])
   })
 
   it('runs a domain search when the template asks for one', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountHome()
 
     wrapper.findComponent(HomeStub).vm.$emit('search', 'example')
+    await until(() => requestsTo(stub.requests, CatalogPath.DomainCheck).length === OFFERED_TLDS.length && !useDomainsStore().lookupPending, 'the lookup to finish')
+    await flushPromises()
 
-    expect(stores.domains.searchOfferedTlds).toHaveBeenCalledWith('example')
+    const checked = requestsTo(stub.requests, CatalogPath.DomainCheck).map(request => bodyOf(request))
+    expect(checked).toEqual(OFFERED_TLDS.map(tld => ({ domain: `example.${tld}` })))
+    const results = wrapper.findComponent(HomeStub).props('domainResults') as Array<{ name: string }>
+    expect(results.map(result => result.name)).toEqual(OFFERED_TLDS.map(tld => `example.${tld}`))
   })
 
   it('switches the billing cycle when the template changes it', async () => {
-    const wrapper = await mountPage(Page)
+    const wrapper = await mountHome()
     expect(wrapper.findComponent(HomeStub).props('cycle')).toBe(PricingCycle.Monthly)
 
     wrapper.findComponent(HomeStub).vm.$emit('update:cycle', PricingCycle.Quarterly)

@@ -3,35 +3,41 @@
  * filtering, the preview limit, the header, the contact card, and the section hiding itself when
  * there are no questions.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import { faqFixture } from '~/tests/helpers/storefrontFixtures'
+import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { routeTable, readOf } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import SectionsFAQ from '~/components/sections/SectionsFAQ.vue'
 import MarketingSectionHeader from '~/components/marketing/MarketingSectionHeader.vue'
 import { CLASSIC_COMPONENTS } from '~/tests/helpers/classicKit'
 import { TemplateName } from '~/types/templatename'
 import { FaqCategory } from '~/types/faqcategory'
+import type { FAQ } from '~/types/faq'
 import { faqCategorySlug } from '~/utils/faqCategory'
 
-/** The mocked storefront endpoints, re-created for every test. */
-const api = { fetchPartners: vi.fn(), fetchTestimonials: vi.fn(), fetchProjects: vi.fn(), fetchFaqs: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** What the stub answers, by route; the tests below change the questions it serves. */
+const replies: StubRouteTable = {}
+
+/**
+ * Makes the stub serve these questions.
+ *
+ * @param faqs The questions the public read answers with.
+ */
+const serve = (faqs: FAQ[]): void => {
+  replies[readOf(StorefrontPath.Faqs)] = { body: faqs }
+}
 
 /** The template the stubbed composable reports. */
 const activeTemplate = ref<TemplateName>(TemplateName.Aurora)
-
-vi.stubGlobal('useTemplate', () => ({ name: activeTemplate }))
 
 /** Three general questions and two about products. */
 const FAQS = [
@@ -48,11 +54,9 @@ const FAQS = [
  * @param props Props of the section.
  * @returns The wrapper.
  */
-const mountFaq = async (props: Record<string, unknown> = {}) => {
-  const wrapper = mountWithKit(SectionsFAQ, { props, components: { MarketingSectionHeader, ...CLASSIC_COMPONENTS } })
-  await flushPromises()
-  return wrapper
-}
+const mountFaq = (props: Record<string, unknown> = {}) =>
+  mountAfterReads(stub, [StorefrontPath.Faqs], () =>
+    mountWithKit(SectionsFAQ, { props, components: { MarketingSectionHeader, ...CLASSIC_COMPONENTS } }))
 
 /**
  * Counts the questions on screen.
@@ -63,10 +67,16 @@ const mountFaq = async (props: Record<string, unknown> = {}) => {
 const questionCount = (wrapper: Awaited<ReturnType<typeof mountFaq>>): number => wrapper.findAll('[data-testid^="ui-accordion-toggle-"]').length
 
 describe('SectionsFAQ', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
     stubPublicPageRuntime()
-    api.fetchFaqs.mockReset()
-    api.fetchFaqs.mockResolvedValue(FAQS)
+    vi.stubGlobal('useTemplate', () => ({ name: activeTemplate }))
+    serve(FAQS)
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('shows every question under the "all" tab at first, with every answer closed', async () => {
@@ -146,7 +156,7 @@ describe('SectionsFAQ', () => {
   })
 
   it('renders nothing when there are no questions', async () => {
-    api.fetchFaqs.mockResolvedValue([])
+    serve([])
 
     const wrapper = await mountFaq()
 

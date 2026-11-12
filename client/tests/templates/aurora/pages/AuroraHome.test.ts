@@ -2,39 +2,49 @@
  * Unit tests for AuroraHome: every section is composed in, the optional ones can be switched off,
  * and the search and billing events travel up to the page that owns the data.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { faqFixture, partnerFixture, testimonialFixture } from '~/tests/helpers/storefrontFixtures'
+import { mountAfterReads, StorefrontPath } from '~/tests/helpers/storefrontSection'
+import { requestsTo, routeTable, readOf } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import AuroraHome from '~/templates/aurora/pages/AuroraHome.vue'
 import { PortalSettingKey } from '~/constants/portalSettingKey'
 import { PricingCycle } from '~/types/pricingcycle'
 import { stubAuroraGlobals, PLANS } from '../auroraGlobals'
 
-/** The mocked storefront endpoints, so the FAQ and testimonials sections have content to show. */
-const api = { fetchPartners: vi.fn().mockResolvedValue([]), fetchTestimonials: vi.fn(), fetchProjects: vi.fn().mockResolvedValue([]), fetchFaqs: vi.fn(), fetchLocations: vi.fn().mockResolvedValue([]) }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useStorefrontApi', () => ({
-  /**
-   * Stands in for the storefront API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useStorefrontApi: () => api,
-}))
+/** What the stub answers, by route, so the FAQ and testimonials sections have content to show. */
+const replies: StubRouteTable = {}
 
 describe('AuroraHome', () => {
-  beforeEach(() => {
-    api.fetchFaqs.mockReset()
-    api.fetchFaqs.mockResolvedValue([faqFixture(1), faqFixture(2)])
-    api.fetchTestimonials.mockReset()
-    api.fetchTestimonials.mockResolvedValue([testimonialFixture(1), testimonialFixture(2)])
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
+    Object.assign(replies, {
+      [readOf(StorefrontPath.Partners)]: { body: [] },
+      [readOf(StorefrontPath.Projects)]: { body: [] },
+      [readOf(StorefrontPath.Locations)]: { body: [] },
+      [readOf(StorefrontPath.Faqs)]: { body: [faqFixture(1), faqFixture(2)] },
+      [readOf(StorefrontPath.Testimonials)]: { body: [testimonialFixture(1), testimonialFixture(2)] },
+    })
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('composes the hero, search, trust bar, plans, services, process, testimonials, FAQ and call to action', async () => {
     stubAuroraGlobals()
-    const wrapper = mountWithKit(AuroraHome, { props: { plans: PLANS } })
-    await flushPromises()
+    const wrapper = await mountAfterReads(
+      stub,
+      [StorefrontPath.Partners, StorefrontPath.Locations, StorefrontPath.Testimonials, StorefrontPath.Faqs],
+      () => mountWithKit(AuroraHome, { props: { plans: PLANS } }),
+    )
 
     expect(wrapper.attributes('data-testid')).toBe('aurora-home')
     expect(wrapper.find('[data-testid="hero-title"]').exists()).toBe(true)
@@ -48,6 +58,7 @@ describe('AuroraHome', () => {
   })
 
   it('sets a brand glow behind the hero search card', () => {
+    stubAuroraGlobals()
     const wrapper = mountWithKit(AuroraHome)
 
     expect(wrapper.find('[data-testid="hero-search-glow"]').exists()).toBe(true)
@@ -63,8 +74,11 @@ describe('AuroraHome', () => {
 
   it('hides a section whose homepage switch is off and keeps the others', async () => {
     stubAuroraGlobals({ settings: { [PortalSettingKey.SectionStats]: 'false', [PortalSettingKey.SectionFaq]: 'false', [PortalSettingKey.SectionCta]: 'false' } })
-    const wrapper = mountWithKit(AuroraHome, { props: { plans: PLANS } })
-    await flushPromises()
+    const wrapper = await mountAfterReads(
+      stub,
+      [StorefrontPath.Partners, StorefrontPath.Locations, StorefrontPath.Testimonials],
+      () => mountWithKit(AuroraHome, { props: { plans: PLANS } }),
+    )
 
     expect(wrapper.find('[data-testid="trust-bar"]').exists()).toBe(false)
     expect(wrapper.find('#faq').exists()).toBe(false)
@@ -81,16 +95,17 @@ describe('AuroraHome', () => {
       [{ [PortalSettingKey.SectionPartners]: 'false', [PortalSettingKey.SectionTrusted]: 'false' }, 0],
     ]
 
+    replies[readOf(StorefrontPath.Partners)] = { body: [partnerFixture(1), partnerFixture(2)] }
+
     for (const [settings, count] of cases) {
-      api.fetchPartners.mockResolvedValue([partnerFixture(1), partnerFixture(2)])
       stubAuroraGlobals({ settings })
-      const wrapper = mountWithKit(AuroraHome)
-      await flushPromises()
+      // The partners are only read while their section is on; the testimonials always are.
+      const reads = count > 0 ? [StorefrontPath.Partners, StorefrontPath.Testimonials] : [StorefrontPath.Testimonials]
+      const wrapper = await mountAfterReads(stub, reads, () => mountWithKit(AuroraHome))
 
       expect(wrapper.findAll('[data-testid="aurora-partners"]')).toHaveLength(count)
       expect(wrapper.find('[data-testid="aurora-trusted"]').exists()).toBe(false)
     }
-    api.fetchPartners.mockResolvedValue([])
   })
 
   it('needs both the prop and the switch for the process section', async () => {
@@ -108,12 +123,10 @@ describe('AuroraHome', () => {
 
   it('shows the portfolio projects only when their switch is on', async () => {
     stubAuroraGlobals({ settings: { [PortalSettingKey.SectionProjects]: 'true' } })
-    api.fetchProjects.mockResolvedValue([])
-    const wrapper = mountWithKit(AuroraHome)
-    await flushPromises()
+    const wrapper = await mountAfterReads(stub, [StorefrontPath.Projects], () => mountWithKit(AuroraHome))
 
     expect(wrapper.exists()).toBe(true)
-    expect(api.fetchProjects).toHaveBeenCalled()
+    expect(requestsTo(stub.requests, StorefrontPath.Projects)).toHaveLength(1)
   })
 
   it('passes the search term of the card up to the page', async () => {

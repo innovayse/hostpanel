@@ -1,27 +1,29 @@
 /**
- * Unit tests for ClientForgotPasswordPanel against the real auth store: the request form, its
- * refusal and the "mail sent" state. Only the API composable is replaced.
+ * Unit tests for ClientForgotPasswordPanel against the real auth store, the real auth API
+ * composable and the real transport, with a stub BFF answering on a real socket (nothing of ours
+ * is mocked): the request form, its refusal and the "mail sent" state.
  *
  * @module tests/components/client/ForgotPasswordPanel.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountWithLogo } from '~/tests/helpers/authScreens'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import ForgotPasswordPanel from '~/components/client/ForgotPasswordPanel.vue'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** The mocked reset-request call, re-created for every test. */
-const requestPasswordReset = vi.fn()
+/** The BFF path the reset mail is requested from. */
+const FORGOT_PATH = '/api/portal/auth/forgot-password'
 
-vi.mock('~/composables/apis/useAuthApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns Only the endpoint this component reaches through the store.
-   */
-  useAuthApi: () => ({ requestPasswordReset })
-}))
+/** The stub playing the BFF. */
+let stub: StubServer
 
-const { default: ForgotPasswordPanel } = await import('~/components/client/ForgotPasswordPanel.vue')
+/** The replies of the current test; a test changes them before it submits. */
+let table: StubRouteTable
 
 /**
  * Types an address and submits the form.
@@ -32,11 +34,15 @@ const { default: ForgotPasswordPanel } = await import('~/components/client/Forgo
 const submitWith = async (wrapper: ReturnType<typeof mountWithLogo>, email: string): Promise<void> => {
   await wrapper.find('[data-testid="forgot-email"]').setValue(email)
   await wrapper.find('form').trigger('submit')
-  await flushPromises()
 }
 
-beforeEach(() => {
-  requestPasswordReset.mockReset()
+beforeEach(async () => {
+  table = { [`POST ${FORGOT_PATH}`]: { body: {} } }
+  stub = await startTransport(routeTable(table))
+})
+
+afterEach(async () => {
+  await stub.close()
 })
 
 describe('ClientForgotPasswordPanel', () => {
@@ -48,22 +54,22 @@ describe('ClientForgotPasswordPanel', () => {
   })
 
   it('asks the API for a reset mail and switches to the sent state, echoing the address', async () => {
-    requestPasswordReset.mockResolvedValue({})
     const wrapper = mountWithLogo(ForgotPasswordPanel)
 
     await submitWith(wrapper, 'ada@example.com')
+    await waitUntil(() => expect(wrapper.find('[data-testid="outcome-panel"]').exists()).toBe(true))
 
-    expect(requestPasswordReset).toHaveBeenCalledWith('ada@example.com')
+    expect(bodyOf(requestsTo(stub.requests, FORGOT_PATH)[0])).toEqual({ email: 'ada@example.com' })
     expect(wrapper.find('[data-testid="forgot-form"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="outcome-panel"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="forgot-sent-back"]').attributes('href')).toBe('/client/login')
   })
 
   it('keeps the form and shows the API sentence when the request is refused', async () => {
-    requestPasswordReset.mockRejectedValue({ data: { detail: 'Too many requests.' } })
+    table[`POST ${FORGOT_PATH}`] = { status: 429, body: { detail: 'Too many requests.' } }
     const wrapper = mountWithLogo(ForgotPasswordPanel)
 
     await submitWith(wrapper, 'ada@example.com')
+    await waitUntil(() => expect(wrapper.find('[data-testid="ui-form-error"]').exists()).toBe(true))
 
     expect(wrapper.find('[data-testid="forgot-form"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="ui-form-error"]').text()).toBe('Too many requests.')

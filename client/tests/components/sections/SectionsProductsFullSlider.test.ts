@@ -3,12 +3,18 @@
  * calls to action, the arrows that only show with several slides, and the scroll-down button. The
  * carousel library is stood in for.
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
+import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { mountPage, registerPageComponents, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
 import SectionsProductsSlide from '~/components/sections/SectionsProductsSlide.vue'
 import ProductsFullSlider from '~/components/sections/SectionsProductsFullSlider.vue'
 import type { SlidePublic } from '~/types/slidepublic'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The slide jumps the stand-in carousel was asked for. */
 const slideToLoop = vi.hoisted(() => vi.fn())
@@ -33,17 +39,20 @@ vi.mock('swiper/modules', () => ({ Autoplay: {}, Navigation: {} }))
 vi.mock('swiper/css', () => ({}))
 vi.mock('swiper/css/navigation', () => ({}))
 
-/** The mocked catalogue endpoints, re-created for every test. */
-const api = { fetchSlides: vi.fn() }
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/composables/apis/useCatalogApi', () => ({
-  /**
-   * Stands in for the catalogue API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useCatalogApi: () => api,
-}))
+/** What the stub answers, by route; the tests below change the slides it serves. */
+const replies: StubRouteTable = {}
+
+/**
+ * Makes the stub serve these slides.
+ *
+ * @param slides The slides the public read answers with.
+ */
+const serve = (slides: SlidePublic[]): void => {
+  replies[`GET ${CatalogPath.Slides}`] = { body: slides }
+}
 
 /**
  * Builds a slide.
@@ -73,23 +82,33 @@ const slide = (id: number, overrides: Partial<SlidePublic> = {}): SlidePublic =>
 const mountSlider = async () => {
   // The hero is auto-imported by Nuxt, so the test registers a stand-in that keeps its test id.
   const wrapper = await mountPage(ProductsFullSlider, { stubs: { SectionsHero: { template: '<div data-testid="sections-hero" />' } } })
+  // The slides cross a real socket, and nothing renders until they arrive: the slider, or the hero in its place.
+  await waitUntil(() => expect(wrapper.find('[data-testid="products-slider"], [data-testid="sections-hero"]').exists()).toBe(true))
   await flushPromises()
   return wrapper
 }
 
 describe('ProductsFullSlider', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
+    stub = await startTransport(routeTable(replies))
     stubPublicPageRuntime()
     slideToLoop.mockReset()
     registerPageComponents({ SectionsProductsSlide })
-    api.fetchSlides.mockReset()
-    api.fetchSlides.mockResolvedValue([slide(1), slide(2, { links: { demoUrl: 'https://demo.test', learnMoreUrl: '/products/slide-2' }, brandColor: '#10b981' })])
+    serve([slide(1), slide(2, { links: { demoUrl: 'https://demo.test', learnMoreUrl: '/products/slide-2' }, brandColor: '#10b981' })])
+  })
+
+  afterEach(async () => {
+    await stub.close()
+    vi.unstubAllGlobals()
   })
 
   it('reads the slides in the active language', async () => {
     await mountSlider()
 
-    expect(api.fetchSlides).toHaveBeenCalledWith('en')
+    const reads = requestsTo(stub.requests, CatalogPath.Slides)
+    expect(reads).toHaveLength(1)
+    expect(reads[0]?.method).toBe('GET')
+    expect(queryOf(reads[0]!)).toEqual({ lang: 'en' })
   })
 
   it('renders a slide per catalogue slide with its title, tagline and features', async () => {
@@ -123,13 +142,13 @@ describe('ProductsFullSlider', () => {
     const several = await mountSlider()
     expect((several.find('[data-testid="slider-prev"]').element as HTMLElement).style.display).not.toBe('none')
 
-    api.fetchSlides.mockResolvedValue([slide(1)])
+    serve([slide(1)])
     const single = await mountSlider()
     expect((single.find('[data-testid="slider-prev"]').element as HTMLElement).style.display).toBe('none')
   })
 
   it('falls back to the text hero when the operator has no slides, instead of an empty band', async () => {
-    api.fetchSlides.mockResolvedValue([])
+    serve([])
     const wrapper = await mountSlider()
 
     expect(wrapper.find('[data-testid="products-slider"]').exists()).toBe(false)
@@ -167,7 +186,7 @@ describe('ProductsFullSlider', () => {
   })
 
   it('falls back to the illustration of the slide topic when it has no picture, and to the generic one otherwise', async () => {
-    api.fetchSlides.mockResolvedValue([
+    serve([
       slide(1, { imageUrl: '', links: { demoUrl: null, learnMoreUrl: '/vps' } }),
       slide(2, { imageUrl: '', links: { demoUrl: null, learnMoreUrl: '/offers' } }),
     ])
@@ -196,14 +215,14 @@ describe('ProductsFullSlider', () => {
   })
 
   it('shows no dots for a single slide', async () => {
-    api.fetchSlides.mockResolvedValue([slide(1)])
+    serve([slide(1)])
     const wrapper = await mountSlider()
 
     expect(wrapper.find('[data-testid="carousel-dots"]').exists()).toBe(false)
   })
 
   it('renders no image for a slide whose image is empty', async () => {
-    api.fetchSlides.mockResolvedValue([slide(1, { imageUrl: '' })])
+    serve([slide(1, { imageUrl: '' })])
     const wrapper = await mountSlider()
 
     expect(wrapper.text()).toContain('Slide 1')

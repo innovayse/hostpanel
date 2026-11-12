@@ -1,96 +1,92 @@
 /**
- * Tests for the sign-in action in `stores/auth.ts`.
+ * Tests for the actions in `stores/auth.ts`, through the real auth API composable, the real stores a sign-out resets
+ * and the transport, against a stub BFF.
  *
  * The store, not the login page, owns the refusal sentence and the in-flight flag, so these
- * assertions pin the contract the page renders from.
+ * assertions pin the contract the page renders from. Nothing of our own is replaced: the stub plays the BFF and a
+ * request's method, path and body are asserted on what reached it. Only the Nuxt framework globals a sign-out reaches
+ * (`navigateTo`, `useRuntimeConfig`) are stood in for.
  *
  * @module tests/stores/auth.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { ref, computed } from 'vue'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { bodyOf } from '~/tests/helpers/requestBody'
+import { readOf, refusal, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import { CLIENT_LOGIN_PATH } from '~/constants/clientRoutes'
+import { useAuthStore } from '~/stores/auth'
+import { useCartStore } from '~/stores/cart'
+import { usePluginsStore } from '~/stores/plugins'
+import { ActionOutcome } from '~/types/actionoutcome'
+import { EmailConfirmationStatus } from '~/types/emailconfirmationstatus'
+import { HttpMethod } from '~/types/httpmethod'
+import { InviteOutcome } from '~/types/inviteoutcome'
+import { PricingCycle } from '~/types/pricingcycle'
+import { SignInOutcome } from '~/types/signinoutcome'
 
-/** The mocked password sign-in call, re-created for every test. */
-const loginMock = vi.fn()
+/** The auth endpoints the store reaches; sign-in and sign-out are in {@link AccountEndpoint}. */
+const AuthPath = {
+  TwoFactorLogin: '/api/portal/auth/2fa-login',
+  Register: '/api/portal/auth/register',
+  ConfirmEmail: '/api/portal/auth/confirm-email',
+  EmailVerified: '/api/portal/auth/email-verified',
+  ResendVerification: '/api/portal/auth/resend-verification',
+  ForgotPassword: '/api/portal/auth/forgot-password',
+  ResetPassword: '/api/portal/auth/reset-password',
+  AcceptInvite: '/api/portal/auth/accept-invite'
+} as const
 
-/** The mocked second-factor sign-in call, re-created for every test. */
-const loginWithTwoFactorMock = vi.fn()
+/** The stub playing the BFF. */
+let stub: StubServer
 
-/** The mocked email-confirmation call. */
-const confirmEmailMock = vi.fn()
+/** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
+let table: StubRouteTable
 
-/** The mocked email-status read. */
-const fetchEmailVerifiedMock = vi.fn()
+/**
+ * The key of a write in a stub route table.
+ *
+ * @param path - The path of the write.
+ * @returns The `POST` key for the route table.
+ */
+const postOf = (path: string): string => `${HttpMethod.Post} ${path}`
 
-/** The mocked verification-mail resend. */
-const resendVerificationMock = vi.fn()
+/** The key of the sign-in write. */
+const LOGIN = postOf(AccountEndpoint.Login)
 
-/** The mocked password-reset request call. */
-const requestPasswordResetMock = vi.fn()
+/** The key of the sign-out write. */
+const LOGOUT = postOf(AccountEndpoint.Logout)
 
-/** The mocked accept-invitation call. */
-const acceptInviteMock = vi.fn()
+/**
+ * The reply of a backend that refuses a form with a sentence and per-field messages.
+ *
+ * @param detail - The sentence.
+ * @param errors - The messages, by field.
+ * @returns The failure reply, in the shape the backend answers a validation failure with.
+ */
+const fieldRefusal = (detail: string, errors: Record<string, string[]>): StubReply => ({
+  status: 422,
+  body: { type: 'VALIDATION_ERROR', detail, errors }
+})
 
-/** The mocked registration call. */
-const registerMock = vi.fn()
+beforeEach(async () => {
+  setActivePinia(createPinia())
+  table = { [LOGOUT]: { body: {} } }
+  stub = await startTransport(routeTable(table))
+})
 
-/** The mocked sign-out call. */
-const logoutMock = vi.fn()
-
-/** The mocked password-reset call. */
-const resetPasswordMock = vi.fn()
-
-vi.stubGlobal('ref', ref)
-vi.stubGlobal('computed', computed)
-vi.stubGlobal('useCookie', () => ref(null))
-
-vi.mock('~/composables/apis/useAuthApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns Only the endpoint the tests reach for.
-   */
-  useAuthApi: () => ({
-    login: loginMock,
-    loginWithTwoFactor: loginWithTwoFactorMock,
-    confirmEmail: confirmEmailMock,
-    fetchEmailVerified: fetchEmailVerifiedMock,
-    resendVerification: resendVerificationMock,
-    requestPasswordReset: requestPasswordResetMock,
-    acceptInvite: acceptInviteMock,
-    register: registerMock,
-    resetPassword: resetPasswordMock,
-    logout: logoutMock
-  })
-}))
-
-vi.mock('~/stores/client', () => ({
-  /**
-   * Stands in for the client store, which sign-in does not touch.
-   *
-   * @returns An inert store.
-   */
-  useClientStore: () => ({ reset: vi.fn() })
-}))
-
-const { useAuthStore } = await import('~/stores/auth')
-const { useCartStore } = await import('~/stores/cart')
-const { PricingCycle } = await import('~/types/pricingcycle')
-const { SignInOutcome } = await import('~/types/signinoutcome')
-const { ActionOutcome } = await import('~/types/actionoutcome')
-const { EmailConfirmationStatus } = await import('~/types/emailconfirmationstatus')
-const { InviteOutcome } = await import('~/types/inviteoutcome')
+afterEach(async () => {
+  vi.unstubAllGlobals()
+  await stub.close()
+})
 
 describe('useAuthStore.signIn', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    loginMock.mockReset()
-    loginWithTwoFactorMock.mockReset()
-  })
-
   it('reports SignedIn, stores the account and leaves no error', async () => {
-    loginMock.mockResolvedValue({ id: 1, email: 'ada@example.com' })
+    table[LOGIN] = { body: { id: 1, email: 'ada@example.com' } }
     const store = useAuthStore()
 
     const outcome = await store.signIn('ada@example.com', 'pw')
@@ -99,10 +95,13 @@ describe('useAuthStore.signIn', () => {
     expect(store.error).toBe('')
     expect(store.loading).toBe(false)
     expect(store.user).toMatchObject({ id: 1 })
+    expect(stub.requests).toHaveLength(1)
+    expect(stub.requests[0]?.method).toBe(HttpMethod.Post)
+    expect(bodyOf(stub.requests[0])).toEqual({ email: 'ada@example.com', password: 'pw' })
   })
 
   it('does not store the { success: true } acknowledgement as the account, so the profile is fetched later', async () => {
-    loginMock.mockResolvedValue({ success: true })
+    table[LOGIN] = { body: { success: true } }
     const store = useAuthStore()
 
     const outcome = await store.signIn('ada@example.com', 'pw')
@@ -112,7 +111,7 @@ describe('useAuthStore.signIn', () => {
   })
 
   it('keeps the API sentence as error and reports Failed when the credentials are refused', async () => {
-    loginMock.mockRejectedValue({ data: { detail: 'Wrong email or password.' } })
+    table[LOGIN] = refusal('Wrong email or password.')
     const store = useAuthStore()
 
     const outcome = await store.signIn('ada@example.com', 'bad')
@@ -124,19 +123,19 @@ describe('useAuthStore.signIn', () => {
   })
 
   it('keeps the field messages of a refused sign-in and clears them on the next attempt', async () => {
-    loginMock.mockRejectedValueOnce({ data: { type: 'VALIDATION_ERROR', detail: 'Invalid.', errors: { email: ['Email is invalid.'] } } })
+    table[LOGIN] = fieldRefusal('Invalid.', { email: ['Email is invalid.'] })
     const store = useAuthStore()
 
     expect(await store.signIn('nope', 'x')).toBe(SignInOutcome.Failed)
     expect(store.fieldErrors).toEqual({ email: 'Email is invalid.' })
 
-    loginMock.mockResolvedValueOnce({ id: 1 })
+    table[LOGIN] = { body: { id: 1 } }
     await store.signIn('ada@example.com', 'ok')
     expect(store.fieldErrors).toEqual({})
   })
 
   it('reports TwoFactorRequired, keeps the challenge and leaves the account unset', async () => {
-    loginMock.mockResolvedValue({ twoFactorRequired: true, pendingToken: 't' })
+    table[LOGIN] = { body: { twoFactorRequired: true, pendingToken: 't' } }
     const store = useAuthStore()
 
     const outcome = await store.signIn('ada@example.com', 'pw')
@@ -148,22 +147,24 @@ describe('useAuthStore.signIn', () => {
   })
 
   it('finishes a second-factor sign-in with the open challenge and the typed code', async () => {
-    loginMock.mockResolvedValue({ twoFactorRequired: true, pendingToken: 't' })
-    loginWithTwoFactorMock.mockResolvedValue({ id: 7 })
+    table[LOGIN] = { body: { twoFactorRequired: true, pendingToken: 't' } }
+    table[postOf(AuthPath.TwoFactorLogin)] = { body: { id: 7 } }
     const store = useAuthStore()
     await store.signIn('ada@example.com', 'pw')
 
     const outcome = await store.confirmTwoFactor('123456')
 
-    expect(loginWithTwoFactorMock).toHaveBeenCalledWith('t', '123456')
+    const finished = requestsTo(stub.requests, AuthPath.TwoFactorLogin)
+    expect(finished.map(request => request.method)).toEqual([HttpMethod.Post])
+    expect(bodyOf(finished[0])).toEqual({ pendingToken: 't', code: '123456' })
     expect(outcome).toBe(SignInOutcome.SignedIn)
     expect(store.twoFactorToken).toBe('')
     expect(store.user).toEqual({ id: 7 })
   })
 
   it('keeps the challenge open and shows the sentence when the code is refused', async () => {
-    loginMock.mockResolvedValue({ twoFactorRequired: true, pendingToken: 't' })
-    loginWithTwoFactorMock.mockRejectedValue({ data: { detail: 'Invalid code.' } })
+    table[LOGIN] = { body: { twoFactorRequired: true, pendingToken: 't' } }
+    table[postOf(AuthPath.TwoFactorLogin)] = refusal('Invalid code.')
     const store = useAuthStore()
     await store.signIn('ada@example.com', 'pw')
 
@@ -176,7 +177,7 @@ describe('useAuthStore.signIn', () => {
   })
 
   it('drops the challenge when the visitor goes back to the password form', async () => {
-    loginMock.mockResolvedValue({ twoFactorRequired: true, pendingToken: 't' })
+    table[LOGIN] = { body: { twoFactorRequired: true, pendingToken: 't' } }
     const store = useAuthStore()
     await store.signIn('ada@example.com', 'pw')
 
@@ -186,11 +187,12 @@ describe('useAuthStore.signIn', () => {
   })
 
   it('clears a previous error when the next attempt starts', async () => {
-    loginMock.mockRejectedValueOnce({ data: { detail: 'No.' } })
-    loginMock.mockResolvedValueOnce({ id: 2 })
+    table[LOGIN] = refusal('No.')
     const store = useAuthStore()
 
     await store.signIn('a', 'b')
+    expect(store.error).toBe('No.')
+    table[LOGIN] = { body: { id: 2 } }
     await store.signIn('a', 'b')
 
     expect(store.error).toBe('')
@@ -198,11 +200,6 @@ describe('useAuthStore.signIn', () => {
 })
 
 describe('useAuthStore.confirmEmail', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    confirmEmailMock.mockReset()
-  })
-
   it('fails without a request when the link is missing its email or token', async () => {
     const store = useAuthStore()
 
@@ -210,22 +207,25 @@ describe('useAuthStore.confirmEmail', () => {
 
     expect(status).toBe(EmailConfirmationStatus.Failed)
     expect(store.confirmError).not.toBe('')
-    expect(confirmEmailMock).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, AuthPath.ConfirmEmail)).toHaveLength(0)
   })
 
   it('reports Confirmed when the API accepts the link', async () => {
-    confirmEmailMock.mockResolvedValue(undefined)
+    table[postOf(AuthPath.ConfirmEmail)] = { body: {} }
     const store = useAuthStore()
 
     const status = await store.confirmEmail('ada@example.com', 'tok')
 
+    const confirmed = requestsTo(stub.requests, AuthPath.ConfirmEmail)
+    expect(confirmed.map(request => request.method)).toEqual([HttpMethod.Post])
+    expect(bodyOf(confirmed[0])).toEqual({ email: 'ada@example.com', token: 'tok' })
     expect(status).toBe(EmailConfirmationStatus.Confirmed)
     expect(store.confirmStatus).toBe(EmailConfirmationStatus.Confirmed)
     expect(store.confirmError).toBe('')
   })
 
   it('keeps the API sentence and reports Failed when the link is refused', async () => {
-    confirmEmailMock.mockRejectedValue({ data: { detail: 'Link expired.' } })
+    table[postOf(AuthPath.ConfirmEmail)] = refusal('Link expired.')
     const store = useAuthStore()
 
     const status = await store.confirmEmail('ada@example.com', 'tok')
@@ -236,14 +236,8 @@ describe('useAuthStore.confirmEmail', () => {
 })
 
 describe('useAuthStore email verification', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    fetchEmailVerifiedMock.mockReset()
-    resendVerificationMock.mockReset()
-  })
-
   it('keeps the three-valued status the API answers with', async () => {
-    fetchEmailVerifiedMock.mockResolvedValue({ verified: false })
+    table[readOf(AuthPath.EmailVerified)] = { body: { verified: false } }
     const store = useAuthStore()
 
     await store.loadEmailVerified()
@@ -252,7 +246,7 @@ describe('useAuthStore email verification', () => {
   })
 
   it('leaves the status unknown when the read fails', async () => {
-    fetchEmailVerifiedMock.mockRejectedValue(new Error('down'))
+    table[readOf(AuthPath.EmailVerified)] = { status: 503, body: {} }
     const store = useAuthStore()
 
     await store.loadEmailVerified()
@@ -261,18 +255,19 @@ describe('useAuthStore email verification', () => {
   })
 
   it('reports Succeeded and a local sentence when the mail is sent', async () => {
-    resendVerificationMock.mockResolvedValue(undefined)
+    table[postOf(AuthPath.ResendVerification)] = { body: {} }
     const store = useAuthStore()
 
     const outcome = await store.resendVerification()
 
+    expect(requestsTo(stub.requests, AuthPath.ResendVerification).map(request => request.method)).toEqual([HttpMethod.Post])
     expect(outcome).toBe(ActionOutcome.Succeeded)
     expect(store.resendMessage).not.toBe('')
     expect(store.resending).toBe(false)
   })
 
   it('keeps the API sentence and reports Failed when the resend is refused', async () => {
-    resendVerificationMock.mockRejectedValue({ data: { detail: 'Too many requests.' } })
+    table[postOf(AuthPath.ResendVerification)] = refusal('Too many requests.')
     const store = useAuthStore()
 
     const outcome = await store.resendVerification()
@@ -283,24 +278,22 @@ describe('useAuthStore email verification', () => {
 })
 
 describe('useAuthStore.requestPasswordReset', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    requestPasswordResetMock.mockReset()
-  })
-
   it('reports Succeeded and leaves no error', async () => {
-    requestPasswordResetMock.mockResolvedValue(undefined)
+    table[postOf(AuthPath.ForgotPassword)] = { body: {} }
     const store = useAuthStore()
 
     const outcome = await store.requestPasswordReset('ada@example.com')
 
+    const asked = requestsTo(stub.requests, AuthPath.ForgotPassword)
+    expect(asked.map(request => request.method)).toEqual([HttpMethod.Post])
+    expect(bodyOf(asked[0])).toEqual({ email: 'ada@example.com' })
     expect(outcome).toBe(ActionOutcome.Succeeded)
     expect(store.resetRequestError).toBe('')
     expect(store.resetRequesting).toBe(false)
   })
 
   it('keeps the API sentence and reports Failed when the request is refused', async () => {
-    requestPasswordResetMock.mockRejectedValue({ data: { detail: 'Too many requests.' } })
+    table[postOf(AuthPath.ForgotPassword)] = refusal('Too many requests.')
     const store = useAuthStore()
 
     const outcome = await store.requestPasswordReset('ada@example.com')
@@ -312,24 +305,22 @@ describe('useAuthStore.requestPasswordReset', () => {
 })
 
 describe('useAuthStore.acceptInvite', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    acceptInviteMock.mockReset()
-  })
-
   it('reports Accepted when the API accepts the token', async () => {
-    acceptInviteMock.mockResolvedValue(undefined)
+    table[postOf(AuthPath.AcceptInvite)] = { body: {} }
     const store = useAuthStore()
 
     const outcome = await store.acceptInvite('tok')
 
+    const accepted = requestsTo(stub.requests, AuthPath.AcceptInvite)
+    expect(accepted.map(request => request.method)).toEqual([HttpMethod.Post])
+    expect(bodyOf(accepted[0])).toEqual({ token: 'tok' })
     expect(outcome).toBe(InviteOutcome.Accepted)
     expect(store.inviteError).toBe('')
     expect(store.inviting).toBe(false)
   })
 
   it('reports SignInRequired when the refusal carries the sign-in-required code', async () => {
-    acceptInviteMock.mockRejectedValue({ data: { type: 'INVITE_SIGN_IN_REQUIRED' } })
+    table[postOf(AuthPath.AcceptInvite)] = { status: 403, body: { type: 'INVITE_SIGN_IN_REQUIRED' } }
     const store = useAuthStore()
 
     const outcome = await store.acceptInvite('tok')
@@ -339,7 +330,7 @@ describe('useAuthStore.acceptInvite', () => {
   })
 
   it('keeps the API sentence and reports Failed for any other refusal', async () => {
-    acceptInviteMock.mockRejectedValue({ data: { type: 'INVITE_EXPIRED', detail: 'Invitation expired.' } })
+    table[postOf(AuthPath.AcceptInvite)] = { status: 410, body: { type: 'INVITE_EXPIRED', detail: 'Invitation expired.' } }
     const store = useAuthStore()
 
     const outcome = await store.acceptInvite('tok')
@@ -349,7 +340,7 @@ describe('useAuthStore.acceptInvite', () => {
   })
 
   it('forgets the last outcome and sentence on clearInvite', async () => {
-    acceptInviteMock.mockRejectedValue({ data: { type: 'INVITE_SIGN_IN_REQUIRED', detail: 'Sign in first.' } })
+    table[postOf(AuthPath.AcceptInvite)] = { status: 403, body: { type: 'INVITE_SIGN_IN_REQUIRED', detail: 'Sign in first.' } }
     const store = useAuthStore()
     await store.acceptInvite('tok')
 
@@ -361,28 +352,23 @@ describe('useAuthStore.acceptInvite', () => {
 })
 
 describe('useAuthStore.register', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    registerMock.mockReset()
-  })
-
   it('reports Succeeded and leaves no error', async () => {
-    registerMock.mockResolvedValue(undefined)
+    table[postOf(AuthPath.Register)] = { body: {} }
     const store = useAuthStore()
     const payload = { firstname: 'A', lastname: 'B', email: 'a@b.c', password: 'pw' }
 
     const outcome = await store.register(payload)
 
+    const registered = requestsTo(stub.requests, AuthPath.Register)
+    expect(registered.map(request => request.method)).toEqual([HttpMethod.Post])
+    expect(bodyOf(registered[0])).toEqual(payload)
     expect(outcome).toBe(ActionOutcome.Succeeded)
-    expect(registerMock).toHaveBeenCalledWith(payload)
     expect(store.registerError).toBe('')
     expect(store.registering).toBe(false)
   })
 
   it('keeps the API sentence and the field messages when the registration is refused', async () => {
-    registerMock.mockRejectedValue({
-      data: { detail: 'Fix the form.', type: 'VALIDATION_ERROR', errors: { email: ['Email is taken.'] } }
-    })
+    table[postOf(AuthPath.Register)] = fieldRefusal('Fix the form.', { email: ['Email is taken.'] })
     const store = useAuthStore()
 
     const outcome = await store.register({ firstname: 'A', lastname: 'B', email: 'a@b.c', password: 'pw' })
@@ -394,10 +380,12 @@ describe('useAuthStore.register', () => {
   })
 
   it('clears the previous refusal when the next attempt starts', async () => {
-    registerMock.mockRejectedValueOnce({ data: { detail: 'No.' } }).mockResolvedValueOnce(undefined)
+    table[postOf(AuthPath.Register)] = refusal('No.')
     const store = useAuthStore()
 
     await store.register({ firstname: 'A', lastname: 'B', email: 'a@b.c', password: 'pw' })
+    expect(store.registerError).toBe('No.')
+    table[postOf(AuthPath.Register)] = { body: {} }
     await store.register({ firstname: 'A', lastname: 'B', email: 'a@b.c', password: 'pw' })
 
     expect(store.registerError).toBe('')
@@ -406,27 +394,22 @@ describe('useAuthStore.register', () => {
 })
 
 describe('useAuthStore.resetPassword', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    resetPasswordMock.mockReset()
-  })
-
   it('sends the link values and the new password, and reports Succeeded', async () => {
-    resetPasswordMock.mockResolvedValue(undefined)
+    table[postOf(AuthPath.ResetPassword)] = { body: {} }
     const store = useAuthStore()
 
     const outcome = await store.resetPassword('a@b.c', 'tok', 'newpass123')
 
+    const reset = requestsTo(stub.requests, AuthPath.ResetPassword)
+    expect(reset.map(request => request.method)).toEqual([HttpMethod.Post])
+    expect(bodyOf(reset[0])).toEqual({ email: 'a@b.c', token: 'tok', newPassword: 'newpass123' })
     expect(outcome).toBe(ActionOutcome.Succeeded)
-    expect(resetPasswordMock).toHaveBeenCalledWith('a@b.c', 'tok', 'newpass123')
     expect(store.resetError).toBe('')
     expect(store.resetting).toBe(false)
   })
 
   it('keeps the API sentence and the field messages when the reset is refused', async () => {
-    resetPasswordMock.mockRejectedValue({
-      data: { detail: 'Weak.', type: 'VALIDATION_ERROR', errors: { newPassword: ['Too short.'] } }
-    })
+    table[postOf(AuthPath.ResetPassword)] = fieldRefusal('Weak.', { newPassword: ['Too short.'] })
     const store = useAuthStore()
 
     const outcome = await store.resetPassword('a@b.c', 'tok', 'x')
@@ -443,8 +426,6 @@ describe('useAuthStore.signOut', () => {
   const navigate = vi.fn()
 
   beforeEach(() => {
-    setActivePinia(createPinia())
-    logoutMock.mockReset().mockResolvedValue(undefined)
     navigate.mockReset()
     vi.stubGlobal('navigateTo', navigate)
   })
@@ -455,7 +436,8 @@ describe('useAuthStore.signOut', () => {
 
     await store.signOut()
 
-    expect(navigate).toHaveBeenCalledWith('/client/login')
+    expect(requestsTo(stub.requests, AccountEndpoint.Logout)).toHaveLength(1)
+    expect(navigate).toHaveBeenCalledWith(CLIENT_LOGIN_PATH)
   })
 
   it('leaves through the local sign-in page in local mode', async () => {
@@ -464,14 +446,13 @@ describe('useAuthStore.signOut', () => {
 
     await store.signOut()
 
-    expect(navigate).toHaveBeenCalledWith('/client/login')
+    expect(requestsTo(stub.requests, AccountEndpoint.Logout)).toHaveLength(1)
+    expect(navigate).toHaveBeenCalledWith(CLIENT_LOGIN_PATH)
   })
 })
 
 describe('useAuthStore cart on sign-out', () => {
   beforeEach(() => {
-    setActivePinia(createPinia())
-    logoutMock.mockReset().mockResolvedValue(undefined)
     vi.stubGlobal('useRuntimeConfig', () => ({ public: { authMode: 'local' } }))
   })
 
@@ -481,6 +462,7 @@ describe('useAuthStore cart on sign-out', () => {
 
     await useAuthStore().logout()
 
+    expect(requestsTo(stub.requests, AccountEndpoint.Logout)).toHaveLength(1)
     expect(cart.items).toEqual([])
   })
 
@@ -495,25 +477,18 @@ describe('useAuthStore cart on sign-out', () => {
 })
 
 describe('useAuthStore.endLocalSession', () => {
-  beforeEach(() => {
-    setActivePinia(createPinia())
-    logoutMock.mockReset()
-  })
-
   it('clears the session cookies and the signed-in account without leaving the page', async () => {
-    logoutMock.mockResolvedValue(undefined)
     const store = useAuthStore()
     store.user = { id: 1, email: 'ada@example.com' } as never
 
     await store.endLocalSession()
 
-    expect(logoutMock).toHaveBeenCalledTimes(1)
+    const cleared = requestsTo(stub.requests, AccountEndpoint.Logout)
+    expect(cleared.map(request => request.method)).toEqual([HttpMethod.Post])
     expect(store.user).toBeNull()
   })
 
   it('forgets the plugin menu and page of the person whose session ended', async () => {
-    logoutMock.mockResolvedValue(undefined)
-    const { usePluginsStore } = await import('~/stores/plugins')
     const plugins = usePluginsStore()
     plugins.menu = [{ label: 'My sites', icon: null, url: '/client/apps/acme-sites/sites' }]
     plugins.uiLoaded = true
@@ -525,12 +500,13 @@ describe('useAuthStore.endLocalSession', () => {
   })
 
   it('still ends the session on this side when the clear is refused', async () => {
-    logoutMock.mockRejectedValue(new Error('offline'))
+    table[LOGOUT] = { status: 503, body: {} }
     const store = useAuthStore()
     store.user = { id: 1, email: 'ada@example.com' } as never
 
     await store.endLocalSession()
 
+    expect(requestsTo(stub.requests, AccountEndpoint.Logout)).toHaveLength(1)
     expect(store.user).toBeNull()
   })
 })

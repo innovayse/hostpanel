@@ -1,39 +1,46 @@
 /**
- * Unit tests for the SSH key store: what loads when, what a refusal leaves behind, and that a
- * private key never leaves the browser.
+ * Unit tests for the SSH key store, through the real API composable and transport against a stub
+ * server: what loads when, what a refusal leaves behind, and that a private key never leaves the
+ * browser.
+ *
+ * @module tests/stores/sshkeys.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { computed, ref } from 'vue'
+import { startTransport } from '../helpers/stubTransport'
+import { requestsTo, routeTable } from '../helpers/stubRoutes'
+import type { StubRouteTable } from '../helpers/stubRoutes'
+import type { StubReply, StubServer } from '../helpers/stubServer'
+import { useSshKeysStore } from '~/stores/sshkeys'
 import { ActionOutcome } from '~/types/actionoutcome'
 import { SshAccessState } from '~/types/sshaccessstate'
 import { SshKeyLocalError } from '~/types/sshkeylocalerror'
 import { SshKeySyncState } from '~/types/sshkeysyncstate'
 
-/** The mocked SSH endpoints, reset before every test. */
-const api = vi.hoisted(() => ({
-  fetchSshAccess: vi.fn(),
-  fetchSshKeys: vi.fn(),
-  addSshKey: vi.fn(),
-  revokeSshKey: vi.fn()
-}))
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.stubGlobal('ref', ref)
-vi.stubGlobal('computed', computed)
-
-vi.mock('~/composables/apis/useClientApi', () => ({
-  /**
-   * Stands in for the real API composable so the store runs without transport.
-   *
-   * @returns The mocked endpoints.
-   */
-  useClientApi: () => api
-}))
-
-const { useSshKeysStore } = await import('~/stores/sshkeys')
+/** The replies of the current test, by `METHOD /path`. */
+let table: StubRouteTable
 
 /** A real ED25519 public key line. */
 const KEY = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG6EJIHRxsxge2aZnl+clPBfoX0nmvD7FfHXM2QQ3+3b me@host'
+
+/**
+ * The BFF path of a service's SSH access.
+ *
+ * @param serviceId - The service id.
+ * @returns The access path.
+ */
+const accessPath = (serviceId: string): string => `/api/portal/client/services/${serviceId}/ssh`
+
+/**
+ * The BFF path of a service's SSH keys.
+ *
+ * @param serviceId - The service id.
+ * @returns The key list path.
+ */
+const keysPath = (serviceId: string): string => `${accessPath(serviceId)}/keys`
 
 /**
  * An access summary in the given state.
@@ -54,48 +61,54 @@ const key = (keyId: string): Record<string, unknown> =>
   ({ keyId, label: 'l', fingerprint: 'SHA256:x', createdAt: '', syncState: SshKeySyncState.Installed, isStale: false, presentOnServer: true })
 
 /**
- * A refusal as `apiFetch` throws it.
+ * A refusal as the BFF answers it.
  *
  * @param detail - The API's sentence.
- * @returns The error.
+ * @returns The stub reply.
  */
-const refusal = (detail: string): Record<string, unknown> => ({ data: { detail } })
+const refusal = (detail: string): StubReply => ({ status: 400, body: { detail } })
 
 describe('useSshKeysStore', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     setActivePinia(createPinia())
-    Object.values(api).forEach((fn) => fn.mockReset())
+    table = {}
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('loads access and keys for exactly the given service', async () => {
-    api.fetchSshAccess.mockResolvedValue(access(SshAccessState.Available))
-    api.fetchSshKeys.mockResolvedValue([key('a')])
+    table[`GET ${accessPath('42')}`] = { body: access(SshAccessState.Available) }
+    table[`GET ${keysPath('42')}`] = { body: [key('a')] }
     const store = useSshKeysStore()
 
     const pending = store.load('42')
     expect(store.loading).toBe(true)
     await pending
 
-    expect(api.fetchSshAccess).toHaveBeenCalledWith('42')
-    expect(api.fetchSshKeys).toHaveBeenCalledWith('42')
+    expect(requestsTo(stub.requests, accessPath('42'))).toHaveLength(1)
+    expect(requestsTo(stub.requests, keysPath('42'))).toHaveLength(1)
+    expect(stub.requests).toHaveLength(2)
     expect(store.loading).toBe(false)
     expect(store.canManage).toBe(true)
     expect(store.keys).toHaveLength(1)
   })
 
   it('skips the key list for an inactive service', async () => {
-    api.fetchSshAccess.mockResolvedValue(access(SshAccessState.ServiceInactive))
+    table[`GET ${accessPath('42')}`] = { body: access(SshAccessState.ServiceInactive) }
     const store = useSshKeysStore()
     await store.load('42')
-    expect(api.fetchSshKeys).not.toHaveBeenCalled()
+    expect(requestsTo(stub.requests, keysPath('42'))).toHaveLength(0)
     expect(store.canManage).toBe(false)
     expect(store.canRevoke).toBe(false)
   })
 
   it('cannot manage in any state but available', async () => {
     for (const state of [SshAccessState.Unsupported, SshAccessState.ShellDisabled, SshAccessState.NotConfigured, SshAccessState.Unreachable]) {
-      api.fetchSshAccess.mockResolvedValue(access(state))
-      api.fetchSshKeys.mockResolvedValue([])
+      table[`GET ${accessPath('1')}`] = { body: access(state) }
+      table[`GET ${keysPath('1')}`] = { body: [] }
       const store = useSshKeysStore()
       await store.load('1')
       expect(store.canManage).toBe(false)
@@ -104,7 +117,7 @@ describe('useSshKeysStore', () => {
   })
 
   it('keeps the API sentence when loading fails', async () => {
-    api.fetchSshAccess.mockRejectedValue(refusal('No such client service.'))
+    table[`GET ${accessPath('9')}`] = { status: 404, body: { detail: 'No such client service.' } }
     const store = useSshKeysStore()
     await store.load('9')
     expect(store.loadError).toBe('No such client service.')
@@ -115,7 +128,7 @@ describe('useSshKeysStore', () => {
     const store = useSshKeysStore()
     expect(await store.add('1', 'x', '-----BEGIN OPENSSH PRIVATE KEY-----\nabc')).toBe(ActionOutcome.Failed)
     expect(store.localError).toBe(SshKeyLocalError.PrivateKey)
-    expect(api.addSshKey).not.toHaveBeenCalled()
+    expect(stub.requests).toHaveLength(0)
   })
 
   it('refuses a malformed key or an empty label locally', async () => {
@@ -124,20 +137,22 @@ describe('useSshKeysStore', () => {
     expect(store.localError).toBe(SshKeyLocalError.InvalidKey)
     expect(await store.add('1', '  ', KEY)).toBe(ActionOutcome.Failed)
     expect(store.localError).toBe(SshKeyLocalError.LabelRequired)
-    expect(api.addSshKey).not.toHaveBeenCalled()
+    expect(stub.requests).toHaveLength(0)
   })
 
   it('adds a key, trimmed, and appends it', async () => {
-    api.addSshKey.mockResolvedValue(key('new'))
+    table[`POST ${keysPath('7')}`] = { body: key('new') }
     const store = useSshKeysStore()
     expect(await store.add('7', ' laptop ', KEY)).toBe(ActionOutcome.Succeeded)
-    expect(api.addSshKey).toHaveBeenCalledWith('7', { label: 'laptop', publicKey: KEY })
-    expect(store.keys.map((k) => k.keyId)).toEqual(['new'])
+    const [sent] = requestsTo(stub.requests, keysPath('7'))
+    expect(sent?.method).toBe('POST')
+    expect(JSON.parse(sent?.body ?? '')).toEqual({ label: 'laptop', publicKey: KEY })
+    expect(store.keys.map(k => k.keyId)).toEqual(['new'])
   })
 
   it('shows the API sentence and refreshes the list when adding fails', async () => {
-    api.addSshKey.mockRejectedValue(refusal('The hosting server could not be reached.'))
-    api.fetchSshKeys.mockResolvedValue([{ ...key('k'), syncState: SshKeySyncState.InstallFailed }])
+    table[`POST ${keysPath('7')}`] = refusal('The hosting server could not be reached.')
+    table[`GET ${keysPath('7')}`] = { body: [{ ...key('k'), syncState: SshKeySyncState.InstallFailed }] }
     const store = useSshKeysStore()
     expect(await store.add('7', 'laptop', KEY)).toBe(ActionOutcome.Failed)
     expect(store.addError).toBe('The hosting server could not be reached.')
@@ -146,20 +161,20 @@ describe('useSshKeysStore', () => {
   })
 
   it('revokes a key and removes it from the list', async () => {
-    api.fetchSshAccess.mockResolvedValue(access(SshAccessState.Available))
-    api.fetchSshKeys.mockResolvedValue([key('a'), key('b')])
-    api.revokeSshKey.mockResolvedValue(undefined)
+    table[`GET ${accessPath('7')}`] = { body: access(SshAccessState.Available) }
+    table[`GET ${keysPath('7')}`] = { body: [key('a'), key('b')] }
+    table[`DELETE ${keysPath('7')}/a`] = { status: 204 }
     const store = useSshKeysStore()
     await store.load('7')
     expect(await store.revoke('7', 'a')).toBe(ActionOutcome.Succeeded)
-    expect(api.revokeSshKey).toHaveBeenCalledWith('7', 'a')
-    expect(store.keys.map((k) => k.keyId)).toEqual(['b'])
+    expect(requestsTo(stub.requests, `${keysPath('7')}/a`).map(request => request.method)).toEqual(['DELETE'])
+    expect(store.keys.map(k => k.keyId)).toEqual(['b'])
     expect(store.revokingId).toBeNull()
   })
 
   it('keeps the key and the sentence when revoking fails', async () => {
-    api.fetchSshKeys.mockResolvedValue([key('a')])
-    api.revokeSshKey.mockRejectedValue(refusal('Unavailable'))
+    table[`GET ${keysPath('7')}`] = { body: [key('a')] }
+    table[`DELETE ${keysPath('7')}/a`] = refusal('Unavailable')
     const store = useSshKeysStore()
     expect(await store.revoke('7', 'a')).toBe(ActionOutcome.Failed)
     expect(store.revokeError).toBe('Unavailable')
@@ -167,8 +182,8 @@ describe('useSshKeysStore', () => {
   })
 
   it('reports the key limit and clears everything on reset', async () => {
-    api.fetchSshAccess.mockResolvedValue(access(SshAccessState.Available))
-    api.fetchSshKeys.mockResolvedValue([key('a'), key('b')])
+    table[`GET ${accessPath('7')}`] = { body: access(SshAccessState.Available) }
+    table[`GET ${keysPath('7')}`] = { body: [key('a'), key('b')] }
     const store = useSshKeysStore()
     await store.load('7')
     expect(store.atLimit).toBe(true)

@@ -26,6 +26,7 @@ import { PluginSlotId } from '~/types/pluginslotid'
 import { ServiceStatus } from '~/types/servicestatus'
 import { SuspensionSource } from '~/types/suspensionsource'
 import { settle } from '~/tests/helpers/settle'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the page reads for service 4. */
 const PATHS = {
@@ -84,7 +85,7 @@ const baseTable = (permissions: Permission): StubRouteTable => ({
  */
 const mountService = async (): Promise<Awaited<ReturnType<typeof mountPage>>> => {
   const wrapper = await mountPage(ServicePage, { components: PLUGIN_COMPONENTS })
-  await vi.waitFor(() => expect(reads(PATHS.service)).toBeGreaterThan(0))
+  await waitUntil(() => expect(reads(PATHS.service)).toBeGreaterThan(0))
   await settle()
   return wrapper
 }
@@ -221,7 +222,7 @@ describe('service page', () => {
     expect(wrapper.find('[data-testid="service-not-found"]').exists()).toBe(false)
 
     await wrapper.find('[data-testid="service-retry"]').trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="service-details"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="service-details"]').exists()).toBe(true))
 
     expect(reads(PATHS.service)).toBe(3)
     expect(wrapper.find('[data-testid="service-load-error"]').exists()).toBe(false)
@@ -269,7 +270,7 @@ describe('service page plugin tabs', () => {
 
   it('reads the slot with the service on screen and adds no tab without plugins', async () => {
     const wrapper = await mountService()
-    await vi.waitFor(() => expect(reads(slotPath(PluginSlotId.ServiceTabs))).toBe(1))
+    await waitUntil(() => expect(reads(slotPath(PluginSlotId.ServiceTabs))).toBe(1))
 
     expect(requestsTo(stub.requests, slotPath(PluginSlotId.ServiceTabs)).map(queryOf)).toEqual([{ serviceId: '4' }])
     expect(wrapper.find('[data-testid^="service-tab-plugin."]').exists()).toBe(false)
@@ -280,7 +281,7 @@ describe('service page plugin tabs', () => {
     table[`GET ${slotPath(PluginSlotId.ServiceTabs)}`] = SERVICE_NOT_FOUND
 
     const wrapper = await mountService()
-    await vi.waitFor(() => expect(reads(slotPath(PluginSlotId.ServiceTabs))).toBe(1))
+    await waitUntil(() => expect(reads(slotPath(PluginSlotId.ServiceTabs))).toBe(1))
     await settle()
 
     expect(wrapper.find('[data-testid^="service-tab-plugin."]').exists()).toBe(false)
@@ -295,12 +296,12 @@ describe('service page plugin tabs', () => {
     table[`GET ${slotWidgetPath(PluginSlotId.ServiceTabs, 'slow')}`] = { body: readingView() }
 
     const wrapper = await mountService()
-    await vi.waitFor(() => expect(wrapper.find(pluginTab('slow')).exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find(pluginTab('slow')).exists()).toBe(true))
     expect(wrapper.find(pluginTab('slow')).text()).toContain('Widget slow')
     expect(wrapper.find(pluginTab('ok')).text()).toContain('ok')
 
     await wrapper.get(pluginTab('slow')).trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="plugin-slot-widget-acme-sites-slow"]').text()).toContain('live'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="plugin-slot-widget-acme-sites-slow"]').text()).toContain('live'))
 
     expect(requestsTo(stub.requests, slotWidgetPath(PluginSlotId.ServiceTabs, 'slow')).map(queryOf)).toEqual([{ serviceId: '4' }])
     expect(wrapper.find('[data-testid="service-overview"]').exists()).toBe(false)
@@ -310,7 +311,7 @@ describe('service page plugin tabs', () => {
     table[`GET ${slotPath(PluginSlotId.ServiceTabs)}`] = { body: slotIndex(PluginSlotId.ServiceTabs, ['ok']) }
 
     const wrapper = await mountService()
-    await vi.waitFor(() => expect(wrapper.find(pluginTab('ok')).exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find(pluginTab('ok')).exists()).toBe(true))
     await settle()
 
     expect(reads(slotWidgetPath(PluginSlotId.ServiceTabs, 'ok'))).toBe(0)
@@ -322,13 +323,13 @@ describe('service page plugin tabs', () => {
     table[`GET ${slotWidgetPath(PluginSlotId.ServiceTabs, 'ok')}`] = { body: workingView() }
 
     const wrapper = await mountService()
-    await vi.waitFor(() => expect(wrapper.find(pluginTab('broken')).exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find(pluginTab('broken')).exists()).toBe(true))
     await wrapper.get(pluginTab('broken')).trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="plugin-slot-unavailable-acme-sites-broken"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="plugin-slot-unavailable-acme-sites-broken"]').exists()).toBe(true))
     expect(wrapper.find('[data-testid="service-sidebar"]').exists()).toBe(true)
 
     await wrapper.get(pluginTab('ok')).trigger('click')
-    await vi.waitFor(() => expect(wrapper.find('[data-testid="plugin-slot-widget-acme-sites-ok"]').text()).toBe('Site is live'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="plugin-slot-widget-acme-sites-ok"]').text()).toBe('Site is live'))
     await wrapper.get('[data-testid="service-tab-overview"]').trigger('click')
     expect(wrapper.find('[data-testid="service-details"]').exists()).toBe(true)
   })
@@ -341,18 +342,18 @@ describe('service page plugin tabs', () => {
     table['GET /api/portal/client/services/5/cancellation-status'] = { body: { pending: false } }
     table['GET /api/portal/client/services/5/invoices'] = { body: { invoices: [], unattributedInvoiceCount: 0 } }
     const first = await mountService()
-    await vi.waitFor(() => expect(first.find(pluginTab('ok')).exists()).toBe(true))
+    await waitUntil(() => expect(first.find(pluginTab('ok')).exists()).toBe(true))
     await first.get(pluginTab('ok')).trigger('click')
-    await vi.waitFor(() => expect(first.find('[data-testid="plugin-slot-widget-acme-sites-ok"]').exists()).toBe(true))
+    await waitUntil(() => expect(first.find('[data-testid="plugin-slot-widget-acme-sites-ok"]').exists()).toBe(true))
 
     // The page reads its id once (`route.params.id`), and Nuxt mounts the page again for another id, which is what this
     // stands in for; the widget key `${activeTab}:${serviceId}` makes the widget start over with the new service.
     first.unmount()
     stubClientRuntime({ params: { id: '5' } })
     const second = await mountService()
-    await vi.waitFor(() => expect(second.find(pluginTab('ok')).exists()).toBe(true))
+    await waitUntil(() => expect(second.find(pluginTab('ok')).exists()).toBe(true))
     await second.get(pluginTab('ok')).trigger('click')
-    await vi.waitFor(() => expect(second.find('[data-testid="plugin-slot-widget-acme-sites-ok"]').exists()).toBe(true))
+    await waitUntil(() => expect(second.find('[data-testid="plugin-slot-widget-acme-sites-ok"]').exists()).toBe(true))
 
     expect(requestsTo(stub.requests, slotPath(PluginSlotId.ServiceTabs)).map(queryOf)).toEqual([{ serviceId: '4' }, { serviceId: '5' }])
     expect(requestsTo(stub.requests, slotWidgetPath(PluginSlotId.ServiceTabs, 'ok')).map(queryOf)).toEqual([{ serviceId: '4' }, { serviceId: '5' }])
@@ -363,7 +364,7 @@ describe('service page plugin tabs', () => {
     table[`GET ${slotWidgetPath(PluginSlotId.ServiceTabs, 'slow')}`] = { hold: true }
 
     const wrapper = await mountService()
-    await vi.waitFor(() => expect(wrapper.find(pluginTab('slow')).exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find(pluginTab('slow')).exists()).toBe(true))
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     await wrapper.get(pluginTab('slow')).trigger('click')
     vi.advanceTimersByTime(5000)

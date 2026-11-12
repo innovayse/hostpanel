@@ -1,183 +1,140 @@
 /**
- * Unit tests for AuroraCheckout: the empty cart, the guest form with its placeholders, the
- * signed-in account line, payment method choice, the order summary and the place-order flow,
- * with the three stores replaced by minimal fakes so no transport is involved.
+ * Tests for AuroraCheckout against the real cart, currency, checkout, auth and client stores, the
+ * real billing and auth API composables and the real transport, with a stub BFF answering on a real
+ * socket (nothing of ours is mocked): the empty cart, the guest form with its placeholders, the
+ * signed-in account line, payment method choice, the order summary and the place-order flow.
+ *
+ * @module tests/templates/aurora/pages/AuroraCheckout.test
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { Suspense, defineComponent, h, reactive, ref } from 'vue'
-import type { Ref } from 'vue'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
-import { mountWithKit } from '~/tests/helpers/mountWithKit'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { BillingEndpoint } from '~/tests/helpers/billingPaths'
+import { awaitCheckoutLoaded, checkoutReplies, writeOf } from '~/tests/helpers/checkoutFlow'
+import { makeClientUser } from '~/tests/helpers/clientUser'
+import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
+import { until } from '~/tests/helpers/settle'
+import { readOf, refusal, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
+import type { StubServer } from '~/tests/helpers/stubServer'
+import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 import AuroraCheckout from '~/templates/aurora/pages/AuroraCheckout.vue'
 import GatewayOption from '~/components/checkout/GatewayOption.vue'
 import SaveOption from '~/components/checkout/SaveOption.vue'
 import SubmitHint from '~/components/checkout/SubmitHint.vue'
+import { useAuthStore } from '~/stores/auth'
+import { useCartStore } from '~/stores/cart'
+import { useCheckoutStore } from '~/stores/checkout'
+import { useClientStore } from '~/stores/client'
+import type { CartItem } from '~/types/cartitem'
+import type { GatewayMethod } from '~/types/gatewaymethod'
+import { PaymentModule } from '~/types/paymentmodule'
 import { Permission } from '~/types/permission'
-import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
-import { stubAuroraGlobals } from '../auroraGlobals'
+import { PricingCycle } from '~/types/pricingcycle'
 
-/** The fake stores and their spies, shared with the module mocks below. */
-const fakes = vi.hoisted(() => ({
-  cart: null as null | Record<string, unknown>,
-  currency: null as null | Record<string, unknown>,
-  checkout: null as null | Record<string, unknown>,
-  /** The permissions the signed-in person holds; `null` stands for a first-time buyer who acts for no account. */
-  held: null as number | null,
-}))
+/** The stub playing the BFF. */
+let stub: StubServer
 
-vi.mock('~/stores/cart', () => ({ useCartStore: () => fakes.cart }))
-vi.mock('~/stores/currency', () => ({ useCurrencyStore: () => fakes.currency }))
-vi.mock('~/stores/checkout', () => ({ useCheckoutStore: () => fakes.checkout }))
-// The client store's own decision is covered by its tests; the page only reads its answer.
-vi.mock('~/stores/client', () => ({
-  useClientStore: () => ({ mayDo: (flag: number) => fakes.held === null || (fakes.held & flag) === flag }),
-}))
-// The page reaches the session through the store module; the test's session is the stand-in
-// `stubAuroraGlobals` registers as the global store accessor.
-vi.mock('~/stores/auth', () => ({
-  useAuthStore: () => (globalThis as unknown as { useAuthStore: () => unknown }).useAuthStore(),
-}))
+/** The replies of the current test; a test changes them before it mounts or acts. */
+let table: StubRouteTable
 
-/** One cart line as the summary renders it. */
-const ITEM = { pid: 7, name: 'Business hosting', cycleLabel: 'Monthly' }
+/** The gateways the stub offers unless a test says otherwise: the example gateway first (so it is the selected one), then a card gateway. */
+const DEFAULT_METHODS: GatewayMethod[] = [
+  { module: 'example_gateway', displayName: 'Example Gateway', supportsStoredCredentials: false },
+  { module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false },
+]
 
-/** The refs of the fake checkout store that a test sets before mounting. */
-interface FakeCheckout {
-  /** Sentence the store shows above the button. */
-  error: Ref<string>
-  /** Module of the chosen payment method; empty means none. */
-  selectedMethod: Ref<string>
-  /** Whether an order is in flight. */
-  submitting: Ref<boolean>
-  /** Short label the button shows while an order is in flight. */
-  submittingLabel: Ref<string>
-  /** Sentence shown under the button while an order is in flight. */
-  submittingHint: Ref<string>
-  /** Spy standing in for the store's order action. */
-  placeOrder: ReturnType<typeof vi.fn>
-}
+/** The one cart line the summary shows. */
+const ITEM: CartItem = { pid: 7, name: 'Business hosting', billingcycle: PricingCycle.Monthly, cycleLabel: 'Monthly', amount: 9.99, currency: 'USD' }
+
+/** The signed-in customer. */
+const ann = makeClientUser({ firstName: 'Ann', lastName: 'Lee', email: 'ann@acme.test' })
 
 /**
- * Rebuilds the three fake stores.
+ * Mounts the page, waits for the currencies and gateways to load and fills the cart.
  *
- * @param options Whether the cart is empty and which payment methods the gateway offers.
- * @returns The settable parts of the fake checkout store.
+ * @param items The lines to put in the cart; the one line of the summary by default.
+ * @returns The wrapper.
  */
-const buildStores = (options: { empty?: boolean, canSave?: boolean, methods?: { module: string, displayName: string, supportsStoredCredentials: boolean }[] } = {}): FakeCheckout => {
-  const placeOrder = vi.fn(async () => ({ kind: CheckoutDestinationKind.Route, target: '/client/order-success' }))
-  fakes.cart = reactive({
-    isEmpty: options.empty ?? false,
-    init: vi.fn(),
-    itemsInCurrency: () => (options.empty ? [] : [ITEM]),
+const mountCheckout = async (items: CartItem[] = [ITEM]) => {
+  const wrapper = await mountPage(AuroraCheckout, {
+    components: { CheckoutGatewayOption: GatewayOption, CheckoutSaveOption: SaveOption, CheckoutSubmitHint: SubmitHint },
   })
-  fakes.currency = reactive({
-    payerCode: 'USD',
-    currencies: [{ code: 'USD' }, { code: 'EUR' }],
-    init: vi.fn(),
-    load: vi.fn(),
-  })
-  /** The sentence the fake store shows above the button. */
-  const error = ref('')
-  /** The payment method the fake store has selected. */
-  const selectedMethod = ref('example_gateway')
-  /** Whether the fake store offers the renewal-save box. */
-  const canSaveForRenewals = ref(options.canSave ?? false)
-  /** Whether the fake store is placing an order. */
-  const submitting = ref(false)
-  /** The button label the fake store shows while placing an order. */
-  const submittingLabel = ref('checkout.processing')
-  /** The line under the button the fake store shows while placing an order. */
-  const submittingHint = ref('')
-  fakes.checkout = {
-    staleItems: ref<unknown[]>([]),
-    totalLabel: ref('$9.99'),
-    submittingLabel,
-    submittingHint,
-    paymentMethods: ref(options.methods ?? [{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }, { module: 'example_gateway', displayName: 'Example Gateway', supportsStoredCredentials: false }]),
-    selectedMethod,
-    saveForRenewals: ref(false),
-    canSaveForRenewals,
-    submitting,
-    error,
-    itemPrice: () => '$9.99',
-    changeGuestCurrency: vi.fn(),
-    loadPaymentMethods: vi.fn(async () => undefined),
-    resetFlow: vi.fn(),
-    refreshCartPrices: vi.fn(async () => undefined),
-    placeOrder,
-  }
-  return { error, selectedMethod, submitting, submittingLabel, submittingHint, placeOrder }
-}
-
-/**
- * Mounts the page under a Suspense boundary, because its setup awaits the payment methods.
- *
- * @returns The wrapper once the async setup has settled.
- */
-const mountPage = async () => {
-  const Host = defineComponent({ render: () => h(Suspense, null, { default: () => h(AuroraCheckout) }) })
-  const wrapper = mountWithKit(Host, { components: { CheckoutGatewayOption: GatewayOption, CheckoutSaveOption: SaveOption, CheckoutSubmitHint: SubmitHint } })
+  await awaitCheckoutLoaded()
+  useCartStore().items = items
   await flushPromises()
   return wrapper
 }
 
+/**
+ * How many orders reached the backend.
+ *
+ * @returns The count.
+ */
+const placedOrders = (): number => requestsTo(stub.requests, BillingEndpoint.OrderCreate).length
+
 describe('AuroraCheckout', () => {
-  beforeEach(() => {
-    fakes.held = Permission.All
-    vi.stubGlobal('useHead', vi.fn())
+  beforeEach(async () => {
+    stubPublicPageRuntime()
+    vi.mocked(navigateTo).mockClear()
+    window.localStorage.clear()
+    table = checkoutReplies(DEFAULT_METHODS)
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
   })
 
   it('offers the way back to hosting instead of a form when the cart is empty', async () => {
-    stubAuroraGlobals()
-    buildStores({ empty: true })
-    const wrapper = await mountPage()
+    const wrapper = await mountCheckout([])
 
     expect(wrapper.find('[data-testid="checkout-empty"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="checkout-browse-hosting"]').attributes('href')).toBe('/hosting')
+    expect(wrapper.find('[data-testid="checkout-browse-hosting"]').attributes('href')).toBe('/en/hosting')
     expect(wrapper.find('[data-testid="checkout-account"]').exists()).toBe(false)
   })
 
-  it('offers the renewal-save box, unticked, only when the store says so', async () => {
-    stubAuroraGlobals()
-    buildStores({ canSave: true })
-    const offered = await mountPage()
+  it('offers the renewal-save box, unticked, only when the signed-in payer can have the method kept', async () => {
+    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [{ module: 'example_gateway', displayName: 'Example Gateway', supportsStoredCredentials: true }] }
+    const offered = await mountCheckout()
+    useAuthStore().user = ann
+    await flushPromises()
 
     expect(offered.find('[data-testid="checkout-save-for-renewals"]').attributes('aria-checked')).toBe('false')
     expect(offered.text()).toContain('checkout.saveForRenewalsAgreement')
 
-    buildStores({ canSave: false })
-    const hidden = await mountPage()
+    const hidden = await mountCheckout()
 
     expect(hidden.find('[data-testid="checkout-save-for-renewals"]').exists()).toBe(false)
   })
 
   it('gives every guest field a translated placeholder', async () => {
-    stubAuroraGlobals()
-    buildStores()
-    const wrapper = await mountPage()
+    const wrapper = await mountCheckout()
 
     for (const id of ['firstname', 'lastname', 'email', 'password']) {
       expect(wrapper.find(`[data-testid="checkout-${id}"]`).attributes('placeholder')).toBe(`checkout.placeholders.${id}`)
     }
-    expect(wrapper.find('[data-testid="checkout-sign-in"]').attributes('href')).toBe('/client/login')
+    expect(wrapper.find('[data-testid="checkout-sign-in"]').attributes('href')).toBe('/en/client/login')
   })
 
   it('shows the signed-in account line instead of the guest form, and signs out on "not you"', async () => {
-    const { signOut } = stubAuroraGlobals({ user: { firstName: 'Ann', lastName: 'Lee', email: 'ann@acme.test' } })
-    buildStores()
-    const wrapper = await mountPage()
+    const wrapper = await mountCheckout()
+    useAuthStore().user = ann
+    await flushPromises()
 
     expect(wrapper.find('[data-testid="checkout-logged-in"]').text()).toContain('ann@acme.test')
     expect(wrapper.find('[data-testid="checkout-firstname"]').exists()).toBe(false)
 
     await wrapper.find('[data-testid="checkout-not-you"]').trigger('click')
-    expect(signOut).toHaveBeenCalledTimes(1)
+    await waitUntil(() => expect(useAuthStore().user).toBeNull())
+
+    expect(requestsTo(stub.requests, AccountEndpoint.Logout).map(request => request.method)).toEqual(['POST'])
+    expect(wrapper.find('[data-testid="checkout-logged-in"]').exists()).toBe(false)
   })
 
   it('lists the gateway methods and marks the selected one', async () => {
-    stubAuroraGlobals()
-    buildStores()
-    const wrapper = await mountPage()
+    const wrapper = await mountCheckout()
 
     expect(wrapper.find('[data-testid="checkout-method-example_gateway"]').classes()).toContain('border-ac1')
     expect(wrapper.find('[data-testid="checkout-method-card_gateway"]').classes()).not.toContain('border-ac1')
@@ -185,50 +142,47 @@ describe('AuroraCheckout', () => {
   })
 
   it('says so when no payment method is available', async () => {
-    stubAuroraGlobals()
-    buildStores({ methods: [] })
-    const wrapper = await mountPage()
+    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [] }
+    const wrapper = await mountCheckout()
 
     expect(wrapper.find('[data-testid="checkout-no-methods"]').text()).toBe('checkout.noPaymentMethods')
   })
 
   it('summarises the order with each line and the total', async () => {
-    stubAuroraGlobals()
-    buildStores()
-    const wrapper = await mountPage()
+    const wrapper = await mountCheckout()
 
     expect(wrapper.find('[data-testid="checkout-item-7"]').text()).toContain('Business hosting')
     expect(wrapper.find('[data-testid="checkout-item-7"]').text()).toContain('$9.99')
     expect(wrapper.find('[data-testid="checkout-total"]').text()).toBe('$9.99')
   })
 
-  it('shows the store error as an alert above the button', async () => {
-    stubAuroraGlobals()
-    buildStores().error.value = 'Card declined'
-    const wrapper = await mountPage()
+  it('shows the order refusal as an alert above the button', async () => {
+    table[writeOf(BillingEndpoint.OrderCreate)] = refusal('Card declined')
+    const wrapper = await mountCheckout()
 
-    expect(wrapper.find('[data-testid="checkout-error"]').text()).toBe('Card declined')
+    await wrapper.find('[data-testid="checkout-place-order"]').trigger('click')
+    await waitUntil(() => expect(wrapper.find('[data-testid="checkout-error"]').text()).toBe('Card declined'))
   })
 
   it('places the order and follows the destination the store returns', async () => {
-    stubAuroraGlobals()
-    const { placeOrder } = buildStores()
-    const wrapper = await mountPage()
+    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [{ module: PaymentModule.BankTransfer, displayName: 'Bank transfer', supportsStoredCredentials: false }] }
+    // The cart's total is the placed order's total, so the payer is not asked to accept a changed total.
+    const wrapper = await mountCheckout([{ ...ITEM, amount: 12 }])
 
     await wrapper.find('[data-testid="checkout-place-order"]').trigger('click')
-    await flushPromises()
+    await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith('/en/client/invoices/12/pay'))
 
-    expect(placeOrder).toHaveBeenCalledTimes(1)
-    expect(navigateTo).toHaveBeenCalledWith('/client/order-success')
+    expect(placedOrders()).toBe(1)
   })
 
   it('keeps the busy label short on the button and puts the sentence in a polite line under it', async () => {
-    stubAuroraGlobals()
-    const store = buildStores()
-    store.submitting.value = true
-    store.submittingLabel.value = 'checkout.redirecting'
-    store.submittingHint.value = 'checkout.redirectingToBank'
-    const wrapper = await mountPage()
+    // An order that never settles keeps the page in its busy state.
+    table[writeOf(BillingEndpoint.OrderCreate)] = { hold: true }
+    const wrapper = await mountCheckout()
+
+    await wrapper.find('[data-testid="checkout-place-order"]').trigger('click')
+    await until(() => placedOrders() === 1, 'the order to reach the backend')
+    await flushPromises()
 
     const button = wrapper.find('[data-testid="checkout-place-order"]')
     expect(button.text()).toBe('checkout.redirecting')
@@ -241,19 +195,20 @@ describe('AuroraCheckout', () => {
   })
 
   it('disables the button while no payment method is selected', async () => {
-    stubAuroraGlobals()
-    buildStores().selectedMethod.value = ''
-    const wrapper = await mountPage()
+    const wrapper = await mountCheckout()
+
+    useCheckoutStore().selectedMethod = ''
+    await flushPromises()
 
     expect(wrapper.find('[data-testid="checkout-place-order"]').attributes('disabled')).toBeDefined()
   })
 
   describe('purchase permission', () => {
     it('offers the gateways and the order button to a member who may place orders', async () => {
-      stubAuroraGlobals()
-      fakes.held = Permission.PlaceNewOrders
-      buildStores()
-      const wrapper = await mountPage()
+      const wrapper = await mountCheckout()
+
+      useClientStore().user = makeClientUser({ permissions: Permission.PlaceNewOrders })
+      await flushPromises()
 
       expect(wrapper.find('[data-testid="checkout-permission-denied"]').exists()).toBe(false)
       expect(wrapper.find('[data-testid="checkout-method-card_gateway-input"]').attributes('disabled')).toBeUndefined()
@@ -261,10 +216,10 @@ describe('AuroraCheckout', () => {
     })
 
     it('disables the gateways and the order button, and says why, for a member who may not place orders', async () => {
-      stubAuroraGlobals()
-      fakes.held = Permission.ViewPayInvoices
-      const { placeOrder } = buildStores()
-      const wrapper = await mountPage()
+      const wrapper = await mountCheckout()
+
+      useClientStore().user = makeClientUser({ permissions: Permission.ViewPayInvoices })
+      await flushPromises()
 
       expect(wrapper.find('[data-testid="checkout-permission-denied"]').text()).toContain('checkout.permissionDenied')
       expect(wrapper.find('[data-testid="checkout-method-card_gateway-input"]').attributes('disabled')).toBeDefined()
@@ -272,14 +227,15 @@ describe('AuroraCheckout', () => {
 
       await wrapper.find('[data-testid="checkout-place-order"]').trigger('click')
       await flushPromises()
-      expect(placeOrder).not.toHaveBeenCalled()
+      expect(placedOrders()).toBe(0)
     })
 
     it('keeps the checkout open for a signed-in first-time buyer who acts for no account', async () => {
-      stubAuroraGlobals({ user: { firstName: 'Ann', lastName: 'Lee', email: 'ann@acme.test' } })
-      fakes.held = null
-      buildStores()
-      const wrapper = await mountPage()
+      const wrapper = await mountCheckout()
+
+      useAuthStore().user = ann
+      useClientStore().user = makeClientUser({ id: null, permissions: Permission.None, actsForAccount: false })
+      await flushPromises()
 
       expect(wrapper.find('[data-testid="checkout-permission-denied"]').exists()).toBe(false)
       expect(wrapper.find('[data-testid="checkout-place-order"]').attributes('disabled')).toBeUndefined()

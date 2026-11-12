@@ -22,6 +22,7 @@ import type { PluginSource } from '~/types/pluginblock'
 import type { PluginFollowUp } from '~/types/pluginfollowup'
 import type { PluginViewCondition } from '~/types/pluginviewcondition'
 import { settle } from '~/tests/helpers/settle'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -112,14 +113,14 @@ describe('usePluginView', () => {
     const server = await startHeldServer()
     try {
       const wrapper = mountWithKit(Host)
-      await vi.waitFor(() => expect(server.held).toHaveLength(1))
+      await waitUntil(() => expect(server.held).toHaveLength(1))
       query.value = { page: '2' }
       await nextTick()
-      await vi.waitFor(() => expect(server.held).toHaveLength(2))
+      await waitUntil(() => expect(server.held).toHaveLength(2))
 
       server.held[1]?.answer({ status: 'newer' })
       // Real sockets: the newer answer is awaited until it is shown, so the older one surely lands after it.
-      await vi.waitFor(() => expect(wrapper.get('[data-testid="value"]').text()).toBe('newer'))
+      await waitUntil(() => expect(wrapper.get('[data-testid="value"]').text()).toBe('newer'))
       server.held[0]?.answer({ status: 'older' })
       await settle()
       await new Promise(resolve => setTimeout(resolve, 20))

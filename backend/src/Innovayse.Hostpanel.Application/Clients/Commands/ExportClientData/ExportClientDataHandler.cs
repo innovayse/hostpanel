@@ -138,7 +138,7 @@ public sealed class ExportClientDataHandler
             client.NotifyGeneral, client.NotifyInvoice, client.NotifySupport,
             client.NotifyProduct, client.NotifyDomain, client.NotifyAffiliate),
         new ClientExportSettingsDto(
-            client.OverdueNotices, client.TaxExempt, client.SeparateInvoices,
+            client.OverdueNotices, client.TaxExempt, client.TaxId, client.TaxExemptionReason, client.SeparateInvoices,
             client.DisableCcProcessing, client.StatusUpdate, client.AllowSso),
         new RegistrationInfo(
             client.RegistrationIp, client.RegistrationUserAgent, client.DeviceType, client.OperatingSystem, client.Browser),

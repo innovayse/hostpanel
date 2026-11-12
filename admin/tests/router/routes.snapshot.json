@@ -563,6 +563,10 @@
         "component": "CurrenciesView.vue"
       },
       {
+        "path": "settings/tax-rules",
+        "component": "TaxRulesView.vue"
+      },
+      {
         "path": "storefront/testimonials",
         "component": "TestimonialsView.vue"
       },

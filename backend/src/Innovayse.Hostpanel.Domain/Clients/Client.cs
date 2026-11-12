@@ -20,6 +20,12 @@ public sealed class Client : BaseEntity, IAggregateRoot
     /// <summary>Longest company name the stored column holds.</summary>
     private const int CompanyNameMaxLength = 200;
 
+    /// <summary>Longest tax identification number the stored column holds.</summary>
+    public const int TaxIdMaxLength = 50;
+
+    /// <summary>Longest tax exemption reason the stored column holds.</summary>
+    public const int TaxExemptionReasonMaxLength = 500;
+
     /// <summary>
     /// Longest name of the other system an external account link points into, in characters; the
     /// <c>Clients.ExternalAccountProvider</c> column is this wide.
@@ -129,6 +135,12 @@ public sealed class Client : BaseEntity, IAggregateRoot
 
     /// <summary>Gets whether this client is tax exempt: no tax rate can be set on their invoices.</summary>
     public bool TaxExempt { get; private set; }
+
+    /// <summary>Gets the client's tax identification number (for example a VAT number), or <see langword="null"/> when none is recorded.</summary>
+    public string? TaxId { get; private set; }
+
+    /// <summary>Gets why the client is tax exempt, or <see langword="null"/> when no reason is recorded.</summary>
+    public string? TaxExemptionReason { get; private set; }
 
     /// <summary>Gets whether invoices are generated separately per service.</summary>
     public bool SeparateInvoices { get; private set; }
@@ -397,17 +409,35 @@ public sealed class Client : BaseEntity, IAggregateRoot
     /// </summary>
     /// <param name="overdueNotices">Send payment reminder emails for unpaid invoices.</param>
     /// <param name="taxExempt">Tax exempt flag.</param>
+    /// <param name="taxId">The client's tax identification number, or null or blank for none.</param>
+    /// <param name="taxExemptionReason">Why the client is tax exempt, or null or blank for no reason.</param>
     /// <param name="separateInvoices">Separate invoices per service.</param>
     /// <param name="disableCcProcessing">Refuse card payments and saved card charges.</param>
     /// <param name="marketingOptIn">Marketing emails opt-in.</param>
     /// <param name="statusUpdate">Send status update emails.</param>
     /// <param name="allowSso">Allow single sign-on into the hosting panels of this client's services.</param>
+    /// <exception cref="ArgumentException">The tax id or the exemption reason is longer than its column.</exception>
     public void UpdateSettings(
-        bool overdueNotices, bool taxExempt, bool separateInvoices,
+        bool overdueNotices, bool taxExempt, string? taxId, string? taxExemptionReason, bool separateInvoices,
         bool disableCcProcessing, bool marketingOptIn, bool statusUpdate, bool allowSso)
     {
+        var trimmedTaxId = string.IsNullOrWhiteSpace(taxId) ? null : taxId.Trim();
+        if (trimmedTaxId is { Length: > TaxIdMaxLength })
+        {
+            throw new ArgumentException($"A client's tax id is at most {TaxIdMaxLength} characters.", nameof(taxId));
+        }
+
+        var trimmedReason = string.IsNullOrWhiteSpace(taxExemptionReason) ? null : taxExemptionReason.Trim();
+        if (trimmedReason is { Length: > TaxExemptionReasonMaxLength })
+        {
+            throw new ArgumentException(
+                $"A client's tax exemption reason is at most {TaxExemptionReasonMaxLength} characters.", nameof(taxExemptionReason));
+        }
+
         OverdueNotices = overdueNotices;
         TaxExempt = taxExempt;
+        TaxId = trimmedTaxId;
+        TaxExemptionReason = trimmedReason;
         SeparateInvoices = separateInvoices;
         DisableCcProcessing = disableCcProcessing;
         MarketingOptIn = marketingOptIn;

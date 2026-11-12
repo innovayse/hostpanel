@@ -282,6 +282,68 @@ An issued credit note is never deleted. It can only be voided, and a voided note
 
 Credit notes add no income of their own. A note given as account credit leaves the income as the payment made it (the cash stays taken; the credit is a balance, and credit spent later on another invoice adds no income). A gateway refund note counts its refund once, as the refund. The credit-only history line a note writes stays out of the transaction list and the transaction reports like every other balance movement.
 
+## Tax rules
+
+A tax rule sets the tax rate that new invoices are raised at. Each rule has a **Name**, a **Country**, an optional **Region**, a **Rate (%)** and an **Enabled** switch. There is at most one rule per country and region (`TAX_RULE_ALREADY_EXISTS`). A rule without a region covers the whole country; a rule with a region covers clients whose state matches it.
+
+### How the rate is picked
+
+When a new invoice is raised for a client, the panel picks one rate for it:
+
+1. If **billing.tax.enabled** is off in System Settings, the invoice is not taxed. The setting is on by default and switches automatic tax off for everyone.
+2. If the client is **Tax Exempt**, the invoice is never taxed.
+3. If the client has no country, the invoice is not taxed.
+4. Otherwise the panel looks for an enabled rule for the client's country and region first, and then for an enabled rule for the whole country. The rate of the first one found is used.
+5. If there is no such rule, the invoice is not taxed.
+
+This applies to order invoices, renewal invoices, invoices for billable items, invoices converted from a quote and invoices created by staff. Credit top-up invoices are never taxed.
+
+The rate is fixed on the invoice when it is raised. Changing or deleting a rule later, or changing the client, does not change an invoice that was already issued.
+
+### Add, edit and delete a rule
+
+Go to **Settings → Tax Rules** to see the rules.
+
+<Steps>
+<li>
+
+Click **Add Tax Rule**.
+
+</li>
+<li>
+
+Enter a **Name**, for example "Germany VAT", and choose the **Country**.
+
+</li>
+<li>
+
+Enter a **Region** only if the rule is for one state of the country. Leave it empty for a rule that covers the whole country.
+
+</li>
+<li>
+
+Enter the **Rate (%)**, from 0 to 100 with up to three decimals; any other value is refused with `TAX_RULE_RATE_INVALID`. Keep **Enabled** on, because only enabled rules are used on new invoices.
+
+</li>
+<li>
+
+Click **Add**. A refusal, such as a second rule for the same country and region, is shown inside the dialog.
+
+</li>
+</Steps>
+
+To change a rule, use its edit action in the list, change the fields and click **Save**. To remove one, use its delete action and confirm **Delete**. To stop using a rule without losing it, edit it and turn **Enabled** off.
+
+<Callout type="note">
+Deleting a rule does not change invoices already issued. They keep the rate they were taxed at.
+</Callout>
+
+### What is not covered yet
+
+- Tax per line item. One rate applies to the whole invoice.
+- VAT number validation. The client's **Tax ID** is stored as you enter it and is not checked.
+- Tax included pricing. Tax is always added on top of the prices.
+
 ## Cancel and delete
 
 - **Mark Cancelled** — cancels an unpaid invoice. Cannot cancel a paid, refunded, or already-cancelled invoice (`INVOICE_CANCEL_NOT_ALLOWED`). Cannot cancel an invoice that has a payment; refund or delete the payment first (`INVOICE_HAS_PAYMENTS`).

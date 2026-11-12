@@ -54,7 +54,8 @@
     "slides": "Слайды",
     "emailTemplates": "Шаблоны писем",
     "gateways": "Платёжные шлюзы",
-    "currencies": "Валюты"
+    "currencies": "Валюты",
+    "taxRules": "Налоговые правила"
   },
   "storefront": "Контент витрины",
   "storefrontChildren": {

@@ -1,0 +1,56 @@
+{
+  "title": "Tax Rules",
+  "description": "Set the tax rate new invoices are taxed at, per country or per region of a country",
+  "addRule": "Add Tax Rule",
+  "empty": "No tax rules yet. Add a rule to tax new invoices automatically.",
+  "loading": "Loading tax rules...",
+  "table": {
+    "name": "Name",
+    "country": "Country",
+    "region": "Region",
+    "rate": "Rate",
+    "enabled": "Status",
+    "actions": "Actions"
+  },
+  "wholeCountry": "Whole country",
+  "enabledBadge": "Enabled",
+  "disabledBadge": "Disabled",
+  "deleteModal": {
+    "title": "Delete Tax Rule",
+    "message": "Delete the tax rule {name}? Invoices already issued keep the rate they were taxed at.",
+    "confirmLabel": "Delete",
+    "loadingLabel": "Deleting..."
+  },
+  "toasts": {
+    "deleted": "The tax rule was deleted."
+  },
+  "form": {
+    "addTitle": "Add Tax Rule",
+    "editTitle": "Edit Tax Rule",
+    "name": {
+      "label": "Name",
+      "placeholder": "e.g. Germany VAT"
+    },
+    "country": {
+      "label": "Country",
+      "placeholder": "Select a country"
+    },
+    "region": {
+      "label": "Region",
+      "placeholder": "e.g. Bavaria",
+      "hint": "Leave empty for a rule that covers the whole country."
+    },
+    "rate": {
+      "label": "Rate (%)",
+      "placeholder": "e.g. 19"
+    },
+    "enabled": {
+      "label": "Enabled",
+      "hint": "Only enabled rules are used on new invoices."
+    },
+    "cancel": "Cancel",
+    "add": "Add",
+    "save": "Save",
+    "saving": "Saving..."
+  }
+}

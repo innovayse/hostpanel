@@ -2,6 +2,7 @@ using FluentValidation;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Common.Validators;
 using Innovayse.Hostpanel.Application.Resources;
+using Innovayse.Hostpanel.Domain.Clients;
 using Microsoft.Extensions.Localization;
 
 namespace Innovayse.Hostpanel.Application.Clients.Commands.AdminCreateClient;
@@ -100,6 +101,14 @@ public sealed class AdminCreateClientValidator : LocalizedValidator<AdminCreateC
         RuleFor(x => x.Preferences.AdminNotes)
             .MaximumLength(2000).WithMessage(L["ClientAdminNotesInvalid"])
             .When(x => x.Preferences.AdminNotes is not null);
+
+        // The switches are optional on create; their tax texts are checked only when the group is sent.
+        RuleFor(x => x.Settings)
+            .Must(s => s?.TaxId is null || s.TaxId.Length <= Client.TaxIdMaxLength)
+            .WithMessage(L["ClientTaxIdInvalid"]);
+        RuleFor(x => x.Settings)
+            .Must(s => s?.TaxExemptionReason is null || s.TaxExemptionReason.Length <= Client.TaxExemptionReasonMaxLength)
+            .WithMessage(L["ClientTaxExemptionReasonInvalid"]);
 
         RuleFor(x => x.Preferences.PaymentMethod)
             .MaximumLength(50).WithMessage(L["ClientPaymentMethodInvalid"])

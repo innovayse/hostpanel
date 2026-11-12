@@ -137,7 +137,7 @@ public sealed class UpdateClientHandler
             cmd.Notifications.General, cmd.Notifications.Invoice, cmd.Notifications.Support,
             cmd.Notifications.Product, cmd.Notifications.Domain, cmd.Notifications.Affiliate);
         client.UpdateSettings(
-            cmd.Settings.OverdueNotices, cmd.Settings.TaxExempt, cmd.Settings.SeparateInvoices,
+            cmd.Settings.OverdueNotices, cmd.Settings.TaxExempt, cmd.Settings.TaxId, cmd.Settings.TaxExemptionReason, cmd.Settings.SeparateInvoices,
             cmd.Settings.DisableCcProcessing, cmd.Settings.MarketingOptIn, cmd.Settings.StatusUpdate, cmd.Settings.AllowSso);
 
         if (cmd.Status is { } newStatus && newStatus != client.Status)

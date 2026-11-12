@@ -331,7 +331,7 @@ public sealed class CurrencyCodeValidatorTests
             new PostalAddress(null, null, null, null, null, null),
             new ClientPreferencesDto(null, code, null, null, null),
             new ContactNotifications(true, true, true, true, true, true),
-            new ClientSettingsDto(true, false, false, false, false, false, false),
+            new ClientSettingsDto(true, false, null, null, false, false, false, false, false),
             null));
 
         AssertOutcome(result, "Preferences.Currency", bad: true);
@@ -349,7 +349,7 @@ public sealed class CurrencyCodeValidatorTests
             new PostalAddress(null, null, null, null, null, null),
             new ClientPreferencesDto(null, code, null, null, null),
             new ContactNotifications(true, true, true, true, true, true),
-            new ClientSettingsDto(true, false, false, false, false, false, false),
+            new ClientSettingsDto(true, false, null, null, false, false, false, false, false),
             null));
 
         AssertOutcome(result, "Preferences.Currency", bad: false);

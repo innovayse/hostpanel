@@ -1642,4 +1642,25 @@
   <data name="EmailDeliveryKeyRequired" xml:space="preserve">
     <value>Նամակի բանալին պարտադիր է։</value>
   </data>
+  <data name="ClientTaxIdInvalid" xml:space="preserve">
+    <value>Հարկ վճարողի համարը չպետք է գերազանցի 50 նիշը։</value>
+  </data>
+  <data name="ClientTaxExemptionReasonInvalid" xml:space="preserve">
+    <value>Հարկից ազատման պատճառը չպետք է գերազանցի 500 նիշը։</value>
+  </data>
+  <data name="TaxRuleNameInvalid" xml:space="preserve">
+    <value>Նշեք մինչև 100 նիշ երկարությամբ անուն։</value>
+  </data>
+  <data name="TaxRuleCountryInvalid" xml:space="preserve">
+    <value>Նշեք երկրի երկտառ կոդը։</value>
+  </data>
+  <data name="TaxRuleRegionInvalid" xml:space="preserve">
+    <value>Մարզը չպետք է գերազանցի 100 նիշը։</value>
+  </data>
+  <data name="TaxRuleRateInvalid" xml:space="preserve">
+    <value>Հարկի դրույքը պետք է լինի 0-ից 100 տոկոս։</value>
+  </data>
+  <data name="TaxRuleRateDecimalsInvalid" xml:space="preserve">
+    <value>Հարկի դրույքը կարող է ունենալ առավելագույնը երեք տասնորդական նիշ։</value>
+  </data>
 </root>

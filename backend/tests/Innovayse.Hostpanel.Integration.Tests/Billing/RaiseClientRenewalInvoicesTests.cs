@@ -391,6 +391,30 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         line.RenewalPeriodStart.Should().Be(start);
     }
 
+    /// <summary>The renewal invoice is taxed at the rate of the client's country, fixed on the invoice.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CountryRule_TaxesTheRenewalInvoice()
+    {
+        var admin = await BillingTestSeeds.AdminClientAsync(factory);
+        await TaxRuleTestSeeds.CreateAsync(admin, "MT", null, 18m);
+        using var scope = Host(new FakeEmailSender()).Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var bus = scope.ServiceProvider.GetRequiredService<IMessageBus>();
+        var client = await SeedClientAsync(context);
+        client.UpdateAddress(null, null, null, null, null, "MT");
+        await context.SaveChangesAsync(CancellationToken.None);
+        await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(5), clientId: client.Id);
+
+        var result = await RaiseAsync(bus, client.Id);
+
+        result.Value.Should().Be(1);
+        var invoice = (await InvoicesOfAsync(context, client.Id)).Single();
+        invoice.TaxRate.Should().Be(18m);
+        invoice.Tax.Should().Be(Math.Round(invoice.SubTotal * 0.18m, 2, MidpointRounding.AwayFromZero));
+        invoice.Total.Should().Be(invoice.SubTotal + invoice.Tax);
+    }
+
     /// <summary>SeparateInvoices gives one invoice per line.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -403,7 +427,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
 
         // The same Client method UpdateClientHandler calls for the admin's "separate invoices" switch.
         client.UpdateSettings(
-            overdueNotices: true, taxExempt: false, separateInvoices: true,
+            overdueNotices: true, taxExempt: false, taxId: null, taxExemptionReason: null, separateInvoices: true,
             disableCcProcessing: false, marketingOptIn: false, statusUpdate: true, allowSso: false);
         await context.SaveChangesAsync(CancellationToken.None);
         var (_, first, _) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(5), clientId: client.Id);

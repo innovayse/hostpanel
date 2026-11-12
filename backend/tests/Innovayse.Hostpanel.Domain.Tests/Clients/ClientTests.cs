@@ -615,17 +615,57 @@ public class ClientTests
     public void WithdrawMarketingConsent_ClearsOnlyTheMarketingFlag()
     {
         var client = Client.Create("user-1", "John", "Doe", "john@example.com", Now);
-        client.UpdateSettings(overdueNotices: false, taxExempt: true, separateInvoices: true, disableCcProcessing: true, marketingOptIn: true, statusUpdate: false, allowSso: false);
+        client.UpdateSettings(overdueNotices: false, taxExempt: true, taxId: "DE123456789", taxExemptionReason: "Charity", separateInvoices: true, disableCcProcessing: true, marketingOptIn: true, statusUpdate: false, allowSso: false);
 
         client.WithdrawMarketingConsent();
 
         Assert.False(client.MarketingOptIn);
         Assert.False(client.OverdueNotices);
         Assert.True(client.TaxExempt);
+        Assert.Equal("DE123456789", client.TaxId);
+        Assert.Equal("Charity", client.TaxExemptionReason);
         Assert.True(client.SeparateInvoices);
         Assert.True(client.DisableCcProcessing);
         Assert.False(client.StatusUpdate);
         Assert.False(client.AllowSso);
+    }
+
+    /// <summary>The tax id and the exemption reason are stored trimmed, and blank ones are cleared.</summary>
+    [Fact]
+    public void UpdateSettings_StoresTheTaxIdAndReasonTrimmedAndClearsBlankOnes()
+    {
+        var client = Client.Create("user-1", "John", "Doe", "john@example.com", Now);
+
+        client.UpdateSettings(true, true, "  DE123456789 ", " Charity ", false, false, false, true, true);
+        Assert.Equal("DE123456789", client.TaxId);
+        Assert.Equal("Charity", client.TaxExemptionReason);
+
+        client.UpdateSettings(true, false, "  ", null, false, false, false, true, true);
+        Assert.Null(client.TaxId);
+        Assert.Null(client.TaxExemptionReason);
+    }
+
+    /// <summary>A new client has no tax id and no exemption reason.</summary>
+    [Fact]
+    public void Create_HasNoTaxIdOrExemptionReason()
+    {
+        var client = Client.Create("user-1", "John", "Doe", "john@example.com", Now);
+
+        Assert.Null(client.TaxId);
+        Assert.Null(client.TaxExemptionReason);
+    }
+
+    /// <summary>A tax id or an exemption reason longer than its column is refused and nothing is changed.</summary>
+    [Fact]
+    public void UpdateSettings_RefusesATaxIdOrReasonOverItsColumn()
+    {
+        var client = Client.Create("user-1", "John", "Doe", "john@example.com", Now);
+
+        Assert.Throws<ArgumentException>(
+            () => client.UpdateSettings(true, true, new string('1', Client.TaxIdMaxLength + 1), null, false, false, false, true, true));
+        Assert.Throws<ArgumentException>(
+            () => client.UpdateSettings(true, true, null, new string('r', Client.TaxExemptionReasonMaxLength + 1), false, false, false, true, true));
+        Assert.False(client.TaxExempt);
     }
 
     /// <summary>Withdrawing consent a second time changes nothing and does not fail.</summary>

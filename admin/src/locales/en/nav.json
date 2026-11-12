@@ -54,7 +54,8 @@
     "slides": "Slides",
     "emailTemplates": "Email Templates",
     "gateways": "Payment Gateways",
-    "currencies": "Currencies"
+    "currencies": "Currencies",
+    "taxRules": "Tax Rules"
   },
   "storefront": "Storefront content",
   "storefrontChildren": {

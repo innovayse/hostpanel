@@ -1642,4 +1642,25 @@
   <data name="EmailDeliveryKeyRequired" xml:space="preserve">
     <value>Ключ письма обязателен.</value>
   </data>
+  <data name="ClientTaxIdInvalid" xml:space="preserve">
+    <value>Налоговый номер не должен превышать 50 символов.</value>
+  </data>
+  <data name="ClientTaxExemptionReasonInvalid" xml:space="preserve">
+    <value>Причина освобождения от налога не должна превышать 500 символов.</value>
+  </data>
+  <data name="TaxRuleNameInvalid" xml:space="preserve">
+    <value>Укажите название не длиннее 100 символов.</value>
+  </data>
+  <data name="TaxRuleCountryInvalid" xml:space="preserve">
+    <value>Укажите двухбуквенный код страны.</value>
+  </data>
+  <data name="TaxRuleRegionInvalid" xml:space="preserve">
+    <value>Регион не должен превышать 100 символов.</value>
+  </data>
+  <data name="TaxRuleRateInvalid" xml:space="preserve">
+    <value>Налоговая ставка должна быть от 0 до 100 процентов.</value>
+  </data>
+  <data name="TaxRuleRateDecimalsInvalid" xml:space="preserve">
+    <value>Налоговая ставка может иметь не более трёх знаков после запятой.</value>
+  </data>
 </root>

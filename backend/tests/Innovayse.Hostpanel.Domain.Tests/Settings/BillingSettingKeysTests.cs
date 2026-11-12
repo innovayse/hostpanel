@@ -27,6 +27,18 @@ public sealed class BillingSettingKeysTests
         pattern.Regex.IsMatch("yes").Should().BeFalse();
     }
 
+    /// <summary>Automatic tax is on until the operator switches it off, and the switch takes true or false only.</summary>
+    [Fact]
+    public void TaxEnabled_IsOnByDefault_AndTakesTrueOrFalseOnly()
+    {
+        var seeded = BillingSettingKeys.Defaults.Single(d => d.Key == BillingSettingKeys.TaxEnabled);
+        var pattern = BillingSettingKeys.Patterns[BillingSettingKeys.TaxEnabled];
+
+        seeded.Value.Should().Be("true");
+        pattern.Regex.IsMatch("FALSE").Should().BeTrue();
+        pattern.Regex.IsMatch("off").Should().BeFalse();
+    }
+
     /// <summary>The day lists accept what an operator types and refuse the rest.</summary>
     /// <param name="value">The setting value.</param>
     /// <param name="ok">Whether the value is accepted.</param>

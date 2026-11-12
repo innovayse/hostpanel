@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
@@ -23,15 +24,21 @@ public sealed class InvoiceSelectedItemsHandler
     /// <summary>The clock every moment in this handler is read from.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Fixes the tax rate the invoice is raised at.</summary>
+    private readonly ClientTaxRateResolver _taxRates;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="payerCurrency">The currency the invoiced client is billed in, stamped on the invoice.</param>
     /// <param name="clock">The clock the current moment is read from.</param>
-    public InvoiceSelectedItemsHandler(IHostpanelDbContext context, IPayerCurrencyResolver payerCurrency, IClock clock)
+    /// <param name="taxRates">Fixes the tax rate the invoice is raised at.</param>
+    public InvoiceSelectedItemsHandler(
+        IHostpanelDbContext context, IPayerCurrencyResolver payerCurrency, IClock clock, ClientTaxRateResolver taxRates)
     {
         _context = context;
         _payerCurrency = payerCurrency;
         _clock = clock;
+        _taxRates = taxRates;
     }
 
     /// <summary>Handles the command.</summary>
@@ -71,6 +78,12 @@ public sealed class InvoiceSelectedItemsHandler
         var now = _clock.UtcNow;
         var invoice = Invoice.CreateForBillableItems(
             cmd.ClientId, now.Add(PaymentTerm), currency, items, now);
+
+        var taxed = await _taxRates.ApplyToAsync(invoice, ct);
+        if (taxed.IsFailure)
+        {
+            return Result<int>.FailureCode(taxed.ErrorCode!);
+        }
 
         _context.Invoices.Add(invoice);
         await _context.SaveChangesAsync(ct);

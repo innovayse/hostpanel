@@ -6,6 +6,7 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Campaigns.Common;
 using Innovayse.Hostpanel.Application.Clients.Commands.AcceptInvitation;
 using Innovayse.Hostpanel.Application.Common;
+using Innovayse.Hostpanel.Application.Fraud.Common;
 using Innovayse.Hostpanel.Application.Plugins.Common;
 using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Application.Support.Common;
@@ -96,6 +97,8 @@ public static class DependencyInjection
 
         // The rate a new invoice is raised at: the one answer every invoice-creating use case asks.
         services.AddScoped<ClientTaxRateResolver>();
+        // The operator's fraud thresholds and limits, read by the fraud check and by the settings screen.
+        services.AddScoped<FraudSettingsReader>();
 
         // This installation's identity towards the plugin registry: where it is kept, and the enrolment that registers and verifies it.
         services.AddScoped<RegistryInstanceStore>();

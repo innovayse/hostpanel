@@ -7,6 +7,7 @@ using Innovayse.Hostpanel.Domain.Campaigns;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
 using Innovayse.Hostpanel.Domain.Faqs;
+using Innovayse.Hostpanel.Domain.Fraud;
 using Innovayse.Hostpanel.Domain.Hosting;
 using Innovayse.Hostpanel.Domain.Locations;
 using Innovayse.Hostpanel.Domain.Migration;
@@ -347,6 +348,12 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
 
     /// <summary>Gets the clients each campaign is delivered to, with the outcome of every delivery.</summary>
     public DbSet<EmailCampaignRecipient> EmailCampaignRecipients => Set<EmailCampaignRecipient>();
+
+    /// <summary>Gets the IP addresses, ranges, e-mail domains and countries the operator blocks.</summary>
+    public DbSet<BlockListEntry> BlockListEntries => Set<BlockListEntry>();
+
+    /// <summary>Gets the log of fraud decisions about registrations and orders.</summary>
+    public DbSet<FraudLogEntry> FraudLogEntries => Set<FraudLogEntry>();
 
     /// <summary>
     /// Gets the values plugins keep in their host-kept store, one row per plugin, opaque client reference (or none, for a

@@ -17,7 +17,8 @@
   },
   "orderStatusOptions": {
     "fraud": "Խարդախություն",
-    "incomplete": "Թերի"
+    "incomplete": "Թերի",
+    "underReview": "Ստուգման ենթակա"
   },
   "ticketFilterOptions": {
     "allActiveTickets": "Բոլոր ակտիվ տոմսերը",
@@ -38,5 +39,33 @@
     "refunded": "Վերադարձված",
     "refunding": "Վերադարձը ընթացքի մեջ է",
     "partiallyRefunded": "Մասնակի վերադարձված"
+  },
+  "fraudReasonOptions": {
+    "blockedIp": "IP հասցեն արգելափակված է",
+    "blockedEmailDomain": "Էլ. փոստի դոմենն արգելափակված է",
+    "blockedCountry": "Երկիրը արգելափակված է",
+    "disposableEmail": "Մեկանգամյա էլ. փոստի հասցե",
+    "sharedIpAccounts": "Շատ հաշիվներ մեկ IP հասցեից",
+    "orderVelocity": "Չափազանց շատ պատվերներ մեկ IP հասցեից",
+    "countryMismatch": "Վճարման երկիրը չի համապատասխանում IP-ի երկրին",
+    "providerHighRisk": "Գնահատման ծառայությունը բարձր ռիսկ է նշել",
+    "anonymousIp": "Պրոքսի, VPN կամ հոսթինգի IP հասցե"
+  },
+  "fraudDecisionOptions": {
+    "approved": "Հաստատված",
+    "review": "Սպասում է ստուգման",
+    "rejected": "Մերժված",
+    "manualApproved": "Հաստատված աշխատակցի կողմից",
+    "manualRejected": "Մերժված աշխատակցի կողմից"
+  },
+  "fraudCheckKindOptions": {
+    "registration": "Գրանցում",
+    "order": "Պատվեր"
+  },
+  "blockListTypeOptions": {
+    "ip": "IP հասցե",
+    "cidr": "IP տիրույթ (CIDR)",
+    "emailDomain": "Էլ. փոստի դոմեն",
+    "country": "Երկիր"
   }
 }

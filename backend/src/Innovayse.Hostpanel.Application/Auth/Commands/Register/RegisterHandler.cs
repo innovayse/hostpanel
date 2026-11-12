@@ -2,9 +2,13 @@ using Innovayse.Hostpanel.Application.Auth.Commands.SendVerificationEmail;
 using Innovayse.Hostpanel.Application.Auth.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Fraud.Commands.RecordFraudDecision;
+using Innovayse.Hostpanel.Application.Fraud.Extensions;
 using Innovayse.Hostpanel.Application.IntegrationEvents.Contracts;
 using Innovayse.Hostpanel.Domain.Auth;
+using Innovayse.Hostpanel.Domain.Fraud.Enums;
 using Innovayse.Hostpanel.Shared.Models;
+using Innovayse.Hostpanel.Shared.MultiTenancy;
 using Microsoft.Extensions.Logging;
 using Wolverine;
 
@@ -30,24 +34,49 @@ public sealed class RegisterHandler
     /// <summary>Where refusals and a mail that could not be sent are logged.</summary>
     private readonly ILogger<RegisterHandler> _logger;
 
+    /// <summary>The caller's IP address, which the fraud log keeps with the decision; the command does not state it, and must not.</summary>
+    private readonly ICurrentUserService _caller;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="users">The local user service, which creates the account.</param>
-    /// <param name="bus">Wolverine message bus, for the integration event and the verification mail.</param>
+    /// <param name="bus">Wolverine message bus, for the integration event, the verification mail and the fraud check.</param>
     /// <param name="logger">Where refusals and a mail that could not be sent are logged.</param>
-    public RegisterHandler(IUserService users, IMessageBus bus, ILogger<RegisterHandler> logger)
+    /// <param name="caller">The caller's IP address, which the fraud log keeps with the decision.</param>
+    public RegisterHandler(IUserService users, IMessageBus bus, ILogger<RegisterHandler> logger, ICurrentUserService caller)
     {
         _users = users;
         _bus = bus;
         _logger = logger;
+        _caller = caller;
     }
 
     /// <summary>Creates the account and everything an account needs to be usable.</summary>
     /// <param name="cmd">Email, password and name of the new account.</param>
     /// <param name="ct">Cancellation token.</param>
-    /// <returns>The new account's id, or <c>REGISTRATION_FAILED</c> when the account cannot be created.</returns>
+    /// <returns>
+    /// The new account's id, or <c>REGISTRATION_FRAUD_REJECTED</c> when fraud detection refuses the registration (no account is
+    /// created), or <c>REGISTRATION_FAILED</c> when the account cannot be created.
+    /// </returns>
     public async Task<Result<RegisteredUserDto>> HandleAsync(RegisterCommand cmd, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(cmd);
+
+        // A registration is refused only for a block list hit or a score at the reject threshold; one that only scores into the
+        // review band goes through, because there is no order to hold, and the log keeps it for staff.
+        var verdict = await _bus.EvaluateFraudAsync(FraudCheckKind.Registration, cmd.Email, null, ct);
+        if (verdict.Checked)
+        {
+            await _bus.RecordFraudDecisionAsync(
+                _logger,
+                new RecordFraudDecisionCommand(
+                    FraudCheckKind.Registration, verdict.Decision, null, null, _caller.IpAddress, cmd.Email, verdict.Score, verdict.Reasons),
+                ct);
+        }
+
+        if (verdict.Decision is FraudDecision.Rejected)
+        {
+            return Result<RegisteredUserDto>.FailureCode(HostpanelErrorCodes.REGISTRATION_FRAUD_REJECTED);
+        }
 
         string userId;
         try

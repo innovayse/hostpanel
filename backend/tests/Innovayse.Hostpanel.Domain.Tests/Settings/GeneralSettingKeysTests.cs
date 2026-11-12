@@ -8,14 +8,15 @@ namespace Innovayse.Hostpanel.Domain.Tests.Settings;
 /// </summary>
 public class GeneralSettingKeysTests
 {
-    /// <summary>The catalogue is the union of the four default lists, nothing more and nothing less.</summary>
+    /// <summary>The catalogue is the union of the five default lists, nothing more and nothing less.</summary>
     [Fact]
-    public void All_IsTheUnionOfThePortalBillingPluginAndCampaignDefaults()
+    public void All_IsTheUnionOfThePortalBillingPluginCampaignAndFraudDefaults()
     {
         var union = PortalSettingKeys.Defaults
             .Concat(BillingSettingKeys.Defaults)
             .Concat(PluginSettingKeys.Defaults)
             .Concat(CampaignSettingKeys.Defaults)
+            .Concat(FraudSettingKeys.Defaults)
             .Select(d => d.Key)
             .ToHashSet(StringComparer.Ordinal);
 

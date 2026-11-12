@@ -20,4 +20,10 @@ public enum OrderStatus
     /// order is not complete yet. It returns to <see cref="Active"/> when no such line is left.
     /// </summary>
     Incomplete = 4,
+
+    /// <summary>
+    /// Order held back for staff because its fraud score reached the review threshold. It is not accepted or fulfilled, and a
+    /// payment for it fulfils nothing, until staff approve it (back to <see cref="Pending"/>) or reject it (<see cref="Fraud"/>).
+    /// </summary>
+    UnderReview = 5,
 }

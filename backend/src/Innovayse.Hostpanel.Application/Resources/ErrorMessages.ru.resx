@@ -1474,4 +1474,22 @@
   <data name="TAX_RULE_RATE_INVALID" xml:space="preserve">
     <value>Налоговая ставка должна быть от 0 до 100 процентов.</value>
   </data>
+  <data name="ORDER_NOT_UNDER_REVIEW" xml:space="preserve">
+    <value>Этот заказ не ожидает проверки на мошенничество.</value>
+  </data>
+  <data name="ORDER_FRAUD_REJECTED" xml:space="preserve">
+    <value>Мы не смогли принять этот заказ. Если вы считаете, что это ошибка, свяжитесь с поддержкой.</value>
+  </data>
+  <data name="REGISTRATION_FRAUD_REJECTED" xml:space="preserve">
+    <value>Мы не смогли создать эту учётную запись. Если вы считаете, что это ошибка, свяжитесь с поддержкой.</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_VALUE_INVALID" xml:space="preserve">
+    <value>Значение не подходит к выбранному типу чёрного списка.</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_ENTRY_EXISTS" xml:space="preserve">
+    <value>Это значение уже есть в чёрном списке.</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_ENTRY_NOT_FOUND" xml:space="preserve">
+    <value>Запись чёрного списка не найдена.</value>
+  </data>
 </root>

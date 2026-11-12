@@ -1474,4 +1474,22 @@
   <data name="TAX_RULE_RATE_INVALID" xml:space="preserve">
     <value>A tax rate must be between 0 and 100 percent.</value>
   </data>
+  <data name="ORDER_NOT_UNDER_REVIEW" xml:space="preserve">
+    <value>This order is not waiting for a fraud review.</value>
+  </data>
+  <data name="ORDER_FRAUD_REJECTED" xml:space="preserve">
+    <value>We could not accept this order. Please contact support if you think this is a mistake.</value>
+  </data>
+  <data name="REGISTRATION_FRAUD_REJECTED" xml:space="preserve">
+    <value>We could not create this account. Please contact support if you think this is a mistake.</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_VALUE_INVALID" xml:space="preserve">
+    <value>The value does not fit the chosen block list type.</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_ENTRY_EXISTS" xml:space="preserve">
+    <value>This value is already on the block list.</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_ENTRY_NOT_FOUND" xml:space="preserve">
+    <value>The block list entry was not found.</value>
+  </data>
 </root>

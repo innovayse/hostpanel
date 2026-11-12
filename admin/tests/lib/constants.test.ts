@@ -7,10 +7,14 @@ import { describe, expect, it } from 'vitest'
 import {
   BILLABLE_ITEM_TYPE_OPTIONS,
   BILLING_CYCLE_OPTIONS,
+  BLOCK_LIST_TYPE_OPTIONS,
   CLIENT_STATUS_OPTIONS,
   CURRENCY_OPTIONS,
   DNS_RECORD_TYPE_OPTIONS,
   DOMAIN_STATUS_OPTIONS,
+  FRAUD_CHECK_KIND_OPTIONS,
+  FRAUD_DECISION_OPTIONS,
+  FRAUD_REASON_OPTIONS,
   GATEWAY_OPTIONS,
   INVOICE_STATUS_OPTIONS,
   ORDER_LINE_FULFILMENT_OPTIONS,
@@ -27,6 +31,7 @@ import { translate } from '@/lib/translate'
 import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { ClientStatus } from '@/types/client'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
+import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import { PaymentGateway } from '@/types/gateway'
 import { InvoiceStatus } from '@/types/invoice'
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
@@ -85,6 +90,22 @@ describe('option lists', () => {
 
     expect(option?.label).toBe(translate('clients.clientSummary.partiallyRefunded'))
     expect(option?.label).toBe('Partially Refunded')
+  })
+
+  it('name every fraud reason once, each under its own sentence, and offer the review status in the order filter', () => {
+    expect(valuesOf(FRAUD_REASON_OPTIONS)).toEqual(membersOf(FraudReasonCode))
+    expect(new Set(FRAUD_REASON_OPTIONS.map((option) => option.label)).size).toBe(FRAUD_REASON_OPTIONS.length)
+    expect(ORDER_STATUS_OPTIONS.find((option) => option.value === OrderStatus.UnderReview)?.label).toBe('Pending review')
+  })
+
+  it('name every fraud decision, check kind and block list type once, each under its own sentence', () => {
+    expect(valuesOf(FRAUD_DECISION_OPTIONS)).toEqual(membersOf(FraudDecision))
+    expect(valuesOf(FRAUD_CHECK_KIND_OPTIONS)).toEqual(membersOf(FraudCheckKind))
+    expect(valuesOf(BLOCK_LIST_TYPE_OPTIONS)).toEqual(membersOf(BlockListType))
+    for (const options of [FRAUD_DECISION_OPTIONS, FRAUD_CHECK_KIND_OPTIONS, BLOCK_LIST_TYPE_OPTIONS]) {
+      expect(new Set(options.map((option) => option.label)).size).toBe(options.length)
+    }
+    expect(BLOCK_LIST_TYPE_OPTIONS.find((option) => option.value === BlockListType.Cidr)?.label).toBe('IP range (CIDR)')
   })
 
   it('draw payment methods from the payment method set', () => {

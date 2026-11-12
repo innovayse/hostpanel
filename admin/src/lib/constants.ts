@@ -14,6 +14,7 @@ import { CurrencyCode } from '@/types/currency'
 import { BillableItemType, RecurringPeriod } from '@/types/billableitem'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
 import { PaymentGateway } from '@/types/gateway'
+import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode } from '@/types/fraud'
 import { InvoiceStatus } from '@/types/invoice'
 import { OrderItemFulfilmentState, OrderStatus } from '@/types/order'
 import { QuoteStage } from '@/types/quote'
@@ -160,6 +161,43 @@ export const ORDER_STATUS_OPTIONS: SelectOption[] = [
   { value: OrderStatus.Cancelled, get label() { return translate('clients.clientSummary.cancelled') } },
   { value: OrderStatus.Fraud, get label() { return translate('constants.orderStatusOptions.fraud') } },
   { value: OrderStatus.Incomplete, get label() { return translate('constants.orderStatusOptions.incomplete') } },
+  { value: OrderStatus.UnderReview, get label() { return translate('constants.orderStatusOptions.underReview') } },
+]
+
+/** Fraud reason options, for the labels of the reasons an order or a fraud log entry names. */
+export const FRAUD_REASON_OPTIONS: SelectOption<FraudReasonCode>[] = [
+  { value: FraudReasonCode.BlockedIp, get label() { return translate('constants.fraudReasonOptions.blockedIp') } },
+  { value: FraudReasonCode.BlockedEmailDomain, get label() { return translate('constants.fraudReasonOptions.blockedEmailDomain') } },
+  { value: FraudReasonCode.BlockedCountry, get label() { return translate('constants.fraudReasonOptions.blockedCountry') } },
+  { value: FraudReasonCode.DisposableEmail, get label() { return translate('constants.fraudReasonOptions.disposableEmail') } },
+  { value: FraudReasonCode.SharedIpAccounts, get label() { return translate('constants.fraudReasonOptions.sharedIpAccounts') } },
+  { value: FraudReasonCode.OrderVelocity, get label() { return translate('constants.fraudReasonOptions.orderVelocity') } },
+  { value: FraudReasonCode.CountryMismatch, get label() { return translate('constants.fraudReasonOptions.countryMismatch') } },
+  { value: FraudReasonCode.ProviderHighRisk, get label() { return translate('constants.fraudReasonOptions.providerHighRisk') } },
+  { value: FraudReasonCode.AnonymousIp, get label() { return translate('constants.fraudReasonOptions.anonymousIp') } },
+]
+
+/** Fraud decision options, for the fraud log filter and the labels of its badges. */
+export const FRAUD_DECISION_OPTIONS: SelectOption<FraudDecision>[] = [
+  { value: FraudDecision.Approved, get label() { return translate('constants.fraudDecisionOptions.approved') } },
+  { value: FraudDecision.Review, get label() { return translate('constants.fraudDecisionOptions.review') } },
+  { value: FraudDecision.Rejected, get label() { return translate('constants.fraudDecisionOptions.rejected') } },
+  { value: FraudDecision.ManualApproved, get label() { return translate('constants.fraudDecisionOptions.manualApproved') } },
+  { value: FraudDecision.ManualRejected, get label() { return translate('constants.fraudDecisionOptions.manualRejected') } },
+]
+
+/** Fraud check kind options, for the labels of the fraud log's kind column. */
+export const FRAUD_CHECK_KIND_OPTIONS: SelectOption<FraudCheckKind>[] = [
+  { value: FraudCheckKind.Registration, get label() { return translate('constants.fraudCheckKindOptions.registration') } },
+  { value: FraudCheckKind.Order, get label() { return translate('constants.fraudCheckKindOptions.order') } },
+]
+
+/** Block list type options, for the block list tabs and the labels of the add form. */
+export const BLOCK_LIST_TYPE_OPTIONS: SelectOption<BlockListType>[] = [
+  { value: BlockListType.Ip, get label() { return translate('constants.blockListTypeOptions.ip') } },
+  { value: BlockListType.Cidr, get label() { return translate('constants.blockListTypeOptions.cidr') } },
+  { value: BlockListType.EmailDomain, get label() { return translate('constants.blockListTypeOptions.emailDomain') } },
+  { value: BlockListType.Country, get label() { return translate('constants.blockListTypeOptions.country') } },
 ]
 
 /** Fulfilment state options of one order line, for the labels of its badge. */

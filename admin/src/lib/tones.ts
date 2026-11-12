@@ -14,6 +14,7 @@ import { ClientStatus } from '@/types/client'
 import { CampaignStatus } from '@/types/emailcampaign'
 import { ContactType } from '@/types/contact'
 import { DomainStatus } from '@/types/domain'
+import { FraudDecision } from '@/types/fraud'
 import { GatewayLogResult } from '@/types/gatewaylog'
 import { IntegrationConnectionState } from '@/types/integration'
 import { FulfilmentStatus, InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
@@ -43,6 +44,16 @@ const ORDER_TONES: Record<OrderStatus, UiTone> = {
   [OrderStatus.Cancelled]: UiTone.Danger,
   [OrderStatus.Fraud]: UiTone.Danger,
   [OrderStatus.Incomplete]: UiTone.Warning,
+  [OrderStatus.UnderReview]: UiTone.Warning,
+}
+
+/** Badge tone of each fraud decision. */
+const FRAUD_DECISION_TONES: Record<FraudDecision, UiTone> = {
+  [FraudDecision.Approved]: UiTone.Success,
+  [FraudDecision.Review]: UiTone.Warning,
+  [FraudDecision.Rejected]: UiTone.Danger,
+  [FraudDecision.ManualApproved]: UiTone.Success,
+  [FraudDecision.ManualRejected]: UiTone.Danger,
 }
 
 /** Badge tone of each order line fulfilment state. */
@@ -274,6 +285,14 @@ export const fulfilmentStatusTone = (status: string): UiTone => toneOf(FULFILMEN
  * @returns The tone; neutral for a status this panel does not know.
  */
 export const paymentClaimStatusTone = (status: string): UiTone => toneOf(PAYMENT_CLAIM_STATUS_TONES, status)
+
+/**
+ * Tone of a fraud decision badge.
+ *
+ * @param decision - The decision string the API sent.
+ * @returns The tone; neutral for a decision this panel does not know.
+ */
+export const fraudDecisionTone = (decision: string): UiTone => toneOf(FRAUD_DECISION_TONES, decision)
 
 /**
  * Tone of a gateway log outcome badge.

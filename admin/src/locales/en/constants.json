@@ -17,7 +17,8 @@
   },
   "orderStatusOptions": {
     "fraud": "Fraud",
-    "incomplete": "Incomplete"
+    "incomplete": "Incomplete",
+    "underReview": "Pending review"
   },
   "ticketFilterOptions": {
     "allActiveTickets": "All Active Tickets",
@@ -38,5 +39,33 @@
     "refunded": "Refunded",
     "refunding": "Refund in progress",
     "partiallyRefunded": "Partly refunded"
+  },
+  "fraudReasonOptions": {
+    "blockedIp": "IP address is blocked",
+    "blockedEmailDomain": "E-mail domain is blocked",
+    "blockedCountry": "Country is blocked",
+    "disposableEmail": "Disposable e-mail address",
+    "sharedIpAccounts": "Many accounts from one IP address",
+    "orderVelocity": "Too many orders from one IP address",
+    "countryMismatch": "Billing country differs from the IP country",
+    "providerHighRisk": "Scoring service rated it high risk",
+    "anonymousIp": "Proxy, VPN or hosting IP address"
+  },
+  "fraudDecisionOptions": {
+    "approved": "Approved",
+    "review": "Pending review",
+    "rejected": "Rejected",
+    "manualApproved": "Approved by staff",
+    "manualRejected": "Rejected by staff"
+  },
+  "fraudCheckKindOptions": {
+    "registration": "Registration",
+    "order": "Order"
+  },
+  "blockListTypeOptions": {
+    "ip": "IP address",
+    "cidr": "IP range (CIDR)",
+    "emailDomain": "Email domain",
+    "country": "Country"
   }
 }

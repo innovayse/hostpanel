@@ -1474,4 +1474,22 @@
   <data name="TAX_RULE_RATE_INVALID" xml:space="preserve">
     <value>Հարկի դրույքը պետք է լինի 0-ից 100 տոկոս։</value>
   </data>
+  <data name="ORDER_NOT_UNDER_REVIEW" xml:space="preserve">
+    <value>Այս պատվերը չի սպասում խարդախության ստուգման։</value>
+  </data>
+  <data name="ORDER_FRAUD_REJECTED" xml:space="preserve">
+    <value>Չհաջողվեց ընդունել այս պատվերը։ Եթե կարծում եք՝ սխալ է, դիմեք աջակցությանը։</value>
+  </data>
+  <data name="REGISTRATION_FRAUD_REJECTED" xml:space="preserve">
+    <value>Չհաջողվեց ստեղծել այս հաշիվը։ Եթե կարծում եք՝ սխալ է, դիմեք աջակցությանը։</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_VALUE_INVALID" xml:space="preserve">
+    <value>Արժեքը չի համապատասխանում արգելված ցուցակի ընտրված տեսակին։</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_ENTRY_EXISTS" xml:space="preserve">
+    <value>Այս արժեքն արդեն արգելված ցուցակում է։</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_ENTRY_NOT_FOUND" xml:space="preserve">
+    <value>Արգելված ցուցակի գրառումը չի գտնվել։</value>
+  </data>
 </root>

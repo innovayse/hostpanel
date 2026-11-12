@@ -23,6 +23,12 @@ export enum ApiPath {
   AdminEmailTemplates = '/admin/email-templates',
   /** `/admin/faqs` collection and its members. */
   AdminFaqs = '/admin/faqs',
+  /** `/admin/fraud/blocklist` collection and its members. */
+  AdminFraudBlockList = '/admin/fraud/blocklist',
+  /** `/admin/fraud/log` collection. */
+  AdminFraudLog = '/admin/fraud/log',
+  /** `/admin/fraud/settings` document. */
+  AdminFraudSettings = '/admin/fraud/settings',
   /** `/admin/integrations` collection and its members. */
   AdminIntegrations = '/admin/integrations',
   /** `/admin/knowledgebase` collection and its members. */

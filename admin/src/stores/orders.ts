@@ -1,10 +1,10 @@
 /**
  * Pinia store for admin order management: the paged list with a status filter, one order's
  * detail and the lifecycle commands (accept, retry of a failed line, closing a hand-finished
- * refund, cancel, delete).
+ * refund, cancel, delete, and approving or rejecting an order held for fraud review).
  *
  * Owns every request the order pages make and the sentence for a refusal, so the pages hold
- * no `catch`. A load puts its sentence in `error`; a command (accept, retry, cancel, delete) puts its
+ * no `catch`. A load puts its sentence in `error`; a command (accept, retry, cancel, review, delete) puts its
  * sentence in `actionError`. A retry also tracks which line is running and keeps a refusal per line.
  */
 import { defineStore } from 'pinia'
@@ -42,7 +42,7 @@ export const useOrdersStore = defineStore('orders', () => {
   /** Sentence for the last failed load, null when none. */
   const error = ref<string | null>(null)
 
-  /** Sentence for the last refused accept, retry, cancel or delete, null when none. */
+  /** Sentence for the last refused accept, retry, cancel, review or delete, null when none. */
   const actionError = ref<string | null>(null)
 
   /** Id of the order line whose retry is in flight, null when none, so only that line shows progress. */
@@ -166,6 +166,33 @@ export const useOrdersStore = defineStore('orders', () => {
   }
 
   /**
+   * Approves an order held for fraud review, then refreshes the current order detail.
+   *
+   * @param id - The order primary key.
+   * @returns True when approved; false when refused (see `actionError`).
+   */
+  const approveReview = async (id: number): Promise<boolean> => {
+    const result = await runAction(actionError, () => api.approveOrderReview(id))
+    // A refusal can mean another operator decided first, so the detail is read again either way.
+    await fetchOne(id)
+    return result.ok
+  }
+
+  /**
+   * Rejects an order held for fraud review with the reason the client is mailed, then refreshes the current order detail.
+   *
+   * @param id - The order primary key.
+   * @param reason - Why the order is refused.
+   * @returns True when rejected; false when refused (see `actionError`).
+   */
+  const rejectReview = async (id: number, reason: string): Promise<boolean> => {
+    const result = await runAction(actionError, () => api.rejectOrderReview(id, { reason }))
+    // A refusal can mean another operator decided first, so the detail is read again either way.
+    await fetchOne(id)
+    return result.ok
+  }
+
+  /**
    * Deletes an order, then refreshes the list.
    *
    * @param id - The order primary key.
@@ -199,6 +226,8 @@ export const useOrdersStore = defineStore('orders', () => {
     retryOrderLine,
     closeLineRefund,
     cancelOrder,
+    approveReview,
+    rejectReview,
     deleteOrder,
   }
 })

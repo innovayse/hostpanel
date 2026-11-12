@@ -1,18 +1,21 @@
 <script setup lang="ts">
 /**
  * Order detail view: one order with its items, linked invoice and the admin actions
- * (accept, cancel, delete), a retry on each line the API says may be retried (`canRetry`, decided
+ * (accept, cancel, delete), the fraud panel with approve and reject for an order held for review, a retry on each line the API says may be retried (`canRetry`, decided
  * with its configured lease), and a button that closes a line as refunded by hand on each line the
  * API says may be closed (`canClose`: failed, stuck in refunding past the retry lease, or partly refunded).
  *
  * Reads `stores/orders`; a refused load shows `store.error` with a retry. The outcome of an accept
  * or cancel (success, or the API's sentence) shows above the order; a delete returns to the list.
- * Cancelling, deleting and closing a refund are confirmed first in a danger prompt.
+ * Cancelling, deleting and closing a refund are confirmed first in a danger prompt; a rejection asks for the reason the
+ * client is mailed.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import OrderFact from '@/components/orders/OrderFact.vue'
+import OrderFraudPanel from '@/components/orders/OrderFraudPanel.vue'
+import OrderRejectReviewDialog from '@/components/orders/OrderRejectReviewDialog.vue'
 import UiBadge from '@/components/ui/UiBadge.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
@@ -69,6 +72,9 @@ const dangerConfirm = ref<OrderDangerAction | null>(null)
 
 /** The partly refunded line whose refund is waiting to be closed, null when none. */
 const closingRefundItemId = ref<number | null>(null)
+
+/** Whether the reject prompt for an order held for review is open. */
+const rejecting = ref(false)
 
 /** True while an order command is in flight. */
 const processing = ref(false)
@@ -155,6 +161,26 @@ const handleAccept = async (): Promise<void> => {
   if (ok && store.unfulfilledLines.length > 0) {
     feedback.show(t('orders.fulfillment.acceptedWithFailedLines', { lines: store.unfulfilledLineNames }), true)
   }
+}
+
+/**
+ * Approves the order held for fraud review.
+ *
+ * @returns Resolves when the store has finished.
+ */
+const handleApproveReview = async (): Promise<void> => {
+  await runCommand(() => store.approveReview(orderId()), 'orders.fraud.approved')
+}
+
+/**
+ * Rejects the order held for fraud review with the reason the operator typed, then closes the prompt.
+ *
+ * @param reason - Why the order is refused; the client is mailed it.
+ * @returns Resolves when the store has finished.
+ */
+const handleRejectReview = async (reason: string): Promise<void> => {
+  await runCommand(() => store.rejectReview(orderId(), reason), 'orders.fraud.rejected')
+  rejecting.value = false
 }
 
 /**
@@ -366,6 +392,14 @@ onMounted(async () => {
         </UiCard>
       </UiGrid>
 
+      <OrderFraudPanel
+        v-if="store.currentOrder.fraudScore !== null"
+        :order="store.currentOrder"
+        :busy="processing"
+        @approve="handleApproveReview"
+        @reject="rejecting = true"
+      />
+
       <UiCard data-testid="order-items">
         <UiTable :density="UiTableDensity.Comfortable">
           <UiTableHead>
@@ -491,6 +525,13 @@ onMounted(async () => {
         </UiStack>
       </UiCard>
     </template>
+
+    <OrderRejectReviewDialog
+      v-if="rejecting"
+      :loading="processing"
+      @submit="handleRejectReview"
+      @close="rejecting = false"
+    />
 
     <UiDialog
       :open="dangerConfirm !== null"

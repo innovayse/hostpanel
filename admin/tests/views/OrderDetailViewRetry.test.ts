@@ -81,6 +81,8 @@ const orderWith = (items: ReturnType<typeof line>[]) => ({
   failedLineCount: 0,
   createdAt: '2026-03-04T10:00:00Z',
   ipAddress: null,
+  fraudScore: null,
+  fraudReasons: [],
   notes: null,
   items,
 })

@@ -27,6 +27,8 @@ const pendingOrder = {
   itemCount: 1,
   createdAt: '2026-03-04T10:00:00Z',
   ipAddress: '10.0.0.1',
+  fraudScore: null,
+  fraudReasons: [],
   notes: 'Call the client',
   items: [
     {

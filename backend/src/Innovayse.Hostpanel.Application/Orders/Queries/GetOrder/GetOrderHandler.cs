@@ -5,6 +5,8 @@ using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Orders.Common;
+using Innovayse.Hostpanel.Domain.Fraud;
+using Innovayse.Hostpanel.Domain.Fraud.Enums;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
@@ -53,48 +55,56 @@ public sealed class GetOrderHandler
     {
         ArgumentNullException.ThrowIfNull(query);
 
-        var dto = await _context.Orders
+        var found = await _context.Orders
             .AsNoTracking()
             .Where(o => o.Id == query.OrderId)
-            .Select(o => new OrderDetailDto(
-                o.Id,
-                o.OrderNumber,
-                o.ClientId,
-                string.Empty,
-                o.Status,
-                o.PaymentMethod,
-                o.Items.Sum(item => item.FirstPaymentAmount),
-                o.Currency,
-                o.InvoiceId,
-                null,
-                null,
-                o.IpAddress,
-                o.Notes,
-                o.Items
-                    .OrderBy(item => item.Id)
-                    .Select(item => new OrderItemDto(
-                        item.Id,
-                        item.ProductId,
-                        item.ProductName,
-                        item.BillingCycle,
-                        item.Domain,
-                        item.Hostname,
-                        item.FirstPaymentAmount,
-                        item.RecurringAmount,
-                        item.Status,
-                        item.FulfilmentState,
-                        item.FulfilmentErrorCode,
-                        item.FulfilmentAttempts,
-                        item.LastFulfilmentAttemptAt,
-                        false,
-                        false))
-                    .ToList(),
-                o.CreatedAt))
+            .Select(o => new
+            {
+                Dto = new OrderDetailDto(
+                    o.Id,
+                    o.OrderNumber,
+                    o.ClientId,
+                    string.Empty,
+                    o.Status,
+                    o.PaymentMethod,
+                    o.Items.Sum(item => item.FirstPaymentAmount),
+                    o.Currency,
+                    o.InvoiceId,
+                    null,
+                    null,
+                    o.IpAddress,
+                    o.Notes,
+                    o.Items
+                        .OrderBy(item => item.Id)
+                        .Select(item => new OrderItemDto(
+                            item.Id,
+                            item.ProductId,
+                            item.ProductName,
+                            item.BillingCycle,
+                            item.Domain,
+                            item.Hostname,
+                            item.FirstPaymentAmount,
+                            item.RecurringAmount,
+                            item.Status,
+                            item.FulfilmentState,
+                            item.FulfilmentErrorCode,
+                            item.FulfilmentAttempts,
+                            item.LastFulfilmentAttemptAt,
+                            false,
+                            false))
+                        .ToList(),
+                    o.FraudScore,
+                    Array.Empty<FraudReasonCode>(),
+                    o.CreatedAt),
+                o.FraudReasonCodes,
+            })
             .FirstOrDefaultAsync(ct);
-        if (dto is null)
+        if (found is null)
         {
             return Result<OrderDetailDto>.FailureCode(HostpanelErrorCodes.ORDER_NOT_FOUND);
         }
+
+        var dto = found.Dto with { FraudReasons = FraudReasonText.Parse(found.FraudReasonCodes) };
 
         // FK_Orders_Clients_ClientId restricts deleting a client that has orders, so a missing client
         // is a broken database, not an answer to render. A missing invoice reads as null.

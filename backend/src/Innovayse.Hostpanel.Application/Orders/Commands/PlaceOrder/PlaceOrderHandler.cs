@@ -14,6 +14,8 @@ using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetOwnedDomainNames;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetTldPricing;
+using Innovayse.Hostpanel.Application.Fraud.Commands.RecordFraudDecision;
+using Innovayse.Hostpanel.Application.Fraud.Extensions;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillPaidOrder;
 using Innovayse.Hostpanel.Application.Orders.Common;
 using Innovayse.Hostpanel.Application.Products.Common;
@@ -22,6 +24,7 @@ using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Domain.Fraud.Enums;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
@@ -138,6 +141,8 @@ public sealed class PlaceOrderHandler
     /// is billed in, or
     /// <c>ORDER_PAYMENT_METHOD_UNAVAILABLE</c> when the checkout is not offering that method,
     /// <c>ORDER_CURRENCY_UNAVAILABLE</c> when a guest chose a currency this panel does not offer,
+    /// <c>ORDER_FRAUD_REJECTED</c> when fraud detection refuses the order (nothing is created; an order that only scores
+    /// into the review band is placed and held, not refused),
     /// <c>ORDER_GUEST_DETAILS_REQUIRED</c> when a guest checkout reached the handler without its
     /// registration fields, <c>ACCOUNT_EMAIL_EXISTS</c> when a guest's address already has an
     /// account, <c>PRODUCT_NOT_FOUND</c> or <c>PRODUCT_NOT_AVAILABLE</c> when a line item names a
@@ -221,6 +226,20 @@ public sealed class PlaceOrderHandler
             return Result<PlaceOrderResultDto>.FailureCode(owned.ErrorCode!);
         }
 
+        // Fraud detection looks before any account, order number or invoice exists, so a refused request leaves nothing behind.
+        // A signed-in caller's own address wins over the one typed into the guest fields.
+        var fraudEmail = _caller.Email ?? cmd.Email;
+        var verdict = await _bus.EvaluateFraudAsync(FraudCheckKind.Order, fraudEmail, existingClient?.Address.Country, ct);
+        if (verdict.Decision is FraudDecision.Rejected)
+        {
+            await _bus.RecordFraudDecisionAsync(
+                _logger,
+                new RecordFraudDecisionCommand(
+                    FraudCheckKind.Order, verdict.Decision, existingClient?.Id, null, _caller.IpAddress, fraudEmail, verdict.Score, verdict.Reasons),
+                ct);
+            return Result<PlaceOrderResultDto>.FailureCode(HostpanelErrorCodes.ORDER_FRAUD_REJECTED);
+        }
+
         var clientId = existingClient?.Id;
         if (clientId is null)
         {
@@ -282,6 +301,13 @@ public sealed class PlaceOrderHandler
                 item.Domain, item.Hostname, item.DomainAction, item.EppCode, item.Years);
         }
 
+        // Held before the first save, so the order is never stored as Pending: a payment can arrive any moment after the
+        // invoice exists, and a Pending order would be fulfilled by it.
+        if (verdict.Decision is FraudDecision.Review)
+        {
+            order.HoldForReview(verdict.Score, verdict.Reasons);
+        }
+
         // Raised before the order is saved: an invoice whose order then fails to save is cancelled
         // below, while an order saved without its invoice was a Pending order nobody could pay.
         var invoiceItems = lines
@@ -297,6 +323,16 @@ public sealed class PlaceOrderHandler
 
         order.LinkInvoice(invoice.Value);
         await SaveOrCancelInvoiceAsync(order, invoice.Value, ct);
+
+        // Logged once the order has its id; nothing was logged when fraud detection is off.
+        if (verdict.Checked)
+        {
+            await _bus.RecordFraudDecisionAsync(
+                _logger,
+                new RecordFraudDecisionCommand(
+                    FraudCheckKind.Order, verdict.Decision, clientId.Value, order.Id, _caller.IpAddress, fraudEmail, verdict.Score, verdict.Reasons),
+                ct);
+        }
 
         // Nothing is owed (a free plan): no gateway takes a payment of zero, so the invoice is
         // settled and the order fulfilled here, or it would wait forever for a payment.

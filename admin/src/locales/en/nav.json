@@ -46,6 +46,12 @@
   "servers": "Servers",
   "integrations": "Integrations",
   "migration": "Migration",
+  "fraud": "Fraud",
+  "fraudChildren": {
+    "settings": "Settings",
+    "blockLists": "Block lists",
+    "log": "Fraud log"
+  },
   "settings": "Settings",
   "settingsChildren": {
     "general": "General",

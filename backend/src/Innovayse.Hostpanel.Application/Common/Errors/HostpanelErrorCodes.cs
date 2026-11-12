@@ -1915,4 +1915,22 @@ public static class HostpanelErrorCodes
 
     /// <summary>No registration with that id is waiting for confirmation, the answer of the well-known address. (404).</summary>
     public const string PLUGIN_REGISTRY_INSTANCE_NOT_FOUND = "PLUGIN_REGISTRY_INSTANCE_NOT_FOUND";
+
+    /// <summary>The order is not held for fraud review, so it cannot be approved or rejected from the queue (409).</summary>
+    public const string ORDER_NOT_UNDER_REVIEW = Domain.Orders.OrdersErrors.OrderNotUnderReview;
+
+    /// <summary>The order was refused by fraud detection: nothing was created (403).</summary>
+    public const string ORDER_FRAUD_REJECTED = "ORDER_FRAUD_REJECTED";
+
+    /// <summary>The registration was refused by fraud detection: no account was created (403).</summary>
+    public const string REGISTRATION_FRAUD_REJECTED = "REGISTRATION_FRAUD_REJECTED";
+
+    /// <summary>The block list value does not fit its type, for instance a malformed CIDR range (400).</summary>
+    public const string FRAUD_BLOCKLIST_VALUE_INVALID = Domain.Fraud.FraudErrors.BlockListValueInvalid;
+
+    /// <summary>The value is on the block list already for that type (409).</summary>
+    public const string FRAUD_BLOCKLIST_ENTRY_EXISTS = "FRAUD_BLOCKLIST_ENTRY_EXISTS";
+
+    /// <summary>The id names no block list entry (404).</summary>
+    public const string FRAUD_BLOCKLIST_ENTRY_NOT_FOUND = "FRAUD_BLOCKLIST_ENTRY_NOT_FOUND";
 }

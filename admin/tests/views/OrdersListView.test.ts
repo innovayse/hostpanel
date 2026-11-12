@@ -24,6 +24,9 @@ const pendingOrder = {
   invoiceId: null,
   itemCount: 2,
   failedLineCount: 0,
+  ipAddress: '10.0.0.1',
+  fraudScore: null,
+  fraudReasons: [],
   createdAt: '2026-03-04T10:00:00Z',
 }
 
@@ -215,6 +218,28 @@ describe('OrdersListView', () => {
 
     const urls = mock.mock.calls.map(([url]) => url as string)
     expect(urls.at(-1)).toBe('/api/orders?page=1&pageSize=20&status=Incomplete')
+  })
+
+  it('shows the fraud score and the IP address of an order held for review, and none on an unscored one', async () => {
+    const held = { ...pendingOrder, id: 5, orderNumber: 'ORD-0005', status: OrderStatus.UnderReview, fraudScore: 82, fraudReasons: [] }
+    stubRoutes({ 'GET /api/orders': () => json({ items: [pendingOrder, held], totalCount: 2 }) })
+    const wrapper = await mountList()
+
+    expect(wrapper.get('[data-testid="orders-row-5"]').text()).toContain('Pending review')
+    expect(wrapper.get('[data-testid="orders-fraud-score-5"]').text()).toBe('82')
+    expect(wrapper.get('[data-testid="orders-row-5"]').text()).toContain('10.0.0.1')
+    expect(wrapper.find('[data-testid="orders-fraud-score-1"]').exists()).toBe(false)
+  })
+
+  it('opens the review queue from its button, filtering the list to orders pending review', async () => {
+    const mock = stubRoutes({ 'GET /api/orders?': () => json({ items: [pendingOrder], totalCount: 1 }) })
+    const wrapper = await mountList()
+
+    await wrapper.get('[data-testid="orders-review-queue"]').trigger('click')
+    await flushPromises()
+
+    const urls = mock.mock.calls.map(([url]) => url as string)
+    expect(urls.at(-1)).toBe('/api/orders?page=1&pageSize=20&status=UnderReview')
   })
 
   it('shows the empty state when there are no orders', async () => {

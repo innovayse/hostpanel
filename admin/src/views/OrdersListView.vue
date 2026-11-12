@@ -2,14 +2,16 @@
 /**
  * Orders list view: paged table of all customer orders with a status filter.
  *
- * Shows order number, client, status, payment method, total, item count and date, with row
- * actions to accept or cancel a pending order and to open its detail. Reads `stores/orders`;
+ * Shows order number, client, status (with the fraud score of an order held for review), IP address, payment method,
+ * total, item count and date, with row actions to accept or cancel a pending order and to open its detail. Reads `stores/orders`;
  * a refused load shows `store.error` with a retry, and the outcome of an accept or cancel (success, or
- * the API's sentence) shows above the table. Cancelling is confirmed first.
+ * the API's sentence) shows above the table. Cancelling is confirmed first. A button
+ * beside the filter opens the queue of orders pending fraud review.
  */
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiBadge from '@/components/ui/UiBadge.vue'
+import UiButton from '@/components/ui/UiButton.vue'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiDialog from '@/components/ui/UiDialog.vue'
 import UiEmptyState from '@/components/ui/UiEmptyState.vue'
@@ -40,6 +42,7 @@ import { useOrdersStore } from '@/stores/orders'
 import { clientPath, orderPath } from '@/lib/routes'
 import { useResultBanner } from '@/composables/useResultBanner'
 import { UiDialogVariant } from '@/utils/ui/dialog'
+import { UiButtonVariant } from '@/utils/ui/button'
 import { UiTone } from '@/utils/ui/tone'
 import { UiTableDensity } from '@/utils/ui/injection'
 
@@ -99,6 +102,11 @@ const onStatusChange = (status: string): void => {
   store.statusFilter = Object.values(OrderStatus).find((value) => value === status) ?? null
   store.page = 1
   void store.fetchAll()
+}
+
+/** Shows the queue of orders held for fraud review. */
+const showReviewQueue = (): void => {
+  onStatusChange(OrderStatus.UnderReview)
 }
 
 /**
@@ -178,6 +186,14 @@ onMounted(() => store.fetchAll())
       data-testid="orders-header"
     >
       <template #actions>
+        <UiButton
+          :variant="UiButtonVariant.Secondary"
+          size="sm"
+          data-testid="orders-review-queue"
+          @click="showReviewQueue"
+        >
+          {{ t('orders.ordersList.reviewQueue') }}
+        </UiButton>
         <UiSelect
           class="w-44"
           :model-value="store.statusFilter ?? ''"
@@ -200,12 +216,13 @@ onMounted(() => store.fetchAll())
     />
 
     <UiCard v-else-if="store.orders.length > 0 || store.loading">
-      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && store.orders.length === 0" :colspan="8" data-testid="orders-table">
+      <UiTable :density="UiTableDensity.Comfortable" :loading="store.loading && store.orders.length === 0" :colspan="9" data-testid="orders-table">
         <UiTableHead>
           <UiTableRow>
             <UiTableHeader>{{ t('orders.ordersList.order') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.client') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.status') }}</UiTableHeader>
+            <UiTableHeader>{{ t('shared.ipAddress') }}</UiTableHeader>
             <UiTableHeader>{{ t('shared.paymentMethod') }}</UiTableHeader>
             <UiTableHeader numeric>{{ t('shared.total') }}</UiTableHeader>
             <UiTableHeader numeric>{{ t('orders.ordersList.items') }}</UiTableHeader>
@@ -232,6 +249,14 @@ onMounted(() => store.fetchAll())
                 <UiBadge :tone="orderStatusTone(order.status)" small>
                   {{ statusLabel(ORDER_STATUS_OPTIONS, order.status) }}
                 </UiBadge>
+                <UiBadge
+                  v-if="order.fraudScore !== null"
+                  :tone="UiTone.Danger"
+                  small
+                  :data-testid="`orders-fraud-score-${order.id}`"
+                >
+                  {{ order.fraudScore }}
+                </UiBadge>
                 <UiText v-if="order.failedLineCount > 0" tone="muted" size="xs" :data-testid="`orders-failed-lines-${order.id}`">
                   {{ t('orders.ordersList.failedLines', { count: order.failedLineCount }) }}
                 </UiText>
@@ -245,6 +270,7 @@ onMounted(() => store.fetchAll())
                 </UiText>
               </UiStack>
             </UiTableCell>
+            <UiTableCell muted>{{ order.ipAddress ?? '-' }}</UiTableCell>
             <UiTableCell>{{ order.paymentMethod }}</UiTableCell>
             <UiTableCell numeric>{{ formatPlainAmount(order.total, order.currency) }}</UiTableCell>
             <UiTableCell numeric muted>{{ order.itemCount }}</UiTableCell>

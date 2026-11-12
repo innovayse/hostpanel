@@ -5,7 +5,7 @@
  */
 
 import { buildQuery, useApi } from '@/composables/useApi'
-import type { OrderDetail, OrderFilter, OrderFulfillment, OrderListItem } from '@/types/order'
+import type { OrderDetail, OrderFilter, OrderFulfillment, OrderListItem, RejectOrderReviewPayload } from '@/types/order'
 import type { PaginatedList } from '@/types/paginatedlist'
 import { ApiPath } from '@/lib/apiPaths'
 import { HttpMethod } from '@/types/http'
@@ -75,6 +75,25 @@ export const useOrdersApi = () => {
   const cancelOrder = (id: number): Promise<void> => request<void>(`${ApiPath.Orders}/${id}/cancel`, { method: HttpMethod.Post })
 
   /**
+   * Approves an order that fraud detection held for review; it returns to pending and is accepted the ordinary way.
+   *
+   * @param id - Order id.
+   * @returns Nothing.
+   */
+  const approveOrderReview = (id: number): Promise<void> =>
+    request<void>(`${ApiPath.Orders}/${id}/approve-review`, { method: HttpMethod.Post })
+
+  /**
+   * Rejects an order that fraud detection held for review; the client is mailed the reason.
+   *
+   * @param id - Order id.
+   * @param payload - The reason the client is told.
+   * @returns Nothing.
+   */
+  const rejectOrderReview = (id: number, payload: RejectOrderReviewPayload): Promise<void> =>
+    request<void>(`${ApiPath.Orders}/${id}/reject-review`, { method: HttpMethod.Post, body: JSON.stringify(payload) })
+
+  /**
    * Deletes an order.
    *
    * @param id - Order id.
@@ -82,5 +101,5 @@ export const useOrdersApi = () => {
    */
   const deleteOrder = (id: number): Promise<void> => request<void>(`${ApiPath.Orders}/${id}`, { method: HttpMethod.Delete })
 
-  return { listOrders, getOrder, acceptOrder, retryOrderLine, closeOrderLineRefund, cancelOrder, deleteOrder }
+  return { listOrders, getOrder, acceptOrder, retryOrderLine, closeOrderLineRefund, cancelOrder, approveOrderReview, rejectOrderReview, deleteOrder }
 }

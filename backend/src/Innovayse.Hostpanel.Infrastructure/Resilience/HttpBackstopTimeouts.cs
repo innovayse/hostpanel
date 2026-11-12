@@ -17,6 +17,9 @@ public static class HttpBackstopTimeouts
     /// <summary>The status page's component checks; above the profile's 12 seconds in total.</summary>
     public static readonly TimeSpan StatusProbe = TimeSpan.FromSeconds(15);
 
+    /// <summary>Fraud scoring service; short because it sits between a checkout and its answer, and its failure falls back to local scoring.</summary>
+    public static readonly TimeSpan MaxMind = TimeSpan.FromSeconds(10);
+
     /// <summary>CWP control-panel clients, typed and named.</summary>
     public static readonly TimeSpan Cwp = TimeSpan.FromSeconds(15);
 

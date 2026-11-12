@@ -97,6 +97,18 @@ public static class ValidationRuleExtensions
         return rule.InclusiveBetween(1, maxPageSize).WithMessage(message);
     }
 
+    /// <summary>Requires a discount within the range <see cref="PriceDiscount"/> allows: 0 to 100 percent.</summary>
+    /// <typeparam name="T">The command or query being validated.</typeparam>
+    /// <param name="rule">The rule builder for the discount property.</param>
+    /// <param name="message">The localized sentence reported when the discount is out of range.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, decimal> MustBeDiscountPercentRange<T>(this IRuleBuilder<T, decimal> rule, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.Must(PriceDiscount.IsValidPercent).WithMessage(message);
+    }
+
     /// <summary>
     /// Requires a link that is safe to render in an <c>href</c> or <c>src</c>: an absolute <c>http</c> or
     /// <c>https</c> address, or a root-relative path. Anything else (<c>javascript:</c>, <c>data:</c>,

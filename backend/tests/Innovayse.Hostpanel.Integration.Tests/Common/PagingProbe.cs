@@ -4,4 +4,5 @@ namespace Innovayse.Hostpanel.Integration.Tests.Common;
 /// <param name="Id">An identifier.</param>
 /// <param name="Page">A 1-based page.</param>
 /// <param name="PageSize">A page size.</param>
-internal sealed record PagingProbe(int Id, int Page, int PageSize);
+/// <param name="DiscountPercent">A discount in percent.</param>
+internal sealed record PagingProbe(int Id, int Page, int PageSize, decimal DiscountPercent = 0m);

@@ -12,6 +12,8 @@ export interface TldPriceRow {
   categories: string[]
   /** One-year registration price as a number, for cart arithmetic. */
   registerAmount: number
+  /** One-year transfer price as a number, for cart arithmetic; the registration price when the zone has no transfer price. */
+  transferAmount: number
   /**
    * ISO 4217 code this TLD's own sell prices are set in. An order can only be placed in this
    * currency: see `TldPriceEntryDto`'s note. A visitor whose payer currency differs sees the

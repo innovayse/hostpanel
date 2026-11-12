@@ -8,6 +8,9 @@ namespace Innovayse.Hostpanel.Domain.Billing;
 /// </summary>
 public sealed class InvoiceItem : BaseEntity
 {
+    /// <summary>Longest line description an invoice stores, the column's limit; every writer of a description stays within it.</summary>
+    public const int DescriptionMaxLength = 500;
+
     /// <summary>Gets the FK to the parent <see cref="Invoice"/> (set by EF after save).</summary>
     public int InvoiceId { get; private set; }
 

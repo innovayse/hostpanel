@@ -31,6 +31,7 @@ const rows: ExpectedRequest[] = [
   { name: 'fetchProducts drops an undefined filter and sends no query at all', call: () => api.fetchProducts({ currency: undefined }), method: HttpMethod.Get, url: '/api/portal/public/products' },
   { name: 'fetchProducts sends the group list as one comma-separated value', call: () => api.fetchProducts({ gids: '1,3,4' }), method: HttpMethod.Get, url: '/api/portal/public/products?gids=1,3,4' },
   { name: 'fetchProductGroups reads the list', call: () => api.fetchProductGroups(), method: HttpMethod.Get, url: '/api/portal/public/product-groups' },
+  { name: 'fetchProductBundles reads the list', call: () => api.fetchProductBundles(), method: HttpMethod.Get, url: '/api/portal/public/product-bundles' },
   { name: 'fetchProductFeatures asks for one group', call: () => api.fetchProductFeatures(7), method: HttpMethod.Get, url: '/api/portal/public/product-features?gid=7' },
   { name: 'fetchCurrencies reads the list', call: () => api.fetchCurrencies(), method: HttpMethod.Get, url: '/api/portal/public/currencies' },
   { name: 'fetchTldPricing quotes in the payer currency', call: () => api.fetchTldPricing('AMD'), method: HttpMethod.Get, url: '/api/portal/public/tld-pricing?currency=AMD' },

@@ -5,6 +5,7 @@
     "accept": "Accept",
     "orderInfo": "Order Info",
     "created": "Created",
+    "bundle": "Product bundle",
     "invoice": "Invoice",
     "noInvoiceLinkedToThis": "No invoice linked to this order.",
     "product": "Product",

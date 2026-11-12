@@ -253,6 +253,8 @@
 
                 <UiStack gap="none" aria-hidden="true" class="my-6 h-px bg-line" />
 
+                <CheckoutBundleSummary :name="bundleName" :offer="bundleOffer" :discount="bundleDiscount" class="mb-4" />
+
                 <UiStack direction="row" align="center" justify="between" class="mb-6">
                   <UiText as="span" size="inherit" tone="inherit" weight="medium" class="text-mut">{{ $t('cart.total') }}</UiText>
                   <UiText
@@ -349,6 +351,9 @@ const {
   mayPlaceOrders,
   staleItems,
   totalLabel,
+  bundleName,
+  bundleOffer,
+  bundleDiscount,
   submittingLabel,
   submittingHint,
   paymentMethods,

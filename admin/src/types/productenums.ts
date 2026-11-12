@@ -52,3 +52,13 @@ export enum ProductErrorCode {
   /** Another product already uses the SKU (409). */
   SkuAlreadyInUse = 'PRODUCT_SKU_ALREADY_IN_USE',
 }
+
+/** How a product bundle discounts the sum of its components; the members are the strings the API sends and accepts. */
+export enum BundleDiscountType {
+  /** No discount: the bundle costs what its components cost. */
+  None = 'None',
+  /** A percentage of the sum, from 0 to 100. */
+  Percentage = 'Percentage',
+  /** A fixed amount in the bundle's discount currency. */
+  Fixed = 'Fixed',
+}

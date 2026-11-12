@@ -324,6 +324,7 @@ import { useDomainsStore } from '~/stores/domains'
 import { DomainActionOutcome } from '~/types/domainactionoutcome'
 import type { TldPriceEntry } from '~/types/tldpriceentry'
 import { formatMoney } from '~/utils/formatMoney'
+import { tldOf } from '~/utils/domainTld'
 import { tldPriceEntry } from '~/utils/tldPriceEntry'
 import { ONE_YEAR, priceForYears } from '~/utils/tldPeriodPrice'
 import { UiHeadingLevel } from '~/utils/ui/enums'
@@ -433,14 +434,6 @@ const tldPricing = computed(() => catalogStore.tldPricing)
 
 /** The category the table is filtered to; null shows every extension. */
 const activeCategory = ref<string | null>(null)
-
-/**
- * The extension part of a domain name.
- *
- * @param domain - Full domain name (e.g. "example.com").
- * @returns Everything after the first dot (e.g. "com").
- */
-const tldOf = (domain: string): string => domain.substring(domain.indexOf('.') + 1)
 
 /**
  * Performs a quick domain search using the current base name with the given TLD extension.

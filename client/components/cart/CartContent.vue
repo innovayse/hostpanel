@@ -77,6 +77,7 @@
                 <span class="text-gray-600 dark:text-gray-400 truncate max-w-[60%]">{{ item.name }}</span>
                 <span class="text-gray-900 dark:text-white">{{ priceOf(item) }}</span>
               </div>
+              <CheckoutBundleSummary :name="bundleName" :offer="bundleOffer" :discount="bundleDiscount" class="pt-1" />
               <div class="border-t border-gray-200 dark:border-white/10 pt-3 mt-3 flex justify-between font-bold text-base">
                 <span class="text-gray-900 dark:text-white">{{ $t('cart.total') }}</span>
                 <span class="text-cyan-700 dark:text-cyan-400 [.tpl-classic_&]:text-classic-ink" data-testid="cart-total">{{ totalLabel }}</span>
@@ -119,7 +120,8 @@
  * the checkout button is a solid brand button.
  *
  * Presentational: the page owns the cart store and the currency, and passes the lines, how many of
- * them are priced in a stale currency, the formatted total and a function that formats one line.
+ * them are priced in a stale currency, the formatted total, a function that formats one line and, for a
+ * cart filled from a bundle, the bundle line (name, discount in words, estimated amount taken off).
  */
 import { CreditCard, Lock, Server, ShoppingCart, Trash2 } from 'lucide-vue-next'
 import type { CartItem } from '~/types/cartitem'
@@ -134,9 +136,15 @@ interface Props {
   totalLabel: string
   /** Formats one line's price in the currency it was added in. */
   priceOf: (item: CartItem) => string
+  /** The bundle the lines came from; empty for a cart of plain lines. */
+  bundleName?: string
+  /** The bundle's discount in words, e.g. "10% off"; empty when it has none. */
+  bundleOffer?: string
+  /** The estimated discount taken off the total, formatted. */
+  bundleDiscount?: string
 }
 
-defineProps<Props>()
+withDefaults(defineProps<Props>(), { bundleName: '', bundleOffer: '', bundleDiscount: '' })
 
 /** Events of CartContent. */
 const emit = defineEmits<{

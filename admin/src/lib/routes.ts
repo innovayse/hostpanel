@@ -97,6 +97,8 @@ export enum AppRoute {
   SettingsCurrencies = '/settings/currencies',
   /** The `/settings/email-templates` screen. */
   SettingsEmailTemplates = '/settings/email-templates',
+  /** The `/settings/product-bundles` screen. */
+  SettingsProductBundles = '/settings/product-bundles',
   /** The `/settings/products` screen. */
   SettingsProducts = '/settings/products',
   /** The `/settings/slides` screen. */

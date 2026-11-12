@@ -98,8 +98,8 @@
  * visitor typed. The lookup itself belongs to pages/index.vue.
  */
 import { BRAND_BUTTON } from '~/templates/aurora/buttons'
-import { AVAILABILITY_DOT_CLASSES, AVAILABILITY_LABEL_CLASSES } from '~/templates/aurora/domainStatus'
-import type { DomainResult } from '~/templates/aurora/types/domainresult'
+import { AVAILABILITY_DOT_CLASSES, AVAILABILITY_LABEL_CLASSES } from '~/utils/domainStatus'
+import type { DomainResult } from '~/types/domainresult'
 import type { TldPriceRow } from '~/types/tldpricerow'
 
 /** Props with their defaults applied. */

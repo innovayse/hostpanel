@@ -6,6 +6,9 @@
       :stale-count="staleItems.length"
       :total-label="totalLabel"
       :price-of="itemPrice"
+      :bundle-name="bundleName"
+      :bundle-offer="bundleOffer"
+      :bundle-discount="bundleDiscount"
       @remove="removeItem"
       @clear="cart.clear()"
     />
@@ -19,6 +22,7 @@
  * The page owns the cart and currency stores; `CartHero` and `CartContent` only render what they
  * are given. The cart lives in localStorage, so it is loaded on mount.
  */
+import { useCartBundle } from '~/composables/useCartBundle'
 import { useCartStore } from '~/stores/cart'
 import { useCurrencyStore } from '~/stores/currency'
 import type { CartItem } from '~/types/cartitem'
@@ -33,6 +37,9 @@ const { name: siteName } = useSiteIdentity()
 const cart = useCartStore()
 /** The payer's currency and the currencies prices can be shown in. */
 const currencyStore = useCurrencyStore()
+
+/** The cart's bundle as display text: its name, its discount in words and the estimated amount taken off. */
+const { bundleName, bundleOffer, bundleDiscount } = useCartBundle()
 
 onMounted(() => {
   cart.init()

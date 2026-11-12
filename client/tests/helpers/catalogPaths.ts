@@ -5,10 +5,11 @@
  * @module tests/helpers/catalogPaths
  */
 
-/** The public reads of the catalogue, the billing currencies and the TLD prices, and the availability check. */
+/** The public reads of the catalogue, its bundles, the billing currencies and the TLD prices, and the availability check. */
 export const CatalogPath = {
   Products: '/api/portal/public/products',
   ProductGroups: '/api/portal/public/product-groups',
+  ProductBundles: '/api/portal/public/product-bundles',
   ProductFeatures: '/api/portal/public/product-features',
   Slides: '/api/portal/public/slides',
   BillingCurrencies: '/api/portal/public/billing-currencies',

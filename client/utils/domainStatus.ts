@@ -4,10 +4,10 @@
  * `unknown` is muted rather than red: nothing is wrong with the name, the check itself did not
  * complete. Each value is a complete class name so Tailwind keeps it.
  *
- * @module templates/aurora/domainStatus
+ * @module utils/domainStatus
  */
 
-import { DomainResultStatus } from '~/templates/aurora/types/domainresultstatus'
+import { DomainResultStatus } from '~/types/domainresultstatus'
 import { UiTone } from '~/utils/ui/enums'
 
 /** Status dot colour per availability state. */

@@ -12,6 +12,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useCartStore } from '~/stores/cart'
+import { BundleDiscountType } from '~/types/bundlediscounttype'
+import type { CartBundle } from '~/types/cartbundle'
 import type { CartItem } from '~/types/cartitem'
 import { CartItemType } from '~/types/cartitemtype'
 import { DomainOrderAction } from '~/types/domainorderaction'
@@ -281,6 +283,84 @@ describe('useCartStore', () => {
       expect(cart.items).toEqual([valid])
       const stored = JSON.parse(localStorage.getItem('innovayse_cart') ?? '[]') as CartItem[]
       expect(stored).toEqual([valid])
+    })
+  })
+
+  describe('bundle', () => {
+    /** A bundle with a ten percent discount. */
+    const bundle: CartBundle = { id: 7, name: 'Starter pack', discountType: BundleDiscountType.Percentage, discountAmount: 10, discountCurrency: null }
+
+    /** The two lines of that bundle. */
+    const lines = (): CartItem[] => [
+      hostingItem({ pid: 1, amount: 60, currency: 'USD', bundleId: 7 }),
+      hostingItem({ pid: 9, amount: 40, currency: 'USD', bundleId: 7, itemType: CartItemType.Domain, domain: 'a.com', domainAction: DomainOrderAction.Register }),
+    ]
+
+    beforeEach(() => {
+      localStorage.clear()
+    })
+
+    it('replaces the cart with the bundle lines and takes the estimated discount off the total', () => {
+      const cart = useCartStore()
+      cart.items = [hostingItem({ pid: 5, amount: 3, currency: 'USD' })]
+
+      cart.startBundle(bundle, lines())
+
+      expect(cart.items.map(i => i.pid)).toEqual([1, 9])
+      expect(cart.subtotal('USD')).toBe(100)
+      expect(cart.discount('USD')).toBe(10)
+      expect(cart.total('USD')).toBe(90)
+    })
+
+    it('ends the bundle when a plain line is added', () => {
+      const cart = useCartStore()
+      cart.startBundle(bundle, lines())
+
+      cart.addItem(hostingItem({ pid: 5, amount: 3, currency: 'USD' }))
+
+      expect(cart.bundle).toBeNull()
+      expect(cart.items.map(i => i.pid)).toEqual([5])
+    })
+
+    it('ends the whole bundle when one of its lines is removed', () => {
+      const cart = useCartStore()
+      cart.startBundle(bundle, lines())
+
+      cart.removeItem(9, PricingCycle.Monthly, 'a.com', DomainOrderAction.Register)
+
+      expect(cart.bundle).toBeNull()
+      expect(cart.isEmpty).toBe(true)
+    })
+
+    it('forgets the bundle when the cart is cleared', () => {
+      const cart = useCartStore()
+      cart.startBundle(bundle, lines())
+
+      cart.clear()
+
+      expect(cart.bundle).toBeNull()
+      expect(localStorage.getItem('innovayse_cart_bundle')).toBeNull()
+    })
+
+    it('keeps the bundle across a reload', () => {
+      useCartStore().startBundle(bundle, lines())
+      setActivePinia(createPinia())
+      const cart = useCartStore()
+
+      cart.init()
+
+      expect(cart.bundle).toEqual(bundle)
+      expect(cart.items).toHaveLength(2)
+    })
+
+    it('drops bundle lines whose bundle was not stored', () => {
+      localStorage.setItem('innovayse_cart', JSON.stringify([...lines(), hostingItem({ pid: 5, amount: 3, currency: 'USD' })]))
+      const cart = useCartStore()
+
+      cart.init()
+
+      expect(cart.bundle).toBeNull()
+      expect(cart.items.map(i => i.pid)).toEqual([5])
     })
   })
 })

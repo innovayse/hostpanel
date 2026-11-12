@@ -565,6 +565,9 @@
   <data name="PlaceOrderItemProductIdInvalid" xml:space="preserve">
     <value>Для каждой позиции нужен корректный товар.</value>
   </data>
+  <data name="PlaceOrderBundleIdInvalid" xml:space="preserve">
+    <value>Набор указан неверно.</value>
+  </data>
   <data name="PlaceOrderItemBillingCycleInvalid" xml:space="preserve">
     <value>Период оплаты должен быть 'monthly', 'annual' или 'annually'.</value>
   </data>

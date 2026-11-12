@@ -1,11 +1,11 @@
 /**
- * Unit tests for the aurora domain status maps and the types they are keyed by: every state has a
+ * Unit tests for the domain status maps and the types they are keyed by: every state has a
  * colour, a tone and a label colour, and the unknown state is muted rather than red.
  */
 import { describe, expect, it } from 'vitest'
-import { AVAILABILITY_DOT_CLASSES, AVAILABILITY_LABEL_CLASSES, AVAILABILITY_TONES } from '~/templates/aurora/domainStatus'
+import { AVAILABILITY_DOT_CLASSES, AVAILABILITY_LABEL_CLASSES, AVAILABILITY_TONES } from '~/utils/domainStatus'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
-import { DomainResultStatus } from '~/templates/aurora/types/domainresultstatus'
+import { DomainResultStatus } from '~/types/domainresultstatus'
 import { UiTone } from '~/utils/ui/enums'
 
 describe('domain status maps', () => {

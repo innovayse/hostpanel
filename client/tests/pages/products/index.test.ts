@@ -19,6 +19,7 @@ import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import ProductsPage from '~/pages/products/index.vue'
 import CatalogProductsHero from '~/components/catalog/ProductsHero.vue'
+import BundleGrid from '~/components/bundle/BundleGrid.vue'
 import CatalogProductFamilyGrid from '~/components/catalog/ProductFamilyGrid.vue'
 import CatalogProductFamilyCard from '~/components/catalog/ProductFamilyCard.vue'
 import CatalogProductsComparison from '~/components/catalog/ProductsComparison.vue'
@@ -66,6 +67,7 @@ const mountProducts = async () => {
       CatalogProductsHero,
       CatalogProductFamilyGrid,
       CatalogProductFamilyCard,
+      BundleGrid,
       CatalogProductsComparison,
       CatalogProductsBenefits,
       CatalogProductsTestimonials,
@@ -87,6 +89,7 @@ describe('products page', () => {
       [`GET ${CatalogPath.ProductGroups}`]: { body: groups },
       [`GET ${CatalogPath.Products}`]: { body: catalogue },
       [`GET ${CatalogPath.ProductFeatures}`]: { body: [] },
+      [readOf(CatalogPath.ProductBundles)]: { body: [] },
       [readOf(StorefrontPath.Testimonials)]: { body: [1, 2, 3].map(id => testimonialFixture(id)) },
     }
     stub = await startTransport(routeTable(table))
@@ -103,6 +106,22 @@ describe('products page', () => {
     const queries = requestsTo(stub.requests, CatalogPath.Products).map(queryOf)
     expect(queries).toContainEqual(expect.objectContaining({ gids: '3,6' }))
     expect(queries.at(-1)).toEqual(expect.objectContaining({ gids: '3,6', currency: 'USD' }))
+  })
+
+  it('shows no bundle section while the operator offers none, and one card per active bundle otherwise', async () => {
+    expect((await mountProducts()).find('[data-testid="bundle-grid"]').exists()).toBe(false)
+
+    table[readOf(CatalogPath.ProductBundles)] = {
+      body: [{
+        id: 4, name: 'Starter pack', description: null, includesDomain: false, domainYears: null,
+        discountType: 'Percentage', discountAmount: 10, discountCurrency: null,
+        components: [{ productId: 11, name: 'Starter', isPrimary: true }],
+      }],
+    }
+    const wrapper = await mountProducts()
+
+    expect(wrapper.findAll('[data-testid^="bundle-card-"]')).toHaveLength(1)
+    expect(wrapper.find('[data-testid="bundle-choose-4"]').attributes('href')).toBe('/en/bundles/4')
   })
 
   it('puts the static domains card first, then one card per catalogue family', async () => {

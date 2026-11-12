@@ -1309,6 +1309,9 @@
   <data name="PlaceOrderItemProductIdInvalid" xml:space="preserve">
     <value>Յուրաքանչյուր ապրանք պետք է ունենա ճիշտ արտադրանք։</value>
   </data>
+  <data name="PlaceOrderBundleIdInvalid" xml:space="preserve">
+    <value>Փաթեթը նշված է սխալ։</value>
+  </data>
   <data name="PlaceOrderItemBillingCycleInvalid" xml:space="preserve">
     <value>Հաշվարկային ժամանակաշրջանը պետք է լինի «monthly», «annual» կամ «annually»։</value>
   </data>

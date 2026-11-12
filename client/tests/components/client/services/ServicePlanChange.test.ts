@@ -16,6 +16,8 @@ import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { FAILED_READ_REQUESTS } from '~/tests/helpers/failedRead'
+import { settle } from '~/tests/helpers/settle'
 import { ServiceChangeStatus } from '~/types/servicechangestatus'
 import { ServiceChangeType } from '~/types/servicechangetype'
 import { waitUntil } from '~/tests/helpers/waitUntil'
@@ -50,13 +52,12 @@ const answerChange = (reply: StubReply): void => {
 /**
  * Mounts the panel and waits for the options to be read.
  *
- * The transport asks once more after a server failure, so the number of requests is not fixed here.
- *
+ * @param requests - How many options requests the read makes before it ends: one, or {@link FAILED_READ_REQUESTS} for a failing server.
  * @returns The wrapper.
  */
-const mountPanel = async () => {
+const mountPanel = async (requests = 1) => {
   const wrapper = mountClient(ServicePlanChange, { props: { serviceId: '4' } })
-  await waitUntil(() => expect(requestsTo(stub.requests, OPTIONS_PATH).length).toBeGreaterThan(0))
+  await waitUntil(() => expect(requestsTo(stub.requests, OPTIONS_PATH)).toHaveLength(requests))
   await waitUntil(() => expect(useServicePlanChangeStore().loading).toBe(false))
   await wrapper.vm.$nextTick()
   return wrapper
@@ -110,9 +111,18 @@ describe('ServicePlanChange', () => {
 
   it('shows the sentence when the options cannot be read', async () => {
     table[`GET ${OPTIONS_PATH}`] = { status: 500, body: { detail: 'no' } }
-    const wrapper = await mountPanel()
+    const wrapper = await mountPanel(FAILED_READ_REQUESTS)
 
     await waitUntil(() => expect(wrapper.find('[data-testid="service-plan-change-load-error"]').exists()).toBe(true))
+  })
+
+  it('asks for the options once more after a server failure, and no more', async () => {
+    table[`GET ${OPTIONS_PATH}`] = { status: 500, body: { detail: 'no' } }
+
+    await mountPanel(FAILED_READ_REQUESTS)
+    await settle()
+
+    expect(requestsTo(stub.requests, OPTIONS_PATH)).toHaveLength(FAILED_READ_REQUESTS)
   })
 
   it('sends the chosen product', async () => {

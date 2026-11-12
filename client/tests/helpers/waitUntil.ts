@@ -5,6 +5,10 @@
  * for a reply that crosses a real socket and the render that follows it. Every test waits through
  * this wrapper instead, so the limit is one named value and not a default each call inherits.
  *
+ * This is the wait for tests that run on real timers: it polls on `setTimeout`, so it never ticks while
+ * `setTimeout` is faked. A test that fakes the clock waits with `until`, `settle` or `untilStable` from
+ * `tests/helpers/settle` instead, which poll on `setImmediate` and never move the faked clock.
+ *
  * @module tests/helpers/waitUntil
  */
 

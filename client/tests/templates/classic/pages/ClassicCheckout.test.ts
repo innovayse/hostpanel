@@ -11,12 +11,12 @@ import { defineComponent, h } from 'vue'
 import { flushPromises } from '@vue/test-utils'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { bankTransferPath, BillingEndpoint } from '~/tests/helpers/billingPaths'
-import { awaitCheckoutLoaded, cartLine, checkoutReplies, writeOf } from '~/tests/helpers/checkoutFlow'
+import { awaitCheckoutLoaded, cartLine, checkoutReplies } from '~/tests/helpers/checkoutFlow'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { until } from '~/tests/helpers/settle'
-import { readOf, refusal, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { readOf, refusal, requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -172,7 +172,7 @@ describe('ClassicCheckout', () => {
   })
 
   it('says so when no gateway is on, and cannot be submitted', async () => {
-    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [] }
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [] }
     const wrapper = await mountCheckout()
 
     expect(wrapper.find('[data-testid="checkout-no-methods"]').exists()).toBe(true)
@@ -268,7 +268,7 @@ describe('ClassicCheckout', () => {
   })
 
   it('keeps the busy label short and explains the bank hand-off in a polite line under the button', async () => {
-    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [{ module: 'hosted_gateway', displayName: 'Bank card', supportsStoredCredentials: false }] }
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [{ module: 'hosted_gateway', displayName: 'Bank card', supportsStoredCredentials: false }] }
     // An order that never settles keeps the page in its busy state.
     table[writeOf(BillingEndpoint.OrderCreate)] = { hold: true }
     const wrapper = await mountCheckout()

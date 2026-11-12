@@ -68,7 +68,7 @@ public sealed class DemoAccountGuardTests(IntegrationTestFactory factory) : ICla
         (await users.CreateAsync(user, DemoTestHost.ClientPassword)).Succeeded.Should().BeTrue();
 
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        db.Clients.Add(Client.Create(user.Id, "Plain", "Customer", DemoTestHost.ClientEmail, DateTimeOffset.UtcNow));
+        db.Clients.Add(Client.Create(user.Id, "Plain", "Customer", DemoTestHost.ClientEmail, TestMoments.Seeded));
         await db.SaveChangesAsync();
     }
 

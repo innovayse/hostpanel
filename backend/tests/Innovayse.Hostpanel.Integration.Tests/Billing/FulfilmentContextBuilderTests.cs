@@ -12,9 +12,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 /// </summary>
 public sealed class FulfilmentContextBuilderTests
 {
-    /// <summary>The moment everything on the invoice happened at.</summary>
-    private static readonly DateTimeOffset Now = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>A client linked to an account in another system.</summary>
     private static readonly ExternalAccount Account = new("crm", "acc-7", null, null);
 
@@ -23,13 +20,13 @@ public sealed class FulfilmentContextBuilderTests
 
     /// <summary>Builds an unsaved invoice that is neither paid, refunded nor lapsed.</summary>
     /// <returns>The invoice.</returns>
-    private static Invoice OpenInvoice() => Invoice.Create(5, Now.AddDays(1), "USD", Now);
+    private static Invoice OpenInvoice() => Invoice.Create(5, TestMoments.Seeded.AddDays(1), "USD", TestMoments.Seeded);
 
     /// <summary>Only the lines that carry a product snapshot are handed over, with the invoice currency and the snapshot values.</summary>
     [Fact]
     public void Lines_AreTheSnapshotLinesInTheInvoiceCurrency()
     {
-        var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
+        var invoice = FulfilmentInvoiceSeeds.Build(5, TestMoments.Seeded);
 
         var lines = FulfilmentContextBuilder.Lines(invoice);
 
@@ -93,7 +90,7 @@ public sealed class FulfilmentContextBuilderTests
     [Fact]
     public void Paid_CarriesThePaymentOfTheInvoice()
     {
-        var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
+        var invoice = FulfilmentInvoiceSeeds.Build(5, TestMoments.Seeded);
 
         var context = FulfilmentContextBuilder.Paid(invoice, ClientRef, Account);
 
@@ -102,7 +99,7 @@ public sealed class FulfilmentContextBuilderTests
         context.ClientRef.Should().Be(ClientRef);
         context.Account.Should().Be(Account);
         context.TransactionReference.Should().Be(FulfilmentInvoiceSeeds.PaymentReference);
-        context.PaidAt.Should().Be(Now);
+        context.PaidAt.Should().Be(TestMoments.Seeded);
         context.Lines.Should().HaveCount(1);
     }
 
@@ -119,7 +116,7 @@ public sealed class FulfilmentContextBuilderTests
     [Fact]
     public void Refunded_CarriesTheRefundInTheInvoiceCurrency()
     {
-        var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
+        var invoice = FulfilmentInvoiceSeeds.Build(5, TestMoments.Seeded);
 
         var context = FulfilmentContextBuilder.Refunded(invoice, ClientRef, null);
 
@@ -128,7 +125,7 @@ public sealed class FulfilmentContextBuilderTests
         context.RefundedAmount.Should().Be(FulfilmentInvoiceSeeds.RefundedAmount);
         context.Currency.Should().Be(FulfilmentInvoiceSeeds.Currency);
         context.TransactionReference.Should().Be(FulfilmentInvoiceSeeds.RefundReference);
-        context.RefundedAt.Should().Be(Now);
+        context.RefundedAt.Should().Be(TestMoments.Seeded);
     }
 
     /// <summary>An invoice with no refund has nothing to tell a plugin about.</summary>
@@ -144,12 +141,12 @@ public sealed class FulfilmentContextBuilderTests
     [Fact]
     public void Lapsed_CarriesTheDueDateAndTheLapse()
     {
-        var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
+        var invoice = FulfilmentInvoiceSeeds.Build(5, TestMoments.Seeded);
 
         var context = FulfilmentContextBuilder.Lapsed(invoice, ClientRef, Account);
 
-        context.DueDate.Should().Be(Now.AddDays(-1));
-        context.LapsedAt.Should().Be(Now);
+        context.DueDate.Should().Be(TestMoments.Seeded.AddDays(-1));
+        context.LapsedAt.Should().Be(TestMoments.Seeded);
         context.Account.Should().Be(Account);
         context.ClientRef.Should().Be(ClientRef);
     }
@@ -170,7 +167,7 @@ public sealed class FulfilmentContextBuilderTests
     [Fact]
     public void RefundAdvice_CarriesTheReferenceTheRequestAndTheLines()
     {
-        var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
+        var invoice = FulfilmentInvoiceSeeds.Build(5, TestMoments.Seeded);
 
         var context = FulfilmentContextBuilder.RefundAdvice(invoice, ClientRef, Account, 7m);
 
@@ -190,7 +187,7 @@ public sealed class FulfilmentContextBuilderTests
     [Fact]
     public void Paid_ForTwoReferences_DiffersOnlyInTheReference()
     {
-        var invoice = FulfilmentInvoiceSeeds.Build(5, Now);
+        var invoice = FulfilmentInvoiceSeeds.Build(5, TestMoments.Seeded);
 
         var first = FulfilmentContextBuilder.Paid(invoice, "ref-a", Account);
         var second = FulfilmentContextBuilder.Paid(invoice, "ref-b", Account);

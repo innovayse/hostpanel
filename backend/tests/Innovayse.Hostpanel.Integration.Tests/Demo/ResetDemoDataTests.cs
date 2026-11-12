@@ -23,7 +23,7 @@ public sealed class ResetDemoDataTests(IntegrationTestFactory factory) : IClassF
     /// <returns>The stray client's id.</returns>
     private static async Task<int> AddStrayClientAsync(IHostpanelDbContext context)
     {
-        var stray = Client.Create($"stray-{Guid.NewGuid():N}", "Stray", "Visitor", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var stray = Client.Create($"stray-{Guid.NewGuid():N}", "Stray", "Visitor", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(stray);
         await context.SaveChangesAsync(CancellationToken.None);
         return stray.Id;

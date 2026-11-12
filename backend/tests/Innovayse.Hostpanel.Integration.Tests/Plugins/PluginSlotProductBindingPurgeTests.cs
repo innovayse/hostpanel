@@ -37,15 +37,12 @@ public sealed class PluginSlotProductBindingPurgeTests(IntegrationTestFactory fa
     {
         var pluginId = $"purge-bind-{Guid.NewGuid():N}"[..40];
         var otherPluginId = $"keep-bind-{Guid.NewGuid():N}"[..40];
-        // Whole microseconds, the precision of the column, so the equal stamp survives the round trip.
-        var now = DateTimeOffset.UtcNow;
-        var moment = new DateTimeOffset(now.Ticks - (now.Ticks % 10), TimeSpan.Zero);
-        await BindAsync(pluginId, "before", 1, moment.AddSeconds(-1));
-        await BindAsync(pluginId, "equal", 2, moment);
-        await BindAsync(pluginId, "after", 3, moment.AddSeconds(1));
-        await BindAsync(otherPluginId, "before", 1, moment.AddSeconds(-1));
+        await BindAsync(pluginId, "before", 1, TestMoments.Seeded.AddSeconds(-1));
+        await BindAsync(pluginId, "equal", 2, TestMoments.Seeded);
+        await BindAsync(pluginId, "after", 3, TestMoments.Seeded.AddSeconds(1));
+        await BindAsync(otherPluginId, "before", 1, TestMoments.Seeded.AddSeconds(-1));
         await OpenStoreScopeAsync(pluginId);
-        using var host = new ClockedHost(factory, moment);
+        using var host = new ClockedHost(factory, TestMoments.Seeded);
 
         await host.Services.GetRequiredService<IHost>().TrackActivity()
             .Timeout(SettleTimeout)

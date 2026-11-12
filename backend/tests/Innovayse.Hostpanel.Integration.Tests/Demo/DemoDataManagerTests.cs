@@ -112,7 +112,7 @@ public sealed class DemoDataManagerTests(IntegrationTestFactory factory)
         {
             using var suppression = scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress();
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var stray = Client.Create($"stray-{Guid.NewGuid():N}", "Stray", "Visitor", $"{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            var stray = Client.Create($"stray-{Guid.NewGuid():N}", "Stray", "Visitor", $"{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
             db.Clients.Add(stray);
             await db.SaveChangesAsync();
         }

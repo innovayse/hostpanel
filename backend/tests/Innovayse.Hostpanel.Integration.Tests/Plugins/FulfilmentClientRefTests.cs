@@ -102,13 +102,12 @@ public sealed class FulfilmentClientRefTests : IClassFixture<AppPluginFixture>
     {
         using var scope = host.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var now = DateTimeOffset.UtcNow;
-        var invoice = FulfilmentInvoiceSeeds.Build(clientId, now);
+        var invoice = FulfilmentInvoiceSeeds.Build(clientId, TestMoments.Seeded);
         db.Invoices.Add(invoice);
         await db.SaveChangesAsync(CancellationToken.None);
 
-        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, _fixture.PluginId, FulfilmentKind.Paid, now));
-        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, _fixture.OtherPluginId, FulfilmentKind.Paid, now));
+        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, _fixture.PluginId, FulfilmentKind.Paid, TestMoments.Seeded));
+        db.FulfilmentRecords.Add(FulfilmentRecord.Create(invoice.Id, _fixture.OtherPluginId, FulfilmentKind.Paid, TestMoments.Seeded));
         await db.SaveChangesAsync(CancellationToken.None);
     }
 }

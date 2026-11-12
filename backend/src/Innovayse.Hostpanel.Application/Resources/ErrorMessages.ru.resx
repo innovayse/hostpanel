@@ -440,7 +440,8 @@
   </data>
   <data name="PRODUCT_BUNDLE_PRIMARY_INVALID" xml:space="preserve">
     <value>В наборе должен быть ровно один основной продукт.</value>
-<data name="PRODUCT_OPTION_QUANTITY_RANGE_INVALID" xml:space="preserve">
+  </data>
+  <data name="PRODUCT_OPTION_QUANTITY_RANGE_INVALID" xml:space="preserve">
     <value>Опции количества нужен минимум от нуля и максимум не меньше одного и не меньше минимума. У других типов опций диапазона нет.</value>
   </data>
 <data name="PRODUCT_OPTION_COUNT_NOT_ALLOWED" xml:space="preserve">

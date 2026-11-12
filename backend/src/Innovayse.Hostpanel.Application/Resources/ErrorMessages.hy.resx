@@ -440,7 +440,8 @@
   </data>
   <data name="PRODUCT_BUNDLE_PRIMARY_INVALID" xml:space="preserve">
     <value>Փաթեթում պետք է լինի ճիշտ մեկ հիմնական արտադրանք։</value>
-<data name="PRODUCT_OPTION_QUANTITY_RANGE_INVALID" xml:space="preserve">
+  </data>
+  <data name="PRODUCT_OPTION_QUANTITY_RANGE_INVALID" xml:space="preserve">
     <value>Քանակի ընտրանուն պետք է նվազագույնը զրո կամ ավելի և առավելագույնը առնվազն մեկ, ոչ պակաս նվազագույնից։ Մյուս տեսակներն ընդգրկույթ չունեն։</value>
   </data>
 <data name="PRODUCT_OPTION_COUNT_NOT_ALLOWED" xml:space="preserve">

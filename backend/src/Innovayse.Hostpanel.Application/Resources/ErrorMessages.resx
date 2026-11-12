@@ -440,7 +440,8 @@
   </data>
   <data name="PRODUCT_BUNDLE_PRIMARY_INVALID" xml:space="preserve">
     <value>A bundle needs exactly one primary product.</value>
-<data name="PRODUCT_OPTION_QUANTITY_RANGE_INVALID" xml:space="preserve">
+  </data>
+  <data name="PRODUCT_OPTION_QUANTITY_RANGE_INVALID" xml:space="preserve">
     <value>A quantity option needs a minimum of zero or more and a maximum of at least one and not below the minimum. Other option types take no range.</value>
   </data>
 <data name="PRODUCT_OPTION_COUNT_NOT_ALLOWED" xml:space="preserve">

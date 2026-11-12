@@ -74,31 +74,30 @@ public sealed class GatewayCustomerEnsurer
     }
 
     /// <summary>
-    /// Saves what the caller staged together with the customer row <see cref="EnsureAsync"/> staged, in one save. When
+    /// Saves what the caller staged together with the customer row <see cref="EnsureAsync"/> staged, in one save (a plain
+    /// save when the payment keeps no method, so the caller has one call either way). When
     /// the save loses because another request recorded the same customer first, only this call's row is dropped and the
     /// rest of the caller's change is saved once more: the plugin answers the same customer for the same client
     /// reference, so the row that won holds the reference this request would have stored.
     /// </summary>
-    /// <param name="ensured">The customer the caller got from <see cref="EnsureAsync"/>.</param>
+    /// <param name="ensured">The customer the caller got from <see cref="EnsureAsync"/>, or <see langword="null"/> when no customer is involved.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>A task that completes once the caller's change is saved.</returns>
     /// <exception cref="ConcurrencyConflictException">
     /// The save lost for a reason other than the customer: nobody recorded the customer, so the conflict is the caller's.
     /// </exception>
-    public async Task SaveAsync(EnsuredGatewayCustomer ensured, CancellationToken ct)
+    public async Task SaveAsync(EnsuredGatewayCustomer? ensured, CancellationToken ct)
     {
-        ArgumentNullException.ThrowIfNull(ensured);
-
         try
         {
             await _context.SaveChangesAsync(ct);
         }
-        catch (ConcurrencyConflictException) when (ensured.Created is { } staged)
+        catch (ConcurrencyConflictException) when (ensured?.Created is { } staged)
         {
             // A conflict with the customer's row means the winner's row exists now, so a missing row says the save
             // lost on something else (the invoice moved) and that is not this method's to retry.
             _context.Detach(staged);
-            if (await FindRefAsync(ensured.ClientId, ensured.GatewayModuleId, ct) is null)
+            if (await FindRefAsync(staged.ClientId, staged.GatewayModuleId, ct) is null)
             {
                 throw;
             }

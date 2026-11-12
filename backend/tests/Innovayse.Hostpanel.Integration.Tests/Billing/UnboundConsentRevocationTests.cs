@@ -1,10 +1,9 @@
 using System.Net;
+using System.Net.Http.Json;
 using Hostpanel.Sdk.Plugins.Enums;
 using Hostpanel.Sdk.Plugins.StoredCredentials;
-using Innovayse.Hostpanel.Application.Billing.Commands.CompleteGatewayPayment;
-using Innovayse.Hostpanel.Application.Billing.Common.Enums;
-using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Billing.Events;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,7 +12,7 @@ namespace Innovayse.Hostpanel.Integration.Tests.Billing;
 /// <summary>
 /// The consent recorded when a hosted payment that keeps the payer's method is started ends with the payment when that
 /// payment will never store a method (<c>UnboundConsentRevoker</c>): the session was declined, was replaced by a new
-/// attempt, or its invoice was settled another way. A session still waiting for the payer keeps its consent.
+/// attempt, or its invoice was cancelled or settled another way. A session still waiting for the payer keeps its consent.
 /// </summary>
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
@@ -75,53 +74,115 @@ public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory
     }
 
     /// <summary>
-    /// An invoice a staff payment settled while the session was open is not paid through that session, so the consent
-    /// recorded for the session is revoked when the session is looked at again, whatever it took.
+    /// An invoice a staff payment settled while the session was open: the payment event closes the consent recorded for the
+    /// session at settle time, without anyone polling the session, and the method the session stored is never bound.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task Complete_InvoiceSettledAnotherWay_RevokesTheConsent()
+    public async Task PaymentReceived_ForAnInvoiceSettledAnotherWay_RevokesTheConsent()
     {
         using var scenario = new SavingGatewayScenario(factory);
         var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("revoke-settled");
         var consent = await StartSavingAsync(scenario, signedIn, invoiceId);
         var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
         await BillingTestSeeds.MarkPaidAsync(admin, invoiceId, 10m);
-        scenario.Plugin.MethodOnStatus = new SavedMethod("pm-orphan", "visa", "4242", 12, 2031, false);
 
-        var response = await SavingGatewayScenario.CompleteAsync(signedIn.Client, invoiceId);
+        await PublishPaymentReceivedAsync(scenario, invoiceId, signedIn.ClientId);
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
         var stored = await ConsentAsync(scenario, signedIn.ClientId, consent.Id);
         stored.IsRevoked.Should().BeTrue();
-        stored.MethodRef.Should().BeNull("the method the session stored belongs to no payment of the invoice, so it is never bound");
+        stored.MethodRef.Should().BeNull();
+    }
+
+    /// <summary>The payment of the session itself bound the method in the settling save, so the payment event leaves that consent as it is.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task PaymentReceived_ForTheSessionsOwnPayment_KeepsTheBoundConsent()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("revoke-bound");
+        var consent = await StartSavingAsync(scenario, signedIn, invoiceId);
+        scenario.Plugin.MethodOnStatus = new SavedMethod("pm-bound", "visa", "4242", 12, 2031, false);
+        (await SavingGatewayScenario.CompleteAsync(signedIn.Client, invoiceId)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        await PublishPaymentReceivedAsync(scenario, invoiceId, signedIn.ClientId);
+
+        var stored = await ConsentAsync(scenario, signedIn.ClientId, consent.Id);
+        stored.IsActive.Should().BeTrue();
+        stored.IsRevoked.Should().BeFalse();
+    }
+
+    /// <summary>Cancelling an invoice ends the consent recorded for its hosted session in the cancelling save.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CancelInvoice_RevokesTheConsentOfItsSession()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("revoke-cancel");
+        var consent = await StartSavingAsync(scenario, signedIn, invoiceId);
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+
+        var response = await admin.PostAsync($"/api/billing/{invoiceId}/cancel", content: null);
+
+        response.IsSuccessStatusCode.Should().BeTrue();
+        (await ConsentAsync(scenario, signedIn.ClientId, consent.Id)).IsRevoked.Should().BeTrue();
+    }
+
+    /// <summary>A bulk cancel ends the consent of the session of every invoice it cancels.</summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task BulkCancel_RevokesTheConsentOfEachSession()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("revoke-bulk");
+        var consent = await StartSavingAsync(scenario, signedIn, invoiceId);
+        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
+
+        var response = await admin.PostAsJsonAsync("/api/billing/bulk", new { invoiceIds = new[] { invoiceId }, action = "Cancel" });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ConsentAsync(scenario, signedIn.ClientId, consent.Id)).IsRevoked.Should().BeTrue();
     }
 
     /// <summary>
-    /// A completion that loses its save to a staff payment recorded in between settles nothing itself: the money goes to
-    /// the balance and the consent recorded for the session is revoked, the same as when the settlement came first.
+    /// A declined session whose consent changes under the completion (the client revoked it, or another writer moved it)
+    /// does not fail the completion: the lost save is dropped without touching what else the request tracks, the answer is
+    /// still the declined state, and the next completion of the session revokes the consent.
     /// </summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
-    public async Task Complete_LosingTheRaceToAnotherSettlement_RevokesTheConsent()
+    public async Task Complete_DeclinedSessionWhoseConsentMovesMeanwhile_DropsTheLostSaveAndRevokesOnTheNextCompletion()
     {
-        using var scenario = new SavingGatewayScenario(factory);
-        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("revoke-race");
+        var sessionId = string.Empty;
+        var race = new ConsentRaceInterceptor(() => sessionId, async (db, id) =>
+            await db.Set<CardChargeConsent>().Where(c => c.Id == id)
+                .ExecuteUpdateAsync(set => set.SetProperty(c => c.IsDefault, false)));
+        using var scenario = new SavingGatewayScenario(factory, saveInterceptor: race);
+        var (signedIn, invoiceId) = await scenario.SeedClientWithInvoiceAsync("revoke-declined-race");
         var consent = await StartSavingAsync(scenario, signedIn, invoiceId);
+        sessionId = consent.SessionId;
+        scenario.Plugin.StateOnStatus = GatewayPaymentState.Declined;
 
-        // The loser's context holds the unpaid row before the staff payment is saved, or its save would meet no newer version.
-        using var loserScope = scenario.Host.Services.CreateScope();
-        var loser = ActivatorUtilities.CreateInstance<CompleteGatewayPaymentHandler>(loserScope.ServiceProvider);
-        var loserContext = loserScope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        _ = await loserContext.Invoices.FirstAsync(i => i.Id == invoiceId);
-        var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
-        await BillingTestSeeds.MarkPaidAsync(admin, invoiceId, 10m);
+        var first = await SavingGatewayScenario.CompleteAsync(signedIn.Client, invoiceId);
 
-        var result = await loser.HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
-
-        result.IsSuccess.Should().BeTrue();
-        result.Value!.State.Should().Be(GatewayCompletionState.Paid);
+        race.Fired.Should().BeTrue();
+        first.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await ConsentAsync(scenario, signedIn.ClientId, consent.Id)).IsRevoked.Should().BeFalse("the lost save revoked nothing");
+        var second = await SavingGatewayScenario.CompleteAsync(signedIn.Client, invoiceId);
+        second.StatusCode.Should().Be(HttpStatusCode.OK);
         (await ConsentAsync(scenario, signedIn.ClientId, consent.Id)).IsRevoked.Should().BeTrue();
+    }
+
+    /// <summary>Publishes the payment event of an invoice and waits until every handler of it has finished.</summary>
+    /// <param name="scenario">The scenario whose host handles it.</param>
+    /// <param name="invoiceId">The paid invoice.</param>
+    /// <param name="clientId">The invoice's client.</param>
+    /// <returns>A task that completes once the handlers finished.</returns>
+    private static async Task PublishPaymentReceivedAsync(SavingGatewayScenario scenario, int invoiceId, int clientId)
+    {
+        using var scope = scenario.Host.Services.CreateScope();
+        await scope.ServiceProvider.PublishAndWaitAsync(
+            new PaymentReceivedEvent(invoiceId, clientId, 10m, "settled-elsewhere") { OccurredAt = DateTimeOffset.UtcNow });
     }
 
     /// <summary>

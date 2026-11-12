@@ -205,4 +205,26 @@ public sealed class BeginSaveStoredMethodTests(IntegrationTestFactory factory) :
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+    /// <summary>
+    /// A concurrent first save session of the same client records the gateway customer between this request's read and its
+    /// save: the unique key refuses this request's customer row, which is dropped, and the consent is saved at once, so the
+    /// session still opens and the client has the one customer the other request recorded.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Begin_WhenAnotherRequestRecordsTheCustomerFirst_StillOpensTheSessionAndRecordsTheConsent()
+    {
+        var race = new CustomerRaceSaveInterceptor();
+        using var scenario = new StoredCredentialScenario(factory, saveInterceptor: race);
+        var signedIn = await BillingTestSeeds.RegisterClientAsync(factory, scenario.Host, "begin-customer-race");
+
+        var response = await BeginAsync(signedIn.Client, scenario.Module, true, BillingTestSeeds.AllowedReturnUrl);
+
+        race.Fired.Should().BeTrue();
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        using var scope = scenario.Host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.GatewayCustomers.AsNoTracking().CountAsync(c => c.ClientId == signedIn.ClientId)).Should().Be(1);
+        (await context.CardChargeConsents.AsNoTracking().CountAsync(c => c.ClientId == signedIn.ClientId)).Should().Be(1);
+    }
 }

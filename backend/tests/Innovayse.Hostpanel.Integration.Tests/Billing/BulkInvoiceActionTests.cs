@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Innovayse.Hostpanel.Application.Billing.Commands.BulkInvoiceAction;
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
@@ -56,7 +57,8 @@ public sealed class BulkInvoiceActionTests(IntegrationTestFactory factory) : ICl
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         var handler = new BulkInvoiceActionHandler(
-            context, scope.ServiceProvider.GetRequiredService<IClientCredit>(), scope.ServiceProvider.GetRequiredService<IClock>());
+            context, scope.ServiceProvider.GetRequiredService<IClientCredit>(), scope.ServiceProvider.GetRequiredService<IClock>(),
+            scope.ServiceProvider.GetRequiredService<UnboundConsentRevoker>());
 
         var outcome = await handler.HandleAsync(
             new BulkInvoiceActionCommand([invoiceId], (InvoiceBulkAction)99), CancellationToken.None);

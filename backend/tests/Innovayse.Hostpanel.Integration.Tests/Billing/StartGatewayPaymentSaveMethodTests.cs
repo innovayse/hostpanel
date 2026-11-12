@@ -461,4 +461,27 @@ public sealed class StartGatewayPaymentSaveMethodTests(IntegrationTestFactory fa
         gatewayOrderId.Should().NotBeNull();
         (await scenario.ConsentsOfAsync(signedIn.ClientId)).Should().ContainSingle().Which.SessionId.Should().Be(gatewayOrderId);
     }
+    /// <summary>
+    /// A save that loses for a reason other than the customer (the invoice moved under the request) is not retried and is
+    /// not mistaken for a customer race: nobody recorded the customer, so the conflict reaches the caller as 409, and the
+    /// rolled back save leaves no customer, consent or session behind.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Start_WithSaveWhenTheInvoiceMovesMeanwhile_IsAConflictAndRecordsNothing()
+    {
+        var invoiceId = 0;
+        var race = new InvoiceRaceSaveInterceptor(() => invoiceId);
+        using var scenario = new SavingGatewayScenario(factory, saveInterceptor: race);
+        var (signedIn, seededInvoiceId) = await scenario.SeedClientWithInvoiceAsync("save-invoice-race");
+        invoiceId = seededInvoiceId;
+
+        var response = await scenario.StartAsync(signedIn.Client, invoiceId, savePaymentMethod: true);
+
+        race.Fired.Should().BeTrue();
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        (await scenario.CustomerCountAsync(signedIn.ClientId)).Should().Be(0);
+        (await scenario.ConsentsOfAsync(signedIn.ClientId)).Should().BeEmpty();
+        (await scenario.InvoiceAsync(invoiceId)).GatewayOrderId.Should().BeNull();
+    }
 }

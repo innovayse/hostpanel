@@ -40,18 +40,27 @@ public sealed class ReleaseDomainRenewalInvoicesHandler
     /// <summary>The clock the moment of a cancellation is read from.</summary>
     private readonly IClock _clock;
 
+    /// <summary>Ends the consent recorded for the session of each invoice cancelled.</summary>
+    private readonly UnboundConsentRevoker _consents;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="clientCredit">Returns released invoices' credit to the client's balance in the same save.</param>
     /// <param name="logger">Structured logger.</param>
     /// <param name="clock">The clock the moment of a cancellation is read from.</param>
+    /// <param name="consents">Ends the consent recorded for the session of each invoice cancelled.</param>
     public ReleaseDomainRenewalInvoicesHandler(
-        IHostpanelDbContext context, IClientCredit clientCredit, ILogger<ReleaseDomainRenewalInvoicesHandler> logger, IClock clock)
+        IHostpanelDbContext context,
+        IClientCredit clientCredit,
+        ILogger<ReleaseDomainRenewalInvoicesHandler> logger,
+        IClock clock,
+        UnboundConsentRevoker consents)
     {
         _context = context;
         _clientCredit = clientCredit;
         _logger = logger;
         _clock = clock;
+        _consents = consents;
     }
 
     /// <summary>Handles the command.</summary>
@@ -127,6 +136,7 @@ public sealed class ReleaseDomainRenewalInvoicesHandler
                 }
 
                 open.Cancel(_clock.UtcNow);
+                await _consents.RevokeOfAsync(open, ct);
                 continue;
             }
 

@@ -305,8 +305,11 @@ docker/                              compose set (shared·dev·prod·platform), 
   (`GatewayCustomerEnsurer.SaveAsync`, which also settles two first requests racing on the customer's unique key by dropping
   only the customer row and saving once more). A consent whose payment never stores a method is revoked
   (`UnboundConsentRevoker`, `CardChargeConsent.RevokeUnbound`, never touching one that already covers a method): by the
-  attempt that replaces the session, in its save, and by `CompleteGatewayPayment` when the gateway declined the session or
-  the invoice was settled another way (also when that is found after a lost save). `CompleteGatewayPayment`, from the return page and from
+  attempt that replaces the session, in its save; by `CompleteGatewayPayment` when the gateway declined the session (a lost
+  save drops only the revoked consents); by `CancelInvoice`, `BulkInvoiceAction` and `ReleaseDomainRenewalInvoices` in the save
+  that cancels the invoice (`UnboundConsentRevoker.RevokeOfAsync`, which takes the session from the invoice); and by
+  `EndSessionConsentOnPaymentReceivedHandler` when the invoice turns paid, whichever path paid it (`Invoice.ApplyPaid` is the one
+  place and raises `PaymentReceivedEvent`; the session's own payment bound its method in that same save, so it is untouched). `CompleteGatewayPayment`, from the return page and from
   `ReconcileGatewayPaymentsCron` alike, binds the method in `GatewayPaymentStatus.SavedMethod` to that consent through
   `StoredMethodBinder` (shared with `CompleteSaveStoredMethod`) in the very save that settles the invoice. A missing or
   conflicting method never fails the payment: no `SavedMethod`, no active consent, a consent already covering another

@@ -148,7 +148,7 @@ public sealed class InvoicesImporter : IMigrationEntityImporter
                 invoice.MarkOverdue(_clock.UtcNow);
                 break;
             case SourceInvoiceStatuses.Cancelled:
-                invoice.Cancel();
+                invoice.Cancel(_clock.UtcNow);
                 break;
             case SourceInvoiceStatuses.Refunded:
                 invoice.RecordPaidHistory(MigrationDefaults.PaidInvoiceReference, paidAt);

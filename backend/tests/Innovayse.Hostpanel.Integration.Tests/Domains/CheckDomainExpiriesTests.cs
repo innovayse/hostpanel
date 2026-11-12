@@ -208,7 +208,7 @@ public sealed class CheckDomainExpiriesTests(IntegrationTestFactory factory) : I
         invoice.AddDomainRenewal($"Domain renewal: {domain.Name} (1y)", 12m, domain.Id, domain.ExpiresAt, domain.ExpiresAt.AddYears(1));
         if (cancel)
         {
-            invoice.Cancel();
+            invoice.Cancel(DateTimeOffset.UtcNow);
         }
 
         context.Invoices.Add(invoice);

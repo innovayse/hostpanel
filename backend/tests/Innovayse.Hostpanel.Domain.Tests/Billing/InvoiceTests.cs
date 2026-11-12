@@ -137,9 +137,38 @@ public sealed class InvoiceTests
     {
         var invoice = Invoice.Create(clientId: 2, dueDate: Now.AddDays(7), currency: "USD", issuedAt: Now);
 
-        invoice.Cancel();
+        invoice.Cancel(Now);
 
         invoice.Status.Should().Be(InvoiceStatus.Cancelled);
+    }
+
+    /// <summary>Cancel raises <see cref="InvoiceCancelledEvent"/> stamped with the moment given, so whatever waited for the invoice can let go of it.</summary>
+    [Fact]
+    public void Cancel_RaisesInvoiceCancelledEvent()
+    {
+        var invoice = Invoice.Create(clientId: 2, dueDate: Now.AddDays(7), currency: "USD", issuedAt: Now);
+        invoice.ClearDomainEvents();
+        var cancelledAt = Now.AddDays(1);
+
+        invoice.Cancel(cancelledAt);
+
+        var raised = invoice.DomainEvents.Should().ContainSingle().Which.Should().BeOfType<InvoiceCancelledEvent>().Subject;
+        raised.ClientId.Should().Be(2);
+        raised.OccurredAt.Should().Be(cancelledAt);
+    }
+
+    /// <summary>A cancel the invoice refuses raises no event.</summary>
+    [Fact]
+    public void Cancel_WhenRefused_RaisesNoEvent()
+    {
+        var invoice = Invoice.Create(clientId: 2, dueDate: Now.AddDays(7), currency: "USD", issuedAt: Now);
+        invoice.MarkPaid("txn_98", Now);
+        invoice.ClearDomainEvents();
+
+        var act = () => invoice.Cancel(Now);
+
+        act.Should().Throw<DomainRuleException>();
+        invoice.DomainEvents.Should().BeEmpty();
     }
 
     /// <summary>Cancel on a Paid invoice throws <see cref="DomainRuleException"/> with <c>INVOICE_CANCEL_NOT_ALLOWED</c>.</summary>
@@ -149,7 +178,7 @@ public sealed class InvoiceTests
         var invoice = Invoice.Create(clientId: 2, dueDate: Now.AddDays(7), currency: "USD", issuedAt: Now);
         invoice.MarkPaid("txn_99", Now);
 
-        var act = () => invoice.Cancel();
+        var act = () => invoice.Cancel(Now);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceCancelNotAllowed);
     }
@@ -568,7 +597,7 @@ public sealed class InvoiceTests
                 invoice.Refund();
                 break;
             case InvoiceStatus.Cancelled:
-                invoice.Cancel();
+                invoice.Cancel(Now);
                 break;
         }
 
@@ -830,9 +859,9 @@ public sealed class InvoiceTests
     public void Cancel_WhenAlreadyCancelled_ThrowsWithInvoiceCancelNotAllowed()
     {
         var invoice = UnpaidFor(10m);
-        invoice.Cancel();
+        invoice.Cancel(Now);
 
-        var act = () => invoice.Cancel();
+        var act = () => invoice.Cancel(Now);
 
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceCancelNotAllowed);
     }
@@ -897,7 +926,7 @@ public sealed class InvoiceTests
         var invoice = UnpaidFor(100m);
         invoice.AddPayment(Now, "Bank", "tx1", 40m, 0m, null, TransactionSource.Manual);
 
-        var act = () => invoice.Cancel();
+        var act = () => invoice.Cancel(Now);
 
         invoice.CanCancel.Should().BeFalse();
         act.Should().Throw<DomainRuleException>().Which.Code.Should().Be(BillingErrors.InvoiceHasPayments);

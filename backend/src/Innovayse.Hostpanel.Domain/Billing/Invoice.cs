@@ -1207,14 +1207,18 @@ public sealed class Invoice : BaseEntity, IAggregateRoot
     }
 
     /// <summary>
-    /// Cancels the invoice so it will not be collected. Applied credit stays on the invoice; the
-    /// caller takes it back with <see cref="RemoveCredit"/> first so the client does not lose it.
+    /// Cancels the invoice so it will not be collected and raises <see cref="InvoiceCancelledEvent"/>. Applied credit stays
+    /// on the invoice; the caller takes it back with <see cref="RemoveCredit"/> first so the client does not lose it.
     /// </summary>
+    /// <param name="now">The moment the invoice is cancelled (UTC).</param>
     /// <exception cref="DomainRuleException">See <see cref="EnsureCancellable"/>.</exception>
-    public void Cancel()
+    public void Cancel(DateTimeOffset now)
     {
         EnsureCancellable();
         Status = InvoiceStatus.Cancelled;
+
+        // Deferred like the creation event: an invoice cancelled before its first save has no id yet.
+        AddDomainEvent(() => new InvoiceCancelledEvent(Id, ClientId) { OccurredAt = now });
     }
 
     /// <summary>

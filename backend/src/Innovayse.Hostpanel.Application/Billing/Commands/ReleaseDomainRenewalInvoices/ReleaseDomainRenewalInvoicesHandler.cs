@@ -37,16 +37,21 @@ public sealed class ReleaseDomainRenewalInvoicesHandler
     /// <summary>Structured logger.</summary>
     private readonly ILogger<ReleaseDomainRenewalInvoicesHandler> _logger;
 
+    /// <summary>The clock the moment of a cancellation is read from.</summary>
+    private readonly IClock _clock;
+
     /// <summary>Initializes the handler.</summary>
     /// <param name="context">The module's data context.</param>
     /// <param name="clientCredit">Returns released invoices' credit to the client's balance in the same save.</param>
     /// <param name="logger">Structured logger.</param>
+    /// <param name="clock">The clock the moment of a cancellation is read from.</param>
     public ReleaseDomainRenewalInvoicesHandler(
-        IHostpanelDbContext context, IClientCredit clientCredit, ILogger<ReleaseDomainRenewalInvoicesHandler> logger)
+        IHostpanelDbContext context, IClientCredit clientCredit, ILogger<ReleaseDomainRenewalInvoicesHandler> logger, IClock clock)
     {
         _context = context;
         _clientCredit = clientCredit;
         _logger = logger;
+        _clock = clock;
     }
 
     /// <summary>Handles the command.</summary>
@@ -121,7 +126,7 @@ public sealed class ReleaseDomainRenewalInvoicesHandler
                     }
                 }
 
-                open.Cancel();
+                open.Cancel(_clock.UtcNow);
                 continue;
             }
 

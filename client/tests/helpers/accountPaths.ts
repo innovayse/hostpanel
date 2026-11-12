@@ -20,7 +20,6 @@ export const AccountEndpoint = {
   Login: '/api/portal/auth/login',
   Logout: '/api/portal/auth/logout',
   StoredMethods: '/api/portal/client/stored-payment-methods',
-  PaymentMethods: '/api/portal/order/payment-methods',
 } as const
 
 /**

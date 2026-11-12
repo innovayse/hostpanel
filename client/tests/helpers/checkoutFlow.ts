@@ -14,25 +14,16 @@ import { CatalogPath } from '~/tests/helpers/catalogPaths'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { USD_CURRENCY } from '~/tests/helpers/payerCatalogue'
 import { until } from '~/tests/helpers/settle'
-import { readOf } from '~/tests/helpers/stubRoutes'
+import { readOf, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import { useCurrencyStore } from '~/stores/currency'
 import type { CartItem } from '~/types/cartitem'
 import type { GatewayMethod } from '~/types/gatewaymethod'
-import { HttpMethod } from '~/types/httpmethod'
 import type { PlaceOrderResult } from '~/types/placeorderresult'
 import { PricingCycle } from '~/types/pricingcycle'
 
 /** The order the stub answers a placed order with: an invoice of 12 dollars. */
-const PLACED_ORDER: PlaceOrderResult = { orderId: 7, orderNumber: 'A 7', invoiceId: 12, paymentToken: 'token', total: 12, currency: 'USD' }
-
-/**
- * The key of a write in a stub route table.
- *
- * @param path - The path of the write.
- * @returns The `POST` key for the route table.
- */
-export const writeOf = (path: string): string => `${HttpMethod.Post} ${path}`
+export const PLACED_ORDER: PlaceOrderResult = { orderId: 7, orderNumber: 'A 7', invoiceId: 12, paymentToken: 'token', total: 12, currency: 'USD' }
 
 /**
  * The replies a checkout reaches: the billing currencies, the gateways on offer, placing the order,
@@ -44,7 +35,7 @@ export const writeOf = (path: string): string => `${HttpMethod.Post} ${path}`
  */
 export const checkoutReplies = (methods: GatewayMethod[]): StubRouteTable => ({
   [readOf(CatalogPath.BillingCurrencies)]: { body: [USD_CURRENCY] },
-  [readOf(AccountEndpoint.PaymentMethods)]: { body: methods },
+  [readOf(BillingEndpoint.OrderPaymentMethods)]: { body: methods },
   [writeOf(BillingEndpoint.OrderCreate)]: { body: PLACED_ORDER },
   [writeOf(AccountEndpoint.Login)]: { body: makeClientUser() },
   [writeOf(AccountEndpoint.Logout)]: { body: {} },

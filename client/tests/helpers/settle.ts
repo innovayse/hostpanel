@@ -6,6 +6,10 @@
  * the event loop with `setImmediate` (never faked here), which lets the stub's replies arrive and the promises behind them
  * run, without moving the faked clock at all.
  *
+ * These are the waits for tests whose clock is faked. A test on real timers waits with `waitUntil` from
+ * `tests/helpers/waitUntil`, which retries an assertion with `vi.waitFor` and a named limit; the two are not
+ * interchangeable, because `vi.waitFor` cannot tick under a faked `setTimeout` and `until` has no assertion to retry.
+ *
  * @module tests/helpers/settle
  */
 

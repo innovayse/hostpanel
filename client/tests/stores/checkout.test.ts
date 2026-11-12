@@ -12,6 +12,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
+import { cartLine } from '../helpers/checkoutFlow'
 import { makeClientUser } from '../helpers/clientUser'
 import { bodyOf } from '../helpers/requestBody'
 import { refusal, requestsTo, routeTable } from '../helpers/stubRoutes'
@@ -31,7 +32,6 @@ import { ConsentTextVersion } from '~/types/consenttextversion'
 import type { BillingCurrency } from '~/types/currency'
 import { DomainOrderAction } from '~/types/domainorderaction'
 import type { PlaceOrderInput } from '~/types/placeorderinput'
-import { PricingCycle } from '~/types/pricingcycle'
 import { ProductType } from '~/types/producttype'
 
 /** The stub playing the BFF. */
@@ -77,7 +77,7 @@ const CURRENCIES: BillingCurrency[] = [
 ]
 
 /** A hosting item priced in dollars. */
-const hosting: CartItem = { pid: 5, name: 'Pro', billingcycle: PricingCycle.Monthly, cycleLabel: 'Monthly', amount: 12, currency: 'USD' }
+const hosting: CartItem = cartLine(5, 12)
 
 /** A guest's details. */
 const guest = { firstname: 'Ada', lastname: 'L', email: 'ada@example.com', password: 'pw-123456', phonenumber: '+374' }

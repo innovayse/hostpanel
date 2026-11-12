@@ -11,6 +11,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { AccountEndpoint } from '../helpers/accountPaths'
+import { BillingEndpoint } from '../helpers/billingPaths'
 import { DOMAIN_ID, DomainAction, domainPath } from '../helpers/domainPanelPaths'
 import { bodyOf } from '../helpers/requestBody'
 import { readOf, refusal, requestsTo, routeTable } from '../helpers/stubRoutes'
@@ -362,13 +363,13 @@ describe('useDomainsStore detail reads', () => {
   })
 
   it('keeps the gateways, and an empty list when they cannot be read', async () => {
-    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [{ module: 'card_gateway', displayName: 'Card gateway', supportsStoredCredentials: false }] }
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [{ module: 'card_gateway', displayName: 'Card gateway', supportsStoredCredentials: false }] }
     const store = useDomainsStore()
 
     await store.loadPaymentMethods()
     expect(store.paymentMethods).toHaveLength(1)
 
-    table[readOf(AccountEndpoint.PaymentMethods)] = REFUSED
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = REFUSED
     await store.loadPaymentMethods()
     expect(store.paymentMethods).toEqual([])
     expect(store.paymentMethodsLoading).toBe(false)

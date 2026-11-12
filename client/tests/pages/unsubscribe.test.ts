@@ -40,15 +40,25 @@ afterEach(async () => {
   await stub.close()
 })
 
+/** The panels the page ends on, by the test id that marks each. */
+enum OutcomePanel {
+  /** The reader is unsubscribed. */
+  Done = 'unsubscribe-done',
+  /** The API refused the link. */
+  Failed = 'unsubscribe-failed'
+}
+
 /**
  * Mounts the page and presses the confirm button, as the reader does.
  *
- * @returns The wrapper once the reply has arrived and the done or failed panel is shown.
+ * @param panel - The panel the reply must end on.
+ * @returns The wrapper once the one confirm request has reached the stub and its panel is shown.
  */
-const mountAndConfirm = async () => {
+const mountAndConfirm = async (panel: OutcomePanel) => {
   const wrapper = await mountAuthPage(UnsubscribePage)
   await wrapper.find('[data-testid="unsubscribe-confirm-button"]').trigger('click')
-  await waitUntil(() => expect(wrapper.find('[data-testid="unsubscribe-done"]').exists() || wrapper.find('[data-testid="unsubscribe-failed"]').exists()).toBe(true))
+  await waitUntil(() => expect(requestsTo(stub.requests, UNSUBSCRIBE_PATH)).toHaveLength(1))
+  await waitUntil(() => expect(wrapper.find(`[data-testid="${panel}"]`).exists()).toBe(true))
   return wrapper
 }
 
@@ -68,7 +78,7 @@ describe('unsubscribe page', () => {
   it('sends the token of the link once the reader confirms, then shows the done panel', async () => {
     stubAuthRuntime({ query: { token: 'tok' } })
 
-    const wrapper = await mountAndConfirm()
+    const wrapper = await mountAndConfirm(OutcomePanel.Done)
 
     const sent = requestsTo(stub.requests, UNSUBSCRIBE_PATH)
     expect(sent).toHaveLength(1)
@@ -82,7 +92,7 @@ describe('unsubscribe page', () => {
     stubAuthRuntime({ query: { token: 'bad' } })
     table[`POST ${UNSUBSCRIBE_PATH}`] = { status: 400, body: { detail: 'This link is not valid.' } }
 
-    const wrapper = await mountAndConfirm()
+    const wrapper = await mountAndConfirm(OutcomePanel.Failed)
 
     expect(wrapper.find('[data-testid="unsubscribe-failed"]').text()).toContain('This link is not valid.')
     expect(wrapper.find('[data-testid="unsubscribe-done"]').exists()).toBe(false)
@@ -92,7 +102,7 @@ describe('unsubscribe page', () => {
     stubAuthRuntime({ query: {} })
     table[`POST ${UNSUBSCRIBE_PATH}`] = { status: 400, body: { detail: 'A token is required.' } }
 
-    const wrapper = await mountAndConfirm()
+    const wrapper = await mountAndConfirm(OutcomePanel.Failed)
 
     const [sent] = requestsTo(stub.requests, UNSUBSCRIBE_PATH)
     expect(bodyOf(sent)).toEqual({ token: '' })

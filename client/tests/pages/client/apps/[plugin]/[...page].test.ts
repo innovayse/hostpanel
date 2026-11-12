@@ -8,7 +8,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import type { vi } from 'vitest'
+import type { Mock } from 'vitest'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import type { StubReply, StubRequest, StubServer } from '~/tests/helpers/stubServer'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
@@ -83,7 +83,7 @@ const mountPluginPage = async (): Promise<Awaited<ReturnType<typeof mountPage>>>
 }
 
 /** The `useHead` spy of the stood-in runtime. */
-let useHead: ReturnType<typeof vi.fn>
+let useHead: Mock
 
 beforeEach(async () => {
   stub = await startTransport(answering())

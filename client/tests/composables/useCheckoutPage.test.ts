@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { createPinia, setActivePinia } from 'pinia'
 import type { Pinia } from 'pinia'
+import { cartLine } from '~/tests/helpers/checkoutFlow'
 import { mountAsyncPage } from '~/tests/helpers/mountWithKit'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { stubLocalePath } from '~/tests/helpers/runtimeStubs'
@@ -29,7 +30,6 @@ import type { CartItem } from '~/types/cartitem'
 import type { ClientUser } from '~/types/clientuser'
 import { PaymentModule } from '~/types/paymentmodule'
 import { Permission } from '~/types/permission'
-import { PricingCycle } from '~/types/pricingcycle'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF paths the checkout page reads and writes. */
@@ -52,7 +52,7 @@ const INVOICE_PAYMENT_PATH = '/client/invoices/77/pay'
 const CART_STORAGE_KEY = 'innovayse_cart'
 
 /** A hosting line priced in dollars. */
-const HOSTING: CartItem = { pid: 5, name: 'Pro', billingcycle: PricingCycle.Monthly, cycleLabel: 'Monthly', amount: 12, currency: 'USD' }
+const HOSTING: CartItem = cartLine(5, 12)
 
 /** The result of the page composable, as a template receives it. */
 type CheckoutPage = Awaited<ReturnType<typeof useCheckoutPage>>

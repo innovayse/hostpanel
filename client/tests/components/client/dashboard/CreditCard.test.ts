@@ -27,17 +27,18 @@ let stub: StubServer
 /** The replies of the current test; a test changes them before it mounts. */
 let table: StubRouteTable
 
+/** How many times the credit is asked for when the first answer is a server failure: the transport asks once more. */
+const FAILED_READ_REQUESTS = 2
+
 /**
  * Mounts the widget and waits until the credit it reads on appearing has been handled.
  *
- * The transport asks once more after a server failure, so the number of requests is not fixed here;
- * the first test asserts the request of a read that succeeded.
- *
+ * @param requests - How many credit requests the read makes before it ends: one, or {@link FAILED_READ_REQUESTS} for a failing server.
  * @returns The wrapper.
  */
-const mountCard = async () => {
+const mountCard = async (requests = 1) => {
   const wrapper = mountClient(CreditCard)
-  await waitUntil(() => expect(requestsTo(stub.requests, CREDIT_PATH).length).toBeGreaterThan(0))
+  await waitUntil(() => expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(requests))
   await waitUntil(() => expect(useCreditStore().loading).toBe(false))
   await wrapper.vm.$nextTick()
   return wrapper
@@ -75,8 +76,16 @@ describe('ClientDashboardCreditCard', () => {
   it('shows nothing when the credit cannot be read', async () => {
     table[`GET ${CREDIT_PATH}`] = { status: 500, body: { detail: 'down' } }
 
-    const wrapper = await mountCard()
+    const wrapper = await mountCard(FAILED_READ_REQUESTS)
 
     expect(wrapper.find('[data-testid="credit-balance-card"]').exists()).toBe(false)
+  })
+
+  it('asks for the credit once more after a server failure, and no more', async () => {
+    table[`GET ${CREDIT_PATH}`] = { status: 500, body: { detail: 'down' } }
+
+    await mountCard(FAILED_READ_REQUESTS)
+
+    expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(FAILED_READ_REQUESTS)
   })
 })

@@ -235,6 +235,8 @@
               <!-- Total divider -->
               <UiDivider class="my-5" />
 
+              <CheckoutBundleSummary :name="bundleName" :offer="bundleOffer" :discount="bundleDiscount" class="mb-4" />
+
               <UiStack direction="row" align="center" justify="between" gap="none" class="mb-6">
                 <UiText tone="inherit" weight="medium" class="text-classic-muted">{{ $t('cart.total') }}</UiText>
                 <UiText as="span" tone="inherit" weight="bold" class="text-2xl text-classic-ink" data-testid="checkout-total">{{ totalLabel }}</UiText>
@@ -320,6 +322,9 @@ const {
   mayPlaceOrders,
   staleItems,
   totalLabel,
+  bundleName,
+  bundleOffer,
+  bundleDiscount,
   submittingLabel,
   submittingHint,
   paymentMethods,

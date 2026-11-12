@@ -6,8 +6,7 @@
  * @module tests/pages/client/invoices/[id]/pay.test
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { AccountEndpoint } from '~/tests/helpers/accountPaths'
-import { bankTransferPath, invoicePath } from '~/tests/helpers/billingPaths'
+import { bankTransferPath, BillingEndpoint, invoicePath } from '~/tests/helpers/billingPaths'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
 import { readOf, refusal, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
@@ -39,7 +38,7 @@ const invoice = (status: InvoiceStatus, isBankTransferPending = status === Invoi
 
 beforeEach(async () => {
   stubClientRuntime({ params: { id: '41' } })
-  table = { [readOf(AccountEndpoint.PaymentMethods)]: { body: [] } }
+  table = { [readOf(BillingEndpoint.OrderPaymentMethods)]: { body: [] } }
   stub = await startTransport(routeTable(table))
 })
 
@@ -50,7 +49,7 @@ afterEach(async () => {
 describe('invoice payment page', () => {
   it('shows the payment panel beside the invoice summary and the security notice with a hosted gateway', async () => {
     table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.Unpaid) }
-    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [HOSTED_GATEWAY] }
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [HOSTED_GATEWAY] }
 
     const wrapper = await mountPage(PayPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(true))
@@ -71,7 +70,7 @@ describe('invoice payment page', () => {
 
   it('shows an error with a retry when the gateway list cannot be read, and recovers on retry', async () => {
     table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.Unpaid) }
-    table[readOf(AccountEndpoint.PaymentMethods)] = refusal('Gateways down.')
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = refusal('Gateways down.')
     const wrapper = await mountPage(PayPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-options-error"]').exists()).toBe(true))
 
@@ -79,7 +78,7 @@ describe('invoice payment page', () => {
     expect(wrapper.find('[data-testid="invoice-pay-unavailable"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(false)
 
-    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [HOSTED_GATEWAY] }
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [HOSTED_GATEWAY] }
     await wrapper.find('[data-testid="invoice-pay-options-retry"]').trigger('click')
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true))
 
@@ -115,7 +114,7 @@ describe('invoice payment page', () => {
 
   it('offers the gateway payment button when a gateway is enabled', async () => {
     table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.Unpaid) }
-    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [HOSTED_GATEWAY] }
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [HOSTED_GATEWAY] }
 
     const wrapper = await mountPage(PayPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true))
@@ -123,7 +122,7 @@ describe('invoice payment page', () => {
 
   it('shows the bank details of an invoice that waits for a transfer, with no payment choices or gateway notice', async () => {
     table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.PaymentPending) }
-    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [HOSTED_GATEWAY] }
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [HOSTED_GATEWAY] }
     table[readOf(bankTransferPath(41))] = { body: { invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null } }
 
     const wrapper = await mountPage(PayPage)

@@ -50,6 +50,7 @@ import {
   ACCOUNT,
   ANNOUNCEMENT,
   BANK_TRANSFER_DETAILS,
+  BUNDLE,
   EMPTY_BANK_TRANSFER_DETAILS,
   CREDIT,
   CREDIT_NOTES,
@@ -549,6 +550,10 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
       .filter((product) => groupId === null || String(product.groupId) === groupId)
       .filter((product) => productId === null || String(product.id) === productId)
     send(res, 200, wanted)
+    return true
+  }
+  if (isGet && path === '/api/public/product-bundles') {
+    send(res, 200, [BUNDLE])
     return true
   }
   if (isGet && path === '/api/product-features') {

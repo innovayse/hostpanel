@@ -24,6 +24,15 @@ const NOT_SCRIPTED: StubReply = { status: 404, body: { type: 'NOT_FOUND', title:
 export const readOf = (path: string): string => `${HttpMethod.Get} ${path}`
 
 /**
+ * The key of a write in a stub route table.
+ *
+ * @param path - The path of the write.
+ * @param method - The verb of the write; a `POST` unless the write is another one.
+ * @returns The `METHOD /path` key for the route table.
+ */
+export const writeOf = (path: string, method: HttpMethod = HttpMethod.Post): string => `${method} ${path}`
+
+/**
  * The reply of a backend that refuses a request with a sentence the screen shows.
  *
  * @param detail - The sentence.

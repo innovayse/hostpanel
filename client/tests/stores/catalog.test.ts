@@ -12,6 +12,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
+import { CatalogPath } from '../helpers/catalogPaths'
 import { queryOf, requestsTo, routeTable } from '../helpers/stubRoutes'
 import type { StubRouteTable } from '../helpers/stubRoutes'
 import type { StubServer } from '../helpers/stubServer'
@@ -40,6 +41,9 @@ const GROUPS_PATH = '/api/portal/public/product-groups'
 
 /** The product group list read, as a table key. */
 const GROUPS_ROUTE = `${HttpMethod.Get} ${GROUPS_PATH}`
+
+/** The product bundle list read, as a table key. */
+const BUNDLES_ROUTE = `${HttpMethod.Get} ${CatalogPath.ProductBundles}`
 
 /** An API refusal as `apiErrorMessage` reads it. */
 const refusal = { status: 400, body: { detail: 'Catalogue unavailable.' } }
@@ -470,5 +474,30 @@ describe('useCatalogStore keeps what it read when a refresh fails', () => {
     expect(requestsTo(stub.requests, GROUPS_PATH)).toHaveLength(2)
     expect(requestsTo(stub.requests, PRODUCTS_PATH)).toHaveLength(2)
     expect(store.familyProducts).toEqual([])
+  })
+})
+
+describe('useCatalogStore bundles', () => {
+  it('reads the active bundles and finds one by its id', async () => {
+    table[BUNDLES_ROUTE] = { body: [{ id: 4, name: 'Starter pack' }, { id: 5, name: 'Pro pack' }] }
+    const store = useCatalogStore()
+
+    await store.loadBundles()
+
+    expect(store.bundles).toHaveLength(2)
+    expect(store.bundleFor(5)).toMatchObject({ name: 'Pro pack' })
+    expect(store.bundleFor(9)).toBeNull()
+  })
+
+  it('keeps the bundles it read and the API sentence when a refresh is refused', async () => {
+    const replies = [{ body: [{ id: 4, name: 'Starter pack' }] }, refusal]
+    table[BUNDLES_ROUTE] = () => replies.shift() ?? refusal
+    const store = useCatalogStore()
+    await store.loadBundles()
+
+    const list = await store.loadBundles()
+
+    expect(list).toEqual([{ id: 4, name: 'Starter pack' }])
+    expect(store.error).toBe('Catalogue unavailable.')
   })
 })

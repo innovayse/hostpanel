@@ -547,6 +547,10 @@
         "component": "ProductsView.vue"
       },
       {
+        "path": "settings/product-bundles",
+        "component": "ProductBundlesView.vue"
+      },
+      {
         "path": "settings/slides",
         "component": "SlidesView.vue"
       },

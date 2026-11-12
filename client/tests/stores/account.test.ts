@@ -11,10 +11,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { AccountEndpoint, contactPath, userPath } from '../helpers/accountPaths'
+import { BillingEndpoint } from '../helpers/billingPaths'
 import { makeContactInput } from '../helpers/accountContact'
 import { makeClientUser } from '../helpers/clientUser'
 import { bodyOf } from '../helpers/requestBody'
-import { readOf, refusal, requestsTo, routeTable } from '../helpers/stubRoutes'
+import { readOf, refusal, requestsTo, routeTable, writeOf } from '../helpers/stubRoutes'
 import type { StubRouteTable } from '../helpers/stubRoutes'
 import type { StubServer } from '../helpers/stubServer'
 import { startTransport } from '../helpers/stubTransport'
@@ -46,15 +47,6 @@ let stub: StubServer
 
 /** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
 let table: StubRouteTable
-
-/**
- * The key of a write in a stub route table.
- *
- * @param method - The verb of the write.
- * @param path - The path, without query.
- * @returns The `METHOD /path` key.
- */
-const writeOf = (method: HttpMethod, path: string): string => `${method} ${path}`
 
 /** The refusal the API answers with. */
 const REFUSED = refusal('Refused.')
@@ -89,7 +81,7 @@ afterEach(async () => {
 
 describe('useAccountStore.saveProfile', () => {
   it('saves, reloads the profile and reports Succeeded', async () => {
-    table[writeOf(HttpMethod.Patch, AccountEndpoint.Me)] = { body: {} }
+    table[writeOf(AccountEndpoint.Me, HttpMethod.Patch)] = { body: {} }
     table[readOf(AccountEndpoint.Me)] = { body: makeClientUser() }
     const store = useAccountStore()
 
@@ -103,7 +95,7 @@ describe('useAccountStore.saveProfile', () => {
   })
 
   it('keeps the API sentence and reports Failed', async () => {
-    table[writeOf(HttpMethod.Patch, AccountEndpoint.Me)] = REFUSED
+    table[writeOf(AccountEndpoint.Me, HttpMethod.Patch)] = REFUSED
     const store = useAccountStore()
 
     const outcome = await store.saveProfile({})
@@ -117,14 +109,14 @@ describe('useAccountStore.saveProfile', () => {
 
 describe('useAccountStore field errors', () => {
   it('keeps the field messages of a refused profile save and clears them when the next save starts', async () => {
-    table[writeOf(HttpMethod.Patch, AccountEndpoint.Me)] = { status: 400, body: { type: 'VALIDATION_ERROR', errors: { phone: ['Phone is invalid.'] } } }
+    table[writeOf(AccountEndpoint.Me, HttpMethod.Patch)] = { status: 400, body: { type: 'VALIDATION_ERROR', errors: { phone: ['Phone is invalid.'] } } }
     table[readOf(AccountEndpoint.Me)] = { body: makeClientUser() }
     const store = useAccountStore()
 
     expect(await store.saveProfile({})).toBe(ActionOutcome.Failed)
     expect(store.fieldErrors).toEqual({ phone: 'Phone is invalid.' })
 
-    table[writeOf(HttpMethod.Patch, AccountEndpoint.Me)] = { body: {} }
+    table[writeOf(AccountEndpoint.Me, HttpMethod.Patch)] = { body: {} }
     await store.saveProfile({})
     expect(store.fieldErrors).toEqual({})
   })
@@ -132,7 +124,7 @@ describe('useAccountStore field errors', () => {
 
 describe('useAccountStore team members', () => {
   it('reports Succeeded for an invitation', async () => {
-    table[writeOf(HttpMethod.Post, AccountEndpoint.InviteUser)] = { body: {} }
+    table[writeOf(AccountEndpoint.InviteUser)] = { body: {} }
     const store = useAccountStore()
 
     expect(await store.inviteUser(invite)).toBe(ActionOutcome.Succeeded)
@@ -141,7 +133,7 @@ describe('useAccountStore team members', () => {
   })
 
   it('keeps the sentence when an invitation is refused', async () => {
-    table[writeOf(HttpMethod.Post, AccountEndpoint.InviteUser)] = REFUSED
+    table[writeOf(AccountEndpoint.InviteUser)] = REFUSED
     const store = useAccountStore()
 
     expect(await store.inviteUser(invite)).toBe(ActionOutcome.Failed)
@@ -149,7 +141,7 @@ describe('useAccountStore team members', () => {
   })
 
   it('keeps the sentence when a removal is refused and clears the in-flight id', async () => {
-    table[writeOf(HttpMethod.Delete, userPath('7'))] = REFUSED
+    table[writeOf(userPath('7'), HttpMethod.Delete)] = REFUSED
     const store = useAccountStore()
 
     expect(await store.removeUser('7')).toBe(ActionOutcome.Failed)
@@ -168,8 +160,8 @@ describe('useAccountStore contacts', () => {
   })
 
   it('creates when the id is null and updates when it is set', async () => {
-    table[writeOf(HttpMethod.Post, AccountEndpoint.Contacts)] = { body: 5 }
-    table[writeOf(HttpMethod.Put, contactPath(5))] = { body: {} }
+    table[writeOf(AccountEndpoint.Contacts)] = { body: 5 }
+    table[writeOf(contactPath(5), HttpMethod.Put)] = { body: {} }
     const store = useAccountStore()
     const body = makeContactInput({ firstName: 'A', lastName: 'L' })
 
@@ -184,7 +176,7 @@ describe('useAccountStore contacts', () => {
   })
 
   it('keeps the sentence when saving is refused', async () => {
-    table[writeOf(HttpMethod.Post, AccountEndpoint.Contacts)] = REFUSED
+    table[writeOf(AccountEndpoint.Contacts)] = REFUSED
     const store = useAccountStore()
 
     expect(await store.saveContact(null, makeContactInput({ firstName: 'A', lastName: 'L' }))).toBe(ContactSaveOutcome.Failed)
@@ -192,7 +184,7 @@ describe('useAccountStore contacts', () => {
   })
 
   it('reports Failed for a refused removal', async () => {
-    table[writeOf(HttpMethod.Delete, contactPath(5))] = REFUSED
+    table[writeOf(contactPath(5), HttpMethod.Delete)] = REFUSED
     const store = useAccountStore()
 
     expect(await store.removeContact(5)).toBe(ActionOutcome.Failed)
@@ -202,7 +194,7 @@ describe('useAccountStore contacts', () => {
 
 describe('useAccountStore two-factor', () => {
   it('returns the setup with a locally rendered QR code', async () => {
-    table[writeOf(HttpMethod.Post, AccountEndpoint.TwoFactorSetup)] = { body: { secret: 'S', qrCodeUri: 'otpauth://x' } }
+    table[writeOf(AccountEndpoint.TwoFactorSetup)] = { body: { secret: 'S', qrCodeUri: 'otpauth://x' } }
     const store = useAccountStore()
 
     const setup = await store.startTwoFactorSetup()
@@ -212,7 +204,7 @@ describe('useAccountStore two-factor', () => {
   })
 
   it('returns null and keeps the sentence when enrolment cannot start', async () => {
-    table[writeOf(HttpMethod.Post, AccountEndpoint.TwoFactorSetup)] = REFUSED
+    table[writeOf(AccountEndpoint.TwoFactorSetup)] = REFUSED
     const store = useAccountStore()
 
     expect(await store.startTwoFactorSetup()).toBeNull()
@@ -220,7 +212,7 @@ describe('useAccountStore two-factor', () => {
   })
 
   it('enables with the code and reloads the profile', async () => {
-    table[writeOf(HttpMethod.Post, AccountEndpoint.TwoFactorEnable)] = { body: {} }
+    table[writeOf(AccountEndpoint.TwoFactorEnable)] = { body: {} }
     table[readOf(AccountEndpoint.Me)] = { body: makeClientUser({ twoFactorEnabled: true }) }
     const store = useAccountStore()
 
@@ -232,8 +224,8 @@ describe('useAccountStore two-factor', () => {
   })
 
   it('disables with the code and the password, then signs this browser out', async () => {
-    table[writeOf(HttpMethod.Post, AccountEndpoint.TwoFactorDisable)] = { body: {} }
-    table[writeOf(HttpMethod.Post, AccountEndpoint.Logout)] = { body: {} }
+    table[writeOf(AccountEndpoint.TwoFactorDisable)] = { body: {} }
+    table[writeOf(AccountEndpoint.Logout)] = { body: {} }
     const store = useAccountStore()
 
     expect(await store.submitTwoFactor(TwoFactorMode.Disable, '654321', 'secret-pw')).toBe(ActionOutcome.Succeeded)
@@ -245,7 +237,7 @@ describe('useAccountStore two-factor', () => {
   })
 
   it('stays signed in when switching off is refused', async () => {
-    table[writeOf(HttpMethod.Post, AccountEndpoint.TwoFactorDisable)] = REFUSED
+    table[writeOf(AccountEndpoint.TwoFactorDisable)] = REFUSED
     const store = useAccountStore()
 
     expect(await store.submitTwoFactor(TwoFactorMode.Disable, '654321', 'wrong')).toBe(ActionOutcome.Failed)
@@ -255,7 +247,7 @@ describe('useAccountStore two-factor', () => {
   })
 
   it('keeps the sentence when a code is refused', async () => {
-    table[writeOf(HttpMethod.Post, AccountEndpoint.TwoFactorEnable)] = REFUSED
+    table[writeOf(AccountEndpoint.TwoFactorEnable)] = REFUSED
     const store = useAccountStore()
 
     expect(await store.submitTwoFactor(TwoFactorMode.Enable, 'x')).toBe(ActionOutcome.Failed)
@@ -266,7 +258,7 @@ describe('useAccountStore two-factor', () => {
 
 describe('useAccountStore sign-in address', () => {
   it('asks for the change and remembers where the link went', async () => {
-    table[writeOf(HttpMethod.Post, AccountEndpoint.EmailChange)] = { body: {} }
+    table[writeOf(AccountEndpoint.EmailChange)] = { body: {} }
     const store = useAccountStore()
 
     const outcome = await store.startEmailChange({ newEmail: 'new@example.com', currentPassword: 'pw' })
@@ -278,7 +270,7 @@ describe('useAccountStore sign-in address', () => {
   })
 
   it('keeps the sentence and sends nobody to an inbox when the change is refused', async () => {
-    table[writeOf(HttpMethod.Post, AccountEndpoint.EmailChange)] = REFUSED
+    table[writeOf(AccountEndpoint.EmailChange)] = REFUSED
     const store = useAccountStore()
 
     const outcome = await store.startEmailChange({ newEmail: 'new@example.com', currentPassword: 'wrong' })
@@ -289,8 +281,8 @@ describe('useAccountStore sign-in address', () => {
   })
 
   it('confirms the change and ends this browser session', async () => {
-    table[writeOf(HttpMethod.Post, `${AccountEndpoint.EmailChange}/confirm`)] = { body: {} }
-    table[writeOf(HttpMethod.Post, AccountEndpoint.Logout)] = { body: {} }
+    table[writeOf(`${AccountEndpoint.EmailChange}/confirm`)] = { body: {} }
+    table[writeOf(AccountEndpoint.Logout)] = { body: {} }
     const store = useAccountStore()
 
     const status = await store.confirmEmailChange('new@example.com', 'tok')
@@ -311,7 +303,7 @@ describe('useAccountStore sign-in address', () => {
   })
 
   it('keeps the sentence and the session when the token is refused', async () => {
-    table[writeOf(HttpMethod.Post, `${AccountEndpoint.EmailChange}/confirm`)] = REFUSED
+    table[writeOf(`${AccountEndpoint.EmailChange}/confirm`)] = REFUSED
     const store = useAccountStore()
 
     const status = await store.confirmEmailChange('new@example.com', 'bad')
@@ -356,13 +348,13 @@ describe('useAccountStore reads', () => {
   })
 
   it('keeps the gateways the profile can default to, and none when the read fails', async () => {
-    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }] }
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [{ module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: false }] }
     const store = useAccountStore()
 
     await store.loadGatewayMethods()
     expect(store.gatewayMethods).toHaveLength(1)
 
-    table[readOf(AccountEndpoint.PaymentMethods)] = refusal('down')
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = refusal('down')
     await store.loadGatewayMethods()
     expect(store.gatewayMethods).toEqual([])
   })
@@ -370,7 +362,7 @@ describe('useAccountStore reads', () => {
 
 describe('useAccountStore modal errors', () => {
   it('clears every modal error on request', async () => {
-    table[writeOf(HttpMethod.Patch, AccountEndpoint.Me)] = REFUSED
+    table[writeOf(AccountEndpoint.Me, HttpMethod.Patch)] = REFUSED
     const store = useAccountStore()
     await store.saveProfile({})
 

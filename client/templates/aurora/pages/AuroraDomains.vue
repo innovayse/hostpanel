@@ -48,7 +48,7 @@ import AuroraDomainResults from '~/templates/aurora/sections/DomainResults.vue'
 import AuroraTldTable from '~/templates/aurora/sections/TldTable.vue'
 import { EYEBROW_CLASS, PAGE_TITLE_CLASS } from '~/templates/aurora/typography'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
-import type { DomainResult } from '~/templates/aurora/types/domainresult'
+import type { DomainResult } from '~/types/domainresult'
 import type { TldPriceRow } from '~/types/tldpricerow'
 
 withDefaults(defineProps<{

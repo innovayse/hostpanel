@@ -80,7 +80,7 @@ export const DOMAIN_PRODUCT = {
  * @param {string} name Plan name.
  * @param {number} monthly Monthly price in USD.
  * @param {string} type Product type the catalogue reports.
- * @returns {object} The plan, priced in USD and AMD.
+ * @returns {{ id: number, groupId: number, name: string, description: string, status: string, type: string, pricing: { monthly: number, annual: number }, prices: { currencyCode: string, monthly: number, annual: number }[] }} The plan, priced in USD and AMD.
  */
 const familyPlan = (id, groupId, name, monthly, type) => ({
   id,
@@ -96,6 +96,9 @@ const familyPlan = (id, groupId, name, monthly, type) => ({
   ],
 })
 
+/** The mailbox plan, a component of {@link BUNDLE}. */
+export const MAILBOX_PLAN = familyPlan(41, 4, 'E2E Mailbox', 3, 'Email')
+
 /** Plans of the extra families: five VPS plans (an odd count, to test the centred last row), then one each for dedicated servers, email and SSL. */
 export const EXTRA_FAMILY_PLANS = [
   familyPlan(21, 2, 'E2E VPS Small', 9, 'Vps'),
@@ -104,9 +107,28 @@ export const EXTRA_FAMILY_PLANS = [
   familyPlan(24, 2, 'E2E VPS Pro', 72, 'Vps'),
   familyPlan(25, 2, 'E2E VPS Max', 144, 'Vps'),
   familyPlan(31, 3, 'E2E Dedicated One', 80, 'Dedicated'),
-  familyPlan(41, 4, 'E2E Mailbox', 3, 'Email'),
+  MAILBOX_PLAN,
   familyPlan(51, 5, 'E2E SSL Basic', 12, 'Ssl'),
 ]
+
+/**
+ * The product bundle `GET /api/public/product-bundles` serves: hosting (the primary component) and a
+ * mailbox, a domain for one year and ten percent off.
+ */
+export const BUNDLE = {
+  id: 5,
+  name: 'E2E Launch Pack',
+  description: 'Hosting, a mailbox and a domain for the end-to-end suite',
+  includesDomain: true,
+  domainYears: 1,
+  discountType: 'Percentage',
+  discountAmount: 10,
+  discountCurrency: null,
+  components: [
+    { productId: PLAN.id, name: PLAN.name, isPrimary: true },
+    { productId: MAILBOX_PLAN.id, name: MAILBOX_PLAN.name, isPrimary: false },
+  ],
+}
 
 /** Every product the catalogue endpoint serves. */
 export const PRODUCTS = [PLAN, PLAN_PRO, DOMAIN_PRODUCT, ...EXTRA_FAMILY_PLANS]

@@ -315,6 +315,18 @@
 <data name="ORDER_DOMAIN_PRICING_INVALID" xml:space="preserve">
     <value>That domain cannot be priced for this order. Check the name and try again.</value>
   </data>
+  <data name="ORDER_BUNDLE_ITEMS_MISMATCH" xml:space="preserve">
+    <value>The products in the order do not match the bundle. Order each product of the bundle once, and nothing else.</value>
+  </data>
+  <data name="ORDER_BUNDLE_DOMAIN_MISMATCH" xml:space="preserve">
+    <value>The bundle needs exactly one domain line when it includes a domain, and none when it does not.</value>
+  </data>
+  <data name="ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED" xml:space="preserve">
+    <value>A bundle can include a domain registration or transfer, not a renewal.</value>
+  </data>
+  <data name="ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE" xml:space="preserve">
+    <value>The currency of this bundle's discount is not available, so the bundle cannot be ordered.</value>
+  </data>
 <data name="DEPARTMENT_NOT_FOUND" xml:space="preserve">
     <value>No such support department exists.</value>
   </data>
@@ -419,6 +431,9 @@
   </data>
   <data name="PRODUCT_BUNDLE_NOT_FOUND" xml:space="preserve">
     <value>No such product bundle.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_NOT_AVAILABLE" xml:space="preserve">
+    <value>That bundle is not available for ordering.</value>
   </data>
   <data name="PRODUCT_BUNDLE_PRODUCT_NOT_FOUND" xml:space="preserve">
     <value>One of the products in the bundle does not exist.</value>

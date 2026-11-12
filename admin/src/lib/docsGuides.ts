@@ -16,5 +16,6 @@ export const DOCS_GUIDES: Partial<Record<string, string>> = {
   [AppRoute.SettingsEmailTemplates]: 'staff/email-templates',
   [AppRoute.SettingsTldPricing]: 'staff/tld-pricing',
   [AppRoute.SettingsProducts]: 'staff/products',
+  [AppRoute.SettingsProductBundles]: 'staff/products',
   [AppRoute.BillingInvoices]: 'staff/billing',
 } as const

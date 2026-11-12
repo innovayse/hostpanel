@@ -73,6 +73,7 @@
             <UiText size="sm" tone="subtle">{{ $t('cart.summary') }}</UiText>
             <UiText size="sm" weight="medium">{{ cart.count }} {{ $t('cart.items') }}</UiText>
           </UiStack>
+          <CheckoutBundleSummary :name="bundleName" :offer="bundleOffer" :discount="bundleDiscount" />
           <UiStack direction="row" align="center" justify="between" gap="none" class="pt-2 border-t border-gray-200 dark:border-white/5">
             <UiText size="lg" weight="bold">{{ $t('cart.total') }}</UiText>
             <UiGradientText class="text-3xl font-black bg-gradient-to-r from-cyan-400 to-primary-400 [html[data-template=classic]_&]:bg-none [html[data-template=classic]_&]:text-classic-ink [html[data-template=classic]_&]:text-2xl [html[data-template=classic]_&]:font-bold" data-testid="cart-drawer-total">{{ totalLabel }}</UiGradientText>
@@ -124,6 +125,7 @@
  * `html[data-template=classic]` rather than on the `tpl-classic` root class.
  */
 import { ShoppingCart, Server, Trash2, CreditCard, Lock } from 'lucide-vue-next'
+import { useCartBundle } from '~/composables/useCartBundle'
 import { useCartStore } from '~/stores/cart'
 import { useCurrencyStore } from '~/stores/currency'
 import { formatMoney } from '~/utils/formatMoney'
@@ -134,6 +136,9 @@ const cart = useCartStore()
 
 /** The currency store: which currency the payer is billed in. */
 const currencyStore = useCurrencyStore()
+
+/** The cart's bundle as display text: its name, its discount in words and the estimated amount taken off. */
+const { bundleName, bundleOffer, bundleDiscount } = useCartBundle()
 
 /** Prefixes a path with the active locale. */
 const localePath = useLocalePath()

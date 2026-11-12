@@ -59,17 +59,22 @@ public sealed class OrdersController : BaseApiController
     /// the checkout IP is read there too. Neither is on the command, so this action binds the
     /// items and dispatches: there is nothing left here to get wrong.
     /// </remarks>
-    /// <param name="command">The items, payment method and, for a guest, registration details.</param>
+    /// <param name="command">
+    /// The items, payment method and, for a guest, registration details; <c>bundleId</c> places the order from a product bundle.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 201 with the new order's id and number, its invoice id and its payment token; 400 with
     /// <c>VALIDATION_ERROR</c>, <c>ORDER_PAYMENT_METHOD_UNAVAILABLE</c>,
     /// <c>ORDER_CURRENCY_UNAVAILABLE</c>, <c>ORDER_GUEST_DETAILS_REQUIRED</c>,
     /// <c>PRODUCT_NOT_AVAILABLE</c>, <c>ORDER_PRODUCT_PRICE_UNAVAILABLE</c>,
-    /// <c>ORDER_DOMAIN_PRICING_INVALID</c> or <c>USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT</c>;
+    /// <c>ORDER_DOMAIN_PRICING_INVALID</c>, <c>PRODUCT_BUNDLE_NOT_AVAILABLE</c>, <c>ORDER_BUNDLE_ITEMS_MISMATCH</c>,
+    /// <c>ORDER_BUNDLE_DOMAIN_MISMATCH</c>, <c>ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED</c>,
+    /// <c>ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE</c> or
+    /// <c>USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT</c>;
     /// 403 with <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c> when the signed-in caller's account may not order, or
     /// <c>CLIENT_PERMISSION_DENIED</c> when they lack the ordering permission or the enabled identity plugin refuses them;
-    /// 404 with <c>PRODUCT_NOT_FOUND</c>, or <c>DOMAIN_NOT_FOUND</c> when a renewal names a domain
+    /// 404 with <c>PRODUCT_NOT_FOUND</c>, <c>PRODUCT_BUNDLE_NOT_FOUND</c>, or <c>DOMAIN_NOT_FOUND</c> when a renewal names a domain
     /// the client does not hold; 409 with <c>ACCOUNT_EMAIL_EXISTS</c> when a guest's address already
     /// has an account; 429 when the rate limit is hit; 500 on an unexpected fault (the invoice of an
     /// order that failed to save is cancelled); 503 with <c>ORDER_NUMBER_RANGE_EXHAUSTED</c>, or with

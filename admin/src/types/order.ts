@@ -48,6 +48,10 @@ export interface OrderDetail extends OrderListItem {
   invoiceTotal: number | null
   /** Admin notes. */
   notes: string | null
+  /** Product bundle the order was placed from; null for an order of single products or once the bundle was deleted. */
+  bundleId: number | null
+  /** Name of that bundle, null when `bundleId` is. */
+  bundleName: string | null
   /** Order line items. */
   items: OrderItemDetail[]
 }

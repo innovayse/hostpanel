@@ -26,8 +26,8 @@ import { useDomainsApi } from '~/composables/apis/useDomainsApi'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
-import { DomainResultStatus } from '~/templates/aurora/types/domainresultstatus'
-import type { DomainResult } from '~/templates/aurora/types/domainresult'
+import { DomainResultStatus } from '~/types/domainresultstatus'
+import type { DomainResult } from '~/types/domainresult'
 import type { DomainCheckResult } from '~/types/domaincheckresult'
 import type { TldPriceRow } from '~/types/tldpricerow'
 import type { TldPeriodPrice } from '~/types/tldperiodprice'
@@ -132,6 +132,7 @@ export const useDomainsStore = defineStore('domains', () => {
       transfer: oneYear(entry.transfer ?? entry.register),
       categories: entry.categories ?? [],
       registerAmount: priceForYears(entry.register, ONE_YEAR) ?? 0,
+      transferAmount: priceForYears(entry.transfer ?? entry.register, ONE_YEAR) ?? 0,
       sellCurrency: entry.sellCurrency,
     })))
 

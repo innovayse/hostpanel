@@ -542,6 +542,30 @@ public static class HostpanelErrorCodes
     public const string ORDER_DOMAIN_PRICING_INVALID = "ORDER_DOMAIN_PRICING_INVALID";
 
     /// <summary>
+    /// The order's product lines are not exactly the products of the bundle it names (400): a component is
+    /// missing, a product is not a component, or one is sent twice.
+    /// </summary>
+    public const string ORDER_BUNDLE_ITEMS_MISMATCH = "ORDER_BUNDLE_ITEMS_MISMATCH";
+
+    /// <summary>
+    /// The order carries a domain line the bundle does not include, or none although it does, or more than
+    /// one (400).
+    /// </summary>
+    public const string ORDER_BUNDLE_DOMAIN_MISMATCH = "ORDER_BUNDLE_DOMAIN_MISMATCH";
+
+    /// <summary>
+    /// The bundle's domain line asks for a renewal (400): a bundle includes a registration or a transfer
+    /// of a domain the client brings, never the renewal of one they already hold.
+    /// </summary>
+    public const string ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED = "ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED";
+
+    /// <summary>
+    /// The bundle's fixed discount is stated in a currency this deployment does not store (400): it cannot be
+    /// converted to the payer's currency, so the order is refused rather than discounted by a wrong figure.
+    /// </summary>
+    public const string ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE = "ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE";
+
+    /// <summary>
     /// The order number sequence has outgrown the configured prefix and the longest order number
     /// the order table stores, so no new order can be numbered until the operator shortens the
     /// prefix (503).
@@ -1120,6 +1144,9 @@ public static class HostpanelErrorCodes
 
     /// <summary>The id names no product bundle (404).</summary>
     public const string PRODUCT_BUNDLE_NOT_FOUND = "PRODUCT_BUNDLE_NOT_FOUND";
+
+    /// <summary>The bundle exists but is not active, so it may not be ordered (400).</summary>
+    public const string PRODUCT_BUNDLE_NOT_AVAILABLE = "PRODUCT_BUNDLE_NOT_AVAILABLE";
 
     /// <summary>A product listed in the bundle does not exist (404).</summary>
     public const string PRODUCT_BUNDLE_PRODUCT_NOT_FOUND = "PRODUCT_BUNDLE_PRODUCT_NOT_FOUND";

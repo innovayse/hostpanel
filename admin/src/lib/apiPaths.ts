@@ -97,6 +97,8 @@ export enum ApiPath {
   PredefinedReplies = '/predefined-replies',
   /** `/predefined-replies/categories` collection and its members. */
   PredefinedRepliesCategories = '/predefined-replies/categories',
+  /** `/products/bundles` collection and its members. */
+  ProductBundles = '/products/bundles',
   /** `/product-features` collection and its members. */
   ProductFeatures = '/product-features',
   /** `/products` collection and its members. */

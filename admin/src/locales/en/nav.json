@@ -56,6 +56,7 @@
   "settingsChildren": {
     "general": "General",
     "products": "Products",
+    "productBundles": "Product bundles",
     "tldPricing": "TLD Pricing",
     "slides": "Slides",
     "emailTemplates": "Email Templates",

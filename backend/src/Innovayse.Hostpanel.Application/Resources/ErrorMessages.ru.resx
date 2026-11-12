@@ -315,6 +315,18 @@
 <data name="ORDER_DOMAIN_PRICING_INVALID" xml:space="preserve">
     <value>Не удалось рассчитать цену для этого домена. Проверьте имя и попробуйте снова.</value>
   </data>
+  <data name="ORDER_BUNDLE_ITEMS_MISMATCH" xml:space="preserve">
+    <value>Продукты в заказе не совпадают с набором. Закажите каждый продукт набора один раз и ничего лишнего.</value>
+  </data>
+  <data name="ORDER_BUNDLE_DOMAIN_MISMATCH" xml:space="preserve">
+    <value>Если набор включает домен, нужна ровно одна строка домена, а если не включает, строки домена быть не должно.</value>
+  </data>
+  <data name="ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED" xml:space="preserve">
+    <value>В набор можно включить регистрацию или перенос домена, но не продление.</value>
+  </data>
+  <data name="ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE" xml:space="preserve">
+    <value>Валюта скидки этого набора недоступна, поэтому заказать набор нельзя.</value>
+  </data>
 <data name="DEPARTMENT_NOT_FOUND" xml:space="preserve">
     <value>Такой отдел поддержки не найден.</value>
   </data>
@@ -419,6 +431,9 @@
   </data>
   <data name="PRODUCT_BUNDLE_NOT_FOUND" xml:space="preserve">
     <value>Такого набора продуктов нет.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_NOT_AVAILABLE" xml:space="preserve">
+    <value>Этот набор недоступен для заказа.</value>
   </data>
   <data name="PRODUCT_BUNDLE_PRODUCT_NOT_FOUND" xml:space="preserve">
     <value>Один из продуктов набора не существует.</value>

@@ -37,6 +37,7 @@ import { TemplateName } from '~/types/templatename'
 import { DOMAIN_BILLING_CYCLE } from '~/constants/pricingCycle'
 import { CartItemType } from '~/types/cartitemtype'
 import { DomainOrderAction } from '~/types/domainorderaction'
+import { tldOf } from '~/utils/domainTld'
 
 /** Translation helpers and the active language. */
 const { t, locale } = useI18n()
@@ -136,7 +137,7 @@ const addDomain = (domain: string): void => {
     return
   }
 
-  const tld = domain.slice(domain.indexOf('.') + 1)
+  const tld = tldOf(domain)
   const row = priceRows.value.find((priceRow) => priceRow.tld === `.${tld}`)
   if (!row) {
     return

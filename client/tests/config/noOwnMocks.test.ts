@@ -11,7 +11,8 @@
  * ours. That list may only shrink. A file that no longer fakes one fails the guard until it is removed
  * from the list, and a new file that fakes one fails until it uses the real composable instead.
  * Stubbing a Nuxt or Vue framework global (`useRoute`, `useHead`, `useCookie`, `navigateTo`, `fetch`, ...)
- * is not replacing code of ours and is always allowed.
+ * is not replacing code of ours and is always allowed, and so is registering the real composable under its own
+ * name (`vi.stubGlobal('useX', useX)`), which only makes the real one reachable as the global it is in the app.
  *
  * @module tests/config/noOwnMocks.test
  */
@@ -35,8 +36,12 @@ const THIS_FILE = import.meta.filename
 /** A `vi.mock` or `vi.doMock` call with a literal module specifier, captured in group 2. */
 const MOCK_CALL = /\bvi\.(?:mock|doMock)\(\s*(['"`])([^'"`]+)\1/g
 
-/** A `vi.stubGlobal` call with a literal name, captured in group 2. */
-const STUB_GLOBAL_CALL = /\bvi\.stubGlobal\(\s*(['"`])([^'"`]+)\1/g
+/**
+ * A `vi.stubGlobal` call with a literal name, captured in group 2. Group 3 holds the value when it is a bare
+ * identifier (`vi.stubGlobal('useX', useX)`), which is how a test registers the real, imported composable under
+ * its auto-import name; any other value (a function, a spy, an object) leaves group 3 undefined.
+ */
+const STUB_GLOBAL_CALL = /\bvi\.stubGlobal\(\s*(['"`])([^'"`]+)\1\s*(?:,\s*([A-Za-z0-9_$]+)\s*\))?/g
 
 /** An exported function or constant of a client source file, captured in group 1. */
 const EXPORTED_NAME = /export\s+(?:const|function|async function)\s+([A-Za-z0-9_$]+)/g
@@ -50,7 +55,6 @@ const OWN_MODULE = /^(?:~|@\/|\.|#)/
  */
 const KNOWN_REMAINDER: readonly string[] = [
   'app.test.ts',
-  'components/account/ProfileTab.test.ts',
   'components/layout/Footer.test.ts',
   'components/layout/Header.test.ts',
   'components/sections/SectionsApps.test.ts',
@@ -83,18 +87,14 @@ const KNOWN_REMAINDER: readonly string[] = [
   'helpers/authScreens.ts',
   'helpers/publicPage.ts',
   'helpers/templateGlobals.ts',
-  'layouts/client.test.ts',
   'layouts/default.test.ts',
   'pages/about.test.ts',
   'pages/checkout/index.test.ts',
-  'pages/client/dashboard.test.ts',
-  'pages/client/tickets/[id].test.ts',
   'pages/contact.test.ts',
   'pages/cookie-policy.test.ts',
   'pages/domains/index.test.ts',
   'pages/hosting/index.test.ts',
   'pages/index.test.ts',
-  'pages/payment/result.test.ts',
   'plugins/brand-tokens.test.ts',
   'plugins/client-auth.test.ts',
   'plugins/color-mode.test.ts',
@@ -104,7 +104,6 @@ const KNOWN_REMAINDER: readonly string[] = [
   'templates/aurora/sections/AuroraFaq.test.ts',
   'templates/aurora/sections/AuroraHero.test.ts',
   'templates/classic/pages/ClassicHome.test.ts',
-  'templates/nova/features.test.ts',
   'templates/nova/pages/NovaHome.test.ts',
   'templates/nova/sections/NovaApps.test.ts',
   'templates/nova/sections/NovaGuarantees.test.ts',
@@ -145,14 +144,18 @@ const ownMocks = (text: string): string[] =>
   [...text.matchAll(MOCK_CALL)].map((match) => match[2] ?? '').filter((specifier) => OWN_MODULE.test(specifier))
 
 /**
- * Finds the globals of ours that one file's text replaces with `vi.stubGlobal`.
+ * Finds the globals of ours that one file's text replaces with `vi.stubGlobal`. Registering the real composable
+ * under its own name (`vi.stubGlobal('useX', useX)`) replaces nothing, so it is not counted.
  *
  * @param text - File contents.
  * @param ownNames - The auto-imported names the client defines itself.
  * @returns The names replaced, empty when the file replaces nothing of ours.
  */
 const ownGlobalStubs = (text: string, ownNames: ReadonlySet<string>): string[] =>
-  [...text.matchAll(STUB_GLOBAL_CALL)].map((match) => match[2] ?? '').filter((name) => ownNames.has(name))
+  [...text.matchAll(STUB_GLOBAL_CALL)]
+    .filter((match) => match[3] !== match[2])
+    .map((match) => match[2] ?? '')
+    .filter((name) => ownNames.has(name))
 
 /** Every name the client's composables, stores and utils export, which Nuxt hands to every file as a global. */
 const OWN_AUTO_IMPORTS: ReadonlySet<string> = new Set(
@@ -204,6 +207,15 @@ describe('no mocks of our own modules in the client tests', () => {
   it('leaves the mocks of packages we do not own alone', () => {
     expect(ownMocks(`vi.mock('swiper/vue', () => ({}))`)).toEqual([])
     expect(ownMocks(`vi.mock('@vuepic/vue-datepicker', () => ({}))`)).toEqual([])
+  })
+
+  it('does not count the real composable registered under its own name as a fake', () => {
+    const own = new Set(['useAuthMode', 'useClientStore'])
+
+    expect(ownGlobalStubs(`vi.stubGlobal('useAuthMode', useAuthMode)`, own)).toEqual([])
+    expect(ownGlobalStubs(`vi.stubGlobal( "useClientStore" , useClientStore )`, own)).toEqual([])
+    expect(ownGlobalStubs(`vi.stubGlobal('useAuthMode', useOtherMode)`, own)).toEqual(['useAuthMode'])
+    expect(ownGlobalStubs(`vi.stubGlobal('useAuthMode', useAuthMode.bind(null))`, own)).toEqual(['useAuthMode'])
   })
 
   it('catches a composable of ours being faked as a global and leaves framework globals alone', () => {

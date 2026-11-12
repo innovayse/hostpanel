@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import { stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import CartContent from '~/components/cart/CartContent.vue'
+import CheckoutBundleSummary from '~/components/checkout/BundleSummary.vue'
 import type { CartItem } from '~/types/cartitem'
 import { CartItemType } from '~/types/cartitemtype'
 import { PricingCycle } from '~/types/pricingcycle'
@@ -26,6 +27,7 @@ const mountContent = (props: Record<string, unknown> = {}) =>
   mountWithKit(CartContent, {
     props: { items, staleCount: 0, totalLabel: '$17.00', priceOf: (item: CartItem) => `$${item.amount}.00`, ...props },
     stubs: { TransitionGroup: false },
+    components: { CheckoutBundleSummary },
   })
 
 describe('CartContent', () => {
@@ -76,6 +78,14 @@ describe('CartContent', () => {
     await wrapper.findAll('[data-testid="cart-item-remove"]')[1]?.trigger('click')
 
     expect(wrapper.emitted('remove')?.[0]).toEqual([items[1]])
+  })
+
+  it('shows the bundle line only for a cart filled from a bundle with a discount', () => {
+    expect(mountContent().find('[data-testid="bundle-summary-discount"]').exists()).toBe(false)
+
+    const wrapper = mountContent({ bundleName: 'Starter pack', bundleOffer: '10% off', bundleDiscount: '$1.70' })
+
+    expect(wrapper.find('[data-testid="bundle-summary-amount"]').text()).toBe('-$1.70')
   })
 
   it('reports Clear cart', async () => {

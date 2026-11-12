@@ -197,6 +197,7 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         children: [
           { to: AppRoute.Settings, labelKey: 'nav.settingsChildren.general' },
           { to: AppRoute.SettingsProducts, labelKey: 'nav.settingsChildren.products' },
+          { to: AppRoute.SettingsProductBundles, labelKey: 'nav.settingsChildren.productBundles' },
           { to: AppRoute.SettingsTldPricing, labelKey: 'nav.settingsChildren.tldPricing' },
           { to: AppRoute.SettingsSlides, labelKey: 'nav.settingsChildren.slides' },
           { to: AppRoute.SettingsEmailTemplates, labelKey: 'nav.settingsChildren.emailTemplates' },

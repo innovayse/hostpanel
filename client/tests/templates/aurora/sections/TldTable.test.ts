@@ -22,6 +22,7 @@ const row = (tld: string, categories: string[]): TldPriceRow => ({
   transfer: '$9',
   categories,
   registerAmount: 10,
+  transferAmount: 10,
   sellCurrency: 'USD',
 })
 

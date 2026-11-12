@@ -5,7 +5,7 @@
 import { APP_LOCALES } from '~/constants/appLocales'
 
 /** Locale files merged into one message set per locale. */
-const MODULES = ['common', 'nav', 'hero', 'products', 'contact', 'faq', 'cta', 'whychooseus', 'team', 'partners', 'process', 'testimonials', 'footer', 'terms', 'legal', 'privacy', 'whatsapp', 'error', 'cookieBanner', 'cookiePolicy', 'refundPolicy', 'aup', 'seo', 'domains', 'hosting', 'cart', 'checkout', 'client', 'configure', 'announcements', 'invoicePay', 'knowledgebase', 'trial', 'aurora', 'nova', 'paymentResult', 'demo', 'about', 'hostingSections', 'storefront', 'trust', 'signInPrompt', 'plugins']
+const MODULES = ['common', 'nav', 'hero', 'products', 'contact', 'faq', 'cta', 'whychooseus', 'team', 'partners', 'process', 'testimonials', 'footer', 'terms', 'legal', 'privacy', 'whatsapp', 'error', 'cookieBanner', 'cookiePolicy', 'refundPolicy', 'aup', 'seo', 'domains', 'hosting', 'cart', 'checkout', 'client', 'configure', 'announcements', 'invoicePay', 'knowledgebase', 'trial', 'aurora', 'nova', 'paymentResult', 'demo', 'about', 'hostingSections', 'storefront', 'trust', 'signInPrompt', 'plugins', 'bundles']
 
 export default defineNuxtPlugin({
   name: 'i18n-messages',

@@ -26,7 +26,7 @@ public sealed class ServiceSuspendedHandlerTests(IntegrationTestFactory factory)
         var (clientId, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
         await SuspendQuietlyAsync(scope.ServiceProvider, context, serviceId);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", TestMoments.Seeded));
 
         var call = Assert.Single(provider.Suspended);
         Assert.Equal(serviceId, call.ServiceId);
@@ -49,7 +49,7 @@ public sealed class ServiceSuspendedHandlerTests(IntegrationTestFactory factory)
 
         var (clientId, serviceId) = await ProvisioningTestSeeds.SeedUnassignedServiceAsync(context);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", TestMoments.Seeded));
 
         Assert.Empty(provider.Suspended);
     }
@@ -70,7 +70,7 @@ public sealed class ServiceSuspendedHandlerTests(IntegrationTestFactory factory)
 
         var (clientId, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceSuspendedEvent(serviceId, clientId, "non-payment", TestMoments.Seeded));
 
         Assert.Empty(provider.Suspended);
     }
@@ -87,7 +87,7 @@ public sealed class ServiceSuspendedHandlerTests(IntegrationTestFactory factory)
         var host = ProvisioningTestSeeds.WithRecordingProvider(factory, provider);
         using var scope = host.Services.CreateScope();
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceSuspendedEvent(int.MaxValue, 1, "non-payment", DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceSuspendedEvent(int.MaxValue, 1, "non-payment", TestMoments.Seeded));
 
         Assert.Empty(provider.Suspended);
     }

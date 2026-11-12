@@ -30,7 +30,7 @@ public sealed class ServiceUnsuspendedHandlerTests(IntegrationTestFactory factor
 
         var (clientId, _, serviceId) = await ProvisioningTestSeeds.SeedActiveServiceAsync(context);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceUnsuspendedEvent(serviceId, clientId, DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceUnsuspendedEvent(serviceId, clientId, TestMoments.Seeded));
 
         var reference = Assert.Single(provider.Unsuspended);
         Assert.Equal("provisioning-ref-1", reference);
@@ -58,7 +58,7 @@ public sealed class ServiceUnsuspendedHandlerTests(IntegrationTestFactory factor
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceUnsuspendedEvent(serviceId, clientId, DateTimeOffset.UtcNow));
+        await scope.ServiceProvider.PublishAndWaitAsync(new ServiceUnsuspendedEvent(serviceId, clientId, TestMoments.Seeded));
 
         Assert.Empty(provider.Unsuspended);
     }
@@ -79,7 +79,7 @@ public sealed class ServiceUnsuspendedHandlerTests(IntegrationTestFactory factor
         await SuspendKeysThenUnsuspendQuietlyAsync(clientId, serviceId);
         agent.KeysOf("web").Should().BeEmpty();
 
-        await PublishAsync(factory.Services, new ServiceUnsuspendedEvent(serviceId, clientId, DateTimeOffset.UtcNow));
+        await PublishAsync(factory.Services, new ServiceUnsuspendedEvent(serviceId, clientId, TestMoments.Seeded));
 
         agent.KeysOf("web").Keys.Should().BeEquivalentTo(installed, "the same keys come back, under the same ids");
         (await StatesAsync(serviceId)).Should().Equal(SshKeySyncState.Installed, SshKeySyncState.Installed);
@@ -98,7 +98,7 @@ public sealed class ServiceUnsuspendedHandlerTests(IntegrationTestFactory factor
         await SuspendKeysThenUnsuspendQuietlyAsync(clientId, serviceId);
         await using var host = ProvisioningTestSeeds.HostWithFakeProvider(factory, new FakeProvisioningProvider { ShouldFail = true });
 
-        await PublishAsync(host.Services, new ServiceUnsuspendedEvent(serviceId, clientId, DateTimeOffset.UtcNow));
+        await PublishAsync(host.Services, new ServiceUnsuspendedEvent(serviceId, clientId, TestMoments.Seeded));
 
         var agents = (FakeSshKeyProviderFactory)host.Services.GetRequiredService<ISshKeyProviderFactory>();
         agents.AgentFor(serverId).KeysOf("web").Should().BeEmpty("no restore was sent to the server");
@@ -116,7 +116,7 @@ public sealed class ServiceUnsuspendedHandlerTests(IntegrationTestFactory factor
     private async Task SuspendKeysThenUnsuspendQuietlyAsync(int clientId, int serviceId)
     {
         await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Suspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
-        await PublishAsync(factory.Services, new ClientServiceSuspendedEvent(serviceId, clientId, DateTimeOffset.UtcNow));
+        await PublishAsync(factory.Services, new ClientServiceSuspendedEvent(serviceId, clientId, TestMoments.Seeded));
         (await StatesAsync(serviceId)).Should().OnlyContain(state => state == SshKeySyncState.Suspended);
         await SshTestSeeds.ChangeServiceQuietlyAsync(factory, serviceId, s => s.Unsuspend(DateTimeOffset.UtcNow, hostingAlreadyUpdated: true));
     }

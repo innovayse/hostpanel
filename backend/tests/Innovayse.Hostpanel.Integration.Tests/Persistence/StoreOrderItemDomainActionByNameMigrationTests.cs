@@ -125,7 +125,7 @@ public sealed class StoreOrderItemDomainActionByNameMigrationTests
             RETURNING "Id"
             """,
             ("user", Guid.NewGuid().ToString()),
-            ("now", DateTimeOffset.UtcNow));
+            ("now", TestMoments.Seeded));
 
         var groupId = await InsertAsync(
             connectionString,

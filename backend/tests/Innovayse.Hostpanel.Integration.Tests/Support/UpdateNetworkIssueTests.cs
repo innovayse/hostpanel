@@ -25,7 +25,7 @@ public sealed class UpdateNetworkIssueTests(IntegrationTestFactory factory) : IC
             type = "Server",
             server = "web-01",
             priority = nameof(NetworkIssuePriority.High),
-            startDate = DateTimeOffset.UtcNow,
+            startDate = TestMoments.Seeded,
             description = "Something is down.",
         });
         var id = int.Parse((await createResponse.Content.ReadAsStringAsync()).Trim());
@@ -37,7 +37,7 @@ public sealed class UpdateNetworkIssueTests(IntegrationTestFactory factory) : IC
             server = "web-02",
             priority = nameof(NetworkIssuePriority.Low),
             status = "Investigating",
-            startDate = DateTimeOffset.UtcNow,
+            startDate = TestMoments.Seeded,
             endDate = (DateTimeOffset?)null,
             description = "Updated.",
         });
@@ -59,7 +59,7 @@ public sealed class UpdateNetworkIssueTests(IntegrationTestFactory factory) : IC
             server = (string?)null,
             priority = nameof(NetworkIssuePriority.High),
             status = "Reported",
-            startDate = DateTimeOffset.UtcNow,
+            startDate = TestMoments.Seeded,
             endDate = (DateTimeOffset?)null,
             description = "Anything.",
         });
@@ -80,7 +80,7 @@ public sealed class UpdateNetworkIssueTests(IntegrationTestFactory factory) : IC
             server = (string?)null,
             priority = nameof(NetworkIssuePriority.High),
             status = "Reported",
-            startDate = DateTimeOffset.UtcNow,
+            startDate = TestMoments.Seeded,
             endDate = (DateTimeOffset?)null,
             description = "Anything.",
         });

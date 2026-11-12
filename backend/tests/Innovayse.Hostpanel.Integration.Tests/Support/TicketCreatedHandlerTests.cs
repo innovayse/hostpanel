@@ -31,11 +31,11 @@ public sealed class TicketCreatedHandlerTests(IntegrationTestFactory factory) : 
         await context.SaveChangesAsync(CancellationToken.None);
 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var ticket = Ticket.Create(clientId, "Help", "Something's broken", department.Id, TicketPriority.Medium, DateTimeOffset.UtcNow);
+        var ticket = Ticket.Create(clientId, "Help", "Something's broken", department.Id, TicketPriority.Medium, TestMoments.Seeded);
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new TicketCreatedEvent(ticket.Id, clientId, department.Id) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new TicketCreatedEvent(ticket.Id, clientId, department.Id) { OccurredAt = TestMoments.Seeded });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(departmentEmail, message.To);
@@ -51,7 +51,7 @@ public sealed class TicketCreatedHandlerTests(IntegrationTestFactory factory) : 
         var host = EventHandlerTestHost.WithFakeRelay(factory, emailSender);
         using var scope = host.Services.CreateScope();
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new TicketCreatedEvent(1, 1, 999_999_999) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new TicketCreatedEvent(1, 1, 999_999_999) { OccurredAt = TestMoments.Seeded });
 
         Assert.Empty(emailSender.Sent);
     }
@@ -74,14 +74,14 @@ public sealed class TicketCreatedHandlerTests(IntegrationTestFactory factory) : 
         await context.SaveChangesAsync(CancellationToken.None);
         var ownerId = await DomainsTestSeeds.SeedClientAsync(context);
         var otherClientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var ticket = Ticket.Create(ownerId, "Help", "Something's broken", department.Id, TicketPriority.Medium, DateTimeOffset.UtcNow);
+        var ticket = Ticket.Create(ownerId, "Help", "Something's broken", department.Id, TicketPriority.Medium, TestMoments.Seeded);
         using (scope.ServiceProvider.GetRequiredService<IDomainEventGate>().Suppress())
         {
             context.Tickets.Add(ticket);
             await context.SaveChangesAsync(CancellationToken.None);
         }
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new TicketCreatedEvent(ticket.Id, otherClientId, department.Id) { OccurredAt = DateTimeOffset.UtcNow });
+        await scope.ServiceProvider.PublishAndWaitAsync(new TicketCreatedEvent(ticket.Id, otherClientId, department.Id) { OccurredAt = TestMoments.Seeded });
 
         Assert.Empty(emailSender.Sent);
     }

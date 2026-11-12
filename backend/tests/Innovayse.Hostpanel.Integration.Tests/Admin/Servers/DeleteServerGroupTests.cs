@@ -48,7 +48,7 @@ public sealed class DeleteServerGroupTests(IntegrationTestFactory factory) : ICl
             await context.SaveChangesAsync(CancellationToken.None);
             context.Products.Add(Product.Create(
                 productGroup.Id, $"Plan {Guid.NewGuid():N}", null, null, null, "plan", ProductType.SharedHosting, 0m, 0m,
-                DateTimeOffset.UtcNow, serverGroupId: groupId));
+                TestMoments.Seeded, serverGroupId: groupId));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

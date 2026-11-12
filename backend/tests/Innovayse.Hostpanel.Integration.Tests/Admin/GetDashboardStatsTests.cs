@@ -56,13 +56,13 @@ public sealed class GetDashboardStatsTests(IntegrationTestFactory factory) : ICl
 
         using var scope = factory.Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-        var client = Client.Create($"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+        var client = Client.Create($"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(client);
         await context.SaveChangesAsync(CancellationToken.None);
         var departmentId = await SupportTestSeeds.SeedDepartmentAsync(context);
-        var openTicket = Ticket.Create(client.Id, "Open one", "Help", departmentId, TicketPriority.Medium, DateTimeOffset.UtcNow);
-        var closedTicket = Ticket.Create(client.Id, "Closed one", "Help", departmentId, TicketPriority.Medium, DateTimeOffset.UtcNow);
-        closedTicket.Close(DateTimeOffset.UtcNow);
+        var openTicket = Ticket.Create(client.Id, "Open one", "Help", departmentId, TicketPriority.Medium, TestMoments.Seeded);
+        var closedTicket = Ticket.Create(client.Id, "Closed one", "Help", departmentId, TicketPriority.Medium, TestMoments.Seeded);
+        closedTicket.Close(TestMoments.Seeded);
         context.Tickets.Add(openTicket);
         context.Tickets.Add(closedTicket);
         await context.SaveChangesAsync(CancellationToken.None);

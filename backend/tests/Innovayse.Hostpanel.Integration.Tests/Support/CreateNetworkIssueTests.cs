@@ -24,7 +24,7 @@ public sealed class CreateNetworkIssueTests(IntegrationTestFactory factory) : IC
             type = "Server",
             server = "web-01",
             priority = nameof(NetworkIssuePriority.High),
-            startDate = DateTimeOffset.UtcNow,
+            startDate = TestMoments.Seeded,
             description = "Something is down.",
         });
 
@@ -44,7 +44,7 @@ public sealed class CreateNetworkIssueTests(IntegrationTestFactory factory) : IC
             type = "NotARealType",
             server = (string?)null,
             priority = nameof(NetworkIssuePriority.High),
-            startDate = DateTimeOffset.UtcNow,
+            startDate = TestMoments.Seeded,
             description = "Bad input.",
         });
 
@@ -64,7 +64,7 @@ public sealed class CreateNetworkIssueTests(IntegrationTestFactory factory) : IC
             type = "Server",
             server = (string?)null,
             priority = nameof(NetworkIssuePriority.High),
-            startDate = DateTimeOffset.UtcNow,
+            startDate = TestMoments.Seeded,
             description = "Anything.",
         });
 

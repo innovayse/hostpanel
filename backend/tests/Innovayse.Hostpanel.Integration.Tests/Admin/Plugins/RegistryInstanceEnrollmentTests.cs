@@ -29,7 +29,7 @@ public sealed class RegistryInstanceEnrollmentTests(IntegrationTestFactory facto
     [Fact]
     public async Task AFailedAttempt_WaitsItsBackoff_ThenTriesAgainAsync()
     {
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(TestMoments.Seeded);
         var registry = new FakeRegistryServer();
         using var host = new RegistryTestHost(factory, registry, clock: clock);
         var healthy = false;
@@ -60,7 +60,7 @@ public sealed class RegistryInstanceEnrollmentTests(IntegrationTestFactory facto
     [Fact]
     public async Task EachFailureInARow_WaitsLongerAsync()
     {
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(TestMoments.Seeded);
         var registry = new FakeRegistryServer();
         using var host = new RegistryTestHost(factory, registry, clock: clock);
         registry.Intercept = call => call.Target == "/v1/instances" ? new HttpResponseMessage(System.Net.HttpStatusCode.ServiceUnavailable) : null;
@@ -80,7 +80,7 @@ public sealed class RegistryInstanceEnrollmentTests(IntegrationTestFactory facto
     [Fact]
     public async Task AForcedRun_IgnoresTheBackoffAsync()
     {
-        var clock = new ManualTimeProvider(DateTimeOffset.UtcNow);
+        var clock = new ManualTimeProvider(TestMoments.Seeded);
         var registry = new FakeRegistryServer();
         using var host = new RegistryTestHost(factory, registry, clock: clock);
         var healthy = false;

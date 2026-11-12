@@ -173,7 +173,7 @@ public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory
         var consent = await StartSavingAsync(scenario, signedIn, invoiceId);
         var admin = await BillingTestSeeds.AdminClientAsync(factory, scenario.Host);
 
-        var response = await admin.PostAsJsonAsync("/api/billing/bulk", new { invoiceIds = new[] { invoiceId }, action = "Cancel" });
+        var response = await admin.PostAsJsonAsync("/api/billing/bulk", new { invoiceIds = new[] { invoiceId }, action = "MarkCancelled" });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         (await ConsentAsync(scenario, signedIn.ClientId, consent.Id)).IsRevoked.Should().BeTrue();
@@ -244,6 +244,6 @@ public sealed class UnboundConsentRevocationTests(IntegrationTestFactory factory
         (await ConsentAsync(scenario, signedIn.ClientId, old.Id)).IsRevoked.Should().BeTrue();
         var consents = await scenario.ConsentsOfAsync(signedIn.ClientId);
         consents.Where(c => c.Id != old.Id).Should().HaveCount(saveAgain ? 1 : 0)
-            .And.OnlyContain(c => !c.IsRevoked);
+            .And.NotContain(c => c.IsRevoked);
     }
 }

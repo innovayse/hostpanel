@@ -280,6 +280,9 @@ export const useCheckoutStore = defineStore('checkout', () => {
         eppCode: i.eppCode || undefined,
         years: i.years || undefined,
       })),
+      // The bundle the lines were chosen from; the backend checks the lines against it and applies
+      // its discount. Absent for a cart of plain lines.
+      bundleId: cart.bundle?.id,
       paymentmethod: method,
       // The guest's chosen currency; ignored by the backend for an existing signed-in client,
       // whose currency is already fixed on their client record.

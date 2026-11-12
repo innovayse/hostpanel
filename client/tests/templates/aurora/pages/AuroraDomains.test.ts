@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import AuroraDomains from '~/templates/aurora/pages/AuroraDomains.vue'
 import { ALL_CATEGORY } from '~/templates/aurora/types/allcategory'
-import { DomainResultStatus } from '~/templates/aurora/types/domainresultstatus'
+import { DomainResultStatus } from '~/types/domainresultstatus'
 import type { TldPriceRow } from '~/types/tldpricerow'
 import { stubAuroraGlobals } from '../auroraGlobals'
 
@@ -18,6 +18,7 @@ const ROW: TldPriceRow = {
   transfer: '$9',
   categories: ['Popular'],
   registerAmount: 10,
+  transferAmount: 10,
   sellCurrency: 'USD',
 }
 

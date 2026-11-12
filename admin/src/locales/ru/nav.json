@@ -56,6 +56,7 @@
   "settingsChildren": {
     "general": "Общее",
     "products": "Продукты",
+    "productBundles": "Комплекты продуктов",
     "tldPricing": "Цены на TLD",
     "slides": "Слайды",
     "emailTemplates": "Шаблоны писем",

@@ -72,7 +72,7 @@ public sealed class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceI
         });
         builder.Navigation(x => x.ProductSnapshot).IsRequired(false);
 
-        builder.Property(x => x.Description).HasMaxLength(500).IsRequired();
+        builder.Property(x => x.Description).HasMaxLength(InvoiceItem.DescriptionMaxLength).IsRequired();
         builder.Property(x => x.UnitPrice).HasColumnType("numeric(18,4)").IsRequired();
 
         // The client group discount already taken off the list price, as it was when the line was billed. Every line

@@ -9,15 +9,12 @@ using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
 using Innovayse.Hostpanel.Domain.Clients;
-using Innovayse.Hostpanel.Domain.Domains;
-using Innovayse.Hostpanel.Domain.Domains.Enums;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Domain.Services.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Orders;
@@ -611,8 +608,8 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         await EnableBankTransferAsync();
         var tld = $"x{Guid.NewGuid():N}"[..9];
         const decimal usdSellPrice = 10m;
-        var expectedAmd = await SeedUsdTldAndRatesAsync(tld, usdSellPrice);
-        var productId = await SeedDomainProductAsync();
+        var expectedAmd = await OrdersTestSeeds.SeedUsdTldAndRatesAsync(factory, tld, usdSellPrice);
+        var productId = await OrdersTestSeeds.SeedDomainProductAsync(factory);
         var client = factory.CreateClient();
 
         var response = await client.PostAsJsonAsync("/api/orders", new
@@ -664,8 +661,8 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     {
         await EnableBankTransferAsync();
         var tld = $"x{Guid.NewGuid():N}"[..9];
-        await SeedUsdTldAndRatesAsync(tld, 10m);
-        var productId = await SeedDomainProductAsync();
+        await OrdersTestSeeds.SeedUsdTldAndRatesAsync(factory, tld, 10m);
+        var productId = await OrdersTestSeeds.SeedDomainProductAsync(factory);
 
         var response = await factory.CreateClient().PostAsJsonAsync("/api/orders", new
         {
@@ -708,8 +705,8 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         await EnableBankTransferAsync();
         var tld = $"x{Guid.NewGuid():N}"[..9];
         const decimal usdSellPrice = 9.99m;
-        await SeedUsdTldAndRatesAsync(tld, usdSellPrice);
-        var productId = await SeedDomainProductAsync();
+        await OrdersTestSeeds.SeedUsdTldAndRatesAsync(factory, tld, usdSellPrice);
+        var productId = await OrdersTestSeeds.SeedDomainProductAsync(factory);
         var client = factory.CreateClient();
         client.DefaultRequestHeaders.Add("X-Language", "ru");
 
@@ -904,8 +901,8 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     {
         await EnableBankTransferAsync();
         var tld = $"x{Guid.NewGuid():N}"[..9];
-        await SeedUsdTldAndRatesAsync(tld, 10m);
-        var productId = await SeedDomainProductAsync();
+        await OrdersTestSeeds.SeedUsdTldAndRatesAsync(factory, tld, 10m);
+        var productId = await OrdersTestSeeds.SeedDomainProductAsync(factory);
         var email = $"guest-{Guid.NewGuid():N}@example.test";
 
         var response = await factory.CreateClient().PostAsJsonAsync("/api/orders", new
@@ -953,7 +950,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     public async Task InvalidDomainLineIsRefusedByTheValidator(string action, string? domain, int years, string? eppCode)
     {
         await EnableBankTransferAsync();
-        var productId = await SeedDomainProductAsync();
+        var productId = await OrdersTestSeeds.SeedDomainProductAsync(factory);
 
         var response = await factory.CreateClient().PostAsJsonAsync("/api/orders", new
         {
@@ -1114,9 +1111,9 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
     {
         await EnableBankTransferAsync();
         var productId = await SeedProductAsync(usdMonthly: 40m);
-        var domainProductId = await SeedDomainProductAsync();
+        var domainProductId = await OrdersTestSeeds.SeedDomainProductAsync(factory);
         var tld = $"x{Guid.NewGuid():N}"[..9];
-        await SeedUsdTldAndRatesAsync(tld, 10m);
+        await OrdersTestSeeds.SeedUsdTldAndRatesAsync(factory, tld, 10m);
         var admin = await ClientsTestSeeds.AdminClientAsync(factory);
         var groupId = await ClientGroupTestSeeds.CreateAsync(admin, discountPercent: 50m);
         var (caller, clientId) = await ClientsTestSeeds.RegisterClientAsync(factory, "group-discount-domain");
@@ -1237,61 +1234,6 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         paymentMethod = "bank_transfer",
         items = new[] { new { productId, billingCycle = cycle.ToString() } },
     };
-
-    /// <summary>Seeds a USD-sold TLD and the AMD and USD rates, so the conversion is deterministic.</summary>
-    /// <param name="tld">The extension, without the dot.</param>
-    /// <param name="usdSellPrice">The one-year USD sell price of registration.</param>
-    /// <returns>The AMD amount the stored rates convert the USD price to.</returns>
-    private async Task<decimal> SeedUsdTldAndRatesAsync(string tld, decimal usdSellPrice)
-    {
-        using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-        var rows = await db.Currencies.ToListAsync();
-        var usd = rows.SingleOrDefault(c => c.Code == "USD");
-        if (usd is null)
-        {
-            usd = Currency.Create("USD", "840", "$", string.Empty, 2, 1m, isBase: !rows.Any(c => c.IsBase));
-            db.Currencies.Add(usd);
-        }
-
-        var amd = rows.SingleOrDefault(c => c.Code == "AMD");
-        if (amd is null)
-        {
-            amd = Currency.Create("AMD", "051", "֏", string.Empty, 2, 0.0026m, isBase: false);
-            db.Currencies.Add(amd);
-        }
-
-        var prices = new Dictionary<int, decimal> { [1] = usdSellPrice };
-        var config = TldConfig.Create(tld, RegistrarModule.NameAm, "USD", "USD", true, 1, ["test"]);
-        config.UpdateSellPrices(prices, prices, prices);
-        db.TldConfigs.Add(config);
-        await db.SaveChangesAsync();
-
-        // The pricing query keeps the enabled configs for minutes; drop them so this TLD is seen.
-        scope.ServiceProvider.GetRequiredService<IMemoryCache>().Remove("tld-pricing-configs");
-
-        return usd.ConvertTo(usdSellPrice, amd);
-    }
-
-    /// <summary>Seeds an active domain product, the line item a domain order points at.</summary>
-    /// <returns>The new product's primary key.</returns>
-    private async Task<int> SeedDomainProductAsync()
-    {
-        using var scope = factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-        var group = ProductGroup.Create($"place-order-domain-{Guid.NewGuid():N}", null);
-        db.ProductGroups.Add(group);
-        await db.SaveChangesAsync();
-
-        var product = Product.Create(
-            group.Id, "Domain Registration", null, null, null, null, ProductType.Domain, 0m, 0m, TestMoments.Seeded);
-        db.Products.Add(product);
-        await db.SaveChangesAsync();
-
-        return product.Id;
-    }
 
     /// <summary>
     /// Asserts the refusal carries the expected error code, which is what a client branches on.

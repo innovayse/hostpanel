@@ -27,6 +27,8 @@ namespace Innovayse.Hostpanel.Application.Orders.Common;
 /// <param name="FraudScore">The fraud score (0 to 100) that held the order for review, or null when it was never held.</param>
 /// <param name="FraudReasons">The reasons the fraud score came from; empty when the order was never held.</param>
 /// <param name="CreatedAt">UTC timestamp when the order was placed.</param>
+/// <param name="BundleId">FK to the product bundle the order was placed from, or null for an order of single products or once the bundle was deleted.</param>
+/// <param name="BundleName">The name of that bundle, or null when <paramref name="BundleId"/> is.</param>
 public sealed record OrderDetailDto(
     int Id,
     string OrderNumber,
@@ -44,4 +46,6 @@ public sealed record OrderDetailDto(
     IReadOnlyList<OrderItemDto> Items,
     int? FraudScore,
     IReadOnlyList<FraudReasonCode> FraudReasons,
-    DateTimeOffset CreatedAt);
+    DateTimeOffset CreatedAt,
+    int? BundleId = null,
+    string? BundleName = null);

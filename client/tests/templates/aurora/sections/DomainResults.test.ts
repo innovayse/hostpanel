@@ -5,8 +5,8 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import DomainResults from '~/templates/aurora/sections/DomainResults.vue'
-import { DomainResultStatus } from '~/templates/aurora/types/domainresultstatus'
-import type { DomainResult } from '~/templates/aurora/types/domainresult'
+import { DomainResultStatus } from '~/types/domainresultstatus'
+import type { DomainResult } from '~/types/domainresult'
 import { stubAuroraGlobals } from '../auroraGlobals'
 
 /** One result per availability state. */

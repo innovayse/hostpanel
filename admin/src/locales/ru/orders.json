@@ -5,6 +5,7 @@
     "accept": "Принять",
     "orderInfo": "Информация о заказе",
     "created": "Создан",
+    "bundle": "Комплект продуктов",
     "invoice": "Счёт",
     "noInvoiceLinkedToThis": "К этому заказу не привязан счёт.",
     "product": "Продукт",

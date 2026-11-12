@@ -23,10 +23,13 @@ import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
 import { useCheckoutStore } from '~/stores/checkout'
 import { useCurrencyStore } from '~/stores/currency'
+import { BundleDiscountType } from '~/types/bundlediscounttype'
 import type { CartItem } from '~/types/cartitem'
+import { CartItemType } from '~/types/cartitemtype'
 import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
 import { ConsentTextVersion } from '~/types/consenttextversion'
 import type { BillingCurrency } from '~/types/currency'
+import { DomainOrderAction } from '~/types/domainorderaction'
 import type { PlaceOrderInput } from '~/types/placeorderinput'
 import { PricingCycle } from '~/types/pricingcycle'
 import { ProductType } from '~/types/producttype'
@@ -218,6 +221,40 @@ describe('useCheckoutStore.placeOrder', () => {
     expect((body.items as unknown[]).length).toBe(1)
     expect(body).toMatchObject({ paymentmethod: 'bank_transfer', currency: 'USD', ...guest })
     expect(bodyOf(requestsTo(stub.requests, LOGIN_PATH)[0])).toEqual({ email: 'ada@example.com', password: 'pw-123456' })
+  })
+
+  it('sends the bundle id with one line per component and the domain line with the years the bundle fixes', async () => {
+    const cart = useCartStore()
+    cart.startBundle(
+      { id: 7, name: 'Starter pack', discountType: BundleDiscountType.Percentage, discountAmount: 25, discountCurrency: null },
+      [
+        { ...hosting, bundleId: 7, domain: 'example.com' },
+        {
+          pid: 9, name: 'example.com', billingcycle: PricingCycle.Annual, cycleLabel: '2 Years', amount: 8, currency: 'USD',
+          bundleId: 7, itemType: CartItemType.Domain, domain: 'example.com', domainAction: DomainOrderAction.Transfer, eppCode: 'abc', years: 2,
+        },
+      ],
+    )
+    const store = useCheckoutStore()
+    store.selectedMethod = 'bank_transfer'
+
+    await store.placeOrder(input(() => true))
+
+    const body = bodyOf(requestsTo(stub.requests, CREATE_PATH)[0]) as Record<string, unknown>
+    expect(body.bundleId).toBe(7)
+    expect(body.items).toEqual([
+      { productId: 5, billingcycle: PricingCycle.Monthly, domain: 'example.com' },
+      { productId: 9, billingcycle: PricingCycle.Annual, domain: 'example.com', domainAction: DomainOrderAction.Transfer, eppCode: 'abc', years: 2 },
+    ])
+  })
+
+  it('sends no bundle id for a cart of plain lines', async () => {
+    const store = arrange('bank_transfer')
+
+    await store.placeOrder(input())
+
+    const body = bodyOf(requestsTo(stub.requests, CREATE_PATH)[0]) as Record<string, unknown>
+    expect(body.bundleId).toBeUndefined()
   })
 
   it('sends no guest details and no sign-in for a signed-in client', async () => {

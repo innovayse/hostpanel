@@ -195,6 +195,7 @@ const router = createRouter({
         { path: 'settings', component: lazy('views/SystemSettingsView.vue') },
         { path: 'settings/email-templates', component: lazy('views/EmailTemplatesView.vue') },
         { path: 'settings/products', component: lazy('views/ProductsView.vue') },
+        { path: 'settings/product-bundles', component: lazy('views/ProductBundlesView.vue') },
         { path: 'settings/slides', component: lazy('views/SlidesView.vue') },
         { path: 'settings/slides/create', component: lazy('views/SlideFormView.vue') },
         { path: 'settings/slides/:id/edit', component: lazy('views/SlideFormView.vue') },

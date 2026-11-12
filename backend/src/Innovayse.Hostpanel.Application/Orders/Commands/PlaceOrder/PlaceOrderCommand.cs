@@ -26,11 +26,19 @@ namespace Innovayse.Hostpanel.Application.Orders.Commands.PlaceOrder;
 /// <param name="Password">Guest's password (required for guest checkout).</param>
 /// <param name="PhoneNumber">Guest's phone number, stored on the client record the order creates (optional).</param>
 /// <param name="PaymentMethod">Payment gateway module name selected at checkout.</param>
-/// <param name="Items">One or more products to include in the order.</param>
+/// <param name="Items">
+/// One or more products to include in the order. For a bundle order (<paramref name="BundleId"/>) one line per
+/// product of the bundle and, when the bundle includes a domain, one domain line (register or transfer).
+/// </param>
 /// <param name="Currency">
 /// The currency the guest chose to be billed in; <see langword="null"/> means the base. Read
 /// only when the order creates a client record: a client who already exists already has a
 /// currency, and it is not the checkout's to change.
+/// </param>
+/// <param name="BundleId">
+/// The product bundle the order is placed from; <see langword="null"/> for an order of single products. The bundle
+/// must be active and <paramref name="Items"/> must be exactly its products (each once) plus one domain line when
+/// it includes a domain. The registration period of that domain line is the bundle's, whatever the line sends.
 /// </param>
 public sealed record PlaceOrderCommand(
     string? FirstName,
@@ -40,7 +48,8 @@ public sealed record PlaceOrderCommand(
     string? PhoneNumber,
     string PaymentMethod,
     IReadOnlyList<PlaceOrderItemDto> Items,
-    string? Currency = null)
+    string? Currency = null,
+    int? BundleId = null)
 {
     /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
     /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>

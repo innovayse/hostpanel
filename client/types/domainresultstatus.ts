@@ -1,7 +1,7 @@
 /**
  * Availability of one checked domain name.
  *
- * @module templates/aurora/types/domainresultstatus
+ * @module types/domainresultstatus
  */
 
 /** Availability of one checked domain name. */

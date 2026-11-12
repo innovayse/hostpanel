@@ -13,8 +13,9 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <param name="Quantity">Number of units (≥ 1).</param>
 /// <param name="ProductSnapshot">What the product the line charges for was when it was ordered, or <see langword="null"/> on a domain line.</param>
 /// <param name="DiscountPercent">
-/// The client group discount in percent already taken off the list price to reach <paramref name="UnitPrice"/>;
-/// 0 when none was given.
+/// The client group discount in percent already taken off the list price on the way to <paramref name="UnitPrice"/>;
+/// 0 when none was given. The discount of a product bundle, taken off on top of the group's, is not part of it, so on
+/// a bundle order's line <paramref name="UnitPrice"/> is lower than the list price less this percent alone.
 /// </param>
 public sealed record OrderInvoiceItemDto(
     string Description, decimal UnitPrice, int Quantity, ProductSnapshot? ProductSnapshot, decimal DiscountPercent);

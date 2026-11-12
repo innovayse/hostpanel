@@ -344,6 +344,9 @@ onMounted(async () => {
             <OrderFact :label="t('orders.orderDetail.created')">
               {{ formatDateTime(store.currentOrder.createdAt) }}
             </OrderFact>
+            <OrderFact v-if="store.currentOrder.bundleName" :label="t('orders.orderDetail.bundle')">
+              <span data-testid="order-bundle">{{ store.currentOrder.bundleName }}</span>
+            </OrderFact>
             <OrderFact :label="t('orders.orderDetail.linesSubtotal')">
               <span data-testid="order-lines-subtotal">
                 {{ formatPlainAmount(store.currentOrder.total, store.currentOrder.currency) }}

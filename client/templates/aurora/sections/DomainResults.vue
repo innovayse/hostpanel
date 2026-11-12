@@ -75,9 +75,9 @@
  * never writes to a store.
  */
 import { BRAND_BUTTON, LINE_BUTTON } from '~/templates/aurora/buttons'
-import { AVAILABILITY_DOT_CLASSES, AVAILABILITY_TONES } from '~/templates/aurora/domainStatus'
-import { DomainResultStatus } from '~/templates/aurora/types/domainresultstatus'
-import type { DomainResult } from '~/templates/aurora/types/domainresult'
+import { AVAILABILITY_DOT_CLASSES, AVAILABILITY_TONES } from '~/utils/domainStatus'
+import { DomainResultStatus } from '~/types/domainresultstatus'
+import type { DomainResult } from '~/types/domainresult'
 
 withDefaults(defineProps<{
   /** Lookup results, one row per checked extension. */

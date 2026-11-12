@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest'
 import { mountWithKit } from '~/tests/helpers/mountWithKit'
 import DomainSearch from '~/templates/aurora/sections/DomainSearch.vue'
-import { DomainResultStatus } from '~/templates/aurora/types/domainresultstatus'
+import { DomainResultStatus } from '~/types/domainresultstatus'
 import type { TldPriceRow } from '~/types/tldpricerow'
 import { stubAuroraGlobals } from '../auroraGlobals'
 
@@ -23,6 +23,7 @@ const hint = (tld: string, registerAmount: number): TldPriceRow => ({
   transfer: '$0',
   categories: [],
   registerAmount,
+  transferAmount: registerAmount,
   sellCurrency: 'USD',
 })
 

@@ -20,6 +20,7 @@ import { HOSTING_GROUP_ID } from '~/constants/catalogGroup'
 import { MONTHS_PER_YEAR, PRICING_CYCLES, PRICING_CYCLE_MONTHS } from '~/constants/pricingCycle'
 import { apiErrorMessage } from '~/lib/errorHandler'
 import { useCurrencyStore } from '~/stores/currency'
+import type { CatalogBundle } from '~/types/catalogbundle'
 import type { PlanCard } from '~/types/plancard'
 import type { PricingCycle } from '~/types/pricingcycle'
 import type { CatalogFilter } from '~/types/catalogfilter'
@@ -47,6 +48,9 @@ export const useCatalogStore = defineStore('catalog', () => {
 
   /** The catalogue's product groups; empty until {@link loadProductGroups}. */
   const productGroups = ref<PortalProductGroup[]>([])
+
+  /** The active product bundles; empty until {@link loadBundles}. */
+  const bundles = ref<CatalogBundle[]>([])
 
   /** Specification lines already read, keyed by product group id. */
   const featuresByGroup = ref<Record<number, ProductFeature[]>>({})
@@ -245,6 +249,28 @@ export const useCatalogStore = defineStore('catalog', () => {
   }
 
   /**
+   * Reads the active product bundles and keeps them.
+   *
+   * @returns The bundles; after a failure ({@link error} holds the sentence) the ones already kept,
+   * so a refused refresh cannot empty a page that is already showing them.
+   */
+  const loadBundles = async (): Promise<CatalogBundle[]> => {
+    const list = await guarded(() => api.fetchProductBundles(), null)
+    if (list !== null) {
+      bundles.value = list
+    }
+    return bundles.value
+  }
+
+  /**
+   * Looks up a bundle {@link loadBundles} already read.
+   *
+   * @param id - Bundle primary key.
+   * @returns The bundle, or null when none has that id.
+   */
+  const bundleFor = (id: number): CatalogBundle | null => bundles.value.find(bundle => bundle.id === id) ?? null
+
+  /**
    * The family read in flight and the currency it was started for, shared by every caller that
    * asks for the same currency until it settles; null when none runs.
    */
@@ -339,6 +365,7 @@ export const useCatalogStore = defineStore('catalog', () => {
 
   return {
     productGroups,
+    bundles,
     familyGroups,
     familyProducts,
     productsByKey,
@@ -350,6 +377,8 @@ export const useCatalogStore = defineStore('catalog', () => {
     error,
     loadProducts,
     loadProductGroups,
+    loadBundles,
+    bundleFor,
     loadFamilies,
     productsFor,
     hostingPlans,

@@ -565,6 +565,9 @@
   <data name="PlaceOrderItemProductIdInvalid" xml:space="preserve">
     <value>Each item needs a valid product.</value>
   </data>
+  <data name="PlaceOrderBundleIdInvalid" xml:space="preserve">
+    <value>The bundle is not valid.</value>
+  </data>
   <data name="PlaceOrderItemBillingCycleInvalid" xml:space="preserve">
     <value>Billing cycle must be 'monthly', 'annual' or 'annually'.</value>
   </data>

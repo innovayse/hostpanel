@@ -1517,6 +1517,18 @@ recurring amount, which already is the discounted price, and never read the grou
 group or changing a group's discount touches no existing invoice and no existing service, and a renewal is not
 discounted a second time.
 
+**A bundle order is the same order with a checked set of lines and one more discount (#80).** `PlaceOrderCommand.BundleId`
+names an active product bundle; `ProductBundleDtoExtensions.ResolveOrderItems` (Orders) refuses lines that are not the
+bundle's (`ORDER_BUNDLE_ITEMS_MISMATCH` for the product lines, `ORDER_BUNDLE_DOMAIN_MISMATCH` for a domain line that is
+missing, extra or not wanted, `ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED` for a renewal, `PRODUCT_BUNDLE_NOT_AVAILABLE` for
+an inactive bundle) and sets the domain line's `Years` to the bundle's, whatever the checkout sent. The handler then
+prices the lines as for any order, takes the client group's discount, and `BundleDiscountAllocator` (pure, Orders/Common)
+takes the bundle's discount off those prices: a percentage off every line, a fixed amount (converted to the payer's
+currency through `ConvertAmountsQuery` when it is stated in another) in proportion to the prices with cumulative
+rounding (the line discounts add up exactly to the total), capped at the subtotal. A fixed discount whose currency is not a
+stored one is refused with `ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE` before any guest account is created. The order records the bundle (`Order.PlaceFromBundle`), the invoice
+lines end with the bundle's name, and like the group discount the final price is the recurring amount too.
+
 **A manual bank transfer wait is bounded and never loses a card session's money.** `Invoice.RequestBankTransfer` leaves the hosted
 session on the invoice (the choice is refused only inside `GatewaySessionWindow`). While the transfer waits
 (`IsBankTransferPending`), `ReconcileGatewayPaymentsCronHandler` asks the gateway about that session like an open invoice's, without the
@@ -2171,6 +2183,13 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
   `useApi.ts` imports no store. The gates: ESLint `no-restricted-imports` and
   `scripts/check-layers.mjs` (auto-imports hide the calls from import rules, so the script reads
   the source for them too).
+- **A bundle is carried by the cart.** `/bundles/[id]` builds the bundle's lines (`utils/bundleOrder.ts`: one per component
+  product on the cycle the visitor chose, plus the domain line when the bundle includes one, with the years the bundle fixes)
+  and hands them to `cart.startBundle`, which replaces the cart and keeps the bundle (`CartBundle`, its own localStorage key) beside
+  the lines, each of which carries `bundleId`. `stores/checkout.ts` sends `bundleId` with the same `items` body as any order;
+  the backend validates the bundle and applies the discount, the storefront only estimates it (`utils/bundlePricing.ts`, a
+  fixed discount only in its own currency) and `cart.total` is that estimate, so the cart, the drawer and the checkout agree.
+  A bundle is bought whole: adding a plain line or removing one of its lines ends the bundle.
 - **Two hops, one language header.** The browser stamps `X-Language` (from the i18n locale,
   validated by `utils/transportLanguage.ts`) on every call to the BFF; the BFF forwards it to the
   API, and an unknown value becomes `en`. `Accept-Language` is not used anywhere.

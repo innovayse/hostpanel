@@ -1,10 +1,10 @@
 /**
  * One row of the aurora domain availability list.
  *
- * @module templates/aurora/types/domainresult
+ * @module types/domainresult
  */
 
-import type { DomainResultStatus } from '~/templates/aurora/types/domainresultstatus'
+import type { DomainResultStatus } from '~/types/domainresultstatus'
 
 /** One row of the domain availability list rendered by the aurora domain search. */
 export interface DomainResult {

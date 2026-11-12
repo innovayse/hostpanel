@@ -16,8 +16,10 @@ namespace Innovayse.Hostpanel.Application.Orders.Common;
 /// domain line, which charges for a domain and not for a catalogue product.
 /// </param>
 /// <param name="DiscountPercent">
-/// The client group discount in percent already taken off the list price to reach <paramref name="Price"/>;
-/// 0 when none was given.
+/// The client group discount in percent already taken off the list price on the way to <paramref name="Price"/>;
+/// 0 when none was given. A bundle's discount, taken off on top of the group's, is not part of it (a fixed bundle
+/// discount is an amount, not a percent), so on a bundle order <paramref name="Price"/> is lower than the list price
+/// less this percent alone.
 /// </param>
 public sealed record PricedOrderLine(
     PlaceOrderItemDto Item, string ProductName, decimal Price, ProductSnapshot? Snapshot, decimal DiscountPercent = 0m);

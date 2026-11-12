@@ -53,6 +53,12 @@ public sealed class PlaceOrderValidator : LocalizedValidator<PlaceOrderCommand>
             .MustBeCurrencyCode(L["CurrencyCodeInvalid"])
             .When(x => x.Currency is not null);
 
+        // Shape only. Whether the bundle exists, is active and matches the lines is a question for the
+        // database, which the handler asks and refuses with the matching error code.
+        RuleFor(x => x.BundleId)
+            .GreaterThan(0).WithMessage(L["PlaceOrderBundleIdInvalid"])
+            .When(x => x.BundleId is not null);
+
         RuleForEach(x => x.Items).ChildRules(item =>
         {
             item.RuleFor(i => i.ProductId).GreaterThan(0).WithMessage(L["PlaceOrderItemProductIdInvalid"]);

@@ -272,7 +272,7 @@ describe('useDomainsStore storefront lookup', () => {
   it('turns the price table into rows with dotted extensions and one-year prices', () => {
     const store = withPricing()
 
-    expect(store.priceRows[0]).toMatchObject({ tld: '.com', register: '12.50', renew: '12.50', transfer: '12.50', registerAmount: 12.5, sellCurrency: 'USD' })
+    expect(store.priceRows[0]).toMatchObject({ tld: '.com', register: '12.50', renew: '12.50', transfer: '12.50', registerAmount: 12.5, transferAmount: 12.5, sellCurrency: 'USD' })
     expect(store.priceRows[1]).toMatchObject({ tld: '.net', renew: '11.00' })
     expect(store.currencyCode).toBe('USD')
   })

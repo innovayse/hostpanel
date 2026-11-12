@@ -1,10 +1,10 @@
 /**
  * Unit tests for the domain availability states: unknown is its own state, never folded into taken.
  *
- * @module tests/templates/aurora/types/domainresultstatus.test
+ * @module tests/types/domainresultstatus.test
  */
 import { describe, expect, it } from 'vitest'
-import { DomainResultStatus } from '~/templates/aurora/types/domainresultstatus'
+import { DomainResultStatus } from '~/types/domainresultstatus'
 
 describe('DomainResultStatus', () => {
   it('has exactly the three states the registrar check can report', () => {

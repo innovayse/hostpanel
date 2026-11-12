@@ -93,7 +93,7 @@ pipeline. A value has one name and one home:
   `MAILHOG_IMAGE`, `NGINX_IMAGE` and `CADDY_IMAGE`, full references pinned to an exact version and a digest
   (`postgres:17.11-alpine3.24@sha256:...`). `NGINX_IMAGE` must be the unprivileged nginx build.
 - **Application images** (`prod`) are `${IMAGE_REGISTRY}/{api,client,admin}:${IMAGE_TAG}`; the deploy jobs
-  set `IMAGE_REGISTRY` to the project's own registry path. **For manual compose use on a host or laptop, `IMAGE_REGISTRY` must be in the host `docker/.env`** (compose refuses to start without it; `.env.example` carries a placeholder). The public Docker Hub images stay
+  set `IMAGE_REGISTRY` to the project's own registry path. The production deploy pulls the images its own pipeline built (`IMAGE_TAG` is that pipeline's commit) and never builds on the host. **For manual compose use on a host or laptop, `IMAGE_REGISTRY` must be in the host `docker/.env`** (compose refuses to start without it; `.env.example` carries a placeholder). The public Docker Hub images stay
   `innovayse/hostpanel:{api,client,admin}-<version>` (`DOCKERHUB_NAMESPACE`).
 - **Runtime tuning**: `AUTH_APP_NAME`, `API_GC_SERVER`, `API_GC_CONSERVE_MEMORY`,
   `API_GC_HEAP_HARD_LIMIT_PERCENT` (prod and hub); in the dev stack `DEV_FILE_POLLING`, `DEV_NUGET_AUDIT`,

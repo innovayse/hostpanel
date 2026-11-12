@@ -60,7 +60,7 @@ import sys
 import time
 
 CONTRACT_VERSION = 1
-AGENT_VERSION = "1.2.2"
+AGENT_VERSION = "1.2.3"
 CONFIG_PATH = "/etc/hostpanel-ssh-key-agent/agent.conf"
 MAX_REQUEST_BYTES = 16 * 1024
 MAX_AUTHORIZED_KEYS_BYTES = 256 * 1024
@@ -98,8 +98,9 @@ DEFAULTS = {
     "jail_group": "sftp-ssh",
     "jail_sections": "basicshell,editors,extendedshell,netutils,terminfo",
     "jail_shell": "/bin/bash",
-    # Copied into every jail with jk_cp on each enrolment (binaries with their libraries), so a
-    # jail built before an entry was added gets it on the next key. A bare jailkit tree on CWP lacks
+    # Copied into every jail with jk_cp (binaries with their libraries) when the jail lacks an entry
+    # or the host copy changed, so a jail built before an entry was added gets it on the next key,
+    # and an entry already in place costs no copy. A bare jailkit tree on CWP lacks
     # uname, which a login profile script calls, and /etc/profile.d/colorls.sh, where `ll` is defined.
     "jail_extras": "/usr/bin/uname,/usr/bin/id,/usr/bin/hostname,/usr/bin/dircolors,/usr/bin/rsync,/usr/bin/tar,/usr/bin/gzip,/usr/bin/unzip,/etc/bashrc,/etc/profile.d/colorls.sh,/etc/DIR_COLORS",
     "systemd_unit_dir": "/etc/systemd/system",
@@ -517,6 +518,38 @@ def _jail_identity(jail, account):
             handle.write(row)
 
 
+def _host_files(path):
+    """The host path itself, or every entry below it when it is a directory (links not followed)."""
+    if not os.path.isdir(path) or os.path.islink(path):
+        return [path]
+    found = []
+    for parent, dirs, files in os.walk(path):
+        found.extend(os.path.join(parent, entry) for entry in dirs + files)
+    return found
+
+
+def _jail_copy_is_stale(jail, extra):
+    """
+    Whether jk_cp has to copy the extra again: some file of it is missing in the jail, or the
+    host copy differs in size or is newer (a package update). jk_cp resolves and copies every
+    binary's libraries, which costs seconds of CPU per binary, so an extra already in place is
+    left alone; the check itself only stats files. Times are compared in whole seconds because
+    jk_cp keeps a file's time but drops its fraction.
+    """
+    for source in _host_files(extra):
+        target = os.path.join(jail, source.lstrip("/"))
+        try:
+            host = os.lstat(source)
+            copy = os.lstat(target)
+        except FileNotFoundError:
+            return True
+        if stat.S_ISLNK(host.st_mode) or stat.S_ISDIR(host.st_mode):
+            continue
+        if copy.st_size != host.st_size or int(copy.st_mtime) < int(host.st_mtime):
+            return True
+    return False
+
+
 def enrol_jail(account, config):
     """
     Gives the account jailed SSH, matching the customer sshd's `Match Group <jail_group>` with
@@ -533,8 +566,9 @@ def enrol_jail(account, config):
         _root_dir(jail)
         _jail_run(["/usr/sbin/jk_init", "-f", "-j", jail] + list(config["jail_sections"]))
     extras = [p for p in config.get("jail_extras", []) if os.path.isabs(p) and os.path.exists(p)]
-    if extras:
-        _jail_run(["/usr/sbin/jk_cp", "-f", "-j", jail] + extras)
+    stale = [p for p in extras if _jail_copy_is_stale(jail, p)]
+    if stale:
+        _jail_run(["/usr/sbin/jk_cp", "-f", "-j", jail] + stale)
     _jail_identity(jail, dict(account, jail_shell=config["jail_shell"]))
 
     where = os.path.join(jail, "home", name)

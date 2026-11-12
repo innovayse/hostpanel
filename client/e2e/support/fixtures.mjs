@@ -636,7 +636,7 @@ export const DOMAIN_ORDER = {
 
 /** Payment gateways enabled for a new order: bank transfer only, because it needs no card element or bank redirect. */
 export const GATEWAY_METHODS = [
-  { module: 'bank_transfer', displayName: 'Bank transfer' },
+  { module: 'bank_transfer', displayName: 'Bank transfer', supportsStoredCredentials: false },
 ]
 
 /** The bank details and reference the stub answers once the signed-in client has chosen the bank transfer for {@link INVOICE}. */
@@ -663,7 +663,10 @@ export const EMPTY_BANK_TRANSFER_DETAILS = {
 }
 
 /** The hosted card gateway the stub adds to the gateway list once a spec enables it (`POST /__e2e/gateways`). */
-export const HOSTED_GATEWAY = { module: 'e2e_card_gateway', displayName: 'E2E Card Gateway' }
+export const HOSTED_GATEWAY = { module: 'e2e_card_gateway', displayName: 'E2E Card Gateway', supportsStoredCredentials: true }
+
+/** A second hosted gateway the stub adds on request (`plain: true`): it cannot keep the method it collects, so checkout offers no save box for it. */
+export const PLAIN_GATEWAY = { module: 'e2e_plain_gateway', displayName: 'E2E Plain Gateway', supportsStoredCredentials: false }
 
 /** The address the stub sends the payer to for a hosted gateway page; the offline guard blocks the navigation itself, the request is observable. */
 export const GATEWAY_PAGE_URL = 'https://gateway.e2e.test/hosted/session'

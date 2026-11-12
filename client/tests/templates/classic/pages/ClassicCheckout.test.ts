@@ -1,24 +1,26 @@
 /**
- * Unit tests for ClassicCheckout against the real cart, currency, checkout, auth and client stores,
- * the real API composables and the real transport, with a stub BFF answering on a real socket: the
- * empty cart, the order summary, the account step in both states, the payment-method choice and the
- * card form, placing an order and a refused order.
+ * Tests for ClassicCheckout against the real cart, currency, checkout, auth and client stores, the
+ * real billing and auth API composables and the real transport, with a stub BFF answering on a real
+ * socket (nothing of ours is mocked): the empty cart, the order summary, the account step in both
+ * states, the payment-method choice, placing an order and a refused order.
  *
  * @module tests/templates/classic/pages/ClassicCheckout.test
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { flushPromises } from '@vue/test-utils'
-import { createPinia, setActivePinia } from 'pinia'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { bankTransferPath, BillingEndpoint } from '~/tests/helpers/billingPaths'
+import { awaitCheckoutLoaded, cartLine, checkoutReplies, writeOf } from '~/tests/helpers/checkoutFlow'
+import { makeClientUser } from '~/tests/helpers/clientUser'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
-import { CatalogPath } from '~/tests/helpers/catalogPaths'
-import { USD_CURRENCY } from '~/tests/helpers/payerCatalogue'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { until } from '~/tests/helpers/settle'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { readOf, refusal, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 import ClassicCheckout from '~/templates/classic/pages/ClassicCheckout.vue'
 import GatewayOption from '~/components/checkout/GatewayOption.vue'
 import SaveOption from '~/components/checkout/SaveOption.vue'
@@ -27,27 +29,22 @@ import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
 import { useCheckoutStore } from '~/stores/checkout'
 import { useClientStore } from '~/stores/client'
-import { useCurrencyStore } from '~/stores/currency'
 import type { CartItem } from '~/types/cartitem'
-import { makeClientUser } from '~/tests/helpers/clientUser'
+import type { GatewayMethod } from '~/types/gatewaymethod'
 import { Permission } from '~/types/permission'
 import { PaymentModule } from '~/types/paymentmodule'
-import { PricingCycle } from '~/types/pricingcycle'
-import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** The BFF paths the checkout reads and writes. */
-const PATHS = {
-  methods: '/api/portal/order/payment-methods',
-  create: '/api/portal/order/create',
-  login: '/api/portal/auth/login',
-  bankTransfer: '/api/portal/client/invoices/12/bank-transfer',
-} as const
 
 /** The stub playing the BFF. */
 let stub: StubServer
 
-/** The replies of the current test; a test changes them before it mounts. */
+/** The replies of the current test; a test changes them before it mounts or acts. */
 let table: StubRouteTable
+
+/** The gateways the stub offers unless a test says otherwise: the bank transfer first, then a card gateway that can keep a method. */
+const DEFAULT_METHODS: GatewayMethod[] = [
+  { module: PaymentModule.BankTransfer, displayName: 'Bank transfer', supportsStoredCredentials: false },
+  { module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: true },
+]
 
 /** Stand-in for the phone field, which keeps its country picker out of this test. */
 const PhoneInputStub = defineComponent({
@@ -65,41 +62,17 @@ const PhoneInputStub = defineComponent({
 const client = makeClientUser()
 
 /**
- * Builds a hosting cart line.
- *
- * @param pid Product id.
- * @param amount Price of the line.
- * @param currency Currency the line is priced in.
- * @returns The line.
- */
-const line = (pid: number, amount: number, currency = 'USD'): CartItem => ({
-  pid,
-  name: `Plan ${pid}`,
-  billingcycle: PricingCycle.Monthly,
-  cycleLabel: 'Monthly',
-  amount,
-  currency,
-})
-
-/**
- * Fills the cart, mounts the checkout and waits until it has rendered, after the gateways were read,
- * with the currencies loaded.
+ * Mounts the checkout, waits for the currencies and gateways to load and fills the cart.
  *
  * @param items Lines to put in the cart.
  * @returns The wrapper.
  */
-const mountCheckout = async (items: CartItem[] = [line(1, 5), line(2, 7)]) => {
-  const pinia = createPinia()
-  setActivePinia(pinia)
-  useCartStore().items = items
+const mountCheckout = async (items: CartItem[] = [cartLine(1, 5), cartLine(2, 7)]) => {
   const wrapper = await mountPage(ClassicCheckout, {
     components: { CheckoutGatewayOption: GatewayOption, CheckoutSaveOption: SaveOption, CheckoutSubmitHint: SubmitHint, UiPhoneInput: PhoneInputStub },
-    pinia,
   })
-  await until(
-    () => wrapper.find('[data-testid="classic-checkout"]').exists() && useCurrencyStore().loaded,
-    'the checkout to render with the currencies loaded',
-  )
+  await awaitCheckoutLoaded()
+  useCartStore().items = items
   await flushPromises()
   return wrapper
 }
@@ -120,22 +93,10 @@ const fillGuestForm = async (wrapper: Awaited<ReturnType<typeof mountCheckout>>)
 describe('ClassicCheckout', () => {
   beforeEach(async () => {
     stubPublicPageRuntime()
-    table = {
-      [`GET ${CatalogPath.BillingCurrencies}`]: { body: [USD_CURRENCY] },
-      [`GET ${PATHS.methods}`]: {
-        body: [
-          { module: PaymentModule.BankTransfer, displayName: 'Bank transfer' },
-          { module: 'card_gateway', displayName: 'Card' },
-        ],
-      },
-      [`POST ${PATHS.create}`]: { body: { orderId: 7, invoiceId: 12, paymentToken: 'token', total: 12, currency: 'USD' } },
-      // The guest's automatic sign-in after the order, and the bank-transfer choice for its invoice.
-      [`POST ${PATHS.login}`]: { body: client },
-      [`POST ${PATHS.bankTransfer}`]: { body: {} },
-    }
-    stub = await startTransport(routeTable(table))
     vi.mocked(navigateTo).mockClear()
     window.localStorage.clear()
+    table = checkoutReplies(DEFAULT_METHODS)
+    stub = await startTransport(routeTable(table))
   })
 
   afterEach(async () => {
@@ -160,7 +121,7 @@ describe('ClassicCheckout', () => {
   })
 
   it('warns about lines left in another currency and leaves them out', async () => {
-    const wrapper = await mountCheckout([line(1, 5), line(2, 2000, 'AMD')])
+    const wrapper = await mountCheckout([cartLine(1, 5), cartLine(2, 2000, 'AMD')])
 
     expect(wrapper.find('[data-testid="checkout-stale"]').exists()).toBe(true)
     expect(wrapper.findAll('[data-testid="checkout-item"]')).toHaveLength(1)
@@ -211,7 +172,7 @@ describe('ClassicCheckout', () => {
   })
 
   it('says so when no gateway is on, and cannot be submitted', async () => {
-    table[`GET ${PATHS.methods}`] = { body: [] }
+    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [] }
     const wrapper = await mountCheckout()
 
     expect(wrapper.find('[data-testid="checkout-no-methods"]').exists()).toBe(true)
@@ -286,11 +247,9 @@ describe('ClassicCheckout', () => {
     await fillGuestForm(wrapper)
 
     await wrapper.find('[data-testid="checkout-submit"]').trigger('click')
-    await waitUntil(() => expect(navigateTo).toHaveBeenCalled())
+    await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith('/en/client/invoices/12/pay'))
 
-    const [placed] = requestsTo(stub.requests, PATHS.create)
-    expect(placed?.method).toBe('POST')
-    expect(bodyOf(placed)).toEqual(expect.objectContaining({
+    expect(bodyOf(requestsTo(stub.requests, BillingEndpoint.OrderCreate)[0])).toEqual(expect.objectContaining({
       paymentmethod: PaymentModule.BankTransfer,
       currency: 'USD',
       firstname: 'Ada',
@@ -303,19 +262,21 @@ describe('ClassicCheckout', () => {
         expect.objectContaining({ productId: 2, billingcycle: 'monthly' }),
       ],
     }))
-    expect(navigateTo).toHaveBeenCalledWith('/en/client/invoices/12/pay')
+    expect(bodyOf(requestsTo(stub.requests, AccountEndpoint.Login)[0])).toEqual({ email: 'ada@example.test', password: 's3cret-pass' })
+    expect(requestsTo(stub.requests, bankTransferPath(12)).map(request => request.method)).toEqual(['POST'])
     expect(useCartStore().items).toEqual([])
   })
 
   it('keeps the busy label short and explains the bank hand-off in a polite line under the button', async () => {
-    table[`GET ${PATHS.methods}`] = { body: [{ module: 'hosted_gateway', displayName: 'Bank card' }] }
-    // An order that is never answered keeps the page in its busy state.
-    table[`POST ${PATHS.create}`] = { hold: true }
+    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [{ module: 'hosted_gateway', displayName: 'Bank card', supportsStoredCredentials: false }] }
+    // An order that never settles keeps the page in its busy state.
+    table[writeOf(BillingEndpoint.OrderCreate)] = { hold: true }
     const wrapper = await mountCheckout()
     await fillGuestForm(wrapper)
     expect(wrapper.find('[data-testid="checkout-submit-hint"]').text()).toBe('')
 
     await wrapper.find('[data-testid="checkout-submit"]').trigger('click')
+    await until(() => requestsTo(stub.requests, BillingEndpoint.OrderCreate).length === 1, 'the order to reach the backend')
     await flushPromises()
 
     const button = wrapper.find('[data-testid="checkout-submit"]')
@@ -328,14 +289,13 @@ describe('ClassicCheckout', () => {
   })
 
   it('shows the refusal sentence and stays on the page when the order is refused', async () => {
-    table[`POST ${PATHS.create}`] = { status: 400, body: { detail: 'Email already registered.' } }
+    table[writeOf(BillingEndpoint.OrderCreate)] = refusal('Email already registered.')
     const wrapper = await mountCheckout()
     await fillGuestForm(wrapper)
 
     await wrapper.find('[data-testid="checkout-submit"]').trigger('click')
-    await until(() => wrapper.find('[data-testid="checkout-error"]').exists(), 'the refusal to be shown')
+    await waitUntil(() => expect(wrapper.find('[data-testid="checkout-error"]').text()).toBe('Email already registered.'))
 
-    expect(wrapper.find('[data-testid="checkout-error"]').text()).toBe('Email already registered.')
     expect(navigateTo).not.toHaveBeenCalled()
     expect(useCartStore().items).toHaveLength(2)
   })

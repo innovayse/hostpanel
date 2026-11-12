@@ -193,7 +193,7 @@ internal sealed class DemoBillingSeeder
                 invoice.MarkOverdue(dueDate);
                 break;
             case InvoiceStatus.Cancelled:
-                invoice.Cancel();
+                invoice.Cancel(invoiceDate);
                 break;
             case InvoiceStatus.Paid:
             case InvoiceStatus.Refunded:

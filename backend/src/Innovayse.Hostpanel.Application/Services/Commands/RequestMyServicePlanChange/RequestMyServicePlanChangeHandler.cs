@@ -5,6 +5,7 @@ using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Services.Commands.CompleteServiceChange;
 using Innovayse.Hostpanel.Application.Services.Common;
 using Innovayse.Hostpanel.Domain.Services;
@@ -13,6 +14,7 @@ using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Wolverine;
 
 namespace Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlanChange;
@@ -25,9 +27,12 @@ namespace Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlan
 /// <para>
 /// An upgrade is approved at once. The prorated charge becomes an invoice through the one invoice creation use case, the
 /// request keeps the invoice id, and the plan changes when that invoice is paid (<c>ServiceChangeInvoicePaidHandler</c>);
-/// an upgrade with nothing left to prorate has no invoice and is applied now. When the save that links the invoice to
+/// an upgrade with nothing left to prorate has no invoice and is applied now. The invoice falls due after the same payment term
+/// as the invoice of an order (<see cref="OrderOptions.InvoicePaymentTerm"/>). When the save that links the invoice to
 /// the request fails, the invoice is cancelled and the request taken back, so no payable invoice is left for a change that
-/// is never applied. The request is saved before the invoice is raised and approved with it, so only the request that
+/// is never applied. An invoice cancelled later, whoever cancels it, rejects its approved request
+/// (<c>ServiceChangeInvoiceCancelledHandler</c>), so the service is never left holding an open request for an invoice that can
+/// no longer be paid. The request is saved before the invoice is raised and approved with it, so only the request that
 /// wins the unique index on open requests ever raises one. A downgrade is approved at once only when
 /// the <c>billing.plan_change.auto_approve_downgrades</c> setting is on, otherwise it waits as Pending for staff. An approved
 /// change is applied by <see cref="CompleteServiceChangeCommand"/>, the same use case staff approval ends in.
@@ -36,15 +41,11 @@ namespace Innovayse.Hostpanel.Application.Services.Commands.RequestMyServicePlan
 /// Ownership is settled before anything else, so a stranger's id never reaches a query that would answer differently for
 /// an id that exists. A failed invoice takes the saved request back, so the
 /// service is never left holding an open request that waits for an invoice that does not exist. Known limits: the proration
-/// is worked out from list prices, a downgrade quoted earlier keeps its amount until staff decide it, and a request whose
-/// invoice is cancelled stays Approved until staff reject it.
+/// is worked out from list prices, and a downgrade quoted earlier keeps its amount until staff decide it.
 /// </para>
 /// </remarks>
 public sealed class RequestMyServicePlanChangeHandler
 {
-    /// <summary>How long the proration invoice stays payable before its due date, in days.</summary>
-    private const int InvoiceDueInDays = 7;
-
     /// <summary>The rule that says a client may only touch their own services.</summary>
     private readonly IServiceOwnership _ownership;
 
@@ -59,6 +60,9 @@ public sealed class RequestMyServicePlanChangeHandler
 
     /// <summary>The clock the moment of the request is read from.</summary>
     private readonly IClock _clock;
+
+    /// <summary>How long the proration invoice stays payable before it falls due.</summary>
+    private readonly IOptions<OrderOptions> _orderOptions;
 
     /// <summary>Records the activity log line for this action, saved with the change it describes.</summary>
     private readonly IActivityLogger _activity;
@@ -75,6 +79,7 @@ public sealed class RequestMyServicePlanChangeHandler
     /// <param name="quoter">Works out which plans the service can move to and what the move costs.</param>
     /// <param name="settings">Reads whether a downgrade is approved without staff.</param>
     /// <param name="clock">The clock the moment of the request is read from.</param>
+    /// <param name="orderOptions">How long the proration invoice stays payable before it falls due.</param>
     /// <param name="activity">Records the activity log line for this action, saved with the change it describes.</param>
     /// <param name="bus">Wolverine bus, used to raise the invoice and to apply the change through their own use cases.</param>
     /// <param name="logger">Reports an invoice or a request that could not be withdrawn.</param>
@@ -84,6 +89,7 @@ public sealed class RequestMyServicePlanChangeHandler
         ServicePlanChangeQuoter quoter,
         ServicePlanChangeSettingsReader settings,
         IClock clock,
+        IOptions<OrderOptions> orderOptions,
         IActivityLogger activity,
         IMessageBus bus,
         ILogger<RequestMyServicePlanChangeHandler> logger)
@@ -93,6 +99,7 @@ public sealed class RequestMyServicePlanChangeHandler
         _quoter = quoter;
         _settings = settings;
         _clock = clock;
+        _orderOptions = orderOptions;
         _activity = activity;
         _bus = bus;
         _logger = logger;
@@ -209,15 +216,7 @@ public sealed class RequestMyServicePlanChangeHandler
             // The invoice is payable but the request that would apply it was not saved as linked to it: withdraw both. Not the
             // request's token, since a cancelled request is exactly when the invoice must still be withdrawn. The original
             // failure is what the caller sees.
-            var invoiceId = request.InvoiceId.Value;
-            var cancelled = await _bus.InvokeAsync<Result>(new CancelInvoiceCommand(invoiceId), CancellationToken.None);
-            if (cancelled.IsFailure)
-            {
-                _logger.LogCritical(
-                    "Plan change save failed and its invoice {InvoiceId} could not be cancelled: {Code}. Cancel it by hand.",
-                    invoiceId, cancelled.ErrorCode);
-            }
-
+            await TryCancelInvoiceAsync(request.InvoiceId.Value);
             await TryRemoveRequestAsync(request);
             throw;
         }
@@ -253,6 +252,28 @@ public sealed class RequestMyServicePlanChangeHandler
         await _context.SaveChangesAsync(CancellationToken.None);
     }
 
+    /// <summary>Cancels the invoice of a change that is never applied, without letting a failure here hide the original one.</summary>
+    /// <param name="invoiceId">The invoice raised for the change.</param>
+    /// <returns>A task that completes once the invoice is cancelled or the failure to cancel it is logged.</returns>
+    private async Task TryCancelInvoiceAsync(int invoiceId)
+    {
+        try
+        {
+            var cancelled = await _bus.InvokeAsync<Result>(new CancelInvoiceCommand(invoiceId), CancellationToken.None);
+            if (cancelled.IsFailure)
+            {
+                _logger.LogCritical(
+                    "Plan change save failed and its invoice {InvoiceId} could not be cancelled: {Code}. Cancel it by hand.",
+                    invoiceId, cancelled.ErrorCode);
+            }
+        }
+        catch (Exception cancellation)
+        {
+            _logger.LogCritical(
+                cancellation, "Plan change save failed and its invoice {InvoiceId} could not be cancelled. Cancel it by hand.", invoiceId);
+        }
+    }
+
     /// <summary>Takes a saved request back after another failure, without letting a failure here hide the original one.</summary>
     /// <param name="request">The saved request.</param>
     /// <returns>A task that completes once the request is deleted or the failure to delete it is logged.</returns>
@@ -279,6 +300,6 @@ public sealed class RequestMyServicePlanChangeHandler
         // it is one fixed sentence around the product name rather than a resource looked up per language.
         var item = new CreateInvoiceItemDto($"Upgrade to {option.Name} (prorated for the rest of the billing period)", option.ProrationAmount, 1);
         return await _bus.InvokeAsync<Result<int>>(
-            new CreateInvoiceCommand(service.ClientId, _clock.UtcNow.AddDays(InvoiceDueInDays), [item]), ct);
+            new CreateInvoiceCommand(service.ClientId, _clock.UtcNow.Add(_orderOptions.Value.InvoicePaymentTerm), [item]), ct);
     }
 }

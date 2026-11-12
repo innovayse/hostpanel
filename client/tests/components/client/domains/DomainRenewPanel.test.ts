@@ -1,7 +1,7 @@
 /**
  * Unit tests for DomainRenewPanel: the standing badge, the order summary, the payment method
- * choice, the order and the success state. The store, the API composables and the transport run for
- * real against a stub BFF.
+ * choice, the order and the success state. The domains store, its API composables and the transport
+ * run for real against a stub BFF.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { mountClient } from '~/tests/helpers/mountClient'
@@ -9,22 +9,19 @@ import DomainRenewPanel from '~/components/client/domains/DomainRenewPanel.vue'
 import type { DomainDetail } from '~/types/domaindetail'
 import { DomainStatus } from '~/types/domainstatus'
 import { HttpMethod } from '~/types/httpmethod'
-import { DOMAIN_ID, DomainAction, domainPath } from '~/tests/helpers/domainPanelPaths'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { DOMAIN_ID, DomainAction, domainPath } from '~/tests/helpers/domainPanelPaths'
 import { bodyOf } from '~/tests/helpers/requestBody'
-import { requestsTo, routeTable, refusal } from '~/tests/helpers/stubRoutes'
+import { readOf, refusal, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 
-/** A gateway the panel offers. */
-const card = { module: 'card_gateway', displayName: 'Card gateway' }
-
 /** The stub playing the BFF. */
 let stub: StubServer
 
-/** The replies of the current test; a test changes them before it submits. */
+/** The replies the stub gives, by `METHOD /path`; a test changes the renewal order's before it submits. */
 let table: StubRouteTable
 
 /**
@@ -38,6 +35,9 @@ const domain = (overrides: Partial<DomainDetail> = {}): DomainDetail => ({
   ...overrides
 } as DomainDetail)
 
+/** A gateway the panel offers. */
+const card = { module: 'card_gateway', displayName: 'Card gateway', supportsStoredCredentials: false }
+
 /**
  * Mounts the panel and waits for the payment methods to arrive.
  *
@@ -50,16 +50,16 @@ const mountPanel = async (overrides: Partial<DomainDetail> = {}) => {
   return wrapper
 }
 
-beforeEach(async () => {
-  table = { [`GET ${AccountEndpoint.PaymentMethods}`]: { body: [card] } }
-  stub = await startTransport(request => routeTable(table)(request))
-})
-
-afterEach(async () => {
-  await stub.close()
-})
-
 describe('DomainRenewPanel', () => {
+  beforeEach(async () => {
+    table = { [readOf(AccountEndpoint.PaymentMethods)]: { body: [card] } }
+    stub = await startTransport(routeTable(table))
+  })
+
+  afterEach(async () => {
+    await stub.close()
+  })
+
   it.each([
     [{}, 'client.domains.renewActive'],
     [{ status: DomainStatus.Expired }, 'client.domains.renewPastPeriod'],
@@ -79,25 +79,24 @@ describe('DomainRenewPanel', () => {
   it('preselects the first saved payment method', async () => {
     const wrapper = await mountPanel()
 
-    expect(wrapper.find('[data-testid="domain-renew-submit"]').attributes('disabled')).toBeUndefined()
+    await waitUntil(() => expect(wrapper.find('[data-testid="domain-renew-submit"]').attributes('disabled')).toBeUndefined())
   })
 
   it('places the order for this domain and shows the invoice link', async () => {
-    table[`POST ${domainPath(DomainAction.RenewOrder)}`] = { body: { orderId: 3, invoiceId: 90 } }
+    table[`${HttpMethod.Post} ${domainPath(DomainAction.RenewOrder)}`] = { body: { orderId: 3, invoiceId: 90 } }
     const wrapper = await mountPanel()
 
     await wrapper.find('form').trigger('submit')
 
     await waitUntil(() => expect(wrapper.find('[data-testid="domain-renew-pay"]').exists()).toBe(true))
     const orders = requestsTo(stub.requests, domainPath(DomainAction.RenewOrder))
-    expect(orders).toHaveLength(1)
-    expect(orders[0]?.method).toBe(HttpMethod.Post)
+    expect(orders.map(order => order.method)).toEqual([HttpMethod.Post])
     expect(bodyOf(orders[0])).toEqual({ years: 1, paymentmethod: 'card_gateway' })
     expect(wrapper.find('[data-testid="domain-renew-pay"]').attributes('href')).toBe('/client/invoices/90')
   })
 
   it('keeps the form and shows the refusal when the order fails', async () => {
-    table[`POST ${domainPath(DomainAction.RenewOrder)}`] = refusal('Cannot renew yet.')
+    table[`${HttpMethod.Post} ${domainPath(DomainAction.RenewOrder)}`] = refusal('Cannot renew yet.')
     const wrapper = await mountPanel()
 
     await wrapper.find('form').trigger('submit')

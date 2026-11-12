@@ -432,14 +432,14 @@ backend:test:migration-addon:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST
       changes: [backend/plugins/**/*]
 
+# The three prod build jobs have no `changes:` filter on purpose: deploy:prod pulls all three images by
+# the pipeline's own tag ($CI_COMMIT_SHORT_SHA), so every pipeline on main has to push every one of them.
 backend:build:api:prod:
   extends: .build-image
   variables: { SERVICE: api, DOCKERFILE: backend/Dockerfile, BUILD_CONTEXT: backend, IMAGE_TARGET: prod, TAG: latest }
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
-      changes: [backend/**/*]
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"
-      changes: [backend/**/*]
 
 backend:build:api:dev:
   extends: .build-image
@@ -496,9 +496,7 @@ client:build:prod:
   variables: { SERVICE: client, DOCKERFILE: client/Dockerfile, BUILD_CONTEXT: client, IMAGE_TARGET: prod, TAG: latest }
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
-      changes: [client/**/*]
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"
-      changes: [client/**/*]
 
 client:build:dev:
   extends: .build-image
@@ -559,9 +557,7 @@ admin:build:prod:
   variables: { SERVICE: admin, DOCKERFILE: admin/Dockerfile, BUILD_CONTEXT: ., IMAGE_TARGET: prod, TAG: latest }
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
-      changes: [admin/**/*]
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"
-      changes: [admin/**/*]
 
 admin:build:dev:
   extends: .build-image
@@ -656,10 +652,10 @@ deploy:demo:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"
 
 # ── production ───────────────────────────────────────────────────────────────
-# The production host serves the public site. Unlike staging it does not consume registry images at
-# all: it builds its own from the checkout. So this job needs no build job, only the test jobs
-# (.deploy-needs-tests): the build jobs require a `builder` runner and waiting on them would leave the
-# deploy permanently pending.
+# The production host serves the public site. It never builds: backend:build:api:prod, client:build:prod
+# and admin:build:prod build the three images in this pipeline and push them tagged $CI_COMMIT_SHORT_SHA,
+# and the deploy pulls exactly those and recreates the containers. A build on the host would download every
+# package again over that host's own network link, and a corrupted download fails the deploy.
 #
 # COMPOSE_FILE (docker/) is the exact set the running containers were created with.
 # Composing with fewer would silently redefine the project. To read it off a running host, find the
@@ -687,29 +683,26 @@ maintenance:prod-free-disk:
       when: manual
 
 deploy:prod:
-  extends: .nuget-credentials
   stage: deploy
   tags: [prod]
   variables:
     GIT_STRATEGY: none
     # DEPLOY_DIR is the CI/CD variable scoped to production/hostpanel.
     COMPOSE_FILE: $COMPOSE_FILES_DEPLOYED
-    # The tag backend:build:*:prod / client:build:prod / admin:build:prod pushed from main.
-    IMAGE_TAG: latest
-    # The local image names docker/docker-compose.prod.yml builds and runs: the project's own registry path.
+    # The tag the prod build jobs of this same pipeline pushed, so the deploy runs the code that was tested.
+    IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+    # The local image names docker/docker-compose.prod.yml runs: the project's own registry path.
     IMAGE_REGISTRY: $CI_REGISTRY_IMAGE
     # See the note on .deploy-staging above.
     ASPNETCORE_ENVIRONMENT: Production
     # Where the pre-deploy database dumps go, and how many of the newest are kept.
     BACKUP_DIR: $DEPLOY_DIR/backups
     BACKUP_KEEP: "10"
-    # This job builds the API image on the production host, so the private feed
-    # credential has to reach the restore here too — docker-compose.prod.yml passes it
-    # through as a BuildKit secret (id nuget_credentials) read from this variable. The host's .env does
-    # not carry it, and without it the restore goes to the feed anonymously and the build fails 401.
-    NUGET_INNOVAYSE_CREDENTIALS: $NuGetPackageSourceCredentials_innovayse
     # The public health endpoint, waited for after the deploy.
     HEALTH_URL: $PROD_PUBLIC_URL/health
+  # The images are pulled from the project's registry with the job's own token, which dies with the job.
+  before_script:
+    - echo "$CI_JOB_TOKEN" | docker login -u gitlab-ci-token --password-stdin "$CI_REGISTRY"
   script:
     - test -n "$DEPLOY_DIR" || { echo "DEPLOY_DIR must be set as a CI/CD variable scoped to this environment" >&2; exit 1; }
     - test -n "$PROD_PUBLIC_URL" || { echo "PROD_PUBLIC_URL must be set as a CI/CD variable scoped to this environment" >&2; exit 1; }
@@ -729,10 +722,10 @@ deploy:prod:
       for svc in hostpanel-api hostpanel-client hostpanel-admin; do
         cid=$(docker ps -q --filter "label=com.docker.compose.service=$svc" | head -1)
         [ -n "$cid" ] || continue
-        # The build below moves the service's tag to the new image, leaving the old one untagged,
-        # and an untagged image is gone by the time a rollback wants it. A tag of its own keeps it.
+        # Recreating the container on the new image can leave the old one untagged, and an untagged
+        # image is gone by the time a rollback wants it. A tag of its own keeps it.
         docker tag "$(docker inspect "$cid" --format '{{.Image}}')" "hostpanel-rollback/$svc:previous"
-        echo "$svc $(docker inspect "$cid" --format '{{.Config.Image}}') hostpanel-rollback/$svc:previous" >> "$DEPLOY_DIR/.deploy/previous-images"
+        echo "$svc hostpanel-rollback/$svc:previous" >> "$DEPLOY_DIR/.deploy/previous-images"
       done
       cat "$DEPLOY_DIR/.deploy/previous-images"
     - git -C "$DEPLOY_DIR" fetch "$CI_REPOSITORY_URL" "$CI_COMMIT_SHA"
@@ -758,18 +751,13 @@ deploy:prod:
     - ls -lh "$BACKUP_DIR"/ | tail -3
     # The service keys carry the product prefix (hostpanel-api, hostpanel-client, hostpanel-admin);
     # the admin is deployed with the others so that its container is replaced too.
-    - docker compose build hostpanel-api hostpanel-client hostpanel-admin
-    - docker compose up -d hostpanel-api hostpanel-client hostpanel-admin
-    # `up -d` above does not necessarily put a rebuilt image into service. Compose
-    # decides whether to recreate by comparing the service's *configuration*, and every
-    # built service here is `build:`-only with no `image:` key -- so the tag compose
-    # derives (hostpanel-<service>:latest) is byte-identical from one deploy to the
-    # next no matter what was built into it. A deploy could report success while the
-    # frontends stayed on their pre-build images. `build` above fixes the other half.
-    #
-    # Not a blanket --force-recreate: that would restart containers on every deploy
-    # even when nothing changed. Compare the image the container was created from
-    # against the one its tag points at now, and recreate only where they differ.
+    # The images are the ones this pipeline built, pulled by IMAGE_TAG. --no-build makes it impossible for
+    # compose to fall back to building on this host when a pull has failed to leave an image behind.
+    - docker compose pull hostpanel-api hostpanel-client hostpanel-admin
+    - docker compose up -d --no-build hostpanel-api hostpanel-client hostpanel-admin
+    # A deploy that reports success has not necessarily recreated a container. Compare the image
+    # each container was created from against the one its tag points at now, and recreate only where
+    # they differ, so a redeploy of the same commit does not restart containers that already run it.
     - |
       for svc in hostpanel-api hostpanel-client hostpanel-admin; do
         cid=$(docker compose ps -q "$svc")
@@ -779,7 +767,7 @@ deploy:prod:
         have=$(docker inspect "$cid" --format '{{.Image}}')
         if [ "$have" != "$want" ]; then
           echo "$svc runs ${have#sha256:} but its image is now ${want#sha256:} - recreating."
-          docker compose up -d --force-recreate --no-deps "$svc"
+          docker compose up -d --force-recreate --no-build --no-deps "$svc"
           cid=$(docker compose ps -q "$svc")
           have=$(docker inspect "$cid" --format '{{.Image}}')
           if [ "$have" != "$want" ]; then
@@ -797,6 +785,8 @@ deploy:prod:
   # stay applied; the dump taken above is the way back from those.
   after_script:
     - |
+      # The login in before_script wrote this runner user's real ~/.docker/config.json, see .deploy-staging.
+      docker logout "$CI_REGISTRY" || true
       [ "$CI_JOB_STATUS" = "failed" ] || exit 0
       state="$DEPLOY_DIR/.deploy"
       [ -s "$state/previous-images" ] || { echo "Nothing recorded to roll back to."; exit 0; }
@@ -809,8 +799,10 @@ deploy:prod:
       git checkout -f "$(cat "$state/previous-commit")"
       git submodule sync --recursive
       git submodule update --init --recursive --force
-      while read -r svc tag previous; do
-        docker tag "$previous" "$tag"
+      # Compose runs each service on ${IMAGE_REGISTRY}/<name>:${IMAGE_TAG}, with <name> the service key without
+      # its product prefix. Put the recorded image under that name, so the recreate below starts it.
+      while read -r svc previous; do
+        docker tag "$previous" "$IMAGE_REGISTRY/${svc#hostpanel-}:$IMAGE_TAG"
         docker compose up -d --no-deps --force-recreate --no-build "$svc"
       done < "$state/previous-images"
       sh scripts/wait-for-health.sh "$HEALTH_URL" "$HEALTH_TIMEOUT_SECONDS" && echo "Rolled back; the site answers."
@@ -818,7 +810,11 @@ deploy:prod:
   # Manual on purpose — merging should not by itself change what customers see.
   when: manual
   allow_failure: false
+  # The three image builds are required, not optional: the deploy pulls what they pushed.
   needs:
     - !reference [.deploy-needs-tests, needs]
+    - backend:build:api:prod
+    - client:build:prod
+    - admin:build:prod
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"

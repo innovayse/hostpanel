@@ -1,90 +1,68 @@
 /**
- * Unit tests for the payment result page against the real invoice payment, cart, auth and stored
- * method stores, API composables, order payment token and transport, with a stub BFF answering on a
- * real socket (nothing of ours is mocked): it verifies a hosted-gateway payment from the address and
- * shows the paid, pending, declined, missing or unknown outcome, never asserting money moved unless
- * the bank said so.
+ * Tests for the payment result page against the real invoice payment store, billing API composable,
+ * order payment token memory and transport, with a stub BFF answering on a real socket (nothing of
+ * ours is mocked; the token lives in the browser's own session storage): it verifies a
+ * hosted-gateway payment from the address and shows the paid, pending, declined, missing or unknown
+ * outcome, never asserting money moved unless the bank said so.
  *
  * @module tests/pages/payment/result.test
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { flushPromises } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import type { Pinia } from 'pinia'
-import { useOrderPaymentToken } from '~/composables/useOrderPaymentToken'
-import { makeClientUser } from '~/tests/helpers/clientUser'
+import { invoicePaymentCompletePath, orderPaymentCompletePath } from '~/tests/helpers/billingPaths'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
-import ResultPage from '~/pages/payment/result.vue'
-import { useAuthStore } from '~/stores/auth'
-import { useCartStore } from '~/stores/cart'
-import { ConsentTextVersion } from '~/types/consenttextversion'
-import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
-import { PricingCycle } from '~/types/pricingcycle'
-import { SaveMethodMode } from '~/types/savemethodmode'
-import { consumeCheckoutSave, rememberCheckoutSave } from '~/utils/pendingCheckoutSave'
-import { ProductType } from '~/types/producttype'
+import { makeBackendUnreachable } from '~/tests/helpers/unreachableTransport'
 import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** The path that settles the payment of order 5. */
-const ORDER_COMPLETE = '/api/portal/order/5/gateway-payment/complete'
-
-/** The path that settles the payment of invoice 9. */
-const INVOICE_COMPLETE = '/api/portal/client/invoices/9/gateway-payment/complete'
-
-/** The path that opens a stored-method save session. */
-const SESSIONS_PATH = '/api/portal/client/stored-payment-methods/sessions'
-
-/** The reply of the session endpoint that sends the payer to the gateway. */
-const SESSION_REDIRECT = { body: { sessionId: 's1', mode: SaveMethodMode.Redirect, redirectUrl: 'https://gateway.example/save' } }
-
-/** The reply of a backend that cannot be reached. */
-const UNREACHABLE = { status: 503, body: { detail: 'Unavailable.' } }
+import ResultPage from '~/pages/payment/result.vue'
+import { useOrderPaymentToken } from '~/composables/useOrderPaymentToken'
+import { useCartStore } from '~/stores/cart'
+import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
+import { HttpMethod } from '~/types/httpmethod'
+import { PricingCycle } from '~/types/pricingcycle'
+import { ProductType } from '~/types/producttype'
 
 /** The stub playing the BFF. */
 let stub: StubServer
 
-/** The replies of the current test. */
+/** The replies of the current test; a test changes them before it mounts. */
 let table: StubRouteTable
 
-/**
- * What the stored-method start writes the redirect to; the browser's location is the one stand-in,
- * so a handed-on redirect is read from it instead of the test page navigating away.
- */
-let browserLocation: { origin: string, href: string }
+/** The order the payer is sent back for, and the invoice it was billed on. */
+const ORDER = { id: 5, invoiceId: 77, token: 'token-1' } as const
 
 /**
- * Answers the order's settle call with a state.
+ * The key of the stub reply to an order's payment check.
  *
- * @param state The state the bank reported.
- * @param orderNumber The order number the backend answers with, when it does.
+ * @param orderId - The order id.
+ * @returns The route table key.
  */
-const orderIs = (state: GatewayPaymentState, orderNumber?: string): void => {
-  table[`POST ${ORDER_COMPLETE}`] = { body: { state, orderNumber } }
+const orderCheck = (orderId: number): string => `${HttpMethod.Post} ${orderPaymentCompletePath(orderId)}`
+
+/**
+ * The key of the stub reply to an invoice's payment check.
+ *
+ * @param invoiceId - The invoice id.
+ * @returns The route table key.
+ */
+const invoiceCheck = (invoiceId: number): string => `${HttpMethod.Post} ${invoicePaymentCompletePath(invoiceId)}`
+
+/**
+ * Puts the payment token of the order in the browser, as checkout does before it leaves for the bank.
+ *
+ * @returns Nothing.
+ */
+const rememberOrder = (): void => {
+  useOrderPaymentToken().remember(ORDER.id, ORDER.token, ORDER.invoiceId)
 }
 
 /**
- * Answers the invoice's settle call with a state.
- *
- * @param state The state the bank reported.
- */
-const invoiceIs = (state: GatewayPaymentState): void => {
-  table[`POST ${INVOICE_COMPLETE}`] = { body: { state } }
-}
-
-/**
- * The requests that tried to open a stored-method save session.
- *
- * @returns The requests, oldest first.
- */
-const sessionRequests = () => requestsTo(stub.requests, SESSIONS_PATH)
-
-/**
- * Mounts the page for one address query and waits until the check has finished.
+ * Mounts the page for one address query and waits until the check has ended in an outcome.
  *
  * @param query The address query string.
  * @param pinia A Pinia the test filled before mounting; a fresh one when omitted.
@@ -93,36 +71,24 @@ const sessionRequests = () => requestsTo(stub.requests, SESSIONS_PATH)
 const mountResult = async (query: Record<string, string | string[]> = {}, pinia?: Pinia) => {
   stubPublicPageRuntime({ query })
   const wrapper = await mountPage(ResultPage, { pinia })
-  await waitUntil(() => expect(wrapper.find('[data-testid="payment-verifying"]').exists()).toBe(false))
-  await flushPromises()
+  await waitUntil(() => expect(wrapper.find('[data-testid="payment-title"]').exists()).toBe(true))
   return wrapper
 }
 
-/** The account that made the checkout choice. */
-const ADA = 'ada@example.com'
-
 /**
- * Builds a Pinia in which the given account is already loaded as the signed-in one.
+ * How many payment checks reached the stub, for either target.
  *
- * @param email The signed-in account's email.
- * @returns The Pinia to mount the page with.
+ * @returns The count.
  */
-const signedInAs = (email: string): Pinia => {
-  const pinia = createPinia()
-  setActivePinia(pinia)
-  useAuthStore().user = makeClientUser({ email })
-  return pinia
-}
+const checks = (): number => stub.requests.filter(request => request.url.endsWith('/gateway-payment/complete')).length
 
 describe('payment result page', () => {
   beforeEach(async () => {
     window.sessionStorage.clear()
     vi.stubGlobal('useOrderPaymentToken', useOrderPaymentToken)
-    browserLocation = { origin: 'https://panel.test', href: '' }
-    vi.stubGlobal('location', browserLocation)
+    rememberOrder()
     table = {}
     stub = await startTransport(routeTable(table))
-    useOrderPaymentToken().remember('5', 'token-1', 77)
   })
 
   afterEach(async () => {
@@ -134,47 +100,45 @@ describe('payment result page', () => {
 
     expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.missingTitle')
     expect(wrapper.find('[data-testid="payment-invoices"]').attributes('href')).toBe('/en/client/invoices')
-    expect(stub.requests).toHaveLength(0)
+    expect(checks()).toBe(0)
   })
 
   it('verifies an order with its payment token and offers the order page once paid', async () => {
-    orderIs(GatewayPaymentState.Paid, 'INV-77')
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Paid, orderNumber: 'INV-77' } }
 
     const wrapper = await mountResult({ order: '5' })
 
-    const [sent] = requestsTo(stub.requests, ORDER_COMPLETE)
-    expect(bodyOf(sent)).toEqual({ paymentToken: 'token-1' })
+    expect(bodyOf(requestsTo(stub.requests, orderPaymentCompletePath(ORDER.id))[0])).toEqual({ paymentToken: ORDER.token })
     expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.successTitle')
     expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe('/en/client/order-success?order=INV-77')
-    expect(useOrderPaymentToken().recall('5')).toBeUndefined()
+    expect(useOrderPaymentToken().recall(ORDER.id)).toBeUndefined()
   })
 
   it('verifies an invoice without a token and offers the invoice once paid', async () => {
-    invoiceIs(GatewayPaymentState.Paid)
+    table[invoiceCheck(9)] = { body: { state: GatewayPaymentState.Paid } }
 
     const wrapper = await mountResult({ invoice: '9' })
 
-    const [sent] = requestsTo(stub.requests, INVOICE_COMPLETE)
-    expect(bodyOf(sent)).toEqual({})
+    expect(bodyOf(requestsTo(stub.requests, invoicePaymentCompletePath(9))[0])).toEqual({})
     expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe('/en/client/invoices/9')
   })
 
   it('keeps the token and lets the payer check again while the bank has not settled', async () => {
-    orderIs(GatewayPaymentState.Pending)
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Pending } }
     const wrapper = await mountResult({ order: '5' })
     expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.pendingTitle')
-    expect(useOrderPaymentToken().recall('5')).toBe('token-1')
+    expect(useOrderPaymentToken().recall(ORDER.id)).toBe(ORDER.token)
 
-    orderIs(GatewayPaymentState.Paid)
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Paid } }
     await wrapper.find('[data-testid="payment-retry"]').trigger('click')
     await waitUntil(() => expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.successTitle'))
 
-    expect(requestsTo(stub.requests, ORDER_COMPLETE)).toHaveLength(2)
+    expect(requestsTo(stub.requests, orderPaymentCompletePath(ORDER.id))).toHaveLength(2)
   })
 
   it('sends a declined payer to pay the same invoice again, never to a fresh cart', async () => {
-    orderIs(GatewayPaymentState.Declined)
-    invoiceIs(GatewayPaymentState.Declined)
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Declined } }
+    table[invoiceCheck(9)] = { body: { state: GatewayPaymentState.Declined } }
 
     const order = await mountResult({ order: '5' })
     expect(order.find('[data-testid="payment-try-again"]').attributes('href')).toBe('/en/client/invoices/77/pay')
@@ -184,8 +148,8 @@ describe('payment result page', () => {
   })
 
   it('sends a declined order payer to the invoice list when the billed invoice is not remembered', async () => {
-    orderIs(GatewayPaymentState.Declined)
-    useOrderPaymentToken().forget('5')
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Declined } }
+    useOrderPaymentToken().forget(ORDER.id)
 
     const order = await mountResult({ order: '5' })
 
@@ -207,12 +171,13 @@ describe('payment result page', () => {
       return pinia
     }
 
-    orderIs(GatewayPaymentState.Declined)
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Declined } }
     const declinedPinia = filledPinia()
     await mountResult({ order: '5' }, declinedPinia)
     expect(useCartStore(declinedPinia).items).toHaveLength(1)
 
-    orderIs(GatewayPaymentState.Paid, 'ORD-5')
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' } }
+    rememberOrder()
     const paidPinia = filledPinia()
     await mountResult({ order: '5' }, paidPinia)
     expect(useCartStore(paidPinia).items).toEqual([])
@@ -222,7 +187,7 @@ describe('payment result page', () => {
     const pinia = createPinia()
     setActivePinia(pinia)
     useCartStore().items = [{ pid: 1, name: 'Credits', billingcycle: PricingCycle.Monthly, cycleLabel: 'Monthly', amount: 5, currency: 'USD', productType: ProductType.Digital }]
-    orderIs(GatewayPaymentState.Paid, 'ORD-5')
+    table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' } }
 
     const wrapper = await mountResult({ order: '5' }, pinia)
 
@@ -237,120 +202,16 @@ describe('payment result page', () => {
 
       expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.missingTitle')
     }
-    expect(stub.requests).toHaveLength(0)
+    expect(checks()).toBe(0)
   })
 
   it('does not assert an outcome when the backend cannot be reached, and keeps the token', async () => {
-    rememberCheckoutSave('5', 'card_gateway', ADA)
-    table[`POST ${ORDER_COMPLETE}`] = UNREACHABLE
+    await makeBackendUnreachable()
 
-    const wrapper = await mountResult({ order: '5' }, signedInAs(ADA))
+    const wrapper = await mountResult({ order: '5' })
 
     expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.unknownTitle')
     expect(wrapper.find('[data-testid="payment-status"]').exists()).toBe(true)
-    expect(useOrderPaymentToken().recall('5')).toBe('token-1')
-    // Nothing was confirmed or declined, so the renewal-save choice is neither acted on nor dropped.
-    expect(sessionRequests()).toHaveLength(0)
-    expect(consumeCheckoutSave('5', ADA)).toBe('card_gateway')
-  })
-
-  describe('save for automatic renewals', () => {
-    it('starts the stored-method session once the payment is confirmed and the payer asked for it', async () => {
-      rememberCheckoutSave('5', 'card_gateway', ADA)
-      table[`POST ${SESSIONS_PATH}`] = SESSION_REDIRECT
-      orderIs(GatewayPaymentState.Paid, 'ORD-5')
-
-      const wrapper = await mountResult({ order: '5' }, signedInAs(ADA))
-      await waitUntil(() => expect(sessionRequests()).toHaveLength(1))
-      await flushPromises()
-
-      expect(bodyOf(sessionRequests()[0])).toMatchObject({ gatewayModuleId: 'card_gateway', consentAccepted: true, consentTextVersion: ConsentTextVersion.CheckoutAgreement })
-      expect(wrapper.find('[data-testid="payment-save-starting"]').exists()).toBe(true)
-      expect(wrapper.find('[data-testid="payment-save-failed"]').exists()).toBe(false)
-      await waitUntil(() => expect(browserLocation.href).toBe('https://gateway.example/save'))
-    })
-
-    it('starts nothing, and drops the choice, when another account opens the page on the same browser', async () => {
-      rememberCheckoutSave('5', 'card_gateway', ADA)
-      orderIs(GatewayPaymentState.Paid, 'ORD-5')
-
-      const wrapper = await mountResult({ order: '5' }, signedInAs('bob@example.com'))
-
-      expect(sessionRequests()).toHaveLength(0)
-      expect(wrapper.find('[data-testid="payment-save-starting"]').exists()).toBe(false)
-      expect(consumeCheckoutSave('5', ADA)).toBeNull()
-    })
-
-    it('starts nothing when the payer did not ask for it', async () => {
-      orderIs(GatewayPaymentState.Paid, 'ORD-5')
-
-      await mountResult({ order: '5' }, signedInAs(ADA))
-
-      expect(sessionRequests()).toHaveLength(0)
-    })
-
-    it('starts one session only, even when the paid page is opened again', async () => {
-      rememberCheckoutSave('5', 'card_gateway', ADA)
-      table[`POST ${SESSIONS_PATH}`] = SESSION_REDIRECT
-      orderIs(GatewayPaymentState.Paid, 'ORD-5')
-
-      await mountResult({ order: '5' }, signedInAs(ADA))
-      await waitUntil(() => expect(sessionRequests()).toHaveLength(1))
-      await mountResult({ order: '5' }, signedInAs(ADA))
-
-      expect(sessionRequests()).toHaveLength(1)
-    })
-
-    it('does not start on a declined payment, and drops the choice', async () => {
-      rememberCheckoutSave('5', 'card_gateway', ADA)
-      orderIs(GatewayPaymentState.Declined)
-
-      await mountResult({ order: '5' }, signedInAs(ADA))
-
-      expect(sessionRequests()).toHaveLength(0)
-      expect(consumeCheckoutSave('5', ADA)).toBeNull()
-    })
-
-    it('does not start on a pending payment, and keeps the choice for the next check', async () => {
-      rememberCheckoutSave('5', 'card_gateway', ADA)
-      orderIs(GatewayPaymentState.Pending)
-
-      await mountResult({ order: '5' }, signedInAs(ADA))
-
-      expect(sessionRequests()).toHaveLength(0)
-      expect(consumeCheckoutSave('5', ADA)).toBe('card_gateway')
-    })
-
-    it('does not start when the outcome could not be confirmed', async () => {
-      rememberCheckoutSave('5', 'card_gateway', ADA)
-      table[`POST ${ORDER_COMPLETE}`] = UNREACHABLE
-
-      await mountResult({ order: '5' }, signedInAs(ADA))
-
-      expect(sessionRequests()).toHaveLength(0)
-    })
-
-    it('starts nothing for an invoice payment', async () => {
-      rememberCheckoutSave('9', 'card_gateway', ADA)
-      invoiceIs(GatewayPaymentState.Paid)
-
-      await mountResult({ invoice: '9' }, signedInAs(ADA))
-
-      expect(sessionRequests()).toHaveLength(0)
-    })
-
-    it('keeps the paid result and shows a notice with a link to the saved methods when the session cannot be started', async () => {
-      rememberCheckoutSave('5', 'card_gateway', ADA)
-      table[`POST ${SESSIONS_PATH}`] = { status: 400, body: { detail: 'Not supported.' } }
-      orderIs(GatewayPaymentState.Paid, 'ORD-5')
-
-      const wrapper = await mountResult({ order: '5' }, signedInAs(ADA))
-      await waitUntil(() => expect(wrapper.find('[data-testid="payment-save-failed"]').exists()).toBe(true))
-
-      expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.successTitle')
-      expect(wrapper.find('[data-testid="payment-continue"]').exists()).toBe(true)
-      expect(wrapper.find('[data-testid="payment-save-failed-link"]').attributes('href')).toBe('/en/client/account?tab=payment')
-      expect(wrapper.find('[data-testid="payment-save-starting"]').exists()).toBe(false)
-    })
+    expect(useOrderPaymentToken().recall(ORDER.id)).toBe(ORDER.token)
   })
 })

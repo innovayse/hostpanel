@@ -1,6 +1,6 @@
 /**
  * The BFF paths of the account page's endpoints (identity, sign-in address, contacts, team, two-factor,
- * stored payment methods, sign-out), so a test that answers them from a stub BFF route table names an
+ * stored payment methods, sign-in, sign-out), so a test that answers them from a stub BFF route table names an
  * endpoint instead of spelling out the URL.
  *
  * @module tests/helpers/accountPaths
@@ -11,11 +11,13 @@ export const AccountEndpoint = {
   Me: '/api/portal/client/me',
   EmailChange: '/api/portal/client/email-change',
   Contacts: '/api/portal/client/contacts',
+  Emails: '/api/portal/client/emails',
   Users: '/api/portal/client/users',
   InviteUser: '/api/portal/client/users/invite',
   TwoFactorSetup: '/api/portal/auth/2fa-setup',
   TwoFactorEnable: '/api/portal/auth/2fa-enable',
   TwoFactorDisable: '/api/portal/auth/2fa-disable',
+  Login: '/api/portal/auth/login',
   Logout: '/api/portal/auth/logout',
   StoredMethods: '/api/portal/client/stored-payment-methods',
   PaymentMethods: '/api/portal/order/payment-methods',

@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Application.Products.Commands.CreateProduct;
 using Innovayse.Hostpanel.Application.Products.Commands.UpdateProduct;
 using Innovayse.Hostpanel.Application.Products.Common;
+using Innovayse.Hostpanel.Application.Products.Queries.GetOrderableProductOptions;
 using Innovayse.Hostpanel.Application.Products.Queries.GetProducts;
 using Innovayse.Hostpanel.Application.Products.Queries.ListCatalogProducts;
 using Innovayse.Hostpanel.Shared.Authorization;
@@ -60,6 +61,28 @@ public sealed class ProductsController : BaseApiController
     public async Task<IActionResult> ListCatalogAsync([FromQuery] ListCatalogProductsQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<CatalogProductDto>>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// The option groups a client is offered when ordering an active product, with their options; groups
+    /// with no option are left out. Anonymous: the order screen reads it before anyone has signed in.
+    /// </summary>
+    /// <param name="id">Product primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 200 with the groups in display order; 400 when the id is refused; 404 with <c>PRODUCT_NOT_FOUND</c>
+    /// when the product does not exist or is not active; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpGet("/api/public/products/{id:int}/options")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(IReadOnlyList<ProductOptionGroupDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ListOrderableOptionsAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<ProductOptionGroupDto>>>(
+            new GetOrderableProductOptionsQuery(id), ct);
         return HandleResult(outcome);
     }
 

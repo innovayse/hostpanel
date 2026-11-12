@@ -1,28 +1,32 @@
 /**
- * Tests for `stores/domains.ts`, through the real domains, catalogue, billing and client API composables, the real
- * catalogue and currency stores and the transport against a stub server.
+ * Tests for `stores/domains.ts`, through the real domains, catalogue, billing and client API composables and the transport against a stub server.
  *
  * The store, not the domain pages, owns the in-flight flags and the refusal sentences, so these
- * assertions pin the contract the pages render from. Nothing of our own is replaced: the stub plays the BFF.
+ * assertions pin the contract the pages render from. Nothing of our own is replaced: the stub plays the BFF, and
+ * "the API was called with X" is an assertion on the request that reached it.
  *
  * @module tests/stores/domains.test
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { requestsTo, routeTable } from '../helpers/stubRoutes'
+import { AccountEndpoint } from '../helpers/accountPaths'
+import { DOMAIN_ID, DomainAction, domainPath } from '../helpers/domainPanelPaths'
+import { bodyOf } from '../helpers/requestBody'
+import { readOf, refusal, requestsTo, routeTable } from '../helpers/stubRoutes'
 import type { StubRouteTable } from '../helpers/stubRoutes'
-import type { StubReply, StubServer } from '../helpers/stubServer'
+import type { StubRequest, StubServer } from '../helpers/stubServer'
 import { startTransport } from '../helpers/stubTransport'
-import { emptyContact } from '~/utils/domainContacts'
-import { DomainActionOutcome } from '~/types/domainactionoutcome'
-import type { DomainDetail } from '~/types/domaindetail'
-import { DomainAvailabilityStatus } from '~/types/domainavailabilitystatus'
-import { HttpMethod } from '~/types/httpmethod'
-import { ProductType } from '~/types/producttype'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { useCatalogStore } from '~/stores/catalog'
 import { useDomainsStore } from '~/stores/domains'
+import { DomainActionOutcome } from '~/types/domainactionoutcome'
+import { DomainAvailabilityStatus } from '~/types/domainavailabilitystatus'
+import type { DomainDetail } from '~/types/domaindetail'
+import { HttpMethod } from '~/types/httpmethod'
+import { ProductType } from '~/types/producttype'
+import { emptyContact } from '~/utils/domainContacts'
+import { EMPTY_AMOUNT } from '~/utils/formatCurrency'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -30,22 +34,26 @@ let stub: StubServer
 /** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
 let table: StubRouteTable
 
-/** The base path of domain 9. */
-const DOMAIN_9 = '/api/portal/client/domains/9'
-
 /** The availability check. */
-const CHECK_ROUTE = `${HttpMethod.Post} /api/portal/public/domain-check`
+const CHECK_ROUTE = 'POST /api/portal/public/domain-check'
 
-/** An API refusal as `apiErrorMessage` reads it. */
-const refusal: StubReply = { status: 400, body: { detail: 'Refused by the registrar.' } }
+/** The catalogue read. */
+const PRODUCTS_ROUTE = readOf('/api/portal/public/products')
+
+/** The placing of a transfer order. */
+const TRANSFER_ROUTE = 'POST /api/portal/client/domains/transfer-order'
 
 /**
- * The JSON body of a request the stub received.
+ * The key of an action on the domain every test opens in a stub route table.
  *
- * @param path - The path the request went to.
- * @returns The parsed body of the first such request.
+ * @param method - The verb of the action.
+ * @param action - The action, or an empty string for the domain itself.
+ * @returns The `METHOD /path` key.
  */
-const bodyTo = (path: string): unknown => JSON.parse(requestsTo(stub.requests, path)[0]?.body ?? '')
+const on = (method: HttpMethod, action: Parameters<typeof domainPath>[0]): string => `${method} ${domainPath(action)}`
+
+/** The refusal the registrar answers with. */
+const REFUSED = refusal('Refused by the registrar.')
 
 beforeEach(async () => {
   setActivePinia(createPinia())
@@ -65,14 +73,14 @@ describe('useDomainsStore', () => {
     const outcome = await store.checkAvailability('a.com')
 
     expect(outcome).toBe(DomainActionOutcome.Done)
-    expect(bodyTo('/api/portal/public/domain-check')).toEqual({ domain: 'a.com' })
+    expect(bodyOf(requestsTo(stub.requests, '/api/portal/public/domain-check')[0])).toEqual({ domain: 'a.com' })
     expect(store.searchResult).toMatchObject({ domain: 'a.com' })
     expect(store.searchError).toBe('')
     expect(store.searching).toBe(false)
   })
 
   it('keeps the API sentence when the availability check is refused', async () => {
-    table[CHECK_ROUTE] = refusal
+    table[CHECK_ROUTE] = REFUSED
     const store = useDomainsStore()
 
     const outcome = await store.checkAvailability('a.com')
@@ -84,29 +92,28 @@ describe('useDomainsStore', () => {
   })
 
   it('returns the domain product id, or null when the catalogue fails', async () => {
-    const productsRoute = `${HttpMethod.Get} /api/portal/public/products`
-    table[productsRoute] = { body: [{ id: 1, type: ProductType.SharedHosting }, { id: 7, type: ProductType.Domain }] }
+    table[PRODUCTS_ROUTE] = { body: [{ id: 1, type: ProductType.SharedHosting }, { id: 7, type: ProductType.Domain }] }
     const store = useDomainsStore()
     expect(await store.fetchDomainProductId()).toBe(7)
 
-    table[productsRoute] = refusal
+    table[PRODUCTS_ROUTE] = REFUSED
     expect(await store.fetchDomainProductId()).toBeNull()
   })
 
   it('stores the transfer order on success', async () => {
-    table[`${HttpMethod.Post} /api/portal/client/domains/transfer-order`] = { body: { orderId: 1, invoiceId: 2 } }
+    table[TRANSFER_ROUTE] = { body: { orderId: 1, invoiceId: 2 } }
     const store = useDomainsStore()
 
     const outcome = await store.placeTransfer({ domain: 'a.com' })
 
     expect(outcome).toBe(DomainActionOutcome.Done)
-    expect(bodyTo('/api/portal/client/domains/transfer-order')).toEqual({ domain: 'a.com' })
+    expect(bodyOf(requestsTo(stub.requests, '/api/portal/client/domains/transfer-order')[0])).toEqual({ domain: 'a.com' })
     expect(store.transferResult).toEqual({ orderId: 1, invoiceId: 2 })
     expect(store.transferSaving).toBe(false)
   })
 
   it('keeps the transfer refusal as an error and sets no result', async () => {
-    table[`${HttpMethod.Post} /api/portal/client/domains/transfer-order`] = refusal
+    table[TRANSFER_ROUTE] = REFUSED
     const store = useDomainsStore()
 
     const outcome = await store.placeTransfer({ domain: 'a.com' })
@@ -117,50 +124,49 @@ describe('useDomainsStore', () => {
   })
 
   it('stores the renewal order on success and the sentence on refusal', async () => {
-    const renewRoute = `${HttpMethod.Post} ${DOMAIN_9}/renew-order`
-    table[renewRoute] = { body: { orderId: 3, invoiceId: 4 } }
+    table[on(HttpMethod.Post, DomainAction.RenewOrder)] = { body: { orderId: 3, invoiceId: 4 } }
     const store = useDomainsStore()
-    expect(await store.placeRenewal('9', 1, 'gw')).toBe(DomainActionOutcome.Done)
-    expect(bodyTo(`${DOMAIN_9}/renew-order`)).toEqual({ years: 1, paymentmethod: 'gw' })
+    expect(await store.placeRenewal(DOMAIN_ID, 1, 'gw')).toBe(DomainActionOutcome.Done)
+    expect(bodyOf(requestsTo(stub.requests, domainPath(DomainAction.RenewOrder))[0])).toEqual({ years: 1, paymentmethod: 'gw' })
     expect(store.renewResult).toEqual({ orderId: 3, invoiceId: 4 })
 
-    table[renewRoute] = refusal
-    expect(await store.placeRenewal('9', 1, 'gw')).toBe(DomainActionOutcome.Failed)
+    table[on(HttpMethod.Post, DomainAction.RenewOrder)] = REFUSED
+    expect(await store.placeRenewal(DOMAIN_ID, 1, 'gw')).toBe(DomainActionOutcome.Failed)
     expect(store.renewError).toBe('Refused by the registrar.')
     expect(store.renewSaving).toBe(false)
   })
 
   it('reports a toggle outcome and clears its flag either way', async () => {
-    table[`${HttpMethod.Put} ${DOMAIN_9}/lock`] = { body: {} }
+    table[on(HttpMethod.Put, DomainAction.Lock)] = { body: {} }
     const store = useDomainsStore()
-    expect(await store.setLock('9', true)).toBe(DomainActionOutcome.Done)
-    expect(bodyTo(`${DOMAIN_9}/lock`)).toEqual({ value: true })
+    expect(await store.setLock(DOMAIN_ID, true)).toBe(DomainActionOutcome.Done)
+    expect(bodyOf(requestsTo(stub.requests, domainPath(DomainAction.Lock))[0])).toEqual({ value: true })
     expect(store.lockSaving).toBe(false)
 
-    table[`${HttpMethod.Put} ${DOMAIN_9}/autorenew`] = refusal
-    expect(await store.setAutoRenew('9', true)).toBe(DomainActionOutcome.Failed)
+    table[on(HttpMethod.Put, DomainAction.AutoRenew)] = REFUSED
+    expect(await store.setAutoRenew(DOMAIN_ID, true)).toBe(DomainActionOutcome.Failed)
     expect(store.toggleError).toBe('Refused by the registrar.')
     expect(store.autoRenewSaving).toBe(false)
 
-    table[`${HttpMethod.Put} ${DOMAIN_9}/idprotect`] = { body: {} }
-    expect(await store.setIdProtect('9', false)).toBe(DomainActionOutcome.Done)
-    expect(bodyTo(`${DOMAIN_9}/idprotect`)).toEqual({ value: false })
+    table[on(HttpMethod.Put, DomainAction.IdProtect)] = { body: {} }
+    expect(await store.setIdProtect(DOMAIN_ID, false)).toBe(DomainActionOutcome.Done)
+    expect(bodyOf(requestsTo(stub.requests, domainPath(DomainAction.IdProtect))[0])).toEqual({ value: false })
     expect(store.toggleError).toBe('')
   })
 
   it('saves nameservers and re-reads the domain, keeping the sentence on refusal', async () => {
     const store = useDomainsStore()
 
-    table[`${HttpMethod.Put} ${DOMAIN_9}/nameservers`] = refusal
-    expect(await store.saveNameservers('9', ['ns1.a.com'])).toBe(DomainActionOutcome.Failed)
+    table[on(HttpMethod.Put, DomainAction.Nameservers)] = REFUSED
+    expect(await store.saveNameservers(DOMAIN_ID, ['ns1.a.com'])).toBe(DomainActionOutcome.Failed)
     expect(store.nsError).toBe('Refused by the registrar.')
-    expect(requestsTo(stub.requests, DOMAIN_9)).toHaveLength(0)
+    expect(requestsTo(stub.requests, domainPath(''))).toHaveLength(0)
 
-    const saved = { id: 9, management: { nameservers: [{ id: 1, host: 'ns1.a.com' }] } }
-    table[`${HttpMethod.Put} ${DOMAIN_9}/nameservers`] = { body: {} }
-    table[`${HttpMethod.Get} ${DOMAIN_9}`] = { body: saved }
-    expect(await store.saveNameservers('9', ['ns1.a.com'])).toBe(DomainActionOutcome.Done)
-    expect(bodyTo(`${DOMAIN_9}/nameservers`)).toEqual({ nameservers: ['ns1.a.com'] })
+    const saved = { id: 7, management: { nameservers: [{ id: 1, host: 'ns1.a.com' }] } }
+    table[on(HttpMethod.Put, DomainAction.Nameservers)] = { body: {} }
+    table[on(HttpMethod.Get, '')] = { body: saved }
+    expect(await store.saveNameservers(DOMAIN_ID, ['ns1.a.com'])).toBe(DomainActionOutcome.Done)
+    expect(bodyOf(requestsTo(stub.requests, domainPath(DomainAction.Nameservers)).at(-1))).toEqual({ nameservers: ['ns1.a.com'] })
     expect(store.nsError).toBe('')
     expect(store.nsSaving).toBe(false)
     expect(store.domain).toEqual(saved)
@@ -168,72 +174,71 @@ describe('useDomainsStore', () => {
 
   it('still reports a nameserver save as done when only the re-read fails', async () => {
     const store = useDomainsStore()
-    const loaded = { id: 9, management: { nameservers: [] } }
+    const loaded = { id: 7, management: { nameservers: [] } }
     store.domain = loaded as unknown as DomainDetail
 
-    table[`${HttpMethod.Put} ${DOMAIN_9}/nameservers`] = { body: {} }
-    table[`${HttpMethod.Get} ${DOMAIN_9}`] = refusal
-    expect(await store.saveNameservers('9', ['ns1.a.com'])).toBe(DomainActionOutcome.Done)
+    table[on(HttpMethod.Put, DomainAction.Nameservers)] = { body: {} }
+    table[on(HttpMethod.Get, '')] = REFUSED
+    expect(await store.saveNameservers(DOMAIN_ID, ['ns1.a.com'])).toBe(DomainActionOutcome.Done)
+    expect(requestsTo(stub.requests, domainPath(''))).toHaveLength(1)
     expect(store.nsError).toBe('')
     expect(store.nsSaving).toBe(false)
     expect(store.domain).toEqual(loaded)
   })
 
   it('keeps the EPP code on success and the sentence on refusal', async () => {
-    const eppRoute = `${HttpMethod.Post} ${DOMAIN_9}/epp`
-    table[eppRoute] = { body: { eppCode: 'abc' } }
+    table[on(HttpMethod.Post, DomainAction.Epp)] = { body: { eppCode: 'abc' } }
     const store = useDomainsStore()
-    expect(await store.requestEpp('9')).toBe(DomainActionOutcome.Done)
+    expect(await store.requestEpp(DOMAIN_ID)).toBe(DomainActionOutcome.Done)
     expect(store.eppCode).toBe('abc')
 
-    table[eppRoute] = refusal
-    expect(await store.requestEpp('9')).toBe(DomainActionOutcome.Failed)
+    table[on(HttpMethod.Post, DomainAction.Epp)] = REFUSED
+    expect(await store.requestEpp(DOMAIN_ID)).toBe(DomainActionOutcome.Failed)
     expect(store.eppCode).toBe('')
     expect(store.eppError).toBe('Refused by the registrar.')
     expect(store.eppSending).toBe(false)
   })
 
   it('loads the registrant as form fields, and null when the registrar has none', async () => {
-    const contactRoute = `${HttpMethod.Get} ${DOMAIN_9}/contact`
-    table[contactRoute] = {
+    table[on(HttpMethod.Get, DomainAction.Contact)] = {
       body: {
         firstName: 'Ada', lastName: 'Lovelace', organization: null, email: 'ada@example.com', phone: '+44 1',
         address1: '1 Main St', address2: null, city: 'London', state: 'LDN', postalCode: 'N1', country: 'GB'
       }
     }
     const store = useDomainsStore()
-    expect(await store.loadRegistrant('9')).toEqual({
+    expect(await store.loadRegistrant(DOMAIN_ID)).toEqual({
       firstName: 'Ada', lastName: 'Lovelace', organization: '', email: 'ada@example.com',
       address1: '1 Main St', address2: '', city: 'London', state: 'LDN',
       postalCode: 'N1', country: 'GB', phone: '+44 1'
     })
 
-    table[contactRoute] = refusal
-    expect(await store.loadRegistrant('9')).toBeNull()
+    table[on(HttpMethod.Get, DomainAction.Contact)] = REFUSED
+    expect(await store.loadRegistrant(DOMAIN_ID)).toBeNull()
   })
 
   it('loads WHOIS and contacts as null on failure, and saves WHOIS', async () => {
-    const whoisRoute = `${HttpMethod.Get} ${DOMAIN_9}/whois`
     const record = { registrar: 'Reg', registrant: 'Ada', createdAt: '2026-01-01T00:00:00Z', expiresAt: '2027-01-01T00:00:00Z' }
-    table[whoisRoute] = { body: record }
+    table[on(HttpMethod.Get, DomainAction.Whois)] = { body: record }
     const store = useDomainsStore()
-    expect(await store.loadWhois('9')).toEqual(record)
+    expect(await store.loadWhois(DOMAIN_ID)).toEqual(record)
 
-    table[whoisRoute] = refusal
-    expect(await store.loadWhois('9')).toBeNull()
+    table[on(HttpMethod.Get, DomainAction.Whois)] = REFUSED
+    expect(await store.loadWhois(DOMAIN_ID)).toBeNull()
     expect(store.whoisLoading).toBe(false)
 
-    table[`${HttpMethod.Get} /api/portal/client/contacts`] = refusal
+    table[readOf(AccountEndpoint.Contacts)] = REFUSED
     expect(await store.loadContacts()).toBeNull()
 
-    table[`${HttpMethod.Put} ${DOMAIN_9}/whois`] = refusal
-    expect(await store.saveWhois('9', emptyContact())).toBe(DomainActionOutcome.Failed)
+    table[on(HttpMethod.Put, DomainAction.Whois)] = REFUSED
+    expect(await store.saveWhois(DOMAIN_ID, emptyContact())).toBe(DomainActionOutcome.Failed)
+    expect(bodyOf(requestsTo(stub.requests, domainPath(DomainAction.Whois)).at(-1))).toEqual({ contact: emptyContact() })
     expect(store.whoisError).toBe('Refused by the registrar.')
     expect(store.whoisSaving).toBe(false)
   })
 
   it('reset clears results and errors', async () => {
-    table[`${HttpMethod.Post} /api/portal/client/domains/transfer-order`] = refusal
+    table[TRANSFER_ROUTE] = REFUSED
     const store = useDomainsStore()
     await store.placeTransfer({})
 
@@ -285,18 +290,12 @@ describe('useDomainsStore storefront lookup', () => {
   })
 
   it('checks a name against every offered extension, marking a failed check unknown', async () => {
-    /**
-     * Answers each name the way the registrar would: one available, one unreachable, the rest taken.
-     *
-     * @param request - The availability check.
-     * @returns The reply.
-     */
-    table[CHECK_ROUTE] = (request) => {
-      const name = (JSON.parse(request.body) as { domain: string }).domain
-      if (name === 'my-site.net') {
-        return { status: 502 }
+    table[CHECK_ROUTE] = (request: StubRequest) => {
+      const { domain } = bodyOf(request) as { domain: string }
+      if (domain === 'my-site.net') {
+        return { status: 502, body: { detail: 'registrar down' } }
       }
-      return { body: { domain: name, available: name === 'my-site.com', status: 'x' } }
+      return { body: { domain, available: domain === 'my-site.com', status: 'x' } }
     }
     const store = withPricing()
 
@@ -304,10 +303,11 @@ describe('useDomainsStore storefront lookup', () => {
 
     expect(store.lookupResults).toEqual([
       { name: 'my-site.com', price: '12.50', status: 'available' },
-      { name: 'my-site.net', price: '—', status: 'unknown' },
-      { name: 'my-site.org', price: '—', status: 'taken' },
-      { name: 'my-site.io', price: '—', status: 'taken' }
+      { name: 'my-site.net', price: EMPTY_AMOUNT, status: 'unknown' },
+      { name: 'my-site.org', price: EMPTY_AMOUNT, status: 'taken' },
+      { name: 'my-site.io', price: EMPTY_AMOUNT, status: 'taken' }
     ])
+    expect(requestsTo(stub.requests, '/api/portal/public/domain-check')).toHaveLength(4)
     expect(store.lookupPending).toBe(false)
     expect(store.lookupTerm).toBe('My Site.xyz')
   })
@@ -317,7 +317,7 @@ describe('useDomainsStore storefront lookup', () => {
 
     await store.searchOfferedTlds('   ')
 
-    expect(requestsTo(stub.requests, '/api/portal/public/domain-check')).toHaveLength(0)
+    expect(stub.requests).toHaveLength(0)
     expect(store.lookupResults).toEqual([])
     expect(store.lookupTerm).toBe('')
   })
@@ -325,51 +325,50 @@ describe('useDomainsStore storefront lookup', () => {
 
 describe('useDomainsStore detail reads', () => {
   it('keeps the domain and clears the previous one while the next loads', async () => {
-    table[`${HttpMethod.Get} /api/portal/client/domains/4`] = { body: { id: 4, name: 'a.com' } }
+    table[on(HttpMethod.Get, '')] = { body: { id: 7, name: 'a.com' } }
     const store = useDomainsStore()
 
-    expect(await store.loadDomain('4')).toMatchObject({ name: 'a.com' })
-    expect(store.domain).toMatchObject({ id: 4 })
+    expect(await store.loadDomain(DOMAIN_ID)).toMatchObject({ name: 'a.com' })
+    expect(store.domain).toMatchObject({ id: 7 })
     expect(store.domainLoading).toBe(false)
     expect(store.domainError).toBe('')
   })
 
   it('keeps the API sentence and no domain when the read is refused', async () => {
-    table[`${HttpMethod.Get} /api/portal/client/domains/4`] = refusal
+    table[on(HttpMethod.Get, '')] = REFUSED
     const store = useDomainsStore()
 
-    expect(await store.loadDomain('4')).toBeNull()
+    expect(await store.loadDomain(DOMAIN_ID)).toBeNull()
     expect(store.domain).toBeNull()
     expect(store.domainError).toBe('Refused by the registrar.')
   })
 
   it('reads the primary profile once and reuses it', async () => {
     const profile = makeClientUser()
-    table[`${HttpMethod.Get} /api/portal/client/me`] = { body: profile }
+    table[readOf(AccountEndpoint.Me)] = { body: profile }
     const store = useDomainsStore()
 
     await store.loadPrimaryProfile()
     const again = await store.loadPrimaryProfile()
 
     expect(again).toEqual(profile)
-    expect(requestsTo(stub.requests, '/api/portal/client/me')).toHaveLength(1)
+    expect(requestsTo(stub.requests, AccountEndpoint.Me)).toHaveLength(1)
   })
 
   it('returns null for the primary profile when it cannot be read', async () => {
-    table[`${HttpMethod.Get} /api/portal/client/me`] = refusal
+    table[readOf(AccountEndpoint.Me)] = REFUSED
 
     expect(await useDomainsStore().loadPrimaryProfile()).toBeNull()
   })
 
   it('keeps the gateways, and an empty list when they cannot be read', async () => {
-    const methodsRoute = `${HttpMethod.Get} /api/portal/order/payment-methods`
-    table[methodsRoute] = { body: [{ module: 'card_gateway', displayName: 'Card gateway' }] }
+    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [{ module: 'card_gateway', displayName: 'Card gateway', supportsStoredCredentials: false }] }
     const store = useDomainsStore()
 
     await store.loadPaymentMethods()
     expect(store.paymentMethods).toHaveLength(1)
 
-    table[methodsRoute] = refusal
+    table[readOf(AccountEndpoint.PaymentMethods)] = REFUSED
     await store.loadPaymentMethods()
     expect(store.paymentMethods).toEqual([])
     expect(store.paymentMethodsLoading).toBe(false)

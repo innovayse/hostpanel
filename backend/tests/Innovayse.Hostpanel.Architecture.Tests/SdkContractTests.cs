@@ -596,11 +596,12 @@ public sealed class SdkContractTests
     [Fact]
     public void PaymentSlotLifecycleAndPanelRecords_KeepTheirMembers()
     {
+        // SDK 3.5.0 added PaymentInstruction.SavePaymentMethod and GatewayPaymentStatus.SavedMethod.
         typeof(PaymentInstruction).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
-            "OrderNumber", "AmountMinor", "ReturnUrl", "Description", "Language");
+            "OrderNumber", "AmountMinor", "ReturnUrl", "Description", "Language", "SavePaymentMethod");
         typeof(PaymentSession).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("GatewayOrderId", "RedirectUrl");
         typeof(GatewayPaymentStatus).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(
-            "State", "TransactionId", "RawStatus", "AmountMinor", "Currency");
+            "State", "TransactionId", "RawStatus", "AmountMinor", "Currency", "SavedMethod");
         typeof(PluginSlot).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Id", "Area", "ContextKeys");
         typeof(PluginStatusReport).GetProperties().Select(p => p.Name).Should().BeEquivalentTo("Health", "Detail");
         typeof(HostingPanelConnection).GetProperties().Select(p => p.Name).Should().BeEquivalentTo(

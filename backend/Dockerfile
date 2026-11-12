@@ -114,21 +114,54 @@ ARG VERSION=0.0.0-dev
 # of the API project, set on restore and publish alike: the restore decides which packages the publish
 # copies). The packages are already in the cache from the first restore; the secret is mounted again only so
 # a cache miss cannot fail on a private feed.
+#
+# The same restore also pins the runtime. The prod stage is Alpine, so the host is published for that runtime and
+# nothing else: a portable publish copies the native assets of every platform a package ships (SkiaSharp alone carries
+# Windows, macOS, bionic and glibc builds, about 300 MB with their debug files), a runtime-specific one only the
+# matching build. BuildKit hands over the architecture the image is built for (TARGETARCH), because the Docker Hub
+# images are built natively for amd64 and arm64. The runtime identifier is written once here and read by the restore,
+# the publish and the check below. The image starts the host with `dotnet Innovayse.Hostpanel.API.dll`, so it needs
+# no native launcher (UseAppHost=false, which also keeps the restore from fetching the launcher pack for Alpine) and
+# stays framework-dependent.
+ARG TARGETARCH
+RUN case "$TARGETARCH" in \
+        amd64) echo linux-musl-x64 ;; \
+        arm64) echo linux-musl-arm64 ;; \
+        *) echo "No runtime identifier for TARGETARCH '$TARGETARCH'; build with BuildKit for linux/amd64 or linux/arm64." >&2; exit 1 ;; \
+    esac > /tmp/runtime-id
 RUN --mount=type=secret,id=nuget_credentials,required=false \
     SSO=$([ "$AUTH_MODE" = "sso" ] && echo "-p:InnovayseSso=true"); \
     if [ -s /run/secrets/nuget_credentials ]; then export NuGetPackageSourceCredentials_innovayse="$(cat /run/secrets/nuget_credentials)"; fi; \
-    dotnet restore src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj -p:OmitRuntimeCompilation=true $SSO
+    dotnet restore src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj -r "$(cat /tmp/runtime-id)" \
+        -p:SelfContained=false -p:UseAppHost=false -p:OmitRuntimeCompilation=true $SSO
 
 # The image version goes in as HostVersion, never as Version: a global Version reaches every referenced project and
 # would overwrite the version the plugin SDK sets for itself (backend/src/Directory.Build.props maps HostVersion onto
 # the host's own projects only). A plugin is built against the SDK's own number and refuses to load against another,
 # so an SDK stamped 0.0.0.0 made every plugin's entry point type unloadable.
+#
+# DebugType=none keeps every .pdb out of the output, the host's own and the ones packages ship beside their libraries.
 RUN SSO=$([ "$AUTH_MODE" = "sso" ] && echo "-p:InnovayseSso=true"); \
     dotnet publish src/Innovayse.Hostpanel.API/Innovayse.Hostpanel.API.csproj -c Release -o /out --no-restore \
+        -r "$(cat /tmp/runtime-id)" --no-self-contained \
+        /p:UseAppHost=false \
+        /p:DebugType=none \
+        /p:DebugSymbols=false \
         /p:OmitRuntimeCompilation=true \
         /p:ErrorOnDuplicatePublishOutputFiles=false \
         /p:HostVersion=$VERSION \
         $SSO
+
+# The image build fails when the output grows back what the publish above keeps out: a debug symbol file, a native
+# runtime folder of another platform, or no SkiaSharp native library at all (branding images are rendered with it,
+# and the Alpine build is the one the host loads). A runtime-specific publish puts the matching native library
+# beside the assemblies; the only folders allowed under runtimes/ are the runtime itself and its portable parents.
+RUN rid="$(cat /tmp/runtime-id)"; \
+    symbols="$(find /out -name '*.pdb')"; \
+    if [ -n "$symbols" ]; then echo "Debug symbols in the publish output:" >&2; echo "$symbols" >&2; exit 1; fi; \
+    foreign="$(find /out/runtimes -mindepth 1 -maxdepth 1 -type d ! -name "$rid" ! -name linux-musl ! -name linux ! -name unix ! -name any 2>/dev/null)"; \
+    if [ -n "$foreign" ]; then echo "Native runtimes of other platforms in the publish output:" >&2; echo "$foreign" >&2; exit 1; fi; \
+    if [ -z "$(find /out -name libSkiaSharp.so)" ]; then echo "libSkiaSharp.so is missing from the publish output for $rid" >&2; exit 1; fi
 
 FROM mcr.microsoft.com/dotnet/aspnet:9.0.22-alpine3.24@sha256:c8e9a3262af499a08fd3911542af57a35c7a11819ba5db2a0a1658e47417d11b AS prod
 

@@ -1,6 +1,7 @@
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Orders;
+using Innovayse.Hostpanel.Domain.Products;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -29,6 +30,7 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.Currency).IsRequired().HasMaxLength(CurrencyCode.Length);
         builder.Property(x => x.PaymentMethod).IsRequired().HasMaxLength(50);
         builder.Property(x => x.InvoiceId);
+        builder.Property(x => x.BundleId);
         builder.Property(x => x.IpAddress).HasMaxLength(45);
         builder.Property(x => x.Notes).HasMaxLength(2000);
         builder.Property(x => x.CreatedAt).IsRequired();
@@ -54,5 +56,12 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
             .WithMany()
             .HasForeignKey(x => x.InvoiceId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // An order outlives the bundle it was placed from: deleting the bundle clears the link.
+        builder.HasOne<ProductBundle>()
+            .WithMany()
+            .HasForeignKey(x => x.BundleId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.HasIndex(x => x.BundleId);
     }
 }

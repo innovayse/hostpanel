@@ -850,6 +850,33 @@
   <data name="ProductGroupDescriptionTooLong" xml:space="preserve">
     <value>Նկարագրությունը չպետք է գերազանցի {0} նիշը։</value>
   </data>
+  <data name="ProductBundleIdInvalid" xml:space="preserve">
+    <value>Նշեք փաթեթի ճիշտ ID։</value>
+  </data>
+  <data name="ProductBundleNameRequired" xml:space="preserve">
+    <value>Արտադրանքների փաթեթը պետք է ունենա անվանում։</value>
+  </data>
+  <data name="ProductBundleNameTooLong" xml:space="preserve">
+    <value>Փաթեթի անվանումը չպետք է գերազանցի {0} նիշը։</value>
+  </data>
+  <data name="ProductBundleDescriptionTooLong" xml:space="preserve">
+    <value>Նկարագրությունը չպետք է գերազանցի {0} նիշը։</value>
+  </data>
+  <data name="ProductBundleSortOrderInvalid" xml:space="preserve">
+    <value>Դասավորման դիրքը չի կարող բացասական լինել։</value>
+  </data>
+  <data name="ProductBundleDomainTermInvalid" xml:space="preserve">
+    <value>Դոմենով փաթեթին պետք է 1-ից {0} տարի գրանցում, իսկ առանց դոմենի փաթեթը պետք է թողնի տարիները դատարկ։</value>
+  </data>
+  <data name="ProductBundleDiscountInvalid" xml:space="preserve">
+    <value>Զեղչը չի համապատասխանում իր տեսակին․ տոկոսը 0-ից {0} է, ֆիքսված գումարը բացասական չէ և պահանջում է արժույթի կոդ, իսկ առանց զեղչի ոչ գումար է պետք, ոչ արժույթ։</value>
+  </data>
+  <data name="ProductBundleItemsRequired" xml:space="preserve">
+    <value>Փաթեթին ավելացրեք առնվազն մեկ արտադրանք։</value>
+  </data>
+  <data name="ProductBundleItemProductInvalid" xml:space="preserve">
+    <value>Փաթեթի յուրաքանչյուր դիրքի համար նշեք արտադրանքի ճիշտ ID։</value>
+  </data>
   <data name="ProductIdInvalid" xml:space="preserve">
     <value>Նշեք ապրանքի վավեր ID։</value>
   </data>
@@ -906,6 +933,39 @@
   </data>
   <data name="ProductFeatureSortOrderInvalid" xml:space="preserve">
     <value>Դասավորության հերթականությունը չի կարող բացասական լինել։</value>
+  </data>
+  <data name="ProductOptionGroupIdInvalid" xml:space="preserve">
+    <value>Նշեք ընտրանիների խմբի վավեր ID։</value>
+  </data>
+  <data name="ProductOptionIdInvalid" xml:space="preserve">
+    <value>Նշեք ընտրանու վավեր ID։</value>
+  </data>
+  <data name="ProductOptionGroupNameRequired" xml:space="preserve">
+    <value>Ընտրանիների խումբը պահանջում է անուն։</value>
+  </data>
+  <data name="ProductOptionGroupNameTooLong" xml:space="preserve">
+    <value>Անունը չպետք է գերազանցի {0} նիշը։</value>
+  </data>
+  <data name="ProductOptionGroupTypeInvalid" xml:space="preserve">
+    <value>Ընտրեք ընտրանիների խմբի վավեր տեսակ։</value>
+  </data>
+  <data name="ProductOptionNameRequired" xml:space="preserve">
+    <value>Ընտրանին պահանջում է անուն։</value>
+  </data>
+  <data name="ProductOptionNameTooLong" xml:space="preserve">
+    <value>Անունը չպետք է գերազանցի {0} նիշը։</value>
+  </data>
+  <data name="ProductOptionDisplayOrderInvalid" xml:space="preserve">
+    <value>Ցուցադրման հերթականությունը չի կարող բացասական լինել։</value>
+  </data>
+  <data name="ProductOptionPriceTypeInvalid" xml:space="preserve">
+    <value>Ընտրեք գնի վավեր տեսակ։</value>
+  </data>
+  <data name="ProductOptionPriceInvalid" xml:space="preserve">
+    <value>Գինը չի կարող բացասական լինել։</value>
+  </data>
+  <data name="ProductOptionGroupIdsRequired" xml:space="preserve">
+    <value>Նշեք ընտրանիների խմբերի ID-ները նոր հերթականությամբ։</value>
   </data>
   <data name="SlideIdInvalid" xml:space="preserve">
     <value>Նշեք սլայդի վավեր ID։</value>

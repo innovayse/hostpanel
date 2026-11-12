@@ -1,29 +1,21 @@
 /**
- * Tests for `pages/client/invoices/[id]/pay.vue` against the real invoice payment store, API
- * composable and transport, with a stub BFF answering on a real socket (nothing of ours is mocked):
- * the layout, the already-paid and not-found states and the gateway payment button.
+ * Tests for `pages/client/invoices/[id]/pay.vue` against the real invoice payment store, the real
+ * billing API composable and transport, with a stub BFF answering on a real socket (nothing of ours
+ * is mocked): the layout, the already-paid and not-found states and the gateway payment button.
  *
  * @module tests/pages/client/invoices/[id]/pay.test
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { bankTransferPath, invoicePath } from '~/tests/helpers/billingPaths'
 import { mountPage, stubClientRuntime } from '~/tests/helpers/mountClient'
-import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { readOf, refusal, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { waitUntil } from '~/tests/helpers/waitUntil'
 import PayPage from '~/pages/client/invoices/[id]/pay.vue'
 import { InvoiceStatus } from '~/types/invoicestatus'
-import { waitUntil } from '~/tests/helpers/waitUntil'
-
-/** The BFF paths the page reads for invoice 41. */
-const PATHS = {
-  invoice: '/api/portal/client/invoices/41',
-  gateways: '/api/portal/order/payment-methods',
-  bankTransfer: '/api/portal/client/invoices/41/bank-transfer',
-} as const
-
-/** One enabled hosted gateway. */
-const HOSTED_GATEWAY = { module: 'hostedbank', displayName: 'Bank' }
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -31,11 +23,14 @@ let stub: StubServer
 /** The replies of the current test; a test changes them before it mounts. */
 let table: StubRouteTable
 
+/** The one hosted gateway the stub offers when a test wants a gateway on. */
+const HOSTED_GATEWAY = { module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }
+
 /**
  * Builds an invoice.
  *
  * @param status - Invoice status.
- * @param isBankTransferPending - Whether a bank transfer waits on the invoice.
+ * @param isBankTransferPending - Whether a bank transfer waits on it; true for a payment-pending invoice by default.
  * @returns The invoice.
  */
 const invoice = (status: InvoiceStatus, isBankTransferPending = status === InvoiceStatus.PaymentPending) => ({
@@ -44,9 +39,7 @@ const invoice = (status: InvoiceStatus, isBankTransferPending = status === Invoi
 
 beforeEach(async () => {
   stubClientRuntime({ params: { id: '41' } })
-  table = {
-    [`GET ${PATHS.gateways}`]: { body: [] },
-  }
+  table = { [readOf(AccountEndpoint.PaymentMethods)]: { body: [] } }
   stub = await startTransport(routeTable(table))
 })
 
@@ -56,18 +49,18 @@ afterEach(async () => {
 
 describe('invoice payment page', () => {
   it('shows the payment panel beside the invoice summary and the security notice with a hosted gateway', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
-    table[`GET ${PATHS.gateways}`] = { body: [HOSTED_GATEWAY] }
+    table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.Unpaid) }
+    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [HOSTED_GATEWAY] }
 
     const wrapper = await mountPage(PayPage)
-    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(true))
+    await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(true))
 
+    expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="pay-summary"]').text()).toContain('Hosting')
-    expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(true)
   })
 
   it('says online payment is unavailable and hides the security notice when no gateway exists', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
+    table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.Unpaid) }
 
     const wrapper = await mountPage(PayPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-unavailable"]').exists()).toBe(true))
@@ -77,8 +70,8 @@ describe('invoice payment page', () => {
   })
 
   it('shows an error with a retry when the gateway list cannot be read, and recovers on retry', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
-    table[`GET ${PATHS.gateways}`] = { status: 503, body: { detail: 'Gateways down.' } }
+    table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.Unpaid) }
+    table[readOf(AccountEndpoint.PaymentMethods)] = refusal('Gateways down.')
     const wrapper = await mountPage(PayPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-options-error"]').exists()).toBe(true))
 
@@ -86,7 +79,7 @@ describe('invoice payment page', () => {
     expect(wrapper.find('[data-testid="invoice-pay-unavailable"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(false)
 
-    table[`GET ${PATHS.gateways}`] = { body: [HOSTED_GATEWAY] }
+    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [HOSTED_GATEWAY] }
     await wrapper.find('[data-testid="invoice-pay-options-retry"]').trigger('click')
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true))
 
@@ -94,7 +87,7 @@ describe('invoice payment page', () => {
   })
 
   it('says an already paid invoice has been paid and offers no payment', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Paid) }
+    table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.Paid) }
 
     const wrapper = await mountPage(PayPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-already-paid"]').exists()).toBe(true))
@@ -103,7 +96,7 @@ describe('invoice payment page', () => {
   })
 
   it('treats a partially refunded invoice as already paid and offers no payment', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.PartiallyRefunded) }
+    table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.PartiallyRefunded) }
 
     const wrapper = await mountPage(PayPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-already-paid"]').exists()).toBe(true))
@@ -112,7 +105,7 @@ describe('invoice payment page', () => {
   })
 
   it('says the invoice was not found when the read fails', async () => {
-    table[`GET ${PATHS.invoice}`] = { status: 404, body: { detail: 'No such invoice.' } }
+    table[readOf(invoicePath(41))] = refusal('No such invoice.')
 
     const wrapper = await mountPage(PayPage)
     await waitUntil(() => expect(wrapper.text()).toContain('client.invoices.notFound'))
@@ -121,41 +114,40 @@ describe('invoice payment page', () => {
   })
 
   it('offers the gateway payment button when a gateway is enabled', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
-    table[`GET ${PATHS.gateways}`] = { body: [HOSTED_GATEWAY] }
-    const wrapper = await mountPage(PayPage)
+    table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.Unpaid) }
+    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [HOSTED_GATEWAY] }
 
+    const wrapper = await mountPage(PayPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true))
   })
 
   it('shows the bank details of an invoice that waits for a transfer, with no payment choices or gateway notice', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.PaymentPending) }
-    table[`GET ${PATHS.gateways}`] = { body: [HOSTED_GATEWAY] }
-    table[`GET ${PATHS.bankTransfer}`] = { body: { invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null } }
+    table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.PaymentPending) }
+    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [HOSTED_GATEWAY] }
+    table[readOf(bankTransferPath(41))] = { body: { invoiceId: 41, reference: 'INV-41', amountDue: 100, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null } }
 
     const wrapper = await mountPage(PayPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="bank-transfer-card"]').exists()).toBe(true))
 
-    expect(requestsTo(stub.requests, PATHS.bankTransfer).map(request => request.method)).toEqual(['GET'])
+    expect(requestsTo(stub.requests, bankTransferPath(41)).map(request => request.method)).toEqual(['GET'])
     expect(wrapper.find('[data-testid="bank-transfer-reference"]').text()).toBe('INV-41')
     expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-pay-security"]').exists()).toBe(false)
   })
 
   it('does not read bank details for an invoice that does not wait for a transfer', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
+    table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.Unpaid) }
 
     const wrapper = await mountPage(PayPage)
     await waitUntil(() => expect(wrapper.find('[data-testid="invoice-pay-panel"]').exists()).toBe(true))
 
-    expect(requestsTo(stub.requests, PATHS.bankTransfer)).toHaveLength(0)
+    expect(requestsTo(stub.requests, bankTransferPath(41))).toHaveLength(0)
   })
 
   it('links the breadcrumb back to the invoice', async () => {
-    table[`GET ${PATHS.invoice}`] = { body: invoice(InvoiceStatus.Unpaid) }
+    table[readOf(invoicePath(41))] = { body: invoice(InvoiceStatus.Unpaid) }
 
     const wrapper = await mountPage(PayPage)
-
     await waitUntil(() => expect(wrapper.find('nav a[href="/client/invoices/41"]').exists()).toBe(true))
   })
 })

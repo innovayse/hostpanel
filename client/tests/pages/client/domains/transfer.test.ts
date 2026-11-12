@@ -33,7 +33,7 @@ let stub: StubServer
 let table: StubRouteTable
 
 /** A gateway. */
-const card = { module: 'card_gateway', displayName: 'Card gateway' }
+const card = { module: 'card_gateway', displayName: 'Card gateway', supportsStoredCredentials: false }
 
 beforeEach(async () => {
   stubClientRuntime({ query: { domain: 'moving.org', eppcode: 'AUTH-1' } })

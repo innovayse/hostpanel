@@ -92,7 +92,7 @@ public sealed class InvoiceBankTransferTests
         }
         else
         {
-            invoice.Cancel();
+            invoice.Cancel(Now);
         }
 
         var act = () => invoice.RequestBankTransfer(Now);

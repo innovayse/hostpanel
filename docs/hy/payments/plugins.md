@@ -27,7 +27,7 @@ Development և Testing միջավայրերից բացի մնացած բոլոր
 
 ### Վստահելի բանալիներ {#trusted-keys}
 
-Սերվերը վստահում է երկու տեղում թվարկված հանրային բանալիներին։ Պահպանողների բանալիները սերվերի հետ գալիս են `PluginSigning:MaintainerKeys` բաժնում (բանալու id՝ `innovayse-2026`, որը ստորագրում է Innovayse-ի պլագինները)։ Ձերը ավելացնում եք `PluginSigning:OperatorKeys` բաժնում, օրինակ՝ միջավայրի փոփոխականներով.
+Սերվերը վստահում է երկու տեղում թվարկված հանրային բանալիներին։ Պահպանողների բանալիները սերվերի հետ գալիս են `PluginSigning:MaintainerKeys` բաժնում (բանալու id՝ `official-innovayse-2026`, որը ստորագրում է Innovayse-ի պլագինները)։ Ձերը ավելացնում եք `PluginSigning:OperatorKeys` բաժնում, օրինակ՝ միջավայրի փոփոխականներով.
 
 ```text
 PluginSigning__OperatorKeys__0__KeyId=my-company-2026

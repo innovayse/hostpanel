@@ -18,8 +18,25 @@ namespace Innovayse.Hostpanel.Application.Orders.Commands.StartOrderGatewayPayme
 /// <see cref="Innovayse.Hostpanel.Domain.Orders.Order.PaymentToken"/> for why an order id alone is not
 /// enough.
 /// </param>
+/// <param name="SavePaymentMethod">
+/// Whether the payer asked to keep the payment method they pay with, so the host can charge it later. Needs a gateway
+/// module that offers stored credentials; the consent evidence below is recorded with the payment.
+/// </param>
+/// <param name="ConsentTextVersion">
+/// The version of the consent wording the payer ticked, as the portal showed it; kept as evidence. Required when
+/// <paramref name="SavePaymentMethod"/> is set, ignored otherwise.
+/// </param>
+/// <param name="IpAddress">The address of the request, set by the controller; not read from the body.</param>
+/// <param name="UserAgent">The browser identification of the request, set by the controller; not read from the body.</param>
 public sealed record StartOrderGatewayPaymentCommand(
-    int OrderId, string Module, string ReturnUrl, string? PaymentToken)
+    int OrderId,
+    string Module,
+    string ReturnUrl,
+    string? PaymentToken,
+    bool SavePaymentMethod = false,
+    string? ConsentTextVersion = null,
+    string? IpAddress = null,
+    string? UserAgent = null)
 {
     /// <summary>Prints the record without its secret members; see <see cref="SecretMembers"/>.</summary>
     /// <param name="builder">The builder the generated <c>ToString</c> is assembling.</param>

@@ -70,9 +70,11 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
     /// <summary>Builds a payment-plugin manifest for a test plugin.</summary>
     /// <param name="id">The module id.</param>
     /// <param name="name">The display name.</param>
+    /// <param name="capabilities">The capabilities the manifest declares; none by default.</param>
     /// <returns>The manifest.</returns>
-    private static PluginManifest PaymentManifest(string id, string name) => new()
+    private static PluginManifest PaymentManifest(string id, string name, params string[] capabilities) => new()
     {
+        Capabilities = capabilities,
         Id = id,
         Name = name,
         Version = "1.0.0",
@@ -200,6 +202,35 @@ public sealed class ListAvailablePaymentMethodsTests(IntegrationTestFactory fact
         var only = Assert.Single(plugins);
         only.Module.Should().Be("bank-gateway");
         only.DisplayName.Should().Be("Bank Card (Bank Gateway)");
+    }
+
+    /// <summary>
+    /// A plugin that declares the stored credentials capability is marked as supporting it, so checkout can offer to
+    /// keep the payer's method; a plugin without it, and the built-in bank transfer, are not.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task OnlyAPluginDeclaringStoredCredentialsSupportsThem()
+    {
+        var registry = new FakePluginRegistry();
+        registry.Add(PaymentManifest("saving-gateway", "Saving Gateway", PluginCapabilities.StoredCredentials));
+        registry.Add(PaymentManifest("plain-gateway", "Plain Gateway"));
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("saving-gateway", new FakePaymentPlugin { CurrencyCode = "840" });
+        resolver.Register("plain-gateway", new FakePaymentPlugin { CurrencyCode = "840" });
+        var host = factory.WithWebHostBuilder(builder =>
+            builder.ConfigureTestServices(services =>
+            {
+                services.AddSingleton<IPluginRegistry>(registry);
+                services.AddSingleton<IPaymentPluginResolver>(resolver);
+            }));
+        await SwitchIntegrationAsync(host, BuiltInPaymentModules.BankTransferIntegrationSlug, enabled: true);
+
+        var methods = await host.CreateClient().GetFromJsonAsync<List<AvailablePaymentMethodDto>>("/api/payment-methods");
+
+        methods!.Single(m => m.Module == "saving-gateway").SupportsStoredCredentials.Should().BeTrue();
+        methods!.Single(m => m.Module == "plain-gateway").SupportsStoredCredentials.Should().BeFalse();
+        methods!.Single(m => m.Module == BuiltInPaymentModules.BankTransfer).SupportsStoredCredentials.Should().BeFalse();
     }
 
     /// <summary>

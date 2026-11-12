@@ -35,7 +35,7 @@ upload at once, and to plugins that are already installed after the next restart
 ### Trusted keys
 
 The server trusts the public keys listed in two places. The maintainers' keys ship with the server in the
-`PluginSigning:MaintainerKeys` section (key id `innovayse-2026`, which signs the Innovayse plugins). You add your own under
+`PluginSigning:MaintainerKeys` section (key id `official-innovayse-2026`, which signs the Innovayse plugins). You add your own under
 `PluginSigning:OperatorKeys`, for example with environment variables:
 
 ```text

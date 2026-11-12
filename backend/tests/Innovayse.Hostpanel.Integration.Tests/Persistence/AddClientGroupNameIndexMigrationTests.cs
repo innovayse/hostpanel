@@ -69,6 +69,43 @@ public sealed class AddClientGroupNameIndexMigrationTests
         }
     }
 
+    /// <summary>
+    /// A group already literally named after the suffixed form of a duplicate ("Name (Id)" for the same Id) keeps its
+    /// name, the duplicate gets a different suffix, and the unique index can still be built.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task Up_AGroupAlreadyNamedLikeTheSuffixedDuplicate_IsKeptAndTheDuplicateGetsAnotherSuffixAsync()
+    {
+        var databaseName = $"it_{Guid.NewGuid():N}";
+        var connectionString = await SharedPostgresServer.CreateDatabaseAsync(databaseName);
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(connectionString).Options;
+            await MigrateAsync(options, PreviousMigration);
+            var first = await InsertGroupAsync(connectionString, "Wholesale");
+            var second = await InsertGroupAsync(connectionString, "Wholesale");
+            var taken = await InsertGroupAsync(connectionString, $"Wholesale ({second})");
+
+            await MigrateAsync(options, MigrationUnderTest);
+
+            (await NameOfAsync(connectionString, first)).Should().Be("Wholesale");
+            (await NameOfAsync(connectionString, taken)).Should().Be($"Wholesale ({second})", "an existing name is not taken over");
+            (await NameOfAsync(connectionString, second)).Should().Be($"Wholesale ({second}-2)");
+            var names = await ScalarAsync(connectionString, """SELECT count(DISTINCT "Name") FROM "ClientGroups" """);
+            names.Should().Be(3L, "every name is different");
+            var index = await ScalarAsync(
+                connectionString, "SELECT count(*) FROM pg_indexes WHERE indexname = 'IX_ClientGroups_Name'");
+            index.Should().Be(1L);
+        }
+        finally
+        {
+            using var probe = new NpgsqlConnection(connectionString);
+            NpgsqlConnection.ClearPool(probe);
+            await SharedPostgresServer.DropDatabaseAsync(databaseName);
+        }
+    }
+
     /// <summary>Migrates the test database to a named migration.</summary>
     /// <param name="options">The options pointing at the test database.</param>
     /// <param name="target">The migration to reach.</param>

@@ -149,7 +149,7 @@ public sealed class InvoiceCreditTopUpTests
     {
         var invoice = TopUp();
 
-        invoice.Cancel();
+        invoice.Cancel(Now);
 
         invoice.Status.Should().Be(InvoiceStatus.Cancelled);
     }
@@ -161,7 +161,7 @@ public sealed class InvoiceCreditTopUpTests
         var invoice = TopUp();
         invoice.Settle("Bank Transfer", "INV-1", Now, TransactionSource.Manual);
 
-        var act = () => invoice.Cancel();
+        var act = () => invoice.Cancel(Now);
 
         act.Should().Throw<DomainRuleException>();
     }

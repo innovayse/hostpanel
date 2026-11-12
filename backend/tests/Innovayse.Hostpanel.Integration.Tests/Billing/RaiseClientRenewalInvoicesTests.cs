@@ -375,7 +375,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         var (clientId, service, start) = await SeedServiceAsync(context, DateTimeOffset.UtcNow.AddDays(10));
         (await RaiseAsync(bus, clientId)).Value.Should().Be(1);
         var first = await context.Invoices.FirstAsync(i => i.ClientId == clientId, CancellationToken.None);
-        first.Cancel();
+        first.Cancel(DateTimeOffset.UtcNow);
         await context.SaveChangesAsync(CancellationToken.None);
 
         var result = await RaiseAsync(bus, clientId);
@@ -501,7 +501,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
         var (domain, expiry) = await SeedDomainAsync(context, client.Id, DateTimeOffset.UtcNow.AddDays(10), new() { [1] = 12m });
         (await RaiseAsync(bus, client.Id)).Value.Should().Be(1);
         var first = await context.Invoices.FirstAsync(i => i.ClientId == client.Id, CancellationToken.None);
-        first.Cancel();
+        first.Cancel(DateTimeOffset.UtcNow);
         await context.SaveChangesAsync(CancellationToken.None);
 
         (await RaiseAsync(bus, client.Id)).Value.Should().Be(1);
@@ -947,7 +947,7 @@ public sealed class RaiseClientRenewalInvoicesTests(IntegrationTestFactory facto
 
         var orderInvoice = Invoice.Create(client.Id, DateTimeOffset.UtcNow.AddDays(7), "USD", DateTimeOffset.UtcNow);
         orderInvoice.AddItem($"Domain renewal: {domain.Name}", 12m, 1);
-        orderInvoice.Cancel();
+        orderInvoice.Cancel(DateTimeOffset.UtcNow);
         context.Invoices.Add(orderInvoice);
         await context.SaveChangesAsync(CancellationToken.None);
         var order = Order.Create($"ORD-{Guid.NewGuid():N}"[..20], client.Id, "bank-transfer", null, "USD", DateTimeOffset.UtcNow);

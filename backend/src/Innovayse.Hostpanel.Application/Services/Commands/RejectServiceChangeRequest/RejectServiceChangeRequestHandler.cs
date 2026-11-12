@@ -5,6 +5,8 @@ using Innovayse.Hostpanel.Application.Billing.Queries.GetInvoiceBrief;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Services.Enums;
+using Innovayse.Hostpanel.Shared.Infrastructure;
 using Innovayse.Hostpanel.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Wolverine;
@@ -19,7 +21,10 @@ namespace Innovayse.Hostpanel.Application.Services.Commands.RejectServiceChangeR
 /// <remarks>
 /// The invoice is cancelled before the request is saved, and an invoice that is already cancelled is left alone, so a
 /// reject that failed halfway can be repeated. An invoice that is paid cannot be cancelled and refuses the reject: the
-/// client has paid for the change, and staff apply it (approve) rather than turn it down.
+/// client has paid for the change, and staff apply it (approve) rather than turn it down. Cancelling the invoice also
+/// publishes <c>InvoiceCancelledEvent</c>, which <c>ServiceChangeInvoiceCancelledHandler</c> answers by rejecting the same
+/// request, so the two can race: when that event handler saves first, this save loses on the request's concurrency token, and
+/// the reject is answered as a success that only adds the staff note to the rejection already there.
 /// </remarks>
 public sealed class RejectServiceChangeRequestHandler
 {
@@ -82,8 +87,39 @@ public sealed class RejectServiceChangeRequestHandler
         request.Reject(cmd.Note, _clock.UtcNow);
         await _activity.RecordAsync(
             new ActivityLogEntry(request.ClientId, $"Rejected {request.Type} - Service ID: {request.ServiceId}, Request ID: {request.Id}"), ct);
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (ConcurrencyConflictException)
+        {
+            return await KeepNoteOfRejectionAsync(cmd, ct);
+        }
 
+        return Result.Success();
+    }
+
+    /// <summary>
+    /// Settles a reject that lost the race to the cancellation of the request's invoice: the request is already rejected, which
+    /// is what staff asked for, so only their note is added.
+    /// </summary>
+    /// <param name="cmd">The reject command, carrying the staff note.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Success when the request is rejected now, <c>SERVICE_CHANGE_INVALID_STATE</c> when it ended in another state.</returns>
+    private async Task<Result> KeepNoteOfRejectionAsync(RejectServiceChangeRequestCommand cmd, CancellationToken ct)
+    {
+        // The change set that lost is discarded with everything tracked, and the request is read again as it was saved.
+        _context.DetachAll();
+        var request = await _context.ServiceChangeRequests.FirstOrDefaultAsync(r => r.Id == cmd.RequestId, ct);
+        if (request is null || request.Status != ServiceChangeStatus.Rejected)
+        {
+            return Result.FailureCode(HostpanelErrorCodes.SERVICE_CHANGE_INVALID_STATE);
+        }
+
+        request.AmendRejectionNote(cmd.Note);
+        await _activity.RecordAsync(
+            new ActivityLogEntry(request.ClientId, $"Added a note to rejected {request.Type} - Service ID: {request.ServiceId}, Request ID: {request.Id}"), ct);
+        await _context.SaveChangesAsync(ct);
         return Result.Success();
     }
 

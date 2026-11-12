@@ -14,8 +14,8 @@
  * SaveOption - the checkout choice "Save this payment method for automatic renewals".
  *
  * Off by default (the parent owns the value). The text under the label is the agreement to charge
- * later renewal invoices, so ticking the box is the payer's consent; the server records it when the
- * save session is started after a confirmed payment.
+ * later renewal invoices, so ticking the box is the payer's consent; the server records it from the
+ * start-payment request that carries the box, and the gateway saves the method within that payment.
  */
 
 /** Props of SaveOption. */

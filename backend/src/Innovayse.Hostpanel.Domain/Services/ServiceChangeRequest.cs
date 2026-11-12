@@ -149,6 +149,18 @@ public sealed class ServiceChangeRequest : BaseEntity
         ResolvedAt = now;
     }
 
+    /// <summary>
+    /// Keeps a staff note on a request that was rejected by someone else first, for example by the cancellation of its invoice,
+    /// so the note of the staff member who turned it down is not lost.
+    /// </summary>
+    /// <param name="note">The staff note; <see langword="null"/> keeps the one already there.</param>
+    /// <exception cref="DomainRuleException">The request is not rejected.</exception>
+    public void AmendRejectionNote(string? note)
+    {
+        EnsureStatus(ServiceChangeStatus.Rejected, "given a rejection note");
+        Note = note ?? Note;
+    }
+
     /// <summary>Refuses a transition from any status but the expected one.</summary>
     /// <param name="expected">The only status the move is allowed from.</param>
     /// <param name="action">What the request was asked to become, for the message.</param>

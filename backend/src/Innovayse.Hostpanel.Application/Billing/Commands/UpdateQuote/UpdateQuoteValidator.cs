@@ -31,7 +31,7 @@ public sealed class UpdateQuoteValidator : LocalizedValidator<UpdateQuoteCommand
                 .WithMessage(L["QuoteItemDescriptionInvalid", DescriptionMaxLength]);
             item.RuleFor(i => i.UnitPrice).GreaterThanOrEqualTo(0).WithMessage(L["QuoteItemUnitPriceInvalid"]);
             item.RuleFor(i => i.Quantity).GreaterThan(0).WithMessage(L["QuoteItemQuantityInvalid"]);
-            item.RuleFor(i => i.DiscountPercent).InclusiveBetween(0, 100).WithMessage(L["QuoteItemDiscountInvalid"]);
+            item.RuleFor(i => i.DiscountPercent).MustBeDiscountPercentRange(L["QuoteItemDiscountInvalid"]);
         });
     }
 }

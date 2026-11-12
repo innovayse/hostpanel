@@ -70,7 +70,7 @@ repositories. What is specific to this project is short:
 - **Recurring jobs and background handlers return `Task`, not `Result`.** The crons
   (`CheckOverdueInvoicesCron`, `ProcessBillableItemsCron`, `ProcessRenewalsCron`,
   `ReconcileGatewayPaymentsCron`, `SendRenewalRemindersCron`, `SuspendOverdueServicesCron`,
-  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`, `CheckStatusComponentsCron`) and `ResetDemoData`,
+  `AutoTerminateSuspendedCron`, `SyncServerAccountCountsCron`, `DispatchFulfilmentCron`, `DispatchEmailCampaignsCron`, `CheckStatusComponentsCron`, `UpdateExchangeRatesCron`) and `ResetDemoData`,
   `CheckDomainExpiries` and `SyncPendingDomainStatuses` are scheduled messages, not dispatched by a
   caller, so nothing would receive a `Result`. So are `RunMigrationPull` (published by
   `MigrationPullQueue` once a job's queued state is saved; the job row records how the pull ended; when two
@@ -244,7 +244,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   changes with a rename, because stored settings and plugin data are keyed by it. The in-tree
   `Innovayse.Providers.*` projects and `Innovayse.Inecobank.Tests` predate the convention and take it as each
   moves to its own repository (#780, #841).
-- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.5.0, which keeps what 2.1.0 added, the `Ui`
+- **The SDK is grouped by area (since SDK 2.0.0; the submodule is at 3.7.0, which keeps what 2.1.0 added, the `Ui`
   view schema, `externalOrigins`, the endpoints capability and the fulfilment `ClientRef`, adds the plugin
   packaging package, `Hostpanel.Sdk.Packaging`, and with 3.5.0 `PaymentInstruction.SavePaymentMethod` and
   `GatewayPaymentStatus.SavedMethod`, see "Stored credentials are an optional payment capability").** Every SDK type lives in
@@ -272,7 +272,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   is enabled from the admin Integrations page, where it is listed (with its type) when its manifest sets
   `showInIntegrations`.
 - **Capabilities (#818).** A manifest may list `capabilities`, names from the SDK's `PluginCapabilities`:
-  `storedCredentials` (a payment plugin only, the class also implements `IStoredCredentialPlugin`) and `endpoints`
+  `storedCredentials` (a payment plugin only, the class also implements `IStoredCredentialPlugin`), `paymentReturn` (a payment plugin only, the class also implements `IPaymentReturnPlugin`) and `endpoints`
   (any type, the class also implements `IPluginEndpoints`). A **serving plugin** is an app plugin or a plugin of any
   other type that declares `endpoints`; `PluginManifestCapabilityExtensions.ServesEndpoints()`
   (`Infrastructure/Plugins/Extensions`) is the one place that decides it, and the loader (which also registers such a
@@ -318,6 +318,27 @@ docker/                              compose set (shared·dev·prod·platform), 
   conflicting method never fails the payment: no `SavedMethod`, no active consent, a consent already covering another
   method, or a reference over `CardChargeConsent.MaxMethodRefLength` (200) is logged and binds nothing. A save that lost to a
   concurrent completion drops the binding with the rest, because the winner bound it in its own save.
+- **Session kinds, the browser step and the plugin HTTP clients (#1174, #1159, SDK 3.7.0).** A payment session is a redirect,
+  a form post or a browser step. `StartGatewayPaymentHandler` is the one place that judges it: `PaymentSessionExtensions`
+  (`Application/Billing/Extensions`) refuses a form that breaks `PaymentFormPost`'s rules or `PaymentFormPostLimits` (absolute
+  `https` action without user info or control characters, field count, name and value lengths) and a browser step from a plugin
+  that is not an `IPaymentReturnPlugin`, answers `PAYMENT_GATEWAY_SERVICE_UNAVAILABLE`, stores no session and cancels the order
+  the gateway just registered (`GatewayPaymentCanceller`); an accepted one is mapped by the same class to `RedirectDto`
+  (`RedirectUrl`, `Kind`, `FormPost`), which the three start routes answer with. The portal never renders plugin markup: it builds
+  the form from the fields as element properties and submits it (`utils/externalRedirect`, `redirectToGateway`), a redirect and a
+  browser step open the address. The payer returns to `/payment/result`, which posts the other query pairs as
+  `returnParameters` to the three complete routes (`CompleteMyGatewayPayment`, `CompleteOrderGatewayPayment`, then
+  `CompleteGatewayPayment`); `null` (the reconciliation job) is not a return and only reads the status. For a return the handler
+  calls `IPaymentReturnPlugin.CompleteAsync` first, with `PaymentReturnParameterExtensions.ToPluginParameters` (ordinal names,
+  first value wins, a set over `PaymentReturnLimits` is dropped whole), and then `GetStatusAsync`, whose answer alone decides;
+  an invoice already settled is never completed again, and a plugin that throws leaves the status unread (503
+  `PAYMENT_GATEWAY_SERVICE_UNAVAILABLE`, the reconciliation job settles it later). `paymentReturn` is a payment-only capability
+  checked against `IPaymentReturnPlugin` by the activator. A callback may answer an HTML page (`PluginReply.Raw` with
+  `text/html`): `PluginCallRunner` hands `RawReplyResult` the exact `https` origins of the manifest's `externalOrigins`
+  (`PluginPageOrigins`), which writes `default-src 'none'` with only those origins for script, style, font, connect, frame and
+  form-action, `base-uri 'none'`, `frame-ancestors 'none'` and a sandbox without the application's origin, plus `no-store` and no
+  referrer. The client named after a plugin id and the factory's unnamed client do not follow redirects
+  (`AddNoRedirects`). The SDK's `Redirect` reply kind (`PluginReply.Redirect`) is not served yet: it is answered `PLUGIN_FAILED`.
 - **What the three newer plugin types promise.** *Fulfilment* (`IFulfilmentPlugin`): the host writes a
   `FulfilmentRecords` row in the payment's own transaction and `DispatchFulfilmentCron` delivers it, so delivery is
   **at least once** with back-off; every method must be idempotent on `InvoiceId` (the same paid invoice can arrive
@@ -450,7 +471,7 @@ docker/                              compose set (shared·dev·prod·platform), 
   every `hostAccess` entry is a kind of `PluginHostAccess.All` (today `ssh`, exact case), none twice, and only in a
   version 2 manifest (`PLUGIN_HOST_ACCESS_UNKNOWN`);
   every `capabilities` entry is one the host defines and the plugin type may carry (`PLUGIN_CAPABILITY_NOT_ALLOWED`:
-  an unknown or wrong-case name, a name declared twice, or `storedCredentials` on anything but a payment plugin); a plugin that is not a
+  an unknown or wrong-case name, a name declared twice, or `storedCredentials` or `paymentReturn` on anything but a payment plugin); a plugin that is not a
   serving plugin declares no `api` route and no `ui` menu, page or slot (`PLUGIN_ENDPOINTS_NOT_DECLARED`, because the
   host would accept them and never serve them);
   a client route, page or slot `permission` is `PluginPermissions.Any` or a defined `ClientPermission` name,
@@ -1495,6 +1516,8 @@ addresses. Module `Products`; this slice stores and serves the options and does 
 
 ### Recurring billing
 
+`UpdateExchangeRatesCron` (03:00 UTC, `ScheduledJobsOptions.UpdateExchangeRatesHour`) refreshes the currency rates by running the same `UpdateExchangeRatesCommand` as the admin button, so the update has one implementation. A refusal (source down, no base currency) is logged and the next run is scheduled all the same; `ScheduledJobs:DisableExchangeRateUpdates` turns the outbound call off. It changes rates only: product prices are recomputed by `UpdateProductPricesCommand`, an operator's decision.
+
 Renewal invoicing, payment and suspension run as four crons (UTC, the default hours of `ScheduledJobsOptions`):
 `ProcessRenewalsCron` 05:00 (applies paid but
 unapplied renewal lines, self-heals zero-total open renewal invoices, alerts on stale claimed lines, then raises
@@ -1514,6 +1537,18 @@ percent on the invoice line and is cleared only when staff edit the unit price. 
 recurring amount, which already is the discounted price, and never read the group again, so moving a client to another
 group or changing a group's discount touches no existing invoice and no existing service, and a renewal is not
 discounted a second time.
+
+**A bundle order is the same order with a checked set of lines and one more discount (#80).** `PlaceOrderCommand.BundleId`
+names an active product bundle; `ProductBundleDtoExtensions.ResolveOrderItems` (Orders) refuses lines that are not the
+bundle's (`ORDER_BUNDLE_ITEMS_MISMATCH` for the product lines, `ORDER_BUNDLE_DOMAIN_MISMATCH` for a domain line that is
+missing, extra or not wanted, `ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED` for a renewal, `PRODUCT_BUNDLE_NOT_AVAILABLE` for
+an inactive bundle) and sets the domain line's `Years` to the bundle's, whatever the checkout sent. The handler then
+prices the lines as for any order, takes the client group's discount, and `BundleDiscountAllocator` (pure, Orders/Common)
+takes the bundle's discount off those prices: a percentage off every line, a fixed amount (converted to the payer's
+currency through `ConvertAmountsQuery` when it is stated in another) in proportion to the prices with cumulative
+rounding (the line discounts add up exactly to the total), capped at the subtotal. A fixed discount whose currency is not a
+stored one is refused with `ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE` before any guest account is created. The order records the bundle (`Order.PlaceFromBundle`), the invoice
+lines end with the bundle's name, and like the group discount the final price is the recurring amount too.
 
 **A manual bank transfer wait is bounded and never loses a card session's money.** `Invoice.RequestBankTransfer` leaves the hosted
 session on the invoice (the choice is refused only inside `GatewaySessionWindow`). While the transfer waits
@@ -1752,6 +1787,31 @@ surrounding spaces, make one recipient, the one with the lowest client id; the c
   readers over the mails delivered, that is recipients with a `SentAt`, from 0 to 1). The pixel counts a mail client that loads images
   on its own (image proxies, prefetch) as an open, so opens are an upper bound.
 - **Preview.** `GET /api/admin/email-campaigns/{id}/preview` renders the stored template in the default language with a sample link.
+
+### Fraud detection
+
+The `Fraud` module (tables `BlockListEntries` and `FraudLogEntries`) scores a registration or an order from 0 to 100 and decides with `FraudDecisionPolicy`:
+below `fraud.manual_review_risk_score` it goes through, from there it is held, from `fraud.auto_reject_risk_score` it is refused. The rules are
+pure Domain code: each signal is a small class behind `IFraudSignal` (`Domain/Fraud/Signals/`), listed once in `FraudSignals.All`, and `FraudRiskScorer`
+adds the weights and holds the sum to 0 to 100. A block list hit weighs 100, so it reaches any threshold. The facts a signal reads are gathered by
+`EvaluateFraudRisk` (the block list, what the fraud log remembers of the caller's IP address, and the optional external service behind
+`IFraudScoringProvider`), which writes nothing; the deciding use case then logs through `RecordFraudDecision`, once it knows the order.
+
+- **Settings** are the six `fraud.*` keys of `FraudSettingKeys`, in the general catalogue (seeded, edited in System Settings, read through `SettingSource`,
+  saved together by `UpdateFraudSettings`, which holds the rule review below reject). `FraudSettingsReader` falls back to the defaults, with a warning, when the
+  stored pair contradicts itself. It is off by default (`fraud.enabled`).
+- **The held state is a status, not a flag.** `OrderStatus.UnderReview` (5) is only reached from Pending (`Order.HoldForReview`); fulfilment acts on Pending orders
+  only, so a payment for a held order fulfils nothing, and `ApproveOrderReview` returns the order to Pending and fulfils it at once when its invoice is already
+  paid. `RejectOrderReview` cancels the open invoice through Billing (a paid invoice refuses, and the order stays held until it is refunded) and
+  `Order.RejectFromReview` makes the order `Fraud` and raises the event the `order-rejected` mail answers. The queue is `GET /api/orders?status=UnderReview`.
+- **The check runs before anything is created** in `PlaceOrderHandler` (a refusal creates no account, order number or invoice) and in `RegisterHandler` (local
+  mode; a sign-up through the external sign-on provider never reaches this host). A held order is stored already `UnderReview`, never Pending.
+- **The log is the memory of the signals.** Orders from one address within the velocity window and the other e-mail addresses seen from it within 30 days are
+  counted from `FraudLogEntries`; only the automatic decisions (Approved, Review, Rejected) count as orders. The log keeps no foreign key to an order or client.
+- **The external service** is `MaxMindFraudScoringProvider` (`Infrastructure/Integrations/MaxMind/`, the `maxmind` integration, minFraud Insights). It sends the
+  address, the domain of the e-mail address and the billing country, never the address itself; any failure is logged without the response body and ends as
+  no answer, and the higher of the local and the service's score counts. Without it only the country of the IP address is unknown, so the country mismatch
+  signal stays silent.
 
 ## Demo mode
 
@@ -2144,6 +2204,13 @@ rules is deleted and the ESLint conformance block applies to every `.vue` and `.
   `useApi.ts` imports no store. The gates: ESLint `no-restricted-imports` and
   `scripts/check-layers.mjs` (auto-imports hide the calls from import rules, so the script reads
   the source for them too).
+- **A bundle is carried by the cart.** `/bundles/[id]` builds the bundle's lines (`utils/bundleOrder.ts`: one per component
+  product on the cycle the visitor chose, plus the domain line when the bundle includes one, with the years the bundle fixes)
+  and hands them to `cart.startBundle`, which replaces the cart and keeps the bundle (`CartBundle`, its own localStorage key) beside
+  the lines, each of which carries `bundleId`. `stores/checkout.ts` sends `bundleId` with the same `items` body as any order;
+  the backend validates the bundle and applies the discount, the storefront only estimates it (`utils/bundlePricing.ts`, a
+  fixed discount only in its own currency) and `cart.total` is that estimate, so the cart, the drawer and the checkout agree.
+  A bundle is bought whole: adding a plain line or removing one of its lines ends the bundle.
 - **Two hops, one language header.** The browser stamps `X-Language` (from the i18n locale,
   validated by `utils/transportLanguage.ts`) on every call to the BFF; the BFF forwards it to the
   API, and an unknown value becomes `en`. `Accept-Language` is not used anywhere.

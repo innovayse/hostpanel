@@ -69,8 +69,8 @@ public sealed class DraftInvoiceClientAccessTests(IntegrationTestFactory factory
     {
         var (owner, draftId) = await SeedDraftAsync("draft-gw-complete");
 
-        var response = await owner.PostAsync($"/api/me/invoices/{draftId}/gateway-payment/complete", content: null);
-        var absent = await owner.PostAsync($"/api/me/invoices/{BillingTestSeeds.NoSuchId}/gateway-payment/complete", content: null);
+        var response = await owner.PostAsJsonAsync($"/api/me/invoices/{draftId}/gateway-payment/complete", new { });
+        var absent = await owner.PostAsJsonAsync($"/api/me/invoices/{BillingTestSeeds.NoSuchId}/gateway-payment/complete", new { });
 
         await AssertIndistinguishableFromAbsentAsync(response, absent);
     }

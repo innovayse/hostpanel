@@ -46,10 +46,17 @@
   "servers": "Servers",
   "integrations": "Integrations",
   "migration": "Migration",
+  "fraud": "Fraud",
+  "fraudChildren": {
+    "settings": "Settings",
+    "blockLists": "Block lists",
+    "log": "Fraud log"
+  },
   "settings": "Settings",
   "settingsChildren": {
     "general": "General",
     "products": "Products",
+    "productBundles": "Product bundles",
     "tldPricing": "TLD Pricing",
     "slides": "Slides",
     "emailTemplates": "Email Templates",

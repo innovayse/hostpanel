@@ -19,6 +19,12 @@ public static class OrdersErrors
     public const string OrderNotPending = "ORDER_NOT_PENDING";
 
     /// <summary>
+    /// The order is not held for review (409): <see cref="Order.ApproveReview"/> and <see cref="Order.RejectFromReview"/>
+    /// both require it.
+    /// </summary>
+    public const string OrderNotUnderReview = "ORDER_NOT_UNDER_REVIEW";
+
+    /// <summary>
     /// The order was not accepted (400): only an Active or Incomplete order has lines to fulfil,
     /// <see cref="Order.BeginFulfilment"/>.
     /// </summary>

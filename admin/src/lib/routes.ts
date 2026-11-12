@@ -61,6 +61,14 @@ export enum AppRoute {
   Dashboard = '/dashboard',
   /** The `/domains` screen. */
   Domains = '/domains',
+  /** The `/fraud` area root; it opens the settings screen. */
+  Fraud = '/fraud',
+  /** The `/fraud/block-lists` screen. */
+  FraudBlockLists = '/fraud/block-lists',
+  /** The `/fraud/log` screen. */
+  FraudLog = '/fraud/log',
+  /** The `/fraud/settings` screen. */
+  FraudSettings = '/fraud/settings',
   /** The `/integrations` screen. */
   Integrations = '/integrations',
   /** The `/integrations/payments` screen. */
@@ -89,6 +97,8 @@ export enum AppRoute {
   SettingsCurrencies = '/settings/currencies',
   /** The `/settings/email-templates` screen. */
   SettingsEmailTemplates = '/settings/email-templates',
+  /** The `/settings/product-bundles` screen. */
+  SettingsProductBundles = '/settings/product-bundles',
   /** The `/settings/products` screen. */
   SettingsProducts = '/settings/products',
   /** The `/settings/slides` screen. */

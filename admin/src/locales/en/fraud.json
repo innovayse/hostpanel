@@ -1,0 +1,75 @@
+{
+  "blockList": {
+    "title": "Block lists",
+    "subtitle": "IP addresses, IP ranges, email domains and countries the fraud check always flags.",
+    "tabsLabel": "Block list type",
+    "valueLabel": {
+      "Ip": "IP address",
+      "Cidr": "IP range (CIDR)",
+      "EmailDomain": "Email domain",
+      "Country": "Country"
+    },
+    "valuePlaceholder": {
+      "Ip": "203.0.113.7",
+      "Cidr": "203.0.113.0/24",
+      "EmailDomain": "mail.example",
+      "Country": "Select country"
+    },
+    "note": "Note",
+    "notePlaceholder": "Why it is blocked (optional)",
+    "add": "Add to block list",
+    "added": "Entry added to the block list.",
+    "addedAt": "Added",
+    "removed": "Entry removed from the block list.",
+    "empty": "This block list is empty.",
+    "deleteTitle": "Remove from block list?",
+    "deleteMessage": "{value} will no longer be flagged by the fraud check."
+  },
+  "log": {
+    "title": "Fraud log",
+    "subtitle": "Every registration and order the fraud check scored, with its decision and the reasons behind it.",
+    "decision": "Decision",
+    "reason": "Reason",
+    "kind": "Check",
+    "score": "Score",
+    "reasons": "Reasons",
+    "noReasons": "None",
+    "order": "Order"
+  },
+  "settings": {
+    "title": "Fraud settings",
+    "subtitle": "Choose when an order waits for review and when an action is refused at once.",
+    "loading": "Loading fraud settings",
+    "enabled": "Fraud detection",
+    "enabledHint": "When off, registrations and orders are not scored and nothing is held for review.",
+    "saved": "Fraud settings saved.",
+    "fields": {
+      "manualReviewRiskScore": {
+        "label": "Review threshold",
+        "hint": "From this risk score, from 0 to 100, an order waits for staff review."
+      },
+      "autoRejectRiskScore": {
+        "label": "Auto reject threshold",
+        "hint": "From this risk score, from 0 to 100, an action is refused at once. It must be above the review threshold."
+      },
+      "velocityWindowMinutes": {
+        "label": "Velocity window (minutes)",
+        "hint": "How far back orders from one IP address are counted, from 1 to 1440 minutes."
+      },
+      "velocityMaxOrders": {
+        "label": "Orders allowed in the window",
+        "hint": "More orders than this from one IP address inside the window raise the risk."
+      },
+      "maxAccountsPerIp": {
+        "label": "Accounts allowed per IP address",
+        "hint": "More accounts than this from one IP address raise the risk."
+      }
+    },
+    "errors": {
+      "scoreRange": "Enter a whole number from 0 to 100.",
+      "reviewBelowReject": "Must be lower than the auto reject threshold.",
+      "windowRange": "Enter a whole number of minutes from 1 to 1440.",
+      "countRange": "Enter a whole number from 1 to 100."
+    }
+  }
+}

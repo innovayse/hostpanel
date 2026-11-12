@@ -44,6 +44,20 @@ describe('useOrdersApi', () => {
     expect(callOf(mock)).toMatchObject({ url: '/api/orders/8/items/2/close-refund', method: 'POST' })
   })
 
+  it('approveOrderReview POSTs to the approve-review route', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+
+    await useOrdersApi().approveOrderReview(8)
+    expect(callOf(mock)).toMatchObject({ url: '/api/orders/8/approve-review', method: 'POST' })
+  })
+
+  it('rejectOrderReview POSTs the reason to the reject-review route', async () => {
+    const mock = stubFetch(new Response(null, { status: 204 }))
+
+    await useOrdersApi().rejectOrderReview(8, { reason: 'Stolen card' })
+    expect(callOf(mock)).toMatchObject({ url: '/api/orders/8/reject-review', method: 'POST', body: { reason: 'Stolen card' } })
+  })
+
   it('accept and cancel POST, delete DELETEs', async () => {
     const mock = stubFetch(new Response(null, { status: 204 }))
     const api = useOrdersApi()

@@ -46,10 +46,17 @@
   "servers": "Серверы",
   "integrations": "Интеграции",
   "migration": "Миграция",
+  "fraud": "Защита от мошенничества",
+  "fraudChildren": {
+    "settings": "Настройки",
+    "blockLists": "Списки блокировки",
+    "log": "Журнал проверок"
+  },
   "settings": "Настройки",
   "settingsChildren": {
     "general": "Общее",
     "products": "Продукты",
+    "productBundles": "Комплекты продуктов",
     "tldPricing": "Цены на TLD",
     "slides": "Слайды",
     "emailTemplates": "Шаблоны писем",

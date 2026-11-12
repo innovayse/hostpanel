@@ -13,8 +13,10 @@ import { requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
 import CartDrawer from '~/components/layout/CartDrawer.vue'
+import CheckoutBundleSummary from '~/components/checkout/BundleSummary.vue'
 import { useCartStore } from '~/stores/cart'
 import { useCurrencyStore } from '~/stores/currency'
+import { BundleDiscountType } from '~/types/bundlediscounttype'
 import type { CartItem } from '~/types/cartitem'
 import type { BillingCurrency } from '~/types/currency'
 import { PricingCycle } from '~/types/pricingcycle'
@@ -59,7 +61,7 @@ const line = (pid: number, amount: number, currency = 'USD'): CartItem => ({
  * @returns The wrapper.
  */
 const mountOpen = async (items: CartItem[] = []) => {
-  const wrapper = mountWithKit(CartDrawer)
+  const wrapper = mountWithKit(CartDrawer, { components: { CheckoutBundleSummary } })
   const cart = useCartStore()
   cart.items = items
   cart.isOpen = true
@@ -109,6 +111,16 @@ describe('CartDrawer', () => {
     expect(prices[1]).toContain('7.50')
     expect(wrapper.find('[data-testid="cart-drawer-total"]').text()).toContain('12.50')
     expect(wrapper.find('[data-testid="cart-drawer-count"]').text()).toContain('2')
+  })
+
+  it('takes the bundle discount off the total and names it', async () => {
+    const wrapper = await mountOpen([{ ...line(1, 50), bundleId: 7 }, { ...line(2, 50), bundleId: 7 }])
+    const cart = useCartStore()
+    cart.bundle = { id: 7, name: 'Starter pack', discountType: BundleDiscountType.Percentage, discountAmount: 10, discountCurrency: null }
+    await nextTick()
+
+    expect(wrapper.find('[data-testid="bundle-summary-amount"]').text()).toBe('-$10.00')
+    expect(wrapper.find('[data-testid="cart-drawer-total"]').text()).toContain('90.00')
   })
 
   it('leaves a line priced in another currency out of the list and the total, with a notice', async () => {

@@ -1,5 +1,6 @@
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
+using Innovayse.Hostpanel.Domain.Fraud;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Products;
 using Microsoft.EntityFrameworkCore;
@@ -33,6 +34,9 @@ public sealed class OrderConfiguration : IEntityTypeConfiguration<Order>
         builder.Property(x => x.BundleId);
         builder.Property(x => x.IpAddress).HasMaxLength(45);
         builder.Property(x => x.Notes).HasMaxLength(2000);
+        builder.Property(x => x.FraudScore);
+        builder.Property(x => x.FraudReasonCodes).IsRequired().HasMaxLength(FraudReasonText.MaxLength);
+        builder.Ignore(x => x.FraudReasons);
         builder.Property(x => x.CreatedAt).IsRequired();
 
         // 43 characters for the base64url of 32 random bytes; the width is rounded up so a

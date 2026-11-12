@@ -90,7 +90,8 @@ public sealed class CompleteGatewayPaymentHandler
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// The completion state, or <c>INVOICE_NOT_FOUND</c>, <c>GATEWAY_SESSION_NOT_FOUND</c>,
-    /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, or <c>GATEWAY_PAYMENT_MISMATCH</c> when the gateway
+    /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the plugin throws while completing a return
+    /// (the status is then not read), or <c>GATEWAY_PAYMENT_MISMATCH</c> when the gateway
     /// reports a paid amount below what the invoice owes, or another currency (the invoice stays
     /// unpaid). A paid amount above what is owed (a payment recorded while the session was open)
     /// settles the invoice and puts the rest on the client's credit balance, and staff are alerted
@@ -133,6 +134,13 @@ public sealed class CompleteGatewayPaymentHandler
         if (plugin is null)
         {
             return Result<GatewayCompletionDto>.FailureCode(HostpanelErrorCodes.PAYMENT_PLUGIN_NOT_CONFIGURED);
+        }
+
+        // A payment that is finished by what the payer's browser brings back is completed first; the status is read after it,
+        // from the gateway, and is what decides, never the value the completion step answered.
+        if (cmd.ReturnParameters is { } returned && !await TryCompleteFromReturnAsync(plugin, invoice, returned, ct))
+        {
+            return Result<GatewayCompletionDto>.FailureCode(HostpanelErrorCodes.PAYMENT_GATEWAY_SERVICE_UNAVAILABLE);
         }
 
         var status = await plugin.GetStatusAsync(invoice.GatewayOrderId, ct);
@@ -257,6 +265,44 @@ public sealed class CompleteGatewayPaymentHandler
         await _bus.InvokeAsync(new FulfillInvoicedOrderCommand(invoice.Id), ct);
 
         return Result<GatewayCompletionDto>.Success(new GatewayCompletionDto(GatewayCompletionState.Paid));
+    }
+
+    /// <summary>
+    /// Hands the request the payer came back with to the plugin that completes a payment from it
+    /// (<see cref="IPaymentReturnPlugin"/>), within <see cref="PaymentReturnLimits"/>. A plugin without that capability has
+    /// nothing to complete and is left alone: its status is all the host reads. The plugin may be asked again for the same
+    /// payment (the payer returns twice), which its contract makes idempotent.
+    /// </summary>
+    /// <param name="plugin">The payment plugin of the invoice's session.</param>
+    /// <param name="invoice">The invoice being completed.</param>
+    /// <param name="returned">The names and values of the return request.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// <see langword="false"/> when the plugin threw: whether it charged is unknown, so the status is not read now and the
+    /// reconciliation job settles the payment if it was taken; <see langword="true"/> otherwise.
+    /// </returns>
+    private async Task<bool> TryCompleteFromReturnAsync(
+        IPaymentPlugin plugin, Invoice invoice, IReadOnlyList<PaymentReturnParameterDto> returned, CancellationToken ct)
+    {
+        if (plugin is not IPaymentReturnPlugin returnPlugin)
+        {
+            return true;
+        }
+
+        try
+        {
+            await returnPlugin.CompleteAsync(invoice.GatewayOrderId!, returned.ToPluginParameters(), ct);
+            return true;
+        }
+        catch (Exception ex) when (JobFailure.IsFailure(ex, ct))
+        {
+            // The plugin's exceptions are its own types; the gateway's text stays in the log, the response carries the code.
+            _logger.LogWarning(
+                ex,
+                "Payment plugin {Module} could not complete the payment of invoice {InvoiceId} from the return request.",
+                invoice.GatewayModule, invoice.Id);
+            return false;
+        }
     }
 
     /// <summary>

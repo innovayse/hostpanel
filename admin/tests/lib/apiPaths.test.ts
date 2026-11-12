@@ -31,6 +31,14 @@ describe('ApiPath', () => {
     expect([ApiPath.AdminEmailLogs, ApiPath.AdminEmailTemplates]).toEqual(['/admin/email-logs', '/admin/email-templates'])
   })
 
+  it('names the fraud detection roots under /admin/fraud', () => {
+    expect([ApiPath.AdminFraudBlockList, ApiPath.AdminFraudLog, ApiPath.AdminFraudSettings]).toEqual([
+      '/admin/fraud/blocklist',
+      '/admin/fraud/log',
+      '/admin/fraud/settings',
+    ])
+  })
+
   it('keeps the base the proxy mounts the API under', () => {
     expect(API_BASE).toBe('/api')
     expect(ApiPath.Auth).toBe('/auth')

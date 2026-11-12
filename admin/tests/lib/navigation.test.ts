@@ -21,7 +21,7 @@ describe('NAV_SECTIONS', () => {
       [AppRoute.Dashboard, AppRoute.Clients, AppRoute.Orders, AppRoute.Billing, AppRoute.Domains, AppRoute.Support],
       [AppRoute.Reports],
       [AppRoute.Servers, AppRoute.Integrations, AppRoute.Plugins, AppRoute.Storefront],
-      [AppRoute.Migration, AppRoute.Settings],
+      [AppRoute.Migration, AppRoute.Fraud, AppRoute.Settings],
     ])
   })
 

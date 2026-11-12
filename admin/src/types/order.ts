@@ -2,6 +2,7 @@
  * An order, its detail and one line on it.
  */
 
+import type { FraudReasonCode } from '@/types/fraud'
 import type { InvoiceStatus } from '@/types/invoice'
 import type { BillingCycle } from '@/types/service'
 
@@ -29,6 +30,12 @@ export interface OrderListItem {
   itemCount: number
   /** Number of lines staff can retry now: failed lines, plus lines a dead retry left in progress past the lease. */
   failedLineCount: number
+  /** Client IP address at checkout. */
+  ipAddress: string | null
+  /** Fraud score (0 to 100) that held the order for review, null when it was never held. */
+  fraudScore: number | null
+  /** The reasons the fraud score came from; empty when the order was never held. */
+  fraudReasons: FraudReasonCode[]
   /** ISO 8601 creation timestamp. */
   createdAt: string
 }
@@ -39,10 +46,12 @@ export interface OrderDetail extends OrderListItem {
   invoiceStatus: InvoiceStatus | null
   /** Invoice total, tax included and credit taken off, when an invoice exists; `total` is the lines' pre-tax sum. */
   invoiceTotal: number | null
-  /** Client IP address at checkout. */
-  ipAddress: string | null
   /** Admin notes. */
   notes: string | null
+  /** Product bundle the order was placed from; null for an order of single products or once the bundle was deleted. */
+  bundleId: number | null
+  /** Name of that bundle, null when `bundleId` is. */
+  bundleName: string | null
   /** Order line items. */
   items: OrderItemDetail[]
 }
@@ -128,6 +137,14 @@ export enum OrderStatus {
   Cancelled = 'Cancelled',
   Fraud = 'Fraud',
   Incomplete = 'Incomplete',
+  /** Held back by fraud detection until staff approve or reject it. */
+  UnderReview = 'UnderReview',
+}
+
+/** Body of rejecting an order held for review. */
+export interface RejectOrderReviewPayload {
+  /** Why the order is refused; the client reads it in the e-mail. */
+  reason: string
 }
 
 /** Status of one line on an order, exactly as the API sends it. */

@@ -1309,6 +1309,9 @@
   <data name="PlaceOrderItemProductIdInvalid" xml:space="preserve">
     <value>Յուրաքանչյուր ապրանք պետք է ունենա ճիշտ արտադրանք։</value>
   </data>
+  <data name="PlaceOrderBundleIdInvalid" xml:space="preserve">
+    <value>Փաթեթը նշված է սխալ։</value>
+  </data>
   <data name="PlaceOrderItemBillingCycleInvalid" xml:space="preserve">
     <value>Հաշվարկային ժամանակաշրջանը պետք է լինի «monthly», «annual» կամ «annually»։</value>
   </data>
@@ -1677,5 +1680,41 @@
   </data>
   <data name="TaxRuleRateDecimalsInvalid" xml:space="preserve">
     <value>Հարկի դրույքը կարող է ունենալ առավելագույնը երեք տասնորդական նիշ։</value>
+  </data>
+  <data name="FraudBlockListTypeInvalid" xml:space="preserve">
+    <value>Արգելված ցուցակի տեսակը վավեր չէ։</value>
+  </data>
+  <data name="FraudBlockListValueInvalid" xml:space="preserve">
+    <value>Արժեքը չի համապատասխանում արգելված ցուցակի ընտրված տեսակին։</value>
+  </data>
+  <data name="FraudBlockListNoteTooLong" xml:space="preserve">
+    <value>Նշումը չպետք է գերազանցի 500 նիշը։</value>
+  </data>
+  <data name="FraudBlockListEntryIdInvalid" xml:space="preserve">
+    <value>Արգելված ցուցակի գրառման նույնացուցիչը պետք է մեծ լինի զրոյից։</value>
+  </data>
+  <data name="FraudScoreOutOfRange" xml:space="preserve">
+    <value>Ռիսկի գնահատականը պետք է լինի 0-ից 100 ամբողջ թիվ։</value>
+  </data>
+  <data name="FraudReviewBelowReject" xml:space="preserve">
+    <value>Ստուգման շեմը պետք է ցածր լինի ավտոմատ մերժման շեմից։</value>
+  </data>
+  <data name="FraudVelocityWindowOutOfRange" xml:space="preserve">
+    <value>Պատվերների հաճախականության պատուհանը պետք է լինի 1-ից 1440 րոպե։</value>
+  </data>
+  <data name="FraudCountOutOfRange" xml:space="preserve">
+    <value>Սահմանաչափը պետք է լինի 1-ից 100 ամբողջ թիվ։</value>
+  </data>
+  <data name="FraudCheckKindInvalid" xml:space="preserve">
+    <value>Խարդախության ստուգման տեսակը վավեր չէ։</value>
+  </data>
+  <data name="FraudDecisionInvalid" xml:space="preserve">
+    <value>Խարդախության վերաբերյալ որոշումը վավեր չէ։</value>
+  </data>
+  <data name="OrderReviewReasonRequired" xml:space="preserve">
+    <value>Նշեք պատճառը, որը կտեսնի հաճախորդը։</value>
+  </data>
+  <data name="OrderReviewReasonTooLong" xml:space="preserve">
+    <value>Պատճառը չպետք է գերազանցի 1000 նիշը։</value>
   </data>
 </root>

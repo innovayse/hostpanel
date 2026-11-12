@@ -65,7 +65,7 @@ public sealed class CreditTopUpPaymentTests(IntegrationTestFactory factory) : IC
     /// <param name="invoiceId">The top-up invoice.</param>
     /// <returns>The HTTP response.</returns>
     private static Task<HttpResponseMessage> CompleteAsync(HttpClient owner, int invoiceId) =>
-        owner.PostAsync($"/api/me/invoices/{invoiceId}/gateway-payment/complete", content: null);
+        owner.PostAsJsonAsync($"/api/me/invoices/{invoiceId}/gateway-payment/complete", new { });
 
     /// <summary>Records a full manual payment on the invoice as the admin.</summary>
     /// <param name="admin">The admin session.</param>

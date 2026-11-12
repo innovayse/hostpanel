@@ -1,3 +1,4 @@
+using Innovayse.Hostpanel.Domain.Fraud.Enums;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 
 namespace Innovayse.Hostpanel.Application.Orders.Common;
@@ -14,6 +15,9 @@ namespace Innovayse.Hostpanel.Application.Orders.Common;
 /// <param name="InvoiceId">FK to the linked invoice, or null if not yet created.</param>
 /// <param name="ItemCount">Number of line items in the order.</param>
 /// <param name="FailedLineCount">Number of lines that failed to be fulfilled and still need staff: failed lines that can be retried, and partly refunded lines whose refund staff must finish by hand.</param>
+/// <param name="IpAddress">The client's IP address at checkout time, shown in the fraud review queue.</param>
+/// <param name="FraudScore">The fraud score (0 to 100) that held the order for review, or null when it was never held.</param>
+/// <param name="FraudReasons">The reasons the fraud score came from; empty when the order was never held.</param>
 /// <param name="CreatedAt">UTC timestamp when the order was placed.</param>
 public sealed record OrderListItemDto(
     int Id,
@@ -27,4 +31,7 @@ public sealed record OrderListItemDto(
     int? InvoiceId,
     int ItemCount,
     int FailedLineCount,
+    string? IpAddress,
+    int? FraudScore,
+    IReadOnlyList<FraudReasonCode> FraudReasons,
     DateTimeOffset CreatedAt);

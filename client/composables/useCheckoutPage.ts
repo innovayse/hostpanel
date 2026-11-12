@@ -16,13 +16,14 @@
 
 import { storeToRefs } from 'pinia'
 import { Permission } from '~/types/permission'
+import { useCartBundle } from '~/composables/useCartBundle'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
 import { useCheckoutStore } from '~/stores/checkout'
 import { useClientStore } from '~/stores/client'
 import { useCurrencyStore } from '~/stores/currency'
 import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
-import { redirectToExternal } from '~/utils/externalRedirect'
+import { redirectToGateway } from '~/utils/externalRedirect'
 
 /**
  * Wires a checkout page. Call it once at the top of the page's `<script setup>` and `await` it:
@@ -93,6 +94,9 @@ export const useCheckoutPage = async () => {
     error: orderError
   } = storeToRefs(checkout)
 
+  /** The cart's bundle as display text: its name, its discount in words and the estimated amount taken off. */
+  const { bundleName, bundleOffer, bundleDiscount } = useCartBundle()
+
   /** Formats a cart line price in the currency it was added in. */
   const { itemPrice } = checkout
 
@@ -144,9 +148,9 @@ export const useCheckoutPage = async () => {
     if (!destination) {
       return
     }
-    if (destination.kind === CheckoutDestinationKind.External) {
-      // The store already refused an unsafe address; this is the last guard before the browser leaves.
-      redirectToExternal(destination.target)
+    if (destination.kind === CheckoutDestinationKind.Gateway) {
+      // The store already refused an unsafe answer; this is the last guard before the browser leaves.
+      redirectToGateway(destination.start)
     } else {
       await navigateTo(destination.target)
     }
@@ -163,6 +167,9 @@ export const useCheckoutPage = async () => {
     mayPlaceOrders,
     staleItems,
     totalLabel,
+    bundleName,
+    bundleOffer,
+    bundleDiscount,
     submittingLabel,
     submittingHint,
     paymentMethods,

@@ -12,6 +12,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick } from 'vue'
+import { cartLine } from '../helpers/checkoutFlow'
 import { makeClientUser } from '../helpers/clientUser'
 import { bodyOf } from '../helpers/requestBody'
 import { refusal, requestsTo, routeTable } from '../helpers/stubRoutes'
@@ -23,10 +24,14 @@ import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
 import { useCheckoutStore } from '~/stores/checkout'
 import { useCurrencyStore } from '~/stores/currency'
+import { BundleDiscountType } from '~/types/bundlediscounttype'
 import type { CartItem } from '~/types/cartitem'
+import { CartItemType } from '~/types/cartitemtype'
 import { CheckoutDestinationKind } from '~/types/checkoutdestinationkind'
+import { GatewaySessionKind } from '~/types/gatewaysessionkind'
 import { ConsentTextVersion } from '~/types/consenttextversion'
 import type { BillingCurrency } from '~/types/currency'
+import { DomainOrderAction } from '~/types/domainorderaction'
 import type { PlaceOrderInput } from '~/types/placeorderinput'
 import { PricingCycle } from '~/types/pricingcycle'
 import { ProductType } from '~/types/producttype'
@@ -74,7 +79,7 @@ const CURRENCIES: BillingCurrency[] = [
 ]
 
 /** A hosting item priced in dollars. */
-const hosting: CartItem = { pid: 5, name: 'Pro', billingcycle: PricingCycle.Monthly, cycleLabel: 'Monthly', amount: 12, currency: 'USD' }
+const hosting: CartItem = cartLine(5, 12)
 
 /** A guest's details. */
 const guest = { firstname: 'Ada', lastname: 'L', email: 'ada@example.com', password: 'pw-123456', phonenumber: '+374' }
@@ -220,6 +225,40 @@ describe('useCheckoutStore.placeOrder', () => {
     expect(bodyOf(requestsTo(stub.requests, LOGIN_PATH)[0])).toEqual({ email: 'ada@example.com', password: 'pw-123456' })
   })
 
+  it('sends the bundle id with one line per component and the domain line with the years the bundle fixes', async () => {
+    const cart = useCartStore()
+    cart.startBundle(
+      { id: 7, name: 'Starter pack', discountType: BundleDiscountType.Percentage, discountAmount: 25, discountCurrency: null },
+      [
+        { ...hosting, bundleId: 7, domain: 'example.com' },
+        {
+          pid: 9, name: 'example.com', billingcycle: PricingCycle.Annual, cycleLabel: '2 Years', amount: 8, currency: 'USD',
+          bundleId: 7, itemType: CartItemType.Domain, domain: 'example.com', domainAction: DomainOrderAction.Transfer, eppCode: 'abc', years: 2,
+        },
+      ],
+    )
+    const store = useCheckoutStore()
+    store.selectedMethod = 'bank_transfer'
+
+    await store.placeOrder(input(() => true))
+
+    const body = bodyOf(requestsTo(stub.requests, CREATE_PATH)[0]) as Record<string, unknown>
+    expect(body.bundleId).toBe(7)
+    expect(body.items).toEqual([
+      { productId: 5, billingcycle: PricingCycle.Monthly, domain: 'example.com' },
+      { productId: 9, billingcycle: PricingCycle.Annual, domain: 'example.com', domainAction: DomainOrderAction.Transfer, eppCode: 'abc', years: 2 },
+    ])
+  })
+
+  it('sends no bundle id for a cart of plain lines', async () => {
+    const store = arrange('bank_transfer')
+
+    await store.placeOrder(input())
+
+    const body = bodyOf(requestsTo(stub.requests, CREATE_PATH)[0]) as Record<string, unknown>
+    expect(body.bundleId).toBeUndefined()
+  })
+
   it('sends no guest details and no sign-in for a signed-in client', async () => {
     signIn()
     const store = arrange('bank_transfer')
@@ -253,10 +292,46 @@ describe('useCheckoutStore.placeOrder', () => {
     const returnUrl = startBody().returnUrl as string
     expect(new URL(returnUrl).pathname).toBe('/en/payment/result')
     expect(new URL(returnUrl).search).toBe('?order=42')
-    expect(destination).toEqual({ kind: CheckoutDestinationKind.External, target: BANK_URL })
+    expect(destination).toEqual({ kind: CheckoutDestinationKind.Gateway, start: { redirectUrl: BANK_URL } })
     // Kept until the result page sees the payment confirmed.
     expect(useCartStore().items).toHaveLength(1)
     expect(store.submitting).toBe(true)
+  })
+
+  it.each([
+    {
+      name: 'a form post',
+      start: {
+        redirectUrl: 'https://bank.example/hosted',
+        kind: GatewaySessionKind.FormPost,
+        formPost: { action: 'https://bank.example/hosted', fields: [{ name: 'token', value: 't1' }] }
+      }
+    },
+    { name: 'a browser step', start: { redirectUrl: BANK_URL, kind: GatewaySessionKind.BrowserStep, formPost: null } }
+  ])('hands the browser $name as the backend described it', async ({ start }) => {
+    table[START_ROUTE] = { body: start }
+    const store = arrange('hosted_gateway')
+
+    const destination = await store.placeOrder(input())
+
+    expect(destination).toEqual({ kind: CheckoutDestinationKind.Gateway, start })
+  })
+
+  it('refuses a form post whose action is not secure and lets the payer try again', async () => {
+    table[START_ROUTE] = {
+      body: {
+        redirectUrl: BANK_URL,
+        kind: GatewaySessionKind.FormPost,
+        formPost: { action: 'javascript:alert(1)', fields: [] }
+      }
+    }
+    const store = arrange('hosted_gateway')
+
+    const destination = await store.placeOrder(input())
+
+    expect(destination).toBeNull()
+    expect(store.error).toBe('checkout.errors.generic')
+    expect(store.submitting).toBe(false)
   })
 
   it('refuses a gateway address that is not secure and lets the payer try again', async () => {
@@ -416,7 +491,7 @@ describe('useCheckoutStore.placeOrder', () => {
 
     expect(requestsTo(stub.requests, CREATE_PATH)).toHaveLength(1)
     expect(requestsTo(stub.requests, LOGIN_PATH)).toHaveLength(1)
-    expect(destination).toMatchObject({ kind: CheckoutDestinationKind.External })
+    expect(destination).toMatchObject({ kind: CheckoutDestinationKind.Gateway })
   })
 
   it('places a new order when the cart changed after a failed payment start', async () => {
@@ -504,7 +579,7 @@ describe('useCheckoutStore save for renewals', () => {
 
     const destination = await store.placeOrder(input())
 
-    expect(destination).toEqual({ kind: CheckoutDestinationKind.External, target: BANK_URL })
+    expect(destination).toEqual({ kind: CheckoutDestinationKind.Gateway, start: { redirectUrl: BANK_URL } })
     expect(requestsTo(stub.requests, START_PATH)).toHaveLength(1)
     expect(startBody()).toEqual({
       module: 'hosted_gateway',

@@ -501,6 +501,22 @@
         "component": "IntegrationDetailView.vue"
       },
       {
+        "path": "fraud",
+        "redirect": "/fraud/settings"
+      },
+      {
+        "path": "fraud/settings",
+        "component": "FraudSettingsView.vue"
+      },
+      {
+        "path": "fraud/block-lists",
+        "component": "FraudBlockListsView.vue"
+      },
+      {
+        "path": "fraud/log",
+        "component": "FraudLogView.vue"
+      },
+      {
         "path": "migration",
         "component": "MigrationView.vue"
       },
@@ -529,6 +545,10 @@
       {
         "path": "settings/products",
         "component": "ProductsView.vue"
+      },
+      {
+        "path": "settings/product-bundles",
+        "component": "ProductBundlesView.vue"
       },
       {
         "path": "settings/slides",

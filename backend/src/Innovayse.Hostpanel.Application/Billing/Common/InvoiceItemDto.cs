@@ -7,8 +7,9 @@ namespace Innovayse.Hostpanel.Application.Billing.Common;
 /// <param name="Quantity">Number of units.</param>
 /// <param name="Amount">Line total (UnitPrice × Quantity).</param>
 /// <param name="DiscountPercent">
-/// The client group discount in percent already taken off the list price to reach <c>UnitPrice</c>, as it was when the
-/// line was billed; 0 for a line without one.
+/// The client group discount in percent already taken off the list price on the way to <c>UnitPrice</c>, as it was when
+/// the line was billed; 0 for a line without one. A product bundle's discount is not part of it, so on a bundle order's
+/// line <c>UnitPrice</c> is lower than the list price less this percent alone.
 /// </param>
 /// <param name="Sku">The SKU of the product the line was sold from, read from the line's product snapshot; null for a line without one (a domain, a manual line).</param>
 public sealed record InvoiceItemDto(

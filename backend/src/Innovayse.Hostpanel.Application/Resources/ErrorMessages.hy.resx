@@ -315,6 +315,18 @@
 <data name="ORDER_DOMAIN_PRICING_INVALID" xml:space="preserve">
     <value>Այս դոմենի համար գին հնարավոր չէ հաշվարկել։ Ստուգեք անունը և կրկին փորձեք։</value>
   </data>
+  <data name="ORDER_BUNDLE_ITEMS_MISMATCH" xml:space="preserve">
+    <value>Պատվերի արտադրանքները չեն համապատասխանում փաթեթին։ Պատվիրեք փաթեթի յուրաքանչյուր արտադրանքը մեկ անգամ և ոչ ավելին։</value>
+  </data>
+  <data name="ORDER_BUNDLE_DOMAIN_MISMATCH" xml:space="preserve">
+    <value>Եթե փաթեթը ներառում է դոմեն, պետք է լինի դոմենի ուղիղ մեկ տող, իսկ եթե չի ներառում՝ ոչ մի։</value>
+  </data>
+  <data name="ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED" xml:space="preserve">
+    <value>Փաթեթում կարելի է ներառել դոմենի գրանցում կամ տեղափոխում, բայց ոչ երկարացում։</value>
+  </data>
+  <data name="ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE" xml:space="preserve">
+    <value>Այս փաթեթի զեղչի արժույթը հասանելի չէ, ուստի փաթեթը հնարավոր չէ պատվիրել։</value>
+  </data>
 <data name="DEPARTMENT_NOT_FOUND" xml:space="preserve">
     <value>Աջակցության նման բաժին չի գտնվել։</value>
   </data>
@@ -419,6 +431,9 @@
   </data>
   <data name="PRODUCT_BUNDLE_NOT_FOUND" xml:space="preserve">
     <value>Այդպիսի արտադրանքների փաթեթ չկա։</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_NOT_AVAILABLE" xml:space="preserve">
+    <value>Այս փաթեթը հասանելի չէ պատվերի համար։</value>
   </data>
   <data name="PRODUCT_BUNDLE_PRODUCT_NOT_FOUND" xml:space="preserve">
     <value>Փաթեթի արտադրանքներից մեկը գոյություն չունի։</value>
@@ -596,6 +611,9 @@
   </data>
 <data name="PLUGIN_MANIFEST_CHANGELOG_TOO_LONG" xml:space="preserve">
     <value>Մանիֆեստի փոփոխությունների ցանկը չափազանց երկար է․ առավելագույնը 4000 նիշ։</value>
+  </data>
+<data name="PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID" xml:space="preserve">
+    <value>Մանիֆեստում սերվերի հաշվի նույնացուցչի պիտակը պետք է լինի 1-ից 60 նիշ՝ առանց կառավարող նիշերի։</value>
   </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Այս հավելագրիչը հղում է անում ներկայացման փաստաթղթի, որը իր փաթեթում չկա։</value>
@@ -1473,5 +1491,23 @@
   </data>
   <data name="TAX_RULE_RATE_INVALID" xml:space="preserve">
     <value>Հարկի դրույքը պետք է լինի 0-ից 100 տոկոս։</value>
+  </data>
+  <data name="ORDER_NOT_UNDER_REVIEW" xml:space="preserve">
+    <value>Այս պատվերը չի սպասում խարդախության ստուգման։</value>
+  </data>
+  <data name="ORDER_FRAUD_REJECTED" xml:space="preserve">
+    <value>Չհաջողվեց ընդունել այս պատվերը։ Եթե կարծում եք՝ սխալ է, դիմեք աջակցությանը։</value>
+  </data>
+  <data name="REGISTRATION_FRAUD_REJECTED" xml:space="preserve">
+    <value>Չհաջողվեց ստեղծել այս հաշիվը։ Եթե կարծում եք՝ սխալ է, դիմեք աջակցությանը։</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_VALUE_INVALID" xml:space="preserve">
+    <value>Արժեքը չի համապատասխանում արգելված ցուցակի ընտրված տեսակին։</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_ENTRY_EXISTS" xml:space="preserve">
+    <value>Այս արժեքն արդեն արգելված ցուցակում է։</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_ENTRY_NOT_FOUND" xml:space="preserve">
+    <value>Արգելված ցուցակի գրառումը չի գտնվել։</value>
   </data>
 </root>

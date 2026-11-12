@@ -47,7 +47,7 @@ public sealed class CompleteMyGatewayPaymentTests(IntegrationTestFactory factory
             new { module = "bank-gateway", returnUrl = BillingTestSeeds.AllowedReturnUrl }))
             .StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var response = await owner.PostAsync($"/api/me/invoices/{invoiceId}/gateway-payment/complete", content: null);
+        var response = await owner.PostAsJsonAsync($"/api/me/invoices/{invoiceId}/gateway-payment/complete", new { });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -67,7 +67,7 @@ public sealed class CompleteMyGatewayPaymentTests(IntegrationTestFactory factory
         var invoiceId = await BillingTestSeeds.CreateInvoiceAsync(admin, ownerClientId, 10m);
         var stranger = await BillingTestSeeds.RegisterStrangerAsync(factory, null, "stranger-complete");
 
-        var response = await stranger.PostAsync($"/api/me/invoices/{invoiceId}/gateway-payment/complete", content: null);
+        var response = await stranger.PostAsJsonAsync($"/api/me/invoices/{invoiceId}/gateway-payment/complete", new { });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.INVOICE_NOT_FOUND);
@@ -78,7 +78,7 @@ public sealed class CompleteMyGatewayPaymentTests(IntegrationTestFactory factory
     [Fact]
     public async Task CompleteRefusesAnonymous()
     {
-        var response = await factory.CreateClient().PostAsync("/api/me/invoices/1/gateway-payment/complete", content: null);
+        var response = await factory.CreateClient().PostAsJsonAsync("/api/me/invoices/1/gateway-payment/complete", new { });
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -90,7 +90,7 @@ public sealed class CompleteMyGatewayPaymentTests(IntegrationTestFactory factory
     {
         var (client, _) = await BillingTestSeeds.RegisterClientAsync(factory, null, "completemygatewaypayment-validation");
 
-        var response = await client.PostAsync("/api/me/invoices/0/gateway-payment/complete", content: null);
+        var response = await client.PostAsJsonAsync("/api/me/invoices/0/gateway-payment/complete", new { });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(SharedErrorCodes.ValidationError);

@@ -15,6 +15,8 @@ import type { ClientInvoice } from '~/types/clientinvoice'
 import type { ConsentTextVersion } from '~/types/consenttextversion'
 import type { GatewayCompletion } from '~/types/gatewaycompletion'
 import type { GatewayMethod } from '~/types/gatewaymethod'
+import type { GatewayStart } from '~/types/gatewaystart'
+import type { PaymentReturnParameter } from '~/types/paymentreturnparameter'
 import type { PlaceOrderResult } from '~/types/placeorderresult'
 import { PaymentTarget } from '~/types/paymenttarget'
 import { HttpMethod } from '~/types/httpmethod'
@@ -73,7 +75,7 @@ export const useBillingApi = () => {
    * automatic renewals; the gateway then keeps it within the same payment. Leave out for a plain payment.
    * @param consentTextVersion - The wording the payer agreed to when they ticked the box; the server records the
    * consent from this same request. Sent with `savePaymentMethod` only.
-   * @returns The bank's URL to hand the browser to.
+   * @returns Where and how to hand the browser to the bank: a redirect, an auto submitted form or a browser step.
    * @throws Whatever `apiFetch` throws.
    */
   const startOrderGatewayPayment = (
@@ -83,8 +85,8 @@ export const useBillingApi = () => {
     paymentToken: string,
     savePaymentMethod?: boolean,
     consentTextVersion?: ConsentTextVersion
-  ): Promise<{ redirectUrl: string }> =>
-    apiFetch<{ redirectUrl: string }>(`/api/portal/order/${orderId}/gateway-payment/start`, {
+  ): Promise<GatewayStart> =>
+    apiFetch<GatewayStart>(`/api/portal/order/${orderId}/gateway-payment/start`, {
       method: HttpMethod.Post,
       body: { module, returnUrl, paymentToken, savePaymentMethod, consentTextVersion }
     })
@@ -95,15 +97,15 @@ export const useBillingApi = () => {
    * @param invoiceId - Invoice to pay.
    * @param module - Gateway module to pay through.
    * @param returnUrl - Absolute URL the bank returns the payer to.
-   * @returns The bank's URL to hand the browser to.
+   * @returns Where and how to hand the browser to the bank: a redirect, an auto submitted form or a browser step.
    * @throws Whatever `apiFetch` throws.
    */
   const startInvoiceGatewayPayment = (
     invoiceId: string | number,
     module: string,
     returnUrl: string
-  ): Promise<{ redirectUrl: string }> =>
-    apiFetch<{ redirectUrl: string }>(
+  ): Promise<GatewayStart> =>
+    apiFetch<GatewayStart>(
       `/api/portal/client/invoices/${invoiceId}/gateway-payment/start`,
       { method: HttpMethod.Post, body: { module, returnUrl } }
     )
@@ -116,6 +118,8 @@ export const useBillingApi = () => {
    * @param id - The order or invoice id.
    * @param paymentToken - The order's payment token. Required when `target` is `PaymentTarget.Order`; ignored
    * for an invoice, which is authorised by the caller's own credential.
+   * @param returnParameters - The names and values the gateway returned the payer with; the backend hands them to a
+   * plugin that completes a payment from them (see `utils/paymentReturn`). Empty for a return that carried none.
    * @returns What the bank said the payment did.
    * @throws Whatever `apiFetch` throws: the caller must not read a failure here as a
    * declined payment; the money may well have moved.
@@ -123,15 +127,16 @@ export const useBillingApi = () => {
   const completeGatewayPayment = (
     target: PaymentTarget,
     id: string | number,
-    paymentToken?: string
+    paymentToken?: string,
+    returnParameters: PaymentReturnParameter[] = []
   ): Promise<GatewayCompletion> =>
     apiFetch<GatewayCompletion>(
       target === PaymentTarget.Order
         ? `/api/portal/order/${id}/gateway-payment/complete`
         : `/api/portal/client/invoices/${id}/gateway-payment/complete`,
-      // Only the order endpoint reads a token; the invoice one is behind the client's own
-      // credential and is sent an empty body, exactly as before.
-      { method: HttpMethod.Post, body: target === PaymentTarget.Order ? { paymentToken } : {} }
+      // Only the order endpoint reads a token; the invoice one is behind the client's own credential. Both carry the
+      // gateway's return request, which the backend hands to the payment plugin before it reads the status.
+      { method: HttpMethod.Post, body: target === PaymentTarget.Order ? { paymentToken, returnParameters } : { returnParameters } }
     )
 
   /**

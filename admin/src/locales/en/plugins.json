@@ -3,6 +3,7 @@
     "builtIn": "Built-in",
     "capabilities": {
       "endpoints": "Serves pages",
+      "paymentReturn": "Completes payments after a step in the browser",
       "storedCredentials": "Saved payment methods"
     },
     "pendingRestart": "Pending restart",
@@ -46,6 +47,7 @@
     },
     "capabilities": {
       "endpoints": "Add its own pages, menus and widgets to the panels",
+      "paymentReturn": "Complete a payment from the payer's return from the gateway",
       "storedCredentials": "Charge saved cards and payment accounts"
     }
   },

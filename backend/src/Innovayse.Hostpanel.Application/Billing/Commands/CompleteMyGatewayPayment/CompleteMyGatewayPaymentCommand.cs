@@ -1,3 +1,5 @@
+using Innovayse.Hostpanel.Application.Billing.Common;
+
 namespace Innovayse.Hostpanel.Application.Billing.Commands.CompleteMyGatewayPayment;
 
 /// <summary>Command for a client to verify a hosted-gateway payment on one of their own invoices.</summary>
@@ -8,4 +10,5 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.CompleteMyGatewayPaym
 /// why the check could not be added to that shared handler.
 /// </remarks>
 /// <param name="InvoiceId">The invoice whose gateway session should be verified.</param>
-public sealed record CompleteMyGatewayPaymentCommand(int InvoiceId);
+/// <param name="ReturnParameters">The request the payer came back from the gateway with, handed on unchanged; see <c>CompleteGatewayPaymentCommand</c>.</param>
+public sealed record CompleteMyGatewayPaymentCommand(int InvoiceId, IReadOnlyList<PaymentReturnParameterDto>? ReturnParameters = null);

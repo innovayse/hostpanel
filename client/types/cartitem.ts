@@ -47,4 +47,6 @@ export interface CartItem {
    * saved before this field existed has none, and is treated like any non-digital line.
    */
   productType?: ProductType
+  /** Id of the bundle the line was added with; set on every line of a bundle, absent on a plain line. */
+  bundleId?: number
 }

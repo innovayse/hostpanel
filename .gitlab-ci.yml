@@ -195,8 +195,24 @@ variables:
     # Dockerfiles never mount the secret. NUXT_PUBLIC_PORTAL_CHAT_BASE_URL is the client's build-time
     # proxy target; an unset CI/CD variable expands to empty (no proxy).
     - docker build --secret id=nuget_credentials,env=NuGetPackageSourceCredentials_innovayse --build-arg AUTH_MODE=sso --build-arg "NUXT_PUBLIC_PORTAL_CHAT_BASE_URL=$NUXT_PUBLIC_PORTAL_CHAT_BASE_URL" --target "$IMAGE_TARGET" -f "$DOCKERFILE" -t "$IMAGE:$TAG" -t "$IMAGE:$CI_COMMIT_SHORT_SHA" "$BUILD_CONTEXT"
-    - docker push "$IMAGE:$TAG"
-    - docker push "$IMAGE:$CI_COMMIT_SHORT_SHA"
+    # Both tags come from the one build above. A push that stalls would hold the job until the job
+    # timeout, so each push has its own limit and is retried a bounded number of times; layers
+    # already uploaded are skipped on a retry. The worst case (two tags, three attempts of 240 s
+    # plus a 10 s grace, and the pauses) stays near 26 minutes, well inside the job limit. Any
+    # failed push is retried, an authentication failure included.
+    - |
+      for tag in "$TAG" "$CI_COMMIT_SHORT_SHA"; do
+        attempt=1
+        until timeout -k 10 240 docker push "$IMAGE:$tag"; do
+          if [ "$attempt" -ge 3 ]; then
+            echo "Pushing $IMAGE:$tag failed after $attempt attempts" >&2
+            exit 1
+          fi
+          attempt=$((attempt + 1))
+          echo "Push failed, attempt $attempt of 3 in 10 seconds"
+          sleep 10
+        done
+      done
   rules:
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "main"
     - if: $CI_SERVER_HOST == $PIPELINE_SERVER_HOST && $CI_COMMIT_BRANCH == "ci-test"
@@ -421,7 +437,7 @@ backend:test:integration:e:
   extends: .test-integration
   variables:
     TEST_FILTER: >-
-      FullyQualifiedName~Integration.Tests.Migration.|FullyQualifiedName~Integration.Tests.Notifications.|FullyQualifiedName~Integration.Tests.Orders.|FullyQualifiedName~Integration.Tests.Persistence.|FullyQualifiedName~Integration.Tests.Products.|FullyQualifiedName~Integration.Tests.Provisioning.|FullyQualifiedName~Integration.Tests.Services.
+      FullyQualifiedName~Integration.Tests.Fraud.|FullyQualifiedName~Integration.Tests.Migration.|FullyQualifiedName~Integration.Tests.Notifications.|FullyQualifiedName~Integration.Tests.Orders.|FullyQualifiedName~Integration.Tests.Persistence.|FullyQualifiedName~Integration.Tests.Products.|FullyQualifiedName~Integration.Tests.Provisioning.|FullyQualifiedName~Integration.Tests.Services.
 
 # Unit tests of the migration source addon (PHP). They run the exporters against an in-memory
 # SQLite database through pdo_sqlite, which the official PHP image carries. Composer needs unzip

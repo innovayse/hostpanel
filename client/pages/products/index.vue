@@ -2,6 +2,7 @@
   <UiStack gap="none" data-testid="products-page">
     <CatalogProductsHero />
     <CatalogProductFamilyGrid :products="products" />
+    <BundleGrid :bundles="catalogStore.bundles" :discount-label="discountLabel" />
     <CatalogProductsComparison :groups="comparisonGroups" />
     <CatalogProductsBenefits />
     <CatalogProductsTestimonials />
@@ -15,12 +16,14 @@
  *
  * The page reads the catalogue through the catalogue store (prices are in the payer's currency, so
  * the read runs again when the payer's currency or the language changes), groups it into
- * families (one per catalogue product group) with `buildProductFamilies`, and hands the result to the catalogue components. It owns
+ * families (one per catalogue product group) with `buildProductFamilies`, and hands the result to the catalogue components, followed by the
+ * bundle offers the operator sells. It owns
  * the head (title, canonical, hreflang, schema.org) and nothing visual.
  */
 import { APP_LOCALES } from '~/constants/appLocales'
 import { productTypeIcon } from '~/constants/productTypeIcon'
 import { SCHEMA_ORG_CONTEXT } from '~/constants/schemaOrg'
+import { useBundleDiscountLabel } from '~/composables/useBundleDiscountLabel'
 import { useCartStore } from '~/stores/cart'
 import { useCatalogStore } from '~/stores/catalog'
 import { useCurrencyStore } from '~/stores/currency'
@@ -50,13 +53,19 @@ onMounted(() => {
   currencyStore.load()
 })
 
+/** Words a bundle's discount. */
+const discountLabel = useBundleDiscountLabel()
+
 /** The payer's currency to format prices with, never chosen by the page's language. */
 const payerCurrency = computed(() => currencyStore.moneyCurrencyFor(currencyStore.payerCode))
 
 await useAsyncData('products:families', async () => {
   const list = await catalogStore.loadFamilies()
   // Specification lines back the bullets of a family whose descriptions list none.
-  await Promise.all(catalogStore.familyGroups.map((group) => catalogStore.loadProductFeatures(group.id)))
+  await Promise.all([
+    ...catalogStore.familyGroups.map((group) => catalogStore.loadProductFeatures(group.id)),
+    catalogStore.loadBundles(),
+  ])
   return list
 }, {
   watch: [() => currencyStore.payerCode, locale],

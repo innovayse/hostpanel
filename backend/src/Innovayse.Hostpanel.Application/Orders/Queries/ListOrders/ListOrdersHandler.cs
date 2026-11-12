@@ -71,6 +71,9 @@ public sealed class ListOrdersHandler
                 o.InvoiceId,
                 o.Items.Count,
                 o.Items.Count(i => i.FulfilmentState == OrderItemFulfilmentState.Failed || i.FulfilmentState == OrderItemFulfilmentState.PartiallyRefunded),
+                o.IpAddress,
+                o.FraudScore,
+                o.FraudReasons,
                 o.CreatedAt))
             .ToList();
 

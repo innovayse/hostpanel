@@ -10,11 +10,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises } from '@vue/test-utils'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { BillingEndpoint } from '~/tests/helpers/billingPaths'
-import { awaitCheckoutLoaded, checkoutReplies, writeOf } from '~/tests/helpers/checkoutFlow'
+import { awaitCheckoutLoaded, cartLine, checkoutReplies, PLACED_ORDER } from '~/tests/helpers/checkoutFlow'
 import { makeClientUser } from '~/tests/helpers/clientUser'
 import { mountPage, stubPublicPageRuntime } from '~/tests/helpers/publicPage'
 import { until } from '~/tests/helpers/settle'
-import { readOf, refusal, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { readOf, refusal, requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -23,6 +23,7 @@ import AuroraCheckout from '~/templates/aurora/pages/AuroraCheckout.vue'
 import GatewayOption from '~/components/checkout/GatewayOption.vue'
 import SaveOption from '~/components/checkout/SaveOption.vue'
 import SubmitHint from '~/components/checkout/SubmitHint.vue'
+import { clientInvoicePayPath } from '~/constants/clientRoutes'
 import { useAuthStore } from '~/stores/auth'
 import { useCartStore } from '~/stores/cart'
 import { useCheckoutStore } from '~/stores/checkout'
@@ -31,7 +32,6 @@ import type { CartItem } from '~/types/cartitem'
 import type { GatewayMethod } from '~/types/gatewaymethod'
 import { PaymentModule } from '~/types/paymentmodule'
 import { Permission } from '~/types/permission'
-import { PricingCycle } from '~/types/pricingcycle'
 
 /** The stub playing the BFF. */
 let stub: StubServer
@@ -46,7 +46,7 @@ const DEFAULT_METHODS: GatewayMethod[] = [
 ]
 
 /** The one cart line the summary shows. */
-const ITEM: CartItem = { pid: 7, name: 'Business hosting', billingcycle: PricingCycle.Monthly, cycleLabel: 'Monthly', amount: 9.99, currency: 'USD' }
+const ITEM: CartItem = cartLine(7, 9.99)
 
 /** The signed-in customer. */
 const ann = makeClientUser({ firstName: 'Ann', lastName: 'Lee', email: 'ann@acme.test' })
@@ -96,7 +96,7 @@ describe('AuroraCheckout', () => {
   })
 
   it('offers the renewal-save box, unticked, only when the signed-in payer can have the method kept', async () => {
-    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [{ module: 'example_gateway', displayName: 'Example Gateway', supportsStoredCredentials: true }] }
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [{ module: 'example_gateway', displayName: 'Example Gateway', supportsStoredCredentials: true }] }
     const offered = await mountCheckout()
     useAuthStore().user = ann
     await flushPromises()
@@ -142,7 +142,7 @@ describe('AuroraCheckout', () => {
   })
 
   it('says so when no payment method is available', async () => {
-    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [] }
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [] }
     const wrapper = await mountCheckout()
 
     expect(wrapper.find('[data-testid="checkout-no-methods"]').text()).toBe('checkout.noPaymentMethods')
@@ -151,7 +151,7 @@ describe('AuroraCheckout', () => {
   it('summarises the order with each line and the total', async () => {
     const wrapper = await mountCheckout()
 
-    expect(wrapper.find('[data-testid="checkout-item-7"]').text()).toContain('Business hosting')
+    expect(wrapper.find('[data-testid="checkout-item-7"]').text()).toContain(ITEM.name)
     expect(wrapper.find('[data-testid="checkout-item-7"]').text()).toContain('$9.99')
     expect(wrapper.find('[data-testid="checkout-total"]').text()).toBe('$9.99')
   })
@@ -165,12 +165,12 @@ describe('AuroraCheckout', () => {
   })
 
   it('places the order and follows the destination the store returns', async () => {
-    table[readOf(AccountEndpoint.PaymentMethods)] = { body: [{ module: PaymentModule.BankTransfer, displayName: 'Bank transfer', supportsStoredCredentials: false }] }
+    table[readOf(BillingEndpoint.OrderPaymentMethods)] = { body: [{ module: PaymentModule.BankTransfer, displayName: 'Bank transfer', supportsStoredCredentials: false }] }
     // The cart's total is the placed order's total, so the payer is not asked to accept a changed total.
-    const wrapper = await mountCheckout([{ ...ITEM, amount: 12 }])
+    const wrapper = await mountCheckout([{ ...ITEM, amount: PLACED_ORDER.total }])
 
     await wrapper.find('[data-testid="checkout-place-order"]').trigger('click')
-    await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith('/en/client/invoices/12/pay'))
+    await waitUntil(() => expect(navigateTo).toHaveBeenCalledWith(`/en${clientInvoicePayPath(PLACED_ORDER.invoiceId)}`))
 
     expect(placedOrders()).toBe(1)
   })

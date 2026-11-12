@@ -50,6 +50,7 @@ import {
   ACCOUNT,
   ANNOUNCEMENT,
   BANK_TRANSFER_DETAILS,
+  BUNDLE,
   EMPTY_BANK_TRANSFER_DETAILS,
   CREDIT,
   CREDIT_NOTES,
@@ -551,6 +552,10 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
     send(res, 200, wanted)
     return true
   }
+  if (isGet && path === '/api/public/product-bundles') {
+    send(res, 200, [BUNDLE])
+    return true
+  }
   if (isGet && path === '/api/product-features') {
     send(res, 200, query.get('groupId') === '1' || query.get('gid') === '1' ? HOSTING_SPECIFICATIONS : [])
     return true
@@ -884,7 +889,7 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
   const gatewayStartMatch = path.match(/^\/api\/me\/invoices\/(\d+)\/gateway-payment\/start$/)
   if (method === 'POST' && gatewayStartMatch) {
     if (gatewayStartMatch[1] === String(INVOICE.id)) {
-      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL })
+      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL, kind: 'Redirect', formPost: null })
     } else {
       sendProblem(res, 404, 'NOT_FOUND', 'Invoice not found.')
     }
@@ -904,7 +909,7 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
   const orderGatewayMatch = path.match(/^\/api\/orders\/(\d+)\/gateway-payment\/(start|complete)$/)
   if (method === 'POST' && orderGatewayMatch) {
     if (orderGatewayMatch[2] === 'start') {
-      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL })
+      send(res, 200, { redirectUrl: GATEWAY_PAGE_URL, kind: 'Redirect', formPost: null })
     } else if (orderGatewayMatch[1] === String(ORDER.orderId)) {
       send(res, 200, { state: 'Paid', orderNumber: `ORD-${ORDER.orderId}` })
     } else if (orderGatewayMatch[1] === String(ORDER_DECLINED_ID)) {

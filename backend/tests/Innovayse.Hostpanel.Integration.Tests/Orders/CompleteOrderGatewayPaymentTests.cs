@@ -108,6 +108,42 @@ public sealed class CompleteOrderGatewayPaymentTests(IntegrationTestFactory fact
     }
 
     /// <summary>
+    /// The checkout return leg hands what the payer came back from the gateway with to the plugin that completes a payment from
+    /// it, before the status is read, and the order is fulfilled once the status says paid.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task CompleteWithTheReturnParametersHandsThemToThePluginBeforeReadingTheStatus()
+    {
+        var plugin = new FakeReturnPaymentPlugin
+        {
+            StatusResult = new GatewayPaymentStatus(GatewayPaymentState.Paid, "gw-txn-return", "paid", AmountMinor: 2500),
+        };
+        var resolver = new FakePaymentPluginResolver();
+        resolver.Register("bank-gateway", plugin);
+        var host = BuildHost(resolver);
+        var (orderId, paymentToken, _) = await OrdersTestSeeds.SeedOrderWithInvoiceAsync(factory);
+        using (var scope = host.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+            var order = await context.Orders.FindAsync(orderId);
+            var invoice = await context.Invoices.FindAsync(order!.InvoiceId!.Value);
+            invoice!.SetGatewaySession("bank-gateway", "gw-order-return", scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
+            await context.SaveChangesAsync(CancellationToken.None);
+        }
+
+        var response = await host.CreateClient().PostAsJsonAsync(
+            $"/api/orders/{orderId}/gateway-payment/complete",
+            new { paymentToken, returnParameters = new[] { new { name = "nonce", value = "n1" } } });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("state").GetString().Should().Be(nameof(GatewayCompletionState.Paid));
+        plugin.Calls.Should().Equal("complete", "status");
+        plugin.Completions.Should().ContainSingle().Which.GatewayOrderId.Should().Be("gw-order-return");
+        plugin.Completions[0].Parameters.Should().BeEquivalentTo(new Dictionary<string, string> { ["nonce"] = "n1" });
+    }
+
+    /// <summary>
     /// A completion whose save landed but whose fulfilment failed is finished by the retry: the
     /// invoice is already settled, and the retry still fulfils the order rather than answering Paid
     /// with the order left pending.

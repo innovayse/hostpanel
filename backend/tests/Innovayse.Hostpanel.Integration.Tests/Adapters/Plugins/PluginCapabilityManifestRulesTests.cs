@@ -78,4 +78,15 @@ public sealed class PluginCapabilityManifestRulesTests
         RuleOf(Manifest("Payment", ""","capabilities":["storedCredentials","endpoints"]""")).Should().BeNull();
         RuleOf(Manifest("App", ""","capabilities":["endpoints"]""")).Should().BeNull();
     }
+
+    /// <summary>The paymentReturn capability fits a payment plugin only.</summary>
+    [Fact]
+    public void Validate_PaymentReturn_IsAllowedOnAPaymentPluginOnly()
+    {
+        RuleOf(Manifest("Payment", ""","capabilities":["paymentReturn"]""")).Should().BeNull();
+        RuleOf(Manifest("Payment", ""","capabilities":["storedCredentials","paymentReturn"]""")).Should().BeNull();
+        RuleOf(Manifest("Fulfilment", ""","capabilities":["paymentReturn"]""")).Should().Be(PluginManifestRule.CapabilityNotAllowed);
+        RuleOf(Manifest("App", ""","capabilities":["paymentReturn"]""")).Should().Be(PluginManifestRule.CapabilityNotAllowed);
+        RuleOf(Manifest("Payment", ""","capabilities":["paymentReturn","paymentReturn"]""")).Should().Be(PluginManifestRule.CapabilityNotAllowed);
+    }
 }

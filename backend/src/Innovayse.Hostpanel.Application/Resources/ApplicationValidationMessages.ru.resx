@@ -565,6 +565,9 @@
   <data name="PlaceOrderItemProductIdInvalid" xml:space="preserve">
     <value>Для каждой позиции нужен корректный товар.</value>
   </data>
+  <data name="PlaceOrderBundleIdInvalid" xml:space="preserve">
+    <value>Набор указан неверно.</value>
+  </data>
   <data name="PlaceOrderItemBillingCycleInvalid" xml:space="preserve">
     <value>Период оплаты должен быть 'monthly', 'annual' или 'annually'.</value>
   </data>
@@ -1677,5 +1680,41 @@
   </data>
   <data name="TaxRuleRateDecimalsInvalid" xml:space="preserve">
     <value>Налоговая ставка может иметь не более трёх знаков после запятой.</value>
+  </data>
+  <data name="FraudBlockListTypeInvalid" xml:space="preserve">
+    <value>Недопустимый тип чёрного списка.</value>
+  </data>
+  <data name="FraudBlockListValueInvalid" xml:space="preserve">
+    <value>Значение не подходит к выбранному типу чёрного списка.</value>
+  </data>
+  <data name="FraudBlockListNoteTooLong" xml:space="preserve">
+    <value>Примечание не должно быть длиннее 500 символов.</value>
+  </data>
+  <data name="FraudBlockListEntryIdInvalid" xml:space="preserve">
+    <value>Идентификатор записи чёрного списка должен быть больше нуля.</value>
+  </data>
+  <data name="FraudScoreOutOfRange" xml:space="preserve">
+    <value>Оценка риска должна быть целым числом от 0 до 100.</value>
+  </data>
+  <data name="FraudReviewBelowReject" xml:space="preserve">
+    <value>Порог проверки должен быть ниже порога автоотказа.</value>
+  </data>
+  <data name="FraudVelocityWindowOutOfRange" xml:space="preserve">
+    <value>Окно частоты заказов должно быть от 1 до 1440 минут.</value>
+  </data>
+  <data name="FraudCountOutOfRange" xml:space="preserve">
+    <value>Лимит должен быть целым числом от 1 до 100.</value>
+  </data>
+  <data name="FraudCheckKindInvalid" xml:space="preserve">
+    <value>Недопустимый вид проверки на мошенничество.</value>
+  </data>
+  <data name="FraudDecisionInvalid" xml:space="preserve">
+    <value>Недопустимое решение по мошенничеству.</value>
+  </data>
+  <data name="OrderReviewReasonRequired" xml:space="preserve">
+    <value>Укажите причину, которую увидит клиент.</value>
+  </data>
+  <data name="OrderReviewReasonTooLong" xml:space="preserve">
+    <value>Причина не должна быть длиннее 1000 символов.</value>
   </data>
 </root>

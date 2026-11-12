@@ -27,6 +27,8 @@ const pendingOrder = {
   itemCount: 1,
   createdAt: '2026-03-04T10:00:00Z',
   ipAddress: '10.0.0.1',
+  fraudScore: null,
+  fraudReasons: [],
   notes: 'Call the client',
   items: [
     {
@@ -170,6 +172,18 @@ describe('OrderDetailView', () => {
 
     expect(wrapper.get('[data-testid="order-lines-subtotal"]').text()).toContain('30.00 EUR')
     expect(wrapper.get('[data-testid="order-invoice-total"]').text()).toContain('33.00 EUR')
+  })
+
+  it('names the product bundle the order was placed from, and shows none for a plain order', async () => {
+    stubRoutes({ 'GET /api/orders/8': () => json({ ...pendingOrder, bundleId: 4, bundleName: 'Starter pack' }) })
+    const bundled = await mountDetail()
+
+    expect(bundled.wrapper.get('[data-testid="order-bundle"]').text()).toBe('Starter pack')
+
+    stubRoutes({ 'GET /api/orders/8': () => json({ ...pendingOrder, bundleId: null, bundleName: null }) })
+    const plain = await mountDetail()
+
+    expect(plain.wrapper.find('[data-testid="order-bundle"]').exists()).toBe(false)
   })
 
   it('shows a dash for an invoice total the API could not read', async () => {

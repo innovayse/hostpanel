@@ -11,6 +11,7 @@ import { ContactType } from '@/types/contact'
 import { CurrencyCode } from '@/types/currency'
 import { DemoAccountRole } from '@/types/demo'
 import { DnsRecordType, DomainStatus } from '@/types/domain'
+import { BlockListType, FraudCheckKind, FraudDecision, FraudReasonCode, FraudSettingsField } from '@/types/fraud'
 import { PaymentGateway } from '@/types/gateway'
 import { IntegrationFieldType } from '@/types/integration'
 import { InvoiceOpenAction, InvoiceStatus } from '@/types/invoice'
@@ -24,7 +25,28 @@ import { BrandingImageKind } from '@/types/upload'
 describe('status enums', () => {
   it('are spelled as the API spells them', () => {
     expect(Object.values(DemoAccountRole)).toEqual(['Admin', 'Client'])
-    expect(Object.values(OrderStatus)).toEqual(['Pending', 'Active', 'Cancelled', 'Fraud', 'Incomplete'])
+    expect(Object.values(OrderStatus)).toEqual(['Pending', 'Active', 'Cancelled', 'Fraud', 'Incomplete', 'UnderReview'])
+    expect(Object.values(FraudReasonCode)).toEqual([
+      'BlockedIp',
+      'BlockedEmailDomain',
+      'BlockedCountry',
+      'DisposableEmail',
+      'SharedIpAccounts',
+      'OrderVelocity',
+      'CountryMismatch',
+      'ProviderHighRisk',
+      'AnonymousIp',
+    ])
+    expect(Object.values(BlockListType)).toEqual(['Ip', 'Cidr', 'EmailDomain', 'Country'])
+    expect(Object.values(FraudCheckKind)).toEqual(['Registration', 'Order'])
+    expect(Object.values(FraudDecision)).toEqual(['Approved', 'Review', 'Rejected', 'ManualApproved', 'ManualRejected'])
+    expect(Object.values(FraudSettingsField)).toEqual([
+      'manualReviewRiskScore',
+      'autoRejectRiskScore',
+      'velocityWindowMinutes',
+      'velocityMaxOrders',
+      'maxAccountsPerIp',
+    ])
     expect(Object.values(OrderItemFulfilmentState)).toEqual(['Pending', 'InProgress', 'Fulfilled', 'Failed', 'Refunded', 'Refunding', 'PartiallyRefunded'])
     expect(Object.values(OrderItemStatus)).toEqual(['Pending', 'Active', 'Cancelled'])
     expect(Object.values(ServiceStatus)).toEqual(['Active', 'Pending', 'Suspended', 'Terminated'])

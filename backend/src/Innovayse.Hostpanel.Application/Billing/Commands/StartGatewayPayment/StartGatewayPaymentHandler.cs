@@ -22,7 +22,8 @@ namespace Innovayse.Hostpanel.Application.Billing.Commands.StartGatewayPayment;
 /// <summary>
 /// Handles <see cref="StartGatewayPaymentCommand"/>: resolves the payment plugin,
 /// registers the payment (fresh per-attempt order number; the gateway rejects
-/// reused ones), stores the session on the invoice, and returns the redirect URL. The gateway order of
+/// reused ones), stores the session on the invoice, and returns where and how the payer's browser goes next: a redirect, an
+/// auto submitted form or a browser step (<see cref="PaymentSessionExtensions"/>). The gateway order of
 /// a session the new one replaces is cancelled through its plugin when the plugin can (<see cref="GatewayPaymentCanceller"/>).
 /// </summary>
 /// <remarks>
@@ -114,12 +115,13 @@ public sealed class StartGatewayPaymentHandler
     /// <param name="cmd">The start command.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
-    /// The gateway redirect URL for the payer's browser, or one of: <c>INVOICE_NOT_FOUND</c>,
+    /// Where and how the payer's browser goes to the gateway, or one of: <c>INVOICE_NOT_FOUND</c>,
     /// <c>INVOICE_NOT_PAYABLE</c>, <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c> when a
     /// stored card charge claim of the invoice blocks it, <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c>, <c>RETURN_URL_NOT_ALLOWED</c>,
     /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, <c>GATEWAY_SESSION_ALREADY_STARTED</c>,
     /// <c>CURRENCY_NOT_FOUND</c>, <c>GATEWAY_CURRENCY_MISMATCH</c> or
-    /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the plugin fails to register the payment. A payment that saves
+    /// <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the plugin fails to register the payment or answers a session the host
+    /// refuses (a form post that breaks the contract's rules, a browser step from a plugin that cannot complete a return). A payment that saves
     /// the method is also refused with <c>UNAUTHORIZED</c> when the request carries no caller (a guest), with
     /// <c>STORED_CREDENTIALS_NOT_SUPPORTED</c> when the module's plugin offers no stored credentials, with the caller's own failure
     /// (<c>CLIENT_PROFILE_NOT_FOUND</c>, <c>IDENTITY_PLUGIN_UNAVAILABLE</c>)
@@ -227,6 +229,18 @@ public sealed class StartGatewayPaymentHandler
             return Result<RedirectDto>.FailureCode(HostpanelErrorCodes.PAYMENT_GATEWAY_SERVICE_UNAVAILABLE);
         }
 
+        // The host acts only on a session it can honour: a form that breaks the plugin contract's rules, or a browser step from a
+        // plugin that cannot complete a payment from the return request, is a failed payment. The order the gateway just
+        // registered is voided, because no invoice will point at it. The reason stays in the log, the response carries the code.
+        if (!session.IsAcceptedBy(plugin))
+        {
+            _logger.LogWarning(
+                "Payment plugin {Module} answered a {Kind} session for invoice {InvoiceId} that the host refuses.",
+                cmd.Module, session.Kind, invoice.Id);
+            await _canceller.CancelAsync(cmd.Module, session.GatewayOrderId, invoice.Id, ct);
+            return Result<RedirectDto>.FailureCode(HostpanelErrorCodes.PAYMENT_GATEWAY_SERVICE_UNAVAILABLE);
+        }
+
         // The session this attempt replaces is abandoned. Read before it is overwritten; a session that took money is a
         // settled payment, not an abandoned one, so it is left alone.
         var abandoned = invoice is { GatewayModule: { } previousModule, GatewayOrderId: { } previousOrderId }
@@ -261,7 +275,7 @@ public sealed class StartGatewayPaymentHandler
             await _canceller.CancelAsync(old.Module, old.OrderId, invoice.Id, ct);
         }
 
-        return Result.Success(new RedirectDto(session.RedirectUrl));
+        return Result.Success(session.ToRedirectDto());
     }
 
     /// <summary>

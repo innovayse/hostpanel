@@ -4,6 +4,9 @@ using Innovayse.Hostpanel.Application.Billing.Commands.CancelInvoice;
 using Innovayse.Hostpanel.Application.Billing.Commands.CreateOrderInvoice;
 using Innovayse.Hostpanel.Application.Billing.Commands.SettleFreeInvoice;
 using Innovayse.Hostpanel.Application.Billing.Common;
+using Innovayse.Hostpanel.Application.Billing.Currencies.Common;
+using Innovayse.Hostpanel.Application.Billing.Currencies.Queries.ConvertAmounts;
+using Innovayse.Hostpanel.Application.Billing.Extensions;
 using Innovayse.Hostpanel.Application.Billing.Queries.ListAvailablePaymentMethods;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Clients.Extensions;
@@ -14,14 +17,19 @@ using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Application.Domains.Common;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetOwnedDomainNames;
 using Innovayse.Hostpanel.Application.Domains.Queries.GetTldPricing;
+using Innovayse.Hostpanel.Application.Fraud.Commands.RecordFraudDecision;
+using Innovayse.Hostpanel.Application.Fraud.Extensions;
 using Innovayse.Hostpanel.Application.Orders.Commands.FulfillPaidOrder;
 using Innovayse.Hostpanel.Application.Orders.Common;
+using Innovayse.Hostpanel.Application.Orders.Extensions;
 using Innovayse.Hostpanel.Application.Products.Common;
 using Innovayse.Hostpanel.Application.Products.Queries.GetOrderableProducts;
+using Innovayse.Hostpanel.Application.Products.Queries.GetProductBundle;
 using Innovayse.Hostpanel.Domain.Auth.Enums;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Clients.Enums;
+using Innovayse.Hostpanel.Domain.Fraud.Enums;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products.Enums;
@@ -38,6 +46,9 @@ namespace Innovayse.Hostpanel.Application.Orders.Commands.PlaceOrder;
 /// the <see cref="Order"/> aggregate already linked to it, with product prices snapshotted into
 /// its line items. Clients, products, currencies and invoices are
 /// reached through their own modules' queries, commands and ports, never their tables.
+/// An order placed from a product bundle (<see cref="PlaceOrderCommand.BundleId"/>) goes the same way: its lines are
+/// checked against the bundle first, and the bundle's discount is taken off the prices after the discount of the
+/// client's group, so the order, its invoice and its services all carry the one final price.
 /// </summary>
 public sealed class PlaceOrderHandler
 {
@@ -126,7 +137,7 @@ public sealed class PlaceOrderHandler
     /// </summary>
     /// <remarks>
     /// Everything that can refuse runs before anything is created: currency, payment method,
-    /// products, prices and domain ownership. Only then is a guest account made and an order
+    /// products, prices, domain ownership and the conversion of a bundle's fixed discount. Only then is a guest account made and an order
     /// number taken. The invoice is raised next and the order saved already linked to it, so a
     /// failure leaves no Pending order without an invoice for the client to retry into a
     /// duplicate; a failure after the invoice exists cancels it through Billing.
@@ -138,13 +149,17 @@ public sealed class PlaceOrderHandler
     /// is billed in, or
     /// <c>ORDER_PAYMENT_METHOD_UNAVAILABLE</c> when the checkout is not offering that method,
     /// <c>ORDER_CURRENCY_UNAVAILABLE</c> when a guest chose a currency this panel does not offer,
+    /// <c>ORDER_FRAUD_REJECTED</c> when fraud detection refuses the order (nothing is created; an order that only scores
+    /// into the review band is placed and held, not refused),
     /// <c>ORDER_GUEST_DETAILS_REQUIRED</c> when a guest checkout reached the handler without its
     /// registration fields, <c>ACCOUNT_EMAIL_EXISTS</c> when a guest's address already has an
     /// account, <c>PRODUCT_NOT_FOUND</c> or <c>PRODUCT_NOT_AVAILABLE</c> when a line item names a
     /// product that does not exist or is not active, <c>ORDER_PRODUCT_PRICE_UNAVAILABLE</c> when a
     /// product has no price for the requested currency and cycle, <c>ORDER_DOMAIN_PRICING_INVALID</c>
     /// when a domain line cannot be priced (see the private pricing helpers below for the causes
-    /// that one code covers), <c>DOMAIN_NOT_FOUND</c> when a renewal names a domain the client does
+    /// that one code covers), <c>PRODUCT_BUNDLE_NOT_FOUND</c> or <c>PRODUCT_BUNDLE_NOT_AVAILABLE</c> when the bundle does
+    /// not exist or is not active, <c>ORDER_BUNDLE_ITEMS_MISMATCH</c>, <c>ORDER_BUNDLE_DOMAIN_MISMATCH</c> or
+    /// <c>ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED</c> when the lines are not the bundle's, <c>ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE</c> when the bundle's fixed discount is in a currency that is not stored, <c>DOMAIN_NOT_FOUND</c> when a renewal names a domain the client does
     /// not hold, <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c> when the signed-in caller's account may not order,
     /// <c>ORDER_NUMBER_RANGE_EXHAUSTED</c> when the order number would outgrow its column,
     /// <c>CLIENT_PERMISSION_DENIED</c> when the caller may not order (a sub-user or plugin member without the
@@ -208,7 +223,29 @@ public sealed class PlaceOrderHandler
             return Result<PlaceOrderResultDto>.FailureCode(methodAvailable.ErrorCode!);
         }
 
-        var priced = await PriceLinesAsync(cmd.Items, currency.Value!, ct);
+        // A bundle order is checked against its bundle before anything is priced; from here on the lines are the
+        // checked ones, whose domain line carries the bundle's registration period instead of the one it sent.
+        var items = cmd.Items;
+        ProductBundleDto? bundle = null;
+        if (cmd.BundleId is { } bundleId)
+        {
+            var found = await _bus.InvokeAsync<Result<ProductBundleDto>>(new GetProductBundleQuery(bundleId), ct);
+            if (found.IsFailure)
+            {
+                return Result<PlaceOrderResultDto>.FailureCode(found.ErrorCode!);
+            }
+
+            var bundleItems = found.Value!.ResolveOrderItems(cmd.Items);
+            if (bundleItems.IsFailure)
+            {
+                return Result<PlaceOrderResultDto>.FailureCode(bundleItems.ErrorCode!);
+            }
+
+            bundle = found.Value;
+            items = bundleItems.Value!;
+        }
+
+        var priced = await PriceLinesAsync(items, currency.Value!, ct);
         if (priced.IsFailure)
         {
             return Result<PlaceOrderResultDto>.FailureCode(priced.ErrorCode!);
@@ -219,6 +256,34 @@ public sealed class PlaceOrderHandler
         if (owned.IsFailure)
         {
             return Result<PlaceOrderResultDto>.FailureCode(owned.ErrorCode!);
+        }
+
+        // Fraud detection looks before any account, order number or invoice exists, so a refused request leaves nothing behind.
+        // A signed-in caller's own address wins over the one typed into the guest fields.
+        var fraudEmail = _caller.Email ?? cmd.Email;
+        var verdict = await _bus.EvaluateFraudAsync(FraudCheckKind.Order, fraudEmail, existingClient?.Address.Country, ct);
+        if (verdict.Decision is FraudDecision.Rejected)
+        {
+            await _bus.RecordFraudDecisionAsync(
+                _logger,
+                new RecordFraudDecisionCommand(
+                    FraudCheckKind.Order, verdict.Decision, existingClient?.Id, null, _caller.IpAddress, fraudEmail, verdict.Score, verdict.Reasons),
+                ct);
+            return Result<PlaceOrderResultDto>.FailureCode(HostpanelErrorCodes.ORDER_FRAUD_REJECTED);
+        }
+
+        // The last thing that can refuse an order: a fixed bundle discount in another currency is converted now, so a
+        // refused conversion leaves nothing behind, in particular no client created for a guest.
+        var bundleDiscount = 0m;
+        if (bundle is not null)
+        {
+            var converted = await ConvertBundleDiscountAsync(bundle, currency.Value!, ct);
+            if (converted.IsFailure)
+            {
+                return Result<PlaceOrderResultDto>.FailureCode(converted.ErrorCode!);
+            }
+
+            bundleDiscount = converted.Value;
         }
 
         var clientId = existingClient?.Id;
@@ -260,6 +325,12 @@ public sealed class PlaceOrderHandler
         // service the order creates then all carry the one discounted price.
         lines = await ApplyClientGroupDiscountAsync(lines, clientId.Value, currency.Value!, ct);
 
+        // On top of the group discount, so a client in a discounted group keeps it inside a bundle.
+        if (bundle is not null)
+        {
+            lines = ApplyBundleDiscount(bundle, bundleDiscount, lines, currency.Value!);
+        }
+
         // Taken from a database sequence, not derived from the stored maximum: reading the maximum
         // and claiming max + 1 are two steps, so two concurrent orders claimed the same number and
         // the second hit the unique index. A sequence also never frees a number for reuse, so a
@@ -275,6 +346,11 @@ public sealed class PlaceOrderHandler
 
         var order = Order.Create(
             _orderOptions.Value.FormatNumber(nextNumber), clientId.Value, cmd.PaymentMethod, _caller.IpAddress, currency.Value!, now);
+        if (bundle is not null)
+        {
+            order.PlaceFromBundle(bundle.Id);
+        }
+
         foreach (var line in lines)
         {
             var item = line.Item;
@@ -282,11 +358,18 @@ public sealed class PlaceOrderHandler
                 item.Domain, item.Hostname, item.DomainAction, item.EppCode, item.Years);
         }
 
+        // Held before the first save, so the order is never stored as Pending: a payment can arrive any moment after the
+        // invoice exists, and a Pending order would be fulfilled by it.
+        if (verdict.Decision is FraudDecision.Review)
+        {
+            order.HoldForReview(verdict.Score, verdict.Reasons);
+        }
+
         // Raised before the order is saved: an invoice whose order then fails to save is cancelled
         // below, while an order saved without its invoice was a Pending order nobody could pay.
         var invoiceItems = lines
             .Select(line => new OrderInvoiceItemDto(
-                DescribeLine(line), line.Price, 1, line.Snapshot, line.DiscountPercent))
+                line.Describe(bundle?.Name), line.Price, 1, line.Snapshot, line.DiscountPercent))
             .ToList();
         var invoice = await _bus.InvokeAsync<Result<int>>(
             new CreateOrderInvoiceCommand(clientId.Value, currency.Value!, invoiceItems), ct);
@@ -297,6 +380,16 @@ public sealed class PlaceOrderHandler
 
         order.LinkInvoice(invoice.Value);
         await SaveOrCancelInvoiceAsync(order, invoice.Value, ct);
+
+        // Logged once the order has its id; nothing was logged when fraud detection is off.
+        if (verdict.Checked)
+        {
+            await _bus.RecordFraudDecisionAsync(
+                _logger,
+                new RecordFraudDecisionCommand(
+                    FraudCheckKind.Order, verdict.Decision, clientId.Value, order.Id, _caller.IpAddress, fraudEmail, verdict.Score, verdict.Reasons),
+                ct);
+        }
 
         // Nothing is owed (a free plan): no gateway takes a payment of zero, so the invoice is
         // settled and the order fulfilled here, or it would wait forever for a payment.
@@ -410,6 +503,69 @@ public sealed class PlaceOrderHandler
     }
 
     /// <summary>
+    /// States the bundle's discount in the payer's currency. A fixed discount is stated in the bundle's own currency
+    /// and, when that is not the payer's, converted with the stored rates, the conversion Billing owns.
+    /// </summary>
+    /// <remarks>
+    /// Asked before anything is created, because the conversion is the one part of the bundle discount that can be
+    /// refused; spreading the figure over the lines afterwards (<see cref="ApplyBundleDiscount"/>) cannot be.
+    /// </remarks>
+    /// <param name="bundle">The bundle the order is placed from.</param>
+    /// <param name="currencyCode">ISO 4217 alpha code the order bills in.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// The bundle's discount amount in the payer's currency (a percentage for a percentage bundle), or the
+    /// conversion's refusal (<c>CURRENCY_NOT_FOUND</c>) when a fixed discount cannot be converted, or
+    /// <c>ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE</c> when the currency of a fixed discount is not stored, since the
+    /// conversion would pass such an amount through unchanged and the payer would be given a wrong figure.
+    /// </returns>
+    private async Task<Result<decimal>> ConvertBundleDiscountAsync(
+        ProductBundleDto bundle, string currencyCode, CancellationToken ct)
+    {
+        if (bundle.DiscountType != BundleDiscountType.Fixed
+            || string.Equals(bundle.DiscountCurrency, currencyCode, StringComparison.OrdinalIgnoreCase))
+        {
+            return Result.Success(bundle.DiscountAmount);
+        }
+
+        if (await _context.FindCurrencyAsync(bundle.DiscountCurrency!, ct) is null)
+        {
+            return Result<decimal>.FailureCode(HostpanelErrorCodes.ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE);
+        }
+
+        var converted = await _bus.InvokeAsync<Result<ConvertedAmountsDto>>(
+            new ConvertAmountsQuery(currencyCode, [new CurrencyAmountDto(bundle.DiscountAmount, bundle.DiscountCurrency!)]), ct);
+        return converted.IsFailure
+            ? Result<decimal>.FailureCode(converted.ErrorCode!)
+            : Result.Success(converted.Value!.Amounts[0].Amount);
+    }
+
+    /// <summary>
+    /// Takes the bundle's discount off the prices of the order's lines, domain line included: the bundle sells them
+    /// together, so its discount is spread over what the payer is charged for all of them.
+    /// </summary>
+    /// <remarks>
+    /// The prices already carry the client group's discount, so the bundle discount comes on top of it; the spreading
+    /// itself is <see cref="BundleDiscountAllocator"/>. The line keeps only the group's percent as its
+    /// <see cref="PricedOrderLine.DiscountPercent"/>: the bundle's share is told apart by the bundle's name in the
+    /// line's description, not by a second percent that would not describe a fixed amount.
+    /// </remarks>
+    /// <param name="bundle">The bundle the order is placed from.</param>
+    /// <param name="discount">The bundle's discount in the payer's currency, from <see cref="ConvertBundleDiscountAsync"/>.</param>
+    /// <param name="lines">The priced lines, after the client group's discount.</param>
+    /// <param name="currencyCode">ISO 4217 alpha code the order bills in.</param>
+    /// <returns>The lines at their price after the bundle's discount.</returns>
+    private static IReadOnlyList<PricedOrderLine> ApplyBundleDiscount(
+        ProductBundleDto bundle, decimal discount, IReadOnlyList<PricedOrderLine> lines, string currencyCode)
+    {
+        var discounted = BundleDiscountAllocator.Allocate(
+            lines.Select(line => line.Price).ToList(), bundle.DiscountType, discount, currencyCode);
+        return lines
+            .Select((line, index) => line with { Price = discounted[index] })
+            .ToList();
+    }
+
+    /// <summary>
     /// Refuses a renewal line for a domain the ordering client does not hold.
     /// </summary>
     /// <remarks>
@@ -509,14 +665,6 @@ public sealed class PlaceOrderHandler
             _logger.LogError("Free order {OrderId} could not be fulfilled: {Code}.", orderId, fulfilled.ErrorCode);
         }
     }
-
-    /// <summary>The invoice line text for an order line: the product, and for a domain line the domain it is for.</summary>
-    /// <param name="line">The priced line.</param>
-    /// <returns>The description the invoice carries.</returns>
-    private static string DescribeLine(PricedOrderLine line) =>
-        line.Item.DomainAction is not null && !string.IsNullOrWhiteSpace(line.Item.Domain)
-            ? $"{line.ProductName} ({line.Item.Domain})"
-            : line.ProductName;
 
     /// <summary>
     /// Refuses a payment method the checkout is not offering right now.

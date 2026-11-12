@@ -47,6 +47,15 @@ describe('AppRoute', () => {
     expect(AppRoute.Dashboard).toBe('/dashboard')
     expect(AppRoute.Setup).toBe('/setup')
   })
+
+  it('names the fraud screens under the fraud area root', () => {
+    expect([AppRoute.FraudSettings, AppRoute.FraudBlockLists, AppRoute.FraudLog]).toEqual([
+      '/fraud/settings',
+      '/fraud/block-lists',
+      '/fraud/log',
+    ])
+    expect(AppRoute.FraudSettings.startsWith(AppRoute.Fraud)).toBe(true)
+  })
 })
 
 describe('route builders', () => {

@@ -542,6 +542,30 @@ public static class HostpanelErrorCodes
     public const string ORDER_DOMAIN_PRICING_INVALID = "ORDER_DOMAIN_PRICING_INVALID";
 
     /// <summary>
+    /// The order's product lines are not exactly the products of the bundle it names (400): a component is
+    /// missing, a product is not a component, or one is sent twice.
+    /// </summary>
+    public const string ORDER_BUNDLE_ITEMS_MISMATCH = "ORDER_BUNDLE_ITEMS_MISMATCH";
+
+    /// <summary>
+    /// The order carries a domain line the bundle does not include, or none although it does, or more than
+    /// one (400).
+    /// </summary>
+    public const string ORDER_BUNDLE_DOMAIN_MISMATCH = "ORDER_BUNDLE_DOMAIN_MISMATCH";
+
+    /// <summary>
+    /// The bundle's domain line asks for a renewal (400): a bundle includes a registration or a transfer
+    /// of a domain the client brings, never the renewal of one they already hold.
+    /// </summary>
+    public const string ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED = "ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED";
+
+    /// <summary>
+    /// The bundle's fixed discount is stated in a currency this deployment does not store (400): it cannot be
+    /// converted to the payer's currency, so the order is refused rather than discounted by a wrong figure.
+    /// </summary>
+    public const string ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE = "ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE";
+
+    /// <summary>
     /// The order number sequence has outgrown the configured prefix and the longest order number
     /// the order table stores, so no new order can be numbered until the operator shortens the
     /// prefix (503).
@@ -836,6 +860,9 @@ public static class HostpanelErrorCodes
     /// <summary>The manifest changelog is longer than the SDK allows (400).</summary>
     public const string PLUGIN_MANIFEST_CHANGELOG_TOO_LONG = "PLUGIN_MANIFEST_CHANGELOG_TOO_LONG";
 
+    /// <summary>The manifest serverAccountIdLabel is empty, too long or holds a control character (400).</summary>
+    public const string PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID = "PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID";
+
     /// <summary>A page or slot names a view document the plugin package does not hold, or a path that is not a package-relative .json file (400).</summary>
     public const string PLUGIN_VIEW_MISSING = "PLUGIN_VIEW_MISSING";
 
@@ -1117,6 +1144,9 @@ public static class HostpanelErrorCodes
 
     /// <summary>The id names no product bundle (404).</summary>
     public const string PRODUCT_BUNDLE_NOT_FOUND = "PRODUCT_BUNDLE_NOT_FOUND";
+
+    /// <summary>The bundle exists but is not active, so it may not be ordered (400).</summary>
+    public const string PRODUCT_BUNDLE_NOT_AVAILABLE = "PRODUCT_BUNDLE_NOT_AVAILABLE";
 
     /// <summary>A product listed in the bundle does not exist (404).</summary>
     public const string PRODUCT_BUNDLE_PRODUCT_NOT_FOUND = "PRODUCT_BUNDLE_PRODUCT_NOT_FOUND";
@@ -1915,4 +1945,22 @@ public static class HostpanelErrorCodes
 
     /// <summary>No registration with that id is waiting for confirmation, the answer of the well-known address. (404).</summary>
     public const string PLUGIN_REGISTRY_INSTANCE_NOT_FOUND = "PLUGIN_REGISTRY_INSTANCE_NOT_FOUND";
+
+    /// <summary>The order is not held for fraud review, so it cannot be approved or rejected from the queue (409).</summary>
+    public const string ORDER_NOT_UNDER_REVIEW = Domain.Orders.OrdersErrors.OrderNotUnderReview;
+
+    /// <summary>The order was refused by fraud detection: nothing was created (403).</summary>
+    public const string ORDER_FRAUD_REJECTED = "ORDER_FRAUD_REJECTED";
+
+    /// <summary>The registration was refused by fraud detection: no account was created (403).</summary>
+    public const string REGISTRATION_FRAUD_REJECTED = "REGISTRATION_FRAUD_REJECTED";
+
+    /// <summary>The block list value does not fit its type, for instance a malformed CIDR range (400).</summary>
+    public const string FRAUD_BLOCKLIST_VALUE_INVALID = Domain.Fraud.FraudErrors.BlockListValueInvalid;
+
+    /// <summary>The value is on the block list already for that type (409).</summary>
+    public const string FRAUD_BLOCKLIST_ENTRY_EXISTS = "FRAUD_BLOCKLIST_ENTRY_EXISTS";
+
+    /// <summary>The id names no block list entry (404).</summary>
+    public const string FRAUD_BLOCKLIST_ENTRY_NOT_FOUND = "FRAUD_BLOCKLIST_ENTRY_NOT_FOUND";
 }

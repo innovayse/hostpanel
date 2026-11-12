@@ -61,17 +61,32 @@ const rememberOrder = (): void => {
   useOrderPaymentToken().remember(ORDER.id, ORDER.token, ORDER.invoiceId)
 }
 
+/** The heading each outcome of the check renders. */
+enum ResultTitle {
+  /** The payment is confirmed. */
+  Success = 'paymentResult.successTitle',
+  /** The bank has not settled yet. */
+  Pending = 'paymentResult.pendingTitle',
+  /** The bank declined the payment. */
+  Declined = 'paymentResult.declinedTitle',
+  /** The address names no payment to check. */
+  Missing = 'paymentResult.missingTitle',
+  /** The backend could not give an answer. */
+  Unknown = 'paymentResult.unknownTitle'
+}
+
 /**
- * Mounts the page for one address query and waits until the check has ended in an outcome.
+ * Mounts the page for one address query and waits until the expected outcome is rendered.
  *
+ * @param title The heading of the outcome the check must end in.
  * @param query The address query string.
  * @param pinia A Pinia the test filled before mounting; a fresh one when omitted.
  * @returns The wrapper.
  */
-const mountResult = async (query: Record<string, string | string[]> = {}, pinia?: Pinia) => {
+const mountResult = async (title: ResultTitle, query: Record<string, string | string[]> = {}, pinia?: Pinia) => {
   stubPublicPageRuntime({ query })
   const wrapper = await mountPage(ResultPage, { pinia })
-  await waitUntil(() => expect(wrapper.find('[data-testid="payment-title"]').exists()).toBe(true))
+  await waitUntil(() => expect(wrapper.find('[data-testid="payment-title"]').text()).toBe(title))
   return wrapper
 }
 
@@ -96,9 +111,8 @@ describe('payment result page', () => {
   })
 
   it('says there is nothing to check, and does not call the backend, when the address names no payment', async () => {
-    const wrapper = await mountResult()
+    const wrapper = await mountResult(ResultTitle.Missing)
 
-    expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.missingTitle')
     expect(wrapper.find('[data-testid="payment-invoices"]').attributes('href')).toBe('/en/client/invoices')
     expect(checks()).toBe(0)
   })
@@ -106,10 +120,9 @@ describe('payment result page', () => {
   it('verifies an order with its payment token and offers the order page once paid', async () => {
     table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Paid, orderNumber: 'INV-77' } }
 
-    const wrapper = await mountResult({ order: '5' })
+    const wrapper = await mountResult(ResultTitle.Success, { order: '5' })
 
-    expect(bodyOf(requestsTo(stub.requests, orderPaymentCompletePath(ORDER.id))[0])).toEqual({ paymentToken: ORDER.token })
-    expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.successTitle')
+    expect(bodyOf(requestsTo(stub.requests, orderPaymentCompletePath(ORDER.id))[0])).toEqual({ paymentToken: ORDER.token, returnParameters: [] })
     expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe('/en/client/order-success?order=INV-77')
     expect(useOrderPaymentToken().recall(ORDER.id)).toBeUndefined()
   })
@@ -117,21 +130,34 @@ describe('payment result page', () => {
   it('verifies an invoice without a token and offers the invoice once paid', async () => {
     table[invoiceCheck(9)] = { body: { state: GatewayPaymentState.Paid } }
 
-    const wrapper = await mountResult({ invoice: '9' })
+    const wrapper = await mountResult(ResultTitle.Success, { invoice: '9' })
 
-    expect(bodyOf(requestsTo(stub.requests, invoicePaymentCompletePath(9))[0])).toEqual({})
+    expect(bodyOf(requestsTo(stub.requests, invoicePaymentCompletePath(9))[0])).toEqual({ returnParameters: [] })
     expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe('/en/client/invoices/9')
+  })
+
+  it('hands what the gateway returned the payer with to the backend, without the page own parameters', async () => {
+    table[invoiceCheck(9)] = { body: { state: GatewayPaymentState.Paid } }
+
+    await mountResult(ResultTitle.Success, { invoice: '9', nonce: 'n1', payer: ['p1', 'p2'] })
+
+    expect(bodyOf(requestsTo(stub.requests, invoicePaymentCompletePath(9))[0])).toEqual({
+      returnParameters: [
+        { name: 'nonce', value: 'n1' },
+        { name: 'payer', value: 'p1' },
+        { name: 'payer', value: 'p2' }
+      ]
+    })
   })
 
   it('keeps the token and lets the payer check again while the bank has not settled', async () => {
     table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Pending } }
-    const wrapper = await mountResult({ order: '5' })
-    expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.pendingTitle')
+    const wrapper = await mountResult(ResultTitle.Pending, { order: '5' })
     expect(useOrderPaymentToken().recall(ORDER.id)).toBe(ORDER.token)
 
     table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Paid } }
     await wrapper.find('[data-testid="payment-retry"]').trigger('click')
-    await waitUntil(() => expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.successTitle'))
+    await waitUntil(() => expect(wrapper.find('[data-testid="payment-title"]').text()).toBe(ResultTitle.Success))
 
     expect(requestsTo(stub.requests, orderPaymentCompletePath(ORDER.id))).toHaveLength(2)
   })
@@ -140,10 +166,10 @@ describe('payment result page', () => {
     table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Declined } }
     table[invoiceCheck(9)] = { body: { state: GatewayPaymentState.Declined } }
 
-    const order = await mountResult({ order: '5' })
+    const order = await mountResult(ResultTitle.Declined, { order: '5' })
     expect(order.find('[data-testid="payment-try-again"]').attributes('href')).toBe('/en/client/invoices/77/pay')
 
-    const invoice = await mountResult({ invoice: '9' })
+    const invoice = await mountResult(ResultTitle.Declined, { invoice: '9' })
     expect(invoice.find('[data-testid="payment-try-again"]').attributes('href')).toBe('/en/client/invoices/9/pay')
   })
 
@@ -151,7 +177,7 @@ describe('payment result page', () => {
     table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Declined } }
     useOrderPaymentToken().forget(ORDER.id)
 
-    const order = await mountResult({ order: '5' })
+    const order = await mountResult(ResultTitle.Declined, { order: '5' })
 
     expect(order.find('[data-testid="payment-try-again"]').attributes('href')).toBe('/en/client/invoices')
   })
@@ -173,13 +199,13 @@ describe('payment result page', () => {
 
     table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Declined } }
     const declinedPinia = filledPinia()
-    await mountResult({ order: '5' }, declinedPinia)
+    await mountResult(ResultTitle.Declined, { order: '5' }, declinedPinia)
     expect(useCartStore(declinedPinia).items).toHaveLength(1)
 
     table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' } }
     rememberOrder()
     const paidPinia = filledPinia()
-    await mountResult({ order: '5' }, paidPinia)
+    await mountResult(ResultTitle.Success, { order: '5' }, paidPinia)
     expect(useCartStore(paidPinia).items).toEqual([])
   })
 
@@ -189,7 +215,7 @@ describe('payment result page', () => {
     useCartStore().items = [{ pid: 1, name: 'Credits', billingcycle: PricingCycle.Monthly, cycleLabel: 'Monthly', amount: 5, currency: 'USD', productType: ProductType.Digital }]
     table[orderCheck(ORDER.id)] = { body: { state: GatewayPaymentState.Paid, orderNumber: 'ORD-5' } }
 
-    const wrapper = await mountResult({ order: '5' }, pinia)
+    const wrapper = await mountResult(ResultTitle.Success, { order: '5' }, pinia)
 
     expect(wrapper.find('[data-testid="payment-continue"]').attributes('href')).toBe('/en/client/order-success?order=ORD-5&digital=1')
   })
@@ -198,9 +224,7 @@ describe('payment result page', () => {
     /** Queries whose order or invoice id is repeated or malformed. */
     const queries: Array<Record<string, string | string[]>> = [{ order: ['1', '2'] }, { invoice: ['3', '4'] }, { order: '../x' }, { order: '5', invoice: ['9', '10'] }]
     for (const query of queries) {
-      const wrapper = await mountResult(query)
-
-      expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.missingTitle')
+      await mountResult(ResultTitle.Missing, query)
     }
     expect(checks()).toBe(0)
   })
@@ -208,9 +232,8 @@ describe('payment result page', () => {
   it('does not assert an outcome when the backend cannot be reached, and keeps the token', async () => {
     await makeBackendUnreachable()
 
-    const wrapper = await mountResult({ order: '5' })
+    const wrapper = await mountResult(ResultTitle.Unknown, { order: '5' })
 
-    expect(wrapper.find('[data-testid="payment-title"]').text()).toBe('paymentResult.unknownTitle')
     expect(wrapper.find('[data-testid="payment-status"]').exists()).toBe(true)
     expect(useOrderPaymentToken().recall(ORDER.id)).toBe(ORDER.token)
   })

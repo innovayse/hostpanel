@@ -19,6 +19,7 @@ import type { StubServer } from '../helpers/stubServer'
 import { startTransport } from '../helpers/stubTransport'
 import { useInvoicePaymentStore } from '~/stores/invoicepayment'
 import { GatewayPaymentState } from '~/types/gatewaypaymentstate'
+import { GatewaySessionKind } from '~/types/gatewaysessionkind'
 import { HttpMethod } from '~/types/httpmethod'
 import { PaymentTarget } from '~/types/paymenttarget'
 
@@ -82,13 +83,13 @@ afterEach(async () => {
 })
 
 describe('useInvoicePaymentStore.startGatewayPayment', () => {
-  it('returns the gateway address and stays in flight while the browser leaves', async () => {
+  it('returns where the browser goes and stays in flight while it leaves', async () => {
     table[START_ROUTE] = { body: { redirectUrl: 'https://bank.example/pay' } }
     const store = useInvoicePaymentStore()
 
-    const url = await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
+    const start = await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
 
-    expect(url).toBe('https://bank.example/pay')
+    expect(start).toEqual({ redirectUrl: 'https://bank.example/pay' })
     expect(requestsTo(stub.requests, START_PATH)).toHaveLength(1)
     expect(bodyOf(requestsTo(stub.requests, START_PATH)[0])).toEqual({ module: 'gw', returnUrl: 'https://app.example/result' })
     expect(store.submitting).toBe(true)
@@ -98,11 +99,35 @@ describe('useInvoicePaymentStore.startGatewayPayment', () => {
     table[START_ROUTE] = { body: { redirectUrl: 'javascript:alert(1)' } }
     const store = useInvoicePaymentStore()
 
-    const url = await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
+    const start = await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
 
-    expect(url).toBeNull()
+    expect(start).toBeNull()
     expect(store.submitting).toBe(false)
     expect(store.error).not.toBe('')
+  })
+
+  it('returns a form post and a browser step as the backend described them', async () => {
+    const formPost = { action: 'https://bank.example/hosted', fields: [{ name: 'token', value: 't1' }] }
+    const store = useInvoicePaymentStore()
+
+    table[START_ROUTE] = { body: { redirectUrl: formPost.action, kind: GatewaySessionKind.FormPost, formPost } }
+    const posted = await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
+    table[START_ROUTE] = { body: { redirectUrl: 'https://bank.example/step', kind: GatewaySessionKind.BrowserStep, formPost: null } }
+    const step = await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
+
+    expect(posted).toEqual({ redirectUrl: formPost.action, kind: GatewaySessionKind.FormPost, formPost })
+    expect(step).toMatchObject({ kind: GatewaySessionKind.BrowserStep, redirectUrl: 'https://bank.example/step' })
+  })
+
+  it('refuses a form post whose action the browser must not follow', async () => {
+    const formPost = { action: 'javascript:alert(1)', fields: [] }
+    table[START_ROUTE] = { body: { redirectUrl: 'https://bank.example/pay', kind: GatewaySessionKind.FormPost, formPost } }
+    const store = useInvoicePaymentStore()
+
+    const start = await store.startGatewayPayment('7', 'gw', 'https://app.example/result')
+
+    expect(start).toBeNull()
+    expect(store.submitting).toBe(false)
   })
 
   it('returns null, keeps the sentence and releases the flag on failure', async () => {
@@ -197,7 +222,7 @@ describe('useInvoicePaymentStore.verifyGatewayPayment', () => {
 
     expect(state).toBe(word)
     expect(requestsTo(stub.requests, COMPLETE_ORDER_PATH)).toHaveLength(1)
-    expect(bodyOf(requestsTo(stub.requests, COMPLETE_ORDER_PATH)[0])).toEqual({ paymentToken: 'tok' })
+    expect(bodyOf(requestsTo(stub.requests, COMPLETE_ORDER_PATH)[0])).toEqual({ paymentToken: 'tok', returnParameters: [] })
   })
 
   it('keeps the order number the backend answered with', async () => {
@@ -215,6 +240,16 @@ describe('useInvoicePaymentStore.verifyGatewayPayment', () => {
     const state = await useInvoicePaymentStore().verifyGatewayPayment(PaymentTarget.Invoice, '7')
 
     expect(state).toBe(GatewayPaymentState.Unknown)
+  })
+
+  it('sends what the gateway returned the payer with, for the plugin to complete the payment', async () => {
+    table[COMPLETE_INVOICE_ROUTE] = { body: { state: GatewayPaymentState.Paid } }
+    const returned = [{ name: 'nonce', value: 'n1' }, { name: 'nonce', value: 'n2' }]
+
+    const state = await useInvoicePaymentStore().verifyGatewayPayment(PaymentTarget.Invoice, '7', undefined, returned)
+
+    expect(state).toBe(GatewayPaymentState.Paid)
+    expect(bodyOf(requestsTo(stub.requests, '/api/portal/client/invoices/7/gateway-payment/complete')[0])).toEqual({ returnParameters: returned })
   })
 })
 

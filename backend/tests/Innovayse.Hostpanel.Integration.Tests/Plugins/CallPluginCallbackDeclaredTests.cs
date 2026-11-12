@@ -8,6 +8,7 @@ using Innovayse.Hostpanel.Application.Common.Settings;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Innovayse.Hostpanel.Infrastructure.Plugins;
 using Innovayse.Hostpanel.Integration.Tests.Adapters.Plugins;
+using Innovayse.Hostpanel.Shared.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,6 +26,9 @@ public sealed class CallPluginCallbackDeclaredTests : IAsyncLifetime
 {
     /// <summary>The body cap of the host under test.</summary>
     private const int MaxBodyBytes = 64;
+
+    /// <summary>The one origin of the test plugins' manifests that a page may reach; the other two entries are not exact https origins.</summary>
+    private const string GatewayOrigin = "https://js.gateway.example";
 
     /// <summary>The database and the host.</summary>
     private readonly IntegrationTestFactory _factory = new();
@@ -102,6 +106,7 @@ public sealed class CallPluginCallbackDeclaredTests : IAsyncLifetime
             Type = type,
             Category = loaded.Manifest.Category,
             Capabilities = capabilities ?? [],
+            ExternalOrigins = [GatewayOrigin, "https://*.wildcard.example", "http://plain.example"],
             EntryPoint = loaded.Manifest.EntryPoint,
             SdkVersion = loaded.Manifest.SdkVersion,
             Api = new PluginApi
@@ -302,7 +307,7 @@ public sealed class CallPluginCallbackDeclaredTests : IAsyncLifetime
         (await response.Content.ReadAsStringAsync()).Should().Be("[accepted]");
     }
 
-    /// <summary>A raw reply of an allowed media type is written; one outside the list is a plugin fault, so a callback cannot serve markup or script.</summary>
+    /// <summary>A raw reply of an allowed media type, or an HTML page, is written; one outside the list is a plugin fault, so a callback cannot serve script or other markup.</summary>
     /// <param name="mediaType">The media type the plugin chose.</param>
     /// <param name="allowed">Whether the host writes it.</param>
     /// <returns>A task that completes when the assertions have run.</returns>
@@ -311,7 +316,7 @@ public sealed class CallPluginCallbackDeclaredTests : IAsyncLifetime
     [InlineData("application/json; charset=utf-8", true)]
     [InlineData("APPLICATION/XML", true)]
     [InlineData("application/x-www-form-urlencoded", true)]
-    [InlineData("text/html", false)]
+    [InlineData("text/html; charset=utf-8", true)]
     [InlineData("image/svg+xml", false)]
     [InlineData("application/javascript", false)]
     [InlineData("application/octet-stream", false)]
@@ -327,6 +332,46 @@ public sealed class CallPluginCallbackDeclaredTests : IAsyncLifetime
         {
             (await response.Content.ReadAsStringAsync()).Should().Contain(HostpanelErrorCodes.PLUGIN_FAILED);
         }
+    }
+
+    /// <summary>
+    /// An HTML page a callback answers is written as the plugin chose it, under a strict policy built from the exact https
+    /// origins its manifest declares: nothing loads or connects anywhere else, the page cannot be framed, it has no base
+    /// address and runs sandboxed without this application's origin, and it is never cached and sends no referrer.
+    /// </summary>
+    /// <returns>A task that completes when the assertions have run.</returns>
+    [Fact]
+    public async Task AnHtmlReply_IsWrittenAsAPage_UnderAStrictPolicyOfTheDeclaredOrigins()
+    {
+        const string page = "<!doctype html><title>Pay</title><p>Pay</p>";
+        _probe.Behaviour = _ => PluginReply.Raw(200, Encoding.UTF8.GetBytes(page), "text/html; charset=utf-8");
+        using var http = _host.CreateClient();
+
+        using var posted = await http.PostAsync($"/api/plugins/{_pluginId}/callback/pay/o-7", new StringContent("{}"));
+
+        posted.StatusCode.Should().Be(HttpStatusCode.OK);
+        posted.Content.Headers.ContentType!.ToString().Should().Be("text/html; charset=utf-8");
+        (await posted.Content.ReadAsStringAsync()).Should().Be(page);
+        posted.Headers.GetValues("X-Content-Type-Options").Should().Equal("nosniff");
+        posted.Headers.CacheControl!.NoStore.Should().BeTrue();
+        posted.Headers.GetValues("Referrer-Policy").Should().Equal("no-referrer");
+        var policy = posted.Headers.GetValues("Content-Security-Policy").Single();
+        policy.Should().Be(RawReplyResult.PagePolicy([GatewayOrigin]));
+        policy.Should().Contain("default-src 'none'").And.Contain($"script-src 'unsafe-inline' {GatewayOrigin};")
+            .And.Contain($"connect-src {GatewayOrigin};").And.Contain("base-uri 'none'").And.Contain("frame-ancestors 'none'")
+            .And.Contain("sandbox allow-scripts allow-forms");
+        policy.Should().NotContain("wildcard").And.NotContain("plain.example").And.NotContain("'self'").And.NotContain("*");
+    }
+
+    /// <summary>A page whose plugin declares no origin may reach none: every source directive that lists origins says <c>'none'</c>.</summary>
+    [Fact]
+    public void APagePolicy_WithNoOrigins_AllowsNoOrigin()
+    {
+        var policy = RawReplyResult.PagePolicy([]);
+
+        policy.Should().Contain("connect-src 'none'").And.Contain("frame-src 'none'").And.Contain("form-action 'none'")
+            .And.Contain("font-src 'none'").And.Contain("script-src 'unsafe-inline';").And.Contain("img-src data:;");
+        policy.Should().NotContain("https:");
     }
 
     /// <summary>A raw reply with an empty body and a refusing status answers that status with no body.</summary>

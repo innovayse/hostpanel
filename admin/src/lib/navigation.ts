@@ -183,11 +183,21 @@ export const NAV_SECTIONS: readonly NavSection[] = [
         icon: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12',
       },
       {
+        to: AppRoute.Fraud, labelKey: 'nav.fraud',
+        icon: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z',
+        children: [
+          { to: AppRoute.FraudSettings, labelKey: 'nav.fraudChildren.settings' },
+          { to: AppRoute.FraudBlockLists, labelKey: 'nav.fraudChildren.blockLists' },
+          { to: AppRoute.FraudLog, labelKey: 'nav.fraudChildren.log' },
+        ],
+      },
+      {
         to: AppRoute.Settings, labelKey: 'nav.settings',
         icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z',
         children: [
           { to: AppRoute.Settings, labelKey: 'nav.settingsChildren.general' },
           { to: AppRoute.SettingsProducts, labelKey: 'nav.settingsChildren.products' },
+          { to: AppRoute.SettingsProductBundles, labelKey: 'nav.settingsChildren.productBundles' },
           { to: AppRoute.SettingsTldPricing, labelKey: 'nav.settingsChildren.tldPricing' },
           { to: AppRoute.SettingsSlides, labelKey: 'nav.settingsChildren.slides' },
           { to: AppRoute.SettingsEmailTemplates, labelKey: 'nav.settingsChildren.emailTemplates' },

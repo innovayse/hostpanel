@@ -16,6 +16,8 @@ import { queryOf, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
+import { FAILED_READ_REQUESTS } from '~/tests/helpers/failedRead'
+import { settle } from '~/tests/helpers/settle'
 import { waitUntil } from '~/tests/helpers/waitUntil'
 
 /** The BFF path that answers the credit balance and its history. */
@@ -30,14 +32,12 @@ let table: StubRouteTable
 /**
  * Mounts the widget and waits until the credit it reads on appearing has been handled.
  *
- * The transport asks once more after a server failure, so the number of requests is not fixed here;
- * the first test asserts the request of a read that succeeded.
- *
+ * @param requests - How many credit requests the read makes before it ends: one, or {@link FAILED_READ_REQUESTS} for a failing server.
  * @returns The wrapper.
  */
-const mountCard = async () => {
+const mountCard = async (requests = 1) => {
   const wrapper = mountClient(CreditCard)
-  await waitUntil(() => expect(requestsTo(stub.requests, CREDIT_PATH).length).toBeGreaterThan(0))
+  await waitUntil(() => expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(requests))
   await waitUntil(() => expect(useCreditStore().loading).toBe(false))
   await wrapper.vm.$nextTick()
   return wrapper
@@ -75,8 +75,17 @@ describe('ClientDashboardCreditCard', () => {
   it('shows nothing when the credit cannot be read', async () => {
     table[`GET ${CREDIT_PATH}`] = { status: 500, body: { detail: 'down' } }
 
-    const wrapper = await mountCard()
+    const wrapper = await mountCard(FAILED_READ_REQUESTS)
 
     expect(wrapper.find('[data-testid="credit-balance-card"]').exists()).toBe(false)
+  })
+
+  it('asks for the credit once more after a server failure, and no more', async () => {
+    table[`GET ${CREDIT_PATH}`] = { status: 500, body: { detail: 'down' } }
+
+    await mountCard(FAILED_READ_REQUESTS)
+    await settle()
+
+    expect(requestsTo(stub.requests, CREDIT_PATH)).toHaveLength(FAILED_READ_REQUESTS)
   })
 })

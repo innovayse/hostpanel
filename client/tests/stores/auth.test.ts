@@ -14,7 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { AccountEndpoint } from '~/tests/helpers/accountPaths'
 import { bodyOf } from '~/tests/helpers/requestBody'
-import { readOf, refusal, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
+import { readOf, refusal, requestsTo, routeTable, writeOf } from '~/tests/helpers/stubRoutes'
 import type { StubRouteTable } from '~/tests/helpers/stubRoutes'
 import type { StubReply, StubServer } from '~/tests/helpers/stubServer'
 import { startTransport } from '~/tests/helpers/stubTransport'
@@ -47,19 +47,11 @@ let stub: StubServer
 /** The replies the stub gives, by `METHOD /path`; each test fills the ones it needs. */
 let table: StubRouteTable
 
-/**
- * The key of a write in a stub route table.
- *
- * @param path - The path of the write.
- * @returns The `POST` key for the route table.
- */
-const postOf = (path: string): string => `${HttpMethod.Post} ${path}`
-
 /** The key of the sign-in write. */
-const LOGIN = postOf(AccountEndpoint.Login)
+const LOGIN = writeOf(AccountEndpoint.Login)
 
 /** The key of the sign-out write. */
-const LOGOUT = postOf(AccountEndpoint.Logout)
+const LOGOUT = writeOf(AccountEndpoint.Logout)
 
 /**
  * The reply of a backend that refuses a form with a sentence and per-field messages.
@@ -73,10 +65,15 @@ const fieldRefusal = (detail: string, errors: Record<string, string[]>): StubRep
   body: { type: 'VALIDATION_ERROR', detail, errors }
 })
 
+/** Spy standing in for the auto-imported navigation helper. */
+const navigate = vi.fn()
+
 beforeEach(async () => {
   setActivePinia(createPinia())
   table = { [LOGOUT]: { body: {} } }
   stub = await startTransport(routeTable(table))
+  navigate.mockReset()
+  vi.stubGlobal('navigateTo', navigate)
 })
 
 afterEach(async () => {
@@ -148,7 +145,7 @@ describe('useAuthStore.signIn', () => {
 
   it('finishes a second-factor sign-in with the open challenge and the typed code', async () => {
     table[LOGIN] = { body: { twoFactorRequired: true, pendingToken: 't' } }
-    table[postOf(AuthPath.TwoFactorLogin)] = { body: { id: 7 } }
+    table[writeOf(AuthPath.TwoFactorLogin)] = { body: { id: 7 } }
     const store = useAuthStore()
     await store.signIn('ada@example.com', 'pw')
 
@@ -164,7 +161,7 @@ describe('useAuthStore.signIn', () => {
 
   it('keeps the challenge open and shows the sentence when the code is refused', async () => {
     table[LOGIN] = { body: { twoFactorRequired: true, pendingToken: 't' } }
-    table[postOf(AuthPath.TwoFactorLogin)] = refusal('Invalid code.')
+    table[writeOf(AuthPath.TwoFactorLogin)] = refusal('Invalid code.')
     const store = useAuthStore()
     await store.signIn('ada@example.com', 'pw')
 
@@ -207,11 +204,11 @@ describe('useAuthStore.confirmEmail', () => {
 
     expect(status).toBe(EmailConfirmationStatus.Failed)
     expect(store.confirmError).not.toBe('')
-    expect(requestsTo(stub.requests, AuthPath.ConfirmEmail)).toHaveLength(0)
+    expect(stub.requests).toEqual([])
   })
 
   it('reports Confirmed when the API accepts the link', async () => {
-    table[postOf(AuthPath.ConfirmEmail)] = { body: {} }
+    table[writeOf(AuthPath.ConfirmEmail)] = { body: {} }
     const store = useAuthStore()
 
     const status = await store.confirmEmail('ada@example.com', 'tok')
@@ -225,7 +222,7 @@ describe('useAuthStore.confirmEmail', () => {
   })
 
   it('keeps the API sentence and reports Failed when the link is refused', async () => {
-    table[postOf(AuthPath.ConfirmEmail)] = refusal('Link expired.')
+    table[writeOf(AuthPath.ConfirmEmail)] = refusal('Link expired.')
     const store = useAuthStore()
 
     const status = await store.confirmEmail('ada@example.com', 'tok')
@@ -255,7 +252,7 @@ describe('useAuthStore email verification', () => {
   })
 
   it('reports Succeeded and a local sentence when the mail is sent', async () => {
-    table[postOf(AuthPath.ResendVerification)] = { body: {} }
+    table[writeOf(AuthPath.ResendVerification)] = { body: {} }
     const store = useAuthStore()
 
     const outcome = await store.resendVerification()
@@ -267,7 +264,7 @@ describe('useAuthStore email verification', () => {
   })
 
   it('keeps the API sentence and reports Failed when the resend is refused', async () => {
-    table[postOf(AuthPath.ResendVerification)] = refusal('Too many requests.')
+    table[writeOf(AuthPath.ResendVerification)] = refusal('Too many requests.')
     const store = useAuthStore()
 
     const outcome = await store.resendVerification()
@@ -279,7 +276,7 @@ describe('useAuthStore email verification', () => {
 
 describe('useAuthStore.requestPasswordReset', () => {
   it('reports Succeeded and leaves no error', async () => {
-    table[postOf(AuthPath.ForgotPassword)] = { body: {} }
+    table[writeOf(AuthPath.ForgotPassword)] = { body: {} }
     const store = useAuthStore()
 
     const outcome = await store.requestPasswordReset('ada@example.com')
@@ -293,7 +290,7 @@ describe('useAuthStore.requestPasswordReset', () => {
   })
 
   it('keeps the API sentence and reports Failed when the request is refused', async () => {
-    table[postOf(AuthPath.ForgotPassword)] = refusal('Too many requests.')
+    table[writeOf(AuthPath.ForgotPassword)] = refusal('Too many requests.')
     const store = useAuthStore()
 
     const outcome = await store.requestPasswordReset('ada@example.com')
@@ -306,7 +303,7 @@ describe('useAuthStore.requestPasswordReset', () => {
 
 describe('useAuthStore.acceptInvite', () => {
   it('reports Accepted when the API accepts the token', async () => {
-    table[postOf(AuthPath.AcceptInvite)] = { body: {} }
+    table[writeOf(AuthPath.AcceptInvite)] = { body: {} }
     const store = useAuthStore()
 
     const outcome = await store.acceptInvite('tok')
@@ -320,7 +317,7 @@ describe('useAuthStore.acceptInvite', () => {
   })
 
   it('reports SignInRequired when the refusal carries the sign-in-required code', async () => {
-    table[postOf(AuthPath.AcceptInvite)] = { status: 403, body: { type: 'INVITE_SIGN_IN_REQUIRED' } }
+    table[writeOf(AuthPath.AcceptInvite)] = { status: 403, body: { type: 'INVITE_SIGN_IN_REQUIRED' } }
     const store = useAuthStore()
 
     const outcome = await store.acceptInvite('tok')
@@ -330,7 +327,7 @@ describe('useAuthStore.acceptInvite', () => {
   })
 
   it('keeps the API sentence and reports Failed for any other refusal', async () => {
-    table[postOf(AuthPath.AcceptInvite)] = { status: 410, body: { type: 'INVITE_EXPIRED', detail: 'Invitation expired.' } }
+    table[writeOf(AuthPath.AcceptInvite)] = { status: 410, body: { type: 'INVITE_EXPIRED', detail: 'Invitation expired.' } }
     const store = useAuthStore()
 
     const outcome = await store.acceptInvite('tok')
@@ -340,7 +337,7 @@ describe('useAuthStore.acceptInvite', () => {
   })
 
   it('forgets the last outcome and sentence on clearInvite', async () => {
-    table[postOf(AuthPath.AcceptInvite)] = { status: 403, body: { type: 'INVITE_SIGN_IN_REQUIRED', detail: 'Sign in first.' } }
+    table[writeOf(AuthPath.AcceptInvite)] = { status: 403, body: { type: 'INVITE_SIGN_IN_REQUIRED', detail: 'Sign in first.' } }
     const store = useAuthStore()
     await store.acceptInvite('tok')
 
@@ -353,7 +350,7 @@ describe('useAuthStore.acceptInvite', () => {
 
 describe('useAuthStore.register', () => {
   it('reports Succeeded and leaves no error', async () => {
-    table[postOf(AuthPath.Register)] = { body: {} }
+    table[writeOf(AuthPath.Register)] = { body: {} }
     const store = useAuthStore()
     const payload = { firstname: 'A', lastname: 'B', email: 'a@b.c', password: 'pw' }
 
@@ -368,7 +365,7 @@ describe('useAuthStore.register', () => {
   })
 
   it('keeps the API sentence and the field messages when the registration is refused', async () => {
-    table[postOf(AuthPath.Register)] = fieldRefusal('Fix the form.', { email: ['Email is taken.'] })
+    table[writeOf(AuthPath.Register)] = fieldRefusal('Fix the form.', { email: ['Email is taken.'] })
     const store = useAuthStore()
 
     const outcome = await store.register({ firstname: 'A', lastname: 'B', email: 'a@b.c', password: 'pw' })
@@ -380,12 +377,12 @@ describe('useAuthStore.register', () => {
   })
 
   it('clears the previous refusal when the next attempt starts', async () => {
-    table[postOf(AuthPath.Register)] = refusal('No.')
+    table[writeOf(AuthPath.Register)] = refusal('No.')
     const store = useAuthStore()
 
     await store.register({ firstname: 'A', lastname: 'B', email: 'a@b.c', password: 'pw' })
     expect(store.registerError).toBe('No.')
-    table[postOf(AuthPath.Register)] = { body: {} }
+    table[writeOf(AuthPath.Register)] = { body: {} }
     await store.register({ firstname: 'A', lastname: 'B', email: 'a@b.c', password: 'pw' })
 
     expect(store.registerError).toBe('')
@@ -395,7 +392,7 @@ describe('useAuthStore.register', () => {
 
 describe('useAuthStore.resetPassword', () => {
   it('sends the link values and the new password, and reports Succeeded', async () => {
-    table[postOf(AuthPath.ResetPassword)] = { body: {} }
+    table[writeOf(AuthPath.ResetPassword)] = { body: {} }
     const store = useAuthStore()
 
     const outcome = await store.resetPassword('a@b.c', 'tok', 'newpass123')
@@ -409,7 +406,7 @@ describe('useAuthStore.resetPassword', () => {
   })
 
   it('keeps the API sentence and the field messages when the reset is refused', async () => {
-    table[postOf(AuthPath.ResetPassword)] = fieldRefusal('Weak.', { newPassword: ['Too short.'] })
+    table[writeOf(AuthPath.ResetPassword)] = fieldRefusal('Weak.', { newPassword: ['Too short.'] })
     const store = useAuthStore()
 
     const outcome = await store.resetPassword('a@b.c', 'tok', 'x')
@@ -422,14 +419,6 @@ describe('useAuthStore.resetPassword', () => {
 })
 
 describe('useAuthStore.signOut', () => {
-  /** Spy standing in for the auto-imported navigation helper. */
-  const navigate = vi.fn()
-
-  beforeEach(() => {
-    navigate.mockReset()
-    vi.stubGlobal('navigateTo', navigate)
-  })
-
   it('leaves through the local sign-in page under SSO when no SSO address is configured', async () => {
     vi.stubGlobal('useRuntimeConfig', () => ({ public: { authMode: 'sso', ssoPublicUrl: '' } }))
     const store = useAuthStore()
@@ -514,6 +503,7 @@ describe('useAuthStore.endLocalSession', () => {
     const cleared = requestsTo(stub.requests, AccountEndpoint.Logout)
     expect(cleared.map(request => request.method)).toEqual([HttpMethod.Post])
     expect(store.user).toBeNull()
+    expect(navigate).not.toHaveBeenCalled()
   })
 
   it('forgets the plugin menu and page of the person whose session ended', async () => {

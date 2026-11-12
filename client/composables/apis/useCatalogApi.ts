@@ -10,6 +10,7 @@
  */
 
 import { apiFetch } from '~/composables/useApi'
+import type { CatalogBundle } from '~/types/catalogbundle'
 import type { CountryOption } from '~/types/countryoption'
 import type { DomainCheckResult } from '~/types/domaincheckresult'
 import type { PortalCurrency } from '~/types/portalcurrency'
@@ -64,6 +65,15 @@ export const useCatalogApi = () => {
    */
   const fetchProductGroups = (): Promise<PortalProductGroup[]> =>
     read<PortalProductGroup[]>('/api/portal/public/product-groups')
+
+  /**
+   * Reads the active product bundles the storefront offers.
+   *
+   * @returns The bundles.
+   * @throws Whatever `apiFetch` throws.
+   */
+  const fetchProductBundles = (): Promise<CatalogBundle[]> =>
+    read<CatalogBundle[]>('/api/portal/public/product-bundles')
 
   /**
    * Reads the specification lines behind the plan comparison table.
@@ -133,6 +143,7 @@ export const useCatalogApi = () => {
   return {
     fetchProducts,
     fetchProductGroups,
+    fetchProductBundles,
     fetchProductFeatures,
     fetchCurrencies,
     fetchCountries,

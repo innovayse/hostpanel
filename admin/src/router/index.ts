@@ -179,6 +179,10 @@ const router = createRouter({
         { path: 'apps/:plugin/:page*', component: lazy('views/PluginPageView.vue') },
         { path: 'servers', component: lazy('views/ServersView.vue') },
         { path: 'integrations/:slug/configure', component: lazy('views/IntegrationDetailView.vue') },
+        { path: 'fraud', redirect: AppRoute.FraudSettings },
+        { path: 'fraud/settings', component: lazy('views/FraudSettingsView.vue') },
+        { path: 'fraud/block-lists', component: lazy('views/FraudBlockListsView.vue') },
+        { path: 'fraud/log', component: lazy('views/FraudLogView.vue') },
         { path: 'migration', component: lazy('views/MigrationView.vue') },
         {
           path: 'integrations',
@@ -191,6 +195,7 @@ const router = createRouter({
         { path: 'settings', component: lazy('views/SystemSettingsView.vue') },
         { path: 'settings/email-templates', component: lazy('views/EmailTemplatesView.vue') },
         { path: 'settings/products', component: lazy('views/ProductsView.vue') },
+        { path: 'settings/product-bundles', component: lazy('views/ProductBundlesView.vue') },
         { path: 'settings/slides', component: lazy('views/SlidesView.vue') },
         { path: 'settings/slides/create', component: lazy('views/SlideFormView.vue') },
         { path: 'settings/slides/:id/edit', component: lazy('views/SlideFormView.vue') },

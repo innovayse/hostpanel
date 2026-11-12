@@ -9,7 +9,7 @@ import DomainRenewPanel from '~/components/client/domains/DomainRenewPanel.vue'
 import type { DomainDetail } from '~/types/domaindetail'
 import { DomainStatus } from '~/types/domainstatus'
 import { HttpMethod } from '~/types/httpmethod'
-import { AccountEndpoint } from '~/tests/helpers/accountPaths'
+import { BillingEndpoint } from '~/tests/helpers/billingPaths'
 import { DOMAIN_ID, DomainAction, domainPath } from '~/tests/helpers/domainPanelPaths'
 import { bodyOf } from '~/tests/helpers/requestBody'
 import { readOf, refusal, requestsTo, routeTable } from '~/tests/helpers/stubRoutes'
@@ -52,7 +52,7 @@ const mountPanel = async (overrides: Partial<DomainDetail> = {}) => {
 
 describe('DomainRenewPanel', () => {
   beforeEach(async () => {
-    table = { [readOf(AccountEndpoint.PaymentMethods)]: { body: [card] } }
+    table = { [readOf(BillingEndpoint.OrderPaymentMethods)]: { body: [card] } }
     stub = await startTransport(routeTable(table))
   })
 

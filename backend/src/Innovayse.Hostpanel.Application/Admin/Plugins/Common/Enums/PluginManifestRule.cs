@@ -164,4 +164,7 @@ public enum PluginManifestRule
 
     /// <summary>The <c>changelog</c> is longer than the SDK allows.</summary>
     ChangelogTooLong = 40,
+
+    /// <summary>The <c>serverAccountIdLabel</c> is empty, longer than the SDK allows or holds a control character.</summary>
+    AccountIdLabelInvalid = 41,
 }

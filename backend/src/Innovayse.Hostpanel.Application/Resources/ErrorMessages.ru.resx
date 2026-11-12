@@ -315,6 +315,18 @@
 <data name="ORDER_DOMAIN_PRICING_INVALID" xml:space="preserve">
     <value>Не удалось рассчитать цену для этого домена. Проверьте имя и попробуйте снова.</value>
   </data>
+  <data name="ORDER_BUNDLE_ITEMS_MISMATCH" xml:space="preserve">
+    <value>Продукты в заказе не совпадают с набором. Закажите каждый продукт набора один раз и ничего лишнего.</value>
+  </data>
+  <data name="ORDER_BUNDLE_DOMAIN_MISMATCH" xml:space="preserve">
+    <value>Если набор включает домен, нужна ровно одна строка домена, а если не включает, строки домена быть не должно.</value>
+  </data>
+  <data name="ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED" xml:space="preserve">
+    <value>В набор можно включить регистрацию или перенос домена, но не продление.</value>
+  </data>
+  <data name="ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE" xml:space="preserve">
+    <value>Валюта скидки этого набора недоступна, поэтому заказать набор нельзя.</value>
+  </data>
 <data name="DEPARTMENT_NOT_FOUND" xml:space="preserve">
     <value>Такой отдел поддержки не найден.</value>
   </data>
@@ -419,6 +431,9 @@
   </data>
   <data name="PRODUCT_BUNDLE_NOT_FOUND" xml:space="preserve">
     <value>Такого набора продуктов нет.</value>
+  </data>
+  <data name="PRODUCT_BUNDLE_NOT_AVAILABLE" xml:space="preserve">
+    <value>Этот набор недоступен для заказа.</value>
   </data>
   <data name="PRODUCT_BUNDLE_PRODUCT_NOT_FOUND" xml:space="preserve">
     <value>Один из продуктов набора не существует.</value>
@@ -596,6 +611,9 @@
   </data>
 <data name="PLUGIN_MANIFEST_CHANGELOG_TOO_LONG" xml:space="preserve">
     <value>Список изменений в манифесте слишком длинный: не более 4000 символов.</value>
+  </data>
+<data name="PLUGIN_MANIFEST_ACCOUNT_ID_LABEL_INVALID" xml:space="preserve">
+    <value>Подпись поля идентификатора аккаунта сервера в манифесте должна содержать от 1 до 60 символов без управляющих символов.</value>
   </data>
 <data name="PLUGIN_VIEW_MISSING" xml:space="preserve">
     <value>Этот плагин ссылается на документ представления, которого нет в его пакете.</value>
@@ -1473,5 +1491,23 @@
   </data>
   <data name="TAX_RULE_RATE_INVALID" xml:space="preserve">
     <value>Налоговая ставка должна быть от 0 до 100 процентов.</value>
+  </data>
+  <data name="ORDER_NOT_UNDER_REVIEW" xml:space="preserve">
+    <value>Этот заказ не ожидает проверки на мошенничество.</value>
+  </data>
+  <data name="ORDER_FRAUD_REJECTED" xml:space="preserve">
+    <value>Мы не смогли принять этот заказ. Если вы считаете, что это ошибка, свяжитесь с поддержкой.</value>
+  </data>
+  <data name="REGISTRATION_FRAUD_REJECTED" xml:space="preserve">
+    <value>Мы не смогли создать эту учётную запись. Если вы считаете, что это ошибка, свяжитесь с поддержкой.</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_VALUE_INVALID" xml:space="preserve">
+    <value>Значение не подходит к выбранному типу чёрного списка.</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_ENTRY_EXISTS" xml:space="preserve">
+    <value>Это значение уже есть в чёрном списке.</value>
+  </data>
+  <data name="FRAUD_BLOCKLIST_ENTRY_NOT_FOUND" xml:space="preserve">
+    <value>Запись чёрного списка не найдена.</value>
   </data>
 </root>

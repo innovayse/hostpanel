@@ -1,10 +1,12 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Orders.Commands.AcceptOrder;
+using Innovayse.Hostpanel.Application.Orders.Commands.ApproveOrderReview;
 using Innovayse.Hostpanel.Application.Orders.Commands.CancelOrder;
 using Innovayse.Hostpanel.Application.Orders.Commands.CloseOrderLineRefund;
 using Innovayse.Hostpanel.Application.Orders.Commands.CompleteOrderGatewayPayment;
 using Innovayse.Hostpanel.Application.Orders.Commands.DeleteOrder;
 using Innovayse.Hostpanel.Application.Orders.Commands.PlaceOrder;
+using Innovayse.Hostpanel.Application.Orders.Commands.RejectOrderReview;
 using Innovayse.Hostpanel.Application.Orders.Commands.RetryOrderLine;
 using Innovayse.Hostpanel.Application.Orders.Commands.StartOrderGatewayPayment;
 using Innovayse.Hostpanel.Application.Orders.Common;
@@ -57,17 +59,22 @@ public sealed class OrdersController : BaseApiController
     /// the checkout IP is read there too. Neither is on the command, so this action binds the
     /// items and dispatches: there is nothing left here to get wrong.
     /// </remarks>
-    /// <param name="command">The items, payment method and, for a guest, registration details.</param>
+    /// <param name="command">
+    /// The items, payment method and, for a guest, registration details; <c>bundleId</c> places the order from a product bundle.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 201 with the new order's id and number, its invoice id and its payment token; 400 with
     /// <c>VALIDATION_ERROR</c>, <c>ORDER_PAYMENT_METHOD_UNAVAILABLE</c>,
     /// <c>ORDER_CURRENCY_UNAVAILABLE</c>, <c>ORDER_GUEST_DETAILS_REQUIRED</c>,
     /// <c>PRODUCT_NOT_AVAILABLE</c>, <c>ORDER_PRODUCT_PRICE_UNAVAILABLE</c>,
-    /// <c>ORDER_DOMAIN_PRICING_INVALID</c> or <c>USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT</c>;
+    /// <c>ORDER_DOMAIN_PRICING_INVALID</c>, <c>PRODUCT_BUNDLE_NOT_AVAILABLE</c>, <c>ORDER_BUNDLE_ITEMS_MISMATCH</c>,
+    /// <c>ORDER_BUNDLE_DOMAIN_MISMATCH</c>, <c>ORDER_BUNDLE_DOMAIN_ACTION_NOT_ALLOWED</c>,
+    /// <c>ORDER_BUNDLE_DISCOUNT_CURRENCY_UNAVAILABLE</c> or
+    /// <c>USER_PROVISIONING_NOT_ALLOWED_CREATE_ACCOUNT</c>;
     /// 403 with <c>CLIENT_SUSPENDED</c> or <c>CLIENT_CLOSED</c> when the signed-in caller's account may not order, or
     /// <c>CLIENT_PERMISSION_DENIED</c> when they lack the ordering permission or the enabled identity plugin refuses them;
-    /// 404 with <c>PRODUCT_NOT_FOUND</c>, or <c>DOMAIN_NOT_FOUND</c> when a renewal names a domain
+    /// 404 with <c>PRODUCT_NOT_FOUND</c>, <c>PRODUCT_BUNDLE_NOT_FOUND</c>, or <c>DOMAIN_NOT_FOUND</c> when a renewal names a domain
     /// the client does not hold; 409 with <c>ACCOUNT_EMAIL_EXISTS</c> when a guest's address already
     /// has an account; 429 when the rate limit is hit; 500 on an unexpected fault (the invoice of an
     /// order that failed to save is cancelled); 503 with <c>ORDER_NUMBER_RANGE_EXHAUSTED</c>, or with
@@ -235,6 +242,56 @@ public sealed class OrdersController : BaseApiController
         return HandleResult(outcome);
     }
 
+    /// <summary>
+    /// Approves an order that fraud detection held for review: it returns to pending and is accepted and fulfilled the ordinary
+    /// way, at once when its invoice was already paid while it waited.
+    /// </summary>
+    /// <param name="id">Order primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when approved; 400 with <c>VALIDATION_ERROR</c> for a non-positive id; 401 without a session; 403 for a non-admin; 404 with
+    /// <c>ORDER_NOT_FOUND</c> when the id names no order; 409 with <c>ORDER_NOT_UNDER_REVIEW</c> when the order is not held for review;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/approve-review")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ApproveReviewAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new ApproveOrderReviewCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Rejects an order that fraud detection held for review; its open invoice is cancelled and the client is mailed the reason.</summary>
+    /// <param name="id">Order primary key; wins over any order id in the body.</param>
+    /// <param name="command">The reason the client is told.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when rejected; 400 with <c>VALIDATION_ERROR</c> for a non-positive id or a missing or too long reason, or
+    /// <c>INVOICE_CANCEL_NOT_ALLOWED</c> / <c>INVOICE_HAS_PAYMENTS</c> when its invoice already took money and cannot be cancelled;
+    /// 401 without a session; 403 for a non-admin; 404 with <c>ORDER_NOT_FOUND</c> when the id names no order; 409 with
+    /// <c>ORDER_NOT_UNDER_REVIEW</c> when the order is not held for review;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/reject-review")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RejectReviewAsync(int id, [FromBody] RejectOrderReviewCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command with { OrderId = id }, ct);
+        return HandleResult(outcome);
+    }
+
     /// <summary>Permanently deletes a pending or cancelled order.</summary>
     /// <param name="id">Order primary key.</param>
     /// <param name="ct">Cancellation token.</param>
@@ -312,13 +369,13 @@ public sealed class OrdersController : BaseApiController
     /// marks the invoice paid and fulfills the order.
     /// </summary>
     /// <param name="id">Order primary key; wins over any order id in the body.</param>
-    /// <param name="command">The order's payment token.</param>
+    /// <param name="command">The order's payment token and the request the payer came back from the gateway with.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 with the payment state (Paid, Pending or Declined) and the order's number; 400 with <c>VALIDATION_ERROR</c> or
     /// <c>ORDER_NOT_INVOICED</c>; 404 with <c>ORDER_NOT_FOUND</c> when the id and token do not match an
     /// order, <c>INVOICE_NOT_FOUND</c> or <c>GATEWAY_SESSION_NOT_FOUND</c>; 503 with
-    /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the payment module is not set up;
+    /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c> when the payment module is not set up, or <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c>;
     /// 429 when the rate limit is hit.
     /// </returns>
     [HttpPost("{id:int}/gateway-payment/complete")]

@@ -4,12 +4,15 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Domain.Domains.Enums;
+using Innovayse.Hostpanel.Domain.Fraud.Enums;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products;
 using Innovayse.Hostpanel.Domain.Products.Enums;
 using Innovayse.Hostpanel.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Fixtures;
@@ -89,6 +92,10 @@ public static class OrdersTestSeeds
         else if (status == OrderStatus.Active)
         {
             order.Accept(DateTimeOffset.UtcNow);
+        }
+        else if (status == OrderStatus.UnderReview)
+        {
+            order.HoldForReview(60, [FraudReasonCode.DisposableEmail]);
         }
 
         db.Orders.Add(order);
@@ -305,6 +312,63 @@ public static class OrdersTestSeeds
             "/api/admin/integrations/bank-transfer",
             new { isEnabled = true, config = new Dictionary<string, string> { ["iban"] = BankTransferTestSeeds.Iban } });
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.NoContent);
+    }
+
+    /// <summary>Seeds a USD-sold TLD and the AMD and USD rates, so the conversion is deterministic.</summary>
+    /// <param name="factory">The factory whose database to seed against.</param>
+    /// <param name="tld">The extension, without the dot.</param>
+    /// <param name="usdSellPrice">The one-year USD sell price of registration.</param>
+    /// <returns>The AMD amount the stored rates convert the USD price to.</returns>
+    public static async Task<decimal> SeedUsdTldAndRatesAsync(IntegrationTestFactory factory, string tld, decimal usdSellPrice)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var rows = await db.Currencies.ToListAsync();
+        var usd = rows.SingleOrDefault(c => c.Code == "USD");
+        if (usd is null)
+        {
+            usd = Currency.Create("USD", "840", "$", string.Empty, 2, 1m, isBase: !rows.Any(c => c.IsBase));
+            db.Currencies.Add(usd);
+        }
+
+        var amd = rows.SingleOrDefault(c => c.Code == "AMD");
+        if (amd is null)
+        {
+            amd = Currency.Create("AMD", "051", "֏", string.Empty, 2, 0.0026m, isBase: false);
+            db.Currencies.Add(amd);
+        }
+
+        var prices = new Dictionary<int, decimal> { [1] = usdSellPrice };
+        var config = TldConfig.Create(tld, RegistrarModule.NameAm, "USD", "USD", true, 1, ["test"]);
+        config.UpdateSellPrices(prices, prices, prices);
+        db.TldConfigs.Add(config);
+        await db.SaveChangesAsync();
+
+        // The pricing query keeps the enabled configs for minutes; drop them so this TLD is seen.
+        scope.ServiceProvider.GetRequiredService<IMemoryCache>().Remove("tld-pricing-configs");
+
+        return usd.ConvertTo(usdSellPrice, amd);
+    }
+
+    /// <summary>Seeds an active domain product, the line item a domain order points at.</summary>
+    /// <param name="factory">The factory whose database to seed against.</param>
+    /// <returns>The new product's primary key.</returns>
+    public static async Task<int> SeedDomainProductAsync(IntegrationTestFactory factory)
+    {
+        using var scope = factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        var group = ProductGroup.Create($"place-order-domain-{Guid.NewGuid():N}", null);
+        db.ProductGroups.Add(group);
+        await db.SaveChangesAsync();
+
+        var product = Product.Create(
+            group.Id, "Domain Registration", null, null, null, null, ProductType.Domain, 0m, 0m, TestMoments.Seeded);
+        db.Products.Add(product);
+        await db.SaveChangesAsync();
+
+        return product.Id;
     }
 
     /// <summary>Asserts the refusal carries the expected error code, which is what a client branches on.</summary>

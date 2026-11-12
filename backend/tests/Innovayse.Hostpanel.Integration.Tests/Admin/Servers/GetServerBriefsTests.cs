@@ -16,9 +16,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetServerBriefsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>A known server comes back with its name, host and address; an unknown id is left out.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -44,7 +41,7 @@ public sealed class GetServerBriefsTests(IntegrationTestFactory factory) : IClas
                 MonthlyCost: 0m,
                 Datacenter: null,
                 ServerStatusAddress: null,
-                NameServers: ServerNameServers.None), SeededAt);
+                NameServers: ServerNameServers.None), TestMoments.Seeded);
             context.Servers.Add(server);
             await context.SaveChangesAsync(CancellationToken.None);
             serverId = server.Id;

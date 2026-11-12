@@ -15,9 +15,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>Staff can list every support ticket.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -62,11 +59,11 @@ public sealed class ListTicketsTests(IntegrationTestFactory factory) : IClassFix
         using (var scope = factory.Services.CreateScope())
         {
             var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
-            var client = Client.Create($"user-{Guid.NewGuid():N}", "Grace", "Hopper", $"grace-{Guid.NewGuid():N}@example.test", SeededAt);
+            var client = Client.Create($"user-{Guid.NewGuid():N}", "Grace", "Hopper", $"grace-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
             context.Clients.Add(client);
             await context.SaveChangesAsync(CancellationToken.None);
             var departmentId = await SupportTestSeeds.SeedDepartmentAsync(context);
-            var ticket = Ticket.Create(client.Id, "Named requestor", "Hello", departmentId, TicketPriority.Medium, SeededAt);
+            var ticket = Ticket.Create(client.Id, "Named requestor", "Hello", departmentId, TicketPriority.Medium, TestMoments.Seeded);
             context.Tickets.Add(ticket);
             await context.SaveChangesAsync(CancellationToken.None);
             ticketId = ticket.Id;

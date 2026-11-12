@@ -23,9 +23,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin.Servers;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class SyncServerAccountCountsCronTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>Builds a host whose server-connection tester is <paramref name="tester"/>.</summary>
     /// <param name="tester">The fake tester the host should resolve instead of a real one.</param>
     /// <returns>The isolated host.</returns>
@@ -56,7 +53,7 @@ public sealed class SyncServerAccountCountsCronTests(IntegrationTestFactory fact
             MonthlyCost: 0m,
             Datacenter: null,
             ServerStatusAddress: null,
-            NameServers: ServerNameServers.None), SeededAt);
+            NameServers: ServerNameServers.None), TestMoments.Seeded);
         context.Servers.Add(server);
         await context.SaveChangesAsync(CancellationToken.None);
         return server;
@@ -129,7 +126,7 @@ public sealed class SyncServerAccountCountsCronTests(IntegrationTestFactory fact
         var poisonedId = 0;
         using var failingHost = FailingSaveHost.Create(
             factory,
-            new ManualTimeProvider(SeededAt),
+            new ManualTimeProvider(TestMoments.Seeded),
             tracker => tracker.Entries<Server>().Any(e => e.State == EntityState.Modified && e.Entity.Id == poisonedId));
         using var host = failingHost.WithWebHostBuilder(builder =>
             builder.ConfigureTestServices(services => services.AddSingleton<IServerConnectionTester>(tester)));

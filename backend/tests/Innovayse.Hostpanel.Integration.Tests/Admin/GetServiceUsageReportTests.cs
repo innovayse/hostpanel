@@ -18,9 +18,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Admin;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetServiceUsageReportTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>An admin reads the service-usage report.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -45,13 +42,13 @@ public sealed class GetServiceUsageReportTests(IntegrationTestFactory factory) :
             var group = ProductGroup.Create($"Group-{Guid.NewGuid():N}", null);
             context.ProductGroups.Add(group);
             await context.SaveChangesAsync(CancellationToken.None);
-            var product = Product.Create(group.Id, name, null, null, null, null, ProductType.SharedHosting, 5m, 50m, SeededAt);
-            var client = Client.Create($"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", SeededAt);
+            var product = Product.Create(group.Id, name, null, null, null, null, ProductType.SharedHosting, 5m, 50m, TestMoments.Seeded);
+            var client = Client.Create($"user-{Guid.NewGuid():N}", "Ada", "Lovelace", $"ada-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
             context.Products.Add(product);
             context.Clients.Add(client);
             await context.SaveChangesAsync(CancellationToken.None);
-            context.ClientServices.Add(ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, SeededAt));
-            context.ClientServices.Add(ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, SeededAt));
+            context.ClientServices.Add(ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, TestMoments.Seeded));
+            context.ClientServices.Add(ClientService.Create(client.Id, product.Id, BillingCycle.Monthly, TestMoments.Seeded));
             await context.SaveChangesAsync(CancellationToken.None);
         }
 

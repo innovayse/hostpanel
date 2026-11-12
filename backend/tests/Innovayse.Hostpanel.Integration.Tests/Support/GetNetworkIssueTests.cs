@@ -13,9 +13,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class GetNetworkIssueTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>An admin can read a network issue.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -28,7 +25,7 @@ public sealed class GetNetworkIssueTests(IntegrationTestFactory factory) : IClas
             type = "Server",
             server = "web-01",
             priority = nameof(NetworkIssuePriority.High),
-            startDate = SeededAt,
+            startDate = TestMoments.Seeded,
             description = "Something is down.",
         });
         var id = int.Parse((await createResponse.Content.ReadAsStringAsync()).Trim());

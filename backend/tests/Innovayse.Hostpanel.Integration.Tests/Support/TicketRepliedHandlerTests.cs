@@ -15,9 +15,6 @@ namespace Innovayse.Hostpanel.Integration.Tests.Support;
 /// <param name="factory">The shared API + PostgreSQL host.</param>
 public sealed class TicketRepliedHandlerTests(IntegrationTestFactory factory) : IClassFixture<IntegrationTestFactory>
 {
-    /// <summary>The fixed moment the seeded rows and the events are stamped with.</summary>
-    private static readonly DateTimeOffset SeededAt = new(2026, 3, 10, 12, 0, 0, TimeSpan.Zero);
-
     /// <summary>A staff reply notifies the client who owns the ticket.</summary>
     /// <returns>A task that completes when the test has run.</returns>
     [Fact]
@@ -30,11 +27,11 @@ public sealed class TicketRepliedHandlerTests(IntegrationTestFactory factory) : 
 
         var (client, email) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "ticket-notify", "Jane", "Doe");
         var departmentId = await SupportTestSeeds.SeedDepartmentAsync(context);
-        var ticket = Ticket.Create(client.Id, "Help", "Something's broken", departmentId, TicketPriority.Medium, SeededAt);
+        var ticket = Ticket.Create(client.Id, "Help", "Something's broken", departmentId, TicketPriority.Medium, TestMoments.Seeded);
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: true) { OccurredAt = SeededAt });
+        await scope.ServiceProvider.PublishAndWaitAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: true) { OccurredAt = TestMoments.Seeded });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(email, message.To);
@@ -57,11 +54,11 @@ public sealed class TicketRepliedHandlerTests(IntegrationTestFactory factory) : 
         const string subject = "Printer <b>offline</b> & jammed";
         var (client, _) = await EventHandlerTestHost.SeedIdentityClientAsync(scope.ServiceProvider, context, "ticket-notify", "Jane", "Doe");
         var departmentId = await SupportTestSeeds.SeedDepartmentAsync(context);
-        var ticket = Ticket.Create(client.Id, subject, "Something's broken", departmentId, TicketPriority.Medium, SeededAt);
+        var ticket = Ticket.Create(client.Id, subject, "Something's broken", departmentId, TicketPriority.Medium, TestMoments.Seeded);
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: true) { OccurredAt = SeededAt });
+        await scope.ServiceProvider.PublishAndWaitAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: true) { OccurredAt = TestMoments.Seeded });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Contains($"#{ticket.Id}: {subject}", message.Subject, StringComparison.Ordinal);
@@ -83,11 +80,11 @@ public sealed class TicketRepliedHandlerTests(IntegrationTestFactory factory) : 
         await context.SaveChangesAsync(CancellationToken.None);
 
         var clientId = await DomainsTestSeeds.SeedClientAsync(context);
-        var ticket = Ticket.Create(clientId, "Help", "Something's broken", department.Id, TicketPriority.Medium, SeededAt);
+        var ticket = Ticket.Create(clientId, "Help", "Something's broken", department.Id, TicketPriority.Medium, TestMoments.Seeded);
         context.Tickets.Add(ticket);
         await context.SaveChangesAsync(CancellationToken.None);
 
-        await scope.ServiceProvider.PublishAndWaitAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: false) { OccurredAt = SeededAt });
+        await scope.ServiceProvider.PublishAndWaitAsync(new TicketRepliedEvent(ticket.Id, IsStaffReply: false) { OccurredAt = TestMoments.Seeded });
 
         var message = Assert.Single(emailSender.Sent);
         Assert.Equal(departmentEmail, message.To);

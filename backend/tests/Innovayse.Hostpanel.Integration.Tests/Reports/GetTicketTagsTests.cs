@@ -27,7 +27,7 @@ public sealed class GetTicketTagsTests(IntegrationTestFactory factory) : IClassF
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             // A real department: a ticket's department is a foreign key.
             var departmentId = await SupportTestSeeds.SeedDepartmentAsync(db);
-            var ticket = Ticket.Create(clientId, "Subject", "Body", departmentId, TicketPriority.Low, DateTimeOffset.UtcNow);
+            var ticket = Ticket.Create(clientId, "Subject", "Body", departmentId, TicketPriority.Low, TestMoments.Seeded);
             ticket.AddTag(marker);
             db.Tickets.Add(ticket);
             await db.SaveChangesAsync();

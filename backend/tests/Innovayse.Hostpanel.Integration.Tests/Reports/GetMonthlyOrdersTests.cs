@@ -32,7 +32,7 @@ public sealed class GetMonthlyOrdersTests(IntegrationTestFactory factory) : ICla
             await db.SaveChangesAsync();
 
             var product = Product.Create(
-                group.Id, $"Product-{marker}", null, null, null, null, ProductType.SharedHosting, 10m, 100m, DateTimeOffset.UtcNow);
+                group.Id, $"Product-{marker}", null, null, null, null, ProductType.SharedHosting, 10m, 100m, TestMoments.Seeded);
             db.Products.Add(product);
             await db.SaveChangesAsync();
             productId = product.Id;

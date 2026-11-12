@@ -28,7 +28,7 @@ public sealed class GetTicketFeedbackCommentsTests(IntegrationTestFactory factor
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
             // A real department: a ticket's department is a foreign key.
             var departmentId = await SupportTestSeeds.SeedDepartmentAsync(db);
-            var ticket = Ticket.Create(clientId, $"Subject-{marker}", "Body", departmentId, TicketPriority.Low, DateTimeOffset.UtcNow);
+            var ticket = Ticket.Create(clientId, $"Subject-{marker}", "Body", departmentId, TicketPriority.Low, TestMoments.Seeded);
             ticket.Assign(77);
             ticket.LeaveFeedback(8, "Great support", marker, scope.ServiceProvider.GetRequiredService<IClock>().UtcNow);
             db.Tickets.Add(ticket);

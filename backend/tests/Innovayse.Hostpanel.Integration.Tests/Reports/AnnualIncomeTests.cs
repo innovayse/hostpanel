@@ -100,7 +100,7 @@ public sealed class AnnualIncomeTests(IntegrationTestFactory factory) : IClassFi
 
         var baseCurrency = await context.Currencies.SingleAsync(c => c.IsBase, CancellationToken.None);
         var payer = Client.Create(
-            $"refunded-{Guid.NewGuid():N}", "Refunded", "Payer", $"refunded-{Guid.NewGuid():N}@example.test", DateTimeOffset.UtcNow);
+            $"refunded-{Guid.NewGuid():N}", "Refunded", "Payer", $"refunded-{Guid.NewGuid():N}@example.test", TestMoments.Seeded);
         context.Clients.Add(payer);
         await context.SaveChangesAsync(CancellationToken.None);
 

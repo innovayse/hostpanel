@@ -29,7 +29,7 @@ public sealed class GetProductSuspensionsTests(IntegrationTestFactory factory) :
             db.ProductGroups.Add(group);
             await db.SaveChangesAsync();
             var product = Product.Create(
-                group.Id, $"SuspProduct-{marker}", null, null, null, null, ProductType.SharedHosting, 10m, 100m, DateTimeOffset.UtcNow);
+                group.Id, $"SuspProduct-{marker}", null, null, null, null, ProductType.SharedHosting, 10m, 100m, TestMoments.Seeded);
             db.Products.Add(product);
             await db.SaveChangesAsync();
 

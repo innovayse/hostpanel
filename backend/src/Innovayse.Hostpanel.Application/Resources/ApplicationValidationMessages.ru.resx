@@ -991,6 +991,39 @@
   <data name="ProductFeatureSortOrderInvalid" xml:space="preserve">
     <value>Порядок сортировки не может быть отрицательным.</value>
   </data>
+  <data name="ProductOptionGroupIdInvalid" xml:space="preserve">
+    <value>Укажите корректный идентификатор группы опций.</value>
+  </data>
+  <data name="ProductOptionIdInvalid" xml:space="preserve">
+    <value>Укажите корректный идентификатор опции.</value>
+  </data>
+  <data name="ProductOptionGroupNameRequired" xml:space="preserve">
+    <value>Группе опций требуется название.</value>
+  </data>
+  <data name="ProductOptionGroupNameTooLong" xml:space="preserve">
+    <value>Название не должно превышать {0} символов.</value>
+  </data>
+  <data name="ProductOptionGroupTypeInvalid" xml:space="preserve">
+    <value>Выберите корректный тип группы опций.</value>
+  </data>
+  <data name="ProductOptionNameRequired" xml:space="preserve">
+    <value>Опции требуется название.</value>
+  </data>
+  <data name="ProductOptionNameTooLong" xml:space="preserve">
+    <value>Название не должно превышать {0} символов.</value>
+  </data>
+  <data name="ProductOptionDisplayOrderInvalid" xml:space="preserve">
+    <value>Порядок отображения не может быть отрицательным.</value>
+  </data>
+  <data name="ProductOptionPriceTypeInvalid" xml:space="preserve">
+    <value>Выберите корректный тип цены.</value>
+  </data>
+  <data name="ProductOptionPriceInvalid" xml:space="preserve">
+    <value>Цена не может быть отрицательной.</value>
+  </data>
+  <data name="ProductOptionGroupIdsRequired" xml:space="preserve">
+    <value>Укажите идентификаторы групп опций в новом порядке.</value>
+  </data>
   <data name="SlideIdInvalid" xml:space="preserve">
     <value>Укажите корректный идентификатор слайда.</value>
   </data>

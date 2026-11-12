@@ -52,4 +52,34 @@ public static class ProductsErrors
 
     /// <summary>The bundle does not have exactly one primary product (400): <see cref="ProductBundle.Update"/>.</summary>
     public const string ProductBundlePrimaryInvalid = "PRODUCT_BUNDLE_PRIMARY_INVALID";
+
+    /// <summary>
+    /// The quantity range does not fit the group: a quantity group needs a minimum from zero and a maximum
+    /// of at least one and not below it, and every other type must carry none (400):
+    /// <see cref="ProductOptionGroup.Create"/> and <see cref="ProductOptionGroup.Update"/>.
+    /// </summary>
+    public const string ProductOptionQuantityRangeInvalid = "PRODUCT_OPTION_QUANTITY_RANGE_INVALID";
+
+    /// <summary>
+    /// The group's type holds one option and already has it (400): <see cref="ProductOptionGroup.AddOption"/>.
+    /// </summary>
+    public const string ProductOptionCountNotAllowed = "PRODUCT_OPTION_COUNT_NOT_ALLOWED";
+
+    /// <summary>
+    /// A text option was given a price, which a free text value cannot carry (400):
+    /// <see cref="ProductOptionGroup.AddOption"/> and <see cref="ProductOptionGroup.UpdateOption"/>.
+    /// </summary>
+    public const string ProductOptionPriceNotAllowed = "PRODUCT_OPTION_PRICE_NOT_ALLOWED";
+
+    /// <summary>
+    /// An option modifier is negative, or a percentage above 100 (400):
+    /// <see cref="ProductOptionGroup.AddOption"/> and <see cref="ProductOptionGroup.UpdateOption"/>.
+    /// </summary>
+    public const string ProductOptionPriceOutOfRange = "PRODUCT_OPTION_PRICE_OUT_OF_RANGE";
+
+    /// <summary>
+    /// The id names no option of the group (404): <see cref="ProductOptionGroup.UpdateOption"/> and
+    /// <see cref="ProductOptionGroup.RemoveOption"/>.
+    /// </summary>
+    public const string ProductOptionNotFound = "PRODUCT_OPTION_NOT_FOUND";
 }

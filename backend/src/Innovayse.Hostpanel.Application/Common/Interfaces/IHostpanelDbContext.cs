@@ -80,6 +80,12 @@ public interface IHostpanelDbContext
     /// <summary>Gets the product specification lines table.</summary>
     public DbSet<ProductFeature> ProductFeatures { get; }
 
+    /// <summary>Gets the product option groups table.</summary>
+    public DbSet<ProductOptionGroup> ProductOptionGroups { get; }
+
+    /// <summary>Gets the product options table.</summary>
+    public DbSet<ProductOption> ProductOptions { get; }
+
     /// <summary>Gets the per-currency product prices table.</summary>
     public DbSet<ProductPrice> ProductPrices { get; }
 

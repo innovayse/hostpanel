@@ -96,7 +96,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         await db.SaveChangesAsync();
 
         var product = Product.Create(
-            group.Id, name, null, null, null, null, type, 0m, 0m, DateTimeOffset.UtcNow);
+            group.Id, name, null, null, null, null, type, 0m, 0m, TestMoments.Seeded);
         product.SetSku(sku);
         product.SetMetadata(metadata);
         product.SetPrice("USD", BillingCycle.Monthly, usdMonthly);
@@ -123,7 +123,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         await db.SaveChangesAsync();
 
         var product = Product.Create(
-            group.Id, "Priceless Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            group.Id, "Priceless Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
 
         db.Products.Add(product);
         await db.SaveChangesAsync();
@@ -145,7 +145,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         await db.SaveChangesAsync();
 
         var product = Product.Create(
-            group.Id, "Cycle Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, DateTimeOffset.UtcNow);
+            group.Id, "Cycle Hosting", null, null, null, null, ProductType.SharedHosting, 0m, 0m, TestMoments.Seeded);
         product.SetPrice("USD", cycle, amount);
         db.Products.Add(product);
         await db.SaveChangesAsync();
@@ -464,7 +464,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         using (var seed = factory.Services.CreateScope())
         {
             var db = seed.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Clients.Add(Domain.Clients.Client.Create(subject.UserId, "Fresh", "Subject", subject.Email, DateTimeOffset.UtcNow));
+            db.Clients.Add(Domain.Clients.Client.Create(subject.UserId, "Fresh", "Subject", subject.Email, TestMoments.Seeded));
             await db.SaveChangesAsync();
             (await seed.ServiceProvider.GetRequiredService<ISubjectRoleStore>()
                 .GetRolesAsync(subject.UserId, CancellationToken.None)).Should().NotContain(Role.Client);
@@ -1286,7 +1286,7 @@ public sealed class PlaceOrderTests(IntegrationTestFactory factory) : IClassFixt
         await db.SaveChangesAsync();
 
         var product = Product.Create(
-            group.Id, "Domain Registration", null, null, null, null, ProductType.Domain, 0m, 0m, DateTimeOffset.UtcNow);
+            group.Id, "Domain Registration", null, null, null, null, ProductType.Domain, 0m, 0m, TestMoments.Seeded);
         db.Products.Add(product);
         await db.SaveChangesAsync();
 

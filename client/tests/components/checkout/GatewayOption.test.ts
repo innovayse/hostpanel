@@ -17,7 +17,7 @@ import { PaymentModule } from '~/types/paymentmodule'
  */
 const mountOption = (module: string, displayName: string, modelValue?: string) =>
   mountWithKit(GatewayOption, {
-    props: { method: { module, displayName }, name: 'gw', modelValue },
+    props: { method: { module, displayName, supportsStoredCredentials: false }, name: 'gw', modelValue },
     attrs: { testid: 'gw-row' },
   })
 
@@ -67,7 +67,7 @@ describe('GatewayOption', () => {
 
   it('cannot be chosen when it is disabled', () => {
     const wrapper = mountWithKit(GatewayOption, {
-      props: { method: { module: 'hosted_gateway', displayName: 'Card' }, name: 'gw', disabled: true },
+      props: { method: { module: 'hosted_gateway', displayName: 'Card', supportsStoredCredentials: false }, name: 'gw', disabled: true },
       attrs: { testid: 'gw-row' },
     })
 

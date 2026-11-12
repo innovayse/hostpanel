@@ -31,7 +31,7 @@
  *   so only the spec for the verification banner turns it off, until the next reset;
  * - `POST /__e2e/account`: overrides fields of the signed-in person's account (`GET /api/auth/me`), such as
  *   `clientPermissions` or `clientId`, so a spec can sign in a member without a permission or a first-time buyer, until the next reset;
- * - `POST /__e2e/gateways`: adds the hosted card gateway to the gateway list (`GET /api/payment-methods`) and, with
+ * - `POST /__e2e/gateways`: adds the hosted card gateway to the gateway list (`GET /api/payment-methods`), with `plain: true` a hosted gateway that cannot store credentials beside it, and, with
  *   `bankTransfer: false`, takes the bank transfer off it, and with `bankTransferDetailsEmpty: true` makes its bank details all empty; only bank transfer is offered by default, so only the specs for the
  *   saved methods and the invoice payment turn the card on, until the next reset;
  * - `POST /__e2e/reset`: clears the log, the scripted answers, the settings overrides, demo mode and
@@ -81,6 +81,7 @@ import {
   GATEWAY_PAGE_URL,
   GATEWAY_PENDING_INVOICE,
   HOSTED_GATEWAY,
+  PLAIN_GATEWAY,
   STORED_CARD_DEFAULT,
   STORED_CARD_NEW,
   STORED_CARD_OTHER,
@@ -190,6 +191,9 @@ let demoEnabled = false
 
 /** Whether the gateway list also offers the hosted card gateway; off by default, a spec turns it on, a reset turns it off. */
 let hostedGatewayEnabled = false
+
+/** Whether the gateway list also offers the hosted gateway without stored credentials; off by default, a spec turns it on, a reset turns it off. */
+let plainGatewayEnabled = false
 
 /** Whether the gateway list offers the bank transfer; on by default, a spec turns it off, a reset turns it on. */
 let bankTransferEnabled = true
@@ -611,7 +615,8 @@ const route = (method, path, body, res, query = new URLSearchParams(), language 
   }
   if (isGet && path === '/api/payment-methods') {
     const offered = bankTransferEnabled ? GATEWAY_METHODS : []
-    send(res, 200, hostedGatewayEnabled ? [...offered, HOSTED_GATEWAY] : offered)
+    const hosted = hostedGatewayEnabled ? [...offered, HOSTED_GATEWAY] : offered
+    send(res, 200, plainGatewayEnabled ? [...hosted, PLAIN_GATEWAY] : hosted)
     return true
   }
 
@@ -1216,6 +1221,7 @@ on('forge-unknown', { event: 'toggle', id: 'pages.9.title' })
     settingOverrides.clear()
     demoEnabled = false
     hostedGatewayEnabled = false
+    plainGatewayEnabled = false
     bankTransferEnabled = true
     bankTransferDetailsEmpty = false
     bankTransferChosen = false
@@ -1267,6 +1273,7 @@ on('forge-unknown', { event: 'toggle', id: 'pages.9.title' })
   if (path === '/__e2e/gateways') {
     const gateways = await readJson(req)
     hostedGatewayEnabled = gateways.hosted === true
+    plainGatewayEnabled = gateways.plain === true
     bankTransferEnabled = gateways.bankTransfer !== false
     bankTransferDetailsEmpty = gateways.bankTransferDetailsEmpty === true
     send(res, 204)

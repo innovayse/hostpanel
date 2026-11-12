@@ -12,6 +12,7 @@ import { expectLastRequest, startTransport } from '../../helpers/stubTransport'
 import type { ExpectedRequest } from '../../helpers/stubTransport'
 import type { StubServer } from '../../helpers/stubServer'
 import { useBillingApi } from '~/composables/apis/useBillingApi'
+import { ConsentTextVersion } from '~/types/consenttextversion'
 import { PaymentTarget } from '~/types/paymenttarget'
 import { HttpMethod } from '~/types/httpmethod'
 
@@ -34,6 +35,7 @@ const rows: ExpectedRequest[] = [
   { name: 'fetchGatewayMethods reads the gateways under the order surface', call: () => api.fetchGatewayMethods(), method: HttpMethod.Get, url: '/api/portal/order/payment-methods' },
   { name: 'createOrder posts the order', call: () => api.createOrder({ items: [], paymentmethod: 'card_gateway' }), method: HttpMethod.Post, url: '/api/portal/order/create', body: { items: [], paymentmethod: 'card_gateway' } },
   { name: 'startOrderGatewayPayment posts module, return address and token', call: () => api.startOrderGatewayPayment(42, 'hosted_gateway', 'https://x/return', 'tok'), method: HttpMethod.Post, url: '/api/portal/order/42/gateway-payment/start', body: { module: 'hosted_gateway', returnUrl: 'https://x/return', paymentToken: 'tok' } },
+  { name: 'startOrderGatewayPayment posts the save choice and the consent version when asked', call: () => api.startOrderGatewayPayment(42, 'hosted_gateway', 'https://x/return', 'tok', true, ConsentTextVersion.CheckoutAgreement), method: HttpMethod.Post, url: '/api/portal/order/42/gateway-payment/start', body: { module: 'hosted_gateway', returnUrl: 'https://x/return', paymentToken: 'tok', savePaymentMethod: true, consentTextVersion: ConsentTextVersion.CheckoutAgreement } },
   { name: 'startInvoiceGatewayPayment posts module and return address', call: () => api.startInvoiceGatewayPayment(7, 'hosted_gateway', 'https://x/return'), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/gateway-payment/start', body: { module: 'hosted_gateway', returnUrl: 'https://x/return' } },
   { name: 'selectBankTransfer posts to the invoice bank transfer route', call: () => api.selectBankTransfer(7), method: HttpMethod.Post, url: '/api/portal/client/invoices/7/bank-transfer', body: {} },
   { name: 'fetchBankTransfer reads the invoice bank transfer route', call: () => api.fetchBankTransfer(7), method: HttpMethod.Get, url: '/api/portal/client/invoices/7/bank-transfer' },

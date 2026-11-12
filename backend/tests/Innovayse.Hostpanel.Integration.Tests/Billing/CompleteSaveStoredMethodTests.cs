@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Innovayse.Hostpanel.Application.Common.Errors;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Domain.Billing;
@@ -136,6 +137,34 @@ public sealed class CompleteSaveStoredMethodTests(IntegrationTestFactory factory
         var checkContext = check.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
         (await checkContext.CardChargeConsents.AsNoTracking().SingleAsync(c => c.GatewayModuleId == scenario.Module && c.SessionId == sessionId)).MethodRef
             .Should().Be("some-other-method");
+    }
+
+    /// <summary>
+    /// A method whose reference is longer than the consent can hold is answered as not saved instead of a database
+    /// error, and the consent stays without a method.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task Complete_MethodReferenceTooLongForTheConsent_IsNotSaved()
+    {
+        using var scenario = new SavingGatewayScenario(factory);
+        var signedIn = await BillingTestSeeds.RegisterClientAsync(factory, scenario.Host, "complete-long-ref");
+        scenario.Plugin.SaveSessionResult = new SavedMethodResult(
+            true, new SavedMethod(new string('m', CardChargeConsent.MaxMethodRefLength + 1), "visa", "4242", 12, 2031, false));
+        var begun = await signedIn.Client.PostAsJsonAsync(
+            "/api/me/stored-payment-methods/sessions",
+            new { gatewayModuleId = scenario.Module, consentAccepted = true, returnUrl = BillingTestSeeds.AllowedReturnUrl, consentTextVersion = "2026-11" });
+        begun.StatusCode.Should().Be(HttpStatusCode.OK);
+        var sessionId = (await begun.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("sessionId").GetString()!;
+
+        var response = await signedIn.Client.PostAsJsonAsync(
+            $"/api/me/stored-payment-methods/sessions/{sessionId}/complete", new { gatewayModuleId = scenario.Module });
+
+        (await BillingTestSeeds.CodeOfAsync(response)).Should().Be(HostpanelErrorCodes.STORED_METHOD_NOT_SAVED);
+        using var scope = scenario.Host.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        (await context.CardChargeConsents.AsNoTracking().SingleAsync(c => c.GatewayModuleId == scenario.Module && c.SessionId == sessionId)).MethodRef
+            .Should().BeNull();
     }
 
     /// <summary>

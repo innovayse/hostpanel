@@ -1,4 +1,5 @@
 using Hostpanel.Sdk.Plugins.Enums;
+using Hostpanel.Sdk.Plugins.Payment;
 using Hostpanel.Sdk.Plugins.StoredCredentials;
 using Innovayse.Hostpanel.Application.Common.Interfaces;
 using Innovayse.Hostpanel.Infrastructure.Demo;
@@ -413,5 +414,30 @@ public sealed class DemoStoredCredentialPluginTests(IntegrationTestFactory facto
         repeated.Saved.Should().BeTrue();
         unknown.Should().Be(new SavedMethodResult(false, null));
         (await plugin.ListMethodsAsync("demo-cus-9", CancellationToken.None)).Should().ContainSingle();
+    }
+
+    /// <summary>
+    /// A payment registered with the choice to keep the method reports the demo card once it reads as paid, the same card on
+    /// every read; a payment registered without it reports none.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task GetStatus_OfAPaymentThatAskedToSave_ReportsTheSameSavedMethod()
+    {
+        var plugin = NewPlugin();
+        var saving = await plugin.CreatePaymentAsync(
+            new PaymentInstruction("INV1-1", 1000, "https://shop.test/return", null, null, SavePaymentMethod: true), CancellationToken.None);
+        var plain = await plugin.CreatePaymentAsync(
+            new PaymentInstruction("INV2-1", 1000, "https://shop.test/return", null, null), CancellationToken.None);
+
+        var first = await plugin.GetStatusAsync(saving.GatewayOrderId, CancellationToken.None);
+        var second = await plugin.GetStatusAsync(saving.GatewayOrderId, CancellationToken.None);
+        var unsaved = await plugin.GetStatusAsync(plain.GatewayOrderId, CancellationToken.None);
+
+        first.State.Should().Be(GatewayPaymentState.Paid);
+        first.SavedMethod.Should().NotBeNull();
+        first.SavedMethod!.Last4.Should().Be("4242");
+        second.SavedMethod.Should().Be(first.SavedMethod, "a repeated read answers the same card");
+        unsaved.SavedMethod.Should().BeNull();
     }
 }

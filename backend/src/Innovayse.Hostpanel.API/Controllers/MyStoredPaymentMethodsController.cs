@@ -124,13 +124,8 @@ public sealed class MyStoredPaymentMethodsController : BaseApiController
     public async Task<IActionResult> BeginSaveAsync([FromBody] BeginSaveStoredMethodCommand command, CancellationToken ct)
     {
         // The consent evidence is the connection's and the headers', never the body's: the overlay wins over any value sent.
-        var userAgent = Request.Headers.UserAgent.ToString();
         var outcome = await _bus.InvokeAsync<Result<SaveMethodSessionDto>>(
-            command with
-            {
-                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString(),
-                UserAgent = userAgent.Length > 0 ? userAgent : null,
-            },
+            command with { IpAddress = RequestIpAddress, UserAgent = RequestUserAgent },
             ct);
         return HandleResult(outcome);
     }

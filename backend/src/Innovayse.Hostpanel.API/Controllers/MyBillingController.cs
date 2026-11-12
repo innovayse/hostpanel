@@ -120,12 +120,18 @@ public sealed class MyBillingController : BaseApiController
 
     /// <summary>Starts a hosted-gateway payment for the authenticated client's invoice.</summary>
     /// <param name="id">Invoice primary key.</param>
-    /// <param name="command">The payment module and return URL; its invoice id comes from the route.</param>
+    /// <param name="command">
+    /// The payment module and return URL, and optionally the choice to keep the payment method with the consent wording
+    /// version; its invoice id comes from the route, and the address and browser kept as consent evidence are the
+    /// request's own, set here over whatever the body says.
+    /// </param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 200 OK with the redirect URL; 401 without a session; 404 with <c>INVOICE_NOT_FOUND</c> when it is not the caller's,
-    /// or <c>CURRENCY_NOT_FOUND</c>; 400 with <c>INVOICE_NOT_PAYABLE</c>, <c>RETURN_URL_NOT_ALLOWED</c> or
-    /// <c>GATEWAY_CURRENCY_MISMATCH</c>; 409 with <c>GATEWAY_SESSION_ALREADY_STARTED</c>, <c>INVOICE_STORED_CHARGE_UNRESOLVED</c> or <c>INVOICE_STORED_CHARGE_HELD</c>; 503 with
+    /// or <c>CURRENCY_NOT_FOUND</c>; 400 with <c>VALIDATION_ERROR</c> (a method to keep without the consent wording
+    /// version), <c>INVOICE_NOT_PAYABLE</c>, <c>RETURN_URL_NOT_ALLOWED</c> or
+    /// <c>GATEWAY_CURRENCY_MISMATCH</c>; 409 with <c>GATEWAY_SESSION_ALREADY_STARTED</c>, <c>INVOICE_STORED_CHARGE_UNRESOLVED</c>,
+    /// <c>INVOICE_STORED_CHARGE_HELD</c> or <c>STORED_CREDENTIALS_NOT_SUPPORTED</c> (a method to keep at a module that cannot keep one); 503 with
     /// <c>PAYMENT_PLUGIN_NOT_CONFIGURED</c>, or with <c>PAYMENT_GATEWAY_SERVICE_UNAVAILABLE</c> when the
     /// gateway fails to register the payment; 403 with <c>CLIENT_PERMISSION_DENIED</c> when the user
     /// lacks <c>ViewPayInvoices</c>, or with <c>CLIENT_SUSPENDED</c>, <c>CLIENT_CLOSED</c> or
@@ -145,7 +151,10 @@ public sealed class MyBillingController : BaseApiController
     public async Task<IActionResult> StartGatewayPaymentAsync(
         int id, [FromBody] StartMyGatewayPaymentCommand command, CancellationToken ct)
     {
-        var outcome = await _bus.InvokeAsync<Result<RedirectDto>>(command with { InvoiceId = id }, ct);
+        // The consent evidence is the connection's and the headers', never the body's: the overlay wins over any value sent.
+        var outcome = await _bus.InvokeAsync<Result<RedirectDto>>(
+            command with { InvoiceId = id, IpAddress = RequestIpAddress, UserAgent = RequestUserAgent },
+            ct);
         return HandleResult(outcome);
     }
 

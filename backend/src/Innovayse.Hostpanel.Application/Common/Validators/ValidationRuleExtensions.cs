@@ -53,6 +53,24 @@ public static class ValidationRuleExtensions
         return rule.Must(value => CurrencyCode.IsValid(value as string)).WithMessage(message);
     }
 
+    /// <summary>
+    /// Requires the version of the consent wording a payer ticked: present, not blank, and short enough for the consent
+    /// that keeps it as evidence (<see cref="CardChargeConsent.MaxTextVersionLength"/>).
+    /// </summary>
+    /// <typeparam name="T">The command being validated.</typeparam>
+    /// <typeparam name="TProperty">The type of the property, a <see cref="string"/> (nullable or not).</typeparam>
+    /// <param name="rule">The rule builder for the wording version property.</param>
+    /// <param name="message">The localized sentence reported when the version is missing or too long.</param>
+    /// <returns>The rule builder, for chaining.</returns>
+    public static IRuleBuilderOptions<T, TProperty> MustBeConsentTextVersion<T, TProperty>(
+        this IRuleBuilder<T, TProperty> rule, string message)
+    {
+        ArgumentNullException.ThrowIfNull(rule);
+
+        return rule.Must(value => value is string { Length: > 0 and <= CardChargeConsent.MaxTextVersionLength } version
+            && !string.IsNullOrWhiteSpace(version)).WithMessage(message);
+    }
+
     /// <summary>Requires a 1-based page number.</summary>
     /// <typeparam name="T">The command or query being validated.</typeparam>
     /// <param name="rule">The rule builder for the page property.</param>

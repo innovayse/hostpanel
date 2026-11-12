@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Hostpanel.Sdk.Plugins.Enums;
 using Innovayse.Hostpanel.Application.Billing.Commands.CompleteGatewayPayment;
+using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Billing.Common.Enums;
 using Innovayse.Hostpanel.Application.Clients.Common;
 using Innovayse.Hostpanel.Application.Common.Errors;
@@ -256,7 +257,8 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var handler = new CompleteGatewayPaymentHandler(
             readerContext, resolver, bus, NullLogger<CompleteGatewayPaymentHandler>.Instance,
             readerScope.ServiceProvider.GetRequiredService<IClock>(),
-            readerScope.ServiceProvider.GetRequiredService<IClientCredit>());
+            readerScope.ServiceProvider.GetRequiredService<IClientCredit>(),
+            readerScope.ServiceProvider.GetRequiredService<StoredMethodBinder>());
 
         // Loads the same row the handler is about to load, then wins the race by saving first.
         using (var winnerScope = factory.Services.CreateScope())
@@ -293,7 +295,8 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
         var handler = new CompleteGatewayPaymentHandler(
             readerContext, resolver, bus, NullLogger<CompleteGatewayPaymentHandler>.Instance,
             readerScope.ServiceProvider.GetRequiredService<IClock>(),
-            readerScope.ServiceProvider.GetRequiredService<IClientCredit>());
+            readerScope.ServiceProvider.GetRequiredService<IClientCredit>(),
+            readerScope.ServiceProvider.GetRequiredService<StoredMethodBinder>());
 
         // The handler's own context has to be holding the row *before* the competing write, or it
         // saves against the current version and there is no conflict to test. Loading it here is
@@ -392,7 +395,8 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             scope.ServiceProvider.GetRequiredService<IMessageBus>(),
             NullLogger<CompleteGatewayPaymentHandler>.Instance,
             scope.ServiceProvider.GetRequiredService<IClock>(),
-            scope.ServiceProvider.GetRequiredService<IClientCredit>());
+            scope.ServiceProvider.GetRequiredService<IClientCredit>(),
+            scope.ServiceProvider.GetRequiredService<StoredMethodBinder>());
 
         var result = await handler.HandleAsync(new CompleteGatewayPaymentCommand(invoiceId), CancellationToken.None);
 
@@ -1282,7 +1286,8 @@ public sealed class CompleteGatewayPaymentTests(IntegrationTestFactory factory) 
             scope.ServiceProvider.GetRequiredService<IMessageBus>(),
             NullLogger<CompleteGatewayPaymentHandler>.Instance,
             scope.ServiceProvider.GetRequiredService<IClock>(),
-            scope.ServiceProvider.GetRequiredService<IClientCredit>());
+            scope.ServiceProvider.GetRequiredService<IClientCredit>(),
+            scope.ServiceProvider.GetRequiredService<StoredMethodBinder>());
 
     /// <summary>
     /// Seeds a client and an invoice with a live gateway session directly against the database,

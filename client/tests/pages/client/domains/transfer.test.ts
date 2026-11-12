@@ -18,7 +18,7 @@ vi.mock('~/composables/apis/useCatalogApi', () => ({ useCatalogApi: () => ({}) }
 vi.mock('~/composables/apis/useCurrencyApi', () => ({ useCurrencyApi: () => ({}) }))
 
 /** A gateway. */
-const card = { module: 'card_gateway', displayName: 'Card gateway' }
+const card = { module: 'card_gateway', displayName: 'Card gateway', supportsStoredCredentials: false }
 
 describe('domain transfer page', () => {
   beforeEach(() => {

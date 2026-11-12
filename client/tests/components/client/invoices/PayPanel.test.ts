@@ -41,7 +41,7 @@ describe('PayPanel', () => {
   })
 
   it('offers the gateway button with its hint when a gateway is enabled', () => {
-    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }] })
+    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }] })
 
     expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="invoice-pay-hosted-hint"]').text()).toContain('invoicePay.hostedHint')
@@ -49,7 +49,7 @@ describe('PayPanel', () => {
   })
 
   it('offers no card form or saved-method choice', () => {
-    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }] })
+    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }] })
 
     expect(wrapper.find('[data-testid="pay-method-selector"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-pay-submit"]').exists()).toBe(false)
@@ -57,7 +57,7 @@ describe('PayPanel', () => {
 
   it('starts the gateway payment for the invoice through the store', async () => {
     billingApi.startInvoiceGatewayPayment.mockResolvedValue({ redirectUrl: 'javascript:alert(1)' })
-    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }] })
+    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }] })
 
     await wrapper.find('[data-testid="invoice-pay-hosted"]').trigger('click')
 
@@ -65,13 +65,13 @@ describe('PayPanel', () => {
   })
 
   it('disables the gateway button while a payment is being started', () => {
-    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }], submitting: true })
+    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }], submitting: true })
 
     expect(wrapper.find('[data-testid="invoice-pay-hosted"]').attributes('disabled')).toBeDefined()
   })
 
   it('offers the bank transfer beside the card when the admin switched it on', () => {
-    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }, { module: 'bank_transfer', displayName: 'Transfer' }] })
+    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }, { module: 'bank_transfer', displayName: 'Transfer', supportsStoredCredentials: false }] })
 
     expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="invoice-pay-bank-transfer"]').exists()).toBe(true)
@@ -79,7 +79,7 @@ describe('PayPanel', () => {
   })
 
   it('offers the bank transfer alone when no gateway plugin is enabled', () => {
-    const wrapper = mountPanel({ gatewayMethods: [{ module: 'bank_transfer', displayName: 'Transfer' }] })
+    const wrapper = mountPanel({ gatewayMethods: [{ module: 'bank_transfer', displayName: 'Transfer', supportsStoredCredentials: false }] })
 
     expect(wrapper.find('[data-testid="invoice-pay-hosted"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="invoice-pay-bank-transfer"]').exists()).toBe(true)
@@ -89,7 +89,7 @@ describe('PayPanel', () => {
   it('chooses the bank transfer through the store and then shows the bank details', async () => {
     billingApi.selectBankTransfer.mockResolvedValue({ invoiceId: 9, reference: 'INV-9', amountDue: 10, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null })
     const wrapper = mountPanel({
-      gatewayMethods: [{ module: 'bank_transfer', displayName: 'Transfer' }],
+      gatewayMethods: [{ module: 'bank_transfer', displayName: 'Transfer', supportsStoredCredentials: false }],
       invoice: { id: 9, status: 'Unpaid' }
     })
 
@@ -103,7 +103,7 @@ describe('PayPanel', () => {
 
   it('shows the bank details instead of the payment choices when the invoice already waits for a transfer', () => {
     const wrapper = mountPanel({
-      gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }, { module: 'bank_transfer', displayName: 'Transfer' }],
+      gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }, { module: 'bank_transfer', displayName: 'Transfer', supportsStoredCredentials: false }],
       invoice: { id: 9, status: 'PaymentPending', isBankTransferPending: true },
       bankTransfer: { invoiceId: 9, reference: 'INV-9', amountDue: 10, currency: 'USD', accountName: null, iban: 'AM00', swift: null, bankName: null, instructions: null }
     })
@@ -115,7 +115,7 @@ describe('PayPanel', () => {
 
   it('keeps the payment choices for a pending invoice that is not a bank transfer (an imported one)', () => {
     const wrapper = mountPanel({
-      gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }, { module: 'bank_transfer', displayName: 'Transfer' }],
+      gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }, { module: 'bank_transfer', displayName: 'Transfer', supportsStoredCredentials: false }],
       invoice: { id: 9, status: 'PaymentPending', isBankTransferPending: false }
     })
 
@@ -132,7 +132,7 @@ describe('PayPanel', () => {
   })
 
   it('shows the refusal sentence the store holds', () => {
-    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank' }], error: 'Gateway is down.' })
+    const wrapper = mountPanel({ gatewayMethods: [{ module: 'hostedbank', displayName: 'Bank', supportsStoredCredentials: false }], error: 'Gateway is down.' })
 
     expect(wrapper.find('[data-testid="invoice-pay-error"]').text()).toBe('Gateway is down.')
   })

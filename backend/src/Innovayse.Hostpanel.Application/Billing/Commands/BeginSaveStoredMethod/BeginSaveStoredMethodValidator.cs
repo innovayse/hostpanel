@@ -21,9 +21,7 @@ public sealed class BeginSaveStoredMethodValidator : LocalizedValidator<BeginSav
         RuleFor(x => x.GatewayModuleId).NotEmpty().WithMessage(L["GatewayModuleRequired"]);
         RuleFor(x => x.ConsentAccepted).Equal(true).WithMessage(L["CardConsentRequired"]);
         RuleFor(x => x.ConsentTextVersion)
-            .NotEmpty()
-            .MaximumLength(CardChargeConsent.MaxTextVersionLength)
-            .WithMessage(L["ConsentTextVersionInvalid", CardChargeConsent.MaxTextVersionLength]);
+            .MustBeConsentTextVersion(L["ConsentTextVersionInvalid", CardChargeConsent.MaxTextVersionLength]);
         RuleFor(x => x.ReturnUrl).NotEmpty().WithMessage(L["ReturnUrlRequired"])
             .MustBeAbsoluteWebUrl(L["ReturnUrlInvalid"]);
     }

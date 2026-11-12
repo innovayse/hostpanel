@@ -60,8 +60,8 @@ afterEach(() => {
 const mountCard = async (options: MountWithKitOptions = {}) => {
   const wrapper = mountAccount(StoredMethodsCard, options)
   useAccountStore().gatewayMethods = [
-    { module: PaymentModule.BankTransfer, displayName: 'Bank transfer' },
-    { module: 'card_gateway', displayName: 'Card gateway' }
+    { module: PaymentModule.BankTransfer, displayName: 'Bank transfer', supportsStoredCredentials: false },
+    { module: 'card_gateway', displayName: 'Card gateway', supportsStoredCredentials: false }
   ]
   await flushPromises()
   return wrapper
@@ -204,7 +204,7 @@ describe('StoredMethodsCard', () => {
 
   it('explains when no gateway can store a method instead of showing an empty select', async () => {
     const wrapper = mountAccount(StoredMethodsCard)
-    useAccountStore().gatewayMethods = [{ module: PaymentModule.BankTransfer, displayName: 'Bank transfer' }]
+    useAccountStore().gatewayMethods = [{ module: PaymentModule.BankTransfer, displayName: 'Bank transfer', supportsStoredCredentials: false }]
     await flushPromises()
 
     expect(wrapper.find('[data-testid="stored-methods-no-gateways"]').exists()).toBe(true)

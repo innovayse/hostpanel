@@ -140,8 +140,8 @@ describe('ClassicCheckout', () => {
     stubPublicPageRuntime()
     billing.fetchGatewayMethods.mockReset()
     billing.fetchGatewayMethods.mockResolvedValue([
-      { module: PaymentModule.BankTransfer, displayName: 'Bank transfer' },
-      { module: 'card_gateway', displayName: 'Card' },
+      { module: PaymentModule.BankTransfer, displayName: 'Bank transfer', supportsStoredCredentials: false },
+      { module: 'card_gateway', displayName: 'Card', supportsStoredCredentials: true },
     ])
     billing.createOrder.mockReset()
     billing.createOrder.mockResolvedValue({ orderId: 7, invoiceId: 12, paymentToken: 'token', total: 12, currency: 'USD' })
@@ -315,7 +315,7 @@ describe('ClassicCheckout', () => {
   })
 
   it('keeps the busy label short and explains the bank hand-off in a polite line under the button', async () => {
-    billing.fetchGatewayMethods.mockResolvedValue([{ module: 'hosted_gateway', displayName: 'Bank card' }])
+    billing.fetchGatewayMethods.mockResolvedValue([{ module: 'hosted_gateway', displayName: 'Bank card', supportsStoredCredentials: false }])
     // An order that never settles keeps the page in its busy state.
     billing.createOrder.mockReturnValue(new Promise(() => undefined))
     const wrapper = await mountCheckout()

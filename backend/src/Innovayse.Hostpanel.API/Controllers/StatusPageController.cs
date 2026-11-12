@@ -1,10 +1,12 @@
+using Innovayse.Hostpanel.Application.StatusPage.Commands.ConfigureStatusComponentMonitoring;
 using Innovayse.Hostpanel.Application.StatusPage.Commands.CreateStatusComponent;
 using Innovayse.Hostpanel.Application.StatusPage.Commands.CreateStatusComponentGroup;
 using Innovayse.Hostpanel.Application.StatusPage.Commands.OpenStatusIncident;
 using Innovayse.Hostpanel.Application.StatusPage.Commands.PostStatusIncidentUpdate;
-using Innovayse.Hostpanel.Application.StatusPage.Commands.SetStatusComponentState;
+using Innovayse.Hostpanel.Application.StatusPage.Commands.SetStatusComponentOverride;
 using Innovayse.Hostpanel.Application.StatusPage.Common;
 using Innovayse.Hostpanel.Application.StatusPage.Queries.GetStatusOverview;
+using Innovayse.Hostpanel.Application.StatusPage.Queries.GetStatusUptime;
 using Innovayse.Hostpanel.Application.StatusPage.Queries.ListStatusIncidents;
 using Innovayse.Hostpanel.Shared.Authorization;
 using Innovayse.Hostpanel.Shared.Controllers;
@@ -69,21 +71,44 @@ public sealed class StatusPageController : BaseApiController
         return HandleResult(outcome, id => CreatedResult($"/api/admin/status/components/{id}", id));
     }
 
-    /// <summary>Sets the state the status page shows for a component.</summary>
+    /// <summary>
+    /// Forces a state onto the status page for a component whatever its automatic checks find, or, with no state,
+    /// hands the state back to the checks.
+    /// </summary>
     /// <param name="id">The component identifier; wins over any id in the body.</param>
-    /// <param name="command">The component's new state.</param>
+    /// <param name="command">The state to force, or <c>null</c> to clear the override.</param>
     /// <param name="ct">Cancellation token.</param>
     /// <returns>
     /// 204 on success; 400 when a value is refused; 404 when the id names no component;
     /// 401 when the caller is not signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.
     /// </returns>
-    [HttpPut("components/{id:int}/state")]
+    [HttpPut("components/{id:int}/override")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> SetComponentStateAsync(int id, [FromBody] SetStatusComponentStateCommand command, CancellationToken ct)
+    public async Task<IActionResult> SetComponentOverrideAsync(int id, [FromBody] SetStatusComponentOverrideCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command with { Id = id }, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Sets how a component is monitored automatically: the address to check, whether it runs and the failure threshold.</summary>
+    /// <param name="id">The component identifier; wins over any id in the body.</param>
+    /// <param name="command">The monitoring settings.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 on success; 400 when a value is refused; 404 when the id names no component;
+    /// 401 when the caller is not signed in; 403 when the caller's role is not allowed; 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPut("components/{id:int}/monitoring")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> ConfigureComponentMonitoringAsync(int id, [FromBody] ConfigureStatusComponentMonitoringCommand command, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(command with { Id = id }, ct);
         return HandleResult(outcome);
@@ -156,6 +181,21 @@ public sealed class StatusPageController : BaseApiController
     public async Task<IActionResult> ListIncidentsAsync([FromQuery] ListStatusIncidentsQuery query, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result<IReadOnlyList<StatusIncidentDto>>>(query, ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>The uptime of every component over the last 30, 60 or 90 days, with a daily series for the uptime bars. Anonymous.</summary>
+    /// <param name="query">The window in days: 30, 60 or 90; 90 when omitted.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>200 with the uptime figures; 400 when the window is refused; 429 when the rate limit is hit.</returns>
+    [HttpGet("/api/public/status/uptime")]
+    [AllowAnonymous]
+    [PublicContentCache]
+    [ProducesResponseType(typeof(StatusUptimeDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetUptimeAsync([FromQuery] GetStatusUptimeQuery query, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result<StatusUptimeDto>>(query, ct);
         return HandleResult(outcome);
     }
 }

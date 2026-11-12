@@ -1573,6 +1573,21 @@
   <data name="StatusStateInvalid" xml:space="preserve">
     <value>Choose a valid state.</value>
   </data>
+  <data name="StatusCheckUrlRequired" xml:space="preserve">
+    <value>Enter the address to check.</value>
+  </data>
+  <data name="StatusCheckUrlInvalid" xml:space="preserve">
+    <value>Enter a full web address starting with http:// or https://.</value>
+  </data>
+  <data name="StatusCheckUrlTooLong" xml:space="preserve">
+    <value>The address may not be longer than {0} characters.</value>
+  </data>
+  <data name="StatusFailureThresholdInvalid" xml:space="preserve">
+    <value>Choose a number of failed checks from 1 to {0}.</value>
+  </data>
+  <data name="StatusUptimeWindowInvalid" xml:space="preserve">
+    <value>Choose 30, 60 or 90 days.</value>
+  </data>
   <data name="StatusDaysInvalid" xml:space="preserve">
     <value>Choose a number of days from 1 to {0}.</value>
   </data>

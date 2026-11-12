@@ -8,20 +8,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useBundleDiscountLabel } from '~/composables/useBundleDiscountLabel'
+import { useCurrencyStore } from '~/stores/currency'
 import { BundleDiscountType } from '~/types/bundlediscounttype'
+import type { BillingCurrency } from '~/types/currency'
 
-vi.mock('~/stores/currency', () => ({
-  /**
-   * Stands in for the currency store: every code formats as dollars.
-   *
-   * @returns The one member the composable reads.
-   */
-  useCurrencyStore: () => ({ moneyCurrencyFor: () => ({ code: 'USD', prefix: '$', suffix: '', decimals: 2 }) }),
-}))
+/** The one currency the real store is given: dollars with two decimals. */
+const usd: BillingCurrency = { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true }
 
 describe('useBundleDiscountLabel', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    useCurrencyStore().currencies = [usd]
     vi.stubGlobal('useI18n', () => ({
       t: (key: string, params: Record<string, unknown> = {}) => `${key}:${String(params.amount ?? '')}`,
     }))

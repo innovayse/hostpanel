@@ -9,21 +9,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useCartBundle } from '~/composables/useCartBundle'
 import { useCartStore } from '~/stores/cart'
+import { useCurrencyStore } from '~/stores/currency'
 import { BundleDiscountType } from '~/types/bundlediscounttype'
+import type { BillingCurrency } from '~/types/currency'
 import { PricingCycle } from '~/types/pricingcycle'
 
-vi.mock('~/stores/currency', () => ({
-  /**
-   * Stands in for the currency store: a USD payer and dollar formatting.
-   *
-   * @returns The members the composable reads.
-   */
-  useCurrencyStore: () => ({ payerCode: 'USD', moneyCurrencyFor: () => ({ code: 'USD', prefix: '$', suffix: '', decimals: 2 }) }),
-}))
+/** The one currency the real store is given: a USD payer and dollars with two decimals. */
+const usd: BillingCurrency = { code: 'USD', numeric: '840', prefix: '$', suffix: '', decimals: 2, isBase: true }
 
 describe('useCartBundle', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
+    useCurrencyStore().currencies = [usd]
     vi.stubGlobal('useI18n', () => ({ t: (key: string) => key }))
   })
 

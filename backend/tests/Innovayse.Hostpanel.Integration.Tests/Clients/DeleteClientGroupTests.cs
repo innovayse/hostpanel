@@ -1,5 +1,9 @@
 using System.Net;
 using Innovayse.Hostpanel.Application.Common.Errors;
+using Innovayse.Hostpanel.Application.Common.Interfaces;
+using Innovayse.Hostpanel.Shared.Infrastructure;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Innovayse.Hostpanel.Integration.Tests.Clients;
 
@@ -59,5 +63,28 @@ public sealed class DeleteClientGroupTests(IntegrationTestFactory factory) : ICl
         var response = await factory.CreateClient().DeleteAsync($"{ClientGroupTestSeeds.Route}/1");
 
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    /// <summary>
+    /// A client that joins a group after the delete use case checked for members is refused by the foreign key, and the
+    /// context reports it as the persistence-agnostic conflict the delete handler answers as
+    /// <c>CLIENT_GROUP_IN_USE</c>.
+    /// </summary>
+    /// <returns>A task that completes when the test has run.</returns>
+    [Fact]
+    public async Task SaveChanges_DeletingAGroupAClientJoinedMeanwhile_ReportsAConflict()
+    {
+        var admin = await ClientsTestSeeds.AdminClientAsync(factory);
+        var id = await ClientGroupTestSeeds.CreateAsync(admin);
+        var (clientId, _) = await ClientsTestSeeds.SeedClientAsync(factory);
+        using var scope = factory.Services.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IHostpanelDbContext>();
+        var group = await context.ClientGroups.SingleAsync(g => g.Id == id);
+        await ClientGroupTestSeeds.AssignAsync(factory, clientId, id);
+
+        context.ClientGroups.Remove(group);
+        var save = () => context.SaveChangesAsync(CancellationToken.None);
+
+        await save.Should().ThrowAsync<ConcurrencyConflictException>();
     }
 }

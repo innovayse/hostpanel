@@ -142,6 +142,11 @@ public static class HostpanelErrorCodes
     /// <summary>The client group still has clients, so it cannot be deleted (409).</summary>
     public const string CLIENT_GROUP_IN_USE = "CLIENT_GROUP_IN_USE";
 
+    /// <summary>
+    /// Another client group already has this name (409, by the generic <c>ALREADY</c> arm of <c>StatusMapping</c>).
+    /// </summary>
+    public const string CLIENT_GROUP_NAME_ALREADY_EXISTS = "CLIENT_GROUP_NAME_ALREADY_EXISTS";
+
     /// <summary>The requested bulk action name is not one this endpoint knows (400).</summary>
     public const string BULK_INVOICE_ACTION_UNKNOWN = "BULK_INVOICE_ACTION_UNKNOWN";
 

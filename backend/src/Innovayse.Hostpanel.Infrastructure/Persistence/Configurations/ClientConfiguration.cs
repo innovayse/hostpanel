@@ -7,6 +7,12 @@ namespace Innovayse.Hostpanel.Infrastructure.Persistence.Configurations;
 /// <summary>EF Core table configuration for <see cref="Client"/>.</summary>
 public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
 {
+    /// <summary>
+    /// The foreign key from a client to its group. Named so the context can tell a group deleted while a client
+    /// joins it (a violation of this key) from any other failure.
+    /// </summary>
+    public const string ClientGroupForeignKey = "FK_Clients_ClientGroups_ClientGroupId";
+
     /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<Client> builder)
     {
@@ -57,6 +63,7 @@ public sealed class ClientConfiguration : IEntityTypeConfiguration<Client>
         builder.HasOne<ClientGroup>()
             .WithMany()
             .HasForeignKey(x => x.ClientGroupId)
+            .HasConstraintName(ClientGroupForeignKey)
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(x => x.ClientGroupId);
         builder.Property(x => x.BillingContact).HasMaxLength(256);

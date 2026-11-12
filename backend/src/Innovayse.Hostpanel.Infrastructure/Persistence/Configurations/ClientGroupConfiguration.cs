@@ -10,6 +10,12 @@ public sealed class ClientGroupConfiguration : IEntityTypeConfiguration<ClientGr
     /// <summary>The rows that hold the default flag: the filter of the index that lets at most one group have it.</summary>
     private const string DefaultRowFilter = "\"IsDefault\"";
 
+    /// <summary>
+    /// The unique index on the group name. Named so the context can tell two groups saved under one name at once
+    /// (a violation of this index) from any other failure.
+    /// </summary>
+    public const string NameIndex = "IX_ClientGroups_Name";
+
     /// <inheritdoc/>
     public void Configure(EntityTypeBuilder<ClientGroup> builder)
     {
@@ -20,6 +26,10 @@ public sealed class ClientGroupConfiguration : IEntityTypeConfiguration<ClientGr
         builder.Property(x => x.DiscountPercent).IsRequired().HasColumnType("numeric(5,2)");
         builder.Property(x => x.Color).IsRequired().HasMaxLength(ClientGroup.ColorLength);
         builder.Property(x => x.IsDefault).IsRequired();
+
+        // Two groups with one name cannot be told apart in the admin lists and filters, so the database refuses
+        // the second.
+        builder.HasIndex(x => x.Name, NameIndex).IsUnique();
 
         // At most one group is the default, for every writer: the domain clears the flag on the others
         // when it sets it, and this index refuses a second row that holds it.

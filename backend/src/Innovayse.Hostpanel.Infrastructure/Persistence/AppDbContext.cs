@@ -373,7 +373,9 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
     /// delivery claimed the same email first (the unique delivery key of an email log row was violated), or another
     /// call wrote the first value of the same plugin store key, or another call opened the same plugin store scope, or
     /// another call created the service of the same order line first, or another attempt recorded the renewal of the same
-    /// order line first, or another call opened a plan change request for the same service first.
+    /// order line first, or another call opened a plan change request for the same service first, or another client
+    /// group has the same name (the unique name index was violated), or a client and its group were saved against each
+    /// other (the foreign key from the client to its group was violated).
     /// </exception>
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
@@ -511,6 +513,29 @@ public sealed class AppDbContext : IdentityDbContext<AppUser>, IHostpanelDbConte
             // RequestMyServicePlanChangeHandler answers it as the request that is already open.
             throw new ConcurrencyConflictException(
                 "Another call opened a plan change request for the same service concurrently.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.UniqueViolation,
+            ConstraintName: ClientGroupConfiguration.NameIndex,
+        })
+        {
+            // Two groups were saved under one name at once, or a rename took a name another group has: the same
+            // lost race as a concurrent save. The create and update handlers answer it as
+            // CLIENT_GROUP_NAME_ALREADY_EXISTS.
+            throw new ConcurrencyConflictException(
+                "Another client group already has the same name.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is PostgresException
+        {
+            SqlState: PostgresErrorCodes.ForeignKeyViolation,
+            ConstraintName: ClientConfiguration.ClientGroupForeignKey,
+        })
+        {
+            // A client joined a group while it was being deleted, or was saved into a group deleted a moment
+            // before: the same lost race as a concurrent save. The delete handler answers it as CLIENT_GROUP_IN_USE.
+            throw new ConcurrencyConflictException(
+                "A client and its client group were saved against each other concurrently.", ex);
         }
     }
 

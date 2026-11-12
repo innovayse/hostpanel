@@ -616,5 +616,27 @@
       "CreditNoteVoided": "Кредит-нота аннулирована",
       "PlanChangeCredit": "Кредит за переход на дешёвый тариф"
     }
+  },
+  "clientGroups": {
+    "title": "Группы клиентов",
+    "subtitle": "Сегменты клиентов со скидкой и цветом.",
+    "add": "Добавить группу",
+    "createTitle": "Новая группа клиентов",
+    "editTitle": "Изменение группы клиентов",
+    "empty": "Групп клиентов пока нет.",
+    "namePlaceholder": "Например, Реселлеры",
+    "descriptionPlaceholder": "Для чего эта группа",
+    "discount": "Скидка (%)",
+    "discountPlaceholder": "0",
+    "color": "Цвет",
+    "colorPlaceholder": "#3B82F6",
+    "clients": "Клиенты",
+    "setDefault": "Сделать группой по умолчанию",
+    "clearDefault": "Убрать из групп по умолчанию",
+    "deleteTitle": "Удаление группы клиентов",
+    "deleteMessage": "Удалить группу {name}? Это действие нельзя отменить.",
+    "group": "Группа клиента",
+    "noGroup": "Без группы",
+    "defaultGroup": "Группа по умолчанию"
   }
 }

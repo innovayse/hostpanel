@@ -74,6 +74,10 @@ public sealed class InvoiceItemConfiguration : IEntityTypeConfiguration<InvoiceI
 
         builder.Property(x => x.Description).HasMaxLength(500).IsRequired();
         builder.Property(x => x.UnitPrice).HasColumnType("numeric(18,4)").IsRequired();
+
+        // The client group discount already taken off the list price, as it was when the line was billed. Every line
+        // written before groups existed was billed without one, so the column defaults to 0.
+        builder.Property(x => x.DiscountPercent).HasColumnType("numeric(5,2)").HasDefaultValue(0m).IsRequired();
         builder.Property(x => x.Quantity).IsRequired();
         builder.Property(x => x.Amount).HasColumnType("numeric(18,4)").IsRequired();
     }

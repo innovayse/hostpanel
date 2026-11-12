@@ -21,6 +21,9 @@ export const pendingOrder: OrderListItem = {
   invoiceId: null,
   itemCount: 2,
   failedLineCount: 0,
+  ipAddress: null,
+  fraudScore: null,
+  fraudReasons: [],
   createdAt: '2026-10-10T10:00:00Z',
 }
 

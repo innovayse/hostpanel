@@ -421,7 +421,7 @@ backend:test:integration:e:
   extends: .test-integration
   variables:
     TEST_FILTER: >-
-      FullyQualifiedName~Integration.Tests.Migration.|FullyQualifiedName~Integration.Tests.Notifications.|FullyQualifiedName~Integration.Tests.Orders.|FullyQualifiedName~Integration.Tests.Persistence.|FullyQualifiedName~Integration.Tests.Products.|FullyQualifiedName~Integration.Tests.Provisioning.|FullyQualifiedName~Integration.Tests.Services.
+      FullyQualifiedName~Integration.Tests.Fraud.|FullyQualifiedName~Integration.Tests.Migration.|FullyQualifiedName~Integration.Tests.Notifications.|FullyQualifiedName~Integration.Tests.Orders.|FullyQualifiedName~Integration.Tests.Persistence.|FullyQualifiedName~Integration.Tests.Products.|FullyQualifiedName~Integration.Tests.Provisioning.|FullyQualifiedName~Integration.Tests.Services.
 
 # Unit tests of the migration source addon (PHP). They run the exporters against an in-memory
 # SQLite database through pdo_sqlite, which the official PHP image carries. Composer needs unzip

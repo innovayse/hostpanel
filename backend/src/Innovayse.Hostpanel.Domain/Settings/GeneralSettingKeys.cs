@@ -17,6 +17,7 @@ public static class GeneralSettingKeys
         .Concat(BillingSettingKeys.Defaults)
         .Concat(PluginSettingKeys.Defaults)
         .Concat(CampaignSettingKeys.Defaults)
+        .Concat(FraudSettingKeys.Defaults)
         .Select(d => d.Key)
         .ToHashSet(StringComparer.Ordinal);
 
@@ -25,6 +26,7 @@ public static class GeneralSettingKeys
         .Concat(BillingSettingKeys.Defaults)
         .Concat(PluginSettingKeys.Defaults)
         .Concat(CampaignSettingKeys.Defaults)
+        .Concat(FraudSettingKeys.Defaults)
         .ToList();
 
     /// <summary>Tells whether a key belongs to the general settings catalogue.</summary>
@@ -48,7 +50,8 @@ public static class GeneralSettingKeys
         return PortalSettingKeys.Patterns.TryGetValue(key, out pattern!)
             || BillingSettingKeys.Patterns.TryGetValue(key, out pattern!)
             || PluginSettingKeys.Patterns.TryGetValue(key, out pattern!)
-            || CampaignSettingKeys.Patterns.TryGetValue(key, out pattern!);
+            || CampaignSettingKeys.Patterns.TryGetValue(key, out pattern!)
+            || FraudSettingKeys.Patterns.TryGetValue(key, out pattern!);
     }
 
     /// <summary>Tells whether a catalogue key may be saved empty although it seeds with a value or has a shape.</summary>

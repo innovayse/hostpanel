@@ -17,6 +17,7 @@ import {
   clientStatusTone,
   contactTypeTone,
   domainStatusTone,
+  fraudDecisionTone,
   fulfilmentStatusTone,
   gatewayLogResultTone,
   invoiceStatusTone,
@@ -41,6 +42,7 @@ import { ClientStatus } from '@/types/client'
 import { ContactType } from '@/types/contact'
 import { DomainStatus } from '@/types/domain'
 import { InvoicePaymentClaimStatus } from '@/types/invoicepaymentclaim'
+import { FraudDecision } from '@/types/fraud'
 import { GatewayLogResult } from '@/types/gatewaylog'
 import { FulfilmentStatus, InvoiceStatus, InvoiceTransactionType } from '@/types/invoice'
 import { MigrationLogAction, MigrationStatus } from '@/types/migration'
@@ -68,6 +70,7 @@ describe('lifecycle status tones', () => {
     expect(orderStatusTone(OrderStatus.Cancelled)).toBe(UiTone.Danger)
     expect(orderStatusTone(OrderStatus.Fraud)).toBe(UiTone.Danger)
     expect(orderStatusTone(OrderStatus.Incomplete)).toBe(UiTone.Warning)
+    expect(orderStatusTone(OrderStatus.UnderReview)).toBe(UiTone.Warning)
   })
 
   it('colours each order item status', () => {
@@ -158,6 +161,15 @@ describe('billing tones', () => {
     expect(paymentClaimStatusTone(InvoicePaymentClaimStatus.Settled)).toBe(UiTone.Success)
     expect(paymentClaimStatusTone(InvoicePaymentClaimStatus.Declined)).toBe(UiTone.Danger)
     expect(paymentClaimStatusTone('Mystery')).toBe(UiTone.Neutral)
+  })
+
+  it('maps every fraud decision to a tone', () => {
+    expect(fraudDecisionTone(FraudDecision.Approved)).toBe(UiTone.Success)
+    expect(fraudDecisionTone(FraudDecision.Review)).toBe(UiTone.Warning)
+    expect(fraudDecisionTone(FraudDecision.Rejected)).toBe(UiTone.Danger)
+    expect(fraudDecisionTone(FraudDecision.ManualApproved)).toBe(UiTone.Success)
+    expect(fraudDecisionTone(FraudDecision.ManualRejected)).toBe(UiTone.Danger)
+    expect(fraudDecisionTone('Mystery')).toBe(UiTone.Neutral)
   })
 
   it('maps gateway log outcomes to tones', () => {

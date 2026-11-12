@@ -1,10 +1,12 @@
 using Innovayse.Hostpanel.Application.Billing.Common;
 using Innovayse.Hostpanel.Application.Orders.Commands.AcceptOrder;
+using Innovayse.Hostpanel.Application.Orders.Commands.ApproveOrderReview;
 using Innovayse.Hostpanel.Application.Orders.Commands.CancelOrder;
 using Innovayse.Hostpanel.Application.Orders.Commands.CloseOrderLineRefund;
 using Innovayse.Hostpanel.Application.Orders.Commands.CompleteOrderGatewayPayment;
 using Innovayse.Hostpanel.Application.Orders.Commands.DeleteOrder;
 using Innovayse.Hostpanel.Application.Orders.Commands.PlaceOrder;
+using Innovayse.Hostpanel.Application.Orders.Commands.RejectOrderReview;
 using Innovayse.Hostpanel.Application.Orders.Commands.RetryOrderLine;
 using Innovayse.Hostpanel.Application.Orders.Commands.StartOrderGatewayPayment;
 using Innovayse.Hostpanel.Application.Orders.Common;
@@ -232,6 +234,56 @@ public sealed class OrdersController : BaseApiController
     public async Task<IActionResult> CancelAsync(int id, CancellationToken ct)
     {
         var outcome = await _bus.InvokeAsync<Result>(new CancelOrderCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>
+    /// Approves an order that fraud detection held for review: it returns to pending and is accepted and fulfilled the ordinary
+    /// way, at once when its invoice was already paid while it waited.
+    /// </summary>
+    /// <param name="id">Order primary key.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when approved; 400 with <c>VALIDATION_ERROR</c> for a non-positive id; 401 without a session; 403 for a non-admin; 404 with
+    /// <c>ORDER_NOT_FOUND</c> when the id names no order; 409 with <c>ORDER_NOT_UNDER_REVIEW</c> when the order is not held for review;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/approve-review")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ApproveReviewAsync(int id, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(new ApproveOrderReviewCommand(id), ct);
+        return HandleResult(outcome);
+    }
+
+    /// <summary>Rejects an order that fraud detection held for review; its open invoice is cancelled and the client is mailed the reason.</summary>
+    /// <param name="id">Order primary key; wins over any order id in the body.</param>
+    /// <param name="command">The reason the client is told.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>
+    /// 204 when rejected; 400 with <c>VALIDATION_ERROR</c> for a non-positive id or a missing or too long reason, or
+    /// <c>INVOICE_CANCEL_NOT_ALLOWED</c> / <c>INVOICE_HAS_PAYMENTS</c> when its invoice already took money and cannot be cancelled;
+    /// 401 without a session; 403 for a non-admin; 404 with <c>ORDER_NOT_FOUND</c> when the id names no order; 409 with
+    /// <c>ORDER_NOT_UNDER_REVIEW</c> when the order is not held for review;
+    /// 429 when the rate limit is hit.
+    /// </returns>
+    [HttpPost("{id:int}/reject-review")]
+    [Authorize(Policy = Policies.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> RejectReviewAsync(int id, [FromBody] RejectOrderReviewCommand command, CancellationToken ct)
+    {
+        var outcome = await _bus.InvokeAsync<Result>(command with { OrderId = id }, ct);
         return HandleResult(outcome);
     }
 

@@ -17,6 +17,7 @@ using Innovayse.Hostpanel.Infrastructure.ImageProcessing;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel;
 using Innovayse.Hostpanel.Infrastructure.Integrations.CPanel.Whm.Extensions;
 using Innovayse.Hostpanel.Infrastructure.Integrations.GitHub;
+using Innovayse.Hostpanel.Infrastructure.Integrations.MaxMind;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration;
 using Innovayse.Hostpanel.Infrastructure.Integrations.Migration.Settings;
 using Innovayse.Hostpanel.Infrastructure.Integrations.NameAm;
@@ -530,6 +531,15 @@ public static class DependencyInjection
             // lost response posts the enquiry to the operator's chat twice, and the mail has
             // already delivered it, so the duplicate buys nothing.
             .AddNoRetryResilience(o => o.Telegram);
+
+        // Fraud scoring: asked while a registration or order is being placed, so a slow service must not hold the checkout open.
+        // The call is a pure query, so a retry is safe; a failure ends as "no answer" and the local score decides.
+        services.AddHttpClient<IFraudScoringProvider, MaxMindFraudScoringProvider>(client =>
+        {
+            client.BaseAddress = new Uri(MaxMindFraudScoringProvider.BaseAddress);
+            client.Timeout = HttpBackstopTimeouts.MaxMind;
+        })
+            .AddReadOnlyResilience(o => o.Default);
 
         // GitHub Releases: daily release-update check. User-Agent is required by GitHub's API
         // policy; read-only resilience (retries + circuit breaker) is applied via the standard

@@ -2,6 +2,8 @@ using System.Buffers.Text;
 using System.Security.Cryptography;
 using System.Text;
 using Innovayse.Hostpanel.Domain.Billing;
+using Innovayse.Hostpanel.Domain.Fraud;
+using Innovayse.Hostpanel.Domain.Fraud.Enums;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Orders.Events;
 using Innovayse.Hostpanel.Domain.Products.Enums;
@@ -55,6 +57,12 @@ public sealed class Order : BaseEntity, IAggregateRoot
     /// <summary>Gets the admin notes.</summary>
     public string? Notes { get; private set; }
 
+    /// <summary>Gets the fraud score (0 to 100) that held the order for review, or null when it was never held.</summary>
+    public int? FraudScore { get; private set; }
+
+    /// <summary>Gets the fraud reasons as stored, see <see cref="FraudReasonText"/>; empty when the order was never held.</summary>
+    public string FraudReasonCodes { get; private set; } = string.Empty;
+
     /// <summary>Gets the UTC timestamp when the order was placed.</summary>
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -81,6 +89,9 @@ public sealed class Order : BaseEntity, IAggregateRoot
 
     /// <summary>Gets the read-only collection of order items.</summary>
     public IReadOnlyList<OrderItem> Items => _items.AsReadOnly();
+
+    /// <summary>Gets the reasons the fraud score came from; empty when the order was never held.</summary>
+    public IReadOnlyList<FraudReasonCode> FraudReasons => FraudReasonText.Parse(FraudReasonCodes);
 
     /// <summary>
     /// Gets whether the order may be deleted: only one that never went anywhere (Pending) or was
@@ -496,12 +507,61 @@ public sealed class Order : BaseEntity, IAggregateRoot
                 $"Cannot mark an order as fraud with status {Status}. Only Pending orders can be flagged.");
         }
 
-        Status = OrderStatus.Fraud;
+        FlagAsFraud();
+    }
 
-        foreach (var item in _items)
+    /// <summary>
+    /// Holds a pending order back for staff: it is neither accepted nor fulfilled until <see cref="ApproveReview"/> or
+    /// <see cref="RejectFromReview"/>. A payment that arrives meanwhile fulfils nothing, because fulfilment acts on Pending orders only.
+    /// </summary>
+    /// <param name="score">The fraud score, 0 to 100.</param>
+    /// <param name="reasons">The reasons the score came from.</param>
+    /// <exception cref="DomainRuleException">Thrown when the order is not in Pending status.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the score is outside 0 to 100.</exception>
+    public void HoldForReview(int score, IReadOnlyList<FraudReasonCode> reasons)
+    {
+        ArgumentNullException.ThrowIfNull(reasons);
+        ArgumentOutOfRangeException.ThrowIfNegative(score);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(score, FraudAssessment.MaxScore);
+
+        if (Status is not OrderStatus.Pending)
         {
-            item.MarkCancelled();
+            throw new DomainRuleException(
+                OrdersErrors.OrderNotPending,
+                $"Cannot hold an order with status {Status} for review. Only Pending orders can be held.");
         }
+
+        Status = OrderStatus.UnderReview;
+        FraudScore = score;
+        FraudReasonCodes = FraudReasonText.Format(reasons);
+    }
+
+    /// <summary>
+    /// Releases an order held for review back to Pending, the state a placed order is in, so it is accepted and fulfilled the
+    /// ordinary way (on payment, or by staff).
+    /// </summary>
+    /// <exception cref="DomainRuleException">Thrown when the order is not under review.</exception>
+    public void ApproveReview()
+    {
+        EnsureUnderReview("approve");
+
+        Status = OrderStatus.Pending;
+    }
+
+    /// <summary>
+    /// Refuses an order held for review: it becomes <see cref="OrderStatus.Fraud"/>, its lines are cancelled and
+    /// <see cref="OrderRejectedFromReviewEvent"/> tells the client why.
+    /// </summary>
+    /// <param name="reason">Why staff refused it; the client reads it.</param>
+    /// <param name="now">The current moment (UTC), read by the caller; stamped on the domain event.</param>
+    /// <exception cref="DomainRuleException">Thrown when the order is not under review.</exception>
+    public void RejectFromReview(string reason, DateTimeOffset now)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        EnsureUnderReview("reject");
+
+        FlagAsFraud();
+        AddDomainEvent(new OrderRejectedFromReviewEvent(Id, ClientId, OrderNumber, reason.Trim()) { OccurredAt = now });
     }
 
     /// <summary>
@@ -546,6 +606,30 @@ public sealed class Order : BaseEntity, IAggregateRoot
 
         return presented.Length == expected.Length
             && CryptographicOperations.FixedTimeEquals(presented, expected);
+    }
+
+    /// <summary>Marks the order as fraud and cancels its lines; the one transition both <see cref="MarkFraud"/> and <see cref="RejectFromReview"/> end in.</summary>
+    private void FlagAsFraud()
+    {
+        Status = OrderStatus.Fraud;
+
+        foreach (var item in _items)
+        {
+            item.MarkCancelled();
+        }
+    }
+
+    /// <summary>Refuses an action that needs the order to be under review.</summary>
+    /// <param name="action">What was asked, for the message.</param>
+    /// <exception cref="DomainRuleException">Thrown when the order is not under review.</exception>
+    private void EnsureUnderReview(string action)
+    {
+        if (Status is not OrderStatus.UnderReview)
+        {
+            throw new DomainRuleException(
+                OrdersErrors.OrderNotUnderReview,
+                $"Cannot {action} the review of an order with status {Status}. Only an order under review can be reviewed.");
+        }
     }
 
     /// <summary>Finds one of this order's lines.</summary>

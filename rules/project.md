@@ -1753,6 +1753,31 @@ surrounding spaces, make one recipient, the one with the lowest client id; the c
   on its own (image proxies, prefetch) as an open, so opens are an upper bound.
 - **Preview.** `GET /api/admin/email-campaigns/{id}/preview` renders the stored template in the default language with a sample link.
 
+### Fraud detection
+
+The `Fraud` module (tables `BlockListEntries` and `FraudLogEntries`) scores a registration or an order from 0 to 100 and decides with `FraudDecisionPolicy`:
+below `fraud.manual_review_risk_score` it goes through, from there it is held, from `fraud.auto_reject_risk_score` it is refused. The rules are
+pure Domain code: each signal is a small class behind `IFraudSignal` (`Domain/Fraud/Signals/`), listed once in `FraudSignals.All`, and `FraudRiskScorer`
+adds the weights and holds the sum to 0 to 100. A block list hit weighs 100, so it reaches any threshold. The facts a signal reads are gathered by
+`EvaluateFraudRisk` (the block list, what the fraud log remembers of the caller's IP address, and the optional external service behind
+`IFraudScoringProvider`), which writes nothing; the deciding use case then logs through `RecordFraudDecision`, once it knows the order.
+
+- **Settings** are the six `fraud.*` keys of `FraudSettingKeys`, in the general catalogue (seeded, edited in System Settings, read through `SettingSource`,
+  saved together by `UpdateFraudSettings`, which holds the rule review below reject). `FraudSettingsReader` falls back to the defaults, with a warning, when the
+  stored pair contradicts itself. It is off by default (`fraud.enabled`).
+- **The held state is a status, not a flag.** `OrderStatus.UnderReview` (5) is only reached from Pending (`Order.HoldForReview`); fulfilment acts on Pending orders
+  only, so a payment for a held order fulfils nothing, and `ApproveOrderReview` returns the order to Pending and fulfils it at once when its invoice is already
+  paid. `RejectOrderReview` cancels the open invoice through Billing (a paid invoice refuses, and the order stays held until it is refunded) and
+  `Order.RejectFromReview` makes the order `Fraud` and raises the event the `order-rejected` mail answers. The queue is `GET /api/orders?status=UnderReview`.
+- **The check runs before anything is created** in `PlaceOrderHandler` (a refusal creates no account, order number or invoice) and in `RegisterHandler` (local
+  mode; a sign-up through the external sign-on provider never reaches this host). A held order is stored already `UnderReview`, never Pending.
+- **The log is the memory of the signals.** Orders from one address within the velocity window and the other e-mail addresses seen from it within 30 days are
+  counted from `FraudLogEntries`; only the automatic decisions (Approved, Review, Rejected) count as orders. The log keeps no foreign key to an order or client.
+- **The external service** is `MaxMindFraudScoringProvider` (`Infrastructure/Integrations/MaxMind/`, the `maxmind` integration, minFraud Insights). It sends the
+  address, the domain of the e-mail address and the billing country, never the address itself; any failure is logged without the response body and ends as
+  no answer, and the higher of the local and the service's score counts. Without it only the country of the IP address is unknown, so the country mismatch
+  signal stays silent.
+
 ## Demo mode
 
 `Demo__Enabled=true` turns a deployment into the public demo; nothing is a default, so

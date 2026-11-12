@@ -71,6 +71,30 @@ describe('ordersStore', () => {
     expect(store.currentOrder).toEqual({ id: 8, status: 'Cancelled' })
   })
 
+  it('approveReview and rejectReview POST to the review routes and refresh the order detail', async () => {
+    const store = useOrdersStore()
+    const approve = stubFetch(new Response(null, { status: 204 }), json({ id: 8, status: 'Pending' }))
+
+    expect(await store.approveReview(8)).toBe(true)
+    expect(callOf(approve, 0)).toMatchObject({ url: '/api/orders/8/approve-review', method: 'POST' })
+    expect(store.currentOrder).toEqual({ id: 8, status: 'Pending' })
+
+    const reject = stubFetch(new Response(null, { status: 204 }), json({ id: 8, status: 'Fraud' }))
+    expect(await store.rejectReview(8, 'Stolen card')).toBe(true)
+    expect(callOf(reject, 0)).toMatchObject({ url: '/api/orders/8/reject-review', method: 'POST', body: { reason: 'Stolen card' } })
+    expect(store.currentOrder).toEqual({ id: 8, status: 'Fraud' })
+  })
+
+  it('a refused review sets actionError and still reads the order again', async () => {
+    const store = useOrdersStore()
+    const mock = stubFetch(problem('The order is not held for review.', 409), json({ id: 8, status: 'Active' }))
+
+    expect(await store.approveReview(8)).toBe(false)
+    expect(store.actionError).toBe('The order is not held for review.')
+    expect(mock).toHaveBeenCalledTimes(2)
+    expect(store.currentOrder).toEqual({ id: 8, status: 'Active' })
+  })
+
   it('acceptOrder keeps the lines it could not fulfil and names them', async () => {
     const store = useOrdersStore()
     const failedLines = [

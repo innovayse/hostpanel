@@ -4,6 +4,7 @@ using System.Text.Json;
 using Innovayse.Hostpanel.Domain.Billing;
 using Innovayse.Hostpanel.Domain.Clients;
 using Innovayse.Hostpanel.Domain.Domains;
+using Innovayse.Hostpanel.Domain.Fraud.Enums;
 using Innovayse.Hostpanel.Domain.Orders;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 using Innovayse.Hostpanel.Domain.Products;
@@ -89,6 +90,10 @@ public static class OrdersTestSeeds
         else if (status == OrderStatus.Active)
         {
             order.Accept(DateTimeOffset.UtcNow);
+        }
+        else if (status == OrderStatus.UnderReview)
+        {
+            order.HoldForReview(60, [FraudReasonCode.DisposableEmail]);
         }
 
         db.Orders.Add(order);

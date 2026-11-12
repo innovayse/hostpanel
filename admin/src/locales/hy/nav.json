@@ -46,6 +46,12 @@
   "servers": "Սերվերներ",
   "integrations": "Ինտեգրացիաներ",
   "migration": "Միգրացիա",
+  "fraud": "Խարդախությունից պաշտպանություն",
+  "fraudChildren": {
+    "settings": "Կարգավորումներ",
+    "blockLists": "Արգելափակման ցուցակներ",
+    "log": "Ստուգումների մատյան"
+  },
   "settings": "Կարգավորումներ",
   "settingsChildren": {
     "general": "Ընդհանուր",

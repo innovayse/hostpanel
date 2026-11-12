@@ -118,7 +118,7 @@ describe('AppSidebar', () => {
     expect(entriesOf(0)).toEqual(['nav-dashboard', 'nav-clients', 'nav-orders', 'nav-billing', 'nav-domains', 'nav-support'])
     expect(entriesOf(1)).toEqual(['nav-reports'])
     expect(entriesOf(2)).toEqual(['nav-servers', 'nav-integrations', 'nav-plugins', 'nav-storefront'])
-    expect(entriesOf(3)).toEqual(['nav-migration', 'nav-settings'])
+    expect(entriesOf(3)).toEqual(['nav-migration', 'nav-fraud', 'nav-settings'])
   })
 
   it('draws the phone menu drawer in the same order as the desktop sidebar', async () => {

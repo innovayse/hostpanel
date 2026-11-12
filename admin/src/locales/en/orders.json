@@ -46,7 +46,8 @@
     "confirmCancelMessage": "The order will be cancelled. This cannot be undone.",
     "cancelOrder": "Cancel order",
     "failedLines": "{count} to retry",
-    "needsAttention": "Needs attention"
+    "needsAttention": "Needs attention",
+    "reviewQueue": "Pending review"
   },
   "fulfillment": {
     "acceptedWithFailedLines": "Order accepted, but these lines could not be fulfilled: {lines}.",
@@ -70,5 +71,22 @@
     "orderLineServiceConflict": "The service stored for this line belongs to another client or product. Check the line and its service by hand.",
     "unexpected": "An unexpected error stopped the line.",
     "generic": "The line could not be fulfilled."
+  },
+  "fraud": {
+    "title": "Fraud review",
+    "score": "Fraud score",
+    "reasons": "Risk reasons",
+    "noReasons": "No reasons recorded.",
+    "held": "This order is held for review. It is not accepted or fulfilled until you approve it.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approved": "Order approved.",
+    "rejected": "Order rejected.",
+    "rejectTitle": "Reject this order?",
+    "rejectReasonLabel": "Reason",
+    "rejectReasonHint": "The client reads this reason in the e-mail.",
+    "rejectReasonPlaceholder": "Why the order is refused",
+    "rejectReasonRequired": "Enter a reason.",
+    "rejectSubmit": "Reject order"
   }
 }

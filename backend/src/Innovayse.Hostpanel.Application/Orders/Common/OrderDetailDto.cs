@@ -1,4 +1,5 @@
 using Innovayse.Hostpanel.Domain.Billing.Enums;
+using Innovayse.Hostpanel.Domain.Fraud.Enums;
 using Innovayse.Hostpanel.Domain.Orders.Enums;
 
 namespace Innovayse.Hostpanel.Application.Orders.Common;
@@ -23,6 +24,8 @@ namespace Innovayse.Hostpanel.Application.Orders.Common;
 /// <param name="IpAddress">Client's IP address at checkout time.</param>
 /// <param name="Notes">Admin notes attached to the order.</param>
 /// <param name="Items">Line items in the order.</param>
+/// <param name="FraudScore">The fraud score (0 to 100) that held the order for review, or null when it was never held.</param>
+/// <param name="FraudReasons">The reasons the fraud score came from; empty when the order was never held.</param>
 /// <param name="CreatedAt">UTC timestamp when the order was placed.</param>
 public sealed record OrderDetailDto(
     int Id,
@@ -39,4 +42,6 @@ public sealed record OrderDetailDto(
     string? IpAddress,
     string? Notes,
     IReadOnlyList<OrderItemDto> Items,
+    int? FraudScore,
+    IReadOnlyList<FraudReasonCode> FraudReasons,
     DateTimeOffset CreatedAt);

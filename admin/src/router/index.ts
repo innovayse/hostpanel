@@ -179,6 +179,10 @@ const router = createRouter({
         { path: 'apps/:plugin/:page*', component: lazy('views/PluginPageView.vue') },
         { path: 'servers', component: lazy('views/ServersView.vue') },
         { path: 'integrations/:slug/configure', component: lazy('views/IntegrationDetailView.vue') },
+        { path: 'fraud', redirect: AppRoute.FraudSettings },
+        { path: 'fraud/settings', component: lazy('views/FraudSettingsView.vue') },
+        { path: 'fraud/block-lists', component: lazy('views/FraudBlockListsView.vue') },
+        { path: 'fraud/log', component: lazy('views/FraudLogView.vue') },
         { path: 'migration', component: lazy('views/MigrationView.vue') },
         {
           path: 'integrations',

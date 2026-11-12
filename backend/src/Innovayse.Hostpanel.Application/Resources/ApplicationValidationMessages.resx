@@ -1678,4 +1678,40 @@
   <data name="TaxRuleRateDecimalsInvalid" xml:space="preserve">
     <value>A tax rate can have at most three decimal places.</value>
   </data>
+  <data name="FraudBlockListTypeInvalid" xml:space="preserve">
+    <value>The block list type is not valid.</value>
+  </data>
+  <data name="FraudBlockListValueInvalid" xml:space="preserve">
+    <value>The value does not fit the chosen block list type.</value>
+  </data>
+  <data name="FraudBlockListNoteTooLong" xml:space="preserve">
+    <value>The note must not be longer than 500 characters.</value>
+  </data>
+  <data name="FraudBlockListEntryIdInvalid" xml:space="preserve">
+    <value>Block list entry id must be greater than zero.</value>
+  </data>
+  <data name="FraudScoreOutOfRange" xml:space="preserve">
+    <value>A risk score must be a whole number from 0 to 100.</value>
+  </data>
+  <data name="FraudReviewBelowReject" xml:space="preserve">
+    <value>The review score must be lower than the auto-reject score.</value>
+  </data>
+  <data name="FraudVelocityWindowOutOfRange" xml:space="preserve">
+    <value>The velocity window must be from 1 to 1440 minutes.</value>
+  </data>
+  <data name="FraudCountOutOfRange" xml:space="preserve">
+    <value>The limit must be a whole number from 1 to 100.</value>
+  </data>
+  <data name="FraudCheckKindInvalid" xml:space="preserve">
+    <value>The kind of fraud check is not valid.</value>
+  </data>
+  <data name="FraudDecisionInvalid" xml:space="preserve">
+    <value>The fraud decision is not valid.</value>
+  </data>
+  <data name="OrderReviewReasonRequired" xml:space="preserve">
+    <value>Give the reason the client is told.</value>
+  </data>
+  <data name="OrderReviewReasonTooLong" xml:space="preserve">
+    <value>The reason must not be longer than 1000 characters.</value>
+  </data>
 </root>

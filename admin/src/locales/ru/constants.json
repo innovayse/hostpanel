@@ -17,7 +17,8 @@
   },
   "orderStatusOptions": {
     "fraud": "Мошенничество",
-    "incomplete": "Не завершён"
+    "incomplete": "Не завершён",
+    "underReview": "На проверке"
   },
   "ticketFilterOptions": {
     "allActiveTickets": "Все активные тикеты",
@@ -38,5 +39,33 @@
     "refunded": "Возвращена",
     "refunding": "Возврат выполняется",
     "partiallyRefunded": "Возвращена частично"
+  },
+  "fraudReasonOptions": {
+    "blockedIp": "IP-адрес заблокирован",
+    "blockedEmailDomain": "Домен e-mail заблокирован",
+    "blockedCountry": "Страна заблокирована",
+    "disposableEmail": "Одноразовый адрес e-mail",
+    "sharedIpAccounts": "Много аккаунтов с одного IP-адреса",
+    "orderVelocity": "Слишком много заказов с одного IP-адреса",
+    "countryMismatch": "Страна оплаты не совпадает со страной IP",
+    "providerHighRisk": "Сервис оценки признал высокий риск",
+    "anonymousIp": "Прокси, VPN или хостинговый IP-адрес"
+  },
+  "fraudDecisionOptions": {
+    "approved": "Одобрено",
+    "review": "Ожидает проверки",
+    "rejected": "Отклонено",
+    "manualApproved": "Одобрено сотрудником",
+    "manualRejected": "Отклонено сотрудником"
+  },
+  "fraudCheckKindOptions": {
+    "registration": "Регистрация",
+    "order": "Заказ"
+  },
+  "blockListTypeOptions": {
+    "ip": "IP-адрес",
+    "cidr": "Диапазон IP (CIDR)",
+    "emailDomain": "Домен e-mail",
+    "country": "Страна"
   }
 }

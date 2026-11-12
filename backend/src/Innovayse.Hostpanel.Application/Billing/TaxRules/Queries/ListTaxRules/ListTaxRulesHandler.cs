@@ -30,6 +30,8 @@ public sealed class ListTaxRulesHandler
         var rules = await _context.TaxRules
             .AsNoTracking()
             .OrderBy(r => r.Country)
+            // A missing region sorts last in PostgreSQL, so order on its presence to put the country-wide rule first.
+            .ThenBy(r => r.Region != null)
             .ThenBy(r => r.Region)
             .ThenBy(r => r.Id)
             .SelectDto()

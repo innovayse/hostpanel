@@ -6,6 +6,7 @@ import importlib.util
 import json
 import os
 import pwd
+import shutil
 import subprocess
 import sys
 import time
@@ -318,6 +319,16 @@ class JailEnrolTests(AgentTestCase):
             self.assertTrue(os.path.isabs(argv[0]))
             if argv[0] == "/usr/sbin/jk_init":
                 os.makedirs(os.path.join(argv[argv.index("-j") + 1], "etc"), exist_ok=True)
+            if argv[0] == "/usr/sbin/jk_cp":
+                # Copies like jk_cp does: the host path recreated under the jail, times kept.
+                jail = argv[argv.index("-j") + 1]
+                for source in argv[argv.index("-j") + 2:]:
+                    target = os.path.join(jail, source.lstrip("/"))
+                    if os.path.isdir(source):
+                        shutil.copytree(source, target, symlinks=True, dirs_exist_ok=True)
+                    else:
+                        os.makedirs(os.path.dirname(target), exist_ok=True)
+                        shutil.copy2(source, target)
             if argv[0] == "/usr/bin/systemd-escape":
                 return SimpleNamespace(returncode=0, stdout=argv[-1].strip("/").replace("/", "-") + ".mount")
             if argv[:2] == ["/usr/sbin/usermod", "-aG"]:
@@ -364,22 +375,103 @@ class JailEnrolTests(AgentTestCase):
             self.assertIn("alice:x:", handle.read())
         self.assertTrue(self.call(op="status", account="alice")["shell_enabled"])
 
-    def test_jail_gets_login_comforts_on_every_enrolment(self):
+    def jk_cp_calls(self):
+        return [c for c in self.calls if c[0] == "/usr/sbin/jk_cp"]
+
+    def host_file(self, name, text="x"):
+        path = os.path.join(self.tmp.name, "host", name)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as handle:
+            handle.write(text)
+        return path
+
+    def test_jail_gets_login_comforts(self):
         # Missing in a bare jailkit tree on srv4: uname (a profile.d script calls it at login)
         # and /etc/bashrc (where `ll` is defined). Only paths present on the host are copied.
-        extra = os.path.join(self.tmp.name, "bashrc")
-        open(extra, "w").close()
+        extra = self.host_file("bashrc")
         missing = os.path.join(self.tmp.name, "absent")
         self.config["jail_extras"] = [extra, missing]
         self.assertTrue(self.add(1, KEY_ID_A)["ok"])
-        cp = [c for c in self.calls if c[0] == "/usr/sbin/jk_cp"]
+        cp = self.jk_cp_calls()
         self.assertEqual(len(cp), 1)
         self.assertEqual(cp[0][:4], ["/usr/sbin/jk_cp", "-f", "-j", os.path.join(self.jail_root, "alice")])
         self.assertEqual(cp[0][4:], [extra])
+
+    def test_extra_added_later_reaches_a_built_jail(self):
+        first = self.host_file("bashrc")
+        self.config["jail_extras"] = [first]
+        self.assertTrue(self.add(1, KEY_ID_A)["ok"])
+        later = self.host_file("uname")
+        self.config["jail_extras"] = [first, later]
         self.calls.clear()
         self.assertTrue(self.add(2, KEY_ID_B)["ok"])
-        self.assertTrue([c for c in self.calls if c[0] == "/usr/sbin/jk_cp"],
-                        "a jail built before an extra was added gets it on the next key")
+        cp = self.jk_cp_calls()
+        self.assertEqual(len(cp), 1, "a jail built before an extra was added gets it on the next key")
+        self.assertEqual(cp[0][4:], [later], "only the extra the jail lacks is copied")
+
+    def test_extras_already_in_the_jail_are_not_copied_again(self):
+        # jk_cp resolves and copies every binary's libraries: with git and its helpers in the list
+        # that took ~20 s of CPU per key on srv4, longer than HostPanel waits for one SSH call.
+        tree = os.path.join(self.tmp.name, "host", "git-core")
+        os.makedirs(os.path.join(tree, "mergetools"))
+        for name in ("git-add", "mergetools/vimdiff"):
+            with open(os.path.join(tree, name), "w") as handle:
+                handle.write("bin")
+        os.symlink("git-add", os.path.join(tree, "git-stage"))
+        self.config["jail_extras"] = [self.host_file("bashrc"), tree]
+        self.assertTrue(self.add(1, KEY_ID_A)["ok"])
+        self.calls.clear()
+        self.assertTrue(self.add(2, KEY_ID_B)["ok"])
+        self.assertEqual(self.jk_cp_calls(), [])
+
+    def test_extra_changed_on_the_host_is_copied_again(self):
+        unchanged = self.host_file("bashrc")
+        updated = self.host_file("rsync", "v1")
+        tree = os.path.join(self.tmp.name, "host", "zoneinfo")
+        os.makedirs(tree)
+        zone = os.path.join(tree, "Yerevan")
+        with open(zone, "w") as handle:
+            handle.write("old")
+        self.config["jail_extras"] = [unchanged, updated, tree]
+        self.assertTrue(self.add(1, KEY_ID_A)["ok"])
+        later = time.time() + 60
+        with open(updated, "w") as handle:
+            handle.write("v2, a package update")
+        os.utime(updated, (later, later))
+        with open(zone, "w") as handle:
+            handle.write("new rules")
+        os.utime(zone, (later, later))
+        self.calls.clear()
+        self.assertTrue(self.add(2, KEY_ID_B)["ok"])
+        cp = self.jk_cp_calls()
+        self.assertEqual(len(cp), 1)
+        self.assertEqual(cp[0][4:], [updated, tree])
+
+    def test_a_copy_whose_time_lost_its_fraction_is_not_stale(self):
+        # jk_cp keeps a file's time but drops the fraction of a second (seen on srv4), so a copy
+        # is up to date when its whole second is not older than the host's.
+        extra = self.host_file("bashrc")
+        os.utime(extra, (1792956992.5939536, 1792956992.5939536))
+        self.config["jail_extras"] = [extra]
+        self.assertTrue(self.add(1, KEY_ID_A)["ok"])
+        copy = os.path.join(self.jail_root, "alice", extra.lstrip("/"))
+        os.utime(copy, (1792956992.0, 1792956992.0))
+        self.calls.clear()
+        self.assertTrue(self.add(2, KEY_ID_B)["ok"])
+        self.assertEqual(self.jk_cp_calls(), [])
+
+    def test_a_file_missing_inside_a_copied_directory_is_copied_again(self):
+        tree = os.path.join(self.tmp.name, "host", "pki")
+        os.makedirs(tree)
+        with open(os.path.join(tree, "cert.pem"), "w") as handle:
+            handle.write("pem")
+        self.config["jail_extras"] = [tree]
+        self.assertTrue(self.add(1, KEY_ID_A)["ok"])
+        with open(os.path.join(tree, "new.pem"), "w") as handle:
+            handle.write("pem")
+        self.calls.clear()
+        self.assertTrue(self.add(2, KEY_ID_B)["ok"])
+        self.assertEqual([c[4:] for c in self.jk_cp_calls()], [[tree]])
 
     def test_enrolment_is_idempotent(self):
         self.assertTrue(self.add(1, KEY_ID_A)["ok"])
